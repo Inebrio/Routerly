@@ -244,6 +244,16 @@ describe('ModelDiscoveryPage — loaded state', () => {
     );
   });
 
+  it('row click adds the model, same as the Add button', async () => {
+    renderPage();
+    await waitFor(() => screen.getByRole('button', { name: 'Add' }));
+    await userEvent.click(screen.getAllByText('gpt-4o')[0]!);
+    expect(navigateFn).toHaveBeenCalledWith(
+      expect.stringContaining('modelId=gpt-4o'),
+      expect.objectContaining({ state: expect.objectContaining({ catalogEntry: expect.anything() }) })
+    );
+  });
+
   it('"Add again" text when isConfigured=true', async () => {
     mockGetCatalog.mockResolvedValue([makeEntry({ isConfigured: true })]);
     renderPage();

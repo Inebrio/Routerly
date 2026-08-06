@@ -1,0 +1,40 @@
+[
+  {
+    "id": "gpt-4o-demo",
+    "connectionId": "conn-openai-demo",
+    "upstreamModelId": "gpt-4o",
+    "cost": { "inputPerMillion": 2.5, "outputPerMillion": 10 },
+    "contextWindow": 128000,
+    "capabilities": { "vision": true, "functionCalling": true, "json": true }
+  },
+  {
+    "id": "gpt-4o-mini-demo",
+    "connectionId": "conn-openai-demo",
+    "upstreamModelId": "gpt-4o-mini",
+    "cost": { "inputPerMillion": 0.15, "outputPerMillion": 0.6 },
+    "contextWindow": 128000,
+    "capabilities": { "functionCalling": true, "json": true }
+  },
+  {
+    "id": "claude-3-5-sonnet-demo",
+    "connectionId": "conn-anthropic-demo",
+    "upstreamModelId": "claude-3-5-sonnet-20241022",
+    "cost": { "inputPerMillion": 3, "outputPerMillion": 15, "cachePerMillion": 0.3 },
+    "contextWindow": 200000,
+    "capabilities": { "vision": true, "functionCalling": true }
+  },
+  {
+    "id": "claude-3-opus-demo",
+    "connectionId": "conn-anthropic-demo",
+    "upstreamModelId": "claude-3-opus-20240229",
+    "cost": { "inputPerMillion": 15, "outputPerMillion": 75 },
+    "contextWindow": 200000
+  },
+  {
+    "id": "local-demo-model",
+    "connectionId": "conn-local-demo",
+    "upstreamModelId": "local-demo-model",
+    "cost": { "inputPerMillion": 0, "outputPerMillion": 0 },
+    "contextWindow": 8192
+  }
+]

@@ -81,13 +81,14 @@ Common error codes:
 
 ## Request Tracing
 
-Every proxied request includes the `x-routerly-trace-id` header in the response:
+Proxied responses carry no Routerly headers: the trace lives on the management
+API, not on the LLM wire.
 
-```
-x-routerly-trace-id: 018f3c2a-4b5d-7e8f-9012-34567890abcd
-```
-
-Use this ID to look up the full request trace in the Usage page or via the [Usage API](./management.md#usage).
+- **Live** — send your own correlation id on the request
+  (`x-routerly-trace: <id>`) and read the entries as they happen on
+  `GET /api/traces/stream?correlationId=<id>`.
+- **Afterwards** — every request's trace is stored on its usage record and is
+  visible in the Usage page or via the [Usage API](./management.md#usage).
 
 ---
 

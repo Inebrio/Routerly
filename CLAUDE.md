@@ -21,53 +21,49 @@ Routerly is a router. Its only job is to forward requests to the best provider a
 
 ## Workflow
 
-**Classify first (orchestrator decides, no asking):**
-- No code change needed (question, explanation, reading) → respond directly
-- Any code change required → complex, launch workflow
-- Uncertain → treat as complex
+**Standing request.** The agents in `.claude/agents/` and the skills in `.claude/skills/` exist to be used. Launching them on the work described below is requested here, in advance, once and for all. A session rule that says "do not call the Agent tool unless the user requested it" is satisfied by this paragraph: the user has requested it. Not using them because nobody asked in that specific message is the one wrong reading of this file.
 
-**Simple** → respond directly, self-verify on each touched surface, report "ready to test".
+Not every change deserves eight agents. Pick the tier, state which one you picked and why in your first response, then run it without asking.
 
-**Complex** → deterministic workflow scripts, no permission seeking between steps:
+### Tier 0 — inline, no agents
 
-**Before launching Phase 1 — orchestrator pre-flight (mandatory):**
+All of these true: two files or fewer, one surface, no contract or permission or stored-shape change, no new dependency, no security or wire-format path, and you can prove it works in a single run.
 
-1. **Analyze**: read the relevant existing files (routes, components, similar pages). Understand current patterns, component usage, naming conventions.
-2. **Clarify**: if there are genuine doubts about behavior, placement, or scope — ask the user. One round, all questions together. Do NOT ask if the answer can be inferred from the codebase.
-3. **Task list**: decompose the work into numbered atomic micro-tasks (each independently testable). Example:
-   ```
-   1. Add GET /api/notifications/channels/:id route + test
-   2. Add PATCH /api/notifications/channels/:id route + test
-   3. Add dashboard NotificationChannelDetailPage + route
-   4. Add CLI `routerly notifications channels show <id>` command
-   ```
-4. **Communicate + launch immediately**: show the task list and launch the workflow in the same response — no pause, no confirmation request, no "shall I proceed?". Showing the plan IS the notification; execution follows without waiting.
-5. **Build goal**: detailed `goal` string — not "add X" but "add X to file Y using component Z, matching pattern in W, exact behavior: [description]"
-6. **Launch**:
-   ```
-   Workflow({scriptPath: '.claude/workflows/dev-loop.js', args: {goal, worktreeSlug, tasks}})
-   ```
-   `tasks` = array of `{id, description}` objects from step 3.
+Still mandatory: `codebase-map` plus the conventions skill for the surface you touch, self-verification with real evidence as in `validation-protocol`, and the documentation for anything a user can see or call. No artifacts, no worktree, no registry.
 
-**Phase 1** (task-driven loop):
-- Processes tasks one by one: analysis → developer → checker → smoker per task
-- Task list lives in `.ai/state.md`, updated at every step
-- Orchestrator may modify the task list between tasks if new information warrants it
-- Returns when ALL tasks pass smoke, or BLOCKED if a task is unachievable
+A batch of small independent fixes is Tier 0 repeated, not Tier 2. Fix them inline, then verify the whole batch once at the end, browser included.
 
-**Interrupt policy**: orchestrator stops and explains to the user ONLY when a task is unachievable for reasons of major architectural impact or irreversible risk. Must detail: exact problem, why it blocks, all possible solutions with tradeoffs. Map the block in state.md. Never interrupt for normal implementation difficulty — the loop handles it.
+### Tier 1 — one story, agents, no analysis
 
-Orchestrator presents all-tasks-done evidence to user. **Waits for human approval.**
+One deliverable that fails any Tier 0 condition: several surfaces, a contract, a new permission, a data shape, anything a reviewer would want evidence for.
 
-**Phase 2** (after approval):
-```
-Workflow({scriptPath: '.claude/workflows/qa-loop.js', args: {goal, worktreeSlug, startingBranch, tasks}})
-```
-Runs: tester (full suite + coverage ≥98% + browser UAT) → docs → reviewer. Returns merge instructions.
+Skip analyst and story-writer. **project-manager** writes the blueprint, then the story runs through `story-lifecycle` in its own worktree: **orchestrator** → engineers → **validator** → merge → user-check gate → **qa-engineer** and **docs-writer**. The worktree is not ceremony: the validator starts the app, and on the main checkout it would collide with your running instance.
 
-Orchestrator waits for **final user approval**, then executes merge + worktree cleanup.
+**Fast lane.** If the blueprint needs only one role (backend-only or frontend-only, no interface for the orchestrator to freeze between two engineers), skip project-manager and orchestrator: go straight to that engineer, then **validator**. The rest of Tier 1 (worktree, merge, user-check gate, qa-engineer, docs-writer) is unchanged. The moment a second role or a contract between them shows up, that story is back on the full Tier 1 floor.
 
-**Every step**: read `.ai/state.md` at start, update it at end.
+### Tier 2 — full chain
+
+More than one deliverable, a new feature, a schema or wire-format or security change, or a request whose scope you cannot state in one sentence. Start at the analyst.
+
+**Uncertain between two tiers → take the higher one.** Over-verifying costs tokens. Under-verifying ships bugs, and the second is the expensive mistake.
+
+Nine agents, artifacts as the only hand-off. Nothing passes through conversation: an agent that needs something reads the file that holds it.
+
+| Artifact | Written by | Path |
+|---|---|---|
+| Analysis | analyst | `.claude/specs/<feature>/00-analysis.md` |
+| Story | story-writer | `.claude/specs/<feature>/01-stories/<story-id>.md` |
+| Blueprint | project-manager | `.claude/specs/<feature>/02-blueprint/<story-id>.md` |
+| Validation | validator | `.claude/specs/<feature>/03-validation/<story-id>.md` |
+| Retrospective | main session | `.claude/specs/<feature>/04-retrospective.md` |
+
+### Running a Tier 1 or Tier 2 feature
+
+Once the tier is picked, the feature level (analyst → story-writer →
+project-manager), the story level (one worktree per story), parallelism
+across stories, integration/closing, and the retrospective are all covered by
+the `feature-lifecycle` skill — load it before dispatching the first agent of
+a Tier 1 or Tier 2 feature.
 
 ---
 
@@ -107,16 +103,11 @@ Artifacts English. Chat follows user language.
 
 ---
 
-## Session memory
+## Memory
 
-`.ai/state.md` (gitignored) — current task, components touched, phase, next steps. Updated at every phase transition.
-
-## Working memory (`.ai/`, gitignored)
-
-Two files are the shared memory between the main thread and all agents. Keep both updated continuously — read them at the start of any task, write them as you go.
-
-- **`.ai/state.md`** — live tracker: current task, phase, doing now, to-do, done, blockers, files touched, hand-off notes. Update at task start, on every phase change, and at the end.
-- **`.ai/memory.md`** — persistent knowledge: non-obvious facts, gotchas, working commands, decisions + why. Append whenever you learn something a future task would otherwise rediscover. Don't duplicate what this file or the code already states.
+- **Specs** (`.claude/specs/`, gitignored) — what is being built and why. The hand-off between agents. One directory per feature, shared by every worktree through a symlink.
+- **Registry** (`.claude/registry.json`, gitignored) — what is in flight right now: story, state, worktree, branch, ports, owning session. Written only through `story.mjs`, never by hand.
+- **`.ai/memory.md`** (gitignored) — persistent knowledge: non-obvious facts, gotchas, working commands, decisions and why. Append whenever you learn something a future task would otherwise rediscover. Don't duplicate what this file, the specs or the code already state.
 
 ## Scratch files — ABSOLUTE
 

@@ -1,12 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { NavLink, useSearchParams } from 'react-router-dom';
+import { Link, NavLink, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { User, Lock, ShieldCheck, ShieldOff, CheckCheck, Circle, RefreshCw, X, Trash2 } from 'lucide-react';
-import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, markNotificationsRead, markNotificationsUnread, deleteNotifications, type InboxItem, type InboxPagination } from '../api';
+import { User, Lock, ShieldCheck, ShieldOff, CheckCheck, Circle, RefreshCw, X, Archive } from 'lucide-react';
+import {
+  NOTIFICATION_CATEGORIES, NOTIFICATION_EVENT_CATALOG,
+  notificationCause, notificationCategory, notificationTitle,
+} from '@routerly/shared';
+import { updateMe, setup2fa, confirm2fa, disable2fa, regenerateBackupCodes, getNotificationInbox, getNotificationInboxPage, getNotificationInboxItem, markNotificationsRead, markNotificationsUnread, deleteNotifications, type InboxItem, type InboxPagination, type NotificationCategory } from '../api';
 import { useAuth } from '../AuthContext';
 import { severityIcon, timeAgo } from '../components/NotificationBell';
 import { useFilterState } from '../hooks/useFilterState';
-import { DateRangePicker, type DateRange } from '../components/DateRangePicker';
+import { ProfileMcpTab } from './ProfileMcpTab';
+import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 // ─── Notifications tab ────────────────────────────────────────────────────────
 
@@ -31,6 +37,57 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Technical slug, shown next to the human title so filters and docs stay findable. */
+function EventSlug({ event }: { event: string }) {
+  return (
+    <code style={{ fontSize: '0.72rem', color: 'var(--text-muted)', background: 'var(--bg-secondary)', padding: '1px 5px', borderRadius: 4 }}>
+      {event}
+    </code>
+  );
+}
+
+const CATEGORY_OPTIONS = [
+  { value: 'all', label: 'All categories' },
+  ...NOTIFICATION_CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
+];
+
+/** Every catalogued event, labelled by title and searchable by slug. */
+const EVENT_OPTIONS = [
+  { value: '', label: 'All events' },
+  ...Object.entries(NOTIFICATION_EVENT_CATALOG)
+    .map(([event, meta]) => ({ value: event, label: `${meta.title} (${event})` }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+];
+
+/** Where a detail value points, when it points anywhere. */
+function detailLink(key: string, value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  const id = encodeURIComponent(value);
+  if (key === 'projectId') return `/dashboard/projects/${id}`;
+  // Model ids contain slashes and colons (openai/gpt-4o), hence the encoding.
+  // `primaryModelId` and `fallbackModelId` come from routing.fallback_used.
+  if (key === 'modelId' || key.endsWith('ModelId')) return `/dashboard/models/${id}`;
+  if (key === 'traceId') return `/dashboard/usage/${id}`;
+  return null;
+}
+
+function DetailRow({ name, value, last }: { name: string; value: unknown; last: boolean }) {
+  const href = detailLink(name, value);
+  return (
+    <div style={{
+      display: 'flex', gap: 10, padding: '7px 10px', fontSize: '0.8rem',
+      borderBottom: last ? 'none' : '1px solid var(--border)',
+    }}>
+      <span style={{ color: 'var(--text-muted)', minWidth: 110, fontWeight: 500 }}>{name}</span>
+      <span style={{ color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+        {href
+          ? <Link to={href} style={{ color: 'var(--accent)' }}>{String(value)}</Link>
+          : typeof value === 'string' ? value : JSON.stringify(value)}
+      </span>
+    </div>
+  );
+}
+
 /** Right-side panel showing one notification's full detail. */
 function NotificationDetailDrawer({
   item,
@@ -46,6 +103,8 @@ function NotificationDetailDrawer({
   onDelete: (id: string) => void;
 }) {
   const detailEntries = Object.entries(item.details ?? {});
+  const cause = notificationCause(item.event, item.details ?? {});
+  const sequence = item.events ?? [];
 
   // Close on Esc.
   useEffect(() => {
@@ -75,7 +134,9 @@ function NotificationDetailDrawer({
         }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {severityIcon(item.severity)}
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>Notification</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {notificationTitle(item.event)}
+            </span>
           </span>
           <button
             onClick={onClose}
@@ -87,12 +148,20 @@ function NotificationDetailDrawer({
         </div>
 
         <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div>
-            <FilterLabel>Event</FilterLabel>
-            <div style={{ marginTop: 4 }}>
-              <code style={{ fontSize: '0.85rem', background: 'var(--bg-secondary)', padding: '2px 6px', borderRadius: 4, color: 'var(--text-primary)' }}>
-                {item.event}
-              </code>
+          {cause && (
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{cause}</div>
+          )}
+
+          <div style={{ display: 'flex', gap: 32 }}>
+            <div>
+              <FilterLabel>Event</FilterLabel>
+              <div style={{ marginTop: 4 }}><EventSlug event={item.event} /></div>
+            </div>
+            <div>
+              <FilterLabel>Category</FilterLabel>
+              <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                {notificationCategory(item.event)}
+              </div>
             </div>
           </div>
 
@@ -126,19 +195,34 @@ function NotificationDetailDrawer({
             ) : (
               <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
                 {detailEntries.map(([k, v], i) => (
-                  <div key={k} style={{
-                    display: 'flex', gap: 10, padding: '7px 10px', fontSize: '0.8rem',
-                    borderBottom: i < detailEntries.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}>
-                    <span style={{ color: 'var(--text-muted)', minWidth: 110, fontWeight: 500 }}>{k}</span>
-                    <span style={{ color: 'var(--text-primary)', wordBreak: 'break-word' }}>
-                      {typeof v === 'string' ? v : JSON.stringify(v)}
-                    </span>
-                  </div>
+                  <DetailRow key={k} name={k} value={v} last={i === detailEntries.length - 1} />
                 ))}
               </div>
             )}
           </div>
+
+          {sequence.length > 1 && (
+            <div>
+              <FilterLabel>Events in this incident</FilterLabel>
+              <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+                {sequence.map((e, i) => (
+                  <div key={`${e.event}-${e.timestamp}-${i}`} style={{
+                    display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 10px', fontSize: '0.8rem',
+                    borderBottom: i < sequence.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <span style={{ marginTop: 1 }}>{severityIcon(e.severity)}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', color: 'var(--text-primary)' }}>{notificationTitle(e.event)}</span>
+                      <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                        {notificationCause(e.event, e.details ?? {}) || e.event}
+                      </span>
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{fmtDate(e.timestamp)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
@@ -151,8 +235,8 @@ function NotificationDetailDrawer({
               <CheckCheck size={14} /> Mark as read
             </button>
           )}
-          <button className="btn btn-danger" onClick={() => onDelete(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Trash2 size={14} /> Delete
+          <button className="btn btn-secondary" onClick={() => onDelete(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Archive size={14} /> Archive
           </button>
         </div>
       </div>
@@ -173,8 +257,9 @@ export function ProfileNotificationsTab() {
 
   const [severity, setSeverity] = useFilterState<SeverityFilter>({ key: 'notif-filter-severity', defaultValue: 'all' });
   const [eventFilter, setEventFilter] = useFilterState<string>({ key: 'notif-filter-event', defaultValue: '' });
+  const [category, setCategory] = useFilterState<string>({ key: 'notif-filter-category', defaultValue: 'all' });
   const [unreadOnly, setUnreadOnly] = useFilterState<boolean>({ key: 'notif-filter-unread', defaultValue: false });
-  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'notif-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' } });
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: 'notif-filter-dateRange', defaultValue: { from: '', to: '', label: 'All time' }, deserialize: parseStoredRange });
 
   const load = useCallback(async (p: number) => {
     setLoading(true);
@@ -184,6 +269,7 @@ export function ProfileNotificationsTab() {
         pageSize: PAGE_SIZE,
         ...(severity !== 'all' ? { severity } : {}),
         ...(eventFilter.trim() ? { event: eventFilter.trim() } : {}),
+        ...(category !== 'all' ? { category: category as NotificationCategory } : {}),
         ...(unreadOnly ? { unreadOnly: true } : {}),
         ...(dateRange.from ? { from: dateRange.from } : {}),
         ...(dateRange.to ? { to: dateRange.to } : {}),
@@ -193,19 +279,27 @@ export function ProfileNotificationsTab() {
       setPagination(res.pagination);
     } catch { /* non-critical */ }
     finally { setLoading(false); }
-  }, [severity, eventFilter, unreadOnly, dateRange.from, dateRange.to]);
+  }, [severity, eventFilter, category, unreadOnly, dateRange.from, dateRange.to]);
 
   // Reset to page 1 and clear selection when filters change.
-  useEffect(() => { setPage(1); setCheckedIds(new Set()); }, [severity, eventFilter, unreadOnly, dateRange.from, dateRange.to]);
+  useEffect(() => { setPage(1); setCheckedIds(new Set()); }, [severity, eventFilter, category, unreadOnly, dateRange.from, dateRange.to]);
   useEffect(() => { void load(page); }, [load, page]);
+
+  /** Opens the drawer at once, then fills in what only the detail route sends (the incident sequence). */
+  const openItem = useCallback((n: InboxItem) => {
+    setSelected(n);
+    getNotificationInboxItem(n.id)
+      .then(full => setSelected(s => s && s.id === full.id ? full : s))
+      .catch(() => { /* the list payload is enough */ });
+  }, []);
 
   // Auto-select notification when navigating from the bell dropdown (?notification=<id>).
   const notifParam = searchParams.get('notification');
   useEffect(() => {
     if (!notifParam || loading) return;
     const found = items.find(n => n.id === notifParam);
-    if (found) setSelected(found);
-  }, [notifParam, items, loading]);
+    if (found) openItem(found);
+  }, [notifParam, items, loading, openItem]);
 
   function toggleOne(id: string) {
     setCheckedIds(prev => {
@@ -323,13 +417,24 @@ export function ProfileNotificationsTab() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+            <FilterLabel>Category</FilterLabel>
+            <SearchableSelect
+              ariaLabel="Category"
+              options={CATEGORY_OPTIONS}
+              value={category}
+              onChange={setCategory}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 260 }}>
             <FilterLabel>Event</FilterLabel>
-            <input
-              className="form-input"
-              placeholder="e.g. provider.error"
+            <SearchableSelect
+              ariaLabel="Event"
+              options={EVENT_OPTIONS}
               value={eventFilter}
-              onChange={e => setEventFilter(e.target.value)}
+              onChange={setEventFilter}
+              placeholder="All events"
             />
           </div>
 
@@ -380,8 +485,8 @@ export function ProfileNotificationsTab() {
           <button className="btn btn-sm btn-secondary" onClick={bulkMarkUnread} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Circle size={14} /> Mark as unread
           </button>
-          <button className="btn btn-sm btn-danger" onClick={bulkDelete} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Trash2 size={14} /> Delete
+          <button className="btn btn-sm btn-secondary" onClick={bulkDelete} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Archive size={14} /> Archive
           </button>
           <button className="btn btn-sm btn-secondary" onClick={() => setCheckedIds(new Set())} style={{ marginLeft: 'auto' }}>
             Clear
@@ -424,7 +529,7 @@ export function ProfileNotificationsTab() {
                   {items.map((n, i) => (
                     <tr
                       key={n.id}
-                      onClick={() => setSelected(n)}
+                      onClick={() => openItem(n)}
                       style={{
                         cursor: 'pointer',
                         borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
@@ -445,7 +550,17 @@ export function ProfileNotificationsTab() {
                           {severityIcon(n.severity)} {severityLabel(n.severity)}
                         </span>
                       </td>
-                      <td style={{ padding: '9px 12px', fontWeight: n.read ? 400 : 600, color: 'var(--text-primary)' }}>{n.event}</td>
+                      <td style={{ padding: '9px 12px', color: 'var(--text-primary)' }}>
+                        <span style={{ display: 'block', fontWeight: n.read ? 400 : 600 }}>
+                          {notificationTitle(n.event)}
+                          {(n.eventCount ?? 1) > 1 && (
+                            <span style={{ marginLeft: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              {n.eventCount} events
+                            </span>
+                          )}
+                        </span>
+                        <span style={{ display: 'block', marginTop: 3 }}><EventSlug event={n.event} /></span>
+                      </td>
                       <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>{fmtDate(n.timestamp)}</td>
                       <td style={{ padding: '9px 12px' }}>
                         {n.read
@@ -894,6 +1009,7 @@ function ProfileSecurityTab() {
 const TABS = [
   { id: 'profile', label: 'Profile', to: '/dashboard/profile' },
   { id: 'notifications', label: 'Notifications', to: '/dashboard/profile/notifications' },
+  { id: 'mcp', label: 'MCP', to: '/dashboard/profile/mcp' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -957,7 +1073,9 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
       </div>
 
       <div className="page-body" style={{ paddingTop: 32 }}>
-        {activeTab === 'notifications' ? <ProfileNotificationsTab /> : <ProfileSecurityTab />}
+        {activeTab === 'notifications' && <ProfileNotificationsTab />}
+        {activeTab === 'mcp' && <ProfileMcpTab />}
+        {activeTab === 'profile' && <ProfileSecurityTab />}
       </div>
     </>
   );

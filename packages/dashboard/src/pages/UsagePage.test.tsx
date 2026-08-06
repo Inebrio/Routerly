@@ -14,8 +14,16 @@ vi.mock('../api', () => ({
 // Mock DateRangePicker and MultiSelect to avoid complex UI
 vi.mock('../components/DateRangePicker', () => ({
   DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
-  PRESETS: [],
+  // The page seeds its default range from PRESETS, so the stub has to carry the
+  // preset it looks for: an empty list would make the default throw.
+  PRESETS: [
+    {
+      label: 'This month',
+      range: () => ({ from: '2024-06-01', to: new Date().toISOString().slice(0, 10), label: 'This month' }),
+    },
+  ],
   RECENT_PRESETS: [],
+  parseStoredRange: (v: string) => JSON.parse(v),
 }));
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: () => <div data-testid="multi-select" />,
@@ -46,6 +54,10 @@ function makeStats(overrides: Record<string, unknown> = {}) {
       ...overrides,
     },
     byModel: {},
+    // The filter buttons are built from these (T210), so a fixture that wants a
+    // caller or a type to be offered has to put traffic behind it.
+    byCallType: { completion: 8, routing: 2, guardrail: 1, judge: 1 },
+    byRequestType: { chat: 5, completion: 1, embedding: 1, rerank: 1, image: 1, audio: 1 },
     timeline: [],
     records: [],
   };
@@ -169,16 +181,24 @@ describe('UsagePage — Guardrail filter button', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Completion' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Router' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Guardrail' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^Completion \d/ })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^Router \d/ })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /^Guardrail \d/ })).toBeTruthy();
     });
   });
 
   it('clicking Guardrail button marks it active (btn-primary)', async () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats());
     renderPage();
-    const btn = await screen.findByRole('button', { name: 'Guardrail' });
+    const btn = await screen.findByRole('button', { name: /^Guardrail \d/ });
+    await userEvent.click(btn);
+    expect(btn.className).toContain('btn-primary');
+  });
+
+  it('offers the Judge filter for the experiment judge calls (T72)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const btn = await screen.findByRole('button', { name: /^Judge \d/ });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
   });
@@ -237,7 +257,7 @@ describe('UsagePage — blockedCalls stat card', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStats({ blockedCalls: 5 }));
     renderPage();
     await waitFor(() => expect(screen.getByText('Blocked Calls')).toBeTruthy());
-    expect(screen.getByText('5')).toBeTruthy();
+    expect(screen.getByText('Blocked Calls').closest('.stat-card')?.querySelector('.stat-value')?.textContent).toBe('5');
   });
 });
 
@@ -294,6 +314,32 @@ describe('UsagePage — Rank column and sortable per-model table', () => {
     // first cell is Rank — should show 1 (or the star + 1)
     const rankCell = cheapRow?.querySelector('td:first-child');
     expect(rankCell?.textContent).toContain('1');
+  });
+
+  it('shows the first 10 models and expands to the rest on demand', async () => {
+    const byModel = Object.fromEntries(
+      Array.from({ length: 14 }, (_, i) => [`model-${String(i).padStart(2, '0')}`, {
+        calls: 10, inputTokens: 5000, outputTokens: 2000, cachedInputTokens: 0,
+        cost: 0.001 * (i + 1), errors: 0, success: 10, avgLatencyMs: 200, p95LatencyMs: 400,
+      }])
+    );
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Rank')).toBeTruthy());
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(10);
+
+    await userEvent.click(screen.getByText('Show 4 more models'));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(14);
+
+    await userEvent.click(screen.getByText('Show fewer models'));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(10);
+  });
+
+  it('leaves the ranking whole when it fits', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byModel: makeByModel() });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Rank')).toBeTruthy());
+    expect(screen.queryByText(/Show \d+ more model/)).toBeNull();
   });
 
   it('model with zero success gets rank — (Infinity, displays as dash)', async () => {
@@ -488,6 +534,30 @@ describe('UsagePage — records table', () => {
     await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
   });
 
+  it('names the token a call came in on, and offers it as a filter', async () => {
+    vi.mocked(getProjects).mockResolvedValue([{
+      id: 'proj-abc', name: 'MyProject',
+      tokens: [
+        { id: 'tok-1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-01-01T00:00:00Z', labels: ['ci'] },
+        { id: 'tok-2', tokenSnippet: 'sk-rt-bbb', createdAt: '2026-01-01T00:00:00Z' },
+      ],
+    } as never]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ tokenId: 'tok-1' })]));
+    renderPage();
+    // The label wins over the snippet on the record row, and the filter is
+    // offered because the project has more than one token.
+    await waitFor(() => expect(screen.getAllByText('ci').length).toBeGreaterThan(0));
+    expect(screen.getByText('Token')).toBeTruthy();
+  });
+
+  it('shows no token line on a record written before tokens were tracked', async () => {
+    vi.mocked(getProjects).mockResolvedValue([{ id: 'proj-abc', name: 'MyProject', tokens: [] } as never]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
+    expect(screen.queryByText('Token')).toBeNull();
+  });
+
   it('falls back to projectId span when project not found', async () => {
     vi.mocked(getProjects).mockResolvedValue([]);
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ projectId: 'unknown-proj' })]));
@@ -526,6 +596,32 @@ describe('UsagePage — records table', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ callType: 'completion' })]));
     renderPage();
     await waitFor(() => expect(screen.getByText('completion')).toBeTruthy());
+  });
+
+  it('names the caller of a guardrail and of a judge call (T72)', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([
+      makeRecord({ id: 'r-guard', callType: 'guardrail' }),
+      makeRecord({ id: 'r-judge', callType: 'judge' }),
+    ]));
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('guardrail')).toBeTruthy();
+      expect(screen.getByText('judge')).toBeTruthy();
+    });
+  });
+
+  it('shows the request type of a record', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ requestType: 'embedding' })]));
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o'));
+    expect(screen.getAllByText('Embedding').some(el => el.tagName === 'TD')).toBe(true);
+  });
+
+  it('falls back to Chat for records written before requestType existed', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o'));
+    expect(screen.getAllByText('Chat').some(el => el.tagName === 'TD')).toBe(true);
   });
 
   it('navigates to detail page on row click', async () => {
@@ -610,7 +706,7 @@ describe('UsagePage — stat card click toggles callTypeFilter', () => {
     expect(card).toBeTruthy();
     fireEvent.click(card);
     // After click, Completion Type filter button becomes active
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Completion' }).className).toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Completion \d/ }).className).toContain('btn-primary'));
   });
 
   it('clicking Router Calls card activates routing filter (Router button becomes primary)', async () => {
@@ -620,7 +716,7 @@ describe('UsagePage — stat card click toggles callTypeFilter', () => {
     const card = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
     expect(card).toBeTruthy();
     fireEvent.click(card);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Router \d/ }).className).toContain('btn-primary'));
   });
 
   it('clicking Router Calls card again deactivates routing filter', async () => {
@@ -629,11 +725,11 @@ describe('UsagePage — stat card click toggles callTypeFilter', () => {
     await waitFor(() => screen.getByText('Router Calls'));
     // Activate via the explicit Router filter button (not the card) then click the card
     // to cover the card's f===routing → 'all' toggle branch
-    await userEvent.click(screen.getByRole('button', { name: 'Router' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).toContain('btn-primary'));
+    await userEvent.click(screen.getByRole('button', { name: /^Router \d/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Router \d/ }).className).toContain('btn-primary'));
     const card = screen.getByText('Router Calls').closest('.stat-card') as HTMLElement;
     fireEvent.click(card); // callTypeFilter=routing → card sets it to 'all'
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Router' }).className).not.toContain('btn-primary'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Router \d/ }).className).not.toContain('btn-primary'));
   });
 });
 
@@ -645,7 +741,7 @@ describe('UsagePage — reset filters button', () => {
     renderPage();
     await waitFor(() => screen.getByText('Total Calls'));
     // Activate a filter via the Type buttons
-    const guardrailBtn = screen.getByRole('button', { name: 'Guardrail' });
+    const guardrailBtn = screen.getByRole('button', { name: /^Guardrail \d/ });
     await userEvent.click(guardrailBtn);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Reset filters' })).toBeTruthy());
     await userEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
@@ -667,6 +763,30 @@ describe('UsagePage — reset filters button', () => {
     const btn = await screen.findByRole('button', { name: 'Error' });
     await userEvent.click(btn);
     expect(btn.className).toContain('btn-primary');
+  });
+});
+
+// ── Request type filter (T60) ──────────────────────────────────────────────────
+
+describe('UsagePage — request type filter', () => {
+  it('sends the picked request type to the server', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    const btn = await screen.findByRole('button', { name: /^Embedding \d/ });
+    await userEvent.click(btn);
+    expect(btn.className).toContain('btn-primary');
+    await waitFor(() => {
+      const calls = vi.mocked(getUsage).mock.calls;
+      expect(calls[calls.length - 1]?.[6]).toMatchObject({ requestType: 'embedding' });
+    });
+  });
+
+  it('reset clears the request type filter', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: /^Image \d/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Reset filters' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Image \d/ }).className).not.toContain('btn-primary'));
   });
 });
 
@@ -1014,7 +1134,7 @@ describe('UsagePage — rank sort with one Infinity one finite', () => {
 // ── v.cost null in byModel ────────────────────────────────────────────────────
 
 describe('UsagePage — byModel cost null fallback', () => {
-  it('renders $0.00000000 for model with null cost in byModel', async () => {
+  it('renders $0 for model with null cost in byModel', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       ...makeStats(),
       byModel: {
@@ -1024,8 +1144,8 @@ describe('UsagePage — byModel cost null fallback', () => {
     });
     renderPage();
     await waitFor(() => screen.getAllByText(/null-cost/).length > 0);
-    // v.cost ?? 0 → 0 → "$0.00000000"
-    expect(screen.getAllByText('$0.00000000').length).toBeGreaterThan(0);
+    // v.cost ?? 0 → 0 → "$0"
+    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
   });
 });
 
@@ -1045,7 +1165,8 @@ describe('UsagePage — fmtCost via per-model table', () => {
     });
     renderPage();
     await waitFor(() => screen.getAllByText(/free-model/).length > 0);
-    expect(screen.getByText('$0')).toBeTruthy();
+    // both the Cost/1K and the Cost (USD) cell collapse to "$0"
+    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
   });
 
   it('fmtCost: costPer1k between 0.01 and 1 uses 3 decimal places', async () => {
@@ -1237,7 +1358,7 @@ describe('UsagePage — stat card ternary fallbacks', () => {
 // ── record cost null fallback ─────────────────────────────────────────────────
 
 describe('UsagePage — record cost null fallback', () => {
-  it('null cost in record renders $0.00000000', async () => {
+  it('null cost in record renders $0', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
       byModel: {},
@@ -1250,8 +1371,26 @@ describe('UsagePage — record cost null fallback', () => {
     } as never);
     renderPage();
     await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
-    // cost ?? 0 → 0.toFixed(8) → "$0.00000000"
-    expect(screen.getByText('$0.00000000')).toBeTruthy();
+    // cost ?? 0 → "$0"
+    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
+  });
+
+  it('per-call cost keeps 3 significant digits, sub-microdollar collapses to a threshold', async () => {
+    const rec = (id: string, cost: number) => ({
+      id, timestamp: new Date().toISOString(), projectId: 'p',
+      modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
+      cost, latencyMs: 100, outcome: 'success',
+    });
+    vi.mocked(getUsage).mockResolvedValue({
+      summary: { totalCost: 0, totalCalls: 2, successCalls: 2, errorCalls: 0, routingCalls: 0, completionCalls: 2, routingCost: 0, completionCost: 0 },
+      byModel: {},
+      timeline: [],
+      records: [rec('r-small', 0.00028812), rec('r-tiny', 0.0000004)],
+    } as never);
+    renderPage();
+    await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
+    expect(screen.getByText('$0.000288')).toBeTruthy();
+    expect(screen.getByText('<$0.000001')).toBeTruthy();
   });
 });
 
@@ -1319,6 +1458,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1362,6 +1502,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1403,6 +1544,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1436,16 +1578,17 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
     await wf(() => expect(s.getByTestId('date-picker')).toBeTruthy());
   });
 
-  it('stale range with label="This month" gets remapped to "Questo mese"', async () => {
+  it('stale range with label="This month" gets remapped to "This month"', async () => {
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
-    // PRESETS must contain 'Questo mese' for the remap to find it
-    const mockPreset = { label: 'Questo mese', range: () => ({ from: yesterday, to: today, label: 'Questo mese' }) };
+    // PRESETS must contain 'This month' for the remap to find it
+    const mockPreset = { label: 'This month', range: () => ({ from: yesterday, to: today, label: 'This month' }) };
 
     vi.doMock('../components/DateRangePicker', () => ({
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [mockPreset],
       RECENT_PRESETS: [],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     vi.doMock('../api', () => ({
       getUsage: vi.fn().mockResolvedValue({
@@ -1463,7 +1606,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
         useFilterState: ({ defaultValue }: { defaultValue: unknown }) => {
           callIndex++;
           if (callIndex === 1) {
-            // label 'This month' → code remaps to 'Questo mese' then finds the preset
+            // label 'This month' → code remaps to 'This month' then finds the preset
             return react.useState({ from: yesterday, to: yesterday, label: 'This month' });
           }
           return react.useState(defaultValue);
@@ -1488,6 +1631,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
       DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
       PRESETS: [],
       RECENT_PRESETS: [mockRecentPreset],
+      parseStoredRange: (v: string) => JSON.parse(v),
     }));
     const mockGetUsage = vi.fn().mockResolvedValue({
       summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
@@ -1524,5 +1668,155 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
     // recentPreset.range() provides today/today → period='custom' (both truthy)
     const firstCall = mockGetUsage.mock.calls[0];
     expect(firstCall?.[0]).toBe('custom');
+  });
+});
+
+// The same savings layer the Overview carries, over the filtered window (T209).
+const SERIES = {
+  bucket: 'day' as const,
+  baselineModelId: 'openai/gpt-4o',
+  baselineModelIds: ['openai/gpt-4o-mini', 'openai/gpt-4o'],
+  points: [
+    {
+      bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06,
+      baselineCosts: { 'openai/gpt-4o-mini': 0.01, 'openai/gpt-4o': 0.06 },
+      inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000,
+    },
+  ],
+};
+
+const SAVINGS = {
+  comparedCalls: 2,
+  comparedCost: 0.006,
+  comparedLatencyMs: 2000,
+  comparedInputTokens: 2000,
+  comparedOutputTokens: 1000,
+  cache: { inputTokens: 0, cost: 0 },
+  baselines: [
+    { modelId: 'openai/gpt-4o-mini', cost: 0.015, costDelta: 0.006, costDeltaPercent: 40, latencyMs: 4500, latencyDeltaMs: 1500, latencySamples: 2, tokensEstimated: 4500, tokenDelta: 0 },
+    { modelId: 'openai/gpt-4o', cost: 0.09, costDelta: 0.081, costDeltaPercent: 90, latencyMs: 5000, latencyDeltaMs: 2000, latencySamples: 1, tokensEstimated: 4500, tokenDelta: 675 },
+  ],
+  optimizers: [{ id: 'rtk', calls: 2, tokensSaved: 1200, costSaved: 0.002, rolledBack: 0 }],
+};
+
+describe('UsagePage — type filters follow the traffic (T210)', () => {
+  it('offers only the callers and types the window holds', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byCallType: { completion: 9, routing: 1 },
+      byRequestType: { chat: 10 },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Completion \d/ })).toBeTruthy());
+    expect(screen.queryByRole('button', { name: /^Guardrail/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Judge/ })).toBeNull();
+    // One type in the whole window is not a choice, so the group is not drawn.
+    expect(screen.queryByText('Type')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Chat/ })).toBeNull();
+  });
+
+  it('counts each caller and type next to its button', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byCallType: { completion: 9, routing: 1 },
+      byRequestType: { chat: 8, embedding: 2 },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Completion 9' })).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Router 1' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Embedding 2' })).toBeTruthy();
+  });
+
+  it('keeps a one-value filter on screen while it is the active one', async () => {
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byCallType: { completion: 10 },
+      byRequestType: { chat: 8, embedding: 2 },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Completion Calls')).toBeTruthy());
+    // Nothing but completions: the caller filter has nothing to pick.
+    expect(screen.queryByText('Caller')).toBeNull();
+    // The stat card sets that filter anyway, so the group comes back with it:
+    // hiding it would leave no way to clear what the card just set.
+    await userEvent.click(screen.getByText('Completion Calls'));
+    await waitFor(() => expect(screen.getByText('Caller')).toBeTruthy());
+    expect(screen.getByRole('button', { name: /^Completion \d/ }).className).toContain('btn-primary');
+  });
+
+  it('survives a service that ships no counts', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), byCallType: undefined, byRequestType: undefined } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Total Calls')).toBeTruthy());
+    expect(screen.queryByText('Caller')).toBeNull();
+    expect(screen.queryByText('Type')).toBeNull();
+  });
+});
+
+describe('UsagePage — savings (T209)', () => {
+  it('asks the service for the series and the totals, one record page wide', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(vi.mocked(getUsage).mock.calls.some(c =>
+      c[4] === 1 && c[5] === 1 && (c[6] as Record<string, unknown>)?.series === true && (c[6] as Record<string, unknown>)?.savings === true,
+    )).toBe(true));
+  });
+
+  it('draws no savings chart when the service returned no series', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Total Cost')).toBeTruthy());
+    expect(screen.queryByText('What routing saved')).toBeNull();
+  });
+
+  it('carries the money saved on the Total Cost card and the tokens on their own', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('$0.0810 saved (90%) vs always gpt-4o')).toBeTruthy());
+    expect(screen.queryByText('Cost saved')).toBeNull();
+    // Time saved was never explainable from the numbers on screen, so it is gone.
+    expect(screen.queryByText('Time saved')).toBeNull();
+    expect(screen.getByText('1.2k cut by optimizers')).toBeTruthy();
+  });
+
+  it('sums the per-model tokens into one compact card', async () => {
+    // The summary ships no token totals, so the card adds up the same per-model
+    // breakdown the table below it renders.
+    vi.mocked(getUsage).mockResolvedValue({
+      ...makeStats(),
+      byModel: {
+        'openai/gpt-4o': { calls: 5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 200, cost: 0.01, errors: 0, success: 5, avgLatencyMs: 320, p95LatencyMs: 600 },
+        'openai/gpt-4o-mini': { calls: 5, inputTokens: 2000, outputTokens: 1500, cachedInputTokens: 0, cost: 0.002, errors: 0, success: 5, avgLatencyMs: 120, p95LatencyMs: 200 },
+      },
+    } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Tokens')).toBeTruthy());
+    expect(screen.getByText('5.0k')).toBeTruthy();
+    expect(screen.getByText('3.0k in · 2.0k out · 200 cached')).toBeTruthy();
+  });
+
+  it('draws the savings chart over the filtered window', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('What routing saved')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Tokens' })).toBeTruthy();
+  });
+
+  it('switches the chart metric', async () => {
+    vi.mocked(getUsage).mockResolvedValue({ ...makeStats(), series: SERIES, savings: SAVINGS } as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('What routing saved')).toBeTruthy());
+    await userEvent.click(screen.getByRole('button', { name: 'Tokens' }));
+    expect(screen.getByRole('button', { name: 'Tokens' }).className).toContain('active');
+    // Speed was an estimate nobody could check, so the metric is gone with it.
+    expect(screen.queryByRole('button', { name: 'Speed' })).toBeNull();
+  });
+
+  it('keeps the savings layer out when the fetch fails', async () => {
+    vi.mocked(getUsage).mockImplementation(((_p: string, _pr: unknown, _f: unknown, _t: unknown, _pg: unknown, _ps: unknown, opts?: { savings?: boolean }) =>
+      opts?.savings ? Promise.reject(new Error('nope')) : Promise.resolve(makeStats())) as never);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Total Cost')).toBeTruthy());
+    expect(screen.queryByText('What routing saved')).toBeNull();
   });
 });

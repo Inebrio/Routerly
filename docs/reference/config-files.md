@@ -19,14 +19,22 @@ Everything lives under the installing user's home directory.
 ~/.routerly/
 ├── app/               # Service binary (managed by installer)
 ├── config/
-│   ├── settings.json  # Global settings
-│   ├── models.json    # Registered LLM models
-│   ├── projects.json  # Projects, routing, budgets, tokens
-│   ├── users.json     # User accounts
-│   ├── roles.json     # Custom roles and permissions
-│   └── secret         # JWT signing key (mode 0600, keep safe)
+│   ├── settings.json     # Global settings
+│   ├── models.json       # Registered LLM models
+│   ├── projects.json     # Projects, routing, budgets, tokens
+│   ├── users.json        # User accounts
+│   ├── roles.json        # Custom roles and permissions
+│   ├── modules.json      # Which modules are enabled
+│   ├── profiles.json     # Routing profiles
+│   ├── connections.json  # Provider connections
+│   ├── instances.json    # Model instances
+│   ├── experiments.json  # A/B tests, their variants and tokens
+│   └── secret            # JWT signing key (mode 0600, keep safe)
 └── data/
-    └── usage.json     # Usage records
+    ├── usage.json        # Usage records
+    ├── notifications.json # Notification inbox
+    ├── audit.json        # Audit log
+    └── update-announcement.json # Last update alert announced (RA-15)
 ```
 
 ### System scope
@@ -47,9 +55,17 @@ Service config and data move to a system-wide directory; the CLI auth tokens rem
 │   ├── projects.json
 │   ├── users.json
 │   ├── roles.json
+│   ├── modules.json
+│   ├── profiles.json
+│   ├── connections.json
+│   ├── instances.json
+│   ├── experiments.json
 │   └── secret              # JWT signing key (mode 0600)
 └── data/
-    └── usage.json
+    ├── usage.json
+    ├── notifications.json
+    ├── audit.json
+    └── update-announcement.json
 ```
 
 ### CLI auth tokens (always per-user)
@@ -73,10 +89,9 @@ Global service configuration.
   "port": 3000,
   "host": "0.0.0.0",
   "dashboardEnabled": true,
-  "defaultTimeoutMs": 30000,
   "logLevel": "info",
   "publicUrl": "http://localhost:3000",
-  "channel": "stable",
+  "channel": "current",
   "notifications": {
     "channels": [],
     "notificationRules": [],
@@ -90,10 +105,9 @@ Global service configuration.
 | `port` | `number` | `3000` | TCP port the service listens on |
 | `host` | `string` | `"0.0.0.0"` | Bind address. Use `127.0.0.1` behind a reverse proxy |
 | `dashboardEnabled` | `boolean` | `true` | Enable or disable the web dashboard |
-| `defaultTimeoutMs` | `number` | `30000` | Default provider request timeout in milliseconds |
 | `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
-| `channel` | `string` | `"stable"` | Update channel: `"latest"`, `"stable"`, `"develop"`, or a version tag such as `"v0.2.0"`. Controls which GitHub Release the update checker compares against |
+| `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, or a version tag such as `"v0.2.0"`. `"stable"`/`"develop"` are accepted as deprecated aliases for `"current"`/`"next"`. Controls which GitHub Release the update checker compares against |
 | `notifications.channels` | `array` | `[]` | Notification channel objects. Each has `provider`, optional `name`, `id`, `events` (event patterns), `targets` (`{ roles, permissions, users }`), plus provider-specific fields. See [Notifications](../concepts/notifications.md) |
 | `notifications.notificationRules` | `array` | `[]` | Route event patterns to specific channel IDs: `{ events, channels }` |
 | `notifications.cooldowns` | `object` | `{}` | Minimum interval between repeated dispatches per event type (e.g. `"provider.degraded": "15m"`) |
@@ -150,7 +164,7 @@ Array of project configurations including routing policies, budgets, tokens, and
     "id": "proj_abc123",
     "name": "My App",
     "slug": "my-app",
-    "defaultTimeoutMs": 30000,
+    "timeoutMs": 2000,
     "policies": ["random"],
     "models": ["gpt-5-mini", "claude-haiku-4-5"],
     "tokens": [
@@ -184,7 +198,7 @@ Array of project configurations including routing policies, budgets, tokens, and
 | `id` | `string` | Internal project ID (`proj_…`) |
 | `name` | `string` | Human-readable project name |
 | `slug` | `string` | URL-safe identifier, used in scoped proxy path `/projects/{slug}/v1/*` |
-| `defaultTimeoutMs` | `number` | Per-project request timeout override |
+| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, in milliseconds. Default `2000`; `0` disables it |
 | `policies` | `string[]` | Routing policies in priority order |
 | `models` | `string[]` | Model IDs assigned to the project |
 
@@ -283,6 +297,32 @@ Array of usage records, one per LLM request. Written by the service after each c
 ```
 
 This file grows continuously. Routerly does not currently rotate or archive it automatically — back it up and truncate as needed.
+
+---
+
+## data/update-announcement.json
+
+Records the last `system.update_available` alert the update checker raised, so the same release is not announced again after a restart. See [Concepts: Notifications](../concepts/notifications.md) for the event itself.
+
+```json
+{
+  "announcedVersion": "0.5.0",
+  "currentVersion": "0.4.0",
+  "channel": "stable",
+  "announcedAt": "2026-08-04T10:00:00.000Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `announcedVersion` | `string` | The `latestVersion` from the check that raised the alert |
+| `currentVersion` | `string` | The version the instance was running when it announced |
+| `channel` | `string` | The update channel the announcement came from |
+| `announcedAt` | `string` | ISO 8601 timestamp, informational only |
+
+The update checker is the file's only writer: it reads the record before each check and rewrites it whenever it raises a new alert. No API endpoint exposes this file; it is not readable or writable through the dashboard, the CLI, or the management API.
+
+Deleting this file does not disable the alert. It is read the same way a missing or corrupt file is: as "no prior announcement". The next check announces the current channel's release once more and rewrites the file, after which deduplication resumes as normal.
 
 ---
 

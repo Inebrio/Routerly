@@ -1,11 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DateRangePicker, PRESETS, RECENT_PRESETS, type DateRange } from './DateRangePicker';
+import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from './DateRangePicker';
 
-function mkRange(from = '', to = '', label = 'Tutto il tempo'): DateRange {
+function mkRange(from = '', to = '', label = 'All time'): DateRange {
   return { from, to, label };
 }
+
+// The calendar refuses future days, so "today" has to be fixed for every test
+// that clicks one. Late June leaves the whole first three weeks selectable.
+beforeEach(() => { vi.setSystemTime(new Date(2024, 5, 28)); });
+afterEach(() => { vi.useRealTimers(); });
 
 function renderPicker(value = mkRange(), onChange = vi.fn()) {
   return { ...render(<DateRangePicker value={value} onChange={onChange} />), onChange };
@@ -13,9 +18,26 @@ function renderPicker(value = mkRange(), onChange = vi.fn()) {
 
 // Open the picker by clicking the trigger button
 async function openPicker() {
-  const btn = screen.getByRole('button', { name: /Seleziona periodo|Tutto il tempo|Oggi|Ieri|Ultimi|Ultima|Quest|Questo|From now/i });
+  const btn = screen.getByRole('button', { name: /Select period|All time|Today|Yesterday|Last |This |From now/i });
   await userEvent.click(btn);
 }
+
+// ── Stored value migration ───────────────────────────────────────────────────
+
+describe('parseStoredRange', () => {
+  it('upgrades preset labels saved by pre-0.4 builds', () => {
+    const stored = JSON.stringify({ from: '2026-07-01', to: '2026-07-31', label: 'Questo mese' });
+    expect(parseStoredRange(stored)).toEqual({ from: '2026-07-01', to: '2026-07-31', label: 'This month' });
+    expect(PRESETS.some(p => p.label === parseStoredRange(stored).label)).toBe(true);
+  });
+
+  it('leaves current and custom labels untouched', () => {
+    const custom = { from: '2026-07-01', to: '2026-07-15', label: '2026-07-01 -> 2026-07-15' };
+    expect(parseStoredRange(JSON.stringify(custom))).toEqual(custom);
+    const current = { from: '', to: '', label: 'All time' };
+    expect(parseStoredRange(JSON.stringify(current))).toEqual(current);
+  });
+});
 
 // ── Trigger button ────────────────────────────────────────────────────────────
 
@@ -24,7 +46,7 @@ describe('DateRangePicker — trigger button', () => {
     renderPicker();
     expect(screen.getByRole('button')).toBeTruthy();
     // label shows the value.label
-    expect(screen.getByText('Tutto il tempo')).toBeTruthy();
+    expect(screen.getByText('All time')).toBeTruthy();
   });
 
   it('shows X clear icon when value has from/to set', () => {
@@ -43,7 +65,7 @@ describe('DateRangePicker — trigger button', () => {
     const xSpan = document.querySelector('[style*="opacity: 0.5"]');
     if (xSpan) {
       await userEvent.click(xSpan as HTMLElement);
-      expect(onChange).toHaveBeenCalledWith({ from: '', to: '', label: 'Tutto il tempo' });
+      expect(onChange).toHaveBeenCalledWith({ from: '', to: '', label: 'All time' });
     }
   });
 
@@ -52,123 +74,123 @@ describe('DateRangePicker — trigger button', () => {
     const btn = screen.getAllByRole('button')[0]!;
     await userEvent.click(btn);
     // Calendar header visible
-    await waitFor(() => expect(screen.getByText('Seleziona')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Apply')).toBeTruthy());
     await userEvent.click(btn);
-    await waitFor(() => expect(screen.queryByText('Seleziona')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Apply')).toBeNull());
   });
 
-  it('shows fallback "Seleziona periodo" when value.label is empty string', () => {
+  it('shows fallback "Select period" when value.label is empty string', () => {
     renderPicker({ from: '', to: '', label: '' });
-    expect(screen.getByText('Seleziona periodo')).toBeTruthy();
+    expect(screen.getByText('Select period')).toBeTruthy();
   });
 });
 
 // ── Preset selection ──────────────────────────────────────────────────────────
 
 describe('DateRangePicker — preset selection (lines 91-256)', () => {
-  it('clicking "Oggi" preset calls onChange and closes picker', async () => {
+  it('clicking "Today" preset calls onChange and closes picker', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Oggi'));
-    await userEvent.click(screen.getByText('Oggi'));
+    await waitFor(() => screen.getByText('Today'));
+    await userEvent.click(screen.getByText('Today'));
     expect(onChange).toHaveBeenCalledTimes(1);
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Oggi');
+    expect(arg.label).toBe('Today');
     expect(arg.from).toBeTruthy();
     // Picker closed
-    await waitFor(() => expect(screen.queryByText('Seleziona')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Apply')).toBeNull());
   });
 
-  it('clicking "Ieri" preset calls onChange with yesterday', async () => {
+  it('clicking "Yesterday" preset calls onChange with yesterday', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Ieri'));
-    await userEvent.click(screen.getByText('Ieri'));
+    await waitFor(() => screen.getByText('Yesterday'));
+    await userEvent.click(screen.getByText('Yesterday'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Ieri');
+    expect(arg.label).toBe('Yesterday');
   });
 
-  it('clicking "Questa settimana" preset calls onChange', async () => {
+  it('clicking "This week" preset calls onChange', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Questa settimana'));
-    await userEvent.click(screen.getByText('Questa settimana'));
+    await waitFor(() => screen.getByText('This week'));
+    await userEvent.click(screen.getByText('This week'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Questa settimana');
+    expect(arg.label).toBe('This week');
   });
 
-  it('clicking "Questo mese" preset calls onChange', async () => {
+  it('clicking "This month" preset calls onChange', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Questo mese'));
-    await userEvent.click(screen.getByText('Questo mese'));
+    await waitFor(() => screen.getByText('This month'));
+    await userEvent.click(screen.getByText('This month'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Questo mese');
+    expect(arg.label).toBe('This month');
   });
 
-  it('clicking "Questo trimestre" preset calls onChange', async () => {
+  it('clicking "This quarter" preset calls onChange', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Questo trimestre'));
-    await userEvent.click(screen.getByText('Questo trimestre'));
+    await waitFor(() => screen.getByText('This quarter'));
+    await userEvent.click(screen.getByText('This quarter'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Questo trimestre');
+    expect(arg.label).toBe('This quarter');
   });
 
-  it("clicking \"Quest'anno\" preset calls onChange", async () => {
+  it("clicking \"This year\" preset calls onChange", async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText("Quest'anno"));
-    await userEvent.click(screen.getByText("Quest'anno"));
+    await waitFor(() => screen.getByText("This year"));
+    await userEvent.click(screen.getByText("This year"));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe("Quest'anno");
+    expect(arg.label).toBe("This year");
   });
 
-  it('clicking "Ultimi 7 giorni" preset calls onChange', async () => {
+  it('clicking "Last 7 days" preset calls onChange', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Ultimi 7 giorni'));
-    await userEvent.click(screen.getByText('Ultimi 7 giorni'));
+    await waitFor(() => screen.getByText('Last 7 days'));
+    await userEvent.click(screen.getByText('Last 7 days'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Ultimi 7 giorni');
+    expect(arg.label).toBe('Last 7 days');
   });
 
-  it('clicking "Ultimi 30 giorni" preset calls onChange', async () => {
+  it('clicking "Last 30 days" preset calls onChange', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Ultimi 30 giorni'));
-    await userEvent.click(screen.getByText('Ultimi 30 giorni'));
+    await waitFor(() => screen.getByText('Last 30 days'));
+    await userEvent.click(screen.getByText('Last 30 days'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Ultimi 30 giorni');
+    expect(arg.label).toBe('Last 30 days');
   });
 
-  it('clicking "Ultimi 12 mesi" preset calls onChange', async () => {
+  it('clicking "Last 12 months" preset calls onChange', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Ultimi 12 mesi'));
-    await userEvent.click(screen.getByText('Ultimi 12 mesi'));
+    await waitFor(() => screen.getByText('Last 12 months'));
+    await userEvent.click(screen.getByText('Last 12 months'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Ultimi 12 mesi');
+    expect(arg.label).toBe('Last 12 months');
   });
 
-  it('clicking "Tutto il tempo" preset calls onChange with empty from/to', async () => {
+  it('clicking "All time" preset calls onChange with empty from/to', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange('2024-01-01', '2024-01-31', 'Gennaio')} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getAllByText('Tutto il tempo'));
-    // There might be multiple "Tutto il tempo" elements; click the button
-    const tuttoBtn = screen.getAllByText('Tutto il tempo').find(el => el.tagName === 'BUTTON' || el.closest('button'));
-    if (tuttoBtn) {
-      await userEvent.click(tuttoBtn.closest('button') ?? tuttoBtn);
+    await waitFor(() => screen.getAllByText('All time'));
+    // There might be multiple "All time" elements; click the button
+    const allTimeBtn = screen.getAllByText('All time').find(el => el.tagName === 'BUTTON' || el.closest('button'));
+    if (allTimeBtn) {
+      await userEvent.click(allTimeBtn.closest('button') ?? allTimeBtn);
     }
     const arg = onChange.mock.calls[0]![0] as DateRange;
     expect(arg.from).toBe('');
@@ -191,10 +213,10 @@ describe('DateRangePicker — preset selection (lines 91-256)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Ultima ora'));
-    await userEvent.click(screen.getByText('Ultima ora'));
+    await waitFor(() => screen.getByText('Last hour'));
+    await userEvent.click(screen.getByText('Last hour'));
     const arg = onChange.mock.calls[0]![0] as DateRange;
-    expect(arg.label).toBe('Ultima ora');
+    expect(arg.label).toBe('Last hour');
     // ISO datetime format
     expect(arg.from).toMatch(/T/);
     expect(arg.to).toMatch(/T/);
@@ -202,13 +224,13 @@ describe('DateRangePicker — preset selection (lines 91-256)', () => {
 
   it('active preset is highlighted (active = label match)', async () => {
     // When value.label matches a preset, that button should use accent bg
-    const oggi = PRESETS.find(p => p.label === 'Oggi')!.range();
-    render(<DateRangePicker value={oggi} onChange={vi.fn()} />);
+    const todayRange = PRESETS.find(p => p.label === 'Today')!.range();
+    render(<DateRangePicker value={todayRange} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getAllByText('Oggi'));
-    // Multiple "Oggi" could appear; the preset button inside the list has accent bg
-    const oggiBtn = screen.getAllByText('Oggi').find(el => (el as HTMLElement).closest('button'));
-    expect(oggiBtn).toBeTruthy();
+    await waitFor(() => screen.getAllByText('Today'));
+    // Multiple "Today" could appear; the preset button inside the list has accent bg
+    const todayBtn = screen.getAllByText('Today').find(el => (el as HTMLElement).closest('button'));
+    expect(todayBtn).toBeTruthy();
   });
 });
 
@@ -218,7 +240,7 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
   it('prev button navigates to previous month (including December wrap)', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const navBtns = screen.getAllByRole('button').filter(b =>
       b.querySelector('svg')
@@ -234,20 +256,20 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
     if (iconBtns[0]) {
       await userEvent.click(iconBtns[0]);
       // Month header should change — just verify it doesn't crash
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
   });
 
   it('next button navigates to next month (including January wrap)', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const calBtns = screen.getAllByRole('button');
     const iconBtns = calBtns.filter(b => !b.textContent?.trim());
     if (iconBtns[1]) {
       await userEvent.click(iconBtns[1]);
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
   });
 
@@ -256,7 +278,7 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
     // Render with a fixed value so viewYear/Month init to current
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const iconBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim());
     const prevBtn = iconBtns[0];
@@ -265,14 +287,14 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
       for (let i = 0; i < 13; i++) {
         await userEvent.click(prevBtn);
       }
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
   });
 
   it('nextMonth wraps from December to January of next year', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const iconBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim());
     const nextBtn = iconBtns[1];
@@ -280,8 +302,77 @@ describe('DateRangePicker — month navigation (lines 190-197)', () => {
       for (let i = 0; i < 13; i++) {
         await userEvent.click(nextBtn);
       }
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
+  });
+});
+
+// ── Future dates are out of reach ─────────────────────────────────────────────
+
+describe('DateRangePicker — future dates', () => {
+  it('a day after today cannot be picked', async () => {
+    const onChange = vi.fn();
+    render(<DateRangePicker value={mkRange()} onChange={onChange} />);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await waitFor(() => screen.getByText('Apply'));
+
+    // Today is June 28 2024, so June 30 is in the future.
+    const day30 = Array.from(document.querySelectorAll('[style*="border-radius: 50%"]'))
+      .find(d => d.textContent?.trim() === '30') as HTMLElement;
+    expect(day30.style.cursor).toBe('default');
+    await userEvent.click(day30);
+    await userEvent.click(screen.getByText('Apply'));
+
+    // Nothing was selected, so the range stays empty.
+    expect(onChange).toHaveBeenCalledWith({ from: '', to: '', label: 'All time' });
+  });
+
+  it('labels and picks the local calendar day, east of UTC too', async () => {
+    // Rome is UTC+2 in June: a UTC-based day label would be one day behind what
+    // the cell says, which both mis-picks and lets tomorrow through the check.
+    const tz = process.env['TZ'];
+    process.env['TZ'] = 'Europe/Rome';
+    vi.setSystemTime(new Date('2024-06-28T12:00:00+02:00'));
+    try {
+      const onChange = vi.fn();
+      render(<DateRangePicker value={mkRange()} onChange={onChange} />);
+      await userEvent.click(screen.getAllByRole('button')[0]!);
+      await waitFor(() => screen.getByText('Apply'));
+
+      const cell = (day: string) => Array.from(document.querySelectorAll('[style*="border-radius: 50%"]'))
+        .find(d => d.textContent?.trim() === day) as HTMLElement;
+
+      expect(cell('29').style.cursor).toBe('default');
+      await userEvent.click(cell('28'));
+      await userEvent.click(screen.getByText('Apply'));
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ from: '2024-06-28T00:00:00' }));
+    } finally {
+      if (tz === undefined) delete process.env['TZ']; else process.env['TZ'] = tz;
+    }
+  });
+
+  it('the month after the current one cannot be reached', async () => {
+    render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await waitFor(() => screen.getByText('Apply'));
+
+    const nextBtn = screen.getAllByRole('button').filter(b => !b.textContent?.trim())[1]!;
+    expect(nextBtn.hasAttribute('disabled')).toBe(true);
+    await userEvent.click(nextBtn);
+    expect(screen.getByText('June 2024')).toBeTruthy();
+  });
+
+  it('going back then forward again is allowed up to the current month', async () => {
+    render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
+    await waitFor(() => screen.getByText('Apply'));
+
+    const iconBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim());
+    await userEvent.click(iconBtns[0]!);
+    expect(screen.getByText('May 2024')).toBeTruthy();
+    await userEvent.click(iconBtns[1]!);
+    expect(screen.getByText('June 2024')).toBeTruthy();
   });
 });
 
@@ -291,7 +382,7 @@ describe('DateRangePicker — day click / range selection (lines 199-213)', () =
   it('clicking a day starts picking end date', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click on day "15"
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
@@ -304,7 +395,7 @@ describe('DateRangePicker — day click / range selection (lines 199-213)', () =
       if (day20) {
         await userEvent.click(day20);
         // Range is set; picking done
-        expect(screen.getByText('Seleziona')).toBeTruthy();
+        expect(screen.getByText('Apply')).toBeTruthy();
       }
     }
   });
@@ -312,7 +403,7 @@ describe('DateRangePicker — day click / range selection (lines 199-213)', () =
   it('clicking end before start swaps from/to (line 207-209)', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day20 = Array.from(dayCells).find(d => d.textContent?.trim() === '20') as HTMLElement | undefined;
@@ -320,14 +411,14 @@ describe('DateRangePicker — day click / range selection (lines 199-213)', () =
     if (day20 && day10) {
       await userEvent.click(day20); // pick start = 20
       await userEvent.click(day10); // pick end = 10 < 20 → should swap
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
   });
 
   it('hovering over day while picking end shows preview', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day10 = Array.from(dayCells).find(d => d.textContent?.trim() === '10') as HTMLElement | undefined;
@@ -338,7 +429,7 @@ describe('DateRangePicker — day click / range selection (lines 199-213)', () =
       if (day15) {
         await userEvent.hover(day15); // triggers onMouseEnter → setHovered
         await userEvent.unhover(day15); // triggers onMouseLeave → setHovered('')
-        expect(screen.getByText('Seleziona')).toBeTruthy();
+        expect(screen.getByText('Apply')).toBeTruthy();
       }
     }
   });
@@ -347,20 +438,20 @@ describe('DateRangePicker — day click / range selection (lines 199-213)', () =
 // ── Confirm / cancel (lines 216-249) ─────────────────────────────────────────
 
 describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
-  it('Seleziona with no dates calls onChange with empty from/to and "Tutto il tempo" label', async () => {
+  it('Apply with no dates calls onChange with empty from/to and "All time" label', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
-    await userEvent.click(screen.getByText('Seleziona'));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ label: 'Tutto il tempo' }));
+    await waitFor(() => screen.getByText('Apply'));
+    await userEvent.click(screen.getByText('Apply'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ label: 'All time' }));
   });
 
-  it('Seleziona with single date and default times produces plain-date label', async () => {
+  it('Apply with single date and default times produces plain-date label', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click day 15 (start), then same day 15 (end = same)
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
@@ -369,7 +460,7 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
       await userEvent.click(day15);
       await userEvent.click(day15);
     }
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       // Same-day + default times → label is the date string only
@@ -377,11 +468,11 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
     }
   });
 
-  it('Seleziona with same date and custom times produces time-range label', async () => {
+  it('Apply with same date and custom times produces time-range label', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click day 15 twice to set same start/end
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
@@ -398,18 +489,18 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
       await userEvent.type(timeInputs[0] as HTMLElement, '09:00');
     }
 
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       expect(typeof arg.label).toBe('string');
     }
   });
 
-  it('Seleziona with different from/to and default times produces date-range label', async () => {
+  it('Apply with different from/to and default times produces date-range label', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day10 = Array.from(dayCells).find(d => d.textContent?.trim() === '10') as HTMLElement | undefined;
@@ -418,18 +509,18 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
       await userEvent.click(day10);
       await userEvent.click(day20);
     }
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       expect(arg.label).toMatch(/—/);
     }
   });
 
-  it('Seleziona with different from/to and custom times produces datetime-range label', async () => {
+  it('Apply with different from/to and custom times produces datetime-range label', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day10 = Array.from(dayCells).find(d => d.textContent?.trim() === '10') as HTMLElement | undefined;
@@ -446,7 +537,7 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
       await userEvent.type(timeInputs[0] as HTMLElement, '08:00');
     }
 
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       expect(typeof arg.label).toBe('string');
@@ -457,7 +548,7 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day5 = Array.from(dayCells).find(d => d.textContent?.trim() === '5') as HTMLElement | undefined;
@@ -475,7 +566,7 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     // The ft/tt used in onChange should have :00 appended → length 8
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
@@ -483,21 +574,21 @@ describe('DateRangePicker — confirm / cancel (lines 216-249)', () => {
     }
   });
 
-  it('Annulla button resets pending state and closes picker', async () => {
+  it('Cancel button resets pending state and closes picker', async () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange('2024-06-01', '2024-06-15', '1-15 Jun')} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click a day to change pending state
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day5 = Array.from(dayCells).find(d => d.textContent?.trim() === '5') as HTMLElement | undefined;
     if (day5) await userEvent.click(day5);
 
-    await userEvent.click(screen.getByText('Annulla'));
+    await userEvent.click(screen.getByText('Cancel'));
     // onChange not called; picker closed
     expect(onChange).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.queryByText('Seleziona')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Apply')).toBeNull());
   });
 });
 
@@ -512,11 +603,11 @@ describe('DateRangePicker — outside click closes picker (lines 174-188)', () =
       </div>
     );
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click outside
     await userEvent.click(screen.getByTestId('outside'));
-    await waitFor(() => expect(screen.queryByText('Seleziona')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Apply')).toBeNull());
   });
 });
 
@@ -529,14 +620,14 @@ describe('DateRangePicker — value prop changes sync pending state (lines 166-1
     );
     // Open picker to see the pending state
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Update value prop — triggers the useEffect that calls setPendingFrom/To
     rerender(
       <DateRangePicker value={mkRange('2024-06-01', '2024-06-30', 'Giugno')} onChange={vi.fn()} />
     );
     // Picker still open; pending state has been reset to new value
-    expect(screen.getByText('Seleziona')).toBeTruthy();
+    expect(screen.getByText('Apply')).toBeTruthy();
   });
 
   it('parseTimeFromISO extracts time when ISO value has time component', async () => {
@@ -548,7 +639,7 @@ describe('DateRangePicker — value prop changes sync pending state (lines 166-1
       />
     );
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const timeInputs = document.querySelectorAll('input[type="time"]') as NodeListOf<HTMLInputElement>;
     // The "Da" time input should reflect 08:30:00
@@ -584,13 +675,13 @@ describe('PRESETS and RECENT_PRESETS exports', () => {
 // ── startOfWeek Sunday branch (line 34) ───────────────────────────────────────
 
 describe('startOfWeek Sunday branch', () => {
-  it('PRESETS "Questa settimana" from a Sunday covers getDay()===0 → subtract 6 path', () => {
+  it('PRESETS "This week" from a Sunday covers getDay()===0 → subtract 6 path', () => {
     // Use a local Sunday (2024-07-07 = Sunday in local time).
     vi.setSystemTime(new Date(2024, 6, 7)); // July 7 2024, local Sunday
-    const r = PRESETS.find(p => p.label === 'Questa settimana')!.range();
+    const r = PRESETS.find(p => p.label === 'This week')!.range();
     // Branch covered: getDay()===0 path executed (subtract 6 instead of getDay()-1).
     // Result: from <= to (week start <= today), label correct.
-    expect(r.label).toBe('Questa settimana');
+    expect(r.label).toBe('This week');
     expect(r.from <= r.to).toBe(true);
     vi.useRealTimers();
   });
@@ -606,7 +697,7 @@ describe('parseTimeFromISO branches', () => {
       <DateRangePicker value={mkRange('2024-06-01', '2024-06-30', 'Giugno')} onChange={vi.fn()} />
     );
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const timeInputs = document.querySelectorAll('input[type="time"]') as NodeListOf<HTMLInputElement>;
     // Da defaults to 00:00:00 (shown as "00:00" or "00:00:00" depending on happy-dom)
     expect(timeInputs[0]!.value).toMatch(/^00:00/);
@@ -615,9 +706,9 @@ describe('parseTimeFromISO branches', () => {
   });
 
   it('returns defaultTime when iso is empty string', async () => {
-    render(<DateRangePicker value={mkRange('', '', 'Tutto il tempo')} onChange={vi.fn()} />);
+    render(<DateRangePicker value={mkRange('', '', 'All time')} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const timeInputs = document.querySelectorAll('input[type="time"]') as NodeListOf<HTMLInputElement>;
     expect(timeInputs[0]!.value).toMatch(/^00:00/);
     expect(timeInputs[1]!.value).toMatch(/^23:59/);
@@ -644,7 +735,7 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Pick a day so pendingFrom is set — click day 15 twice to set from+to
     const day15 = findDayCell(15);
@@ -660,7 +751,7 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
       fireEvent.change(timeInputs[1], { target: { value: '18:45' } });
     }
 
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       // from should contain T09:30:00 (seconds appended)
@@ -674,7 +765,7 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click day 10, then day 20 to set from=10, to=20
     const day10 = findDayCell(10);
@@ -683,7 +774,7 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
       await userEvent.click(day10); // sets pendingFrom, clears pendingTo, pickingEnd=true
       await userEvent.click(day20); // sets pendingTo=20
     }
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       // from and to should be different dates
@@ -696,7 +787,7 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const day15 = findDayCell(15);
     if (day15) { await userEvent.click(day15); await userEvent.click(day15); }
@@ -709,7 +800,7 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
     if (timeInputs[1]) {
       fireEvent.change(timeInputs[1], { target: { value: '18:45:00' } });
     }
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       expect(arg.from).toContain('T09:30:00');
@@ -722,18 +813,18 @@ describe('handleConfirm — 5-char time inputs (lines 219-220)', () => {
 describe('handleCancel — empty value.from and value.to', () => {
   it('resets to empty string when value has no from/to set', async () => {
     const onChange = vi.fn();
-    render(<DateRangePicker value={mkRange('', '', 'Tutto il tempo')} onChange={onChange} />);
+    render(<DateRangePicker value={mkRange('', '', 'All time')} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     // Click a day to dirty pending state
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const day5 = Array.from(dayCells).find(d => d.textContent?.trim() === '5') as HTMLElement | undefined;
     if (day5) await userEvent.click(day5);
 
-    await userEvent.click(screen.getByText('Annulla'));
+    await userEvent.click(screen.getByText('Cancel'));
     expect(onChange).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.queryByText('Seleziona')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('Apply')).toBeNull());
   });
 });
 
@@ -757,7 +848,7 @@ describe('"From now" button — active state hover (lines 277, 323-324)', () => 
   });
 
   it('changes background on hover when "From now" is not active', async () => {
-    render(<DateRangePicker value={mkRange('', '', 'Tutto il tempo')} onChange={vi.fn()} />);
+    render(<DateRangePicker value={mkRange('', '', 'All time')} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
     await waitFor(() => screen.getByText('From now'));
     const fromNowBtn = screen.getByText('From now').closest('button') as HTMLButtonElement;
@@ -774,15 +865,15 @@ describe('"From now" button — active state hover (lines 277, 323-324)', () => 
 describe('RECENT_PRESETS button — hover when active (lines 345-346)', () => {
   it('is a no-op on hover when the RECENT_PRESET button is active', async () => {
     // active=true → if(!active) is false → no-op (covers the false branch)
-    render(<DateRangePicker value={mkRange('', '', 'Ultima ora')} onChange={vi.fn()} />);
+    render(<DateRangePicker value={mkRange('', '', 'Last hour')} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getAllByText('Ultima ora'));
-    // Trigger also shows "Ultima ora" — find the preset button (last match)
-    const allMatches = screen.getAllByText('Ultima ora');
+    await waitFor(() => screen.getAllByText('Last hour'));
+    // Trigger also shows "Last hour" — find the preset button (last match)
+    const allMatches = screen.getAllByText('Last hour');
     const btn = (allMatches.find(el => el.tagName === 'BUTTON') ?? allMatches[allMatches.length - 1]!.closest('button')) as HTMLButtonElement;
     fireEvent.mouseEnter(btn);
     fireEvent.mouseLeave(btn);
-    expect(screen.getAllByText('Ultima ora').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Last hour').length).toBeGreaterThan(0);
   });
 });
 
@@ -790,21 +881,21 @@ describe('RECENT_PRESETS button — hover when active (lines 345-346)', () => {
 
 describe('PRESETS button — hover when active (lines 374-375)', () => {
   it('is a no-op on hover when the PRESET button is active', async () => {
-    const oggi = PRESETS.find(p => p.label === 'Oggi')!.range();
-    render(<DateRangePicker value={oggi} onChange={vi.fn()} />);
+    const todayRange = PRESETS.find(p => p.label === 'Today')!.range();
+    render(<DateRangePicker value={todayRange} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getAllByText('Oggi'));
-    const btn = screen.getAllByText('Oggi').find(el => el.closest('button'))!.closest('button') as HTMLButtonElement;
+    await waitFor(() => screen.getAllByText('Today'));
+    const btn = screen.getAllByText('Today').find(el => el.closest('button'))!.closest('button') as HTMLButtonElement;
     fireEvent.mouseEnter(btn);
     fireEvent.mouseLeave(btn);
-    expect(screen.getAllByText('Oggi').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Today').length).toBeGreaterThan(0);
   });
 
   it('sets background on mouseEnter when PRESET button is not active', async () => {
     render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Oggi'));
-    const btn = screen.getAllByText('Oggi').find(el => el.closest('button'))!.closest('button') as HTMLButtonElement;
+    await waitFor(() => screen.getByText('Today'));
+    const btn = screen.getAllByText('Today').find(el => el.closest('button'))!.closest('button') as HTMLButtonElement;
     fireEvent.mouseEnter(btn);
     expect(btn.style.background).toBe('var(--bg-elevated)');
     fireEvent.mouseLeave(btn);
@@ -819,26 +910,26 @@ describe('Month navigation buttons — hover (lines 391, 401)', () => {
   it('prev month button responds to mouseEnter/mouseLeave', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const iconBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim());
     const prevBtn = iconBtns[0];
     if (prevBtn) {
       fireEvent.mouseEnter(prevBtn);
       fireEvent.mouseLeave(prevBtn);
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
   });
 
   it('next month button responds to mouseEnter/mouseLeave', async () => {
     renderPicker();
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const iconBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim());
     const nextBtn = iconBtns[1];
     if (nextBtn) {
       fireEvent.mouseEnter(nextBtn);
       fireEvent.mouseLeave(nextBtn);
-      expect(screen.getByText('Seleziona')).toBeTruthy();
+      expect(screen.getByText('Apply')).toBeTruthy();
     }
   });
 });
@@ -852,7 +943,7 @@ describe('Day cell — today is endpoint (line 437 isEndpoint branch)', () => {
     const todayStr = new Date().toISOString().slice(0, 10); // mirrors fmt(new Date())
     render(<DateRangePicker value={mkRange(todayStr, todayStr, todayStr)} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     // pendingFrom===pendingTo===todayStr; the matching calendar cell has isEndpoint=true
     // → circleBg = 'var(--accent, #6366f1)'. happy-dom may store the background as the
     // CSS variable string or as the fallback color.
@@ -879,7 +970,7 @@ describe('Day cell — isOtherMon prevents click (line 465)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     // isOtherMon cells have cursor:'default'
     const allCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     const otherMonthCell = Array.from(allCells).find(d =>
@@ -901,7 +992,7 @@ describe('Day cell — onMouseOver/onMouseOut (lines 471, 475)', () => {
     const todayStr = new Date().toISOString().slice(0, 10);
     render(<DateRangePicker value={mkRange(todayStr, todayStr, todayStr)} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     // Find the endpoint cell — accent background or #fff color (happy-dom CSS var handling varies)
     const endpointCell = Array.from(dayCells).find(d => {
@@ -924,7 +1015,7 @@ describe('Day cell — onMouseOver/onMouseOut (lines 471, 475)', () => {
     vi.setSystemTime(new Date(2024, 5, 15)); // June 2024
     render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const dayCells = document.querySelectorAll('[style*="border-radius: 50%"]');
     // Day 5 — not endpoint, cursor=pointer
     const day5 = Array.from(dayCells).find(d =>
@@ -948,7 +1039,7 @@ describe('"A" time input onChange handler (line 501)', () => {
     const onChange = vi.fn();
     render(<DateRangePicker value={mkRange()} onChange={onChange} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
 
     const timeInputs = document.querySelectorAll('input[type="time"]');
     // Second input is "A" (to time)
@@ -964,7 +1055,7 @@ describe('"A" time input onChange handler (line 501)', () => {
       await userEvent.click(day10);
       await userEvent.click(day10);
     }
-    await userEvent.click(screen.getByText('Seleziona'));
+    await userEvent.click(screen.getByText('Apply'));
     if (onChange.mock.calls.length > 0) {
       const arg = onChange.mock.calls[onChange.mock.calls.length - 1]![0] as DateRange;
       expect(arg.to).toContain('T20:30:00');
@@ -974,23 +1065,23 @@ describe('"A" time input onChange handler (line 501)', () => {
   it('sets pendingToTime to "23:59:59" when "A" input is cleared (falsy branch)', async () => {
     render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const timeInputs = document.querySelectorAll('input[type="time"]');
     if (timeInputs[1]) {
       fireEvent.change(timeInputs[1], { target: { value: '' } });
     }
     // No crash — empty string triggers the `|| '23:59:59'` fallback
-    expect(screen.getByText('Seleziona')).toBeTruthy();
+    expect(screen.getByText('Apply')).toBeTruthy();
   });
 
   it('sets pendingToTime to "23:59:59" when "Da" input is cleared (falsy branch)', async () => {
     render(<DateRangePicker value={mkRange()} onChange={vi.fn()} />);
     await userEvent.click(screen.getAllByRole('button')[0]!);
-    await waitFor(() => screen.getByText('Seleziona'));
+    await waitFor(() => screen.getByText('Apply'));
     const timeInputs = document.querySelectorAll('input[type="time"]');
     if (timeInputs[0]) {
       fireEvent.change(timeInputs[0], { target: { value: '' } });
     }
-    expect(screen.getByText('Seleziona')).toBeTruthy();
+    expect(screen.getByText('Apply')).toBeTruthy();
   });
 });

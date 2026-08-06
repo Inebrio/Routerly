@@ -32,6 +32,25 @@ vi.mock('../api', () => ({
   ],
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so getByDisplayValue tests keep working
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+  }) => (
+    <select value={value} disabled={disabled} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: ({
     options,

@@ -36,8 +36,8 @@ POST /api/auth/login
 }
 ```
 
-- `token` — short-lived JWT (1 hour). Use as `Authorization: Bearer <token>` on all other endpoints.
-- `refreshToken` — opaque token used to obtain new access tokens without re-entering credentials. Store securely; see [POST /api/auth/refresh](#refresh). Rotates on every use.
+- `token` - short-lived JWT (1 hour). Use as `Authorization: Bearer <token>` on all other endpoints.
+- `refreshToken` - opaque token used to obtain new access tokens without re-entering credentials. Store securely; see [POST /api/auth/refresh](#refresh). Rotates on every use.
 
 ### Refresh
 
@@ -60,10 +60,10 @@ This endpoint is **public** (no `Authorization` header required).
 }
 ```
 
-Issues a new 1-hour access token **and a new refresh token** (rotation). The previous refresh token is immediately invalidated — replace it with the value returned in the response. Returns `401` if the token is invalid or has already been used/revoked.
+Issues a new 1-hour access token **and a new refresh token** (rotation). The previous refresh token is immediately invalidated - replace it with the value returned in the response. Returns `401` if the token is invalid or has already been used/revoked.
 
 :::note
-The CLI and dashboard perform this refresh automatically — the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response. Both clients persist the new refresh token automatically.
+The CLI and dashboard perform this refresh automatically - the CLI tries silently when the token expires or is within 5 minutes of expiry; the dashboard retries on any `401` response. Both clients persist the new refresh token automatically.
 :::
 
 ---
@@ -114,11 +114,26 @@ PUT /api/me
 
 ## Models
 
+A model listed here (`ModelConfig`-shaped) is always backed by a
+[Model Instance](#model-instances) bound to a [Connection](#connections)
+under the hood; these endpoints are a convenience layer over that pair. Each
+model in the response carries a `connectionId` pointing at the connection it
+resolves against. See [Connections](#connections) and
+[Dashboard: Models: Preconfigured vs Custom Connection](../dashboard/models.md#preconfigured-vs-custom-connection)
+for the higher-level explanation.
+
 ### List Models
 
 ```
 GET /api/models
 ```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`)
+
+**Response `200`:** array of models, including those on disabled connections.
+Each entry includes `connectionId`; secret fields (`apiKey`, `cfClearance`,
+and the other provider-specific credential fields) are always redacted, use
+[Get Model API Key](#get-model-api-key) to read the plaintext key.
 
 ### Create Model
 
@@ -126,25 +141,31 @@ GET /api/models
 POST /api/models
 ```
 
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
 ```json
 {
   "id": "gpt-5-mini",
   "provider": "openai",
   "apiKey": "sk-...",
-  "inputPrice": 0.25,
-  "outputPrice": 2.0,
+  "inputPerMillion": 0.25,
+  "outputPerMillion": 2.0,
   "contextWindow": 128000,
-  "capabilities": ["functionCalling", "json"],
-  "fieldOverrides": { "inputPrice": true }
+  "capabilities": { "functionCalling": true, "json": true },
+  "fieldOverrides": { "inputPerMillion": true }
 }
 ```
 
 **Request fields:**
-- `fieldOverrides` (optional) — object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPrice`, `outputPrice`, `cachePrice`, `cacheWritePrice`, `pricingTiers`, `contextWindow`, `capabilities`.
+- `connectionId` (optional): bind the model to an existing connection instead of supplying credentials inline. When present, `apiKey`/`endpoint`/`cfClearance` and the other credential fields are ignored; the connection's provider must match `provider` (`400` otherwise, `404` if `connectionId` does not exist).
+- When `connectionId` is **absent**, `apiKey`/`endpoint`/`cfClearance` (and any provider-specific credential fields) are used to create a dedicated, single-model connection with id `conn-for-<id>`, and the model binds to it. This is the same wire shape the endpoint accepted before the connections cutover, so existing integrations are unaffected.
+- `fieldOverrides` (optional): object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities`.
 
-**Response includes:**
-- `catalogDefaults` (if model is in catalog) — last known catalog values for each tracked field
-- `fieldOverrides` (if any) — which fields are locked against auto-sync
+**Response `201`:** the created model (redacted), including `connectionId`.
+- `catalogDefaults` (if model is in catalog): last known catalog values for each tracked field
+- `fieldOverrides` (if any): which fields are locked against auto-sync
+
+**Errors**: `409` a model with this `id` already exists · `400` `connectionId` given but its provider does not match `provider` · `404` `connectionId` given but not found · `403` insufficient permissions
 
 ### Get Model
 
@@ -153,8 +174,9 @@ GET /api/models/:id
 ```
 
 **Response includes:**
-- `catalogDefaults` (if model is in catalog) — object with keys: `inputPrice`, `outputPrice`, `cachePrice`, `cacheWritePrice`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
-- `fieldOverrides` (if any) — object with field names as keys, all values set to `true`
+- `connectionId`: the connection this model currently resolves against
+- `catalogDefaults` (if model is in catalog): object with keys: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities` (whichever were synced from the catalog)
+- `fieldOverrides` (if any): object with field names as keys, all values set to `true`
 
 ### Update Model
 
@@ -165,12 +187,17 @@ PUT /api/models/:id
 **Request body** (all fields optional):
 ```json
 {
-  "inputPrice": 0.5,
-  "fieldOverrides": { "inputPrice": true, "contextWindow": false }
+  "inputPerMillion": 0.5,
+  "fieldOverrides": { "inputPerMillion": true, "contextWindow": false }
 }
 ```
 
 Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To unlock a field for auto-sync, send `"fieldOverrides[fieldName] = false"`. When all overrides are cleared, the `fieldOverrides` object is removed from the model config.
+
+**`connectionId` rebinding:**
+- Send `connectionId` to rebind the model to a different existing connection (same provider-match / `400`/`404` rules as create). If the model was previously on its own dedicated `conn-for-<id>` connection and no other model still references it, that dedicated connection is deleted as part of the rebind.
+- Omit `connectionId`: if the model is currently on a shared connection and the body carries no `apiKey`/`cfClearance`, the shared binding is left untouched (a plain field edit does not silently detach the model from its shared connection). If the model is on its own dedicated connection, or the body includes new credentials, the dedicated `conn-for-<id>` connection is created/updated from them (empty `apiKey`/`cfClearance` keeps the currently stored credentials).
+- Renaming a model's `id` (via body `id`) also renames its dedicated connection from `conn-for-<old-id>` to `conn-for-<new-id>` when that connection is still single-model.
 
 ### Delete Model
 
@@ -178,15 +205,951 @@ Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To
 DELETE /api/models/:id
 ```
 
-### Rotate Model API Key
+If the model owned its dedicated `conn-for-<id>` connection and no other model instance references it, the connection is deleted along with the model.
+
+### Get Model API Key
 
 ```
-POST /api/models/:id/apikey
+GET /api/models/:id/apikey
 ```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:write`)
+
+Returns the plaintext credential of the connection the model is currently
+bound to. To rotate the key, use [Update Model](#update-model) (or, for a
+model on a preconfigured connection, [Update Connection](#update-connection))
+with a new `apiKey`.
+
+**Response `200`:**
+```json
+{ "apiKey": "sk-..." }
+```
+
+`apiKey` is `null` for oauth/web-session providers (`anthropic-oauth`, `openai-web`, etc.), whose credentials are never returned in plaintext.
+
+**Errors**: `404` model not found · `403` insufficient permissions
+
+---
+
+## Provider Descriptors
+
+### List Provider Descriptors
+
+```
+GET /api/providers/descriptors
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
+
+Returns the static registry of provider types Routerly knows how to connect to
+(distinct from the model **catalog** - see [Catalog](#catalog)). Used by the
+dashboard to populate the provider dropdown when creating a connection.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "openai",
+    "label": "OpenAI",
+    "protocol": "openai",
+    "supportLevel": "native",
+    "nativeCapabilities": { "vision": true, "functionCalling": true, "json": true }
+  },
+  {
+    "id": "anthropic-oauth",
+    "label": "Anthropic (OAuth)",
+    "protocol": "anthropic",
+    "supportLevel": "oauth",
+    "nativeCapabilities": { "thinking": true, "vision": true, "functionCalling": true, "json": true }
+  }
+]
+```
+
+**Fields:**
+- `id` - provider identifier, used as `providerId` on a connection
+- `protocol` - wire protocol the connection speaks: `openai`, `anthropic`, `gemini`, or `custom`
+- `supportLevel` - how credentials are supplied: `native` (plain API key), `compatible` (OpenAI-compatible custom endpoint, plain API key), `oauth` (OAuth access/refresh token pair, encrypted at rest), `web` (browser session cookie, encrypted at rest)
+- `nativeCapabilities` - capability flags (`thinking`, `vision`, `functionCalling`, `json`, `embedding`) the provider natively supports, used as defaults for model instances
+
+**Errors**: `403` insufficient permissions
+
+---
+
+## Connections
+
+A connection stores credentials for one account with one provider (see
+`providerId`, from [Provider Descriptors](#provider-descriptors)). A connection
+does not expose any models by itself - create [Model Instances](#model-instances)
+on top of it to make models routable.
+
+### List Connections
+
+```
+GET /api/connections
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
+
+**Response `200`:** array of connections with `credentials` always `undefined` (never returned by any connections endpoint, on any provider `supportLevel`).
+```json
+[
+  { "id": "conn-uuid", "providerId": "openai", "label": "Main OpenAI", "enabled": true }
+]
+```
+
+**Errors**: `403` insufficient permissions
+
+### Create Connection
+
+```
+POST /api/connections
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
 
 ```json
-{ "apiKey": "sk-NEW_KEY" }
+{
+  "providerId": "openai",
+  "label": "Main OpenAI",
+  "credentials": { "apiKey": "sk-..." },
+  "endpoint": "https://api.openai.com/v1",
+  "enabled": true
+}
 ```
+
+**Fields:**
+- `providerId` - must match a known provider id from [Provider Descriptors](#provider-descriptors) (required)
+- `providerName` - upstream provider behind a `custom` connection, e.g. `deepseek` (optional). Free text: it names the service the `endpoint` belongs to, and models created on the connection use it as their ID prefix (`deepseek/deepseek-r1`). Routing still dispatches on `providerId`
+- `label` - unique name for the connection (optional). Blank or absent means the server generates one from the provider (`openai`, then `openai-2`, `openai-3`, ...), or from `providerName` for a `custom` connection. A name another connection already uses is rejected
+- `credentials` - arbitrary key-value object; shape depends on `supportLevel` (required, may be `{}`). See **Credential encryption** below
+- `endpoint` - override base URL, e.g. for `custom`/Azure-style deployments (optional)
+- `enabled` - whether the connection is usable by routing (required)
+
+**Credential encryption (oauth/web providers):**
+
+For providers with `supportLevel: "oauth"` or `"web"`, plaintext credential
+fields are encrypted server-side before being written to disk, and the
+plaintext keys are stripped from the stored config. The API never returns
+`credentials` on any response, on any provider.
+
+| `supportLevel` | Plaintext input field | Stored (encrypted) field | Required |
+|---|---|---|---|
+| `oauth` | `oauthPlain` | `oauthEnc` | yes |
+| `oauth` | `refreshPlain` | `refreshEnc` | no |
+| `web` | `cookiePlain` | `cookieEnc` | yes |
+| `web` | `cfClearancePlain` | `cfClearanceEnc` | no (openai-web only) |
+
+Any other field on `credentials` (e.g. `expiresAt` for oauth providers) passes
+through untouched. For `native`/`compatible` providers (e.g. plain `apiKey`),
+`credentials` passes through entirely untouched - plaintext-at-rest is
+intentional for those providers.
+
+**Response `200`:** the created connection, `credentials` omitted (see List Connections above).
+
+**Errors**: `400` invalid body / unknown `providerId` / `label_taken` (`{"error":"label_taken","message":"Label \"<name>\" is already used by another connection"}`) · `403` insufficient permissions or `module_disabled` (oauth/web connection while the corresponding `provider-oauth`/`provider-web` module is disabled)
+
+### Update Connection
+
+```
+PATCH /api/connections/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Request body** (all fields optional, same shape as create):
+```json
+{ "label": "Renamed", "credentials": { "oauthPlain": "new-access-token" } }
+```
+
+Sending `"label": ""` regenerates the name from the provider; sending a name
+another connection already uses returns `400 label_taken`.
+
+When `credentials` is present in the body, it **replaces** the stored
+credentials object wholesale (not a deep merge) - resend every field you want
+to keep, following the same `oauthPlain`/`refreshPlain`/`cookiePlain`/`cfClearancePlain`
+convention as create. Only the fields present in the submitted `credentials`
+object are encrypted; omitted plaintext fields simply don't produce an
+encrypted counterpart.
+
+**Response `200`:** the updated connection, `credentials` omitted.
+
+**Errors**: `400` invalid body · `404` connection not found · `403` insufficient permissions or `module_disabled`
+
+### Delete Connection
+
+```
+DELETE /api/connections/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` connection not found · `403` insufficient permissions
+
+---
+
+## Model Instances
+
+A model instance exposes one upstream model on top of an existing
+[connection](#connections), with its own pricing, context window, limits, and
+capability overrides. This is what shows up as a routable model.
+
+### List Instances
+
+```
+GET /api/instances
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:read`)
+
+**Response `200`:** array of instances.
+```json
+[
+  {
+    "id": "inst-uuid",
+    "connectionId": "conn-uuid",
+    "upstreamModelId": "gpt-5-mini",
+    "cost": { "inputPerMillion": 0.25, "outputPerMillion": 2.0 },
+    "contextWindow": 128000,
+    "limits": [],
+    "capabilities": { "functionCalling": true, "json": true }
+  }
+]
+```
+
+**Errors**: `403` insufficient permissions
+
+### Create Instance
+
+```
+POST /api/instances
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+```json
+{
+  "connectionId": "conn-uuid",
+  "upstreamModelId": "gpt-5-mini",
+  "cost": { "inputPerMillion": 0.25, "outputPerMillion": 2.0 },
+  "contextWindow": 128000,
+  "limits": [],
+  "capabilities": { "functionCalling": true, "json": true }
+}
+```
+
+**Fields:**
+- `connectionId` - id of an existing connection (required)
+- `upstreamModelId` - the provider's model id, e.g. `gpt-5-mini` (required)
+- `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
+- `contextWindow` - token limit (required)
+- `limits` - array of usage limit objects, same shape as [project token limits](#create-token) (optional)
+- `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
+
+**Response `200`:** the created instance.
+
+**Errors**: `400` invalid body · `403` insufficient permissions
+
+### Update Instance
+
+```
+PATCH /api/instances/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Request body** (all fields optional, same shape as create).
+
+**Response `200`:** the updated instance.
+
+**Errors**: `400` invalid body · `404` instance not found · `403` insufficient permissions
+
+### Delete Instance
+
+```
+DELETE /api/instances/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `connections:manage`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` instance not found · `403` insufficient permissions
+
+---
+
+## Profiles
+
+A profile bundles one area of a project's configuration into a reusable, named
+unit. Its `kind` decides which fields it carries:
+
+| `kind` | Fields |
+|--------|--------|
+| `routing` | `policies`, `selector`, `fallbackStrategy` |
+| `optimizer` | `optimizers` |
+| `security` | `guardrails`, `pii` |
+
+Every profile also has `id`, `kind`, `label`, `version`, `builtin` and, when it
+was produced by [Clone Profile](#clone-profile), `baseId`.
+
+Routerly ships read-only built-ins for two kinds (`auto`, `cheap`, `fast`,
+`coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`).
+Security ships none: guardrails and PII policies rewrite the request, so a
+project never inherits them from a preset it did not choose, and every security
+profile is user-created. A project either keeps its own inline
+configuration for a kind or is assigned a profile of that kind via
+[Assign Project Profiles](#assign-project-profiles); the three kinds are
+assigned independently.
+
+See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
+for the selector and fallback strategy reference. Both fields are optional on
+write and default to `argmax` and `next-best`; the API is the only surface that
+sets them, since the dashboard and the CLI do not expose either.
+
+All profile endpoints return `403 module_disabled` when the `profiles` module
+is disabled.
+
+### List Profiles
+
+```
+GET /api/profiles
+GET /api/profiles?kind=routing
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:read`)
+
+Returns the built-ins followed by any user-created profiles. `kind` filters the
+result to one kind; omit it to get all three.
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "auto",
+    "kind": "routing",
+    "version": 1,
+    "label": "Auto",
+    "policies": [
+      { "type": "health", "enabled": true },
+      { "type": "performance", "enabled": true },
+      { "type": "cheapest", "enabled": true },
+      { "type": "capability", "enabled": true }
+    ],
+    "selector": "argmax",
+    "fallbackStrategy": "next-best",
+    "builtin": true
+  },
+  {
+    "id": "optimizer-safe",
+    "kind": "optimizer",
+    "version": 1,
+    "label": "Safe",
+    "optimizers": { "steps": [{ "id": "session-dedup", "enabled": true }] },
+    "builtin": true
+  },
+  {
+    "id": "b1e7c0f2-9a4d-4c31-8f0a-2d6b5e7c1a90",
+    "kind": "security",
+    "version": 1,
+    "label": "My Security Profile",
+    "guardrails": { "detectInjection": true, "rules": [] },
+    "pii": { "policies": [{ "target": "request", "entities": ["EMAIL", "PHONE", "CREDIT_CARD", "SSN", "IBAN"] }] },
+    "builtin": false
+  }
+]
+```
+
+**Errors**: `400` `invalid_kind` · `403` insufficient permissions
+
+### Create Profile
+
+```
+POST /api/profiles
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+```json
+{
+  "kind": "routing",
+  "label": "My Routing Profile",
+  "policies": [{ "type": "cheapest", "enabled": true }],
+  "selector": "cheapest",
+  "fallbackStrategy": "abort"
+}
+```
+
+**Fields:**
+- `kind`: `routing` | `optimizer` | `security` (required, decides which other
+  fields are accepted)
+- `label`: display name (required, non-empty)
+- everything else is optional and defaults to an empty configuration, so
+  `{ "kind": "security", "label": "Empty" }` is a valid body that can be filled
+  in later with [Update Profile](#update-profile)
+
+**Response `201`:** the created profile (`builtin: false`, `version: 1`).
+
+**Errors**: `400` invalid body · `403` insufficient permissions
+
+### Clone Profile
+
+```
+POST /api/profiles/clone
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+```json
+{ "baseId": "auto", "label": "My Auto Profile" }
+```
+
+**Fields:**
+- `baseId`: id of the built-in profile to clone (user-owned profiles cannot be
+  cloned) (required)
+- `label`: display name for the new profile (required, non-empty)
+
+**Response `200`:** the created profile, same kind and configuration as the
+base (`builtin: false`, `version: 1`, `baseId` set to the source profile's id).
+
+**Errors**: `400` invalid body or unknown `baseId` · `403` insufficient permissions
+
+### Update Profile
+
+```
+PATCH /api/profiles/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+**Request body**: any subset of the fields that belong to the target profile's
+kind, at least one required. `kind` itself cannot be changed.
+
+```json
+{
+  "label": "Renamed Profile",
+  "policies": [{ "type": "cheapest", "enabled": true }],
+  "selector": "cheapest",
+  "fallbackStrategy": "abort"
+}
+```
+
+Only user-created profiles can be updated. Every successful update bumps the
+profile's `version` field by 1.
+
+**Response `200`:** the updated profile.
+
+**Errors**: `400` invalid body (including a field that does not belong to this
+profile's kind) · `404` profile not found · `409` `immutable_builtin_profile`
+(target id matches a built-in) · `403` insufficient permissions
+
+### Delete Profile
+
+```
+DELETE /api/profiles/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `profiles:manage`)
+
+**Response**: `204 No Content`
+
+**Errors**: `404` profile not found · `409` `immutable_builtin_profile`
+(target id matches a built-in) · `409` `profile_in_use` (a project still
+references it, unassign it first) · `403` insufficient permissions
+
+### Assign Project Profiles
+
+```
+PUT /api/projects/:id/profiles
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `project:write`)
+
+```json
+{ "routing": "auto", "optimizer": null }
+```
+
+**Fields** (at least one required, each `string | null`):
+- `routing`, `optimizer`, `security`: id of an existing profile of that kind,
+  or `null` to clear the assignment and fall back to the project's own inline
+  configuration for that kind
+
+Kinds omitted from the body keep their current assignment.
+
+**Response `200`:** the updated project (same shape as
+[List Projects](#list-projects), `tokens` present with `token` values stripped).
+
+**Errors**: `400` invalid body · `404` project not found or
+`profile_not_found` (with the offending `kind`) · `403` insufficient permissions
+
+---
+
+## Optimizers
+
+Prompt/context optimizers reduce a request's token footprint before it is
+forwarded to a provider. All 8 ship disabled by default; a project opts in
+per-optimizer via its [`optimizers` field](#optimizers-project-field). See
+[Concepts: Optimizers](../concepts/optimizers.md) for what each optimizer
+does, its class (`lossless` / `recoverable` / `lossy`), the safety gate, and
+which steps are language-bound.
+
+### List Optimizers
+
+```
+GET /api/optimizers
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
+
+Read-only catalog of the optimizers installed in the running service,
+resolved from the in-memory registry populated at module bootstrap.
+
+**Response `200`:**
+```json
+[
+  { "id": "session-dedup", "klass": "lossless", "installed": true },
+  { "id": "ccr", "klass": "recoverable", "installed": true },
+  { "id": "rtk", "klass": "recoverable", "installed": true },
+  { "id": "headroom", "klass": "lossless", "installed": true },
+  { "id": "json-table", "klass": "recoverable", "installed": true },
+  { "id": "relevance", "klass": "lossy", "installed": true },
+  { "id": "caveman", "klass": "lossy", "installed": true },
+  { "id": "llmlingua-2", "klass": "lossy", "installed": true }
+]
+```
+
+Returns `[]` if the optimizer modules were not bootstrapped.
+
+**Errors**: `403` insufficient permissions
+
+### Preview Optimizers
+
+```
+POST /api/optimizers/preview
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
+
+Pure dry-run: applies the given steps to sample messages and reports the
+token delta per step. **No upstream call is made and no project config is
+written.**
+
+```json
+{
+  "projectId": "proj-uuid",
+  "model": "openai/gpt-4o-mini",
+  "sampleMessages": [{ "role": "user", "content": "Hello, please help me with this." }],
+  "steps": [
+    { "id": "caveman", "enabled": true },
+    { "id": "rtk", "enabled": true }
+  ]
+}
+```
+
+**Fields:**
+- `sampleMessages`: message array to run the pipeline over, same shape as an
+  [LLM Proxy](./llm-proxy.md) request's `messages` (required, min 1)
+- `steps`: the optimizer steps to dry-run, same shape as the
+  [`optimizers` project field](#optimizers-project-field) (required)
+- `projectId`: optional. When given, the preview runs "as" that project (its
+  other config is read; nothing is written); `404` if unknown. The `steps`
+  in the request body still drive which optimizers run. The project's own
+  saved `optimizers.steps` are not substituted in
+- `model`: optional model id the sample is addressed to. `headroom` sizes its
+  budget on the requested model's context window, so without one it reports a
+  skip reason instead of trimming, exactly as it would on a request naming a
+  model Routerly has no window for
+
+**Response `200`:**
+```json
+{
+  "estimatedTokensBefore": 55,
+  "estimatedTokensAfter": 30,
+  "messages": [{ "role": "user", "content": "Hello, help me this." }],
+  "perStep": [
+    {
+      "id": "caveman",
+      "before": 55,
+      "after": 30,
+      "messages": [{ "role": "user", "content": "Hello, help me this." }]
+    },
+    {
+      "id": "rtk",
+      "before": 30,
+      "after": 30,
+      "messages": [{ "role": "user", "content": "Hello, help me this." }],
+      "skipReason": "No redundant whitespace or repeated block found in the message text."
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `estimatedTokensBefore` / `estimatedTokensAfter` | Token estimate of the whole prompt before the first step and after the last one |
+| `messages` | The prompt as the pipeline left it, ready to diff against `sampleMessages` |
+| `perStep[].before` / `perStep[].after` | Token estimate around that single step |
+| `perStep[].messages` | The prompt as that step left it. Always present, so step *n*'s diff anchors on step *n-1*'s output; unchanged when the step did nothing |
+| `perStep[].rolledBack` | `true` when the step produced a result the safety gate rejected, so its change was discarded. Absent otherwise |
+| `perStep[].skipReason` | Why an enabled step declined to run, in the optimizer's own words. Absent when the step ran |
+
+A `lossy` step whose result fails the safety gate reports `rolledBack: true`
+and is otherwise unchanged (`before === after`), mirroring what happens on a
+live request. `rolledBack` is what separates "was rejected" from "had nothing
+to do", which the token delta alone cannot say. A step that declined to run
+at all reports `skipReason` instead: no context window for the model, no
+repeated message, text that is not English, no JSON array long enough, the
+`llmlingua-2` checkpoint not downloaded.
+
+**Errors**: `400` invalid body · `404` `projectId` given but not found ·
+`403` insufficient permissions
+
+### LLMLingua-2 Checkpoints
+
+```
+GET /api/optimizers/llmlingua2/model
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
+
+State of the optional `llmlingua-2` install on **this service host**. Not
+project-scoped: the runtime and the downloaded checkpoints are shared by
+every project that names one. Carries no prompt content.
+
+**Response `200`:**
+```json
+{
+  "runtimeInstalled": true,
+  "checkpoints": [
+    {
+      "key": "bert-multilingual-q8",
+      "label": "BERT multilingual, quantized",
+      "repo": "ldenoue/llmlingua-2-bert-base-multilingual-cased-meetingbank",
+      "dtype": "q8",
+      "sizeMb": 182,
+      "license": "The export repo declares no license; the upstream weights are Apache-2.0.",
+      "note": "The default. Smallest and fastest, and enough for prose in the 104 languages BERT multilingual covers.",
+      "isDefault": true,
+      "state": "downloading",
+      "progress": 42,
+      "loadedBytes": 76000000,
+      "totalBytes": 182000000
+    },
+    {
+      "key": "xlm-roberta-large-int8",
+      "label": "XLM-RoBERTa large, int8",
+      "repo": "atjsh/llmlingua-2-js-xlm-roberta-large-meetingbank",
+      "dtype": "int8",
+      "sizeMb": 579,
+      "license": "MIT.",
+      "note": "Better compression quality and a declared license, at roughly three times the disk and noticeably slower inference.",
+      "isDefault": false,
+      "state": "absent"
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `runtimeInstalled` | Whether the optional `@huggingface/transformers` dependency is present. `false` means no checkpoint can be downloaded or used |
+| `checkpoints[].key` | The value a step's `model` field takes ([`optimizers` project field](#optimizers-project-field)) |
+| `checkpoints[].isDefault` | The checkpoint a step with no `model` runs on. Reported rather than derived, because `ROUTERLY_LLMLINGUA_MODEL` can move it |
+| `checkpoints[].state` | `absent`, `downloading` or `ready` |
+| `checkpoints[].progress` | 0–100 while `downloading`, absent otherwise. `loadedBytes` / `totalBytes` accompany it when the host reports sizes |
+| `checkpoints[].error` | Why the last download attempt failed. The checkpoint goes back to `absent` and can be retried |
+
+**Errors**: `403` insufficient permissions
+
+```
+POST /api/optimizers/llmlingua2/model
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:manage`)
+
+Starts one checkpoint's download on the service host and returns
+immediately: it is hundreds of megabytes, so the caller polls the `GET`
+above rather than holding a request open.
+
+```json
+{ "key": "xlm-roberta-large-int8" }
+```
+
+`key` is optional; omitted, the default checkpoint is downloaded. It must be
+one this host publishes, and free text is refused rather than fetched, since
+fetching is what costs the disk.
+
+**Response `202`:** the same body as the `GET`, with the requested
+checkpoint already in `downloading`.
+
+**Errors**: `400` unknown checkpoint key · `409` `@huggingface/transformers`
+is not installed on the service host · `403` insufficient permissions
+
+---
+
+## Experiments
+
+A/B tests that route each call to one of several projects. A variant is an
+existing project taken whole, so the whole of what a project expresses (its
+models, routing profile, optimizer pipeline, guardrails) becomes comparable.
+See [Concepts: Experiments](../concepts/experiments.md) for how a test lives,
+the rotations and how the numbers are computed.
+
+Experiments are a **module**. With it disabled every route below answers
+`403 {"error":"module_disabled"}` before the handler runs, so a client can
+tell "turned off" from "not allowed" (`403 Forbidden` with a
+`Required permission:` message).
+
+Tokens are returned with `token` stripped on every read: the raw value exists
+only in the `201` of [Create Experiment](#create-experiment) and the response
+of [Create Experiment Token](#create-experiment-token), the same rule project
+tokens follow.
+
+### List Experiments
+
+```
+GET /api/experiments
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:read`)
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31",
+    "name": "Cheap vs premium",
+    "description": "Is the cheap model good enough for support replies?",
+    "rotation": "sticky",
+    "stickyKey": "auto",
+    "variants": [
+      { "id": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d", "projectId": "proj-cheap", "name": "Cheap" },
+      { "id": "6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35", "projectId": "proj-premium", "name": "Premium" }
+    ],
+    "tokens": [
+      {
+        "id": "b7e5c3a1-9f2d-4e60-a8b3-0c1d2e3f4a5b",
+        "tokenSnippet": "sk-rt-2246",
+        "createdAt": "2026-08-01T10:12:03.000Z",
+        "lastUsedAt": "2026-08-01T10:41:55.000Z"
+      }
+    ],
+    "judge": { "enabled": true, "modelId": "gpt-4o", "criteria": ["Answers the question asked"], "sampleRate": 0.2 },
+    "createdAt": "2026-08-01T10:12:03.000Z"
+  }
+]
+```
+
+| Field | Description |
+|-------|-------------|
+| `rotation` | `sticky` (default), `weighted` or `round-robin` |
+| `stickyKey` | `auto` (default), `end-user`, `conversation` or `client`. Read only by `sticky` |
+| `variants[].projectId` | The project this arm routes to |
+| `variants[].name` | Display label. Absent means the project's own name is shown |
+| `variants[].weight` | Share of traffic under `weighted`. Normalised against the other weights, so `1`/`1` and `50`/`50` are the same split. A missing weight counts as `1` |
+| `judge` | Quality scoring. Absent when never configured, `enabled: false` when turned off |
+| `judge.sampleRate` | Fraction of calls scored, `0`-`1` (the dashboard field and the CLI flag take a percentage) |
+| `judgeScores` | Verdict tally per variant id: `{ count, totalScore, lastAt }`. Absent until the first verdict |
+| `minSamplesPerVariant` | Overrides the default of `30` |
+
+**Errors**: `403` insufficient permissions · `403` `module_disabled`
+
+### Get Experiment
+
+```
+GET /api/experiments/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:read`)
+
+**Response `200`**: one experiment, same shape as the list entries.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Experiment Metrics
+
+```
+GET /api/experiments/:id/metrics?from=<iso>&to=<iso>
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:read`)
+
+The comparison, one entry per variant. Read straight off the usage log,
+which the experiment stamps with its id on every call it routes, so the
+numbers agree with [Usage](#usage) by construction and the experiment keeps
+no counters of its own.
+
+**Query:** `from` and `to`, both optional ISO 8601 values. Neither given
+measures the whole history. An explicit window, not the period vocabulary
+`/api/usage` uses: the caller already knows the window it wants. A date-only
+bound (`2026-08-01`) covers the whole day, exactly as `/api/usage` reads it;
+a full instant is taken as given.
+
+**Response `200`:**
+```json
+{
+  "experimentId": "8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31",
+  "minSamplesPerVariant": 30,
+  "totalCalls": 214,
+  "ready": false,
+  "variants": [
+    {
+      "variantId": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d",
+      "projectId": "proj-cheap",
+      "name": "Cheap",
+      "calls": 118,
+      "errors": 2,
+      "errorRate": 0.017,
+      "cost": 0.4212,
+      "avgCostPerCall": 0.00357,
+      "inputTokens": 91240,
+      "outputTokens": 30118,
+      "avgLatencyMs": 812,
+      "p95LatencyMs": 1904,
+      "avgTtftMs": 240,
+      "judgedCalls": 24,
+      "avgScore": 7.4,
+      "enoughSamples": true
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `ready` | Every variant reached `minSamplesPerVariant`. Until then the comparison is premature |
+| `enoughSamples` | The same test for one variant |
+| `errors` / `errorRate` | Calls whose outcome was neither `success` nor `blocked` |
+| `p95LatencyMs` | Nearest-rank, the same method the usage route uses |
+| `avgTtftMs` | Over the streamed calls only. Absent when none streamed |
+| `judgedCalls` / `avgScore` | Judge verdicts, `0`-`10`. `avgScore` is absent until the first one. Both come from the running tally on the experiment, so they cover its whole life and ignore `from`/`to` |
+
+Only the client's own completion calls are counted. Router decision calls,
+guardrail passes and the judge's own verdicts are gateway overhead: counting
+them would make the cheap variant look expensive for a reason the operator
+cannot act on.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Create Experiment
+
+```
+POST /api/experiments
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+```json
+{
+  "name": "Cheap vs premium",
+  "description": "Is the cheap model good enough for support replies?",
+  "rotation": "weighted",
+  "variants": [
+    { "projectId": "proj-cheap", "name": "Cheap", "weight": 80 },
+    { "projectId": "proj-premium", "name": "Premium", "weight": 20 }
+  ],
+  "judge": { "enabled": true, "modelId": "gpt-4o", "criteria": ["Answers the question asked"], "sampleRate": 0.2 },
+  "minSamplesPerVariant": 50
+}
+```
+
+**Fields:** `name` (required) · `description` · `rotation` (default
+`sticky`) · `stickyKey` · `variants` (default `[]`, each needs `projectId`;
+`id` is generated when omitted) · `judge` · `minSamplesPerVariant` (integer
+`>= 1`).
+
+The experiment is created with its first token and routes traffic straight
+away. Variants can be left empty here and added by `PATCH` later.
+
+**Response `201`**: the experiment, plus a top-level `token` holding the raw
+value. It is returned here and nowhere else.
+
+**Errors**: `400` invalid body · `404` `project_not_found` (with the offending
+`projectIds`) · `409` name already taken · `403` insufficient permissions ·
+`403` `module_disabled`
+
+### Update Experiment
+
+```
+PATCH /api/experiments/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+Same fields as create, all optional, at least one required. `variants` and
+`judge.criteria` replace the whole list rather than merging into it.
+
+Every field stays editable for the whole life of the experiment, including
+one already serving traffic. Redesigning a test that already has traffic mixes
+two different measurements under one set of numbers, so narrow the metrics
+window to the period after the change.
+
+**Response `200`**: the updated experiment.
+
+**Errors**: `400` invalid body · `404` not found · `404` `project_not_found` ·
+`403` insufficient permissions · `403` `module_disabled`
+
+### Create Experiment Token
+
+```
+POST /api/experiments/:id/tokens
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+An experiment can hold several tokens, which is how one test is handed to
+several clients and one of them revoked later. No body.
+
+**Response `200`:**
+```json
+{
+  "token": "sk-rt-91b0d4e7c2a58f36b1d09e4c7a2f5b8d3e6c1a0f9b4d7e2c5a8f1b6d3e0c9a4",
+  "tokenInfo": {
+    "id": "c8f6d4b2-0a3e-4f71-b9c4-1d2e3f4a5b6c",
+    "tokenSnippet": "sk-rt-91b0",
+    "createdAt": "2026-08-01T11:02:17.000Z"
+  }
+}
+```
+
+A client uses it exactly like a project token: same base URL, this value in
+place of the project's. Each request lands on one variant and is billed to
+that variant's project. Nothing about the test reaches the wire.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
+
+### Revoke Experiment Token
+
+```
+DELETE /api/experiments/:id/tokens/:tokenId
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+**Response `204`**: no content. Any client still using the token starts
+failing immediately.
+
+**Errors**: `404` not found · `404` token not found · `403` insufficient
+permissions · `403` `module_disabled`
+
+### Delete Experiment
+
+```
+DELETE /api/experiments/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `experiments:manage`)
+
+**Response `204`**: no content.
+
+The experiment's tokens go with it, so every client still calling one starts
+getting `401`. Move those clients to a project token first.
+
+**Errors**: `404` not found · `403` insufficient permissions · `403`
+`module_disabled`
 
 ---
 
@@ -198,6 +1161,9 @@ POST /api/models/:id/apikey
 GET /api/projects
 ```
 
+There is no single-project route: read a project from this list. Projects are
+addressed by `id`, never by name or slug.
+
 ### Create Project
 
 ```
@@ -207,31 +1173,40 @@ POST /api/projects
 ```json
 {
   "name": "My App",
-  "slug": "my-app",
-  "defaultTimeoutMs": 30000,
-  "models": ["gpt-5-mini"]
+  "timeoutMs": 2000,
+  "models": [{ "modelId": "gpt-5-mini", "prompt": "Short factual answers" }],
+  "autoRouting": true,
+  "routingModelId": "ollama/qwen3.5:9b"
 }
 ```
 
-### Get Project
+Only `name` is required. `models` holds target model references, not bare id
+strings: each entry is `{ modelId, prompt? }`. **Response `201`**: the created
+project plus a `token` field with the first project token in clear text, which
+is the only time it is readable.
 
-```
-GET /api/projects/:slug
-```
+**Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a project with
+that name already exists · `403` insufficient permissions
 
 ### Update Project
 
 ```
-PUT /api/projects/:slug
+PUT /api/projects/:id
 ```
 
 On `PUT`, the `guardrails` and `pii` fields are optional: omit a field to leave it
 unchanged, send `null` to clear it, or send an object to replace it.
 
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Project name |
+| `timeoutMs` | number | Upstream timeout for this project's requests |
+| `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
+
 ### Content Guardrails and PII (project fields)
 
 A project may carry two optional security blocks, accepted by both
-`POST /api/projects` and `PUT /api/projects/:slug` and validated server-side.
+`POST /api/projects` and `PUT /api/projects/:id` and validated server-side.
 Use `PATCH /api/projects/:id/guardrails` for partial updates (guardrails or PII only).
 
 #### Guardrails
@@ -381,7 +1356,7 @@ entity types).
 Security rules that call a model (semantic embedding, topic judge, moderation
 judge) are tracked as separate usage records with `callType: "guardrail"`. These
 records are attributed to the same project and token as the originating request
-and are subject to the same budget limits — an over-budget judge call fails
+and are subject to the same budget limits - an over-budget judge call fails
 the same as an over-budget completion. The records appear in
 `GET /api/usage` alongside completion and routing records and are broken out in
 the usage summary (see [Query Usage Records](#query-usage-records)).
@@ -400,10 +1375,64 @@ A rule with `log: true` (and `block` unset) forwards the request to the model wi
 consumer-visible impact; the match is recorded on the usage record for audit purposes.
 `block` and `log` are independent, so a rule may do both: block the request and record the match.
 
+### Optimizers (project field) {#optimizers-project-field}
+
+A project may carry an optional `optimizers` block, accepted by both
+`POST /api/projects` and `PUT /api/projects/:id`. On `PUT`, the field
+follows the same undefined/null/object convention as `guardrails` and `pii`:
+omit it to leave the pipeline unchanged, send `null` to clear it, or send an
+object to validate and replace it. Setting or clearing it requires
+`optimizers:manage` **in addition to** `project:write`. A caller with
+`project:write` but not `optimizers:manage` gets `403` on any request whose
+body includes a non-`undefined` `optimizers` field, even if every other
+field is otherwise valid.
+
+```json
+{
+  "optimizers": {
+    "steps": [
+      { "id": "session-dedup", "enabled": true },
+      { "id": "ccr", "enabled": true },
+      { "id": "caveman", "enabled": true },
+      { "id": "relevance", "enabled": true, "threshold": 0.3 },
+      { "id": "llmlingua-2", "enabled": true, "model": "xlm-roberta-large-int8" }
+    ]
+  }
+}
+```
+
+**Fields:**
+- `steps`: array of optimizer steps. Array order is execution order, steps
+  run top to bottom in the `request.preprocess` pipeline phase (required,
+  may be empty)
+- Each step: `id` (one of `session-dedup`, `ccr`, `rtk`, `headroom`,
+  `json-table`, `relevance`, `caveman`, `llmlingua-2`; each id may appear at
+  most once, and a duplicate id is rejected), `enabled: boolean`,
+  `threshold?: number` (optional; a positive number, capped at `1` for
+  `relevance` and `llmlingua-2`, unbounded for `ccr`, `headroom` and
+  `json-table`; unused for `session-dedup`, `rtk` and `caveman`)
+- `model?: string`: **`llmlingua-2` only**, the key of the checkpoint that
+  step runs on, from [LLMLingua-2
+  Checkpoints](#llmlingua-2-checkpoints). Unset means the host's default
+  checkpoint. Set on any other id it is rejected with `400`
+
+See [Concepts: Optimizers](../concepts/optimizers.md) for what each id does
+and its class. See [Concepts: Optimizers, Threshold
+Range](../concepts/optimizers.md#threshold-range) for what each id's
+threshold means (`ccr`: turn count, default 3; `headroom`: reserved token
+budget, default 1024; `json-table`: minimum rows, default 5; `relevance` and
+`llmlingua-2`: a `0`–`1` ratio, default 0.1 and 0.5; the rest unused). Leave
+threshold unset to use the built-in default.
+
+**Errors**: `400` invalid `optimizers` config (bad shape, out-of-range
+threshold, duplicate step id, unknown checkpoint key, or `model` on a step
+that runs on none) · `403` insufficient permissions (`optimizers:manage`
+required to set/clear)
+
 ### Delete Project
 
 ```
-DELETE /api/projects/:slug
+DELETE /api/projects/:id
 ```
 
 ---
@@ -413,18 +1442,20 @@ DELETE /api/projects/:slug
 ### List Tokens
 
 ```
-GET /api/projects/:slug/tokens
+GET /api/projects/:id/tokens
 ```
 
 ### Create Token
 
 ```
-POST /api/projects/:slug/tokens
+POST /api/projects/:id/tokens
 ```
 
 ```json
 {
   "name": "production",
+  "labels": ["prod"],
+  "scopes": ["batch", "internal"],
   "tags": {
     "environment": "prod",
     "team": "backend"
@@ -441,20 +1472,26 @@ POST /api/projects/:slug/tokens
 ```
 
 **Fields:**
-- `name` — token name (required)
-- `tags` — arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
-- `limits` — array of per-token spending limits (optional)
+- `name` - token name (required)
+- `labels`: array of free-text labels shown next to the token in the dashboard (optional)
+- `scopes`: free-form scopes stored with the token (optional). Routerly does
+  not interpret them; they are yours for bookkeeping. The MCP server is
+  authenticated by [personal MCP tokens](#personal-mcp-surface), not by these
+  scopes
+- `tags` - arbitrary key-value metadata attached to the token (optional). Tags are included in every usage record created with this token.
+- `limits` - array of per-token spending limits (optional)
 
-**Response includes the token value in plain text — returned once only.** The response also includes the `tags` object.
+**Response includes the token value in plain text - returned once only.** The response also includes the `labels`, `scopes`, and `tags` fields.
 
 ### Update Token
 
 ```
-PUT /api/projects/:slug/tokens/:tokenId
+PUT /api/projects/:id/tokens/:tokenId
 ```
 
 ```json
 {
+  "scopes": ["batch"],
   "tags": {
     "environment": "staging"
   }
@@ -462,12 +1499,16 @@ PUT /api/projects/:slug/tokens/:tokenId
 ```
 
 **Fields:**
-- `tags` — replace the token's tags. Pass an empty object `{}` to clear all tags (optional).
+- `labels`: replace the token's labels (optional)
+- `scopes`: replace the token's access scopes (optional)
+- `tags` - replace the token's tags. Pass an empty object `{}` to clear all tags (optional).
+
+Any field omitted from the request body is left unchanged (partial update).
 
 ### Delete Token
 
 ```
-DELETE /api/projects/:slug/tokens/:tokenId
+DELETE /api/projects/:id/tokens/:tokenId
 ```
 
 ---
@@ -477,13 +1518,13 @@ DELETE /api/projects/:slug/tokens/:tokenId
 ### List Members
 
 ```
-GET /api/projects/:slug/members
+GET /api/projects/:id/members
 ```
 
 ### Add Member
 
 ```
-POST /api/projects/:slug/members
+POST /api/projects/:id/members
 ```
 
 ```json
@@ -493,7 +1534,7 @@ POST /api/projects/:slug/members
 ### Update Member Role
 
 ```
-PUT /api/projects/:slug/members/:userId
+PUT /api/projects/:id/members/:userId
 ```
 
 ```json
@@ -503,7 +1544,7 @@ PUT /api/projects/:slug/members/:userId
 ### Remove Member
 
 ```
-DELETE /api/projects/:slug/members/:userId
+DELETE /api/projects/:id/members/:userId
 ```
 
 ---
@@ -660,12 +1701,18 @@ Query parameters:
 | `projectIds` | string | Comma-separated project IDs to filter by |
 | `model` | string | Filter by model ID |
 | `modelIds` | string | Comma-separated model IDs to filter by |
-| `callType` | string | `completion`, `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
+| `tokenIds` | string | Comma-separated project token IDs to filter by. Matches the token the call authenticated with, so a project's traffic can be narrowed to one client. Records written before 0.4.0 carry no `tokenId` and are excluded whenever this filter is set |
+| `callType` | string | Who made the call: `completion` (the client), `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
+| `requestType` | string | What was asked for, from the endpoint the client hit: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio`. `chat` also matches records written before 0.4.0, which had no `requestType` field |
 | `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked`. `error` matches records that are neither `success` nor `blocked` |
 | `limit` | number | Max records to return (default: 100) |
 | `offset` | number | Pagination offset |
+| `savings` | string | `1` adds the [savings block](#savings-block) to the response. Off by default: the computation is only paid for by the callers that show it |
+| `series` | string | `1` adds the [savings series](#savings-series) to the response. Same cost as `savings`, and equally off by default |
 
-All filters are applied server-side. `projectIds` and `modelIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
+`callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
+
+All filters are applied server-side. `projectIds`, `modelIds` and `tokenIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 
 **Response summary object:**
 
@@ -682,7 +1729,12 @@ All filters are applied server-side. `projectIds` and `modelIds` accept comma-se
     "guardrailCalls": 12,
     "completionCost": 0.1200,
     "routingCost": 0.0011,
-    "guardrailCost": 0.0023
+    "guardrailCost": 0.0023,
+    "latencyMedianMs": 780,
+    "latencyP95Ms": 2450,
+    "ttftMedianMs": 210,
+    "ttftP95Ms": 900,
+    "ttftSamples": 176
   },
   "byModel": {
     "openai/gpt-5-mini": {
@@ -693,6 +1745,8 @@ All filters are applied server-side. `projectIds` and `modelIds` accept comma-se
       "p95LatencyMs": 1540
     }
   },
+  "byCallType": { "completion": 180, "routing": 8, "guardrail": 12 },
+  "byRequestType": { "chat": 176, "embedding": 24 },
   "timeline": [],
   "records": [],
   "pagination": {}
@@ -708,6 +1762,11 @@ The `summary` object breaks down calls and cost by sub-activity type:
 | `guardrailCalls` / `guardrailCost` | Model calls made by security rules (semantic embedding, topic judge, moderation judge) |
 | `blockedCalls` | Requests blocked by a guardrail rule before reaching any model |
 | `errorCalls` | Failed calls -- does **not** include blocked calls |
+| `latencyMedianMs` / `latencyP95Ms` | Response time distribution over successful client calls. Routing and guardrail calls are excluded: they are gateway overhead, not client-visible time |
+| `ttftMedianMs` / `ttftP95Ms` | Time-to-first-token distribution over the same calls |
+| `ttftSamples` | Calls backing the TTFT figures. `ttftMs` is optional on the record, so this can be lower than `successCalls` |
+
+`byCallType` and `byRequestType` count the records of each kind in the window. Both are counted **before** the `callType` and `requestType` filters are applied, so they stay stable while a type filter is active: a client can build its filter controls from them and still show every value available. The other filters (period, project, model, outcome, tags) do narrow them. Records written before these fields existed are counted as `completion` and `chat`.
 
 Each `byModel` entry includes:
 
@@ -719,14 +1778,169 @@ Each `byModel` entry includes:
 | `avgLatencyMs` | Mean response time in milliseconds |
 | `p95LatencyMs` | 95th-percentile response time in milliseconds |
 
+Every record in the `records` array carries `tokenId`, the project token the call authenticated with, taken from the bearer token that was presented and never from the payload. Records written before 0.4.0 have no such field. Internal calls that no client token stands behind, such as an experiment rotation firing on its own, are recorded without one.
+
 Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests -- a block is a normal guardrail outcome, not a model error.
 
 The `outcome` filter on `GET /api/usage` accepts `blocked` in addition to `success`, `error`, and `budget_exceeded`.
 
+### Savings block
+
+Add `savings=1` to `GET /api/usage` to get a `savings` object alongside the rest of the response. It answers two questions over the same filtered records: what the routed traffic actually cost and took, and what it would have cost and taken had every client call gone to one fixed model instead.
+
+```json
+{
+  "savings": {
+    "comparedCalls": 180,
+    "comparedCost": 0.12,
+    "comparedLatencyMs": 148000,
+    "comparedInputTokens": 420000,
+    "comparedOutputTokens": 96000,
+    "cache": { "inputTokens": 180000, "cost": 0.0162 },
+    "baselines": [
+      {
+        "modelId": "openai/gpt-5-mini",
+        "cost": 0.14,
+        "costDelta": 0.02,
+        "costDeltaPercent": 14.28,
+        "latencyMs": 132000,
+        "latencyDeltaMs": -16000,
+        "latencySamples": 120,
+        "tokensEstimated": 541800,
+        "tokenDelta": 25800
+      }
+    ],
+    "optimizers": [
+      { "id": "ccr", "calls": 84, "tokensSaved": 51200, "costSaved": 0.0128, "rolledBack": 0 },
+      { "id": "caveman", "calls": 12, "tokensSaved": 940, "costSaved": 0.0002, "rolledBack": 3 }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `comparedCalls` | Client calls the counterfactual covers: successful, carrying tokens, priced against a known model |
+| `comparedCost` | What those calls actually cost, in USD |
+| `comparedLatencyMs` | What those calls actually took, in milliseconds, summed |
+| `comparedInputTokens` / `comparedOutputTokens` | Token totals of the compared calls |
+| `cache.inputTokens` | Input tokens served from prompt cache instead of being charged at full input price |
+| `cache.cost` | USD those cached tokens saved against the same model's full input price |
+| `baselines` | One counterfactual per baseline model, cheapest first |
+| `optimizers` | One entry per optimizer that changed at least one compared call, most tokens saved first |
+
+Each optimizer entry:
+
+| Field | Description |
+|-------|-------------|
+| `id` | The optimizer id |
+| `calls` | Compared calls where it ran and changed the prompt |
+| `tokensSaved` | Prompt tokens it removed, summed over those calls |
+| `costSaved` | USD those tokens would have cost at the serving model's input price |
+| `rolledBack` | Calls where its output was rejected by the safety gate and discarded |
+
+Unlike the baselines, these are measured, not counterfactual: the service
+records each optimizer's own before/after token estimate on the usage record
+as the request is served. The array is empty when no record in the window
+carries optimizer stats, which is the case for every record written before
+0.4.0.
+
+Each baseline entry:
+
+| Field | Description |
+|-------|-------------|
+| `modelId` | The baseline model |
+| `cost` | The compared calls repriced at this model's rates, in USD |
+| `costDelta` | `cost - comparedCost`: money saved against this baseline. Negative means routing cost more |
+| `costDeltaPercent` | `costDelta` as a percentage of the baseline cost |
+| `latencyMs` | Estimated total time, from this model's own median milliseconds per output token over the same window. Absent when the model produced no output token in the window |
+| `latencyDeltaMs` | `latencyMs - comparedLatencyMs`: time saved against this baseline. Negative means routing was slower. Absent together with `latencyMs` |
+| `latencySamples` | Calls of this model in the window backing the time estimate. `0` means there is no estimate, only the cost figure |
+| `tokensEstimated` | Input plus output tokens the same conversations are estimated to take on this model, from the ratio between its tokenizer family and the family of the model that served each call |
+| `tokenDelta` | `tokensEstimated - (comparedInputTokens + comparedOutputTokens)`: tokens saved against this baseline. Positive means routing moved fewer |
+
+Baselines depend on the scope of the query. A query scoped with `projectId` counterfactuals exactly that project's enabled target models. An unscoped query counterfactuals the paid models **in play** in the window: every enabled target model of the projects that produced a record in it, plus every model that served a client call in it. Free models are excluded because they make the cost comparison meaningless, and embedding models are excluded because they cannot answer a completion call. A model that only served routing or guardrail calls is not in play either. This is the set the dashboard [Overview](../dashboard/overview.md#what-routing-saved) compares against.
+
+:::note The token counterfactual is a ratio, not a re-tokenization
+`tokensEstimated` is derived from a fixed ratio per tokenizer family (o200k, cl100k, Claude, Llama). Routerly does not retain prompts, so nothing is re-tokenized. Every surface that shows this figure declares it as an estimate.
+:::
+
+Routing and guardrail calls are excluded from the comparison: they are the gateway's own overhead, not the client's workload, and the `summary` object already reports them. Pass-through records carry no tokens and are excluded for the same reason.
+
+:::note Repricing is an estimate, not a replay
+The cost figure is exact arithmetic on the observed token counts, but a different model tokenizes the same text slightly differently and may answer at a different length. Read a baseline as "the same conversation, priced elsewhere". Measuring the real difference needs a live comparison on production traffic.
+:::
+
+The same block is rendered by [`routerly report savings`](../cli/commands.md#routerly-report-savings) and by the project's [Dashboard tab](../dashboard/projects.md#dashboard-tab).
+
+### Savings series
+
+Add `series=1` to `GET /api/usage` to get the same comparison spread over time. It covers the same records as the savings block, cut into buckets: one per hour when `period=daily`, one per day otherwise, the same granularity as `timeline`.
+
+```json
+{
+  "series": {
+    "bucket": "day",
+    "baselineModelId": "openai/gpt-5",
+    "baselineModelIds": ["openai/gpt-5-mini", "openai/gpt-5"],
+    "points": [
+      {
+        "bucket": "2026-07-31",
+        "calls": 96,
+        "cost": 0.062,
+        "baselineCost": 0.184,
+        "baselineCosts": { "openai/gpt-5-mini": 0.071, "openai/gpt-5": 0.184 },
+        "inputTokens": 210000,
+        "outputTokens": 48000,
+        "cachedInputTokens": 90000,
+        "latencyMs": 74000,
+        "baselineLatencyMs": 96000
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `bucket` | `hour` or `day`: the width of each point |
+| `baselineModelId` | Model the `baselineCost` and `baselineLatencyMs` figures are priced against: the **costliest** baseline, the worst case routing avoided. Absent when no baseline costs anything |
+| `baselineModelIds` | Every paid baseline `baselineCosts` is keyed by, cheapest first. Empty when no baseline costs anything |
+| `points` | Oldest first, capped at the most recent 60 buckets |
+
+Each point:
+
+| Field | Description |
+|-------|-------------|
+| `bucket` | `YYYY-MM-DD` for a day bucket, `YYYY-MM-DDTHH` (UTC) for an hour bucket |
+| `calls` | Compared client calls in the bucket, the same set the savings block counts |
+| `cost` | USD those calls actually cost |
+| `baselineCost` | The same calls repriced at `baselineModelId`. `0` when there is no baseline |
+| `baselineCosts` | The same calls repriced at every paid baseline, keyed by model id. Empty when no baseline costs anything; the costliest entry equals `baselineCost` |
+| `inputTokens` / `outputTokens` / `cachedInputTokens` | Token totals of the bucket |
+| `latencyMs` | Summed end-to-end latency of those calls |
+| `baselineLatencyMs` | Estimated summed latency on the baseline, from its throughput over the whole window. `0` when it has no sample to estimate from |
+
+Every field is a total rather than an average, so a consumer can re-bucket or average them itself. Buckets with no compared call are left out rather than zero filled: a gap means there was no traffic, which a zero would misreport as free traffic.
+
+The series is rendered by the dashboard [Overview](../dashboard/overview.md#what-routing-saved) and by [`routerly report savings --trend`](../cli/commands.md#routerly-report-savings).
+
+### Get a Single Usage Record
+
+```
+GET /api/usage/:id
+```
+
+Requires `report:read`. Returns the full usage record.
+
+`:id` is matched against the record id first, then against its `traceId`. That second lookup is what makes a notification carrying only a trace id link straight to the request that produced it.
+
+**Errors**: `404` record not found · `403` missing `report:read`
+
 Individual usage records for blocked requests carry `guardrailTriggered` (the rule identifier, e.g. `regex:pattern` or `injection:dan-mode`) and `blockedBy` (same value; present only when the outcome is `blocked`). Records where PII was redacted carry `piiRedacted` with an array of redacted entity types. Records where a guardrail triggered on the `flag` or `log` path carry `guardrailTriggered` but not `blockedBy`.
 
 :::note Wire format unchanged
-The block response sent to the API client is standard and unchanged: HTTP 200, empty content, `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic). Only observability around the block changed — the usage record is now written and the summary counts it separately.
+The block response sent to the API client is standard and unchanged: HTTP 200, empty content, `finish_reason: "content_filter"` (OpenAI) or `stop_reason: "refusal"` (Anthropic). Only observability around the block changed - the usage record is now written and the summary counts it separately.
 :::
 
 ### Get Routing Trace
@@ -735,72 +1949,71 @@ The block response sent to the API client is standard and unchanged: HTTP 200, e
 GET /api/traces/:id
 ```
 
-Returns the routing trace (`{ trace: [...] }`). All trace entries are stored out-of-band in the trace store; the wire response sent to your API client is never modified.
+Returns the routing trace (`{ trace: [...] }`) of a request still in the in-memory buffer (5 minutes). All trace entries are stored out-of-band; the wire response sent to your API client is never modified. The durable copy is on the request's usage record.
+
+Every entry carries where it came from, so a consumer can group a request by phase or by module without knowing who produced it:
+
+| Field | Description |
+|-------|-------------|
+| `phase` | Pipeline phase that was running: `ingress`, `protocol.decode`, `request.preprocess`, `routing.prepare`, `routing.execute`, `upstream.prepare`, `upstream.execute`, `response.postprocess`, `protocol.encode`, `egress`, `finalize` |
+| `module` | Module that reported it: `router`, `policy`, `model`, `pii`, `guardrail`, `budget`, `resilience`, … (read from the `module:event` message) |
+| `message` | The event, e.g. `router:result`, `policy:result:cheapest`, `pii:scrubbed` |
+| `panel` | Which side of the call the entry belongs to: `request`/`response` for the client's own call, `router-request`/`router-response` for the calls Routerly made on its behalf. This is what keeps router overhead out of the request's own cost |
+| `details` | Event-specific metadata (see below) |
+| `at` | Epoch milliseconds |
+| `content` | Prompts and answers. Present **only** for projects with `traceContent: true` (see [Update Project](#update-project)); otherwise the field never exists, in the buffer or on disk |
 
 | Entry | When emitted | `details` shape |
 |-------|-------------|-----------------|
-| `guardrail:evaluated` | After every guardrail check on each target, whether or not any rule fires | `{ target: "request"\|"response", rules: [{ rule, outcome, reason? }] }`. One object per rule. `outcome` is `passed`, `triggered`, or `skipped`. `reason` is set on skipped rules (e.g. `judge-failed`) and on scoring rules (e.g. `regex:<pattern>`, `semantic:82%`). The built-in prompt-injection check appears as `rule: "injection"`. |
+| `guardrail:evaluated` | After every guardrail check on each target, whether or not any rule fires | `{ target: "request"\|"response", rules: RuleEval[] }`. One object per configured rule, inject-only and skipped rules included. `RuleEval` is `{ rule, outcome, index?, type?, target?, score?, threshold?, ms?, injects?, reason?, judgeMessage?, judgeRaw?, usage? }`. `outcome` is `passed`, `triggered`, or `skipped`; `score`/`threshold` are reported whatever the outcome, so a rule that passed at 0.49 against 0.50 is visible; `reason` carries the hit string on a trigger and the cause on a skip (`model-not-found`, `embedding-failed`, `judge-failed`); `usage` is the judge call's tokens. The built-in prompt-injection check appears as `rule: "injection"`. |
+| `guardrail:injected` | A rule added steering text to the request | `{ target: "request", rules: string[], chars }`. The injected text itself is on `content.injection`, and only for projects with `traceContent: true`. |
 | `guardrail:triggered` | Emitted whenever a rule triggers (block or log) on the request side | `{ rule, target, block, log, blockMessage }` |
 | `guardrail:response-triggered` | Emitted whenever a rule triggers (block or log) on the response side | `{ rule, target, block, log, blockMessage }` |
-| `pii:evaluated` | After every PII scrubbing pass, whether or not anything was redacted | `{ redacted: string[] }`. Entity types found (e.g. `["EMAIL"]`). Empty array on a clean pass. `panel` indicates `"request"` or `"response"`. |
-| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[] }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
-
-Use the `x-routerly-trace-id` header from any LLM proxy response — present even on blocked responses — to look up its trace:
+| `pii:evaluated` | After every PII scrubbing pass, on the request and on the response, whether or not anything was redacted | `{ target, mode?, policies: { configured, active }, entities: string[], customPatterns, scanned, redacted: string[], counts: Record<string, number>, ms }`. `entities` is what was looked for, `redacted` what was found, `counts` how many of each. `scanned` is how many message contents were scanned: multimodal parts are skipped, so a clean pass still says what it looked at. |
+| `pii:scrubbed` | When at least one PII entity was detected and replaced | `{ entities: string[], counts }`. Entity types that were replaced. Also emitted alongside `pii:evaluated` on a hit. |
+| `optimizer:step` | Once per configured optimizer step, whatever it did | `{ id, outcome, klass?, tokensBefore?, tokensAfter?, saved?, ms?, reason? }`. `outcome` is `applied`, `unchanged`, `skipped` or `rolled-back`; `reason` says why (`disabled`, `not-registered`, `unsupported-request`, `safety-gate`, `invalid-result`, `threw: …`). |
+| `budget:checked` | Before every upstream attempt, per candidate model | `{ model, allowed, ms, violated?: [{ metric, window, limit, current }] }`. A candidate refused here is dropped and the router moves to the next one. |
+| `egress:sent` | Last entry of the request: what was written back to the client | `{ protocol, kind, status?, encoding?, frames?, bytes?, error? }`. `kind` is `json`, `stream`, `block` or `passthrough`. |
+| `trace:recap` | Once, when the request finishes | The aggregate of everything above: `{ outcome, durationMs, model?, provider?, attempts, tokens, costUsd, latencyMs, ttftMs?, tokensPerSec?, overhead?, guardrails?, pii?, optimizers?, errors? }`. `outcome` is `ok`, `blocked`, `error` or `incomplete`; `overhead` is what Routerly's own model calls cost, kept out of the request's numbers. Purely derived, so it never disagrees with the entries it summarises. |
 
 ```bash
 curl -s http://localhost:3000/api/traces/$TRACE_ID \
   -H "Authorization: Bearer <jwt>"
 ```
 
----
-
-## End Users
-
-### List End Users
+### Stream Traces
 
 ```
-GET /api/end-users
+GET /api/traces/stream
 ```
 
-**Auth**: `Authorization: Bearer <jwt>` (requires `report:read`)
+Server-sent events, one `trace` event per entry, as the entries happen. Requires `report:read`.
 
-**Query parameters:**
+| Query parameter | Description |
+|-----------------|-------------|
+| `correlationId` | Only requests that carried this `x-routerly-trace` value |
+| `projectId` | Only requests of this project |
+| `traceId` | Only this one request |
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `projectId` | string | Filter by project ID (optional) |
+Without filters the stream carries every request the service handles. Filters combine (AND).
 
-**Response `200`:**
-
-```json
-{
-  "users": [
-    {
-      "userId": "user-123",
-      "projectId": "proj-uuid",
-      "firstSeen": "2026-06-15T10:30:00.000Z",
-      "lastSeen": "2026-06-25T14:45:30.000Z",
-      "requests": 142,
-      "totalTokens": 45600,
-      "totalCost": 0.0456
-    }
-  ]
-}
+```bash
+curl -N "http://localhost:3000/api/traces/stream?correlationId=my-id" \
+  -H "Authorization: Bearer <jwt>"
 ```
 
-**Response fields:**
+```
+: open
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `userId` | string | End-user identifier (from `body.user` in the request) |
-| `projectId` | string | Project ID this user is attributed to |
-| `firstSeen` | ISO 8601 | Timestamp of first request |
-| `lastSeen` | ISO 8601 | Timestamp of most recent request |
-| `requests` | number | Total request count for this user |
-| `totalTokens` | number | Total tokens used (input + output) |
-| `totalCost` | number | Estimated USD cost |
+event: trace
+data: {"traceId":"018f3c2a-...","entry":{"phase":"routing.prepare","module":"router","message":"router:result","panel":"router-response","details":{...},"at":1785700142000},"projectId":"...","correlationId":"my-id","topic":"trace/routing.prepare/router/result"}
 
-**Errors**: `403` insufficient permissions
+: ping
+```
+
+This is how the Playground follows a request live: it picks a correlation id, sends it on the proxy request as `x-routerly-trace`, and reads it back here. The proxied request and its response are untouched — the id never reaches the provider and no header is added to the answer.
+
+A comment line (`: ping`) is written every 15 seconds so idle streams survive proxies.
 
 ---
 
@@ -816,9 +2029,12 @@ GET /api/settings
 ```json
 {
   "port": 3000,
+  "host": "0.0.0.0",
   "logLevel": "info",
-  "defaultTimeoutMs": 30000,
   "publicUrl": "https://routerly.example.com",
+  "requireMfa": false,
+  "listeningAddresses": ["http://127.0.0.1:3000", "http://192.168.1.116:3000"],
+  "localAddresses": ["192.168.1.116"],
   "providerRepos": [
     {
       "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
@@ -828,6 +2044,8 @@ GET /api/settings
   ]
 }
 ```
+
+`listeningAddresses` and `localAddresses` are derived at runtime from the bind host and are not stored in `settings.json`: a wildcard bind expands to every IPv4 interface, any other host resolves to that single address. They are read-only and ignored on `PUT`.
 
 ### Update Settings
 
@@ -839,7 +2057,6 @@ PUT /api/settings
 {
   "port": 3000,
   "logLevel": "info",
-  "defaultTimeoutMs": 30000,
   "publicUrl": "https://routerly.example.com",
   "providerRepos": [
     {
@@ -855,13 +2072,126 @@ PUT /api/settings
 ```
 
 **Fields:**
-- `port`, `logLevel`, `defaultTimeoutMs`, `publicUrl` — service configuration (optional)
-- `providerRepos` — array of provider repository objects (optional)
+- `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional)
+- `providerRepos` - array of provider repository objects (optional)
 
 **ProviderRepo object:**
-- `url` — repository endpoint (required)
-- `enabled` — whether the repo is active (optional, default `true`)
-- `channel` — named channel to prefer (optional, e.g. `stable`, `latest`)
+- `url` - repository endpoint (required)
+- `enabled` - whether the repo is active (optional, default `true`)
+- `channel` - named channel to prefer (optional, e.g. `stable`, `latest`)
+
+---
+
+## Modules
+
+Manage optional service modules. Core modules (`config`, `provider`, `catalog`, `reverse-proxy`, `routing`) are always-on and cannot be disabled. Optional modules (e.g. `guardrails`, `pii`) can be toggled on or off; disabling a module removes its features entirely at boot (no hot-swap). Changes require a service restart.
+
+### List Modules
+
+```
+GET /api/modules
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `modules:read`)
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "guardrails",
+    "version": "0.4.0",
+    "enabled": true,
+    "alwaysOn": false,
+    "dependsOn": []
+  },
+  {
+    "id": "reverse-proxy",
+    "version": "0.4.0",
+    "enabled": true,
+    "alwaysOn": true,
+    "dependsOn": ["provider", "routing"]
+  }
+]
+```
+
+**Response fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Module identifier |
+| `version` | string | Module version. Always equal to the running product's version, not versioned independently per module |
+| `enabled` | boolean | Whether the module is currently active. When a module is disabled, its routes, tools, and features are not loaded at boot; disabling requires a service restart to take effect |
+| `alwaysOn` | boolean | Whether this is a core module that cannot be disabled |
+| `dependsOn` | array | List of module IDs this module depends on; empty array if no dependencies |
+
+**Errors**: `403` insufficient permissions
+
+### Enable Module
+
+```
+POST /api/modules/:id/enable
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
+
+Enables a module. Returns `409` if the module is unknown or has unmet dependencies. Always-on modules are already enabled by definition and can be targeted here without error (no-op, returns `200`).
+
+**Response `200`:**
+```json
+{
+  "id": "guardrails",
+  "enabled": true,
+  "restartRequired": true
+}
+```
+
+**Response `409` (unknown module):**
+```json
+{ "error": "Unknown module \"unknown-module\"" }
+```
+
+**Response `409` (unmet dependencies):**
+```json
+{ "error": "Cannot enable \"guardrails\": depends on disabled provider" }
+```
+
+**Errors**: `403` insufficient permissions · `409` module cannot be enabled
+
+### Disable Module
+
+```
+POST /api/modules/:id/disable
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `modules:manage`)
+
+Disables a module. Returns `409` if the module is always-on, unknown, or required by another enabled module.
+
+**Response `200`:**
+```json
+{
+  "id": "guardrails",
+  "enabled": false,
+  "restartRequired": true
+}
+```
+
+**Response `409` (always-on):**
+```json
+{ "error": "Module \"reverse-proxy\" is always-on and cannot be disabled" }
+```
+
+**Response `409` (unknown module):**
+```json
+{ "error": "Unknown module \"unknown-module\"" }
+```
+
+**Response `409` (required by dependents):**
+```json
+{ "error": "Cannot disable \"provider\": required by reverse-proxy, routing" }
+```
+
+**Errors**: `403` insufficient permissions · `409` module cannot be disabled
 
 ---
 
@@ -954,14 +2284,14 @@ Returns per-repository status information.
 ```
 
 **Fields:**
-- `url` — repository endpoint
-- `enabled` — whether this repo is active
-- `resolvedFile` — filename of the last successfully fetched catalog (null if never fetched)
-- `updatedAt` — timestamp from the catalog registry (null if never fetched)
-- `lastChecked` — when Routerly last attempted to fetch from this repo
-- `error` — error message if the last fetch failed (null on success)
-- `cachedAt` — when the current catalog was loaded into memory
-- `expiresAt` — when the 5-minute cache expires
+- `url` - repository endpoint
+- `enabled` - whether this repo is active
+- `resolvedFile` - filename of the last successfully fetched catalog (null if never fetched)
+- `updatedAt` - timestamp from the catalog registry (null if never fetched)
+- `lastChecked` - when Routerly last attempted to fetch from this repo
+- `error` - error message if the last fetch failed (null on success)
+- `cachedAt` - when the current catalog was loaded into memory
+- `expiresAt` - when the 5-minute cache expires
 
 **Errors**: `403` insufficient permissions
 
@@ -980,7 +2310,7 @@ Invalidate the in-memory cache and fetch all enabled repositories immediately.
 { "ok": true, "message": "Catalog refreshed successfully" }
 ```
 
-**Response `200` (partial failure — some repos errored):**
+**Response `200` (partial failure - some repos errored):**
 ```json
 {
   "ok": false,
@@ -1037,7 +2367,7 @@ POST /api/notifications/channels
 | `provider` | string | yes | Channel type: `smtp`, `ses`, `sendgrid`, `azure`, `google`, `webhook`, `slack`, `teams`, `pagerduty`, `discord`, `dashboard` |
 | `name` | string | no | Friendly label shown in the UI |
 | `events` | string[] | no | Event patterns routed to this channel (empty = all). Supports exact names, `*`, and prefix globs like `budget.*` |
-| `targets` | object | no | `{ roles, permissions, users }` — who receives (empty = everyone). Controls inbox visibility for `dashboard` and recipient resolution for email channels; ignored for webhook/native channels |
+| `targets` | object | no | `{ roles, permissions, users }` - who receives (empty = everyone). Controls inbox visibility for `dashboard` and recipient resolution for email channels; ignored for webhook/native channels |
 
 Provider-specific fields (e.g. `host`, `apiKey`, `botToken`) pass through alongside these base fields.
 
@@ -1156,12 +2486,18 @@ POST /api/notifications/channels/:id/test
 
 ### Notifications Inbox {#notifications-inbox}
 
-The in-app notification inbox is per-user, available to any authenticated dashboard user (no special permission required). Returns only items for the current user (matched by the `targets` of the `dashboard` channel that created each item, or all items when no targeting was configured). Users can also dismiss items individually (soft delete), which removes them from their personal inbox only.
+The in-app notification inbox is per-user, available to any authenticated dashboard user (no special permission required). Three gates decide whether an item reaches the caller:
+
+1. **Audience** - the `targets` of the `dashboard` channel that created the item; no targeting means everyone.
+2. **Permissions** - `auth.*` events need `audit:read`, `config.model_*` needs `model:read`, `config.project_*` needs `project:read`, `system.*` needs `settings:read`. Routing, provider and budget events are not gated.
+3. **Projects** - an item whose `details.projectId` points at a project the caller cannot reach (by `projectIds` scope or membership) is hidden. Callers without a project scope see every project.
+
+Users can also dismiss items individually (soft delete), which removes them from their personal inbox only.
 
 #### List Inbox Items
 
 ```
-GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unreadOnly=false&from=&to=
+GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&category=&event=&unreadOnly=false&from=&to=
 ```
 
 **Query params:**
@@ -1169,6 +2505,7 @@ GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unr
 - `page` - page number for paginated response (1-indexed, default 1)
 - `pageSize` - items per page (1–100, default 20)
 - `severity` - filter by severity: `info`, `warning`, `critical`, or `all` (default `all`)
+- `category` - filter by event category: `routing`, `provider`, `budget`, `config`, `security`, `system`. Omit for all categories
 - `event` - filter by event name substring (case-insensitive)
 - `unreadOnly` - when `true`, returns only items the current user has not read
 - `from` - start date (YYYY-MM-DD or ISO 8601 timestamp); when date-only, spans from 00:00
@@ -1183,14 +2520,18 @@ GET /api/notifications/inbox?limit=50&page=1&pageSize=20&severity=all&event=&unr
       "event": "provider.error",
       "severity": "critical",
       "timestamp": "2026-06-24T12:00:00.000Z",
-      "details": { "modelId": "openai/gpt-4o" },
-      "read": false
+      "details": { "modelId": "openai/gpt-4o", "traceId": "e7b1…" },
+      "read": false,
+      "traceId": "e7b1…",
+      "eventCount": 3
     }
   ],
   "unreadCount": 5,
   "enabled": true
 }
 ```
+
+Events emitted while serving the same request share a trace id and are folded into a single item: `traceId` carries that id and `eventCount` how many events it represents. `eventCount` is omitted when the item stands alone. The list never carries the folded sequence - fetch the item to get it.
 
 **Response `200` (paginated mode when `page` is provided):**
 ```json
@@ -1225,12 +2566,32 @@ GET /api/notifications/inbox/:id
   "event": "provider.error",
   "severity": "critical",
   "timestamp": "2026-06-24T12:00:00.000Z",
-  "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000 },
-  "read": false
+  "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000, "traceId": "e7b1…" },
+  "read": false,
+  "traceId": "e7b1…",
+  "eventCount": 2,
+  "events": [
+    {
+      "event": "routing.fallback_used",
+      "severity": "info",
+      "timestamp": "2026-06-24T11:59:58.000Z",
+      "details": { "primaryModelId": "openai/gpt-4o", "fallbackModelId": "ollama/qwen2.5:3b" }
+    },
+    {
+      "event": "provider.error",
+      "severity": "critical",
+      "timestamp": "2026-06-24T12:00:00.000Z",
+      "details": { "modelId": "openai/gpt-4o", "latencyMs": 5000 }
+    }
+  ]
 }
 ```
 
-**Errors**: `404` notification not found (either does not exist or is not in the current user's inbox)
+- `eventCount` - number of events folded into this item; `1` for a lone event
+- `events` - the incident's sequence, oldest first. Present only when a second event correlated on the same `traceId`. The top-level `event`, `severity` and `details` mirror the most severe entry
+- Only this endpoint returns `events`; the list endpoint stops at `traceId` and `eventCount`
+
+**Errors**: `404` notification not found (does not exist, is not in the current user's inbox, or the caller lacks the permission or project scope the item requires)
 
 #### Mark Inbox Items as Read
 
@@ -1346,7 +2707,7 @@ GET /api/integrations
       "type": "otel",
       "enabled": true,
       "name": "OpenTelemetry",
-      "endpoint": "http://localhost:4318/v1/metrics",
+      "endpoint": "http://localhost:4318",
       "protocol": "http",
       "headers": {}
     }
@@ -1390,7 +2751,7 @@ POST /api/integrations
 
 **Auth**: `Authorization: Bearer <jwt>` (requires `settings:write`)
 
-**Request body** — per-type examples:
+**Request body** - per-type examples:
 
 **Prometheus** (pull, optional auth)
 ```json
@@ -1406,7 +2767,7 @@ POST /api/integrations
 {
   "type": "otel",
   "name": "OpenTelemetry Collector",
-  "endpoint": "http://localhost:4318/v1/metrics",
+  "endpoint": "http://localhost:4318",
   "protocol": "http",
   "headers": {
     "Authorization": "Bearer otel-token"
@@ -1471,7 +2832,7 @@ Webhook requests are signed with HMAC-SHA256 using the `secret` field; the signa
   "type": "otel",
   "enabled": true,
   "name": "OpenTelemetry Collector",
-  "endpoint": "http://localhost:4318/v1/metrics",
+  "endpoint": "http://localhost:4318",
   "protocol": "http",
   "headers": {}
 }
@@ -1507,7 +2868,7 @@ PATCH /api/integrations/:id
   "type": "otel",
   "enabled": false,
   "name": "Updated Name",
-  "endpoint": "http://localhost:4318/v1/metrics",
+  "endpoint": "http://localhost:4318",
   "protocol": "http"
 }
 ```
@@ -1562,6 +2923,56 @@ All push-type integrations (OpenTelemetry, Datadog, Grafana, InfluxDB, Webhook) 
 | `routerly_budget_used_ratio` | Gauge | `project` | Budget consumption (0–1) |
 
 Each integration type sends these metrics in its native format (OTLP, Datadog Series API, Prometheus remote_write, InfluxDB line protocol, JSON webhook).
+
+### Trace Export
+
+Metrics answer "how much"; traces answer "why this model". An `otel` or `webhook`
+integration can also receive one export per proxied request:
+
+```json
+{
+  "traces": { "enabled": true, "sampleRate": 0.1 }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Off by default. Unlike the 60s metric push, trace export costs one outbound request per proxied request. |
+| `sampleRate` | number | `0`–`1`, share of traces exported. Omit for every trace. |
+
+Accepted by `POST /api/integrations` and `PATCH /api/integrations/:id`, on `otel`
+and `webhook` only: Datadog, Grafana and InfluxDB are metric-only write paths and
+reject the field. A settings write takes effect immediately (the export path
+caches the integration list for 30 seconds otherwise).
+
+**OpenTelemetry** — OTLP/HTTP JSON to `<endpoint>/v1/traces`, native spans:
+
+- one `routerly.request` server span per request, carrying `routerly.trace_id` and `routerly.project_id`
+- one `routerly.<phase>` internal child span per pipeline phase (`routerly.routing.prepare`, `routerly.routing.execute`, …)
+- every trace entry as a span event on its phase, named after the entry (`router:result`), with `routerly.panel`, `routerly.module` and the entry details as attributes (values over 4096 chars are truncated)
+
+Span ids are derived from the trace id, so a retried export overwrites instead of duplicating.
+
+**Webhook** — the signed envelope used by the metric push, with the trace as body:
+
+```json
+{
+  "source": "routerly",
+  "type": "trace",
+  "timestamp": "2026-08-02T19:37:33.485Z",
+  "trace": {
+    "id": "018f3c2a-4b5d-7e8f-9012-34567890abcd",
+    "projectId": "7a1f9a3b-...",
+    "entries": [
+      { "phase": "routing.prepare", "module": "router", "panel": "router-response", "message": "router:result", "details": { }, "at": 1785700142000 }
+    ]
+  }
+}
+```
+
+Prompts and answers are included only for projects with `traceContent: true`.
+An export failure is never surfaced on the proxy path: the request that produced
+the trace is unaffected.
 
 ---
 
@@ -1695,3 +3106,125 @@ POST /api/system/update
 ```
 
 Poll `GET /health` to detect when the service has restarted. The CLI command `routerly update run` does this automatically.
+
+---
+
+## Personal MCP Surface
+
+Every user manages their own [MCP](../concepts/mcp.md) tokens and sees the
+tools those tokens expose. These routes live under `/api/me`: they act on the
+caller and require no permission beyond a valid dashboard session. This is
+distinct from the `/mcp` protocol surface itself (see
+[Service: MCP Server](../service/endpoints.md#mcp-server)), which is
+authenticated by an MCP token rather than a JWT.
+
+### List My Tools
+
+```
+GET /api/me/mcp-tools
+```
+
+**Auth**: `Authorization: Bearer <jwt>`
+
+Returns the tools the caller's own MCP tokens expose: the registry filtered by
+the caller's permissions. A tool the caller cannot call is never listed.
+
+**Response `200`:**
+```json
+[
+  {
+    "name": "list_models",
+    "scope": "read",
+    "description": "List the models configured on this Routerly gateway (id, provider, context window). No secrets are returned.",
+    "sourceModule": "catalog.registry",
+    "permission": "model:read"
+  },
+  {
+    "name": "toggle_model",
+    "scope": "write",
+    "description": "Enable or disable one of a project's model refs (flips its `enabled` flag). The flag is persisted but not yet honored by the routing engine. Requires the 'project:write' permission.",
+    "sourceModule": "config.store",
+    "permission": "project:write"
+  }
+]
+```
+
+`sourceModule` is the internal DI token key of the module backing the tool
+(e.g. `catalog.registry`, `config.store`). A tool is only present when its
+backing module is bootstrapped on this instance; a module that is not running
+removes its tools from the list entirely.
+
+### List My Tokens
+
+```
+GET /api/me/mcp-tokens
+```
+
+**Auth**: `Authorization: Bearer <jwt>`
+
+**Response `200`:**
+```json
+[
+  {
+    "id": "2f1c0b8a-6d4e-4a2f-9f10-0b3f1c8e77aa",
+    "name": "laptop",
+    "tokenSnippet": "sk-rt-mcp-8f3c",
+    "createdAt": "2026-07-01T09:12:00.000Z",
+    "lastUsedAt": "2026-07-31T18:40:12.000Z",
+    "expiresAt": "2027-01-01T00:00:00.000Z"
+  }
+]
+```
+
+The stored SHA-256 hash never leaves the service: `tokenSnippet` is the
+display identity. `lastUsedAt` and `expiresAt` are absent when unset.
+
+### Create My Token
+
+```
+POST /api/me/mcp-tokens
+```
+
+**Auth**: `Authorization: Bearer <jwt>`
+
+```json
+{
+  "name": "laptop",
+  "expiresAt": "2027-01-01T00:00:00.000Z"
+}
+```
+
+**Fields:**
+- `name` - 1 to 60 characters, unique among the caller's tokens (required)
+- `expiresAt` - ISO 8601 instant (optional). Omit for a token that never expires
+
+**Response `201`:** the token record plus `token`, the raw value. **This is
+the only time it is returned**; only its hash is stored.
+
+```json
+{
+  "id": "2f1c0b8a-6d4e-4a2f-9f10-0b3f1c8e77aa",
+  "name": "laptop",
+  "tokenSnippet": "sk-rt-mcp-8f3c",
+  "createdAt": "2026-07-01T09:12:00.000Z",
+  "expiresAt": "2027-01-01T00:00:00.000Z",
+  "token": "sk-rt-mcp-8f3c1d…"
+}
+```
+
+**Errors**: `400` invalid body · `409` `An MCP token named "<name>" already exists`
+
+### Revoke My Token
+
+```
+DELETE /api/me/mcp-tokens/:id
+```
+
+**Auth**: `Authorization: Bearer <jwt>`
+
+**Response `204`**, no body. Revocation is immediate: a client using that
+token fails its next call. Only the caller's own tokens are visible here, so
+another user's id is reported as not found.
+
+**Errors**: `404` `{ "error": "Token not found" }`
+

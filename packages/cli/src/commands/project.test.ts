@@ -796,7 +796,7 @@ describe('project create', () => {
     expect(out).toContain('my-api');
     expect(out).toContain('sk-rt-abc123');
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
-    expect(postCall![2]).toMatchObject({ name: 'my-api', timeoutMs: 5000, autoRouting: true });
+    expect(postCall![2]).toMatchObject({ name: 'my-api', timeoutMs: 2000, autoRouting: true });
   });
 
   it('creates project with routing model and custom timeout', async () => {
@@ -860,7 +860,23 @@ describe('project edit', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'project', 'edit', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name or --timeout'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout or --trace-content'));
+  });
+
+  it('turns trace content capture on and back off', async () => {
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--trace-content']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.objectContaining({ traceContent: true }));
+
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--no-trace-content']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.objectContaining({ traceContent: false }));
+  });
+
+  it('leaves trace content untouched when neither flag is given', async () => {
+    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'Renamed']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.not.objectContaining({ traceContent: expect.anything() }));
   });
 
   it('updates project name', async () => {
@@ -1576,6 +1592,19 @@ describe('token create', () => {
     expect(postCall![2]).toMatchObject({ labels: ['dev', 'staging'] });
   });
 
+  it('creates token with scopes', async () => {
+    mockApi.mockResolvedValueOnce([baseProject])
+           .mockResolvedValueOnce({ token: 'sk-rt-scp', tokenInfo: { id: 'tok-s', tokenSnippet: 'scp', createdAt: '2024-01-01' } });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api', '--scopes', 'mcp,mcp:write']);
+    const out = lines.join('\n');
+    expect(out).toContain('mcp');
+    expect(out).toContain('mcp:write');
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({ scopes: ['mcp', 'mcp:write'] });
+  });
+
   it('creates token with tags', async () => {
     mockApi.mockResolvedValueOnce([baseProject])
            .mockResolvedValueOnce({ token: 'sk-rt-xyz', tokenInfo: { id: 'tok-3', tokenSnippet: 'xyz', createdAt: '2024-01-01' } });
@@ -1703,6 +1732,24 @@ describe('token edit', () => {
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { tags: Record<string, string> };
     expect(body.tags).toEqual({ env: 'prod' });
+  });
+
+  it('updates scopes', async () => {
+    const project = { ...baseProject, tokens: [tokenWithLimits] };
+    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--scopes', 'mcp,mcp:write']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { scopes: string[] };
+    expect(body.scopes).toEqual(['mcp', 'mcp:write']);
+  });
+
+  it('preserves existing scopes when --scopes omitted', async () => {
+    const project = { ...baseProject, tokens: [{ ...tokenWithLimits, scopes: ['mcp'] }] };
+    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'prod']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { scopes: string[] };
+    expect(body.scopes).toEqual(['mcp']);
   });
 
   it('exits 1 when token not found', async () => {
@@ -2578,7 +2625,7 @@ describe('branch coverage extras', () => {
     await makeCmd().parseAsync(['node', 'project', 'list']);
     const out = lines.join('\n');
     expect(out).toContain('my-api');
-    expect(out).toContain('5s'); // timeoutMs ?? 5000
+    expect(out).toContain('2s'); // timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS
   });
 
   // routing show: policies absent → ?? [] right side; routing show without fallbackRoutingModelIds
@@ -3116,15 +3163,42 @@ describe('branch coverage extras', () => {
     expect(out).toContain('abc123');
   });
 
-  // project show: timeoutMs absent uses ?? 5000
-  it('project show: project without timeoutMs uses 5000 default', async () => {
+  // project show: timeoutMs absent falls back to DEFAULT_PROJECT_TIMEOUT_MS
+  it('project show: project without timeoutMs uses the default', async () => {
     const project = { id: 'proj-1', name: 'my-api', models: [], autoRouting: true };
     mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
     const out = lines.join('\n');
-    expect(out).toContain('5s');
+    expect(out).toContain('2s');
+  });
+
+  it('project show: timeoutMs 0 prints "off"', async () => {
+    const project = { id: 'proj-1', name: 'my-api', models: [], autoRouting: true, timeoutMs: 0 };
+    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    expect(lines.join('\n')).toContain('off');
+  });
+
+  it('project create: --timeout 0 is sent as 0, not replaced by the default', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'proj-1', name: 'my-api', token: 'sk-rt-x' });
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api', '--timeout', '0']);
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({ timeoutMs: 0 });
+  });
+
+  it('project create: a negative --timeout is refused', async () => {
+    const errs: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => errs.push(a.join(' ')));
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+    await expect(makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api', '--timeout', '-1']))
+      .rejects.toThrow('exit');
+    expect(errs.join('\n')).toContain('non-negative integer');
+    exit.mockRestore();
   });
 
   // pii list: project pii without policies key → ?? []

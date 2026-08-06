@@ -142,6 +142,31 @@ describe('UsageRecordPage — main display', () => {
     expect(screen.getByText('proj-1')).toBeTruthy();
   });
 
+  it('names the project token the call came in on', async () => {
+    mockGetProjects.mockResolvedValue([{
+      id: 'proj-1', name: 'My Project',
+      tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-01-01T00:00:00Z', labels: ['ci'] }],
+    }]);
+    mockGetRecord.mockResolvedValue(makeRecord({ tokenId: 'tok-1' }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Token')).toBeTruthy());
+    expect(screen.getByText('ci')).toBeTruthy();
+  });
+
+  it('falls back to the token id when the token is gone', async () => {
+    mockGetProjects.mockResolvedValue([{ id: 'proj-1', name: 'My Project', tokens: [] }]);
+    mockGetRecord.mockResolvedValue(makeRecord({ tokenId: 'tok-revoked' }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('tok-revoked')).toBeTruthy());
+  });
+
+  it('hides the Token field on a record written before tokens were tracked', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord());
+    renderPage();
+    await waitFor(() => screen.getByText('openai/gpt-4o'));
+    expect(screen.queryByText('Token')).toBeNull();
+  });
+
   it('shows TTFT when present', async () => {
     mockGetRecord.mockResolvedValue(makeRecord({ ttftMs: 42 }));
     renderPage();
@@ -178,6 +203,18 @@ describe('UsageRecordPage — main display', () => {
     mockGetRecord.mockResolvedValue(makeRecord());
     renderPage();
     await waitFor(() => expect(screen.getByText('completion')).toBeTruthy());
+  });
+
+  it('shows the request type', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ requestType: 'audio' }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Audio')).toBeTruthy());
+  });
+
+  it('defaults the request type to Chat when absent', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Chat')).toBeTruthy());
   });
 
   it('shows errorMessage box when present', async () => {
@@ -235,14 +272,14 @@ describe('UsageRecordPage — trace log', () => {
     await waitFor(() => expect(screen.getByTestId('trace-entry')).toBeTruthy());
   });
 
-  it('renders Router Recap section when trace has router:recap', async () => {
+  it('keeps router:recap in the log, inside its own panel', async () => {
     mockGetRecord.mockResolvedValue(makeRecord({ trace: [
       { message: 'router:recap', panel: 'router-response' },
     ]}));
     renderPage();
-    await waitFor(() => expect(screen.getByText('Router Recap')).toBeTruthy());
-    // trace-entry rendered twice: once in Router Recap section, but TracePanel filters it out
-    expect(screen.getAllByTestId('trace-entry').length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(screen.getByText('Router Response')).toBeTruthy());
+    // One entry, rendered once: there is no separate recap card duplicating it
+    expect(screen.getAllByTestId('trace-entry').length).toBe(1);
   });
 });
 
@@ -253,25 +290,39 @@ describe('UsageRecordPage — TracePanel', () => {
     mockGetRecord.mockResolvedValue(makeRecord({ trace: [
       { message: 'msg1', panel: 'request' },
       { message: 'msg2', panel: 'response' },
-      { message: 'router:recap', panel: 'router-response' }, // filtered out from TracePanel
-    ]}));
-    renderPage();
-    await waitFor(() => {
-      const entries = screen.getAllByTestId('trace-entry');
-      // TracePanel filters router:recap; Router Recap section also renders it
-      expect(entries.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  it('does not render empty TracePanel when all entries are router:recap', async () => {
-    mockGetRecord.mockResolvedValue(makeRecord({ trace: [
       { message: 'router:recap', panel: 'router-response' },
     ]}));
     renderPage();
-    await waitFor(() => screen.getByText('Router Recap'));
-    // TracePanel filters router:recap → filteredEntries=[]; TracePanel returns null
-    // Trace Log shows 1 event but TracePanel renders nothing from non-recap panels
-    expect(screen.getByText('1 event')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getAllByTestId('trace-entry').length).toBe(3);
+    });
+  });
+
+  it('summarises the request from trace:recap, above the log', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: [
+      { message: 'trace:recap', panel: 'response', details: {
+        outcome: 'blocked', model: 'openai/gpt-4o', provider: 'openai', attempts: 2,
+        durationMs: 1200, costUsd: 0.002, tokens: { input: 100, output: 50 },
+        guardrails: { rules: 3, triggered: 1, skipped: 1, blockedBy: 'no-secrets' },
+      } },
+      { message: 'msg1', panel: 'request' },
+    ]}));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('blocked')).toBeTruthy());
+    expect(screen.getByText('2 attempts')).toBeTruthy();
+    expect(screen.getByText('no-secrets')).toBeTruthy();
+    // The recap itself never appears in the log below
+    expect(screen.getAllByTestId('trace-entry').length).toBe(1);
+  });
+
+  it('drops trace:recap from the log — the summary card shows it', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: [
+      { message: 'trace:recap', panel: 'response', details: { outcome: 'ok' } },
+    ]}));
+    renderPage();
+    // The header still counts the stored entry, the log itself renders nothing
+    await waitFor(() => expect(screen.getByText('1 event')).toBeTruthy());
+    expect(screen.queryByTestId('trace-entry')).toBeNull();
   });
 
   it('renders router-request panel entries', async () => {
@@ -309,6 +360,37 @@ describe('UsageRecordPage — TracePanel', () => {
       expect(screen.getByText('Model Request')).toBeTruthy();
       expect(screen.getByText('Model Response')).toBeTruthy();
     });
+  });
+});
+
+describe('UsageRecordPage — phase deep dive', () => {
+  const phaseTrace = [
+    { message: 'pii:scrubbed', panel: 'request', phase: 'request.preprocess', module: 'pii', at: 1000 },
+    { message: 'router:selected', panel: 'router-response', phase: 'routing.execute', module: 'router', at: 1040 },
+    { message: 'model:success', panel: 'response', phase: 'routing.execute', module: 'model', at: 1300 },
+  ];
+
+  it('groups entries by pipeline phase, with modules and elapsed time', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: phaseTrace }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Request · Preprocess')).toBeTruthy());
+    expect(screen.getByText('Routing · Execute')).toBeTruthy();
+    expect(screen.getByText('pii')).toBeTruthy();
+    expect(screen.getByText('1 event')).toBeTruthy();
+    expect(screen.getByText('2 events · 260 ms')).toBeTruthy();
+    expect(screen.getByText('+40 ms')).toBeTruthy();
+    // Panel grouping is not used when the entries carry a phase
+    expect(screen.queryByText('Model Request')).toBeNull();
+  });
+
+  it('collapses and reopens a phase', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ trace: phaseTrace }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('pii:scrubbed')).toBeTruthy());
+    await userEvent.click(screen.getByText('Request · Preprocess'));
+    expect(screen.queryByText('pii:scrubbed')).toBeNull();
+    await userEvent.click(screen.getByText('Request · Preprocess'));
+    expect(screen.getByText('pii:scrubbed')).toBeTruthy();
   });
 });
 

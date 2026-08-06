@@ -6,10 +6,16 @@ import {
   ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
-import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
-import { TraceEntryRenderer } from '../components/TraceEntryRenderer.js';
-import { MessageStatsCard } from '../components/MessageStatsCard.js';
-import { extractMessageStats } from '../utils/traceUtils.js';
+import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
+import { TraceLog } from '../components/TraceLog.js';
+import { TraceSummary } from '../components/TraceSummary.js';
+import { SearchableSelect } from '../components/SearchableSelect.js';
+import { isCaptureMode } from '../utils/captureMode.js';
+
+// Fixed placeholder shown instead of the real measured per-message latency while capturing
+// documentation screenshots: the real value is wall-clock derived and differs between two
+// runs of the same commit. See ../utils/captureMode.
+const CAPTURE_MSG_LATENCY_MS = 380;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,6 +135,14 @@ function ComparePanel({
     let inputTokens = 0;
     let outputTokens = 0;
     const turnTraces: unknown[] = [];
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = crypto.randomUUID();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      turnTraces.push(ev.entry);
+    });
 
     const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
     const payload = {
@@ -141,11 +155,10 @@ function ComparePanel({
       const cleanKey = key.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': '1' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': correlationId },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-      const traceId = res.headers.get('x-routerly-trace-id');
       if (!res.ok || !res.body) {
         const body = await res.text();
         let msg = `HTTP ${res.status}`;
@@ -163,7 +176,6 @@ function ComparePanel({
         if (dataStr === '[DONE]' || !dataStr) return;
         try {
           const data = JSON.parse(dataStr);
-          if (data.type === 'trace') { turnTraces.push(data.entry); return; }
           /* v8 ignore next */
           if (data.type === 'result') return;
           /* v8 ignore next */
@@ -211,6 +223,7 @@ function ComparePanel({
         setMsgs(prev => prev.slice(0, -1));
       }
     } finally {
+      stopTrace();
       abortRef.current = null;
       setLoading(false);
     }
@@ -248,10 +261,13 @@ function ComparePanel({
               <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Model {label}:</span>
-                  <select className="form-input" style={{ flex: 1, padding: '4px 8px', fontSize: '0.78rem' }} value={model} onChange={e => setModel(e.target.value)}>
-                    <option value="">Select model...</option>
-                    {availableModels.map(m => <option key={m.modelId} value={m.modelId}>{m.modelId}</option>)}
-                  </select>
+                  <SearchableSelect
+                    options={[{ value: '', label: 'Select model...' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                    value={model}
+                    onChange={setModel}
+                    placeholder="Select model..."
+                    style={{ flex: 1, fontSize: '0.78rem' }}
+                  />
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <ParamSlider label="Temp" value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} />
@@ -289,7 +305,7 @@ function ComparePanel({
                         </div>
                         {isAssistant && (
                           <div style={{ display: 'flex', gap: 6, marginTop: 3, fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                            {msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
+                            {msg.latencyMs ? <span>{isCaptureMode() ? CAPTURE_MSG_LATENCY_MS : msg.latencyMs}ms</span> : null}
                             {(msg.inputTokens || msg.outputTokens) ? (
                               /* v8 ignore next 3 */
                               <span style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
@@ -325,20 +341,23 @@ function ComparePanel({
                     Debug ({traceHistory.length} {traceHistory.length === 1 ? 'turn' : 'turns'})
                   </summary>
                   <div style={{ maxHeight: 200, overflowY: 'auto', padding: 10, background: 'var(--bg-base)', fontSize: '0.82rem' }}>
-                    {traceHistory.map((traces, i) => {
-                      const stats = extractMessageStats(traces as TraceEntry[]);
-                      return (
-                        <div key={i} style={{ marginBottom: 8 }}>
-                          <MessageStatsCard stats={stats} turnNumber={i + 1} />
-                          <details style={{ marginTop: 4 }}>
-                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Technical Details</summary>
+                    {[...traceHistory.entries()].reverse().map(([i, traces]) => (
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <TraceSummary
+                          trace={traces as TraceEntry[]}
+                          turn={i + 1}
+                          collapsible
+                          defaultOpen={i === traceHistory.length - 1}
+                        >
+                          <details>
+                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Turn #{i + 1} trace log</summary>
                             <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
-                              {(traces as TraceEntry[]).map((entry, j) => <TraceEntryRenderer key={j} entry={entry} />)}
+                              <TraceLog entries={traces as TraceEntry[]} collapsed />
                             </div>
                           </details>
-                        </div>
-                      );
-                    })}
+                        </TraceSummary>
+                      </div>
+                    ))}
                   </div>
                 </details>
               )}
@@ -395,7 +414,7 @@ export function TestPage() {
   const [showRaw, setShowRaw] = useState<Record<number, boolean>>({});
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const debugEndRef = useRef<HTMLDivElement>(null);
+  const debugTopRef = useRef<HTMLDivElement>(null);
   const [debugTraceHistory, setDebugTraceHistory] = useState<(unknown[] | null)[]>([]);
   const [showDebugSidebar, setShowDebugSidebar] = useState(true);
 
@@ -447,7 +466,8 @@ export function TestPage() {
   }, [matchedProject?.id]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
-  useEffect(() => { debugEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
+  // The newest turn is at the top of the list, so that is where the debug panel goes.
+  useEffect(() => { debugTopRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [debugTraceHistory]);
 
   // ── Send ───────────────────────────────────────────────────────────────────
 
@@ -473,6 +493,21 @@ export function TestPage() {
     abortRef.current = controller;
     const turnIndex = debugTraceHistory.length;
     setDebugTraceHistory(prev => [...prev, []]);
+
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = crypto.randomUUID();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      setDebugTraceHistory(prev => {
+        const u = [...prev];
+        /* v8 ignore next */
+        const cur = (u[turnIndex] as unknown[]) ?? [];
+        u[turnIndex] = [...cur, ev.entry];
+        return u;
+      });
+    });
 
     const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
     const modelToUse = selectedModelId || matchedProject?.routingModelId || matchedProject?.models?.[0]?.modelId || '';
@@ -500,12 +535,10 @@ export function TestPage() {
       const cleanKey = apiKey.trim().replace(/[''"""']/g, '');
       const res = await fetch('/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': '1' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cleanKey}`, 'x-routerly-trace': correlationId },
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
-      // Capture trace ID for post-stream trace fetch
-      const traceId = res.headers.get('x-routerly-trace-id');
 
       if (!res.ok || !res.body) {
         const body = await res.text();
@@ -524,16 +557,6 @@ export function TestPage() {
         if (dataStr === '[DONE]' || !dataStr) return;
         try {
           const data = JSON.parse(dataStr);
-          if (data.type === 'trace') {
-            setDebugTraceHistory(prev => {
-              const u = [...prev];
-              /* v8 ignore next */
-              const cur = (u[turnIndex] as unknown[]) ?? [];
-              u[turnIndex] = [...cur, data.entry];
-              return u;
-            });
-            return;
-          }
           /* v8 ignore next */
           if (data.type === 'result') return;
           /* v8 ignore next */
@@ -585,7 +608,7 @@ export function TestPage() {
       const latencyMs = Date.now() - startMs;
       const isBlocked = finishReason === 'content_filter' || stopReason === 'refusal';
 
-      // Fetch full trace from API (SSE trace events may be incomplete; the stored trace is authoritative)
+      // Fetch full trace from API (live entries may be incomplete; the stored trace is authoritative)
       let traceEntries: TraceEntry[] = [];
       if (traceId) {
         try {
@@ -598,7 +621,7 @@ export function TestPage() {
             return u;
           });
         } catch {
-          // Trace fetch failed — keep SSE-collected entries
+          // Trace fetch failed — keep the entries collected live
         }
       }
 
@@ -653,6 +676,7 @@ export function TestPage() {
         setMessages(prev => prev.slice(0, -1));
       }
     } finally {
+      stopTrace();
       abortRef.current = null;
       setLoading(false);
     }
@@ -928,11 +952,13 @@ export function TestPage() {
                 <div style={{ padding: '6px 16px 10px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Model</label>
-                    <select className="form-input" style={{ padding: '4px 8px', fontSize: '0.78rem' }}
-                      value={selectedModelId} onChange={e => setSelectedModelId(e.target.value)}>
-                      <option value="">Auto (project default)</option>
-                      {availableModels.map(m => <option key={m.modelId} value={m.modelId}>{m.modelId}</option>)}
-                    </select>
+                    <SearchableSelect
+                      options={[{ value: '', label: 'Auto (project default)' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                      value={selectedModelId}
+                      onChange={setSelectedModelId}
+                      placeholder="Auto (project default)"
+                      style={{ fontSize: '0.78rem', minWidth: 180 }}
+                    />
                   </div>
                   <ParamSlider label="Temp" value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} />
                   <ParamSlider label="Max tokens" value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
@@ -1036,7 +1062,7 @@ export function TestPage() {
                               guardrail: {(msg.guardrailInputTokens ?? 0) + (msg.guardrailOutputTokens ?? 0)} | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
                             </span>
                           ) : null}
-                          {isAssistant && msg.latencyMs ? <span>{msg.latencyMs}ms</span> : null}
+                          {isAssistant && msg.latencyMs ? <span>{isCaptureMode() ? CAPTURE_MSG_LATENCY_MS : msg.latencyMs}ms</span> : null}
                           {/* Truncation badge — response cut off by max_tokens */}
                           {isAssistant && msg.finishReason === 'length' && (
                             <span
@@ -1119,7 +1145,7 @@ export function TestPage() {
                   />
                   {loading
                     ? <button className="btn btn-danger" onClick={handleStop}><Square size={15} /></button>
-                    : <button className="btn btn-primary" onClick={handleSend} disabled={!input.trim() || !apiKey}><Send size={15} /></button>
+                    : <button className="btn btn-primary" data-testid="playground-send-button" onClick={handleSend} disabled={!input.trim() || !apiKey}><Send size={15} /></button>
                   }
                 </div>
               </div>
@@ -1138,36 +1164,38 @@ export function TestPage() {
                   </div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 12, background: 'var(--bg-base)' }}>
+                  <div ref={debugTopRef} />
                   {debugTraceHistory.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
                       <p style={{ margin: 0, fontSize: '0.82rem' }}>No debug data yet.</p>
                       <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>Send a message to see routing details.</p>
                     </div>
                   ) : (
-                    debugTraceHistory.map((traces, i) => {
+                    // Newest turn first: the one you just sent is the one you want to read.
+                    [...debugTraceHistory.entries()].reverse().map(([i, traces]) => {
                       /* v8 ignore next */
                       if (!traces) return null;
-                      const stats = extractMessageStats(traces as any[]);
                       return (
                         <div key={i} style={{ marginBottom: 14 }}>
-                          <MessageStatsCard stats={stats} turnNumber={i + 1} />
-                          <details style={{ marginTop: 6 }}>
-                            <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              Technical Details
-                            </summary>
-                            <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
-                              {(traces as any[]).map((entry, j) => (
-                                <div key={j} style={{ marginBottom: j < traces.length - 1 ? 10 : 0 }}>
-                                  <TraceEntryRenderer entry={entry} />
-                                </div>
-                              ))}
-                            </div>
-                          </details>
+                          <TraceSummary
+                            trace={traces as TraceEntry[]}
+                            turn={i + 1}
+                            collapsible
+                            defaultOpen={i === debugTraceHistory.length - 1}
+                          >
+                            <details>
+                              <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                Turn #{i + 1} trace log
+                              </summary>
+                              <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
+                                <TraceLog entries={traces as TraceEntry[]} collapsed />
+                              </div>
+                            </details>
+                          </TraceSummary>
                         </div>
                       );
                     })
                   )}
-                  <div ref={debugEndRef} />
                 </div>
               </div>
             )}

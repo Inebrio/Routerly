@@ -1,0 +1,26 @@
+[
+  {
+    "id": "exp-model-compare",
+    "name": "Model Compare",
+    "description": "GPT-4o against Claude 3.5 Sonnet on the same traffic",
+    "rotation": "weighted",
+    "variants": [
+      { "id": "var-gpt4o", "projectId": "proj-acme-demo", "name": "GPT-4o", "weight": 1 },
+      { "id": "var-claude", "projectId": "proj-beta-demo", "name": "Claude 3.5 Sonnet", "weight": 1 }
+    ],
+    "tokens": [
+      {
+        "id": "tok-exp-1",
+        "token": "sk-rt-expfake00000000000000000000000000000000000000000000000",
+        "tokenSnippet": "sk-rt-expf",
+        "createdAt": "2026-03-01T10:00:00.000Z"
+      }
+    ],
+    "judge": {
+      "enabled": true,
+      "modelId": "gpt-4o-mini-demo",
+      "criteria": ["Helpfulness", "Correctness"],
+      "sampleRate": 0.5
+    }
+  }
+]

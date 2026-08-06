@@ -103,13 +103,14 @@ describe('NotificationDropdown', () => {
     const { container } = render(<DropdownWrapper open={false} />);
     expect(container.querySelector('[data-testid="dropdown"]')).toBeNull();
     // notification items should not be in DOM
-    expect(screen.queryByText('provider.error')).toBeNull();
+    expect(screen.queryByText('Provider call failed')).toBeNull();
   });
 
   it('renders items when open', () => {
     render(<DropdownWrapper open={true} />);
-    expect(screen.getByText('provider.error')).toBeTruthy();
-    expect(screen.getByText('system.startup')).toBeTruthy();
+    // T53: rows show the human title from the shared catalog, not the raw slug.
+    expect(screen.getByText('Provider call failed')).toBeTruthy();
+    expect(screen.getByText('Service started')).toBeTruthy();
   });
 
   it('shows "No notifications" when items list is empty', () => {
@@ -142,9 +143,10 @@ describe('NotificationDropdown', () => {
     render(<DropdownWrapper open={true} itemsOverride={many} unread={8} />);
     // Only first 5 should be rendered
     for (let i = 0; i < 5; i++) {
-      expect(screen.getByText(`event.${i}`)).toBeTruthy();
+      // Unknown slugs degrade to a sentence-cased label.
+      expect(screen.getByText(`Event ${i}`)).toBeTruthy();
     }
-    expect(screen.queryByText('event.5')).toBeNull();
+    expect(screen.queryByText('Event 5')).toBeNull();
   });
 
   it('shows "View all notifications" link', () => {
@@ -213,7 +215,7 @@ describe('ProfileNotificationBadge', () => {
     await waitFor(() => expect(mockGetInbox).toHaveBeenCalled());
     const btn = document.querySelector('button[title="Notifications"]')!;
     await userEvent.click(btn);
-    expect(screen.getByText('provider.error')).toBeTruthy();
+    expect(screen.getByText('Provider call failed')).toBeTruthy();
   });
 
   it('calls markNotificationsRead on markAll', async () => {
@@ -248,7 +250,7 @@ describe('ProfileNotificationBadge', () => {
     // Open the dropdown
     const btn = document.querySelector('button[title="Notifications"]')!;
     await userEvent.click(btn);
-    expect(screen.getByText('provider.error')).toBeTruthy();
+    expect(screen.getByText('Provider call failed')).toBeTruthy();
 
     // Click outside (on document.body) — triggers the mousedown handler that calls onClose
     await act(async () => {
@@ -257,7 +259,7 @@ describe('ProfileNotificationBadge', () => {
 
     // Dropdown items should no longer be visible
     await waitFor(() => {
-      expect(screen.queryByText('provider.error')).toBeNull();
+      expect(screen.queryByText('Provider call failed')).toBeNull();
     });
   });
 
@@ -274,9 +276,9 @@ describe('ProfileNotificationBadge', () => {
     // The "View all" link calls onClose (line 222 closure)
     await userEvent.click(screen.getByText('View all notifications'));
 
-    // Dropdown now closed — provider.error no longer in DOM
+    // Dropdown now closed — the item title is no longer in the DOM
     await waitFor(() => {
-      expect(screen.queryByText('provider.error')).toBeNull();
+      expect(screen.queryByText('Provider call failed')).toBeNull();
     });
   });
 

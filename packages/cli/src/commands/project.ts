@@ -2,7 +2,26 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
+import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
 import type { ProjectConfig, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+
+// ─── Helper: TTFT timeout display ────────────────────────────────────────────
+
+/** 0 means "wait as long as the provider takes", which reads better than "0s". */
+function formatTimeout(timeoutMs?: number): string {
+  if (timeoutMs === 0) return 'off';
+  return `${(timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS) / 1000}s`;
+}
+
+/** Parses --timeout, rejecting anything that is not a non-negative integer. */
+function parseTimeoutOption(raw: string): number {
+  const ms = Number(raw);
+  if (!Number.isInteger(ms) || ms < 0) {
+    console.error(chalk.red('--timeout must be a non-negative integer in milliseconds (0 disables the timeout).'));
+    process.exit(1);
+  }
+  return ms;
+}
 
 // ─── Helper: resolve project by name or ID ────────────────────────────────────
 
@@ -479,18 +498,21 @@ Examples:
 Examples:
   routerly project token create my-api
   routerly project token create my-api --labels dev,staging
+  routerly project token create my-api --scopes batch,internal
 `)
     .option('--labels <tags>', 'Comma-separated labels for this token')
+    .option('--scopes <list>', 'Comma-separated free-form scopes (e.g. batch,internal)')
     .option('--tag <kv>', 'Key=value tag metadata (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, opts: { labels?: string; tag: string[] }) => {
+    .action(async (nameOrId: string, opts: { labels?: string; scopes?: string; tag: string[] }) => {
       try {
         const project = await resolveProject(nameOrId);
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : undefined;
+        const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : undefined;
         const tags = parseTags(opts.tag);
         const res = await api<{ token: string; tokenInfo: { id: string; tokenSnippet: string; createdAt: string } }>(
           'POST',
           `/api/projects/${encodeURIComponent(project.id)}/tokens`,
-          { ...(labels ? { labels } : {}), ...(tags ? { tags } : {}) }
+          { ...(labels ? { labels } : {}), ...(scopes ? { scopes } : {}), ...(tags ? { tags } : {}) }
         );
         console.log(chalk.green(`✓ Token created for project "${project.name}".`));
         console.log(chalk.bold('\nToken (save this — shown only once):'));
@@ -498,6 +520,7 @@ Examples:
         console.log(chalk.gray(`  ID:      ${res.tokenInfo.id}`));
         console.log(chalk.gray(`  Snippet: ${res.tokenInfo.tokenSnippet}…`));
         if (labels?.length) console.log(chalk.gray(`  Labels:  ${labels.join(', ')}`));
+        if (scopes?.length) console.log(chalk.gray(`  Scopes:  ${scopes.join(', ')}`));
         if (tags) console.log(chalk.gray(`  Tags:    ${Object.entries(tags).map(([k, v]) => `${k}=${v}`).join(', ')}`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -521,6 +544,9 @@ Examples:
   # Update labels
   routerly project token edit my-api <token-id> --labels prod,v2
 
+  # Update access scopes
+  routerly project token edit my-api <token-id> --scopes batch,internal
+
   # Add a cost limit on a specific model
   routerly project token edit my-api <token-id> --add-limit "openai/gpt-5.2:cost:period:hourly:10"
 
@@ -531,10 +557,11 @@ Examples:
   routerly project token edit my-api <token-id> --remove-limit "openai/gpt-5.2:cost:period:hourly"
 `)
     .option('--labels <tags>', 'Comma-separated labels (replaces existing labels)')
+    .option('--scopes <list>', 'Comma-separated access scopes (replaces existing scopes)')
     .option('--tag <kv>', 'Key=value tag (repeatable; replaces all existing tags)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--add-limit <spec>', 'Add a per-model limit (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--remove-limit <spec>', 'Remove a limit: <model>:<metric>:<windowType> (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
+    .action(async (nameOrId: string, tokenId: string, opts: { labels?: string; scopes?: string; tag: string[]; addLimit: string[]; removeLimit: string[] }) => {
       try {
         const project = await resolveProject(nameOrId);
         const token = (project.tokens ?? []).find(t => t.id === tokenId);
@@ -570,10 +597,12 @@ Examples:
         models = models.filter(m => m.limits && m.limits.length > 0);
 
         const labels = opts.labels ? opts.labels.split(',').map(s => s.trim()).filter(Boolean) : token.labels;
+        const scopes = opts.scopes ? opts.scopes.split(',').map(s => s.trim()).filter(Boolean) : token.scopes;
         const tags = opts.tag.length ? parseTags(opts.tag) : token.tags;
         await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}/tokens/${encodeURIComponent(tokenId)}`, {
           models,
           ...(labels !== undefined ? { labels } : {}),
+          ...(scopes !== undefined ? { scopes } : {}),
           ...(tags !== undefined ? { tags } : {}),
         });
         console.log(chalk.green(`✓ Token "${tokenId}" updated in project "${project.name}".`));
@@ -930,7 +959,7 @@ Examples:
             p.models.length,
             (p.tokens ?? []).length,
             (p.members ?? []).length,
-            `${(p.timeoutMs ?? 5000) / 1000}s`,
+            formatTimeout(p.timeoutMs),
           ]);
         }
         console.log(table.toString());
@@ -955,7 +984,8 @@ Examples:
 
         console.log(chalk.bold(`\n── ${project.name} ──────────────────────────────────`));
         console.log(chalk.gray(`  ID:      `) + project.id);
-        console.log(chalk.gray(`  Timeout: `) + `${(project.timeoutMs ?? 5000) / 1000}s`);
+        console.log(chalk.gray(`  Timeout: `) + formatTimeout(project.timeoutMs));
+        console.log(chalk.gray(`  Traces:  `) + (project.traceContent ? 'metadata + content' : 'metadata only'));
 
         // Routing
         console.log(chalk.bold('\n  Routing'));
@@ -1017,14 +1047,17 @@ Examples:
   # Minimal project
   routerly project create --name "My API"
 
-  # With a custom timeout
-  routerly project create --name "Production" --timeout 60000
+  # With a custom TTFT timeout
+  routerly project create --name "Production" --timeout 5000
+
+  # No TTFT timeout: wait as long as the provider takes
+  routerly project create --name "Batch jobs" --timeout 0
 
   # With auto-routing enabled and a routing model
   routerly project create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
 `)
     .requiredOption('--name <name>', 'Project name')
-    .option('--timeout <ms>', 'TTFT timeout per model attempt in milliseconds (default: 5000). Aborts if first response byte not received in time.')
+    .option('--timeout <ms>', `TTFT timeout per model attempt in milliseconds (default: ${DEFAULT_PROJECT_TIMEOUT_MS}). Aborts if the first response byte does not arrive in time; 0 disables it.`)
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
@@ -1032,7 +1065,7 @@ Examples:
       try {
         const body: Record<string, unknown> = {
           name: opts.name,
-          timeoutMs: opts.timeout ? parseInt(opts.timeout) : 5000,
+          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : DEFAULT_PROJECT_TIMEOUT_MS,
           autoRouting: opts.autoRouting !== undefined ? opts.autoRouting : true,
           models: [],
         };
@@ -1063,29 +1096,38 @@ Examples:
 
   // ── project edit ─────────────────────────────────────────────────────────────
   cmd.command('edit <project>')
-    .description('Edit project name or timeout')
+    .description('Edit project name, timeout or trace content capture')
     .addHelpText('after', `
 Examples:
   routerly project edit my-api --name "My Production API"
-  routerly project edit my-api --timeout 60000
+  routerly project edit my-api --timeout 5000
+  routerly project edit my-api --timeout 0
+  routerly project edit my-api --trace-content
+  routerly project edit my-api --no-trace-content
 `)
     .option('--name <name>', 'New project name')
-    .option('--timeout <ms>', 'New request timeout in milliseconds')
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string }) => {
-      if (!opts.name && !opts.timeout) {
-        console.error(chalk.red('Provide at least --name or --timeout.'));
+    .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
+    .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
+    .option('--no-trace-content', 'Record metadata only, no prompts or answers')
+    // --trace-content declared before --no-trace-content, so an untouched flag stays
+    // undefined and leaves the stored value alone.
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean }) => {
+      const traceContent = opts.traceContent;
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined) {
+        console.error(chalk.red('Provide at least --name, --timeout or --trace-content.'));
         process.exit(1);
       }
       try {
         const project = await resolveProject(nameOrId);
         await api<void>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
           name: opts.name ?? project.name,
-          timeoutMs: opts.timeout ? parseInt(opts.timeout) : project.timeoutMs,
+          timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : project.timeoutMs,
           autoRouting: project.autoRouting,
           routingModelId: project.routingModelId,
           fallbackRoutingModelIds: project.fallbackRoutingModelIds,
           policies: project.policies,
           models: project.models,
+          ...(traceContent !== undefined ? { traceContent } : {}),
         });
         console.log(chalk.green(`✓ Project "${project.name}" updated.`));
       } catch (err) {

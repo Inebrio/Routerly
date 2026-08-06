@@ -1,8 +1,11 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react'; // useState still used for record/projects/loading state
 import { ArrowLeft } from 'lucide-react';
-import { getProjects, getUsageRecord, type Project, type UsageRecord, type TraceEntry } from '../api';
-import { TraceEntryRenderer } from '../components/TraceEntryRenderer';
+import { requestTypeLabel } from '@routerly/shared';
+import { getProjects, getUsageRecord, type Project, type UsageRecord } from '../api';
+import { tokenLabel } from '../utils/tokenLabel';
+import { TraceLog } from '../components/TraceLog';
+import { TraceSummary } from '../components/TraceSummary';
 
 function Field({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
@@ -13,55 +16,6 @@ function Field({ label, value, mono = false }: { label: string; value: React.Rea
       <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontFamily: mono ? 'monospace' : 'inherit', wordBreak: 'break-all' }}>
         {value}
       </span>
-    </div>
-  );
-}
-
-const PANEL_LABELS: Record<string, string> = {
-  'router-request':  'Router Request',
-  'router-response': 'Router Response',
-  'request':         'Model Request',
-  'response':        'Model Response',
-};
-
-const PANEL_COLORS: Record<string, string> = {
-  'router-request':  '#3d75f5',
-  'router-response': '#8b5cf6',
-  'request':         '#3b82f6',
-  'response':        '#0ea5e9',
-};
-
-function TracePanel({ entries }: { entries: TraceEntry[] }) {
-  // router:recap has its own dedicated section
-  const filteredEntries = entries.filter(e => e.message !== 'router:recap');
-  if (filteredEntries.length === 0) return null;
-
-  // Group by panel for readability
-  const panels = ['router-request', 'router-response', 'request', 'response'] as const;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {panels.map(panel => {
-        const panelEntries = filteredEntries.filter(e => e.panel === panel);
-        if (panelEntries.length === 0) return null;
-        /* v8 ignore next */ const color = PANEL_COLORS[panel] ?? '#6b7280';
-        /* v8 ignore next */ const label = PANEL_LABELS[panel] ?? panel;
-        return (
-          <div key={panel}>
-            <div style={{
-              fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.06em', marginBottom: 8,
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
-              <span style={{ color }}>{label}</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 16, borderLeft: `2px solid ${color}30` }}>
-              {panelEntries.map((e, i) => <TraceEntryRenderer key={i} entry={e} />)}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -146,6 +100,9 @@ export function UsageRecordPage() {
       <div className="page-body">
         <div style={{ display: 'grid', gap: 16, maxWidth: 900 }}>
 
+          {/* Summary: what the whole request did, in one card */}
+          <TraceSummary trace={record.trace} />
+
           {/* Identity */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ margin: '0 0 20px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -154,6 +111,16 @@ export function UsageRecordPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
               <Field label="Record ID" value={record.id} mono />
               <Field label="Project" value={project ? project.name : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.projectId}</span>} />
+              {/* Which of the project's tokens the call came in on. Older records carry none. */}
+              {record.tokenId && (
+                <Field
+                  label="Token"
+                  value={(() => {
+                    const t = project?.tokens?.find(tk => tk.id === record.tokenId);
+                    return t ? tokenLabel(t) : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.tokenId}</span>;
+                  })()}
+                />
+              )}
               <Field label="Model" value={record.modelId} mono />
               <Field
                 label="Call Type"
@@ -168,6 +135,8 @@ export function UsageRecordPage() {
                   </span>
                 }
               />
+              {/* Records written before requestType existed were all chat calls. */}
+              <Field label="Request Type" value={requestTypeLabel(record.requestType ?? 'chat')} />
             </div>
           </div>
 
@@ -224,19 +193,6 @@ export function UsageRecordPage() {
             )}
           </div>
 
-          {/* Router Recap */}
-          {record.trace && record.trace.some(e => e.message === 'router:recap') && (
-            <div className="card" style={{ padding: 24 }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Router Recap
-              </h3>
-              {record.trace
-                .filter(e => e.message === 'router:recap')
-                .map((e, i) => <TraceEntryRenderer key={i} entry={e} />)
-              }
-            </div>
-          )}
-
           {/* Trace Log */}
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -255,7 +211,7 @@ export function UsageRecordPage() {
                 No trace available. Trace data is captured for new calls only.
               </p>
             ) : (
-              <TracePanel entries={record.trace} />
+              <TraceLog entries={record.trace} />
             )}
           </div>
 

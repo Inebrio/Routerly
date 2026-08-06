@@ -584,3 +584,107 @@ describe('integrations add — parseHeaders invalid header', () => {
     expect(body['headers']).toEqual({});
   });
 });
+
+// ── traces ────────────────────────────────────────────────────────────────────
+
+describe('integrations traces', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('add --traces opts the integration in', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'otel-t', type: 'otel', enabled: true });
+    const cmd = makeIntegrationsCommand();
+    await cmd.parseAsync([
+      'node', 'routerly', 'add', '--type', 'otel',
+      '--endpoint', 'http://otel:4318',
+      '--traces', '--trace-sample-rate', '0.25',
+    ]);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/integrations', expect.objectContaining({
+      traces: { enabled: true, sampleRate: 0.25 },
+    }));
+  });
+
+  it('add --traces defaults to every trace', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'hook-t', type: 'webhook', enabled: true });
+    const cmd = makeIntegrationsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'add', '--type', 'webhook', '--url', 'http://hook', '--traces']);
+    const body = mockApi.mock.calls.find(c => c[0] === 'POST')![2] as Record<string, unknown>;
+    expect(body['traces']).toEqual({ enabled: true });
+  });
+
+  it('add --traces on a metric-only integration exits 1', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeIntegrationsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'add', '--type', 'datadog', '--api-key', 'k', '--traces']))
+      .rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('otel and webhook'));
+  });
+
+  it('add --traces with an out-of-range sample rate exits 1', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeIntegrationsCommand();
+    await expect(cmd.parseAsync([
+      'node', 'routerly', 'add', '--type', 'otel', '--endpoint', 'http://otel:4318',
+      '--traces', '--trace-sample-rate', '5',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('between 0 and 1'));
+  });
+
+  it('traces <id> on PATCHes the flag', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'otel-t', type: 'otel', enabled: true });
+    mockApi.mockResolvedValueOnce({ id: 'otel-t', type: 'otel', enabled: true });
+    const cmd = makeIntegrationsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'traces', 'otel-t', 'on', '--sample-rate', '0.5']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/integrations/otel-t', { traces: { enabled: true, sampleRate: 0.5 } });
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('enabled'));
+  });
+
+  it('traces <id> off PATCHes the flag without touching the sample rate', async () => {
+    mockApi.mockResolvedValueOnce({ id: 'hook-t', type: 'webhook', enabled: true });
+    mockApi.mockResolvedValueOnce({ id: 'hook-t', type: 'webhook', enabled: true });
+    const cmd = makeIntegrationsCommand();
+    await cmd.parseAsync(['node', 'routerly', 'traces', 'hook-t', 'off']);
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/integrations/hook-t', { traces: { enabled: false } });
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('disabled'));
+  });
+
+  it('traces <id> with an unknown state exits 1', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeIntegrationsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'traces', 'otel-t', 'maybe'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Unknown state'));
+  });
+
+  it('traces <id> on an unknown integration reports not found', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    mockApi.mockRejectedValueOnce(new ApiError(404, 'not found'));
+    const cmd = makeIntegrationsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'traces', 'nope', 'on'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
+
+  it('traces <id> on a metric-only integration exits 1', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    mockApi.mockResolvedValueOnce({ id: 'dd-1', type: 'datadog', enabled: true });
+    const cmd = makeIntegrationsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'traces', 'dd-1', 'on'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('otel and webhook'));
+  });
+
+  it('traces <id> reports a failing PATCH', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    mockApi.mockResolvedValueOnce({ id: 'otel-t', type: 'otel', enabled: true });
+    mockApi.mockRejectedValueOnce(new Error('service down'));
+    const cmd = makeIntegrationsCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'traces', 'otel-t', 'on'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('service down'));
+  });
+});

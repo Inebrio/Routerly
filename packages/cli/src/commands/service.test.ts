@@ -67,7 +67,7 @@ describe('service status', () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     mockApi
       .mockResolvedValueOnce({ version: '0.3.0', uptime: 125, nodeVersion: 'v22.0.0' }) // system/info
-      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', defaultTimeoutMs: 30000 }) // settings
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', listeningAddresses: ['http://127.0.0.1:3000', 'http://192.168.1.10:3000'] }) // settings
       .mockResolvedValueOnce([{}, {}]) // models
       .mockResolvedValueOnce([{}]); // projects
     const lines: string[] = [];
@@ -78,13 +78,15 @@ describe('service status', () => {
     expect(out).toContain('2m 5s'); // 125s = 2m 5s
     expect(out).toContain('3000');
     expect(out).toContain('enabled');
+    expect(out).toContain('Listening at:  http://127.0.0.1:3000');
+    expect(out).toContain('Listening at:  http://192.168.1.10:3000');
   });
 
   it('omits version/uptime when system/info fails', async () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     mockApi
       .mockRejectedValueOnce(new Error('unreachable')) // system/info catch → null
-      .mockResolvedValueOnce({ port: 8080, host: '127.0.0.1', dashboardEnabled: false, logLevel: 'warn', defaultTimeoutMs: 5000 })
+      .mockResolvedValueOnce({ port: 8080, host: '127.0.0.1', dashboardEnabled: false, logLevel: 'warn' })
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     const lines: string[] = [];
@@ -113,7 +115,7 @@ describe('service status', () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     mockApi
       .mockResolvedValueOnce(null as unknown as never) // system/info returns null
-      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: false, logLevel: 'info', defaultTimeoutMs: 5000 })
+      .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: false, logLevel: 'info' })
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     const lines: string[] = [];
@@ -164,12 +166,6 @@ describe('service configure', () => {
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ logLevel: 'debug' }));
   });
 
-  it('sends PUT with defaultTimeoutMs', async () => {
-    mockApi.mockResolvedValueOnce(undefined);
-    await run('configure', '--timeout', '60000');
-    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ defaultTimeoutMs: 60000 }));
-  });
-
   it('sends PUT with metricsEnabled=true when --metrics true', async () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--metrics', 'true');
@@ -194,6 +190,24 @@ describe('service configure', () => {
     const call = mockApi.mock.calls[0];
     const patch = call![2] as Record<string, unknown>;
     expect(patch['prometheusAuthToken']).toBeUndefined();
+  });
+
+  it('sends publicUrl when --public-url provided', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--public-url', 'https://routerly.example.com');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ publicUrl: 'https://routerly.example.com' }));
+  });
+
+  it('sends requireMfa=true when --require-mfa true', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--require-mfa', 'true');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: true }));
+  });
+
+  it('sends requireMfa=false when --require-mfa false', async () => {
+    mockApi.mockResolvedValueOnce(undefined);
+    await run('configure', '--require-mfa', 'false');
+    expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: false }));
   });
 
   it('exits 1 with admin-required message on 401', async () => {

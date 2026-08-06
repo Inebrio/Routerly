@@ -1,6 +1,6 @@
 ---
 title: Users & Roles
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # Dashboard: Users & Roles
@@ -20,6 +20,28 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `user:read` | View dashboard users |
 | `user:write` | Create, edit, and delete users, assign roles |
 | `report:read` | View usage analytics and request logs |
+| `settings:read` | View global settings |
+| `settings:write` | Change global settings |
+| `notification:write` | Manage notification channels and rules |
+| `token:read` | View project tokens |
+| `token:write` | Create and revoke project tokens |
+| `role:write` | Create, edit, and delete custom roles |
+| `audit:read` | Read the audit log |
+| `modules:read` | View which modules are installed and enabled |
+| `modules:manage` | Enable and disable modules |
+| `connections:read` | View provider connections |
+| `connections:manage` | Create, edit, and delete provider connections |
+| `resilience:read` | View retry, timeout, and fallback settings |
+| `resilience:manage` | Change retry, timeout, and fallback settings |
+| `profiles:read` | View [routing profiles](./profiles.md) |
+| `profiles:manage` | Create, edit, and delete routing profiles |
+| `optimizers:read` | View the [optimizer](../concepts/optimizers.md) catalog, samples, and previews |
+| `optimizers:manage` | Change a project's optimizer pipeline |
+| `experiments:read` | View [experiments](./experiments.md) and their metrics |
+| `experiments:manage` | Create, edit, and delete experiments, manage their tokens |
+
+Permissions gated by a module (`experiments:*`, for instance) still answer
+`403` while that module is disabled, whatever the role says.
 
 ---
 
@@ -28,8 +50,8 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | Role | Permissions |
 |------|-------------|
 | `admin` | All permissions |
-| `operator` | `project:read`, `project:write`, `model:read`, `model:write`, `report:read` |
-| `viewer` | `project:read`, `model:read`, `report:read` |
+| `operator` | Everything except `user:write`, `role:write`, `settings:write`, `audit:read`, `modules:manage`, `resilience:*` |
+| `viewer` | `project:read`, `model:read`, `report:read`, `settings:read`, `token:read`, `audit:read`, `modules:read`, `connections:read`, `profiles:read`, `optimizers:read`, `experiments:read` |
 
 ---
 
@@ -48,7 +70,8 @@ The new user can log in immediately.
 
 ### Editing a User
 
-Click the **Edit** icon to change the user's email, password, or role.
+Click a row, or its **Edit** icon, to change the user's email, password, or
+role. With `user:write` missing the row is inert and the icon is hidden.
 
 ### Removing a User
 

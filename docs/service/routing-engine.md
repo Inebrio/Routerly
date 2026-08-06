@@ -33,6 +33,26 @@ For each incoming request the engine performs the following steps:
 
 7. **Fallback** — If the winning model returns a provider error or timeout, the engine retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
 
+### Optimizers and Context Window Fit
+
+Prompt/context optimizers (see [Concepts: Optimizers](../concepts/optimizers.md))
+run earlier in request handling, in the `request.preprocess` pipeline phase,
+before this lifecycle resolves a candidate model. `ctx.attempt`, which
+carries the resolved model's `contextWindow`, is only populated once step 1
+above has selected a candidate, i.e. after the optimizer pipeline has
+already run.
+
+:::caution headroom is a permanent no-op on live requests today
+The `headroom` optimizer needs the target model's `contextWindow` to decide
+how many turns to trim, but reads it from `ctx.attempt`, which does not
+exist yet during `request.preprocess`. As a result `headroom` never sees a
+context window on a real request and never trims anything in production,
+even though its trim logic is correct and fully covered in isolation by its
+own tests. This is a pipeline-phase ordering gap, not a bug in `headroom`
+itself. Re-checking attempt-dependent optimizers once a candidate is
+resolved is a documented follow-up, not yet scheduled.
+:::
+
 ---
 
 ## Available Policies
@@ -275,6 +295,68 @@ Suggested order: `health` → `context` → `capability` → `budget-remaining` 
 
 ---
 
+## Routing Profiles
+
+A **routing profile** (`RoutingProfile`, `kind: 'routing'`) packages a policy
+list, a **selector**, and a **fallback strategy** into one reusable, versioned
+unit, stored via [`GET/POST/PATCH/DELETE /api/profiles`](../api/management.md#profiles)
+alongside the optimizer and security profile kinds. A project resolves its
+effective routing profile at request time: if the project has a
+`routingProfileId` set, that profile's policies/selector/fallback are used
+instead of the project's own inline policy list; otherwise the project's own
+inline policies run through the default selector/fallback behaviour described
+above (argmax-equivalent, no live fallback wiring, see the caution below).
+
+### Built-in Profiles
+
+4 routing built-ins ship as code constants (never persisted, never mutable):
+`auto`, `cheap`, `fast`, `coding`. Two retired presets, `balanced` and
+`offline`, still resolve for projects that reference them but are never listed;
+`balanced` is rewritten to `auto` by the routing module's config migration.
+Cloning a built-in (`POST /api/profiles/clone`) writes a new, editable copy to
+`profiles.json` with `builtin: false` and `version: 1`; every subsequent
+`PATCH` bumps `version` by 1. See
+[Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
+for what each built-in optimizes for.
+
+### Selectors
+
+After the policy layer scores and filters candidates (steps 3-5 above), the
+profile's **selector** picks the final model from the ranked list:
+
+| Selector | Behaviour |
+|----------|-----------|
+| `argmax` | Highest score wins; near-ties (within a small tolerance) resolve by weighted-random among the tied group. |
+| `weighted-random` | One candidate is picked at random with probability proportional to its score. |
+| `round-robin` | Deterministic rotation through candidates, keyed by project id, ignoring score. |
+| `cheapest` | Lowest `cost` wins; undefined cost sorts last; ties break by score. |
+| `lowest-latency` | Lowest recently-observed latency wins; unknown latency sorts last. |
+
+Implemented in `packages/service/src/modules/routing/selectors/index.ts`
+(`SELECTOR_MAP`).
+
+### Fallback Strategies
+
+| Strategy | Behaviour |
+|----------|-----------|
+| `next-best` | Try the next-highest-ranked remaining candidate. |
+| `retry-after-cooldown` | Put the failed model on a cooldown and retry it later rather than moving on immediately. |
+| `abort` | Stop with no retry. |
+
+Implemented in `packages/service/src/modules/routing/fallback/index.ts`
+(`FALLBACK_MAP`).
+
+:::caution Not yet wired into the retry loop
+`fallbackStrategy` is stored on the profile, returned by every profile
+endpoint, and editable from the dashboard, but the reverse-proxy's retry loop
+(step 7 above) does not currently read it: retries still follow the
+positional-scoring fallback order described in step 7, regardless of the
+resolved profile's `fallbackStrategy`. This is confirmed scope for a future
+change, not a bug in the current profile CRUD endpoints.
+:::
+
+---
+
 ## Policy Ordering and Weights
 
 Policies are applied in the order configured in the project. Their positional weight (`total − index`) means policies near the top of the list have more influence on the final score. Reorder policies via the dashboard (**Projects → your project → Routing**) or the CLI.
@@ -292,7 +374,9 @@ Policies are applied in the order configured in the project. Their positional we
 
 ## Routing Trace
 
-Every request produces a routing trace that records each policy's scores and decisions. The trace is accessible in the dashboard's Playground view and is identified by the `x-routerly-trace-id` response header.
+Every request produces a routing trace that records each policy's scores and decisions, alongside what the other modules did (guardrails, PII, budget, resilience, the upstream call). Each entry is stamped with the pipeline phase and the module that reported it.
+
+The trace is visible in the dashboard's Playground and Usage views, streamed live on `GET /api/traces/stream`, and can be exported to an OpenTelemetry collector or a webhook (see [Trace Export](../api/management#trace-export)). The proxied response is never modified to carry it.
 
 ---
 

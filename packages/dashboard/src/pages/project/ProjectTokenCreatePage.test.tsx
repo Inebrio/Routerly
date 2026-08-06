@@ -125,7 +125,7 @@ describe('ProjectTokenCreatePage — token creation', () => {
   it('submitting form calls createProjectToken', async () => {
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
-    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalledWith('proj-1', [], undefined));
+    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalledWith('proj-1', [], undefined, undefined));
   });
 
   it('shows revealed token after successful creation', async () => {
@@ -244,6 +244,30 @@ describe('ProjectTokenCreatePage — tags', () => {
       'proj-1',
       [],
       expect.objectContaining({ env: '' }),
+      undefined,
+    ));
+  });
+});
+
+// ── Scopes ────────────────────────────────────────────────────────────────────
+
+describe('ProjectTokenCreatePage scopes', () => {
+  it('shows Scopes section', () => {
+    renderPage();
+    expect(screen.getByText('Scopes')).toBeTruthy();
+  });
+
+  it('createProjectToken called with scopes when a scope is added', async () => {
+    renderPage();
+    const scopeTextbox = screen.getAllByPlaceholderText('Search or create a label…')[1]!;
+    await userEvent.type(scopeTextbox, 'mcp');
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
+    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalledWith(
+      'proj-1',
+      [],
+      undefined,
+      ['mcp'],
     ));
   });
 });
@@ -334,8 +358,8 @@ describe('ProjectTokenCreatePage — copied feedback clears after timeout', () =
 describe('ProjectTokenCreatePage — existing labels from project tokens', () => {
   it('existing labels from project tokens are available as suggestions in LabelInput', async () => {
     renderPage();
-    // Use placeholder to target the LabelInput specifically (page has multiple textboxes: label + tag key/value)
-    const labelTextbox = screen.getByPlaceholderText('Search or create a label…');
+    // Use placeholder to target the Labels LabelInput specifically (page has label + scope + tag inputs)
+    const labelTextbox = screen.getAllByPlaceholderText('Search or create a label…')[0]!;
     await userEvent.type(labelTextbox, 'pro');
     // 'production' from existing token labels should appear
     await waitFor(() => expect(screen.getByText('production')).toBeTruthy());

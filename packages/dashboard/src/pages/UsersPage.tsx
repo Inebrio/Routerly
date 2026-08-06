@@ -3,11 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Users, Pencil, ShieldOff } from 'lucide-react';
 import { getUsers, createUser, deleteUser, reset2faForUser, type User } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { SearchableSelect } from '../components/SearchableSelect';
+import { useAuth } from '../AuthContext';
 
 type AddForm = { email: string; password: string; roleId: string };
 
 export function UsersPage() {
+  const { can } = useAuth();
+  const canRead  = can('user:read');
+  const canWrite = can('user:write');
   const [users, setUsers]         = useState<User[]>([]);
+  const [loadErr, setLoadErr]     = useState('');
   const [loading, setLoading]     = useState(true);
   const [showAdd, setShowAdd]     = useState(false);
   const [addForm, setAddForm]     = useState<AddForm>({ email: '', password: '', roleId: 'viewer' });
@@ -16,11 +22,16 @@ export function UsersPage() {
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (canRead) load(); else setLoading(false); }, [canRead]);
 
   async function load() {
     setLoading(true);
-    try { setUsers(await getUsers()); } finally { setLoading(false); }
+    try {
+      setUsers(await getUsers());
+      setLoadErr('');
+    } catch (e) {
+      setLoadErr(e instanceof Error ? e.message : 'Failed to load users');
+    } finally { setLoading(false); }
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -57,14 +68,22 @@ export function UsersPage() {
     });
   }
 
+  if (!canRead) {
+    return <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view users.</p></div>;
+  }
+
   return (
     <>
       <div className="toolbar">
         <span className="toolbar-title">{users.length} user{users.length !== 1 ? 's' : ''}</span>
-        <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-          <Plus size={16} /> Add User
-        </button>
+        {canWrite && (
+          <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+            <Plus size={16} /> Add User
+          </button>
+        )}
       </div>
+
+      {loadErr && <div className="form-error" style={{ margin: '0 20px' }}>{loadErr}</div>}
 
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
@@ -76,24 +95,34 @@ export function UsersPage() {
             <thead><tr><th>Email</th><th>Role</th><th>Projects</th><th></th></tr></thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.id}>
+                <tr
+                  key={u.id}
+                  {...(canWrite ? {
+                    style: { cursor: 'pointer' },
+                    onClick: () => navigate(`/dashboard/settings/users/${u.id}`),
+                  } : {})}
+                >
                   <td><strong style={{ color: 'var(--text-primary)' }}>{u.email}</strong></td>
                   <td><span className={`badge ${u.roleId === 'admin' ? 'badge-success' : 'badge-ollama'}`}>{u.roleId}</span></td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     {u.projectIds.length === 0 ? 'All' : u.projectIds.join(', ')}
                   </td>
-                  <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    {u.totpEnabled && (
+                  <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                    {canWrite && u.totpEnabled && (
                       <button className="btn-icon" title="Reset 2FA" onClick={() => handleReset2fa(u.id, u.email)}>
                         <ShieldOff size={14} />
                       </button>
                     )}
-                    <button className="btn-icon" onClick={() => navigate(`/dashboard/settings/users/${u.id}`)}>
-                      <Pencil size={14} />
-                    </button>
-                    <button className="btn-icon danger" onClick={() => handleDelete(u.id)}>
-                      <Trash2 size={15} />
-                    </button>
+                    {canWrite && (
+                      <>
+                        <button className="btn-icon" onClick={() => navigate(`/dashboard/settings/users/${u.id}`)}>
+                          <Pencil size={14} />
+                        </button>
+                        <button className="btn-icon danger" onClick={() => handleDelete(u.id)}>
+                          <Trash2 size={15} />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -121,10 +150,11 @@ export function UsersPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">Role</label>
-                <select className="form-input" value={addForm.roleId} onChange={e => setAddForm(f => ({ ...f, roleId: e.target.value }))}>
-                  <option value="admin">Admin</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <SearchableSelect
+                  options={[{ value: 'admin', label: 'Admin' }, { value: 'viewer', label: 'Viewer' }]}
+                  value={addForm.roleId}
+                  onChange={v => setAddForm(f => ({ ...f, roleId: v }))}
+                />
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAdd(false)}>Cancel</button>

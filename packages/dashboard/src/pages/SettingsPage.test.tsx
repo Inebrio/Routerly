@@ -30,6 +30,28 @@ vi.mock('../api', () => ({
   ] as const,
 }));
 
+// ponytail: mock SearchableSelect as a plain <select>; aria-label mirrors placeholder so
+// getByLabelText keeps working now that SearchableSelect has no id/htmlFor association.
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    disabled,
+    placeholder,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+    placeholder?: string;
+  }) => (
+    <select aria-label={placeholder} value={value} disabled={disabled} onChange={e => onChange(e.target.value)}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 // ponytail: mock MultiSelect with plain multi-select so options/onChange work
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: ({
@@ -79,6 +101,7 @@ import {
 
 import {
   SettingsGeneralTab,
+  SettingsSecurityTab,
   SettingsNotificationsTab,
   SettingsIntegrationsTab,
   SettingsCatalogTab,
@@ -110,7 +133,6 @@ const baseSettings = {
   port: 3000,
   host: '0.0.0.0',
   dashboardEnabled: true,
-  defaultTimeoutMs: 30000,
   logLevel: 'info' as const,
   publicUrl: 'http://localhost:3000',
   requireMfa: false,
@@ -120,6 +142,7 @@ const baseSettings = {
 const baseSystemInfo = {
   version: '0.3.0',
   channel: 'latest',
+  rawChannel: 'latest',
   uptimeSeconds: 3661,
   nodeVersion: 'v22.0.0',
   platform: 'linux',
@@ -139,6 +162,7 @@ describe('SettingsGeneralTab', () => {
   beforeEach(() => {
     mockGetSettings.mockResolvedValue({ ...baseSettings } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
   });
 
   function renderGeneral() {
@@ -164,36 +188,81 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => expect(screen.queryByText('Failed to load settings')).not.toBeNull());
   });
 
-  it('renders host and port from settings as read-only', async () => {
+  it('renders one read-only line per listening address, saying which reach the network', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000', 'http://192.168.1.10:3000'] } as never);
     renderGeneral();
-    // labels have no htmlFor — query by display value instead
-    await waitFor(() => expect(screen.queryByDisplayValue('0.0.0.0')).not.toBeNull());
-    const hostInput = screen.getByDisplayValue('0.0.0.0') as HTMLInputElement;
-    expect(hostInput.disabled).toBe(true);
-    const portInput = screen.getByDisplayValue('3000') as HTMLInputElement;
-    expect(portInput.disabled).toBe(true);
+    await waitFor(() => screen.getByText('http://127.0.0.1:3000'));
+    // The same address appears in the Public URL help text, so identify this one by its own copy button.
+    expect(screen.getByLabelText('Copy http://192.168.1.10:3000')).toBeInTheDocument();
+    expect(screen.getByText('Reachable at any of these addresses')).toBeInTheDocument();
+    // A loopback address only serves this machine; the other one is reachable from the LAN.
+    expect(screen.getByText('This machine')).toBeInTheDocument();
+    expect(screen.getByText('Network')).toBeInTheDocument();
+    // no editable host/port inputs left
+    expect(screen.queryByDisplayValue('0.0.0.0')).toBeNull();
+  });
+
+  it('says "Reachable at" and shows host and port when there is a single address', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://localhost:3000'] } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByText('Reachable at'));
+    expect(screen.getByText('This machine')).toBeInTheDocument();
+    expect(screen.getByText('Host and port')).toBeInTheDocument();
+    expect(screen.getByText('0.0.0.0:3000')).toBeInTheDocument();
+  });
+
+  it('falls back to host:port when the service reports no listening addresses', async () => {
+    renderGeneral();
+    await waitFor(() => screen.getByText('http://0.0.0.0:3000'));
+  });
+
+  it('copies a listening address to the clipboard', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000'] } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    await userEvent.click(screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    expect(writeText).toHaveBeenCalledWith('http://127.0.0.1:3000');
+    await waitFor(() => screen.getByText('Copied!'));
+  });
+
+  it('keeps the copy button silent when the clipboard write fails', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) }, configurable: true });
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: ['http://127.0.0.1:3000'] } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    await userEvent.click(screen.getByLabelText('Copy http://127.0.0.1:3000'));
+    expect(screen.queryByText('Copied!')).toBeNull();
+  });
+
+  it('shows version and uptime from the system info endpoint', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByText('0.3.0'));
+    expect(screen.queryByText('1h 1m 1s')).not.toBeNull();
+  });
+
+  it('still renders the form when the system info endpoint fails', async () => {
+    mockGetSystemInfo.mockRejectedValue(new Error('down'));
+    renderGeneral();
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    expect(screen.queryByText('Version')).toBeNull();
   });
 
   it('renders publicUrl input pre-filled from settings', async () => {
     renderGeneral();
-    await waitFor(() => expect(screen.queryByLabelText('Service Host')).not.toBeNull());
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => expect(screen.queryByLabelText('Public URL')).not.toBeNull());
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     expect(input.value).toBe('http://localhost:3000');
   });
 
   it('publicUrl falls back to http://localhost:PORT when settings.publicUrl is empty', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
     renderGeneral();
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     expect(input.value).toBe('http://localhost:3000');
-  });
-
-  it('renders default timeout input pre-filled', async () => {
-    renderGeneral();
-    await waitFor(() => screen.getByLabelText('Default Request Timeout (ms)'));
-    const input = screen.getByLabelText('Default Request Timeout (ms)') as HTMLInputElement;
-    expect(input.value).toBe('30000');
   });
 
   it('renders log level select pre-filled with info', async () => {
@@ -211,32 +280,10 @@ describe('SettingsGeneralTab', () => {
     expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error']);
   });
 
-  it('renders requireMfa checkbox pre-filled', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: true } as never);
+  it('does not render the 2FA toggle — it lives in the Security tab', async () => {
     renderGeneral();
-    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
-    const cb = screen.getByText(/Require Two-Factor Authentication/).closest('label')!
-      .querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(cb.checked).toBe(true);
-  });
-
-  it('toggling requireMfa updates form state', async () => {
-    renderGeneral();
-    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
-    const cb = screen.getByText(/Require Two-Factor Authentication/).closest('label')!
-      .querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(cb.checked).toBe(false);
-    await userEvent.click(cb);
-    expect(cb.checked).toBe(true);
-  });
-
-  it('changing timeout input updates form value', async () => {
-    renderGeneral();
-    await waitFor(() => screen.getByLabelText('Default Request Timeout (ms)'));
-    const input = screen.getByLabelText('Default Request Timeout (ms)') as HTMLInputElement;
-    await userEvent.clear(input);
-    await userEvent.type(input, '60000');
-    expect(input.value).toBe('60000');
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    expect(screen.queryByText(/Require Two-Factor Authentication/)).toBeNull();
   });
 
   it('submitting form calls updateSettings with form fields', async () => {
@@ -245,7 +292,6 @@ describe('SettingsGeneralTab', () => {
     await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
     const call = mockUpdateSettings.mock.calls[0]![0] as Record<string, unknown>;
-    expect(call).toHaveProperty('defaultTimeoutMs');
     expect(call).toHaveProperty('logLevel');
   });
 
@@ -350,15 +396,6 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => expect(screen.queryByText('Failed to save')).not.toBeNull());
   });
 
-  it('settings with requireMfa undefined omits it from form fields (no checkbox truthy)', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: undefined } as never);
-    renderGeneral();
-    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
-    const cb = screen.getByText(/Require Two-Factor Authentication/).closest('label')!
-      .querySelector('input[type="checkbox"]') as HTMLInputElement;
-    expect(cb.checked).toBe(false);
-  });
-
   it('settings with notifications populates form.notifications', async () => {
     const notif = { channels: [{ id: 'ch1', provider: 'dashboard' as const }] };
     mockGetSettings.mockResolvedValue({ ...baseSettings, notifications: notif } as never);
@@ -376,6 +413,83 @@ describe('SettingsGeneralTab', () => {
     const sel = screen.getByLabelText('Log Level') as HTMLSelectElement;
     await userEvent.selectOptions(sel, 'warn');
     expect(sel.value).toBe('warn');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SettingsSecurityTab
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('SettingsSecurityTab', () => {
+  beforeEach(() => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings } as never);
+    mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
+  });
+
+  function renderSecurity() {
+    return render(<MemoryRouter><SettingsSecurityTab /></MemoryRouter>);
+  }
+
+  function checkbox() {
+    return screen.getByText(/Require Two-Factor Authentication/).closest('label')!
+      .querySelector('input[type="checkbox"]') as HTMLInputElement;
+  }
+
+  it('shows spinner while loading', () => {
+    mockGetSettings.mockReturnValue(new Promise(() => {}));
+    renderSecurity();
+    expect(document.querySelector('.spinner')).toBeTruthy();
+  });
+
+  it('renders the 2FA toggle pre-filled from settings', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: true } as never);
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    expect(checkbox().checked).toBe(true);
+  });
+
+  it('treats a missing requireMfa as disabled', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, requireMfa: undefined } as never);
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    expect(checkbox().checked).toBe(false);
+  });
+
+  it('saves the toggled value', async () => {
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    await userEvent.click(checkbox());
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ requireMfa: true }));
+    expect(screen.queryByText('Settings saved successfully.')).not.toBeNull();
+  });
+
+  it('shows an error when loading fails', async () => {
+    mockGetSettings.mockRejectedValue(new Error('Network failure'));
+    renderSecurity();
+    await waitFor(() => expect(screen.queryByText('Network failure')).not.toBeNull());
+  });
+
+  it('shows a fallback error when loading rejects with a non-Error', async () => {
+    mockGetSettings.mockRejectedValue('boom');
+    renderSecurity();
+    await waitFor(() => expect(screen.queryByText('Failed to load settings')).not.toBeNull());
+  });
+
+  it('shows an error when saving fails', async () => {
+    mockUpdateSettings.mockRejectedValue(new Error('Save failed'));
+    renderSecurity();
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(screen.queryByText('Save failed')).not.toBeNull());
+  });
+
+  it('shows a fallback error when saving rejects with a non-Error', async () => {
+    mockUpdateSettings.mockRejectedValue('oops');
+    renderSecurity();
+    await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(screen.queryByText('Failed to save settings')).not.toBeNull());
   });
 });
 
@@ -1649,7 +1763,7 @@ describe('SettingsCatalogTab', () => {
 describe('SettingsAboutTab', () => {
   beforeEach(() => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'stable', 'develop'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({ available: false, currentVersion: '0.3.0', latestVersion: '0.3.0', checkedAt: new Date().toISOString() } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
     mockTriggerUpdate.mockResolvedValue({ message: 'Update started' } as never);
@@ -1871,7 +1985,7 @@ describe('SettingsAboutTab', () => {
   it('ChannelSelector: renders channel select with releases', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    expect(screen.getByDisplayValue(/current|latest|develop/)).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
   it('ChannelSelector: getAvailableReleases failure falls back to FALLBACK_RELEASES', async () => {
@@ -1879,104 +1993,83 @@ describe('SettingsAboutTab', () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     // Still renders a select (from FALLBACK_RELEASES)
-    expect(screen.getByText('Channel')).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
-  it('ChannelSelector: shows "custom…" option in select', async () => {
+  it('ChannelSelector: dropdown lists only latest, current, next and custom — no old names', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    expect(sel).toBeTruthy();
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    const values = Array.from(sel.options).map(o => o.value);
+    expect(values).toEqual(['latest', 'current', 'next', '__custom']);
   });
 
   it('ChannelSelector: selecting a known channel calls updateSettings', async () => {
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'stable', 'develop'], versions: [] } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'stable' }));
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'current' }));
   });
 
   it('ChannelSelector: selecting __custom shows custom input', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
   });
 
   it('ChannelSelector: custom input Apply calls updateSettings', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
-      const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-      await userEvent.type(customInput, 'v0.2.5');
-      await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    await userEvent.type(customInput, 'v0.2.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
+  });
+
+  it('ChannelSelector: custom input still accepts a deprecated alias by name', async () => {
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    await userEvent.type(customInput, 'stable');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'stable' }));
   });
 
   it('ChannelSelector: pressing Enter in custom input calls save', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
-      const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-      await userEvent.type(customInput, 'v0.2.5{Enter}');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    await userEvent.type(customInput, 'v0.2.5{Enter}');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
   });
 
   it('ChannelSelector: empty custom input disables Apply button', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByRole('button', { name: 'Apply' }));
-      const applyBtn = screen.getByRole('button', { name: 'Apply' }) as HTMLButtonElement;
-      expect(applyBtn.disabled).toBe(true);
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByRole('button', { name: 'Apply' }));
+    const applyBtn = screen.getByRole('button', { name: 'Apply' }) as HTMLButtonElement;
+    expect(applyBtn.disabled).toBe(true);
   });
 
   it('ChannelSelector: ← back button hides custom input', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByRole('button', { name: '← back' }));
-      await userEvent.click(screen.getByRole('button', { name: '← back' }));
-      await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByRole('button', { name: '← back' }));
+    await userEvent.click(screen.getByRole('button', { name: '← back' }));
+    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull());
   });
 
   it('ChannelSelector: unknown current channel triggers showCustom=true automatically', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'v0.2.1-beta' } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'v0.2.1-beta', rawChannel: 'v0.2.1-beta' } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
@@ -1988,27 +2081,52 @@ describe('SettingsAboutTab', () => {
     mockUpdateSettings.mockRejectedValue(new Error('Channel save failed'));
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(screen.queryByText('Channel save failed')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(screen.queryByText('Channel save failed')).not.toBeNull());
   });
 
   it('ChannelSelector: handleChannelSave updates info.channel', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-      // After save, "Saved" text appears briefly
-      await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    // After save, "Saved" text appears briefly
+    await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
+  });
+
+  it('ChannelSelector: stored deprecated alias selects canonical option and shows a muted hint', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'stable' } as never);
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    // Selected option is the canonical name, not the raw stored alias
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(sel.value).toBe('current');
+    // No free-text fallback for a known alias
+    expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull();
+    expect(screen.getByText('stored as stable (deprecated)')).toBeTruthy();
+  });
+
+  it('ChannelSelector: stored deprecated "develop" alias selects "next" and shows its hint', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'next', rawChannel: 'develop' } as never);
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(sel.value).toBe('next');
+    expect(screen.getByText('stored as develop (deprecated)')).toBeTruthy();
+  });
+
+  it('ChannelSelector: updateSettings is not called on render, dropdown open or dropdown close', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'stable' } as never);
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
+
+    const sel = screen.getByRole('combobox') as HTMLSelectElement;
+    await userEvent.click(sel);
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
+
+    await userEvent.keyboard('{Escape}');
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
   });
 });
 
@@ -2028,8 +2146,8 @@ describe('SettingsGeneralTab — publicUrl onChange', () => {
 
   it('typing in Service Host input updates publicUrl form field', async () => {
     renderGeneral();
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     await userEvent.clear(input);
     await userEvent.type(input, 'http://192.168.1.10:3000');
     expect(input.value).toBe('http://192.168.1.10:3000');
@@ -2607,7 +2725,7 @@ describe('SettingsAboutTab — doUpdate polling', () => {
       isDocker: false,
       updateInfo: { available: true, currentVersion: '0.3.0', latestVersion: '0.4.0', checkedAt: new Date().toISOString() },
     } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'stable'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({} as never);
   });
 
@@ -2711,44 +2829,30 @@ describe('SettingsAboutTab — doUpdate polling', () => {
   it('ChannelSelector: save with empty trimmed string returns early (line 1748)', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, '__custom');
-      await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
-      const applyBtn = screen.getByRole('button', { name: 'Apply' });
-      // Apply is disabled when customVal is empty — but try pressing Enter in empty field
-      const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
-      // Input is empty; pressing Enter calls save('') → !ch.trim() → return
-      fireEvent.keyDown(customInput, { key: 'Enter' });
-      await new Promise(r => setTimeout(r, 50));
-      expect(mockUpdateSettings).not.toHaveBeenCalled();
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
+    await waitFor(() => screen.getByPlaceholderText('v0.2.0'));
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    // Input is empty; pressing Enter calls save('') → !ch.trim() → return
+    fireEvent.keyDown(customInput, { key: 'Enter' });
+    await new Promise(r => setTimeout(r, 50));
+    expect(mockUpdateSettings).not.toHaveBeenCalled();
   });
 
   it('ChannelSelector: save non-Error shows "Failed to save"', async () => {
     mockUpdateSettings.mockRejectedValue('non-error string');
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(screen.queryByText('Failed to save')).not.toBeNull());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(screen.queryByText('Failed to save')).not.toBeNull());
   });
 
   it('info.channel null uses "latest" fallback in ChannelSelector', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: null } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: null, rawChannel: null } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     // channel ?? 'latest' → 'latest' branch
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    expect(sel).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.getByText('latest')).toBeTruthy();
   });
 
   it('handleChannelSave: prev is null branch (setInfo prev?... : prev)', async () => {
@@ -2759,13 +2863,8 @@ describe('SettingsAboutTab — doUpdate polling', () => {
     // Instead verify the normal path once more with a version that exercises setInfo update.
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === '__custom'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'stable');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'current');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
   });
 });
 
@@ -3383,19 +3482,10 @@ describe('SettingsCatalogTab — refreshCatalog catch + persist branches', () =>
   it('SettingsGeneralTab: host !== 0.0.0.0 uses host in placeholder', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: '192.168.1.1' } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     // placeholder uses host value (not '<your-ip>')
     expect(input.placeholder).toContain('192.168.1.1');
-  });
-
-  it('SettingsGeneralTab: form.defaultTimeoutMs undefined shows empty string in timeout field', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, defaultTimeoutMs: undefined } as never);
-    render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Default Request Timeout (ms)'));
-    const input = screen.getByLabelText('Default Request Timeout (ms)') as HTMLInputElement;
-    // form.defaultTimeoutMs ?? '' → '' branch
-    expect(input.value).toBe('');
   });
 
   it('SettingsGeneralTab: form.logLevel undefined uses "info" fallback', async () => {
@@ -3756,33 +3846,20 @@ describe('SettingsNotificationsTab — summariseChannel singular and sendTest br
 describe('SettingsGeneralTab — null field fallback branches', () => {
   beforeEach(() => {
     mockUpdateSettings.mockResolvedValue({} as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
   });
 
-  it('settings?.host ?? "" fallback when host is undefined', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, host: undefined } as never);
+  it('empty listeningAddresses falls back to the bind address', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, listeningAddresses: [] } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    // host is undefined → settings?.host ?? '' → '' (covers L147 ?? fallback)
-    const hostInput = document.querySelector('input[disabled]') as HTMLInputElement | null;
-    // The disabled host input should show empty string
-    if (hostInput) expect(hostInput.value).toBe('');
-  });
-
-  it('settings?.port ?? "" fallback when port is undefined', async () => {
-    mockGetSettings.mockResolvedValue({ ...baseSettings, port: undefined } as never);
-    render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    // port is undefined → settings?.port ?? '' → '' (covers L151 ?? fallback)
-    const disabledInputs = Array.from(document.querySelectorAll('input[disabled]')) as HTMLInputElement[];
-    const portInput = disabledInputs.find(i => i.value === '');
-    expect(portInput).toBeTruthy();
+    await waitFor(() => screen.getByText('http://0.0.0.0:3000'));
   });
 
   it('settings?.host undefined → placeholder uses localhost fallback (L163 false+nullish branch)', async () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: undefined } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const urlInput = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const urlInput = screen.getByLabelText('Public URL') as HTMLInputElement;
     // host is undefined → settings?.host ?? 'localhost' → 'localhost' (L164 ?? fallback)
     expect(urlInput.placeholder).toContain('localhost');
   });
@@ -3791,20 +3868,16 @@ describe('SettingsGeneralTab — null field fallback branches', () => {
     // publicUrl is '' (falsy) → s.publicUrl || `http://localhost:${s.port}` → uses localhost:port
     mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const urlInput = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const urlInput = screen.getByLabelText('Public URL') as HTMLInputElement;
     // form.publicUrl is set to 'http://localhost:3000' because '' is falsy
     expect(urlInput.value).toContain('localhost');
   });
 
   it('settings null (resolve null) shows error (L135 guard)', async () => {
     // When settings resolves to null, setSettings(null) → !settings=true → error fallback
-    // But the component also accesses s.defaultTimeoutMs etc on line 105 before setting state
-    // So if getSettings resolves null, the component throws
-    // The error boundary doesn't exist here, so we need to catch the error state
-    // Actually the component uses setSettings(s) and then accesses s.defaultTimeoutMs — crash
-    // The correct way to reach line 135 is via a rejection + re-render... skip this unreachable path
-    // Instead verify the error div shown from rejection:
+    // The component reads fields off s before setting state, so a null resolve throws.
+    // The reachable path to the error div is a rejection:
     mockGetSettings.mockRejectedValue(new Error('Network error'));
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
     await waitFor(() => expect(screen.queryByText('Network error')).not.toBeNull());
@@ -4299,13 +4372,13 @@ describe('SettingsAboutTab — additional ?? branch coverage', () => {
   const baseSystemInfo = {
     version: '0.3.0', nodeVersion: 'v22.0.0', platform: 'linux',
     uptimeSeconds: 3600, configDir: '/etc/routerly',
-    isDocker: false, channel: 'stable',
+    isDocker: false, channel: 'current',
     updateInfo: { hasUpdate: true, latestVersion: '0.4.0', releaseNotes: '' },
-    releases: { channels: ['stable', 'latest'], versions: ['0.3.0'] },
+    releases: { channels: ['latest', 'current', 'next'], versions: ['0.3.0'] },
   };
 
   beforeEach(() => {
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['stable', 'latest'], versions: ['0.3.0'] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next'], versions: ['0.3.0'] } as never);
     mockUpdateSettings.mockResolvedValue({} as never);
     mockCheckForUpdates.mockResolvedValue({ hasUpdate: false, latestVersion: '0.3.0', releaseNotes: '' } as never);
   });
@@ -4322,27 +4395,18 @@ describe('SettingsAboutTab — additional ?? branch coverage', () => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
-    const sel = screen.getAllByRole('combobox').find(s =>
-      Array.from((s as HTMLSelectElement).options).some(o => o.value === 'latest'),
-    ) as HTMLSelectElement | undefined;
-    if (sel) {
-      await userEvent.selectOptions(sel, 'latest');
-      await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
-      // setInfo(prev => prev ? { ...prev, channel: 'latest' } : prev) → prev is non-null, covers true branch
-    }
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'latest');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    // setInfo(prev => prev ? { ...prev, channel: 'latest' } : prev) → prev is non-null, covers true branch
   });
 
-  it('CHANNEL_LABELS fallback (ch ?? ch) for version option (L1806)', async () => {
-    // releases.versions has '0.3.0' — it appears as a version option in ChannelSelector
-    // But CHANNEL_LABELS only has 'stable'/'latest'/'edge' → version '0.3.0' hits ?? ch fallback
+  it('a version stored as channel does not crash the selector (no dropdown label lookup left)', async () => {
     mockGetSystemInfo.mockResolvedValue({
       ...baseSystemInfo,
-      channel: '0.3.0', // current = '0.3.0', which is in versions → isKnown=true → shows select
+      channel: '0.3.0', // a version isn't in releases.channels — just verify no crash, no stale label lookup
     } as never);
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
-    // The select shows channels (stable, latest) + custom option
-    // Actually versions are shown differently — let's just verify no crash
     expect(screen.queryByText('Channel')).not.toBeNull();
   });
 
@@ -4438,8 +4502,8 @@ describe('SettingsGeneralTab — host placeholder branch (L164)', () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, host: 'myserver.local', port: 3000 } as never);
     mockUpdateSettings.mockResolvedValue({} as never);
     render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
-    await waitFor(() => screen.getByLabelText('Service Host'));
-    const input = screen.getByLabelText('Service Host') as HTMLInputElement;
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     // placeholder uses settings.host → 'http://myserver.local:3000'
     expect(input.placeholder).toContain('myserver.local');
   });
@@ -4700,25 +4764,106 @@ describe('SettingsCatalogTab — non-Error rejection + confirmRemove + move same
   });
 });
 
-describe('SettingsAboutTab — unknown channel label (L1806) + non-Error rejection (L1468)', () => {
-  it('releases.channels with unknown channel → CHANNEL_LABELS ?? ch fallback (L1806 branch 268,1)', async () => {
+describe('SettingsAboutTab — rolling channel tag label + non-Error rejection (L1468)', () => {
+  it('a non-semver rolling tag from releases.channels is labelled with its own value', async () => {
     mockGetSystemInfo.mockResolvedValue({
       version: '0.3.0', nodeVersion: 'v22.0.0', platform: 'linux',
       uptimeSeconds: 3600, configDir: '/etc/routerly',
-      isDocker: false, channel: 'stable',
+      isDocker: false, channel: 'current',
       updateInfo: null,
-      releases: { channels: ['stable', 'nightly'], versions: [] },
+      releases: { channels: ['current', 'nightly'], versions: [] },
     } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['stable', 'nightly'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['current', 'nightly'], versions: [] } as never);
     mockUpdateSettings.mockResolvedValue({} as never);
     mockCheckForUpdates.mockResolvedValue({ hasUpdate: false, latestVersion: '0.3.0', releaseNotes: '' } as never);
     render(<MemoryRouter><SettingsAboutTab /></MemoryRouter>);
     await waitFor(() => screen.getByText('Channel'));
-    // Select renders with 'stable' (CHANNEL_LABELS['stable']='current') and 'nightly' (no label → 'nightly')
-    const sel = Array.from(document.querySelectorAll('select option')) as HTMLOptionElement[];
-    const nightlyOpt = sel.find(o => o.value === 'nightly');
-    expect(nightlyOpt).toBeTruthy();
-    // Text content is 'nightly' (fallback from ?? ch)
-    expect(nightlyOpt?.textContent).toBe('nightly');
+    // The channel list arrives from getAvailableReleases(), so wait for it to replace FALLBACK_RELEASES.
+    await userEvent.click(screen.getByRole('combobox'));
+    await waitFor(() => expect(screen.getByText('nightly')).toBeTruthy());
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SettingsIntegrationsTab — trace export
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('SettingsIntegrationsTab — trace export', () => {
+  const otelIntegration = {
+    id: 'otel-1', type: 'otel', enabled: true,
+    endpoint: 'http://collector:4318', protocol: 'http',
+  };
+
+  beforeEach(() => {
+    mockCreateIntegration.mockResolvedValue({ id: 'new1', type: 'otel', enabled: true } as never);
+    mockUpdateIntegration.mockImplementation((id: string, patch: Record<string, unknown>) =>
+      Promise.resolve({ ...otelIntegration, ...patch, id }) as never);
+    mockTestIntegration.mockResolvedValue({ ok: true, message: 'OK' } as never);
+  });
+
+  async function expand(integrations: Record<string, unknown>[]) {
+    mockGetIntegrations.mockResolvedValue(integrations as never);
+    render(<MemoryRouter><SettingsIntegrationsTab /></MemoryRouter>);
+    await waitFor(() => screen.getByText(integrations[0]!['id'] as string));
+    const chevron = document.querySelectorAll('button')[0]!;
+    await userEvent.click(chevron);
+    await waitFor(() => screen.getByLabelText(/Export request traces/i));
+  }
+
+  it('opts an OTLP integration in and saves the flag', async () => {
+    await expand([otelIntegration]);
+
+    const checkbox = screen.getByLabelText(/Export request traces/i) as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    expect(screen.queryByText(/exports every request/i)).toBeNull();
+
+    await userEvent.click(checkbox);
+    expect(screen.getByText(/exports every request/i)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: /Save/i }));
+    await waitFor(() => expect(mockUpdateIntegration).toHaveBeenCalledWith('otel-1', expect.objectContaining({
+      traces: { enabled: true },
+    })));
+  });
+
+  it('pre-fills the sample rate and clamps what is typed', async () => {
+    await expand([{ ...otelIntegration, traces: { enabled: true, sampleRate: 0.25 } }]);
+
+    const rate = screen.getByRole('spinbutton') as HTMLInputElement;
+    expect(rate.value).toBe('0.25');
+
+    fireEvent.change(rate, { target: { value: '7' } });
+    expect((screen.getByRole('spinbutton') as HTMLInputElement).value).toBe('1');
+
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '' } });
+    expect((screen.getByRole('spinbutton') as HTMLInputElement).value).toBe('1');
+  });
+
+  it('turning it off saves enabled:false, not a missing field', async () => {
+    await expand([{ ...otelIntegration, traces: { enabled: true, sampleRate: 0.5 } }]);
+
+    await userEvent.click(screen.getByLabelText(/Export request traces/i));
+    await userEvent.click(screen.getByRole('button', { name: /Save/i }));
+
+    await waitFor(() => expect(mockUpdateIntegration).toHaveBeenCalledWith('otel-1', expect.objectContaining({
+      traces: { enabled: false, sampleRate: 0.5 },
+    })));
+  });
+
+  it('is offered by webhook and by no metric-only integration', async () => {
+    await expand([
+      { id: 'hook-1', type: 'webhook', enabled: true, url: 'http://hook.local' },
+    ]);
+    expect(screen.getByLabelText(/Export request traces/i)).toBeTruthy();
+
+    cleanup();
+    mockGetIntegrations.mockResolvedValue([
+      { id: 'dd-1', type: 'datadog', enabled: true, apiKey: 'k', site: 'datadoghq.com' },
+    ] as never);
+    render(<MemoryRouter><SettingsIntegrationsTab /></MemoryRouter>);
+    await waitFor(() => screen.getByText('dd-1'));
+    await userEvent.click(document.querySelectorAll('button')[0]!);
+    await waitFor(() => screen.getByPlaceholderText('Your Datadog API key'));
+    expect(screen.queryByLabelText(/Export request traces/i)).toBeNull();
   });
 });

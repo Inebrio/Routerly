@@ -19,6 +19,18 @@ const PERM_LABELS: Record<Permission, string> = {
   'token:write':        'Tokens – Write',
   'role:write':         'Roles – Write',
   'audit:read':         'Audit Log – Read',
+  'modules:read':       'Modules – Read',
+  'modules:manage':     'Modules – Manage',
+  'connections:read':   'Connections – Read',
+  'connections:manage': 'Connections – Manage',
+  'resilience:read':    'Resilience – Read',
+  'resilience:manage':  'Resilience – Manage',
+  'profiles:read':      'Routing Profiles – Read',
+  'profiles:manage':    'Routing Profiles – Manage',
+  'optimizers:read':    'Optimizers – Read',
+  'optimizers:manage':  'Optimizers – Manage',
+  'experiments:read':   'Experiments – Read',
+  'experiments:manage': 'Experiments – Manage',
 };
 
 interface RoleFormState {

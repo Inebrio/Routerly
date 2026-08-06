@@ -1,6 +1,6 @@
 ---
 title: Settings
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 # Dashboard: Settings
@@ -15,18 +15,53 @@ Open Settings from the **Settings** item in the sidebar.
 
 ![Settings General tab showing server info, runtime settings, and anonymous metrics toggle](../assets/screenshot-settings.png)
 
-### Service Configuration
+### Server Info
+
+Read-only block. It answers one question: where is this service reachable, and from where.
+
+Under **Reachable at any of these addresses** (**Reachable at** when there is only one) each address is listed with a badge:
+
+| Badge | Meaning |
+|-------|---------|
+| **This machine** | Loopback address (`127.0.0.1`, `::1`, `localhost`). Only clients running on the same machine can use it |
+| **Network** | Reachable from other machines that can route to this host |
+
+Each address has a **Copy** button that puts it on the clipboard.
+
+The list is derived at runtime from the bind address: a wildcard bind (`0.0.0.0`) expands to every IPv4 interface, any other host resolves to that single address.
+
+Below the list:
+
+| Row | Description |
+|-----|-------------|
+| **Host and port** | The bind address the service was started with |
+| **Version** | The running build |
+| **Uptime** | Time since the service started |
+
+Host and port come from the environment or the settings file and cannot be changed here; changing them requires a restart.
+
+### Runtime Settings
+
+Everything in this block is editable and saved with **Save Settings**.
 
 | Field | Description |
 |-------|-------------|
-| **Port** | The port the service listens on (read-only — change via CLI or environment variable) |
-| **Host** | The bind address (read-only) |
-| **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets |
-| **Default Timeout** | Per-request timeout in milliseconds (applies to all projects unless overridden per-project) |
-| **Log Level** | `trace` / `debug` / `info` / `warn` / `error` |
-| **Dashboard Enabled** | Toggle the web dashboard on or off |
+| **Log Level** | `trace` / `debug` / `info` / `warn` / `error`. Routerly prints the [full request trace](../concepts/architecture.md#the-trace-on-the-console) on stdout, with failures on stderr; at `warn` and `error` only the failures are printed |
+| **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets. Useful when the dashboard runs on a different machine or port than the service |
 
-Changes are saved immediately and take effect without a restart (except Port and Host, which require a restart).
+**Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.
+
+Per-request timeouts are configured per project (see [Projects](./projects.md#general-tab)), not globally.
+
+---
+
+## Security Tab {#security-tab}
+
+| Field | Description |
+|-------|-------------|
+| **Require Two-Factor Authentication for all users** | When enabled, users without 2FA are prompted to set it up right after login. Users enrol from their [Profile](./profile) page |
+
+Press **Save Settings** to apply.
 
 ---
 
@@ -63,6 +98,8 @@ Click a channel row to navigate to its **edit page** for detailed configuration.
 7. Use **Send Test** to verify the channel works before relying on it for real events
 
 See [Concepts: Notifications](../concepts/notifications.md) for the full event taxonomy and per-type configuration fields.
+
+Among the built-in events, the update checker raises **System – Update Available** whenever it finds a newer release on the configured update channel; it appears with that label in the Events dropdown here and in the routing-rule Events picker below, so it can be routed to any channel like any other event. It also lands in the in-app inbox for any `Dashboard` channel it matches.
 
 :::note Target scope
 **Recipients / Targets** control inbox visibility for the `Dashboard` channel and recipient resolution for email channels. Webhook and native channels (Slack, Teams, PagerDuty, Discord) deliver to a fixed endpoint - targets are stored but do not affect their delivery.
@@ -188,6 +225,20 @@ Click the **Refresh** button in the top right to invalidate the 6-hour in-memory
 
 ---
 
+## Modules {#modules-tab}
+
+Optional service modules are managed from the CLI, not from the dashboard:
+
+```bash
+routerly modules list
+routerly modules enable <id>
+routerly modules disable <id>
+```
+
+Module changes require a service restart to take effect. See [CLI — Commands](../cli/commands#routerly-modules) for the full command reference and the list of modules.
+
+---
+
 ## Integrations Tab {#integrations-tab}
 
 Export Routerly metrics to external monitoring and observability systems. Integrations push metrics every 60 seconds to your chosen platform.
@@ -220,7 +271,7 @@ Click a row to expand inline details (endpoint, protocol, headers, etc. dependin
    - **Auth Token** (optional) — if Routerly's `/metrics` endpoint requires bearer authentication
 
    **OpenTelemetry** (push):
-   - **Endpoint URL** (required) — e.g. `http://localhost:4318/v1/metrics`
+   - **Endpoint URL** (required) — e.g. `http://localhost:4318`
    - **Protocol** (required) — `http` or `grpc`
    - **Headers** (optional) — one per line, format `Key: Value` (e.g. `Authorization: Bearer token`)
 
@@ -244,9 +295,10 @@ Click a row to expand inline details (endpoint, protocol, headers, etc. dependin
    - **Secret** (optional) — if set, Routerly signs each request with HMAC-SHA256 in the `X-Routerly-Signature` header
    - **Headers** (optional) — custom headers to include with each request
 
-5. Check the **Enabled** toggle to activate immediately upon creation
-6. Click **Create Integration**
-7. Use **Test** to verify connectivity before relying on it for production metrics
+5. For **OpenTelemetry** and **Webhook**, optionally turn on [trace export](#exporting-traces)
+6. Check the **Enabled** toggle to activate immediately upon creation
+7. Click **Create Integration**
+8. Use **Test** to verify connectivity before relying on it for production metrics
 
 ### Editing an Integration
 
@@ -294,6 +346,34 @@ Each platform receives metrics in its native format:
 - **InfluxDB** — InfluxDB v2 line protocol
 - **Webhook** — JSON POST with metric snapshot
 
+### Exporting Traces {#exporting-traces}
+
+Metrics are aggregates pushed every 60 seconds. A **trace** is the opposite: the
+full record of one proxied request, every phase it went through and every module
+that spoke in it. The two sinks that can carry a per-request payload,
+**OpenTelemetry** and **Webhook**, can export traces as well, on the create and
+edit forms:
+
+| Field | Description |
+|-------|-------------|
+| **Export request traces** | Off by default. Unlike the 60-second metric push, this is one outbound request per proxied request |
+| **Sample rate** | Shown once export is on. `1` exports every request, `0.1` one in ten. The decision is taken once per request, so a sampled-out request produces no partial export |
+
+What each sink receives:
+
+- **OpenTelemetry** — native OTLP spans on `<endpoint>/v1/traces`: a
+  `routerly.request` root span with one `routerly.<phase>` child span per
+  pipeline phase, and each trace entry as a span event. No extra configuration:
+  the same endpoint already used for metrics.
+- **Webhook** — one POST per completed request, `{ "source": "routerly", "type":
+  "trace", "timestamp", "trace": { "id", "projectId", "entries" } }`, signed with
+  the same `X-Routerly-Signature` HMAC as the metric payloads when a secret is set.
+
+Traces always carry metadata: models, policies, guardrail outcomes, PII scan
+results, tokens and timings. Prompts and answers are included only for projects
+that opted in (**Trace content** on the project's General tab, or `routerly
+project edit <project> --trace-content`).
+
 ---
 
 ## About Tab
@@ -305,7 +385,7 @@ System information about the running instance:
 | Field | Description |
 |-------|-------------|
 | **Version** | Routerly version string |
-| **Channel** | Active update channel: `latest`, `stable`, `develop`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
+| **Channel** | Active update channel: `latest`, `current`, `next`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
 | **Uptime** | How long the service has been running since last start |
 | **Node.js** | Node.js runtime version |
 | **Platform** | OS and architecture |
@@ -317,10 +397,12 @@ The channel selector lets you choose which release stream Routerly follows when 
 
 | Channel | Description |
 |---------|-------------|
-| `latest` | Most recent release (may include pre-releases) |
-| `stable` | Most recent production-stable release |
-| `develop` | Development pre-release builds |
+| `latest` | Newest production-ready release |
+| `current` | Newest production-ready release (same as `latest`) |
+| `next` | Unstable/rolling release line |
 | Custom version | Pin to a specific release tag (e.g. `v0.2.0`) |
+
+`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`, respectively. Removal is planned no earlier than the release after next.
 
 Changing the channel takes effect immediately — the running service is notified without a restart.
 
@@ -329,7 +411,7 @@ To enter a specific version tag, select **Custom…** in the dropdown. Type the 
 You can also change the channel from the CLI:
 
 ```bash
-routerly update channel stable
+routerly update channel current
 routerly update channel v0.2.0
 ```
 

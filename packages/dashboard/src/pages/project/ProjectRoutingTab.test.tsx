@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -7,6 +8,8 @@ import { ProjectRoutingTab } from './ProjectRoutingTab';
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
   updateProject: vi.fn(),
+  getProfiles: vi.fn(),
+  assignProjectProfiles: vi.fn(),
 }));
 
 // ponytail: useBlocker requires a data router; mock the hook so MemoryRouter works
@@ -47,9 +50,11 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { getModels, updateProject } from '../../api';
+import { getModels, updateProject, getProfiles, assignProjectProfiles } from '../../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockUpdateProject = vi.mocked(updateProject as (...args: unknown[]) => Promise<unknown>);
+const mockGetProfiles = vi.mocked(getProfiles as () => Promise<unknown>);
+const mockAssignProfile = vi.mocked(assignProjectProfiles as (...args: unknown[]) => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -138,9 +143,17 @@ function renderTab(project: Record<string, unknown> = mockProject) {
   );
 }
 
+const sampleProfiles = [
+  { id: 'auto', kind: 'routing', version: 1, label: 'Auto', policies: [{ type: 'cheapest', enabled: true }], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
+  { id: 'builtin-balanced', kind: 'routing', version: 1, label: 'Balanced', policies: [], selector: 'argmax', fallbackStrategy: 'next-best', builtin: true },
+  { id: 'user-custom', kind: 'routing', version: 2, label: 'My Profile', policies: [], selector: 'cheapest', fallbackStrategy: 'abort', builtin: false },
+];
+
 beforeEach(() => {
   mockGetModels.mockResolvedValue([chatModel, chatModel2, embeddingModel]);
   mockUpdateProject.mockResolvedValue({ ...mockProject });
+  mockGetProfiles.mockResolvedValue(sampleProfiles);
+  mockAssignProfile.mockResolvedValue({ ...mockProject, routingProfileId: 'builtin-balanced' });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -2284,5 +2297,146 @@ describe('ProjectRoutingTab — singular hidden example count', () => {
     await userEvent.click(header);
     // With PAGE=5 and 6 examples, hidden=1 → "1 more example" (no 's')
     await waitFor(() => screen.getByText('+ 1 more example'));
+  });
+});
+
+// ── Routing Profile assignment control ────────────────────────────────────────
+
+function getProfileSelect() {
+  return screen.getByTestId('searchable-select') as HTMLSelectElement;
+}
+
+const assignedProject = { ...mockProject, routingProfileId: 'builtin-balanced' };
+
+/** Like renderTab, but keeps the project in state so setProject re-renders the tab. */
+function renderStatefulTab(initial: Record<string, unknown>) {
+  function LayoutWrapper() {
+    const [project, setProject] = React.useState(initial);
+    return <Outlet context={{ project, setProject }} />;
+  }
+  return render(
+    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/routing']}>
+      <Routes>
+        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
+          <Route path="routing" element={<ProjectRoutingTab />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+describe('ProjectRoutingTab — routing profile assignment', () => {
+  it('starts in custom mode: policy editor visible, no profile select', async () => {
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    expect(screen.queryByTestId('searchable-select')).toBeNull();
+  });
+
+  it('switching to Profile assigns the Auto profile by default', async () => {
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'auto' }));
+  });
+
+  it('falls back to the first built-in when Auto is missing', async () => {
+    mockGetProfiles.mockResolvedValueOnce(sampleProfiles.filter(p => p.id !== 'auto'));
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'builtin-balanced' }));
+  });
+
+  it('falls back to the first user profile when no built-in exists', async () => {
+    mockGetProfiles.mockResolvedValueOnce(sampleProfiles.filter(p => !p.builtin));
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'user-custom' }));
+  });
+
+  it('errors instead of assigning when no profile exists at all', async () => {
+    mockGetProfiles.mockResolvedValueOnce([]);
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    await waitFor(() => screen.getByText(/No routing profile available/));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+  });
+
+  it('lists built-in and user profiles, without a Custom entry, when assigned', async () => {
+    renderTab(assignedProject);
+    const sel = await waitFor(getProfileSelect);
+    const opts = Array.from(sel.options).map(o => o.textContent);
+    expect(opts).toContain('Balanced (built-in)');
+    expect(opts).toContain('My Profile');
+    expect(opts).not.toContain("Custom (this project's own policies)");
+  });
+
+  it('hides the policy editor while a profile is assigned', async () => {
+    renderTab(assignedProject);
+    await waitFor(getProfileSelect);
+    expect(screen.queryByTestId('searchable-Add a policy...')).toBeNull();
+    screen.getByText(/Policies come from the profile/);
+  });
+
+  it('keeps target models configurable while a profile is assigned', async () => {
+    renderTab({ ...mockProjectWithPolicies, routingProfileId: 'builtin-balanced' });
+    await waitFor(getProfileSelect);
+    expect(screen.getByRole('button', { name: /Add Target Model/ })).not.toBeNull();
+  });
+
+  it('selecting another profile assigns it', async () => {
+    renderTab(assignedProject);
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, 'user-custom');
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'user-custom' }));
+  });
+
+  it('switching to Custom clears the assignment', async () => {
+    renderTab(assignedProject);
+    await waitFor(getProfileSelect);
+    await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: null }));
+  });
+
+  it('clicking the already active mode does nothing', async () => {
+    renderTab();
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+  });
+
+  it('prefills the inline policies from the profile when switching to Custom', async () => {
+    mockAssignProfile.mockResolvedValueOnce({ ...mockProject });
+    renderStatefulTab({ ...mockProject, routingProfileId: 'auto' });
+    await waitFor(getProfileSelect);
+    await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    // 'auto' carries a cheapest policy, which becomes this project's starting point
+    await waitFor(() => screen.getByText(/Scores models inversely proportional/));
+  });
+
+  it('shows an error when assignment fails', async () => {
+    mockAssignProfile.mockRejectedValueOnce(new Error('assign failed'));
+    renderTab(assignedProject);
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, 'user-custom');
+    await waitFor(() => expect(screen.queryByText('assign failed')).not.toBeNull());
+  });
+
+  it('shows a fallback message when assignment fails with a non-Error', async () => {
+    mockAssignProfile.mockRejectedValueOnce('oops');
+    renderTab(assignedProject);
+    const sel = await waitFor(getProfileSelect);
+    await userEvent.selectOptions(sel, 'user-custom');
+    await waitFor(() => expect(screen.queryByText('Failed to assign routing profile')).not.toBeNull());
+  });
+
+  it('tolerates a failed profiles fetch', async () => {
+    mockGetProfiles.mockRejectedValueOnce(new Error('boom'));
+    renderTab(assignedProject);
+    const sel = await waitFor(getProfileSelect);
+    // Only the mocked SearchableSelect placeholder option remains
+    expect(Array.from(sel.options).map(o => o.value)).toEqual(['']);
   });
 });

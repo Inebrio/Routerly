@@ -101,4 +101,11 @@ Routerly authenticates the request, swaps in your stored subscription token, and
 | Cost tracking | per-token | not available (flat subscription) |
 | Compatible clients | any | any (token swap is server-side) |
 
+The subscription backend only speaks the Responses API and only streams.
+Routerly maps it back to the shape the caller asked for, so an `openai-oauth`
+model behaves like any other model: `/v1/chat/completions` with or without
+`stream`, and `/v1/messages` for Anthropic-format clients such as
+[Claude Code](../integrations/clients/claude-code.md). Tool calls work on both
+endpoints.
+
 Both can coexist: you can have an `openai-oauth` model alongside your existing `openai` API-key models in the same project.

@@ -22,6 +22,32 @@ vi.mock('../components/ConfirmDialog', () => ({
   ),
 }));
 
+// ponytail: mock SearchableSelect as a plain <select> so selectOptions tests keep working
+vi.mock('../components/SearchableSelect', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    placeholder,
+    disabled,
+  }: {
+    options: { value: string; label: string }[];
+    value: string;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    disabled?: boolean;
+  }) => (
+    <select
+      data-testid={`searchable-${placeholder ?? 'select'}`}
+      value={value}
+      disabled={disabled}
+      onChange={e => onChange(e.target.value)}
+    >
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  ),
+}));
+
 vi.mock('./notificationChannelFields', () => ({
   CHANNEL_PROVIDER_META: [
     { key: 'dashboard', label: 'Dashboard', description: 'In-app inbox' },

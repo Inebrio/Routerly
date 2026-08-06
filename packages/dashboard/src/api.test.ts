@@ -110,6 +110,13 @@ describe('processResponse — JSON body', () => {
     await expect(getModels()).rejects.toThrow('Bad request');
   });
 
+  it('prefers the sentence over the machine code when the body carries both', async () => {
+    const { getModels } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      mockRes(400, { error: 'label_taken', message: 'Label "Main" is already used by another connection' }, false));
+    await expect(getModels()).rejects.toThrow('Label "Main" is already used by another connection');
+  });
+
   it('throws HTTP status when non-ok and no error field', async () => {
     const { getModels } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(400, {}, false));
@@ -876,6 +883,7 @@ describe('getUsage', () => {
       projectIds: ['p1', 'p2'],
       modelIds: ['m1'],
       callType: 'completion',
+      requestType: 'embedding',
       outcome: 'success',
     });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
@@ -888,15 +896,17 @@ describe('getUsage', () => {
     expect(url).toContain('projectIds=p1%2Cp2');
     expect(url).toContain('modelIds=m1');
     expect(url).toContain('callType=completion');
+    expect(url).toContain('requestType=embedding');
     expect(url).toContain('outcome=success');
   });
 
-  it('skips callType=all and outcome=all', async () => {
+  it('skips callType=all, requestType=all and outcome=all', async () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
-    await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { callType: 'all', outcome: 'all' });
+    await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { callType: 'all', requestType: 'all', outcome: 'all' });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('callType');
+    expect(url).not.toContain('requestType');
     expect(url).not.toContain('outcome');
   });
 
@@ -925,6 +935,56 @@ describe('getTrace', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { trace: [] }));
     await getTrace('t1');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/traces/t1');
+  });
+});
+
+describe('streamTraces', () => {
+  function sseRes(frames: string[]): Response {
+    const encoder = new TextEncoder();
+    return {
+      ok: true,
+      status: 200,
+      body: new ReadableStream<Uint8Array>({
+        start(c) { for (const f of frames) c.enqueue(encoder.encode(f)); c.close(); },
+      }),
+    } as unknown as Response;
+  }
+
+  it('forwards each frame and skips keepalive comments', async () => {
+    const { streamTraces } = await api();
+    const event = { traceId: 't1', topic: 'trace/request/pii/scrubbed', entry: { panel: 'request', message: 'pii:scrubbed', details: {} } };
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(sseRes([': open\n\n', `event: trace\ndata: ${JSON.stringify(event)}\n\n`, ': ping\n\n']));
+    const seen: unknown[] = [];
+    const stop = await streamTraces({ correlationId: 'c1' }, e => seen.push(e));
+    await vi.waitFor(() => expect(seen).toHaveLength(1));
+    expect(seen[0]).toEqual(event);
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/traces/stream?correlationId=c1');
+    stop();
+  });
+
+  it('ignores a malformed frame', async () => {
+    const { streamTraces } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(sseRes(['data: not json\n\n']));
+    const seen: unknown[] = [];
+    const stop = await streamTraces({}, e => seen.push(e));
+    await new Promise(r => setTimeout(r, 10));
+    expect(seen).toHaveLength(0);
+    stop();
+  });
+
+  it('returns a no-op stop when the channel cannot be opened', async () => {
+    const { streamTraces } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, status: 403, body: null } as unknown as Response);
+    const stop = await streamTraces({ traceId: 't1' }, () => { throw new Error('must not fire'); });
+    expect(typeof stop).toBe('function');
+    stop();
+  });
+
+  it('survives a fetch rejection', async () => {
+    const { streamTraces } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('offline'));
+    const stop = await streamTraces({ projectId: 'p1' }, () => { throw new Error('must not fire'); });
+    expect(typeof stop).toBe('function');
   });
 });
 
@@ -1143,9 +1203,10 @@ describe('getNotificationInboxPage', () => {
   it('includes all optional params when provided', async () => {
     const { getNotificationInboxPage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { items: [], pagination: {}, unreadCount: 0, enabled: true }));
-    await getNotificationInboxPage({ page: 1, pageSize: 10, severity: 'critical', event: 'budget.exceeded', unreadOnly: true, from: '2024-01-01', to: '2024-01-31' });
+    await getNotificationInboxPage({ page: 1, pageSize: 10, severity: 'critical', event: 'budget.exceeded', category: 'budget', unreadOnly: true, from: '2024-01-01', to: '2024-01-31' });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('severity=critical');
+    expect(url).toContain('category=budget');
     expect(url).toContain('event=budget.exceeded');
     expect(url).toContain('unreadOnly=true');
     expect(url).toContain('from=2024-01-01');
@@ -1159,6 +1220,7 @@ describe('getNotificationInboxPage', () => {
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).not.toContain('severity');
     expect(url).not.toContain('event');
+    expect(url).not.toContain('category');
     expect(url).not.toContain('unreadOnly');
     expect(url).not.toContain('from');
     expect(url).not.toContain('to');
@@ -1227,20 +1289,6 @@ describe('deletePlaygroundPreset', () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deletePlaygroundPreset('p1', 'pp1');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
-  });
-});
-
-// ── End users ─────────────────────────────────────────────────────────────────
-
-describe('getEndUsers', () => {
-  it('GET /end-users?projectId=... and extracts .users', async () => {
-    const { getEndUsers } = await api();
-    const users = [{ userId: 'u1', projectId: 'p1', firstSeen: '', lastSeen: '', requests: 1, totalCost: 0, totalTokens: 0 }];
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { users }));
-    const result = await getEndUsers('p1');
-    expect(result).toEqual(users);
-    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
-    expect(url).toContain('projectId=p1');
   });
 });
 
@@ -1331,5 +1379,39 @@ describe('getAuditLog', () => {
     await getAuditLog({});
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toMatch(/\/audit$/);
+  });
+});
+
+// ── Modules ───────────────────────────────────────────────────────────────────
+
+describe('getModules', () => {
+  it('GET /modules', async () => {
+    const { getModules } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
+    await getModules();
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    expect(url).toMatch(/\/modules$/);
+  });
+});
+
+describe('enableModule', () => {
+  it('POST /modules/:id/enable with encodeURIComponent', async () => {
+    const { enableModule } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: true, restartRequired: true }));
+    await enableModule('g 1');
+    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
+    expect(url).toContain(`${encodeURIComponent('g 1')}/enable`);
+    expect(init.method).toBe('POST');
+  });
+});
+
+describe('disableModule', () => {
+  it('POST /modules/:id/disable with encodeURIComponent', async () => {
+    const { disableModule } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: false, restartRequired: true }));
+    await disableModule('g 1');
+    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
+    expect(url).toContain(`${encodeURIComponent('g 1')}/disable`);
+    expect(init.method).toBe('POST');
   });
 });

@@ -11,13 +11,14 @@ import { ModelsPage } from './pages/ModelsPage';
 import { ModelFormPage } from './pages/ModelFormPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
+import { ProjectDashboardTab } from './pages/project/ProjectDashboardTab';
 import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
 import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
+import { ProjectOptimizerTab } from './pages/project/ProjectOptimizerTab';
 import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
 import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
 import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
 import { ProjectSecurityTab } from './pages/project/ProjectSecurityTab';
-import { ProjectEndUsersTab } from './pages/project/ProjectEndUsersTab';
 import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
 import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
@@ -25,18 +26,30 @@ import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
 import { TestPage } from './pages/TestPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { SettingsGeneralTab, SettingsAboutTab, SettingsIntegrationsTab, SettingsCatalogTab } from './pages/SettingsPage';
+import { SettingsGeneralTab, SettingsSecurityTab, SettingsAboutTab, SettingsIntegrationsTab, SettingsCatalogTab } from './pages/SettingsPage';
 import { NotificationChannelListPage } from './pages/NotificationChannelListPage';
 import { NotificationChannelEditPage } from './pages/NotificationChannelEditPage';
 import { NotificationChannelCreatePage } from './pages/NotificationChannelCreatePage';
 import { RolesPage } from './pages/RolesPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { McpTokenNewPage } from './pages/McpTokenNewPage';
 import { UserEditPage } from './pages/UserEditPage';
 import { HelpPage } from './pages/HelpPage';
 import { ModelDiscoveryPage } from './pages/ModelDiscoveryPage';
 import { AuditPage } from './pages/AuditPage';
+import { ConnectionsPage } from './pages/ConnectionsPage';
+import { ConnectionFormPage } from './pages/ConnectionFormPage';
+import { ProfilesPage } from './pages/ProfilesPage';
+import { ProfileFormPage } from './pages/ProfileFormPage';
+import { ConnectPage, useClientsEnabled } from './pages/ConnectPage';
+import { ConnectClientPage } from './pages/ConnectClientPage';
+import { ExperimentsPage, useExperimentsEnabled } from './pages/ExperimentsPage';
+import { ExperimentLayout } from './pages/experiment/ExperimentLayout';
+import { ExperimentConfigTab } from './pages/experiment/ExperimentConfigTab';
+import { ExperimentMetricsTab } from './pages/experiment/ExperimentMetricsTab';
+import { ExperimentTokenTab } from './pages/experiment/ExperimentTokenTab';
 
-import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, Settings as SettingsIcon, UserCircle, LogOut, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Cloud, Route, AppWindow, Split } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
@@ -85,16 +98,29 @@ function ThemeCycleButton() {
 }
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const profileRowRef = useRef<HTMLDivElement>(null);
+  // Clients has no permission gate (session-only); visibility instead depends on
+  // whether the module is enabled, only known after this async check resolves.
+  const clientsEnabled = useClientsEnabled();
+  // Same treatment for Experiments: the permission plus the module both have to be on.
+  const experimentsEnabled = useExperimentsEnabled();
 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
+  // One flat list, ordered the way the product is used: what you set up
+  // (Providers to Projects), then what it tells you back (Experiments, Usage),
+  // and last the Playground, the bench you drop into to try things out. Connect
+  // app is not here: it configures the tools around Routerly rather than
+  // Routerly itself, so it sits in the footer next to Settings.
   const navItems = [
     { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
+    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: 'Providers' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
+    ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
     { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
+    ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
   ];
@@ -153,6 +179,16 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <SettingsIcon size={15} />
           <span className="nav-label">Settings</span>
         </NavLink>
+        {clientsEnabled && (
+          <NavLink
+            to="/dashboard/connect"
+            title={collapsed ? 'Connect app' : undefined}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            <AppWindow size={15} />
+            <span className="nav-label">Connect app</span>
+          </NavLink>
+        )}
         <NavLink
           to="/dashboard/help"
           title={collapsed ? 'Help' : undefined}
@@ -359,6 +395,16 @@ const router = createBrowserRouter([
           { path: 'models/discover', element: <ModelDiscoveryPage /> },
           { path: 'models/new', element: <ModelFormPage /> },
           { path: 'models/:id', element: <ModelFormPage /> },
+          { path: 'connections', element: <ConnectionsPage /> },
+          { path: 'connections/new', element: <ConnectionFormPage /> },
+          { path: 'connections/:id/edit', element: <ConnectionFormPage /> },
+          { path: 'profiles', element: <ProfilesPage /> },
+          { path: 'profiles/new', element: <ProfileFormPage /> },
+          { path: 'profiles/:id', element: <ProfileFormPage /> },
+          { path: 'connect', element: <ConnectPage /> },
+          { path: 'connect/:id', element: <ConnectClientPage /> },
+          // Kept for links minted before the section was renamed.
+          { path: 'clients', element: <Navigate to="/dashboard/connect" replace /> },
           { path: 'projects', element: <ProjectsPage /> },
           {
             path: 'projects/new',
@@ -385,18 +431,40 @@ const router = createBrowserRouter([
             path: 'projects/:id',
             element: <ProjectLayout />,
             children: [
-              { index: true, element: <ProjectGeneralTab /> },
+              { index: true, element: <ProjectDashboardTab /> },
+              { path: 'dashboard', element: <ProjectDashboardTab /> },
               { path: 'general', element: <ProjectGeneralTab /> },
               { path: 'routing', element: <ProjectRoutingTab /> },
+              { path: 'optimizer', element: <ProjectOptimizerTab /> },
               { path: 'token', element: <ProjectTokenTab /> },
               { path: 'users', element: <ProjectUsersTab /> },
               { path: 'logs', element: <ProjectLogsTab /> },
               { path: 'security', element: <ProjectSecurityTab /> },
-              { path: 'end-users', element: <ProjectEndUsersTab /> },
+            ],
+          },
+          { path: 'experiments', element: <ExperimentsPage /> },
+          {
+            path: 'experiments/new',
+            element: <ExperimentLayout />,
+            children: [
+              { index: true, element: <ExperimentConfigTab /> },
+            ],
+          },
+          {
+            path: 'experiments/:id',
+            element: <ExperimentLayout />,
+            children: [
+              { index: true, element: <ExperimentConfigTab /> },
+              { path: 'config', element: <ExperimentConfigTab /> },
+              { path: 'metrics', element: <ExperimentMetricsTab /> },
+              { path: 'token', element: <ExperimentTokenTab /> },
             ],
           },
           { path: 'usage', element: <UsagePage /> },
           { path: 'health', element: <Navigate to="/dashboard/models?tab=health" replace /> },
+          // Instances were folded into the Models list; keep the old path landing there
+          // instead of the generic overview fallback (mirrors the 'health' redirect above).
+          { path: 'instances', element: <Navigate to="/dashboard/models" replace /> },
           { path: 'test', element: <TestPage /> },
           {
             path: 'settings',
@@ -404,6 +472,7 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="general" replace /> },
               { path: 'general', element: <SettingsGeneralTab /> },
+              { path: 'security', element: <SettingsSecurityTab /> },
               { path: 'notifications', element: <NotificationChannelListPage /> },
               { path: 'notifications/new', element: <NotificationChannelCreatePage /> },
               { path: 'notifications/:id', element: <NotificationChannelEditPage /> },
@@ -419,6 +488,8 @@ const router = createBrowserRouter([
           { path: 'help', element: <HelpPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
+          { path: 'profile/mcp', element: <ProfilePage initialTab="mcp" /> },
+          { path: 'profile/mcp/new', element: <McpTokenNewPage /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],

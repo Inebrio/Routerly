@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getNotificationChannels, deleteNotificationChannel, testNotificationChannel } from '../api';
 import type { RedactedChannel } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { SearchableSelect } from '../components/SearchableSelect';
 import {
   CHANNEL_PROVIDER_META,
   summariseChannel,
@@ -175,20 +176,16 @@ export function NotificationChannelListPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* Provider filter */}
           {providerOptions.length > 1 && (
-            <select
+            <SearchableSelect
               value={providerFilter}
-              onChange={e => setProviderFilter(e.target.value)}
-              style={{
-                height: 32, padding: '0 10px', fontSize: '0.85rem', borderRadius: 6,
-                border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
-                outline: 'none',
-              }}
-            >
-              <option value="">All types</option>
-              {providerOptions.map(p => (
-                <option key={p} value={p}>{providerLabel(p as ChannelProvider)}</option>
-              ))}
-            </select>
+              onChange={setProviderFilter}
+              placeholder="All types"
+              style={{ height: 32, fontSize: '0.85rem', minWidth: 150 }}
+              options={[
+                { value: '', label: 'All types' },
+                ...providerOptions.map(p => ({ value: p, label: providerLabel(p as ChannelProvider) })),
+              ]}
+            />
           )}
           {/* Search */}
           <div style={{ position: 'relative' }}>

@@ -179,22 +179,27 @@ Native integrations. Deliver to a fixed endpoint — `targets` is accepted but d
 
 Every event carries the payload `{ event, severity, timestamp, details }`, where `severity` is one of `info`, `warning`, or `critical`.
 
-| Event | Severity | Description |
-|-------|----------|-------------|
-| `budget.threshold` | warning | Budget reached the configured warning threshold (e.g. 80%) |
-| `budget.exhausted` | critical | Budget reached its limit |
-| `budget.reset` | info | Budget window reset (optional) |
-| `provider.error` | critical | Non-retryable provider error (5xx, auth failure) |
-| `provider.degraded` | warning | Error rate for a model exceeded the threshold in the window |
-| `provider.recovered` | info | A previously degraded model is healthy again |
-| `provider.rate_limited` | warning | 429 received; model entered cooldown |
-| `routing.no_candidates` | critical | All models filtered out; request returned 503 |
-| `routing.fallback_used` | info | Primary model skipped; a fallback was used |
-| `auth.login_failed` | warning | A dashboard login failed for an existing user (wrong password) |
-| `auth.token_invalid` | warning | A project token that does not exist was used |
-| `config.model_added` / `config.model_deleted` | info | A model was created or deleted |
-| `config.project_created` / `config.project_deleted` | info | A project was created or deleted |
-| `system.startup` / `system.shutdown` | info | Service lifecycle |
+The event name is the stable identifier: rules, cooldowns and filters all match on it. Alongside it, each event has a **title** and a **category** used by the dashboard and the CLI to display it. Categories are `routing`, `provider`, `budget`, `config`, `security` and `system`.
+
+| Event | Category | Title | Severity | Description |
+|-------|----------|-------|----------|-------------|
+| `provider.error` | provider | Provider call failed | warning | The provider rejected the call or timed out; the provider's own message is kept in `details.error` |
+| `provider.degraded` | provider | Provider degraded | warning | Consecutive failures for a model crossed the threshold |
+| `provider.recovered` | provider | Provider recovered | info | A previously degraded model is healthy again |
+| `provider.rate_limited` | provider | Provider rate limited | warning | 429 received; model entered cooldown |
+| `routing.no_candidates` | routing | No model could serve the request | critical | All models filtered out; request returned 503 |
+| `routing.fallback_used` | routing | Fallback model used | info | Primary model skipped; a fallback was used |
+| `budget.threshold_reached` | budget | Budget threshold reached | warning | Budget reached its warning threshold (80% of a limit) |
+| `budget.exceeded` | budget | Budget exhausted | critical | Budget reached its limit |
+| `budget.reset` | budget | Budget period reset | info | Budget window reset |
+| `auth.login_failed` | security | Failed sign-in | warning | A dashboard login failed for an existing user (wrong password) |
+| `auth.token_invalid` | security | Invalid API token | warning | A project token that does not exist, or has expired, was used |
+| `config.model_added` / `config.model_deleted` | config | Model added / Model deleted | info | A model was created or deleted |
+| `config.project_created` / `config.project_deleted` | config | Project created / Project deleted | info | A project was created or deleted |
+| `system.startup` / `system.shutdown` | system | Service started / Service stopped | info | Service lifecycle |
+| `system.update_available` | system | A newer release is available | info | The update checker found a release newer than the one running on the configured channel; `details` carries `currentVersion`, `latestVersion`, `channel` and, when known, `releaseUrl`. Raised once per distinct release/channel/version combination, not on every scheduled check |
+
+An event that is not in this table still displays: its title is derived from the name (`cache.purged` reads as "Cache purged") and its category comes from the prefix.
 
 ---
 
@@ -246,17 +251,34 @@ Durations accept `s`, `m`, `h`, `d` suffixes. Cooldown state is held in memory (
 
 Independently of external channels, every event matching a `dashboard` channel's `events` filter (or all events when no `dashboard` channel is configured) is appended to the inbox, persisted in `notifications.json`. Retention: last 200 events or 30 days, whichever is smaller.
 
-The inbox is **per-user**: each user sees only items addressed to them (matched by the `targets` of the `dashboard` channel that created the item, or all items when no targeting is configured). Each user independently:
+The inbox is **per-user**. Three gates decide whether an item reaches a given user:
+
+1. **Audience** - the `targets` of the `dashboard` channel that created the item (no targeting means everyone).
+2. **Permissions** - sign-in events need `audit:read`, model events `model:read`, project events `project:read`, service lifecycle events `settings:read`. Operational events (routing, provider, budget) are not gated.
+3. **Projects** - an item about a project is hidden from users who cannot reach that project (scoped by `projectIds` or by membership). Users without a project scope see everything.
+
+Each user independently:
 
 - Marks items as read or unread (tracked per-user)
-- Dismisses (deletes) items - removal is **per-user only**, never global. Other users' copies of the same notification remain in their inboxes unless they also dismiss it.
+- Archives items - removal is **per-user only**, never global. Other users' copies of the same notification remain in their inboxes unless they also archive it.
 
 Users access their inbox via the notification bell on the profile row in the sidebar, or the full **Notifications** tab under **My Profile** (`/dashboard/profile/notifications`).
+
+### Correlated Incidents
+
+Events emitted while serving the same request share a trace id. The inbox folds them into a single item carrying `traceId`, `eventCount` and, on the detail endpoint, the full `events` sequence. A request that fell back twice before failing is one incident in the list, not three lines. The detail view (dashboard drawer, `routerly notification show`) shows the sequence in the order it happened.
+
+### Reading an Item
+
+The list shows the title with the event name underneath. The detail view adds the **cause**: one line built from the item's details, ending with the provider's own error message when there is one, for example `ollama/qwen2.5:3b on ollama - TTFT timeout after 3000ms`.
+
+Ids in the details are links in the dashboard: `projectId` opens the project, `modelId` (also `primaryModelId` and `fallbackModelId`) opens the model, `traceId` opens the matching record in Usage.
 
 ### Filtering and Pagination
 
 The inbox supports filtering by:
 - **Severity** - `info`, `warning`, or `critical`
+- **Category** - `routing`, `provider`, `budget`, `config`, `security`, `system`
 - **Event** - substring match (case-insensitive) on event name
 - **Date range** - `from` and `to` (YYYY-MM-DD or ISO 8601); date-only values span the full day
 - **Read status** - `unreadOnly` to show only unread items
