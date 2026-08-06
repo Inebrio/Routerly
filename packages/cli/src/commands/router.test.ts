@@ -935,6 +935,67 @@ describe('router create', () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('An orchestrator needs at least one candidate router'));
   });
+
+  it('attaches a period limit to the matching --candidate via --candidate-limit', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator' });
+    await makeCmd().parseAsync([
+      'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
+      '--candidate', 'r-1:2', '--candidate', 'r-2:1',
+      '--candidate-limit', 'r-1:cost:period:daily:50',
+    ]);
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({
+      candidates: [
+        { routerId: 'r-1', weight: 2, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 50 }] },
+        { routerId: 'r-2', weight: 1 },
+      ],
+    });
+  });
+
+  it('attaches a rolling limit to the matching --candidate via --candidate-limit', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator' });
+    await makeCmd().parseAsync([
+      'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
+      '--candidate', 'r-1:1',
+      '--candidate-limit', 'r-1:calls:rolling:1:day:100',
+    ]);
+    const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
+    expect(postCall![2]).toMatchObject({
+      candidates: [
+        { routerId: 'r-1', weight: 1, limits: [{ metric: 'calls', windowType: 'rolling', rollingAmount: 1, rollingUnit: 'day', value: 100 }] },
+      ],
+    });
+  });
+
+  it('exits 1 when --candidate-limit is given without --candidate', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync([
+      'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
+      '--candidate-limit', 'r-1:cost:period:daily:50',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--candidate-limit requires at least one --candidate'));
+  });
+
+  it('exits 1 when --candidate-limit references a router ID not in --candidate', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync([
+      'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
+      '--candidate', 'r-1:1', '--candidate-limit', 'r-2:cost:period:daily:50',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('references router ID "r-2"'));
+  });
+
+  it('exits 1 on malformed --candidate-limit spec', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync([
+      'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
+      '--candidate', 'r-1:1', '--candidate-limit', 'r-1:cost:bogus',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid limit spec'));
+  });
 });
 
 // ─── router edit ──────────────────────────────────────────────────────────────
@@ -1034,6 +1095,32 @@ describe('router edit', () => {
     await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'no-colon-here'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid --candidate value'));
+  });
+
+  it('attaches a limit to the matching --candidate via --candidate-limit', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync([
+      'node', 'router', 'edit', 'my-api',
+      '--candidate', 'new-1:3', '--candidate', 'new-2:1',
+      '--candidate-limit', 'new-1:cost:period:daily:50',
+    ]);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    expect(putCall![2]).toMatchObject({
+      candidates: [
+        { routerId: 'new-1', weight: 3, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 50 }] },
+        { routerId: 'new-2', weight: 1 },
+      ],
+    });
+  });
+
+  it('exits 1 when --candidate-limit is given without --candidate on edit', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync([
+      'node', 'router', 'edit', 'my-api', '--candidate-limit', 'r-1:cost:period:daily:50',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--candidate-limit requires --candidate'));
   });
 });
 
