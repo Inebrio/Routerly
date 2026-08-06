@@ -40,7 +40,7 @@ export function computeExperimentMetrics(
   const variants: ExperimentVariantMetrics[] = experiment.variants.map(variant => {
     const rows = mine.filter(r => r.experimentVariantId === variant.id);
     const errors = rows.filter(r => r.outcome !== 'success' && r.outcome !== 'blocked').length;
-    const cost = rows.reduce((s, r) => s + r.cost, 0);
+    const cost = rows.reduce((s, r) => s + (r.cost ?? 0), 0);
     const latencies = rows.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
     const ttfts = rows.map(r => r.ttftMs).filter((n): n is number => typeof n === 'number');
     // The judge keeps a running tally on the experiment, not a score per usage

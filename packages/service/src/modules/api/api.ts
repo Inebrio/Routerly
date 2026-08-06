@@ -1884,7 +1884,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       entry.inputTokens += r.inputTokens;
       entry.outputTokens += r.outputTokens;
       entry.cachedInputTokens += r.cachedInputTokens ?? 0;
-      entry.cost += r.cost;
+      entry.cost += r.cost ?? 0;
       if (r.outcome === 'success') entry.success++;
       // A guardrail-blocked request is neither a success nor a model error — exclude it from the error count (#77).
       if (r.outcome !== 'success' && r.outcome !== 'blocked') entry.errors++;
@@ -1903,15 +1903,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const guardrailCalls = filtered.filter(r => r.callType === 'guardrail').length;
     const completionCalls = filtered.filter(r => isCompletionCall(r.callType)).length;
     const succ = (r: typeof filtered[number]) => r.outcome === 'success';
-    const routingCost = filtered.filter(r => r.callType === 'routing' && succ(r)).reduce((s, r) => s + r.cost, 0);
-    const guardrailCost = filtered.filter(r => r.callType === 'guardrail' && succ(r)).reduce((s, r) => s + r.cost, 0);
-    const completionCost = filtered.filter(r => isCompletionCall(r.callType) && succ(r)).reduce((s, r) => s + r.cost, 0);
+    const routingCost = filtered.filter(r => r.callType === 'routing' && succ(r)).reduce((s, r) => s + (r.cost ?? 0), 0);
+    const guardrailCost = filtered.filter(r => r.callType === 'guardrail' && succ(r)).reduce((s, r) => s + (r.cost ?? 0), 0);
+    const completionCost = filtered.filter(r => isCompletionCall(r.callType) && succ(r)).reduce((s, r) => s + (r.cost ?? 0), 0);
 
     // Timeline for the selected period (hourly for daily, daily otherwise)
     const timeline: Record<string, number> = {};
     for (const r of filtered.filter(r => r.outcome === 'success')) {
       const key = period === 'daily' ? r.timestamp.slice(0, 13) : r.timestamp.slice(0, 10);
-      timeline[key] = (timeline[key] ?? 0) + r.cost;
+      timeline[key] = (timeline[key] ?? 0) + (r.cost ?? 0);
     }
 
     // Latency and TTFT distribution over successful client calls. The average
@@ -1970,7 +1970,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
-    const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + r.cost, 0);
+    const totalCost = filtered.filter(r => r.outcome === 'success').reduce((s, r) => s + (r.cost ?? 0), 0);
     const totalCalls = filtered.length;
     const successCalls = filtered.filter(r => r.outcome === 'success').length;
     // Guardrail blocks are a distinct outcome — not a model error (#77).
@@ -2027,7 +2027,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (routerId && r.routerId !== routerId) continue;
       const s = sessionMap.get(r.sessionId) ?? { sessionId: r.sessionId, routerId: r.routerId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
       s.requests++;
-      s.totalCost += r.cost;
+      s.totalCost += r.cost ?? 0;
       s.totalTokens += r.inputTokens + r.outputTokens;
       if (r.timestamp < s.firstSeen) s.firstSeen = r.timestamp;
       if (r.timestamp > s.lastSeen) s.lastSeen = r.timestamp;
@@ -2593,11 +2593,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const ok = r.outcome === 'success';
       if (ok) {
         a.success++;
-        a.totalCost += r.cost;
+        a.totalCost += r.cost ?? 0;
         a.totalTokens += r.inputTokens + r.outputTokens;
         if (typeof r.latencyMs === 'number') { a.latencies.push(r.latencyMs); a.totalLatencyMs += r.latencyMs; }
         const day = r.timestamp.slice(0, 10);
-        a.trend[day] = (a.trend[day] ?? 0) + r.cost;
+        a.trend[day] = (a.trend[day] ?? 0) + (r.cost ?? 0);
       }
       byModel.set(r.modelId, a);
     }
