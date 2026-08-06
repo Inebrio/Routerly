@@ -860,7 +860,7 @@ describe('router edit', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout or --trace-content'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout, --trace-content, --kind or --candidate'));
   });
 
   it('turns trace content capture on and back off', async () => {
