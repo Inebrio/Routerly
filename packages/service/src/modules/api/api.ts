@@ -14,6 +14,7 @@ import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.j
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
+import { validatePassthroughSlug } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
@@ -1101,6 +1102,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // `limits: z.array(z.any())` convention elsewhere in this file).
     limits: z.array(z.any()).optional(),
   })).optional();
+  const passthroughSlugSchema = z.string().min(1).optional();
 
   fastify.get('/api/routers', async (_req, reply) => {
     const routers = await readConfig('routers');
@@ -1123,6 +1125,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       optimizers?: OptimizerConfig | null;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
+      slug?: string;
     }
   }>('/api/routers', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1133,9 +1136,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
+    const parsedSlug = passthroughSlugSchema.safeParse(req.body.slug);
+    if (!parsedSlug.success) return reply.status(400).send({ error: 'Invalid slug', details: parsedSlug.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
+    const slug = parsedSlug.data;
     const kind: RouterKind = parsedKind.data ?? 'router';
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
@@ -1158,13 +1164,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       optimizers = parsed.data as OptimizerConfig;
     }
 
-    const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
+    // Passthrough routers authenticate with the caller's own upstream credential
+    // (RTR-03) — they never get a Routerly-issued token.
+    const rawToken = kind === 'passthrough' ? undefined : `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
     const router: RouterConfig = {
       id: uuidv4(),
       name: trimmedName,
-      tokens: [{
+      tokens: rawToken === undefined ? [] : [{
         id: uuidv4(),
         token: rawToken,
         tokenSnippet: rawToken.substring(0, 10),
@@ -1185,10 +1193,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(optimizers ? { optimizers } : {}),
       ...(kind !== 'router' ? { kind } : {}),
       ...(kind === 'orchestrator' && candidates !== undefined ? { candidates } : {}),
+      ...(slug !== undefined ? { slug } : {}),
     };
-    // Name-uniqueness and candidate validation both need the freshest possible
-    // router list, and the push that follows must land on that exact same
-    // snapshot — all three happen inside one lock hold (B2/EC4), so a
+    // Name-uniqueness and candidate/slug validation all need the freshest
+    // possible router list, and the push that follows must land on that exact
+    // same snapshot — all happen inside one lock hold (B2/EC4), so a
     // concurrent creation can never observe a stale list or silently lose
     // this router (or have this one silently lose a concurrent sibling).
     const finalRouters = await updateConfig('routers', (routers) => {
@@ -1197,6 +1206,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const candidateError = validateOrchestratorCandidates({ kind, candidates, routers });
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
+      const slugError = validatePassthroughSlug({ kind, slug, models: req.body.models, routers });
+      if (slugError) throw new ConfigUpdateAbort(slugError.status, { error: slugError.message });
       return [...routers, router];
     });
     void emitEvent('config.router_created', 'info', { routerId: router.id, name: router.name }, { routerId: router.id, log: req.log });
@@ -1205,7 +1216,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...router,
       kind,
       ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, finalRouters) } : {}),
-      token: rawToken,
+      ...(rawToken !== undefined ? { token: rawToken } : {}),
     });
   });
 
@@ -1225,6 +1236,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       traceContent?: boolean;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
+      slug?: string;
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1235,9 +1247,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
+    const parsedSlug = passthroughSlugSchema.safeParse(req.body.slug);
+    if (!parsedSlug.success) return reply.status(400).send({ error: 'Invalid slug', details: parsedSlug.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
+    const slug = parsedSlug.data;
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
 
@@ -1269,6 +1284,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         kind, candidates: candidatesUpdate.candidates, routers, selfId: req.params.id,
       });
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
+      // Slug: omitted = leave unchanged (same fallback as candidates above).
+      const effectiveSlug = slug !== undefined ? slug : routers[index]!.slug;
+      const slugError = validatePassthroughSlug({
+        kind, slug: effectiveSlug, models: req.body.models, routers, selfId: req.params.id,
+      });
+      if (slugError) throw new ConfigUpdateAbort(slugError.status, { error: slugError.message });
       // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
       let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
       if (req.body.guardrails === null) {
@@ -1321,6 +1342,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...optimizersUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
+        ...(slug !== undefined ? { slug } : {}),
       };
       const next = [...routers];
       next[index] = updated;
