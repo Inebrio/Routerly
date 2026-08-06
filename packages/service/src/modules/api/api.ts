@@ -9,6 +9,7 @@ import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry/telemetry.js';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
+import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
@@ -256,8 +257,45 @@ const previewBodySchema = z.object({
   steps: z.array(optimizerStepSchema),
 });
 
+/** Paths never hard-blocked by the permission guard, even while a secrets file is unsafe:
+ *  login/refresh so a locked-out operator can still reach a token, and the status/fix
+ *  endpoints themselves so that token can act on the block (RTR-04). */
+const PERMISSION_GUARD_EXEMPT_PATHS = new Set([
+  '/api/auth/login',
+  '/api/auth/refresh',
+  '/api/system/permissions',
+  '/api/system/permissions/fix',
+]);
+
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
+
+  // ─── Permission hard-block hook (RTR-04) ──────────────────────────────────
+  // Re-stats the secrets files on every /api/* request (except the exempt paths
+  // above) and hard-blocks with 423 while any is unsafe. Runs as `onRequest`,
+  // before the auth `preHandler` hook below, so it also blocks unauthenticated
+  // requests to unknown/public paths under /api/*.
+  fastify.addHook('onRequest', async (req, reply) => {
+    if (!req.url.startsWith('/api/')) return;
+    const path = req.url.split('?')[0]!;
+    if (PERMISSION_GUARD_EXEMPT_PATHS.has(path)) return;
+
+    if (isBypassActive()) {
+      fastify.log.warn(`[permission-guard] ROUTERLY_SKIP_PERMISSION_CHECK is set — skipping permission check for ${req.method} ${req.url}.`);
+      return;
+    }
+
+    const status = await checkPermissions();
+    if (!status.blocked) return;
+
+    const files = status.unsafe.filter(u => u.severity === 'secret').map(u => u.file);
+    fastify.log.warn(`[permission-guard] Blocking ${req.method} ${req.url} — unsafe permissions on secrets file(s): ${files.join(', ')}.`);
+    return reply.status(423).send({
+      error: 'unsafe_permissions',
+      message: `Unsafe permissions on secrets file(s): ${files.join(', ')}. An operator must confirm a fix via POST /api/system/permissions/fix.`,
+      files,
+    });
+  });
 
   await fastify.register(connectionsRoutes);
   await fastify.register(profilesRoutes);
@@ -1893,6 +1931,27 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       isDocker: process.env['ROUTERLY_DOCKER'] === '1',
       updateInfo: updateChecker.getLastResult(),
     });
+  });
+
+  // ─── GET /api/system/permissions (RTR-04) ────────────────────────────────
+  fastify.get('/api/system/permissions', async (req, reply) => {
+    if (!requirePerm(req, 'settings:read', reply)) return;
+    if (isBypassActive()) {
+      fastify.log.warn('[permission-guard] ROUTERLY_SKIP_PERMISSION_CHECK is set — skipping permission check for GET /api/system/permissions.');
+    }
+    const status = await checkPermissions();
+    return reply.send(status);
+  });
+
+  // ─── POST /api/system/permissions/fix (RTR-04) ───────────────────────────
+  const fixPermissionsBodySchema = z.object({ confirm: z.literal(true) });
+  fastify.post('/api/system/permissions/fix', async (req, reply) => {
+    if (!requirePerm(req, 'settings:write', reply)) return;
+    const parsed = fixPermissionsBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'confirmation required' });
+    const fixed = await fixPermissions();
+    audit(req, 'system:permissions:fix', 'success', { fixed });
+    return reply.send({ fixed });
   });
 
   // ─── GET /api/system/releases ────────────────────────────────────────────

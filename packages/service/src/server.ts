@@ -14,6 +14,7 @@ import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
 import { migrateRouterStorage } from './modules/config/migrate.js';
+import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
 import { bootstrap } from './bootstrap/index.js';
@@ -121,6 +122,11 @@ export async function buildServer() {
 
 export async function startServer() {
   await initConfigDirs();
+
+  // Permission guard runs first, before anything else reads or writes a
+  // config file (including the migration below) — an unsafe secrets file
+  // must block startup before its content is ever touched.
+  await enforceStartupGuard();
 
   // Runs here, before anything else touches CONFIG_PATHS.routers, and
   // deliberately NOT inside configModule.migrate() (which the kernel wraps in

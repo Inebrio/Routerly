@@ -34,6 +34,13 @@ vi.mock('../optimizers/llmlingua2/model.js', () => ({
   startDownload: vi.fn(() => ({ ok: true })),
 }))
 vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }))
+// Default: safe/unblocked, no bypass — matches a fresh install and keeps every pre-existing
+// test in this file unaffected by the RTR-04 onRequest hook. Overridden per-test below.
+vi.mock('../config/permission-guard.js', () => ({
+  checkPermissions: vi.fn().mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] }),
+  fixPermissions: vi.fn().mockResolvedValue([]),
+  isBypassActive: vi.fn().mockReturnValue(false),
+}))
 vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
@@ -76,6 +83,7 @@ import * as llmlingua2Model from '../optimizers/llmlingua2/model.js'
 import { setClientConfiguratorEnabled } from '../clients/module.js'
 import { CLIENT_REGISTRY } from '@routerly/shared'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
+import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js'
 
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
@@ -89,6 +97,9 @@ const mockVerifyTotp = vi.mocked(verifyTotp)
 const mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
 const mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
 const mockHashBackupCode = vi.mocked(hashBackupCode)
+const mockCheckPermissions = vi.mocked(checkPermissions)
+const mockFixPermissions = vi.mocked(fixPermissions)
+const mockIsBypassActive = vi.mocked(isBypassActive)
 
 beforeAll(async () => {
   vi.mocked(getOrCreateSecret).mockResolvedValue('d'.repeat(64)) // valid 32-byte hex secret
@@ -2618,6 +2629,119 @@ describe('PUT /api/settings', () => {
 })
 
 // ─── POST /api/system/update ──────────────────────────────────────────────────
+
+describe('GET /api/system/permissions (RTR-04)', () => {
+  it('200 for a user with settings:read, returns the current status', async () => {
+    setupAdminAuth()
+    mockCheckPermissions.mockResolvedValueOnce({
+      blocked: true, bypassActive: false,
+      unsafe: [{ file: 'users', path: '/x/users.json', mode: '644', severity: 'secret' }],
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/system/permissions', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({
+      blocked: true, bypassActive: false,
+      unsafe: [{ file: 'users', path: '/x/users.json', mode: '644', severity: 'secret' }],
+    })
+  })
+
+  it('403 for a user without settings:read', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/system/permissions', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('POST /api/system/permissions/fix (RTR-04)', () => {
+  it('200 for a user with settings:write and confirm: true, returns the fixed keys', async () => {
+    setupAdminAuth()
+    mockFixPermissions.mockResolvedValueOnce(['users', 'settings'])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/system/permissions/fix',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ confirm: true }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({ fixed: ['users', 'settings'] })
+  })
+
+  it('400 when confirm is missing or not literal true', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/system/permissions/fix',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ confirm: false }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json()).toEqual({ error: 'confirmation required' })
+    expect(mockFixPermissions).not.toHaveBeenCalled()
+  })
+
+  it('403 for a user without settings:write', async () => {
+    mockVerifyToken.mockReturnValue({ sub: 'noperm-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [{ id: 'noperm-id', email: 'noperm@example.com', passwordHash: 'hashed', roleId: 'noperm', projectIds: [] }]
+      if (t === 'roles') return [{ id: 'noperm', name: 'NoPerm', permissions: [] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/system/permissions/fix',
+      headers: { authorization: 'Bearer tok', 'content-type': 'application/json' },
+      payload: JSON.stringify({ confirm: true }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(403)
+  })
+})
+
+describe('Permission hard-block hook (RTR-04)', () => {
+  it('blocks a sample route with 423 when a secrets file is unsafe', async () => {
+    setupAdminAuth()
+    mockCheckPermissions.mockResolvedValueOnce({
+      blocked: true, bypassActive: false,
+      unsafe: [{ file: 'users', path: '/x/users.json', mode: '644', severity: 'secret' }],
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(423)
+    expect(res.json()).toEqual({
+      error: 'unsafe_permissions',
+      message: expect.stringContaining('users'),
+      files: ['users'],
+    })
+  })
+
+  it('lets the request through with no hard-block check when the bypass env var is set', async () => {
+    setupAdminAuth()
+    mockIsBypassActive.mockReturnValueOnce(true)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info' }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockCheckPermissions).not.toHaveBeenCalled()
+  })
+})
 
 describe('POST /api/system/update', () => {
   it('returns 403 for non-admin user', async () => {

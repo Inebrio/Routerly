@@ -191,6 +191,7 @@ export {
   suggestConnectionLabel, isConnectionLabelTaken,
 } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
+export type { PermissionCheckStatus } from './types/config.js';
 
 // Update channel vocabulary: 'latest' | 'current' | 'next', 'stable'/'develop' deprecated aliases (RC-3)
 export {

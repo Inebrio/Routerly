@@ -60,13 +60,15 @@ vi.mock('./api', () => ({
   updateSettings: vi.fn(),
   getClients: vi.fn(),
   getExperiments: vi.fn(),
+  getPermissionStatus: vi.fn(),
+  fixPermissions: vi.fn(),
 }));
 
 // ── AuthContext mock ───────────────────────────────────────────────────────────
 vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }));
 
-import App from './App';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments } from './api';
+import App, { __resetPermissionCheckForTests } from './App';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments, getPermissionStatus, fixPermissions } from './api';
 import { useAuth } from './AuthContext';
 
 const mockCheckSetup = vi.mocked(checkSetupStatus as () => Promise<unknown>);
@@ -75,6 +77,8 @@ const mockGetSettings = vi.mocked(getSettings as () => Promise<unknown>);
 const mockUpdateSettings = vi.mocked(updateSettings as (...a: unknown[]) => Promise<unknown>);
 const mockGetClients = vi.mocked(getClients as () => Promise<unknown>);
 const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
+const mockGetPermissionStatus = vi.mocked(getPermissionStatus as () => Promise<unknown>);
+const mockFixPermissions = vi.mocked(fixPermissions as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
@@ -91,6 +95,8 @@ beforeEach(() => {
   mockUpdateSettings.mockResolvedValue(undefined);
   mockGetClients.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
   mockGetExperiments.mockRejectedValue(Object.assign(new Error('module_disabled'), { status: 403 }));
+  mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+  mockFixPermissions.mockResolvedValue({ fixed: [] });
   mockUseAuth.mockReturnValue({
     user: adminUser,
     isLoading: false,
@@ -261,6 +267,99 @@ describe('ProtectedLayout — telemetry banner', () => {
     await userEvent.click(screen.getByText(/No thanks/));
     await waitFor(() => expect(screen.queryByText(/anonymous install metrics/)).toBeNull());
     expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ telemetry: expect.objectContaining({ enabled: false }) }));
+  });
+});
+
+// ── Permission guard (RTR-04) ──────────────────────────────────────────────────
+// The "checked once per session" flag lives at module scope in App.tsx;
+// __resetPermissionCheckForTests() clears it between cases so each test can
+// observe the first-check behaviour and prove a second mount does not re-fetch.
+// Must run before any test that navigates the router away from '/dashboard'
+// (e.g. Sign Out further down) since the router instance is a module singleton.
+
+describe('ProtectedLayout — permission warning banner', () => {
+  beforeEach(() => {
+    __resetPermissionCheckForTests();
+    // The router is a module singleton: the MFA banner test above navigates it
+    // to /dashboard/profile as a side effect, which otherwise leaks into every
+    // test that runs after it in this file. Restore a known route first.
+    window.history.pushState({}, '', '/dashboard/overview');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+
+  it('shows a warning banner once for general-severity unsafe files, and does not re-fetch on remount', async () => {
+    mockGetPermissionStatus.mockResolvedValue({
+      blocked: false,
+      bypassActive: false,
+      unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+    });
+
+    const first = render(<App />);
+    await waitFor(() => expect(screen.getByText(/permissive access/)).toBeTruthy(), { timeout: 3000 });
+    expect(screen.getByText(/settings/)).toBeTruthy();
+    first.unmount();
+
+    // Second mount (simulated navigation/remount): banner still shows from the
+    // cached module-level result, but the API is not called again (EC4).
+    render(<App />);
+    await waitFor(() => expect(screen.getByText(/permissive access/)).toBeTruthy());
+    expect(mockGetPermissionStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no banner when permissions are safe (AC8)', async () => {
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+    expect(screen.queryByText(/permissive access/)).toBeNull();
+  });
+
+  it('dismisses the warning banner without needing a re-fetch', async () => {
+    mockGetPermissionStatus.mockResolvedValue({
+      blocked: false,
+      bypassActive: false,
+      unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText(/permissive access/));
+    const dismissBtn = Array.from(document.querySelectorAll('button')).find(b => b.title === 'Dismiss' && b.textContent === '×');
+    await userEvent.click(dismissBtn!);
+    expect(screen.queryByText(/permissive access/)).toBeNull();
+  });
+});
+
+describe('ProtectedLayout — permission-blocked modal', () => {
+  beforeEach(() => __resetPermissionCheckForTests());
+
+  it('opens the modal when the lr-permission-blocked event fires, and closes it on successful fix', async () => {
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    mockFixPermissions.mockResolvedValue({ fixed: ['users'] });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => expect(screen.getByText(/users.json is unsafe/)).toBeTruthy());
+    expect(screen.getByText('users')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fix now' }));
+    await waitFor(() => expect(screen.queryByText(/users.json is unsafe/)).toBeNull());
+    expect(mockFixPermissions).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the modal on Cancel without calling fixPermissions', async () => {
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => expect(screen.getByText(/users.json is unsafe/)).toBeTruthy());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
+    expect(mockFixPermissions).not.toHaveBeenCalled();
   });
 });
 
