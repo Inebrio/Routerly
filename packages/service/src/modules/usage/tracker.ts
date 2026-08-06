@@ -8,7 +8,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface TrackUsageParams {
   routerId: string;
-  model: ModelConfig;
+  /** Absent for traffic with no resolved model (e.g. Passthrough) — cost is recorded as null. */
+  model?: ModelConfig;
+  /** Model id to record when `model` is absent. Defaults to 'unknown' when neither is given. */
+  modelId?: string;
   inputTokens: number;
   outputTokens: number;
   /** Input tokens served from prompt cache read (subset of inputTokens, billed at cachePerMillion rate) */
@@ -50,28 +53,34 @@ export interface TrackUsageParams {
  * Records a usage event to usage.json after each API call.
  */
 export async function trackUsage(params: TrackUsageParams): Promise<void> {
-  const cost = calculateCost(
+  const model = params.model;
+
+  // Calculate input/output cost breakdown for reporting. Only meaningful when a
+  // model was resolved to price against — absent (e.g. Passthrough) means unknown cost.
+  const plainInput = params.inputTokens - (params.cachedInputTokens ?? 0) - (params.cacheCreationInputTokens ?? 0);
+  const priced = model === undefined ? undefined : {
+    costInput: Math.round((
+      (plainInput / 1_000_000) * model.cost.inputPerMillion +
+      ((params.cachedInputTokens ?? 0) / 1_000_000) * (model.cost.cachePerMillion ?? model.cost.inputPerMillion) +
+      ((params.cacheCreationInputTokens ?? 0) / 1_000_000) * (model.cost.cacheWritePerMillion ?? model.cost.inputPerMillion)
+    ) * 1_000_000_000) / 1_000_000_000,
+    costOutput: Math.round(((params.outputTokens / 1_000_000) * model.cost.outputPerMillion) * 1_000_000_000) / 1_000_000_000,
+    priceInput: model.cost.inputPerMillion,
+    priceOutput: model.cost.outputPerMillion,
+  };
+  const cost = model === undefined ? null : calculateCost(
     params.inputTokens,
     params.outputTokens,
-    params.model,
+    model,
     params.cachedInputTokens,
     params.cacheCreationInputTokens,
   );
-
-  // Calculate input/output cost breakdown for reporting
-  const plainInput = params.inputTokens - (params.cachedInputTokens ?? 0) - (params.cacheCreationInputTokens ?? 0);
-  const costInput = Math.round((
-    (plainInput / 1_000_000) * params.model.cost.inputPerMillion +
-    ((params.cachedInputTokens ?? 0) / 1_000_000) * (params.model.cost.cachePerMillion ?? params.model.cost.inputPerMillion) +
-    ((params.cacheCreationInputTokens ?? 0) / 1_000_000) * (params.model.cost.cacheWritePerMillion ?? params.model.cost.inputPerMillion)
-  ) * 1_000_000_000) / 1_000_000_000;
-  const costOutput = Math.round(((params.outputTokens / 1_000_000) * params.model.cost.outputPerMillion) * 1_000_000_000) / 1_000_000_000;
 
   const record: UsageRecord = {
     id: uuidv4(),
     timestamp: new Date().toISOString(),
     routerId: params.routerId,
-    modelId: params.model.id,
+    modelId: model ? model.id : (params.modelId ?? 'unknown'),
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
     ...(params.cachedInputTokens ? { cachedInputTokens: params.cachedInputTokens } : {}),
@@ -86,10 +95,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     requestType: params.requestType ?? 'chat',
     ...(params.traceId ? { trace: getTrace(params.traceId) ?? [] } : {}),
     ...(params.traceId ? { traceId: params.traceId } : {}),
-    costInput,
-    costOutput,
-    priceInput: params.model.cost.inputPerMillion,
-    priceOutput: params.model.cost.outputPerMillion,
+    ...(priced ? priced : {}),
     ...(params.endUserId ? { endUserId: params.endUserId } : {}),
     ...(params.tokenId ? { tokenId: params.tokenId } : {}),
     ...(params.sessionId ? { sessionId: params.sessionId } : {}),

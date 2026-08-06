@@ -84,7 +84,7 @@ export function aggregate(
     bump(tokens, { router, model, type: 'output' }, r.outputTokens);
     if (r.cachedInputTokens) bump(tokens, { router, model, type: 'cached' }, r.cachedInputTokens);
 
-    bump(cost, { router, model }, r.cost);
+    bump(cost, { router, model }, r.cost ?? 0);
 
     const dKey = `${router} ${model}`;
     const d = durations.get(dKey) ?? { labels: { router, model }, latencies: [] };

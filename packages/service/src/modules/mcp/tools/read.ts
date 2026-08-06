@@ -145,7 +145,7 @@ export const usageSummaryTool: McpToolEntry = {
       routerId: resolved.router.id,
       windowHours,
       count: scoped.length,
-      cost: +scoped.reduce((s, r) => s + r.cost, 0).toFixed(6),
+      cost: +scoped.reduce((s, r) => s + (r.cost ?? 0), 0).toFixed(6),
       inputTokens: scoped.reduce((s, r) => s + r.inputTokens, 0),
       outputTokens: scoped.reduce((s, r) => s + r.outputTokens, 0),
     })
