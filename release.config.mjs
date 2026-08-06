@@ -23,7 +23,7 @@ export default {
     }],
     ['@semantic-release/exec', {
       prepareCmd:
-        'npm version ${nextRelease.version} --workspaces --include-workspace-root --no-git-tag-version --ignore-scripts' +
+        'npm version ${nextRelease.version} --allow-same-version --workspaces --include-workspace-root --no-git-tag-version --ignore-scripts' +
         ' && node scripts/sync-module-versions.mjs' +
         ' && node scripts/sync-module-versions.mjs --check',
       publishCmd:
