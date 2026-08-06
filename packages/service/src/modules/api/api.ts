@@ -237,11 +237,12 @@ function rejectInvalidTimeout(timeoutMs: number | undefined, reply: FastifyReply
 function resolveCandidatesForResponse(
   candidates: OrchestratorCandidateRef[] | undefined,
   routers: RouterConfig[],
-): { routerId: string; name: string; weight: number }[] {
+): { routerId: string; name: string; weight: number; limits?: Limit[] }[] {
   return (candidates ?? []).map(c => ({
     routerId: c.routerId,
     name: routers.find(r => r.id === c.routerId)?.name ?? c.routerId,
     weight: c.weight,
+    ...(c.limits !== undefined ? { limits: c.limits } : {}),
   }));
 }
 

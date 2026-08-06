@@ -1388,9 +1388,10 @@ describe('GET /api/routers', () => {
     expect(body[0].tokens[0].token).toBeUndefined()
   })
 
-  it('resolves an orchestrator\'s candidates to {routerId,name,weight} only, and reports kind for every router (AC7 wire-level)', async () => {
+  it('resolves an orchestrator\'s candidates to {routerId,name,weight,limits}, stripping the target Router\'s own policy/model config, and reports kind for every router (AC7 wire-level)', async () => {
     setupAdminAuth()
-    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }] }] }
+    const candidateLimits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1, limits: candidateLimits }] }
     const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [{ modelId: 'm1' }], policies: [{ type: 'cheapest', enabled: true }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1407,7 +1408,11 @@ describe('GET /api/routers', () => {
     const orcResponse = body.find((r: any) => r.id === 'orc-1')
     const plainResponse = body.find((r: any) => r.id === 'r1')
     expect(orcResponse.kind).toBe('orchestrator')
-    expect(orcResponse.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1 }])
+    // The Orchestrator's own per-candidate override data (weight, limits) is not the
+    // target Router's own config — AC7 only opacity-limits the latter (its policies/models).
+    expect(orcResponse.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1, limits: candidateLimits }])
+    expect(orcResponse.candidates[0].policies).toBeUndefined()
+    expect(orcResponse.candidates[0].models).toBeUndefined()
     expect(plainResponse.kind).toBe('router')
     expect(plainResponse.candidates).toBeUndefined()
   })
@@ -1646,7 +1651,7 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     expect(body.candidates).toBeUndefined()
   })
 
-  it('persists a per-candidate limits array sent in the request body, opaque on the wire (B1)', async () => {
+  it('persists a per-candidate limits array sent in the request body, and reflects it back in the response (RTR-02 remediation)', async () => {
     setupAdminAuth()
     const candidateRouter = { id: 'r1', name: 'Plain Router', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1666,9 +1671,9 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(201)
-    // Response stays opacity-limited to {routerId,name,weight} (AC7) — limits
-    // never leak onto the wire even though they were accepted and stored.
-    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1 }])
+    // The Orchestrator's own per-candidate limits are not the target Router's own
+    // config (AC7 only opacity-limits the latter), so they round-trip on the wire.
+    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1, limits }])
     const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
     const written = routersCall![1] as any[]
     const persisted = written.find(r => r.name === 'Orc')
