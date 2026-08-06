@@ -7,12 +7,12 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry/telemetry.js';
-import { readConfig, writeConfig } from '../config/loader.js';
+import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
@@ -303,6 +303,19 @@ const PERMISSION_GUARD_EXEMPT_PATHS = new Set([
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
+
+  // A route's `updateConfig` mutator throws this to abort the write and reply
+  // with a specific status/body (B2 fix) — one place to unwrap it, instead of
+  // a try/catch at every call site. `proper-lockfile`'s ELOCKED (retry budget
+  // exhausted under heavy concurrent write load) is turned into a clean,
+  // retryable 503 instead of leaking as a raw unhandled 500.
+  fastify.setErrorHandler(async (err, _req, reply) => {
+    if (err instanceof ConfigUpdateAbort) return reply.status(err.status).send(err.body);
+    if ((err as NodeJS.ErrnoException).code === 'ELOCKED') {
+      return reply.status(503).send({ error: 'Configuration is busy being updated by another request — retry shortly' });
+    }
+    throw err;
+  });
 
   // ─── Permission hard-block hook (RTR-04) ──────────────────────────────────
   // Re-stats the secrets files on every /api/* request (except the exempt paths
@@ -921,29 +934,31 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     instances[index] = instance;
     await writeConfig('instances', instances);
 
-    // If the model ID changed, cascade the rename to all router references
+    // If the model ID changed, cascade the rename to all router references.
+    // Read-mutate-write on 'routers' inside one lock hold (B2), so a concurrent
+    // router write can't be silently clobbered by this cascade or vice versa.
     if (newId !== req.params.id) {
-      const routers = await readConfig('routers');
-      let routersChanged = false;
-      for (const router of routers) {
-        for (const ref of (router.models ?? [])) {
-          if (ref.modelId === req.params.id) {
-            ref.modelId = newId;
-            routersChanged = true;
-          }
-        }
-        for (const token of (router.tokens ?? [])) {
-          for (const ref of (token.models ?? [])) {
+      await updateConfig('routers', (routers) => {
+        let routersChanged = false;
+        const next = routers.map(router => structuredClone(router));
+        for (const router of next) {
+          for (const ref of (router.models ?? [])) {
             if (ref.modelId === req.params.id) {
               ref.modelId = newId;
               routersChanged = true;
             }
           }
+          for (const token of (router.tokens ?? [])) {
+            for (const ref of (token.models ?? [])) {
+              if (ref.modelId === req.params.id) {
+                ref.modelId = newId;
+                routersChanged = true;
+              }
+            }
+          }
         }
-      }
-      if (routersChanged) {
-        await writeConfig('routers', routers);
-      }
+        return routersChanged ? next : routers;
+      });
     }
 
     audit(req, 'model:update', 'success', { id: req.params.id });
@@ -1080,6 +1095,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   const orchestratorCandidatesSchema = z.array(z.object({
     routerId: z.string().min(1),
     weight: z.number(),
+    // Per-candidate usage limit overrides (AC6) — same shape as a model's/router's
+    // `limits`, not further validated here (matches updateTokenBodySchema's
+    // `limits: z.array(z.any())` convention elsewhere in this file).
+    limits: z.array(z.any()).optional(),
   })).optional();
 
   fastify.get('/api/routers', async (_req, reply) => {
@@ -1113,18 +1132,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
+    // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
+    // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
+    const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
     const kind: RouterKind = parsedKind.data ?? 'router';
-    const routers = await readConfig('routers');
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
-    if (routers.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
-      return reply.status(409).send({ error: `A router named "${trimmedName}" already exists` });
-    }
-    // Re-read the router list immediately before validating/writing, so a candidate
-    // created concurrently with this request is seen (EC4).
-    const freshRouters = kind === 'orchestrator' ? await readConfig('routers') : routers;
-    const candidateError = validateOrchestratorCandidates({ kind, candidates: parsedCandidates.data, routers: freshRouters });
-    if (candidateError) return reply.status(400).send({ error: candidateError });
     let guardrails: GuardrailConfig | undefined;
     if (req.body.guardrails !== undefined) {
       const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
@@ -1170,16 +1183,27 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(pii ? { pii } : {}),
       ...(optimizers ? { optimizers } : {}),
       ...(kind !== 'router' ? { kind } : {}),
-      ...(kind === 'orchestrator' && parsedCandidates.data !== undefined ? { candidates: parsedCandidates.data } : {}),
+      ...(kind === 'orchestrator' && candidates !== undefined ? { candidates } : {}),
     };
-    freshRouters.push(router);
-    await writeConfig('routers', freshRouters);
+    // Name-uniqueness and candidate validation both need the freshest possible
+    // router list, and the push that follows must land on that exact same
+    // snapshot — all three happen inside one lock hold (B2/EC4), so a
+    // concurrent creation can never observe a stale list or silently lose
+    // this router (or have this one silently lose a concurrent sibling).
+    const finalRouters = await updateConfig('routers', (routers) => {
+      if (routers.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+        throw new ConfigUpdateAbort(409, { error: `A router named "${trimmedName}" already exists` });
+      }
+      const candidateError = validateOrchestratorCandidates({ kind, candidates, routers });
+      if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
+      return [...routers, router];
+    });
     void emitEvent('config.router_created', 'info', { routerId: router.id, name: router.name }, { routerId: router.id, log: req.log });
     audit(req, 'router:create', 'success', { id: router.id });
     return reply.status(201).send({
       ...router,
       kind,
-      ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(parsedCandidates.data, freshRouters) } : {}),
+      ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, finalRouters) } : {}),
       token: rawToken,
     });
   });
@@ -1210,93 +1234,99 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Not found' });
+    // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
+    // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
+    const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
-    if (routers.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
-      return reply.status(409).send({ error: `A router named "${trimmedName}" already exists` });
-    }
-    // Absent kind = keep the router's existing kind (default 'router'), same fallback
-    // pattern as autoRouting/timeoutMs below — not a reset to plain router on every edit.
-    const kind: RouterKind = parsedKind.data ?? routers[index]!.kind ?? 'router';
-    // Re-read the router list immediately before validating/writing, so a candidate
-    // created concurrently with this request is seen (EC4); recompute index against it.
-    const freshRouters = kind === 'orchestrator' ? await readConfig('routers') : routers;
-    const freshIndex = kind === 'orchestrator' ? freshRouters.findIndex(p => p.id === req.params.id) : index;
-    if (freshIndex === -1) return reply.status(404).send({ error: 'Not found' });
-    // Candidates: omitted from the request body = leave unchanged (same fallback as
-    // guardrails/pii/optimizers below); an explicit array (including []) replaces it.
-    // Computed before validation so an omitted body still validates (and keeps) the
-    // router's existing candidate list instead of tripping EC2's "needs at least one".
-    let candidatesUpdate: { candidates?: OrchestratorCandidateRef[] } = {};
-    if (parsedCandidates.data !== undefined) {
-      candidatesUpdate = { candidates: parsedCandidates.data };
-    } else if (freshRouters[freshIndex]!.candidates) {
-      candidatesUpdate = { candidates: freshRouters[freshIndex]!.candidates };
-    }
-    const candidateError = validateOrchestratorCandidates({
-      kind, candidates: candidatesUpdate.candidates, routers: freshRouters, selfId: req.params.id,
-    });
-    if (candidateError) return reply.status(400).send({ error: candidateError });
-    // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
-    let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
-    if (req.body.guardrails === null) {
-      guardrailsUpdate = {};
-    } else if (req.body.guardrails !== undefined) {
-      const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
-      if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
-      guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
-    } else if (freshRouters[freshIndex]!.guardrails) {
-      guardrailsUpdate = { guardrails: freshRouters[freshIndex]!.guardrails };
-    }
-    let piiUpdate: { pii?: PiiConfig } = {};
-    if (req.body.pii === null) {
-      piiUpdate = {};
-    } else if (req.body.pii !== undefined) {
-      const parsed = piiConfigSchema.safeParse(req.body.pii);
-      if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
-      piiUpdate = { pii: parsed.data as PiiConfig };
-    } else if (freshRouters[freshIndex]!.pii) {
-      piiUpdate = { pii: freshRouters[freshIndex]!.pii };
-    }
-    let optimizersUpdate: { optimizers?: OptimizerConfig } = {};
-    if (req.body.optimizers === null) {
-      optimizersUpdate = {};
-    } else if (req.body.optimizers !== undefined) {
-      const parsed = optimizerConfigSchema.safeParse(req.body.optimizers);
-      if (!parsed.success) return reply.status(400).send({ error: 'Invalid optimizers config', details: parsed.error.issues });
-      optimizersUpdate = { optimizers: parsed.data as OptimizerConfig };
-    } else if (freshRouters[freshIndex]!.optimizers) {
-      optimizersUpdate = { optimizers: freshRouters[freshIndex]!.optimizers };
-    }
 
-    const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, ...existing } = freshRouters[freshIndex]!;
-    const updated: RouterConfig = {
-      ...existing,
-      name: trimmedName,
-      ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : existing.routingModelId !== undefined ? { routingModelId: existing.routingModelId } : {}),
-      autoRouting: req.body.autoRouting ?? existing.autoRouting ?? true,
-      ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
-      ...(req.body.policies !== undefined && { policies: req.body.policies }),
-      models: req.body.models.map(m => ({
-        modelId: m.modelId,
-        ...(m.prompt ? { prompt: m.prompt } : {}),
-      })),
+    // Everything that reads or validates against the stored router list — the
+    // duplicate-name check, kind inheritance, candidate validation and the
+    // update itself — runs against one single fresh read, inside one lock
+    // hold, so a concurrent write can never be missed or silently lost (B2/EC4).
+    let updated!: RouterConfig;
+    const finalRouters = await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Not found' });
+      if (routers.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+        throw new ConfigUpdateAbort(409, { error: `A router named "${trimmedName}" already exists` });
+      }
+      // Absent kind = keep the router's existing kind (default 'router'), same fallback
+      // pattern as autoRouting/timeoutMs below — not a reset to plain router on every edit.
+      const kind: RouterKind = parsedKind.data ?? routers[index]!.kind ?? 'router';
+      // Candidates: omitted from the request body = leave unchanged (same fallback as
+      // guardrails/pii/optimizers below); an explicit array (including []) replaces it.
+      // Computed before validation so an omitted body still validates (and keeps) the
+      // router's existing candidate list instead of tripping EC2's "needs at least one".
+      let candidatesUpdate: { candidates?: OrchestratorCandidateRef[] } = {};
+      if (candidates !== undefined) {
+        candidatesUpdate = { candidates };
+      } else if (routers[index]!.candidates) {
+        candidatesUpdate = { candidates: routers[index]!.candidates };
+      }
+      const candidateError = validateOrchestratorCandidates({
+        kind, candidates: candidatesUpdate.candidates, routers, selfId: req.params.id,
+      });
+      if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
+      // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
+      let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
+      if (req.body.guardrails === null) {
+        guardrailsUpdate = {};
+      } else if (req.body.guardrails !== undefined) {
+        const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
+        if (!parsed.success) throw new ConfigUpdateAbort(400, { error: 'Invalid guardrails config', details: parsed.error.issues });
+        guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
+      } else if (routers[index]!.guardrails) {
+        guardrailsUpdate = { guardrails: routers[index]!.guardrails };
+      }
+      let piiUpdate: { pii?: PiiConfig } = {};
+      if (req.body.pii === null) {
+        piiUpdate = {};
+      } else if (req.body.pii !== undefined) {
+        const parsed = piiConfigSchema.safeParse(req.body.pii);
+        if (!parsed.success) throw new ConfigUpdateAbort(400, { error: 'Invalid pii config', details: parsed.error.issues });
+        piiUpdate = { pii: parsed.data as PiiConfig };
+      } else if (routers[index]!.pii) {
+        piiUpdate = { pii: routers[index]!.pii };
+      }
+      let optimizersUpdate: { optimizers?: OptimizerConfig } = {};
+      if (req.body.optimizers === null) {
+        optimizersUpdate = {};
+      } else if (req.body.optimizers !== undefined) {
+        const parsed = optimizerConfigSchema.safeParse(req.body.optimizers);
+        if (!parsed.success) throw new ConfigUpdateAbort(400, { error: 'Invalid optimizers config', details: parsed.error.issues });
+        optimizersUpdate = { optimizers: parsed.data as OptimizerConfig };
+      } else if (routers[index]!.optimizers) {
+        optimizersUpdate = { optimizers: routers[index]!.optimizers };
+      }
+
+      const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, ...existing } = routers[index]!;
+      updated = {
+        ...existing,
+        name: trimmedName,
+        ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : existing.routingModelId !== undefined ? { routingModelId: existing.routingModelId } : {}),
+        autoRouting: req.body.autoRouting ?? existing.autoRouting ?? true,
+        ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
+        ...(req.body.policies !== undefined && { policies: req.body.policies }),
+        models: req.body.models.map(m => ({
+          modelId: m.modelId,
+          ...(m.prompt ? { prompt: m.prompt } : {}),
+        })),
         timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS,
-      // Absent = leave as is; the flag gates prompt/answer capture in traces.
-      ...(req.body.traceContent !== undefined ? { traceContent: req.body.traceContent } : {}),
-      ...guardrailsUpdate,
-      ...piiUpdate,
-      ...optimizersUpdate,
-      ...(kind !== 'router' ? { kind } : {}),
-      ...(kind === 'orchestrator' ? candidatesUpdate : {}),
-    };
-    freshRouters[freshIndex] = updated;
-    await writeConfig('routers', freshRouters);
+        // Absent = leave as is; the flag gates prompt/answer capture in traces.
+        ...(req.body.traceContent !== undefined ? { traceContent: req.body.traceContent } : {}),
+        ...guardrailsUpdate,
+        ...piiUpdate,
+        ...optimizersUpdate,
+        ...(kind !== 'router' ? { kind } : {}),
+        ...(kind === 'orchestrator' ? candidatesUpdate : {}),
+      };
+      const next = [...routers];
+      next[index] = updated;
+      return next;
+    });
     audit(req, 'router:update', 'success', { id: req.params.id });
-    return reply.send(toRouterResponse(updated, freshRouters));
+    return reply.send(toRouterResponse(updated, finalRouters));
   });
 
   fastify.patch<{
@@ -1304,37 +1334,44 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: { guardrails?: GuardrailConfig; pii?: PiiConfig };
   }>('/api/routers/:id/guardrails', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Not found' });
-    const router = routers[index]!;
-    let guardrailsUpdate: { guardrails?: GuardrailConfig } = router.guardrails ? { guardrails: router.guardrails } : {};
-    let piiUpdate: { pii?: PiiConfig } = router.pii ? { pii: router.pii } : {};
+    let guardrailsParsed: GuardrailConfig | undefined;
     if (req.body.guardrails !== undefined) {
       const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
-      guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
+      guardrailsParsed = parsed.data as GuardrailConfig;
     }
+    let piiParsed: PiiConfig | undefined;
     if (req.body.pii !== undefined) {
       const parsed = piiConfigSchema.safeParse(req.body.pii);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
-      piiUpdate = { pii: parsed.data as PiiConfig };
+      piiParsed = parsed.data as PiiConfig;
     }
-    const updated: RouterConfig = { ...router, ...guardrailsUpdate, ...piiUpdate };
-    routers[index] = updated;
-    await writeConfig('routers', routers);
+    let updated!: RouterConfig;
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Not found' });
+      const router = routers[index]!;
+      const guardrailsUpdate: { guardrails?: GuardrailConfig } = guardrailsParsed !== undefined ? { guardrails: guardrailsParsed } : router.guardrails ? { guardrails: router.guardrails } : {};
+      const piiUpdate: { pii?: PiiConfig } = piiParsed !== undefined ? { pii: piiParsed } : router.pii ? { pii: router.pii } : {};
+      updated = { ...router, ...guardrailsUpdate, ...piiUpdate };
+      const next = [...routers];
+      next[index] = updated;
+      return next;
+    });
     audit(req, 'router:update', 'success', { id: req.params.id });
     return reply.send({ ...updated, tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || [] });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const deleted = routers.find(p => p.id === req.params.id);
-    const filtered = routers.filter(p => p.id !== req.params.id);
-    if (filtered.length === routers.length) return reply.status(404).send({ error: 'Not found' });
-    await writeConfig('routers', filtered);
-    void emitEvent('config.router_deleted', 'info', { routerId: req.params.id, name: deleted?.name }, { log: req.log });
+    let deletedName: string | undefined;
+    await updateConfig('routers', (routers) => {
+      const deleted = routers.find(p => p.id === req.params.id);
+      if (!deleted) throw new ConfigUpdateAbort(404, { error: 'Not found' });
+      deletedName = deleted.name;
+      return routers.filter(p => p.id !== req.params.id);
+    });
+    void emitEvent('config.router_deleted', 'info', { routerId: req.params.id, name: deletedName }, { log: req.log });
     audit(req, 'router:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
   });
@@ -1436,12 +1473,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const parsed = createTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Not found' });
-
     const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
-
     const newToken = {
       id: uuidv4(),
       token: rawToken,
@@ -1453,12 +1485,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(parsed.data.expiresAt ? { expiresAt: parsed.data.expiresAt } : {}),
     };
 
-    const updated = { ...routers[index]! };
-    if (!updated.tokens) updated.tokens = [];
-    updated.tokens.push(newToken);
-
-    routers[index] = updated;
-    await writeConfig('routers', routers);
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Not found' });
+      const updated = { ...routers[index]! };
+      updated.tokens = [...(updated.tokens ?? []), newToken];
+      const next = [...routers];
+      next[index] = updated;
+      return next;
+    });
     audit(req, 'token:create', 'success', { routerId: req.params.id });
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
@@ -1469,93 +1504,102 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const parsed = updateTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
+    let updatedToken!: RouterToken;
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      if (!router.tokens) throw new ConfigUpdateAbort(404, { error: 'Token not found' });
+      const tokenIndex = router.tokens.findIndex(t => t.id === req.params.tokenId);
+      if (tokenIndex === -1) throw new ConfigUpdateAbort(404, { error: 'Token not found' });
+      const token = { ...router.tokens[tokenIndex]! };
+      if (parsed.data.models !== undefined) token.models = parsed.data.models as TokenModelRef[];
+      if (parsed.data.labels !== undefined) token.labels = parsed.data.labels;
+      if (parsed.data.tags !== undefined) token.tags = parsed.data.tags;
+      if (parsed.data.scopes !== undefined) token.scopes = parsed.data.scopes;
+      updatedToken = token;
+      const tokens = [...router.tokens];
+      tokens[tokenIndex] = token;
+      const next = [...routers];
+      next[index] = { ...router, tokens };
+      return next;
+    });
 
-    const router = routers[index]!;
-    if (!router.tokens) return reply.status(404).send({ error: 'Token not found' });
-
-    const token = router.tokens.find(t => t.id === req.params.tokenId);
-    if (!token) return reply.status(404).send({ error: 'Token not found' });
-
-    if (parsed.data.models !== undefined) token.models = parsed.data.models as TokenModelRef[];
-    if (parsed.data.labels !== undefined) token.labels = parsed.data.labels;
-    if (parsed.data.tags !== undefined) token.tags = parsed.data.tags;
-    if (parsed.data.scopes !== undefined) token.scopes = parsed.data.scopes;
-    await writeConfig('routers', routers);
-
-    return reply.send({ ...token, token: undefined });
+    return reply.send({ ...updatedToken, token: undefined });
   });
 
   fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
-
-    const router = routers[index]!;
-    if (!router.tokens) return reply.status(404).send({ error: 'Token not found' });
-
-    const tokenIndex = router.tokens.findIndex(t => t.id === req.params.tokenId);
-    if (tokenIndex === -1) return reply.status(404).send({ error: 'Token not found' });
-
-    router.tokens.splice(tokenIndex, 1);
-    await writeConfig('routers', routers);
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      if (!router.tokens) throw new ConfigUpdateAbort(404, { error: 'Token not found' });
+      const tokenIndex = router.tokens.findIndex(t => t.id === req.params.tokenId);
+      if (tokenIndex === -1) throw new ConfigUpdateAbort(404, { error: 'Token not found' });
+      const tokens = router.tokens.filter((_, i) => i !== tokenIndex);
+      const next = [...routers];
+      next[index] = { ...router, tokens };
+      return next;
+    });
     audit(req, 'token:delete', 'success', { routerId: req.params.id, tokenId: req.params.tokenId });
     return reply.status(204).send();
   });
 
   fastify.post<{ Params: { id: string }; Body: { userId: string; role: string } }>('/api/routers/:id/members', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
-
     const users = await readConfig('users');
     if (!users.find(u => u.id === req.body.userId)) return reply.status(404).send({ error: 'User not found' });
 
-    const router = routers[index]!;
-    if (!router.members) router.members = [];
-    if (router.members.find(m => m.userId === req.body.userId)) {
-      return reply.status(409).send({ error: 'User is already a member' });
-    }
-
-    router.members.push({ userId: req.body.userId, role: req.body.role as any });
-    await writeConfig('routers', routers);
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      const members = router.members ?? [];
+      if (members.find(m => m.userId === req.body.userId)) {
+        throw new ConfigUpdateAbort(409, { error: 'User is already a member' });
+      }
+      const next = [...routers];
+      next[index] = { ...router, members: [...members, { userId: req.body.userId, role: req.body.role as any }] };
+      return next;
+    });
     return reply.status(201).send({ userId: req.body.userId, role: req.body.role });
   });
 
   fastify.put<{ Params: { id: string, userId: string }; Body: { role: string } }>('/api/routers/:id/members/:userId', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
-
-    const router = routers[index]!;
-    if (!router.members) return reply.status(404).send({ error: 'Member not found' });
-    const member = router.members.find(m => m.userId === req.params.userId);
-    if (!member) return reply.status(404).send({ error: 'Member not found' });
-
-    member.role = req.body.role as any;
-    await writeConfig('routers', routers);
-    return reply.send(member);
+    let updatedMember!: { userId: string; role: string };
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      if (!router.members) throw new ConfigUpdateAbort(404, { error: 'Member not found' });
+      const memberIndex = router.members.findIndex(m => m.userId === req.params.userId);
+      if (memberIndex === -1) throw new ConfigUpdateAbort(404, { error: 'Member not found' });
+      const members = [...router.members];
+      updatedMember = { ...members[memberIndex]!, role: req.body.role as any };
+      members[memberIndex] = updatedMember as any;
+      const next = [...routers];
+      next[index] = { ...router, members };
+      return next;
+    });
+    return reply.send(updatedMember);
   });
 
   fastify.delete<{ Params: { id: string, userId: string } }>('/api/routers/:id/members/:userId', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
-
-    const router = routers[index]!;
-    if (!router.members) return reply.status(404).send({ error: 'Member not found' });
-
-    const memberIndex = router.members.findIndex(m => m.userId === req.params.userId);
-    if (memberIndex === -1) return reply.status(404).send({ error: 'Member not found' });
-
-    router.members.splice(memberIndex, 1);
-    await writeConfig('routers', routers);
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      if (!router.members) throw new ConfigUpdateAbort(404, { error: 'Member not found' });
+      const memberIndex = router.members.findIndex(m => m.userId === req.params.userId);
+      if (memberIndex === -1) throw new ConfigUpdateAbort(404, { error: 'Member not found' });
+      const members = router.members.filter((_, i) => i !== memberIndex);
+      const next = [...routers];
+      next[index] = { ...router, members };
+      return next;
+    });
     return reply.status(204).send();
   });
 
@@ -1577,26 +1621,31 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const { name, systemPrompt, messages } = req.body;
     if (!name?.trim()) return reply.status(400).send({ error: 'name is required' });
     if (systemPrompt === undefined) return reply.status(400).send({ error: 'systemPrompt is required' });
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
     const preset = { id: randomUUID(), name: name.trim(), systemPrompt, ...(messages ? { messages } : {}) };
-    const router = routers[index]!;
-    router.playgroundPresets = [...(router.playgroundPresets ?? []), preset];
-    await writeConfig('routers', routers);
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      const next = [...routers];
+      next[index] = { ...router, playgroundPresets: [...(router.playgroundPresets ?? []), preset] };
+      return next;
+    });
     return reply.status(201).send(preset);
   });
 
   fastify.delete<{ Params: { id: string; presetId: string } }>('/api/routers/:id/playground-presets/:presetId', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
-    const routers = await readConfig('routers');
-    const index = routers.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
-    const router = routers[index]!;
-    const before = (router.playgroundPresets ?? []).length;
-    router.playgroundPresets = (router.playgroundPresets ?? []).filter(p => p.id !== req.params.presetId);
-    if (router.playgroundPresets.length === before) return reply.status(404).send({ error: 'Preset not found' });
-    await writeConfig('routers', routers);
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex(p => p.id === req.params.id);
+      if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
+      const router = routers[index]!;
+      const before = (router.playgroundPresets ?? []).length;
+      const playgroundPresets = (router.playgroundPresets ?? []).filter(p => p.id !== req.params.presetId);
+      if (playgroundPresets.length === before) throw new ConfigUpdateAbort(404, { error: 'Preset not found' });
+      const next = [...routers];
+      next[index] = { ...router, playgroundPresets };
+      return next;
+    });
     return reply.status(204).send();
   });
 
