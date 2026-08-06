@@ -141,7 +141,8 @@ function isReservedPath(path: string): boolean {
     path === '/health' ||
     path === '/api' ||
     path.startsWith('/api/') ||
-    path.startsWith('/dashboard')
+    path.startsWith('/dashboard') ||
+    path.startsWith('/passthrough') // RTR-03: owned by router-passthrough.ts, never this generic proxy.
   );
 }
 
