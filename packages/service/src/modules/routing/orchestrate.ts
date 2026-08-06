@@ -1,5 +1,10 @@
 import type { OrchestratorCandidateRef, RouterConfig, UsageRecord } from '@routerly/shared';
+import type { ProcessorRegistry } from '../../core/index.js';
+import type { ProxyContext } from '../reverse-proxy/context.js';
 import { readUsageRecords } from '../usage/usageStore.js';
+import { readConfig } from '../config/loader.js';
+import { isOrchestratorCandidateAllowed } from '../budget/budget.js';
+import { runCandidateLoop } from '../reverse-proxy/candidate-loop.js';
 
 // Windows mirror the plain-Router policies this is adapted from (health.ts,
 // rate-limit.ts, fairness.ts) — same defaults, keyed by routerId instead of modelId.
@@ -117,4 +122,91 @@ export async function scoreOrchestratorCandidates(
   });
 
   return scored.map(s => s.candidate);
+}
+
+/**
+ * Sets `ctx.result` to a routing-failure error in the calling lane's own wire shape (EC1) —
+ * never a silent fallback to any direct model call, and never a bare throw reaching Fastify.
+ * Mirrors the exhaustion shape each lane's own model-attempt loop already produces
+ * (`anthropicAttempt`/`openaiAttempt`), scoped to "candidate routers" instead of "candidate
+ * models" since that is what actually ran out here.
+ */
+function setOrchestratorExhausted(ctx: ProxyContext): void {
+  if (ctx.protocol === 'anthropic') {
+    ctx.result = {
+      kind: 'block', status: 503,
+      body: { type: 'error', error: { type: 'overloaded_error', message: 'All orchestrator candidate routers are budget-exhausted or unavailable.' } },
+    };
+    return;
+  }
+  if (ctx.stream) {
+    const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
+    ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() };
+    return;
+  }
+  ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All orchestrator candidate routers failed or are budget-exhausted.', type: 'server_error' } } };
+}
+
+/**
+ * Forwards a request through an Orchestrator to its best available candidate Router (task 3,
+ * AC2/AC5/AC6/EC1/EC3). Scores candidates with `scoreOrchestratorCandidates`, then tries each in
+ * order via the shared `runCandidateLoop` (same mechanism the plain-Router model loop uses):
+ * for each candidate, `isOrchestratorCandidateAllowed` (AC6 — the Orchestrator's own budget gate,
+ * entirely separate from the candidate Router's own independent limit) gates the attempt, then
+ * the request is forwarded by re-running the *same* `routing.prepare`/`routing.execute` phases
+ * the candidate Router would run for a direct call — not a shortcut copy of that logic — by
+ * temporarily pointing `ctx.router`/`ctx.routerId` at the candidate and letting the existing
+ * `anthropicAttempt`/`openaiAttempt` (itself registered on `routing.execute`) run the plain-Router
+ * model loop against it. That loop's own terminal 503 (all of *that* Router's models exhausted)
+ * is a per-candidate failure signal here, not a response to return — it is cleared and the next
+ * Orchestrator candidate is tried. `ctx.orchestratorId` is set for the duration so the lanes'
+ * `cctx` construction threads it into `trackUsage` (AC5).
+ *
+ * A candidate whose target no longer resolves to a live Router of kind `'router'` — deleted or
+ * repointed since `scoreOrchestratorCandidates` read the router list — or whose forward attempt
+ * throws for any other reason, is treated exactly like any other candidate failure: skipped, next
+ * candidate tried (EC3). Exhausting every candidate sets a routing-failure `ctx.result`, never a
+ * fallback to any direct model call (EC1).
+ */
+export async function forwardToRouter(
+  orchestrator: RouterConfig,
+  ctx: ProxyContext,
+  pipeline: ProcessorRegistry<ProxyContext>,
+): Promise<void> {
+  const liveRouters = await readConfig('routers');
+  const liveById = new Map(liveRouters.map(r => [r.id, r]));
+  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters);
+
+  ctx.orchestratorId = orchestrator.id;
+
+  await runCandidateLoop(ordered, async (candidate) => {
+    const target = liveById.get(candidate.routerId);
+    if (!target || (target.kind ?? 'router') !== 'router') return false; // EC3: gone/repointed since scoring
+    if (!(await isOrchestratorCandidateAllowed(orchestrator.id, candidate))) return false; // AC6
+
+    const savedRouter = ctx.router;
+    const savedRouterId = ctx.routerId;
+    ctx.router = target;
+    ctx.routerId = target.id;
+    try {
+      await pipeline.runPhase('routing.prepare', ctx);
+      if (!ctx.result) await pipeline.runPhase('routing.execute', ctx);
+    } catch {
+      // Never let one candidate Router's failure (e.g. its own no_models_available) reach
+      // the client unhandled — same "skip, try next" contract as every other candidate fault.
+      delete ctx.result;
+      return false;
+    } finally {
+      ctx.router = savedRouter;
+      ctx.routerId = savedRouterId;
+    }
+
+    if (ctx.result?.kind === 'block') {
+      // This candidate Router exhausted its own models — a per-candidate failure from the
+      // Orchestrator's point of view, not a response to return. Try the next candidate.
+      delete ctx.result;
+      return false;
+    }
+    return ctx.result !== undefined; // success: json / stream / passthrough, byte-identical (AC2)
+  }, () => setOrchestratorExhausted(ctx));
 }
