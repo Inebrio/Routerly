@@ -1365,6 +1365,30 @@ describe('GET /api/routers', () => {
     const body = JSON.parse(res.body)
     expect(body[0].tokens[0].token).toBeUndefined()
   })
+
+  it('resolves an orchestrator\'s candidates to {routerId,name,weight} only, and reports kind for every router (AC7 wire-level)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }] }] }
+    const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [{ modelId: 'm1' }], policies: [{ type: 'cheapest', enabled: true }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc, r1]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    const orcResponse = body.find((r: any) => r.id === 'orc-1')
+    const plainResponse = body.find((r: any) => r.id === 'r1')
+    expect(orcResponse.kind).toBe('orchestrator')
+    expect(orcResponse.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1 }])
+    expect(plainResponse.kind).toBe('router')
+    expect(plainResponse.candidates).toBeUndefined()
+  })
 })
 
 describe('POST /api/routers', () => {
@@ -1481,6 +1505,279 @@ describe('POST /api/routers', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
+  })
+})
+
+// ─── Orchestrator (RTR-02) ────────────────────────────────────────────────────
+
+describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
+  it('returns 400 when an orchestrator is created with zero candidates (EC2)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('An orchestrator needs at least one candidate router')
+  })
+
+  it('returns 400 when a candidate targets another orchestrator (AC3)', async () => {
+    setupAdminAuth()
+    const otherOrchestrator = { id: 'orc-2', name: 'Other Orc', kind: 'orchestrator', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [otherOrchestrator]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'orc-2', weight: 1 }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('An orchestrator cannot target another orchestrator')
+  })
+
+  it('returns 400 for an unknown candidate router id', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'ghost', weight: 1 }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('Unknown candidate router: ghost')
+  })
+
+  it('creates a valid orchestrator: candidates opacity-limited to {routerId,name,weight}, raw token intact (AC1, AC7)', async () => {
+    setupAdminAuth()
+    const candidateRouter = { id: 'r1', name: 'Plain Router', tokens: [], members: [], models: [], policies: [{ type: 'cheapest', enabled: true }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [candidateRouter]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 3 }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = res.json()
+    expect(body.kind).toBe('orchestrator')
+    expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 3 }])
+    // No policy/budget/model field of the candidate router leaks through (AC7).
+    expect(body.candidates[0].policies).toBeUndefined()
+    expect(body.candidates[0].models).toBeUndefined()
+    // Raw token for the new orchestrator itself is untouched by the candidate shaping.
+    expect(body.token).toMatch(/^sk-rt-/)
+  })
+
+  it('a plain router response never carries a raw candidates array', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Plain' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const body = res.json()
+    expect(body.kind).toBe('router')
+    expect(body.candidates).toBeUndefined()
+  })
+
+  it('resolves candidates against a freshly re-read router list, not the pre-check one (EC4)', async () => {
+    setupAdminAuth()
+    // First readConfig('routers') call (dup-name check) sees no candidate yet;
+    // the second, fresh re-read immediately before validation/write sees it —
+    // modelling a candidate router whose own creation lands in the same window.
+    const candidateRouter = { id: 'r1', name: 'Plain Router', tokens: [], members: [], models: [] }
+    let routersCallCount = 0
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') {
+        routersCallCount += 1
+        return routersCallCount === 1 ? [] : [candidateRouter]
+      }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1 }] }),
+    })
+    await app.close()
+    expect(routersCallCount).toBeGreaterThan(1)
+    expect(res.statusCode).toBe(201)
+    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1 }])
+  })
+})
+
+describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
+  it('returns 400 when an orchestrator update self-references (AC4)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [{ routerId: 'orc-1', weight: 1 }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('An orchestrator cannot target itself')
+  })
+
+  it('returns 400 when an orchestrator update has zero candidates (EC2)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('An orchestrator needs at least one candidate router')
+  })
+
+  it('updates a valid orchestrator: response candidates opacity-limited (AC7 wire-level)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [] }
+    const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
+    const r2 = { id: 'r2', name: 'Router Two', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc, r1, r2]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        name: 'Orc', models: [], kind: 'orchestrator',
+        candidates: [{ routerId: 'r1', weight: 1 }, { routerId: 'r2', weight: 2 }],
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.kind).toBe('orchestrator')
+    expect(body.candidates).toEqual([
+      { routerId: 'r1', name: 'Router One', weight: 1 },
+      { routerId: 'r2', name: 'Router Two', weight: 2 },
+    ])
+  })
+
+  it('kind is inherited from the stored router when omitted, so an unrelated update to an existing orchestrator still enforces EC2', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }
+    const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc, r1]
+      return []
+    })
+
+    const app = await buildApp()
+    // Renaming only; kind/candidates absent from the body. Candidates is a
+    // full-replace field on PUT (same contract as `models`), so kind is still
+    // inherited as 'orchestrator' and the missing candidates trips EC2 —
+    // callers must resend the full candidate list on every orchestrator PUT.
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Renamed Orc', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('An orchestrator needs at least one candidate router')
+  })
+
+  it('a router update that neither sets nor inherits orchestrator kind is unaffected by candidate validation', async () => {
+    setupAdminAuth()
+    const plain = { id: 'p1', name: 'Plain', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [plain]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Renamed Plain', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.kind).toBe('router')
+    expect(body.candidates).toBeUndefined()
   })
 })
 
