@@ -198,6 +198,73 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
 }
 
 /**
+ * Thrown from an `updateConfig` mutator to abort the read-mutate-write cycle
+ * without persisting anything, while still carrying the HTTP status/body an
+ * API route should reply with. The lock is released (via the same
+ * try/finally as any other failure) before this propagates to the caller.
+ */
+export class ConfigUpdateAbort extends Error {
+  constructor(public readonly status: number, public readonly body: unknown) {
+    super(`config update aborted (status ${status})`);
+  }
+}
+
+/**
+ * Atomically reads, mutates and writes back one config file under a single
+ * hold of the same `proper-lockfile` lock `writeConfig` uses — closing the
+ * read-modify-write race a bare `readConfig()` ... `writeConfig()` pair left
+ * open (B2/EC4): two concurrent callers each captured their own stale
+ * in-memory copy of the array, and whichever's write landed last silently
+ * discarded the other's addition even though both requests had already been
+ * told 201/200.
+ *
+ * `mutate` receives the freshest possible read (taken after the lock is
+ * held, so no other writer can interleave) and returns the value to persist.
+ * Returning the exact same reference it was given is a no-op: signals
+ * "nothing changed" and skips the write entirely (mirrors the historical
+ * conditional-write call sites this replaces).
+ *
+ * Retries are bumped from writeConfig's 10/50-500ms: the critical section is
+ * now the read+validate+write, not just the write, so a burst of concurrent
+ * callers holds the lock slightly longer each — a wider margin avoids
+ * trading the data-loss bug for a wave of ELOCKED failures under load.
+ */
+export async function updateConfig<K extends keyof StoredTypeMap>(
+  key: K,
+  mutate: (current: StoredTypeMap[K]) => StoredTypeMap[K] | Promise<StoredTypeMap[K]>,
+): Promise<StoredTypeMap[K]> {
+  if (key === 'usage') {
+    throw new Error(`updateConfig does not support 'usage' — it is append-only NDJSON, see appendUsageRecords`);
+  }
+  const filePath = CONFIG_PATHS[key];
+  await mkdir(dirname(filePath), { recursive: true });
+  try {
+    await readFile(filePath);
+  } catch {
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), 'utf-8');
+  }
+
+  const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
+  let release: (() => Promise<void>) | undefined;
+  try {
+    release = await lockfile.lock(filePath, {
+      retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 },
+    });
+    const current = await readConfig(key);
+    const next = await mutate(current);
+    if (next === current) return next; // no-op: mutator made no change, nothing to publish
+    await writeFile(tmpPath, JSON.stringify(next, null, 2), 'utf-8');
+    await rename(tmpPath, filePath);
+    return next;
+  } catch (err) {
+    await unlink(tmpPath).catch(() => {});
+    throw err;
+  } finally {
+    if (release) await release();
+  }
+}
+
+/**
  * Appends a single usage record without locking the whole file for long.
  */
 export async function appendUsageRecord(record: UsageRecord): Promise<void> {

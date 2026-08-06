@@ -4,7 +4,28 @@ import { setResilienceStore } from '../resilience/index.js'
 import { InMemoryResilienceStore } from '../resilience/store.js'
 import { resilienceKeys } from '../resilience/keys.js'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(), getOrCreateSecret: vi.fn() }))
+vi.mock('../config/loader.js', () => {
+  // Mirrors loader.ts's real `updateConfig`/`ConfigUpdateAbort` semantics on
+  // top of the mocked readConfig/writeConfig below, so every route under
+  // test observes the same single-read-inside-the-lock behavior (B2) it
+  // gets in production, and `throw new ConfigUpdateAbort(...)` from a route
+  // under test is the same class instance api.ts's `instanceof` check sees
+  // (both go through this one mocked module).
+  class ConfigUpdateAbort extends Error {
+    constructor(public readonly status: number, public readonly body: unknown) {
+      super(`config update aborted (status ${status})`);
+    }
+  }
+  const readConfig = vi.fn();
+  const writeConfig = vi.fn();
+  const updateConfig = vi.fn(async (key: string, mutate: (current: unknown) => unknown | Promise<unknown>) => {
+    const current = await readConfig(key);
+    const next = await mutate(current);
+    if (next !== current) await writeConfig(key, next);
+    return next;
+  });
+  return { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, getOrCreateSecret: vi.fn() };
+})
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
 }))
@@ -67,7 +88,7 @@ vi.mock('../catalog/fetcher.js', () => ({
 }))
 
 import { apiRoutes, listeningAddresses } from './api.js'
-import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js'
+import { readConfig, writeConfig, updateConfig, getOrCreateSecret } from '../config/loader.js'
 import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 import { createSessionToken, verifyToken } from '../auth/jwt.js'
@@ -88,6 +109,7 @@ import { checkPermissions, fixPermissions, isBypassActive } from '../config/perm
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
+const mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
 const mockVerifyToken = vi.mocked(verifyToken)
 const mockCreateSessionToken = vi.mocked(createSessionToken)
 const mockGetTrace = vi.mocked(getTrace)
@@ -1624,11 +1646,42 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     expect(body.candidates).toBeUndefined()
   })
 
-  it('resolves candidates against a freshly re-read router list, not the pre-check one (EC4)', async () => {
+  it('persists a per-candidate limits array sent in the request body, opaque on the wire (B1)', async () => {
     setupAdminAuth()
-    // First readConfig('routers') call (dup-name check) sees no candidate yet;
-    // the second, fresh re-read immediately before validation/write sees it —
-    // modelling a candidate router whose own creation lands in the same window.
+    const candidateRouter = { id: 'r1', name: 'Plain Router', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [candidateRouter]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const limits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1, limits }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    // Response stays opacity-limited to {routerId,name,weight} (AC7) — limits
+    // never leak onto the wire even though they were accepted and stored.
+    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1 }])
+    const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
+    const written = routersCall![1] as any[]
+    const persisted = written.find(r => r.name === 'Orc')
+    expect(persisted.candidates).toEqual([{ routerId: 'r1', weight: 1, limits }])
+  })
+
+  it('resolves candidates against the single lock-held read, not a stale pre-check one (EC4/B2)', async () => {
+    setupAdminAuth()
+    // Post-B2 fix: the dup-name check, candidate validation and the push all
+    // run against the exact same `readConfig('routers')` result, taken once
+    // inside `updateConfig`'s lock — not a separate pre-check read that a
+    // concurrent candidate-router creation could race past. One call is the
+    // fix; two calls (the old pre-B2 shape) would have left that race open.
     const candidateRouter = { id: 'r1', name: 'Plain Router', tokens: [], members: [], models: [] }
     let routersCallCount = 0
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1636,7 +1689,7 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
       if (t === 'roles') return []
       if (t === 'routers') {
         routersCallCount += 1
-        return routersCallCount === 1 ? [] : [candidateRouter]
+        return [candidateRouter]
       }
       return []
     })
@@ -1649,7 +1702,7 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
       payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1 }] }),
     })
     await app.close()
-    expect(routersCallCount).toBeGreaterThan(1)
+    expect(routersCallCount).toBe(1)
     expect(res.statusCode).toBe(201)
     expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1 }])
   })
@@ -1759,6 +1812,50 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     expect(body.name).toBe('Renamed Orc')
     expect(body.kind).toBe('orchestrator')
     expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1 }])
+  })
+
+  it('round-trips per-candidate limits through PUT: preserved when omitted, replaced when re-sent (B1)', async () => {
+    setupAdminAuth()
+    const existingLimits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
+    const orc = {
+      id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [],
+      candidates: [{ routerId: 'r1', weight: 1, limits: existingLimits }],
+    }
+    const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc, r1]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    // 1. Renaming only, candidates omitted from the body: existing limits survive
+    // untouched (same "omitted = leave unchanged" contract the candidates array itself gets).
+    const appA = await buildApp()
+    const resA = await appA.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Renamed Orc', models: [] }),
+    })
+    await appA.close()
+    expect(resA.statusCode).toBe(200)
+    const writtenA = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')![1] as any[]
+    expect(writtenA.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', weight: 1, limits: existingLimits }])
+
+    // 2. Re-sending candidates with a different limits array replaces it wholesale.
+    mockWriteConfig.mockClear()
+    const newLimits = [{ metric: 'requests', windowType: 'period', period: 'hourly', value: 100 }]
+    const appB = await buildApp()
+    const resB = await appB.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1, limits: newLimits }] }),
+    })
+    await appB.close()
+    expect(resB.statusCode).toBe(200)
+    const writtenB = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')![1] as any[]
+    expect(writtenB.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', weight: 1, limits: newLimits }])
   })
 
   it('a router update that neither sets nor inherits orchestrator kind is unaffected by candidate validation', async () => {
