@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
-import { createRouter, updateRouter, getSettings } from '../../api';
+import { createRouter, updateRouter, getSettings, type RouterKind } from '../../api';
 import { useRouter } from './RouterLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -9,6 +9,12 @@ import { CopyBlock } from '../../components/CopyBlock';
 import { AUTO_MODEL, PLACEHOLDER_TOKEN } from '../connectShared';
 import { writeToClipboard } from '../../utils/clipboard';
 import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
+
+const KIND_OPTIONS: { value: RouterKind; label: string; description: string }[] = [
+  { value: 'router', label: 'Router', description: 'Routes requests across model candidates.' },
+  { value: 'orchestrator', label: 'Orchestrator', description: 'Routes requests across other routers instead of models.' },
+  { value: 'passthrough', label: 'Passthrough', description: 'Forwards requests unmodified.' },
+];
 
 const SECTION_TITLE: React.CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -58,6 +64,7 @@ export function RouterGeneralTab() {
 
   const [form, setForm] = useState({
     name: '',
+    kind: 'router' as RouterKind,
     timeoutMs: String(DEFAULT_ROUTER_TIMEOUT_MS),
     traceContent: false,
   });
@@ -66,6 +73,7 @@ export function RouterGeneralTab() {
     if (router) {
       setForm({
         name: router.name,
+        kind: router.kind ?? 'router',
         timeoutMs: String(router.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS),
         traceContent: router.traceContent === true,
       });
@@ -96,6 +104,7 @@ export function RouterGeneralTab() {
           }
         : {
             name: form.name,
+            ...(form.kind !== 'router' ? { kind: form.kind } : {}),
             models: [],
             timeoutMs: parseInt(form.timeoutMs),
           };
@@ -105,7 +114,7 @@ export function RouterGeneralTab() {
         // Update context and reset form so isDirty becomes false — no navigation needed
         const updated = { ...router, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent };
         setRouter(updated);
-        setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent });
+        setForm(f => ({ ...f, name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent }));
       } else {
         const proj = await createRouter(payload);
         if (proj.token) {
@@ -245,6 +254,22 @@ message = client.messages.create(
 
       <form onSubmit={handleSubmit} style={{ maxWidth: 480 }}>
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+
+        {!isEdit && (
+          <div className="form-group">
+            <label className="form-label">Kind</label>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+              Fixed once the router is created.
+            </p>
+            <SearchableSelect
+              ariaLabel="Router Kind"
+              value={form.kind}
+              onChange={v => setForm(f => ({ ...f, kind: v as RouterKind }))}
+              options={KIND_OPTIONS.map(k => ({ value: k.value, label: k.label, description: k.description }))}
+              style={{ maxWidth: 420 }}
+            />
+          </div>
+        )}
 
         <div className="form-group">
           <label className="form-label">Router Name</label>

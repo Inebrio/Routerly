@@ -228,6 +228,29 @@ export interface ModelConfig {
 /** Effective model computed from ModelInstance + ProviderConnection. Carries connectionId so resilience keys can target the real connection. */
 export type EffectiveModel = ModelConfig & { connectionId: string };
 
+/**
+ * The three-way distinction an entity's `kind` picks between. A plain
+ * `'router'` routes to models (today's behaviour, and the implicit default
+ * when `kind` is absent — every router stored before this field existed).
+ * An `'orchestrator'` routes to other routers instead of models (RTR-02).
+ * `'passthrough'` is reserved for a later story and carries neither
+ * `candidates` nor `models`.
+ */
+export type RouterKind = 'router' | 'orchestrator' | 'passthrough';
+
+/**
+ * One candidate Router an Orchestrator may forward to. Mirrors
+ * `RouterModelRef`'s weight/limits shape, but points at a Router id instead
+ * of a model id — an Orchestrator's candidate pool is other Routers, not
+ * models.
+ */
+export interface OrchestratorCandidateRef {
+  routerId: string;
+  weight: number;
+  /** Per-candidate usage limit overrides, scored the same way as a model's `limits`. */
+  limits?: Limit[];
+}
+
 export interface RouterModelRef {
   modelId: string;
   prompt?: string;
@@ -537,6 +560,10 @@ export interface RouterConfig {
   name: string;
   slug?: string;
   description?: string;
+  /** Absent means 'router' — every router stored before this field existed. */
+  kind?: RouterKind;
+  /** Meaningful only when `kind === 'orchestrator'`; absent/ignored for 'router'. */
+  candidates?: OrchestratorCandidateRef[];
   tokens: RouterToken[];
   members: RouterMember[];
   /** ID of the ModelConfig to use for routing decisions (deprecated, use policies instead) */
@@ -1215,6 +1242,12 @@ export interface UsageRecord {
   experimentId?: string;
   /** Variant of that experiment the rotation picked. Always set together with `experimentId`. */
   experimentVariantId?: string;
+  /**
+   * Set when this call was forwarded through an Orchestrator (RTR-02).
+   * `routerId`/`modelId` on this same record always identify the Router
+   * (and model) that actually executed the call — never the Orchestrator.
+   */
+  orchestratorId?: string;
 }
 
 /** Per-model aggregate row in the GET /api/usage response (`byModel`). */

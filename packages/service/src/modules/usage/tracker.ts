@@ -42,6 +42,8 @@ export interface TrackUsageParams {
   /** Experiment that routed this call, and the variant it drew (T71) */
   experimentId?: string;
   experimentVariantId?: string;
+  /** Set when this call was forwarded through an Orchestrator (RTR-02). */
+  orchestratorId?: string;
 }
 
 /**
@@ -98,6 +100,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
     ...(params.optimizerStats && params.optimizerStats.length > 0 ? { optimizers: params.optimizerStats } : {}),
     ...(params.experimentId ? { experimentId: params.experimentId } : {}),
     ...(params.experimentVariantId ? { experimentVariantId: params.experimentVariantId } : {}),
+    ...(params.orchestratorId ? { orchestratorId: params.orchestratorId } : {}),
   };
 
   // A trace still open keeps growing (response guardrails, PII on the answer,

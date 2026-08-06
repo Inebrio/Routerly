@@ -64,6 +64,14 @@ export interface ProxyContext {
   // and the byte-writing block paths need to know.
   responsesApi?: boolean
 
+  /**
+   * Set by `forwardToRouter` (RTR-02) while forwarding through an Orchestrator, to the
+   * Orchestrator's own id — read back into `LLMCallContext.orchestratorId` by the lanes'
+   * `cctx` construction so `trackUsage` records it (AC5). Absent for a direct call to a
+   * plain Router.
+   */
+  orchestratorId?: string
+
   // routing / attempt loop
   candidates?: RoutingCandidate[]
   attempt?: { model: ModelConfig; candidate: RoutingCandidate }

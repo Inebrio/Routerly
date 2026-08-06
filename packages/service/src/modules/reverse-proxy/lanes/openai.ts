@@ -4,6 +4,8 @@ import type { ChatCompletionRequest, ChatCompletionResponse, StreamChunk } from 
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
+import { runCandidateLoop } from '../candidate-loop.js'
+import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import type { TraceEntry } from '@routerly/shared'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
@@ -109,6 +111,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.req?.experiment ? { experiment: ctx.req.experiment } : {}),
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }
 
     // ── openai-oauth: Codex Responses backend, mapped back to OpenAI chunks. ──
@@ -219,27 +222,35 @@ export const openaiAttempt: Processor<ProxyContext> = {
     const pipeline = getProxyPipeline()
     const router = ctx.router
     const log = ctx.log
+
+    // Orchestrator: no models of its own — resolve via its candidate Routers instead of the
+    // plain-Router model loop below (RTR-02).
+    if (router.kind === 'orchestrator') {
+      await forwardToRouter(router, ctx, pipeline)
+      return
+    }
+
     // execution: only route to models on enabled connections
     const allModels = await listEffectiveModels()
-    const sorted = [...(ctx.candidates ?? [])].sort((a, b) => b.weight - a.weight)
 
     let primaryModelId: string | undefined
     let primaryFailed = false
-    for (const candidate of sorted) {
+
+    await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
       const model = allModels.find((m) => m.id === candidate.model)
-      if (!model) continue
+      if (!model) return false
       if (!primaryModelId) primaryModelId = model.id
       ctx.attempt = { model, candidate }
 
       await pipeline.runPhase('upstream.prepare', ctx) // Plan 5 budget: per-candidate isAllowed
-      if (ctx.result) return                            // budget block short-circuits
+      if (ctx.result) return true                       // budget block short-circuits
       await pipeline.runPhase('upstream.execute', ctx)  // openai:upstream sets ctx.result on success
 
       if (ctx.result) {
         if (primaryFailed && model.id !== primaryModelId) {
           void emitEvent('routing.fallback_used', 'info', { routerId: router.id, primaryModelId, fallbackModelId: model.id, traceId: ctx.traceId }, { routerId: router.id, log })
         }
-        return
+        return true
       }
       // The fault (if any) was already recorded once by handleProviderResult inside
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
@@ -249,18 +260,19 @@ export const openaiAttempt: Processor<ProxyContext> = {
         delete ctx.attemptResponse
       }
       if (model.id === primaryModelId) primaryFailed = true
-    }
-
-    // All candidates exhausted.
-    void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
-    if (ctx.stream) {
-      const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
-      ctx.emit?.(errorEntry)
-      const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
-      ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
-    } else {
-      ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
-    }
+      return false
+    }, () => {
+      // All candidates exhausted.
+      void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
+      if (ctx.stream) {
+        const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
+        ctx.emit?.(errorEntry)
+        const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
+        ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
+      } else {
+        ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
+      }
+    })
   },
 }
 

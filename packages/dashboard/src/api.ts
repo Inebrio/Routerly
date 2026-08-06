@@ -313,10 +313,12 @@ export interface RoutingPolicy {
 
 import type {
   RouterConfig,
+  RouterKind,
   RouterToken as SharedRouterToken,
   RouterMember,
   RouterModelRef,
 } from '@routerly/shared';
+export type { RouterKind } from '@routerly/shared';
 
 /** List/detail responses omit the raw token value: only creation returns it. */
 export type RouterToken = Omit<SharedRouterToken, 'token'>;
@@ -373,20 +375,36 @@ export interface PiiConfig {
   policies: PiiPolicy[];
 }
 
+/** An orchestrator candidate as the GET response resolves it: the server
+ *  looks up `name` from the candidate router, nothing else of that router
+ *  is ever included (AC7 opacity guarantee). */
+export interface OrchestratorCandidate {
+  routerId: string;
+  name: string;
+  weight: number;
+  /** Per-candidate usage limit overrides, scored the same way as a model's `limits`. */
+  limits?: Limit[];
+}
+
 /** Local response shape: same fields as the shared RouterConfig, but tokens
- *  carry no raw token value (see RouterToken above) and models/members/tokens
- *  are optional to match what list/detail responses actually send. */
-export type Router = Omit<RouterConfig, 'models' | 'tokens' | 'members'> & {
+ *  carry no raw token value (see RouterToken above), models/members/tokens
+ *  are optional to match what list/detail responses actually send, and
+ *  `candidates` is the name-resolved wire shape, not the stored one. */
+export type Router = Omit<RouterConfig, 'models' | 'tokens' | 'members' | 'candidates'> & {
   models: RouterModelRef[];
   tokens?: RouterToken[];
   members?: RouterMember[];
   token?: string;
+  kind?: RouterKind;
+  candidates?: OrchestratorCandidate[];
 };
 
 export const getRouters = () => request<Router[]>('/routers');
 
 export const createRouter = (data: {
   name: string;
+  kind?: RouterKind;
+  candidates?: { routerId: string; weight: number; limits?: Limit[] }[];
   routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
@@ -397,6 +415,8 @@ export const createRouter = (data: {
 
 export const updateRouter = (id: string, data: {
   name: string;
+  kind?: RouterKind;
+  candidates?: { routerId: string; weight: number; limits?: Limit[] }[];
   routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
