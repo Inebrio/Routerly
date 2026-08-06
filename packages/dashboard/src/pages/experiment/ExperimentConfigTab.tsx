@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X, Copy, Check } from 'lucide-react';
 import {
-  createExperiment, updateExperiment, getProjects, getModels,
+  createExperiment, updateExperiment, getRouters, getModels,
   type CreateExperimentBody, type ExperimentRotation, type ExperimentStickyKey,
-  type ExperimentVariant, type Model, type Project,
+  type ExperimentVariant, type Model, type Router,
 } from '../../api';
 import {
   EXPERIMENT_ROTATIONS, ROTATION_CATALOG, STICKY_KEYS, STICKY_KEY_CATALOG,
@@ -18,16 +18,16 @@ import { useExperiment } from './ExperimentLayout';
 /** Local row: the weight stays a string so the field can be emptied while typing. */
 interface VariantRow {
   id?: string;
-  projectId: string;
+  routerId: string;
   name: string;
   weight: string;
 }
 
 function toRow(v: ExperimentVariant): VariantRow {
-  return { ...(v.id ? { id: v.id } : {}), projectId: v.projectId, name: v.name ?? '', weight: v.weight !== undefined ? String(v.weight) : '' };
+  return { ...(v.id ? { id: v.id } : {}), routerId: v.routerId, name: v.name ?? '', weight: v.weight !== undefined ? String(v.weight) : '' };
 }
 
-const EMPTY_ROW: VariantRow = { projectId: '', name: '', weight: '' };
+const EMPTY_ROW: VariantRow = { routerId: '', name: '', weight: '' };
 
 export function ExperimentConfigTab() {
   const { experiment, setExperiment } = useExperiment();
@@ -53,7 +53,7 @@ export function ExperimentConfigTab() {
     experiment?.judge ? String(Math.round(experiment.judge.sampleRate * 100)) : '100',
   );
 
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -64,9 +64,9 @@ export function ExperimentConfigTab() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    Promise.all([getProjects(), getModels()])
-      .then(([ps, ms]) => { setProjects(ps); setModels(ms); })
-      .catch(e => setErr(e instanceof Error ? e.message : 'Failed to load projects'));
+    Promise.all([getRouters(), getModels()])
+      .then(([ps, ms]) => { setRouters(ps); setModels(ms); })
+      .catch(e => setErr(e instanceof Error ? e.message : 'Failed to load routers'));
   }, []);
 
   function setVariant(index: number, patch: Partial<VariantRow>) {
@@ -82,10 +82,10 @@ export function ExperimentConfigTab() {
       rotation,
       ...(rotation === 'sticky' ? { stickyKey } : {}),
       variants: variants
-        .filter(v => v.projectId)
+        .filter(v => v.routerId)
         .map(v => ({
           ...(v.id ? { id: v.id } : {}),
-          projectId: v.projectId,
+          routerId: v.routerId,
           ...(v.name.trim() ? { name: v.name.trim() } : {}),
           ...(rotation === 'weighted' && v.weight.trim() ? { weight: Number(v.weight) } : {}),
         })),
@@ -130,7 +130,7 @@ export function ExperimentConfigTab() {
       <div style={{ maxWidth: 620 }}>
         <div style={{ padding: 16, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, marginBottom: 24 }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-            Experiment created. Point your client at this token instead of a project token. It won't be shown again.
+            Experiment created. Point your client at this token instead of a router token. It won't be shown again.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>{created.token}</div>
@@ -145,9 +145,9 @@ export function ExperimentConfigTab() {
   }
 
   const shares = rotation === 'weighted'
-    ? variantShares(variants.map(v => ({ id: '', projectId: v.projectId, ...(v.weight.trim() ? { weight: Number(v.weight) } : {}) })))
+    ? variantShares(variants.map(v => ({ id: '', routerId: v.routerId, ...(v.weight.trim() ? { weight: Number(v.weight) } : {}) })))
     : [];
-  const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
+  const routerOptions = routers.map(p => ({ value: p.id, label: p.name }));
   const readOnly = !canManage;
 
   return (
@@ -216,18 +216,18 @@ export function ExperimentConfigTab() {
       <div className="form-section">
         <div className="section-title">Variants</div>
         <p className="section-desc">
-          Each variant is an existing project, taken whole: its models, routing and guardrails all apply. A test needs at least two.
+          Each variant is an existing router, taken whole: its models, routing and guardrails all apply. A test needs at least two.
         </p>
         {variants.map((v, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
             <div style={{ flex: 2 }}>
               <SearchableSelect
-                ariaLabel={`Variant ${i + 1} project`}
-                placeholder="Select a project"
-                value={v.projectId}
+                ariaLabel={`Variant ${i + 1} router`}
+                placeholder="Select a router"
+                value={v.routerId}
                 disabled={readOnly}
-                onChange={val => setVariant(i, { projectId: val })}
-                options={projectOptions}
+                onChange={val => setVariant(i, { routerId: val })}
+                options={routerOptions}
               />
             </div>
             <input

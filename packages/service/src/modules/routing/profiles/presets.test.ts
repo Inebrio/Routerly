@@ -131,7 +131,7 @@ describe('BUILTIN_PROFILES', () => {
     expect(aggressive.slice(0, balanced.length)).toEqual(balanced)
   })
 
-  // Guardrails and PII rewrite the request, so no project may inherit them from
+  // Guardrails and PII rewrite the request, so no router may inherit them from
   // a preset it never chose: security profiles are user-written only.
   it('ships no security preset', () => {
     expect(listBuiltins('security')).toEqual([])

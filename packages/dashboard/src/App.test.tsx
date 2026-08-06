@@ -15,16 +15,16 @@ vi.mock('./pages/OverviewPage', () => ({ OverviewPage: () => <div>OverviewPage</
 vi.mock('./pages/ModelsPage', () => ({ ModelsPage: () => <div>ModelsPage</div> }));
 vi.mock('./pages/ModelFormPage', () => ({ ModelFormPage: () => <div>ModelFormPage</div> }));
 vi.mock('./pages/ModelDiscoveryPage', () => ({ ModelDiscoveryPage: () => <div>ModelDiscoveryPage</div> }));
-vi.mock('./pages/ProjectsPage', () => ({ ProjectsPage: () => <div>ProjectsPage</div> }));
-vi.mock('./pages/project/ProjectLayout', () => ({ ProjectLayout: () => <div>ProjectLayout</div> }));
-vi.mock('./pages/project/ProjectGeneralTab', () => ({ ProjectGeneralTab: () => <div>ProjectGeneralTab</div> }));
-vi.mock('./pages/project/ProjectRoutingTab', () => ({ ProjectRoutingTab: () => <div>ProjectRoutingTab</div> }));
-vi.mock('./pages/project/ProjectTokenTab', () => ({ ProjectTokenTab: () => <div>ProjectTokenTab</div> }));
-vi.mock('./pages/project/ProjectUsersTab', () => ({ ProjectUsersTab: () => <div>ProjectUsersTab</div> }));
-vi.mock('./pages/project/ProjectLogsTab', () => ({ ProjectLogsTab: () => <div>ProjectLogsTab</div> }));
-vi.mock('./pages/project/ProjectSecurityTab', () => ({ ProjectSecurityTab: () => <div>ProjectSecurityTab</div> }));
-vi.mock('./pages/project/ProjectTokenCreatePage', () => ({ ProjectTokenCreatePage: () => <div>ProjectTokenCreatePage</div> }));
-vi.mock('./pages/project/ProjectTokenEditPage', () => ({ ProjectTokenEditPage: () => <div>ProjectTokenEditPage</div> }));
+vi.mock('./pages/RoutersPage', () => ({ RoutersPage: () => <div>RoutersPage</div> }));
+vi.mock('./pages/router/RouterLayout', () => ({ RouterLayout: () => <div>RouterLayout</div> }));
+vi.mock('./pages/router/RouterGeneralTab', () => ({ RouterGeneralTab: () => <div>RouterGeneralTab</div> }));
+vi.mock('./pages/router/RouterRoutingTab', () => ({ RouterRoutingTab: () => <div>RouterRoutingTab</div> }));
+vi.mock('./pages/router/RouterTokenTab', () => ({ RouterTokenTab: () => <div>RouterTokenTab</div> }));
+vi.mock('./pages/router/RouterUsersTab', () => ({ RouterUsersTab: () => <div>RouterUsersTab</div> }));
+vi.mock('./pages/router/RouterLogsTab', () => ({ RouterLogsTab: () => <div>RouterLogsTab</div> }));
+vi.mock('./pages/router/RouterSecurityTab', () => ({ RouterSecurityTab: () => <div>RouterSecurityTab</div> }));
+vi.mock('./pages/router/RouterTokenCreatePage', () => ({ RouterTokenCreatePage: () => <div>RouterTokenCreatePage</div> }));
+vi.mock('./pages/router/RouterTokenEditPage', () => ({ RouterTokenEditPage: () => <div>RouterTokenEditPage</div> }));
 vi.mock('./pages/UsersPage', () => ({ UsersPage: () => <div>UsersPage</div> }));
 vi.mock('./pages/UsagePage', () => ({ UsagePage: () => <div>UsagePage</div> }));
 vi.mock('./pages/UsageRecordPage', () => ({ UsageRecordPage: () => <div>UsageRecordPage</div> }));
@@ -271,7 +271,7 @@ describe('Sidebar', () => {
     renderApp();
     await waitFor(() => screen.getByText('Overview'));
     expect(screen.getByText('Models')).toBeTruthy();
-    expect(screen.getByText('Projects')).toBeTruthy();
+    expect(screen.getByText('Routers')).toBeTruthy();
     expect(screen.getByText('Usage')).toBeTruthy();
   });
 
@@ -295,7 +295,7 @@ describe('Sidebar', () => {
     await waitFor(() => screen.getByText('Experiments'));
     const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
     expect(labels).toEqual([
-      'Overview', 'Providers', 'Models', 'Profiles', 'Projects',
+      'Overview', 'Providers', 'Models', 'Profiles', 'Routers',
       'Experiments', 'Usage', 'Playground',
     ]);
     // Connect app is a setup step, not a daily destination: it sits with Settings.

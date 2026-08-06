@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { OPTIMIZER_CATALOG, OPTIMIZER_FIXTURES, optimizerFixture, optimizerLabel, optimizerThreshold } from '@routerly/shared';
-import type { ProjectConfig, OptimizerStep, OptimizerId, Message } from '@routerly/shared';
+import type { RouterConfig, OptimizerStep, OptimizerId, Message } from '@routerly/shared';
 
 interface InstalledOptimizer {
   id: string;
@@ -59,16 +59,16 @@ function thresholdCell(id: string): string {
   return spec.default != null ? `${range}, default ${spec.default}` : `${range}, required`;
 }
 
-// ─── Helper: resolve project by name or ID ────────────────────────────────────
+// ─── Helper: resolve router by name or ID ────────────────────────────────────
 
-async function resolveProject(nameOrId: string): Promise<ProjectConfig> {
-  const projects = await api<ProjectConfig[]>('GET', '/api/projects');
-  const project = projects.find(p => p.id === nameOrId || p.name === nameOrId);
-  if (!project) {
-    console.error(chalk.red(`Project "${nameOrId}" not found. Run \`routerly project list\` to see available projects.`));
+async function resolveRouter(nameOrId: string): Promise<RouterConfig> {
+  const routers = await api<RouterConfig[]>('GET', '/api/routers');
+  const router = routers.find(p => p.id === nameOrId || p.name === nameOrId);
+  if (!router) {
+    console.error(chalk.red(`Router "${nameOrId}" not found. Run \`routerly router list\` to see available routers.`));
     process.exit(1);
   }
-  return project;
+  return router;
 }
 
 // Commander collector for repeatable options.
@@ -163,8 +163,8 @@ Examples:
 
 Checkpoints are hundreds of megabytes and download on the service host, not
 here. --install returns as soon as the download starts; run the command again
-to see its progress. The checkpoints are shared by every project; which one a
-project uses is set with \`routerly optimizers config <project> --checkpoint <key>\`.
+to see its progress. The checkpoints are shared by every router; which one a
+router uses is set with \`routerly optimizers config <router> --checkpoint <key>\`.
 `)
     .action(async (opts: { install?: boolean | string; json?: boolean }) => {
       try {
@@ -197,12 +197,12 @@ project uses is set with \`routerly optimizers config <project> --checkpoint <ke
     });
 
   // ── optimizers config ────────────────────────────────────────────────────────
-  cmd.command('config <project>')
-    .description('Configure a project optimizer pipeline (read-modify-write)')
+  cmd.command('config <router>')
+    .description('Configure a router optimizer pipeline (read-modify-write)')
     .option('--enable <id>', 'Enable an optimizer step (repeatable)', collect, [])
     .option('--disable <id>', 'Disable an optimizer step (repeatable)', collect, [])
     .option('--threshold <id=val>', 'Set an optimizer step threshold (repeatable)', collect, [])
-    .option('--checkpoint <key>', 'LLMLingua-2 checkpoint this project runs on (see `routerly optimizers model`)')
+    .option('--checkpoint <key>', 'LLMLingua-2 checkpoint this router runs on (see `routerly optimizers model`)')
     .option('--order <ids>', 'Comma-separated optimizer ids controlling step order')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
@@ -221,10 +221,10 @@ Examples:
       json?: boolean;
     }) => {
       try {
-        const project = await resolveProject(nameOrId);
+        const router = await resolveRouter(nameOrId);
 
         // Clone the current steps so we never mutate the fetched object.
-        const steps: OptimizerStep[] = (project.optimizers?.steps ?? []).map(s => ({ ...s }));
+        const steps: OptimizerStep[] = (router.optimizers?.steps ?? []).map(s => ({ ...s }));
         const byId = new Map(steps.map(s => [s.id, s]));
 
         const upsert = (id: string): OptimizerStep => {
@@ -276,25 +276,25 @@ Examples:
           || opts.threshold.length > 0 || opts.checkpoint !== undefined || opts.order !== undefined;
 
         const updated = mutating
-          ? await api<ProjectConfig>('PUT', `/api/projects/${encodeURIComponent(project.id)}`, {
-            name: project.name,
-            models: project.models,
-            ...(project.routingModelId !== undefined ? { routingModelId: project.routingModelId } : {}),
-            ...(project.autoRouting !== undefined ? { autoRouting: project.autoRouting } : {}),
-            ...(project.fallbackRoutingModelIds !== undefined ? { fallbackRoutingModelIds: project.fallbackRoutingModelIds } : {}),
-            ...(project.policies !== undefined ? { policies: project.policies } : {}),
-            ...(project.timeoutMs !== undefined ? { timeoutMs: project.timeoutMs } : {}),
+          ? await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+            name: router.name,
+            models: router.models,
+            ...(router.routingModelId !== undefined ? { routingModelId: router.routingModelId } : {}),
+            ...(router.autoRouting !== undefined ? { autoRouting: router.autoRouting } : {}),
+            ...(router.fallbackRoutingModelIds !== undefined ? { fallbackRoutingModelIds: router.fallbackRoutingModelIds } : {}),
+            ...(router.policies !== undefined ? { policies: router.policies } : {}),
+            ...(router.timeoutMs !== undefined ? { timeoutMs: router.timeoutMs } : {}),
             optimizers: { steps: ordered },
           })
-          : project;
+          : router;
 
         if (opts.json) {
           console.log(JSON.stringify(updated, null, 2));
           return;
         }
         console.log(mutating
-          ? chalk.green(`✓ Updated optimizer pipeline on project "${project.name}"`)
-          : chalk.gray(`Optimizer pipeline on project "${project.name}"`));
+          ? chalk.green(`✓ Updated optimizer pipeline on router "${router.name}"`)
+          : chalk.gray(`Optimizer pipeline on router "${router.name}"`));
         const finalSteps = updated.optimizers?.steps ?? ordered;
         if (finalSteps.length === 0) {
           console.log(chalk.gray('  (no steps)'));
@@ -313,8 +313,8 @@ Examples:
     });
 
   // ── optimizers preview ───────────────────────────────────────────────────────
-  cmd.command('preview <project>')
-    .description('Dry-run the project optimizer pipeline over sample messages')
+  cmd.command('preview <router>')
+    .description('Dry-run the router optimizer pipeline over sample messages')
     .option('--message <text>', 'A user message to include (repeatable)', collect, [])
     .option('--fixture <id>', 'Use a shipped sample conversation instead of --message')
     .option('--model <id>', 'Address the sample to this model, so context-window steps have a window to fit')
@@ -351,10 +351,10 @@ it has no context window to size against instead of trimming.
         } else {
           sampleMessages = opts.message.map(text => ({ role: 'user', content: text }));
         }
-        const project = await resolveProject(nameOrId);
-        const steps = project.optimizers?.steps ?? [];
+        const router = await resolveRouter(nameOrId);
+        const steps = router.optimizers?.steps ?? [];
         const result = await api<PreviewResult>('POST', '/api/optimizers/preview', {
-          projectId: project.id,
+          routerId: router.id,
           sampleMessages,
           steps,
           ...(opts.model ? { model: opts.model } : {}),
@@ -368,7 +368,7 @@ it has no context window to size against instead of trimming.
         console.log(chalk.gray('Tokens after:  ') + result.estimatedTokensAfter);
         console.log(chalk.gray('Saved:         ') + (result.estimatedTokensBefore - result.estimatedTokensAfter));
         if (result.perStep.length === 0) {
-          console.log(chalk.yellow('\nNo optimizer steps configured on this project.'));
+          console.log(chalk.yellow('\nNo optimizer steps configured on this router.'));
           return;
         }
         // "Saved 0" is the same cell whether a step ran and found nothing or never

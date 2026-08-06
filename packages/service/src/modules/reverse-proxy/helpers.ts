@@ -1,6 +1,6 @@
 import type { FastifyBaseLogger } from 'fastify'
 import type {
-  ChatCompletionRequest, ChatCompletionResponse, MessagesRequest, ProjectConfig, StreamChunk,
+  ChatCompletionRequest, ChatCompletionResponse, MessagesRequest, RouterConfig, StreamChunk,
 } from '@routerly/shared'
 import type { ProxyContext, ProxyResult } from './context.js'
 import { StreamingScrubber, scrubText } from '../pii/piiScrubber.js'
@@ -217,12 +217,12 @@ export async function* wrapWithStreamingScrubber(
  */
 export async function* wrapWithResponseGuardrail(
   iter: AsyncIterable<any>,
-  project: ProjectConfig,
+  router: RouterConfig,
   guardrailPctx: unknown,
   log: FastifyBaseLogger,
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
-  const bufferForGuardrail = project.guardrails?.rules.some(
+  const bufferForGuardrail = router.guardrails?.rules.some(
     (r: any) => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both'),
   ) ?? false
   const buffered: unknown[] = []
@@ -235,8 +235,8 @@ export async function* wrapWithResponseGuardrail(
     else yield chunk
   }
 
-  if (project.guardrails && fullContent) {
-    const result = await checkGuardrails('response', fullContent, project.guardrails, guardrailPctx as any, log)
+  if (router.guardrails && fullContent) {
+    const result = await checkGuardrails('response', fullContent, router.guardrails, guardrailPctx as any, log)
     const hit = result.triggered ? { triggered: result.triggered } : null
     if (hit && result.block) {
       ctx.blockedBy = hit.triggered

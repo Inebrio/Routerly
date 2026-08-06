@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { McpTool, McpToolResult, McpAuthContext } from './mcp.js';
-import type { McpToken, ProjectConfig } from './config.js';
+import type { McpToken, RouterConfig } from './config.js';
 
-const project: ProjectConfig = {
+const router: RouterConfig = {
   id: 'p1',
   name: 'Test',
   tokens: [],
@@ -20,8 +20,8 @@ const token: McpToken = {
 
 const authCtx: McpAuthContext = {
   user: { id: 'u1', email: 'dev@routerly.ai', roleId: 'admin' },
-  permissions: ['project:read', 'model:read'],
-  projects: [project],
+  permissions: ['router:read', 'model:read'],
+  routers: [router],
   token,
 };
 
@@ -55,11 +55,11 @@ describe('McpToolResult', () => {
 });
 
 describe('McpAuthContext', () => {
-  it('binds the owning user, its permissions and its accessible projects', () => {
+  it('binds the owning user, its permissions and its accessible routers', () => {
     expect(authCtx.user.id).toBe('u1');
     expect(authCtx.token.id).toBe('t1');
-    expect(authCtx.permissions).toContain('project:read');
-    expect(authCtx.projects.map(p => p.id)).toEqual(['p1']);
+    expect(authCtx.permissions).toContain('router:read');
+    expect(authCtx.routers.map(p => p.id)).toEqual(['p1']);
   });
 });
 
@@ -72,6 +72,6 @@ describe('McpTool', () => {
     expect(tool.permission).toBe('model:read');
 
     const result = await tool.handler({}, authCtx);
-    expect(result.content[0]?.text).toBe(JSON.stringify(['project:read', 'model:read']));
+    expect(result.content[0]?.text).toBe(JSON.stringify(['router:read', 'model:read']));
   });
 });

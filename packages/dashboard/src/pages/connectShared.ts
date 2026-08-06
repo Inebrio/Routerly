@@ -5,7 +5,7 @@ export { AUTO_MODEL } from '@routerly/shared';
 /** Docs site root; every client meta carries the slug to append. */
 export const DOCS_BASE = 'https://doc.routerly.ai/next/';
 
-/** The dashboard never holds a project's raw token, so snippets ship a placeholder. */
+/** The dashboard never holds a router's raw token, so snippets ship a placeholder. */
 export const PLACEHOLDER_TOKEN = 'sk-rt-YOUR_TOKEN';
 
 /** MCP tokens are personal and minted separately, hence a second placeholder. */

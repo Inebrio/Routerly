@@ -1,4 +1,4 @@
-import type { ModelConfig, ProjectConfig, UsageRecord } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, UsageRecord } from '@routerly/shared';
 import { readConfig } from '../../modules/config/loader.js';
 import { listEffectiveModelsIncludingDisabled } from '../../modules/provider/list-effective.js';
 import { getLimitUsageSnapshot } from '../../modules/budget/budget.js';
@@ -55,7 +55,7 @@ export const DURATION_WINDOW = 100;
 
 export function aggregate(
   usage: UsageRecord[],
-  projectName: (id: string) => string,
+  routerName: (id: string) => string,
   modelInfo: (id: string) => { model: string; provider: string },
 ): Aggregates {
   const requests = new Map<string, { labels: Record<string, string>; value: number }>();
@@ -75,19 +75,19 @@ export function aggregate(
   };
 
   for (const r of usage) {
-    const project = projectName(r.projectId);
+    const router = routerName(r.routerId);
     const { model, provider } = modelInfo(r.modelId);
 
-    bump(requests, { project, model, provider, status: r.outcome }, 1);
+    bump(requests, { router, model, provider, status: r.outcome }, 1);
 
-    bump(tokens, { project, model, type: 'input' }, r.inputTokens);
-    bump(tokens, { project, model, type: 'output' }, r.outputTokens);
-    if (r.cachedInputTokens) bump(tokens, { project, model, type: 'cached' }, r.cachedInputTokens);
+    bump(tokens, { router, model, type: 'input' }, r.inputTokens);
+    bump(tokens, { router, model, type: 'output' }, r.outputTokens);
+    if (r.cachedInputTokens) bump(tokens, { router, model, type: 'cached' }, r.cachedInputTokens);
 
-    bump(cost, { project, model }, r.cost);
+    bump(cost, { router, model }, r.cost);
 
-    const dKey = `${project} ${model}`;
-    const d = durations.get(dKey) ?? { labels: { project, model }, latencies: [] };
+    const dKey = `${router} ${model}`;
+    const d = durations.get(dKey) ?? { labels: { router, model }, latencies: [] };
     d.latencies.push(r.latencyMs);
     if (d.latencies.length > DURATION_WINDOW) d.latencies.shift();
     durations.set(dKey, d);
@@ -98,12 +98,12 @@ export function aggregate(
 
 // ─── Budget ratio ─────────────────────────────────────────────────────────────
 
-export async function projectBudgetRatio(project: ProjectConfig, models: ModelConfig[]): Promise<number> {
+export async function routerBudgetRatio(router: RouterConfig, models: ModelConfig[]): Promise<number> {
   let maxRatio = 0;
-  for (const ref of project.models) {
+  for (const ref of router.models) {
     const model = models.find((m) => m.id === ref.modelId);
     if (!model) continue;
-    const snapshots = await getLimitUsageSnapshot(model, project);
+    const snapshots = await getLimitUsageSnapshot(model, router);
     for (const s of snapshots) {
       if (s.metric !== 'cost' || s.value <= 0) continue;
       const ratio = Math.min(1, s.current / s.value);
@@ -117,25 +117,25 @@ export async function projectBudgetRatio(project: ProjectConfig, models: ModelCo
 
 export async function getMetricsSnapshot(): Promise<{
   agg: Aggregates;
-  projectName: (id: string) => string;
+  routerName: (id: string) => string;
   modelInfo: (id: string) => { model: string; provider: string };
-  projects: ProjectConfig[];
+  routers: RouterConfig[];
   models: ModelConfig[];
 }> {
   // observability: must still account for disabled-connection models
-  const [usage, projects, models] = await Promise.all([
+  const [usage, routers, models] = await Promise.all([
     readConfig('usage'),
-    readConfig('projects'),
+    readConfig('routers'),
     listEffectiveModelsIncludingDisabled(),
   ]);
 
-  const projectName = (id: string): string => projects.find((p) => p.id === id)?.name ?? id;
+  const routerName = (id: string): string => routers.find((p) => p.id === id)?.name ?? id;
   const modelInfo = (id: string): { model: string; provider: string } => {
     const m = models.find((mm) => mm.id === id);
     return { model: id, provider: m?.provider ?? 'unknown' };
   };
 
-  const agg = aggregate(usage as UsageRecord[], projectName, modelInfo);
+  const agg = aggregate(usage as UsageRecord[], routerName, modelInfo);
 
-  return { agg, projectName, modelInfo, projects, models };
+  return { agg, routerName, modelInfo, routers, models };
 }

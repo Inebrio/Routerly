@@ -63,7 +63,7 @@ const EVENT_OPTIONS = [
 function detailLink(key: string, value: unknown): string | null {
   if (typeof value !== 'string' || !value) return null;
   const id = encodeURIComponent(value);
-  if (key === 'projectId') return `/dashboard/projects/${id}`;
+  if (key === 'routerId') return `/dashboard/routers/${id}`;
   // Model ids contain slashes and colons (openai/gpt-4o), hence the encoding.
   // `primaryModelId` and `fallbackModelId` come from routing.fallback_used.
   if (key === 'modelId' || key.endsWith('ModelId')) return `/dashboard/models/${id}`;
@@ -1004,7 +1004,7 @@ function ProfileSecurityTab() {
   );
 }
 
-// ─── Tab bar (reuses ProjectLayout pattern) ───────────────────────────────────
+// ─── Tab bar (reuses RouterLayout pattern) ───────────────────────────────────
 
 const TABS = [
   { id: 'profile', label: 'Profile', to: '/dashboard/profile' },
@@ -1046,7 +1046,7 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
           </p>
         </div>
 
-        {/* Tab navigation - same pattern as ProjectLayout */}
+        {/* Tab navigation - same pattern as RouterLayout */}
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)' }}>
           {tabs.map(tab => {
             const isActive = activeTab === tab.id;

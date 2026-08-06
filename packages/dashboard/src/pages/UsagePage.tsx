@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { CALL_TYPES, REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
-import { getUsage, getProjects, getModels, type UsageStats, type Project, type Model } from '../api';
+import { getUsage, getRouters, getModels, type UsageStats, type Router, type Model } from '../api';
 import { MultiSelect } from '../components/MultiSelect';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { CostCard, SavingsCard, TokensCard, savingsSeriesData, type SavingsMetric } from '../components/savings';
@@ -70,13 +70,13 @@ const ALL_TIME: DateRange = { from: '', to: '', label: 'All time' };
 export function UsagePage() {
   const providerLabel = useProviderLabels();
   const [stats, setStats]               = useState<UsageStats | null>(null);
-  const [projects, setProjects]         = useState<Project[]>([]);
+  const [routers, setRouters]         = useState<Router[]>([]);
   const [allModels, setAllModels]       = useState<Model[]>([]);
   // "This month" is the default, and it has to arrive as a real range: an empty
   // one used to be filled in on mount, which overwrote a stored "All time" on
   // every reload and lost the filter the user had picked.
   const [dateRange, setDateRange]       = useFilterState<DateRange>({ key: 'usage-filters-dateRange', defaultValue: THIS_MONTH?.range() ?? ALL_TIME, deserialize: parseStoredRange });
-  const [projectIds, setProjectIds]     = useFilterState<string[]>({ key: 'usage-filters-projectIds', defaultValue: [] });
+  const [routerIds, setRouterIds]     = useFilterState<string[]>({ key: 'usage-filters-routerIds', defaultValue: [] });
   const [modelIds, setModelIds]         = useFilterState<string[]>({ key: 'usage-filters-modelIds', defaultValue: [] });
   const [tokenIds, setTokenIds]         = useFilterState<string[]>({ key: 'usage-filters-tokenIds', defaultValue: [] });
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
@@ -136,7 +136,7 @@ export function UsagePage() {
   }, []);
 
   useEffect(() => {
-    getProjects().then(setProjects).catch(console.error);
+    getRouters().then(setRouters).catch(console.error);
     // ponytail: fetch stable model list once for filter options so the dropdown
     // does not collapse when a model filter is active (server-filtered records
     // would otherwise shrink the option list)
@@ -146,7 +146,7 @@ export function UsagePage() {
   useEffect(() => {
     latestTimestampRef.current = null;
     setNewRowIds(new Set());
-  }, [dateRange, page, pageSize, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const fetchStats = useCallback(() => {
     const prevMax = latestTimestampRef.current;
@@ -160,7 +160,7 @@ export function UsagePage() {
     }
     const period = from || to ? 'custom' : 'all';
     return getUsage(period, undefined, from, to, page, pageSize, {
-      projectIds,
+      routerIds,
       modelIds,
       tokenIds,
       callType: callTypeFilter,
@@ -187,7 +187,7 @@ export function UsagePage() {
         setFetchError(msg);
         console.error('Failed to load usage stats:', msg);
       });
-  }, [dateRange, page, pageSize, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -202,7 +202,7 @@ export function UsagePage() {
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
 
-  useEffect(() => { setPage(1); }, [dateRange, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  useEffect(() => { setPage(1); }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   // Savings over the same window and the same filters, one page of records asked
   // for because only the aggregates are read here (T209).
@@ -217,7 +217,7 @@ export function UsagePage() {
     }
     const period = from || to ? 'custom' : 'all';
     getUsage(period, undefined, from, to, 1, 1, {
-      projectIds,
+      routerIds,
       modelIds,
       tokenIds,
       callType: callTypeFilter,
@@ -228,7 +228,7 @@ export function UsagePage() {
     })
       .then(setSavingsStats)
       .catch(() => setSavingsStats(null));
-  }, [dateRange, projectIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
 
   const savingsData = useMemo(() => savingsSeriesData(savingsStats?.series), [savingsStats]);
 
@@ -252,35 +252,35 @@ export function UsagePage() {
     [allModels],
   );
 
-  const projectOptions = useMemo(
-    () => projects.map(p => ({ value: p.id, label: p.name })),
-    [projects],
+  const routerOptions = useMemo(
+    () => routers.map(p => ({ value: p.id, label: p.name })),
+    [routers],
   );
 
   // Tokens are named per client, so filtering by one answers "what is this caller
-  // doing" without the caller sending anything. Scoped to the selected projects
+  // doing" without the caller sending anything. Scoped to the selected routers
   // when there are any, otherwise the list is every token the gateway knows.
   const tokenOptions = useMemo(() => {
-    const scope = projectIds.length > 0 ? projects.filter(p => projectIds.includes(p.id)) : projects;
+    const scope = routerIds.length > 0 ? routers.filter(p => routerIds.includes(p.id)) : routers;
     return scope.flatMap(p =>
       (p.tokens ?? []).map(t => ({
         value: t.id,
-        label: projectIds.length === 1 ? tokenLabel(t) : `${p.name} / ${tokenLabel(t)}`,
+        label: routerIds.length === 1 ? tokenLabel(t) : `${p.name} / ${tokenLabel(t)}`,
       })),
     );
-  }, [projects, projectIds]);
+  }, [routers, routerIds]);
 
-  /** Token name by id, for the caller shown under each call's project. */
+  /** Token name by id, for the caller shown under each call's router. */
   const tokenNames = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const p of projects) for (const t of p.tokens ?? []) map[t.id] = tokenLabel(t);
+    for (const p of routers) for (const t of p.tokens ?? []) map[t.id] = tokenLabel(t);
     return map;
-  }, [projects]);
+  }, [routers]);
 
   // Server now filters; records are already consistent with active filters.
   const displayRecords = stats?.records ?? [];
 
-  const hasActiveFilters = projectIds.length > 0 || modelIds.length > 0 || tokenIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all';
+  const hasActiveFilters = routerIds.length > 0 || modelIds.length > 0 || tokenIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all';
   const hasReset = hasActiveFilters;
 
   function handleModelSort(key: ModelSortKey) {
@@ -449,12 +449,12 @@ export function UsagePage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-              <FilterLabel>Project</FilterLabel>
+              <FilterLabel>Router</FilterLabel>
               <MultiSelect
-                options={projectOptions}
-                value={projectIds}
-                onChange={setProjectIds}
-                placeholder="All Projects"
+                options={routerOptions}
+                value={routerIds}
+                onChange={setRouterIds}
+                placeholder="All Routers"
               />
             </div>
 
@@ -526,7 +526,7 @@ export function UsagePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <FilterLabel>&nbsp;</FilterLabel>
                 <button className="btn btn-sm btn-secondary"
-                  onClick={() => { setProjectIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
+                  onClick={() => { setRouterIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
                   Reset filters
                 </button>
               </div>
@@ -709,7 +709,7 @@ export function UsagePage() {
                   <table>
                     <thead>
                       <tr>
-                        <th>Time</th><th>Project</th><th>Model</th><th>Type</th><th>Caller</th>
+                        <th>Time</th><th>Router</th><th>Model</th><th>Type</th><th>Caller</th>
                         <th style={numTh}>In</th><th style={numTh}>Out</th><th style={numTh}>Cost</th>
                         <th style={numTh}>Latency</th><th style={numTh}>TTFT</th><th style={numTh}>Tok/s</th>
                         <th>Status</th>
@@ -735,7 +735,7 @@ export function UsagePage() {
                               {new Date(r.timestamp).toLocaleString()}
                             </td>
                             <td style={{ fontSize: '0.78rem' }}>
-                              {projects.find(p => p.id === r.projectId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.projectId}</span>}
+                              {routers.find(p => p.id === r.routerId)?.name ?? <span className="mono" style={{ fontSize: '0.72rem' }}>{r.routerId}</span>}
                               {r.tokenId && (
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                   {tokenNames[r.tokenId] ?? r.tokenId}

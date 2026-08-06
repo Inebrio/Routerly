@@ -18,8 +18,8 @@ function baseCtx(overrides: Partial<ProxyContext> = {}): ProxyContext {
     req: { headers: {} } as any,
     reply: {} as any,
     log: { warn: vi.fn(), error: vi.fn() } as any,
-    project: { id: 'p1', optimizers: { steps: [] } } as any,
-    projectId: 'p1',
+    router: { id: 'p1', optimizers: { steps: [] } } as any,
+    routerId: 'p1',
     traceId: 't1',
     original: request,
     request,
@@ -68,7 +68,7 @@ describe('optimizer-core module', () => {
       },
     })
     const { proc } = await setup([dropSystem])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.request.messages).toHaveLength(1)
     expect(ctx.request.messages[0]!.content).toBe('hello world')
@@ -84,7 +84,7 @@ describe('optimizer-core module', () => {
       },
     })
     const { proc } = await setup([boom])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
     expect(() => proc.run(ctx)).not.toThrow()
     expect(ctx.request.messages).toHaveLength(2)
     expect(ctx.request).toBe(ctx.original)
@@ -101,7 +101,7 @@ describe('optimizer-core module', () => {
       recover,
     })
     const { proc } = await setup([rejected])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.request.messages).toHaveLength(2)
     expect(recover).toHaveBeenCalledOnce()
@@ -115,7 +115,7 @@ describe('optimizer-core module', () => {
       },
     })
     const { proc } = await setup([overCompress])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.request.messages).toHaveLength(2)
   })
@@ -128,7 +128,7 @@ describe('optimizer-core module', () => {
       },
     })
     const { proc } = await setup([moderate])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.request.messages).toHaveLength(1)
   })
@@ -141,7 +141,7 @@ describe('optimizer-core module', () => {
       },
     })
     const { proc } = await setup([heavy])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.request.messages).toHaveLength(1)
   })
@@ -152,7 +152,7 @@ describe('optimizer-core module', () => {
     const unsupported = opt('ccr', 'lossless', { supports: () => false, optimize })
     const { proc } = await setup([disabled, unsupported])
     const ctx = baseCtx({
-      project: {
+      router: {
         id: 'p1',
         optimizers: {
           steps: [
@@ -174,17 +174,17 @@ describe('optimizer-core module', () => {
     const b = opt('ccr', 'lossless', { optimize: () => { calls.push('b'); return { changed: false, estimatedTokensBefore: 1, estimatedTokensAfter: 1 } } })
     const { proc } = await setup([a, b])
     const ctx = baseCtx({
-      project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'session-dedup', enabled: true }] } } as any,
+      router: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'session-dedup', enabled: true }] } } as any,
     })
     await proc.run(ctx)
     expect(calls).toEqual(['b', 'a'])
   })
 
-  it('no-ops when the project has no optimizers config', async () => {
+  it('no-ops when the router has no optimizers config', async () => {
     const optimize = vi.fn()
     const o = opt('session-dedup', 'lossless', { optimize })
     const { proc } = await setup([o])
-    const ctx = baseCtx({ project: { id: 'p1' } as any })
+    const ctx = baseCtx({ router: { id: 'p1' } as any })
     await proc.run(ctx)
     expect(optimize).not.toHaveBeenCalled()
   })
@@ -194,7 +194,7 @@ describe('optimizer-core module', () => {
     const o = opt('session-dedup', 'lossless', { optimize })
     const { proc } = await setup([o])
     const ctx = baseCtx({
-      project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any,
+      router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any,
       result: { kind: 'block' },
     })
     await proc.run(ctx)
@@ -217,7 +217,7 @@ describe('optimizer.apply — optimizerStats', () => {
   it('records the token delta of every step that changed the prompt, in execution order', async () => {
     const { proc } = await setup([shrink('ccr', 'recoverable', 100, 60), shrink('rtk', 'recoverable', 60, 55)])
     const ctx = baseCtx({
-      project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } } as any,
+      router: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } } as any,
     })
     await proc.run(ctx)
     expect(ctx.optimizerStats).toEqual([
@@ -231,14 +231,14 @@ describe('optimizer.apply — optimizerStats', () => {
       optimize: () => ({ changed: false, estimatedTokensBefore: 100, estimatedTokensAfter: 100 }),
     })
     const { proc } = await setup([inert])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.optimizerStats).toBeUndefined()
   })
 
   it('marks a gate-rejected lossy step as rolled back, with no saving credited', async () => {
     const { proc } = await setup([shrink('llmlingua-2', 'lossy', 100, 5)])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.optimizerStats).toEqual([
       { id: 'llmlingua-2', tokensBefore: 100, tokensAfter: 100, rolledBack: true },
@@ -247,7 +247,7 @@ describe('optimizer.apply — optimizerStats', () => {
 
   it('marks a validate-rejected step as rolled back', async () => {
     const { proc } = await setup([shrink('ccr', 'recoverable', 100, 60, { validate: () => false })])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.optimizerStats).toEqual([{ id: 'ccr', tokensBefore: 100, tokensAfter: 100, rolledBack: true }])
   })
@@ -255,7 +255,7 @@ describe('optimizer.apply — optimizerStats', () => {
   it('records nothing for a step that threw: there is no result to measure', async () => {
     const boom = opt('ccr', 'recoverable', { optimize: () => { throw new Error('boom') } })
     const { proc } = await setup([boom])
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any })
     await proc.run(ctx)
     expect(ctx.optimizerStats).toBeUndefined()
   })
@@ -276,7 +276,7 @@ describe('optimizer.apply — trace', () => {
     })
     const { proc } = await setup([shrink])
     const emit = vi.fn()
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any, emit })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }] } } as any, emit })
     await proc.run(ctx)
     expect(details(emit)[0]).toMatchObject({
       id: 'ccr', outcome: 'applied', klass: 'recoverable', tokensBefore: 100, tokensAfter: 60, saved: 40,
@@ -287,7 +287,7 @@ describe('optimizer.apply — trace', () => {
   it('reports a step that ran and changed nothing', async () => {
     const { proc } = await setup([opt('session-dedup', 'lossless')])
     const emit = vi.fn()
-    const ctx = baseCtx({ project: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any, emit })
+    const ctx = baseCtx({ router: { id: 'p1', optimizers: { steps: [{ id: 'session-dedup', enabled: true }] } } as any, emit })
     await proc.run(ctx)
     expect(details(emit)).toEqual([expect.objectContaining({ id: 'session-dedup', outcome: 'unchanged', saved: 0 })])
   })
@@ -296,7 +296,7 @@ describe('optimizer.apply — trace', () => {
     const { proc } = await setup([opt('session-dedup', 'lossless'), opt('ccr', 'lossless', { supports: () => false })])
     const emit = vi.fn()
     const ctx = baseCtx({
-      project: {
+      router: {
         id: 'p1',
         optimizers: {
           steps: [
@@ -323,7 +323,7 @@ describe('optimizer.apply — trace', () => {
     ])
     const emit = vi.fn()
     const ctx = baseCtx({
-      project: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } } as any,
+      router: { id: 'p1', optimizers: { steps: [{ id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] } } as any,
       emit,
     })
     await proc.run(ctx)
@@ -349,7 +349,7 @@ describe('optimizer.apply — trace', () => {
     ])
     const emit = vi.fn()
     const ctx = baseCtx({
-      project: {
+      router: {
         id: 'p1',
         optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }, { id: 'ccr', enabled: true }, { id: 'rtk', enabled: true }] },
       } as any,

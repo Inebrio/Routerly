@@ -25,7 +25,7 @@ const mockWriteConfig = vi.mocked(writeConfig)
 
 // Mutable per-test dashUser the fake preHandler injects (mirrors the JWT preHandler
 // that populates req.dashUser inside apiRoutes in production).
-let currentPermissions: Permission[] = ['model:read', 'project:read']
+let currentPermissions: Permission[] = ['model:read', 'router:read']
 let currentUserId = 'u1'
 
 const EXISTING_TOKEN: McpToken = {
@@ -43,7 +43,7 @@ function users(): UserConfig[] {
       email: 'u@example.com',
       passwordHash: 'x',
       roleId: 'admin',
-      projectIds: [],
+      routerIds: [],
       mcpTokens: [{ ...EXISTING_TOKEN }],
     },
   ] as unknown as UserConfig[]
@@ -78,7 +78,7 @@ async function buildApp(): Promise<FastifyInstance> {
 }
 
 beforeEach(() => {
-  currentPermissions = ['model:read', 'project:read']
+  currentPermissions = ['model:read', 'router:read']
   currentUserId = 'u1'
   mockReadConfig.mockReset()
   mockWriteConfig.mockReset()
@@ -98,9 +98,9 @@ describe('GET /api/me/mcp-tools', () => {
     const body = res.json()
     const names = body.map((t: { name: string }) => t.name)
     expect(names).toContain('list_models')
-    expect(names).toContain('list_projects')
-    // No token:write / project:write held, so the write tools stay hidden.
-    expect(names).not.toContain('create_project_token')
+    expect(names).toContain('list_routers')
+    // No token:write / router:write held, so the write tools stay hidden.
+    expect(names).not.toContain('create_router_token')
     expect(names).not.toContain('toggle_model')
 
     const entry = body.find((t: { name: string }) => t.name === 'list_models')

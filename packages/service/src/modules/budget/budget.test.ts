@@ -4,7 +4,7 @@ vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
 import { isAllowed, getViolatedLimits, getLimitUsageSnapshot, isAllowedForRoutingModel } from './budget.js'
 import { readConfig } from '../config/loader.js'
-import type { ModelConfig, ProjectConfig, Settings, UsageRecord } from '@routerly/shared'
+import type { ModelConfig, RouterConfig, Settings, UsageRecord } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
 
@@ -18,10 +18,10 @@ function makeModel(id: string, limits: any[] = []): ModelConfig {
   }
 }
 
-function makeProject(modelId: string, projectLimits: any[] = []): ProjectConfig {
+function makeRouter(modelId: string, routerLimits: any[] = []): RouterConfig {
   return {
     id: 'proj-1', name: 'Test', tokens: [], members: [],
-    models: [{ modelId, limits: projectLimits }],
+    models: [{ modelId, limits: routerLimits }],
   }
 }
 
@@ -29,7 +29,7 @@ function makeRecord(modelId: string, cost: number, hoursAgo = 0): UsageRecord {
   return {
     id: `r-${modelId}-${hoursAgo}`,
     timestamp: new Date(Date.now() - hoursAgo * 3_600_000).toISOString(),
-    projectId: 'proj-1', modelId,
+    routerId: 'proj-1', modelId,
     inputTokens: 100, outputTokens: 50, cost,
     latencyMs: 300, outcome: 'success', callType: 'completion',
     costInput: cost / 2, costOutput: cost / 2, priceInput: 1, priceOutput: 3,
@@ -37,47 +37,47 @@ function makeRecord(modelId: string, cost: number, hoursAgo = 0): UsageRecord {
 }
 
 describe('isAllowed', () => {
-  it('returns false when model not in project models', async () => {
-    const project: ProjectConfig = { id: 'p', name: 'P', tokens: [], members: [], models: [] }
-    const result = await isAllowed(makeModel('m'), project)
+  it('returns false when model not in router models', async () => {
+    const router: RouterConfig = { id: 'p', name: 'P', tokens: [], members: [], models: [] }
+    const result = await isAllowed(makeModel('m'), router)
     expect(result).toBe(false)
   })
 
   it('returns true when no limits configured', async () => {
     mockReadConfig.mockResolvedValue([])
-    const result = await isAllowed(makeModel('m'), makeProject('m'))
+    const result = await isAllowed(makeModel('m'), makeRouter('m'))
     expect(result).toBe(true)
   })
 
   it('returns false when daily cost limit exceeded', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0), makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{
         modelId: 'm',
         limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }],
       }],
     }
-    const result = await isAllowed(makeModel('m'), project)
+    const result = await isAllowed(makeModel('m'), router)
     expect(result).toBe(false)
   })
 
   it('returns true when cost is below the limit', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 2, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{
         modelId: 'm',
         limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }],
       }],
     }
-    const result = await isAllowed(makeModel('m'), project)
+    const result = await isAllowed(makeModel('m'), router)
     expect(result).toBe(true)
   })
 
   it('applies token-level limitsMode=disable to remove all limits', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 100, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{
         modelId: 'm',
@@ -88,7 +88,7 @@ describe('isAllowed', () => {
       token: 'tok',
       models: [{ modelId: 'm', limitsMode: 'disable' }],
     }
-    const result = await isAllowed(makeModel('m'), project, token)
+    const result = await isAllowed(makeModel('m'), router, token)
     expect(result).toBe(true)
   })
 
@@ -96,73 +96,73 @@ describe('isAllowed', () => {
     mockReadConfig.mockResolvedValue([
       makeRecord('m', 0, 0), makeRecord('m', 0, 0), makeRecord('m', 0, 0),
     ])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 2 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('uses rolling window type', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{
         metric: 'cost', windowType: 'rolling',
         rollingAmount: 1, rollingUnit: 'day', value: 3,
       }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
-  it('handles global model limits (no project-level limits)', async () => {
+  it('handles global model limits (no router-level limits)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
     const globalModel = makeModel('m', [{ metric: 'cost', windowType: 'period', period: 'daily', value: 3 }])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
-      models: [{ modelId: 'm' }], // no project-level limits
+      models: [{ modelId: 'm' }], // no router-level limits
     }
-    expect(await isAllowed(globalModel, project)).toBe(false)
+    expect(await isAllowed(globalModel, router)).toBe(false)
   })
 })
 
 describe('getViolatedLimits', () => {
   it('returns empty array when all limits are satisfied', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 1, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }] }],
     }
-    const violated = await getViolatedLimits(makeModel('m'), project)
+    const violated = await getViolatedLimits(makeModel('m'), router)
     expect(violated).toHaveLength(0)
   })
 
   it('returns violated limit snapshots', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 10, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }] }],
     }
-    const violated = await getViolatedLimits(makeModel('m'), project)
+    const violated = await getViolatedLimits(makeModel('m'), router)
     expect(violated.length).toBeGreaterThan(0)
     expect(violated[0]!.remaining).toBeLessThanOrEqual(0)
   })
 })
 
 describe('getLimitUsageSnapshot', () => {
-  it('returns empty array when model not in project', async () => {
-    const project: ProjectConfig = { id: 'p', name: 'P', tokens: [], members: [], models: [] }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+  it('returns empty array when model not in router', async () => {
+    const router: RouterConfig = { id: 'p', name: 'P', tokens: [], members: [], models: [] }
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots).toHaveLength(0)
   })
 
   it('returns snapshot with correct current and remaining', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 3, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots).toHaveLength(1)
     expect(snapshots[0]!.current).toBeCloseTo(3, 4)
     expect(snapshots[0]!.remaining).toBeCloseTo(7, 4)
@@ -171,11 +171,11 @@ describe('getLimitUsageSnapshot', () => {
 
   it('returns snapshot for rolling window', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 2, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'rolling', rollingAmount: 1, rollingUnit: 'day', value: 5 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.window).toBe('rolling 1 day')
   })
 })
@@ -202,70 +202,70 @@ describe('isAllowedForRoutingModel', () => {
 describe('isAllowed - more metric types', () => {
   it('checks input_tokens metric', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 0, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'input_tokens', windowType: 'period', period: 'daily', value: 50 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false) // 100 input tokens > 50
+    expect(await isAllowed(makeModel('m'), router)).toBe(false) // 100 input tokens > 50
   })
 
   it('checks output_tokens metric', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 0, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'output_tokens', windowType: 'period', period: 'daily', value: 30 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false) // 50 output tokens > 30
+    expect(await isAllowed(makeModel('m'), router)).toBe(false) // 50 output tokens > 30
   })
 
   it('checks total_tokens metric', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 0, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'total_tokens', windowType: 'period', period: 'daily', value: 100 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false) // 150 total > 100
+    expect(await isAllowed(makeModel('m'), router)).toBe(false) // 150 total > 100
   })
 
   it('handles hourly period', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'hourly', value: 3 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('handles yearly period', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'yearly', value: 3 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('handles legacy window string via legacyWindowToPeriod', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'month', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('handles legacy window year', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'year', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('handles extend limitsMode at token level', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 3, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }] }],
     }
@@ -274,47 +274,47 @@ describe('isAllowed - more metric types', () => {
       models: [{ modelId: 'm', limitsMode: 'extend', limits: [{ metric: 'cost', windowType: 'period', period: 'hourly', value: 5 }] }],
     }
     // Cost is 3, daily limit is 10, hourly is 5 → both must pass
-    expect(await isAllowed(makeModel('m'), project, token)).toBe(true)
+    expect(await isAllowed(makeModel('m'), router, token)).toBe(true)
   })
 
   it('getLimitUsageSnapshot for input_tokens', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 0, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'input_tokens', windowType: 'period', period: 'daily', value: 500 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.current).toBe(100)
     expect(snapshots[0]!.metric).toBe('input_tokens')
   })
 
   it('getLimitUsageSnapshot for output_tokens', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 0, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'output_tokens', windowType: 'period', period: 'daily', value: 500 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.current).toBe(50)
   })
 
   it('getLimitUsageSnapshot for total_tokens', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 0, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'total_tokens', windowType: 'period', period: 'daily', value: 500 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.current).toBe(150)
   })
 
   it('getLimitUsageSnapshot for rolling window with plural label', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 2, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'rolling', rollingAmount: 7, rollingUnit: 'day', value: 100 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.window).toBe('rolling 7 days')
   })
 })
@@ -331,7 +331,7 @@ describe('startOfPeriod weekly – Sunday boundary (line 19)', () => {
     const record: UsageRecord = {
       id: 'r-weekly-sun',
       timestamp: mondayOfWeek.toISOString(),
-      projectId: 'proj-1', modelId: 'm',
+      routerId: 'proj-1', modelId: 'm',
       inputTokens: 100, outputTokens: 50, cost: 5,
       latencyMs: 300, outcome: 'success', callType: 'completion',
       costInput: 2.5, costOutput: 2.5, priceInput: 1, priceOutput: 3,
@@ -343,11 +343,11 @@ describe('startOfPeriod weekly – Sunday boundary (line 19)', () => {
     // be exceeded if Monday falls within the window (day===0 path returns -6 diff).
     // Use a fresh record made "right now" — cost=5, limit=3 → should fail
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'weekly', value: 3 }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 })
 
@@ -355,57 +355,57 @@ describe('startOfPeriod weekly – Sunday boundary (line 19)', () => {
 describe('legacyWindowToPeriod via legacy window field (lines 52–57)', () => {
   it('maps window "minute" → hourly (line 52)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'minute', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('maps window "hour" → hourly (line 52)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'hour', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('maps window "day" → daily (line 53)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'day', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('maps window "week" → weekly (line 54)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'week', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('maps unknown window → daily (default, line 57)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'unknown_unit', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('maps undefined window → daily (default, line 57)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       // no windowType, no window, no period → falls through to legacyWindowToPeriod(undefined) → 'daily'
       models: [{ modelId: 'm', limits: [{ metric: 'cost', value: 3 } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 })
 
@@ -439,17 +439,17 @@ describe('legacyToLimits via model.globalThresholds (lines 68–69)', () => {
 
 // ─── resolveLimits – null obj guard (line 77) ──────────────────────────────────
 describe('resolveLimits with undefined obj (line 77)', () => {
-  it('returns [] when project model ref has no limits and no thresholds', async () => {
+  it('returns [] when router model ref has no limits and no thresholds', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    // project model ref has neither limits nor thresholds → resolveLimits(obj) returns []
+    // router model ref has neither limits nor thresholds → resolveLimits(obj) returns []
     // resolveLevel returns null → applyResolution passes through global limits (none) → []
     const modelNoGlobal = makeModel('m') // no global limits either
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm' }], // no limits, no thresholds
     }
     // No limits at all → isAllowed returns true
-    expect(await isAllowed(modelNoGlobal, project)).toBe(true)
+    expect(await isAllowed(modelNoGlobal, router)).toBe(true)
   })
 })
 
@@ -457,7 +457,7 @@ describe('resolveLimits with undefined obj (line 77)', () => {
 describe('checkLimits rolling window defaults (lines 131–133)', () => {
   it('uses rollingAmount=1 when rollingAmount is absent (line 131)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{
         metric: 'cost', windowType: 'rolling',
@@ -465,12 +465,12 @@ describe('checkLimits rolling window defaults (lines 131–133)', () => {
         rollingUnit: 'day', value: 3,
       } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('uses rollingUnit="day" when rollingUnit is absent (line 132)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{
         metric: 'cost', windowType: 'rolling',
@@ -479,19 +479,19 @@ describe('checkLimits rolling window defaults (lines 131–133)', () => {
         value: 3,
       } as any] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 
   it('falls back to 86_400_000 ms for unknown rollingUnit (line 133)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{
         metric: 'cost', windowType: 'rolling',
         rollingAmount: 1, rollingUnit: 'fortnight' as any, value: 3,
       }] }],
     }
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
   })
 })
 
@@ -500,30 +500,30 @@ describe('getLimitUsageSnapshot – additional branches', () => {
   it('uses globalThresholds when model.limits is empty (line 183)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
     const modelWithLegacy: any = { ...makeModel('m'), limits: [], globalThresholds: { daily: 10 } }
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm' }],
     }
-    const snapshots = await getLimitUsageSnapshot(modelWithLegacy, project)
+    const snapshots = await getLimitUsageSnapshot(modelWithLegacy, router)
     expect(snapshots).toHaveLength(1)
     expect(snapshots[0]!.window).toBe('daily')
     expect(snapshots[0]!.value).toBe(10)
   })
 
   it('returns [] when effective limits array is empty (line 191)', async () => {
-    // model has no limits, project model ref has no limits/thresholds → limits=[] → early return
+    // model has no limits, router model ref has no limits/thresholds → limits=[] → early return
     const modelNoLimits = makeModel('m')
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm' }],
     }
-    const snapshots = await getLimitUsageSnapshot(modelNoLimits, project)
+    const snapshots = await getLimitUsageSnapshot(modelNoLimits, router)
     expect(snapshots).toHaveLength(0)
   })
 
   it('snapshot rolling window with rollingAmount defaulting to 1 (line 209)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 2, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{
         metric: 'cost', windowType: 'rolling',
@@ -531,13 +531,13 @@ describe('getLimitUsageSnapshot – additional branches', () => {
         rollingUnit: 'hour', value: 100,
       } as any] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.window).toBe('rolling 1 hour')
   })
 
   it('snapshot rolling window with rollingUnit defaulting to "day" (line 210)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 2, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{
         metric: 'cost', windowType: 'rolling',
@@ -546,27 +546,27 @@ describe('getLimitUsageSnapshot – additional branches', () => {
         value: 100,
       } as any] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.window).toBe('rolling 3 days')
   })
 
   it('snapshot uses legacyWindowToPeriod when period and windowType absent (line 213)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 2, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', window: 'week', value: 100 } as any] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.window).toBe('weekly')
   })
 
   it('snapshot counts calls metric (line 222)', async () => {
     mockReadConfig.mockResolvedValue([makeRecord('m', 1, 0), makeRecord('m', 1, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 100 }] }],
     }
-    const snapshots = await getLimitUsageSnapshot(makeModel('m'), project)
+    const snapshots = await getLimitUsageSnapshot(makeModel('m'), router)
     expect(snapshots[0]!.current).toBe(2)
     expect(snapshots[0]!.metric).toBe('calls')
   })
@@ -577,11 +577,11 @@ describe('getLimitUsageSnapshot – additional branches', () => {
       ...makeModel('m'),
       limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 3 }],
     }
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm' }],
     }
-    const snapshots = await getLimitUsageSnapshot(modelWithLimits, project)
+    const snapshots = await getLimitUsageSnapshot(modelWithLimits, router)
     expect(snapshots).toHaveLength(1)
     expect(snapshots[0]!.value).toBe(3)
   })
@@ -589,19 +589,19 @@ describe('getLimitUsageSnapshot – additional branches', () => {
 
 // ── Line 77: resolveLimits called with undefined obj (the !obj → [] branch) ──
 describe('resolveLimits — line 77: obj is undefined (via resolveLevel pass-through)', () => {
-  it('returns empty snapshot when model has no limits and project has no limits (obj=undefined in resolveLimits)', async () => {
-    // When projectModelRef has neither limits nor thresholds, resolveLevel returns null
+  it('returns empty snapshot when model has no limits and router has no limits (obj=undefined in resolveLimits)', async () => {
+    // When routerModelRef has neither limits nor thresholds, resolveLevel returns null
     // → applyResolution returns inherited (globalLimits).
     // To trigger resolveLimits(undefined): this is an internal call. We cover it indirectly
-    // by calling getLimitUsageSnapshot with a model that has no global limits and a project
+    // by calling getLimitUsageSnapshot with a model that has no global limits and a router
     // model ref that has no limits either → limits array stays empty → [] returned.
     mockReadConfig.mockResolvedValue([])
     const model = makeModel('m', []) // no limits
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm' }], // no limits/thresholds on this ref
     }
-    const snapshots = await getLimitUsageSnapshot(model, project)
+    const snapshots = await getLimitUsageSnapshot(model, router)
     // No limits configured at any level → empty snapshot
     expect(snapshots).toEqual([])
   })
@@ -614,7 +614,7 @@ describe('getLimitUsageSnapshot — line 210: unknown rollingUnit falls back to 
     const record = makeRecord('m', 5, 0)  // cost=5, recent
     mockReadConfig.mockResolvedValue([record])
     const model = makeModel('m')
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{
         modelId: 'm',
@@ -627,7 +627,7 @@ describe('getLimitUsageSnapshot — line 210: unknown rollingUnit falls back to 
         }],
       }],
     }
-    const snapshots = await getLimitUsageSnapshot(model, project)
+    const snapshots = await getLimitUsageSnapshot(model, router)
     // Should return a snapshot using the fallback window (1 day)
     expect(snapshots).toHaveLength(1)
     expect(snapshots[0]!.current).toBeCloseTo(5)
@@ -639,12 +639,12 @@ describe('startOfPeriod – Sunday (day === 0) branch (line 19)', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-06-09T12:00:00Z')) // Sunday
     mockReadConfig.mockResolvedValue([makeRecord('m', 5, 0)])
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm', limits: [{ metric: 'cost', windowType: 'period', period: 'weekly', value: 3 }] }],
     }
     // cost=5 exceeds limit=3 → not allowed
-    expect(await isAllowed(makeModel('m'), project)).toBe(false)
+    expect(await isAllowed(makeModel('m'), router)).toBe(false)
     vi.useRealTimers()
   })
 })

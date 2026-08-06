@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectTokenTab, LabelInput } from './ProjectTokenTab';
+import { RouterTokenTab, LabelInput } from './RouterTokenTab';
 
 vi.mock('../../api', () => ({
-  createProjectToken: vi.fn(),
-  updateProjectToken: vi.fn(),
-  deleteProjectToken: vi.fn(),
+  createRouterToken: vi.fn(),
+  updateRouterToken: vi.fn(),
+  deleteRouterToken: vi.fn(),
 }));
 
 vi.mock('../../components/ConfirmDialog', () => ({
@@ -20,10 +20,10 @@ vi.mock('../../components/ConfirmDialog', () => ({
   ),
 }));
 
-import { createProjectToken, updateProjectToken, deleteProjectToken } from '../../api';
-const mockCreateProjectToken = vi.mocked(createProjectToken as (...a: unknown[]) => Promise<unknown>);
-const mockUpdateProjectToken = vi.mocked(updateProjectToken as (...a: unknown[]) => Promise<unknown>);
-const mockDeleteProjectToken = vi.mocked(deleteProjectToken as (...a: unknown[]) => Promise<unknown>);
+import { createRouterToken, updateRouterToken, deleteRouterToken } from '../../api';
+const mockCreateRouterToken = vi.mocked(createRouterToken as (...a: unknown[]) => Promise<unknown>);
+const mockUpdateRouterToken = vi.mocked(updateRouterToken as (...a: unknown[]) => Promise<unknown>);
+const mockDeleteRouterToken = vi.mocked(deleteRouterToken as (...a: unknown[]) => Promise<unknown>);
 
 const mockToken = {
   id: 'tok-1',
@@ -36,25 +36,25 @@ const mockToken = {
   models: [],
 };
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [],
   tokens: [mockToken],
 };
 
-function renderTab(project: Record<string, unknown> = mockProject) {
-  const setProject = vi.fn();
+function renderTab(router: Record<string, unknown> = mockRouter) {
+  const setRouter = vi.fn();
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject }} />;
+    return <Outlet context={{ router, setRouter }} />;
   }
   return {
-    setProject,
+    setRouter,
     ...render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token" element={<ProjectTokenTab />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token" element={<RouterTokenTab />} />
             <Route path="token/new" element={<div data-testid="create-page">create</div>} />
             <Route path="token/:tokenId" element={<div data-testid="edit-page">edit</div>} />
           </Route>
@@ -65,25 +65,25 @@ function renderTab(project: Record<string, unknown> = mockProject) {
 }
 
 beforeEach(() => {
-  mockCreateProjectToken.mockResolvedValue({ token: 'sk-rt-newtoken', tokenInfo: { id: 'tok-2', tokenSnippet: 'sk-rt-new', createdAt: '2024-07-01T00:00:00Z', labels: [] } });
-  mockUpdateProjectToken.mockResolvedValue({ ...mockToken, labels: ['staging'] });
-  mockDeleteProjectToken.mockResolvedValue(undefined);
+  mockCreateRouterToken.mockResolvedValue({ token: 'sk-rt-newtoken', tokenInfo: { id: 'tok-2', tokenSnippet: 'sk-rt-new', createdAt: '2024-07-01T00:00:00Z', labels: [] } });
+  mockUpdateRouterToken.mockResolvedValue({ ...mockToken, labels: ['staging'] });
+  mockDeleteRouterToken.mockResolvedValue(undefined);
 });
 
 afterEach(() => vi.clearAllMocks());
 
-// ── null project guard ────────────────────────────────────────────────────────
+// ── null router guard ────────────────────────────────────────────────────────
 
-describe('ProjectTokenTab — null project guard', () => {
-  it('renders nothing when project is null', () => {
+describe('RouterTokenTab — null router guard', () => {
+  it('renders nothing when router is null', () => {
     function LayoutWrapper() {
-      return <Outlet context={{ project: null, setProject: vi.fn() }} />;
+      return <Outlet context={{ router: null, setRouter: vi.fn() }} />;
     }
     const { container } = render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token" element={<ProjectTokenTab />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token" element={<RouterTokenTab />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -94,21 +94,21 @@ describe('ProjectTokenTab — null project guard', () => {
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-describe('ProjectTokenTab — empty state', () => {
+describe('RouterTokenTab — empty state', () => {
   it('shows empty state when no tokens', () => {
-    renderTab({ ...mockProject, tokens: [] });
+    renderTab({ ...mockRouter, tokens: [] });
     expect(screen.getByText('No API tokens yet. Create one to start authenticating requests.')).toBeTruthy();
   });
 
   it('shows New Token button', () => {
-    renderTab({ ...mockProject, tokens: [] });
+    renderTab({ ...mockRouter, tokens: [] });
     expect(screen.getByRole('button', { name: /New Token/i })).toBeTruthy();
   });
 });
 
 // ── Token list render ─────────────────────────────────────────────────────────
 
-describe('ProjectTokenTab — token list render', () => {
+describe('RouterTokenTab — token list render', () => {
   it('renders token snippet', () => {
     renderTab();
     expect(screen.getByText('sk-rt-abcd')).toBeTruthy();
@@ -133,7 +133,7 @@ describe('ProjectTokenTab — token list render', () => {
   });
 
   it('renders "—" for lastUsedAt null', () => {
-    renderTab({ ...mockProject, tokens: [{ ...mockToken, lastUsedAt: null }] });
+    renderTab({ ...mockRouter, tokens: [{ ...mockToken, lastUsedAt: null }] });
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
@@ -143,12 +143,12 @@ describe('ProjectTokenTab — token list render', () => {
   });
 
   it('renders expiry date when expiresAt set', () => {
-    renderTab({ ...mockProject, tokens: [{ ...mockToken, expiresAt: '2025-12-31T00:00:00Z' }] });
+    renderTab({ ...mockRouter, tokens: [{ ...mockToken, expiresAt: '2025-12-31T00:00:00Z' }] });
     expect(screen.queryByText('Never')).toBeNull();
   });
 
   it('shows Budget Overrides badge when token has models', () => {
-    renderTab({ ...mockProject, tokens: [{ ...mockToken, models: [{ modelId: 'openai/gpt-4o' }] }] });
+    renderTab({ ...mockRouter, tokens: [{ ...mockToken, models: [{ modelId: 'openai/gpt-4o' }] }] });
     expect(screen.getByText('Budget Overrides')).toBeTruthy();
   });
 
@@ -158,21 +158,21 @@ describe('ProjectTokenTab — token list render', () => {
   });
 
   it('tokens with no labels/tags renders without label section', () => {
-    renderTab({ ...mockProject, tokens: [{ ...mockToken, labels: [], tags: {} }] });
+    renderTab({ ...mockRouter, tokens: [{ ...mockToken, labels: [], tags: {} }] });
     // No label or tag chips rendered
     expect(screen.queryByText('production')).toBeNull();
     expect(screen.queryByText('env=prod')).toBeNull();
   });
 
   it('tokens key absent defaults to []', () => {
-    renderTab({ ...mockProject, tokens: undefined });
+    renderTab({ ...mockRouter, tokens: undefined });
     expect(screen.getByText('No API tokens yet. Create one to start authenticating requests.')).toBeTruthy();
   });
 });
 
 // ── New Token navigates to create page ───────────────────────────────────────
 
-describe('ProjectTokenTab — New Token navigation', () => {
+describe('RouterTokenTab — New Token navigation', () => {
   it('clicking New Token navigates to create page', async () => {
     renderTab();
     await userEvent.click(screen.getByRole('button', { name: /New Token/i }));
@@ -182,7 +182,7 @@ describe('ProjectTokenTab — New Token navigation', () => {
 
 // ── Edit Token navigates to edit page ────────────────────────────────────────
 
-describe('ProjectTokenTab — Edit Token navigation', () => {
+describe('RouterTokenTab — Edit Token navigation', () => {
   it('clicking Edit button navigates to edit page', async () => {
     renderTab();
     await userEvent.click(screen.getByTitle('Edit Configuration'));
@@ -192,10 +192,10 @@ describe('ProjectTokenTab — Edit Token navigation', () => {
 
 // ── Delete / revoke token ─────────────────────────────────────────────────────
 
-describe('ProjectTokenTab — delete token', () => {
+describe('RouterTokenTab — delete token', () => {
   it('handleDelete uses empty string fallback when tokenSnippet is undefined', async () => {
     const tokenWithoutSnippet = { ...mockToken, tokenSnippet: undefined as unknown as string };
-    renderTab({ ...mockProject, tokens: [tokenWithoutSnippet] });
+    renderTab({ ...mockRouter, tokens: [tokenWithoutSnippet] });
     await userEvent.click(screen.getByTitle('Revoke Token'));
     const dialog = screen.getByTestId('confirm-dialog');
     // message uses '' fallback — no snippet text but dialog still opens
@@ -211,11 +211,11 @@ describe('ProjectTokenTab — delete token', () => {
     expect(getByText(/sk-rt-abcd/)).toBeTruthy();
   });
 
-  it('confirming revoke calls deleteProjectToken', async () => {
+  it('confirming revoke calls deleteRouterToken', async () => {
     renderTab();
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalledWith('proj-1', 'tok-1'));
+    await waitFor(() => expect(mockDeleteRouterToken).toHaveBeenCalledWith('proj-1', 'tok-1'));
   });
 
   it('canceling revoke dialog closes without calling API', async () => {
@@ -223,24 +223,24 @@ describe('ProjectTokenTab — delete token', () => {
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByTestId('confirm-dialog')).toBeNull());
-    expect(mockDeleteProjectToken).not.toHaveBeenCalled();
+    expect(mockDeleteRouterToken).not.toHaveBeenCalled();
   });
 
-  it('calls deleteProjectToken and it rejects (error state is internal)', async () => {
+  it('calls deleteRouterToken and it rejects (error state is internal)', async () => {
     // err state is set in state but not rendered in the JSX — verify the API call was made
-    mockDeleteProjectToken.mockRejectedValueOnce(new Error('Delete failed'));
+    mockDeleteRouterToken.mockRejectedValueOnce(new Error('Delete failed'));
     renderTab();
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalledWith('proj-1', 'tok-1'));
+    await waitFor(() => expect(mockDeleteRouterToken).toHaveBeenCalledWith('proj-1', 'tok-1'));
   });
 
-  it('deleteProjectToken non-Error rejection is handled without crash', async () => {
-    mockDeleteProjectToken.mockRejectedValueOnce('oops');
+  it('deleteRouterToken non-Error rejection is handled without crash', async () => {
+    mockDeleteRouterToken.mockRejectedValueOnce('oops');
     renderTab();
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalledWith('proj-1', 'tok-1'));
+    await waitFor(() => expect(mockDeleteRouterToken).toHaveBeenCalledWith('proj-1', 'tok-1'));
   });
 });
 
@@ -595,25 +595,25 @@ describe('LabelInput', () => {
   });
 });
 
-// ── handleDelete setProject callback coverage ─────────────────────────────────
+// ── handleDelete setRouter callback coverage ─────────────────────────────────
 
-describe('ProjectTokenTab — delete setProject callback', () => {
-  it('setProject callback removes the deleted token', async () => {
-    // Make setProject actually call its updater to cover the p => ... callback
+describe('RouterTokenTab — delete setRouter callback', () => {
+  it('setRouter callback removes the deleted token', async () => {
+    // Make setRouter actually call its updater to cover the p => ... callback
     let capturedUpdater: ((p: unknown) => unknown) | null = null;
     function LayoutWrapper() {
       return <Outlet context={{
-        project: mockProject,
-        setProject: (fn: unknown) => {
+        router: mockRouter,
+        setRouter: (fn: unknown) => {
           if (typeof fn === 'function') capturedUpdater = fn as (p: unknown) => unknown;
         },
       }} />;
     }
     render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token" element={<ProjectTokenTab />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token" element={<RouterTokenTab />} />
             <Route path="token/new" element={<div>create</div>} />
             <Route path="token/:tokenId" element={<div>edit</div>} />
           </Route>
@@ -622,31 +622,31 @@ describe('ProjectTokenTab — delete setProject callback', () => {
     );
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalled());
-    // Invoke the captured updater with the full project to cover the p => callback (L108)
+    await waitFor(() => expect(mockDeleteRouterToken).toHaveBeenCalled());
+    // Invoke the captured updater with the full router to cover the p => callback (L108)
     const updater1 = capturedUpdater as ((p: unknown) => unknown) | null;
     if (updater1) {
-      const result = updater1(mockProject);
+      const result = updater1(mockRouter);
       // token tok-1 should be filtered out
-      expect((result as typeof mockProject).tokens).toEqual([]);
+      expect((result as typeof mockRouter).tokens).toEqual([]);
     }
   });
 
-  it('setProject callback handles null project', async () => {
+  it('setRouter callback handles null router', async () => {
     let capturedUpdater: ((p: unknown) => unknown) | null = null;
     function LayoutWrapper() {
       return <Outlet context={{
-        project: mockProject,
-        setProject: (fn: unknown) => {
+        router: mockRouter,
+        setRouter: (fn: unknown) => {
           if (typeof fn === 'function') capturedUpdater = fn as (p: unknown) => unknown;
         },
       }} />;
     }
     render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token" element={<ProjectTokenTab />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token" element={<RouterTokenTab />} />
             <Route path="token/new" element={<div>create</div>} />
             <Route path="token/:tokenId" element={<div>edit</div>} />
           </Route>
@@ -655,10 +655,10 @@ describe('ProjectTokenTab — delete setProject callback', () => {
     );
     await userEvent.click(screen.getByTitle('Revoke Token'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(mockDeleteProjectToken).toHaveBeenCalled());
+    await waitFor(() => expect(mockDeleteRouterToken).toHaveBeenCalled());
     const updater2 = capturedUpdater as ((p: unknown) => unknown) | null;
     if (updater2) {
-      // null project → returns null (covers the falsy branch of p ? ... : p)
+      // null router → returns null (covers the falsy branch of p ? ... : p)
       const result = updater2(null);
       expect(result).toBeNull();
     }

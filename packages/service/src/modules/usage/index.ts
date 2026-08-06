@@ -27,11 +27,11 @@ export const usageModule: RouterlyModule = defineModule({
         if (!blockedBy) return
         // usage attribution: still account for disabled-connection models
         const models = await listEffectiveModelsIncludingDisabled()
-        const firstModelId = ctx.project.models?.[0]?.modelId
+        const firstModelId = ctx.router.models?.[0]?.modelId
         const model = firstModelId ? models.find((m) => m.id === firstModelId) : undefined
-        if (!model) return // ponytail: no project model to attribute to -> nothing to record
+        if (!model) return // ponytail: no router model to attribute to -> nothing to record
         await trackUsage({
-          projectId: ctx.project.id,
+          routerId: ctx.router.id,
           model,
           inputTokens: 0,
           outputTokens: 0,

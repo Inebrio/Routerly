@@ -25,15 +25,15 @@ function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply)
 interface StreamQuery {
   /** Only entries of requests that carried this `x-routerly-trace` value. */
   correlationId?: string;
-  /** Only entries of this project. */
-  projectId?: string;
+  /** Only entries of this router. */
+  routerId?: string;
   /** Only entries of this single request. */
   traceId?: string;
 }
 
 function matches(q: StreamQuery, event: TraceEvent): boolean {
   if (q.correlationId && event.correlationId !== q.correlationId) return false;
-  if (q.projectId && event.projectId !== q.projectId) return false;
+  if (q.routerId && event.routerId !== q.routerId) return false;
   if (q.traceId && event.traceId !== q.traceId) return false;
   return true;
 }
@@ -50,7 +50,7 @@ export function makeTraceStreamHandler(events: EventBus) {
 
     const query: StreamQuery = {
       ...(req.query?.correlationId ? { correlationId: req.query.correlationId } : {}),
-      ...(req.query?.projectId ? { projectId: req.query.projectId } : {}),
+      ...(req.query?.routerId ? { routerId: req.query.routerId } : {}),
       ...(req.query?.traceId ? { traceId: req.query.traceId } : {}),
     };
 

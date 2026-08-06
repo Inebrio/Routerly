@@ -5,8 +5,8 @@ import type { Role, Permission } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const PERM_LABELS: Record<Permission, string> = {
-  'project:read':       'Projects – Read',
-  'project:write':      'Projects – Write',
+  'router:read':       'Routers – Read',
+  'router:write':      'Routers – Write',
   'model:read':         'Models – Read',
   'model:write':        'Models – Write',
   'user:read':          'Users – Read',

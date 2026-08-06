@@ -95,8 +95,8 @@ function EndpointCard({ baseUrl }: { baseUrl: string }) {
         <EndpointRow label="Anthropic base URL"><CopyBlock text={root} /></EndpointRow>
         <EndpointRow label="API key">
           <p style={{ ...note, paddingTop: 10 }}>
-            A project token, sent as <code>Authorization: Bearer</code> or <code>x-api-key</code>.{' '}
-            <Link to="/dashboard/projects">Create one</Link> on the Projects page.
+            A router token, sent as <code>Authorization: Bearer</code> or <code>x-api-key</code>.{' '}
+            <Link to="/dashboard/routers">Create one</Link> on the Routers page.
           </p>
         </EndpointRow>
         <EndpointRow label="Model">

@@ -19,9 +19,9 @@ const request: Processor<ProxyContext> = {
   after: ['pii.input'],
   async run(ctx) {
     if (ctx.result) return
-    const guardrails = ctx.project.guardrails
+    const guardrails = ctx.router.guardrails
     if (!guardrails) return
-    const pctx = { projectId: ctx.project.id, project: ctx.project, ...(ctx.token ? { token: ctx.token } : {}) }
+    const pctx = { routerId: ctx.router.id, router: ctx.router, ...(ctx.token ? { token: ctx.token } : {}) }
     let result: Awaited<ReturnType<typeof checkGuardrails>>
     try {
       result = await checkGuardrails(
@@ -85,16 +85,16 @@ const response: Processor<ProxyContext> = {
     // Asymmetry: response guardrails are an OpenAI-lane concern only (routes/anthropic.ts has none).
     if (ctx.protocol !== 'openai') return
     if (ctx.result?.kind === 'block') return
-    const guardrails = ctx.project.guardrails
+    const guardrails = ctx.router.guardrails
     if (!guardrails) return
-    const pctx = { projectId: ctx.project.id, project: ctx.project, ...(ctx.token ? { token: ctx.token } : {}) }
+    const pctx = { routerId: ctx.router.id, router: ctx.router, ...(ctx.token ? { token: ctx.token } : {}) }
     if (ctx.result?.kind === 'stream') {
       // Streaming: header already set by egress when the stream opened (unconditional,
       // block-or-not), no header call needed here. WRAP the (already-PII-wrapped)
       // iterator with the SSE-buffering guardrail transform.
       ctx.result.body = wrapWithResponseGuardrail(
         ctx.result.body as AsyncIterable<unknown>,
-        ctx.project,
+        ctx.router,
         pctx,
         ctx.log,
         ctx,

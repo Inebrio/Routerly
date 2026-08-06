@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Pencil, ShieldOff, Split } from 'lucide-react';
 import {
-  getExperiments, getProjects, deleteExperiment,
-  type ApiError, type MaskedExperiment, type Project,
+  getExperiments, getRouters, deleteExperiment,
+  type ApiError, type MaskedExperiment, type Router,
 } from '../api';
 import { rotationLabel, type ExperimentRotation } from '@routerly/shared';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -43,7 +43,7 @@ export function ExperimentsPage() {
   const canManage = can('experiments:manage');
 
   const [experiments, setExperiments] = useState<MaskedExperiment[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
@@ -55,15 +55,15 @@ export function ExperimentsPage() {
       .then(setExperiments)
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load experiments'))
       .finally(() => setLoading(false));
-    // Variants name their project, not its id: a failed lookup only costs the
+    // Variants name their router, not its id: a failed lookup only costs the
     // fallback label, so it never blocks the list.
-    getProjects().then(setProjects).catch(() => {});
+    getRouters().then(setRouters).catch(() => {});
   }, [canRead]);
 
-  /** What each variant is called on screen: its own label, else the project it routes to. */
+  /** What each variant is called on screen: its own label, else the router it routes to. */
   function variantLabels(e: MaskedExperiment): string {
     return e.variants
-      .map(v => v.name ?? projects.find(p => p.id === v.projectId)?.name ?? v.projectId.slice(0, 8))
+      .map(v => v.name ?? routers.find(p => p.id === v.routerId)?.name ?? v.routerId.slice(0, 8))
       .join(' vs ');
   }
 
@@ -88,7 +88,7 @@ export function ExperimentsPage() {
       <>
         <div className="page-header">
           <h1>Experiments</h1>
-          <p>A/B tests that split traffic across whole projects</p>
+          <p>A/B tests that split traffic across whole routers</p>
         </div>
         <div className="page-body">
           <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view experiments.</p></div>
@@ -101,7 +101,7 @@ export function ExperimentsPage() {
     <>
       <div className="page-header">
         <h1>Experiments</h1>
-        <p>A/B tests that split traffic across whole projects</p>
+        <p>A/B tests that split traffic across whole routers</p>
       </div>
       <div className="page-body">
         {error && <div className="form-error" style={{ marginBottom: 20 }}>{error}</div>}
@@ -124,7 +124,7 @@ export function ExperimentsPage() {
             {experiments.length === 0 ? (
               <div className="empty-state">
                 <Split size={40} />
-                <p>No experiments yet. Create one to compare two projects on live traffic.</p>
+                <p>No experiments yet. Create one to compare two routers on live traffic.</p>
               </div>
             ) : (
               <div className="table-wrap" style={{ overflowX: 'auto' }}>

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
-import { updateProjectToken, getModels } from '../../api';
+import { updateRouterToken, getModels } from '../../api';
 import type { Model, Limit, LimitMetric, LimitPeriod, RollingUnit } from '../../api';
-import { useProject } from './ProjectLayout';
-import { LabelInput } from './ProjectTokenTab';
+import { useRouter } from './RouterLayout';
+import { LabelInput } from './RouterTokenTab';
 import { SearchableSelect } from '../../components/SearchableSelect';
 
 // ── Limit helpers ─────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ function inheritedLimitLabel(
   pm: { limits?: Limit[]; thresholds?: { daily?: number; weekly?: number; monthly?: number } },
   fullModel: Model | undefined,
 ): string {
-  const projectLimits = pm.limits?.length ? pm.limits : (pm.thresholds
+  const routerLimits = pm.limits?.length ? pm.limits : (pm.thresholds
     ? [
       ...(pm.thresholds.daily   != null ? [{ metric: 'cost' as LimitMetric, windowType: 'period' as const, period: 'daily'   as LimitPeriod, value: pm.thresholds.daily   }] : []),
       ...(pm.thresholds.weekly  != null ? [{ metric: 'cost' as LimitMetric, windowType: 'period' as const, period: 'weekly'  as LimitPeriod, value: pm.thresholds.weekly  }] : []),
@@ -128,7 +128,7 @@ function inheritedLimitLabel(
     ]
     : undefined);
 
-  const effective = projectLimits ?? globalLimits;
+  const effective = routerLimits ?? globalLimits;
   if (!effective?.length) return 'No limits';
   return effective.map(fmtLimit).join(' · ');
 }
@@ -138,10 +138,10 @@ type EditModel = {
   limitRows: LimitRow[];
 };
 
-export function ProjectTokenEditPage() {
-  const { id: projectId, tokenId } = useParams<{ id: string; tokenId: string }>();
+export function RouterTokenEditPage() {
+  const { id: routerId, tokenId } = useParams<{ id: string; tokenId: string }>();
   const navigate = useNavigate();
-  const { project, setProject } = useProject();
+  const { router, setRouter } = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
@@ -159,7 +159,7 @@ export function ProjectTokenEditPage() {
   const [newTagKey, setNewTagKey] = useState('');
   const [newTagVal, setNewTagVal] = useState('');
 
-  const tokens = project?.tokens || [];
+  const tokens = router?.tokens || [];
   const editingToken = tokens.find(t => t.id === tokenId);
   const allLabels = Array.from(new Set(tokens.flatMap(t => t.labels || []))).sort();
   const allScopes = Array.from(new Set(tokens.flatMap(t => t.scopes || []))).sort();
@@ -179,25 +179,25 @@ export function ProjectTokenEditPage() {
     }
   }, [editingToken]);
 
-  if (!project || !editingToken) return null;
+  if (!router || !editingToken) return null;
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setLoading(true);
-    if (!project || !projectId || !tokenId) return;
+    if (!router || !routerId || !tokenId) return;
     try {
       const cleanedModels = editModels.map(m => ({
         modelId: m.modelId,
         limits: limitRowsToLimits(m.limitRows),
       }));
-      const updated = await updateProjectToken(projectId, tokenId, cleanedModels, editLabels, editTags, editScopes);
-      setProject(p => p ? { ...p, tokens: p.tokens?.map(t => t.id === tokenId ? updated : t) || [] } : p);
-      navigate(`/dashboard/projects/${projectId}/token`);
+      const updated = await updateRouterToken(routerId, tokenId, cleanedModels, editLabels, editTags, editScopes);
+      setRouter(p => p ? { ...p, tokens: p.tokens?.map(t => t.id === tokenId ? updated : t) || [] } : p);
+      navigate(`/dashboard/routers/${routerId}/token`);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error saving token'); }
     finally { setLoading(false); }
   }
 
   function goBack() {
-    navigate(`/dashboard/projects/${projectId}/token`);
+    navigate(`/dashboard/routers/${routerId}/token`);
   }
 
   function toggleModelOverride(modelId: string, enabled: boolean) {
@@ -309,10 +309,10 @@ export function ProjectTokenEditPage() {
           <div style={{ marginTop: 28, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
             <label className="form-label">Per-model limits</label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Override global and project-level limits for requests using this token.
+              Override global and router-level limits for requests using this token.
             </p>
 
-            {(!project.models || project.models.length === 0) ? (
+            {(!router.models || router.models.length === 0) ? (
               <div style={{
                 padding: 20, border: '1px dashed var(--border)',
                 borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center',
@@ -321,7 +321,7 @@ export function ProjectTokenEditPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {project.models.map(pm => {
+                {router.models.map(pm => {
                   const override = editModels.find(m => m.modelId === pm.modelId);
                   const isEnabled = !!override;
                   const fullModel = allModels.find(m => m.id === pm.modelId);

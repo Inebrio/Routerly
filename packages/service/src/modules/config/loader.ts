@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, rename, unlink, chmod } from 'node:fs/promi
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
@@ -37,7 +37,7 @@ const DEFAULTS: Record<string, unknown> = {
     channel: 'latest',
   } satisfies Settings,
   models: [] as ModelConfig[],
-  projects: [] as ProjectConfig[],
+  routers: [] as RouterConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
   // 'provider-web' defaults DISABLED (unofficial, ToS-risk web-cookie adapters) —
@@ -59,7 +59,7 @@ const DEFAULTS: Record<string, unknown> = {
 type StoredTypeMap = {
   settings: Settings;
   models: ModelConfig[];
-  projects: ProjectConfig[];
+  routers: RouterConfig[];
   users: UserConfig[];
   roles: RoleConfig[];
   modules: ModuleRecord[];
@@ -88,7 +88,7 @@ export async function initConfigDirs(): Promise<void> {
  *
  * A transient-empty read (another process mid-write under the old, non-atomic
  * writeConfig) MUST NOT persist anything: doing so clobbered a populated file
- * with `[]` and wiped projects.json. Writes are now atomic (temp + rename), but
+ * with `[]` and wiped routers.json. Writes are now atomic (temp + rename), but
  * we also defend the read: an existing-but-empty file is re-read a couple of
  * times to ride out any racing write, and if still empty we return the default
  * IN MEMORY only — never writing it back. Only ENOENT (file truly missing,
@@ -139,7 +139,7 @@ let tmpCounter = 0;
  * The write is atomic: data goes to a sibling temp file which is then renamed
  * over the target. rename() is atomic on POSIX, so a concurrent reader always
  * sees either the complete old file or the complete new one — never the empty,
- * truncated window that a direct writeFile() opens (and that wiped projects.json).
+ * truncated window that a direct writeFile() opens (and that wiped routers.json).
  */
 export async function writeConfig<K extends keyof StoredTypeMap>(
   key: K,
@@ -202,18 +202,18 @@ export async function appendUsageRecords(records: UsageRecord[]): Promise<void> 
 /**
  * One-shot cleanup of orphan usage records (#77, BUG-5).
  *
- * Drops usage rows whose projectId matches no existing project — residue from
+ * Drops usage rows whose routerId matches no existing router — residue from
  * the pre-fix guardrail path which wrote records under a fictitious
- * projectId 'guardrail'. Real projects' records are kept. Only rewrites the
+ * routerId 'guardrail'. Real routers' records are kept. Only rewrites the
  * file when something was actually removed. Returns the number removed.
  */
 export async function pruneOrphanUsage(): Promise<number> {
-  const [usage, projects] = await Promise.all([
+  const [usage, routers] = await Promise.all([
     readConfig('usage'),
-    readConfig('projects'),
+    readConfig('routers'),
   ]);
-  const validIds = new Set(projects.map((p) => p.id));
-  const kept = usage.filter((r) => validIds.has(r.projectId));
+  const validIds = new Set(routers.map((r) => r.id));
+  const kept = usage.filter((r) => validIds.has(r.routerId));
   const removed = usage.length - kept.length;
   if (removed > 0) await writeConfig('usage', kept);
   return removed;

@@ -39,15 +39,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /v1/models ───────────────────────────────────────────────────────────
   fastify.get('/v1/models', async (request, reply) => {
-    const project = request.project;
+    const router = request.router;
     // client-facing list: only models on enabled connections are routable
     const allModels = await listEffectiveModels();
 
-    const projectModels = project.models
+    const routerModels = router.models
       .map((ref) => allModels.find((m) => m.id === ref.modelId))
       .filter((m): m is NonNullable<typeof m> => m !== undefined);
 
-    const data: ModelObject[] = projectModels.map((m) => ({
+    const data: ModelObject[] = routerModels.map((m) => ({
       id: m.id,
       object: 'model',
       created: Math.floor(Date.now() / 1000),
@@ -66,15 +66,15 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /v1/models/:model ────────────────────────────────────────────────────
   fastify.get<{ Params: { model: string } }>('/v1/models/:model', async (request, reply) => {
-    const project = request.project;
+    const router = request.router;
     // client-facing list: only models on enabled connections are routable
     const allModels = await listEffectiveModels();
 
-    // Ensure the model is available to the project
-    const isAvailable = project.models.some((ref) => ref.modelId === request.params.model);
+    // Ensure the model is available to the router
+    const isAvailable = router.models.some((ref) => ref.modelId === request.params.model);
     if (!isAvailable) {
       return reply.status(404).send({
-        error: { type: 'not_found', message: `Model '${request.params.model}' not found or not available to this project.` }
+        error: { type: 'not_found', message: `Model '${request.params.model}' not found or not available to this router.` }
       });
     }
 

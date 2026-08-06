@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectTestTab } from './ProjectTestTab';
+import { RouterTestTab } from './RouterTestTab';
 import { getTrace, streamTraces } from '../../api';
 
 // ponytail: mock ReactMarkdown as identity render — we only care about content
@@ -20,7 +20,7 @@ vi.mock('../../components/TraceEntryRenderer', () => ({
   ),
 }));
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [{ modelId: 'openai/gpt-4o' }],
@@ -30,15 +30,15 @@ const mockProject = {
   ],
 };
 
-function renderTab(project: Record<string, unknown> | null = mockProject) {
+function renderTab(router: Record<string, unknown> | null = mockRouter) {
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject: vi.fn() }} />;
+    return <Outlet context={{ router, setRouter: vi.fn() }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/test']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/test']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="test" element={<ProjectTestTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="test" element={<RouterTestTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -95,10 +95,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// ── null project guard ────────────────────────────────────────────────────────
+// ── null router guard ────────────────────────────────────────────────────────
 
-describe('ProjectTestTab — null project guard', () => {
-  it('renders nothing when project is null', () => {
+describe('RouterTestTab — null router guard', () => {
+  it('renders nothing when router is null', () => {
     const { container } = renderTab(null);
     expect(container.firstChild).toBeNull();
   });
@@ -106,13 +106,13 @@ describe('ProjectTestTab — null project guard', () => {
 
 // ── Initial render ────────────────────────────────────────────────────────────
 
-describe('ProjectTestTab — initial render', () => {
+describe('RouterTestTab — initial render', () => {
   it('shows "Test Chat" heading', () => {
     renderTab();
     expect(screen.getByText('Test Chat')).toBeTruthy();
   });
 
-  it('shows Project Token input field', () => {
+  it('shows Router Token input field', () => {
     renderTab();
     expect(screen.getByPlaceholderText('sk-rt-...')).toBeTruthy();
   });
@@ -124,7 +124,7 @@ describe('ProjectTestTab — initial render', () => {
 
   it('shows token prompt when no API key entered', () => {
     renderTab();
-    expect(screen.getByText('Please enter a Project Token above to send a message.')).toBeTruthy();
+    expect(screen.getByText('Please enter a Router Token above to send a message.')).toBeTruthy();
   });
 
   it('shows "Type a message below..." after API key entered', async () => {
@@ -160,11 +160,11 @@ describe('ProjectTestTab — initial render', () => {
 
 // ── Token validation feedback ─────────────────────────────────────────────────
 
-describe('ProjectTestTab — token validation feedback', () => {
-  it('shows "Recognized Token" when entered key matches a project token snippet', async () => {
+describe('RouterTestTab — token validation feedback', () => {
+  it('shows "Recognized Token" when entered key matches a router token snippet', async () => {
     renderTab();
     const keyInput = screen.getByPlaceholderText('sk-rt-...');
-    // mockProject.tokens[0].tokenSnippet = 'sk-rt-abc0' (10 chars)
+    // mockRouter.tokens[0].tokenSnippet = 'sk-rt-abc0' (10 chars)
     await userEvent.type(keyInput, 'sk-rt-abc0andmorechars');
     await waitFor(() =>
       expect(screen.getByText(/Recognized Token/)).toBeTruthy()
@@ -197,8 +197,8 @@ describe('ProjectTestTab — token validation feedback', () => {
     );
   });
 
-  it('no feedback shown when project has no tokens', async () => {
-    renderTab({ ...mockProject, tokens: undefined });
+  it('no feedback shown when router has no tokens', async () => {
+    renderTab({ ...mockRouter, tokens: undefined });
     const keyInput = screen.getByPlaceholderText('sk-rt-...');
     await userEvent.type(keyInput, 'sk-rt-abc0andmorechars');
     // no tokens → matchedToken is always null
@@ -208,7 +208,7 @@ describe('ProjectTestTab — token validation feedback', () => {
 
 // ── Show/hide key toggle ──────────────────────────────────────────────────────
 
-describe('ProjectTestTab — show/hide key toggle', () => {
+describe('RouterTestTab — show/hide key toggle', () => {
   it('token input is password type by default', () => {
     renderTab();
     const input = screen.getByPlaceholderText('sk-rt-...') as HTMLInputElement;
@@ -234,7 +234,7 @@ describe('ProjectTestTab — show/hide key toggle', () => {
 
 // ── Send button enabled/disabled ──────────────────────────────────────────────
 
-describe('ProjectTestTab — send button state', () => {
+describe('RouterTestTab — send button state', () => {
   it('Send enabled when both input text and API key are present', async () => {
     renderTab();
     await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-abc0');
@@ -253,7 +253,7 @@ describe('ProjectTestTab — send button state', () => {
 
 // ── Successful send flow ──────────────────────────────────────────────────────
 
-describe('ProjectTestTab — send message', () => {
+describe('RouterTestTab — send message', () => {
   it('sends fetch request to /v1/chat/completions with correct headers', async () => {
     mockFetchOk([
       'data: {"choices":[{"delta":{"content":"Hello"}}],"model":"gpt-4o"}',
@@ -367,7 +367,7 @@ describe('ProjectTestTab — send message', () => {
 
 // ── Error handling ────────────────────────────────────────────────────────────
 
-describe('ProjectTestTab — error handling', () => {
+describe('RouterTestTab — error handling', () => {
   it('shows error when fetch response has no body and ok=false', async () => {
     mockFetchError(500);
     renderTab();
@@ -459,7 +459,7 @@ describe('ProjectTestTab — error handling', () => {
 
 // ── Stop generation ───────────────────────────────────────────────────────────
 
-describe('ProjectTestTab — stop generation', () => {
+describe('RouterTestTab — stop generation', () => {
   it('shows Stop button while loading', async () => {
     // Stream that hangs
     let resolveRead!: () => void;
@@ -501,7 +501,7 @@ describe('ProjectTestTab — stop generation', () => {
 
 // ── Trace events ──────────────────────────────────────────────────────────────
 
-describe('ProjectTestTab — trace events', () => {
+describe('RouterTestTab — trace events', () => {
   it('trace entries appear in debug panels', async () => {
     mockTraceStream([{ panel: 'router-request', message: 'req' }]);
     mockFetchOk([
@@ -548,7 +548,7 @@ describe('ProjectTestTab — trace events', () => {
 
 // ── Thinking delta (extended thinking) ───────────────────────────────────────
 
-describe('ProjectTestTab — thinking delta', () => {
+describe('RouterTestTab — thinking delta', () => {
   it('renders thinking block when thinkingDelta is in SSE', async () => {
     mockFetchOk([
       'data: {"choices":[{"delta":{"thinking":"Let me think..."}}],"model":"claude"}',
@@ -579,7 +579,7 @@ describe('ProjectTestTab — thinking delta', () => {
 
 // ── Image attachment ──────────────────────────────────────────────────────────
 
-describe('ProjectTestTab — image attachment', () => {
+describe('RouterTestTab — image attachment', () => {
   it('non-image file shows error', async () => {
     renderTab();
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -670,7 +670,7 @@ describe('ProjectTestTab — image attachment', () => {
 
 // ── Routing fallback for model selection ─────────────────────────────────────
 
-describe('ProjectTestTab — model selection fallback', () => {
+describe('RouterTestTab — model selection fallback', () => {
   it('uses routingModelId when set', async () => {
     mockFetchOk(['data: [DONE]']);
     renderTab();
@@ -686,7 +686,7 @@ describe('ProjectTestTab — model selection fallback', () => {
 
   it('falls back to first model when no routingModelId', async () => {
     mockFetchOk(['data: [DONE]']);
-    renderTab({ ...mockProject, routingModelId: undefined });
+    renderTab({ ...mockRouter, routingModelId: undefined });
     await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
     await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
     await userEvent.click(screen.getByTitle('Send (Enter)'));
@@ -699,7 +699,7 @@ describe('ProjectTestTab — model selection fallback', () => {
 
   it('uses empty string model when no routingModelId and no models', async () => {
     mockFetchOk(['data: [DONE]']);
-    renderTab({ ...mockProject, routingModelId: undefined, models: [] });
+    renderTab({ ...mockRouter, routingModelId: undefined, models: [] });
     await userEvent.type(screen.getByPlaceholderText('sk-rt-...'), 'sk-rt-mykey');
     await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
     await userEvent.click(screen.getByTitle('Send (Enter)'));
@@ -713,7 +713,7 @@ describe('ProjectTestTab — model selection fallback', () => {
 
 // ── Assistant message with array content ────────────────────────────────────
 
-describe('ProjectTestTab — assistant array content', () => {
+describe('RouterTestTab — assistant array content', () => {
   it('renders text item from array content', async () => {
     // Simulate receiving an array-content assistant message from a prior turn
     // by using the user message array path via image attachment + response
@@ -731,7 +731,7 @@ describe('ProjectTestTab — assistant array content', () => {
 
 // ── Response panel trace: model:error and model:thinking ─────────────────────
 
-describe('ProjectTestTab — response panel trace entries', () => {
+describe('RouterTestTab — response panel trace entries', () => {
   it('response panel renders model:error entry with error styling', async () => {
     mockTraceStream([{"panel":"response","message":"model:error","details":{"msg":"oops"}}]);
     mockFetchOk([
@@ -764,7 +764,7 @@ describe('ProjectTestTab — response panel trace entries', () => {
 
 // ── The stored trace replaces the live one ────────────────────────────────────
 
-describe('ProjectTestTab — stored trace', () => {
+describe('RouterTestTab — stored trace', () => {
   it('summarises the turn from the recap the service stored', async () => {
     mockTraceStream([{ panel: 'router-request', message: 'route' }]);
     vi.mocked(getTrace).mockResolvedValue({ trace: [
@@ -788,7 +788,7 @@ describe('ProjectTestTab — stored trace', () => {
 
 // ── Router Response panel entries ─────────────────────────────────────────────
 
-describe('ProjectTestTab — router response panel entries', () => {
+describe('RouterTestTab — router response panel entries', () => {
   it('router-response panel renders entries from trace', async () => {
     mockTraceStream([{"panel":"router-response","message":"routing-done"}]);
     mockFetchOk([
@@ -817,7 +817,7 @@ describe('ProjectTestTab — router response panel entries', () => {
 
 // ── Attach image button click ─────────────────────────────────────────────────
 
-describe('ProjectTestTab — attach image button click', () => {
+describe('RouterTestTab — attach image button click', () => {
   it('clicking Attach image button triggers file input click', async () => {
     renderTab();
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -830,7 +830,7 @@ describe('ProjectTestTab — attach image button click', () => {
 
 // ── Branch coverage: empty dataStr, loading guard, label without text ─────────
 
-describe('ProjectTestTab — additional branch coverage', () => {
+describe('RouterTestTab — additional branch coverage', () => {
   it('empty data line (dataStr empty) is skipped without error', async () => {
     mockFetchOk([
       'data: ',
@@ -863,7 +863,7 @@ describe('ProjectTestTab — additional branch coverage', () => {
   });
 
   it('recognized token with empty labels array shows no label suffix', async () => {
-    renderTab({ ...mockProject, tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-abc0', labels: [] }] });
+    renderTab({ ...mockRouter, tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-abc0', labels: [] }] });
     const keyInput = screen.getByPlaceholderText('sk-rt-...');
     await userEvent.type(keyInput, 'sk-rt-abc0extra');
     await waitFor(() => expect(screen.getByText(/Recognized Token/)).toBeTruthy());

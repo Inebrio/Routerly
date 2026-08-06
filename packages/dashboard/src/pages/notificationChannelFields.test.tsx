@@ -17,15 +17,15 @@ import {
   CHANNEL_PROVIDER_META,
 } from './notificationChannelFields';
 import type { ChannelProvider } from './notificationChannelFields';
-import { getProjects } from '../api';
+import { getRouters } from '../api';
 
-const mockGetProjects = vi.mocked(getProjects as (...args: unknown[]) => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as (...args: unknown[]) => Promise<unknown>);
 
 // Mock api and MultiSelect so we don't need a full auth context
 vi.mock('../api', () => ({
-  getProjects: vi.fn().mockResolvedValue([]),
+  getRouters: vi.fn().mockResolvedValue([]),
   ALL_PERMISSIONS: [
-    'project:read', 'project:write', 'model:read', 'model:write',
+    'router:read', 'router:write', 'model:read', 'model:write',
     'user:read', 'user:write', 'report:read', 'settings:read',
     'settings:write', 'notification:write', 'token:read', 'token:write',
     'role:write', 'audit:read',
@@ -569,16 +569,16 @@ describe('ChannelEditFields — EditInput optional field clears to undefined', (
 
 describe('RoutingEditFields', () => {
   beforeEach(() => {
-    mockGetProjects.mockResolvedValue([
-      { id: 'p1', name: 'Project 1' },
-      { id: 'p2', name: 'Project 2' },
+    mockGetRouters.mockResolvedValue([
+      { id: 'p1', name: 'Router 1' },
+      { id: 'p2', name: 'Router 2' },
     ]);
   });
 
-  it('renders events, projects, and cooldown sections', async () => {
+  it('renders events, routers, and cooldown sections', async () => {
     render(<RoutingEditFields form={{ events: [], cooldownSeconds: 0 }} onChange={vi.fn()} />);
     expect(screen.getByText('Events')).toBeTruthy();
-    expect(screen.getByText('Projects')).toBeTruthy();
+    expect(screen.getByText('Routers')).toBeTruthy();
     expect(screen.getByText('Cooldown')).toBeTruthy();
   });
 
@@ -617,10 +617,10 @@ describe('RoutingEditFields', () => {
     expect(onChange).toHaveBeenCalledWith('cooldownSeconds', 3);
   });
 
-  it('shows loaded projects in multiselect', async () => {
-    render(<RoutingEditFields form={{ events: [], projects: [] }} onChange={vi.fn()} />);
+  it('shows loaded routers in multiselect', async () => {
+    render(<RoutingEditFields form={{ events: [], routers: [] }} onChange={vi.fn()} />);
     await waitFor(() => {
-      const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+      const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
       expect(projSelect.options.length).toBeGreaterThan(0);
     });
   });
@@ -762,37 +762,37 @@ describe('ChannelEditFields — EmailBaseFields fromAddress onChange fires', () 
   });
 });
 
-// ── RoutingEditFields projects onChange (line 347) ───────────────────────────
+// ── RoutingEditFields routers onChange (line 347) ───────────────────────────
 
-describe('RoutingEditFields — projects MultiSelect onChange fires', () => {
+describe('RoutingEditFields — routers MultiSelect onChange fires', () => {
   beforeEach(() => {
-    mockGetProjects.mockResolvedValue([
-      { id: 'p1', name: 'Project 1' },
+    mockGetRouters.mockResolvedValue([
+      { id: 'p1', name: 'Router 1' },
     ]);
   });
 
-  it('selecting a project fires onChange with project id', async () => {
+  it('selecting a router fires onChange with router id', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [], projects: [] }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ events: [], routers: [] }} onChange={onChange} />);
     await waitFor(() => {
-      const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+      const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
       expect(projSelect.options.length).toBeGreaterThan(0);
     });
-    const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+    const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
     await userEvent.selectOptions(projSelect, ['p1']);
-    expect(onChange).toHaveBeenCalledWith('projects', ['p1']);
+    expect(onChange).toHaveBeenCalledWith('routers', ['p1']);
   });
 
-  it('deselecting all projects fires onChange with undefined', async () => {
+  it('deselecting all routers fires onChange with undefined', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [], projects: ['p1'] }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ events: [], routers: ['p1'] }} onChange={onChange} />);
     await waitFor(() => {
-      const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+      const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
       expect(projSelect.options.length).toBeGreaterThan(0);
     });
-    const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+    const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
     await userEvent.deselectOptions(projSelect, ['p1']);
-    expect(onChange).toHaveBeenCalledWith('projects', undefined);
+    expect(onChange).toHaveBeenCalledWith('routers', undefined);
   });
 });
 
@@ -808,20 +808,20 @@ describe('RecipientsEditFields — permissions MultiSelect onChange fires', () =
       users={[]}
     />);
     const permSelect = screen.getByTestId('multiselect-All permissions (everyone)') as HTMLSelectElement;
-    await userEvent.selectOptions(permSelect, ['project:read']);
-    expect(onChange).toHaveBeenCalledWith('targets', expect.objectContaining({ permissions: ['project:read'] }));
+    await userEvent.selectOptions(permSelect, ['router:read']);
+    expect(onChange).toHaveBeenCalledWith('targets', expect.objectContaining({ permissions: ['router:read'] }));
   });
 
   it('clearing permissions fires onChange with undefined', async () => {
     const onChange = vi.fn();
     render(<RecipientsEditFields
-      form={{ provider: 'smtp', targets: { permissions: ['project:read'] } }}
+      form={{ provider: 'smtp', targets: { permissions: ['router:read'] } }}
       onChange={onChange}
       roles={[]}
       users={[]}
     />);
     const permSelect = screen.getByTestId('multiselect-All permissions (everyone)') as HTMLSelectElement;
-    await userEvent.deselectOptions(permSelect, ['project:read']);
+    await userEvent.deselectOptions(permSelect, ['router:read']);
     expect(onChange).toHaveBeenCalledWith('targets', expect.objectContaining({ permissions: undefined }));
   });
 });

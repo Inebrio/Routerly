@@ -1,29 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Key } from 'lucide-react';
-import { deleteProjectToken, type ProjectToken } from '../../api';
-import { useProject } from './ProjectLayout';
+import { deleteRouterToken, type RouterToken } from '../../api';
+import { useRouter } from './RouterLayout';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 
-export function ProjectTokenTab() {
-  const { project, setProject } = useProject();
+export function RouterTokenTab() {
+  const { router, setRouter } = useRouter();
   const navigate = useNavigate();
-  if (!project) return null;
+  if (!router) return null;
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  const tokens = project.tokens || [];
+  const tokens = router.tokens || [];
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
   function openCreate() {
-    navigate(`/dashboard/projects/${project!.id}/token/new`);
+    navigate(`/dashboard/routers/${router!.id}/token/new`);
   }
 
   function openEdit(tokenId: string) {
-    navigate(`/dashboard/projects/${project!.id}/token/${tokenId}`);
+    navigate(`/dashboard/routers/${router!.id}/token/${tokenId}`);
   }
 
   function handleDelete(tokenId: string, snippet: string) {
@@ -33,11 +33,11 @@ export function ProjectTokenTab() {
         setConfirmState(null);
         setErr(''); setLoading(true);
         /* v8 ignore next */
-        if (!project) return;
+        if (!router) return;
         try {
-          await deleteProjectToken(project.id, tokenId);
+          await deleteRouterToken(router.id, tokenId);
           /* v8 ignore next */
-          setProject(p => p ? { ...p, tokens: p.tokens?.filter(t => t.id !== tokenId) || [] } : p);
+          setRouter(p => p ? { ...p, tokens: p.tokens?.filter(t => t.id !== tokenId) || [] } : p);
         } catch (e) { setErr(e instanceof Error ? e.message : 'Error deleting token'); }
         finally { setLoading(false); }
       },

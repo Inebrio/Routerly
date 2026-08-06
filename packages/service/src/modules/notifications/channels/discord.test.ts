@@ -76,7 +76,7 @@ describe('sendDiscord', () => {
     const mockFetch = vi.fn().mockResolvedValue({ ok: true, text: async () => '' });
     vi.stubGlobal('fetch', mockFetch);
 
-    await sendDiscord(cfg, { ...payload, details: { model: 'gpt-4o', project: 'test' } });
+    await sendDiscord(cfg, { ...payload, details: { model: 'gpt-4o', router: 'test' } });
 
     const body = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string);
     expect(body.embeds[0].fields).toHaveLength(2);

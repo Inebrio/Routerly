@@ -11,7 +11,7 @@ vi.mock('../../lib/paths.js', () => ({
     data: '/test/data',
     settings: '/test/config/settings.json',
     models: '/test/config/models.json',
-    projects: '/test/config/projects.json',
+    routers: '/test/config/routers.json',
     users: '/test/config/users.json',
     roles: '/test/config/roles.json',
     modules: '/test/config/modules.json',
@@ -79,7 +79,7 @@ describe('readConfig', () => {
     const releaseFn = vi.fn().mockResolvedValue(undefined)
     mockLock.mockResolvedValue(releaseFn)
 
-    const result = await readConfig('projects')
+    const result = await readConfig('routers')
 
     expect(Array.isArray(result)).toBe(true)
     expect((result as any[]).length).toBe(0)
@@ -92,13 +92,13 @@ describe('readConfig', () => {
   it('rides out a transient empty read: returns the populated data on retry, no write', async () => {
     // First read observes the truncation window (empty); a retry sees the
     // fully-written file. Must return the real data and never persist a default.
-    const projects = [{ id: 'p1', name: 'Real' }]
+    const routers = [{ id: 'p1', name: 'Real' }]
     mockReadFile
       .mockResolvedValueOnce('' as any)                       // racing writer mid-rename
-      .mockResolvedValueOnce(JSON.stringify(projects) as any) // rename completed
-    const result = await readConfig('projects')
+      .mockResolvedValueOnce(JSON.stringify(routers) as any) // rename completed
+    const result = await readConfig('routers')
 
-    expect(result).toEqual(projects)
+    expect(result).toEqual(routers)
     expect(mockWriteFile).not.toHaveBeenCalled()
     expect(mockRename).not.toHaveBeenCalled()
   })
@@ -175,11 +175,11 @@ describe('writeConfig', () => {
     mockLock.mockResolvedValue(releaseFn)
     mockReadFile.mockResolvedValue('[]' as any)
 
-    await writeConfig('projects', [{ id: 'p1' }] as any)
+    await writeConfig('routers', [{ id: 'p1' }] as any)
 
     // No writeFile call ever puts '' or '{}' (truncated/placeholder) onto the real target path.
     const badTargetWrite = mockWriteFile.mock.calls.find(
-      c => c[0] === '/test/config/projects.json' && (c[1] === '' || c[1] === '{}'),
+      c => c[0] === '/test/config/routers.json' && (c[1] === '' || c[1] === '{}'),
     )
     expect(badTargetWrite).toBeUndefined()
   })
@@ -295,24 +295,24 @@ describe('getOrCreateSecret', () => {
 })
 
 describe('pruneOrphanUsage (#77 BUG-5)', () => {
-  // readConfig reads usage.json and projects.json by path; route the mock per path.
-  function byPath(usage: unknown[], projects: unknown[]) {
+  // readConfig reads usage.json and routers.json by path; route the mock per path.
+  function byPath(usage: unknown[], routers: unknown[]) {
     mockReadFile.mockImplementation(((p: string) =>
       Promise.resolve(
         p.endsWith('usage.json') ? JSON.stringify(usage)
-        : p.endsWith('projects.json') ? JSON.stringify(projects)
+        : p.endsWith('routers.json') ? JSON.stringify(routers)
         : '[]',
       )) as any)
   }
 
-  it('removes records whose projectId matches no project, keeps real ones', async () => {
+  it('removes records whose routerId matches no router, keeps real ones', async () => {
     const releaseFn = vi.fn().mockResolvedValue(undefined)
     mockLock.mockResolvedValue(releaseFn)
     const usage = [
-      { id: 'u1', projectId: 'real-1', cost: 0.1 },
-      { id: 'u2', projectId: 'guardrail', cost: 0, outcome: 'error' },
-      { id: 'u3', projectId: 'real-2', cost: 0.2 },
-      { id: 'u4', projectId: 'guardrail', cost: 0, outcome: 'error' },
+      { id: 'u1', routerId: 'real-1', cost: 0.1 },
+      { id: 'u2', routerId: 'guardrail', cost: 0, outcome: 'error' },
+      { id: 'u3', routerId: 'real-2', cost: 0.2 },
+      { id: 'u4', routerId: 'guardrail', cost: 0, outcome: 'error' },
     ]
     byPath(usage, [{ id: 'real-1' }, { id: 'real-2' }])
 
@@ -328,7 +328,7 @@ describe('pruneOrphanUsage (#77 BUG-5)', () => {
 
   it('does nothing (no write) when there are no orphans', async () => {
     byPath(
-      [{ id: 'u1', projectId: 'real-1', cost: 0.1 }],
+      [{ id: 'u1', routerId: 'real-1', cost: 0.1 }],
       [{ id: 'real-1' }],
     )
     const removed = await pruneOrphanUsage()

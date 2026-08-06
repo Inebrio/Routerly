@@ -3,7 +3,7 @@ import type {
   OptimizerProfile,
   Profile,
   ProfileKind,
-  ProjectConfig,
+  RouterConfig,
   RoutingProfile,
   SecurityProfile,
 } from '@routerly/shared';
@@ -13,14 +13,14 @@ import { BUILTIN_PROFILES, DEFAULT_PROFILE_ID, getBuiltin, listBuiltins } from '
 /**
  * Profile resolution for the three profile kinds.
  *
- * A project either points at a profile (built-in preset or user overlay) or
+ * A router either points at a profile (built-in preset or user overlay) or
  * carries its own inline config. The inline case is reported as an ephemeral
  * profile with id `custom`, so callers have one shape to handle and nothing in
- * projects.json ever needs rewriting to introduce profiles.
+ * routers.json ever needs rewriting to introduce profiles.
  * // ponytail: inline config stays where it is, wrapped at read time, not migrated
  */
 
-/** Id of the ephemeral profile that wraps a project's own inline config. */
+/** Id of the ephemeral profile that wraps a router's own inline config. */
 export const CUSTOM_PROFILE_ID = 'custom';
 
 /** Looks a profile up among user overlays first, then the built-in presets (current or legacy). */
@@ -44,15 +44,15 @@ async function resolveOfKind<T extends Profile>(
 }
 
 /**
- * Resolves the routing profile a project should use.
+ * Resolves the routing profile a router should use.
  *
- * Unlike the other two kinds, routing always yields a profile: a project with
+ * Unlike the other two kinds, routing always yields a profile: a router with
  * neither a profile nor policies still has to be routed, and falls back to the
  * default preset.
  */
-export async function resolveRoutingProfile(project: ProjectConfig): Promise<RoutingProfile> {
+export async function resolveRoutingProfile(router: RouterConfig): Promise<RoutingProfile> {
   const bound = await resolveOfKind<RoutingProfile>(
-    project.routingProfileId ?? project.profileId,
+    router.routingProfileId ?? router.profileId,
     'routing',
   );
   if (bound) return bound;
@@ -65,62 +65,62 @@ export async function resolveRoutingProfile(project: ProjectConfig): Promise<Rou
     builtin: false,
     baseId: fallback.id,
     version: 1,
-    policies: structuredClone(project.policies ?? fallback.policies),
+    policies: structuredClone(router.policies ?? fallback.policies),
   };
 }
 
-/** Resolves the optimizer profile, or undefined when the project runs no optimizers. */
+/** Resolves the optimizer profile, or undefined when the router runs no optimizers. */
 export async function resolveOptimizerProfile(
-  project: ProjectConfig,
+  router: RouterConfig,
 ): Promise<OptimizerProfile | undefined> {
-  const bound = await resolveOfKind<OptimizerProfile>(project.optimizerProfileId, 'optimizer');
+  const bound = await resolveOfKind<OptimizerProfile>(router.optimizerProfileId, 'optimizer');
   if (bound) return bound;
-  if (!project.optimizers) return undefined;
+  if (!router.optimizers) return undefined;
   return {
     id: CUSTOM_PROFILE_ID,
     kind: 'optimizer',
     version: 1,
     label: 'Custom',
     builtin: false,
-    optimizers: structuredClone(project.optimizers),
+    optimizers: structuredClone(router.optimizers),
   };
 }
 
-/** Resolves the security profile, or undefined when the project has no guardrails and no PII config. */
+/** Resolves the security profile, or undefined when the router has no guardrails and no PII config. */
 export async function resolveSecurityProfile(
-  project: ProjectConfig,
+  router: RouterConfig,
 ): Promise<SecurityProfile | undefined> {
-  const bound = await resolveOfKind<SecurityProfile>(project.securityProfileId, 'security');
+  const bound = await resolveOfKind<SecurityProfile>(router.securityProfileId, 'security');
   if (bound) return bound;
-  if (!project.guardrails && !project.pii) return undefined;
+  if (!router.guardrails && !router.pii) return undefined;
   return {
     id: CUSTOM_PROFILE_ID,
     kind: 'security',
     version: 1,
     label: 'Custom',
     builtin: false,
-    guardrails: structuredClone(project.guardrails ?? { rules: [] }),
-    pii: structuredClone(project.pii ?? { policies: [] }),
+    guardrails: structuredClone(router.guardrails ?? { rules: [] }),
+    pii: structuredClone(router.pii ?? { policies: [] }),
   };
 }
 
 /**
- * Returns the project as the request pipeline should see it: inline optimizer
+ * Returns the router as the request pipeline should see it: inline optimizer
  * and security config replaced by whatever the bound profiles say.
  *
  * Done once, at the edge, so every downstream consumer keeps reading
- * `project.optimizers` / `project.guardrails` / `project.pii` unchanged.
+ * `router.optimizers` / `router.guardrails` / `router.pii` unchanged.
  * Routing is not folded in here: the router resolves its own profile because it
  * needs the selector and fallback strategy too, not just the policies.
  */
-export async function applyProfiles(project: ProjectConfig): Promise<ProjectConfig> {
-  if (!project.optimizerProfileId && !project.securityProfileId) return project;
+export async function applyProfiles(router: RouterConfig): Promise<RouterConfig> {
+  if (!router.optimizerProfileId && !router.securityProfileId) return router;
   const [optimizer, security] = await Promise.all([
-    resolveOptimizerProfile(project),
-    resolveSecurityProfile(project),
+    resolveOptimizerProfile(router),
+    resolveSecurityProfile(router),
   ]);
   return {
-    ...project,
+    ...router,
     ...(optimizer ? { optimizers: optimizer.optimizers } : {}),
     ...(security ? { guardrails: security.guardrails, pii: security.pii } : {}),
   };

@@ -2,7 +2,7 @@ import type {
   ExperimentConfig,
   ExperimentMetrics,
   ExperimentVariantMetrics,
-  ProjectConfig,
+  RouterConfig,
   UsageRecord,
 } from '@routerly/shared';
 import { DEFAULT_MIN_SAMPLES_PER_VARIANT, isCompletionCall } from '@routerly/shared';
@@ -32,7 +32,7 @@ function avg(values: number[]): number {
 export function computeExperimentMetrics(
   experiment: ExperimentConfig,
   records: UsageRecord[],
-  projects: ProjectConfig[] = [],
+  routers: RouterConfig[] = [],
 ): ExperimentMetrics {
   const minSamples = experiment.minSamplesPerVariant ?? DEFAULT_MIN_SAMPLES_PER_VARIANT;
   const mine = records.filter(r => r.experimentId === experiment.id && isCompletionCall(r.callType));
@@ -46,11 +46,11 @@ export function computeExperimentMetrics(
     // The judge keeps a running tally on the experiment, not a score per usage
     // record, so this pair is lifetime while everything else follows the window.
     const tally = experiment.judgeScores?.[variant.id];
-    const name = variant.name ?? projects.find(p => p.id === variant.projectId)?.name;
+    const name = variant.name ?? routers.find(p => p.id === variant.routerId)?.name;
 
     return {
       variantId: variant.id,
-      projectId: variant.projectId,
+      routerId: variant.routerId,
       ...(name !== undefined ? { name } : {}),
       calls: rows.length,
       errors,

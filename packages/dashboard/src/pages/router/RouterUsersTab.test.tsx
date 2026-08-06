@@ -3,13 +3,13 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { useState } from 'react';
-import { ProjectUsersTab } from './ProjectUsersTab';
+import { RouterUsersTab } from './RouterUsersTab';
 
 vi.mock('../../api', () => ({
   getUsers: vi.fn(),
-  addProjectMember: vi.fn(),
-  updateProjectMember: vi.fn(),
-  removeProjectMember: vi.fn(),
+  addRouterMember: vi.fn(),
+  updateRouterMember: vi.fn(),
+  removeRouterMember: vi.fn(),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so onChange fires on selectOptions
@@ -47,18 +47,18 @@ vi.mock('../../components/ConfirmDialog', () => ({
   ),
 }));
 
-import { getUsers, addProjectMember, updateProjectMember, removeProjectMember } from '../../api';
+import { getUsers, addRouterMember, updateRouterMember, removeRouterMember } from '../../api';
 const mockGetUsers = vi.mocked(getUsers as () => Promise<unknown>);
-const mockAddProjectMember = vi.mocked(addProjectMember as (...a: unknown[]) => Promise<unknown>);
-const mockUpdateProjectMember = vi.mocked(updateProjectMember as (...a: unknown[]) => Promise<unknown>);
-const mockRemoveProjectMember = vi.mocked(removeProjectMember as (...a: unknown[]) => Promise<unknown>);
+const mockAddRouterMember = vi.mocked(addRouterMember as (...a: unknown[]) => Promise<unknown>);
+const mockUpdateRouterMember = vi.mocked(updateRouterMember as (...a: unknown[]) => Promise<unknown>);
+const mockRemoveRouterMember = vi.mocked(removeRouterMember as (...a: unknown[]) => Promise<unknown>);
 
 const mockUsers = [
   { id: 'u1', email: 'alice@example.com' },
   { id: 'u2', email: 'bob@example.com' },
 ];
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [],
@@ -67,17 +67,17 @@ const mockProject = {
   ],
 };
 
-function renderTab(initial: Record<string, unknown> = mockProject) {
-  // ponytail: real state so setProject callbacks (lines 36-39, 57-59, 79-80) are exercised
+function renderTab(initial: Record<string, unknown> = mockRouter) {
+  // ponytail: real state so setRouter callbacks (lines 36-39, 57-59, 79-80) are exercised
   function LayoutWrapper() {
-    const [project, setProject] = useState<Record<string, unknown> | null>(initial);
-    return <Outlet context={{ project, setProject }} />;
+    const [router, setRouter] = useState<Record<string, unknown> | null>(initial);
+    return <Outlet context={{ router, setRouter }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/users']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/users']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="users" element={<ProjectUsersTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="users" element={<RouterUsersTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -86,25 +86,25 @@ function renderTab(initial: Record<string, unknown> = mockProject) {
 
 beforeEach(() => {
   mockGetUsers.mockResolvedValue(mockUsers);
-  mockAddProjectMember.mockResolvedValue({ userId: 'u2', role: 'viewer' });
-  mockUpdateProjectMember.mockResolvedValue({ userId: 'u1', role: 'admin' });
-  mockRemoveProjectMember.mockResolvedValue(undefined);
+  mockAddRouterMember.mockResolvedValue({ userId: 'u2', role: 'viewer' });
+  mockUpdateRouterMember.mockResolvedValue({ userId: 'u1', role: 'admin' });
+  mockRemoveRouterMember.mockResolvedValue(undefined);
 });
 
 afterEach(() => vi.clearAllMocks());
 
-// ── null project guard ────────────────────────────────────────────────────────
+// ── null router guard ────────────────────────────────────────────────────────
 
-describe('ProjectUsersTab — null project guard', () => {
-  it('renders nothing when project is null', () => {
+describe('RouterUsersTab — null router guard', () => {
+  it('renders nothing when router is null', () => {
     function LayoutWrapper() {
-      return <Outlet context={{ project: null, setProject: vi.fn() }} />;
+      return <Outlet context={{ router: null, setRouter: vi.fn() }} />;
     }
     const { container } = render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/users']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/users']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="users" element={<ProjectUsersTab />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="users" element={<RouterUsersTab />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -115,10 +115,10 @@ describe('ProjectUsersTab — null project guard', () => {
 
 // ── Initial render ────────────────────────────────────────────────────────────
 
-describe('ProjectUsersTab — initial render', () => {
-  it('shows Project Members heading', async () => {
+describe('RouterUsersTab — initial render', () => {
+  it('shows Router Members heading', async () => {
     renderTab();
-    await waitFor(() => expect(screen.getByText('Project Members')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Router Members')).toBeTruthy());
   });
 
   it('shows Add Member button', async () => {
@@ -137,7 +137,7 @@ describe('ProjectUsersTab — initial render', () => {
   });
 
   it('shows empty state when no members', async () => {
-    renderTab({ ...mockProject, members: [] });
+    renderTab({ ...mockRouter, members: [] });
     await waitFor(() => expect(screen.getByText('No members found.')).toBeTruthy());
   });
 
@@ -167,7 +167,7 @@ describe('ProjectUsersTab — initial render', () => {
 
 // ── Add member flow ───────────────────────────────────────────────────────────
 
-describe('ProjectUsersTab — add member', () => {
+describe('RouterUsersTab — add member', () => {
   it('clicking Add Member shows the add form', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
@@ -196,7 +196,7 @@ describe('ProjectUsersTab — add member', () => {
     expect(addBtn.disabled).toBe(true);
   });
 
-  it('selects user and calls addProjectMember', async () => {
+  it('selects user and calls addRouterMember', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
     await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
@@ -206,7 +206,7 @@ describe('ProjectUsersTab — add member', () => {
     await userEvent.selectOptions(selects[0]!, 'u2');
     const addBtn = screen.getByRole('button', { name: /^Add$/i });
     await userEvent.click(addBtn);
-    await waitFor(() => expect(mockAddProjectMember).toHaveBeenCalledWith('proj-1', 'u2', 'viewer'));
+    await waitFor(() => expect(mockAddRouterMember).toHaveBeenCalledWith('proj-1', 'u2', 'viewer'));
   });
 
   it('hides form after successful add', async () => {
@@ -228,8 +228,8 @@ describe('ProjectUsersTab — add member', () => {
     expect(screen.queryByText('Add New Member')).toBeNull();
   });
 
-  it('shows error on addProjectMember failure', async () => {
-    mockAddProjectMember.mockRejectedValueOnce(new Error('Add failed'));
+  it('shows error on addRouterMember failure', async () => {
+    mockAddRouterMember.mockRejectedValueOnce(new Error('Add failed'));
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
     await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
@@ -240,8 +240,8 @@ describe('ProjectUsersTab — add member', () => {
     await waitFor(() => expect(screen.getByText('Add failed')).toBeTruthy());
   });
 
-  it('shows generic error on non-Error from addProjectMember', async () => {
-    mockAddProjectMember.mockRejectedValueOnce('oops');
+  it('shows generic error on non-Error from addRouterMember', async () => {
+    mockAddRouterMember.mockRejectedValueOnce('oops');
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
     await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
@@ -262,7 +262,7 @@ describe('ProjectUsersTab — add member', () => {
     await userEvent.selectOptions(selects[1]!, 'admin');
     await userEvent.selectOptions(selects[0]!, 'u2');
     await userEvent.click(screen.getByRole('button', { name: /^Add$/i }));
-    await waitFor(() => expect(mockAddProjectMember).toHaveBeenCalledWith('proj-1', 'u2', 'admin'));
+    await waitFor(() => expect(mockAddRouterMember).toHaveBeenCalledWith('proj-1', 'u2', 'admin'));
   });
 
   it('handleAddMember no-ops when newUserId is empty (line 30 guard)', async () => {
@@ -272,11 +272,11 @@ describe('ProjectUsersTab — add member', () => {
     // Fire click directly on disabled Add button — bypasses disabled attr, exercises !newUserId guard
     const addBtn = screen.getByRole('button', { name: /^Add$/i });
     fireEvent.click(addBtn);
-    await waitFor(() => expect(mockAddProjectMember).not.toHaveBeenCalled());
+    await waitFor(() => expect(mockAddRouterMember).not.toHaveBeenCalled());
   });
 
-  it('adds member when project has no members array (p.members falsy → [] branch)', async () => {
-    // Project without members key → p.members is undefined → uses [] fallback
+  it('adds member when router has no members array (p.members falsy → [] branch)', async () => {
+    // Router without members key → p.members is undefined → uses [] fallback
     renderTab({ id: 'proj-1', name: 'Test', models: [] });
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
     await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
@@ -284,13 +284,13 @@ describe('ProjectUsersTab — add member', () => {
     const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
     await userEvent.selectOptions(selects[0]!, 'u1');
     await userEvent.click(screen.getByRole('button', { name: /^Add$/i }));
-    await waitFor(() => expect(mockAddProjectMember).toHaveBeenCalledWith('proj-1', 'u1', 'viewer'));
+    await waitFor(() => expect(mockAddRouterMember).toHaveBeenCalledWith('proj-1', 'u1', 'viewer'));
   });
 });
 
 // ── Edit member role ──────────────────────────────────────────────────────────
 
-describe('ProjectUsersTab — edit member role', () => {
+describe('RouterUsersTab — edit member role', () => {
   it('clicking Change Role shows role select', async () => {
     renderTab();
     await waitFor(() => screen.getByTitle('Change Role'));
@@ -305,14 +305,14 @@ describe('ProjectUsersTab — edit member role', () => {
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
-  it('save check calls updateProjectMember', async () => {
+  it('save check calls updateRouterMember', async () => {
     renderTab();
     await waitFor(() => screen.getByTitle('Change Role'));
     await userEvent.click(screen.getByTitle('Change Role'));
     const select = screen.getByRole('combobox') as HTMLSelectElement;
     await userEvent.selectOptions(select, 'admin');
     await userEvent.click(screen.getByTitle('Save changes'));
-    await waitFor(() => expect(mockUpdateProjectMember).toHaveBeenCalledWith('proj-1', 'u1', 'admin'));
+    await waitFor(() => expect(mockUpdateRouterMember).toHaveBeenCalledWith('proj-1', 'u1', 'admin'));
   });
 
   it('Cancel (X) button exits edit mode without saving', async () => {
@@ -321,11 +321,11 @@ describe('ProjectUsersTab — edit member role', () => {
     await userEvent.click(screen.getByTitle('Change Role'));
     await userEvent.click(screen.getByTitle('Cancel'));
     await waitFor(() => expect(screen.queryByTitle('Save changes')).toBeNull());
-    expect(mockUpdateProjectMember).not.toHaveBeenCalled();
+    expect(mockUpdateRouterMember).not.toHaveBeenCalled();
   });
 
-  it('shows error on updateProjectMember failure', async () => {
-    mockUpdateProjectMember.mockRejectedValueOnce(new Error('Update fail'));
+  it('shows error on updateRouterMember failure', async () => {
+    mockUpdateRouterMember.mockRejectedValueOnce(new Error('Update fail'));
     renderTab();
     await waitFor(() => screen.getByTitle('Change Role'));
     await userEvent.click(screen.getByTitle('Change Role'));
@@ -333,8 +333,8 @@ describe('ProjectUsersTab — edit member role', () => {
     await waitFor(() => expect(screen.getByText('Update fail')).toBeTruthy());
   });
 
-  it('shows generic error on non-Error from updateProjectMember', async () => {
-    mockUpdateProjectMember.mockRejectedValueOnce('oops');
+  it('shows generic error on non-Error from updateRouterMember', async () => {
+    mockUpdateRouterMember.mockRejectedValueOnce('oops');
     renderTab();
     await waitFor(() => screen.getByTitle('Change Role'));
     await userEvent.click(screen.getByTitle('Change Role'));
@@ -345,7 +345,7 @@ describe('ProjectUsersTab — edit member role', () => {
 
 // ── Remove member ─────────────────────────────────────────────────────────────
 
-describe('ProjectUsersTab — remove member', () => {
+describe('RouterUsersTab — remove member', () => {
   it('clicking Remove shows confirm dialog', async () => {
     renderTab();
     await waitFor(() => screen.getByTitle('Remove Member'));
@@ -353,12 +353,12 @@ describe('ProjectUsersTab — remove member', () => {
     expect(screen.getByTestId('confirm-dialog')).toBeTruthy();
   });
 
-  it('confirming remove calls removeProjectMember', async () => {
+  it('confirming remove calls removeRouterMember', async () => {
     renderTab();
     await waitFor(() => screen.getByTitle('Remove Member'));
     await userEvent.click(screen.getByTitle('Remove Member'));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(mockRemoveProjectMember).toHaveBeenCalledWith('proj-1', 'u1'));
+    await waitFor(() => expect(mockRemoveRouterMember).toHaveBeenCalledWith('proj-1', 'u1'));
   });
 
   it('canceling remove closes dialog without calling API', async () => {
@@ -367,11 +367,11 @@ describe('ProjectUsersTab — remove member', () => {
     await userEvent.click(screen.getByTitle('Remove Member'));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByTestId('confirm-dialog')).toBeNull());
-    expect(mockRemoveProjectMember).not.toHaveBeenCalled();
+    expect(mockRemoveRouterMember).not.toHaveBeenCalled();
   });
 
-  it('shows error on removeProjectMember failure', async () => {
-    mockRemoveProjectMember.mockRejectedValueOnce(new Error('Remove fail'));
+  it('shows error on removeRouterMember failure', async () => {
+    mockRemoveRouterMember.mockRejectedValueOnce(new Error('Remove fail'));
     renderTab();
     await waitFor(() => screen.getByTitle('Remove Member'));
     await userEvent.click(screen.getByTitle('Remove Member'));
@@ -379,8 +379,8 @@ describe('ProjectUsersTab — remove member', () => {
     await waitFor(() => expect(screen.getByText('Remove fail')).toBeTruthy());
   });
 
-  it('shows generic error on non-Error from removeProjectMember', async () => {
-    mockRemoveProjectMember.mockRejectedValueOnce('oops');
+  it('shows generic error on non-Error from removeRouterMember', async () => {
+    mockRemoveRouterMember.mockRejectedValueOnce('oops');
     renderTab();
     await waitFor(() => screen.getByTitle('Remove Member'));
     await userEvent.click(screen.getByTitle('Remove Member'));

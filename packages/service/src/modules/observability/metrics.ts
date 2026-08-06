@@ -5,7 +5,7 @@ import type { PrometheusIntegration } from '@routerly/shared';
 import {
   aggregate,
   percentile,
-  projectBudgetRatio,
+  routerBudgetRatio,
   renderMetric,
   type Metric,
   type Sample,
@@ -44,19 +44,19 @@ export const metricsRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // observability: must still account for disabled-connection models
-    const [usage, projects, models] = await Promise.all([
+    const [usage, routers, models] = await Promise.all([
       readConfig('usage'),
-      readConfig('projects'),
+      readConfig('routers'),
       listEffectiveModelsIncludingDisabled(),
     ]);
 
-    const projectName = (id: string): string => projects.find((p) => p.id === id)?.name ?? id;
+    const routerName = (id: string): string => routers.find((p) => p.id === id)?.name ?? id;
     const modelInfo = (id: string): { model: string; provider: string } => {
       const m = models.find((mm) => mm.id === id);
       return { model: id, provider: m?.provider ?? 'unknown' };
     };
 
-    const agg = aggregate(usage, projectName, modelInfo);
+    const agg = aggregate(usage, routerName, modelInfo);
 
     const requestsMetric: Metric = {
       name: 'routerly_requests_total',
@@ -101,13 +101,13 @@ export const metricsRoutes: FastifyPluginAsync = async (fastify) => {
     };
 
     const budgetSamples: Sample[] = [];
-    for (const project of projects) {
-      const ratio = await projectBudgetRatio(project, models);
-      budgetSamples.push({ labels: { project: project.name }, value: +ratio.toFixed(6) });
+    for (const router of routers) {
+      const ratio = await routerBudgetRatio(router, models);
+      budgetSamples.push({ labels: { router: router.name }, value: +ratio.toFixed(6) });
     }
     const budgetMetric: Metric = {
       name: 'routerly_budget_used_ratio',
-      help: 'Budget used ratio per project (0-1)',
+      help: 'Budget used ratio per router (0-1)',
       type: 'gauge',
       samples: budgetSamples,
     };

@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { v4 as uuidv4 } from 'uuid'
-import type { McpToken, Permission, ProjectConfig, UserConfig } from '@routerly/shared'
+import type { McpToken, Permission, RouterConfig, UserConfig } from '@routerly/shared'
 import { readConfig, writeConfig } from '../config/loader.js'
 import { getEffectiveRoles } from '../auth/roles.js'
 
-/** Distinct from the `sk-rt-` project-token prefix, so the two are never confused. */
+/** Distinct from the `sk-rt-` router-token prefix, so the two are never confused. */
 export const MCP_TOKEN_PREFIX = 'sk-rt-mcp-'
 
 /** SHA-256, as for every random bearer token in the service (never bcrypt: not a password). */
@@ -59,17 +59,17 @@ export async function resolveUserPermissions(user: UserConfig): Promise<Permissi
 }
 
 /**
- * Projects an MCP token may act on.
+ * Routers an MCP token may act on.
  *
- * A user is scoped by `projectIds` or by project membership. An unscoped user
- * (no projectIds, no membership anywhere) reaches every project, which is what
- * the dashboard already does today: `GET /api/projects` returns the full list to
+ * A user is scoped by `routerIds` or by router membership. An unscoped user
+ * (no routerIds, no membership anywhere) reaches every router, which is what
+ * the dashboard already does today: `GET /api/routers` returns the full list to
  * any authenticated user. Permissions, not this list, are the real gate.
  */
-export async function accessibleProjects(user: UserConfig): Promise<ProjectConfig[]> {
-  const projects = await readConfig('projects')
-  const scoped = projects.filter(
-    (p) => user.projectIds.includes(p.id) || p.members?.some((m) => m.userId === user.id),
+export async function accessibleRouters(user: UserConfig): Promise<RouterConfig[]> {
+  const routers = await readConfig('routers')
+  const scoped = routers.filter(
+    (p) => user.routerIds.includes(p.id) || p.members?.some((m) => m.userId === user.id),
   )
-  return scoped.length > 0 ? scoped : projects
+  return scoped.length > 0 ? scoped : routers
 }

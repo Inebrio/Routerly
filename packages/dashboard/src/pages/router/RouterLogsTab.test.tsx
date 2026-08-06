@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectLogsTab } from './ProjectLogsTab';
+import { RouterLogsTab } from './RouterLogsTab';
 
 vi.mock('../../api', () => ({
   getUsage: vi.fn(),
@@ -121,17 +121,17 @@ function makeStats(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const mockProject = { id: 'proj-1', name: 'Test', models: [] };
+const mockRouter = { id: 'proj-1', name: 'Test', models: [] };
 
 function renderTab() {
   function LayoutWrapper() {
-    return <Outlet context={{ project: mockProject, setProject: vi.fn() }} />;
+    return <Outlet context={{ router: mockRouter, setRouter: vi.fn() }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/logs']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/logs']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="logs" element={<ProjectLogsTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="logs" element={<RouterLogsTab />} />
         </Route>
         <Route path="/dashboard/usage/:id" element={<div data-testid="usage-detail">usage</div>} />
       </Routes>
@@ -148,7 +148,7 @@ afterEach(() => vi.clearAllMocks());
 
 // ── Loading & empty states ────────────────────────────────────────────────────
 
-describe('ProjectLogsTab — loading state', () => {
+describe('RouterLogsTab — loading state', () => {
   it('shows spinner while loading', () => {
     mockGetUsage.mockReturnValue(new Promise(() => {}));
     renderTab();
@@ -156,7 +156,7 @@ describe('ProjectLogsTab — loading state', () => {
   });
 });
 
-describe('ProjectLogsTab — stats when loaded', () => {
+describe('RouterLogsTab — stats when loaded', () => {
   it('shows Total Cost stat card', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Total Cost')).toBeTruthy());
@@ -224,7 +224,7 @@ describe('ProjectLogsTab — stats when loaded', () => {
   });
 });
 
-describe('ProjectLogsTab — records table', () => {
+describe('RouterLogsTab — records table', () => {
   it('renders records table with Request Logs heading', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Request Logs')).toBeTruthy());
@@ -295,18 +295,18 @@ describe('ProjectLogsTab — records table', () => {
   });
 });
 
-describe('ProjectLogsTab — empty records state', () => {
+describe('RouterLogsTab — empty records state', () => {
   it('shows empty state when no records', async () => {
     // mockResolvedValue (not Once) so re-fetches from dateRange init also return empty data
     mockGetUsage.mockResolvedValue(makeStats({ records: [], pagination: { page: 1, totalPages: 1, totalRecords: 0 } }));
     renderTab();
     await waitFor(() =>
-      expect(screen.getByText('No requests for this project in the selected period.')).toBeTruthy()
+      expect(screen.getByText('No requests for this router in the selected period.')).toBeTruthy()
     );
   });
 });
 
-describe('ProjectLogsTab — null stats (getUsage returns null-like)', () => {
+describe('RouterLogsTab — null stats (getUsage returns null-like)', () => {
   it('renders nothing (no table) when stats is null after fetch error swallowed', async () => {
     // mockRejectedValue (not Once) so re-fetches from dateRange init also fail; stats stays null
     mockGetUsage.mockRejectedValue(new Error('fail'));
@@ -318,7 +318,7 @@ describe('ProjectLogsTab — null stats (getUsage returns null-like)', () => {
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 
-describe('ProjectLogsTab — call type filter', () => {
+describe('RouterLogsTab — call type filter', () => {
   it('clicking Completion filter shows only completion records', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
@@ -353,7 +353,7 @@ describe('ProjectLogsTab — call type filter', () => {
   });
 });
 
-describe('ProjectLogsTab — outcome filter', () => {
+describe('RouterLogsTab — outcome filter', () => {
   it('clicking Success filter shows only successful records', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
@@ -385,7 +385,7 @@ describe('ProjectLogsTab — outcome filter', () => {
   });
 });
 
-describe('ProjectLogsTab — Reset filters button', () => {
+describe('RouterLogsTab — Reset filters button', () => {
   it('Reset filters button appears when a filter is active', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
@@ -404,7 +404,7 @@ describe('ProjectLogsTab — Reset filters button', () => {
   });
 });
 
-describe('ProjectLogsTab — "No records match" empty state', () => {
+describe('RouterLogsTab — "No records match" empty state', () => {
   it('shows "No records match the active filters" when filter leaves 0 matches', async () => {
     // mockResolvedValue (not Once) so re-fetches from dateRange init also return this data
     mockGetUsage.mockResolvedValue(makeStats({
@@ -424,7 +424,7 @@ describe('ProjectLogsTab — "No records match" empty state', () => {
 
 // ── Poll interval controls ────────────────────────────────────────────────────
 
-describe('ProjectLogsTab — poll interval controls', () => {
+describe('RouterLogsTab — poll interval controls', () => {
   it('shows auto-refresh status text', async () => {
     renderTab();
     // Either "Auto-refresh disabilitato" or "Auto-refresh ogni ..." is visible
@@ -462,7 +462,7 @@ describe('ProjectLogsTab — poll interval controls', () => {
 
 // ── Stat card toggle — completion/router filter via card click ────────────────
 
-describe('ProjectLogsTab — stat card toggle', () => {
+describe('RouterLogsTab — stat card toggle', () => {
   it('clicking Router Calls card sets callTypeFilter to routing', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Router Calls'));
@@ -508,7 +508,7 @@ describe('ProjectLogsTab — stat card toggle', () => {
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 
-describe('ProjectLogsTab — pagination', () => {
+describe('RouterLogsTab — pagination', () => {
   it('shows pagination controls when totalPages > 1', async () => {
     // mockResolvedValue (not Once) so re-fetches from dateRange init also return paged data
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
@@ -563,7 +563,7 @@ describe('ProjectLogsTab — pagination', () => {
 
 // ── Pagination count in records heading ───────────────────────────────────────
 
-describe('ProjectLogsTab — records heading count', () => {
+describe('RouterLogsTab — records heading count', () => {
   it('shows filtered/total count when pagination present', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
@@ -582,7 +582,7 @@ describe('ProjectLogsTab — records heading count', () => {
 
 // ── Recent preset branch (lines 64-66) ────────────────────────────────────────
 
-describe('ProjectLogsTab — recent preset recalculates range on fetch', () => {
+describe('RouterLogsTab — recent preset recalculates range on fetch', () => {
   it('triggers fetchStats with recalculated range when dateRange matches a RECENT_PRESET label', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
@@ -596,7 +596,7 @@ describe('ProjectLogsTab — recent preset recalculates range on fetch', () => {
 
 // ── Previous page functional updater (line 341) ───────────────────────────────
 
-describe('ProjectLogsTab — Previous page button', () => {
+describe('RouterLogsTab — Previous page button', () => {
   it('clicking Previous from page 2 goes back to page 1', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
     renderTab();
@@ -614,7 +614,7 @@ describe('ProjectLogsTab — Previous page button', () => {
 
 // ── Model filter (line 99 return false branch) ──────────��─────────────────────
 
-describe('ProjectLogsTab — model filter', () => {
+describe('RouterLogsTab — model filter', () => {
   it('selecting a model filters to only matching records', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
@@ -630,10 +630,10 @@ describe('ProjectLogsTab — model filter', () => {
 
 // ── dateRange already set (lines 46-54 false branch) ─────────────────────────
 
-describe('ProjectLogsTab — skips date init when dates already set', () => {
+describe('RouterLogsTab — skips date init when dates already set', () => {
   it('does not overwrite dateRange.from/to when already present in localStorage', async () => {
     // Pre-populate localStorage so useFilterState initialises with non-empty dates
-    localStorage.setItem('project-proj-1-filters-dateRange', JSON.stringify({ from: '2024-01-01', to: '2024-01-31', label: 'Custom' }));
+    localStorage.setItem('router-proj-1-filters-dateRange', JSON.stringify({ from: '2024-01-01', to: '2024-01-31', label: 'Custom' }));
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
     // Date-range input keeps the pre-set label (not overwritten to "This month")
@@ -644,7 +644,7 @@ describe('ProjectLogsTab — skips date init when dates already set', () => {
 
 // ── Router card 'routing'→'all' toggle (line 235 true branch) ────────────────
 
-describe('ProjectLogsTab — Router Calls card toggle to all', () => {
+describe('RouterLogsTab — Router Calls card toggle to all', () => {
   it('clicking Router Calls card when already routing resets to all', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Router Calls'));

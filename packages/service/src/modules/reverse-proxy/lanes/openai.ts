@@ -23,8 +23,8 @@ export function buildOpenAIContext(req: FastifyRequest, reply: FastifyReply): Pr
     req,
     reply,
     log: req.log,
-    project: req.project,
-    projectId: req.project.id,
+    router: req.router,
+    routerId: req.router.id,
     ...(req.token ? { token: req.token } : {}),
     traceId: randomUUID(),
     ...(conversationId ? { conversationId } : {}),
@@ -91,12 +91,12 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const model = attempt.model
     const body = ctx.request
     const log = ctx.log
-    const project = ctx.project
+    const router = ctx.router
     const endUserId = (body as any).user as string | undefined || undefined
 
     const cctx: LLMCallContext = {
-      projectId: project.id,
-      project,
+      routerId: router.id,
+      router,
       ...(ctx.token ? { token: ctx.token } : {}),
       callType: 'completion',
       traceId: ctx.traceId,
@@ -118,8 +118,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
         try {
           const chunks = streamOpenAIOAuthChunks(body as Record<string, unknown>, model, log, {
             traceId: ctx.traceId,
-            projectId: project.id,
-            ...(project.pii ? { pii: project.pii } : {}),
+            routerId: router.id,
+            ...(router.pii ? { pii: router.pii } : {}),
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
@@ -135,8 +135,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
         try {
           const chunks = streamOpenAIOAuthChunks(body as Record<string, unknown>, model, log, {
             traceId: ctx.traceId,
-            projectId: project.id,
-            ...(project.pii ? { pii: project.pii } : {}),
+            routerId: router.id,
+            ...(router.pii ? { pii: router.pii } : {}),
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
           })
           ctx.result = { kind: 'stream', body: await primeStream(chunks) }
@@ -160,7 +160,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
       reply.raw.setHeader('Cache-Control', 'no-cache')
       reply.raw.setHeader('Connection', 'keep-alive')
       reply.raw.flushHeaders()
-      await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, log, ctx.traceId, project.id, project.pii, ctx.token?.id)
+      await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, log, ctx.traceId, router.id, router.pii, ctx.token?.id)
       reply.raw.end()
       ctx.result = { kind: 'passthrough' }
       return
@@ -217,7 +217,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
     if (ctx.protocol !== 'openai') return
     if (ctx.result) return // request already blocked upstream (guardrail / budget, Plan 5)
     const pipeline = getProxyPipeline()
-    const project = ctx.project
+    const router = ctx.router
     const log = ctx.log
     // execution: only route to models on enabled connections
     const allModels = await listEffectiveModels()
@@ -237,7 +237,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
 
       if (ctx.result) {
         if (primaryFailed && model.id !== primaryModelId) {
-          void emitEvent('routing.fallback_used', 'info', { projectId: project.id, primaryModelId, fallbackModelId: model.id, traceId: ctx.traceId }, { projectId: project.id, log })
+          void emitEvent('routing.fallback_used', 'info', { routerId: router.id, primaryModelId, fallbackModelId: model.id, traceId: ctx.traceId }, { routerId: router.id, log })
         }
         return
       }
@@ -252,7 +252,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
     }
 
     // All candidates exhausted.
-    void emitEvent('routing.no_candidates', 'critical', { projectId: project.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { projectId: project.id, log })
+    void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
     if (ctx.stream) {
       const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
       ctx.emit?.(errorEntry)

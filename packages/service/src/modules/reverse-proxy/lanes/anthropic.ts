@@ -25,8 +25,8 @@ export function buildAnthropicContext(req: FastifyRequest, reply: FastifyReply):
     req,
     reply,
     log: req.log,
-    project: req.project,
-    projectId: req.project.id,
+    router: req.router,
+    routerId: req.router.id,
     ...(req.token ? { token: req.token } : {}),
     traceId: randomUUID(),
     ...(conversationId ? { conversationId } : {}),
@@ -70,7 +70,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     const req = ctx.req
     const reply = ctx.reply
     const log = ctx.log
-    const project = ctx.project
+    const router = ctx.router
     const endUserId = (body as any).user as string | undefined || undefined
 
     // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──
@@ -96,8 +96,8 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       try {
         const chunks = streamOpenAIOAuthChunks(toChat(body), model, log, {
           traceId: ctx.traceId,
-          projectId: project.id,
-          ...(project.pii ? { pii: project.pii } : {}),
+          routerId: router.id,
+          ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
         })
         if (!body.stream) {
@@ -117,8 +117,8 @@ export const anthropicUpstream: Processor<ProxyContext> = {
 
     // ── Non-Anthropic providers: convert format and call the executor. ──
     const cctx: LLMCallContext = {
-      projectId: project.id,
-      project,
+      routerId: router.id,
+      router,
       ...(ctx.token ? { token: ctx.token } : {}),
       callType: 'completion',
       traceId: ctx.traceId,

@@ -24,7 +24,10 @@ vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async ()
 vi.mock('./modules/update-checker/update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./modules/config/migrate.js', () => ({
+  migrateProjectConfigs: vi.fn(async () => 0),
+  migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
+}))
 
 import { buildServer, startServer } from './server.js'
 import { readConfig, writeConfig } from './modules/config/loader.js'
@@ -152,6 +155,10 @@ describe('startServer', () => {
   // Config migrations moved out of startServer() into configModule.migrate(),
   // which the kernel runs before any register(). Coverage lives in
   // modules/config/index.test.ts and core/lifecycle/kernel.test.ts.
+  // Exception: migrateRouterStorage() runs directly in startServer(), before
+  // configModule.migrate(), so its EC3 throw is fatal instead of swallowed by
+  // the kernel's best-effort catch (RTR-01 finding B2) — mocked above,
+  // coverage for the real behaviour lives in server.migration-fatal.test.ts.
 
   it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
     const { pruneOrphanUsage } = await import('./modules/config/loader.js')

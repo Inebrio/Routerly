@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
-import { updateProject, getModels, getProfiles, assignProjectProfiles, type Model, type Project, type RoutingProfile } from '../../api';
-import { useProject } from './ProjectLayout';
+import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type Router, type RoutingProfile } from '../../api';
+import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
@@ -12,8 +12,8 @@ type TargetModel = {
   prompt: string;
 };
 
-export function ProjectRoutingTab() {
-  const { project, setProject } = useProject();
+export function RouterRoutingTab() {
+  const { router, setRouter } = useRouter();
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,7 +28,7 @@ export function ProjectRoutingTab() {
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
   const [promptHoverIdx, setPromptHoverIdx] = useState<number | null>(null);
 
-  // Policies to install on the next project refresh, used when switching from a
+  // Policies to install on the next router refresh, used when switching from a
   // profile to custom so the profile policies become the editable starting point.
   const pendingPolicies = useRef<PolicyItem[] | null>(null);
 
@@ -43,11 +43,11 @@ export function ProjectRoutingTab() {
 
   async function onAssignProfile(profileId: string) {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     setErr('');
     try {
-      const updated = await assignProjectProfiles(project.id, { routing: profileId === '' ? null : profileId });
-      setProject(updated);
+      const updated = await assignRouterProfiles(router.id, { routing: profileId === '' ? null : profileId });
+      setRouter(updated);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to assign routing profile');
     }
@@ -55,31 +55,31 @@ export function ProjectRoutingTab() {
 
   useEffect(() => {
     /* v8 ignore next */
-    if (project) {
+    if (router) {
       const mkId = () => Math.random().toString(36).substring(7);
 
       if (pendingPolicies.current) {
         setPolicies(pendingPolicies.current);
         pendingPolicies.current = null;
-      } else if (project.policies && project.policies.length > 0) {
-        setPolicies(project.policies.map(p => ({ ...p, internalId: mkId() })));
+      } else if (router.policies && router.policies.length > 0) {
+        setPolicies(router.policies.map(p => ({ ...p, internalId: mkId() })));
       } else {
         setPolicies([]);
       }
 
-      setTargetModels(project.models.map(m => ({
+      setTargetModels(router.models.map(m => ({
         internalId: Math.random().toString(36).substring(7),
         modelId: m.modelId,
         prompt: m.prompt || '',
       })));
     }
-  }, [project]);
+  }, [router]);
 
   const isDirty = (() => {
     /* v8 ignore next */
-    if (!project) return false;
+    if (!router) return false;
 
-    const savedPolicies = project.policies || [];
+    const savedPolicies = router.policies || [];
     if (policies.length !== savedPolicies.length) return true;
     for (let i = 0; i < policies.length; i++) {
       const p1 = policies[i]!;
@@ -89,7 +89,7 @@ export function ProjectRoutingTab() {
     }
 
     /* v8 ignore next */
-    const savedTargets = project.models || [];
+    const savedTargets = router.models || [];
     if (targetModels.length !== savedTargets.length) return true;
     if (targetModels.some((t, i) => t.modelId !== savedTargets[i]!.modelId || t.prompt !== (savedTargets[i]!.prompt /* v8 ignore next */ || ''))) return true;
     return false;
@@ -206,7 +206,7 @@ export function ProjectRoutingTab() {
 
   async function doSave() {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     setErr('');
 
     // Validate: target models cannot repeat
@@ -218,8 +218,8 @@ export function ProjectRoutingTab() {
 
     setSaving(true);
     try {
-      const payload: Parameters<typeof updateProject>[1] = {
-        name: project.name,
+      const payload: Parameters<typeof updateRouter>[1] = {
+        name: router.name,
         policies: policies.map(p => {
           const { internalId, ...rest } = p;
           return { ...rest, enabled: true };
@@ -228,14 +228,14 @@ export function ProjectRoutingTab() {
           modelId: m.modelId,
           ...(m.prompt.trim() ? { prompt: m.prompt.trim() } : {}),
         })),
-        ...(project.timeoutMs !== undefined && { timeoutMs: project.timeoutMs }),
+        ...(router.timeoutMs !== undefined && { timeoutMs: router.timeoutMs }),
       };
-      const updated = await updateProject(project.id, payload);
-      setProject(updated);
+      const updated = await updateRouter(router.id, payload);
+      setRouter(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setErr(err instanceof Error ? err.message : 'Error saving project routing');
+      setErr(err instanceof Error ? err.message : 'Error saving router routing');
     } finally {
       setSaving(false);
     }
@@ -246,10 +246,10 @@ export function ProjectRoutingTab() {
     void doSave();
   }
 
-  const assignedProfileId = project?.routingProfileId ?? '';
+  const assignedProfileId = router?.routingProfileId ?? '';
   const profileAssigned = assignedProfileId !== '';
 
-  // Policies actually in force: the assigned profile's, or this project's own.
+  // Policies actually in force: the assigned profile's, or this router's own.
   const effectivePolicies: { type: string; enabled: boolean; config?: Record<string, any> }[] =
     profileAssigned ? (profiles.find(p => p.id === assignedProfileId)?.policies ?? []) : policies;
 
@@ -257,7 +257,7 @@ export function ProjectRoutingTab() {
   const isAutoRoutingEnabled = effectivePolicies.find(p => p.type === 'llm')?.config?.autoRouting /* v8 ignore next */ ?? true;
   const showPromptInput = isAiRoutingEnabled && !isAutoRoutingEnabled;
 
-  // Intent chips edit the policy config, so they only show for this project's own policies.
+  // Intent chips edit the policy config, so they only show for this router's own policies.
   const semanticIntentPolicy = profileAssigned ? undefined : policies.find(p => p.type === 'semantic-intent' && p.enabled);
   const isSemanticIntentEnabled = !!semanticIntentPolicy;
   const semanticIntents = isSemanticIntentEnabled
@@ -296,7 +296,7 @@ export function ProjectRoutingTab() {
         <div className="form-group">
           <label className="form-label">Routing</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Use a shared routing profile, or define this project's own policies. Target models stay configurable either way.
+            Use a shared routing profile, or define this router's own policies. Target models stay configurable either way.
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: profileAssigned ? 16 : 0 }}>
             <button
@@ -342,8 +342,8 @@ export function ProjectRoutingTab() {
                 setPolicies={setPolicies}
                 availableModels={availableModels}
                 llmDefaults={{
-                  ...(project?.routingModelId ? { routingModelId: project.routingModelId } : {}),
-                  ...(project?.fallbackRoutingModelIds ? { fallbackModelIds: project.fallbackRoutingModelIds } : {}),
+                  ...(router?.routingModelId ? { routingModelId: router.routingModelId } : {}),
+                  ...(router?.fallbackRoutingModelIds ? { fallbackModelIds: router.fallbackRoutingModelIds } : {}),
                 }}
               />
             </div>

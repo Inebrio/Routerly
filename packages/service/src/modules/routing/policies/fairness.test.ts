@@ -24,7 +24,7 @@ function makeRecord(modelId: string, minutesAgo: number, outcome: 'success' | 'e
   return {
     id: `r-${modelId}-${minutesAgo}`,
     timestamp: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
-    projectId: 'p1', modelId,
+    routerId: 'p1', modelId,
     inputTokens: 100, outputTokens: 50, cost: 0.01,
     latencyMs: 500, outcome, callType: 'completion',
     costInput: 0.005, costOutput: 0.005, priceInput: 1, priceOutput: 3,
@@ -107,15 +107,15 @@ describe('fairnessPolicy', () => {
     expect(result.routing.find(r => r.model === 'b')!.point).toBe(1.0)
   })
 
-  it('ignores records from other projects when projectId is provided', async () => {
+  it('ignores records from other routers when routerId is provided', async () => {
     mockReadConfig.mockResolvedValue([
-      makeRecord('a', 10),                                   // project p1
-      { ...makeRecord('b', 10), projectId: 'p2' },           // different project
+      makeRecord('a', 10),                                   // router p1
+      { ...makeRecord('b', 10), routerId: 'p2' },           // different router
     ])
     const result = await fairnessPolicy({
       request: { model: 'auto', messages: [] },
       candidates: [{ model: makeModel('a') }, { model: makeModel('b') }],
-      projectId: 'p1',
+      routerId: 'p1',
     } as PolicyInput)
     // Only 'a' has a call in p1 → a=100% share → score 0; b=0 calls → score 1.0
     expect(result.routing.find(r => r.model === 'a')!.point).toBe(0)

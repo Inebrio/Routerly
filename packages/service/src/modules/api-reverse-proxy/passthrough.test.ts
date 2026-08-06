@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
-import type { ProjectConfig, ModelConfig } from '@routerly/shared'
+import type { RouterConfig, ModelConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -8,12 +8,12 @@ vi.mock('../auth/auth.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../auth/auth.js')>()
   return {
     ...original,
-    resolveProjectByToken: vi.fn(),
+    resolveRouterByToken: vi.fn(),
   }
 })
 
 import { readConfig } from '../config/loader.js'
-import { resolveProjectByToken } from '../auth/auth.js'
+import { resolveRouterByToken } from '../auth/auth.js'
 import { trackUsage } from '../usage/tracker.js'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 import {
@@ -24,7 +24,7 @@ import {
 } from './passthrough.js'
 
 const mockReadConfig = vi.mocked(readConfig)
-const mockResolveToken = vi.mocked(resolveProjectByToken)
+const mockResolveToken = vi.mocked(resolveRouterByToken)
 const mockTrackUsage = vi.mocked(trackUsage)
 
 afterEach(() => vi.clearAllMocks())
@@ -58,7 +58,7 @@ const anthropicModel: ModelConfig = {
   cost: { inputPerMillion: 3, outputPerMillion: 15 },
 }
 
-const testProject: ProjectConfig = {
+const testRouter: RouterConfig = {
   id: 'proj-1',
   name: 'Test',
   tokens: [{ id: 't1', token: 'valid-token', tokenSnippet: 'valid-tok', createdAt: '2024-01-01' }],
@@ -72,21 +72,21 @@ describe('pickUpstreamModel', () => {
   const allModels = [openaiModel, anthropicModel]
 
   it('returns first model when body has no model field', () => {
-    const result = pickUpstreamModel(testProject, allModels, null)
+    const result = pickUpstreamModel(testRouter, allModels, null)
     expect(result?.id).toBe('openai/gpt-4o')
   })
 
   it('matches body.model by exact id', () => {
-    const project: ProjectConfig = {
-      ...testProject,
+    const router: RouterConfig = {
+      ...testRouter,
       models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'anthropic/claude-3-5-sonnet' }],
     }
-    const result = pickUpstreamModel(project, allModels, { model: 'anthropic/claude-3-5-sonnet' })
+    const result = pickUpstreamModel(router, allModels, { model: 'anthropic/claude-3-5-sonnet' })
     expect(result?.id).toBe('anthropic/claude-3-5-sonnet')
   })
 
   it('matches body.model by id suffix after /', () => {
-    const result = pickUpstreamModel(testProject, allModels, { model: 'gpt-4o' })
+    const result = pickUpstreamModel(testRouter, allModels, { model: 'gpt-4o' })
     expect(result?.id).toBe('openai/gpt-4o')
   })
 
@@ -96,7 +96,7 @@ describe('pickUpstreamModel', () => {
       upstreamModelId: 'gpt-4o-mini',
     }
     const result = pickUpstreamModel(
-      testProject,
+      testRouter,
       [modelWithUpstream, anthropicModel],
       { model: 'gpt-4o-mini' },
     )
@@ -104,26 +104,26 @@ describe('pickUpstreamModel', () => {
   })
 
   it('falls back to first model when body.model is not found', () => {
-    const result = pickUpstreamModel(testProject, allModels, { model: 'unknown-model' })
+    const result = pickUpstreamModel(testRouter, allModels, { model: 'unknown-model' })
     expect(result?.id).toBe('openai/gpt-4o')
   })
 
-  it('returns null when project has no resolvable models', () => {
+  it('returns null when router has no resolvable models', () => {
     const result = pickUpstreamModel(
-      { ...testProject, models: [{ modelId: 'nonexistent' }] },
+      { ...testRouter, models: [{ modelId: 'nonexistent' }] },
       allModels,
       null,
     )
     expect(result).toBeNull()
   })
 
-  it('returns null when project.models is empty', () => {
-    const result = pickUpstreamModel({ ...testProject, models: [] }, allModels, null)
+  it('returns null when router.models is empty', () => {
+    const result = pickUpstreamModel({ ...testRouter, models: [] }, allModels, null)
     expect(result).toBeNull()
   })
 
   it('ignores Buffer body (no model field)', () => {
-    const result = pickUpstreamModel(testProject, allModels, Buffer.from('raw bytes'))
+    const result = pickUpstreamModel(testRouter, allModels, Buffer.from('raw bytes'))
     expect(result?.id).toBe('openai/gpt-4o')
   })
 })
@@ -227,17 +227,17 @@ describe('buildUpstreamHeaders', () => {
 
 // ─── passthroughHandler (integration via Fastify inject) ──────────────────────
 
-async function buildApp(project?: ProjectConfig | null, parseBinary = false) {
+async function buildApp(router?: RouterConfig | null, parseBinary = false) {
   const app = Fastify({ logger: false })
-  app.decorateRequest('project', null as any)
+  app.decorateRequest('router', null as any)
   app.decorateRequest('token', null as any)
   if (parseBinary) {
     // Register binary body parser so Buffer body reaches passthroughHandler (line 162)
     app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, done) => done(null, body))
   }
-  if (project !== undefined) {
+  if (router !== undefined) {
     app.addHook('preHandler', async (req: any) => {
-      req.project = project
+      req.router = router
     })
   }
   app.setNotFoundHandler(passthroughHandler)
@@ -256,7 +256,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({
       method: 'POST',
       url: '/v1/embeddings',
@@ -277,7 +277,7 @@ describe('passthroughHandler', () => {
     const mockFetch = vi.fn()
     vi.stubGlobal('fetch', mockFetch)
 
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'GET', url: '/api/unknown' })
     await app.close()
     vi.unstubAllGlobals()
@@ -290,7 +290,7 @@ describe('passthroughHandler', () => {
     const mockFetch = vi.fn()
     vi.stubGlobal('fetch', mockFetch)
 
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'GET', url: '/health' })
     await app.close()
     vi.unstubAllGlobals()
@@ -303,7 +303,7 @@ describe('passthroughHandler', () => {
     const mockFetch = vi.fn()
     vi.stubGlobal('fetch', mockFetch)
 
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'GET', url: '/dashboard/settings' })
     await app.close()
     vi.unstubAllGlobals()
@@ -312,7 +312,7 @@ describe('passthroughHandler', () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
-  it('returns 401 when no Authorization header and no project on request', async () => {
+  it('returns 401 when no Authorization header and no router on request', async () => {
     const app = await buildApp(null)
     const res = await app.inject({ method: 'POST', url: '/v1/embeddings' })
     await app.close()
@@ -334,13 +334,13 @@ describe('passthroughHandler', () => {
     expect(res.statusCode).toBe(401)
   })
 
-  it('resolves project from x-api-key header (Anthropic SDK style) when request.project is null', async () => {
+  it('resolves router from x-api-key header (Anthropic SDK style) when request.router is null', async () => {
     const mockFetch = vi.fn().mockResolvedValue(
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockResolveToken.mockResolvedValue({ project: testProject, token: testProject.tokens[0]! })
+    mockResolveToken.mockResolvedValue({ router: testRouter, token: testRouter.tokens[0]! })
     mockModels([openaiModel])
 
     const app = await buildApp(null)
@@ -357,13 +357,13 @@ describe('passthroughHandler', () => {
     expect(mockResolveToken).toHaveBeenCalledWith('valid-token')
   })
 
-  it('resolves project from token when request.project is null', async () => {
+  it('resolves router from token when request.router is null', async () => {
     const mockFetch = vi.fn().mockResolvedValue(
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    mockResolveToken.mockResolvedValue({ project: testProject, token: testProject.tokens[0]! })
+    mockResolveToken.mockResolvedValue({ router: testRouter, token: testRouter.tokens[0]! })
     mockModels([openaiModel])
 
     const app = await buildApp(null)
@@ -379,10 +379,10 @@ describe('passthroughHandler', () => {
     expect(mockFetch).toHaveBeenCalledOnce()
   })
 
-  it('returns 502 no_upstream when project has no resolvable models', async () => {
-    const emptyProject: ProjectConfig = { ...testProject, models: [] }
+  it('returns 502 no_upstream when router has no resolvable models', async () => {
+    const emptyRouter: RouterConfig = { ...testRouter, models: [] }
     mockModels([openaiModel])
-    const app = await buildApp(emptyProject)
+    const app = await buildApp(emptyRouter)
     const res = await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
 
@@ -395,7 +395,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
     vi.unstubAllGlobals()
@@ -415,7 +415,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'POST', url: '/v1/embeddings' })
     await app.close()
     vi.unstubAllGlobals()
@@ -429,7 +429,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'POST', url: '/v1/embeddings' })
     await app.close()
     vi.unstubAllGlobals()
@@ -441,7 +441,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue('socket hang up'))
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
     vi.unstubAllGlobals()
@@ -457,7 +457,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({
       method: 'POST', url: '/v1/embeddings',
       headers: { 'content-type': 'text/plain' },
@@ -479,7 +479,7 @@ describe('passthroughHandler', () => {
 
     mockModels([openaiModel])
     // parseBinary=true adds an octet-stream parser so request.body is a Buffer
-    const app = await buildApp(testProject, true)
+    const app = await buildApp(testRouter, true)
     const res = await app.inject({
       method: 'POST', url: '/v1/files',
       headers: { 'content-type': 'application/octet-stream' },
@@ -500,13 +500,13 @@ describe('passthroughHandler', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    // Project has two models; body.model is a number (non-string) → wanted branch is skipped → first model used
-    const project: ProjectConfig = {
-      ...testProject,
+    // Router has two models; body.model is a number (non-string) → wanted branch is skipped → first model used
+    const router: RouterConfig = {
+      ...testRouter,
       models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'anthropic/claude-3-5-sonnet' }],
     }
     mockModels([openaiModel, anthropicModel])
-    const app = await buildApp(project)
+    const app = await buildApp(router)
     const res = await app.inject({
       method: 'POST',
       url: '/v1/embeddings',
@@ -529,7 +529,7 @@ describe('passthroughHandler', () => {
     const mockFetch = vi.fn()
     vi.stubGlobal('fetch', mockFetch)
 
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({ method: 'GET', url: '/api/info?q=1' })
     await app.close()
     vi.unstubAllGlobals()
@@ -554,7 +554,7 @@ describe('passthroughHandler', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     const res = await app.inject({
       method: 'POST', url: '/v1/embeddings',
       headers: { 'content-type': 'application/json' },
@@ -580,7 +580,7 @@ describe('passthroughHandler usage tracking', () => {
     ))
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     await app.inject({
       method: 'POST', url: '/v1/embeddings',
       headers: { 'content-type': 'application/json' },
@@ -591,7 +591,7 @@ describe('passthroughHandler usage tracking', () => {
 
     expect(mockTrackUsage).toHaveBeenCalledOnce()
     expect(mockTrackUsage.mock.calls[0]?.[0]).toMatchObject({
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       requestType: 'embedding',
       outcome: 'success',
       inputTokens: 0,
@@ -603,7 +603,7 @@ describe('passthroughHandler usage tracking', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 429 })))
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     await app.inject({ method: 'POST', url: '/v1/images/generations' })
     await app.close()
     vi.unstubAllGlobals()
@@ -619,7 +619,7 @@ describe('passthroughHandler usage tracking', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     await app.inject({ method: 'POST', url: '/v1/audio/speech' })
     await app.close()
     vi.unstubAllGlobals()
@@ -635,7 +635,7 @@ describe('passthroughHandler usage tracking', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })))
 
     mockModels([openaiModel])
-    const app = await buildApp(testProject)
+    const app = await buildApp(testRouter)
     await app.inject({ method: 'GET', url: '/v1/files' })
     await app.close()
     vi.unstubAllGlobals()

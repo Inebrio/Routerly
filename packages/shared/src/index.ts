@@ -17,12 +17,12 @@ export type {
   ModelCapabilities,
   ModelConfig,
   EffectiveModel,
-  ProjectModelRef,
-  ProjectConfig,
+  RouterModelRef,
+  RouterConfig,
   PlaygroundPreset,
-  ProjectToken,
-  ProjectMember,
-  ProjectRole,
+  RouterToken,
+  RouterMember,
+  RouterRole,
   GuardrailConfig,
   GuardrailRule,
   GuardrailRuleType,
@@ -187,7 +187,7 @@ export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './cl
 
 // Notification event taxonomy (runtime value + derived type)
 export {
-  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS, CALL_TYPES, isCompletionCall,
+  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, CALL_TYPES, isCompletionCall,
   suggestConnectionLabel, isConnectionLabelTaken,
 } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
@@ -214,7 +214,7 @@ export type {
   RequestType, SavingsBaseline, SavingsOptimizerEntry, SavingsSummary, UsageSeries, UsageSeriesPoint,
 } from './types/usage.js';
 
-// Experiments: A/B tests that pick a whole project per request (T70)
+// Experiments: A/B tests that pick a whole router per request (T70)
 export {
   EXPERIMENT_ROTATIONS,
   STICKY_KEYS,

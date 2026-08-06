@@ -11,7 +11,7 @@ import {
   optimizerLabel,
   optimizerThreshold,
 } from './optimizers.js';
-import { ProjectConfig } from './config.js';
+import { RouterConfig } from './config.js';
 
 describe('type-checks', () => {
   it('type-checks', () => {
@@ -62,8 +62,8 @@ describe('type-checks', () => {
     // Runtime check: exactly 8 members.
     expect(ALL_OPTIMIZER_IDS.length).toBe(8);
 
-    // Type-level test: optimizers attaches to ProjectConfig
-    const project: Pick<ProjectConfig, 'optimizers'> = { optimizers: config };
+    // Type-level test: optimizers attaches to RouterConfig
+    const router: Pick<RouterConfig, 'optimizers'> = { optimizers: config };
 
     // Type-level test: per-call stat, with and without the rollback flag
     const stat: OptimizerCallStat = { id: 'ccr', tokensBefore: 100, tokensAfter: 60 };
@@ -73,7 +73,7 @@ describe('type-checks', () => {
     void estimate;
     void result;
     void step;
-    void project;
+    void router;
     void stat;
     void rolled;
     void _exhaustive;

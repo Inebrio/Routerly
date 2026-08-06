@@ -1,4 +1,4 @@
-import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, ProjectConfig, ProjectToken, UsageRecord } from '@routerly/shared';
+import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, RouterConfig, RouterToken, UsageRecord } from '@routerly/shared';
 import { readUsageRecords } from '../usage/usageStore.js';
 
 // ─── Window helpers ────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ function resolveLimits(obj: { limits?: Limit[]; thresholds?: { daily?: number; w
 type LevelResolution = { mode: LimitsMode; limits: Limit[] };
 
 /**
- * Inspect a config ref (ProjectModelRef or TokenModelRef) and determine
+ * Inspect a config ref (RouterModelRef or TokenModelRef) and determine
  * what limits it contributes at this level.
  * Returns null if the level has no configuration (transparent / pass-through).
  */
@@ -168,25 +168,25 @@ export interface LimitSnapshot {
 
 /**
  * Restituisce lo snapshot dei consumi correnti per tutti i limiti effettivi
- * del modello, rispettando la gerarchia token > project > global.
+ * del modello, rispettando la gerarchia token > router > global.
  * Se non ci sono limiti configurati, restituisce [].
  */
 export async function getLimitUsageSnapshot(
   model: ModelConfig,
-  project: ProjectConfig,
-  token?: ProjectToken,
+  router: RouterConfig,
+  token?: RouterToken,
 ): Promise<LimitSnapshot[]> {
-  const projectModelRef = project.models.find((m: { modelId: string }) => m.modelId === model.id);
-  if (!projectModelRef) return [];
+  const routerModelRef = router.models.find((m: { modelId: string }) => m.modelId === model.id);
+  if (!routerModelRef) return [];
 
   const tokenModelRef = token?.models?.find((m: { modelId: string }) => m.modelId === model.id);
   const globalLimits  = model.limits?.length ? model.limits : legacyToLimits(model.globalThresholds);
 
-  const projectResolution = resolveLevel(projectModelRef);
+  const routerResolution = resolveLevel(routerModelRef);
   const tokenResolution   = resolveLevel(tokenModelRef);
 
-  const afterProject = applyResolution(projectResolution, globalLimits);
-  const limits       = applyResolution(tokenResolution, afterProject);
+  const afterRouter = applyResolution(routerResolution, globalLimits);
+  const limits       = applyResolution(tokenResolution, afterRouter);
 
   if (!limits.length) return [];
 
@@ -194,7 +194,7 @@ export async function getLimitUsageSnapshot(
   const now = new Date();
 
   const relevant = (records as UsageRecord[]).filter(
-    r => r.projectId === project.id && r.modelId === model.id && r.outcome === 'success',
+    r => r.routerId === router.id && r.modelId === model.id && r.outcome === 'success',
   );
 
   return limits.map(lim => {
@@ -236,11 +236,11 @@ export async function getLimitUsageSnapshot(
 
 /**
  * Returns true if a model can be used for routing/internal calls,
- * checking only the model's global limits against usage for the given project.
+ * checking only the model's global limits against usage for the given router.
  */
 export async function isAllowedForRoutingModel(
   model: ModelConfig,
-  projectId: string,
+  routerId: string,
 ): Promise<boolean> {
   const limits = model.limits?.length
     ? model.limits
@@ -252,7 +252,7 @@ export async function isAllowedForRoutingModel(
   const now = new Date();
 
   const relevant = (records as UsageRecord[]).filter(
-    r => r.projectId === projectId && r.modelId === model.id && r.outcome === 'success',
+    r => r.routerId === routerId && r.modelId === model.id && r.outcome === 'success',
   );
 
   return checkLimits(limits, relevant, now);
@@ -260,26 +260,26 @@ export async function isAllowedForRoutingModel(
 
 /**
  * Returns true if a model can be used without exceeding any limit.
- * Priority: token-level > project-level > global model limits.
+ * Priority: token-level > router-level > global model limits.
  */
 export async function isAllowed(
   model: ModelConfig,
-  project: ProjectConfig,
-  token?: ProjectToken,
+  router: RouterConfig,
+  token?: RouterToken,
 ): Promise<boolean> {
-  const projectModelRef = project.models.find((m: { modelId: string }) => m.modelId === model.id);
-  if (!projectModelRef) return false;
+  const routerModelRef = router.models.find((m: { modelId: string }) => m.modelId === model.id);
+  if (!routerModelRef) return false;
 
   // Build effective limits applying mode: replace | extend | disable
   const tokenModelRef = token?.models?.find((m: { modelId: string }) => m.modelId === model.id);
   const globalLimits  = model.limits?.length ? model.limits : legacyToLimits(model.globalThresholds);
 
-  const projectResolution = resolveLevel(projectModelRef);
+  const routerResolution = resolveLevel(routerModelRef);
   const tokenResolution   = resolveLevel(tokenModelRef);
 
-  // Apply from global → project → token
-  const afterProject = applyResolution(projectResolution, globalLimits);
-  const limits       = applyResolution(tokenResolution, afterProject);
+  // Apply from global → router → token
+  const afterRouter = applyResolution(routerResolution, globalLimits);
+  const limits       = applyResolution(tokenResolution, afterRouter);
 
   if (!limits.length) return true;
 
@@ -287,22 +287,22 @@ export async function isAllowed(
   const now = new Date();
 
   const relevant = (records as UsageRecord[]).filter(
-    r => r.projectId === project.id && r.modelId === model.id && r.outcome === 'success',
+    r => r.routerId === router.id && r.modelId === model.id && r.outcome === 'success',
   );
 
   return checkLimits(limits, relevant, now);
 }
 
 /**
- * Returns the limits that are currently exceeded for a model in a project.
+ * Returns the limits that are currently exceeded for a model in a router.
  * Returns [] if the model is within all limits (i.e. it is allowed).
  */
 export async function getViolatedLimits(
   model: ModelConfig,
-  project: ProjectConfig,
-  token?: ProjectToken,
+  router: RouterConfig,
+  token?: RouterToken,
 ): Promise<LimitSnapshot[]> {
-  const snapshots = await getLimitUsageSnapshot(model, project, token);
+  const snapshots = await getLimitUsageSnapshot(model, router, token);
   return snapshots.filter(s => s.remaining <= 0);
 }
 

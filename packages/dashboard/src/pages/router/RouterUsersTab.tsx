@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
-import { useProject } from './ProjectLayout';
-import { getUsers, addProjectMember, updateProjectMember, removeProjectMember, User } from '../../api';
+import { useRouter } from './RouterLayout';
+import { getUsers, addRouterMember, updateRouterMember, removeRouterMember, User } from '../../api';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { SearchableSelect } from '../../components/SearchableSelect';
 
-export function ProjectUsersTab() {
-  const { project, setProject } = useProject();
-  if (!project) return null;
+export function RouterUsersTab() {
+  const { router, setRouter } = useRouter();
+  if (!router) return null;
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,8 +33,8 @@ export function ProjectUsersTab() {
     setErr('');
     setLoading(true);
     try {
-      const member = await addProjectMember(project!.id, newUserId, newRole);
-      setProject(p => {
+      const member = await addRouterMember(router!.id, newUserId, newRole);
+      setRouter(p => {
         /* v8 ignore next */
         if (!p) return p;
         const members = p.members ? [...p.members] : /* v8 ignore next */ [];
@@ -55,8 +55,8 @@ export function ProjectUsersTab() {
     setErr('');
     setLoading(true);
     try {
-      const updated = await updateProjectMember(project!.id, userId, editRole);
-      setProject(p => {
+      const updated = await updateRouterMember(router!.id, userId, editRole);
+      setRouter(p => {
         /* v8 ignore next */
         if (!p) return p;
         /* v8 ignore next */
@@ -79,8 +79,8 @@ export function ProjectUsersTab() {
         setErr('');
         setLoading(true);
         try {
-          await removeProjectMember(project!.id, userId);
-          setProject(p => {
+          await removeRouterMember(router!.id, userId);
+          setRouter(p => {
             /* v8 ignore next */
             if (!p) return p;
             /* v8 ignore next */
@@ -95,7 +95,7 @@ export function ProjectUsersTab() {
     });
   }
 
-  const members = project.members || [];
+  const members = router.members || [];
   const availableUsers = users.filter(u => !members.find(m => m.userId === u.id));
 
   return (
@@ -104,9 +104,9 @@ export function ProjectUsersTab() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Project Members</h3>
+          <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Router Members</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Manage users who have access to this project.
+            Manage users who have access to this router.
           </p>
         </div>
         {!adding && (

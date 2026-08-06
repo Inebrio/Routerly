@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { OptimizerProfile, Profile, ProjectConfig, RoutingProfile, SecurityProfile } from '@routerly/shared'
+import type { OptimizerProfile, Profile, RouterConfig, RoutingProfile, SecurityProfile } from '@routerly/shared'
 
 let profilesFixture: Profile[] = []
 
@@ -10,7 +10,7 @@ vi.mock('../../config/loader.js', () => ({
   }),
 }))
 
-function project(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
+function router(overrides: Partial<RouterConfig> = {}): RouterConfig {
   return {
     id: 'p1',
     name: 'Test',
@@ -18,7 +18,7 @@ function project(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
     members: [],
     models: [],
     ...overrides,
-  } as ProjectConfig
+  } as RouterConfig
 }
 
 const routingOverlay: RoutingProfile = {
@@ -53,10 +53,10 @@ const securityOverlay: SecurityProfile = {
 }
 
 describe('resolveRoutingProfile', () => {
-  it('a project with policies and no profile resolves to the custom profile carrying those policies', async () => {
+  it('a router with policies and no profile resolves to the custom profile carrying those policies', async () => {
     const { resolveRoutingProfile } = await import('./store.js')
     const policies = [{ type: 'cheapest' as const, enabled: true }]
-    const resolved = await resolveRoutingProfile(project({ policies }))
+    const resolved = await resolveRoutingProfile(router({ policies }))
     expect(resolved.id).toBe('custom')
     expect(resolved.builtin).toBe(false)
     expect(resolved.baseId).toBe('auto')
@@ -65,14 +65,14 @@ describe('resolveRoutingProfile', () => {
 
   it('is idempotent: resolving twice yields identical output', async () => {
     const { resolveRoutingProfile } = await import('./store.js')
-    const p = project({ policies: [{ type: 'health' as const, enabled: true }] })
+    const p = router({ policies: [{ type: 'health' as const, enabled: true }] })
     expect(await resolveRoutingProfile(p)).toEqual(await resolveRoutingProfile(p))
   })
 
-  it('a project with no policies and no profile falls back to the auto preset policies', async () => {
+  it('a router with no policies and no profile falls back to the auto preset policies', async () => {
     const { resolveRoutingProfile } = await import('./store.js')
     const { getBuiltin } = await import('./presets.js')
-    const resolved = await resolveRoutingProfile(project())
+    const resolved = await resolveRoutingProfile(router())
     expect(resolved.policies).toEqual((getBuiltin('auto') as RoutingProfile).policies)
   })
 
@@ -80,7 +80,7 @@ describe('resolveRoutingProfile', () => {
     const { resolveRoutingProfile } = await import('./store.js')
     const { getBuiltin } = await import('./presets.js')
     const before = structuredClone((getBuiltin('auto') as RoutingProfile).policies)
-    const resolved = await resolveRoutingProfile(project())
+    const resolved = await resolveRoutingProfile(router())
     resolved.policies.push({ type: 'fairness', enabled: true })
     expect((getBuiltin('auto') as RoutingProfile).policies).toEqual(before)
   })
@@ -88,7 +88,7 @@ describe('resolveRoutingProfile', () => {
   it('routingProfileId matching a user overlay returns that overlay, deep-cloned', async () => {
     profilesFixture = [routingOverlay]
     const { resolveRoutingProfile } = await import('./store.js')
-    const resolved = await resolveRoutingProfile(project({ routingProfileId: 'custom-1' }))
+    const resolved = await resolveRoutingProfile(router({ routingProfileId: 'custom-1' }))
     expect(resolved.id).toBe('custom-1')
     expect(resolved.version).toBe(2)
     resolved.policies.push({ type: 'health', enabled: true })
@@ -98,7 +98,7 @@ describe('resolveRoutingProfile', () => {
 
   it('the legacy profileId is still honoured when routingProfileId is absent', async () => {
     const { resolveRoutingProfile } = await import('./store.js')
-    const resolved = await resolveRoutingProfile(project({ profileId: 'fast' }))
+    const resolved = await resolveRoutingProfile(router({ profileId: 'fast' }))
     expect(resolved.id).toBe('fast')
     expect(resolved.builtin).toBe(true)
   })
@@ -106,7 +106,7 @@ describe('resolveRoutingProfile', () => {
   it('an id matching neither an overlay nor a builtin falls back to the custom profile', async () => {
     const { resolveRoutingProfile } = await import('./store.js')
     const resolved = await resolveRoutingProfile(
-      project({ routingProfileId: 'ghost', policies: [{ type: 'llm', enabled: true }] }),
+      router({ routingProfileId: 'ghost', policies: [{ type: 'llm', enabled: true }] }),
     )
     expect(resolved.id).toBe('custom')
     expect(resolved.policies).toEqual([{ type: 'llm', enabled: true }])
@@ -115,22 +115,22 @@ describe('resolveRoutingProfile', () => {
   it('ignores an id that resolves to a profile of another kind', async () => {
     profilesFixture = [optimizerOverlay]
     const { resolveRoutingProfile } = await import('./store.js')
-    const resolved = await resolveRoutingProfile(project({ routingProfileId: 'opt-1' }))
+    const resolved = await resolveRoutingProfile(router({ routingProfileId: 'opt-1' }))
     expect(resolved.id).toBe('custom')
     profilesFixture = []
   })
 })
 
 describe('resolveOptimizerProfile', () => {
-  it('returns undefined when the project has neither a profile nor inline optimizers', async () => {
+  it('returns undefined when the router has neither a profile nor inline optimizers', async () => {
     const { resolveOptimizerProfile } = await import('./store.js')
-    expect(await resolveOptimizerProfile(project())).toBeUndefined()
+    expect(await resolveOptimizerProfile(router())).toBeUndefined()
   })
 
   it('wraps inline optimizers in the ephemeral custom profile', async () => {
     const { resolveOptimizerProfile } = await import('./store.js')
     const optimizers = { steps: [{ id: 'rtk' as const, enabled: true }] }
-    const resolved = await resolveOptimizerProfile(project({ optimizers }))
+    const resolved = await resolveOptimizerProfile(router({ optimizers }))
     expect(resolved?.id).toBe('custom')
     expect(resolved?.optimizers).toEqual(optimizers)
   })
@@ -139,7 +139,7 @@ describe('resolveOptimizerProfile', () => {
     profilesFixture = [optimizerOverlay]
     const { resolveOptimizerProfile } = await import('./store.js')
     const resolved = await resolveOptimizerProfile(
-      project({ optimizerProfileId: 'opt-1', optimizers: { steps: [{ id: 'rtk', enabled: true }] } }),
+      router({ optimizerProfileId: 'opt-1', optimizers: { steps: [{ id: 'rtk', enabled: true }] } }),
     )
     expect(resolved?.id).toBe('opt-1')
     expect(resolved?.optimizers.steps.map(s => s.id)).toEqual(['ccr'])
@@ -148,14 +148,14 @@ describe('resolveOptimizerProfile', () => {
 })
 
 describe('resolveSecurityProfile', () => {
-  it('returns undefined when the project has no guardrails and no pii config', async () => {
+  it('returns undefined when the router has no guardrails and no pii config', async () => {
     const { resolveSecurityProfile } = await import('./store.js')
-    expect(await resolveSecurityProfile(project())).toBeUndefined()
+    expect(await resolveSecurityProfile(router())).toBeUndefined()
   })
 
   it('fills the missing half when only one of guardrails/pii is set inline', async () => {
     const { resolveSecurityProfile } = await import('./store.js')
-    const resolved = await resolveSecurityProfile(project({ guardrails: { rules: [] } }))
+    const resolved = await resolveSecurityProfile(router({ guardrails: { rules: [] } }))
     expect(resolved?.id).toBe('custom')
     expect(resolved?.pii).toEqual({ policies: [] })
   })
@@ -163,7 +163,7 @@ describe('resolveSecurityProfile', () => {
   it('a bound profile wins over inline config', async () => {
     profilesFixture = [securityOverlay]
     const { resolveSecurityProfile } = await import('./store.js')
-    const resolved = await resolveSecurityProfile(project({ securityProfileId: 'sec-1', pii: { policies: [] } }))
+    const resolved = await resolveSecurityProfile(router({ securityProfileId: 'sec-1', pii: { policies: [] } }))
     expect(resolved?.id).toBe('sec-1')
     expect(resolved?.pii.policies).toHaveLength(1)
     profilesFixture = []
@@ -171,9 +171,9 @@ describe('resolveSecurityProfile', () => {
 })
 
 describe('applyProfiles', () => {
-  it('returns the very same object when the project binds no profile', async () => {
+  it('returns the very same object when the router binds no profile', async () => {
     const { applyProfiles } = await import('./store.js')
-    const p = project({ optimizers: { steps: [{ id: 'rtk', enabled: true }] } })
+    const p = router({ optimizers: { steps: [{ id: 'rtk', enabled: true }] } })
     expect(await applyProfiles(p)).toBe(p)
   })
 
@@ -181,7 +181,7 @@ describe('applyProfiles', () => {
     profilesFixture = [optimizerOverlay, securityOverlay]
     const { applyProfiles } = await import('./store.js')
     const applied = await applyProfiles(
-      project({
+      router({
         optimizerProfileId: 'opt-1',
         securityProfileId: 'sec-1',
         optimizers: { steps: [{ id: 'rtk', enabled: true }] },
@@ -197,7 +197,7 @@ describe('applyProfiles', () => {
     profilesFixture = [routingOverlay]
     const { applyProfiles } = await import('./store.js')
     const policies = [{ type: 'cheapest' as const, enabled: true }]
-    const applied = await applyProfiles(project({ routingProfileId: 'custom-1', policies }))
+    const applied = await applyProfiles(router({ routingProfileId: 'custom-1', policies }))
     expect(applied.policies).toEqual(policies)
     profilesFixture = []
   })

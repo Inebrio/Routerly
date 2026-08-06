@@ -4,7 +4,7 @@
  * Ogni chiamata verso un modello — che sia per routing o per completion,
  * streaming o non-streaming — passa da qui. L'executor gestisce in modo
  * uniforme:
- *   • verifica del budget (token > project > global)
+ *   • verifica del budget (token > router > global)
  *   • selezione dell'adapter del provider
  *   • misurazione TTFT e latenza totale
  *   • emissione di trace entries
@@ -18,8 +18,8 @@ import type {
   ChatCompletionResponse,
   ModelConfig,
   EffectiveModel,
-  ProjectConfig,
-  ProjectToken,
+  RouterConfig,
+  RouterToken,
   StreamChunk,
   CallType,
   MessagesRequest,
@@ -59,10 +59,10 @@ type Logger = {
  * Deve essere popolato dal chiamante (route o policy).
  */
 export interface LLMCallContext {
-  projectId: string;
-  project: ProjectConfig;
-  /** Token associato alla richiesta, per la gerarchia token > project > global */
-  token?: ProjectToken;
+  routerId: string;
+  router: RouterConfig;
+  /** Token associato alla richiesta, per la gerarchia token > router > global */
+  token?: RouterToken;
   callType: CallType;
   traceId?: string;
   emit?: (entry: TraceEntry) => void;
@@ -104,8 +104,8 @@ const providerFailCounts = new Map<string, number>(); // consecutive failures
 const providerDegraded   = new Set<string>();          // currently degraded model IDs
 
 // Budget notification deduplication
-const budgetExceededKeys = new Set<string>(); // "${projectId}:${modelId}" — awaiting reset
-const thresholdFiredKeys = new Set<string>(); // "${projectId}:${modelId}:${window}" — threshold already fired
+const budgetExceededKeys = new Set<string>(); // "${routerId}:${modelId}" — awaiting reset
+const thresholdFiredKeys = new Set<string>(); // "${routerId}:${modelId}:${window}" — threshold already fired
 
 function isRateLimitError(err: unknown): boolean {
   return /429|rate.?limit|too many/i.test(err instanceof Error ? err.message : String(err));
@@ -132,7 +132,7 @@ export function upstreamResponseFromError(err: unknown): UpstreamResponse | unde
 // pair only prevents re-emitting provider.degraded/provider.recovered every single call while the
 // store stays in the same state. Delete them once every provider.degraded/.recovered consumer
 // reads the resilience snapshot directly instead of these notification events.
-function handleProviderResult(model: ModelConfig, success: boolean, fault: ResilienceFault | undefined, projectId: string, log: Logger | undefined): void {
+function handleProviderResult(model: ModelConfig, success: boolean, fault: ResilienceFault | undefined, routerId: string, log: Logger | undefined): void {
   const modelId = model.id;
   const provider = model.provider;
   const store = getResilienceStore();
@@ -142,7 +142,7 @@ function handleProviderResult(model: ModelConfig, success: boolean, fault: Resil
     store?.recordSuccess(providerKey);
     providerFailCounts.set(modelId, 0);
     if (providerDegraded.delete(modelId)) {
-      emitEvent('provider.recovered', 'info', { modelId, provider, projectId }, log ? { log } : {}).catch(() => {});
+      emitEvent('provider.recovered', 'info', { modelId, provider, routerId }, log ? { log } : {}).catch(() => {});
     }
     return;
   }
@@ -162,7 +162,7 @@ function handleProviderResult(model: ModelConfig, success: boolean, fault: Resil
   const isOpen = store ? !store.isAvailable(providerKey) : n >= 3;
   if (isOpen && !providerDegraded.has(modelId)) {
     providerDegraded.add(modelId);
-    emitEvent('provider.degraded', 'warning', { modelId, provider, consecutiveErrors: n, projectId }, log ? { log } : {}).catch(() => {});
+    emitEvent('provider.degraded', 'warning', { modelId, provider, consecutiveErrors: n, routerId }, log ? { log } : {}).catch(() => {});
   }
 }
 
@@ -228,15 +228,15 @@ function getPanels(callType: CallType): { req: TracePanel; res: TracePanel } {
  * BudgetExceededError.
  */
 export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Promise<void> {
-  const { project, token, projectId, callType, traceId, emit } = ctx;
+  const { router, token, routerId, callType, traceId, emit } = ctx;
   const { res } = getPanels(callType);
 
-  const isCandidate = project.models.some((m: { modelId: string }) => m.modelId === model.id);
+  const isCandidate = router.models.some((m: { modelId: string }) => m.modelId === model.id);
   const allowed = isCandidate
-    ? await isAllowed(model, project, token)
-    : await isAllowedForRoutingModel(model, projectId);
+    ? await isAllowed(model, router, token)
+    : await isAllowedForRoutingModel(model, routerId);
 
-  const budgetKey = `${projectId}:${model.id}`;
+  const budgetKey = `${routerId}:${model.id}`;
 
   if (!allowed) {
     const reason = 'budget_exhausted';
@@ -246,7 +246,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       details: { modelId: model.id, reason },
     });
     await trackUsage({
-      projectId,
+      routerId,
       model,
       inputTokens: 0,
       outputTokens: 0,
@@ -258,29 +258,29 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       ...(traceId !== undefined ? { traceId } : {}),
     }).catch(() => {});
     budgetExceededKeys.add(budgetKey);
-    emitEvent('budget.exceeded', 'critical', { projectId, modelId: model.id, reason, ...(traceId !== undefined ? { traceId } : {}) }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
+    emitEvent('budget.exceeded', 'critical', { routerId, modelId: model.id, reason, ...(traceId !== undefined ? { traceId } : {}) }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
     throw new BudgetExceededError(model.id);
   }
 
   // Budget is allowed — check if a previous period was exhausted (new period started)
   if (budgetExceededKeys.delete(budgetKey)) {
-    // Clean up threshold dedup for this project:model so it fires again in new period
+    // Clean up threshold dedup for this router:model so it fires again in new period
     for (const k of thresholdFiredKeys) {
       if (k.startsWith(budgetKey + ':')) thresholdFiredKeys.delete(k);
     }
-    emitEvent('budget.reset', 'info', { projectId, modelId: model.id, ...(traceId !== undefined ? { traceId } : {}) }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
+    emitEvent('budget.reset', 'info', { routerId, modelId: model.id, ...(traceId !== undefined ? { traceId } : {}) }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
   }
 
   // Check if usage is near threshold (≥80%) — only for user-facing completion calls
   if (callType === 'completion' && isCandidate) {
-    getLimitUsageSnapshot(model, project, token).then(snapshots => {
+    getLimitUsageSnapshot(model, router, token).then(snapshots => {
       for (const snap of snapshots) {
         if (snap.value > 0 && snap.current / snap.value >= 0.8) {
           const tKey = `${budgetKey}:${snap.window}`;
           if (!thresholdFiredKeys.has(tKey)) {
             thresholdFiredKeys.add(tKey);
             emitEvent('budget.threshold_reached', 'warning', {
-              projectId, modelId: model.id, metric: snap.metric, window: snap.window,
+              routerId, modelId: model.id, metric: snap.metric, window: snap.window,
               current: snap.current, limit: snap.value, pct: Math.round(snap.current / snap.value * 100),
               ...(traceId !== undefined ? { traceId } : {}),
             }, ctx.log ? { log: ctx.log } : {}).catch(() => {});
@@ -306,7 +306,7 @@ export async function llmChat(
   model: ModelConfig,
   ctx: LLMCallContext,
 ): Promise<ChatCompletionResponse> {
-  const { projectId, callType, traceId, emit, log } = ctx;
+  const { routerId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
 
   model = (await loadEffectiveModel(model.id)) ?? model;
@@ -333,7 +333,7 @@ export async function llmChat(
       ...(request.max_tokens != null ? { maxTokens: request.max_tokens } : {}),
       ...(request.temperature != null ? { temperature: request.temperature } : {}),
     },
-    // Prompt text: dropped by publishTrace unless the project opted in.
+    // Prompt text: dropped by publishTrace unless the router opted in.
     ...(systemMsg != null
       ? { content: { systemPrompt: (systemMsg as { role: string; content: string }).content } }
       : {}),
@@ -379,7 +379,7 @@ export async function llmChat(
         inputPerMillion: model.cost.inputPerMillion,
         outputPerMillion: model.cost.outputPerMillion,
       },
-      // Answer text: dropped by publishTrace unless the project opted in.
+      // Answer text: dropped by publishTrace unless the router opted in.
       ...(responseText != null || responseJSON != null
         ? {
             content: {
@@ -393,7 +393,7 @@ export async function llmChat(
     const cachedInputTokens = cachedTokens;
     const cacheCreationInputTokens = cacheCreationTokens;
     await trackUsage({
-      projectId,
+      routerId,
       model,
       inputTokens: response.usage?.prompt_tokens ?? 0,
       outputTokens: response.usage?.completion_tokens ?? 0,
@@ -414,7 +414,7 @@ export async function llmChat(
       ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
     }).catch(() => {});
 
-    handleProviderResult(model, true, undefined, projectId, log);
+    handleProviderResult(model, true, undefined, routerId, log);
     return response;
   } catch (err: unknown) {
     const latencyMs = Date.now() - t0;
@@ -424,11 +424,11 @@ export async function llmChat(
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
 
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
-    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
-    handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
+    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, routerId, error: msg, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
+    handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), routerId, log);
 
     await trackUsage({
-      projectId,
+      routerId,
       model,
       inputTokens: 0,
       outputTokens: 0,
@@ -479,7 +479,7 @@ export async function llmStream(
   model: ModelConfig,
   ctx: LLMCallContext,
 ): Promise<StreamResult> {
-  const { projectId, callType, traceId, emit, log } = ctx;
+  const { routerId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
 
   model = (await loadEffectiveModel(model.id)) ?? model;
@@ -511,7 +511,7 @@ export async function llmStream(
 
   const iter = adapter.streamCompletion(streamRequest, model)[Symbol.asyncIterator]();
 
-  const ttftTimeoutMs = callType === 'completion' ? ctx.project.timeoutMs : undefined;
+  const ttftTimeoutMs = callType === 'completion' ? ctx.router.timeoutMs : undefined;
 
   // Attende il primo chunk per poter misurare il TTFT.
   // Se fallisce qui il chiamante può tentare il candidato successivo.
@@ -535,10 +535,10 @@ export async function llmStream(
     log?.warn({ err, modelId: model.id }, isTtftTimeout ? 'llm executor: TTFT timeout' : 'llm executor: stream failed before first chunk');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
     const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
-    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: msg, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
-    handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
+    emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, routerId, error: msg, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
+    handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), routerId, log);
     await trackUsage({
-      projectId, model, inputTokens: 0, outputTokens: 0, latencyMs,
+      routerId, model, inputTokens: 0, outputTokens: 0, latencyMs,
       outcome: isTtftTimeout ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
@@ -580,7 +580,7 @@ export async function llmStream(
           panel: res,
           message: 'model:thinking',
           details: { modelId: model.id },
-          // Reasoning text: dropped by publishTrace unless the project opted in.
+          // Reasoning text: dropped by publishTrace unless the router opted in.
           content: { text: thinkingAccum },
         });
         thinkingEmitted = true;
@@ -609,7 +609,7 @@ export async function llmStream(
           panel: res,
           message: 'model:thinking',
           details: { modelId: model.id },
-          // Reasoning text: dropped by publishTrace unless the project opted in.
+          // Reasoning text: dropped by publishTrace unless the router opted in.
           content: { text: thinkingAccum },
         });
       }
@@ -623,8 +623,8 @@ export async function llmStream(
         details: { modelId: model.id, error: errorMessage, latencyMs: Date.now() - t0 },
       });
       const provEvt = isRateLimitError(err) ? 'provider.rate_limited' : 'provider.error';
-      emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, projectId, error: errorMessage, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
-      handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), projectId, log);
+      emitEvent(provEvt, 'warning', { modelId: model.id, provider: model.provider, routerId, error: errorMessage, ...(traceId !== undefined ? { traceId } : {}) }, log ? { log } : {}).catch(() => {});
+      handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), routerId, log);
       throw err;
     } finally {
       const latencyMs = Date.now() - t0;
@@ -657,9 +657,9 @@ export async function llmStream(
           },
         });
       }
-      if (outcome === 'success') handleProviderResult(model, true, undefined, projectId, log);
+      if (outcome === 'success') handleProviderResult(model, true, undefined, routerId, log);
       await trackUsage({
-        projectId, model, inputTokens, outputTokens, latencyMs, ttftMs,        ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),        outcome,
+        routerId, model, inputTokens, outputTokens, latencyMs, ttftMs,        ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),        outcome,
         ...(errorMessage !== undefined ? { errorMessage } : {}),
         callType,
         ...(traceId !== undefined ? { traceId } : {}),
@@ -688,7 +688,7 @@ export async function llmMessages(
   model: ModelConfig,
   ctx: LLMCallContext,
 ): Promise<MessagesResponse> {
-  const { projectId, callType, traceId, emit, log } = ctx;
+  const { routerId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
 
   model = (await loadEffectiveModel(model.id)) ?? model;
@@ -749,7 +749,7 @@ export async function llmMessages(
     });
 
     await trackUsage({
-      projectId,
+      routerId,
       model,
       inputTokens,
       outputTokens,
@@ -784,7 +784,7 @@ export async function llmMessages(
     log?.warn({ err, modelId: model.id }, 'llm executor: messages call failed');
     emit?.({ panel: res, message: 'model:error', details: { modelId: model.id, error: msg, latencyMs } });
     await trackUsage({
-      projectId,
+      routerId,
       model,
       inputTokens: 0,
       outputTokens: 0,

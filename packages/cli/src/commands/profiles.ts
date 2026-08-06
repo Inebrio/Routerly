@@ -2,14 +2,14 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import type { Profile, ProfileKind, ProjectConfig } from '@routerly/shared';
+import type { Profile, ProfileKind, RouterConfig } from '@routerly/shared';
 
 // ponytail: no interactive editor for profile bodies in CLI v1; edit via dashboard or clone+PATCH. Add when a headless-edit need is proven.
 
 const KINDS: ProfileKind[] = ['routing', 'optimizer', 'security'];
 
-/** Project field each kind binds to, mirroring the service (modules/api/profiles.ts). */
-const PROJECT_FIELD: Record<ProfileKind, 'routingProfileId' | 'optimizerProfileId' | 'securityProfileId'> = {
+/** Router field each kind binds to, mirroring the service (modules/api/profiles.ts). */
+const ROUTER_FIELD: Record<ProfileKind, 'routingProfileId' | 'optimizerProfileId' | 'securityProfileId'> = {
   routing: 'routingProfileId',
   optimizer: 'optimizerProfileId',
   security: 'securityProfileId',
@@ -34,13 +34,13 @@ function parseKind(value: string): ProfileKind {
   return value as ProfileKind;
 }
 
-async function resolveProject(nameOrId: string): Promise<ProjectConfig> {
-  const projects = await api<ProjectConfig[]>('GET', '/api/projects');
-  const project = projects.find(p => p.id === nameOrId || p.name === nameOrId);
-  if (!project) {
-    fail(`Project "${nameOrId}" not found. Run \`routerly project list\` to see available projects.`);
+async function resolveRouter(nameOrId: string): Promise<RouterConfig> {
+  const routers = await api<RouterConfig[]>('GET', '/api/routers');
+  const router = routers.find(p => p.id === nameOrId || p.name === nameOrId);
+  if (!router) {
+    fail(`Router "${nameOrId}" not found. Run \`routerly router list\` to see available routers.`);
   }
-  return project;
+  return router;
 }
 
 async function fetchProfiles(kind?: ProfileKind): Promise<Profile[]> {
@@ -226,16 +226,16 @@ Examples:
         console.log(chalk.green(`✓ Profile "${id}" deleted`));
       } catch (err) {
         if (err instanceof ApiError && err.message === 'profile_in_use') {
-          fail(`Cannot delete "${id}": it is still assigned to a project.`);
+          fail(`Cannot delete "${id}": it is still assigned to a router.`);
         }
         handleError(err);
       }
     });
 
   // ── profiles set ─────────────────────────────────────────────────────────────
-  cmd.command('set <project> <kind> [profileId]')
-    .description('Assign or clear the profile of one kind for a project')
-    .option('--none', 'Clear the assignment for this kind, back to the project inline config')
+  cmd.command('set <router> <kind> [profileId]')
+    .description('Assign or clear the profile of one kind for a router')
+    .option('--none', 'Clear the assignment for this kind, back to the router inline config')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
@@ -249,8 +249,8 @@ Examples:
         if (!opts.none && !profileId) {
           fail('Error: provide a profileId or --none.');
         }
-        const project = await resolveProject(nameOrId);
-        const result = await api<ProjectConfig>('PUT', `/api/projects/${encodeURIComponent(project.id)}/profiles`, {
+        const router = await resolveRouter(nameOrId);
+        const result = await api<RouterConfig>('PUT', `/api/routers/${encodeURIComponent(router.id)}/profiles`, {
           [kind]: opts.none ? null : profileId,
         });
         if (opts.json) {
@@ -258,15 +258,15 @@ Examples:
           return;
         }
         const what = opts.none ? 'cleared' : `set to "${profileId}"`;
-        console.log(chalk.green(`✓ ${kind} profile ${what} on project "${project.name}"`));
+        console.log(chalk.green(`✓ ${kind} profile ${what} on router "${router.name}"`));
       } catch (err) {
         handleError(err);
       }
     });
 
   // ── profiles get ─────────────────────────────────────────────────────────────
-  cmd.command('get <project>')
-    .description('Show which profile each kind is bound to for a project')
+  cmd.command('get <router>')
+    .description('Show which profile each kind is bound to for a router')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
@@ -275,9 +275,9 @@ Examples:
 `)
     .action(async (nameOrId: string, opts: { json?: boolean }) => {
       try {
-        const project = await resolveProject(nameOrId);
+        const router = await resolveRouter(nameOrId);
         const bound: Record<string, string | null> = {};
-        for (const kind of KINDS) bound[kind] = project[PROJECT_FIELD[kind]] ?? null;
+        for (const kind of KINDS) bound[kind] = router[ROUTER_FIELD[kind]] ?? null;
         if (opts.json) {
           console.log(JSON.stringify(bound, null, 2));
           return;
