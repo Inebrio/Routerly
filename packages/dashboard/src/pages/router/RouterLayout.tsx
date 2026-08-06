@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Outlet, NavLink, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard, Shuffle } from 'lucide-react';
 import { getRouters, type Router } from '../../api';
 
 export function RouterLayout() {
@@ -31,6 +31,7 @@ export function RouterLayout() {
     // so it starts on General instead.
     ...(isNew ? [] : [{ id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> }]),
     { id: 'general', label: 'General', icon: <Settings size={16} /> },
+    ...(router?.kind === 'orchestrator' ? [{ id: 'orchestrator', label: 'Orchestrator', icon: <Shuffle size={16} /> }] : []),
     { id: 'routing', label: 'Routing', icon: <Route size={16} />, disabled: isNew },
     { id: 'optimizer', label: 'Optimizer', icon: <Gauge size={16} />, disabled: isNew },
     { id: 'security', label: 'Security', icon: <Shield size={16} />, disabled: isNew },

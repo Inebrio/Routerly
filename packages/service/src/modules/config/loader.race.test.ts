@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import { readConfig, writeConfig, initConfigDirs } from './loader.js';
+import { readConfig, writeConfig, updateConfig, initConfigDirs } from './loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 
 // Real-filesystem proof of the data-loss fix (no fs mocks). Runs against the
@@ -70,6 +70,33 @@ describe('loader — real-FS concurrent safety (data-loss regression)', () => {
     // readConfig agrees with disk.
     expect(await readConfig('routers')).toEqual(onDisk);
   });
+
+  it('updateConfig: concurrent read-modify-write callers never lose a write (B2/EC4 regression)', async () => {
+    // Reproduces the RTR-02 validation finding directly against the fixed
+    // primitive: a bare readConfig()...writeConfig() pair (the pre-fix POST
+    // /api/routers shape) lets N concurrent callers each capture their own
+    // stale array and the last writer's writeConfig call silently discards
+    // every push that isn't its own — of 12 concurrent "creates", 11 vanished.
+    // updateConfig takes its one readConfig() inside the same lock hold the
+    // write uses, so no caller can ever mutate a copy that's already stale.
+    await initConfigDirs();
+    await writeConfig('routers', []);
+
+    const N = 15;
+    const results = await Promise.all(
+      Array.from({ length: N }, (_, i) =>
+        updateConfig('routers', (current) => [...(current as any[]), { id: `race-${i}`, name: `Race ${i}` }]),
+      ),
+    );
+    // No call may reject (mirrors the ELOCKED-under-load finding: a wider
+    // retry budget is the mitigation for exhaustion, not data loss).
+    expect(results).toHaveLength(N);
+
+    const onDisk = JSON.parse(await readFile(CONFIG_PATHS.routers, 'utf-8'));
+    expect(onDisk).toHaveLength(N);
+    const ids = new Set(onDisk.map((r: any) => r.id));
+    for (let i = 0; i < N; i++) expect(ids.has(`race-${i}`)).toBe(true);
+  }, 20000);
 
   it('a read of a truly-missing file creates it with defaults (first run unchanged)', async () => {
     // models.json under a fresh isolated home; readConfig must create it as [].

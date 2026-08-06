@@ -19,6 +19,8 @@ export type {
   EffectiveModel,
   RouterModelRef,
   RouterConfig,
+  RouterKind,
+  OrchestratorCandidateRef,
   PlaygroundPreset,
   RouterToken,
   RouterMember,
