@@ -25,6 +25,7 @@ vi.mock('./modules/update-checker/update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
 vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }))
 
 import { buildServer, startServer } from './server.js'
 import { readConfig, writeConfig } from './modules/config/loader.js'

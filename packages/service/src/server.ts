@@ -13,6 +13,7 @@ import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
+import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
 import { bootstrap } from './bootstrap/index.js';
@@ -120,6 +121,7 @@ export async function buildServer() {
 
 export async function startServer() {
   await initConfigDirs();
+  await enforceStartupGuard();
   await loadSecret();
   await loadCredentialKey();
   const orphansRemoved = await pruneOrphanUsage();
