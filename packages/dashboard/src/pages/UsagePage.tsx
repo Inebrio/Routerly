@@ -766,7 +766,7 @@ export function UsagePage() {
                             </td>
                             <td style={numTd}>{r.inputTokens}</td>
                             <td style={numTd}>{r.outputTokens}</td>
-                            <td className="mono" style={{ ...numTd, fontSize: '0.78rem' }}>{fmtCallCost(r.cost ?? 0)}</td>
+                            <td className="mono" style={{ ...numTd, fontSize: '0.78rem' }}>{r.cost == null ? 'Unknown' : fmtCallCost(r.cost)}</td>
                             <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.latencyMs}ms</td>
                             <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.ttftMs != null ? `${r.ttftMs}ms` : '—'}</td>
                             <td style={{ ...numTd, color: 'var(--text-muted)' }}>{r.tokensPerSec != null ? `${r.tokensPerSec}` : '—'}</td>
