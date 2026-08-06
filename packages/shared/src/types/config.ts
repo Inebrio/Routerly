@@ -1222,3 +1222,12 @@ export interface UsageByModelEntry {
   /** 95th-percentile latencyMs (0 when none). */
   p95LatencyMs: number;
 }
+
+/** Result of GET /api/system/permissions — the config-directory permission check (RTR-04). */
+export type PermissionCheckStatus = {
+  /** True iff any `unsafe` entry has severity 'secret'. Blocks every /api/* route except the exempt ones. */
+  blocked: boolean;
+  /** True when ROUTERLY_SKIP_PERMISSION_CHECK is set; forces blocked: false and unsafe: []. */
+  bypassActive: boolean;
+  unsafe: Array<{ file: string; path: string; mode: string; severity: 'secret' | 'general' }>;
+};
