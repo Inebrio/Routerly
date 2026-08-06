@@ -1226,8 +1226,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const freshRouters = kind === 'orchestrator' ? await readConfig('routers') : routers;
     const freshIndex = kind === 'orchestrator' ? freshRouters.findIndex(p => p.id === req.params.id) : index;
     if (freshIndex === -1) return reply.status(404).send({ error: 'Not found' });
+    // Candidates: omitted from the request body = leave unchanged (same fallback as
+    // guardrails/pii/optimizers below); an explicit array (including []) replaces it.
+    // Computed before validation so an omitted body still validates (and keeps) the
+    // router's existing candidate list instead of tripping EC2's "needs at least one".
+    let candidatesUpdate: { candidates?: OrchestratorCandidateRef[] } = {};
+    if (parsedCandidates.data !== undefined) {
+      candidatesUpdate = { candidates: parsedCandidates.data };
+    } else if (freshRouters[freshIndex]!.candidates) {
+      candidatesUpdate = { candidates: freshRouters[freshIndex]!.candidates };
+    }
     const candidateError = validateOrchestratorCandidates({
-      kind, candidates: parsedCandidates.data, routers: freshRouters, selfId: req.params.id,
+      kind, candidates: candidatesUpdate.candidates, routers: freshRouters, selfId: req.params.id,
     });
     if (candidateError) return reply.status(400).send({ error: candidateError });
     // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
@@ -1281,7 +1291,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...piiUpdate,
       ...optimizersUpdate,
       ...(kind !== 'router' ? { kind } : {}),
-      ...(kind === 'orchestrator' && parsedCandidates.data !== undefined ? { candidates: parsedCandidates.data } : {}),
+      ...(kind === 'orchestrator' ? candidatesUpdate : {}),
     };
     freshRouters[freshIndex] = updated;
     await writeConfig('routers', freshRouters);
