@@ -72,10 +72,19 @@ describe('loader — real-FS concurrent safety (data-loss regression)', () => {
   });
 
   it('a read of a truly-missing file creates it with defaults (first run unchanged)', async () => {
-    // usage.json under a fresh isolated home; readConfig must create it as [].
-    const result = await readConfig('usage');
+    // models.json under a fresh isolated home; readConfig must create it as [].
+    const result = await readConfig('models');
     expect(Array.isArray(result)).toBe(true);
     // File now exists and is the empty default.
-    expect(JSON.parse(await readFile(CONFIG_PATHS.usage, 'utf-8'))).toEqual([]);
+    expect(JSON.parse(await readFile(CONFIG_PATHS.models, 'utf-8'))).toEqual([]);
+  });
+
+  it('usage (NDJSON): a read of a truly-missing usage.ndjson returns [] WITHOUT creating the file', async () => {
+    // Unlike every other config key, usage never eagerly writes a default on
+    // a missing-file read (RTR-06) — the file is only ever created by an
+    // append or an explicit write.
+    const result = await readConfig('usage');
+    expect(result).toEqual([]);
+    await expect(readFile(CONFIG_PATHS.usage, 'utf-8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 });

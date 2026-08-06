@@ -685,6 +685,7 @@ export type {
   TeamsChannelConfig,
   PagerDutyChannelConfig,
   DiscordChannelConfig,
+  UsageRetentionConfig,
 } from '@routerly/shared';
 
 // backward-compat aliases
@@ -694,7 +695,7 @@ export type { SendGridChannelConfig as SendGridEmailConfig } from '@routerly/sha
 export type { AzureChannelConfig as AzureEmailConfig } from '@routerly/shared';
 export type { GoogleChannelConfig as GoogleEmailConfig } from '@routerly/shared';
 // ponytail: local imports for types used in interfaces defined below
-import type { SmtpChannelConfig, SesChannelConfig, SendGridChannelConfig, AzureChannelConfig, GoogleChannelConfig, NotificationsConfig } from '@routerly/shared';
+import type { SmtpChannelConfig, SesChannelConfig, SendGridChannelConfig, AzureChannelConfig, GoogleChannelConfig, NotificationsConfig, UsageRetentionConfig } from '@routerly/shared';
 export type EmailConfig = SmtpChannelConfig | SesChannelConfig | SendGridChannelConfig | AzureChannelConfig | GoogleChannelConfig;
 
 export interface TelemetryConfig {
@@ -727,6 +728,8 @@ export interface Settings {
   localAddresses?: string[];
   /** URLs the service is actually reachable at, derived from the bind host — injected at runtime, not persisted. */
   listeningAddresses?: string[];
+  /** Usage/billing history retention policy. Absent means no policy configured. */
+  usageRetention?: UsageRetentionConfig;
 }
 
 export const getSettings = () => request<Settings>('/settings');

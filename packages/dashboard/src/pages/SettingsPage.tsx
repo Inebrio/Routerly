@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus, UsageRetentionConfig } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
@@ -113,7 +113,7 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, usageRetention: s.usageRetention ?? {}, ...(s.notifications ? { notifications: s.notifications } : {}) });
       // Version and uptime live on /api/system/info; a failure there must not hide the settings form.
       getSystemInfo().then(setInfo).catch(() => setInfo(null));
     } catch (e) {
@@ -150,6 +150,17 @@ export function SettingsGeneralTab() {
 
   function field<K extends keyof Settings>(key: K, value: Settings[K]) {
     setForm((f: Partial<Settings>) => ({ ...f, [key]: value }));
+  }
+
+  /** Empty input clears that sub-field (omits it from `usageRetention`); a valid number sets it. */
+  function retentionField(key: keyof UsageRetentionConfig, raw: string) {
+    const value = raw === '' ? undefined : Number(raw);
+    setForm((f: Partial<Settings>) => {
+      const next = { ...f.usageRetention };
+      if (value === undefined || Number.isNaN(value)) delete next[key];
+      else next[key] = value;
+      return { ...f, usageRetention: next };
+    });
   }
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
@@ -236,6 +247,40 @@ export function SettingsGeneralTab() {
             Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
             Used in the <strong>How to connect</strong> section of each project.
             Useful when the dashboard runs on a different machine or port than the service.
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Usage Retention</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input
+              id="s-usage-retention-days"
+              className="form-input"
+              type="number"
+              min={1}
+              placeholder="No limit"
+              aria-label="Max age (days)"
+              value={form.usageRetention?.maxAgeDays ?? ''}
+              onChange={e => retentionField('maxAgeDays', e.target.value)}
+            />
+            <input
+              id="s-usage-retention-size"
+              className="form-input"
+              type="number"
+              min={1}
+              placeholder="No limit"
+              aria-label="Max size (MB)"
+              value={form.usageRetention?.maxSizeMb ?? ''}
+              onChange={e => retentionField('maxSizeMb', e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Max age (days)</p>
+            <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Max size (MB)</p>
+          </div>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Usage/billing history older than this many days, or exceeding this size, is dropped from the active log.
+            Leave both empty for no retention limit.
           </p>
         </div>
 

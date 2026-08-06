@@ -5,11 +5,32 @@ vi.mock('./loader.js', () => ({
   writeConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { migrateProjectConfigs, migrateSettings } from './migrate.js';
+vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  rename: vi.fn().mockResolvedValue(undefined),
+  unlink: vi.fn().mockResolvedValue(undefined),
+  access: vi.fn(),
+}));
+
+vi.mock('../../lib/paths.js', () => ({
+  CONFIG_PATHS: {
+    usage: '/test/data/usage.ndjson',
+    usageLegacyJson: '/test/data/usage.json',
+  },
+}));
+
+import { migrateProjectConfigs, migrateSettings, migrateUsageToNdjson } from './migrate.js';
 import { readConfig, writeConfig } from './loader.js';
+import { readFile, writeFile, rename, unlink, access } from 'node:fs/promises';
 
 const mockReadConfig = vi.mocked(readConfig);
 const mockWriteConfig = vi.mocked(writeConfig);
+const mockReadFile = vi.mocked(readFile);
+const mockWriteFile = vi.mocked(writeFile);
+const mockRename = vi.mocked(rename);
+const mockUnlink = vi.mocked(unlink);
+const mockAccess = vi.mocked(access);
 
 afterEach(() => vi.clearAllMocks());
 
@@ -608,5 +629,112 @@ describe('migrateSettings', () => {
 
     expect(dropped).toEqual([]);
     expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migrateUsageToNdjson (RTR-06) ─────────────────────────────────────────────
+
+describe('migrateUsageToNdjson', () => {
+  const enoent = () => Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+
+  it('is a no-op when usage.ndjson is already present (EC4)', async () => {
+    mockAccess.mockResolvedValue(undefined as any);
+
+    const result = await migrateUsageToNdjson();
+
+    expect(result).toBe(0);
+    expect(mockReadFile).not.toHaveBeenCalled();
+    expect(mockRename).not.toHaveBeenCalled();
+  });
+
+  it('returns 0 when there is no legacy usage.json (fresh install)', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    mockReadFile.mockRejectedValue(enoent());
+
+    const result = await migrateUsageToNdjson();
+
+    expect(result).toBe(0);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('migrates an empty legacy file to zero records (EC1)', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    mockReadFile.mockImplementation(((p: string) => {
+      if (p === '/test/data/usage.json') return Promise.resolve('');
+      if (String(p).endsWith('.migrate-tmp')) return Promise.resolve('');
+      return Promise.reject(new Error(`unexpected readFile path ${p}`));
+    }) as any);
+
+    const result = await migrateUsageToNdjson();
+
+    expect(result).toBe(0);
+    expect(mockRename).toHaveBeenCalledWith(expect.stringContaining('.migrate-tmp'), '/test/data/usage.ndjson');
+    expect(mockRename).toHaveBeenCalledWith('/test/data/usage.json', '/test/data/usage.json.migrated');
+  });
+
+  it('throws on a corrupted legacy file instead of silently discarding data (EC2)', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    mockReadFile.mockImplementation(((p: string) => {
+      if (p === '/test/data/usage.json') return Promise.resolve('{not valid json');
+      return Promise.reject(new Error(`unexpected readFile path ${p}`));
+    }) as any);
+
+    await expect(migrateUsageToNdjson()).rejects.toThrow();
+    expect(mockRename).not.toHaveBeenCalled();
+  });
+
+  it('throws when the legacy file is valid JSON but not an array', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    mockReadFile.mockImplementation(((p: string) => {
+      if (p === '/test/data/usage.json') return Promise.resolve('{"not":"an array"}');
+      return Promise.reject(new Error(`unexpected readFile path ${p}`));
+    }) as any);
+
+    await expect(migrateUsageToNdjson()).rejects.toThrow('expected a JSON array');
+  });
+
+  it('migrates a realistic multi-record fixture with a verified round-trip count (AC5)', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    const records = Array.from({ length: 250 }, (_, i) => ({
+      id: `u${i}`,
+      projectId: 'p1',
+      timestamp: new Date(Date.now() - i * 1000).toISOString(),
+      cost: i * 0.01,
+    }));
+    const legacyJson = JSON.stringify(records);
+    let writtenTmpContent = '';
+    mockReadFile.mockImplementation(((p: string) => {
+      if (p === '/test/data/usage.json') return Promise.resolve(legacyJson);
+      if (String(p).endsWith('.migrate-tmp')) return Promise.resolve(writtenTmpContent);
+      return Promise.reject(new Error(`unexpected readFile path ${p}`));
+    }) as any);
+    mockWriteFile.mockImplementation(((p: string, content: string) => {
+      if (String(p).endsWith('.migrate-tmp')) writtenTmpContent = content;
+      return Promise.resolve(undefined);
+    }) as any);
+
+    const result = await migrateUsageToNdjson();
+
+    expect(result).toBe(250);
+    const lines = writtenTmpContent.split('\n').filter((l) => l.length > 0);
+    expect(lines).toHaveLength(250);
+    expect(JSON.parse(lines[0]!).id).toBe('u0');
+    expect(mockRename).toHaveBeenCalledWith(expect.stringContaining('.migrate-tmp'), '/test/data/usage.ndjson');
+    expect(mockRename).toHaveBeenCalledWith('/test/data/usage.json', '/test/data/usage.json.migrated');
+  });
+
+  it('throws and cleans up the temp file when the round-trip line count does not match', async () => {
+    mockAccess.mockRejectedValue(enoent());
+    const records = [{ id: 'u1' }, { id: 'u2' }];
+    mockReadFile.mockImplementation(((p: string) => {
+      if (p === '/test/data/usage.json') return Promise.resolve(JSON.stringify(records));
+      // Simulate a corrupted read-back: fewer lines than were meant to be written.
+      if (String(p).endsWith('.migrate-tmp')) return Promise.resolve(`${JSON.stringify(records[0])}\n`);
+      return Promise.reject(new Error(`unexpected readFile path ${p}`));
+    }) as any);
+
+    await expect(migrateUsageToNdjson()).rejects.toThrow('line-count mismatch');
+    expect(mockUnlink).toHaveBeenCalled();
+    expect(mockRename).not.toHaveBeenCalled();
   });
 });

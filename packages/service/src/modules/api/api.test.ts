@@ -8736,6 +8736,79 @@ describe('PUT /api/settings — providerRepos', () => {
   })
 })
 
+// ── PUT /api/settings — usageRetention validation (RTR-06) ────────────────────
+
+describe('PUT /api/settings — usageRetention', () => {
+  function readConfigStub() {
+    return async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return {}
+      return []
+    }
+  }
+
+  it('accepts a valid usageRetention and persists it', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(readConfigStub())
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ usageRetention: { maxAgeDays: 30 } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', expect.objectContaining({
+      usageRetention: { maxAgeDays: 30 },
+    }))
+  })
+
+  it('accepts an empty usageRetention object — clears both sub-fields, not rejected', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } }
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ usageRetention: {} }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', expect.objectContaining({
+      usageRetention: {},
+    }))
+  })
+
+  it.each([
+    ['negative maxAgeDays', { maxAgeDays: -5 }],
+    ['zero maxSizeMb', { maxSizeMb: 0 }],
+    ['non-numeric maxAgeDays', { maxAgeDays: 'thirty' }],
+  ])('rejects %s with 400', async (_label, usageRetention) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(readConfigStub())
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ usageRetention }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+})
+
 // ── GET /api/audit (issue-92) ─────────────────────────────────────────────────
 
 describe('GET /api/audit', () => {

@@ -55,6 +55,7 @@ export type {
   ModuleRecord,
   Permission,
   Settings,
+  UsageRetentionConfig,
   ProviderRepo,
   UpdateChannel,
   DeprecatedUpdateChannel,
