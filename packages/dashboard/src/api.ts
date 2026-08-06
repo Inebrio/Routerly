@@ -94,12 +94,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return processResponse<T>(res, path);
 }
 
+/** Thrown by request()/processResponse() on any non-2xx response. `status` lets
+ * callers distinguish e.g. 404 (feature/module disabled) from other failures. */
+export type ApiError = Error & { status?: number };
+
+function httpError(message: string, status: number): ApiError {
+  const err: ApiError = new Error(message);
+  err.status = status;
+  return err;
+}
+
 async function processResponse<T>(res: Response, path: string): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   const text = await res.text();
   if (!text) {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw httpError(`HTTP ${res.status}`, res.status);
     return undefined as T;
   }
 
@@ -111,7 +121,12 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
     throw new Error('Invalid JSON response from server');
   }
 
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+  if (!res.ok) {
+    // Some routes answer with a machine code plus a sentence (`label_taken` +
+    // "Label ... is already used"); the sentence is the one worth showing.
+    const body = data as { error?: string; message?: string };
+    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status);
+  }
   return data as T;
 }
 
@@ -187,6 +202,8 @@ export interface ModelCapabilities {
 
 export interface Model {
   id: string; name: string; provider: string; endpoint: string;
+  /** Present when the model is bound to a connection (shared or dedicated). */
+  connectionId?: string;
   upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
@@ -249,7 +266,9 @@ export interface RepoStatus {
 }
 export const getCatalogStatus = () => request<RepoStatus[]>('/catalog/status');
 export const createModel = (data: {
-  id: string; name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
+  id: string; name?: string; provider: string; endpoint?: string; apiKey?: string; cfClearance?: string;
+  /** Bind to an existing (preconfigured) connection instead of submitting endpoint/apiKey. */
+  connectionId?: string;
   cloneFrom?: string; upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
@@ -262,7 +281,9 @@ export const createModel = (data: {
 }) => request<Model>('/models', { method: 'POST', body: JSON.stringify(data) });
 export const updateModel = (id: string, data: {
   id?: string;
-  name?: string; provider: string; endpoint: string; apiKey?: string; cfClearance?: string;
+  name?: string; provider: string; endpoint?: string; apiKey?: string; cfClearance?: string;
+  /** Bind to an existing (preconfigured) connection instead of submitting endpoint/apiKey. */
+  connectionId?: string;
   upstreamModelId?: string;
   inputPerMillion: number; outputPerMillion: number;
   cachePerMillion?: number;
@@ -291,6 +312,7 @@ export interface ProjectToken {
   models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>;
   labels?: string[];
   tags?: Record<string, string>;
+  scopes?: string[];
 }
 
 export interface ProjectMember {
@@ -354,6 +376,10 @@ export interface Project {
   id: string; name: string; routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
+  /** Assigned profile id per kind, or absent for this project's own inline config. */
+  routingProfileId?: string;
+  optimizerProfileId?: string;
+  securityProfileId?: string;
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   tokens?: ProjectToken[];
@@ -362,6 +388,9 @@ export interface Project {
   timeoutMs?: number;
   guardrails?: GuardrailConfig;
   pii?: PiiConfig;
+  optimizers?: OptimizerConfig;
+  /** Capture prompts and answers in traces. Off = metadata only. */
+  traceContent?: boolean;
 }
 
 export const getProjects = () => request<Project[]>('/projects');
@@ -386,10 +415,12 @@ export const updateProject = (id: string, data: {
   timeoutMs?: number;
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
+  optimizers?: OptimizerConfig | null;
+  traceContent?: boolean;
 }) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
-export const createProjectToken = (id: string, labels?: string[], tags?: Record<string, string>) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}) }) });
-export const updateProjectToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[], tags?: Record<string, string>) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels, ...(tags !== undefined ? { tags } : {}) }) });
+export const createProjectToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
+export const updateProjectToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels, ...(tags !== undefined ? { tags } : {}), ...(scopes !== undefined ? { scopes } : {}) }) });
 export const deleteProjectToken = (id: string, tokenId: string) => request<void>(`/projects/${id}/tokens/${tokenId}`, { method: 'DELETE' });
 
 export const addProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members`, { method: 'POST', body: JSON.stringify({ userId, role }) });
@@ -421,6 +452,12 @@ export const ALL_PERMISSIONS = [
   'token:read', 'token:write',
   'role:write',
   'audit:read',
+  'modules:read', 'modules:manage',
+  'connections:read', 'connections:manage',
+  'resilience:read', 'resilience:manage',
+  'profiles:read', 'profiles:manage',
+  'optimizers:read', 'optimizers:manage',
+  'experiments:read', 'experiments:manage',
 ] as const;
 export type Permission = typeof ALL_PERMISSIONS[number];
 
@@ -439,33 +476,77 @@ export const updateRole = (id: string, data: { name?: string; permissions?: Perm
 export const deleteRole = (id: string) =>
   request<void>(`/roles/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
+// ── Modules ───────────────────────────────────────────────────────────────
+export interface ModuleInfo {
+  id: string;
+  version: string;
+  enabled: boolean;
+  alwaysOn: boolean;
+  dependsOn: string[];
+}
+
+export interface ModuleToggleResult {
+  id: string;
+  enabled: boolean;
+  restartRequired: boolean;
+}
+
+export const getModules = () => request<ModuleInfo[]>('/modules');
+export const enableModule = (id: string) =>
+  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/enable`, { method: 'POST' });
+export const disableModule = (id: string) =>
+  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/disable`, { method: 'POST' });
+
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {
   panel: string;
   message: string;
   details: Record<string, unknown>;
+  /** Stamped by the trace module: emitting module, pipeline phase, wall clock. */
+  module?: string;
+  phase?: string;
+  at?: number;
+  /** Prompts and answers. Present only for projects that opted in. */
+  content?: Record<string, unknown>;
 }
 
 export interface UsageRecord {
   id: string; timestamp: string; projectId: string; modelId: string;
   inputTokens: number; outputTokens: number; cachedInputTokens?: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
-  callType?: 'routing' | 'completion';
+  callType?: 'routing' | 'completion' | 'guardrail' | 'judge';
+  requestType?: RequestType;
   errorMessage?: string;
   trace?: TraceEntry[];
   guardrailTriggered?: string;
   blockedBy?: string;
   piiRedacted?: string[];
+  /** Project token the call authenticated with. Absent on records written before it was tracked. */
+  tokenId?: string;
 }
 
-import type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo } from '@routerly/shared';
-export type { UsageByModelEntry, Integration, IntegrationType, ProviderRepo };
+import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
+export type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries };
 
 export interface UsageStats {
-  summary: { totalCost: number; totalCalls: number; successCalls: number; errorCalls: number; routingCalls: number; completionCalls: number; routingCost: number; completionCost: number; guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number };
+  summary: {
+    totalCost: number; totalCalls: number; successCalls: number; errorCalls: number;
+    routingCalls: number; completionCalls: number; routingCost: number; completionCost: number;
+    guardrailCalls?: number; guardrailCost?: number; blockedCalls?: number;
+    latencyMedianMs?: number; latencyP95Ms?: number;
+    ttftMedianMs?: number; ttftP95Ms?: number; ttftSamples?: number;
+  };
   byModel: Record<string, UsageByModelEntry>;
+  /** Calls per caller in the window, before the caller filter narrowed it (T210). */
+  byCallType?: Record<string, number>;
+  /** Calls per request type in the window, before the type filter narrowed it (T210). */
+  byRequestType?: Record<string, number>;
   timeline: [string, number][];
   records: Array<UsageRecord>;
   pagination?: { page: number; pageSize: number; totalRecords: number; totalPages: number };
+  /** Only present when the call asked for it with `savings: true`. */
+  savings?: SavingsSummary;
+  /** Only present when the call asked for it with `series: true`. */
+  series?: UsageSeries;
 }
 
 export interface GetUsageOptions {
@@ -477,8 +558,14 @@ export interface GetUsageOptions {
   pageSize?: number;
   projectIds?: string[];
   modelIds?: string[];
+  tokenIds?: string[];
   callType?: string;
+  requestType?: string;
   outcome?: string;
+  /** Ask the service for the counterfactual block. Costs a config read, so opt in. */
+  savings?: boolean;
+  /** Ask the service for the savings series over time. Same cost as `savings`, so opt in. */
+  series?: boolean;
 }
 
 export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number, opts?: GetUsageOptions) => {
@@ -490,8 +577,12 @@ export const getUsage = (period = 'monthly', projectId?: string, from?: string, 
   if (pageSize != null) params.set('pageSize', String(pageSize));
   if (opts?.projectIds?.length) params.set('projectIds', opts.projectIds.join(','));
   if (opts?.modelIds?.length)   params.set('modelIds',   opts.modelIds.join(','));
+  if (opts?.tokenIds?.length)   params.set('tokenIds',   opts.tokenIds.join(','));
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
+  if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
+  if (opts?.savings) params.set('savings', '1');
+  if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
 };
 
@@ -500,6 +591,61 @@ export const getUsageRecord = (id: string) =>
 
 export const getTrace = (id: string) =>
   request<{ trace: TraceEntry[] }>(`/traces/${id}`);
+
+export interface TraceStreamEvent {
+  traceId: string;
+  projectId?: string;
+  correlationId?: string;
+  topic: string;
+  entry: TraceEntry;
+}
+
+/**
+ * Live trace side channel. Resolves once the stream is open — the server has
+ * subscribed by then, so a request fired afterwards loses no entry — and calls
+ * `onEvent` for each one until the returned stop function runs.
+ *
+ * fetch, not EventSource: the bearer token has to travel in a header.
+ */
+export async function streamTraces(
+  query: { correlationId?: string; projectId?: string; traceId?: string },
+  onEvent: (event: TraceStreamEvent) => void,
+): Promise<() => void> {
+  const controller = new AbortController();
+  const params = new URLSearchParams(Object.entries(query).filter(([, v]) => v) as [string, string][]);
+  const stop = (): void => controller.abort();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/traces/stream?${params.toString()}`, {
+      headers: authHeaders(),
+      signal: controller.signal,
+    });
+  } catch {
+    return stop; // no side channel: the stored trace is still fetched after the turn
+  }
+  if (!res.ok || !res.body) return stop;
+
+  const reader = res.body.getReader();
+  void (async () => {
+    const decoder = new TextDecoder();
+    let buffer = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop() ?? '';
+        for (const frame of frames) {
+          const line = frame.split('\n').find(l => l.startsWith('data: '));
+          if (!line) continue; // keepalive comment
+          try { onEvent(JSON.parse(line.slice(6)) as TraceStreamEvent); } catch { /* malformed frame */ }
+        }
+      }
+    } catch { /* aborted or dropped */ }
+  })();
+  return stop;
+}
 
 // ── Provider Health ───────────────────────────────────────────────────────
 export interface ProviderHealth {
@@ -511,7 +657,9 @@ export interface ProviderHealth {
   p95LatencyMs: number | null;
   requestsLastHour: number;
   lastSuccessAt: string | null;
-  cooldownUntil: string | null;
+  circuitState: ResilienceState;
+  cooldownUntil: number | null;
+  lockoutUntil: number | null;
 }
 
 export const getProviderHealth = () =>
@@ -559,7 +707,6 @@ export interface Settings {
   port: number;
   host: string;
   dashboardEnabled: boolean;
-  defaultTimeoutMs: number;
   logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
@@ -578,6 +725,8 @@ export interface Settings {
   providerRepos?: ProviderRepo[];
   /** Non-loopback IPv4 addresses of the machine running the service — injected at runtime, not persisted. */
   localAddresses?: string[];
+  /** URLs the service is actually reachable at, derived from the bind host — injected at runtime, not persisted. */
+  listeningAddresses?: string[];
 }
 
 export const getSettings = () => request<Settings>('/settings');
@@ -602,6 +751,7 @@ export interface SystemInfo {
   dataDir: string;
   uptimeSeconds: number;
   channel: string;
+  rawChannel: string;
   isDocker: boolean;
   updateInfo: UpdateInfo | null;
 }
@@ -679,6 +829,9 @@ export const updateMe = (data: { currentPassword: string; newPassword: string })
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
 
 // ── Notification inbox (#91) ───────────────────────────────────────────────
+import type { NotificationCategory, NotificationIncidentEvent } from '@routerly/shared';
+export type { NotificationCategory, NotificationIncidentEvent };
+
 export interface InboxItem {
   id: string;
   event: string;
@@ -686,6 +839,12 @@ export interface InboxItem {
   timestamp: string;
   details: Record<string, unknown>;
   read: boolean;
+  /** Set when the event belongs to a traced request (T50). */
+  traceId?: string;
+  /** How many events the incident folded together; 1 for a plain notification. */
+  eventCount?: number;
+  /** The folded sequence, sent by the detail route only. */
+  events?: NotificationIncidentEvent[];
 }
 
 export interface InboxPagination {
@@ -710,6 +869,7 @@ export const getNotificationInboxPage = (opts: {
   pageSize: number;
   severity?: 'info' | 'warning' | 'critical';
   event?: string;
+  category?: NotificationCategory;
   unreadOnly?: boolean;
   from?: string;
   to?: string;
@@ -719,6 +879,7 @@ export const getNotificationInboxPage = (opts: {
   q.set('pageSize', String(opts.pageSize));
   if (opts.severity) q.set('severity', opts.severity);
   if (opts.event) q.set('event', opts.event);
+  if (opts.category) q.set('category', opts.category);
   if (opts.unreadOnly) q.set('unreadOnly', 'true');
   if (opts.from) q.set('from', opts.from);
   if (opts.to) q.set('to', opts.to);
@@ -774,20 +935,6 @@ export interface AuditPage {
   pagination: { page: number; pageSize: number; totalRecords: number; totalPages: number };
 }
 
-export interface EndUser {
-  userId: string;
-  projectId: string;
-  firstSeen: string;
-  lastSeen: string;
-  requests: number;
-  totalCost: number;
-  totalTokens: number;
-}
-
-export const getEndUsers = (projectId: string) =>
-  request<{ users: EndUser[] }>(`/end-users?projectId=${encodeURIComponent(projectId)}`)
-    .then(r => r.users);
-
 // ── Integrations ──────────────────────────────────────────────────────────────
 
 export const getIntegrations = () =>
@@ -816,4 +963,273 @@ export const getAuditLog = (params?: { userId?: string; action?: string; result?
   if (params?.pageSize)                     q.set('pageSize', String(params.pageSize));
   return request<AuditPage>(`/audit${q.size ? '?' + q : ''}`);
 };
+
+// ── Provider connections & model instances ───────────────────────────────────
+
+export interface ProviderDescriptor {
+  id: string;
+  label: string;
+  protocol: 'openai' | 'anthropic' | 'gemini' | 'custom';
+  supportLevel: 'native' | 'compatible' | 'oauth' | 'web';
+  nativeCapabilities: ModelCapabilities;
+}
+
+export const getProviderDescriptors = () => request<ProviderDescriptor[]>('/providers/descriptors');
+
+/**
+ * Connection as returned by the API. Secrets are redacted server-side; only non-secret
+ * cloud config fields (region, resource names, project id) are returned so the edit form
+ * can prefill them, exactly like the model detail form.
+ */
+export interface Connection {
+  id: string;
+  providerId: string;
+  /** Upstream provider behind a `custom` connection, e.g. `deepseek` (T205). */
+  providerName?: string;
+  label: string;
+  credentials?: Record<string, string>;
+  endpoint?: string;
+  enabled: boolean;
+}
+
+export const getConnections = () => request<Connection[]>('/connections');
+/** `label` omitted or blank: the server names the connection after its provider. */
+export const createConnection = (data: {
+  providerId: string; providerName?: string; label?: string; credentials: Record<string, string>;
+  endpoint?: string; enabled: boolean;
+}) => request<Connection>('/connections', { method: 'POST', body: JSON.stringify(data) });
+export const updateConnection = (id: string, data: Partial<{
+  providerId: string; providerName: string; label: string; credentials: Record<string, string>;
+  endpoint?: string; enabled: boolean;
+}>) => request<Connection>(`/connections/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteConnection = (id: string) => request<void>(`/connections/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+// ── Personal MCP surface (tools + tokens of the signed-in user) ──────────────
+
+import type { McpToken } from '@routerly/shared';
+
+export interface McpToolRow {
+  name: string;
+  scope: 'read' | 'write';
+  description: string;
+  sourceModule: string;
+  /** Permission the caller must hold for this tool; always one the caller has. */
+  permission: Permission;
+}
+
+/** A stored MCP token as the API returns it: everything but the hash. */
+export type McpTokenRow = Omit<McpToken, 'tokenHash'>;
+
+export const getMyMcpTools = () => request<McpToolRow[]>('/me/mcp-tools');
+export const getMyMcpTokens = () => request<McpTokenRow[]>('/me/mcp-tokens');
+/** The raw `token` is returned once, here, and never again. */
+export const createMyMcpToken = (body: { name: string; expiresAt?: string }) =>
+  request<McpTokenRow & { token: string }>('/me/mcp-tokens', { method: 'POST', body: JSON.stringify(body) });
+export const deleteMyMcpToken = (id: string) =>
+  request<void>(`/me/mcp-tokens/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+export interface Instance {
+  id: string;
+  connectionId: string;
+  upstreamModelId: string;
+  cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
+  contextWindow: number;
+  limits?: Limit[];
+  capabilities?: ModelCapabilities;
+}
+
+export const getInstances = () => request<Instance[]>('/instances');
+export const createInstance = (data: {
+  connectionId: string; upstreamModelId: string; cost: Instance['cost']; contextWindow: number;
+  limits?: Limit[]; capabilities?: ModelCapabilities;
+}) => request<Instance>('/instances', { method: 'POST', body: JSON.stringify(data) });
+export const updateInstance = (id: string, data: Partial<{
+  connectionId: string; upstreamModelId: string; cost: Instance['cost']; contextWindow: number;
+  limits?: Limit[]; capabilities?: ModelCapabilities;
+}>) => request<Instance>(`/instances/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteInstance = (id: string) => request<void>(`/instances/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+// ── Resilience ───────────────────────────────────────────────────────────
+import type { ResilienceLevel, ResilienceState } from '@routerly/shared';
+export type { ResilienceLevel, ResilienceState } from '@routerly/shared';
+
+export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =>
+  request<{ ok: true }>('/resilience/reset', { method: 'POST', body: JSON.stringify(body ?? {}) });
+
+// ── Profiles (routing, optimizer, security) ───────────────────────────────
+import type {
+  SelectorType, FallbackStrategyType,
+  Profile, ProfileKind, RoutingProfile, OptimizerProfile, SecurityProfile,
+} from '@routerly/shared';
+export type {
+  SelectorType, FallbackStrategyType,
+  Profile, ProfileKind, RoutingProfile, OptimizerProfile, SecurityProfile,
+} from '@routerly/shared';
+
+/** Body of a create: kind and label are required, the rest defaults server-side. */
+export type CreateProfileBody =
+  | ({ kind: 'routing'; label: string } & Partial<Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy'>>)
+  | ({ kind: 'optimizer'; label: string } & Partial<Pick<OptimizerProfile, 'optimizers'>>)
+  | ({ kind: 'security'; label: string } & Partial<Pick<SecurityProfile, 'guardrails' | 'pii'>>);
+
+/** Patch body: only the fields of the profile's own kind are accepted server-side. */
+export type UpdateProfileBody = { label?: string } & Partial<
+  Pick<RoutingProfile, 'policies' | 'selector' | 'fallbackStrategy'> &
+  Pick<OptimizerProfile, 'optimizers'> &
+  Pick<SecurityProfile, 'guardrails' | 'pii'>
+>;
+
+export const getProfiles = (kind?: ProfileKind) =>
+  request<Profile[]>(`/profiles${kind ? `?kind=${encodeURIComponent(kind)}` : ''}`);
+export const createProfile = (data: CreateProfileBody) =>
+  request<Profile>('/profiles', { method: 'POST', body: JSON.stringify(data) });
+export const cloneProfile = (baseId: string, label: string) =>
+  request<Profile>('/profiles/clone', { method: 'POST', body: JSON.stringify({ baseId, label }) });
+export const updateProfile = (id: string, data: UpdateProfileBody) =>
+  request<Profile>(`/profiles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deleteProfile = (id: string) => request<void>(`/profiles/${encodeURIComponent(id)}`, { method: 'DELETE' });
+/** Assigns or clears (null) one or more kinds at once. Omitted kinds are left as they are. */
+export const assignProjectProfiles = (
+  projectId: string,
+  body: Partial<Record<ProfileKind, string | null>>,
+) => request<Project>(`/projects/${encodeURIComponent(projectId)}/profiles`, { method: 'PUT', body: JSON.stringify(body) });
+
+// ── Experiments (T73) ─────────────────────────────────────────────────────────
+
+export type {
+  ExperimentConfig as Experiment,
+  ExperimentJudge,
+  ExperimentMetrics,
+  ExperimentRotation,
+  ExperimentStickyKey,
+  ExperimentVariant,
+  ExperimentVariantMetrics,
+} from '@routerly/shared';
+import type { ExperimentConfig, ExperimentJudge, ExperimentMetrics, ExperimentRotation, ExperimentStickyKey, ExperimentVariant } from '@routerly/shared';
+
+/** The list and detail routes blank out the token value: only creation returns it. */
+export type MaskedExperiment = Omit<ExperimentConfig, 'tokens'> & { tokens: ProjectToken[] };
+
+/** A variant added in the form has no id yet: the service mints one on save. */
+export type ExperimentVariantInput = Omit<ExperimentVariant, 'id'> & { id?: string };
+
+export interface CreateExperimentBody {
+  name: string;
+  description?: string;
+  rotation?: ExperimentRotation;
+  stickyKey?: ExperimentStickyKey;
+  variants: ExperimentVariantInput[];
+  judge?: ExperimentJudge;
+  minSamplesPerVariant?: number;
+}
+
+export type UpdateExperimentBody = Partial<CreateExperimentBody>;
+
+export const getExperiments = () => request<MaskedExperiment[]>('/experiments');
+export const getExperiment = (id: string) => request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}`);
+/** `from`/`to` are ISO timestamps; omitting both measures the whole history. */
+export const getExperimentMetrics = (id: string, window?: { from?: string; to?: string }) => {
+  const qs = new URLSearchParams();
+  if (window?.from) qs.set('from', window.from);
+  if (window?.to) qs.set('to', window.to);
+  const suffix = qs.toString() ? `?${qs}` : '';
+  return request<ExperimentMetrics>(`/experiments/${encodeURIComponent(id)}/metrics${suffix}`);
+};
+/** The only response that carries the raw token: show it once, it is never readable again. */
+export const createExperiment = (data: CreateExperimentBody) =>
+  request<MaskedExperiment & { token: string }>('/experiments', { method: 'POST', body: JSON.stringify(data) });
+export const updateExperiment = (id: string, data: UpdateExperimentBody) =>
+  request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const createExperimentToken = (id: string) =>
+  request<{ token: string; tokenInfo: ProjectToken }>(`/experiments/${encodeURIComponent(id)}/tokens`, { method: 'POST' });
+export const deleteExperimentToken = (id: string, tokenId: string) =>
+  request<void>(`/experiments/${encodeURIComponent(id)}/tokens/${encodeURIComponent(tokenId)}`, { method: 'DELETE' });
+export const deleteExperiment = (id: string) =>
+  request<void>(`/experiments/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+// ── Optimizers ────────────────────────────────────────────────────────────
+import type { LlmLinguaCheckpoint, Message, OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
+export type { OptimizerConfig, OptimizerId, OptimizerStep } from '@routerly/shared';
+
+export interface InstalledOptimizer {
+  id: OptimizerId;
+  klass: string;
+  installed: boolean;
+}
+
+export const getInstalledOptimizers = () => request<InstalledOptimizer[]>('/optimizers');
+
+export interface OptimizerPreviewStep {
+  id: OptimizerId;
+  before: number;
+  after: number;
+  /** The prompt as this step left it, so consecutive steps can be diffed. */
+  messages: Message[];
+  /** The step changed the prompt and the change was rejected and rolled back. */
+  rolledBack?: boolean;
+  /** Why a step that saved nothing never ran, in the operator's words. */
+  skipReason?: string;
+}
+
+export interface OptimizerPreviewResult {
+  estimatedTokensBefore: number;
+  estimatedTokensAfter: number;
+  perStep: OptimizerPreviewStep[];
+  /** The prompt the whole pipeline would forward. */
+  messages: Message[];
+}
+
+export const previewOptimizers = (body: {
+  projectId?: string;
+  /** Model the sample is addressed to, so context-window steps have a window. */
+  model?: string;
+  sampleMessages: Message[];
+  steps: OptimizerStep[];
+}) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
+
+/** One installable LLMLingua-2 checkpoint, as the service host reports it. */
+export interface LlmLinguaCheckpointState extends LlmLinguaCheckpoint {
+  state: 'absent' | 'downloading' | 'ready';
+  /** The one a step with no `model` runs on. */
+  isDefault: boolean;
+  /** 0-100 while downloading, absent otherwise. */
+  progress?: number;
+  loadedBytes?: number;
+  totalBytes?: number;
+  error?: string;
+}
+
+/** State of the optional LLMLingua-2 checkpoints on the service host. */
+export interface LlmLinguaModelState {
+  runtimeInstalled: boolean;
+  checkpoints: LlmLinguaCheckpointState[];
+}
+
+export const getLlmLinguaModel = () => request<LlmLinguaModelState>('/optimizers/llmlingua2/model');
+
+/** Starts one download and returns at once: the caller polls getLlmLinguaModel. */
+export const installLlmLinguaModel = (key?: string) =>
+  request<LlmLinguaModelState>('/optimizers/llmlingua2/model', {
+    method: 'POST',
+    body: JSON.stringify(key ? { key } : {}),
+  });
+
+// ── Client configurator ──────────────────────────────────────────────────
+import type { ClientMeta } from '@routerly/shared';
+export type { ClientMeta, SupportState, WireFormat } from '@routerly/shared';
+
+export interface ClientListItem extends ClientMeta {
+  /** Gateway root as this request reached it; snippet builders append `/v1`. */
+  baseUrl: string;
+}
+
+export interface ClientsResponse {
+  enabled: boolean;
+  clients: ClientListItem[];
+  /** Non-loopback IPv4 addresses of the machine running the service. */
+  advertisedAddresses: string[];
+}
+
+/** 404s (as an ApiError with `status === 404`) when the client-configurator module is disabled. */
+export const getClients = () => request<ClientsResponse>('/clients');
 

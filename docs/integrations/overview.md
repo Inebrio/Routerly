@@ -35,6 +35,33 @@ Native integrations for popular development environments.
 
 ---
 
+## Connect a client
+
+Routerly keeps a registry of the AI clients it knows how to talk to. For
+each one the `routerly clients` CLI command group either writes the config
+file for you (with an automatic backup and undo) or prints the manual steps.
+The dashboard shows the same steps, read-only, under
+[Connect](../dashboard/connect.md).
+
+**Modes**: `llm` means the client sends its model traffic through Routerly,
+`mcp` means it loads Routerly as an MCP server and gets its tools.
+
+| Client | Setup | Modes |
+|--------|-------|-------|
+| [Claude Code](./clients/claude-code) | CLI writes the config | llm + mcp |
+| [Codex](./clients/codex) | CLI writes the config | llm + mcp |
+| [OpenCode](./clients/opencode) | CLI writes the config | llm + mcp |
+| [Continue.dev](./clients/continue) | CLI writes the config | llm |
+| [Claude Desktop](./clients/claude-desktop) | Manual, MCP only | mcp |
+| [OpenClaw](./openclaw) | Manual | llm + mcp |
+| [Cline](./clients/cline) | Manual, VS Code Settings UI | llm + mcp |
+| [Cursor](./cursor) | Manual, in-app Settings | llm + mcp |
+| [Zed](./clients/zed) | Manual, `settings.json` | llm + mcp |
+| [Any OpenAI SDK app](./generic-openai) | Manual, environment variables | llm |
+| [Any Anthropic SDK app](./generic-anthropic) | Manual, environment variables | llm |
+
+---
+
 ## Frameworks
 
 AI application frameworks that call the OpenAI or Anthropic API.

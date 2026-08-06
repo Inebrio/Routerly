@@ -128,9 +128,16 @@ describe('ProjectGeneralTab — edit mode render', () => {
     await waitFor(() =>
       expect(screen.queryByText('How to connect')).not.toBeNull()
     );
+    // One snippet per SDK, plus curl, each carrying the configured endpoint.
     await waitFor(() =>
-      expect(screen.queryByText(/api\.example\.com/)).not.toBeNull()
+      expect(screen.queryAllByText(/api\.example\.com/).length).toBeGreaterThan(0)
     );
+    expect(screen.queryByText('OpenAI SDK')).not.toBeNull();
+    expect(screen.queryByText('Anthropic SDK')).not.toBeNull();
+    expect(screen.queryByText('curl')).not.toBeNull();
+    // The Anthropic client appends /v1 itself, so its base URL must not carry one.
+    expect(screen.getByText(/from anthropic import Anthropic/).textContent)
+      .toContain('base_url="https://api.example.com"');
   });
 
   it('falls back to window.location when publicUrl is empty', async () => {
@@ -226,6 +233,25 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
     await waitFor(() => expect(screen.queryByText('TTFT Timeout (ms)')).toBeNull());
   });
 
+  it('saves the trace content opt-in', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    const checkbox = await screen.findByLabelText(/Capture prompts and answers/i);
+    expect((checkbox as HTMLInputElement).checked).toBe(false);
+    await userEvent.click(checkbox);
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', expect.objectContaining({ traceContent: true })));
+  });
+
+  it('pre-fills the trace content opt-in from the project', async () => {
+    renderTab({ ...mockProject, traceContent: true });
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    const checkbox = await screen.findByLabelText(/Capture prompts and answers/i);
+    expect((checkbox as HTMLInputElement).checked).toBe(true);
+  });
+
   it('pre-fills timeoutMs from project', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
@@ -236,14 +262,26 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
     });
   });
 
-  it('timeoutMs defaults to 5000 when not set on project', async () => {
+  it('timeoutMs falls back to the shared default when not set on project', async () => {
     const proj = { ...mockProject, timeoutMs: undefined };
     renderTab(proj as never);
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
     await waitFor(() => {
       const inputs = document.querySelectorAll('input[type="number"]') as NodeListOf<HTMLInputElement>;
-      expect(inputs[0]?.value).toBe('5000');
+      expect(inputs[0]?.value).toBe('2000');
+    });
+  });
+
+  it('accepts timeoutMs 0 (no timeout) as a valid value', async () => {
+    const proj = { ...mockProject, timeoutMs: 0 };
+    renderTab(proj as never);
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    await waitFor(() => {
+      const input = document.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
+      expect(input.value).toBe('0');
+      expect(input.min).toBe('0');
     });
   });
 

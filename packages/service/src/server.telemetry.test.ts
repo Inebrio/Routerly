@@ -10,24 +10,29 @@ const { version: CURRENT_VERSION } = JSON.parse(
 
 // ── Hoist mock factories before any import ───────────────────────────────────
 
-const { mockPing, mockReadConfig, mockWriteConfig, mockInitConfigDirs, mockLoadSecret } =
+const { mockPing, mockReadConfig, mockWriteConfig, mockInitConfigDirs, mockLoadSecret, mockGetOrCreateSecret, mockLoadCredentialKey } =
   vi.hoisted(() => ({
     mockPing: vi.fn().mockResolvedValue(true),
     mockReadConfig: vi.fn(),
     mockWriteConfig: vi.fn().mockResolvedValue(undefined),
     mockInitConfigDirs: vi.fn().mockResolvedValue(undefined),
     mockLoadSecret: vi.fn().mockResolvedValue(undefined),
+    mockGetOrCreateSecret: vi.fn(),
+    mockLoadCredentialKey: vi.fn().mockResolvedValue(undefined),
   }));
 
-vi.mock('./telemetry.js', () => ({ pingTelemetry: mockPing }));
-vi.mock('./config/loader.js', () => ({
+vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: mockPing }));
+vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: mockInitConfigDirs,
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
   pruneOrphanUsage: vi.fn(async () => 0),
+  appendUsageRecord: vi.fn(),
+  getOrCreateSecret: mockGetOrCreateSecret,
 }));
-vi.mock('./plugins/jwt.js', () => ({ loadSecret: mockLoadSecret }));
-vi.mock('./update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
+vi.mock('./modules/auth/jwt.js', () => ({ loadSecret: mockLoadSecret }));
+vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: mockLoadCredentialKey }));
+vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
 
 vi.mock('fastify', () => ({
   default: vi.fn(() => ({
@@ -36,15 +41,17 @@ vi.mock('fastify', () => ({
     listen: vi.fn().mockResolvedValue(undefined),
     log: { warn: vi.fn(), error: vi.fn() },
     setNotFoundHandler: vi.fn(),
+    decorate: vi.fn(),
+    addHook: vi.fn(),
   })),
 }));
 vi.mock('@fastify/cors', () => ({ default: vi.fn() }));
 vi.mock('@fastify/static', () => ({ default: vi.fn() }));
-vi.mock('./plugins/auth.js', () => ({ default: vi.fn() }));
-vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn() }));
-vi.mock('./routes/openai.js', () => ({ openaiRoutes: vi.fn() }));
-vi.mock('./routes/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));
-vi.mock('./config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }));
+vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn() }));
+vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn() }));
+vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn() }));
+vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));
+vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }));
 
 import { startServer } from './server.js';
 
@@ -55,7 +62,6 @@ function makeSettings(telemetry?: { enabled: boolean; installId: string; lastPin
     port: 3000,
     host: '0.0.0.0',
     dashboardEnabled: false,
-    defaultTimeoutMs: 30000,
     logLevel: 'info' as const,
     channel: 'latest',
     ...(telemetry !== undefined ? { telemetry } : {}),
@@ -64,11 +70,20 @@ function makeSettings(telemetry?: { enabled: boolean; installId: string; lastPin
 
 afterEach(() => vi.clearAllMocks());
 
+// bootstrap() also reads the 'modules' config key (module enable/disable
+// registry) — keyed mock keeps that read returning [] (no disabled modules)
+// while callers still control the 'settings' shape they care about.
+function mockSettings(settings: ReturnType<typeof makeSettings>): void {
+  mockReadConfig.mockImplementation(async (key: string) =>
+    (key === 'settings' ? settings : []) as unknown,
+  );
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('startServer() startup telemetry', () => {
   it('does not ping when telemetry is absent (user not yet asked)', async () => {
-    mockReadConfig.mockResolvedValue(makeSettings());
+    mockSettings(makeSettings());
 
     await startServer();
 
@@ -77,7 +92,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('does not ping when telemetry is disabled', async () => {
-    mockReadConfig.mockResolvedValue(makeSettings({ enabled: false, installId: 'id-1' }));
+    mockSettings(makeSettings({ enabled: false, installId: 'id-1' }));
 
     await startServer();
 
@@ -86,7 +101,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('fires "install" when lastPingedVersion is absent', async () => {
-    mockReadConfig.mockResolvedValue(makeSettings({ enabled: true, installId: 'uuid-abc' }));
+    mockSettings(makeSettings({ enabled: true, installId: 'uuid-abc' }));
 
     await startServer();
 
@@ -100,7 +115,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('fires "upgrade" when lastPingedVersion differs from current version', async () => {
-    mockReadConfig.mockResolvedValue(
+    mockSettings(
       makeSettings({ enabled: true, installId: 'uuid-def', lastPingedVersion: '0.0.1' }),
     );
 
@@ -116,7 +131,7 @@ describe('startServer() startup telemetry', () => {
   });
 
   it('does not ping when lastPingedVersion already matches current version', async () => {
-    mockReadConfig.mockResolvedValue(
+    mockSettings(
       makeSettings({ enabled: true, installId: 'uuid-ghi', lastPingedVersion: CURRENT_VERSION }),
     );
 
@@ -128,7 +143,7 @@ describe('startServer() startup telemetry', () => {
 
   it('does not update lastPingedVersion when ping fails', async () => {
     mockPing.mockResolvedValueOnce(false);
-    mockReadConfig.mockResolvedValue(makeSettings({ enabled: true, installId: 'uuid-fail' }));
+    mockSettings(makeSettings({ enabled: true, installId: 'uuid-fail' }));
 
     await startServer();
 

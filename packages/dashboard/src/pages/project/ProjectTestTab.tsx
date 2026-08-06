@@ -3,7 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useProject } from './ProjectLayout';
-import { TraceEntryRenderer } from '../../components/TraceEntryRenderer';
+import { TraceLog } from '../../components/TraceLog';
+import { TraceSummary } from '../../components/TraceSummary';
+import { getTrace, streamTraces, type TraceEntry } from '../../api';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -32,51 +34,15 @@ export function ProjectTestTab() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const routerReqPanelEndRef = useRef<HTMLDivElement>(null);
-  const routerResPanelEndRef = useRef<HTMLDivElement>(null);
-  const reqPanelEndRef = useRef<HTMLDivElement>(null);
-  const resPanelEndRef = useRef<HTMLDivElement>(null);
-
-  // Ogni pannello filtra le entry del trace per panel field
-  const routerRequestHistory = useMemo(() =>
-    debugTraceHistory.map(trace =>
-      (trace as any[]).filter(t => t.panel === 'router-request')
-    ), [debugTraceHistory]);
-
-  const routerResponseHistory = useMemo(() =>
-    debugTraceHistory.map(trace =>
-      (trace as any[]).filter(t => t.panel === 'router-response')
-    ), [debugTraceHistory]);
-
-  const requestHistory = useMemo(() =>
-    debugTraceHistory.map(trace =>
-      (trace as any[]).filter(t => t.panel === 'request')
-    ), [debugTraceHistory]);
-
-  const responseHistory = useMemo(() =>
-    debugTraceHistory.map(trace =>
-      (trace as any[]).filter(t => t.panel === 'response')
-    ), [debugTraceHistory]);
+  const debugEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
-    routerReqPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [routerRequestHistory]);
-
-  useEffect(() => {
-    routerResPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [routerResponseHistory]);
-
-  useEffect(() => {
-    reqPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [requestHistory]);
-
-  useEffect(() => {
-    resPanelEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [responseHistory]);
+    debugEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [debugTraceHistory]);
 
   // We no longer persist the API key per user request
 
@@ -119,8 +85,22 @@ export function ProjectTestTab() {
     };
 
     const turnIndex = debugTraceHistory.length;
-    // Inizializza il slot con array vuoto — si popola in real-time via SSE
+    // Empty slot, filled live from the trace side channel
     setDebugTraceHistory(prev => [...prev, []]);
+
+    // The trace never rides the LLM wire: the caller picks a correlation id, sends it
+    // on the request and reads its own entries on the management side channel.
+    const correlationId = crypto.randomUUID();
+    let traceId = '';
+    const stopTrace = await streamTraces({ correlationId }, ev => {
+      traceId = ev.traceId;
+      setDebugTraceHistory(prev => {
+        const updated = [...prev];
+        const current = updated[turnIndex] ?? [];
+        updated[turnIndex] = [...current, ev.entry];
+        return updated;
+      });
+    });
 
     try {
       const t0 = performance.now();
@@ -133,7 +113,8 @@ export function ProjectTestTab() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${cleanKey}`
+          'Authorization': `Bearer ${cleanKey}`,
+          'x-routerly-trace': correlationId
         },
         body: JSON.stringify(payload),
         signal: controller.signal
@@ -166,17 +147,6 @@ export function ProjectTestTab() {
               if (dataStr) {
                 try {
                   const data = JSON.parse(dataStr);
-
-                  // ── Evento trace in real-time ─────────────────────────────
-                  if (data.type === 'trace') {
-                    setDebugTraceHistory(prev => {
-                      const updated = [...prev];
-                      const current = updated[turnIndex] as any[];
-                      updated[turnIndex] = [...current, data.entry];
-                      return updated;
-                    });
-                    continue;
-                  }
 
                   // ── Routing completato (routing-only mode) ────────────────
                   if (data.type === 'result') {
@@ -240,6 +210,22 @@ export function ProjectTestTab() {
         }
       }
 
+      // The live entries stop at the last event that made it through the side
+      // channel; the stored trace also has what the pipeline emitted after it,
+      // recap included. It is the authoritative one.
+      if (traceId) {
+        try {
+          const stored = await getTrace(traceId);
+          setDebugTraceHistory(prev => {
+            const updated = [...prev];
+            updated[turnIndex] = stored.trace;
+            return updated;
+          });
+        } catch {
+          // Fetch failed — keep the entries collected live
+        }
+      }
+
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') {
         // Stop requested by user — not an error
@@ -247,6 +233,7 @@ export function ProjectTestTab() {
         setError(e instanceof Error ? e.message : 'Unknown error occurred');
       }
     } finally {
+      stopTrace();
       abortControllerRef.current = null;
       setLoading(false);
     }
@@ -504,106 +491,28 @@ export function ProjectTestTab() {
           )}
         </div>
 
-        {/* 4 scrollable panels */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-          {/* Panel: Router Request */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #5A90F8', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Router Request</span>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debugTraceHistory.length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
-              ) : routerRequestHistory.map((entries, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                  {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
-                </div>
-              ))}
-              <div ref={routerReqPanelEndRef} />
-            </div>
-          </div>
-
-          {/* Panel: Router Response */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #A78BFA', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Router Response</span>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debugTraceHistory.length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
-              ) : routerResponseHistory.map((entries, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                  {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
-                </div>
-              ))}
-              <div ref={routerResPanelEndRef} />
-            </div>
-          </div>
-
-          {/* Panel: Request */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #10B981', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Request</span>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debugTraceHistory.length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
-              ) : requestHistory.map((entries, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                  {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
-                  {entries?.map((e: any, j: number) => <TraceEntryRenderer key={j} entry={e} />)}
-                </div>
-              ))}
-              <div ref={reqPanelEndRef} />
-            </div>
-          </div>
-
-          {/* Panel: Response */}
-          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '5px 12px', background: 'var(--bg-surface)', borderLeft: '3px solid #F59E0B', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Response</span>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px', background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {debugTraceHistory.length === 0 ? (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
-              ) : responseHistory.map((entries, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 3 }}>#{i + 1} {loading && i === debugTraceHistory.length - 1 && '⏳'}</div>
-                  {entries?.length === 0 && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No model calls (routing only)</span>}
-                  {entries?.map((e: any, j: number) => {
-                    const isError = e.message === 'model:error';
-                    const isThinking = e.message === 'model:thinking';
-                    const labelColor = isError ? 'var(--danger)' : isThinking ? '#a78bfa' : 'var(--accent)';
-                    return (
-                      <div key={j} style={{ marginBottom: 4 }}>
-                        <div style={{ fontSize: '0.6rem', color: labelColor, marginBottom: 2, fontWeight: 600 }}>{e.message}</div>
-                        {isThinking ? (
-                          <details>
-                            <summary style={{ fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
-                              {String(e.details?.text ?? '').substring(0, 80)}{String(e.details?.text ?? '').length > 80 ? '…' : ''}
-                            </summary>
-                            <pre style={{ margin: '4px 0 0', padding: 10, background: 'var(--bg-surface)', border: '1px solid rgba(167,139,250,0.3)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                              {String(e.details?.text ?? '')}
-                            </pre>
-                          </details>
-                        ) : (
-                          <pre style={{ margin: 0, padding: 10, background: 'var(--bg-surface)', border: isError ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', overflowX: 'auto', color: isError ? 'var(--danger)' : 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-                            {JSON.stringify(e.details, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-              <div ref={resPanelEndRef} />
-            </div>
-          </div>
-
+        {/* One turn per block: the recap card, and the full log a click below it */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 12, background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {debugTraceHistory.length === 0 ? (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
+          ) : debugTraceHistory.map((entries, i) => {
+            const traces = (entries ?? []) as TraceEntry[];
+            const pending = loading && i === debugTraceHistory.length - 1;
+            return (
+              <div key={i}>
+                <TraceSummary trace={traces} turn={i + 1} />
+                <details style={{ marginTop: 4 }}>
+                  <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                    Turn #{i + 1} trace log · {traces.length} event{traces.length !== 1 ? 's' : ''}{pending ? ' ⏳' : ''}
+                  </summary>
+                  <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                    <TraceLog entries={traces} collapsed />
+                  </div>
+                </details>
+              </div>
+            );
+          })}
+          <div ref={debugEndRef} />
         </div>
       </div>
 

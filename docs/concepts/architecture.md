@@ -72,6 +72,67 @@ When your application sends a chat request to Routerly:
 
 ---
 
+## Tracing
+
+Every step above is a **pipeline phase**, and each phase runs the modules
+registered for it: `ingress`, `protocol.decode`, `request.preprocess` (PII,
+guardrails, optimizers), `routing.prepare` (policies and the decision),
+`routing.execute` with `upstream.prepare` and `upstream.execute` (the budget
+check, the upstream call, retries, fallbacks), `response.postprocess`,
+`protocol.encode`, `egress` (what the client is sent) and `finalize`.
+
+Modules do not write to a shared trace object. They publish events on the
+service event bus, on topics shaped `trace/<phase>/<module>/<event>`, and the
+trace module is the only subscriber: it buffers the entries of a request,
+stamping each one with the phase, the module and the moment it arrived. When
+the request finishes it publishes the completed trace on `traces/completed`,
+which is where the readers pick it up:
+
+| Reader | What it does with the trace |
+|--------|-----------------------------|
+| Usage | Stores it on the usage record once the trace closes, shown as the [trace view](../dashboard/usage.md#trace-view) grouped by phase |
+| Live stream | `GET /api/traces/stream`, the management side channel the [Playground](../dashboard/playground.md) reads while the answer is still streaming |
+| Console | Prints every entry as it happens, one line each (see below) |
+| Integrations | [Exports](../api/management#trace-export) it as OTLP spans or a signed webhook payload, per integration and with its own sample rate |
+
+A call is accounted when its upstream request returns, but its trace keeps
+growing after that -- response guardrails, the PII scan of the answer, what
+egress wrote, the recap. The usage record therefore waits for the trace to close
+before it is written, so what is stored is the whole request and not the part of
+it that happened before the answer came back.
+
+Before it publishes, the trace module appends one derived entry, `trace:recap`:
+the request in a single object (outcome, model, attempts, tokens, cost,
+guardrails, PII, optimizers, router overhead, errors). Every number in it comes
+from an entry already in the buffer, so it cannot disagree with the detail, and
+each reader gets the same aggregate instead of computing its own.
+
+Adding a module to the pipeline therefore adds it to the trace, to the live
+stream, to the console and to every export, without touching any of them.
+Nothing about this reaches the LLM wire: the proxied request and response carry
+no Routerly header and no Routerly field.
+
+### The trace on the console
+
+The whole trace is written to the process streams as it happens, one line per
+entry:
+
+```
+trace <traceId> <phase>/<module> <message> <details JSON>[ +content]
+```
+
+Failures -- anything reporting an error, a block, or a failed outcome -- go to
+**stderr**; everything else goes to **stdout**. Ordinary shell plumbing works
+on it (`routerly start 2> errors.log`), and Docker and systemd capture both.
+
+Two things it never does: it does not print prompts or answers. `entry.content`
+is a per-project opt-in for the trace UI, and logs have a different lifetime, so
+the line only says whether content was captured (`+content`), not what it said.
+And at log level `warn` or `error` it prints failures only -- an operator who
+asked for less output does not get the full trace.
+
+---
+
 ## Configuration Storage
 
 All state is stored as JSON files on disk under `~/.routerly/` (override with `$ROUTERLY_HOME`). There is no external database dependency.

@@ -5,7 +5,7 @@
  * Strategy: mock every page and heavy component so tests focus on App-level logic.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // ── Page mocks — all pages render their route name only ────────────────────────
@@ -32,6 +32,7 @@ vi.mock('./pages/TestPage', () => ({ TestPage: () => <div>TestPage</div> }));
 vi.mock('./pages/SettingsPage', () => ({
   SettingsPage: () => <div>SettingsPage</div>,
   SettingsGeneralTab: () => <div>SettingsGeneralTab</div>,
+  SettingsSecurityTab: () => <div>SettingsSecurityTab</div>,
   SettingsIntegrationsTab: () => <div>SettingsIntegrationsTab</div>,
   SettingsCatalogTab: () => <div>SettingsCatalogTab</div>,
   SettingsAboutTab: () => <div>SettingsAboutTab</div>,
@@ -57,19 +58,23 @@ vi.mock('./api', () => ({
   getSystemInfo: vi.fn(),
   getSettings: vi.fn(),
   updateSettings: vi.fn(),
+  getClients: vi.fn(),
+  getExperiments: vi.fn(),
 }));
 
 // ── AuthContext mock ───────────────────────────────────────────────────────────
 vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }));
 
 import App from './App';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings } from './api';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments } from './api';
 import { useAuth } from './AuthContext';
 
 const mockCheckSetup = vi.mocked(checkSetupStatus as () => Promise<unknown>);
 const mockGetSystemInfo = vi.mocked(getSystemInfo as () => Promise<unknown>);
 const mockGetSettings = vi.mocked(getSettings as () => Promise<unknown>);
 const mockUpdateSettings = vi.mocked(updateSettings as (...a: unknown[]) => Promise<unknown>);
+const mockGetClients = vi.mocked(getClients as () => Promise<unknown>);
+const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
@@ -84,6 +89,8 @@ beforeEach(() => {
   mockGetSystemInfo.mockResolvedValue({ isDocker: false });
   mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: false });
   mockUpdateSettings.mockResolvedValue(undefined);
+  mockGetClients.mockRejectedValue(Object.assign(new Error('Not found'), { status: 404 }));
+  mockGetExperiments.mockRejectedValue(Object.assign(new Error('module_disabled'), { status: 403 }));
   mockUseAuth.mockReturnValue({
     user: adminUser,
     isLoading: false,
@@ -266,6 +273,34 @@ describe('Sidebar', () => {
     expect(screen.getByText('Models')).toBeTruthy();
     expect(screen.getByText('Projects')).toBeTruthy();
     expect(screen.getByText('Usage')).toBeTruthy();
+  });
+
+  it('offers Experiments only when the module answers', async () => {
+    renderApp();
+    await waitFor(() => screen.getByText('Overview'));
+    expect(screen.queryByText('Experiments')).toBeNull();
+
+    mockGetExperiments.mockResolvedValue([]);
+    cleanup();
+    renderApp();
+    await waitFor(() => expect(screen.getByText('Experiments')).toBeTruthy());
+  });
+
+  it('lists the nav flat, in setup then measure order, Playground last', async () => {
+    // Both optional modules on, so the whole intended order is visible at once.
+    mockGetClients.mockResolvedValue([]);
+    mockGetExperiments.mockResolvedValue([]);
+    renderApp();
+    await waitFor(() => screen.getByText('Connect app'));
+    await waitFor(() => screen.getByText('Experiments'));
+    const labels = Array.from(document.querySelectorAll('.sidebar-nav .nav-label')).map(el => el.textContent);
+    expect(labels).toEqual([
+      'Overview', 'Providers', 'Models', 'Profiles', 'Projects',
+      'Experiments', 'Usage', 'Playground',
+    ]);
+    // Connect app is a setup step, not a daily destination: it sits with Settings.
+    const footer = Array.from(document.querySelectorAll('.sidebar-footer .nav-label')).map(el => el.textContent);
+    expect(footer).toContain('Connect app');
   });
 
   it('toggles collapsed state on toggle button click', async () => {

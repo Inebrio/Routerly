@@ -5,13 +5,14 @@ sidebar_position: 2
 
 # HTTP Endpoints
 
-The service exposes four groups of HTTP endpoints on the same port (default: `3000`):
+The service exposes five groups of HTTP endpoints on the same port (default: `3000`):
 
 | Group | Path prefix | Auth | Purpose |
 |-------|-------------|------|---------|
 | [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-rt-…`) | Forward requests to LLM providers |
 | [Pass-Through Proxy](#pass-through-proxy) | any other path | Bearer project token (`sk-rt-…`) | Transparently forward any unhandled provider endpoint |
 | [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users |
+| [MCP Server](#mcp-server) | `/mcp` | Bearer personal MCP token (`sk-rt-mcp-…`) | Model Context Protocol tools for MCP clients |
 | [Dashboard](#dashboard) | `/dashboard/*` | Browser session (cookie) | Serve the React web UI |
 | [Health](#health-check) | `/health` | None | Liveness probe |
 
@@ -45,7 +46,9 @@ The `model` field is the model ID registered in your project. Routerly ignores i
 
 ### `POST /v1/responses`
 
-OpenAI Responses API format (newer API surface). Uses `input` instead of `messages` and always streams. Routerly normalises it to the `chat/completions` shape internally before routing.
+OpenAI Responses API format (newer API surface). Uses `input` instead of `messages`, and streams only when `"stream": true`. Routerly normalises it to the `chat/completions` shape internally before routing, then answers in the Responses wire format — a `response` object, or the typed `event:`-named SSE sequence that ends on `response.completed` with no `[DONE]` sentinel.
+
+`previous_response_id` is rejected with HTTP 400: Routerly keeps no conversation state, so the full `input` list must be sent each turn. See the [LLM Proxy API](../api/llm-proxy.md#responses-api) for the supported item types and event sequence.
 
 ```http
 POST /v1/responses
@@ -185,6 +188,7 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `GET` | `/api/projects` | List projects |
 | `POST` | `/api/projects` | Create a project |
 | `GET` | `/api/usage` | Query usage records |
+| `GET` | `/api/usage/:id` | Read one usage record by record id or trace id |
 | `GET` | `/api/settings` | Read service settings |
 | `PUT` | `/api/settings` | Update service settings |
 | `GET` | `/api/users` | List users (admin only) |
@@ -194,6 +198,88 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `DELETE` | `/api/spend-groups/:id` | Delete a spend group |
 | `GET` | `/api/notifications/inbox` | List the current user's in-app notifications |
 | `POST` | `/api/notifications/inbox/read` | Mark notifications as read (`ids[]` or `all`) |
+| `GET` | `/api/me/mcp-tools` | List the MCP tools the caller's own tokens expose |
+| `GET` | `/api/me/mcp-tokens` | List the caller's personal MCP tokens |
+| `POST` | `/api/me/mcp-tokens` | Create a personal MCP token (raw value returned once) |
+| `DELETE` | `/api/me/mcp-tokens/:id` | Revoke a personal MCP token |
+
+---
+
+## MCP Server
+
+Routerly's `mcp` module exposes the gateway's own management API as tools to
+[Model Context Protocol](https://modelcontextprotocol.io/) clients (Claude
+Code, Claude Desktop, Codex, OpenCode, OpenClaw, and similar). This is a
+distinct surface from the LLM Proxy: `/mcp` never forwards anything to an
+upstream provider, it only reads and writes Routerly's own configuration and
+usage data through a fixed set of built-in tools. See
+[Concepts: MCP Server](../concepts/mcp.md) for the full tool list and both
+transports.
+
+### `POST /mcp`
+
+Streamable HTTP transport, JSON-RPC 2.0. Self-authenticating: this route is
+excluded from the standard project-token auth guard and validates the token
+itself.
+
+**Authentication:** `Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN`, a
+personal MCP token. Project tokens (`sk-rt-…`) are rejected: the token
+identifies a **user**, and the call runs with that user's permissions.
+
+```http
+POST /mcp
+Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{ "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {} }
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      { "name": "list_models", "description": "...", "inputSchema": { "type": "object", "properties": {} } }
+    ]
+  }
+}
+```
+
+`tools/list` returns only the tools the token owner's role permits, and
+`tools/call` re-checks the same permission, so an under-permissioned client
+can neither see nor reach a tool it cannot use.
+
+### stdio transport
+
+For local MCP clients that spawn a subprocess (Claude Desktop and similar),
+run:
+
+```bash
+routerly mcp serve
+```
+
+This is a thin wrapper: it resolves an MCP token, then spawns the Routerly
+service binary with `ROUTERLY_MCP_STDIO=1` and `ROUTERLY_MCP_TOKEN=<token>`
+set, which starts only the stdio MCP server bound to that token owner's
+identity. The identity is resolved once at startup, so a role change reaches
+a running session only after a restart. See
+[Reference: Environment Variables](../reference/environment-variables.md#mcp-server-variables)
+if you are connecting a real MCP client directly to the service binary
+instead of via the CLI.
+
+### Error codes
+
+| Code | Cause |
+|------|-------|
+| `401` | Missing `Authorization` header |
+| `401` | Unknown or revoked token, or a project token used in place of an MCP token |
+| `401` | Token past its `expiresAt` |
+
+A `tools/call` the caller lacks the permission for does not fail at the HTTP
+level (still `200`); the JSON-RPC result carries `isError: true` with an
+explanatory message.
 
 ---
 
@@ -237,13 +323,23 @@ Suitable for Docker `HEALTHCHECK`, Kubernetes liveness probes, and load balancer
 
 ---
 
-## Trace Header
+## Traces
 
-Every LLM Proxy response includes an `x-routerly-trace-id` header containing a UUID that identifies the routing trace for that request. You can use this ID to look up the routing decision in the dashboard's Playground trace viewer.
+LLM Proxy responses carry no Routerly headers. To follow a request, send your own
+correlation id on it and read the entries on the management API while they happen:
 
 ```http
-x-routerly-trace-id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+POST /v1/chat/completions
+x-routerly-trace: my-request-42
 ```
+
+```http
+GET /api/traces/stream?correlationId=my-request-42
+```
+
+The id is consumed by Routerly: it is not forwarded upstream and changes neither
+the request nor the response payload. Once the request is done, its trace is on
+the usage record, and the dashboard shows it in Usage and in the Playground.
 
 ---
 
@@ -252,3 +348,4 @@ x-routerly-trace-id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
 - [API — LLM Proxy](../api/llm-proxy) — full request/response schemas
 - [API — Management](../api/management) — full management endpoint catalogue
 - [Service — Routing Engine](./routing-engine) — how the model is selected for each request
+- [Concepts: MCP Server](../concepts/mcp): MCP tools, transports, and personal tokens

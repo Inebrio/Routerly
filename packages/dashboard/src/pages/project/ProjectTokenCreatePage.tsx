@@ -18,12 +18,15 @@ export function ProjectTokenCreatePage() {
   // Create state
   const [createLabels, setCreateLabels] = useState<string[]>([]);
   const [createLabelInput, setCreateLabelInput] = useState('');
+  const [createScopes, setCreateScopes] = useState<string[]>([]);
+  const [createScopeInput, setCreateScopeInput] = useState('');
   const [createTags, setCreateTags] = useState<Record<string, string>>({});
   const [newTagKey, setNewTagKey] = useState('');
   const [newTagVal, setNewTagVal] = useState('');
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
 
   const allLabels = Array.from(new Set((project.tokens || []).flatMap(t => t.labels || []))).sort();
+  const allScopes = Array.from(new Set((project.tokens || []).flatMap(t => t.scopes || []))).sort();
 
   async function copyToClipboard(token: string) {
     const success = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
@@ -52,7 +55,7 @@ export function ProjectTokenCreatePage() {
     e.preventDefault(); setErr(''); setLoading(true);
     if (!projectId) return;
     try {
-      const result = await createProjectToken(projectId, createLabels, Object.keys(createTags).length ? createTags : undefined);
+      const result = await createProjectToken(projectId, createLabels, Object.keys(createTags).length ? createTags : undefined, createScopes.length ? createScopes : undefined);
       setProject(p => p ? { ...p, tokens: [...(p.tokens || []), result.tokenInfo] } : p);
       setRevealedToken(result.token);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error creating token'); }
@@ -111,6 +114,16 @@ export function ProjectTokenCreatePage() {
                 Tag this token to identify where it's used (e.g. "production", "ci").
               </p>
               <LabelInput labels={createLabels} setLabels={setCreateLabels} input={createLabelInput} setInput={setCreateLabelInput} allLabels={allLabels} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Scopes <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Free-form scopes attached to this token (e.g. "batch", "internal"), stored with the token for your own bookkeeping.
+              </p>
+              <LabelInput labels={createScopes} setLabels={setCreateScopes} input={createScopeInput} setInput={setCreateScopeInput} allLabels={allScopes} />
             </div>
 
             <div className="form-group">

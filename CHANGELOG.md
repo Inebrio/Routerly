@@ -4,6 +4,24 @@ All notable changes to Routerly are documented in this file.
 
 ---
 
+## [0.4.0] — 2026-07-28
+
+### Internal
+
+**Modular kernel architecture**
+The service core has been reorganized from inline route handlers into a dependency-injection container with a modular, phase-based pipeline. This enables extensibility without touching core code: new security rules, routing policies, or provider adapters are registered as independently testable modules contributing processors to a shared pipeline. The refactor preserves wire-format transparency absolutely — all request and response payloads are byte-for-byte identical to previous versions. The architecture is: a frozen `ServiceContainer` housing DI tokens; a `ProcessorRegistry` that chains `Processor<ProxyContext>` objects across a frozen, ordered phase list (ingress, protocol.decode, request.preprocess, routing.prepare, routing.execute, upstream.prepare, upstream.execute, response.postprocess, protocol.encode, egress, finalize); bootstrap assembly in `modules/` where each subsystem (auth, routing, guardrails, budget, usage, logging, pii, notifications, observability, reverse-proxy, and others) registers its own processors behind a module token; and an atomic phase-scoped runner that executes the pipeline while honouring short-circuit guards (block, error, early-exit). Concerns are now decoupled: the guardrail module no longer knows about PII scrubbing, the routing engine no longer duplicates budget checks, and the reverse-proxy lanes (openai, anthropic) are isolated transport processors that delegate all policy logic to the phase pipeline. The routes layer (`modules/api-reverse-proxy/`) delegates to `runProxy(pipeline)` without inline handler logic. This is a major internal refactor with no new user-facing features from the restructuring itself, but it enables future work on composability and operator-written extensions.
+
+### Fixes
+
+**Guardrail steering injection regression**
+When the modular pipeline was activated (atomic route flip from inline handlers to runproxy), the request-injection merge logic that applies inject-only guardrail instructions to the outgoing request system prompt was deleted without being reimplemented in the new pipeline. This caused content guardrails configured with `inject: true` but without a block/log `target` (inject-only steering rules) to silently drop their steering instructions and have no effect on the model. The regression affected topic and moderation rules used only for soft steering, not blocking or logging. The fix adds dedicated upstream.prepare-phase processors `openai:inject` and `anthropic:inject` that merge steering instructions from the guardrail module into the correct system-message field for each provider, matching the previous behavior exactly. Inject-only guardrails (topic and moderation rules with no request/response/both target) are now restored and functional.
+
+### Breaking changes
+
+None. The OpenAI and Anthropic wire formats are unchanged.
+
+---
+
 ## [0.3.0] — 2026-07-13
 
 ### New features

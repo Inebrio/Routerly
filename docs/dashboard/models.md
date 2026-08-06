@@ -42,6 +42,8 @@ Results are paginated at 20 models per page.
 
 Health columns show a dash when no data is available for the window. The health data refreshes automatically every 30 seconds (visible in the subtitle bar).
 
+With `models:write`, clicking a row on the Models tab opens that model's edit form, the same page the pencil icon opens; without the permission the row is inert. Rows on the Health tab are not clickable: their only action is the per-row resilience reset button.
+
 Click any column header to sort.
 
 :::note Redirected from /dashboard/health
@@ -54,14 +56,55 @@ The standalone Provider Health page has been merged into this page. `/dashboard/
 2. Fill in the form:
    - **Model ID** -- the identifier sent to the provider (e.g. `gpt-5-mini`)
    - **Provider** -- select from the dropdown
-   - **API Key** -- encrypted at rest; leave blank for Ollama / custom models without auth
-   - **Base URL** -- optional override (useful for proxies or self-hosted models)
+   - **Connection details** -- choose **Preconfigured** or **Custom**; see [Preconfigured vs Custom Connection](#preconfigured-vs-custom-connection) below
    - **Context Window** -- pre-filled for known models
    - **Pricing** -- input/output/cache prices per 1M tokens; pre-filled for known models
    - **Pricing Tiers** -- add a tier for long-context pricing (e.g. Anthropic above 200k tokens)
    - **Capabilities** -- check all that apply
 
 3. Click **Save**
+
+### Preconfigured vs Custom Connection
+
+The model form's "Connection details" section is a **Preconfigured / Custom**
+toggle, not a fixed API Key + Base URL pair:
+
+- **Preconfigured** -- pick an existing [connection](connections.md) from a
+  dropdown, filtered to connections whose provider matches the model's
+  **Provider**. No endpoint or credential fields are shown; none are sent.
+  The model binds to that connection's `connectionId`. If no connection
+  exists yet for the selected provider, the dropdown is replaced with a
+  message pointing you to the Connections page. Picking a `custom` connection
+  that carries an upstream provider name fills the model's **Provider
+  (upstream provider name)** field with it, so the model ID prefix follows the
+  connection.
+- **Custom** -- the classic inline **Base URL** and **API Key** fields (plus
+  the provider-specific fields for Azure/Bedrock/Vertex/web providers), typed
+  directly into the model form. On save, Routerly creates or updates a
+  dedicated, single-model connection with id `conn-for-<model-id>` from those
+  values and binds the model to it. This is functionally identical to the
+  pre-cutover behavior; the credentials still end up on a connection under
+  the hood.
+
+Both modes produce a model that resolves through a real connection --
+Preconfigured just lets more than one model reuse the same one.
+
+:::note Change one, change all
+Editing a **Preconfigured** connection on the [Connections page](connections.md)
+updates the endpoint and credentials for every model bound to it, immediately.
+There is no per-model override once a model is on a shared connection. If a
+model needs its own credentials, switch it to Custom instead.
+:::
+
+**Editing an existing model** defaults the toggle based on how the model is
+currently bound:
+
+- Bound to a connection shared with other models (any `connectionId` other
+  than that model's own `conn-for-<model-id>`) -- defaults to
+  **Preconfigured**, with that connection pre-selected.
+- Bound to its own dedicated `conn-for-<model-id>` connection -- defaults to
+  **Custom**, with the Base URL pre-filled and API Key left blank (never
+  echoed back).
 
 :::tip Adding from the catalog
 Use the **Model Discovery** page (navigate to **Models**, then click **Discover**) to browse the built-in catalog. Clicking **Add** next to any entry opens the new-model form with the **Provider** and **Model ID** already filled in, and pre-populates pricing and context window from the catalog entry. You only need to supply the API key.
@@ -73,15 +116,21 @@ Use the **Model Discovery** page (navigate to **Models**, then click **Discover*
 
 Click the **Edit** (pencil) icon next to a model. All fields except the Model ID are editable.
 
-To update the API key, enter a new value -- Routerly re-encrypts it immediately.
+The Connection details toggle opens on **Preconfigured** or **Custom**
+depending on the model's current binding -- see
+[Preconfigured vs Custom Connection](#preconfigured-vs-custom-connection). In
+Custom mode, to update the API key enter a new value -- Routerly re-encrypts
+it immediately and writes it to the model's dedicated `conn-for-<model-id>`
+connection. Leaving the API key field blank keeps the currently stored
+credentials unchanged.
 
 #### Catalog Tracking and Field Overrides
 
 Models linked to the catalog show status badges on editable fields:
 
-- **Auto** (green badge) — field is synced from the catalog; your edit will override it
-- **Override** (amber badge) — field is manually locked to your custom value; it will not auto-sync
-- No badge — model is not in the catalog (local Ollama, custom endpoint) or field is always manual (API key, enabled status)
+- **Auto** (green badge) -- field is synced from the catalog; your edit will override it
+- **Override** (amber badge) -- field is manually locked to your custom value; it will not auto-sync
+- No badge -- model is not in the catalog (local Ollama, custom endpoint) or field is always manual (API key, enabled status)
 
 **To override a catalog field:** edit it normally. The badge changes to "Override" and the field is locked. An edit indicator appears showing the catalog default value.
 
@@ -127,12 +176,12 @@ Click any column header to sort ascending; click again to reverse. All five colu
 
 **Filters (two rows):**
 
-- **Search** — filter by model ID or name substring
-- **Provider** — multi-select dropdown; leave empty to show all providers
-- **Context** — limit by context window size: All, &lt;32k, 32k–200k, 200k–1M, &gt;1M
-- **Price /1M** — filter by input price tier: All, Free, &lt;$1, $1–$5, &gt;$5
-- **Show** — All, Configured only (models already added to Routerly), Embedding only
+- **Search** -- filter by model ID or name substring
+- **Provider** -- multi-select dropdown; leave empty to show all providers
+- **Context** -- limit by context window size: All, &lt;32k, 32k–200k, 200k–1M, &gt;1M
+- **Price /1M** -- filter by input price tier: All, Free, &lt;$1, $1–$5, &gt;$5
+- **Show** -- All, Configured only (models already added to Routerly), Embedding only
 
 Click **Reset filters** to clear all filters at once.
 
-Click **Add** next to any model to open the new-model form with that model's details pre-filled. Pricing and context window are populated automatically from the catalog. You only need to supply the API key to complete registration.
+Click **Add** next to any model, or anywhere else on its row, to open the new-model form with that model's details pre-filled. Pricing and context window are populated automatically from the catalog. You only need to supply the API key to complete registration.

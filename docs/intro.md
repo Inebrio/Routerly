@@ -95,7 +95,8 @@ Then register a model, create a project, and start:
 
 ```bash
 routerly model add --id gpt-5-mini --provider openai --api-key sk-YOUR_KEY
-routerly project add --name "My App" --slug my-app --models gpt-5-mini
+routerly project create --name "My App"
+routerly project model add "My App" gpt-5-mini
 routerly start
 ```
 

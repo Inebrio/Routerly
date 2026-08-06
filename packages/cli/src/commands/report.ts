@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import { CALL_TYPES, REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type UsageSeries } from '@routerly/shared';
 import { api } from '../api.js';
 
 interface UsageByModel {
@@ -26,9 +27,13 @@ interface UsageResponse {
     guardrailCost?: number;
   };
   byModel: Record<string, UsageByModel>;
+  /** Calls per request type in the window, counted before `--type` narrowed it (T210). */
+  byRequestType?: Record<string, number>;
   records: Array<{
     timestamp: string;
     projectId: string;
+    /** Project token the call authenticated with. Absent on records written before it was tracked. */
+    tokenId?: string;
     modelId: string;
     inputTokens: number;
     outputTokens: number;
@@ -36,7 +41,100 @@ interface UsageResponse {
     latencyMs: number;
     outcome: string;
     callType?: string;
+    requestType?: string;
   }>;
+  /** Present only when the request asked for it with `savings=1` (T61). */
+  savings?: SavingsSummary;
+  /** Present only when the request asked for it with `series=1` (T81). */
+  series?: UsageSeries;
+}
+
+/**
+ * Validate `--type` against the request types the service knows (T60). Rejecting
+ * here keeps a typo from silently returning an empty report.
+ */
+function parseRequestType(value: string): string {
+  if (!(REQUEST_TYPES as readonly string[]).includes(value)) {
+    console.error(chalk.red(`Error: unknown type '${value}'. Expected one of: ${REQUEST_TYPES.join(', ')}`));
+    process.exit(1);
+  }
+  return value;
+}
+
+/**
+ * Validate `--caller`, the CLI side of the dashboard's Caller filter. The
+ * service treats `completion` as "everything a client asked for", legacy
+ * records without a `callType` included.
+ */
+function parseCallType(value: string): string {
+  if (!(CALL_TYPES as readonly string[]).includes(value)) {
+    console.error(chalk.red(`Error: unknown caller '${value}'. Expected one of: ${CALL_TYPES.join(', ')}`));
+    process.exit(1);
+  }
+  return value;
+}
+
+/**
+ * What routing saved (T102), the same figures the Overview cards show, anchored
+ * the same way: the costliest paid baseline, the single-model policy
+ * routing replaces. The cheapest baseline follows as context, because "sending
+ * everything to the cheapest model would have cost less" is true of any router
+ * and reads as a verdict when it comes first.
+ *
+ * Free baselines are left out: "$0 saved against a local model" says nothing
+ * about what routing avoided paying.
+ */
+function printSavingsRange(savings: SavingsSummary): void {
+  const paid = [...savings.baselines.filter(b => b.cost > 0)].sort((a, b) => a.costDelta - b.costDelta);
+  if (paid.length === 0) return;
+
+  const anchor = paid[paid.length - 1]!;
+  const cheapest = paid[0]!;
+
+  console.log(chalk.gray('Cost saved:   ') + `$${anchor.costDelta.toFixed(6)}`
+    + chalk.gray(` (vs always ${anchor.modelId})`));
+  if (cheapest !== anchor) {
+    console.log(chalk.gray('              ') + `$${cheapest.costDelta.toFixed(6)}`
+      + chalk.gray(` (vs always ${cheapest.modelId})`));
+  }
+  console.log(chalk.gray('Tokens saved: ')
+    + `${savings.optimizers.reduce((sum, o) => sum + o.tokensSaved, 0).toLocaleString()} cut by optimizers, measured`);
+  console.log(chalk.gray('              ')
+    + `${anchor.tokenDelta.toLocaleString()} vs always ${anchor.modelId}, estimated`);
+}
+
+/**
+ * The saving broken down per bucket (T81), the table behind `--trend`.
+ *
+ * The counterfactual columns are priced against the costliest baseline, the
+ * worst case routing avoided, which is the same figure the dashboard shows.
+ */
+function printSavingsTrend(series: UsageSeries | undefined): void {
+  if (!series || series.points.length === 0) {
+    console.log(chalk.yellow('\nNo traffic to break down.'));
+    return;
+  }
+
+  console.log(chalk.bold(`\nPer ${series.bucket}`)
+    + (series.baselineModelId ? chalk.gray(`, against ${series.baselineModelId}`) : ''));
+  const table = new Table({
+    head: ['Bucket', 'Calls', 'Cost', 'Would cost', 'Saved', 'Tokens in/out', 'Avg ms'].map(h => chalk.cyan(h)),
+  });
+  for (const p of series.points) {
+    const saved = p.baselineCost - p.cost;
+    const perCall = (ms: number) => (p.calls > 0 ? `${Math.round(ms / p.calls).toLocaleString()}` : '-');
+    table.push([
+      p.bucket,
+      String(p.calls),
+      `$${p.cost.toFixed(6)}`,
+      p.baselineCost > 0 ? `$${p.baselineCost.toFixed(6)}` : chalk.gray('-'),
+      p.baselineCost === 0 ? chalk.gray('-')
+        : saved >= 0 ? chalk.green(`$${saved.toFixed(6)}`) : chalk.red(`-$${Math.abs(saved).toFixed(6)}`),
+      `${p.inputTokens.toLocaleString()} / ${p.outputTokens.toLocaleString()}`,
+      perCall(p.latencyMs),
+    ]);
+  }
+  console.log(table.toString());
 }
 
 export function makeReportCommand(): Command {
@@ -57,19 +155,34 @@ Examples:
 
   # All-time usage across all projects
   routerly report usage --period all
+
+  # Only embedding calls
+  routerly report usage --type embedding
+
+  # Only the calls the router made to decide where to route
+  routerly report usage --caller routing
+
+  # Only the traffic that came in on one project token
+  routerly report usage --token 3f2b1c4d-...
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
+    .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
     .option('--session-id <id>', 'Filter by session ID')
     .option('--end-user <id>', 'Filter by end-user ID')
+    .option('--token <id>', 'Filter by project token ID (comma-separated for several)')
     .option('--tag <key=value>', 'Filter by tag (key=value)')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; sessionId?: string; endUser?: string; tag?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; project?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; token?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
         if (opts.project) params.set('projectId', opts.project);
+        if (opts.type) params.set('requestType', opts.type);
+        if (opts.caller) params.set('callType', opts.caller);
         if (opts.sessionId) params.set('sessionId', opts.sessionId);
         if (opts.endUser) params.set('endUserId', opts.endUser);
+        if (opts.token) params.set('tokenIds', opts.token);
         if (opts.tag) {
           const [key, value] = opts.tag.split('=');
           if (key && value) params.set(`tag[${key}]`, value);
@@ -112,6 +225,14 @@ Examples:
         if (s.guardrailCalls !== undefined) breakdown.push(`guardrail: ${s.guardrailCalls} calls / $${(s.guardrailCost ?? 0).toFixed(6)}`);
         if (s.blockedCalls) breakdown.push(`blocked: ${s.blockedCalls} calls`);
         if (breakdown.length > 0) console.log(chalk.gray(`Breakdown — ${breakdown.join('  |  ')}`));
+
+        // What `--type` has to choose from in this window (T210): the flag takes
+        // six values while most instances only ever serve one or two, and a list
+        // of the types actually recorded says which ones are worth passing.
+        const types = Object.entries(data.byRequestType ?? {}).sort(([, a], [, b]) => b - a);
+        if (types.length > 0) {
+          console.log(chalk.gray(`Types — ${types.map(([t, n]) => `${requestTypeLabel(t as RequestType)}: ${n}`).join('  |  ')}`));
+        }
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
@@ -130,19 +251,34 @@ Examples:
 
   # Show the last 100 calls for a specific project
   routerly report calls --limit 100 --project my-api
+
+  # Only image generation calls
+  routerly report calls --type image
+
+  # Only the calls a guardrail made
+  routerly report calls --caller guardrail
+
+  # Only the traffic that came in on one project token
+  routerly report calls --token 3f2b1c4d-...
 `)
     .option('--limit <n>', 'Number of records to show', '20')
     .option('--project <id>', 'Filter by project ID')
-    .action(async (opts: { limit: string; project?: string }) => {
+    .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
+    .option('--token <id>', 'Filter by project token ID (comma-separated for several)')
+    .action(async (opts: { limit: string; project?: string; type?: string; caller?: string; token?: string }) => {
       try {
         const params = new URLSearchParams({ period: 'all' });
         if (opts.project) params.set('projectId', opts.project);
+        if (opts.type) params.set('requestType', opts.type);
+        if (opts.caller) params.set('callType', opts.caller);
+        if (opts.token) params.set('tokenIds', opts.token);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
         const limited = data.records.slice(0, parseInt(opts.limit, 10));
 
         const table = new Table({
-          head: ['Timestamp', 'Project', 'Model', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
+          head: ['Timestamp', 'Project', 'Token', 'Model', 'Type', 'Caller', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
         });
 
         for (const r of limited) {
@@ -150,7 +286,13 @@ Examples:
           table.push([
             new Date(r.timestamp).toLocaleString(),
             r.projectId.slice(0, 8),
+            // Records written before tokenId existed carry no caller token.
+            r.tokenId ? r.tokenId.slice(0, 8) : '-',
             r.modelId,
+            // Records written before requestType existed were all chat calls.
+            requestTypeLabel((r.requestType ?? 'chat') as RequestType),
+            // Same for callType: back then everything tracked was a completion.
+            r.callType ?? 'completion',
             r.inputTokens,
             r.outputTokens,
             `$${r.cost.toFixed(6)}`,
@@ -265,38 +407,100 @@ Examples:
       }
     });
 
-  // ── report end-users ──
-  cmd.command('end-users')
-    .description('Show per-end-user usage stats')
+  // ── report savings ──
+  cmd.command('savings')
+    .description('Show what routing, the prompt cache and the optimizers saved')
+    .addHelpText('after', `
+Examples:
+  # This month's saving across every project
+  routerly report savings
+
+  # One project, all time
+  routerly report savings --project my-api --period all
+
+  # Break the saving down over time
+  routerly report savings --trend
+
+  # Pipe the raw savings block
+  routerly report savings --json
+`)
+    .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
     .option('--project <id>', 'Filter by project ID')
+    .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
+    .option('--trend', 'Break the saving down per hour (daily period) or per day')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { project?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; project?: string; type?: string; trend?: boolean; json?: boolean }) => {
       try {
-        const params = new URLSearchParams();
+        const params = new URLSearchParams({ period: opts.period, savings: '1' });
+        if (opts.trend) params.set('series', '1');
         if (opts.project) params.set('projectId', opts.project);
-        const qs = params.toString();
+        if (opts.type) params.set('requestType', opts.type);
 
-        const data = await api<Array<{
-          userId: string;
-          requests: number;
-          totalCost: number;
-        }>>('GET', `/api/end-users${qs ? `?${qs}` : ''}`);
+        const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
+        const savings = data.savings;
 
-        if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
-
-        if (data.length === 0) {
-          console.log(chalk.yellow('No end-user data found.'));
+        // `--trend` adds the series next to the savings fields rather than
+        // replacing them, so a script reading the block keeps working.
+        if (opts.json) {
+          const payload = opts.trend ? { ...savings, series: data.series ?? null } : savings ?? null;
+          console.log(JSON.stringify(payload, null, 2));
           return;
         }
 
-        const table = new Table({
-          head: ['User ID', 'Requests', 'Total Cost'].map(h => chalk.cyan(h)),
-        });
-
-        for (const u of data) {
-          table.push([u.userId, u.requests, `$${u.totalCost.toFixed(6)}`]);
+        if (!savings || savings.comparedCalls === 0) {
+          console.log(chalk.yellow(`No comparable calls for period: ${opts.period}`));
+          return;
         }
-        console.log(table.toString());
+
+        console.log(chalk.bold(`\nSavings Report — ${opts.period.toUpperCase()}\n`));
+        console.log(chalk.gray('Compared calls: ') + savings.comparedCalls);
+        console.log(chalk.gray('Actual cost:    ') + `$${savings.comparedCost.toFixed(6)}`);
+        console.log(chalk.gray('Tokens:         ') +
+          `${savings.comparedInputTokens.toLocaleString()} in / ${savings.comparedOutputTokens.toLocaleString()} out`);
+        if (savings.cache.inputTokens > 0) {
+          console.log(chalk.gray('Prompt cache:   ') +
+            `${savings.cache.inputTokens.toLocaleString()} tokens served from cache, $${savings.cache.cost.toFixed(6)} saved`);
+        }
+
+        if (savings.baselines.length === 0) {
+          console.log(chalk.yellow('\nNo target model to compare against.'));
+        } else {
+          console.log(chalk.bold('\nIf everything had gone to one model'));
+          const table = new Table({
+            head: ['Model', 'Would cost', 'Saved', 'Saved %', 'Tokens saved'].map(h => chalk.cyan(h)),
+          });
+          for (const b of savings.baselines) {
+            const saved = b.costDelta >= 0 ? chalk.green(`$${b.costDelta.toFixed(6)}`) : chalk.red(`-$${Math.abs(b.costDelta).toFixed(6)}`);
+            table.push([
+              b.modelId, `$${b.cost.toFixed(6)}`, saved, `${b.costDeltaPercent.toFixed(1)}%`,
+              b.tokenDelta.toLocaleString(),
+            ]);
+          }
+          console.log(table.toString());
+          printSavingsRange(savings);
+        }
+
+        if (savings.optimizers.length > 0) {
+          console.log(chalk.bold('\nWhat the optimizers removed'));
+          const table = new Table({
+            head: ['ID', 'Name', 'Calls changed', 'Tokens saved', 'Cost saved', 'Rolled back'].map(h => chalk.cyan(h)),
+          });
+          for (const o of savings.optimizers) {
+            table.push([
+              o.id,
+              optimizerLabel(o.id),
+              String(o.calls),
+              o.tokensSaved.toLocaleString(),
+              `$${o.costSaved.toFixed(6)}`,
+              o.rolledBack > 0 ? chalk.yellow(String(o.rolledBack)) : '0',
+            ]);
+          }
+          console.log(table.toString());
+        }
+
+        if (opts.trend) printSavingsTrend(data.series);
+
+        console.log(chalk.gray('\nCosts are the observed tokens repriced at each model\'s rates.'));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);

@@ -1,683 +1,24 @@
-import { useEffect, useState } from 'react';
-import { Check, Trash2, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
 import {
-  getModels,
+  getProfiles,
+  assignProjectProfiles,
   updateProject,
   type GuardrailConfig,
   type GuardrailRule,
-  type GuardrailRuleType,
-  type GuardrailTarget,
-  type Model,
-  type RegexGuardConfig,
-  type SemanticGuardConfig,
-  type TopicGuardConfig,
-  type ModerationGuardConfig,
   type PiiConfig,
-  type PiiEntity,
   type PiiPolicy,
+  type SecurityProfile,
 } from '../../api';
 import { SearchableSelect } from '../../components/SearchableSelect';
-import { MultiSelect } from '../../components/MultiSelect';
+import {
+  SecurityRulesEditor,
+  RULE_TYPE_LABELS,
+  normalizeGuardActions,
+  validateSecurityRules,
+  type RuleWithId,
+} from '../../components/SecurityRulesEditor';
 import { useProject } from './ProjectLayout';
-
-const ALL_PII_ENTITIES: PiiEntity[] = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'];
-
-const PII_LABELS: Record<PiiEntity, string> = {
-  EMAIL: 'Email',
-  PHONE: 'Phone',
-  CREDIT_CARD: 'Credit Card',
-  SSN: 'SSN',
-  IBAN: 'IBAN',
-};
-
-// ── Guardrail rule helpers ────────────────────────────────────────────────────
-
-type RuleWithId = GuardrailRule & { _id: string };
-
-const RULE_TYPE_LABELS: Record<GuardrailRuleType, string> = {
-  regex:      'Regex',
-  semantic:   'Semantic',
-  topic:      'Topic',
-  moderation: 'Moderation',
-};
-
-const RULE_TYPE_DESCRIPTIONS: Record<GuardrailRuleType, string> = {
-  regex:      'Block requests/responses matching regex patterns.',
-  semantic:   'Block content semantically similar to provided examples.',
-  topic:      'Restrict conversation to allowed topics using an LLM judge.',
-  moderation: 'Block harmful content using an LLM moderation judge.',
-};
-
-function makeDefaultRule(type: GuardrailRuleType): RuleWithId {
-  const _id = crypto.randomUUID();
-  switch (type) {
-    case 'regex':
-      return { _id, type, target: 'request', block: true, log: true, config: { patterns: [] } };
-    case 'semantic':
-      return { _id, type, target: 'request', block: true, log: true, config: { embeddingModelId: '', examples: [], threshold: 0.82 } };
-    case 'topic':
-      return { _id, type, target: 'both', block: true, log: true, useJudgeResponse: true, config: { modelId: '', allowedTopics: '', threshold: 0.5 } };
-    case 'moderation':
-      return { _id, type, target: 'both', block: true, log: true, useJudgeResponse: true, config: { modelId: '', threshold: 0.5 } };
-  }
-}
-
-// A judged/scanned rule always blocks + logs, and topic/moderation always use the
-// judge's own explanation as the block message. inject-only rules just steer. No
-// static block message is configurable. Normalizes loaded rules to that invariant.
-function normalizeGuardActions<T extends GuardrailRule>(r: T): T {
-  const judged = r.type === 'regex' || r.type === 'semantic' || !!r.target;
-  const { blockMessage: _bm, useJudgeResponse: _uj, ...rest } = r;
-  const next = { ...rest, block: judged, log: judged } as T;
-  if ((r.type === 'topic' || r.type === 'moderation') && r.target) next.useJudgeResponse = true;
-  return next;
-}
-
-function validateRegexLines(val: string): number[] {
-  return val
-    .split('\n')
-    .map((line, i) => ({ line: line.trim(), i }))
-    .filter(({ line }) => line.length > 0)
-    .filter(({ line }) => { try { new RegExp(line); return false; } catch { return true; } })
-    .map(({ i }) => i);
-}
-
-// ── PII Policy Card ──────────────────────────────────────────────────────────
-
-function PiiPolicyCard({
-  policy,
-  index,
-  onChange,
-  onRemove,
-}: {
-  policy: PiiPolicy;
-  index: number;
-  onChange: (p: PiiPolicy) => void;
-  onRemove: () => void;
-}) {
-  const entities: Set<PiiEntity> = new Set(policy.entities ?? ALL_PII_ENTITIES);
-  const showsResponse = policy.target === 'response' || policy.target === 'both';
-
-  function toggleEntity(e: PiiEntity) {
-    const next = new Set(entities);
-    next.has(e) ? next.delete(e) : next.add(e);
-    onChange({ ...policy, entities: [...next] });
-  }
-
-  // TargetSelector inline (same logic as the guardrail one below)
-  function handleTargetToggle(side: 'request' | 'response') {
-    const reqChecked = policy.target === 'request' || policy.target === 'both';
-    const resChecked = policy.target === 'response' || policy.target === 'both';
-    const newReq = side === 'request' ? !reqChecked : reqChecked;
-    const newRes = side === 'response' ? !resChecked : resChecked;
-    if (!newReq && !newRes) return;
-    let next: GuardrailTarget;
-    if (newReq && newRes) next = 'both';
-    else if (newReq) next = 'request';
-    else next = 'response';
-    onChange({ ...policy, target: next });
-  }
-
-  return (
-    <div style={{
-      border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 12,
-      background: 'var(--surface)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <span style={{ flex: 1, fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Policy {index + 1}
-        </span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={policy.enabled !== false}
-            onChange={e => onChange({ ...policy, enabled: e.target.checked })}
-            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          Enabled
-        </label>
-        <button
-          type="button"
-          onClick={onRemove}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 4, display: 'flex' }}
-          title="Remove policy"
-        >
-          <Trash2 size={15} />
-        </button>
-      </div>
-
-      {/* Target selector (reuses the same checkbox pattern as TargetSelector) */}
-      <div className="form-group" style={{ marginBottom: 10 }}>
-        <label className="form-label" style={{ fontSize: '0.72rem' }}>Apply to</label>
-        <div style={{ display: 'flex', gap: 16 }}>
-          {(['request', 'response'] as const).map(side => (
-            <label key={side} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
-              <input
-                type="checkbox"
-                checked={side === 'request' ? (policy.target === 'request' || policy.target === 'both') : (policy.target === 'response' || policy.target === 'both')}
-                onChange={() => handleTargetToggle(side)}
-                style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-              {side}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Streaming buffer — only when response is targeted */}
-      {showsResponse && (
-        <div className="form-group" style={{ marginBottom: 10, marginLeft: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.72rem' }}>Streaming buffer size (characters)</label>
-          <input
-            className="form-input"
-            type="number"
-            min={10}
-            max={500}
-            value={policy.outputBufferSize ?? 30}
-            onChange={e => onChange({ ...policy, outputBufferSize: Math.max(10, Math.min(500, Number(e.target.value))) })}
-            style={{ width: 100 }}
-          />
-        </div>
-      )}
-
-      <div style={{ marginBottom: 10 }}>
-        <label className="form-label" style={{ fontSize: '0.72rem' }}>Entity types</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {ALL_PII_ENTITIES.map(entity => {
-            const active = entities.has(entity);
-            return (
-              <label key={entity} style={{
-                display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: '0.82rem',
-                padding: '3px 8px', border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                borderRadius: 5, background: active ? 'color-mix(in srgb, var(--primary) 12%, transparent)' : 'transparent',
-                transition: 'all 0.15s',
-              }}>
-                <input
-                  type="checkbox"
-                  checked={active}
-                  onChange={() => toggleEntity(entity)}
-                  style={{ width: 12, height: 12, accentColor: 'var(--primary)', cursor: 'pointer' }}
-                />
-                {PII_LABELS[entity]}
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <label className="form-label" style={{ fontSize: '0.72rem' }}>Custom patterns (regex, one per line)</label>
-        <textarea
-          className="form-input"
-          rows={2}
-          value={(policy.customPatterns ?? []).join('\n')}
-          onChange={e => onChange({ ...policy, customPatterns: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
-          placeholder={'\\b\\d{8}\\b'}
-          style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.82rem' }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ── Target selector ───────────────────────────────────────────────────────────
-
-function TargetSelector({ value, onChange }: { value: GuardrailTarget | undefined; onChange: (v: GuardrailTarget) => void }) {
-  const reqChecked = value === 'request' || value === 'both';
-  const resChecked = value === 'response' || value === 'both';
-
-  function toggle(side: 'request' | 'response') {
-    const newReq = side === 'request' ? !reqChecked : reqChecked;
-    const newRes = side === 'response' ? !resChecked : resChecked;
-    if (!newReq && !newRes) return;
-    if (newReq && newRes) onChange('both');
-    else if (newReq) onChange('request');
-    else onChange('response');
-  }
-
-  return (
-    <div style={{ display: 'flex', gap: 16 }}>
-      {(['request', 'response'] as const).map(side => (
-        <label key={side} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
-          <input
-            type="checkbox"
-            checked={side === 'request' ? reqChecked : resChecked}
-            onChange={() => toggle(side)}
-            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          {side}
-        </label>
-      ))}
-    </div>
-  );
-}
-
-// topic/moderation scope: three independent flags — request/response judge that
-// side (target), inject steers the request system prompt (rule.inject). At least
-// one must stay on. Dropping to inject-only (no judge) clears the judge actions.
-function ScopeSelector({ rule, onChange }: { rule: RuleWithId; onChange: (r: RuleWithId) => void }) {
-  const reqChecked = rule.target === 'request' || rule.target === 'both';
-  const resChecked = rule.target === 'response' || rule.target === 'both';
-  const injChecked = rule.inject === true;
-
-  function apply(req: boolean, inj: boolean, res: boolean) {
-    if (!req && !inj && !res) return; // a rule must do at least one thing
-    const next: RuleWithId = { ...rule };
-    if (req && res) next.target = 'both';
-    else if (req) next.target = 'request';
-    else if (res) next.target = 'response';
-    else delete next.target; // inject-only: no judge
-    if (inj) next.inject = true; else delete next.inject;
-    // A judged side always blocks + logs and uses the judge's explanation; an
-    // inject-only rule (no target) only steers.
-    if (next.target) {
-      next.block = true;
-      next.log = true;
-      next.useJudgeResponse = true;
-    } else {
-      next.block = false;
-      next.log = false;
-      delete next.useJudgeResponse;
-    }
-    delete next.blockMessage;
-    onChange(next);
-  }
-
-  const flags: { key: 'request' | 'inject' | 'response'; checked: boolean }[] = [
-    { key: 'request', checked: reqChecked },
-    { key: 'inject', checked: injChecked },
-    { key: 'response', checked: resChecked },
-  ];
-  return (
-    <div style={{ display: 'flex', gap: 16 }}>
-      {flags.map(({ key, checked }) => (
-        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
-          <input
-            type="checkbox"
-            data-testid={`rule-scope-${key}`}
-            checked={checked}
-            onChange={() => apply(
-              key === 'request' ? !reqChecked : reqChecked,
-              key === 'inject' ? !injChecked : injChecked,
-              key === 'response' ? !resChecked : resChecked,
-            )}
-            style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          {key}
-        </label>
-      ))}
-    </div>
-  );
-}
-
-// ── Per-rule config fields ────────────────────────────────────────────────────
-
-function RegexFields({ rule, onChange, regexErrors }: {
-  rule: RuleWithId;
-  onChange: (r: RuleWithId) => void;
-  regexErrors: number[];
-}) {
-  const cfg = rule.config as RegexGuardConfig;
-  const text = cfg.patterns.join('\n');
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Target</label>
-        <TargetSelector value={rule.target} onChange={t => onChange({ ...rule, target: t })} />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Patterns (one per line)</label>
-        <textarea
-          className="form-input"
-          rows={3}
-          value={text}
-          onChange={e => {
-            const patterns = e.target.value.split('\n').map(s => s.trimEnd());
-            onChange({ ...rule, config: { patterns } });
-          }}
-          placeholder={'offensive\nbad.*word'}
-          style={{
-            resize: 'vertical', fontFamily: 'monospace', fontSize: '0.85rem',
-            ...(regexErrors.length > 0 ? { borderColor: 'var(--error, #ef4444)' } : {}),
-          }}
-        />
-        {regexErrors.length > 0 && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--error, #ef4444)', marginTop: 4 }}>
-            Invalid regex on line(s): {regexErrors.map(i => i + 1).join(', ')}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SemanticFields({ rule, onChange, modelOptions }: {
-  rule: RuleWithId;
-  onChange: (r: RuleWithId) => void;
-  modelOptions: { value: string; label: string }[];
-}) {
-  const cfg = rule.config as SemanticGuardConfig;
-  const threshold = cfg.threshold ?? 0.82;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Target</label>
-        <TargetSelector value={rule.target} onChange={t => onChange({ ...rule, target: t })} />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Embedding model</label>
-        <SearchableSelect
-          options={modelOptions}
-          value={cfg.embeddingModelId}
-          onChange={v => onChange({ ...rule, config: { ...cfg, embeddingModelId: v } })}
-          placeholder="Select embedding model..."
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
-        <MultiSelect
-          options={modelOptions.filter(o => o.value !== cfg.embeddingModelId)}
-          value={cfg.fallbackModelIds ?? []}
-          onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
-          placeholder="No fallback models..."
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Example texts to block (one per line)</label>
-        <textarea
-          className="form-input"
-          rows={3}
-          value={cfg.examples.join('\n')}
-          onChange={e => {
-            const examples = e.target.value.split('\n').map(s => s.trimEnd());
-            onChange({ ...rule, config: { ...cfg, examples } });
-          }}
-          placeholder={'How do I hack...\n...'}
-          style={{ resize: 'vertical', fontSize: '0.85rem' }}
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Similarity threshold: <strong>{threshold.toFixed(2)}</strong></label>
-        <input
-          type="range" min="0" max="1" step="0.01"
-          value={threshold}
-          onChange={e => onChange({ ...rule, config: { ...cfg, threshold: parseFloat(e.target.value) } })}
-          style={{ width: '100%', accentColor: 'var(--primary)' }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function TopicFields({ rule, onChange, modelOptions }: {
-  rule: RuleWithId;
-  onChange: (r: RuleWithId) => void;
-  modelOptions: { value: string; label: string }[];
-}) {
-  const cfg = rule.config as TopicGuardConfig;
-  const threshold = cfg.threshold ?? 0.5;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Apply to</label>
-        <ScopeSelector rule={rule} onChange={onChange} />
-      </div>
-      {rule.target && (<>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Judge model</label>
-        <SearchableSelect
-          options={modelOptions}
-          value={cfg.modelId ?? ''}
-          onChange={v => onChange({ ...rule, config: { ...cfg, modelId: v } })}
-          placeholder="Select judge model..."
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
-        <MultiSelect
-          options={modelOptions.filter(o => o.value !== cfg.modelId)}
-          value={cfg.fallbackModelIds ?? []}
-          onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
-          placeholder="No fallback models..."
-        />
-      </div>
-      </>)}
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Allowed topics (natural language)</label>
-        <textarea
-          className="form-input"
-          rows={3}
-          value={cfg.allowedTopics}
-          onChange={e => onChange({ ...rule, config: { ...cfg, allowedTopics: e.target.value } })}
-          placeholder="Customer support for software products. Technical troubleshooting. Billing questions."
-          style={{ resize: 'vertical', fontSize: '0.85rem' }}
-        />
-      </div>
-      {rule.target && (
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Block if on-topic score below: <strong>{threshold.toFixed(2)}</strong></label>
-        <input
-          type="range" min="0" max="1" step="0.01"
-          value={threshold}
-          onChange={e => onChange({ ...rule, config: { ...cfg, threshold: parseFloat(e.target.value) } })}
-          style={{ width: '100%', accentColor: 'var(--primary)' }}
-        />
-      </div>
-      )}
-    </div>
-  );
-}
-
-function ModerationFields({ rule, onChange, modelOptions, instructionsError }: {
-  rule: RuleWithId;
-  onChange: (r: RuleWithId) => void;
-  modelOptions: { value: string; label: string }[];
-  instructionsError: boolean;
-}) {
-  const cfg = rule.config as ModerationGuardConfig;
-  const threshold = cfg.threshold ?? 0.5;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Apply to</label>
-        <ScopeSelector rule={rule} onChange={onChange} />
-      </div>
-      {rule.target && (<>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Judge model</label>
-        <SearchableSelect
-          options={modelOptions}
-          value={cfg.modelId ?? ''}
-          onChange={v => onChange({ ...rule, config: { ...cfg, modelId: v } })}
-          placeholder="Select judge model..."
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
-        <MultiSelect
-          options={modelOptions.filter(o => o.value !== cfg.modelId)}
-          value={cfg.fallbackModelIds ?? []}
-          onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
-          placeholder="No fallback models..."
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Block if harm score above: <strong>{threshold.toFixed(2)}</strong></label>
-        <input
-          type="range" min="0" max="1" step="0.01"
-          value={threshold}
-          onChange={e => onChange({ ...rule, config: { ...cfg, threshold: parseFloat(e.target.value) } })}
-          style={{ width: '100%', accentColor: 'var(--primary)' }}
-        />
-      </div>
-      </>)}
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>
-          Custom instructions
-        </label>
-        <textarea
-          className="form-input"
-          rows={4}
-          value={cfg.systemPrompt ?? ''}
-          onChange={e => {
-            const val = e.target.value;
-            const next: ModerationGuardConfig = { ...cfg };
-            if (val) next.systemPrompt = val; else delete next.systemPrompt;
-            onChange({ ...rule, config: next });
-          }}
-          placeholder={`You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\nRespond ONLY with a JSON object: {"score": <number between 0 and 1>}`}
-          style={{
-            resize: 'vertical', fontFamily: 'monospace', fontSize: '0.82rem',
-            ...(instructionsError ? { borderColor: 'var(--error, #ef4444)' } : {}),
-          }}
-        />
-        {instructionsError && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--error, #ef4444)', marginTop: 4 }}>
-            Custom instructions are required.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Single rule card ──────────────────────────────────────────────────────────
-
-function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddingModelOptions, instructionsError }: {
-  rule: RuleWithId;
-  onChange: (r: RuleWithId) => void;
-  onDelete: () => void;
-  regexErrors: number[];
-  modelOptions: { value: string; label: string }[];
-  embeddingModelOptions: { value: string; label: string }[];
-  instructionsError: boolean;
-}) {
-  const supportsJudge = rule.type === 'topic' || rule.type === 'moderation';
-  const scopeParts = supportsJudge
-    ? [
-        (rule.target === 'request' || rule.target === 'both') ? 'request' : null,
-        rule.inject ? 'inject' : null,
-        (rule.target === 'response' || rule.target === 'both') ? 'response' : null,
-      ].filter(Boolean)
-    : [rule.target];
-  const scopeLabel = scopeParts.join(' + ');
-
-  return (
-    <div style={{
-      background: 'var(--surface-active)',
-      border: '1px solid var(--border)',
-      borderRadius: 8,
-      padding: 12,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{
-          fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em',
-          padding: '1px 7px', borderRadius: 4,
-          border: '1px solid var(--border)',
-          color: 'var(--text-secondary)',
-        }}>
-          {RULE_TYPE_LABELS[rule.type]}
-        </span>
-        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flex: 1 }}>{scopeLabel}</span>
-
-        {/* Enable/disable this policy (mirrors PII policies) */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          <input
-            type="checkbox"
-            data-testid="rule-enabled"
-            checked={rule.enabled !== false}
-            onChange={e => onChange({ ...rule, enabled: e.target.checked })}
-            style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
-          />
-          Enabled
-        </label>
-
-        <button
-          type="button"
-          onClick={onDelete}
-          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
-          aria-label="Delete rule"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
-
-      {rule.type === 'regex'      && <RegexFields      rule={rule} onChange={onChange} regexErrors={regexErrors} />}
-      {rule.type === 'semantic'   && <SemanticFields   rule={rule} onChange={onChange} modelOptions={embeddingModelOptions} />}
-      {rule.type === 'topic'      && <TopicFields      rule={rule} onChange={onChange} modelOptions={modelOptions} />}
-      {rule.type === 'moderation' && <ModerationFields rule={rule} onChange={onChange} modelOptions={modelOptions} instructionsError={instructionsError} />}
-    </div>
-  );
-}
-
-// ── Add-rule picker ───────────────────────────────────────────────────────────
-
-const ALL_RULE_TYPES: GuardrailRuleType[] = ['regex', 'semantic', 'topic', 'moderation'];
-
-// ── Injection warning ─────────────────────────────────────────────────────────
-// Shown when a rule injects: the request payload is mutated (instruction appended
-// to the system prompt), but unlike a judge no extra model call runs. Same banner
-// treatment/placement as StreamingDisabledWarning (top of the guardrails section).
-function InjectionWarning() {
-  return (
-    <div
-      data-testid="injection-warning"
-      style={{
-        display: 'flex', gap: 10, alignItems: 'flex-start',
-        padding: '12px 16px',
-        marginBottom: 16,
-        borderRadius: 8,
-        background: 'color-mix(in srgb, #f59e0b 10%, transparent)',
-        border: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
-      }}
-    >
-      <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
-      <div>
-        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#b45309' }}>
-          Request payload modified by injection
-        </p>
-        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          One or more rules inject their instruction into the outgoing request's system prompt, so the
-          payload sent to the provider is modified. No additional model call is made and nothing is
-          blocked; the serving model self-enforces the instruction.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ── Streaming-disabled warning ────────────────────────────────────────────────
-
-function StreamingDisabledWarning() {
-  return (
-    <div
-      data-testid="streaming-disabled-warning"
-      style={{
-        display: 'flex', gap: 10, alignItems: 'flex-start',
-        padding: '12px 16px',
-        marginBottom: 16,
-        borderRadius: 8,
-        background: 'color-mix(in srgb, #f59e0b 10%, transparent)',
-        border: '1px solid color-mix(in srgb, #f59e0b 40%, transparent)',
-      }}
-    >
-      <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
-      <div>
-        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#b45309' }}>
-          Streaming disabled for this project
-        </p>
-        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          One or more rules are configured to block responses (target: response or both). Because the entire response must be
-          inspected before a blocking decision can be made, Routerly holds the response in full before returning it
-          to the client. Streaming is not available while a response-blocking rule is active; clients will receive the
-          complete response at once instead of in incremental chunks.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 export function ProjectSecurityTab() {
   const { project, setProject } = useProject();
@@ -685,11 +26,7 @@ export function ProjectSecurityTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState('');
-  const [allModels, setAllModels] = useState<Model[]>([]);
-
-  useEffect(() => {
-    void getModels().then(m => setAllModels(m));
-  }, []);
+  const [profiles, setProfiles] = useState<SecurityProfile[]>([]);
 
   // Guardrails state
   const [detectInjection, setDetectInjection] = useState(false);
@@ -698,8 +35,24 @@ export function ProjectSecurityTab() {
   // PII state
   const [piiPolicies, setPiiPolicies] = useState<PiiPolicy[]>([]);
 
+  // Rules and policies to install on the next project refresh, used when switching
+  // from a profile to custom so the profile config becomes the editable starting point.
+  const pending = React.useRef<{ rules: RuleWithId[]; pii: PiiPolicy[] } | null>(null);
+
+  useEffect(() => {
+    getProfiles('security')
+      .then(list => setProfiles(list.filter((p): p is SecurityProfile => p.kind === 'security')))
+      .catch(() => setProfiles([]));
+  }, []);
+
   useEffect(() => {
     if (!project) return;
+    if (pending.current) {
+      setRules(pending.current.rules);
+      setPiiPolicies(pending.current.pii);
+      pending.current = null;
+      return;
+    }
     const g = project.guardrails;
     if (g) {
       setDetectInjection(g.detectInjection === true);
@@ -711,41 +64,20 @@ export function ProjectSecurityTab() {
     }
   }, [project]);
 
-  function updateRule(id: string, updated: RuleWithId) {
-    setRules(prev => prev.map(r => r._id === id ? updated : r));
-  }
+  const { regexErrorsByRule, moderationErrorIds } = validateSecurityRules(rules);
+  const saveDisabled = saving || Object.keys(regexErrorsByRule).length > 0 || moderationErrorIds.size > 0;
 
-  function deleteRule(id: string) {
-    setRules(prev => prev.filter(r => r._id !== id));
-  }
-
-  function addRule(type: GuardrailRuleType) {
-    setRules(prev => [...prev, makeDefaultRule(type)]);
-  }
-
-  const regexErrorsByRule: Record<string, number[]> = {};
-  for (const r of rules) {
-    if (r.type === 'regex') {
-      const cfg = r.config as RegexGuardConfig;
-      const errs = validateRegexLines(cfg.patterns.join('\n'));
-      if (errs.length > 0) regexErrorsByRule[r._id] = errs;
+  async function onAssignProfile(profileId: string) {
+    /* v8 ignore next */
+    if (!project) return;
+    setErr('');
+    try {
+      const updated = await assignProjectProfiles(project.id, { security: profileId === '' ? null : profileId });
+      setProject(updated);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to assign security profile');
     }
   }
-  const hasRegexErrors = Object.keys(regexErrorsByRule).length > 0;
-
-  // Moderation instructions/policy are required (both inject-only and judged) — empty blocks save.
-  const moderationErrorIds = new Set(
-    rules
-      .filter(r => r.type === 'moderation' && !((r.config as ModerationGuardConfig).systemPrompt ?? '').trim())
-      .map(r => r._id),
-  );
-  const saveDisabled = saving || hasRegexErrors || moderationErrorIds.size > 0;
-
-  // Section-level guardrail warnings (both banners live at the top of the section)
-  const hasResponseBlockingRule = rules.some(
-    r => r.block === true && (r.target === 'response' || r.target === 'both'),
-  );
-  const hasInjectingRule = rules.some(r => r.inject === true);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -782,113 +114,115 @@ export function ProjectSecurityTab() {
 
   if (!project) return null;
 
-  // ponytail: embedding-only models can't act as chat judges — exclude them
-  const modelOptions = allModels
-    .filter(m => m.capabilities?.embedding !== true)
-    .map(m => ({ value: m.id, label: m.name || m.id }));
-  const embeddingModelOptions = allModels
-    .filter(m => m.capabilities?.embedding === true)
-    .map(m => ({ value: m.id, label: m.name || m.id }));
+  const assignedProfileId = project.securityProfileId ?? '';
+  const profileAssigned = assignedProfileId !== '';
+  const assignedProfile = profiles.find(p => p.id === assignedProfileId);
+  const defaultProfileId = profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
+
+  async function onSelectMode(next: 'profile' | 'custom') {
+    if ((next === 'profile') === profileAssigned) return;
+    if (next === 'profile') {
+      if (!defaultProfileId) {
+        setErr('No security profile available. Create one from the Profiles page.');
+        return;
+      }
+      await onAssignProfile(defaultProfileId);
+      return;
+    }
+    // Leaving a profile: its rules and policies become the editable starting point.
+    if (assignedProfile) {
+      pending.current = {
+        rules: (assignedProfile.guardrails.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: crypto.randomUUID() })),
+        pii: assignedProfile.pii.policies ?? [],
+      };
+    }
+    await onAssignProfile('');
+  }
 
   return (
     <form onSubmit={(e) => { void handleSave(e); }} style={{ maxWidth: 800 }}>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
-      {/* ── Content Guardrails ─────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 36 }}>
-        <label className="form-label">Content Guardrails</label>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Inspect requests and responses against configured rules. Active when at least one rule is configured.
+      <div className="form-group">
+        <label className="form-label">Security</label>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
+          Use a shared security profile, or define this project's own guardrails and PII policies.
         </p>
 
-        {/* Guardrail warnings — grouped at the top of the section */}
-        {hasInjectingRule && <InjectionWarning />}
-        {hasResponseBlockingRule && <StreamingDisabledWarning />}
-
-        {/* Rules */}
-        <div>
-          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            Security Policies
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {rules.length === 0 && (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                No security policies configured.
-              </p>
-            )}
-            {rules.map(r => (
-              <RuleCard
-                key={r._id}
-                rule={r}
-                onChange={updated => updateRule(r._id, updated)}
-                onDelete={() => deleteRule(r._id)}
-                regexErrors={regexErrorsByRule[r._id] ?? []}
-                modelOptions={modelOptions}
-                embeddingModelOptions={embeddingModelOptions}
-                instructionsError={moderationErrorIds.has(r._id)}
-              />
-            ))}
-            <div style={{ marginTop: 4, border: '1.5px dashed var(--border)', borderRadius: 8, padding: '6px 10px' }}>
-              <SearchableSelect
-                options={ALL_RULE_TYPES.map(t => ({
-                  value: t,
-                  label: RULE_TYPE_LABELS[t],
-                  description: RULE_TYPE_DESCRIPTIONS[t],
-                }))}
-                value=""
-                onChange={(type) => addRule(type as GuardrailRuleType)}
-                placeholder="Add a security policy..."
-              />
-            </div>
-          </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => void onSelectMode('profile')}
+          >
+            Profile
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
+            onClick={() => void onSelectMode('custom')}
+          >
+            Custom
+          </button>
         </div>
+
+        {profileAssigned && (
+          <>
+            <SearchableSelect
+              style={{ maxWidth: 420 }}
+              ariaLabel="Security Profile"
+              value={assignedProfileId}
+              onChange={v => void onAssignProfile(v)}
+              options={[
+                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} (built-in)` })),
+                ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
+              ]}
+            />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
+              Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.
+            </p>
+            {assignedProfile && (
+              <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {(assignedProfile.guardrails.rules ?? []).map((r, i) => (
+                  <li key={`rule-${i}`}>
+                    {RULE_TYPE_LABELS[r.type] ?? r.type} ({r.target})
+                    {r.block === true ? ', blocking' : ''}
+                  </li>
+                ))}
+                {(assignedProfile.pii.policies ?? []).map((p, i) => (
+                  <li key={`pii-${i}`}>PII redaction ({p.target}){p.enabled === false ? ', disabled' : ''}</li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </div>
 
-      {/* ── PII Policies ───────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 32 }}>
-        <label className="form-label">PII Policies</label>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Detect and redact personal data. Each policy targets request input, model response, or both, and controls its own entity set.
-        </p>
-
-        {piiPolicies.map((policy, i) => (
-          <PiiPolicyCard
-            key={i}
-            policy={policy}
-            index={i}
-            onChange={updated => setPiiPolicies(prev => prev.map((p, j) => j === i ? updated : p))}
-            onRemove={() => setPiiPolicies(prev => prev.filter((_, j) => j !== i))}
+      {!profileAssigned && (
+        <>
+          <SecurityRulesEditor
+            rules={rules}
+            setRules={setRules}
+            piiPolicies={piiPolicies}
+            setPiiPolicies={setPiiPolicies}
           />
-        ))}
-        {piiPolicies.length === 0 && (
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-            No PII policies configured.
-          </p>
-        )}
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ fontSize: '0.85rem' }}
-          onClick={() => setPiiPolicies(prev => [...prev, { enabled: true, target: 'request', entities: [] }])}
-        >
-          + Add Policy
-        </button>
-      </div>
 
-      <button
-        type="submit"
-        className="btn btn-primary"
-        disabled={saveDisabled}
-        style={saved ? { background: '#16a34a', borderColor: '#16a34a' } : {}}
-      >
-        {saving ? (
-          <span className="spinner" />
-        ) : saved ? (
-          <><Check size={15} style={{ marginRight: 6 }} />Saved!</>
-        ) : (
-          'Save Security Settings'
-        )}
-      </button>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={saveDisabled}
+            style={saved ? { background: '#16a34a', borderColor: '#16a34a' } : {}}
+          >
+            {saving ? (
+              <span className="spinner" />
+            ) : saved ? (
+              <><Check size={15} style={{ marginRight: 6 }} />Saved!</>
+            ) : (
+              'Save Security Settings'
+            )}
+          </button>
+        </>
+      )}
     </form>
   );
 }

@@ -128,6 +128,38 @@ describe('routerly model list', () => {
     const { err } = await run('list');
     expect(err.join(' ')).toContain('network error');
   });
+
+  it('shows the owning connection id when the model has a matching instance', async () => {
+    mockApi.mockImplementation((method: string, path: string) => {
+      if (path === '/api/models') return Promise.resolve([baseModel]);
+      if (path === '/api/instances') return Promise.resolve([{ id: 'gpt-4o', connectionId: 'conn-123', upstreamModelId: 'gpt-4o', cost: baseModel.cost, contextWindow: 128000 }]);
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+    const { out } = await run('list');
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/instances');
+    expect(out.join('\n')).toContain('conn-123');
+  });
+
+  it('shows a blank connection column when the model has no matching instance', async () => {
+    mockApi.mockImplementation((method: string, path: string) => {
+      if (path === '/api/models') return Promise.resolve([baseModel]);
+      if (path === '/api/instances') return Promise.resolve([]);
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+    const { out } = await run('list');
+    expect(out.join('\n')).toContain('Connection ID');
+  });
+
+  it('degrades gracefully when /api/instances is forbidden (no connections:read)', async () => {
+    mockApi.mockImplementation((method: string, path: string) => {
+      if (path === '/api/models') return Promise.resolve([baseModel]);
+      if (path === '/api/instances') return Promise.reject(new ApiError(403, 'Forbidden'));
+      return Promise.reject(new Error(`unexpected path ${path}`));
+    });
+    const { out, err } = await run('list');
+    expect(out.join('\n')).toContain('gpt-4o');
+    expect(err.join(' ')).toBe('');
+  });
 });
 
 // ── model show ────────────────────────────────────────────────────────────────
@@ -437,6 +469,32 @@ describe('routerly model add', () => {
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
     const cost = body['cost'] as { pricingTiers?: unknown };
     expect(cost.pricingTiers).toBeUndefined();
+  });
+
+  it('binds to an existing connection via --connection, sending no credentials', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'conn-abc123', '--api-key', 'sk-should-be-dropped');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['connectionId']).toBe('conn-abc123');
+    expect(body).not.toHaveProperty('apiKey');
+    expect(body).not.toHaveProperty('endpoint');
+  });
+
+  it('creates a dedicated connection from inline --api-key when --connection is not given', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--api-key', 'sk-test-key');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body).not.toHaveProperty('connectionId');
+    expect(body['apiKey']).toBe('sk-test-key');
+    expect(body['endpoint']).toBe('https://api.openai.com/v1');
+  });
+
+  it('skips reading the vertex SA key file when --connection is given', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'v', '--provider', 'vertex', '--connection', 'conn-vertex', '--vertex-sa-key', '/nonexistent/path.json');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['connectionId']).toBe('conn-vertex');
+    expect(body).not.toHaveProperty('vertexServiceAccountKey');
   });
 
   it('reads SA key file content when vertex-sa-key is a real file', async () => {

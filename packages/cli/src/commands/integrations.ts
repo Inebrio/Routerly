@@ -79,6 +79,9 @@ export function makeIntegrationsCommand(): Command {
     .option('--bucket <bucket>', 'InfluxDB bucket')
     // webhook
     .option('--secret <secret>', 'HMAC secret (webhook)')
+    // traces (otel/webhook only)
+    .option('--traces', 'Also export request traces (otel/webhook)')
+    .option('--trace-sample-rate <rate>', 'Fraction of traces to export, 0..1 (default: 1)')
     .action(async (opts: {
       type: string; name?: string; enabled: boolean;
       authToken?: string;
@@ -87,6 +90,7 @@ export function makeIntegrationsCommand(): Command {
       url?: string; username?: string;
       token?: string; org?: string; bucket?: string;
       secret?: string;
+      traces?: boolean; traceSampleRate?: string;
     }) => {
       const base: Record<string, unknown> = { type: opts.type, enabled: opts.enabled };
       if (opts.name) base['name'] = opts.name;
@@ -140,6 +144,11 @@ export function makeIntegrationsCommand(): Command {
           process.exit(1);
       }
 
+      if (opts.traces) {
+        const traces = parseTraces(opts.type, opts.traceSampleRate);
+        body['traces'] = traces;
+      }
+
       try {
         const created = await api<Integration>('POST', '/api/integrations', body);
         console.log(chalk.green(`Integration added (id: ${created.id})`));
@@ -187,6 +196,31 @@ export function makeIntegrationsCommand(): Command {
       }
     });
 
+  cmd.command('traces <id> <state>')
+    .description('Turn request-trace export on or off for an integration (otel/webhook)')
+    .option('--sample-rate <rate>', 'Fraction of traces to export, 0..1 (default: 1)')
+    .action(async (id: string, state: string, opts: { sampleRate?: string }) => {
+      if (state !== 'on' && state !== 'off') {
+        console.error(chalk.red(`Unknown state: ${state}. Must be "on" or "off".`));
+        process.exit(1);
+      }
+      const current = await api<Integration>('GET', `/api/integrations/${id}`).catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 404) console.error(chalk.red(`Integration "${id}" not found.`));
+        else console.error(chalk.red(`Error: ${(err as Error).message}`));
+        return process.exit(1);
+      });
+
+      const traces = state === 'on' ? parseTraces(current.type, opts.sampleRate) : { enabled: false };
+
+      try {
+        await api<Integration>('PATCH', `/api/integrations/${id}`, { traces });
+        console.log(chalk.green(`Trace export ${state === 'on' ? 'enabled' : 'disabled'} for integration ${id}.`));
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
   cmd.command('enable <id>')
     .description('Enable an integration')
     .action(async (id: string) => {
@@ -217,6 +251,24 @@ export function makeIntegrationsCommand(): Command {
 function collect(val: string, acc: string[]): string[] {
   acc.push(val);
   return acc;
+}
+
+/**
+ * Trace export is opt-in and only where a per-request payload can be delivered:
+ * the metric-only sinks (datadog, grafana, influxdb, prometheus) cannot carry one.
+ */
+function parseTraces(type: string, sampleRate?: string): { enabled: true; sampleRate?: number } {
+  if (type !== 'otel' && type !== 'webhook') {
+    console.error(chalk.red(`Trace export is only available for otel and webhook integrations (got: ${type}).`));
+    process.exit(1);
+  }
+  if (sampleRate === undefined) return { enabled: true };
+  const rate = Number(sampleRate);
+  if (!Number.isFinite(rate) || rate < 0 || rate > 1) {
+    console.error(chalk.red('Sample rate must be a number between 0 and 1.'));
+    process.exit(1);
+  }
+  return { enabled: true, sampleRate: rate };
 }
 
 function parseHeaders(headers: string[]): Record<string, string> {

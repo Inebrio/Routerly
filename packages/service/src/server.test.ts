@@ -1,41 +1,53 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-vi.mock('./config/loader.js', () => ({
+vi.mock('./modules/config/loader.js', () => ({
   initConfigDirs: vi.fn(),
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
   pruneOrphanUsage: vi.fn(async () => 0),
+  appendUsageRecord: vi.fn(),
+  getOrCreateSecret: vi.fn(),
 }))
-vi.mock('./plugins/jwt.js', () => ({
+vi.mock('./modules/auth/jwt.js', () => ({
   loadSecret: vi.fn(),
   createSessionToken: vi.fn(() => 'token'),
   verifyToken: vi.fn(() => null),
   generateRawToken: vi.fn(() => 'raw'),
 }))
-vi.mock('./plugins/auth.js', () => ({ default: vi.fn(async () => {}) }))
-vi.mock('./routes/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
-vi.mock('./routes/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
-vi.mock('./routes/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
-vi.mock('./telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
-vi.mock('./notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
-vi.mock('./update-checker.js', () => ({
+vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: vi.fn() }))
+vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
+vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
+vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
+vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
+vi.mock('./modules/telemetry/telemetry.js', () => ({ pingTelemetry: vi.fn().mockResolvedValue(true) }))
+vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async () => {}) }))
+vi.mock('./modules/update-checker/update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('./config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
 
 import { buildServer, startServer } from './server.js'
-import { readConfig, writeConfig } from './config/loader.js'
-import { pingTelemetry } from './telemetry.js'
+import { readConfig, writeConfig } from './modules/config/loader.js'
+import { pingTelemetry } from './modules/telemetry/telemetry.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
 const mockPingTelemetry = vi.mocked(pingTelemetry)
 
+// bootstrap() now reads the 'modules' config key too (module enable/disable
+// registry) — keyed mock keeps that read returning [] (no disabled modules)
+// while callers still control the 'settings' shape they care about.
+function mockSettings(settings: unknown): void {
+  mockReadConfig.mockImplementation(async (key: string) =>
+    (key === 'settings' ? settings : []) as any,
+  )
+}
+
 afterEach(() => vi.clearAllMocks())
 
 describe('buildServer', () => {
   it('builds a Fastify instance with dashboard disabled', async () => {
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
     const server = await buildServer()
     const res = await server.inject({ method: 'GET', url: '/health' })
@@ -46,7 +58,7 @@ describe('buildServer', () => {
   })
 
   it('redirects GET / to /dashboard/', async () => {
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
     const server = await buildServer()
     const res = await server.inject({ method: 'GET', url: '/' })
@@ -57,7 +69,7 @@ describe('buildServer', () => {
   })
 
   it('builds with dashboardEnabled:true (dashboard dist not found — catches error gracefully)', async () => {
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: true } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: true } as any)
 
     const server = await buildServer()
     await server.close()
@@ -66,10 +78,7 @@ describe('buildServer', () => {
   // Regression (U6): metricsRoutes must be wired into the real server factory.
   // The isolated metrics.test.ts mounts the plugin directly and so missed this gap.
   it('serves GET /metrics (200, text/plain) — Prometheus endpoint is registered', async () => {
-    mockReadConfig.mockImplementation(async (key: string) => {
-      if (key === 'settings') return { logLevel: 'silent', dashboardEnabled: false } as any
-      return [] as any // usage / projects / models
-    })
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
     const server = await buildServer()
     const res = await server.inject({ method: 'GET', url: '/metrics' })
@@ -88,7 +97,7 @@ describe('startServer', () => {
       port: 3099, host: '127.0.0.1',
       telemetry: { enabled: true, installId: 'install-abc' },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
     mockWriteConfig.mockResolvedValue(undefined)
 
     await startServer()
@@ -103,7 +112,7 @@ describe('startServer', () => {
       port: 3098, host: '127.0.0.1',
       telemetry: { enabled: true, installId: 'install-xyz', lastPingedVersion: '0.0.0' },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
     mockWriteConfig.mockResolvedValue(undefined)
 
     await startServer()
@@ -119,7 +128,7 @@ describe('startServer', () => {
       port: 3097, host: '127.0.0.1',
       telemetry: { enabled: true, installId: 'install-1', lastPingedVersion: pkgVersion },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
     mockWriteConfig.mockResolvedValue(undefined)
 
     await startServer()
@@ -133,30 +142,22 @@ describe('startServer', () => {
       port: 3096, host: '127.0.0.1',
       telemetry: { enabled: false },
     }
-    mockReadConfig.mockResolvedValue(settings)
+    mockSettings(settings)
 
     await startServer()
 
     expect(mockPingTelemetry).not.toHaveBeenCalled()
   })
 
-  it('logs migrated count when migrateProjectConfigs returns > 0', async () => {
-    const { migrateProjectConfigs } = await import('./config/migrate.js')
-    vi.mocked(migrateProjectConfigs).mockResolvedValueOnce(3)
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
-
-    await startServer()
-
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('migrated 3'))
-    logSpy.mockRestore()
-  })
+  // Config migrations moved out of startServer() into configModule.migrate(),
+  // which the kernel runs before any register(). Coverage lives in
+  // modules/config/index.test.ts and core/lifecycle/kernel.test.ts.
 
   it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
-    const { pruneOrphanUsage } = await import('./config/loader.js')
+    const { pruneOrphanUsage } = await import('./modules/config/loader.js')
     vi.mocked(pruneOrphanUsage).mockResolvedValueOnce(18)
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    mockReadConfig.mockResolvedValue({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3095, host: '127.0.0.1', telemetry: { enabled: false } } as any)
 
     await startServer()
 

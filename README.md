@@ -319,7 +319,7 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting, supply chain notes, 
 
 ## Contributing
 
-Contributions are welcome. See the [Development Guide](docs/contributing/development.md).
+Contributions are welcome. See [Releasing](docs/contributing/releasing.md) for version bumps and the maintainer release procedure.
 
 ---
 

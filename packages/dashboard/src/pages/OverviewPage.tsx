@@ -1,84 +1,67 @@
+// RA-16 task 4: trivial change to exercise the single-page selector rule.
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell,
 } from 'recharts';
-import { Activity, DollarSign, XCircle, Boxes, FolderOpen, TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Activity, ArrowRight, Coins, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
+import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
-import { useTheme } from '../ThemeContext.js';
-
-const PALETTE = ['#3d75f5', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#06b6d4', '#f97316'];
-
-const PERIOD_LABEL: Record<string, string> = {
-  daily: 'Cost per Hour (USD)',
-  weekly: 'Cost per Week (USD)',
-  monthly: 'Daily Cost (USD)',
-  all: 'Cost over Time (USD)',
-};
+import { useClientsEnabled } from './ConnectPage.js';
+import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
+import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker.js';
+import { CostCard, SavingsCard, StatCard, TokensCard, compactCost, savingsSeriesData, type SavingsMetric } from '../components/savings.js';
+import { useFilterState } from '../hooks/useFilterState.js';
+import { formatCost } from '../utils/traceUtils.js';
 
 export function OverviewPage() {
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsError, setStatsError] = useState(false);
-  const [period, setPeriod] = useState('monthly');
+  // Same picker the Usage page carries, so a window means the same thing on both (T203),
+  // and remembered the same way, so a reload keeps the window the user picked.
+  const [dateRange, setDateRange] = useFilterState<DateRange>({
+    key: 'overview-filters-dateRange',
+    defaultValue: PRESETS.find(p => p.label === 'This month')!.range(),
+    deserialize: parseStoredRange,
+  });
+
+  // A relative preset stored yesterday still says "This month" but holds
+  // yesterday's dates: re-apply it so the label and the window agree again.
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (RECENT_PRESETS.some(p => p.label === dateRange.label)) return;
+    if (!dateRange.to || dateRange.to.slice(0, 10) >= today) return;
+    const preset = PRESETS.find(p => p.label === dateRange.label);
+    if (preset) setDateRange(preset.range());
+  }, []);
+
   const [modelCount, setModelCount] = useState(0);
   const [projectCount, setProjectCount] = useState(0);
-  const { theme } = useTheme();
-
-  const isDark = theme === 'dark' || (theme === 'auto' && !window.matchMedia('(prefers-color-scheme: light)').matches);
-  const tickColor = isDark ? '#94a3b8' : '#475569';
+  const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
+  const chartTheme = useChartTheme();
 
   useEffect(() => {
-    getUsage(period).then(setStats).catch(() => setStatsError(true));
-  }, [period]);
+    // `series` carries the savings bucketed over time for the chart (T81),
+    // `savings` the whole-window totals per baseline the saving cards read (T102).
+    let from = dateRange.from || undefined;
+    let to = dateRange.to || undefined;
+    // A stored minute/hour window is only meaningful relative to now.
+    const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
+    if (recentPreset) {
+      const fresh = recentPreset.range();
+      from = fresh.from;
+      to = fresh.to;
+    }
+    const period = from || to ? 'custom' : 'all';
+    getUsage(period, undefined, from, to, undefined, undefined, { series: true, savings: true })
+      .then(setStats).catch(() => setStatsError(true));
+  }, [dateRange]);
 
   useEffect(() => {
     getModels().then(m => setModelCount(m.length)).catch(console.error);
     getProjects().then(p => setProjectCount(p.length)).catch(console.error);
   }, []);
-
-  const timelineData = useMemo(() => {
-    if (!stats) return [];
-    const isHourly = (stats.timeline[0]?.[0]?.length ?? 0) > 10;
-
-    if (isHourly) {
-      const costByHour = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
-      const now = new Date();
-      const dateStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
-      return Array.from({ length: 24 }, (_, h) => {
-        const key = `${dateStr}T${String(h).padStart(2, '0')}`;
-        return { date: `${String(h).padStart(2, '0')}:00`, cost: costByHour.get(key) ?? 0 };
-      });
-    }
-
-    // Use period boundaries so weekly ≠ monthly when data is sparse
-    const now = new Date();
-    let start: Date;
-    if (period === 'weekly') {
-      start = new Date(now);
-      const d = start.getDay();
-      start.setDate(start.getDate() - (d === 0 ? 6 : d - 1));
-      start.setHours(0, 0, 0, 0);
-    } else if (period === 'monthly') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-    } else if (period === 'all' && stats.timeline.length > 0) {
-      const firstKey = stats.timeline[0]![0]!;
-      const [fy, fm, fd] = firstKey.split('-').map(Number) as [number, number, number];
-      start = new Date(fy, fm - 1, fd);
-    } else {
-      return [];
-    }
-
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const costByDate = new Map<string, number>(stats.timeline.map(([d, c]) => [d, c]));
-    const result: { date: string; cost: number }[] = [];
-    const cur = new Date(start);
-    while (cur <= end) {
-      const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
-      result.push({ date: key.slice(5), cost: costByDate.get(key) ?? 0 });
-      cur.setDate(cur.getDate() + 1);
-    }
-    return result;
-  }, [stats, period]);
 
   const barData = useMemo(() => {
     if (!stats) return [];
@@ -92,6 +75,8 @@ export function OverviewPage() {
         return { name: shortName, fullName: name, value: v.cost };
       });
   }, [stats]);
+
+  const savingsData = useMemo(() => savingsSeriesData(stats?.series), [stats]);
 
   const sortedModels = useMemo(() =>
     stats ? Object.entries(stats.byModel).sort(([, a], [, b]) => b.calls - a.calls) : [],
@@ -115,13 +100,6 @@ export function OverviewPage() {
     return <div className="loading-center"><div className="spinner" /></div>;
   }
 
-  const tooltipStyle = {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    fontSize: 12,
-  };
-
   return (
     <>
       <div className="page-header">
@@ -130,75 +108,53 @@ export function OverviewPage() {
       </div>
       <div className="page-body">
 
-        {/* Period selector — segmented control */}
-        <div style={{ marginBottom: 24, display: 'inline-flex', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3, gap: 2 }}>
-          {(['daily', 'weekly', 'monthly', 'all'] as const).map(p => (
-            <button
-              key={p}
-              className={`theme-btn${period === p ? ' active' : ''}`}
-              style={{ minWidth: 64 }}
-              onClick={() => setPeriod(p)}
-            >
-              {p.charAt(0).toUpperCase() + p.slice(1)}
-            </button>
-          ))}
+        <ConnectCard />
+
+        {/* Period selector */}
+        <div style={{ marginBottom: 24, display: 'inline-flex' }}>
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
 
         {/* Stats grid */}
         <div className="stats-grid">
-          <StatCard icon={<DollarSign size={18} />} label="Total Cost" accentColor="#3D75F5"
-            value={`$${stats.summary.totalCost.toFixed(4)}`} sub="USD this period" />
+          {/* What routing saved is what the cost would otherwise have been, so it
+              rides on the cost itself instead of a card of its own (T201). */}
+          <CostCard icon={<DollarSign size={18} />} accentColor="#3D75F5"
+            totalCost={stats.summary.totalCost}
+            {...(stats.savings ? { savings: stats.savings } : {})}
+            to="/dashboard/usage" />
+          <TokensCard icon={<Coins size={18} />} accentColor="#8B5CF6"
+            inputTokens={totalIn} outputTokens={totalOut} cachedTokens={totalCached}
+            {...(stats.savings ? { savings: stats.savings } : {})}
+            to="/dashboard/usage" />
           <StatCard icon={<Activity size={18} />} label="Total Calls" accentColor="#5A90F8"
             value={stats.summary.totalCalls}
-            sub={`${stats.summary.routingCalls} routing · ${stats.summary.completionCalls} completion`} />
+            sub={`${stats.summary.routingCalls} routing · ${stats.summary.completionCalls} completion`}
+            to="/dashboard/usage" />
           <StatCard icon={<TrendingUp size={18} />} label="Success Rate" accentColor="#10B981"
             value={stats.summary.totalCalls > 0
               ? `${((stats.summary.successCalls / stats.summary.totalCalls) * 100).toFixed(1)}%`
               : '—'}
-            sub="of all requests" />
+            sub="of all requests" to="/dashboard/usage" />
           <StatCard icon={<XCircle size={18} />} label="Errors" accentColor="#EF4444" valueColor="#EF4444"
-            value={stats.summary.errorCalls} sub="failed requests" />
+            value={stats.summary.errorCalls} sub="failed requests" to="/dashboard/usage" />
           <StatCard icon={<Boxes size={18} />} label="Models" accentColor="#8B5CF6"
-            value={modelCount} sub="registered" />
+            value={modelCount} sub="registered" to="/dashboard/models" />
           <StatCard icon={<FolderOpen size={18} />} label="Projects" accentColor="#A78BFA"
-            value={projectCount} sub="active" />
+            value={projectCount} sub="active" to="/dashboard/projects" />
         </div>
 
-        {/* Token aggregate strip */}
-        {(totalIn > 0 || totalOut > 0) && (
-          <div style={{ marginBottom: 20, fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <span>Input tokens: <strong style={{ color: 'var(--text-secondary)' }}>{totalIn.toLocaleString()}</strong></span>
-            <span>·</span>
-            <span>Output tokens: <strong style={{ color: 'var(--text-secondary)' }}>{totalOut.toLocaleString()}</strong></span>
-            {totalCached > 0 && (
-              <>
-                <span>·</span>
-                <span>Cached: <strong style={{ color: 'var(--text-secondary)' }}>{totalCached.toLocaleString()}</strong></span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Cost timeline */}
-        {timelineData.length > 0 && (
-          <div className="chart-card">
-            <h3>{PERIOD_LABEL[period]}</h3>
-            <ResponsiveContainer key={period} width="100%" height={200}>
-              <AreaChart data={timelineData}>
-                <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5A90F8" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#5A90F8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: tickColor }}
-                  formatter={(v) => [`$${(v as number).toFixed(8)}`, 'Cost']} />
-                <Area type="monotone" dataKey="cost" stroke="#5A90F8" fill="url(#grad)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+        {/* What routing saved, over time (T81) */}
+        {savingsData.length > 0 && (
+          <SavingsCard
+            key={dateRange.label}
+            data={savingsData}
+            baselineIds={stats.series?.baselineModelIds ?? []}
+            {...(stats.savings ? { savings: stats.savings } : {})}
+            metric={savingsMetric}
+            onMetric={setSavingsMetric}
+            resetKey={dateRange.label}
+          />
         )}
 
         {/* Cost by model (bar) + Calls by model (table) */}
@@ -210,16 +166,24 @@ export function OverviewPage() {
             {barData.length === 0 ? (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 8 }}>No cost recorded this period.</p>
             ) : (
-              <ResponsiveContainer key={period} width="100%" height={Math.max(barData.length * 36, 120)}>
+              <ResponsiveContainer key={dateRange.label} width="100%" height={Math.max(barData.length * 36, 120)}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 32 }}>
-                  <XAxis type="number" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `$${(v as number).toFixed(4)}`} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: tickColor, fontSize: 11 }} axisLine={false}
-                    tickLine={false} width={110} />
-                  <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: tickColor }}
-                    formatter={(v, _, p) => [`$${(v as number).toFixed(8)}`, p.payload.fullName]} />
+                  <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" {...axisProps(chartTheme)} tickFormatter={v => compactCost(Number(v))} />
+                  <YAxis type="category" dataKey="name" {...axisProps(chartTheme)} width={110} />
+                  <Tooltip
+                    cursor={{ fill: chartTheme.cursor, fillOpacity: 0.12 }}
+                    content={
+                      <ChartTooltip
+                        formatValue={v => formatCost(v)}
+                        formatName={e => String(e.payload?.fullName ?? e.name ?? '')}
+                        // The row already carries the full model id; the axis label would repeat it.
+                        formatLabel={() => ''}
+                      />
+                    }
+                  />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {barData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]!} />)}
+                    {barData.map((_, i) => <Cell key={i} fill={seriesColor(i)} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -261,23 +225,28 @@ export function OverviewPage() {
   );
 }
 
-function StatCard({ icon, label, value, sub, accentColor, valueColor }: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  sub: string;
-  accentColor?: string;
-  valueColor?: string;
-}) {
-  /* v8 ignore next */
-  const iconColor = accentColor || 'var(--accent)';
+/**
+ * Shortcut to the Connect section. Renders only while the client-configurator
+ * module is enabled, same signal the sidebar entry uses.
+ */
+function ConnectCard() {
+  const enabled = useClientsEnabled();
+  if (!enabled) return null;
+
   return (
-    <div className="stat-card" style={{ '--stat-accent': accentColor } as React.CSSProperties}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: iconColor }}>
-        {icon}<span className="stat-label">{label}</span>
+    <Link
+      to="/dashboard/connect"
+      className="card"
+      style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24, textDecoration: 'none', color: 'inherit' }}
+    >
+      <Terminal size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 2 }}>Connect a client</div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          Point Claude Code, Codex, Cursor and {CLIENT_REGISTRY.length - 3} more at this gateway.
+        </div>
       </div>
-      <div className="stat-value" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
-      <div className="stat-sub">{sub}</div>
-    </div>
+      <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+    </Link>
   );
 }

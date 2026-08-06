@@ -83,6 +83,38 @@ describe('report usage', () => {
     expect(out.join('\n')).toContain('guardrail');
   });
 
+  it('appends --type filter as requestType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('usage', '--type', 'rerank');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('requestType=rerank'));
+  });
+
+  it('rejects an unknown --type before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('usage', '--type', 'garbage');
+    expect(err.join('\n')).toContain("unknown type 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('appends --caller filter as callType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('usage', '--caller', 'routing');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('callType=routing'));
+  });
+
+  it('rejects an unknown --caller before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('usage', '--caller', 'garbage');
+    expect(err.join('\n')).toContain("unknown caller 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('appends --token filter as tokenIds', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('usage', '--token', 'tok-1,tok-2');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('tokenIds=tok-1%2Ctok-2'));
+  });
+
   it('prints "no records" when totalCalls is 0', async () => {
     mockApi.mockResolvedValue({ ...usageFixture, summary: { ...usageFixture.summary, totalCalls: 0 } });
     const { out } = await run('usage');
@@ -132,6 +164,18 @@ describe('report usage', () => {
     const { out } = await run('usage');
     // gpt-4o has 1 error — should appear somewhere
     expect(out.join('\n')).toMatch(/1/);
+  });
+
+  it('lists the request types the window holds, busiest first (T210)', async () => {
+    mockApi.mockResolvedValue({ ...usageFixture, byRequestType: { chat: 4, embedding: 1 } });
+    const { out } = await run('usage');
+    expect(out.join('\n')).toContain('Types — Chat: 4  |  Embedding: 1');
+  });
+
+  it('prints no type line when the service ships no counts (T210)', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { out } = await run('usage');
+    expect(out.join('\n')).not.toContain('Types —');
   });
 
   it('does not show breakdown when optional fields absent', async () => {
@@ -241,6 +285,77 @@ describe('report calls', () => {
     const { err } = await run('calls');
     expect(err.join('\n')).toContain('fail');
   });
+
+  it('appends --type filter as requestType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('calls', '--type', 'embedding');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('requestType=embedding'));
+  });
+
+  it('rejects an unknown --type before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('calls', '--type', 'garbage');
+    expect(err.join('\n')).toContain("unknown type 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('prints the request type column, defaulting legacy records to Chat', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [
+        { ...usageFixture.records[0], requestType: 'image' },
+        usageFixture.records[1], // legacy: no requestType
+      ],
+    });
+    const { out } = await run('calls');
+    expect(out.join('\n')).toMatch(/Image/);
+    expect(out.join('\n')).toMatch(/Chat/);
+  });
+
+  it('appends --caller filter as callType', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('calls', '--caller', 'guardrail');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('callType=guardrail'));
+  });
+
+  it('rejects an unknown --caller before calling the API', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    const { err } = await run('calls', '--caller', 'garbage');
+    expect(err.join('\n')).toContain("unknown caller 'garbage'");
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
+  it('appends --token filter as tokenIds', async () => {
+    mockApi.mockResolvedValue(usageFixture);
+    await run('calls', '--token', 'tok-1');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('tokenIds=tok-1'));
+  });
+
+  it('prints the token column, dashed on records written before it was tracked', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [
+        { ...usageFixture.records[0], tokenId: '3f2b1c4d-9a8b-4c7d-8e6f-1a2b3c4d5e6f' },
+        usageFixture.records[1], // legacy: no tokenId
+      ],
+    });
+    const { out } = await run('calls');
+    expect(out.join('\n')).toContain('3f2b1c4d');
+    expect(out.join('\n')).toMatch(/-\s*\u2502/);
+  });
+
+  it('prints the caller column, defaulting legacy records to completion', async () => {
+    mockApi.mockResolvedValue({
+      ...usageFixture,
+      records: [
+        { ...usageFixture.records[0], callType: 'routing' },
+        usageFixture.records[1], // legacy: no callType
+      ],
+    });
+    const { out } = await run('calls');
+    expect(out.join('\n')).toMatch(/routing/);
+    expect(out.join('\n')).toMatch(/completion/);
+  });
 });
 
 // ── report leaderboard ───────────────────────────────────────────────────────
@@ -330,43 +445,158 @@ describe('report sessions', () => {
   });
 });
 
-// ── report end-users ─────────────────────────────────────────────────────────
+// ── report savings (T64) ─────────────────────────────────────────────────────
 
-const endUsersFixture = [
-  { userId: 'user-111', requests: 10, totalCost: 0.05 },
-  { userId: 'user-222', requests: 3, totalCost: 0.01 },
-];
+const savingsFixture = {
+  ...usageFixture,
+  savings: {
+    comparedCalls: 9,
+    comparedCost: 0.003,
+    comparedLatencyMs: 9000,
+    comparedInputTokens: 1000,
+    comparedOutputTokens: 500,
+    cache: { inputTokens: 400, cost: 0.0009 },
+    baselines: [
+      { modelId: 'cheap', cost: 0.003, costDelta: 0, costDeltaPercent: 0, latencyMs: 8000, latencyDeltaMs: -1000, latencySamples: 8, tokensEstimated: 1500, tokenDelta: 0 },
+      { modelId: 'expensive', cost: 0.03, costDelta: 0.027, costDeltaPercent: 90, latencySamples: 0, tokensEstimated: 1725, tokenDelta: 225 },
+    ],
+    optimizers: [
+      { id: 'ccr', calls: 7, tokensSaved: 4200, costSaved: 0.0126, rolledBack: 0 },
+      { id: 'caveman', calls: 2, tokensSaved: 130, costSaved: 0.0004, rolledBack: 3 },
+    ],
+  },
+};
 
-describe('report end-users', () => {
-  it('prints end-users table', async () => {
-    mockApi.mockResolvedValue(endUsersFixture);
-    const { out } = await run('end-users');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('/api/end-users'));
-    expect(out.join('\n')).toContain('user-111');
+const seriesFixture = {
+  bucket: 'day',
+  baselineModelId: 'expensive',
+  points: [
+    { bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06, inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000 },
+    { bucket: '2026-08-01', calls: 1, cost: 0.003, baselineCost: 0, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, latencyMs: 1000, baselineLatencyMs: 0 },
+  ],
+};
+
+describe('report savings', () => {
+  it('asks the service for the savings block', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    await run('savings');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('savings=1'));
   });
 
-  it('outputs JSON with --json flag', async () => {
-    mockApi.mockResolvedValue(endUsersFixture);
-    const { out } = await run('end-users', '--json');
-    const parsed = JSON.parse(out.join('\n'));
-    expect(Array.isArray(parsed)).toBe(true);
+  it('reports the actual traffic and what the cache already saved', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('Compared calls: 9');
+    expect(text).toContain('$0.003000');
+    expect(text).toContain('$0.000900 saved');
   });
 
-  it('prints empty message when no data', async () => {
-    mockApi.mockResolvedValue([]);
-    const { out } = await run('end-users');
-    expect(out.join('\n')).toContain('No end-user data');
+  it('lists one counterfactual per target, priced and never timed', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('expensive');
+    expect(text).toContain('$0.027000');
+    expect(text).toContain('90.0%');
+    // The time counterfactual was an estimate nobody could check: it is gone.
+    expect(text).not.toContain('Would take');
+    expect(text).not.toContain('Time saved');
   });
 
-  it('appends --project filter', async () => {
-    mockApi.mockResolvedValue(endUsersFixture);
-    await run('end-users', '--project', 'p1');
-    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('projectId=p1'));
+  it('anchors the saving on the costliest baseline, the cheapest as context', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('Cost saved:   $0.027000 (vs always expensive)');
+    expect(text).toContain('              $0.000000 (vs always cheap)');
+    expect(text).toContain('Tokens saved: 4,330 cut by optimizers, measured');
+    expect(text).toContain('225 vs always expensive, estimated');
+  });
+
+  it('drops the summary when every baseline is free', async () => {
+    const baselines = savingsFixture.savings.baselines.map(b => ({ ...b, cost: 0 }));
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, baselines } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).not.toContain('Cost saved:');
+  });
+
+  it('names each optimizer and counts its rollbacks', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings');
+    const text = out.join('\n');
+    expect(text).toContain('Conversation Context Reduction');
+    expect(text).toContain('4,200');
+    expect(text).toContain('Caveman');
+  });
+
+  it('stays quiet about optimizers when none touched a call', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, optimizers: [] } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).not.toContain('What the optimizers removed');
+  });
+
+  it('says so when the project has no target model to compare against', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, baselines: [] } });
+    const { out } = await run('savings');
+    expect(out.join('\n')).toContain('No target model to compare against');
+  });
+
+  it('reports an empty period instead of a table of zeros', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, savings: { ...savingsFixture.savings, comparedCalls: 0 } });
+    const { out } = await run('savings', '--period', 'daily');
+    expect(out.join('\n')).toContain('No comparable calls for period: daily');
+  });
+
+  it('outputs the savings block alone with --json', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    const { out } = await run('savings', '--json');
+    expect(JSON.parse(out.join('\n'))).toEqual(savingsFixture.savings);
+  });
+
+  it('asks for the series and breaks the saving down with --trend', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: seriesFixture });
+    const { out } = await run('savings', '--trend');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.stringContaining('series=1'));
+    const text = out.join('\n');
+    expect(text).toContain('Per day');
+    expect(text).toContain('against expensive');
+    expect(text).toContain('2026-07-31');
+    expect(text).toContain('$0.054000'); // 0.06 baseline - 0.006 actual
+    expect(text).toContain('2,000 / 1,000');
+    expect(text).toContain('1,000'); // 2000 ms over 2 calls
+  });
+
+  it('leaves the series out unless --trend is asked for', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: seriesFixture });
+    const { out } = await run('savings');
+    expect(mockApi).toHaveBeenCalledWith('GET', expect.not.stringContaining('series=1'));
+    expect(out.join('\n')).not.toContain('Per day');
+  });
+
+  it('says so when --trend has no bucket to show', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: { bucket: 'day', points: [] } });
+    const { out } = await run('savings', '--trend');
+    expect(out.join('\n')).toContain('No traffic to break down');
+  });
+
+  it('adds the series next to the savings fields with --json --trend', async () => {
+    mockApi.mockResolvedValue({ ...savingsFixture, series: seriesFixture });
+    const { out } = await run('savings', '--json', '--trend');
+    expect(JSON.parse(out.join('\n'))).toEqual({ ...savingsFixture.savings, series: seriesFixture });
+  });
+
+  it('passes --project and --type through as filters', async () => {
+    mockApi.mockResolvedValue(savingsFixture);
+    await run('savings', '--project', 'p1', '--type', 'embedding');
+    const url = String(mockApi.mock.calls[0]![1]);
+    expect(url).toContain('projectId=p1');
+    expect(url).toContain('requestType=embedding');
   });
 
   it('exits 1 on API error', async () => {
-    mockApi.mockRejectedValue(new Error('fail'));
-    const { err } = await run('end-users');
-    expect(err.join('\n')).toContain('fail');
+    mockApi.mockRejectedValue(new Error('forbidden'));
+    const { err } = await run('savings');
+    expect(err.join('\n')).toContain('forbidden');
   });
 });

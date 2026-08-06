@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { Bell, Users, FolderOpen } from 'lucide-react';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { MultiSelect } from '../components/MultiSelect';
+import { SearchableSelect } from '../components/SearchableSelect';
 import { ALL_PERMISSIONS, getProjects } from '../api';
 import type { Permission, Project } from '../api';
 import type { Role, User } from '../api';
@@ -59,6 +60,7 @@ const EVENT_LABELS: Record<string, string> = {
   'budget.reset':              'Budget – Reset',
   'system.startup':            'System – Startup',
   'system.shutdown':           'System – Shutdown',
+  'system.update_available':   'System – Update Available',
 };
 
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
@@ -80,6 +82,18 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'token:write':        'Tokens – Write',
   'role:write':         'Roles – Write',
   'audit:read':         'Audit Log – Read',
+  'modules:read':       'Modules – Read',
+  'modules:manage':     'Modules – Manage',
+  'connections:read':   'Connections – Read',
+  'connections:manage': 'Connections – Manage',
+  'resilience:read':    'Resilience – Read',
+  'resilience:manage':  'Resilience – Manage',
+  'profiles:read':      'Routing Profiles – Read',
+  'profiles:manage':    'Routing Profiles – Manage',
+  'optimizers:read':    'Optimizers – Read',
+  'optimizers:manage':  'Optimizers – Manage',
+  'experiments:read':   'Experiments – Read',
+  'experiments:manage': 'Experiments – Manage',
 };
 /* v8 ignore next */
 export const PERM_OPTIONS = ALL_PERMISSIONS.map(p => ({ value: p, label: PERM_LABELS_LOCAL[p] ?? p }));
@@ -521,10 +535,11 @@ export function ChannelEditFields({ form, onChange, isEdit }: EditFieldsProps) {
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">Method</label>
-              <select className="form-input" value={String(form['method'] ?? 'POST')} onChange={e => onChange('method', e.target.value)}>
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
-              </select>
+              <SearchableSelect
+                options={[{ value: 'POST', label: 'POST' }, { value: 'GET', label: 'GET' }]}
+                value={String(form['method'] ?? 'POST')}
+                onChange={v => onChange('method', v)}
+              />
             </div>
             <SecretEditInput label="Signing Secret" fieldKey="secret" form={form} onChange={onChange} isEdit={isEdit} placeholder="HMAC signing key" />
           </div>

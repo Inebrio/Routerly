@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationType, ProviderRepo, RepoStatus } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
-import { NOTIFICATION_EVENTS } from '@routerly/shared';
+import { SearchableSelect } from '../components/SearchableSelect';
+import { writeToClipboard } from '../utils/clipboard';
+import { isCaptureMode } from '../utils/captureMode';
+import { NOTIFICATION_EVENTS, normalizeUpdateChannel } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -87,12 +90,20 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
 
 // ── General tab ───────────────────────────────────────────────────────────────
 
+/** Which addresses only work on this machine, so the list says it instead of implying it. */
+function addressScope(address: string): string {
+  return /\/\/(127\.|\[?::1\]?|localhost)/.test(address) ? 'This machine' : 'Network';
+}
+
+
 export function SettingsGeneralTab() {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [info, setInfo] = useState<SystemInfo | null>(null);
   const [form, setForm] = useState<Partial<Settings>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => { load(); }, []);
@@ -102,12 +113,22 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ defaultTimeoutMs: s.defaultTimeoutMs, logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.requireMfa !== undefined ? { requireMfa: s.requireMfa } : {}), ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, ...(s.notifications ? { notifications: s.notifications } : {}) });
+      // Version and uptime live on /api/system/info; a failure there must not hide the settings form.
+      getSystemInfo().then(setInfo).catch(() => setInfo(null));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load settings');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function copyAddress(address: string) {
+    try {
+      await writeToClipboard(address);
+      setCopied(address);
+      setTimeout(/* v8 ignore next */ () => setCopied(null), 2000);
+    } catch { /* silently ignore — the address is selectable text */ }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -135,27 +156,73 @@ export function SettingsGeneralTab() {
   /* v8 ignore next */
   if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || 'Failed to load settings.'}</div>;
 
+  // Older services do not report the resolved interfaces: fall back to the bind address.
+  const listenAddresses = settings.listeningAddresses?.length
+    ? settings.listeningAddresses
+    : [`http://${settings.host}:${settings.port}`];
+
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
 
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>
           Server Info
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label className="form-label">Host</label>
-            <input className="form-input" value={settings?.host ?? ''} disabled readOnly />
-          </div>
-          <div>
-            <label className="form-label">Port</label>
-            <input className="form-input" value={settings?.port ?? ''} disabled readOnly />
-          </div>
-        </div>
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
-          Host and port are configured via environment variables or the settings file and cannot be changed here.
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
+          Read-only. Host and port come from the environment or the settings file, not from here.
         </p>
-        <div className="form-group" style={{ marginTop: 14 }}>
+
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+          {listenAddresses.length === 1 ? 'Reachable at' : 'Reachable at any of these addresses'}
+        </div>
+        {listenAddresses.map(address => (
+          <div key={address} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', minWidth: 0 }}>
+              <span style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {address}
+              </span>
+              <span className="badge badge-neutral" style={{ flexShrink: 0 }}>{addressScope(address)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => copyAddress(address)}
+              className="btn btn-secondary"
+              aria-label={`Copy ${address}`}
+              style={{ flexShrink: 0, padding: '5px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              {copied === address ? <Check size={13} /> : <Copy size={13} />}
+              {copied === address ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        ))}
+
+        <div style={{ marginTop: 14 }}>
+          <InfoRow label="Host and port" value={`${settings.host}:${settings.port}`} mono />
+          {info && <InfoRow label="Version" value={info.version} mono />}
+          {info && <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
+          Runtime Settings
+        </h3>
+
+        <div className="form-group">
+          <label className="form-label">Log Level</label>
+          <SearchableSelect
+            options={LOG_LEVELS.map(l => ({ value: l, label: l }))}
+            value={form.logLevel ?? 'info'}
+            placeholder="Log Level"
+            ariaLabel="Log Level"
+            onChange={v => field('logLevel', v as Settings['logLevel'])}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Controls the verbosity of service logs.
+          </p>
+        </div>
+
+        <div className="form-group">
           <label className="form-label" htmlFor="s-publicurl">Public URL</label>
           <input
             id="s-publicurl"
@@ -169,61 +236,6 @@ export function SettingsGeneralTab() {
             Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
             Used in the <strong>How to connect</strong> section of each project.
             Useful when the dashboard runs on a different machine or port than the service.
-          </p>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 28 }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
-          Runtime Settings
-        </h3>
-
-        <div className="form-group">
-          <label className="form-label" htmlFor="s-timeout">Default Request Timeout (ms)</label>
-          <input
-            id="s-timeout"
-            type="number"
-            className="form-input"
-            min={1000}
-            max={300000}
-            step={1000}
-            value={form.defaultTimeoutMs ?? ''}
-            onChange={e => field('defaultTimeoutMs', Number(e.target.value))}
-            required
-          />
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Maximum time to wait for a model response per attempt. Can be overridden per project.
-          </p>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label" htmlFor="s-loglevel">Log Level</label>
-          <select
-            id="s-loglevel"
-            className="form-input"
-            value={form.logLevel ?? 'info'}
-            onChange={e => field('logLevel', e.target.value as Settings['logLevel'])}
-          >
-            {LOG_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Controls the verbosity of service logs.
-          </p>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={!!form.requireMfa}
-              onChange={e => field('requireMfa', e.target.checked)}
-              style={{ width: 16, height: 16, cursor: 'pointer' }}
-            />
-            Require Two-Factor Authentication for all users
-          </label>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            When enabled, users who have not set up 2FA will see a prompt to do so after logging in.
-            Users can configure 2FA in their Profile page.
           </p>
         </div>
 
@@ -289,6 +301,7 @@ const EVENT_LABELS: Record<string, string> = {
   'budget.reset':              'Budget – Reset',
   'system.startup':            'System – Startup',
   'system.shutdown':           'System – Shutdown',
+  'system.update_available':   'System – Update Available',
 };
 
 /* v8 ignore next */
@@ -309,6 +322,18 @@ const PERM_LABELS_LOCAL: Record<Permission, string> = {
   'token:write':        'Tokens – Write',
   'role:write':         'Roles – Write',
   'audit:read':         'Audit Log – Read',
+  'modules:read':       'Modules – Read',
+  'modules:manage':     'Modules – Manage',
+  'connections:read':   'Connections – Read',
+  'connections:manage': 'Connections – Manage',
+  'resilience:read':    'Resilience – Read',
+  'resilience:manage':  'Resilience – Manage',
+  'profiles:read':      'Routing Profiles – Read',
+  'profiles:manage':    'Routing Profiles – Manage',
+  'optimizers:read':    'Optimizers – Read',
+  'optimizers:manage':  'Optimizers – Manage',
+  'experiments:read':   'Experiments – Read',
+  'experiments:manage': 'Experiments – Manage',
 };
 
 /* v8 ignore next */
@@ -772,10 +797,11 @@ export function SettingsNotificationsTab() {
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">Method</label>
-              <select className="form-input" value={ch.method ?? 'POST'} onChange={e => uf(ch.id, 'method', e.target.value)}>
-                <option value="POST">POST</option>
-                <option value="GET">GET</option>
-              </select>
+              <SearchableSelect
+                options={[{ value: 'POST', label: 'POST' }, { value: 'GET', label: 'GET' }]}
+                value={ch.method ?? 'POST'}
+                onChange={v => uf(ch.id, 'method', v)}
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Secret <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
@@ -975,6 +1001,48 @@ function textToHeaders(text: string): Record<string, string> {
   return result;
 }
 
+/**
+ * Trace export opt-in, offered only by the sinks that can carry a per-request
+ * payload (OTLP spans, webhook JSON). Off by default: unlike the 60s metric push
+ * this is one outbound request per proxied request.
+ */
+function TraceExportFields({ form, onChange }: {
+  form: Record<string, unknown>;
+  onChange: (patch: Record<string, unknown>) => void;
+}) {
+  const traces = form.traces as IntegrationTraces | undefined;
+  const enabled = traces?.enabled === true;
+  const rate = traces?.sampleRate;
+
+  return (
+    <div className="form-group">
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+        <input type="checkbox" checked={enabled} style={{ accentColor: 'var(--primary)' }}
+          onChange={e => onChange({ traces: { enabled: e.target.checked, ...(rate != null ? { sampleRate: rate } : {}) } })} />
+        <span className="form-label" style={{ margin: 0 }}>Export request traces</span>
+      </label>
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+        Ships the full trace of each proxied request: every phase, every module that
+        spoke, and prompts and answers for the projects that opted in.
+      </p>
+      {enabled && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <label className="form-label" style={{ margin: 0 }}>Sample rate</label>
+          <input className="form-input" type="number" min={0} max={1} step={0.05} style={{ width: 100 }}
+            value={rate ?? 1}
+            onChange={e => {
+              // An emptied field reads as "no sampling", the default, not as "export nothing".
+              const value = e.target.value === '' ? 1 : Number(e.target.value);
+              const clamped = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
+              onChange({ traces: { enabled: true, sampleRate: clamped } });
+            }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>1 exports every request, 0.1 one in ten.</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function IntegrationIcon({ type, size = 14 }: { type: IntegrationType; size?: number }) {
   const Icon: React.ElementType = INTEGRATION_TYPES.find(t => t.type === type)?.Icon ?? Activity;
   return <Icon size={size} />;
@@ -1011,17 +1079,16 @@ function integrationFormFields(
                 onChange={e => onChange({ endpoint: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>. Default HTTP port is 4318, gRPC is 4317.
+                Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>, and <code>/v1/traces</code> when trace export is on. Default HTTP port is 4318, gRPC is 4317.
               </p>
             </div>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Protocol</label>
-              <select className="form-input"
+              <SearchableSelect
+                options={[{ value: 'http', label: 'HTTP' }, { value: 'grpc', label: 'gRPC' }]}
                 value={(form.protocol as string) ?? 'http'}
-                onChange={e => onChange({ protocol: e.target.value })}>
-                <option value="http">HTTP</option>
-                <option value="grpc">gRPC</option>
-              </select>
+                onChange={v => onChange({ protocol: v })}
+              />
             </div>
           </div>
           <div className="form-group">
@@ -1032,6 +1099,7 @@ function integrationFormFields(
               onChange={e => onChange({ headers: Object.keys(textToHeaders(e.target.value)).length ? textToHeaders(e.target.value) : undefined })}
               style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }} />
           </div>
+          <TraceExportFields form={form} onChange={onChange} />
         </>
       );
     case 'datadog':
@@ -1050,15 +1118,17 @@ function integrationFormFields(
           </div>
           <div className="form-group">
             <label className="form-label">Site</label>
-            <select className="form-input"
+            <SearchableSelect
+              options={[
+                { value: 'datadoghq.com', label: 'datadoghq.com - US1' },
+                { value: 'us3.datadoghq.com', label: 'us3.datadoghq.com - US3' },
+                { value: 'us5.datadoghq.com', label: 'us5.datadoghq.com - US5' },
+                { value: 'datadoghq.eu', label: 'datadoghq.eu - EU' },
+                { value: 'ddog-gov.com', label: 'ddog-gov.com - US1-FED' },
+              ]}
               value={(form.site as string) ?? 'datadoghq.com'}
-              onChange={e => onChange({ site: e.target.value })}>
-              <option value="datadoghq.com">datadoghq.com — US1</option>
-              <option value="us3.datadoghq.com">us3.datadoghq.com — US3</option>
-              <option value="us5.datadoghq.com">us5.datadoghq.com — US5</option>
-              <option value="datadoghq.eu">datadoghq.eu — EU</option>
-              <option value="ddog-gov.com">ddog-gov.com — US1-FED</option>
-            </select>
+              onChange={v => onChange({ site: v })}
+            />
           </div>
         </>
       );
@@ -1174,6 +1244,7 @@ function integrationFormFields(
               onChange={e => onChange({ headers: Object.keys(textToHeaders(e.target.value)).length ? textToHeaders(e.target.value) : undefined })}
               style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem' }} />
           </div>
+          <TraceExportFields form={form} onChange={onChange} />
         </>
       );
   }
@@ -1735,8 +1806,7 @@ export function SettingsCatalogTab() {
 
 // ── About tab ────────────────────────────────────────────────────────────────
 
-const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'stable', 'develop'], versions: [] };
-const CHANNEL_LABELS: Record<string, string> = { stable: 'current', latest: 'latest', develop: 'develop' };
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next'], versions: [] };
 
 function ChannelSelector({
   current,
@@ -1756,11 +1826,15 @@ function ChannelSelector({
     getAvailableReleases().then(setReleases).catch(() => setReleases(FALLBACK_RELEASES));
   }, []);
 
+  const normalized = normalizeUpdateChannel(current);
+  const deprecatedAlias = normalized.deprecatedAlias;
   const knownValues = [...releases.channels, ...releases.versions];
-  const isKnown = knownValues.includes(current);
+  const isKnown = knownValues.includes(current) || deprecatedAlias !== undefined;
+  const selectValue = deprecatedAlias ? normalized.channel : current;
 
   React.useEffect(() => {
-    if (!isKnown) { setShowCustom(true); setCustomVal(current); }
+    setShowCustom(!isKnown);
+    if (!isKnown) setCustomVal(current);
   }, [current, isKnown]);
 
   async function save(ch: string) {
@@ -1777,8 +1851,7 @@ function ChannelSelector({
     }
   }
 
-  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const v = e.target.value;
+  function handleSelectChange(v: string) {
     if (v === '__custom') { setShowCustom(true); return; }
     void save(v);
   }
@@ -1790,6 +1863,9 @@ function ChannelSelector({
         {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
         {saved && <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>Saved</span>}
         {saving && <div className="spinner" style={{ width: 12, height: 12 }} />}
+        {!showCustom && deprecatedAlias && (
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>stored as {deprecatedAlias} (deprecated)</span>
+        )}
         {showCustom ? (
           <>
             <input
@@ -1814,25 +1890,29 @@ function ChannelSelector({
             >← back</button>
           </>
         ) : (
-          <select
-            className="form-input"
-            style={{ fontSize: '0.83rem', padding: '3px 8px', margin: 0, width: 130 }}
-            value={isKnown ? current : '__custom'}
+          <SearchableSelect
+            style={{ fontSize: '0.83rem', width: 130 }}
+            value={isKnown ? selectValue : '__custom'}
             onChange={handleSelectChange}
             disabled={saving}
-          >
-            {releases.channels.map(ch => (
-              <option key={ch} value={ch}>{CHANNEL_LABELS[ch] ?? ch}</option>
-            ))}
-            <option value="__custom">custom…</option>
-          </select>
+            options={[
+              ...releases.channels.map(ch => ({ value: ch, label: ch })),
+              { value: '__custom', label: 'custom...' },
+            ]}
+          />
         )}
       </div>
     </div>
   );
 }
 
+// Fixed placeholder shown instead of the real uptime while capturing documentation
+// screenshots: the real value is wall-clock derived and differs between two runs of the
+// same commit. See ../utils/captureMode.
+const CAPTURE_UPTIME_DISPLAY = '2d 4h 17m';
+
 function formatUptime(seconds: number): string {
+  if (isCaptureMode()) return CAPTURE_UPTIME_DISPLAY;
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -1877,7 +1957,7 @@ export function SettingsAboutTab() {
   async function handleChannelSave(ch: string) {
     await updateSettings({ channel: ch });
     /* v8 ignore next */
-    setInfo(prev => prev ? { ...prev, channel: ch } : prev);
+    setInfo(prev => prev ? { ...prev, channel: ch, rawChannel: ch } : prev);
   }
 
   async function handleCheckUpdates() {
@@ -1945,7 +2025,7 @@ export function SettingsAboutTab() {
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Application</h3>
         <InfoRow label="Version" value={`v${info.version}`} />
-        <ChannelSelector current={info.channel ?? 'latest'} onSave={handleChannelSave} />
+        <ChannelSelector current={info.rawChannel ?? info.channel ?? 'latest'} onSave={handleChannelSave} />
         <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />
       </div>
 
@@ -2015,10 +2095,84 @@ export function SettingsAboutTab() {
   );
 }
 
+// ── Security tab ─────────────────────────────────────────────────────────────
+
+export function SettingsSecurityTab() {
+  const [requireMfa, setRequireMfa] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    getSettings()
+      .then(s => setRequireMfa(!!s.requireMfa))
+      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load settings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    setSaved(false);
+    try {
+      await updateSettings({ requireMfa });
+      setSaved(true);
+      setTimeout(/* v8 ignore next */ () => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+
+  return (
+    <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Shield size={13} /> Authentication
+        </h3>
+
+        <div className="form-group">
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={requireMfa}
+              onChange={e => setRequireMfa(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            Require Two-Factor Authentication for all users
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            When enabled, users who have not set up 2FA will see a prompt to do so after logging in.
+            Users can configure 2FA in their Profile page.
+          </p>
+        </div>
+      </div>
+
+      {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
+      {saved && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.85rem', color: '#22c55e' }}>
+          Settings saved successfully.
+        </div>
+      )}
+      <div>
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving…</> : <><Save size={15} /> Save Settings</>}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ── Page layout ───────────────────────────────────────────────────────────────
 
 const TABS = [
   { path: 'general',       label: 'General' },
+  { path: 'security',      label: 'Security' },
   { path: 'notifications', label: 'Notifications' },
   { path: 'integrations',  label: 'Integrations' },
   { path: 'catalog',       label: 'Provider Catalog' },

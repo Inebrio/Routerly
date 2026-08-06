@@ -5,8 +5,8 @@
 #   powershell -c "irm https://your-domain.com/install.ps1 | iex"
 #   or with flags:
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Yes"
-#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel stable"
-#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel develop"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel current"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel next"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Version v0.2.0"
 #
 # -Channel and -Version are resolved here; all other flags are forwarded to install.mjs.
@@ -21,11 +21,14 @@ param(
   [switch]$NoCli,
   [switch]$NoDashboard,
   [switch]$NoDaemon,
-  [string]$Channel       = "stable",   # latest | stable | develop
+  [string]$Channel       = "current",  # latest | current | next (stable, develop: deprecated aliases)
   [string]$Version       = ""         # e.g. v0.2.0 — overrides -Channel when set
 )
 
 $ErrorActionPreference = "Stop"
+
+# Whether -Channel was explicitly supplied on the command line (vs. the default).
+$ChannelExplicit = $PSBoundParameters.ContainsKey('Channel')
 
 # ── Distribution config ───────────────────────────────────────────────────────
 $GITHUB_OWNER = "Inebrio"
@@ -147,14 +150,24 @@ function Resolve-DownloadUrl {
   if ($Version) {
     Write-Info "Resolving version $Version..."
     $apiUrl = "$apiBase/tags/$Version"
-  } elseif ($Channel -eq "latest") {
-    Write-Info "Resolving channel latest..."
-    $apiUrl = "$apiBase/latest"
-  } elseif ($Channel -eq "stable" -or $Channel -eq "develop") {
-    Write-Info "Resolving channel $Channel..."
-    $apiUrl = "$apiBase/tags/$Channel"
   } else {
-    Die "Unknown channel: '$Channel'. Valid values: latest, stable, develop"
+    if ($Channel -ceq "stable") {
+      [Console]::Error.WriteLine("Channel 'stable' is deprecated; using 'current' instead.")
+      $script:Channel = "current"
+    } elseif ($Channel -ceq "develop") {
+      [Console]::Error.WriteLine("Channel 'develop' is deprecated; using 'next' instead.")
+      $script:Channel = "next"
+    }
+
+    if ($Channel -ceq "latest" -or $Channel -ceq "current") {
+      Write-Info "Resolving channel $Channel..."
+      $apiUrl = "$apiBase/latest"
+    } elseif ($Channel -ceq "next") {
+      Write-Info "Resolving channel next..."
+      $apiUrl = "$apiBase/tags/next"
+    } else {
+      Die "Unknown channel: '$Channel'. Valid values: latest, current, next`n(deprecated aliases: stable, develop)"
+    }
   }
 
   try {
@@ -163,6 +176,9 @@ function Resolve-DownloadUrl {
   } catch {
     if ($Version) {
       Die "Could not find release '$Version' on GitHub. Check the version tag and retry."
+    }
+    if ($ChannelExplicit) {
+      Die "Could not fetch channel '$Channel' from the GitHub API. Check your network and retry."
     }
     Write-Warn "Could not fetch release from GitHub API. Falling back to main branch..."
     return @{ TarballUrl = ""; Tag = "" }

@@ -72,6 +72,45 @@ describe('notification list', () => {
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/notifications/inbox?limit=50&from=2026-01-01&to=2026-02-01');
   });
 
+  it('passes severity, category, event and unread as query params (T54)', async () => {
+    mockApi.mockResolvedValueOnce([]);
+    const cmd = makeNotificationCommand();
+    await cmd.parseAsync(['node', 'routerly', 'list', '--severity', 'critical', '--category', 'provider', '--event', 'error', '--unread']);
+    expect(mockApi).toHaveBeenCalledWith('GET', '/api/notifications/inbox?limit=50&severity=critical&category=provider&event=error&unreadOnly=true');
+  });
+
+  it('rejects an unknown category before calling the API (T54)', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const cmd = makeNotificationCommand();
+    await expect(cmd.parseAsync(['node', 'routerly', 'list', '--category', 'nope'])).rejects.toThrow('exit');
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Unknown category "nope"'));
+    expect(mockApi).not.toHaveBeenCalled();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it('prints the human title, the slug and the cause (T54)', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'n1', severity: 'critical', event: 'provider.error', timestamp: '2024-01-01T00:00:00Z', details: { provider: 'openai', error: 'connect ETIMEDOUT' } },
+    ]);
+    const cmd = makeNotificationCommand();
+    await cmd.parseAsync(['node', 'routerly', 'list']);
+    const out = vi.mocked(console.log).mock.calls.map(c => String(c[0])).join('\n');
+    expect(out).toContain('Provider call failed');
+    expect(out).toContain('provider.error');
+    expect(out).toContain('connect ETIMEDOUT');
+    expect(out).toContain('provider');
+  });
+
+  it('marks a correlated incident with its event count (T54)', async () => {
+    mockApi.mockResolvedValueOnce([
+      { id: 'n1', severity: 'critical', event: 'provider.error', timestamp: '2024-01-01T00:00:00Z', details: {}, eventCount: 3 },
+    ]);
+    const cmd = makeNotificationCommand();
+    await cmd.parseAsync(['node', 'routerly', 'list']);
+    const out = vi.mocked(console.log).mock.calls.map(c => String(c[0])).join('\n');
+    expect(out).toContain('3 events');
+  });
+
   it('exits 1 on API error', async () => {
     mockApi.mockRejectedValueOnce(new Error('Network error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
@@ -87,12 +126,20 @@ describe('notification delete', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
+  it('accepts the archive name as well as the delete alias (T54)', async () => {
+    mockApi.mockResolvedValueOnce({ deleted: 1 });
+    const cmd = makeNotificationCommand();
+    await cmd.parseAsync(['node', 'routerly', 'archive', 'n1']);
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/inbox/delete', { ids: ['n1'] });
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Archived 1 notification.'));
+  });
+
   it('deletes specific ids', async () => {
     mockApi.mockResolvedValueOnce({ deleted: 2 });
     const cmd = makeNotificationCommand();
     await cmd.parseAsync(['node', 'routerly', 'delete', 'n1', 'n2']);
     expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/inbox/delete', { ids: ['n1', 'n2'] });
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Deleted 2 notifications'));
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Archived 2 notifications'));
   });
 
   it('deletes all with --all', async () => {
@@ -106,7 +153,7 @@ describe('notification delete', () => {
     mockApi.mockResolvedValueOnce({ deleted: 1 });
     const cmd = makeNotificationCommand();
     await cmd.parseAsync(['node', 'routerly', 'delete', 'n1']);
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Deleted 1 notification.'));
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Archived 1 notification.'));
   });
 
   it('outputs JSON with --json', async () => {
@@ -216,6 +263,29 @@ describe('notification show', () => {
     expect(out).toContain('project');
     expect(out).toContain('Acme');
     expect(out).toContain('unread');
+  });
+
+  it('shows the title, category, cause and the incident sequence (T54)', async () => {
+    const lines: string[] = [];
+    vi.mocked(console.log).mockImplementation((...a) => { lines.push(a.map(String).join(' ')); });
+    mockApi.mockResolvedValueOnce({
+      id: 'n1', severity: 'critical', event: 'provider.error', timestamp: '2024-01-01T00:00:00Z',
+      details: { provider: 'openai', error: 'connect ETIMEDOUT' }, read: true,
+      traceId: 't1', eventCount: 2,
+      events: [
+        { event: 'provider.error', severity: 'critical', timestamp: '2024-01-01T00:00:00Z', details: { provider: 'openai' } },
+        { event: 'routing.fallback_used', severity: 'warning', timestamp: '2024-01-01T00:00:01Z', details: { primary: 'gpt-4o', fallback: 'claude' } },
+      ],
+    });
+    const cmd = makeNotificationCommand();
+    await cmd.parseAsync(['node', 'routerly', 'show', 'n1']);
+    const out = lines.join('\n');
+    expect(out).toContain('Provider call failed');
+    expect(out).toContain('provider');
+    expect(out).toContain('connect ETIMEDOUT');
+    expect(out).toContain('t1');
+    expect(out).toContain('Events in this incident:');
+    expect(out).toContain('Fallback model used');
   });
 
   it('renders without a details table when details absent', async () => {

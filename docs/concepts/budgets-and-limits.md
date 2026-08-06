@@ -122,21 +122,31 @@ When a per-token budget is configured, the `mode` field controls how it interact
 
 ### Dashboard
 
-**Project budget:** Open the project → **General** tab → Budget section.
-**Per-token budget:** Open the project → **Tokens** tab → click the edit icon next to a token.
-**Global budget:** Open **Settings → Budgets**.
+**Global budget (per model):** Open **Models**, edit the model, then the **Limits** section.
+**Per-token budget:** Open the project → **Tokens** tab → click the edit icon next to a token. The editor shows the limit inherited from the model so you can see what you are overriding.
 
 ### CLI
 
-You can set a project-level daily or monthly cost budget when adding a model to a project:
+Global limits are set on the model, either with the two cost shorthands or with the full limits array:
 
 ```bash
-routerly project add-model \
-  --slug my-app \
-  --model gpt-5-mini \
-  --daily-budget 5.00 \
-  --monthly-budget 50.00
+routerly model edit gpt-5-mini --daily-budget 5.00 --monthly-budget 50.00
+
+routerly model edit gpt-5-mini --limits-json \
+  '[{"metric":"cost","windowType":"period","period":"monthly","value":100},
+    {"metric":"calls","windowType":"rolling","rollingAmount":1,"rollingUnit":"minute","value":60}]'
 ```
+
+Per-token limits are set on the token, one spec per model:
+
+```bash
+routerly project token edit "My App" <token-id> \
+  --add-limit "gpt-5-mini:cost:period:daily:5"
+```
+
+:::note
+The project level (`limits` on a project's model entry) is honoured at request time but has no dashboard or CLI editor yet: it can only be written directly in `projects.json`. Set budgets on the model or on the token instead.
+:::
 
 ---
 

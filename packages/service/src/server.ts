@@ -4,17 +4,29 @@ import staticFiles from '@fastify/static';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import authPlugin from './plugins/auth.js';
-import { loadSecret } from './plugins/jwt.js';
-import { openaiRoutes } from './routes/openai.js';
-import { anthropicRoutes } from './routes/anthropic.js';
-import { apiRoutes } from './routes/api.js';
-import { metricsRoutes } from './routes/metrics.js';
-import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './config/loader.js';
-import { migrateProjectConfigs } from './config/migrate.js';
-import { pingTelemetry } from './telemetry.js';
-import { updateChecker } from './update-checker.js';
-import { startIntegrationRunner } from './integrations/runner.js';
+import authPlugin from './modules/auth/auth.js';
+import { loadSecret } from './modules/auth/jwt.js';
+import { loadCredentialKey } from './lib/crypto-cred.js';
+import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
+import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
+import { mcpHttpRoutes } from './modules/mcp/http.js';
+import { apiRoutes } from './modules/api/api.js';
+import { metricsRoutes } from './modules/observability/metrics.js';
+import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
+import { pingTelemetry } from './modules/telemetry/telemetry.js';
+import { updateChecker } from './modules/update-checker/update-checker.js';
+import { bootstrap } from './bootstrap/index.js';
+import type { Kernel } from './core/index.js';
+
+// The modular kernel (0.4.0) is decorated onto the Fastify instance so later
+// refactory plans can reach its container/events. Routes still call
+// config/loader.ts directly, but apiRoutes (modules/api/api.ts) reads
+// fastify.kernel to mount route contributions from API_ROUTES.
+declare module 'fastify' {
+  interface FastifyInstance {
+    kernel: Kernel;
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -33,8 +45,22 @@ export async function buildServer() {
     bodyLimit: 256 * 1024 * 1024, // 256 MB — support large files, vision, and 2M-token contexts
   });
 
+  // ─── Modular kernel (0.4.0) ───────────────────────────────────────────────
+  // Boots alongside Fastify; registers the config, provider, and catalog modules
+  // so modules/config/loader.ts, modules/provider/registry.ts, and
+  // modules/catalog/fetcher.ts+sync.ts are reachable via CONFIG_STORE,
+  // PROVIDER_REGISTRY, and CATALOG for later plans. loadSecret()/
+  // initConfigDirs() already ran in startServer() before buildServer(); none
+  // of the three modules does IO at register time, so this is order-safe.
+  // Additive only, no existing registration is touched.
+  const kernel = await bootstrap();
+  fastify.decorate('kernel', kernel);
+  fastify.addHook('onClose', async () => {
+    await kernel.stop();
+  });
+
   // ─── Plugins ─────────────────────────────────────────────────────────────────
-  await fastify.register(cors, { origin: true, exposedHeaders: ['x-routerly-trace-id'] });
+  await fastify.register(cors, { origin: true });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -71,6 +97,9 @@ export async function buildServer() {
   await fastify.register(openaiRoutes);
   await fastify.register(anthropicRoutes);
 
+  // ─── MCP Streamable HTTP endpoint (self-authenticating, in auth skip list) ──
+  await fastify.register(mcpHttpRoutes);
+
   // ─── Root redirect ────────────────────────────────────────────────────────
   fastify.get('/', async (_req, reply) => {
     return reply.redirect('/dashboard/');
@@ -92,15 +121,11 @@ export async function buildServer() {
 export async function startServer() {
   await initConfigDirs();
   await loadSecret();
+  await loadCredentialKey();
   const orphansRemoved = await pruneOrphanUsage();
   if (orphansRemoved > 0) {
     // eslint-disable-next-line no-console
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching project)`);
-  }
-  const migrated = await migrateProjectConfigs();
-  if (migrated > 0) {
-    // eslint-disable-next-line no-console
-    console.log(`[startup] migrated ${migrated} project(s) to new guardrails/PII config shape`);
   }
   const settings = await readConfig('settings');
 
@@ -126,8 +151,10 @@ export async function startServer() {
 
   try {
     await server.listen({ port: settings.port, host: settings.host });
-    updateChecker.start(pkgVersion, settings.channel ?? 'latest');
-    startIntegrationRunner();
+    // The 60s integration push is started by the observability module (kernel start).
+    if (process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
+      updateChecker.start(pkgVersion, settings.channel ?? 'latest');
+    }
   } catch (err) {
     server.log.error(err);
     process.exit(1);

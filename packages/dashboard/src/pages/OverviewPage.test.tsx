@@ -1,12 +1,17 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
-// ponytail: stub recharts — invoke formatters/tickFormatters so coverage doesn't drop
+// ponytail: stub recharts — invoke tickFormatters and render the tooltip content
+// so the formatters this page passes into the chart system stay covered.
 vi.mock('recharts', () => ({
-  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
+  AreaChart: ({ children, data }: { children: React.ReactNode; data?: Array<Record<string, unknown>> }) => (
+    <div data-testid="area-chart" data-labels={(data ?? []).map(d => d.label ?? d.date).join(',')}>{children}</div>
+  ),
   Area: () => null,
+  CartesianGrid: () => null,
   BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   Bar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Cell: () => null,
@@ -18,10 +23,14 @@ vi.mock('recharts', () => ({
     if (tickFormatter) tickFormatter(0.5);
     return null;
   },
-  Tooltip: ({ formatter }: { formatter?: (v: unknown, n: unknown, p: unknown) => unknown }) => {
-    if (formatter) formatter(0.123, '', { payload: { fullName: 'openai/gpt-4o' } });
-    return null;
-  },
+  Tooltip: ({ content }: { content?: React.ReactElement }) =>
+    content
+      ? React.cloneElement(content, {
+          active: true,
+          label: 'gpt-4o',
+          payload: [{ name: 'Cost', value: 0.123, color: '#3d75f5', dataKey: 'cost', payload: { fullName: 'openai/gpt-4o' } }],
+        } as never)
+      : null,
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -29,6 +38,7 @@ vi.mock('../api', () => ({
   getUsage: vi.fn(),
   getModels: vi.fn(),
   getProjects: vi.fn(),
+  getClients: vi.fn(),
 }));
 
 const mockUseTheme = vi.fn(() => ({ theme: 'light', setTheme: vi.fn() }));
@@ -37,11 +47,26 @@ vi.mock('../ThemeContext.js', () => ({
 }));
 
 import { OverviewPage } from './OverviewPage';
-import { getUsage, getModels, getProjects } from '../api';
+import { compactCost } from '../components/savings';
+import { getUsage, getModels, getProjects, getClients } from '../api';
+
+/** "This month", the window the page opens on. */
+// Local calendar days, like the picker: toISOString() is UTC, so east of Greenwich
+// the first of the month reads as the last day of the previous one.
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const monthStart = () => {
+  const now = new Date();
+  return iso(new Date(now.getFullYear(), now.getMonth(), 1));
+};
+const today = () => iso(new Date());
+
+/** The date range picker: its trigger is the only secondary button on the page. */
+const openPicker = () => userEvent.click(document.querySelector('button.btn-secondary') as HTMLElement);
 
 const mockGetUsage    = vi.mocked(getUsage as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels   = vi.mocked(getModels as () => Promise<unknown>);
 const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetClients  = vi.mocked(getClients as () => Promise<unknown>);
 
 function makeStats(overrides: Record<string, unknown> = {}) {
   return {
@@ -72,6 +97,7 @@ beforeEach(() => {
   mockGetUsage.mockResolvedValue(makeStats());
   mockGetModels.mockResolvedValue([{ id: 'm1' }, { id: 'm2' }]);
   mockGetProjects.mockResolvedValue([{ id: 'p1' }]);
+  mockGetClients.mockResolvedValue({ enabled: true, advertisedAddresses: [], clients: [] });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -151,31 +177,46 @@ describe('OverviewPage — loaded state', () => {
     expect(screen.queryByText('Projects')).not.toBeNull();
   });
 
-  it('does not render token strip when all tokens are 0', async () => {
+  it('links to the Connect section while the clients module is enabled', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Overview'));
-    expect(screen.queryByText(/Input tokens/)).toBeNull();
+    const link = await screen.findByRole('link', { name: /Connect a client/ });
+    expect(link.getAttribute('href')).toBe('/dashboard/connect');
   });
 
-  it('renders token aggregate strip when tokens > 0', async () => {
+  it('hides the Connect card when the clients module is disabled', async () => {
+    const err = new Error('Not found') as Error & { status?: number };
+    err.status = 404;
+    mockGetClients.mockRejectedValue(err);
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('Models')).not.toBeNull());
+    expect(screen.queryByText('Connect a client')).toBeNull();
+  });
+
+  it('shows an empty token card when all tokens are 0', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText('Overview'));
+    expect(screen.queryByText('0 in · 0 out')).not.toBeNull();
+  });
+
+  it('sums the per-model tokens into the token card', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       byModel: {
         'openai/gpt-4o': { calls: 10, errors: 0, cost: 0.5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0 },
       },
     }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText(/Input tokens/)).not.toBeNull());
-    expect(screen.queryByText(/Output tokens/)).not.toBeNull();
+    await waitFor(() => expect(screen.queryByText('1.5k')).not.toBeNull());
+    expect(screen.queryByText('1.0k in · 500 out')).not.toBeNull();
   });
 
-  it('renders cached token count when cachedInputTokens > 0', async () => {
+  it('adds the cached share to the token card when there is one', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       byModel: {
         'openai/gpt-4o': { calls: 10, errors: 0, cost: 0.5, inputTokens: 1000, outputTokens: 500, cachedInputTokens: 200 },
       },
     }));
     renderPage();
-    await waitFor(() => expect(screen.queryByText(/Cached/)).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText('1.0k in · 500 out · 200 cached')).not.toBeNull());
   });
 
   it('renders "No cost recorded" when byModel has no entries with cost>0', async () => {
@@ -194,7 +235,8 @@ describe('OverviewPage — loaded state', () => {
     }));
     renderPage();
     await waitFor(() => expect(screen.queryByText('Calls by Model')).not.toBeNull());
-    expect(screen.queryByText('openai/gpt-4o')).not.toBeNull();
+    // The stubbed tooltip renders the same model id, hence the plural query.
+    expect(screen.queryAllByText('openai/gpt-4o').length).toBeGreaterThan(0);
     expect(screen.queryByText('50')).not.toBeNull();
   });
 
@@ -224,85 +266,42 @@ describe('OverviewPage — loaded state', () => {
   });
 });
 
-// ── Period selector ────────────────────────────────────────────────────────────
+// ── Period selector (T203) ─────────────────────────────────────────────────────
 
 describe('OverviewPage — period selector', () => {
-  it('renders four period buttons', async () => {
+  it('opens on this month and asks the service for that window', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Overview'));
-    expect(screen.queryByText('Daily')).not.toBeNull();
-    expect(screen.queryByText('Weekly')).not.toBeNull();
-    expect(screen.queryByText('Monthly')).not.toBeNull();
-    expect(screen.queryByText('All')).not.toBeNull();
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'custom', undefined, monthStart(), today(), undefined, undefined, { series: true, savings: true },
+    ));
+    expect(screen.queryByText('This month')).not.toBeNull();
   });
 
-  it('clicking Daily switches period and calls getUsage with "daily"', async () => {
+  it('picking a preset re-reads that window', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Daily'));
-    await userEvent.click(screen.getByText('Daily'));
-    await waitFor(() =>
-      expect(mockGetUsage).toHaveBeenCalledWith('daily')
-    );
+    await waitFor(() => screen.queryByText('This month'));
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+    const from = new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10);
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'custom', undefined, from, today(), undefined, undefined, { series: true, savings: true },
+    ));
   });
 
-  it('clicking Weekly calls getUsage with "weekly"', async () => {
+  it('an open-ended window falls back to the whole history', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Weekly'));
-    await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('weekly'));
-  });
-
-  it('clicking All calls getUsage with "all"', async () => {
-    renderPage();
-    await waitFor(() => screen.queryByText('All'));
-    await userEvent.click(screen.getByText('All'));
-    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith('all'));
+    await waitFor(() => screen.queryByText('This month'));
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'All time' }));
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'all', undefined, undefined, undefined, undefined, undefined, { series: true, savings: true },
+    ));
   });
 });
 
-// ── Timeline data derivation ───────────────────────────────────────────────────
+// ── Cost by model ──────────────────────────────────────────────────────────────
 
-describe('OverviewPage — timeline chart', () => {
-  it('renders area chart when timeline data is non-empty (monthly period)', async () => {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    mockGetUsage.mockResolvedValue(makeStats({
-      timeline: [[dateStr, 0.5]],
-    }));
-    renderPage();
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
-  it('renders area chart for weekly period', async () => {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    mockGetUsage.mockResolvedValue(makeStats({ timeline: [[dateStr, 0.1]] }));
-    renderPage();
-    await waitFor(() => screen.queryByText('Weekly'));
-    await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
-  it('renders area chart for "all" period with timeline data', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({
-      timeline: [['2024-01-01', 0.1], ['2024-01-02', 0.2]],
-    }));
-    renderPage();
-    await waitFor(() => screen.queryByText('All'));
-    await userEvent.click(screen.getByText('All'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
-  it('renders hourly area chart when timeline entries have datetime format', async () => {
-    mockGetUsage.mockResolvedValue(makeStats({
-      timeline: [['2024-01-15T10', 0.05]],
-    }));
-    renderPage();
-    await waitFor(() => screen.queryByText('Daily'));
-    await userEvent.click(screen.getByText('Daily'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
-  });
-
+describe('OverviewPage — cost by model', () => {
   it('renders bar chart for cost by model', async () => {
     mockGetUsage.mockResolvedValue(makeStats({
       byModel: {
@@ -363,27 +362,235 @@ describe('OverviewPage — dark theme', () => {
     await waitFor(() => expect(screen.queryByText('Overview')).not.toBeNull());
     mockUseTheme.mockReturnValue({ theme: 'light', setTheme: vi.fn() });
   });
+});
 
-  it('weekly timeline with Sunday date uses correct offset (d===0 branch)', async () => {
-    // Force a Sunday so d===0 branch fires (start.setDate - 6)
-    const sunday = new Date('2024-01-07'); // Jan 7 2024 is a Sunday
-    const origDate = globalThis.Date;
-    const MockDate = class extends origDate {
-      constructor(...args: unknown[]) {
-        if (args.length === 0) super(sunday.getTime()); // new Date() → Sunday
-        // @ts-expect-error spread types
-        else super(...args);
-      }
-      static override now() { return sunday.getTime(); }
-    } as unknown as typeof Date;
-    globalThis.Date = MockDate;
+// ── Savings over time (T81) ───────────────────────────────────────────────────
 
-    mockGetUsage.mockResolvedValue(makeStats({ timeline: [['2024-01-01', 0.5]] }));
+const SERIES = {
+  bucket: 'day' as const,
+  baselineModelId: 'openai/gpt-4o',
+  // Cheapest first, same order the service ships (T100).
+  baselineModelIds: ['openai/gpt-4o-mini', 'anthropic/claude-sonnet-4', 'openai/gpt-4o'],
+  points: [
+    {
+      bucket: '2026-07-31', calls: 2, cost: 0.006, baselineCost: 0.06,
+      baselineCosts: { 'openai/gpt-4o-mini': 0.01, 'anthropic/claude-sonnet-4': 0.03, 'openai/gpt-4o': 0.06 },
+      inputTokens: 2000, outputTokens: 1000, cachedInputTokens: 0, latencyMs: 2000, baselineLatencyMs: 4000,
+    },
+    {
+      bucket: '2026-08-01', calls: 1, cost: 0.003, baselineCost: 0.03,
+      baselineCosts: { 'openai/gpt-4o-mini': 0.005, 'anthropic/claude-sonnet-4': 0.015, 'openai/gpt-4o': 0.03 },
+      inputTokens: 1000, outputTokens: 500, cachedInputTokens: 0, latencyMs: 1000, baselineLatencyMs: 2000,
+    },
+  ],
+};
+
+const SAVINGS = {
+  comparedCalls: 3,
+  comparedCost: 0.009,
+  comparedLatencyMs: 3000,
+  comparedInputTokens: 3000,
+  comparedOutputTokens: 1500,
+  cache: { inputTokens: 0, cost: 0 },
+  baselines: [
+    { modelId: 'openai/gpt-4o-mini', cost: 0.015, costDelta: 0.006, costDeltaPercent: 40, latencyMs: 4500, latencyDeltaMs: 1500, latencySamples: 3, tokensEstimated: 4500, tokenDelta: 0 },
+    { modelId: 'anthropic/claude-sonnet-4', cost: 0.045, costDelta: 0.036, costDeltaPercent: 80, latencyMs: 6000, latencyDeltaMs: 3000, latencySamples: 2, tokensEstimated: 5175, tokenDelta: 675 },
+    { modelId: 'openai/gpt-4o', cost: 0.09, costDelta: 0.081, costDeltaPercent: 90, latencyMs: 5000, latencyDeltaMs: 2000, latencySamples: 1, tokensEstimated: 4500, tokenDelta: 0 },
+  ],
+  optimizers: [{ id: 'rtk', calls: 3, tokensSaved: 1200, costSaved: 0.002, rolledBack: 0 }],
+};
+
+describe('OverviewPage — savings over time', () => {
+  it('asks the service for the series and the totals', async () => {
     renderPage();
-    await waitFor(() => screen.queryByText('Weekly'));
-    await userEvent.click(screen.getByText('Weekly'));
-    await waitFor(() => expect(screen.queryByTestId('area-chart')).not.toBeNull());
+    await waitFor(() => expect(mockGetUsage).toHaveBeenCalledWith(
+      'custom', undefined, monthStart(), today(), undefined, undefined, { series: true, savings: true },
+    ));
+  });
 
-    globalThis.Date = origDate;
+  it('stays hidden when the service returned no series', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText('Overview'));
+    expect(screen.queryByText('What routing saved')).toBeNull();
+  });
+
+  it('says how many calls were compared and against how many models', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const card = screen.getByText('What routing saved').closest('.chart-card')!;
+    expect(card.textContent).toContain('3 client calls');
+    expect(screen.getByRole('link', { name: '3 paid models in play' }).getAttribute('href')).toBe('/dashboard/models');
+  });
+
+  it('draws one dashed line per paid baseline, all but the two ends hidden', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const state = (label: string) =>
+      screen.getByRole('button', { name: new RegExp(`^${label}$`) }).getAttribute('aria-pressed');
+    expect(state('gpt-4o-mini')).toBe('true');   // cheapest end
+    expect(state('gpt-4o')).toBe('true');        // costliest end
+    expect(state('claude-sonnet-4')).toBe('false'); // in between, one click away
+  });
+
+  it('recomputes which lines start visible when the period changes the baseline set', async () => {
+    // One paid model in the first window, three in the next one: the two ends
+    // of the new set stay visible and the one in between goes back to hidden.
+    mockGetUsage
+      .mockResolvedValueOnce(makeStats({ series: { ...SERIES, baselineModelIds: ['openai/gpt-4o'] }, savings: SAVINGS }))
+      .mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    await openPicker();
+    await userEvent.click(screen.getByRole('button', { name: 'All time' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^claude-sonnet-4$/ })).not.toBeNull());
+    expect(screen.getByRole('button', { name: /^claude-sonnet-4$/ }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: /^gpt-4o-mini$/ }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('toggles a baseline line from its legend entry', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const middle = screen.getByRole('button', { name: /^claude-sonnet-4$/ });
+    await userEvent.click(middle);
+    expect(middle.getAttribute('aria-pressed')).toBe('true');
+    await userEvent.click(middle);
+    expect(middle.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('carries the money saved on the Total Cost card, anchored on the costliest baseline', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('$0.0810 saved (90%) vs always gpt-4o')).not.toBeNull());
+    // No card of its own: the saving belongs to the number it changes (T201).
+    expect(screen.queryByText('Cost saved')).toBeNull();
+    const card = screen.getByText('Total Cost').closest('.stat-card')!;
+    expect(card.textContent).toContain('$1.2345');
+  });
+
+  it('carries what the optimizers cut on the token card', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('1.2k cut by optimizers')).not.toBeNull());
+    // Time saved was an estimate nobody could check: it is gone for good.
+    expect(screen.queryByText('Time saved')).toBeNull();
+    expect(screen.queryByText(/estimated/)).toBeNull();
+  });
+
+  it('shows the tokenizer estimate when the optimizers cut nothing', async () => {
+    const savings = { ...SAVINGS, optimizers: [], baselines: SAVINGS.baselines.map(b => ({ ...b, tokenDelta: 675 })) };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('675 fewer than always gpt-4o, estimated')).not.toBeNull());
+  });
+
+  // T202 — a saving that is zero or negative is a window too small to compare,
+  // not news: no line, no bar.
+  it('drops every saving that is not positive', async () => {
+    const savings = {
+      ...SAVINGS,
+      optimizers: [],
+      baselines: SAVINGS.baselines.map(b => ({ ...b, costDelta: -0.01, tokenDelta: 0 })),
+    };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    expect(screen.queryByText(/saved \(/)).toBeNull();
+    expect(screen.queryByText(/cut by optimizers/)).toBeNull();
+  });
+
+  it('drops the saving lines when no baseline costs anything', async () => {
+    const savings = { ...SAVINGS, optimizers: [], baselines: SAVINGS.baselines.map(b => ({ ...b, cost: 0 })) };
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    expect(screen.queryByText(/saved \(/)).toBeNull();
+    expect(screen.queryByText(/estimated/)).toBeNull();
+  });
+
+  it('switches the chart between cost and tokens', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    // Cost: actual against every paid baseline
+    expect(screen.getByRole('button', { name: /^gpt-4o$/ })).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Tokens' }));
+    expect(screen.getByText('Input')).toBeTruthy();
+    expect(screen.getByText('Output')).toBeTruthy();
+
+    expect(screen.queryByRole('button', { name: 'Speed' })).toBeNull();
+  });
+
+  it('drops the cost counterfactual when no baseline model applies', async () => {
+    const noBaseline = { ...SERIES, baselineModelIds: [] };
+    mockGetUsage.mockResolvedValue(makeStats({ series: noBaseline }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    // A single series draws no legend at all, so nothing is left to toggle
+    expect(screen.queryByRole('button', { name: /gpt-4o/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /paid models/ })).toBeNull();
+  });
+
+  it('labels hourly buckets by the hour and daily ones by the date', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({
+      series: { bucket: 'hour', baselineModelIds: [], points: [{ ...SERIES.points[0], bucket: '2026-08-01T09' }] },
+    }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const chart = screen.getByText('What routing saved').closest('.chart-card')!.querySelector('[data-testid="area-chart"]');
+    expect(chart?.getAttribute('data-labels')).toBe('09:00');
+  });
+
+  it('labels daily buckets by the date', async () => {
+    mockGetUsage.mockResolvedValue(makeStats({ series: SERIES, savings: SAVINGS }));
+    renderPage();
+    await waitFor(() => expect(screen.queryByText('What routing saved')).not.toBeNull());
+    const chart = screen.getByText('What routing saved').closest('.chart-card')!.querySelector('[data-testid="area-chart"]');
+    expect(chart?.getAttribute('data-labels')).toBe('07-31,08-01');
+  });
+});
+
+// ── Cross-links (T81) ─────────────────────────────────────────────────────────
+
+describe('OverviewPage — stat card links', () => {
+  it('points each stat at the section that explains it', async () => {
+    renderPage();
+    await waitFor(() => screen.queryByText('Total Cost'));
+    const links = Object.fromEntries(
+      [...document.querySelectorAll('a.stat-card')]
+        .map(a => [a.querySelector('.stat-label')?.textContent, a.getAttribute('href')]),
+    );
+    expect(links).toEqual({
+      'Total Cost': '/dashboard/usage',
+      Tokens: '/dashboard/usage',
+      'Total Calls': '/dashboard/usage',
+      'Success Rate': '/dashboard/usage',
+      Errors: '/dashboard/usage',
+      Models: '/dashboard/models',
+      Projects: '/dashboard/projects',
+    });
+  });
+});
+
+// ── Cost axis ticks ───────────────────────────────────────────────────────────
+
+describe('compactCost', () => {
+  it('keeps sub-cent ticks distinct instead of collapsing them to $0.000', () => {
+    expect([0.0015, 0.003, 0.0045, 0.006].map(compactCost))
+      .toEqual(['$0.0015', '$0.0030', '$0.0045', '$0.0060']);
+  });
+
+  it('formats zero, cents and thousands compactly', () => {
+    expect(compactCost(0)).toBe('$0');
+    expect(compactCost(0.5)).toBe('$0.50');
+    expect(compactCost(12.5)).toBe('$12.50');
+    expect(compactCost(2400)).toBe('$2.4k');
+  });
+
+  it('caps the decimals so a tick still fits the axis gutter', () => {
+    expect(compactCost(0.00000001)).toBe('$0.000000');
   });
 });

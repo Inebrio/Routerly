@@ -30,8 +30,10 @@ async function request<T>(
   const data = await res.json().catch(() => ({ error: res.statusText }));
 
   if (!res.ok) {
-    const message = (data as { error?: string }).error ?? res.statusText;
-    throw new ApiError(res.status, message);
+    // Some routes answer with a machine code plus a sentence (`label_taken` +
+    // "Label ... is already used"); the sentence is the one worth printing.
+    const body = data as { error?: string; message?: string };
+    throw new ApiError(res.status, body.message ?? body.error ?? res.statusText);
   }
 
   return data as T;

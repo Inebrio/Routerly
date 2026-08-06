@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useProject } from './ProjectLayout';
 import { getUsers, addProjectMember, updateProjectMember, removeProjectMember, User } from '../../api';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { SearchableSelect } from '../../components/SearchableSelect';
 
 export function ProjectUsersTab() {
   const { project, setProject } = useProject();
@@ -121,17 +122,25 @@ export function ProjectUsersTab() {
           <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>Add New Member</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <select className="form-input" value={newUserId} onChange={e => setNewUserId(e.target.value)} disabled={loading}>
-                <option value="" disabled>Select a user...</option>
-                {availableUsers.map(u => <option key={u.id} value={u.id}>{u.email}</option>)}
-              </select>
+              <SearchableSelect
+                value={newUserId}
+                onChange={setNewUserId}
+                disabled={loading}
+                placeholder="Select a user..."
+                options={availableUsers.map(u => ({ value: u.id, label: u.email }))}
+              />
             </div>
             <div style={{ width: 140 }}>
-              <select className="form-input" value={newRole} onChange={e => setNewRole(e.target.value)} disabled={loading}>
-                <option value="viewer">Viewer</option>
-                <option value="editor">Editor</option>
-                <option value="admin">Admin</option>
-              </select>
+              <SearchableSelect
+                value={newRole}
+                onChange={setNewRole}
+                disabled={loading}
+                options={[
+                  { value: 'viewer', label: 'Viewer' },
+                  { value: 'editor', label: 'Editor' },
+                  { value: 'admin', label: 'Admin' },
+                ]}
+              />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-primary" onClick={handleAddMember} disabled={loading || !newUserId}>Add</button>
@@ -161,7 +170,13 @@ export function ProjectUsersTab() {
                 const isEditing = editingUserId === member.userId;
 
                 return (
-                  <tr key={member.userId}>
+                  <tr
+                    key={member.userId}
+                    {...(isEditing ? {} : {
+                      style: { cursor: 'pointer' },
+                      onClick: () => { setEditingUserId(member.userId); setEditRole(member.role); },
+                    })}
+                  >
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {user?.email || <span style={{ color: 'var(--text-muted)' }}>{member.userId}</span>}
@@ -169,16 +184,16 @@ export function ProjectUsersTab() {
                     </td>
                     <td>
                       {isEditing ? (
-                        <select
-                          className="form-input"
+                        <SearchableSelect
                           value={editRole}
-                          onChange={e => setEditRole(e.target.value)}
+                          onChange={setEditRole}
                           disabled={loading}
-                        >
-                          <option value="viewer">Viewer</option>
-                          <option value="editor">Editor</option>
-                          <option value="admin">Admin</option>
-                        </select>
+                          options={[
+                            { value: 'viewer', label: 'Viewer' },
+                            { value: 'editor', label: 'Editor' },
+                            { value: 'admin', label: 'Admin' },
+                          ]}
+                        />
                       ) : (
                         <span style={{
                           padding: '2px 8px',
@@ -192,7 +207,7 @@ export function ProjectUsersTab() {
                         </span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                    <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }} onClick={e => e.stopPropagation()}>
                       {isEditing ? (
                         <>
                           <button className="btn-icon" onClick={() => handleUpdateMember(member.userId)} disabled={loading} title="Save changes">

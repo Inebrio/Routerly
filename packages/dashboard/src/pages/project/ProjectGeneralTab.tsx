@@ -4,6 +4,20 @@ import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
 import { createProject, updateProject, getSettings } from '../../api';
 import { useProject } from './ProjectLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
+import { SearchableSelect } from '../../components/SearchableSelect';
+import { CopyBlock } from '../../components/CopyBlock';
+import { AUTO_MODEL, PLACEHOLDER_TOKEN } from '../connectShared';
+import { writeToClipboard } from '../../utils/clipboard';
+import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
+
+const SECTION_TITLE: React.CSSProperties = {
+  fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+  color: 'var(--text-muted)', marginBottom: 6,
+};
+
+const SECTION_TEXT: React.CSSProperties = {
+  fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.55,
+};
 
 export function ProjectGeneralTab() {
   const navigate = useNavigate();
@@ -41,25 +55,27 @@ export function ProjectGeneralTab() {
   // For the new token reveal modal
   const [revealedToken, setRevealedToken] = useState<{ name: string; token: string; isNew: boolean; projectId: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '',
-    timeoutMs: '5000',
+    timeoutMs: String(DEFAULT_PROJECT_TIMEOUT_MS),
+    traceContent: false,
   });
 
   useEffect(() => {
     if (project) {
       setForm({
         name: project.name,
-        timeoutMs: String(project.timeoutMs ?? 5000),
+        timeoutMs: String(project.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS),
+        traceContent: project.traceContent === true,
       });
     }
   }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = isEdit
     ? form.name !== (/* v8 ignore next */ project?.name ?? '') ||
-      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? 5000)
+      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS) ||
+      form.traceContent !== (/* v8 ignore next */ project?.traceContent === true)
     : form.name !== '';
 
   // Once the token is revealed the form is "done" — don't block navigation anymore.
@@ -76,6 +92,7 @@ export function ProjectGeneralTab() {
             ...(project!.routingModelId ? { routingModelId: project!.routingModelId } : {}),
             models: project!.models.map(m => ({ modelId: m.modelId })),
             timeoutMs: parseInt(form.timeoutMs),
+            traceContent: form.traceContent,
           }
         : {
             name: form.name,
@@ -86,9 +103,9 @@ export function ProjectGeneralTab() {
       if (isEdit && project) {
         await updateProject(project.id, payload);
         // Update context and reset form so isDirty becomes false — no navigation needed
-        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs) };
+        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent };
         setProject(updated);
-        setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs) });
+        setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent });
       } else {
         const proj = await createProject(payload);
         if (proj.token) {
@@ -105,36 +122,12 @@ export function ProjectGeneralTab() {
   }
 
 
-  function writeToClipboard(text: string): Promise<void> {
-    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
-    // Fallback for non-secure contexts (HTTP, docker self-hosted via IP)
-    return new Promise((resolve, reject) => {
-      const el = document.createElement('textarea');
-      el.value = text;
-      el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
-      document.body.appendChild(el);
-      el.focus();
-      el.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(el);
-      ok ? resolve() : reject(new Error('execCommand failed'));
-    });
-  }
-
   async function copyToken(token: string) {
     try {
       await writeToClipboard(token);
       setCopied(true);
       setTimeout(/* v8 ignore next */ () => setCopied(false), 2000);
     } catch { setErr('Copy failed — please select and copy the token manually.'); }
-  }
-
-  async function copyEndpoint(value: string) {
-    try {
-      await writeToClipboard(value);
-      setCopiedEndpoint(value);
-      setTimeout(/* v8 ignore next */ () => setCopiedEndpoint(null), 2000);
-    } catch { /* silently ignore — user can copy manually */ }
   }
 
   // ── Token reveal view (after project creation) ───────────────────────────────
@@ -176,45 +169,77 @@ export function ProjectGeneralTab() {
     <>
       {/* ── Connection info (only when editing an existing project) ────────────── */}
       {isEdit && project && (() => {
-        const baseUrl = (selectedEndpoint || window.location.origin) + '/v1';
+        const root = (selectedEndpoint || window.location.origin).replace(/\/$/, '');
+        // The two SDKs disagree on where the version prefix lives: the OpenAI
+        // client appends the path to whatever base URL it is given, the
+        // Anthropic client appends `/v1/messages` itself.
+        const openaiBase = `${root}/v1`;
         return (
-          <div style={{ marginBottom: 28, padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, maxWidth: 480 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-              <Plug size={14} style={{ color: 'var(--color-primary, #6366f1)', flexShrink: 0 }} />
-              <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>How to connect</span>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>
-              Use this endpoint as <code style={{ fontSize: '0.75rem' }}>base_url</code> with the OpenAI SDK or Anthropic SDK —
-              both use the same <code style={{ fontSize: '0.75rem' }}>/v1</code> prefix; the final path is appended automatically by the SDK.
-              Use a <Link to={`/dashboard/projects/${project.id}/tokens`} style={{ color: 'var(--color-primary, #6366f1)' }}>project token</Link> as the API key.
-            </p>
-            {endpointOptions.length > 1 && (
-              <select
-                className="form-input"
-                value={selectedEndpoint}
-                onChange={e => setSelectedEndpoint(e.target.value)}
-                style={{ marginBottom: 8, fontSize: '0.82rem', fontFamily: 'monospace' }}
-              >
-                {endpointOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-input, var(--bg-tertiary, var(--bg-secondary)))', border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px', fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0 }}>
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{baseUrl}</span>
+          <section style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                <Plug size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>How to connect</h2>
               </div>
-              <button
-                type="button"
-                onClick={() => copyEndpoint(baseUrl)}
-                className="btn btn-secondary"
-                style={{ flexShrink: 0, padding: '5px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}
-              >
-                {copiedEndpoint === baseUrl ? <Check size={13} /> : <Copy size={13} />}
-                {copiedEndpoint === baseUrl ? 'Copied!' : 'Copy'}
-              </button>
+              <p style={SECTION_TEXT}>
+                Point any OpenAI or Anthropic SDK at Routerly and use a{' '}
+                <Link to={`/dashboard/projects/${project.id}/token`}>project token</Link> as
+                the API key. Replace <code>{PLACEHOLDER_TOKEN}</code> below with yours.
+                Model <code>{AUTO_MODEL}</code> hands the choice to Routerly; any model id
+                from <Link to="/dashboard/models">Models</Link> works too.
+              </p>
+              {endpointOptions.length > 1 && (
+                <SearchableSelect
+                  value={selectedEndpoint}
+                  onChange={setSelectedEndpoint}
+                  options={endpointOptions.map(opt => ({ value: opt, label: opt }))}
+                  style={{ marginBottom: 10, fontSize: '0.82rem', fontFamily: 'monospace', maxWidth: 420 }}
+                />
+              )}
             </div>
-          </div>
+
+            <div>
+              <div style={SECTION_TITLE}>OpenAI SDK</div>
+              <p style={SECTION_TEXT}>Base URL <code>{openaiBase}</code>, the same one any &quot;OpenAI compatible&quot; provider field takes.</p>
+              <CopyBlock text={`from openai import OpenAI
+
+client = OpenAI(
+    base_url="${openaiBase}",
+    api_key="${PLACEHOLDER_TOKEN}",
+)
+
+response = client.chat.completions.create(
+    model="${AUTO_MODEL}",
+    messages=[{"role": "user", "content": "Hello!"}],
+)`} />
+            </div>
+
+            <div>
+              <div style={SECTION_TITLE}>Anthropic SDK</div>
+              <p style={SECTION_TEXT}>Base URL <code>{root}</code>, without the <code>/v1</code>: the SDK adds it.</p>
+              <CopyBlock text={`from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="${root}",
+    api_key="${PLACEHOLDER_TOKEN}",
+)
+
+message = client.messages.create(
+    model="${AUTO_MODEL}",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}],
+)`} />
+            </div>
+
+            <div>
+              <div style={SECTION_TITLE}>curl</div>
+              <p style={SECTION_TEXT}>Check the wiring without installing anything, then look for the call in <Link to="/dashboard/usage">Usage</Link>.</p>
+              <CopyBlock text={`curl ${openaiBase}/chat/completions \\
+  -H "Authorization: Bearer ${PLACEHOLDER_TOKEN}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"${AUTO_MODEL}","messages":[{"role":"user","content":"Hello!"}]}'`} />
+            </div>
+          </section>
         );
       })()}
 
@@ -245,16 +270,34 @@ export function ProjectGeneralTab() {
               <div className="form-group">
                 <label className="form-label">TTFT Timeout (ms)</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                  If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration.
+                  If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration. Set it to 0 to wait as long as the provider takes.
                 </p>
                 <input
                   className="form-input"
                   type="number"
                   value={form.timeoutMs}
                   onChange={e => setForm(f => ({ ...f, timeoutMs: e.target.value }))}
-                  min={1000}
-                  max={50000}
+                  min={0}
+                  step={100}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Trace content</label>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                  Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also
+                  record the prompts sent and the answers received. They are stored with the usage record and
+                  visible to anyone who can read reports.
+                </p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.traceContent}
+                    onChange={e => setForm(f => ({ ...f, traceContent: e.target.checked }))}
+                    style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                  Capture prompts and answers
+                </label>
               </div>
 
             </div>

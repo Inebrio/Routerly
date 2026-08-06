@@ -5,6 +5,7 @@
   --bg-elevated: #161922;
   --bg-glass: rgba(22, 25, 34, 0.7);
   --bg-card: rgba(255, 255, 255, 0.03);
+  --surface-active: rgba(255, 255, 255, 0.03);
 
   --border: rgba(255, 255, 255, 0.07);
   --border-focus: rgba(61, 117, 245, 0.5);
@@ -44,6 +45,9 @@
   --bg-elevated: #F1F5F9;
   --bg-glass: #ffffff;
   --bg-card: #ffffff;
+  /* Rows sit inside a --bg-surface: #ffffff panel, so a white row is invisible.
+     #F1F5F9 is the existing --bg-elevated value: no new colour in the palette. */
+  --surface-active: #F1F5F9;
 
   --border: #E2E8F0;
   --border-focus: rgba(90, 144, 248, 0.6);
@@ -76,6 +80,7 @@
     --bg-elevated: #F1F5F9;
     --bg-glass: #ffffff;
     --bg-card: #ffffff;
+    --surface-active: #F1F5F9;
 
     --border: #E2E8F0;
     --border-focus: rgba(90, 144, 248, 0.6);
@@ -375,6 +380,19 @@ input, select, textarea { font-family: inherit; }
   overflow: hidden;
 }
 
+/* A stat card that points at the section explaining its number (T81). */
+a.stat-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+a.stat-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
 .stat-card::before {
   content: '';
   position: absolute;
@@ -484,6 +502,7 @@ td .badge {
 .badge-completion{ background: rgba(61,117,245,0.08); color: #3D75F5; border: 1px solid rgba(61,117,245,0.15); }
 .badge-router   { background: rgba(139,92,246,0.08); color: #8B5CF6; border: 1px solid rgba(139,92,246,0.15); }
 .badge-policy   { background: rgba(90,144,248,0.08); color: #3D75F5; border: 1px solid rgba(61,117,245,0.2); font-weight: 500; text-transform: none; letter-spacing: 0; }
+.badge-neutral  { background: rgba(148,163,184,0.12); color: var(--text-secondary); border: 1px solid rgba(148,163,184,0.28); }
 
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 .btn {
@@ -722,6 +741,106 @@ td .badge {
   letter-spacing: 0.05em;
 }
 
+/* Header row for charts that carry a control next to the title. */
+.chart-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.chart-card-head h3 { margin-bottom: 0; }
+
+/* ─── Chart tooltip (shared by every chart) ──────────────────────────────── */
+.chart-tooltip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  max-width: 280px;
+}
+
+.chart-tooltip-label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-tooltip-row + .chart-tooltip-row { margin-top: 4px; }
+
+.chart-tooltip-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.chart-tooltip-name {
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-tooltip-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.chart-legend-item { display: flex; align-items: center; gap: 6px; }
+
+/* Clickable legend entry: same look, plus the affordance and the off state. */
+.chart-legend-toggle {
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.chart-legend-toggle:hover { background: var(--bg-elevated); }
+
+.chart-legend-toggle.is-off { opacity: 0.4; text-decoration: line-through; }
+
+.chart-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Recharts keeps a focus ring on the SVG wrapper that lands on nothing. */
+.recharts-wrapper:focus,
+.recharts-surface:focus { outline: none; }
+
 /* ─── Misc ───────────────────────────────────────────────────────────────── */
 .text-success { color: var(--success) !important; }
 .text-danger  { color: var(--danger) !important; }
@@ -780,6 +899,47 @@ td .badge {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+}
+
+/* ─── Provider picker ────────────────────────────────────────────────────── */
+.provider-group + .provider-group { margin-top: 16px; }
+
+.provider-group-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.provider-tile {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.provider-tile:hover {
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.provider-tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--text-primary);
 }
 
 /* Markdown content inside chat bubbles */
@@ -1081,3 +1241,9 @@ tr.row-new { animation: row-highlight 2.5s ease-out; }
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.6; }
 }
+
+/* ─── Playground turn card (TraceSummary, collapsible) ───────────────────── */
+.trace-turn > summary { list-style: none; cursor: pointer; }
+.trace-turn > summary::-webkit-details-marker { display: none; }
+.trace-turn-chevron { transition: transform 0.15s ease; }
+.trace-turn[open] > summary .trace-turn-chevron { transform: rotate(90deg); }
