@@ -139,6 +139,62 @@ describe('RouterOrchestratorTab — add row and save', () => {
   });
 });
 
+describe('RouterOrchestratorTab — per-candidate limits', () => {
+  it('adds a limit to a candidate and includes it in the save payload', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Add Candidate/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Add Candidate/i }));
+
+    const select = await screen.findByTestId('searchable-Select router');
+    await userEvent.selectOptions(select, 'router-b');
+
+    await userEvent.click(screen.getByRole('button', { name: /Usage limits for this candidate/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Add limit/i }));
+
+    const maxInput = document.querySelector('input[placeholder="10.00"]') as HTMLInputElement;
+    await userEvent.type(maxInput, '5');
+
+    await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
+
+    await waitFor(() =>
+      expect(mockUpdateRouter).toHaveBeenCalledWith(
+        'orch-1',
+        expect.objectContaining({
+          candidates: [expect.objectContaining({
+            routerId: 'router-b',
+            limits: [{ metric: 'cost', windowType: 'period', period: 'hourly', value: 5 }],
+          })],
+        })
+      )
+    );
+  });
+
+  it('loads existing candidate limits and omits the key entirely when cleared', async () => {
+    const withLimits = {
+      ...orchestrator,
+      candidates: [{ routerId: 'router-a', weight: 1, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }] }],
+    };
+    renderTab(withLimits);
+    await waitFor(() => screen.getByRole('button', { name: /Usage limits for this candidate/i }));
+    expect(screen.getByText('1 limit')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: /Usage limits for this candidate/i }));
+    const maxInput = document.querySelector('input[value="10"]') as HTMLInputElement;
+    await userEvent.clear(maxInput);
+
+    await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
+
+    await waitFor(() =>
+      expect(mockUpdateRouter).toHaveBeenCalledWith(
+        'orch-1',
+        expect.objectContaining({
+          candidates: [{ routerId: 'router-a', weight: 1 }],
+        })
+      )
+    );
+  });
+});
+
 describe('RouterOrchestratorTab — save failure', () => {
   it('renders the server error message verbatim on a failed save', async () => {
     mockUpdateRouter.mockRejectedValueOnce(new Error('An orchestrator cannot target itself'));
