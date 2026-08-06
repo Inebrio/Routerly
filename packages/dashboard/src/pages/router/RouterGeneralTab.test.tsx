@@ -408,6 +408,41 @@ describe('RouterGeneralTab — new router mode', () => {
   });
 });
 
+// ── Router Kind picker ───────────────────────────────────────────────────────
+
+describe('RouterGeneralTab — Kind picker', () => {
+  it('is not rendered in edit mode', async () => {
+    renderTab();
+    await waitFor(() => screen.getByPlaceholderText('My App'));
+    expect(screen.queryByText('Kind')).toBeNull();
+  });
+
+  it('is rendered in new router mode', () => {
+    renderNew();
+    expect(screen.getByText('Kind')).toBeTruthy();
+  });
+
+  it('sends kind: orchestrator in the create payload when selected', async () => {
+    renderNew();
+    await userEvent.type(screen.getByPlaceholderText('My App'), 'My Orchestrator');
+    await userEvent.click(screen.getByRole('combobox', { name: /Router Kind/i }));
+    await userEvent.click(screen.getByText('Orchestrator'));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
+    await waitFor(() => expect(mockCreateRouter).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'orchestrator' })
+    ));
+  });
+
+  it('omits kind from the create payload for the default "router" kind', async () => {
+    renderNew();
+    await userEvent.type(screen.getByPlaceholderText('My App'), 'My Router');
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
+    await waitFor(() => expect(mockCreateRouter).toHaveBeenCalled());
+    const [payload] = mockCreateRouter.mock.calls[0]!;
+    expect(payload).not.toHaveProperty('kind');
+  });
+});
+
 // ── Unsaved changes modal ────────────────────────────────────────────────────
 
 describe('RouterGeneralTab — unsaved changes modal', () => {
