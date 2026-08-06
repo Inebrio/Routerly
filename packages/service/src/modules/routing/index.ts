@@ -15,6 +15,10 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
     phase: 'routing.prepare',
     async run(ctx) {
       if (ctx.result) return
+      // An Orchestrator has no models of its own (`scoreCandidates` would throw
+      // no_models_available on its empty `models`) — its candidate Routers are scored
+      // separately by `forwardToRouter` (RTR-02), never through this model-oriented path.
+      if (ctx.router.kind === 'orchestrator') return
       // The trace routeRequest returns is for callers without an event bus (the MCP
       // read tool): here every entry already went out through ctx.emit.
       const { models } = await routeRequest(

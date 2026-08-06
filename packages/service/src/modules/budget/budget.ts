@@ -1,4 +1,4 @@
-import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, RouterConfig, RouterToken, UsageRecord } from '@routerly/shared';
+import type { Limit, LimitPeriod, LimitsMode, RollingUnit, ModelConfig, OrchestratorCandidateRef, RouterConfig, RouterToken, UsageRecord } from '@routerly/shared';
 import { readUsageRecords } from '../usage/usageStore.js';
 
 // ─── Window helpers ────────────────────────────────────────────────────────────
@@ -288,6 +288,33 @@ export async function isAllowed(
 
   const relevant = (records as UsageRecord[]).filter(
     r => r.routerId === router.id && r.modelId === model.id && r.outcome === 'success',
+  );
+
+  return checkLimits(limits, relevant, now);
+}
+
+/**
+ * Returns true if an Orchestrator can still forward to a given candidate Router without
+ * exceeding that candidate's own configured limit (AC6) — the Orchestrator's own budget,
+ * entirely separate from the candidate Router's own independent limit (`isAllowed`, checked
+ * on the model inside that Router's own routing, untouched by this).
+ *
+ * Same `Limit` machinery as `isAllowed`, but with no tier to inherit from: an
+ * `OrchestratorCandidateRef` has no token/global level above it (unlike a router-model ref),
+ * so an unset `limits` simply means "no limit at this candidate" — always allowed.
+ */
+export async function isOrchestratorCandidateAllowed(
+  orchestratorId: string,
+  candidate: OrchestratorCandidateRef,
+): Promise<boolean> {
+  const limits = candidate.limits ?? [];
+  if (!limits.length) return true;
+
+  const records = await readUsageRecords();
+  const now = new Date();
+
+  const relevant = (records as UsageRecord[]).filter(
+    r => r.orchestratorId === orchestratorId && r.routerId === candidate.routerId && r.outcome === 'success',
   );
 
   return checkLimits(limits, relevant, now);

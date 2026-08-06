@@ -81,6 +81,8 @@ export interface LLMCallContext {
   optimizerStats?: OptimizerCallStat[];
   /** Experiment that routed this call, and the variant it drew (T71) */
   experiment?: { id: string; variantId: string };
+  /** Set when this call was forwarded through an Orchestrator (RTR-02) — the Orchestrator's own id. */
+  orchestratorId?: string;
 }
 
 /**
@@ -256,6 +258,7 @@ export async function checkBudget(model: ModelConfig, ctx: LLMCallContext): Prom
       callType,
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }).catch(() => {});
     budgetExceededKeys.add(budgetKey);
     emitEvent('budget.exceeded', 'critical', { routerId, modelId: model.id, reason, ...(traceId !== undefined ? { traceId } : {}) }, { ...(ctx.log ? { log: ctx.log } : {}) }).catch(() => {});
@@ -412,6 +415,7 @@ export async function llmChat(
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
       ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }).catch(() => {});
 
     handleProviderResult(model, true, undefined, routerId, log);
@@ -445,6 +449,7 @@ export async function llmChat(
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
       ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }).catch(() => {});
 
     throw err;
@@ -544,6 +549,7 @@ export async function llmStream(
       callType,
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }).catch(() => {});
     throw err;
   }
@@ -667,6 +673,7 @@ export async function llmStream(
         ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
         ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
         ...(ctx.tags ? { tags: ctx.tags } : {}),
+        ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
       }).catch(() => {});
     }
   }
@@ -768,6 +775,7 @@ export async function llmMessages(
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
       ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }).catch(() => {});
 
     // llmMessages never called handleProviderResult before Task 7 (no provider.degraded/.recovered
@@ -801,6 +809,7 @@ export async function llmMessages(
       ...(ctx.piiRedacted && ctx.piiRedacted.length > 0 ? { piiRedacted: ctx.piiRedacted } : {}),
       ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
       ...(ctx.experiment ? { experimentId: ctx.experiment.id, experimentVariantId: ctx.experiment.variantId } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }).catch(() => {});
     throw err;
   }
