@@ -46,6 +46,18 @@ format from going out as a plain `feat` or `fix` and shipping as a minor or
 patch bump. Marking a breaking change correctly is on the author, not on
 tooling.
 
+## Reference the issue you're closing
+
+If a commit resolves a GitHub issue, say so in the body: `Closes #NNN`,
+`Fixes #NNN`, or `Resolves #NNN`. `develop` is this repository's default
+branch, so a commit using that syntax auto-closes the issue the moment it
+lands there — no separate close step. `@semantic-release/github` also
+auto-labels and comments on every issue/PR referenced by `#NNN` (closing
+keyword or not) once the containing commit ships, with the release version
+and a `released on @<channel>` label — this already runs, nothing to
+configure. A commit that fixes something without a tracked issue needs
+nothing extra.
+
 ## Module manifests carry the product version, not their own
 
 Every module under `packages/service/src/modules/` declares a
