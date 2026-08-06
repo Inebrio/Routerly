@@ -20,6 +20,7 @@ import { RouterTokenTab } from './pages/router/RouterTokenTab';
 import { RouterUsersTab } from './pages/router/RouterUsersTab';
 import { RouterLogsTab } from './pages/router/RouterLogsTab';
 import { RouterSecurityTab } from './pages/router/RouterSecurityTab';
+import { RouterOrchestratorTab } from './pages/router/RouterOrchestratorTab';
 import { RouterTokenCreatePage } from './pages/router/RouterTokenCreatePage';
 import { RouterTokenEditPage } from './pages/router/RouterTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
@@ -520,6 +521,7 @@ const router = createBrowserRouter([
               { path: 'users', element: <RouterUsersTab /> },
               { path: 'logs', element: <RouterLogsTab /> },
               { path: 'security', element: <RouterSecurityTab /> },
+              { path: 'orchestrator', element: <RouterOrchestratorTab /> },
             ],
           },
           { path: 'experiments', element: <ExperimentsPage /> },
