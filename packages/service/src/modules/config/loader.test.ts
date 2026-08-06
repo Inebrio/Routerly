@@ -16,7 +16,8 @@ vi.mock('../../lib/paths.js', () => ({
     roles: '/test/config/roles.json',
     modules: '/test/config/modules.json',
     profiles: '/test/config/profiles.json',
-    usage: '/test/data/usage.json',
+    usage: '/test/data/usage.ndjson',
+    usageLegacyJson: '/test/data/usage.json',
     secret: '/test/config/secret',
   },
 }))
@@ -25,6 +26,7 @@ vi.mock('node:fs/promises', () => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
   readFile: vi.fn(),
   writeFile: vi.fn().mockResolvedValue(undefined),
+  appendFile: vi.fn().mockResolvedValue(undefined),
   rename: vi.fn().mockResolvedValue(undefined),
   unlink: vi.fn().mockResolvedValue(undefined),
   chmod: vi.fn().mockResolvedValue(undefined),
@@ -36,6 +38,7 @@ import lockfile from 'proper-lockfile'
 
 const mockReadFile = vi.mocked(fs.readFile)
 const mockWriteFile = vi.mocked(fs.writeFile)
+const mockAppendFile = vi.mocked(fs.appendFile)
 const mockRename = vi.mocked(fs.rename)
 const mockUnlink = vi.mocked(fs.unlink)
 const mockMkdir = vi.mocked(fs.mkdir)
@@ -247,23 +250,20 @@ describe('appendUsageRecord', () => {
     }
   })
 
-  it('reads existing usage and appends new record', async () => {
-    const existing = [{ id: 'r1' }]
-    mockReadFile.mockResolvedValueOnce(JSON.stringify(existing) as any)
+  it('appends the new record without ever reading existing content (AC2)', async () => {
     const releaseFn = vi.fn().mockResolvedValue(undefined)
     mockLock.mockResolvedValue(releaseFn)
-    mockReadFile.mockResolvedValueOnce('{}' as any)
 
     const newRecord = { id: 'r2', timestamp: new Date().toISOString() } as any
     await appendUsageRecord(newRecord)
 
-    // Content is published via temp file (atomic write), then renamed onto usage.json.
-    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]).startsWith('/test/data/usage.json.tmp-'))
-    expect(writeCall).toBeDefined()
-    const written = JSON.parse(writeCall![1] as string)
-    expect(written).toHaveLength(2)
-    expect(written[1].id).toBe('r2')
-    expect(mockRename).toHaveBeenCalledWith(String(writeCall![0]), '/test/data/usage.json')
+    // Append never reads/parses the file's prior content — cost does not grow with history.
+    expect(mockReadFile).not.toHaveBeenCalled()
+    expect(mockAppendFile).toHaveBeenCalledWith(
+      '/test/data/usage.ndjson',
+      expect.stringContaining(JSON.stringify(newRecord)),
+      'utf-8',
+    )
   })
 })
 
@@ -295,11 +295,12 @@ describe('getOrCreateSecret', () => {
 })
 
 describe('pruneOrphanUsage (#77 BUG-5)', () => {
-  // readConfig reads usage.json and routers.json by path; route the mock per path.
+  // readConfig reads usage.ndjson (NDJSON, one record per line) and routers.json
+  // (still a JSON array) by path; route the mock per path.
   function byPath(usage: unknown[], routers: unknown[]) {
     mockReadFile.mockImplementation(((p: string) =>
       Promise.resolve(
-        p.endsWith('usage.json') ? JSON.stringify(usage)
+        p.endsWith('usage.ndjson') ? usage.map((r) => JSON.stringify(r)).join('\n')
         : p.endsWith('routers.json') ? JSON.stringify(routers)
         : '[]',
       )) as any)
@@ -320,10 +321,11 @@ describe('pruneOrphanUsage (#77 BUG-5)', () => {
 
     expect(removed).toBe(2)
     // wrote the pruned usage back (via temp file), keeping only real records
-    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]).startsWith('/test/data/usage.json.tmp-'))
+    const writeCall = mockWriteFile.mock.calls.find(c => String(c[0]).startsWith('/test/data/usage.ndjson.tmp-'))
     expect(writeCall).toBeDefined()
-    const written = JSON.parse(String(writeCall![1]))
+    const written = String(writeCall![1]).split('\n').filter(Boolean).map((l) => JSON.parse(l))
     expect(written.map((r: any) => r.id)).toEqual(['u1', 'u3'])
+    expect(mockRename).toHaveBeenCalledWith(String(writeCall![0]), '/test/data/usage.ndjson')
   })
 
   it('does nothing (no write) when there are no orphans', async () => {
@@ -333,6 +335,6 @@ describe('pruneOrphanUsage (#77 BUG-5)', () => {
     )
     const removed = await pruneOrphanUsage()
     expect(removed).toBe(0)
-    expect(mockWriteFile.mock.calls.some(c => String(c[0]).endsWith('usage.json'))).toBe(false)
+    expect(mockWriteFile.mock.calls.some(c => String(c[0]).endsWith('usage.ndjson'))).toBe(false)
   })
 })

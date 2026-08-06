@@ -844,6 +844,16 @@ export interface Settings {
   integrations?: Integration[];
   /** Provider catalog repos. Fetched at runtime via HTTP. First repo takes precedence on conflict. */
   providerRepos?: ProviderRepo[];
+  /** Usage/billing history retention policy. Absent = no policy configured (unbounded). */
+  usageRetention?: UsageRetentionConfig;
+}
+
+/** Retention/rotation policy for the usage history (RTR-06). Both knobs optional and independent. */
+export interface UsageRetentionConfig {
+  /** Drop records older than this many days. Omitted = no age-based limit. */
+  maxAgeDays?: number;
+  /** Keep the file under this size in MB, dropping the oldest records first. Omitted = no size limit. */
+  maxSizeMb?: number;
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────

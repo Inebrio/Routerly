@@ -265,6 +265,44 @@ describe('SettingsGeneralTab', () => {
     expect(input.value).toBe('http://localhost:3000');
   });
 
+  it('renders usage retention inputs empty when no policy is configured', async () => {
+    renderGeneral();
+    await waitFor(() => expect(screen.queryByLabelText('Max age (days)')).not.toBeNull());
+    expect((screen.getByLabelText('Max age (days)') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('Max size (MB)') as HTMLInputElement).value).toBe('');
+  });
+
+  it('renders usage retention inputs pre-filled from settings', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Max age (days)'));
+    expect((screen.getByLabelText('Max age (days)') as HTMLInputElement).value).toBe('30');
+    expect((screen.getByLabelText('Max size (MB)') as HTMLInputElement).value).toBe('500');
+  });
+
+  it('saving entered usage retention values calls updateSettings with usageRetention', async () => {
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Max age (days)'));
+    await userEvent.type(screen.getByLabelText('Max age (days)'), '30');
+    await userEvent.type(screen.getByLabelText('Max size (MB)'), '500');
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    const call = mockUpdateSettings.mock.calls[0]![0] as { usageRetention?: { maxAgeDays?: number; maxSizeMb?: number } };
+    expect(call.usageRetention).toEqual({ maxAgeDays: 30, maxSizeMb: 500 });
+  });
+
+  it('clearing usage retention inputs sends an empty usageRetention object to unset the policy', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Max age (days)'));
+    await userEvent.clear(screen.getByLabelText('Max age (days)'));
+    await userEvent.clear(screen.getByLabelText('Max size (MB)'));
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    const call = mockUpdateSettings.mock.calls[0]![0] as { usageRetention?: { maxAgeDays?: number; maxSizeMb?: number } };
+    expect(call.usageRetention).toEqual({});
+  });
+
   it('renders log level select pre-filled with info', async () => {
     renderGeneral();
     await waitFor(() => screen.getByLabelText('Log Level'));

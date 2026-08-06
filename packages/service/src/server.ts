@@ -13,7 +13,7 @@ import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
-import { migrateRouterStorage } from './modules/config/migrate.js';
+import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/migrate.js';
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
@@ -124,7 +124,7 @@ export async function startServer() {
   await initConfigDirs();
 
   // Permission guard runs first, before anything else reads or writes a
-  // config file (including the migration below) — an unsafe secrets file
+  // config file (including both migrations below) — an unsafe secrets file
   // must block startup before its content is ever touched.
   await enforceStartupGuard();
 
@@ -142,6 +142,17 @@ export async function startServer() {
   if (storageMigrated !== undefined) {
     // eslint-disable-next-line no-console
     console.log(`[startup] migrated ${storageMigrated} router(s) from projects.json to routers.json`);
+  }
+
+  // Same reasoning and same placement as migrateRouterStorage() above,
+  // deliberately NOT inside configModule.migrate() — a corrupted legacy
+  // usage.json must fail loudly (EC2) and stop the boot, not start the
+  // service on partial/corrupted usage data. See RTR-06 remediation,
+  // .claude/specs/0.4.1/03-validation/RTR-06.md, finding B1.
+  const migratedUsage = await migrateUsageToNdjson();
+  if (migratedUsage > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
   }
 
   await loadSecret();
