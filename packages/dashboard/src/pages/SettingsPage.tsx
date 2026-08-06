@@ -234,7 +234,7 @@ export function SettingsGeneralTab() {
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
-            Used in the <strong>How to connect</strong> section of each project.
+            Used in the <strong>How to connect</strong> section of each router.
             Useful when the dashboard runs on a different machine or port than the service.
           </p>
         </div>
@@ -294,8 +294,8 @@ const EVENT_LABELS: Record<string, string> = {
   'auth.token_invalid':        'Auth – Token Invalid',
   'config.model_added':        'Config – Model Added',
   'config.model_deleted':      'Config – Model Deleted',
-  'config.project_created':    'Config – Project Created',
-  'config.project_deleted':    'Config – Project Deleted',
+  'config.router_created':    'Config – Router Created',
+  'config.router_deleted':    'Config – Router Deleted',
   'budget.threshold_reached':  'Budget – Threshold Reached',
   'budget.exceeded':           'Budget – Exceeded',
   'budget.reset':              'Budget – Reset',
@@ -308,8 +308,8 @@ const EVENT_LABELS: Record<string, string> = {
 const EVENT_OPTIONS = NOTIFICATION_EVENTS.map(e => ({ value: e, label: EVENT_LABELS[e] ?? e }));
 
 const PERM_LABELS_LOCAL: Record<Permission, string> = {
-  'project:read':       'Projects – Read',
-  'project:write':      'Projects – Write',
+  'router:read':       'Routers – Read',
+  'router:write':      'Routers – Write',
   'model:read':         'Models – Read',
   'model:write':        'Models – Write',
   'user:read':          'Users – Read',
@@ -1023,7 +1023,7 @@ function TraceExportFields({ form, onChange }: {
       </label>
       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
         Ships the full trace of each proxied request: every phase, every module that
-        spoke, and prompts and answers for the projects that opted in.
+        spoke, and prompts and answers for the routers that opted in.
       </p>
       {enabled && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>

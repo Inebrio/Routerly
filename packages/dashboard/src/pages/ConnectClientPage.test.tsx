@@ -75,7 +75,7 @@ describe('ConnectClientPage', () => {
     renderPage('codex');
     await waitFor(() => expect(screen.getAllByText(/sk-rt-YOUR_TOKEN/).length).toBeGreaterThan(0));
     expect(screen.getByRole('link', { name: /create one/i }).getAttribute('href'))
-      .toBe('/dashboard/projects');
+      .toBe('/dashboard/routers');
   });
 
   it('spells out the model to use, and the shared OpenAI-compatible shape', async () => {

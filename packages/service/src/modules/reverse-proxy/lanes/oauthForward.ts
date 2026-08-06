@@ -71,7 +71,7 @@ function rewriteBodyModel(rawBody: unknown, model: ModelConfig): string {
 
 /**
  * Request headers we never forward upstream: true hop-by-hop headers plus the
- * inbound tenant-auth headers (the Routerly project token), which we replace
+ * inbound tenant-auth headers (the Routerly router token), which we replace
  * with the stored OAuth credential.
  */
 const DROP_REQUEST = new Set([
@@ -133,7 +133,7 @@ export async function forwardAnthropicOAuth(
   model: ModelConfig,
 ): Promise<unknown> {
   const startMs = Date.now();
-  const projectId = request.project?.id ?? '';
+  const routerId = request.router?.id ?? '';
   const tokenId = request.token?.id;
   const { method, url } = request;
   const targetUrl = buildUpstreamUrl(model, url);
@@ -153,8 +153,8 @@ export async function forwardAnthropicOAuth(
     } as RequestInit);
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'oauth pass-through upstream error');
-    if (projectId) {
-      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+    if (routerId) {
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
     }
     return reply.code(502).send({
       type: 'error',
@@ -177,13 +177,13 @@ export async function forwardAnthropicOAuth(
       path: url,
       upstreamHost: new URL(targetUrl).host,
       status: upstream.status,
-      projectId: request.project ? request.project.id : undefined,
+      routerId: request.router ? request.router.id : undefined,
     },
     'oauth pass-through',
   );
 
-  if (projectId) {
-    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+  if (routerId) {
+    void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
   }
 
   reply.code(upstream.status);
@@ -199,7 +199,7 @@ const DROP_API_KEY_REQUEST = new Set([
 
 /**
  * Verbatim pass-through for standard Anthropic API-key models.
- * Swaps the inbound project token for the model's x-api-key, replaces the
+ * Swaps the inbound router token for the model's x-api-key, replaces the
  * model field in the body with the upstream model id, and pipes the response
  * back as-is — preserving streaming, betas, and all client-specific fields.
  */
@@ -209,7 +209,7 @@ export async function forwardAnthropicApiKey(
   model: ModelConfig,
 ): Promise<unknown> {
   const startMs = Date.now();
-  const projectId = request.project?.id ?? '';
+  const routerId = request.router?.id ?? '';
   const tokenId = request.token?.id;
   const { method, url } = request;
   const targetUrl = buildUpstreamUrl(model, url);
@@ -236,19 +236,19 @@ export async function forwardAnthropicApiKey(
     } as RequestInit);
   } catch (err) {
     request.log.error({ err, url: targetUrl }, 'api-key pass-through upstream error');
-    if (projectId) {
-      void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+    if (routerId) {
+      void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
     }
     return reply.code(502).send({ type: 'error', error: { type: 'api_error', message: err instanceof Error ? err.message : 'upstream request failed' } });
   }
 
   request.log.info(
-    { provider: model.provider, modelId: model.id, path: url, upstreamHost: new URL(targetUrl).host, status: upstream.status, projectId },
+    { provider: model.provider, modelId: model.id, path: url, upstreamHost: new URL(targetUrl).host, status: upstream.status, routerId },
     'api-key pass-through',
   );
 
-  if (projectId) {
-    void trackUsage({ projectId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
+  if (routerId) {
+    void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
   }
 
   upstream.headers.forEach((value, key) => {

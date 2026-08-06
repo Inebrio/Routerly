@@ -20,8 +20,8 @@ describe('experiment types', () => {
       rotation: 'sticky',
       stickyKey: 'auto',
       variants: [
-        { id: 'a', projectId: 'proj-1' },
-        { id: 'b', projectId: 'proj-2', name: 'Strong', weight: 30 },
+        { id: 'a', routerId: 'proj-1' },
+        { id: 'b', routerId: 'proj-2', name: 'Strong', weight: 30 },
       ],
       tokens: [{ id: 't1', token: 'sk-rt-x', createdAt: '2026-08-01T00:00:00.000Z' }],
       judge: { enabled: true, modelId: 'gpt-4o', criteria: ['Answers the question'], sampleRate: 0.1 },
@@ -48,7 +48,7 @@ describe('experiment types', () => {
 
 describe('variantShares', () => {
   const v = (id: string, weight?: number): ExperimentVariant =>
-    weight === undefined ? { id, projectId: `p-${id}` } : { id, projectId: `p-${id}`, weight };
+    weight === undefined ? { id, routerId: `p-${id}` } : { id, routerId: `p-${id}`, weight };
 
   it('splits evenly when no variant declares a weight', () => {
     expect(variantShares([v('a'), v('b'), v('c')])).toEqual([1 / 3, 1 / 3, 1 / 3]);

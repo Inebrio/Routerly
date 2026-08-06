@@ -40,7 +40,7 @@ export function createSessionToken(userId: string, role: string, hours = 1): str
   return signToken({ sub: userId, role, exp: Date.now() + hours * 3600_000 });
 }
 
-/** Generate a random hex token (for project tokens, not JWT) */
+/** Generate a random hex token (for router tokens, not JWT) */
 export function generateRawToken(bytes = 32): string {
   return randomBytes(bytes).toString('hex');
 }

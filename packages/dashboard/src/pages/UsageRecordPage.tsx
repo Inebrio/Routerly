@@ -1,8 +1,8 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react'; // useState still used for record/projects/loading state
+import { useEffect, useState } from 'react'; // useState still used for record/routers/loading state
 import { ArrowLeft } from 'lucide-react';
 import { requestTypeLabel } from '@routerly/shared';
-import { getProjects, getUsageRecord, type Project, type UsageRecord } from '../api';
+import { getRouters, getUsageRecord, type Router, type UsageRecord } from '../api';
 import { tokenLabel } from '../utils/tokenLabel';
 import { TraceLog } from '../components/TraceLog';
 import { TraceSummary } from '../components/TraceSummary';
@@ -28,12 +28,12 @@ export function UsageRecordPage() {
   const stateRecord = (location.state as { record?: UsageRecord } | null)?.record;
 
   const [record, setRecord] = useState<UsageRecord | undefined>(stateRecord);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
   const [loadingRecord, setLoadingRecord] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    getProjects().then(setProjects).catch(console.error);
+    getRouters().then(setRouters).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export function UsageRecordPage() {
     );
   }
 
-  const project = projects.find(p => p.id === record.projectId);
+  const router = routers.find(p => p.id === record.routerId);
   const isRouting = (record.callType ?? 'completion') === 'routing';
   const totalTokens = record.inputTokens + record.outputTokens;
 
@@ -110,13 +110,13 @@ export function UsageRecordPage() {
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
               <Field label="Record ID" value={record.id} mono />
-              <Field label="Project" value={project ? project.name : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.projectId}</span>} />
-              {/* Which of the project's tokens the call came in on. Older records carry none. */}
+              <Field label="Router" value={router ? router.name : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.routerId}</span>} />
+              {/* Which of the router's tokens the call came in on. Older records carry none. */}
               {record.tokenId && (
                 <Field
                   label="Token"
                   value={(() => {
-                    const t = project?.tokens?.find(tk => tk.id === record.tokenId);
+                    const t = router?.tokens?.find(tk => tk.id === record.tokenId);
                     return t ? tokenLabel(t) : <span className="mono" style={{ fontSize: '0.82rem' }}>{record.tokenId}</span>;
                   })()}
                 />

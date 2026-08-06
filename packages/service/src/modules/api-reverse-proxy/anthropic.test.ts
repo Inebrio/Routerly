@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import Fastify from 'fastify'
-import type { ProjectConfig } from '@routerly/shared'
+import type { RouterConfig } from '@routerly/shared'
 import { anthropicRoutes } from './anthropic.js'
 
-const testProject: ProjectConfig = {
+const testRouter: RouterConfig = {
   id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }],
 }
 
 async function buildApp() {
   const app = Fastify({ logger: false })
-  app.decorateRequest('project', null as any)
+  app.decorateRequest('router', null as any)
   app.decorateRequest('token', null as any)
   app.addHook('preHandler', async (req: any) => {
-    req.project = testProject
+    req.router = testRouter
     req.token = undefined
   })
   await app.register(anthropicRoutes)

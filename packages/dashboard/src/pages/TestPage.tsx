@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
-import { getProjects, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Project, type PlaygroundPreset, type TraceEntry } from '../api.js';
+import { getRouters, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Router, type PlaygroundPreset, type TraceEntry } from '../api.js';
 import { TraceLog } from '../components/TraceLog.js';
 import { TraceSummary } from '../components/TraceSummary.js';
 import { SearchableSelect } from '../components/SearchableSelect.js';
@@ -393,7 +393,7 @@ function ComparePanel({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function TestPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [mode, setMode] = useState<Mode>('single');
@@ -434,36 +434,36 @@ export function TestPage() {
   const [savePresetName, setSavePresetName] = useState('');
   const [showSaveForm, setShowSaveForm] = useState(false);
 
-  const { matchedProject, matchedToken } = useMemo(() => {
-    if (!apiKey || apiKey.length < 10) return { matchedProject: null, matchedToken: null };
+  const { matchedRouter, matchedToken } = useMemo(() => {
+    if (!apiKey || apiKey.length < 10) return { matchedRouter: null, matchedToken: null };
     const snippet = apiKey.trim().substring(0, 10);
-    for (const p of projects) {
+    for (const p of routers) {
       const t = p.tokens?.find(tk => tk.tokenSnippet === snippet);
-      if (t) return { matchedProject: p, matchedToken: t };
+      if (t) return { matchedRouter: p, matchedToken: t };
     }
-    return { matchedProject: null, matchedToken: null };
-  }, [apiKey, projects]);
+    return { matchedRouter: null, matchedToken: null };
+  }, [apiKey, routers]);
 
-  const availableModels = useMemo(() => matchedProject?.models ?? [], [matchedProject]);
+  const availableModels = useMemo(() => matchedRouter?.models ?? [], [matchedRouter]);
 
   // ponytail: response-blocking rule => whole response must be buffered => no streaming
   const streamingDisabled = useMemo(
-    () => matchedProject?.guardrails?.rules?.some(
+    () => matchedRouter?.guardrails?.rules?.some(
       r => r.block === true && (r.target === 'response' || r.target === 'both'),
     ) ?? false,
-    [matchedProject],
+    [matchedRouter],
   );
 
-  useEffect(() => { getProjects().then(setProjects).catch(console.error); }, []);
+  useEffect(() => { getRouters().then(setRouters).catch(console.error); }, []);
 
   useEffect(() => {
-    if (!matchedProject) { setPresets([]); return; }
+    if (!matchedRouter) { setPresets([]); return; }
     setPresetsLoading(true);
-    getPlaygroundPresets(matchedProject.id)
+    getPlaygroundPresets(matchedRouter.id)
       .then(setPresets)
       .catch(() => setPresets([]))
       .finally(() => setPresetsLoading(false));
-  }, [matchedProject?.id]);
+  }, [matchedRouter?.id]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
   // The newest turn is at the top of the list, so that is where the debug panel goes.
@@ -510,7 +510,7 @@ export function TestPage() {
     });
 
     const sysMsgs = systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : [];
-    const modelToUse = selectedModelId || matchedProject?.routingModelId || matchedProject?.models?.[0]?.modelId || '';
+    const modelToUse = selectedModelId || matchedRouter?.routingModelId || matchedRouter?.models?.[0]?.modelId || '';
 
     const payload = {
       model: modelToUse,
@@ -711,7 +711,7 @@ export function TestPage() {
 
   async function savePreset() {
     /* v8 ignore next */
-    if (!matchedProject || !savePresetName.trim()) return;
+    if (!matchedRouter || !savePresetName.trim()) return;
     const convoMsgs = messages
       .filter(m => m.role !== 'system' && typeof m.content === 'string')
       .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content as string }));
@@ -721,7 +721,7 @@ export function TestPage() {
         systemPrompt,
       };
       if (convoMsgs.length > 0) presetData.messages = convoMsgs;
-      const created = await createPlaygroundPreset(matchedProject.id, presetData);
+      const created = await createPlaygroundPreset(matchedRouter.id, presetData);
       setPresets(prev => [...prev, created]);
       setSavePresetName('');
       setShowSaveForm(false);
@@ -730,9 +730,9 @@ export function TestPage() {
 
   async function deletePreset(presetId: string) {
     /* v8 ignore next */
-    if (!matchedProject) return;
+    if (!matchedRouter) return;
     try {
-      await deletePlaygroundPreset(matchedProject.id, presetId);
+      await deletePlaygroundPreset(matchedRouter.id, presetId);
       setPresets(prev => prev.filter(p => p.id !== presetId));
     } catch (e) { console.error('Failed to delete preset', e); }
   }
@@ -796,9 +796,9 @@ export function TestPage() {
                   </div>
                 ))}
                 {apiKey.length >= 10 && (
-                  matchedProject ? (
+                  matchedRouter ? (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
-                      <CheckCircle2 size={12} /> {matchedProject.name}
+                      <CheckCircle2 size={12} /> {matchedRouter.name}
                     </span>
                   ) : (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
@@ -826,10 +826,10 @@ export function TestPage() {
                   </button>
                 </div>
                 {apiKey.length >= 10 && (
-                  matchedProject ? (
+                  matchedRouter ? (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#10b981' }}>
                       <CheckCircle2 size={12} />
-                      {matchedProject.name}
+                      {matchedRouter.name}
                       {matchedToken?.labels?.length ? <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>({matchedToken.labels.join(', ')})</span> : null}
                     </span>
                   ) : (
@@ -842,7 +842,7 @@ export function TestPage() {
             )}
 
             {/* Presets button */}
-            {matchedProject && (
+            {matchedRouter && (
               <button
                 className={`btn${showPresetsPanel ? ' btn-primary' : ''}`}
                 onClick={() => setShowPresetsPanel(!showPresetsPanel)}
@@ -859,7 +859,7 @@ export function TestPage() {
       <div style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0, padding: '0 32px 24px' }}>
 
         {/* Presets sidebar */}
-        {showPresetsPanel && matchedProject && (
+        {showPresetsPanel && matchedRouter && (
           <div className="card" style={{ width: 250, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0, flexShrink: 0 }}>
             <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.84rem', fontWeight: 600 }}>Presets</span>
@@ -929,7 +929,7 @@ export function TestPage() {
                 >
                   <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
                   <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                    <strong style={{ color: '#b45309' }}>Streaming not available</strong> — this project has a
+                    <strong style={{ color: '#b45309' }}>Streaming not available</strong> — this router has a
                     response-blocking guardrail active. Routerly must inspect the full response before delivery,
                     so responses arrive all at once.
                   </p>
@@ -953,10 +953,10 @@ export function TestPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Model</label>
                     <SearchableSelect
-                      options={[{ value: '', label: 'Auto (project default)' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                      options={[{ value: '', label: 'Auto (router default)' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
                       value={selectedModelId}
                       onChange={setSelectedModelId}
-                      placeholder="Auto (project default)"
+                      placeholder="Auto (router default)"
                       style={{ fontSize: '0.78rem', minWidth: 180 }}
                     />
                   </div>
@@ -997,7 +997,7 @@ export function TestPage() {
                 {displayMessages.length === 0 ? (
                   <div className="empty-state" style={{ margin: 'auto' }}>
                     <p style={{ margin: 0 }}>No messages yet.</p>
-                    {!apiKey && <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>Enter a Project Token above to start.</p>}
+                    {!apiKey && <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>Enter a Router Token above to start.</p>}
                   </div>
                 ) : (
                   displayMessages.map((msg, i) => {

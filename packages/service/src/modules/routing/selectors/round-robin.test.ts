@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { roundRobinSelector } from './index.js'
 import type { ScoredCandidate, SelectorContext } from './types.js'
 
-function ctx(projectId: string, overrides: Partial<SelectorContext> = {}): SelectorContext {
-  return { projectId, allAbstained: false, ...overrides }
+function ctx(routerId: string, overrides: Partial<SelectorContext> = {}): SelectorContext {
+  return { routerId, allAbstained: false, ...overrides }
 }
 
 describe('roundRobinSelector', () => {
@@ -24,7 +24,7 @@ describe('roundRobinSelector', () => {
     expect(result.models.slice(1).map(m => m.model)).toEqual(['mid', 'zebra'])
   })
 
-  it('advances the cursor across successive calls with the same projectId', () => {
+  it('advances the cursor across successive calls with the same routerId', () => {
     const candidates: ScoredCandidate[] = [
       { model: 'a', score: 0.5 },
       { model: 'b', score: 0.5 },
@@ -40,7 +40,7 @@ describe('roundRobinSelector', () => {
     expect(picks).toEqual(['a', 'b', 'c', 'a'])
   })
 
-  it('keeps independent cursors per projectId', () => {
+  it('keeps independent cursors per routerId', () => {
     const candidates: ScoredCandidate[] = [
       { model: 'a', score: 0.5 },
       { model: 'b', score: 0.5 },

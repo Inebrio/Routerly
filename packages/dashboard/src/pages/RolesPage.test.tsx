@@ -9,7 +9,7 @@ vi.mock('../api', () => ({
   updateRole: vi.fn(),
   deleteRole: vi.fn(),
   ALL_PERMISSIONS: [
-    'project:read', 'project:write', 'model:read', 'model:write',
+    'router:read', 'router:write', 'model:read', 'model:write',
     'user:read', 'user:write', 'report:read', 'settings:read', 'settings:write',
     'notification:write', 'token:read', 'token:write', 'role:write', 'audit:read',
   ],
@@ -34,7 +34,7 @@ const mockUpdateRole  = vi.mocked(updateRole as (...a: unknown[]) => Promise<unk
 const mockDeleteRole  = vi.mocked(deleteRole as (...a: unknown[]) => Promise<unknown>);
 
 function makeRole(overrides: Record<string, unknown> = {}) {
-  return { id: 'r1', name: 'Operator', permissions: ['project:read'], builtin: false, ...overrides };
+  return { id: 'r1', name: 'Operator', permissions: ['router:read'], builtin: false, ...overrides };
 }
 
 function renderPage() {
@@ -121,9 +121,9 @@ describe('RolesPage — loaded roles', () => {
   });
 
   it('renders all permissions as pill spans', async () => {
-    mockGetRoles.mockResolvedValue([makeRole({ permissions: ['project:read', 'model:write'] })]);
+    mockGetRoles.mockResolvedValue([makeRole({ permissions: ['router:read', 'model:write'] })]);
     renderPage();
-    await waitFor(() => expect(screen.queryByText('Projects – Read')).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText('Routers – Read')).not.toBeNull());
     expect(screen.queryByText('Models – Write')).not.toBeNull();
   });
 });
@@ -197,7 +197,7 @@ describe('RolesPage — create role', () => {
     await waitFor(() => screen.getByRole('button', { name: /New Role/ }));
     await userEvent.click(screen.getByRole('button', { name: /New Role/ }));
     await waitFor(() => screen.getByPlaceholderText('e.g. operator'));
-    const projReadLabel = screen.getByText('Projects – Read').closest('label') as HTMLElement;
+    const projReadLabel = screen.getByText('Routers – Read').closest('label') as HTMLElement;
     const cb = projReadLabel.querySelector('input[type="checkbox"]') as HTMLInputElement;
     expect(cb.checked).toBe(false);
     await userEvent.click(cb);
@@ -211,7 +211,7 @@ describe('RolesPage — create role', () => {
 
 describe('RolesPage — edit role', () => {
   it('shows edit form when Edit clicked', async () => {
-    mockGetRoles.mockResolvedValue([makeRole({ id: 'r1', name: 'Operator', permissions: ['project:read'] })]);
+    mockGetRoles.mockResolvedValue([makeRole({ id: 'r1', name: 'Operator', permissions: ['router:read'] })]);
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Edit' }));
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
@@ -243,8 +243,8 @@ describe('RolesPage — edit role', () => {
   });
 
   it('submits edit and updates role in list', async () => {
-    const role = makeRole({ id: 'r1', name: 'Operator', permissions: ['project:read'] });
-    const updated = makeRole({ id: 'r1', name: 'SuperOperator', permissions: ['project:read'] });
+    const role = makeRole({ id: 'r1', name: 'Operator', permissions: ['router:read'] });
+    const updated = makeRole({ id: 'r1', name: 'SuperOperator', permissions: ['router:read'] });
     mockGetRoles.mockResolvedValue([role]);
     mockUpdateRole.mockResolvedValue(updated);
     renderPage();
@@ -301,12 +301,12 @@ describe('RolesPage — edit role', () => {
   });
 
   it('toggles permission in edit form', async () => {
-    mockGetRoles.mockResolvedValue([makeRole({ permissions: ['project:read'] })]);
+    mockGetRoles.mockResolvedValue([makeRole({ permissions: ['router:read'] })]);
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'Edit' }));
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
     await waitFor(() => screen.getByPlaceholderText('Role name'));
-    const projReadLabel = screen.getByText('Projects – Read').closest('label') as HTMLElement;
+    const projReadLabel = screen.getByText('Routers – Read').closest('label') as HTMLElement;
     const cb = projReadLabel.querySelector('input[type="checkbox"]') as HTMLInputElement;
     expect(cb.checked).toBe(true);
     await userEvent.click(cb);
@@ -387,7 +387,7 @@ describe('RolesPage — permission labels', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
     await waitFor(() => screen.getByPlaceholderText('Role name'));
     const labels = [
-      'Projects – Read', 'Projects – Write', 'Models – Read', 'Models – Write',
+      'Routers – Read', 'Routers – Write', 'Models – Read', 'Models – Write',
       'Users – Read', 'Users – Write', 'Reports – Read', 'Settings – Read',
       'Settings – Write', 'Notifications – Write', 'Tokens – Read', 'Tokens – Write',
       'Roles – Write', 'Audit Log – Read',

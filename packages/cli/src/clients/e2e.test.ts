@@ -1,7 +1,7 @@
 /**
  * End-to-end coverage of `routerly clients configure` on a fake home
  * directory: the real command, the real integrations, real files on disk.
- * Only the network edges are mocked (project list, account, token minting,
+ * Only the network edges are mocked (router list, account, token minting,
  * the /health probe), so a break anywhere in command -> registry -> writer
  * shows up here.
  *
@@ -60,7 +60,7 @@ const account = {
   expiresAt: Date.now() + 3_600_000,
 };
 
-const project = {
+const router = {
   id: 'proj-1',
   name: 'my-api',
   models: [],
@@ -77,7 +77,7 @@ let fakeHome: string;
 beforeEach(async () => {
   fakeHome = await mkdtemp(join(tmpdir(), 'routerly-clients-e2e-'));
   process.env.HOME = fakeHome;
-  mockApi.mockReset().mockResolvedValue([project]);
+  mockApi.mockReset().mockResolvedValue([router]);
   mockRequireAccount.mockReset().mockResolvedValue(account);
   mockGetCurrentAccount.mockReset().mockResolvedValue(account);
   mockAcquireToken.mockReset().mockResolvedValue(TOKEN);
@@ -99,7 +99,7 @@ async function configure(id: string): Promise<{ filePath: string; content: strin
   vi.mocked(console.log).mockImplementation((...a: unknown[]) => output.push(a.join(' ')));
   const cmd = makeClientsCommand();
   cmd.exitOverride();
-  await cmd.parseAsync(['node', 'clients', 'configure', id, '--project', 'my-api', '--yes', '--json']);
+  await cmd.parseAsync(['node', 'clients', 'configure', id, '--router', 'my-api', '--yes', '--json']);
   const parsed = JSON.parse(output.join('\n')) as { plan: { filePath: string }; applied: { backupId: string } };
   return {
     filePath: parsed.plan.filePath,
@@ -161,7 +161,7 @@ describe('clients configure end-to-end', () => {
   it('a documented client writes nothing at all', async () => {
     const cmd = makeClientsCommand();
     cmd.exitOverride();
-    await cmd.parseAsync(['node', 'clients', 'configure', 'zed', '--project', 'my-api', '--yes', '--json']);
+    await cmd.parseAsync(['node', 'clients', 'configure', 'zed', '--router', 'my-api', '--yes', '--json']);
     await expect(stat(join(fakeHome, '.config', 'zed', 'settings.json'))).rejects.toThrow();
   });
 });

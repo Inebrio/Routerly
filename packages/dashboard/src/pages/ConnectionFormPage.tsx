@@ -85,7 +85,7 @@ export function ConnectionFormPage() {
               azureResourceName: c.azureResourceName ?? '',
               azureDeploymentId: c.azureDeploymentId ?? '',
               azureApiVersion: c.azureApiVersion ?? '',
-              vertexProjectId: c.vertexProjectId ?? '',
+              VERTEXROUTERIDPLACEHOLDER: c.VERTEXROUTERIDPLACEHOLDER ?? '',
               vertexLocation: c.vertexLocation ?? '',
             });
           } else {
@@ -133,7 +133,7 @@ export function ConnectionFormPage() {
       ...(values.awsAccessKeyId ? { awsAccessKeyId: values.awsAccessKeyId } : {}),
       ...(values.awsSecretAccessKey ? { awsSecretAccessKey: values.awsSecretAccessKey } : {}),
       ...(values.awsSessionToken ? { awsSessionToken: values.awsSessionToken } : {}),
-      ...(values.vertexProjectId ? { vertexProjectId: values.vertexProjectId } : {}),
+      ...(values.VERTEXROUTERIDPLACEHOLDER ? { VERTEXROUTERIDPLACEHOLDER: values.VERTEXROUTERIDPLACEHOLDER } : {}),
       ...(values.vertexLocation ? { vertexLocation: values.vertexLocation } : {}),
       ...(values.vertexServiceAccountKey ? { vertexServiceAccountKey: values.vertexServiceAccountKey } : {}),
     };

@@ -8,12 +8,12 @@ import {
 } from '@routerly/shared';
 import type {
   ExperimentConfig, ExperimentMetrics, ExperimentRotation,
-  ExperimentStickyKey, ProjectConfig, ProjectToken,
+  ExperimentStickyKey, RouterConfig, RouterToken,
 } from '@routerly/shared';
 
 interface VariantBody {
   id?: string;
-  projectId: string;
+  routerId: string;
   name?: string;
   weight?: number;
 }
@@ -29,9 +29,9 @@ interface ExperimentBody {
   minSamplesPerVariant?: number;
 }
 
-/** One `--variant` occurrence, before its project is resolved to an id. */
+/** One `--variant` occurrence, before its router is resolved to an id. */
 interface VariantSpec {
-  project: string;
+  router: string;
   name?: string;
   weight?: number;
 }
@@ -68,21 +68,21 @@ function handleError(err: unknown): never {
   return fail(String(err));
 }
 
-/** `<project>[:label][=weight]`, so one flag carries a whole arm of the test. */
+/** `<router>[:label][=weight]`, so one flag carries a whole arm of the test. */
 function parseVariant(spec: string, previous: VariantSpec[] = []): VariantSpec[] {
   const eq = spec.lastIndexOf('=');
   const head = eq === -1 ? spec : spec.slice(0, eq);
   const colon = head.indexOf(':');
-  const project = (colon === -1 ? head : head.slice(0, colon)).trim();
+  const router = (colon === -1 ? head : head.slice(0, colon)).trim();
   const name = colon === -1 ? '' : head.slice(colon + 1).trim();
-  if (!project) fail(`Invalid --variant "${spec}". Expected <project>[:label][=weight].`);
+  if (!router) fail(`Invalid --variant "${spec}". Expected <router>[:label][=weight].`);
 
   let weight: number | undefined;
   if (eq !== -1) {
     weight = Number(spec.slice(eq + 1));
     if (!Number.isFinite(weight) || weight < 0) fail(`Invalid weight in --variant "${spec}". Expected a number >= 0.`);
   }
-  return [...previous, { project, ...(name ? { name } : {}), ...(weight !== undefined ? { weight } : {}) }];
+  return [...previous, { router, ...(name ? { name } : {}), ...(weight !== undefined ? { weight } : {}) }];
 }
 
 function collectCriteria(value: string, previous: string[] = []): string[] {
@@ -101,13 +101,13 @@ function parseNumber(value: string, flag: string, { min, max, int }: { min: numb
   return n;
 }
 
-async function resolveProjects(specs: VariantSpec[]): Promise<VariantBody[]> {
-  const projects = await api<ProjectConfig[]>('GET', '/api/projects');
+async function resolveRouters(specs: VariantSpec[]): Promise<VariantBody[]> {
+  const routers = await api<RouterConfig[]>('GET', '/api/routers');
   return specs.map(s => {
-    const project = projects.find(p => p.id === s.project || p.name === s.project);
-    if (!project) fail(`Project "${s.project}" not found. Run \`routerly project list\` to see available projects.`);
+    const router = routers.find(p => p.id === s.router || p.name === s.router);
+    if (!router) fail(`Router "${s.router}" not found. Run \`routerly router list\` to see available routers.`);
     return {
-      projectId: project.id,
+      routerId: router.id,
       ...(s.name ? { name: s.name } : {}),
       ...(s.weight !== undefined ? { weight: s.weight } : {}),
     };
@@ -125,7 +125,7 @@ async function buildBody(opts: CommonOpts): Promise<ExperimentBody> {
   if (opts.rotation !== undefined) body.rotation = parseEnum(opts.rotation, EXPERIMENT_ROTATIONS, '--rotation');
   if (opts.stickyKey !== undefined) body.stickyKey = parseEnum(opts.stickyKey, STICKY_KEYS, '--sticky-key');
   if (opts.minSamples !== undefined) body.minSamplesPerVariant = parseNumber(opts.minSamples, '--min-samples', { min: 1, max: 1_000_000, int: true });
-  if (opts.variant?.length) body.variants = await resolveProjects(opts.variant);
+  if (opts.variant?.length) body.variants = await resolveRouters(opts.variant);
 
   if (opts.judge === false && opts.judgeModel) fail('Error: --no-judge and --judge-model cannot be used together.');
   if (opts.judgeModel) {
@@ -145,7 +145,7 @@ async function fetchExperiment(id: string): Promise<ExperimentConfig> {
 const fmtCost = (n: number) => `$${n < 0.01 && n > 0 ? n.toFixed(5) : n.toFixed(2)}`;
 const fmtMs = (n?: number) => (n === undefined ? '-' : `${Math.round(n)} ms`);
 
-function printTokens(tokens: ProjectToken[]): void {
+function printTokens(tokens: RouterToken[]): void {
   const table = new Table({ head: ['ID', 'Token', 'Created', 'Last used'].map(h => chalk.cyan(h)) });
   for (const t of tokens) {
     table.push([t.id, t.tokenSnippet, new Date(t.createdAt).toLocaleString(), t.lastUsedAt ? new Date(t.lastUsedAt).toLocaleString() : chalk.gray('never')]);
@@ -159,7 +159,7 @@ const STICKY_HELP = STICKY_KEYS.map(k => `  ${k.padEnd(12)} ${STICKY_KEY_CATALOG
 // ─── Command ──────────────────────────────────────────────────────────────────
 
 export function makeExperimentsCommand(): Command {
-  const cmd = new Command('experiments').description('Run A/B tests that route each call to one of several projects');
+  const cmd = new Command('experiments').description('Run A/B tests that route each call to one of several routers');
 
   // ── experiments list ─────────────────────────────────────────────────────────
   cmd.command('list')
@@ -207,8 +207,8 @@ Examples:
           console.log(JSON.stringify(e, null, 2));
           return;
         }
-        // `--variant` takes project names, so the table shows names too; ids stay in --json.
-        const projects = await api<ProjectConfig[]>('GET', '/api/projects');
+        // `--variant` takes router names, so the table shows names too; ids stay in --json.
+        const routers = await api<RouterConfig[]>('GET', '/api/routers');
         console.log(chalk.gray('id:          ') + e.id);
         console.log(chalk.gray('name:        ') + e.name);
         if (e.description) console.log(chalk.gray('description: ') + e.description);
@@ -223,13 +223,13 @@ Examples:
         if (e.variants.length === 0) {
           console.log(chalk.gray('  (none)'));
         } else {
-          const table = new Table({ head: ['ID', 'Label', 'Project', 'Weight'].map(h => chalk.cyan(h)) });
+          const table = new Table({ head: ['ID', 'Label', 'Router', 'Weight'].map(h => chalk.cyan(h)) });
           for (const v of e.variants) {
-            const project = projects.find(p => p.id === v.projectId);
+            const router = routers.find(p => p.id === v.routerId);
             table.push([
               v.id,
-              v.name ?? chalk.gray(project?.name ?? '-'),
-              project?.name ?? chalk.red(`${v.projectId} (deleted)`),
+              v.name ?? chalk.gray(router?.name ?? '-'),
+              router?.name ?? chalk.red(`${v.routerId} (deleted)`),
               v.weight !== undefined ? String(v.weight) : chalk.gray('1'),
             ]);
           }
@@ -251,7 +251,7 @@ Examples:
     .option('--description <text>', 'What this test is trying to settle')
     .option('--rotation <rotation>', `How a variant is picked: ${EXPERIMENT_ROTATIONS.join(', ')}`)
     .option('--sticky-key <key>', `What identifies the same caller for sticky rotation: ${STICKY_KEYS.join(', ')}`)
-    .option('--variant <spec>', 'An arm of the test: <project>[:label][=weight]. Repeat for each variant', parseVariant)
+    .option('--variant <spec>', 'An arm of the test: <router>[:label][=weight]. Repeat for each variant', parseVariant)
     .option('--judge-model <modelId>', 'Score answers with this model')
     .option('--criteria <text>', 'One judge criterion. Repeat for each', collectCriteria)
     .option('--sample-rate <percent>', 'Share of calls the judge scores, 0-100 (default 100)')
@@ -279,7 +279,7 @@ Examples:
           return;
         }
         console.log(chalk.green(`✓ Experiment "${created.name}" created -> ${created.id}`));
-        console.log(chalk.bold('\nToken (shown once, point your client at it instead of a project token):'));
+        console.log(chalk.bold('\nToken (shown once, point your client at it instead of a router token):'));
         console.log(created.token);
       } catch (err) {
         handleError(err);
@@ -293,7 +293,7 @@ Examples:
     .option('--description <text>', 'New description')
     .option('--rotation <rotation>', `How a variant is picked: ${EXPERIMENT_ROTATIONS.join(', ')}`)
     .option('--sticky-key <key>', `What identifies the same caller for sticky rotation: ${STICKY_KEYS.join(', ')}`)
-    .option('--variant <spec>', 'An arm of the test: <project>[:label][=weight]. Repeat for each variant. Replaces the whole list', parseVariant)
+    .option('--variant <spec>', 'An arm of the test: <router>[:label][=weight]. Repeat for each variant. Replaces the whole list', parseVariant)
     .option('--judge-model <modelId>', 'Score answers with this model')
     .option('--criteria <text>', 'One judge criterion. Repeat for each. Replaces the whole list', collectCriteria)
     .option('--sample-rate <percent>', 'Share of calls the judge scores, 0-100')
@@ -444,7 +444,7 @@ Examples:
 `)
     .action(async (id: string, opts: { json?: boolean }) => {
       try {
-        const result = await api<{ token: string; tokenInfo: ProjectToken }>('POST', `/api/experiments/${encodeURIComponent(id)}/tokens`);
+        const result = await api<{ token: string; tokenInfo: RouterToken }>('POST', `/api/experiments/${encodeURIComponent(id)}/tokens`);
         if (opts.json) {
           console.log(JSON.stringify(result, null, 2));
           return;

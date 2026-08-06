@@ -3,10 +3,10 @@ import { Check, ChevronDown, ChevronRight, ShieldOff } from 'lucide-react';
 import type { Message } from '@routerly/shared';
 import { OPTIMIZER_FIXTURES, optimizerFixture, optimizerLabel } from '@routerly/shared';
 import {
-  updateProject,
+  updateRouter,
   getInstalledOptimizers,
   getProfiles,
-  assignProjectProfiles,
+  assignRouterProfiles,
   previewOptimizers,
   getModels,
   type InstalledOptimizer,
@@ -14,7 +14,7 @@ import {
   type OptimizerProfile,
   type OptimizerPreviewResult,
 } from '../../api';
-import { useProject } from './ProjectLayout';
+import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { TextDiff, promptText } from '../../components/TextDiff';
@@ -25,8 +25,8 @@ import {
   type OptimizerRow,
 } from '../../components/OptimizerStepsEditor';
 
-export function ProjectOptimizerTab() {
-  const { project, setProject } = useProject();
+export function RouterOptimizerTab() {
+  const { router, setRouter } = useRouter();
   const { can } = useAuth();
   const canRead = can('optimizers:read');
   const canManage = can('optimizers:manage');
@@ -55,7 +55,7 @@ export function ProjectOptimizerTab() {
   const [previewInput, setPreviewInput] = useState<Message[]>([]);
   const [openStep, setOpenStep] = useState<number | null>(null);
 
-  // Steps to install on the next project refresh, used when switching from a
+  // Steps to install on the next router refresh, used when switching from a
   // profile to custom so the profile steps become the editable starting point.
   const pendingRows = React.useRef<OptimizerRow[] | null>(null);
 
@@ -75,26 +75,26 @@ export function ProjectOptimizerTab() {
     getModels().then(setModels).catch(() => setModels([]));
   }, [canRead]);
 
-  // Merge the project's configured steps (in order) with any installed
+  // Merge the router's configured steps (in order) with any installed
   // optimizer not yet configured (appended, disabled).
   useEffect(() => {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     if (pendingRows.current) {
       setRows(pendingRows.current);
       pendingRows.current = null;
       return;
     }
-    setRows(mergeOptimizerRows(project.optimizers?.steps ?? [], installed));
-  }, [project, installed]);
+    setRows(mergeOptimizerRows(router.optimizers?.steps ?? [], installed));
+  }, [router, installed]);
 
   async function onAssignProfile(profileId: string) {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     setErr('');
     try {
-      const updated = await assignProjectProfiles(project.id, { optimizer: profileId === '' ? null : profileId });
-      setProject(updated);
+      const updated = await assignRouterProfiles(router.id, { optimizer: profileId === '' ? null : profileId });
+      setRouter(updated);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to assign optimizer profile');
     }
@@ -102,17 +102,17 @@ export function ProjectOptimizerTab() {
 
   async function doSave() {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     setErr('');
     setSaving(true);
     try {
-      const payload: Parameters<typeof updateProject>[1] = {
-        name: project.name,
-        models: project.models,
+      const payload: Parameters<typeof updateRouter>[1] = {
+        name: router.name,
+        models: router.models,
         optimizers: { steps: buildOptimizerSteps(rows) },
       };
-      const updated = await updateProject(project.id, payload);
-      setProject(updated);
+      const updated = await updateRouter(router.id, payload);
+      setRouter(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -135,14 +135,14 @@ export function ProjectOptimizerTab() {
 
   async function runPreview() {
     /* v8 ignore next */
-    if (!project) return;
+    if (!router) return;
     setPreviewErr('');
     setPreview(null);
     setOpenStep(null);
     setPreviewing(true);
     try {
       const result = await previewOptimizers({
-        projectId: project.id,
+        routerId: router.id,
         sampleMessages: previewMessages,
         steps: buildOptimizerSteps(rows),
         ...(previewModel ? { model: previewModel } : {}),
@@ -173,16 +173,16 @@ export function ProjectOptimizerTab() {
 
   const savedDelta = preview ? preview.estimatedTokensBefore - preview.estimatedTokensAfter : 0;
 
-  // The models this project can be addressed with, or every configured model
-  // when the project allows all of them. The context window is what makes the
+  // The models this router can be addressed with, or every configured model
+  // when the router allows all of them. The context window is what makes the
   // choice matter, so it is on the label.
-  const modelOptions = (project?.models.length ? project.models.map(m => m.modelId) : models.map(m => m.id))
+  const modelOptions = (router?.models.length ? router.models.map(m => m.modelId) : models.map(m => m.id))
     .map(id => {
       const window = models.find(m => m.id === id)?.contextWindow;
       return { value: id, label: window ? `${id} (${Math.round(window / 1000)}k context)` : id };
     });
 
-  const assignedProfileId = project?.optimizerProfileId ?? '';
+  const assignedProfileId = router?.optimizerProfileId ?? '';
   const profileAssigned = assignedProfileId !== '';
   const defaultProfileId = profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
   const assignedProfile = profiles.find(p => p.id === assignedProfileId);
@@ -210,7 +210,7 @@ export function ProjectOptimizerTab() {
         <label className="form-label">Optimizers</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
           Optimizers reduce prompt tokens before requests reach the provider. They run in order from top to bottom.
-          Use a shared optimizer profile, or define this project's own pipeline.
+          Use a shared optimizer profile, or define this router's own pipeline.
         </p>
 
         {canManage && (

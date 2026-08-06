@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Copy, Check, ArrowLeft, Plus, X } from 'lucide-react';
-import { createProjectToken } from '../../api';
-import { useProject } from './ProjectLayout';
-import { LabelInput } from './ProjectTokenTab'; // Will be exported next
+import { createRouterToken } from '../../api';
+import { useRouter } from './RouterLayout';
+import { LabelInput } from './RouterTokenTab'; // Will be exported next
 
-export function ProjectTokenCreatePage() {
-  const { id: projectId } = useParams<{ id: string }>();
+export function RouterTokenCreatePage() {
+  const { id: routerId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { project, setProject } = useProject();
-  if (!project) return null;
+  const { router, setRouter } = useRouter();
+  if (!router) return null;
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
@@ -25,8 +25,8 @@ export function ProjectTokenCreatePage() {
   const [newTagVal, setNewTagVal] = useState('');
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
 
-  const allLabels = Array.from(new Set((project.tokens || []).flatMap(t => t.labels || []))).sort();
-  const allScopes = Array.from(new Set((project.tokens || []).flatMap(t => t.scopes || []))).sort();
+  const allLabels = Array.from(new Set((router.tokens || []).flatMap(t => t.labels || []))).sort();
+  const allScopes = Array.from(new Set((router.tokens || []).flatMap(t => t.scopes || []))).sort();
 
   async function copyToClipboard(token: string) {
     const success = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
@@ -53,17 +53,17 @@ export function ProjectTokenCreatePage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setLoading(true);
-    if (!projectId) return;
+    if (!routerId) return;
     try {
-      const result = await createProjectToken(projectId, createLabels, Object.keys(createTags).length ? createTags : undefined, createScopes.length ? createScopes : undefined);
-      setProject(p => p ? { ...p, tokens: [...(p.tokens || []), result.tokenInfo] } : p);
+      const result = await createRouterToken(routerId, createLabels, Object.keys(createTags).length ? createTags : undefined, createScopes.length ? createScopes : undefined);
+      setRouter(p => p ? { ...p, tokens: [...(p.tokens || []), result.tokenInfo] } : p);
       setRevealedToken(result.token);
     } catch (e) { setErr(e instanceof Error ? e.message : 'Error creating token'); }
     finally { setLoading(false); }
   }
 
   function goBack() {
-    navigate(`/dashboard/projects/${projectId}/token`);
+    navigate(`/dashboard/routers/${routerId}/token`);
   }
 
   return (

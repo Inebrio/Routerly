@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import {
-  getExperimentMetrics, getProjects,
-  type ExperimentMetrics, type ExperimentVariantMetrics, type Project,
+  getExperimentMetrics, getRouters,
+  type ExperimentMetrics, type ExperimentVariantMetrics, type Router,
 } from '../../api';
 import { DateRangePicker, PRESETS, type DateRange } from '../../components/DateRangePicker';
 import { useExperiment } from './ExperimentLayout';
@@ -38,7 +38,7 @@ export function ExperimentMetricsTab() {
   // everywhere; an experiment defaults to its whole history.
   const [range, setRange] = useState<DateRange>(() => PRESETS.find(p => p.label === 'All time')!.range());
   const [metrics, setMetrics] = useState<ExperimentMetrics | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
@@ -58,15 +58,15 @@ export function ExperimentMetricsTab() {
 
   useEffect(load, [load]);
 
-  // The table names the project behind each variant: metrics carry the id only.
-  useEffect(() => { getProjects().then(setProjects).catch(() => {}); }, []);
+  // The table names the router behind each variant: metrics carry the id only.
+  useEffect(() => { getRouters().then(setRouters).catch(() => {}); }, []);
 
   if (!experiment) return null;
 
   const rows = metrics?.variants ?? [];
   const measured = rows.reduce((s, r) => s + r.calls, 0);
-  const projectName = (id: string) => projects.find(p => p.id === id)?.name ?? id.slice(0, 8);
-  const label = (r: ExperimentVariantMetrics) => r.name ?? projectName(r.projectId);
+  const routerName = (id: string) => routers.find(p => p.id === id)?.name ?? id.slice(0, 8);
+  const label = (r: ExperimentVariantMetrics) => r.name ?? routerName(r.routerId);
   const bestCost = bestOf(rows, r => (r.calls > 0 ? r.avgCostPerCall : undefined), true);
   const bestLatency = bestOf(rows, r => (r.calls > 0 ? r.avgLatencyMs : undefined), true);
   const bestScore = bestOf(rows, r => r.avgScore, false);
@@ -139,7 +139,7 @@ export function ExperimentMetricsTab() {
                           )}
                         </div>
                         {r.name && (
-                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>{projectName(r.projectId)}</div>
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 2 }}>{routerName(r.routerId)}</div>
                         )}
                       </td>
                       <td style={{ textAlign: 'right' }}>{r.calls}</td>

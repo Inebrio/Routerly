@@ -14,7 +14,7 @@ const TABLE_HEADER = '[Compacted JSON table]'
 
 /** Minimum rows for this context, from the step's threshold or the catalog default. */
 function minRowsOf(ctx: ProxyContext): number {
-  const step = ctx.project.optimizers?.steps.find((s) => s.id === 'json-table')
+  const step = ctx.router.optimizers?.steps.find((s) => s.id === 'json-table')
   if (typeof step?.threshold === 'number' && step.threshold >= 2) return step.threshold
   return OPTIMIZER_CATALOG['json-table'].threshold!.default!
 }

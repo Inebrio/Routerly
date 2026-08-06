@@ -11,10 +11,10 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults } from '@routerly/shared';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_PROJECT_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -142,7 +142,7 @@ const notificationChannelSchema = z.object({
   provider:        z.enum(CHANNEL_PROVIDERS),
   events:          z.array(z.string()).max(50).optional(),
   cooldownSeconds: z.number().int().min(0).optional(),
-  projects:        z.array(z.string()).optional(),
+  routers:        z.array(z.string()).optional(),
   targets:         channelTargetsSchema.optional(),
 }).passthrough();
 
@@ -248,7 +248,7 @@ function resolveTestRecipient(provider: string, to: string | undefined, fallback
 }
 
 const previewBodySchema = z.object({
-  projectId: z.string().optional(),
+  routerId: z.string().optional(),
   // Model the sample is addressed to. Only `headroom` reads it, to size its
   // budget against that model's context window exactly as it would live.
   model: z.string().optional(),
@@ -489,7 +489,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       email,
       passwordHash: await hashPassword(password),
       roleId: 'admin',
-      projectIds: [],
+      routerIds: [],
     };
     users.push(user);
     await writeConfig('users', users);
@@ -849,28 +849,28 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     instances[index] = instance;
     await writeConfig('instances', instances);
 
-    // If the model ID changed, cascade the rename to all project references
+    // If the model ID changed, cascade the rename to all router references
     if (newId !== req.params.id) {
-      const projects = await readConfig('projects');
-      let projectsChanged = false;
-      for (const project of projects) {
-        for (const ref of (project.models ?? [])) {
+      const routers = await readConfig('routers');
+      let routersChanged = false;
+      for (const router of routers) {
+        for (const ref of (router.models ?? [])) {
           if (ref.modelId === req.params.id) {
             ref.modelId = newId;
-            projectsChanged = true;
+            routersChanged = true;
           }
         }
-        for (const token of (project.tokens ?? [])) {
+        for (const token of (router.tokens ?? [])) {
           for (const ref of (token.models ?? [])) {
             if (ref.modelId === req.params.id) {
               ref.modelId = newId;
-              projectsChanged = true;
+              routersChanged = true;
             }
           }
         }
       }
-      if (projectsChanged) {
-        await writeConfig('projects', projects);
+      if (routersChanged) {
+        await writeConfig('routers', routers);
       }
     }
 
@@ -999,13 +999,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // PROJECTS
+  // ROUTERS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get('/api/projects', async (_req, reply) => {
-    const projects = await readConfig('projects');
+  fastify.get('/api/routers', async (_req, reply) => {
+    const routers = await readConfig('routers');
     // Strip the full token; clients use tokenSnippet for display
-    return reply.send(projects.map(p => ({
+    return reply.send(routers.map(p => ({
       ...p,
       tokens: p.tokens?.map(t => ({ ...t, token: undefined })) || []
     })));
@@ -1024,16 +1024,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       pii?: PiiConfig;
       optimizers?: OptimizerConfig | null;
     }
-  }>('/api/projects', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    // Setting the optimizers pipeline is a privileged sub-operation of project write.
+  }>('/api/routers', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    // Setting the optimizers pipeline is a privileged sub-operation of router write.
     if (req.body.optimizers != null && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
-    const projects = await readConfig('projects');
+    const routers = await readConfig('routers');
     const trimmedName = req.body.name.trim();
-    if (!trimmedName) return reply.status(400).send({ error: 'Project name cannot be empty' });
-    if (projects.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
-      return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
+    if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
+    if (routers.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+      return reply.status(409).send({ error: `A router named "${trimmedName}" already exists` });
     }
     let guardrails: GuardrailConfig | undefined;
     if (req.body.guardrails !== undefined) {
@@ -1057,7 +1057,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: uuidv4(),
       name: trimmedName,
       tokens: [{
@@ -1075,16 +1075,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
-      timeoutMs: req.body.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS,
+      timeoutMs: req.body.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS,
       ...(guardrails ? { guardrails } : {}),
       ...(pii ? { pii } : {}),
       ...(optimizers ? { optimizers } : {}),
     };
-    projects.push(project);
-    await writeConfig('projects', projects);
-    void emitEvent('config.project_created', 'info', { projectId: project.id, name: project.name }, { projectId: project.id, log: req.log });
-    audit(req, 'project:create', 'success', { id: project.id });
-    return reply.status(201).send({ ...project, token: rawToken });
+    routers.push(router);
+    await writeConfig('routers', routers);
+    void emitEvent('config.router_created', 'info', { routerId: router.id, name: router.name }, { routerId: router.id, log: req.log });
+    audit(req, 'router:create', 'success', { id: router.id });
+    return reply.status(201).send({ ...router, token: rawToken });
   });
 
   fastify.put<{
@@ -1102,18 +1102,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       optimizers?: OptimizerConfig | null;
       traceContent?: boolean;
     };
-  }>('/api/projects/:id', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  }>('/api/routers/:id', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
     // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
     if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
     const trimmedName = req.body.name.trim();
-    if (!trimmedName) return reply.status(400).send({ error: 'Project name cannot be empty' });
-    if (projects.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
-      return reply.status(409).send({ error: `A project named "${trimmedName}" already exists` });
+    if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
+    if (routers.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+      return reply.status(409).send({ error: `A router named "${trimmedName}" already exists` });
     }
     // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
     let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
@@ -1123,8 +1123,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
       guardrailsUpdate = { guardrails: parsed.data as GuardrailConfig };
-    } else if (projects[index]!.guardrails) {
-      guardrailsUpdate = { guardrails: projects[index]!.guardrails };
+    } else if (routers[index]!.guardrails) {
+      guardrailsUpdate = { guardrails: routers[index]!.guardrails };
     }
     let piiUpdate: { pii?: PiiConfig } = {};
     if (req.body.pii === null) {
@@ -1133,8 +1133,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = piiConfigSchema.safeParse(req.body.pii);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
       piiUpdate = { pii: parsed.data as PiiConfig };
-    } else if (projects[index]!.pii) {
-      piiUpdate = { pii: projects[index]!.pii };
+    } else if (routers[index]!.pii) {
+      piiUpdate = { pii: routers[index]!.pii };
     }
     let optimizersUpdate: { optimizers?: OptimizerConfig } = {};
     if (req.body.optimizers === null) {
@@ -1143,12 +1143,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const parsed = optimizerConfigSchema.safeParse(req.body.optimizers);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid optimizers config', details: parsed.error.issues });
       optimizersUpdate = { optimizers: parsed.data as OptimizerConfig };
-    } else if (projects[index]!.optimizers) {
-      optimizersUpdate = { optimizers: projects[index]!.optimizers };
+    } else if (routers[index]!.optimizers) {
+      optimizersUpdate = { optimizers: routers[index]!.optimizers };
     }
 
-    const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, ...existing } = projects[index]!;
-    const updated: ProjectConfig = {
+    const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, ...existing } = routers[index]!;
+    const updated: RouterConfig = {
       ...existing,
       name: trimmedName,
       ...(req.body.routingModelId !== undefined ? { routingModelId: req.body.routingModelId } : existing.routingModelId !== undefined ? { routingModelId: existing.routingModelId } : {}),
@@ -1159,16 +1159,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
-        timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS,
+        timeoutMs: req.body.timeoutMs ?? existing.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS,
       // Absent = leave as is; the flag gates prompt/answer capture in traces.
       ...(req.body.traceContent !== undefined ? { traceContent: req.body.traceContent } : {}),
       ...guardrailsUpdate,
       ...piiUpdate,
       ...optimizersUpdate,
     };
-    projects[index] = updated;
-    await writeConfig('projects', projects);
-    audit(req, 'project:update', 'success', { id: req.params.id });
+    routers[index] = updated;
+    await writeConfig('routers', routers);
+    audit(req, 'router:update', 'success', { id: req.params.id });
     return reply.send({
       ...updated,
       tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || []
@@ -1178,14 +1178,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.patch<{
     Params: { id: string };
     Body: { guardrails?: GuardrailConfig; pii?: PiiConfig };
-  }>('/api/projects/:id/guardrails', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
+  }>('/api/routers/:id/guardrails', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
-    const project = projects[index]!;
-    let guardrailsUpdate: { guardrails?: GuardrailConfig } = project.guardrails ? { guardrails: project.guardrails } : {};
-    let piiUpdate: { pii?: PiiConfig } = project.pii ? { pii: project.pii } : {};
+    const router = routers[index]!;
+    let guardrailsUpdate: { guardrails?: GuardrailConfig } = router.guardrails ? { guardrails: router.guardrails } : {};
+    let piiUpdate: { pii?: PiiConfig } = router.pii ? { pii: router.pii } : {};
     if (req.body.guardrails !== undefined) {
       const parsed = guardrailConfigSchema.safeParse(req.body.guardrails);
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid guardrails config', details: parsed.error.issues });
@@ -1196,22 +1196,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (!parsed.success) return reply.status(400).send({ error: 'Invalid pii config', details: parsed.error.issues });
       piiUpdate = { pii: parsed.data as PiiConfig };
     }
-    const updated: ProjectConfig = { ...project, ...guardrailsUpdate, ...piiUpdate };
-    projects[index] = updated;
-    await writeConfig('projects', projects);
-    audit(req, 'project:update', 'success', { id: req.params.id });
+    const updated: RouterConfig = { ...router, ...guardrailsUpdate, ...piiUpdate };
+    routers[index] = updated;
+    await writeConfig('routers', routers);
+    audit(req, 'router:update', 'success', { id: req.params.id });
     return reply.send({ ...updated, tokens: updated.tokens?.map(t => ({ ...t, token: undefined })) || [] });
   });
 
-  fastify.delete<{ Params: { id: string } }>('/api/projects/:id', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const deleted = projects.find(p => p.id === req.params.id);
-    const filtered = projects.filter(p => p.id !== req.params.id);
-    if (filtered.length === projects.length) return reply.status(404).send({ error: 'Not found' });
-    await writeConfig('projects', filtered);
-    void emitEvent('config.project_deleted', 'info', { projectId: req.params.id, name: deleted?.name }, { log: req.log });
-    audit(req, 'project:delete', 'success', { id: req.params.id });
+  fastify.delete<{ Params: { id: string } }>('/api/routers/:id', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const deleted = routers.find(p => p.id === req.params.id);
+    const filtered = routers.filter(p => p.id !== req.params.id);
+    if (filtered.length === routers.length) return reply.status(404).send({ error: 'Not found' });
+    await writeConfig('routers', filtered);
+    void emitEvent('config.router_deleted', 'info', { routerId: req.params.id, name: deleted?.name }, { log: req.log });
+    audit(req, 'router:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
   });
 
@@ -1229,8 +1229,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Every llmlingua-2 checkpoint installable on THIS host, with its state and
-  // live download progress. Read-only, no prompt content, no project scope: it
-  // describes the service install, which is shared by every project.
+  // live download progress. Read-only, no prompt content, no router scope: it
+  // describes the service install, which is shared by every router.
   fastify.get('/api/optimizers/llmlingua2/model', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:read', reply)) return;
     return reply.send({
@@ -1258,22 +1258,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Dry-run: apply the given steps to sample messages and report token deltas.
   // Pure — no upstream call, no config write.
-  fastify.post<{ Body: { projectId?: string; model?: string; sampleMessages: Message[]; steps: { id: string; enabled: boolean; threshold?: number }[] } }>('/api/optimizers/preview', async (req, reply) => {
+  fastify.post<{ Body: { routerId?: string; model?: string; sampleMessages: Message[]; steps: { id: string; enabled: boolean; threshold?: number }[] } }>('/api/optimizers/preview', async (req, reply) => {
     if (!requirePerm(req, 'optimizers:read', reply)) return;
     const parsed = previewBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'Invalid preview request', details: parsed.error.issues });
-    let project: ProjectConfig | undefined;
-    if (parsed.data.projectId) {
-      const projects = await readConfig('projects');
-      project = projects.find(p => p.id === parsed.data.projectId);
-      if (!project) return reply.status(404).send({ error: 'Not found' });
+    let router: RouterConfig | undefined;
+    if (parsed.data.routerId) {
+      const routers = await readConfig('routers');
+      router = routers.find(p => p.id === parsed.data.routerId);
+      if (!router) return reply.status(404).send({ error: 'Not found' });
     }
     const result = await runPreview({
       registry: getOptimizerRegistry(),
       sampleMessages: parsed.data.sampleMessages as Message[],
       steps: parsed.data.steps as OptimizerConfig['steps'],
       ...(parsed.data.model ? { model: parsed.data.model } : {}),
-      ...(project ? { project } : {}),
+      ...(router ? { router } : {}),
     });
     return reply.send(result);
   });
@@ -1306,14 +1306,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     scopes: z.array(z.string()).optional(),
   });
 
-  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; scopes?: string[]; expiresAt?: string } }>('/api/projects/:id/tokens', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; scopes?: string[]; expiresAt?: string } }>('/api/routers/:id/tokens', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
 
     const parsed = createTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
 
     const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
@@ -1329,150 +1329,150 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(parsed.data.expiresAt ? { expiresAt: parsed.data.expiresAt } : {}),
     };
 
-    const updated = { ...projects[index]! };
+    const updated = { ...routers[index]! };
     if (!updated.tokens) updated.tokens = [];
     updated.tokens.push(newToken);
 
-    projects[index] = updated;
-    await writeConfig('projects', projects);
-    audit(req, 'token:create', 'success', { projectId: req.params.id });
+    routers[index] = updated;
+    await writeConfig('routers', routers);
+    audit(req, 'token:create', 'success', { routerId: req.params.id });
     return reply.send({ token: rawToken, tokenInfo: { ...newToken, token: undefined } });
   });
 
-  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string>, scopes?: string[] } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string>, scopes?: string[] } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
 
     const parsed = updateTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
 
-    const project = projects[index]!;
-    if (!project.tokens) return reply.status(404).send({ error: 'Token not found' });
+    const router = routers[index]!;
+    if (!router.tokens) return reply.status(404).send({ error: 'Token not found' });
 
-    const token = project.tokens.find(t => t.id === req.params.tokenId);
+    const token = router.tokens.find(t => t.id === req.params.tokenId);
     if (!token) return reply.status(404).send({ error: 'Token not found' });
 
     if (parsed.data.models !== undefined) token.models = parsed.data.models as TokenModelRef[];
     if (parsed.data.labels !== undefined) token.labels = parsed.data.labels;
     if (parsed.data.tags !== undefined) token.tags = parsed.data.tags;
     if (parsed.data.scopes !== undefined) token.scopes = parsed.data.scopes;
-    await writeConfig('projects', projects);
+    await writeConfig('routers', routers);
 
     return reply.send({ ...token, token: undefined });
   });
 
-  fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/projects/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+  fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
 
-    const project = projects[index]!;
-    if (!project.tokens) return reply.status(404).send({ error: 'Token not found' });
+    const router = routers[index]!;
+    if (!router.tokens) return reply.status(404).send({ error: 'Token not found' });
 
-    const tokenIndex = project.tokens.findIndex(t => t.id === req.params.tokenId);
+    const tokenIndex = router.tokens.findIndex(t => t.id === req.params.tokenId);
     if (tokenIndex === -1) return reply.status(404).send({ error: 'Token not found' });
 
-    project.tokens.splice(tokenIndex, 1);
-    await writeConfig('projects', projects);
-    audit(req, 'token:delete', 'success', { projectId: req.params.id, tokenId: req.params.tokenId });
+    router.tokens.splice(tokenIndex, 1);
+    await writeConfig('routers', routers);
+    audit(req, 'token:delete', 'success', { routerId: req.params.id, tokenId: req.params.tokenId });
     return reply.status(204).send();
   });
 
-  fastify.post<{ Params: { id: string }; Body: { userId: string; role: string } }>('/api/projects/:id/members', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+  fastify.post<{ Params: { id: string }; Body: { userId: string; role: string } }>('/api/routers/:id/members', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
 
     const users = await readConfig('users');
     if (!users.find(u => u.id === req.body.userId)) return reply.status(404).send({ error: 'User not found' });
 
-    const project = projects[index]!;
-    if (!project.members) project.members = [];
-    if (project.members.find(m => m.userId === req.body.userId)) {
+    const router = routers[index]!;
+    if (!router.members) router.members = [];
+    if (router.members.find(m => m.userId === req.body.userId)) {
       return reply.status(409).send({ error: 'User is already a member' });
     }
 
-    project.members.push({ userId: req.body.userId, role: req.body.role as any });
-    await writeConfig('projects', projects);
+    router.members.push({ userId: req.body.userId, role: req.body.role as any });
+    await writeConfig('routers', routers);
     return reply.status(201).send({ userId: req.body.userId, role: req.body.role });
   });
 
-  fastify.put<{ Params: { id: string, userId: string }; Body: { role: string } }>('/api/projects/:id/members/:userId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+  fastify.put<{ Params: { id: string, userId: string }; Body: { role: string } }>('/api/routers/:id/members/:userId', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
 
-    const project = projects[index]!;
-    if (!project.members) return reply.status(404).send({ error: 'Member not found' });
-    const member = project.members.find(m => m.userId === req.params.userId);
+    const router = routers[index]!;
+    if (!router.members) return reply.status(404).send({ error: 'Member not found' });
+    const member = router.members.find(m => m.userId === req.params.userId);
     if (!member) return reply.status(404).send({ error: 'Member not found' });
 
     member.role = req.body.role as any;
-    await writeConfig('projects', projects);
+    await writeConfig('routers', routers);
     return reply.send(member);
   });
 
-  fastify.delete<{ Params: { id: string, userId: string } }>('/api/projects/:id/members/:userId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+  fastify.delete<{ Params: { id: string, userId: string } }>('/api/routers/:id/members/:userId', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
 
-    const project = projects[index]!;
-    if (!project.members) return reply.status(404).send({ error: 'Member not found' });
+    const router = routers[index]!;
+    if (!router.members) return reply.status(404).send({ error: 'Member not found' });
 
-    const memberIndex = project.members.findIndex(m => m.userId === req.params.userId);
+    const memberIndex = router.members.findIndex(m => m.userId === req.params.userId);
     if (memberIndex === -1) return reply.status(404).send({ error: 'Member not found' });
 
-    project.members.splice(memberIndex, 1);
-    await writeConfig('projects', projects);
+    router.members.splice(memberIndex, 1);
+    await writeConfig('routers', routers);
     return reply.status(204).send();
   });
 
   // ── Playground presets (#99) ──────────────────────────────────────────────
 
-  fastify.get<{ Params: { id: string } }>('/api/projects/:id/playground-presets', async (req, reply) => {
-    if (!requirePerm(req, 'project:read', reply)) return;
-    const projects = await readConfig('projects');
-    const project = projects.find(p => p.id === req.params.id);
-    if (!project) return reply.status(404).send({ error: 'Project not found' });
-    return reply.send(project.playgroundPresets ?? []);
+  fastify.get<{ Params: { id: string } }>('/api/routers/:id/playground-presets', async (req, reply) => {
+    if (!requirePerm(req, 'router:read', reply)) return;
+    const routers = await readConfig('routers');
+    const router = routers.find(p => p.id === req.params.id);
+    if (!router) return reply.status(404).send({ error: 'Router not found' });
+    return reply.send(router.playgroundPresets ?? []);
   });
 
   fastify.post<{
     Params: { id: string };
     Body: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> };
-  }>('/api/projects/:id/playground-presets', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  }>('/api/routers/:id/playground-presets', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
     const { name, systemPrompt, messages } = req.body;
     if (!name?.trim()) return reply.status(400).send({ error: 'name is required' });
     if (systemPrompt === undefined) return reply.status(400).send({ error: 'systemPrompt is required' });
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
     const preset = { id: randomUUID(), name: name.trim(), systemPrompt, ...(messages ? { messages } : {}) };
-    const project = projects[index]!;
-    project.playgroundPresets = [...(project.playgroundPresets ?? []), preset];
-    await writeConfig('projects', projects);
+    const router = routers[index]!;
+    router.playgroundPresets = [...(router.playgroundPresets ?? []), preset];
+    await writeConfig('routers', routers);
     return reply.status(201).send(preset);
   });
 
-  fastify.delete<{ Params: { id: string; presetId: string } }>('/api/projects/:id/playground-presets/:presetId', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
-    const projects = await readConfig('projects');
-    const index = projects.findIndex(p => p.id === req.params.id);
-    if (index === -1) return reply.status(404).send({ error: 'Project not found' });
-    const project = projects[index]!;
-    const before = (project.playgroundPresets ?? []).length;
-    project.playgroundPresets = (project.playgroundPresets ?? []).filter(p => p.id !== req.params.presetId);
-    if (project.playgroundPresets.length === before) return reply.status(404).send({ error: 'Preset not found' });
-    await writeConfig('projects', projects);
+  fastify.delete<{ Params: { id: string; presetId: string } }>('/api/routers/:id/playground-presets/:presetId', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
+    const routers = await readConfig('routers');
+    const index = routers.findIndex(p => p.id === req.params.id);
+    if (index === -1) return reply.status(404).send({ error: 'Router not found' });
+    const router = routers[index]!;
+    const before = (router.playgroundPresets ?? []).length;
+    router.playgroundPresets = (router.playgroundPresets ?? []).filter(p => p.id !== req.params.presetId);
+    if (router.playgroundPresets.length === before) return reply.status(404).send({ error: 'Preset not found' });
+    await writeConfig('routers', routers);
     return reply.status(204).send();
   });
 
@@ -1526,7 +1526,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{
-    Body: { email: string; password: string; roleId?: string; projectIds?: string[] }
+    Body: { email: string; password: string; roleId?: string; routerIds?: string[] }
   }>('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:write', reply)) return;
     const users = await readConfig('users');
@@ -1538,7 +1538,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       email: req.body.email,
       passwordHash: await hashPassword(req.body.password),
       roleId: req.body.roleId ?? 'viewer',
-      projectIds: req.body.projectIds ?? [],
+      routerIds: req.body.routerIds ?? [],
     };
     users.push(user);
     await writeConfig('users', users);
@@ -1576,7 +1576,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     await writeConfig('users', users);
     const updated = users[idx]!;
     audit(req, 'user:update', 'success', { id: req.params.id });
-    return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId, projectIds: updated.projectIds });
+    return reply.send({ id: updated.id, email: updated.email, roleId: updated.roleId, routerIds: updated.routerIds });
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/users/:id', async (req, reply) => {
@@ -1611,10 +1611,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USAGE STATS
   // ══════════════════════════════════════════════════════════════════════════════
 
-  fastify.get<{ Querystring: { period?: string; projectId?: string; projectIds?: string; modelIds?: string; tokenIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; routerId?: string; routerIds?: string; modelIds?: string; tokenIds?: string; callType?: string; requestType?: string; outcome?: string; from?: string; to?: string; page?: string; pageSize?: string; endUserId?: string; sessionId?: string; savings?: string; series?: string; [key: string]: string | undefined } }>('/api/usage', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { period = 'monthly', projectId, projectIds, modelIds, tokenIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
+    const { period = 'monthly', routerId, routerIds, modelIds, tokenIds, callType, requestType, outcome, from, to, endUserId, sessionId } = req.query;
     const page = Math.max(1, parseInt(req.query.page ?? '1', 10) || 1);
     const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize ?? '100', 10) || 100));
     // Parse tag filters: ?tag[customer]=acme
@@ -1650,7 +1650,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const ts = new Date(r.timestamp);
       return ts >= since && ts <= until;
     });
-    if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
+    if (routerId) filtered = filtered.filter(r => r.routerId === routerId);
     if (endUserId) filtered = filtered.filter(r => r.endUserId === endUserId);
     if (sessionId) filtered = filtered.filter(r => r.sessionId === sessionId);
     if (Object.keys(tagFilters).length > 0) {
@@ -1659,11 +1659,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Dashboard filters (multiselect + type/outcome) — applied to records, byModel, summary and timeline alike (#80).
     const csv = (s?: string) => (s ? new Set(s.split(',').map(v => v.trim()).filter(Boolean)) : null);
-    const projectIdSet = csv(projectIds);
-    if (projectIdSet) filtered = filtered.filter(r => projectIdSet.has(r.projectId));
+    const routerIdSet = csv(routerIds);
+    if (routerIdSet) filtered = filtered.filter(r => routerIdSet.has(r.routerId));
     const modelIdSet = csv(modelIds);
     if (modelIdSet) filtered = filtered.filter(r => modelIdSet.has(r.modelId));
-    // Which project token the call came in on: narrows a project's traffic down
+    // Which router token the call came in on: narrows a router's traffic down
     // to one client without the client sending anything (T211).
     const tokenIdSet = csv(tokenIds);
     if (tokenIdSet) filtered = filtered.filter(r => r.tokenId !== undefined && tokenIdSet.has(r.tokenId));
@@ -1741,7 +1741,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Latency and TTFT distribution over successful client calls. The average
-    // alone hides the tail, so the project dashboard reads median and p95 (T62).
+    // alone hides the tail, so the router dashboard reads median and p95 (T62).
     // ttftMs is optional on the record, hence its own sample count.
     const clientCalls = filtered.filter(r => r.outcome === 'success' && isCompletionCall(r.callType));
     const latencySamples = clientCalls.map(r => r.latencyMs).filter((n): n is number => typeof n === 'number');
@@ -1751,7 +1751,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // never shows savings, so only the pages that ask pay for the counterfactual.
     //
     // The baselines are the single-model policies the operator could really have
-    // run instead of routing (T102): the target models of the projects that show
+    // run instead of routing (T102): the target models of the routers that show
     // up in the window, plus the models that actually served a call in it. Every
     // paid model on the instance was the first cut and it read as noise: a range
     // anchored on an embedding model or on a model nobody routes to says nothing
@@ -1764,15 +1764,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // Pricing reads the full catalogue, disabled connections included: a record
       // served by a model that has since been switched off still has to be priced.
       // Baselines instead only offer models traffic could go to today.
-      const [projects, allModels, activeModels] = await Promise.all([
-        readConfig('projects'),
+      const [routers, allModels, activeModels] = await Promise.all([
+        readConfig('routers'),
         listEffectiveModelsIncludingDisabled(),
         listEffectiveModels(),
       ]);
-      const projectIdsInResult = new Set(filtered.map(r => r.projectId));
+      const routerIdsInResult = new Set(filtered.map(r => r.routerId));
       const inPlay = new Set([
-        ...projects
-          .filter(p => projectIdsInResult.has(p.id))
+        ...routers
+          .filter(p => routerIdsInResult.has(p.id))
           .flatMap(p => (p.models ?? []).filter(m => m.enabled !== false).map(m => m.modelId)),
         ...filtered.filter(r => isCompletionCall(r.callType)).map(r => r.modelId),
       ]);
@@ -1840,18 +1840,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ─── GET /api/sessions (#94) ──────────────────────────────────────────────
-  fastify.get<{ Querystring: { projectId?: string; limit?: string; cursor?: string } }>('/api/sessions', async (req, reply) => {
+  fastify.get<{ Querystring: { routerId?: string; limit?: string; cursor?: string } }>('/api/sessions', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     const records = await readConfig('usage');
-    const { projectId, limit: limitStr, cursor } = req.query;
+    const { routerId, limit: limitStr, cursor } = req.query;
     const limit = Math.min(100, Math.max(1, parseInt(limitStr ?? '20', 10) || 20));
 
     // Build session map from usage records
-    const sessionMap = new Map<string, { sessionId: string; projectId: string; firstSeen: string; lastSeen: string; requests: number; totalCost: number; totalTokens: number }>();
+    const sessionMap = new Map<string, { sessionId: string; routerId: string; firstSeen: string; lastSeen: string; requests: number; totalCost: number; totalTokens: number }>();
     for (const r of records) {
       if (!r.sessionId) continue;
-      if (projectId && r.projectId !== projectId) continue;
-      const s = sessionMap.get(r.sessionId) ?? { sessionId: r.sessionId, projectId: r.projectId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
+      if (routerId && r.routerId !== routerId) continue;
+      const s = sessionMap.get(r.sessionId) ?? { sessionId: r.sessionId, routerId: r.routerId, firstSeen: r.timestamp, lastSeen: r.timestamp, requests: 0, totalCost: 0, totalTokens: 0 };
       s.requests++;
       s.totalCost += r.cost;
       s.totalTokens += r.inputTokens + r.outputTokens;
@@ -2087,7 +2087,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // In-app inbox is opt-in: active only when a `dashboard`-provider channel exists.
     const channels = settings.notifications?.channels ?? [];
     const enabled = channels.some(c => c.provider === 'dashboard');
-    // Audience, project scope and permissions (U5 + T52), then the per-user soft
+    // Audience, router scope and permissions (U5 + T52), then the per-user soft
     // delete: items the user dismissed are hidden from their inbox.
     const mine = all.filter(n =>
       isVisibleToUser(n, userId, req.dashUser!.permissions, scope) &&
@@ -2147,7 +2147,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/notifications/inbox/:id ──────────────────────────────────────
   // Single in-app notification (detail view). Same three gates as the list: a
-  // user can only read items addressed to them, about a project they reach and
+  // user can only read items addressed to them, about a router they reach and
   // a subject they may read.
   fastify.get<{ Params: { id: string } }>('/api/notifications/inbox/:id', async (req, reply) => {
     const userId = req.dashUser!.id;
@@ -2333,11 +2333,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ─── GET /api/leaderboard (#80) ──────────────────────────────────────────────
   // Ranks models by real-world cost-performance using local usage records only.
-  fastify.get<{ Querystring: { period?: string; projectId?: string; from?: string; to?: string } }>('/api/leaderboard', async (req, reply) => {
+  fastify.get<{ Querystring: { period?: string; routerId?: string; from?: string; to?: string } }>('/api/leaderboard', async (req, reply) => {
     if (!requirePerm(req, 'report:read', reply)) return;
     // health/observability: must still account for disabled models
     const [models, records] = await Promise.all([listEffectiveModelsIncludingDisabled(), readConfig('usage')]);
-    const { period = 'monthly', projectId, from, to } = req.query;
+    const { period = 'monthly', routerId, from, to } = req.query;
 
     const now = new Date();
     let since = new Date(0);
@@ -2358,7 +2358,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const ts = new Date(r.timestamp);
       return ts >= since && ts <= until;
     });
-    if (projectId) filtered = filtered.filter(r => r.projectId === projectId);
+    if (routerId) filtered = filtered.filter(r => r.routerId === routerId);
 
     const providerByModel = new Map(models.map(m => [m.id, m.provider]));
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
-import type { ProjectConfig, ModelConfig } from '@routerly/shared'
+import type { RouterConfig, ModelConfig } from '@routerly/shared'
 import { buildOAuthForwardHeaders, forwardAnthropicOAuth, upstreamModelName } from './oauthForward.js'
 
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -20,7 +20,7 @@ const oauthModel: ModelConfig = {
   cost: { inputPerMillion: 0, outputPerMillion: 0 },
 }
 
-const testProject: ProjectConfig = {
+const testRouter: RouterConfig = {
   id: 'proj-1',
   name: 'Test',
   tokens: [{ id: 't1', token: 'valid-token', createdAt: '2024-01-01' }],
@@ -157,14 +157,14 @@ describe('buildOAuthForwardHeaders', () => {
 
 // ─── forwardAnthropicOAuth (integration via Fastify inject) ───────────────────
 
-async function buildApp(model: ModelConfig, setProject = true) {
+async function buildApp(model: ModelConfig, setRouter = true) {
   const app = Fastify({ logger: false })
-  app.decorateRequest('project', null as any)
+  app.decorateRequest('router', null as any)
   app.addContentTypeParser('text/plain', { parseAs: 'string' }, (_req, body, done) =>
     done(null, body as string),
   )
   app.addHook('preHandler', async (req: any) => {
-    if (setProject) req.project = testProject
+    if (setRouter) req.router = testRouter
   })
   app.route({
     method: ['GET', 'POST'],
@@ -220,7 +220,7 @@ describe('forwardAnthropicOAuth', () => {
     // Body forwarded verbatim except the `model` field, which is rewritten to
     // the upstream model id (commit a076266) — system block etc. preserved.
     expect(init.body).toBe(JSON.stringify({ ...payload, model: 'claude-max' }))
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'success' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'proj-1', outcome: 'success' }))
   })
 
   it('pipes a streamed SSE response back and preserves content-type', async () => {
@@ -293,7 +293,7 @@ describe('forwardAnthropicOAuth', () => {
     const body = res.json()
     expect(body.type).toBe('error')
     expect(body.error.message).toContain('ECONNREFUSED')
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'proj-1', outcome: 'error' }))
   })
 
   it('falls back to a generic message when fetch rejects with a non-Error', async () => {
@@ -314,7 +314,7 @@ describe('forwardAnthropicOAuth', () => {
     expect(res.json().error.message).toBe('upstream request failed')
   })
 
-  it('logs without a projectId when request.project is absent', async () => {
+  it('logs without a routerId when request.router is absent', async () => {
     const mockFetch = vi.fn().mockResolvedValue(
       new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }),
     )
@@ -422,7 +422,7 @@ describe('forwardAnthropicOAuth', () => {
     mockTrackUsage.mockRejectedValueOnce(new Error('tracker down'))
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED catch-swallow')))
 
-    const app = await buildApp(oauthModel) // setProject = true so projectId is present
+    const app = await buildApp(oauthModel) // setRouter = true so routerId is present
     const res = await app.inject({
       method: 'POST',
       url: '/v1/messages',
@@ -457,10 +457,10 @@ describe('forwardAnthropicOAuth', () => {
     expect(mockTrackUsage).toHaveBeenCalledOnce()
   })
 
-  it('returns 502 and skips trackUsage when fetch throws and project is absent (line 107 false branch)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED no-project')))
+  it('returns 502 and skips trackUsage when fetch throws and router is absent (line 107 false branch)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED no-router')))
 
-    const app = await buildApp(oauthModel, false) // setProject = false → projectId is absent
+    const app = await buildApp(oauthModel, false) // setRouter = false → routerId is absent
     const res = await app.inject({
       method: 'POST',
       url: '/v1/messages',
@@ -471,7 +471,7 @@ describe('forwardAnthropicOAuth', () => {
     vi.unstubAllGlobals()
 
     expect(res.statusCode).toBe(502)
-    expect(res.json().error.message).toContain('ECONNREFUSED no-project')
+    expect(res.json().error.message).toContain('ECONNREFUSED no-router')
     expect(mockTrackUsage).not.toHaveBeenCalled()
   })
 })

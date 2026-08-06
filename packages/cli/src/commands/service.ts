@@ -18,7 +18,7 @@ export function makeServiceCommand(): Command {
     .description('Show current service configuration')
     .addHelpText('after', `
 Examples:
-  # Show version, uptime, port, models, and projects
+  # Show version, uptime, port, models, and routers
   routerly service status
 `)
     .action(async () => {
@@ -29,11 +29,11 @@ Examples:
       }
 
       try {
-        const [info, settings, models, projects] = await Promise.all([
+        const [info, settings, models, routers] = await Promise.all([
           api<SystemInfo>('GET', '/api/system/info').catch(() => null),
           api<Settings & { listeningAddresses?: string[] }>('GET', '/api/settings'),
           api<unknown[]>('GET', '/api/models'),
-          api<unknown[]>('GET', '/api/projects'),
+          api<unknown[]>('GET', '/api/routers'),
         ]);
 
         console.log(chalk.bold('\nRouterly Service Status\n'));
@@ -47,7 +47,7 @@ Examples:
         console.log(`  ${chalk.cyan('Dashboard:')}     ${settings.dashboardEnabled ? chalk.green('enabled') : chalk.gray('disabled')}`);
         console.log(`  ${chalk.cyan('Log level:')}     ${settings.logLevel}`);
         console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
-        console.log(`  ${chalk.cyan('Projects:')}      ${projects.length}`);
+        console.log(`  ${chalk.cyan('Routers:')}      ${routers.length}`);
         for (const address of settings.listeningAddresses ?? []) {
           console.log(`  ${chalk.cyan('Listening at:')}  ${address}`);
         }

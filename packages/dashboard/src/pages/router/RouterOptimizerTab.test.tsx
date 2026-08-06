@@ -3,14 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectOptimizerTab } from './ProjectOptimizerTab';
+import { RouterOptimizerTab } from './RouterOptimizerTab';
 
 vi.mock('../../api', () => ({
-  updateProject: vi.fn(),
+  updateRouter: vi.fn(),
   getInstalledOptimizers: vi.fn(),
   previewOptimizers: vi.fn(),
   getProfiles: vi.fn(),
-  assignProjectProfiles: vi.fn(),
+  assignRouterProfiles: vi.fn(),
   getModels: vi.fn(),
   getLlmLinguaModel: vi.fn(),
   installLlmLinguaModel: vi.fn(),
@@ -42,15 +42,15 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { updateProject, getInstalledOptimizers, previewOptimizers, getProfiles, assignProjectProfiles, getModels, getLlmLinguaModel } from '../../api';
+import { updateRouter, getInstalledOptimizers, previewOptimizers, getProfiles, assignRouterProfiles, getModels, getLlmLinguaModel } from '../../api';
 import { optimizerFixture } from '@routerly/shared';
 import { useAuth } from '../../AuthContext';
 
-const mockUpdateProject = vi.mocked(updateProject as (...a: unknown[]) => Promise<unknown>);
+const mockUpdateRouter = vi.mocked(updateRouter as (...a: unknown[]) => Promise<unknown>);
 const mockGetInstalled = vi.mocked(getInstalledOptimizers as () => Promise<unknown>);
 const mockPreview = vi.mocked(previewOptimizers as (...a: unknown[]) => Promise<unknown>);
 const mockGetProfiles = vi.mocked(getProfiles as (...a: unknown[]) => Promise<unknown>);
-const mockAssignProfile = vi.mocked(assignProjectProfiles as (...a: unknown[]) => Promise<unknown>);
+const mockAssignProfile = vi.mocked(assignRouterProfiles as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
 const mockGetModel = vi.mocked(getLlmLinguaModel as (...a: unknown[]) => Promise<unknown>);
 
@@ -91,24 +91,24 @@ const installed = [
   { id: 'caveman', klass: 'lossy', installed: true },
 ];
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [{ modelId: 'openai/gpt-4o' }],
   optimizers: { steps: [{ id: 'ccr', enabled: true, threshold: 6 }] },
 };
 
-const setProject = vi.fn();
+const setRouter = vi.fn();
 
-function renderTab(project: Record<string, unknown> = mockProject) {
+function renderTab(router: Record<string, unknown> = mockRouter) {
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject }} />;
+    return <Outlet context={{ router, setRouter }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/optimizer']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/optimizer']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="optimizer" element={<ProjectOptimizerTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="optimizer" element={<RouterOptimizerTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -124,8 +124,8 @@ function setAuth(perms: string[]) {
 beforeEach(() => {
   mockGetInstalled.mockResolvedValue(installed);
   mockGetProfiles.mockResolvedValue(sampleProfiles);
-  mockAssignProfile.mockResolvedValue({ ...mockProject });
-  mockUpdateProject.mockResolvedValue({ ...mockProject });
+  mockAssignProfile.mockResolvedValue({ ...mockRouter });
+  mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetModels.mockResolvedValue([{ id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openai', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 128000 }]);
   mockGetModel.mockResolvedValue({ runtimeInstalled: false, checkpoints: [{ ...checkpoint, state: 'absent' }] });
   mockPreview.mockResolvedValue({
@@ -139,7 +139,7 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
-describe('ProjectOptimizerTab', () => {
+describe('RouterOptimizerTab', () => {
   it('renders installed optimizers merged with configured steps, configured first', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
@@ -158,7 +158,7 @@ describe('ProjectOptimizerTab', () => {
     await waitFor(() => expect(screen.getByText('Optimizers')).toBeInTheDocument());
   });
 
-  it('toggling and saving calls updateProject with the built steps', async () => {
+  it('toggling and saving calls updateRouter with the built steps', async () => {
     const user = userEvent.setup();
     renderTab();
     await waitFor(() => expect(screen.getByText('Session Dedup')).toBeInTheDocument());
@@ -166,8 +166,8 @@ describe('ProjectOptimizerTab', () => {
     const cbs = screen.getAllByRole('checkbox');
     await user.click(cbs[1]!); // session-dedup
     await user.click(screen.getByRole('button', { name: /save optimizers/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const [, payload] = mockUpdateProject.mock.calls[0] as [string, { optimizers: { steps: unknown[] } }];
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const [, payload] = mockUpdateRouter.mock.calls[0] as [string, { optimizers: { steps: unknown[] } }];
     expect(payload.optimizers.steps).toEqual([
       { id: 'ccr', enabled: true, threshold: 6 },
       { id: 'session-dedup', enabled: true },
@@ -222,7 +222,7 @@ describe('ProjectOptimizerTab', () => {
 
   it('surfaces save errors', async () => {
     const user = userEvent.setup();
-    mockUpdateProject.mockRejectedValue(new Error('save failed'));
+    mockUpdateRouter.mockRejectedValue(new Error('save failed'));
     renderTab();
     await waitFor(() => expect(screen.getByRole('button', { name: /save optimizers/i })).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: /save optimizers/i }));
@@ -232,26 +232,26 @@ describe('ProjectOptimizerTab', () => {
 
 // ── Profile assignment ───────────────────────────────────────────────────────
 
-const assignedProject = { ...mockProject, optimizerProfileId: 'optimizer-safe' };
+const assignedRouter = { ...mockRouter, optimizerProfileId: 'optimizer-safe' };
 
-/** Like renderTab, but keeps the project in state so setProject re-renders the tab. */
+/** Like renderTab, but keeps the router in state so setRouter re-renders the tab. */
 function renderStatefulTab(initial: Record<string, unknown>) {
   function LayoutWrapper() {
-    const [project, setProject] = React.useState(initial);
-    return <Outlet context={{ project, setProject }} />;
+    const [router, setRouter] = React.useState(initial);
+    return <Outlet context={{ router, setRouter }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/optimizer']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/optimizer']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="optimizer" element={<ProjectOptimizerTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="optimizer" element={<RouterOptimizerTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
   );
 }
 
-describe('ProjectOptimizerTab — optimizer profile assignment', () => {
+describe('RouterOptimizerTab — optimizer profile assignment', () => {
   it('starts in custom mode: steps editor and save button visible', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
@@ -287,14 +287,14 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
   });
 
   it('while assigned, hides the editor and lists the profile steps', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     await waitFor(() => expect(screen.getByLabelText('Optimizer Profile')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /save optimizers/i })).not.toBeInTheDocument();
     expect(screen.getByRole('listitem')).toHaveTextContent('Session Dedup');
   });
 
   it('lists built-in and user profiles in the select', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const select = await screen.findByLabelText('Optimizer Profile');
     const labels = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
     expect(labels).toContain('Safe (built-in)');
@@ -303,7 +303,7 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
 
   it('selecting another profile reassigns it', async () => {
     const user = userEvent.setup();
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const select = await screen.findByLabelText('Optimizer Profile');
     await user.selectOptions(select, 'custom-opt');
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: 'custom-opt' }));
@@ -311,12 +311,12 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
 
   it('switching to Custom clears the profile and prefills its steps', async () => {
     const user = userEvent.setup();
-    mockAssignProfile.mockResolvedValue({ ...mockProject, optimizers: { steps: [] } });
-    renderStatefulTab(assignedProject);
+    mockAssignProfile.mockResolvedValue({ ...mockRouter, optimizers: { steps: [] } });
+    renderStatefulTab(assignedRouter);
     await waitFor(() => expect(screen.getByLabelText('Optimizer Profile')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Custom' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: null }));
-    // The profile's enabled session-dedup step is now this project's own first row.
+    // The profile's enabled session-dedup step is now this router's own first row.
     await waitFor(() => expect(screen.getAllByRole('checkbox')[0]).toBeChecked());
     expect(screen.getAllByText(/Session Dedup/)[0]).toBeInTheDocument();
   });
@@ -347,7 +347,7 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
 
   it('a failed profiles fetch leaves the profile list empty', async () => {
     mockGetProfiles.mockRejectedValue(new Error('nope'));
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const select = await screen.findByLabelText('Optimizer Profile');
     expect(Array.from(select.querySelectorAll('option')).map(o => (o as HTMLOptionElement).value)).toEqual(['']);
   });
@@ -355,7 +355,7 @@ describe('ProjectOptimizerTab — optimizer profile assignment', () => {
 
 // ── Fixture preview and per-step diff (T63) ──────────────────────────────────
 
-describe('ProjectOptimizerTab — fixtures and diff', () => {
+describe('RouterOptimizerTab — fixtures and diff', () => {
   it('offers the shipped conversations and says real prompts are not recorded', async () => {
     renderTab();
     const select = await screen.findByLabelText('Prompt to preview');
@@ -451,12 +451,12 @@ describe('ProjectOptimizerTab — fixtures and diff', () => {
 
 // ── The model the sample is addressed to ─────────────────────────────────────
 
-describe('ProjectOptimizerTab — preview model', () => {
-  it('offers the project models with their context window', async () => {
+describe('RouterOptimizerTab — preview model', () => {
+  it('offers the router models with their context window', async () => {
     renderTab();
     const select = await screen.findByLabelText('Model to preview against');
     await waitFor(() => expect(screen.getByText('openai/gpt-4o (128k context)')).toBeInTheDocument());
-    // placeholder + 'no model' + the one project model
+    // placeholder + 'no model' + the one router model
     expect(select.querySelectorAll('option')).toHaveLength(3);
   });
 
@@ -482,9 +482,9 @@ describe('ProjectOptimizerTab — preview model', () => {
 
 // ── The optional LLMLingua-2 checkpoint, rendered inside its own row ─────────
 
-describe('ProjectOptimizerTab — llmlingua-2 checkpoints', () => {
+describe('RouterOptimizerTab — llmlingua-2 checkpoints', () => {
   const withStep = {
-    ...mockProject,
+    ...mockRouter,
     optimizers: { steps: [{ id: 'llmlingua-2', enabled: true }] },
   };
 
@@ -514,8 +514,8 @@ describe('ProjectOptimizerTab — llmlingua-2 checkpoints', () => {
     renderTab(withStep);
     await user.selectOptions(await screen.findByLabelText('LLMLingua-2 checkpoint'), 'xlm-roberta-large-int8');
     await user.click(screen.getByRole('button', { name: /save optimizers/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const [, payload] = mockUpdateProject.mock.calls[0] as [string, { optimizers: { steps: unknown[] } }];
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const [, payload] = mockUpdateRouter.mock.calls[0] as [string, { optimizers: { steps: unknown[] } }];
     expect(payload.optimizers.steps[0]).toEqual({ id: 'llmlingua-2', enabled: true, model: 'xlm-roberta-large-int8' });
   });
 });

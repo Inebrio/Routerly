@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
-import { extractProjectToken } from '../auth/auth.js'
+import { extractRouterToken } from '../auth/auth.js'
 import { MCP_TOOLS } from '../../core/tokens.js'
 import { buildMcpServer } from './server.js'
 import { buildAuthContext } from './auth-context.js'
@@ -21,7 +21,7 @@ import { buildAuthContext } from './auth-context.js'
  */
 export const mcpHttpRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/mcp', async (request, reply) => {
-    const incomingToken = extractProjectToken(request.headers)
+    const incomingToken = extractRouterToken(request.headers)
     if (!incomingToken) {
       return reply.status(401).send({
         error: 'unauthorized',

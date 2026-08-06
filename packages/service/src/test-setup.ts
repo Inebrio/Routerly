@@ -5,7 +5,7 @@ import { join } from 'node:path';
 // Data-safety: paths.ts resolves CONFIG_PATHS.base from process.env.ROUTERLY_HOME
 // at IMPORT time. Vitest loads this setupFile before any test module imports
 // paths.ts, so forcing an isolated home here guarantees tests never read or
-// write the real ~/.routerly (config/projects.json, data/usage.json, ...).
+// write the real ~/.routerly (config/routers.json, data/usage.json, ...).
 //
 // Always overwrite, even if ROUTERLY_HOME is already set: the dev shell may
 // export ROUTERLY_HOME=~/.routerly (see CLAUDE.local.md). Honoring a

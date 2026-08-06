@@ -5,11 +5,32 @@ vi.mock('./loader.js', () => ({
   writeConfig: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { migrateProjectConfigs, migrateSettings } from './migrate.js';
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs/promises')>()),
+  readFile: vi.fn(),
+}));
+
+import { readFile } from 'node:fs/promises';
+import {
+  migrateProjectConfigs,
+  migrateSettings,
+  migrateRouterStorage,
+  migrateRolePermissions,
+  migrateUsageRouterId,
+  migrateNotificationChannelScope,
+} from './migrate.js';
 import { readConfig, writeConfig } from './loader.js';
+import { CONFIG_PATHS } from '../../lib/paths.js';
 
 const mockReadConfig = vi.mocked(readConfig);
 const mockWriteConfig = vi.mocked(writeConfig);
+const mockReadFile = vi.mocked(readFile);
+
+function enoent(): NodeJS.ErrnoException {
+  const err = new Error('not found') as NodeJS.ErrnoException;
+  err.code = 'ENOENT';
+  return err;
+}
 
 afterEach(() => vi.clearAllMocks());
 
@@ -582,7 +603,7 @@ describe('migrateProjectConfigs — multi-project loop', () => {
 
     await migrateProjectConfigs();
 
-    expect(mockWriteConfig).toHaveBeenCalledWith('projects', expect.any(Array));
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', expect.any(Array));
     const saved = mockWriteConfig.mock.calls[0]![1] as any[];
     expect(saved).toHaveLength(1);
     expect(saved[0].id).toBe('p1');
@@ -607,6 +628,182 @@ describe('migrateSettings', () => {
     const dropped = await migrateSettings();
 
     expect(dropped).toEqual([]);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migrateRouterStorage (RTR-01: projects.json → routers.json) ─────────────
+
+describe('migrateRouterStorage', () => {
+  it('EC1: routers.json already exists → no-op, legacy file never read', async () => {
+    mockReadFile.mockResolvedValueOnce('[]');
+
+    const result = await migrateRouterStorage();
+
+    expect(result).toBeUndefined();
+    expect(mockReadFile).toHaveBeenCalledTimes(1);
+    expect(mockReadFile).toHaveBeenCalledWith(CONFIG_PATHS.routers, 'utf-8');
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('AC2: neither file exists (fresh install) → no-op, no write', async () => {
+    mockReadFile.mockRejectedValueOnce(enoent()).mockRejectedValueOnce(enoent());
+
+    const result = await migrateRouterStorage();
+
+    expect(result).toBeUndefined();
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('AC1/AC7: projects.json present with entities → migrated to routers.json unchanged, count returned', async () => {
+    const legacy = [
+      { id: 'p1', name: 'Alpha', models: [], tokens: [{ id: 't1' }], members: [{ userId: 'u1' }] },
+      { id: 'p2', name: 'Beta', models: [], tokens: [], members: [] },
+    ];
+    mockReadFile.mockRejectedValueOnce(enoent()).mockResolvedValueOnce(JSON.stringify(legacy));
+
+    const result = await migrateRouterStorage();
+
+    expect(result).toBe(2);
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', legacy);
+  });
+
+  it('EC2: projects.json present but empty array → migrates cleanly, count=0, no error', async () => {
+    mockReadFile.mockRejectedValueOnce(enoent()).mockResolvedValueOnce('[]');
+
+    const result = await migrateRouterStorage();
+
+    expect(result).toBe(0);
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', []);
+  });
+
+  it('EC3: projects.json present but not valid JSON → throws, no write', async () => {
+    mockReadFile.mockRejectedValueOnce(enoent()).mockResolvedValueOnce('{not json');
+
+    await expect(migrateRouterStorage()).rejects.toThrow(/not valid JSON/);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('EC3: projects.json present but not an array → throws, no write', async () => {
+    mockReadFile.mockRejectedValueOnce(enoent()).mockResolvedValueOnce('{"id":"p1"}');
+
+    await expect(migrateRouterStorage()).rejects.toThrow(/expected an array/);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('a non-ENOENT read error on routers.json propagates', async () => {
+    mockReadFile.mockRejectedValueOnce(new Error('EACCES: permission denied'));
+
+    await expect(migrateRouterStorage()).rejects.toThrow('EACCES');
+  });
+});
+
+// ─── migrateRolePermissions (RTR-01: project:read/write → router:read/write) ─
+
+describe('migrateRolePermissions', () => {
+  it('rewrites project:read/project:write on a custom role, writes back', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'r1', name: 'Custom', permissions: ['project:read', 'project:write', 'model:read'] },
+      { id: 'r2', name: 'Untouched', permissions: ['model:read'] },
+    ] as any);
+
+    const count = await migrateRolePermissions();
+
+    expect(count).toBe(1);
+    const saved = (mockWriteConfig.mock.calls[0]![1] as any[]);
+    expect(saved[0].permissions).toEqual(['router:read', 'router:write', 'model:read']);
+    expect(saved[1].permissions).toEqual(['model:read']);
+  });
+
+  it('EC1: no legacy permission strings present → no write, count=0', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'r1', name: 'Already migrated', permissions: ['router:read', 'router:write'] },
+    ] as any);
+
+    const count = await migrateRolePermissions();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migrateUsageRouterId (RTR-01: projectId → routerId) ──────────────────────
+
+describe('migrateUsageRouterId', () => {
+  it('renames projectId to routerId on every record, writes back', async () => {
+    mockReadConfig.mockResolvedValue([
+      { projectId: 'p1', modelId: 'm1', tokensIn: 10 },
+      { projectId: 'p2', modelId: 'm2', tokensIn: 20 },
+    ] as any);
+
+    const count = await migrateUsageRouterId();
+
+    expect(count).toBe(2);
+    const saved = (mockWriteConfig.mock.calls[0]![1] as any[]);
+    expect(saved[0]).toEqual({ modelId: 'm1', tokensIn: 10, routerId: 'p1' });
+    expect(saved[0].projectId).toBeUndefined();
+  });
+
+  it('EC1: first record already has no projectId → no-op, no write', async () => {
+    mockReadConfig.mockResolvedValue([
+      { routerId: 'r1', modelId: 'm1', tokensIn: 10 },
+    ] as any);
+
+    const count = await migrateUsageRouterId();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('EC2: empty usage array → no-op, no write', async () => {
+    mockReadConfig.mockResolvedValue([] as any);
+
+    const count = await migrateUsageRouterId();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migrateNotificationChannelScope (RTR-01: projectIds → routerIds) ────────
+
+describe('migrateNotificationChannelScope', () => {
+  it('renames projectIds to routerIds on channels that have it, writes settings back', async () => {
+    mockReadConfig.mockResolvedValue({
+      notifications: {
+        channels: [
+          { id: 'c1', type: 'slack', projectIds: ['p1', 'p2'] },
+          { id: 'c2', type: 'email' },
+        ],
+      },
+    } as any);
+
+    const count = await migrateNotificationChannelScope();
+
+    expect(count).toBe(1);
+    const saved = mockWriteConfig.mock.calls[0]![1] as any;
+    expect(saved.notifications.channels[0].routerIds).toEqual(['p1', 'p2']);
+    expect(saved.notifications.channels[0].projectIds).toBeUndefined();
+    expect(saved.notifications.channels[1].routerIds).toBeUndefined();
+  });
+
+  it('EC1: no channel has projectIds → no-op, no write', async () => {
+    mockReadConfig.mockResolvedValue({
+      notifications: { channels: [{ id: 'c1', type: 'email' }] },
+    } as any);
+
+    const count = await migrateNotificationChannelScope();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('EC2: no channels configured at all → no-op, no write', async () => {
+    mockReadConfig.mockResolvedValue({ notifications: {} } as any);
+
+    const count = await migrateNotificationChannelScope();
+
+    expect(count).toBe(0);
     expect(mockWriteConfig).not.toHaveBeenCalled();
   });
 });

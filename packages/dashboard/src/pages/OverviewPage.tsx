@@ -7,7 +7,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Coins, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
 import { CLIENT_REGISTRY } from '@routerly/shared';
-import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
+import { getUsage, getModels, getRouters, type UsageStats } from '../api.js';
 import { useClientsEnabled } from './ConnectPage.js';
 import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker.js';
@@ -37,7 +37,7 @@ export function OverviewPage() {
   }, []);
 
   const [modelCount, setModelCount] = useState(0);
-  const [projectCount, setProjectCount] = useState(0);
+  const [routerCount, setRouterCount] = useState(0);
   const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
   const chartTheme = useChartTheme();
 
@@ -60,7 +60,7 @@ export function OverviewPage() {
 
   useEffect(() => {
     getModels().then(m => setModelCount(m.length)).catch(console.error);
-    getProjects().then(p => setProjectCount(p.length)).catch(console.error);
+    getRouters().then(p => setRouterCount(p.length)).catch(console.error);
   }, []);
 
   const barData = useMemo(() => {
@@ -140,8 +140,8 @@ export function OverviewPage() {
             value={stats.summary.errorCalls} sub="failed requests" to="/dashboard/usage" />
           <StatCard icon={<Boxes size={18} />} label="Models" accentColor="#8B5CF6"
             value={modelCount} sub="registered" to="/dashboard/models" />
-          <StatCard icon={<FolderOpen size={18} />} label="Projects" accentColor="#A78BFA"
-            value={projectCount} sub="active" to="/dashboard/projects" />
+          <StatCard icon={<FolderOpen size={18} />} label="Routers" accentColor="#A78BFA"
+            value={routerCount} sub="active" to="/dashboard/routers" />
         </div>
 
         {/* What routing saved, over time (T81) */}

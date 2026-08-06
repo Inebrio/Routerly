@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as { version: string };
 import { makeAuthCommand } from './commands/auth.js';
 import { makeModelCommand } from './commands/model.js';
-import { makeProjectCommand } from './commands/project.js';
+import { makeRouterCommand } from './commands/router.js';
 import { makeUserCommand } from './commands/user.js';
 import { makeRoleCommand } from './commands/role.js';
 import { makeReportCommand } from './commands/report.js';
@@ -40,7 +40,7 @@ program
 program.addCommand(makeStatusCommand());
 program.addCommand(makeAuthCommand());
 program.addCommand(makeModelCommand());
-program.addCommand(makeProjectCommand());
+program.addCommand(makeRouterCommand());
 program.addCommand(makeUserCommand());
 program.addCommand(makeRoleCommand());
 program.addCommand(makeReportCommand());

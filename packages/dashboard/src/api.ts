@@ -303,22 +303,15 @@ export interface RoutingPolicy {
   config?: any;
 }
 
-export interface ProjectToken {
-  id: string;
-  tokenSnippet?: string;
-  createdAt: string;
-  lastUsedAt?: string;
-  expiresAt?: string;
-  models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>;
-  labels?: string[];
-  tags?: Record<string, string>;
-  scopes?: string[];
-}
+import type {
+  RouterConfig,
+  RouterToken as SharedRouterToken,
+  RouterMember,
+  RouterModelRef,
+} from '@routerly/shared';
 
-export interface ProjectMember {
-  userId: string;
-  role: string;
-}
+/** List/detail responses omit the raw token value: only creation returns it. */
+export type RouterToken = Omit<SharedRouterToken, 'token'>;
 
 export type GuardrailRuleType = 'regex' | 'semantic' | 'topic' | 'moderation';
 export type GuardrailTarget = 'request' | 'response' | 'both';
@@ -372,30 +365,19 @@ export interface PiiConfig {
   policies: PiiPolicy[];
 }
 
-export interface Project {
-  id: string; name: string; routingModelId?: string;
-  autoRouting?: boolean;
-  fallbackRoutingModelIds?: string[];
-  /** Assigned profile id per kind, or absent for this project's own inline config. */
-  routingProfileId?: string;
-  optimizerProfileId?: string;
-  securityProfileId?: string;
-  policies?: RoutingPolicy[];
-  models: { modelId: string; prompt?: string }[];
-  tokens?: ProjectToken[];
-  members?: ProjectMember[];
+/** Local response shape: same fields as the shared RouterConfig, but tokens
+ *  carry no raw token value (see RouterToken above) and models/members/tokens
+ *  are optional to match what list/detail responses actually send. */
+export type Router = Omit<RouterConfig, 'models' | 'tokens' | 'members'> & {
+  models: RouterModelRef[];
+  tokens?: RouterToken[];
+  members?: RouterMember[];
   token?: string;
-  timeoutMs?: number;
-  guardrails?: GuardrailConfig;
-  pii?: PiiConfig;
-  optimizers?: OptimizerConfig;
-  /** Capture prompts and answers in traces. Off = metadata only. */
-  traceContent?: boolean;
-}
+};
 
-export const getProjects = () => request<Project[]>('/projects');
+export const getRouters = () => request<Router[]>('/routers');
 
-export const createProject = (data: {
+export const createRouter = (data: {
   name: string;
   routingModelId?: string;
   autoRouting?: boolean;
@@ -403,9 +385,9 @@ export const createProject = (data: {
   policies?: RoutingPolicy[];
   models: { modelId: string; prompt?: string }[];
   timeoutMs?: number;
-}) => request<Project>('/projects', { method: 'POST', body: JSON.stringify(data) });
+}) => request<Router>('/routers', { method: 'POST', body: JSON.stringify(data) });
 
-export const updateProject = (id: string, data: {
+export const updateRouter = (id: string, data: {
   name: string;
   routingModelId?: string;
   autoRouting?: boolean;
@@ -417,19 +399,19 @@ export const updateProject = (id: string, data: {
   pii?: PiiConfig | null;
   optimizers?: OptimizerConfig | null;
   traceContent?: boolean;
-}) => request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-export const deleteProject = (id: string) => request<void>(`/projects/${id}`, { method: 'DELETE' });
-export const createProjectToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: ProjectToken }>(`/projects/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
-export const updateProjectToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<ProjectToken>(`/projects/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels, ...(tags !== undefined ? { tags } : {}), ...(scopes !== undefined ? { scopes } : {}) }) });
-export const deleteProjectToken = (id: string, tokenId: string) => request<void>(`/projects/${id}/tokens/${tokenId}`, { method: 'DELETE' });
+}) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });
+export const createRouterToken = (id: string, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<{ token: string; tokenInfo: RouterToken }>(`/routers/${id}/tokens`, { method: 'POST', body: JSON.stringify({ labels, ...(tags ? { tags } : {}), ...(scopes ? { scopes } : {}) }) });
+export const updateRouterToken = (id: string, tokenId: string, models?: Array<{ modelId: string; limitsMode?: LimitsMode; limits?: Limit[] }>, labels?: string[], tags?: Record<string, string>, scopes?: string[]) => request<RouterToken>(`/routers/${id}/tokens/${tokenId}`, { method: 'PUT', body: JSON.stringify({ models, labels, ...(tags !== undefined ? { tags } : {}), ...(scopes !== undefined ? { scopes } : {}) }) });
+export const deleteRouterToken = (id: string, tokenId: string) => request<void>(`/routers/${id}/tokens/${tokenId}`, { method: 'DELETE' });
 
-export const addProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members`, { method: 'POST', body: JSON.stringify({ userId, role }) });
-export const updateProjectMember = (id: string, userId: string, role: string) => request<ProjectMember>(`/projects/${id}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ role }) });
-export const removeProjectMember = (id: string, userId: string) => request<void>(`/projects/${id}/members/${userId}`, { method: 'DELETE' });
+export const addRouterMember = (id: string, userId: string, role: string) => request<RouterMember>(`/routers/${id}/members`, { method: 'POST', body: JSON.stringify({ userId, role }) });
+export const updateRouterMember = (id: string, userId: string, role: string) => request<RouterMember>(`/routers/${id}/members/${userId}`, { method: 'PUT', body: JSON.stringify({ role }) });
+export const removeRouterMember = (id: string, userId: string) => request<void>(`/routers/${id}/members/${userId}`, { method: 'DELETE' });
 
 // ── Users ─────────────────────────────────────────────────────────────────
 export interface User {
-  id: string; email: string; roleId: string; projectIds: string[];
+  id: string; email: string; roleId: string; routerIds: string[];
   permissions?: string[];
   totpEnabled?: boolean;
 }
@@ -443,7 +425,7 @@ export const deleteUser = (id: string) => request<void>(`/users/${id}`, { method
 
 // ── Roles ───────────────────────────────────────────────────────────────────────────────────
 export const ALL_PERMISSIONS = [
-  'project:read', 'project:write',
+  'router:read', 'router:write',
   'model:read', 'model:write',
   'user:read', 'user:write',
   'report:read',
@@ -506,12 +488,12 @@ export interface TraceEntry {
   module?: string;
   phase?: string;
   at?: number;
-  /** Prompts and answers. Present only for projects that opted in. */
+  /** Prompts and answers. Present only for routers that opted in. */
   content?: Record<string, unknown>;
 }
 
 export interface UsageRecord {
-  id: string; timestamp: string; projectId: string; modelId: string;
+  id: string; timestamp: string; routerId: string; modelId: string;
   inputTokens: number; outputTokens: number; cachedInputTokens?: number; cost: number; latencyMs: number; ttftMs?: number; tokensPerSec?: number; outcome: string;
   callType?: 'routing' | 'completion' | 'guardrail' | 'judge';
   requestType?: RequestType;
@@ -520,7 +502,7 @@ export interface UsageRecord {
   guardrailTriggered?: string;
   blockedBy?: string;
   piiRedacted?: string[];
-  /** Project token the call authenticated with. Absent on records written before it was tracked. */
+  /** Router token the call authenticated with. Absent on records written before it was tracked. */
   tokenId?: string;
 }
 
@@ -551,12 +533,12 @@ export interface UsageStats {
 
 export interface GetUsageOptions {
   period?: string;
-  projectId?: string;
+  routerId?: string;
   from?: string;
   to?: string;
   page?: number;
   pageSize?: number;
-  projectIds?: string[];
+  routerIds?: string[];
   modelIds?: string[];
   tokenIds?: string[];
   callType?: string;
@@ -568,14 +550,14 @@ export interface GetUsageOptions {
   series?: boolean;
 }
 
-export const getUsage = (period = 'monthly', projectId?: string, from?: string, to?: string, page?: number, pageSize?: number, opts?: GetUsageOptions) => {
+export const getUsage = (period = 'monthly', routerId?: string, from?: string, to?: string, page?: number, pageSize?: number, opts?: GetUsageOptions) => {
   const params = new URLSearchParams({ period });
-  if (projectId) params.set('projectId', projectId);
+  if (routerId) params.set('routerId', routerId);
   if (from) params.set('from', from);
   if (to)   params.set('to', to);
   if (page != null) params.set('page', String(page));
   if (pageSize != null) params.set('pageSize', String(pageSize));
-  if (opts?.projectIds?.length) params.set('projectIds', opts.projectIds.join(','));
+  if (opts?.routerIds?.length) params.set('routerIds', opts.routerIds.join(','));
   if (opts?.modelIds?.length)   params.set('modelIds',   opts.modelIds.join(','));
   if (opts?.tokenIds?.length)   params.set('tokenIds',   opts.tokenIds.join(','));
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
@@ -594,7 +576,7 @@ export const getTrace = (id: string) =>
 
 export interface TraceStreamEvent {
   traceId: string;
-  projectId?: string;
+  routerId?: string;
   correlationId?: string;
   topic: string;
   entry: TraceEntry;
@@ -608,7 +590,7 @@ export interface TraceStreamEvent {
  * fetch, not EventSource: the bearer token has to travel in a header.
  */
 export async function streamTraces(
-  query: { correlationId?: string; projectId?: string; traceId?: string },
+  query: { correlationId?: string; routerId?: string; traceId?: string },
   onEvent: (event: TraceStreamEvent) => void,
 ): Promise<() => void> {
   const controller = new AbortController();
@@ -908,14 +890,14 @@ export interface PlaygroundPreset {
   messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
-export const getPlaygroundPresets = (projectId: string) =>
-  request<PlaygroundPreset[]>(`/projects/${projectId}/playground-presets`);
+export const getPlaygroundPresets = (routerId: string) =>
+  request<PlaygroundPreset[]>(`/routers/${routerId}/playground-presets`);
 
-export const createPlaygroundPreset = (projectId: string, data: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> }) =>
-  request<PlaygroundPreset>(`/projects/${projectId}/playground-presets`, { method: 'POST', body: JSON.stringify(data) });
+export const createPlaygroundPreset = (routerId: string, data: { name: string; systemPrompt: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> }) =>
+  request<PlaygroundPreset>(`/routers/${routerId}/playground-presets`, { method: 'POST', body: JSON.stringify(data) });
 
-export const deletePlaygroundPreset = (projectId: string, presetId: string) =>
-  request<void>(`/projects/${projectId}/playground-presets/${presetId}`, { method: 'DELETE' });
+export const deletePlaygroundPreset = (routerId: string, presetId: string) =>
+  request<void>(`/routers/${routerId}/playground-presets/${presetId}`, { method: 'DELETE' });
 
 // ── Audit ─────────────────────────────────────────────────────────────────────
 
@@ -978,7 +960,7 @@ export const getProviderDescriptors = () => request<ProviderDescriptor[]>('/prov
 
 /**
  * Connection as returned by the API. Secrets are redacted server-side; only non-secret
- * cloud config fields (region, resource names, project id) are returned so the edit form
+ * cloud config fields (region, resource names, router id) are returned so the edit form
  * can prefill them, exactly like the model detail form.
  */
 export interface Connection {
@@ -1089,10 +1071,10 @@ export const updateProfile = (id: string, data: UpdateProfileBody) =>
   request<Profile>(`/profiles/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
 export const deleteProfile = (id: string) => request<void>(`/profiles/${encodeURIComponent(id)}`, { method: 'DELETE' });
 /** Assigns or clears (null) one or more kinds at once. Omitted kinds are left as they are. */
-export const assignProjectProfiles = (
-  projectId: string,
+export const assignRouterProfiles = (
+  routerId: string,
   body: Partial<Record<ProfileKind, string | null>>,
-) => request<Project>(`/projects/${encodeURIComponent(projectId)}/profiles`, { method: 'PUT', body: JSON.stringify(body) });
+) => request<Router>(`/routers/${encodeURIComponent(routerId)}/profiles`, { method: 'PUT', body: JSON.stringify(body) });
 
 // ── Experiments (T73) ─────────────────────────────────────────────────────────
 
@@ -1108,7 +1090,7 @@ export type {
 import type { ExperimentConfig, ExperimentJudge, ExperimentMetrics, ExperimentRotation, ExperimentStickyKey, ExperimentVariant } from '@routerly/shared';
 
 /** The list and detail routes blank out the token value: only creation returns it. */
-export type MaskedExperiment = Omit<ExperimentConfig, 'tokens'> & { tokens: ProjectToken[] };
+export type MaskedExperiment = Omit<ExperimentConfig, 'tokens'> & { tokens: RouterToken[] };
 
 /** A variant added in the form has no id yet: the service mints one on save. */
 export type ExperimentVariantInput = Omit<ExperimentVariant, 'id'> & { id?: string };
@@ -1141,7 +1123,7 @@ export const createExperiment = (data: CreateExperimentBody) =>
 export const updateExperiment = (id: string, data: UpdateExperimentBody) =>
   request<MaskedExperiment>(`/experiments/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(data) });
 export const createExperimentToken = (id: string) =>
-  request<{ token: string; tokenInfo: ProjectToken }>(`/experiments/${encodeURIComponent(id)}/tokens`, { method: 'POST' });
+  request<{ token: string; tokenInfo: RouterToken }>(`/experiments/${encodeURIComponent(id)}/tokens`, { method: 'POST' });
 export const deleteExperimentToken = (id: string, tokenId: string) =>
   request<void>(`/experiments/${encodeURIComponent(id)}/tokens/${encodeURIComponent(tokenId)}`, { method: 'DELETE' });
 export const deleteExperiment = (id: string) =>
@@ -1180,7 +1162,7 @@ export interface OptimizerPreviewResult {
 }
 
 export const previewOptimizers = (body: {
-  projectId?: string;
+  routerId?: string;
   /** Model the sample is addressed to, so context-window steps have a window. */
   model?: string;
   sampleMessages: Message[];

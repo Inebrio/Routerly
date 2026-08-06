@@ -47,7 +47,7 @@ function makeModel(id = 'm1') {
   } as any
 }
 
-function makeProject(modelId = 'm1') {
+function makeRouter(modelId = 'm1') {
   return {
     id: 'proj-1', name: 'Test', tokens: [], members: [],
     models: [{ modelId }],
@@ -57,8 +57,8 @@ function makeProject(modelId = 'm1') {
 
 function makeCtx(override: any = {}): any {
   return {
-    projectId: 'proj-1',
-    project: makeProject(),
+    routerId: 'proj-1',
+    router: makeRouter(),
     callType: 'completion' as const,
     ...override,
   }
@@ -145,11 +145,11 @@ describe('llmChat', () => {
     expect(emitted.some(e => e.message === 'model:error')).toBe(true)
   })
 
-  it('uses isAllowedForRoutingModel when model not in project', async () => {
+  it('uses isAllowedForRoutingModel when model not in router', async () => {
     mockIsAllowedForRouting.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
 
-    const ctx = makeCtx({ project: { ...makeProject('other-model'), models: [{ modelId: 'other-model' }] } })
+    const ctx = makeCtx({ router: { ...makeRouter('other-model'), models: [{ modelId: 'other-model' }] } })
     await llmChat({ messages: [] } as any, makeModel('m1'), ctx)
     expect(mockIsAllowedForRouting).toHaveBeenCalled()
   })
@@ -161,7 +161,7 @@ describe('llmChat', () => {
     const emitted: any[] = []
     const ctx = makeCtx({
       callType: 'routing',
-      project: { ...makeProject('other'), models: [] },
+      router: { ...makeRouter('other'), models: [] },
       emit: (e: any) => emitted.push(e),
     })
     await llmChat({ messages: [{ role: 'system', content: 'route' }] } as any, makeModel(), ctx)
@@ -176,7 +176,7 @@ describe('llmChat', () => {
     const emitted: any[] = []
     const ctx = makeCtx({
       callType: 'guardrail',
-      project: { ...makeProject('other'), models: [] },
+      router: { ...makeRouter('other'), models: [] },
       emit: (e: any) => emitted.push(e),
     })
     await llmChat({ messages: [{ role: 'user', content: 'judge' }] } as any, makeModel(), ctx)
@@ -186,7 +186,7 @@ describe('llmChat', () => {
   })
 
   it('guardrail callType is still budget-gated (BUG-5)', async () => {
-    mockIsAllowed.mockResolvedValue(false) // model is a project candidate, over limit
+    mockIsAllowed.mockResolvedValue(false) // model is a router candidate, over limit
     const ctx = makeCtx({ callType: 'guardrail' })
     await expect(llmChat({ messages: [] } as any, makeModel(), ctx)).rejects.toThrow(BudgetExceededError)
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ callType: 'guardrail', errorMessage: 'budget_exceeded' }))
@@ -239,7 +239,7 @@ describe('llmChat', () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
     const emitted: any[] = []
-    const ctx = makeCtx({ emit: (e: any) => emitted.push(e), callType: 'routing' as const, project: { ...makeProject('other'), models: [] } })
+    const ctx = makeCtx({ emit: (e: any) => emitted.push(e), callType: 'routing' as const, router: { ...makeRouter('other'), models: [] } })
     mockIsAllowedForRouting.mockResolvedValue(true)
     await llmChat({ messages: [{ role: 'system', content: 'sys' }], max_completion_tokens: 50, temperature: 0.7 } as any, makeModel(), ctx)
     const reqEntry = emitted.find(e => e.message === 'model:request')
@@ -274,7 +274,7 @@ describe('llmChat', () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
 
-    const ctx = makeCtx({ project: makeProject('inst-2') })
+    const ctx = makeCtx({ router: makeRouter('inst-2') })
     await llmChat({ messages: [] } as any, makeModel('inst-2'), ctx)
     expect(mockGetProvider).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'sk-instance-key' }))
   })
@@ -384,7 +384,7 @@ describe('llmStream', () => {
     expect(emitted.some(e => e.message === 'model:thinking')).toBe(true)
   })
 
-  it('project timeoutMs 0 disables the TTFT timeout', async () => {
+  it('router timeoutMs 0 disables the TTFT timeout', async () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({
       streamCompletion: vi.fn().mockReturnValue({
@@ -397,7 +397,7 @@ describe('llmStream', () => {
       }),
     } as any)
 
-    const ctx = makeCtx({ project: { ...makeProject(), timeoutMs: 0 } })
+    const ctx = makeCtx({ router: { ...makeRouter(), timeoutMs: 0 } })
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
     const collected: any[] = []
     for await (const c of result.chunks) collected.push(c)
@@ -406,7 +406,7 @@ describe('llmStream', () => {
     expect(collected).toHaveLength(1)
   })
 
-  it('records timeout outcome when TTFT exceeds project timeoutMs', async () => {
+  it('records timeout outcome when TTFT exceeds router timeoutMs', async () => {
     mockIsAllowed.mockResolvedValue(true)
     let resolveNever: () => void
     const neverFirst = new Promise<void>(r => { resolveNever = r })
@@ -420,7 +420,7 @@ describe('llmStream', () => {
       }),
     } as any)
 
-    const ctxWithTimeout = makeCtx({ project: { ...makeProject(), timeoutMs: 50 } })
+    const ctxWithTimeout = makeCtx({ router: { ...makeRouter(), timeoutMs: 50 } })
     await expect(llmStream({ messages: [] } as any, makeModel(), ctxWithTimeout)).rejects.toThrow('TTFT timeout')
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
 
@@ -524,7 +524,7 @@ describe('llmChat — additional branches', () => {
   it('uses routing model budget check and includes traceId in checkBudget when budget exceeded', async () => {
     // Line 112: traceId branch in checkBudget when using isAllowedForRoutingModel
     mockIsAllowedForRouting.mockResolvedValue(false)
-    const ctx = makeCtx({ callType: 'routing', traceId: 'chk-trace-routing', project: { ...makeProject('other'), models: [] } })
+    const ctx = makeCtx({ callType: 'routing', traceId: 'chk-trace-routing', router: { ...makeRouter('other'), models: [] } })
     await expect(llmChat({ messages: [] } as any, makeModel('m1'), ctx)).rejects.toThrow(BudgetExceededError)
     expect(mockIsAllowedForRouting).toHaveBeenCalled()
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ traceId: 'chk-trace-routing' }))
@@ -563,7 +563,7 @@ describe('llmChat — additional branches', () => {
     const emitted: any[] = []
     const ctx = makeCtx({
       callType: 'routing',
-      project: { ...makeProject('other'), models: [] },
+      router: { ...makeRouter('other'), models: [] },
       emit: (e: any) => emitted.push(e),
     })
     const result = await llmChat({ messages: [{ role: 'system', content: 'route' }] } as any, makeModel(), ctx)
@@ -649,7 +649,7 @@ describe('llmChat — additional branches', () => {
     }))
   })
 
-  it('records the project token the call came in on (T211)', async () => {
+  it('records the router token the call came in on (T211)', async () => {
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
     const ctx = makeCtx({ token: { id: 'tok-1', token: 'sk-rt-x', createdAt: new Date().toISOString() } })
@@ -1222,8 +1222,8 @@ describe('llmStream — .catch(() => {}) coverage for emitEvent rejections', () 
 
 describe('checkBudget — budget reset and threshold paths', () => {
   it('emits budget.reset when previously-exceeded budget is now allowed (lines 162-167)', async () => {
-    // Use model that IS in the project so isAllowed (not isAllowedForRoutingModel) is called
-    const model = makeModel('m1') // makeProject defaults to modelId='m1'
+    // Use model that IS in the router so isAllowed (not isAllowedForRoutingModel) is called
+    const model = makeModel('m1') // makeRouter defaults to modelId='m1'
     // Step 1: exhaust budget to set the budgetExceededKeys entry
     mockIsAllowed.mockResolvedValueOnce(false)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
@@ -1254,7 +1254,7 @@ describe('checkBudget — budget reset and threshold paths', () => {
     const model = makeModel('routing-m1')
     mockIsAllowedForRouting.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
-    const ctx = makeCtx({ callType: 'routing', project: { ...makeProject('other'), models: [] } })
+    const ctx = makeCtx({ callType: 'routing', router: { ...makeRouter('other'), models: [] } })
     await llmChat({ messages: [] } as any, model, ctx)
     // getLimitUsageSnapshot should NOT be called for routing callType
     expect(mockGetLimitUsage).not.toHaveBeenCalled()
@@ -1294,7 +1294,7 @@ describe('checkBudget — budget reset and threshold paths', () => {
     // Step 2: exhaust budget for m2 → budgetExceededKeys gets 'proj-1:m2'
     const m2 = makeModel('m2')
     mockIsAllowed.mockResolvedValueOnce(false)
-    const ctx2 = makeCtx({ project: { ...makeProject('m2'), models: [{ modelId: 'm2' }] } })
+    const ctx2 = makeCtx({ router: { ...makeRouter('m2'), models: [{ modelId: 'm2' }] } })
     await expect(llmChat({ messages: [] } as any, m2, ctx2)).rejects.toThrow(BudgetExceededError)
 
     // Step 3: reset budget for m2 → iterates thresholdFiredKeys, 'proj-1:m1:daily' doesn't start with 'proj-1:m2:'
@@ -1318,8 +1318,8 @@ describe('checkBudget — budget reset and threshold paths', () => {
   it('line 157 true: emits budget.exceeded with log when ctx.log is defined', async () => {
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     const model = makeModel('log-m157') // use unique model id
-    // Make the model a project candidate so isAllowed (not isAllowedForRoutingModel) is called
-    const ctx = makeCtx({ log, project: { ...makeProject('log-m157'), models: [{ modelId: 'log-m157' }] } })
+    // Make the model a router candidate so isAllowed (not isAllowedForRoutingModel) is called
+    const ctx = makeCtx({ log, router: { ...makeRouter('log-m157'), models: [{ modelId: 'log-m157' }] } })
     mockIsAllowed.mockResolvedValueOnce(false)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
     await expect(llmChat({ messages: [] } as any, model, ctx)).rejects.toThrow(BudgetExceededError)
@@ -1329,7 +1329,7 @@ describe('checkBudget — budget reset and threshold paths', () => {
   it('line 167 true: emits budget.reset with log when ctx.log is defined', async () => {
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     const model = makeModel('log-m167')
-    const ctx = makeCtx({ log, project: { ...makeProject('log-m167'), models: [{ modelId: 'log-m167' }] } })
+    const ctx = makeCtx({ log, router: { ...makeRouter('log-m167'), models: [{ modelId: 'log-m167' }] } })
     // Step 1: exceed budget to set budgetExceededKeys
     mockIsAllowed.mockResolvedValueOnce(false)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
@@ -1345,7 +1345,7 @@ describe('checkBudget — budget reset and threshold paths', () => {
   it('line 181 true: emits budget.threshold_reached with log when ctx.log is defined', async () => {
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     const model = makeModel('log-m181')
-    const ctx = makeCtx({ callType: 'completion', log, project: { ...makeProject('log-m181'), models: [{ modelId: 'log-m181' }] } })
+    const ctx = makeCtx({ callType: 'completion', log, router: { ...makeRouter('log-m181'), models: [{ modelId: 'log-m181' }] } })
     mockIsAllowed.mockResolvedValue(true)
     mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
@@ -1406,7 +1406,7 @@ describe('checkBudget — threshold snap branches (lines 174/176)', () => {
     // snap.value > 0 AND snap.current/snap.value >= 0.8 → fires threshold event (branch=0 = condition true)
     // !thresholdFiredKeys.has(tKey) → true (not fired yet, branch=0 = true)
     const model = makeModel('thresh-model')
-    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('thresh-model'), models: [{ modelId: 'thresh-model' }] } })
+    const ctx = makeCtx({ callType: 'completion', router: { ...makeRouter('thresh-model'), models: [{ modelId: 'thresh-model' }] } })
     mockIsAllowed.mockResolvedValue(true)
     // 8/10 = 80% → meets >= 0.8 threshold
     mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 8 }] as any)
@@ -1419,7 +1419,7 @@ describe('checkBudget — threshold snap branches (lines 174/176)', () => {
   it('skips already-fired threshold (line 176 if branch=1)', async () => {
     // On first call, threshold fires and tKey is added. On second call, tKey is already in set → skip
     const model = makeModel('thresh-model-repeat')
-    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('thresh-model-repeat'), models: [{ modelId: 'thresh-model-repeat' }] } })
+    const ctx = makeCtx({ callType: 'completion', router: { ...makeRouter('thresh-model-repeat'), models: [{ modelId: 'thresh-model-repeat' }] } })
     mockIsAllowed.mockResolvedValue(true)
     mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
@@ -1439,7 +1439,7 @@ describe('checkBudget — snap below threshold (line 174 if branch=1)', () => {
   it('does not fire threshold event when snap is below 80% (line 174 if branch=1)', async () => {
     // snap.value > 0 AND snap.current/snap.value < 0.8 → condition FALSE → branch=1 → no event
     const model = makeModel('below-thresh')
-    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('below-thresh'), models: [{ modelId: 'below-thresh' }] } })
+    const ctx = makeCtx({ callType: 'completion', router: { ...makeRouter('below-thresh'), models: [{ modelId: 'below-thresh' }] } })
     mockIsAllowed.mockResolvedValue(true)
     // 5/10 = 50% → below 0.8 threshold
     mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 5 }] as any)
@@ -1460,7 +1460,7 @@ describe('llmStream — callType routing (lines 387+407 branches)', () => {
 
     const ctx = makeCtx({
       callType: 'routing' as const,
-      project: { ...makeProject('other'), timeoutMs: 5000, models: [] },
+      router: { ...makeRouter('other'), timeoutMs: 5000, models: [] },
     })
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
     const collected: any[] = []
@@ -1491,7 +1491,7 @@ describe('llmStream — callType routing (lines 387+407 branches)', () => {
 describe('checkBudget — threshold .catch coverage (line 181 .catch)', () => {
   it('line 181 .catch: swallows emitEvent rejection on budget.threshold_reached', async () => {
     const model = makeModel('catch-model-181')
-    const ctx = makeCtx({ callType: 'completion', project: { ...makeProject('catch-model-181'), models: [{ modelId: 'catch-model-181' }] } })
+    const ctx = makeCtx({ callType: 'completion', router: { ...makeRouter('catch-model-181'), models: [{ modelId: 'catch-model-181' }] } })
     mockIsAllowed.mockResolvedValue(true)
     mockGetLimitUsage.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 9 }] as any)
     mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockResolvedValue(makeChatResponse()) } as any)
@@ -1721,7 +1721,7 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     expect(store.records[0]!.fault).toEqual({ category: 'server' })
     expect(mockEmitEvent).toHaveBeenCalledWith(
       'provider.degraded', 'warning',
-      { modelId: 'resilience-degrade', provider: 'openai', consecutiveErrors: 3, projectId: 'proj-1' },
+      { modelId: 'resilience-degrade', provider: 'openai', consecutiveErrors: 3, routerId: 'proj-1' },
       {},
     )
   })
@@ -1740,7 +1740,7 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
     expect(mockEmitEvent).toHaveBeenCalledWith(
       'provider.recovered', 'info',
-      { modelId: 'resilience-recover', provider: 'openai', projectId: 'proj-1' },
+      { modelId: 'resilience-recover', provider: 'openai', routerId: 'proj-1' },
       {},
     )
   })
@@ -1756,7 +1756,7 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     await expect(llmChat({ messages: [] } as any, model, makeCtx())).rejects.toThrow('boom')
     expect(mockEmitEvent).toHaveBeenCalledWith(
       'provider.degraded', 'warning',
-      { modelId: 'resilience-no-store', provider: 'openai', consecutiveErrors: 3, projectId: 'proj-1' },
+      { modelId: 'resilience-no-store', provider: 'openai', consecutiveErrors: 3, routerId: 'proj-1' },
       {},
     )
   })

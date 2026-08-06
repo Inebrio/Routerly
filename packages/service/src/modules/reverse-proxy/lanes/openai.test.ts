@@ -410,7 +410,7 @@ describe('buildOpenAIContext', () => {
       body: { model: 'gpt-4o', messages: [], stream: false },
       headers: {},
       log: makeLog(),
-      project: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
+      router: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
       ...overrides,
     } as any
   }
@@ -446,7 +446,7 @@ describe('/v1/responses on the openai lane', () => {
       body,
       headers: {},
       log: makeLog(),
-      project: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
+      router: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
     } as any
   }
 
@@ -542,7 +542,7 @@ describe('/v1/responses on the openai lane', () => {
     })())
     const ctx = {
       protocol: 'openai', responsesApi: true, stream: true, traceId: 't1',
-      log: makeLog(), project: { id: 'p1', models: [] }, request: { model: 'sub', messages: [] },
+      log: makeLog(), router: { id: 'p1', models: [] }, request: { model: 'sub', messages: [] },
       attempt: { model: oauthModel, candidate: { model: 'sub', weight: 1 } },
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
@@ -581,7 +581,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: false, traceId: 't-nostream',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      project: { id: 'p1' },
+      router: { id: 'p1' },
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(ctx.result).toEqual({
@@ -604,7 +604,7 @@ describe('openai:upstream', () => {
       traceId: 't1',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      project: { id: 'p1', pii: undefined },
+      router: { id: 'p1', pii: undefined },
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(ctx.passthrough).toBe(true)
@@ -629,7 +629,7 @@ describe('openai:upstream', () => {
       req: { headers: {} }, traceId: 't1',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      project: { id: 'p1' },
+      router: { id: 'p1' },
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(rawHeaders['Access-Control-Allow-Origin']).toBeUndefined()
@@ -647,7 +647,7 @@ describe('openai:upstream', () => {
       req: { headers: { origin: 'https://app.example.com' } }, traceId: 't1',
       attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
       request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      project: { id: 'p1' },
+      router: { id: 'p1' },
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(rawHeaders['Access-Control-Allow-Origin']).toBe('https://app.example.com')
@@ -664,7 +664,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: true,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [], user: 'end-user-1' }, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       token: { id: 'tok-1', token: 'x', createdAt: '2024', tags: { env: 'prod' } },
       guardrailTriggered: 'rule-1', piiRedacted: ['EMAIL'], conversationId: 'conv-1',
     } as unknown as ProxyContext
@@ -680,7 +680,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: true,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(log.warn).toHaveBeenCalledOnce()
@@ -694,7 +694,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: true,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(log.warn).not.toHaveBeenCalled()
@@ -712,7 +712,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: false,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(mockLlmChat).toHaveBeenCalledOnce()
@@ -727,7 +727,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: false,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(log.warn).toHaveBeenCalledOnce()
@@ -741,7 +741,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: false,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(log.warn).not.toHaveBeenCalled()
@@ -756,7 +756,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: false,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(ctx.attemptError).toBe(sdkErr)
@@ -771,7 +771,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: true,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log,
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(ctx.attemptError).toBe(err)
@@ -784,7 +784,7 @@ describe('openai:upstream', () => {
       protocol: 'openai', stream: false,
       attempt: { model, candidate },
       request: { model: 'model-a', messages: [] }, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
     } as unknown as ProxyContext
     await openaiUpstream.run(ctx)
     expect(ctx.attemptError).toBeUndefined()
@@ -825,7 +825,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { model: 'm', messages: [] },
       candidates: [{ model: 'missing-model', weight: 5 }, { model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
@@ -844,7 +844,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { model: 'm', messages: [] },
       candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
     } as unknown as ProxyContext
@@ -852,7 +852,7 @@ describe('openai:attempt', () => {
     expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
     expect(mockEmitEvent).toHaveBeenCalledWith(
       'routing.fallback_used', 'info',
-      expect.objectContaining({ projectId: 'p1', primaryModelId: 'model-a', fallbackModelId: 'model-b' }),
+      expect.objectContaining({ routerId: 'p1', primaryModelId: 'model-a', fallbackModelId: 'model-b' }),
       expect.anything(),
     )
   })
@@ -867,7 +867,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { model: 'requested-model', messages: [] },
       candidates: [{ model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
@@ -878,7 +878,7 @@ describe('openai:attempt', () => {
     })
     expect(mockEmitEvent).toHaveBeenCalledWith(
       'routing.no_candidates', 'critical',
-      expect.objectContaining({ projectId: 'p1', requestedModel: 'requested-model' }),
+      expect.objectContaining({ routerId: 'p1', requestedModel: 'requested-model' }),
       expect.anything(),
     )
   })
@@ -894,7 +894,7 @@ describe('openai:attempt', () => {
     const entries: { message: string }[] = []
     const ctx = {
       protocol: 'openai', stream: true, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't-stream-1',
+      router: { id: 'p1' }, traceId: 't-stream-1',
       request: { messages: [] },
       candidates: [{ model: 'model-a', weight: 1 }],
       emit: (e: { message: string }) => entries.push(e),
@@ -915,7 +915,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { messages: [] },
     } as unknown as ProxyContext
     await openaiAttempt.run(ctx)
@@ -932,7 +932,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { messages: [] },
       candidates: [{ model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
@@ -960,7 +960,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { model: 'm', messages: [] },
       candidates: [{ model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
@@ -981,7 +981,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       request: { model: 'm', messages: [] },
       candidates: [{ model: 'model-a', weight: 3 }, { model: 'model-b', weight: 2 }, { model: 'model-c', weight: 1 }],
     } as unknown as ProxyContext
@@ -1001,7 +1001,7 @@ describe('openai:attempt', () => {
     setProxyPipeline(reg)
     const ctx = {
       protocol: 'openai', stream: false, log: makeLog(),
-      project: { id: 'p1' }, traceId: 't1',
+      router: { id: 'p1' }, traceId: 't1',
       requestInjection: 'Follow the guardrail.',
       request: { model: 'm', messages: [{ role: 'system', content: 'Base prompt.' }] },
       candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
@@ -1043,7 +1043,7 @@ describe('openai:attempt', () => {
       const t0 = Date.now()
       const ctx = {
         protocol: 'openai', stream: false, log: makeLog(),
-        project: { id: 'p1' }, traceId: 't1',
+        router: { id: 'p1' }, traceId: 't1',
         request: { model: 'm', messages: [] },
         candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
       } as unknown as ProxyContext
@@ -1069,7 +1069,7 @@ describe('openai:attempt', () => {
       setProxyPipeline(reg)
       const ctx = {
         protocol: 'openai', stream: false, log: makeLog(),
-        project: { id: 'p1' }, traceId: 't1',
+        router: { id: 'p1' }, traceId: 't1',
         request: { model: 'm', messages: [] },
         candidates: [{ model: 'model-a', weight: 1 }],
       } as unknown as ProxyContext

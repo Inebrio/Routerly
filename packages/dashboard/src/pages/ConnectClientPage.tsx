@@ -131,8 +131,8 @@ export function ConnectClientPage() {
               {client.configKind === 'ui'
                 ? `Set these values in ${client.configPathHint}.`
                 : <>Put this in <code>{client.configPathHint}</code>.</>}
-              {' '}Replace <code>{PLACEHOLDER_TOKEN}</code> with a project token:{' '}
-              <Link to="/dashboard/projects">create one</Link> on the Projects page.
+              {' '}Replace <code>{PLACEHOLDER_TOKEN}</code> with a router token:{' '}
+              <Link to="/dashboard/routers">create one</Link> on the Routers page.
             </p>
             <CopyBlock text={snippet} />
             {client.modes.includes('llm') && (

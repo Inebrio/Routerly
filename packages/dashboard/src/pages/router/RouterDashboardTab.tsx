@@ -10,26 +10,26 @@ const ms = (n: number | undefined) => (n == null ? '—' : `${Math.round(n).toLo
 const usd = (n: number) => `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`;
 
 /**
- * Project Dashboard (T62). The first thing a project shows: what the routing
- * saved against the project's own target models, how fast it answered, and how
+ * Router Dashboard (T62). The first thing a router shows: what the routing
+ * saved against the router's own target models, how fast it answered, and how
  * reliable it was. Every figure comes from the same `GET /api/usage` the Logs
  * tab reads, so the two tabs can never disagree.
  */
-export function ProjectDashboardTab() {
-  const { id: projectId } = useParams<{ id: string }>();
+export function RouterDashboardTab() {
+  const { id: routerId } = useParams<{ id: string }>();
 
   const [stats, setStats]   = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr]       = useState('');
   const [dateRange, setDateRange] = useFilterState<DateRange>({
-    key: `project-${projectId}-dashboard-dateRange`,
+    key: `router-${routerId}-dashboard-dateRange`,
     defaultValue: { from: '', to: '', label: 'This month' },
     deserialize: parseStoredRange,
   });
 
   const fetchStats = useCallback(() => {
     /* v8 ignore next */
-    if (!projectId) return Promise.resolve();
+    if (!routerId) return Promise.resolve();
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
     const recentPreset = RECENT_PRESETS.find(p => p.label === dateRange.label);
@@ -40,10 +40,10 @@ export function ProjectDashboardTab() {
     }
     const period = from || to ? 'custom' : 'all';
     // pageSize 1: this tab reads aggregates only, the record list belongs to Logs.
-    return getUsage(period, projectId, from, to, 1, 1, { savings: true })
+    return getUsage(period, routerId, from, to, 1, 1, { savings: true })
       .then(data => { setStats(data); setErr(''); })
       .catch(e => setErr(e.message));
-  }, [projectId, dateRange]);
+  }, [routerId, dateRange]);
 
   useEffect(() => {
     setLoading(true);
@@ -54,7 +54,7 @@ export function ProjectDashboardTab() {
   const savings = stats?.savings;
 
   // The headline number is the worst case avoided: the most expensive target
-  // the project could have used for the whole window.
+  // the router could have used for the whole window.
   const worst = useMemo(() => {
     if (!savings?.baselines.length) return null;
     return savings.baselines.reduce((a, b) => (b.cost > a.cost ? b : a));
@@ -88,7 +88,7 @@ export function ProjectDashboardTab() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : !summary ? null : summary.totalCalls === 0 ? (
         <div className="empty-state">
-          <p>No traffic for this project in the selected period.</p>
+          <p>No traffic for this router in the selected period.</p>
         </div>
       ) : (
         <>
@@ -160,11 +160,11 @@ export function ProjectDashboardTab() {
             )}
           </div>
 
-          {/* Counterfactual against the project targets */}
+          {/* Counterfactual against the router targets */}
           <h3 className="section-title">If everything had gone to one model</h3>
           {!savings?.baselines.length ? (
             <div className="empty-state">
-              <p>Add target models to this project to see the comparison.</p>
+              <p>Add target models to this router to see the comparison.</p>
             </div>
           ) : (
             <div className="table-wrap" style={{ marginBottom: 24 }}>

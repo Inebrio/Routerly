@@ -16,18 +16,18 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ProjectLogsTab() {
-  const { id: projectId } = useParams<{ id: string }>();
+export function RouterLogsTab() {
+  const { id: routerId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [stats, setStats]         = useState<UsageStats | null>(null);
   const [loading, setLoading]     = useState(true);
-  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: `project-${projectId}-filters-dateRange`, defaultValue: { from: '', to: '', label: 'This month' }, deserialize: parseStoredRange });
-  const [modelIds, setModelIds]   = useFilterState<string[]>({ key: `project-${projectId}-filters-modelIds`, defaultValue: [] });
-  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: `project-${projectId}-filters-callType`, defaultValue: 'all' });
-  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: `project-${projectId}-filters-outcome`, defaultValue: 'all' });
+  const [dateRange, setDateRange] = useFilterState<DateRange>({ key: `router-${routerId}-filters-dateRange`, defaultValue: { from: '', to: '', label: 'This month' }, deserialize: parseStoredRange });
+  const [modelIds, setModelIds]   = useFilterState<string[]>({ key: `router-${routerId}-filters-modelIds`, defaultValue: [] });
+  const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing'>({ key: `router-${routerId}-filters-callType`, defaultValue: 'all' });
+  const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: `router-${routerId}-filters-outcome`, defaultValue: 'all' });
   const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
-  const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `project-${projectId}-filters-pollInterval`, defaultValue: 30_000 });
+  const [pollInterval, setPollInterval]     = useFilterState<number>({ key: `router-${routerId}-filters-pollInterval`, defaultValue: 30_000 });
   const [refreshing, setRefreshing]         = useState(false);
   const [page, setPage]                     = useState(1);
   const [pageSize]                          = useState(100);
@@ -56,7 +56,7 @@ export function ProjectLogsTab() {
 
   const fetchStats = useCallback(() => {
     /* v8 ignore next */
-    if (!projectId) return Promise.resolve();
+    if (!routerId) return Promise.resolve();
     // For recent (minutes/hours) presets, recalculate the range on every fetch
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
@@ -67,10 +67,10 @@ export function ProjectLogsTab() {
       to = fresh.to;
     }
     const period = from || to ? 'custom' : 'all';
-    return getUsage(period, projectId, from, to, page, pageSize)
+    return getUsage(period, routerId, from, to, page, pageSize)
       .then(data => { setStats(data); setLastUpdated(new Date()); })
       .catch(console.error);
-  }, [projectId, dateRange, page, pageSize]);
+  }, [routerId, dateRange, page, pageSize]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -266,7 +266,7 @@ export function ProjectLogsTab() {
           {filteredRecords.length === 0 ? (
             <div className="empty-state">
               <p>{stats.records.length === 0
-                ? 'No requests for this project in the selected period.'
+                ? 'No requests for this router in the selected period.'
                 : 'No records match the active filters.'}
               </p>
             </div>

@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, BudgetThresholds, ModelConfig, ProjectToken } from '@routerly/shared';
+import type { ChatCompletionRequest, BudgetThresholds, ModelConfig, RouterToken } from '@routerly/shared';
 import type { TraceEntry } from '@routerly/shared';
 
 /** Rappresenta un modello candidato con il peso accumulato durante la pipeline */
@@ -29,16 +29,16 @@ export interface PolicyInput {
   request: ChatCompletionRequest;
   /** Lista dei modelli candidati */
   candidates: CandidateModel[];
-  /** Configurazione specifica della policy (da ProjectConfig.policies[n].config) */
+  /** Configurazione specifica della policy (da RouterConfig.policies[n].config) */
   config?: any;
   /** Logger opzionale (da Fastify request.log) */
   log?: Logger;
   /** Emette una entry di trace in real-time sullo stream SSE */
   emit?: (entry: TraceEntry) => void;
   /** ID del progetto che ha originato la richiesta (per tracciare le chiamate di routing) */
-  projectId?: string;
+  routerId?: string;
   /** Token del progetto che ha originato la richiesta (per rispettare gli override per-token) */
-  token?: ProjectToken;
+  token?: RouterToken;
   /** ID della traccia corrente, da propagare alle chiamate LLM interne alla policy */
   traceId?: string;
   /** ID della conversazione (da header x-routerly-conversation-id), usato per recuperare le decisioni di routing precedenti */

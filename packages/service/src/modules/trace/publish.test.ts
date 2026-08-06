@@ -30,7 +30,7 @@ describe('publishTrace', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
     publishTrace(
       events,
-      { traceId: 't1', projectId: 'p1', phase: 'request.preprocess', correlationId: 'c1' },
+      { traceId: 't1', routerId: 'p1', phase: 'request.preprocess', correlationId: 'c1' },
       { panel: 'request', message: 'pii:scrubbed', details: { entities: ['EMAIL'] } },
     )
     vi.restoreAllMocks()
@@ -39,7 +39,7 @@ describe('publishTrace', () => {
     expect(seen[0]!.topic).toBe('trace/request.preprocess/pii/scrubbed')
     expect(seen[0]!.payload).toEqual({
       traceId: 't1',
-      projectId: 'p1',
+      routerId: 'p1',
       correlationId: 'c1',
       entry: {
         panel: 'request',
@@ -52,7 +52,7 @@ describe('publishTrace', () => {
     })
   })
 
-  it('omits phase, project and correlation when the origin has none', () => {
+  it('omits phase, router and correlation when the origin has none', () => {
     const events = new EventBus()
     const seen: TraceEvent[] = []
     events.subscribe('trace/**', (_topic, payload) => { seen.push(payload as TraceEvent) })
@@ -60,12 +60,12 @@ describe('publishTrace', () => {
     publishTrace(events, { traceId: 't2' }, { panel: 'response', message: 'model:error', details: {} })
 
     expect(seen[0]!.entry.phase).toBeUndefined()
-    expect(seen[0]!.projectId).toBeUndefined()
+    expect(seen[0]!.routerId).toBeUndefined()
     expect(seen[0]!.correlationId).toBeUndefined()
     expect(seen[0]!.entry.module).toBe('model')
   })
 
-  it('drops prompts and answers unless the project opted in', () => {
+  it('drops prompts and answers unless the router opted in', () => {
     const events = new EventBus()
     const seen: TraceEvent[] = []
     events.subscribe('trace/**', (_topic, payload) => { seen.push(payload as TraceEvent) })

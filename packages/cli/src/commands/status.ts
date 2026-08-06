@@ -48,11 +48,11 @@ Examples:
 
         if (!expired) {
           try {
-            const [info, settings, models, projects] = await Promise.all([
+            const [info, settings, models, routers] = await Promise.all([
               api<SystemInfo>('GET', '/api/system/info').catch(() => null),
               api<Settings>('GET', '/api/settings').catch(() => null),
               api<unknown[]>('GET', '/api/models').catch(() => null),
-              api<unknown[]>('GET', '/api/projects').catch(() => null),
+              api<unknown[]>('GET', '/api/routers').catch(() => null),
             ]);
 
             base.service = {
@@ -66,7 +66,7 @@ Examples:
               dashboardUrl: settings?.dashboardEnabled ? `${account.serverUrl}/dashboard/` : null,
               logLevel: settings?.logLevel ?? null,
               modelCount: models?.length ?? null,
-              projectCount: projects?.length ?? null,
+              routerCount: routers?.length ?? null,
             };
           } catch {
             base.service = { reachable: false };
@@ -103,11 +103,11 @@ Examples:
 
       // ── Server health + settings ────────────────────────────────────────
       try {
-        const [info, settings, models, projects] = await Promise.all([
+        const [info, settings, models, routers] = await Promise.all([
           api<SystemInfo>('GET', '/api/system/info').catch(() => null),
           api<Settings>('GET', '/api/settings').catch(() => null),
           api<unknown[]>('GET', '/api/models').catch(() => null),
-          api<unknown[]>('GET', '/api/projects').catch(() => null),
+          api<unknown[]>('GET', '/api/routers').catch(() => null),
         ]);
 
         // Connectivity
@@ -138,7 +138,7 @@ Examples:
         }
 
         if (models !== null)   console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
-        if (projects !== null) console.log(`  ${chalk.cyan('Projects:')}      ${projects.length}`);
+        if (routers !== null) console.log(`  ${chalk.cyan('Routers:')}      ${routers.length}`);
 
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {

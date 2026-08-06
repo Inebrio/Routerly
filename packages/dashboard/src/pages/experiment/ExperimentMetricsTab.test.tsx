@@ -4,30 +4,30 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('../../api', () => ({
   getExperimentMetrics: vi.fn(),
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
 }));
 
 vi.mock('./ExperimentLayout', () => ({ useExperiment: vi.fn() }));
 
 import { ExperimentMetricsTab } from './ExperimentMetricsTab';
-import { getExperimentMetrics, getProjects } from '../../api';
+import { getExperimentMetrics, getRouters } from '../../api';
 import { useExperiment } from './ExperimentLayout';
 
 const mockGetMetrics = vi.mocked(getExperimentMetrics as (...a: unknown[]) => Promise<unknown>);
-const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as () => Promise<unknown>);
 const mockUseExperiment = vi.mocked(useExperiment);
 
 const experiment = {
   id: 'exp-1', name: 'Cheap vs premium', rotation: 'sticky',
-  variants: [{ id: 'v1', projectId: 'p1', name: 'Cheap' }, { id: 'v2', projectId: 'p2', name: 'Premium' }],
+  variants: [{ id: 'v1', routerId: 'p1', name: 'Cheap' }, { id: 'v2', routerId: 'p2', name: 'Premium' }],
   tokens: [], createdAt: '2026-07-01T00:00:00.000Z',
 };
 
 const metrics = {
   experimentId: 'exp-1', minSamplesPerVariant: 30, totalCalls: 120, ready: true,
   variants: [
-    { variantId: 'v1', projectId: 'p1', name: 'Cheap', calls: 60, errors: 0, errorRate: 0, cost: 0.6, avgCostPerCall: 0.01, inputTokens: 100, outputTokens: 200, avgLatencyMs: 900, p95LatencyMs: 1400, judgedCalls: 10, avgScore: 6.4, enoughSamples: true },
-    { variantId: 'v2', projectId: 'p2', name: 'Premium', calls: 60, errors: 3, errorRate: 0.05, cost: 3, avgCostPerCall: 0.05, inputTokens: 100, outputTokens: 220, avgLatencyMs: 1500, p95LatencyMs: 2600, judgedCalls: 10, avgScore: 8.2, enoughSamples: true },
+    { variantId: 'v1', routerId: 'p1', name: 'Cheap', calls: 60, errors: 0, errorRate: 0, cost: 0.6, avgCostPerCall: 0.01, inputTokens: 100, outputTokens: 200, avgLatencyMs: 900, p95LatencyMs: 1400, judgedCalls: 10, avgScore: 6.4, enoughSamples: true },
+    { variantId: 'v2', routerId: 'p2', name: 'Premium', calls: 60, errors: 3, errorRate: 0.05, cost: 3, avgCostPerCall: 0.05, inputTokens: 100, outputTokens: 220, avgLatencyMs: 1500, p95LatencyMs: 2600, judgedCalls: 10, avgScore: 8.2, enoughSamples: true },
   ],
 };
 
@@ -43,7 +43,7 @@ function setContext(experiment: unknown) {
 
 beforeEach(() => {
   mockGetMetrics.mockResolvedValue(metrics);
-  mockGetProjects.mockResolvedValue([{ id: 'p1', name: 'Small model' }, { id: 'p2', name: 'Big model' }]);
+  mockGetRouters.mockResolvedValue([{ id: 'p1', name: 'Small model' }, { id: 'p2', name: 'Big model' }]);
   setContext(experiment);
 });
 
@@ -54,7 +54,7 @@ describe('ExperimentMetricsTab', () => {
     render(<ExperimentMetricsTab />);
     await waitFor(() => expect(screen.getByText('120 calls measured')).toBeInTheDocument());
     const rows = [...document.querySelectorAll('tbody tr')];
-    // Variant label first, then the project it routes to.
+    // Variant label first, then the router it routes to.
     await waitFor(() => expect(rows.map(r => r.querySelector('td')!.textContent))
       .toEqual(['CheapSmall model', 'PremiumBig model']));
     // Both variants took half the traffic.
