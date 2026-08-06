@@ -382,6 +382,8 @@ export interface OrchestratorCandidate {
   routerId: string;
   name: string;
   weight: number;
+  /** Per-candidate usage limit overrides, scored the same way as a model's `limits`. */
+  limits?: Limit[];
 }
 
 /** Local response shape: same fields as the shared RouterConfig, but tokens
@@ -402,7 +404,7 @@ export const getRouters = () => request<Router[]>('/routers');
 export const createRouter = (data: {
   name: string;
   kind?: RouterKind;
-  candidates?: { routerId: string; weight: number }[];
+  candidates?: { routerId: string; weight: number; limits?: Limit[] }[];
   routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];
@@ -414,7 +416,7 @@ export const createRouter = (data: {
 export const updateRouter = (id: string, data: {
   name: string;
   kind?: RouterKind;
-  candidates?: { routerId: string; weight: number }[];
+  candidates?: { routerId: string; weight: number; limits?: Limit[] }[];
   routingModelId?: string;
   autoRouting?: boolean;
   fallbackRoutingModelIds?: string[];

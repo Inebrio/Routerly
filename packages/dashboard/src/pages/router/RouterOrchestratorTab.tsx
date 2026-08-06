@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Check } from 'lucide-react';
+import { Plus, Trash2, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { getRouters, updateRouter, type Router } from '../../api';
 import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
+import { LimitRowsEditor, limitsToRows, limitRowsToLimits, type LimitRow } from '../../components/LimitRowsEditor';
 
 type CandidateRow = {
   internalId: string; // for React keys
   routerId: string;
   weight: number;
+  limitRows: LimitRow[];
 };
 
 function mkId() {
@@ -36,10 +38,14 @@ export function RouterOrchestratorTab() {
       .finally(() => setLoading(false));
   }, [router?.id]);
 
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     /* v8 ignore next */
     if (!router) return;
-    setRows((router.candidates ?? []).map(c => ({ internalId: mkId(), routerId: c.routerId, weight: c.weight })));
+    setRows((router.candidates ?? []).map(c => ({
+      internalId: mkId(), routerId: c.routerId, weight: c.weight, limitRows: limitsToRows(c.limits),
+    })));
   }, [router]);
 
   const isDirty = (() => {
@@ -47,7 +53,11 @@ export function RouterOrchestratorTab() {
     if (!router) return false;
     const savedCandidates = router.candidates ?? [];
     if (rows.length !== savedCandidates.length) return true;
-    return rows.some((r, i) => r.routerId !== savedCandidates[i]!.routerId || r.weight !== savedCandidates[i]!.weight);
+    return rows.some((r, i) =>
+      r.routerId !== savedCandidates[i]!.routerId ||
+      r.weight !== savedCandidates[i]!.weight ||
+      JSON.stringify(limitRowsToLimits(r.limitRows)) !== JSON.stringify(savedCandidates[i]!.limits ?? [])
+    );
   })();
 
   const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty);
@@ -62,7 +72,15 @@ export function RouterOrchestratorTab() {
     const used = usedRouterIds(-1);
     const first = candidateRouters.find(r => !used.has(r.id));
     /* v8 ignore next */
-    setRows(prev => [...prev, { internalId: mkId(), routerId: first?.id ?? '', weight: 1 }]);
+    setRows(prev => [...prev, { internalId: mkId(), routerId: first?.id ?? '', weight: 1, limitRows: [] }]);
+  }
+
+  function toggleExpanded(internalId: string) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(internalId)) next.delete(internalId); else next.add(internalId);
+      return next;
+    });
   }
 
   function updateRow(idx: number, patch: Partial<CandidateRow>) {
@@ -82,7 +100,10 @@ export function RouterOrchestratorTab() {
       const payload: Parameters<typeof updateRouter>[1] = {
         name: router.name,
         models: router.models.map(m => ({ modelId: m.modelId })),
-        candidates: rows.map(r => ({ routerId: r.routerId, weight: r.weight })),
+        candidates: rows.map(r => {
+          const limits = limitRowsToLimits(r.limitRows);
+          return { routerId: r.routerId, weight: r.weight, ...(limits.length > 0 ? { limits } : {}) };
+        }),
       };
       const updated = await updateRouter(router.id, payload);
       setRouter(updated);
@@ -120,63 +141,95 @@ export function RouterOrchestratorTab() {
           <label className="form-label">Candidate Routers</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
             The routers this Orchestrator forwards requests to. Weight influences how often each
-            candidate is picked; only its name, id and weight are shown here.
+            candidate is picked; only its name, id, weight and optional per-candidate limits are
+            shown here.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {rows.map((row, idx) => {
               const resolved = candidateRouters.find(r => r.id === row.routerId);
+              const isExpanded = expanded.has(row.internalId);
+              const limitCount = row.limitRows.filter(r => r.value !== '').length;
               return (
                 <div
                   key={row.internalId}
                   style={{
-                    display: 'flex',
-                    gap: 12,
-                    alignItems: 'flex-start',
                     background: 'var(--surface-active)',
                     padding: 12,
                     borderRadius: 8,
                     border: '1px solid var(--border)',
                   }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Router</label>
-                    <SearchableSelect
-                      value={row.routerId}
-                      onChange={v => updateRow(idx, { routerId: v })}
-                      placeholder="Select router"
-                      options={candidateRouters
-                        .filter(r => r.id === row.routerId || !usedRouterIds(idx).has(r.id))
-                        .map(r => ({ value: r.id, label: r.name, description: r.id }))}
-                    />
-                    {resolved && (
-                      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, fontFamily: 'monospace' }}>
-                        {resolved.id}
-                      </p>
-                    )}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Router</label>
+                      <SearchableSelect
+                        value={row.routerId}
+                        onChange={v => updateRow(idx, { routerId: v })}
+                        placeholder="Select router"
+                        options={candidateRouters
+                          .filter(r => r.id === row.routerId || !usedRouterIds(idx).has(r.id))
+                          .map(r => ({ value: r.id, label: r.name, description: r.id }))}
+                      />
+                      {resolved && (
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, fontFamily: 'monospace' }}>
+                          {resolved.id}
+                        </p>
+                      )}
+                    </div>
+
+                    <div style={{ width: 120 }}>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Weight</label>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={row.weight}
+                        onChange={e => updateRow(idx, { weight: Number(e.target.value) })}
+                      />
+                    </div>
+
+                    <div style={{ paddingTop: 20 }}>
+                      <button
+                        type="button"
+                        onClick={() => removeRow(idx)}
+                        className="btn-icon danger"
+                        title="Remove candidate"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div style={{ width: 120 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Weight</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={row.weight}
-                      onChange={e => updateRow(idx, { weight: Number(e.target.value) })}
-                    />
-                  </div>
-
-                  <div style={{ paddingTop: 20 }}>
+                  <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                     <button
                       type="button"
-                      onClick={() => removeRow(idx)}
-                      className="btn-icon danger"
-                      title="Remove candidate"
+                      onClick={() => toggleExpanded(row.internalId)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+                        cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem', padding: 0,
+                      }}
                     >
-                      <Trash2 size={16} />
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      Usage limits for this candidate
+                      {limitCount > 0 && (
+                        <span style={{ fontSize: '0.72rem', background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 7px' }}>
+                          {limitCount} {limitCount === 1 ? 'limit' : 'limits'}
+                        </span>
+                      )}
                     </button>
+                    {isExpanded && (
+                      <div style={{ marginTop: 10 }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+                          Optional usage limits applied only to requests this Orchestrator forwards to this candidate.
+                        </p>
+                        <LimitRowsEditor
+                          rows={row.limitRows}
+                          onChange={limitRows => updateRow(idx, { limitRows })}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               );
