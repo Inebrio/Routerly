@@ -220,7 +220,7 @@ const bucketKey = (timestamp: string, bucket: 'hour' | 'day'): string =>
  * Every paid baseline is priced, not only the costliest: the overview draws one
  * line per model and lets the reader turn any of them off (T100). Free models
  * are left out, a flat zero line says nothing. `baselineCost` stays the
- * costliest of them, the headline the project dashboard and the CLI already read.
+ * costliest of them, the headline the router dashboard and the CLI already read.
  *
  * Per-bucket baseline latency reuses the costliest baseline's whole-window
  * throughput (`latencyMs / comparedOutputTokens`) rather than recomputing a

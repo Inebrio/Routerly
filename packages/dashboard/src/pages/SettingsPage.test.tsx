@@ -24,7 +24,7 @@ vi.mock('../api', () => ({
   getCatalogStatus:     vi.fn(),
   probeRepo:            vi.fn(),
   ALL_PERMISSIONS: [
-    'project:read', 'project:write', 'model:read', 'model:write',
+    'router:read', 'router:write', 'model:read', 'model:write',
     'user:read', 'user:write', 'report:read', 'settings:read', 'settings:write',
     'notification:write', 'token:read', 'token:write', 'role:write', 'audit:read',
   ] as const,
@@ -4080,13 +4080,13 @@ describe('SettingsNotificationsTab — ch.targets field nullish branch coverage'
   it('ch.targets.permissions defined → ?? [] left branch (L619 branch 1)', async () => {
     mockGetSettings.mockResolvedValue({
       ...baseSettings,
-      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['project:read'] } }] },
+      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['router:read'] } }] },
     } as never);
     render(<MemoryRouter><SettingsNotificationsTab /></MemoryRouter>);
     await waitFor(() => expect(document.querySelector('button svg.lucide-chevron-right')).not.toBeNull());
     await expandDashboardChannel();
     await waitFor(() => screen.getByTestId('multiselect-All permissions (everyone)'));
-    // ch.targets.permissions = ['project:read'] → ?? [] left side NOT null → branch 1
+    // ch.targets.permissions = ['router:read'] → ?? [] left side NOT null → branch 1
   });
 
   it('ch.targets.users defined → ?? [] left branch (L628 branch 1)', async () => {
@@ -4519,7 +4519,7 @@ describe('SettingsNotificationsTab — summariseChannel permissions branch (L336
   it('summariseChannel: permissions targets shows perm count (L336 branch 42,0)', async () => {
     mockGetSettings.mockResolvedValue({
       ...baseSettings,
-      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['project:read', 'model:read'] } }] },
+      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['router:read', 'model:read'] } }] },
     } as never);
     render(<MemoryRouter><SettingsNotificationsTab /></MemoryRouter>);
     // summariseChannel runs on collapsed card — "2 perms" appears (permissions.length > 1)

@@ -381,7 +381,7 @@ describe('buildAnthropicContext', () => {
       body: { model: 'claude-3-5', messages: [], max_tokens: 100, stream: false },
       headers: {},
       log: makeLog(),
-      project: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
+      router: { id: 'p1', name: 'P', tokens: [], members: [], models: [] },
       ...overrides,
     } as any
   }
@@ -441,7 +441,7 @@ describe('anthropic:upstream', () => {
     const ctx = {
       protocol: 'anthropic', reply, traceId: 't1',
       attempt: { model: { ...model, provider: 'anthropic-oauth' }, candidate },
-      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), project: { id: 'p1' },
+      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), router: { id: 'p1' },
     } as unknown as ProxyContext
     await anthropicUpstream.run(ctx)
     expect(ctx.passthrough).toBe(true)
@@ -455,7 +455,7 @@ describe('anthropic:upstream', () => {
     const ctx = {
       protocol: 'anthropic', reply, traceId: 't1',
       attempt: { model: { ...model, provider }, candidate },
-      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), project: { id: 'p1' },
+      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), router: { id: 'p1' },
     } as unknown as ProxyContext
     await anthropicUpstream.run(ctx)
     expect(ctx.passthrough).toBe(true)
@@ -469,7 +469,7 @@ describe('anthropic:upstream', () => {
       protocol: 'anthropic', traceId: 't-oa',
       attempt: { model: { ...model, id: 'openai-oauth/gpt-5.5', provider: 'openai-oauth' }, candidate },
       original: { model: 'gpt-5.5', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }], stream },
-      req: {}, log: makeLog(), project: { id: 'p1' },
+      req: {}, log: makeLog(), router: { id: 'p1' },
     } as unknown as ProxyContext)
 
     it('streams Codex chunks through the standard egress converter', async () => {
@@ -537,7 +537,7 @@ describe('anthropic:upstream', () => {
       } as any
     })
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: {
         model: 'claude-3-5', max_tokens: 100, system: [{ type: 'text', text: 'sys' }],
@@ -559,7 +559,7 @@ describe('anthropic:upstream', () => {
       choices: [{ index: 0, message: { role: 'assistant', content: undefined as unknown as string }, finish_reason: 'length' }],
     } as any)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 'trace-xyz',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 'trace-xyz',
       attempt: { model, candidate },
       original: { model: 'requested-model', max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] },
     } as unknown as ProxyContext
@@ -580,7 +580,7 @@ describe('anthropic:upstream', () => {
       return { ttftMs: 1, chunks: chunks() } as any
     })
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: {
         model: 'claude-3-5', stream: true, max_tokens: 100, system: 'You are helpful.',
@@ -598,7 +598,7 @@ describe('anthropic:upstream', () => {
     mockLlmStream.mockRejectedValueOnce(new Error('boom'))
     const log = makeLog()
     const ctx = {
-      protocol: 'anthropic', log, project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log, router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: true, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -611,7 +611,7 @@ describe('anthropic:upstream', () => {
     mockLlmStream.mockRejectedValueOnce(new BudgetExceededError('model-a'))
     const log = makeLog()
     const ctx = {
-      protocol: 'anthropic', log, project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log, router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: true, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -627,7 +627,7 @@ describe('anthropic:upstream', () => {
       usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 },
     } as any)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [{ role: 'user', content: 'hi' }] },
     } as unknown as ProxyContext
@@ -641,7 +641,7 @@ describe('anthropic:upstream', () => {
     mockLlmChat.mockRejectedValueOnce(new Error('boom'))
     const log = makeLog()
     const ctx = {
-      protocol: 'anthropic', log, project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log, router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -654,7 +654,7 @@ describe('anthropic:upstream', () => {
     mockLlmChat.mockRejectedValueOnce(new BudgetExceededError('model-a'))
     const log = makeLog()
     const ctx = {
-      protocol: 'anthropic', log, project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log, router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -667,7 +667,7 @@ describe('anthropic:upstream', () => {
     const sdkErr = Object.assign(new Error('rate limited'), { status: 429, headers: { 'retry-after': '5' } })
     mockLlmChat.mockRejectedValueOnce(sdkErr)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -680,7 +680,7 @@ describe('anthropic:upstream', () => {
     const err = new Error('boom')
     mockLlmStream.mockRejectedValueOnce(err)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: true, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -692,7 +692,7 @@ describe('anthropic:upstream', () => {
   it('BudgetExceededError does NOT stash ctx.attemptError (a local skip, not an upstream fault)', async () => {
     mockLlmChat.mockRejectedValueOnce(new BudgetExceededError('model-a'))
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       attempt: { model, candidate },
       original: { model: 'claude-3-5', stream: false, max_tokens: 100, messages: [] },
     } as unknown as ProxyContext
@@ -734,7 +734,7 @@ describe('anthropic:attempt', () => {
     reg.contribute(fakeUpstream())
     setProxyPipeline(reg)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       candidates: [{ model: 'missing-model', weight: 5 }, { model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
     await anthropicAttempt.run(ctx)
@@ -751,7 +751,7 @@ describe('anthropic:attempt', () => {
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
     } as unknown as ProxyContext
     await anthropicAttempt.run(ctx)
@@ -767,7 +767,7 @@ describe('anthropic:attempt', () => {
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       candidates: [{ model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
     await anthropicAttempt.run(ctx)
@@ -782,7 +782,7 @@ describe('anthropic:attempt', () => {
     const reg = new ProcessorRegistry<ProxyContext>()
     reg.contribute(fakeUpstream())
     setProxyPipeline(reg)
-    const ctx = { protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1' } as unknown as ProxyContext
+    const ctx = { protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1' } as unknown as ProxyContext
     await anthropicAttempt.run(ctx)
     expect((ctx.result as any).kind).toBe('block')
   })
@@ -802,7 +802,7 @@ describe('anthropic:attempt', () => {
     reg.contribute({ id: 'anthropic:upstream', phase: 'upstream.execute', run: upstreamRun })
     setProxyPipeline(reg)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       candidates: [{ model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext
     await anthropicAttempt.run(ctx)
@@ -821,7 +821,7 @@ describe('anthropic:attempt', () => {
     reg.contribute(fakeUpstream(['model-a']))
     setProxyPipeline(reg)
     const ctx = {
-      protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
       requestInjection: 'Follow the guardrail.',
       original: { system: 'Base prompt.' },
       candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
@@ -867,7 +867,7 @@ describe('anthropic:attempt', () => {
       reg.contribute(fakeUpstreamWithAttemptError(['model-a'], err))
       setProxyPipeline(reg)
       const ctx = {
-        protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+        protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
         candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
       } as unknown as ProxyContext
       const t0 = Date.now()
@@ -892,7 +892,7 @@ describe('anthropic:attempt', () => {
       reg.contribute(fakeUpstream(['model-a']))
       setProxyPipeline(reg)
       const ctx = {
-        protocol: 'anthropic', log: makeLog(), project: { id: 'p1' }, traceId: 't1',
+        protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
         candidates: [{ model: 'model-a', weight: 2 }, { model: 'model-b', weight: 1 }],
       } as unknown as ProxyContext
       await anthropicAttempt.run(ctx)

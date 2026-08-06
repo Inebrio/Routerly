@@ -6,22 +6,22 @@ import { UsageRecordPage } from './UsageRecordPage';
 
 vi.mock('../api', () => ({
   getUsageRecord: vi.fn(),
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
 }));
 
 vi.mock('../components/TraceEntryRenderer', () => ({
   TraceEntryRenderer: ({ entry }: { entry: { message: string } }) => <div data-testid="trace-entry">{entry.message}</div>,
 }));
 
-import { getUsageRecord, getProjects } from '../api';
+import { getUsageRecord, getRouters } from '../api';
 const mockGetRecord = vi.mocked(getUsageRecord as (id: string) => Promise<unknown>);
-const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as () => Promise<unknown>);
 
 function makeRecord(overrides: Record<string, unknown> = {}) {
   return {
     id: 'rec-1',
     timestamp: new Date('2024-01-15T10:00:00Z').toISOString(),
-    projectId: 'proj-1',
+    routerId: 'proj-1',
     modelId: 'openai/gpt-4o',
     inputTokens: 100,
     outputTokens: 50,
@@ -43,7 +43,7 @@ function renderPage(id = 'rec-1') {
 }
 
 beforeEach(() => {
-  mockGetProjects.mockResolvedValue([]);
+  mockGetRouters.mockResolvedValue([]);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -58,12 +58,12 @@ describe('UsageRecordPage — loading state', () => {
     expect(screen.getByText('Call Detail')).toBeTruthy();
   });
 
-  it('getProjects error is silently caught (no crash)', async () => {
-    mockGetProjects.mockRejectedValue(new Error('projects unavailable'));
+  it('getRouters error is silently caught (no crash)', async () => {
+    mockGetRouters.mockRejectedValue(new Error('routers unavailable'));
     mockGetRecord.mockResolvedValue(makeRecord());
     renderPage();
     await waitFor(() => screen.getByText('openai/gpt-4o'));
-    // Page still renders — getProjects error is swallowed by .catch(console.error)
+    // Page still renders — getRouters error is swallowed by .catch(console.error)
     expect(screen.getByText('Record ID')).toBeTruthy();
   });
 
@@ -127,24 +127,24 @@ describe('UsageRecordPage — main display', () => {
     await userEvent.click(backBtn);
   });
 
-  it('shows project name when project matches projectId', async () => {
-    mockGetProjects.mockResolvedValue([{ id: 'proj-1', name: 'My Project' }]);
+  it('shows router name when router matches routerId', async () => {
+    mockGetRouters.mockResolvedValue([{ id: 'proj-1', name: 'My Router' }]);
     mockGetRecord.mockResolvedValue(makeRecord());
     renderPage();
-    await waitFor(() => expect(screen.getByText('My Project')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('My Router')).toBeTruthy());
   });
 
-  it('shows raw projectId when project not found', async () => {
-    mockGetProjects.mockResolvedValue([{ id: 'other-proj', name: 'Other' }]);
+  it('shows raw routerId when router not found', async () => {
+    mockGetRouters.mockResolvedValue([{ id: 'other-proj', name: 'Other' }]);
     mockGetRecord.mockResolvedValue(makeRecord());
     renderPage();
     await waitFor(() => screen.getByText('openai/gpt-4o'));
     expect(screen.getByText('proj-1')).toBeTruthy();
   });
 
-  it('names the project token the call came in on', async () => {
-    mockGetProjects.mockResolvedValue([{
-      id: 'proj-1', name: 'My Project',
+  it('names the router token the call came in on', async () => {
+    mockGetRouters.mockResolvedValue([{
+      id: 'proj-1', name: 'My Router',
       tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-01-01T00:00:00Z', labels: ['ci'] }],
     }]);
     mockGetRecord.mockResolvedValue(makeRecord({ tokenId: 'tok-1' }));
@@ -154,7 +154,7 @@ describe('UsageRecordPage — main display', () => {
   });
 
   it('falls back to the token id when the token is gone', async () => {
-    mockGetProjects.mockResolvedValue([{ id: 'proj-1', name: 'My Project', tokens: [] }]);
+    mockGetRouters.mockResolvedValue([{ id: 'proj-1', name: 'My Router', tokens: [] }]);
     mockGetRecord.mockResolvedValue(makeRecord({ tokenId: 'tok-revoked' }));
     renderPage();
     await waitFor(() => expect(screen.getByText('tok-revoked')).toBeTruthy());

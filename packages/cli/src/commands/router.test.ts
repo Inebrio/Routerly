@@ -26,18 +26,18 @@ vi.mock('../store.js', () => ({
   }),
 }));
 
-import { makeProjectCommand } from './project.js';
+import { makeRouterCommand } from './router.js';
 import type { GuardrailRule } from '@routerly/shared';
 
 afterEach(() => vi.clearAllMocks());
 
 function makeCmd() {
-  const cmd = makeProjectCommand();
+  const cmd = makeRouterCommand();
   cmd.exitOverride();
   return cmd;
 }
 
-const baseProject = {
+const baseRouter = {
   id: 'proj-1',
   name: 'my-api',
   models: [],
@@ -57,16 +57,16 @@ describe('guardrails show', () => {
   });
 
   it('renders rule detail for regex rule with block:true (no block badge — invariant)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{ type: 'regex' as const, target: 'request' as const, config: { patterns: ['bad'] }, block: true }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     // block/log badges removed from rulesSummary (they are invariants for judged rules)
     expect(out).not.toContain('[block]');
@@ -76,16 +76,16 @@ describe('guardrails show', () => {
   });
 
   it('renders rule detail for regex rule with log:true only (no log badge — invariant)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{ type: 'regex' as const, target: 'request' as const, config: { patterns: ['maybe'] }, log: true }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     // block/log badges removed (invariants)
     expect(out).not.toContain('[log]');
@@ -94,8 +94,8 @@ describe('guardrails show', () => {
   });
 
   it('renders rule detail for topic rule with block+log (no block+log badge — invariant)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const, target: 'request' as const,
@@ -104,10 +104,10 @@ describe('guardrails show', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     // block/log badges removed (invariants); judge model detail is shown instead
     expect(out).not.toContain('[block+log]');
@@ -115,8 +115,8 @@ describe('guardrails show', () => {
   });
 
   it('renders rule detail for moderation rule (no judge-response badge — invariant)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const, target: 'request' as const,
@@ -125,10 +125,10 @@ describe('guardrails show', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     // judge-response badge removed (invariant); judge model detail is shown
     expect(out).not.toContain('[judge-response]');
@@ -136,8 +136,8 @@ describe('guardrails show', () => {
   });
 
   it('shows no badge when neither block nor log', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'semantic' as const, target: 'both' as const,
@@ -145,10 +145,10 @@ describe('guardrails show', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     expect(out).not.toContain('[block]');
     expect(out).not.toContain('[log]');
@@ -157,18 +157,18 @@ describe('guardrails show', () => {
 
   it('outputs raw JSON with --json', async () => {
     const guardrails = { rules: [] };
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--json']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--json']);
     expect(JSON.parse(lines.join('\n'))).toEqual(guardrails);
   });
 
   it('shows empty state when no rules', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('No rules configured');
   });
 });
@@ -186,16 +186,16 @@ describe('guardrails update', () => {
     const rules: GuardrailRule[] = [
       { type: 'regex', target: 'request', config: { patterns: ['x'] }, block: true },
     ];
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { detectInjection: true, rules } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { detectInjection: true, rules } }])
            .mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--remove-rule', '0']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--remove-rule', '0']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: Record<string, unknown> };
     expect(payload.guardrails.detectInjection).toBe(true);
   });
 
   it('does not accept --detect-injection flag (flag was removed)', async () => {
-    await expect(makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--detect-injection'])).rejects.toThrow();
+    await expect(makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--detect-injection'])).rejects.toThrow();
   });
 
   it('--remove-rule removes the rule at the given index', async () => {
@@ -203,9 +203,9 @@ describe('guardrails update', () => {
       { type: 'regex', target: 'request', config: { patterns: ['a'] }, block: true },
       { type: 'regex', target: 'response', config: { patterns: ['b'] }, log: true },
     ];
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules } }])
            .mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--remove-rule', '0']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--remove-rule', '0']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     expect(payload.guardrails.rules).toHaveLength(1);
@@ -213,24 +213,24 @@ describe('guardrails update', () => {
   });
 
   it('--remove-rule out of bounds exits 1', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--remove-rule', '5'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--remove-rule', '5'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('no longer accepts --action flag', async () => {
     // Commander raises an error on unknown options when exitOverride() is active
-    await expect(makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--action', 'block'])).rejects.toThrow();
+    await expect(makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--action', 'block'])).rejects.toThrow();
   });
 
   it('payload has no action or fallbackMessage fields', async () => {
     const rules: GuardrailRule[] = [
       { type: 'regex', target: 'request', config: { patterns: ['test'] }, block: true },
     ];
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules } }])
            .mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--remove-rule', '0']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--remove-rule', '0']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: Record<string, unknown> };
     expect(payload.guardrails).not.toHaveProperty('action');
@@ -247,15 +247,15 @@ describe('pii list', () => {
   });
 
   it('shows table with policies', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       // ponytail: name field omitted — PiiPolicy.name was removed; table has no Name column
       pii: { policies: [{ enabled: true, target: 'both' as const, entities: ['EMAIL', 'PHONE'] }] },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api']);
     const out = lines.join('\n');
     // Table columns: #, Enabled, Target, Entities, Patterns, Buffer — no Name column
     expect(out).toContain('both');
@@ -265,18 +265,18 @@ describe('pii list', () => {
 
   it('outputs raw JSON with --json', async () => {
     const pii = { policies: [{ enabled: true, target: 'request' as const }] };
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api', '--json']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api', '--json']);
     expect(JSON.parse(lines.join('\n'))).toEqual(pii);
   });
 
   it('shows empty state when no policies', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No PII policies');
   });
 });
@@ -290,7 +290,7 @@ describe('pii add', () => {
   });
 
   it('adds a new policy and patches the API with correct shape', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -302,7 +302,7 @@ describe('pii add', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     expect(patchCall).toBeDefined();
     const payload = patchCall![2] as { pii: { policies: Array<{ target: string; entities: string[]; outputBufferSize: number }> } };
@@ -316,7 +316,7 @@ describe('pii add', () => {
   });
 
   it('skips outputBufferSize field when using default (30)', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -328,7 +328,7 @@ describe('pii add', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { pii: { policies: Array<Record<string, unknown>> } };
     expect(payload.pii.policies[0]).not.toHaveProperty('outputBufferSize');
@@ -338,7 +338,7 @@ describe('pii add', () => {
   it('adding a second policy appends it without error (no duplicate-name check)', async () => {
     // Duplicate-name check was removed with PiiPolicy.name. Adding always appends.
     mockApi.mockResolvedValueOnce([{
-      ...baseProject,
+      ...baseRouter,
       pii: { policies: [{ enabled: true, target: 'request' as const }] },
     }]).mockResolvedValueOnce(undefined);
 
@@ -348,7 +348,7 @@ describe('pii add', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     expect(patchCall).toBeDefined();
     const payload = patchCall![2] as { pii: { policies: unknown[] } };
@@ -359,17 +359,17 @@ describe('pii add', () => {
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    // ApiError at GET (resolveProject) — wizard never runs
+    // ApiError at GET (resolveRouter) — wizard never runs
     mockApi.mockRejectedValueOnce(new ApiError(500, 'server error'));
 
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 
   it('outputBufferSize validate: rejects out-of-range, accepts valid', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockResolvedValueOnce(undefined);
 
     // Capture the prompt config so we can call validate directly
@@ -384,7 +384,7 @@ describe('pii add', () => {
 
     vi.doMock('inquirer', () => ({ default: { prompt: promptSpy } }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
 
     expect(capturedValidate).toBeDefined();
     // Out-of-range: below min
@@ -413,8 +413,8 @@ describe('rulesSummary fallback suffix', () => {
   });
 
   it('renders (+2 fallback) for a topic rule with 2 fallbacks', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const, target: 'request' as const,
@@ -422,16 +422,16 @@ describe('rulesSummary fallback suffix', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('(+2 fallback)');
   });
 
   it('renders (+1 fallback) for a moderation rule with 1 fallback', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const, target: 'both' as const,
@@ -439,16 +439,16 @@ describe('rulesSummary fallback suffix', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('(+1 fallback)');
   });
 
   it('renders (+2 fallback) for a semantic rule with 2 fallbacks', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'semantic' as const, target: 'request' as const,
@@ -456,16 +456,16 @@ describe('rulesSummary fallback suffix', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('(+2 fallback)');
   });
 
   it('renders no fallback suffix when fallbackModelIds is absent', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const, target: 'request' as const,
@@ -473,10 +473,10 @@ describe('rulesSummary fallback suffix', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).not.toContain('fallback');
   });
 });
@@ -490,7 +490,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
   });
 
   it('topic rule: comma-separated input yields fallbackModelIds with primary filtered, order preserved', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -507,7 +507,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const cfg = payload.guardrails.rules[0]!.config as { fallbackModelIds?: string[] };
@@ -516,7 +516,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
   });
 
   it('topic rule: empty fallback input yields no fallbackModelIds key', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -529,7 +529,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     expect(payload.guardrails.rules[0]!.config).not.toHaveProperty('fallbackModelIds');
@@ -537,7 +537,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
   });
 
   it('moderation rule: carries fallbackModelIds', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -553,7 +553,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const cfg = payload.guardrails.rules[0]!.config as { fallbackModelIds?: string[] };
@@ -562,7 +562,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
   });
 
   it('semantic rule: carries fallbackModelIds', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -578,7 +578,7 @@ describe('runAddRuleWizard fallbackModelIds', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const cfg = payload.guardrails.rules[0]!.config as { fallbackModelIds?: string[] };
@@ -597,8 +597,8 @@ describe('pii remove', () => {
 
   it('removes policy at index 0, leaving the remaining policy', async () => {
     // pii remove is now index-based (0-based), matching the # column in pii list
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       pii: {
         policies: [
           { enabled: true, target: 'both' as const },
@@ -606,8 +606,8 @@ describe('pii remove', () => {
         ],
       },
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', '0']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', '0']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     expect(patchCall).toBeDefined();
     const payload = patchCall![2] as { pii: { policies: Array<{ target: string }> } };
@@ -616,17 +616,17 @@ describe('pii remove', () => {
   });
 
   it('exits 1 for out-of-range index', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [{ enabled: true, target: 'both' as const }] } }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [{ enabled: true, target: 'both' as const }] } }]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', '5'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', '5'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid index'));
   });
 
   it('exits 1 for non-numeric index', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [{ enabled: true, target: 'both' as const }] } }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [{ enabled: true, target: 'both' as const }] } }]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', 'foo'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', 'foo'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid index'));
   });
@@ -634,64 +634,64 @@ describe('pii remove', () => {
   it('exits 1 on ApiError when index is valid', async () => {
     const { ApiError } = await import('../api.js');
     // GET succeeds, PATCH throws
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [{ enabled: true, target: 'both' as const }] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [{ enabled: true, target: 'both' as const }] } }])
            .mockRejectedValueOnce(new ApiError(500, 'server error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 });
 
-// ─── project list ──────────────────────────────────────────────────────────────
+// ─── router list ──────────────────────────────────────────────────────────────
 
-describe('project list', () => {
+describe('router list', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('shows table with projects', async () => {
-    const projects = [
-      { ...baseProject, id: 'aaaa-bbbb-cccc-1234', tokens: [{ id: 't1' }], members: [{ userId: 'u1', role: 'editor' }] },
+  it('shows table with routers', async () => {
+    const routers = [
+      { ...baseRouter, id: 'aaaa-bbbb-cccc-1234', tokens: [{ id: 't1' }], members: [{ userId: 'u1', role: 'editor' }] },
     ];
-    mockApi.mockResolvedValueOnce(projects);
+    mockApi.mockResolvedValueOnce(routers);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'list']);
+    await makeCmd().parseAsync(['node', 'router', 'list']);
     const out = lines.join('\n');
     expect(out).toContain('my-api');
     expect(out).toContain('5s');
   });
 
-  it('shows empty state when no projects', async () => {
+  it('shows empty state when no routers', async () => {
     mockApi.mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'list']);
-    expect(lines.join('\n')).toContain('No projects yet');
+    await makeCmd().parseAsync(['node', 'router', 'list']);
+    expect(lines.join('\n')).toContain('No routers yet');
   });
 
   it('exits 1 on error', async () => {
     mockApi.mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'list'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'list'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
 });
 
-// ─── project show ──────────────────────────────────────────────────────────────
+// ─── router show ──────────────────────────────────────────────────────────────
 
-describe('project show', () => {
+describe('router show', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('shows project details with members and tokens', async () => {
-    const project = {
-      ...baseProject,
+  it('shows router details with members and tokens', async () => {
+    const router = {
+      ...baseRouter,
       routingModelId: 'gpt-4',
       fallbackRoutingModelIds: ['gpt-3.5'],
       policies: [{ type: 'health' as const, enabled: true }],
@@ -699,11 +699,11 @@ describe('project show', () => {
       tokens: [{ id: 't1', tokenSnippet: 'abc123', createdAt: '2024-01-01T00:00:00Z', labels: ['prod'], models: [{ modelId: 'gpt-4', limits: [{ metric: 'cost' as const, windowType: 'period' as const, period: 'hourly' as const, value: 10 }] }] }],
       members: [{ userId: 'u1', role: 'editor' }],
     };
-    mockApi.mockResolvedValueOnce([project])
+    mockApi.mockResolvedValueOnce([router])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('my-api');
     expect(out).toContain('gpt-4');
@@ -713,48 +713,48 @@ describe('project show', () => {
   });
 
   it('shows empty states for no models/tokens/members', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('(none)');
   });
 
   it('shows unknown userId as gray snippet when user not found in list', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       members: [{ userId: 'unknown-user-id', role: 'viewer' }],
     };
-    mockApi.mockResolvedValueOnce([project])
+    mockApi.mockResolvedValueOnce([router])
            .mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     // resolveUserEmail returns a gray snippet when user not found
     expect(out).toContain('unknown-');
   });
 
   it('shows model with long prompt truncated', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       models: [{ modelId: 'openai/gpt-4', prompt: 'A'.repeat(80) }],
     };
-    mockApi.mockResolvedValueOnce([project])
+    mockApi.mockResolvedValueOnce([router])
            .mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('…');
   });
 
-  it('exits 1 when project not found', async () => {
+  it('exits 1 when router not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'show', 'no-such-project'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'show', 'no-such-router'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
@@ -762,36 +762,36 @@ describe('project show', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'show', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'show', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('shows no-routing-model and no-fallbacks states', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('(not set)');
     expect(out).toContain('(none');
   });
 });
 
-// ─── project create ────────────────────────────────────────────────────────────
+// ─── router create ────────────────────────────────────────────────────────────
 
-describe('project create', () => {
+describe('router create', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('creates project with defaults and shows token', async () => {
-    const resp = { ...baseProject, token: 'sk-rt-abc123' };
+  it('creates router with defaults and shows token', async () => {
+    const resp = { ...baseRouter, token: 'sk-rt-abc123' };
     mockApi.mockResolvedValueOnce(resp);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('my-api');
     expect(out).toContain('sk-rt-abc123');
@@ -799,25 +799,25 @@ describe('project create', () => {
     expect(postCall![2]).toMatchObject({ name: 'my-api', timeoutMs: 2000, autoRouting: true });
   });
 
-  it('creates project with routing model and custom timeout', async () => {
-    mockApi.mockResolvedValueOnce({ ...baseProject });
-    await makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api', '--timeout', '10000', '--routing-model', 'gpt-4']);
+  it('creates router with routing model and custom timeout', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--timeout', '10000', '--routing-model', 'gpt-4']);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({ timeoutMs: 10000, routingModelId: 'gpt-4' });
   });
 
-  it('creates project with auto-routing disabled', async () => {
-    mockApi.mockResolvedValueOnce({ ...baseProject });
-    await makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api', '--no-auto-routing']);
+  it('creates router with auto-routing disabled', async () => {
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--no-auto-routing']);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({ autoRouting: false });
   });
 
   it('shows next steps even when no token in response', async () => {
-    mockApi.mockResolvedValueOnce({ ...baseProject });
+    mockApi.mockResolvedValueOnce({ ...baseRouter });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api']);
     expect(lines.join('\n')).toContain('Next steps');
   });
 
@@ -825,7 +825,7 @@ describe('project create', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(409, 'conflict'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('already exists'));
   });
@@ -833,7 +833,7 @@ describe('project create', () => {
   it('exits 1 on non-ApiError', async () => {
     mockApi.mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
@@ -842,15 +842,15 @@ describe('project create', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(500, 'server error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 });
 
-// ─── project edit ──────────────────────────────────────────────────────────────
+// ─── router edit ──────────────────────────────────────────────────────────────
 
-describe('project edit', () => {
+describe('router edit', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -858,109 +858,109 @@ describe('project edit', () => {
 
   it('exits 1 when no flags provided', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'edit', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('at least --name, --timeout or --trace-content'));
   });
 
   it('turns trace content capture on and back off', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--trace-content']);
-    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.objectContaining({ traceContent: true }));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--trace-content']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ traceContent: true }));
 
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--no-trace-content']);
-    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.objectContaining({ traceContent: false }));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--no-trace-content']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ traceContent: false }));
   });
 
   it('leaves trace content untouched when neither flag is given', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'Renamed']);
-    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/projects/${baseProject.id}`, expect.not.objectContaining({ traceContent: expect.anything() }));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'Renamed']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.not.objectContaining({ traceContent: expect.anything() }));
   });
 
-  it('updates project name', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+  it('updates router name', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'new-name']);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'new-name']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({ name: 'new-name' });
     expect(lines.join('\n')).toContain('updated');
   });
 
-  it('updates project timeout', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--timeout', '10000']);
+  it('updates router timeout', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--timeout', '10000']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({ timeoutMs: 10000 });
   });
 
   it('exits 1 on 409 conflict', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(409, 'conflict'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(409, 'conflict'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'taken'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'taken'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('already exists'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('network fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
 
   it('exits 1 on other ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(500, 'server error'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(500, 'server error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'edit', 'my-api', '--name', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 });
 
-// ─── project remove ────────────────────────────────────────────────────────────
+// ─── router remove ────────────────────────────────────────────────────────────
 
-describe('project remove', () => {
+describe('router remove', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('removes a project', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+  it('removes a router', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'remove', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'remove', 'my-api']);
     const delCall = mockApi.mock.calls.find(c => c[0] === 'DELETE');
     expect(delCall).toBeDefined();
     expect(lines.join('\n')).toContain('removed');
   });
 
-  it('exits 1 when project not found', async () => {
+  it('exits 1 when router not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'remove', 'no-such'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'remove', 'no-such'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'remove', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'remove', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('network fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'remove', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'remove', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
@@ -975,16 +975,16 @@ describe('routing show', () => {
   });
 
   it('shows routing config with policies', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       routingModelId: 'gpt-4',
       fallbackRoutingModelIds: ['gpt-3.5'],
       policies: [{ type: 'health' as const, enabled: true, config: { param: 1 } }],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('gpt-4');
     expect(out).toContain('gpt-3.5');
@@ -992,19 +992,19 @@ describe('routing show', () => {
   });
 
   it('shows no-policies state', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('No routing policies');
   });
 
   it('shows no-routing-model and empty-fallbacks', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, autoRouting: false }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, autoRouting: false }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('(not set)');
     expect(out).toContain('(none)');
@@ -1012,20 +1012,20 @@ describe('routing show', () => {
   });
 
   it('exits 1 on error', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('fail'));
-    // resolveProject is first, but routing show only calls resolveProject then displays
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('fail'));
+    // resolveRouter is first, but routing show only calls resolveRouter then displays
     // Simulate not-found
     mockApi.mockReset();
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'no-such'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'no-such'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
-  it('exits 1 on non-ApiError from resolveProject', async () => {
+  it('exits 1 on non-ApiError from resolveRouter', async () => {
     mockApi.mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
@@ -1040,39 +1040,39 @@ describe('routing update', () => {
   });
 
   it('enables auto-routing and sets routing model', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'update', 'my-api', '--routing-model', 'gpt-4', '--auto-routing']);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--routing-model', 'gpt-4', '--auto-routing']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({ autoRouting: true, routingModelId: 'gpt-4' });
   });
 
   it('disables auto-routing', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, autoRouting: true }]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'update', 'my-api', '--no-auto-routing']);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, autoRouting: true }]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--no-auto-routing']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({ autoRouting: false });
   });
 
   it('sets fallback routing models', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'update', 'my-api', '--fallback-models', 'gpt-3.5,gpt-4o-mini']);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--fallback-models', 'gpt-3.5,gpt-4o-mini']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({ fallbackRoutingModelIds: ['gpt-3.5', 'gpt-4o-mini'] });
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'update', 'my-api', '--auto-routing'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--auto-routing'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('network fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'update', 'my-api', '--auto-routing'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--auto-routing'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
@@ -1087,41 +1087,41 @@ describe('routing policy list', () => {
   });
 
   it('shows policies table', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       policies: [
         { type: 'health' as const, enabled: true },
         { type: 'cheapest' as const, enabled: false, config: { param: 1 } },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('health');
     expect(out).toContain('cheapest');
   });
 
   it('shows empty state when no policies', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No routing policies');
   });
 
   it('exits 1 on error', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'no-such'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'no-such'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('exits 1 on non-ApiError', async () => {
     mockApi.mockRejectedValueOnce(new Error('network fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('network fail'));
   });
@@ -1134,10 +1134,10 @@ describe('routing policy enable', () => {
   });
 
   it('adds a new policy when not present', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'health']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'health']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string; enabled: boolean }> };
     expect(body.policies).toHaveLength(1);
@@ -1146,44 +1146,44 @@ describe('routing policy enable', () => {
   });
 
   it('enables existing disabled policy', async () => {
-    const project = { ...baseProject, policies: [{ type: 'health' as const, enabled: false }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'health']);
+    const router = { ...baseRouter, policies: [{ type: 'health' as const, enabled: false }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'health']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string; enabled: boolean }> };
     expect(body.policies[0]).toMatchObject({ type: 'health', enabled: true });
   });
 
   it('enables policy with --config and updates existing config', async () => {
-    const project = { ...baseProject, policies: [{ type: 'llm' as const, enabled: true, config: { old: 1 } }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'llm', '--config', '{"memoryCount":3}']);
+    const router = { ...baseRouter, policies: [{ type: 'llm' as const, enabled: true, config: { old: 1 } }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'llm', '--config', '{"memoryCount":3}']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string; config: unknown }> };
     expect(body.policies[0]!.config).toEqual({ memoryCount: 3 });
   });
 
   it('exits 1 on invalid JSON in --config', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'health', '--config', 'not-json'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'health', '--config', 'not-json'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON'));
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'health'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'health'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'health'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'health'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1196,11 +1196,11 @@ describe('routing policy disable', () => {
   });
 
   it('disables an existing policy', async () => {
-    const project = { ...baseProject, policies: [{ type: 'health' as const, enabled: true }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    const router = { ...baseRouter, policies: [{ type: 'health' as const, enabled: true }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'disable', 'my-api', 'health']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'disable', 'my-api', 'health']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string; enabled: boolean }> };
     expect(body.policies[0]).toMatchObject({ enabled: false });
@@ -1208,28 +1208,28 @@ describe('routing policy disable', () => {
   });
 
   it('shows warning when policy not configured', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'disable', 'my-api', 'health']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'disable', 'my-api', 'health']);
     expect(lines.join('\n')).toContain('not configured');
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    const project = { ...baseProject, policies: [{ type: 'health' as const, enabled: true }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const router = { ...baseRouter, policies: [{ type: 'health' as const, enabled: true }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'disable', 'my-api', 'health'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'disable', 'my-api', 'health'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    const project = { ...baseProject, policies: [{ type: 'health' as const, enabled: true }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new Error('fail'));
+    const router = { ...baseRouter, policies: [{ type: 'health' as const, enabled: true }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'disable', 'my-api', 'health'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'disable', 'my-api', 'health'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1242,18 +1242,18 @@ describe('routing policy reorder', () => {
   });
 
   it('reorders policies per given order, appends unmentioned', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       policies: [
         { type: 'cheapest' as const, enabled: true },
         { type: 'health' as const, enabled: true },
         { type: 'context' as const, enabled: false },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'reorder', 'my-api', 'health,cheapest']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'reorder', 'my-api', 'health,cheapest']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string }> };
     expect(body.policies[0]!.type).toBe('health');
@@ -1265,19 +1265,19 @@ describe('routing policy reorder', () => {
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    const project = { ...baseProject, policies: [{ type: 'health' as const, enabled: true }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const router = { ...baseRouter, policies: [{ type: 'health' as const, enabled: true }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'reorder', 'my-api', 'health'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'reorder', 'my-api', 'health'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    const project = { ...baseProject, policies: [{ type: 'health' as const, enabled: true }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new Error('fail'));
+    const router = { ...baseRouter, policies: [{ type: 'health' as const, enabled: true }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'reorder', 'my-api', 'health'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'reorder', 'my-api', 'health'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1292,41 +1292,41 @@ describe('model list', () => {
   });
 
   it('shows models table with prompt truncated at 60 chars', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       models: [
         { modelId: 'openai/gpt-4', prompt: 'A'.repeat(80) },
         { modelId: 'openai/gpt-3.5' },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('openai/gpt-4');
     expect(out).toContain('…');
   });
 
   it('shows empty state when no models', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No models configured');
   });
 
   it('exits 1 on error', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'list', 'no-such'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'list', 'no-such'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('exits 1 on non-ApiError', async () => {
     mockApi.mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1339,10 +1339,10 @@ describe('model add', () => {
   });
 
   it('adds model without prompt', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'add', 'my-api', 'openai/gpt-4']);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'add', 'my-api', 'openai/gpt-4']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(body.models).toHaveLength(1);
@@ -1351,35 +1351,35 @@ describe('model add', () => {
   });
 
   it('adds model with prompt', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'model', 'add', 'my-api', 'openai/gpt-4', '--prompt', 'Use for fast tasks']);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'add', 'my-api', 'openai/gpt-4', '--prompt', 'Use for fast tasks']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(body.models[0]).toEqual({ modelId: 'openai/gpt-4', prompt: 'Use for fast tasks' });
   });
 
-  it('shows warning when model already in project', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }] };
-    mockApi.mockResolvedValueOnce([project]);
+  it('shows warning when model already in router', async () => {
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'add', 'my-api', 'openai/gpt-4']);
-    expect(lines.join('\n')).toContain('already in project');
+    await makeCmd().parseAsync(['node', 'router', 'model', 'add', 'my-api', 'openai/gpt-4']);
+    expect(lines.join('\n')).toContain('already in router');
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'add', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'add', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'add', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'add', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1391,12 +1391,12 @@ describe('model remove', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('removes model from project', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }, { modelId: 'openai/gpt-3.5' }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+  it('removes model from router', async () => {
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }, { modelId: 'openai/gpt-3.5' }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'remove', 'my-api', 'openai/gpt-4']);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'remove', 'my-api', 'openai/gpt-4']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string }> };
     expect(body.models).toHaveLength(1);
@@ -1404,29 +1404,29 @@ describe('model remove', () => {
     expect(lines.join('\n')).toContain('removed');
   });
 
-  it('exits 1 when model not in project', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+  it('exits 1 when model not in router', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not in project'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not in router'));
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new Error('fail'));
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1439,11 +1439,11 @@ describe('model set-prompt', () => {
   });
 
   it('sets prompt on a model', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'Use for complex tasks']);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'Use for complex tasks']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(body.models[0]).toEqual({ modelId: 'openai/gpt-4', prompt: 'Use for complex tasks' });
@@ -1451,38 +1451,38 @@ describe('model set-prompt', () => {
   });
 
   it('clears prompt when empty string provided', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4', prompt: 'old' }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', '']);
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4', prompt: 'old' }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', '']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(body.models[0]).toEqual({ modelId: 'openai/gpt-4' });
     expect(body.models[0]).not.toHaveProperty('prompt');
   });
 
-  it('exits 1 when model not in project', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+  it('exits 1 when model not in router', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not in project'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not in router'));
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4' }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new Error('fail'));
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1497,8 +1497,8 @@ describe('token list', () => {
   });
 
   it('shows tokens table with labels, tags, and per-model limits', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [
         {
           id: 'tok-1',
@@ -1512,10 +1512,10 @@ describe('token list', () => {
         },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('abc123');
     expect(out).toContain('prod');
@@ -1524,37 +1524,37 @@ describe('token list', () => {
   });
 
   it('shows token without labels/tags/limits', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-15T10:00:00Z' }],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('abc');
   });
 
   it('shows empty state when no tokens', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No tokens');
   });
 
   it('exits 1 on error', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'list', 'no-such'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'list', 'no-such'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('exits 1 on non-ApiError', async () => {
     mockApi.mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1567,11 +1567,11 @@ describe('token create', () => {
   });
 
   it('creates token with no options', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce({ token: 'sk-rt-abc', tokenInfo: { id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' } });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('sk-rt-abc');
     expect(out).toContain('tok-1');
@@ -1580,11 +1580,11 @@ describe('token create', () => {
   });
 
   it('creates token with labels', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce({ token: 'sk-rt-xyz', tokenInfo: { id: 'tok-2', tokenSnippet: 'xyz', createdAt: '2024-01-01' } });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api', '--labels', 'dev,staging']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api', '--labels', 'dev,staging']);
     const out = lines.join('\n');
     expect(out).toContain('dev');
     expect(out).toContain('staging');
@@ -1593,11 +1593,11 @@ describe('token create', () => {
   });
 
   it('creates token with scopes', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce({ token: 'sk-rt-scp', tokenInfo: { id: 'tok-s', tokenSnippet: 'scp', createdAt: '2024-01-01' } });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api', '--scopes', 'mcp,mcp:write']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api', '--scopes', 'mcp,mcp:write']);
     const out = lines.join('\n');
     expect(out).toContain('mcp');
     expect(out).toContain('mcp:write');
@@ -1606,11 +1606,11 @@ describe('token create', () => {
   });
 
   it('creates token with tags', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce({ token: 'sk-rt-xyz', tokenInfo: { id: 'tok-3', tokenSnippet: 'xyz', createdAt: '2024-01-01' } });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api', '--tag', 'env=prod', '--tag', 'region=us']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api', '--tag', 'env=prod', '--tag', 'region=us']);
     const out = lines.join('\n');
     expect(out).toContain('env=prod');
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
@@ -1618,26 +1618,26 @@ describe('token create', () => {
   });
 
   it('creates token with tag without value (key only)', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce({ token: 'sk-rt-xyz', tokenInfo: { id: 'tok-4', tokenSnippet: 'xyz', createdAt: '2024-01-01' } });
-    await makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api', '--tag', 'mykey']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api', '--tag', 'mykey']);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({ tags: { mykey: '' } });
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'create', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'create', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1667,11 +1667,11 @@ describe('token edit', () => {
   };
 
   it('adds a period limit to existing token', async () => {
-    const project = { ...baseProject, tokens: [{ ...tokenWithLimits, models: [] }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    const router = { ...baseRouter, tokens: [{ ...tokenWithLimits, models: [] }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'openai/gpt-4:cost:period:hourly:10']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'openai/gpt-4:cost:period:hourly:10']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; limits?: unknown[] }> };
     expect(body.models[0]!.modelId).toBe('openai/gpt-4');
@@ -1680,18 +1680,18 @@ describe('token edit', () => {
   });
 
   it('adds a rolling limit to existing token', async () => {
-    const project = { ...baseProject, tokens: [{ ...tokenWithLimits, models: [] }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'openai/gpt-4:calls:rolling:1:day:100']);
+    const router = { ...baseRouter, tokens: [{ ...tokenWithLimits, models: [] }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'openai/gpt-4:calls:rolling:1:day:100']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; limits?: unknown[] }> };
     expect(body.models[0]!.limits).toHaveLength(1);
   });
 
   it('removes a limit from existing token', async () => {
-    const project = { ...baseProject, tokens: [tokenWithLimits] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--remove-limit', 'openai/gpt-4:cost:period']);
+    const router = { ...baseRouter, tokens: [tokenWithLimits] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--remove-limit', 'openai/gpt-4:cost:period']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; limits?: unknown[] }> };
     // cost:period removed, rolling:calls remains; but filter removes entries with 0 limits
@@ -1702,97 +1702,97 @@ describe('token edit', () => {
   });
 
   it('removes model entry when last limit removed', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{
         ...tokenWithLimits,
         models: [{ modelId: 'openai/gpt-4', limits: [{ metric: 'cost' as const, windowType: 'period' as const, period: 'hourly' as const, value: 10 }] }],
       }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--remove-limit', 'openai/gpt-4:cost:period']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--remove-limit', 'openai/gpt-4:cost:period']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: unknown[] };
     expect(body.models).toHaveLength(0);
   });
 
   it('updates labels', async () => {
-    const project = { ...baseProject, tokens: [tokenWithLimits] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'prod,v2']);
+    const router = { ...baseRouter, tokens: [tokenWithLimits] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'prod,v2']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { labels: string[] };
     expect(body.labels).toEqual(['prod', 'v2']);
   });
 
   it('updates tags', async () => {
-    const project = { ...baseProject, tokens: [tokenWithLimits] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--tag', 'env=prod']);
+    const router = { ...baseRouter, tokens: [tokenWithLimits] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--tag', 'env=prod']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { tags: Record<string, string> };
     expect(body.tags).toEqual({ env: 'prod' });
   });
 
   it('updates scopes', async () => {
-    const project = { ...baseProject, tokens: [tokenWithLimits] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--scopes', 'mcp,mcp:write']);
+    const router = { ...baseRouter, tokens: [tokenWithLimits] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--scopes', 'mcp,mcp:write']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { scopes: string[] };
     expect(body.scopes).toEqual(['mcp', 'mcp:write']);
   });
 
   it('preserves existing scopes when --scopes omitted', async () => {
-    const project = { ...baseProject, tokens: [{ ...tokenWithLimits, scopes: ['mcp'] }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'prod']);
+    const router = { ...baseRouter, tokens: [{ ...tokenWithLimits, scopes: ['mcp'] }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'prod']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { scopes: string[] };
     expect(body.scopes).toEqual(['mcp']);
   });
 
   it('exits 1 when token not found', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-999', '--labels', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-999', '--labels', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
 
   it('exits 1 on invalid limit spec (too few parts)', async () => {
-    const project = { ...baseProject, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
-    mockApi.mockResolvedValueOnce([project]);
+    const router = { ...baseRouter, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
+    mockApi.mockResolvedValueOnce([router]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'gpt-4:cost'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'gpt-4:cost'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid limit spec'));
   });
 
   it('exits 1 on unknown windowType in limit spec', async () => {
-    const project = { ...baseProject, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
-    mockApi.mockResolvedValueOnce([project]);
+    const router = { ...baseRouter, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
+    mockApi.mockResolvedValueOnce([router]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'gpt-4:cost:unknown:hourly:10'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'gpt-4:cost:unknown:hourly:10'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Unknown windowType'));
   });
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    const project = { ...baseProject, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const router = { ...baseRouter, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    const project = { ...baseProject, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new Error('fail'));
+    const router = { ...baseRouter, tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1805,10 +1805,10 @@ describe('token remove', () => {
   });
 
   it('removes a token', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(undefined);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'remove', 'my-api', 'tok-1']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'remove', 'my-api', 'tok-1']);
     const delCall = mockApi.mock.calls.find(c => c[0] === 'DELETE');
     expect(delCall).toBeDefined();
     expect(lines.join('\n')).toContain('removed');
@@ -1816,26 +1816,26 @@ describe('token remove', () => {
 
   it('exits 1 on 404', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(404, 'not found'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(404, 'not found'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'remove', 'my-api', 'tok-1'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'remove', 'my-api', 'tok-1'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
 
   it('exits 1 on other ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(500, 'server error'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(500, 'server error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'remove', 'my-api', 'tok-1'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'remove', 'my-api', 'tok-1'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new Error('fail'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'remove', 'my-api', 'tok-1'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'remove', 'my-api', 'tok-1'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1850,36 +1850,36 @@ describe('member list', () => {
   });
 
   it('shows members table with email resolved', async () => {
-    const project = { ...baseProject, members: [{ userId: 'u1', role: 'editor' }] };
-    mockApi.mockResolvedValueOnce([project])
+    const router = { ...baseRouter, members: [{ userId: 'u1', role: 'editor' }] };
+    mockApi.mockResolvedValueOnce([router])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'member', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'member', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('alice@example.com');
     expect(out).toContain('editor');
   });
 
   it('shows empty state when no members', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'member', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'member', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No members');
   });
 
   it('exits 1 on error', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'list', 'no-such'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'list', 'no-such'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
   it('exits 1 on non-ApiError', async () => {
     mockApi.mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1892,54 +1892,54 @@ describe('member add', () => {
   });
 
   it('adds a member', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])                       // resolveProject
+    mockApi.mockResolvedValueOnce([baseRouter])                       // resolveRouter
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])  // resolveUserId (GET /api/users)
            .mockResolvedValueOnce(undefined);                          // POST members
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor']);
+    await makeCmd().parseAsync(['node', 'router', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor']);
     expect(lines.join('\n')).toContain('added');
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({ userId: 'u1', role: 'editor' });
   });
 
   it('exits 1 when user not found', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([]);  // no users
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'add', 'my-api', '--email', 'nobody@example.com', '--role', 'editor'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'add', 'my-api', '--email', 'nobody@example.com', '--role', 'editor'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
 
   it('exits 1 on 409 (already a member)', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new ApiError(409, 'conflict'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('already a member'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
 
   it('exits 1 on other ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new ApiError(500, 'server error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'add', 'my-api', '--email', 'alice@example.com', '--role', 'editor'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
@@ -1952,12 +1952,12 @@ describe('member set-role', () => {
   });
 
   it('updates member role', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'member', 'set-role', 'my-api', '--email', 'alice@example.com', '--role', 'admin']);
+    await makeCmd().parseAsync(['node', 'router', 'member', 'set-role', 'my-api', '--email', 'alice@example.com', '--role', 'admin']);
     expect(lines.join('\n')).toContain('admin');
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT' && c[1].includes('/members/'));
     expect(putCall![2]).toMatchObject({ role: 'admin' });
@@ -1965,21 +1965,21 @@ describe('member set-role', () => {
 
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'set-role', 'my-api', '--email', 'alice@example.com', '--role', 'admin'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'set-role', 'my-api', '--email', 'alice@example.com', '--role', 'admin'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'set-role', 'my-api', '--email', 'alice@example.com', '--role', 'admin'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'set-role', 'my-api', '--email', 'alice@example.com', '--role', 'admin'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -1992,12 +1992,12 @@ describe('member remove', () => {
   });
 
   it('removes a member', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'member', 'remove', 'my-api', '--email', 'alice@example.com']);
+    await makeCmd().parseAsync(['node', 'router', 'member', 'remove', 'my-api', '--email', 'alice@example.com']);
     expect(lines.join('\n')).toContain('removed');
     const delCall = mockApi.mock.calls.find(c => c[0] === 'DELETE' && c[1].includes('/members/'));
     expect(delCall).toBeDefined();
@@ -2005,32 +2005,32 @@ describe('member remove', () => {
 
   it('exits 1 on 404', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new ApiError(404, 'not found'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'remove', 'my-api', '--email', 'alice@example.com'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'remove', 'my-api', '--email', 'alice@example.com'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not a member'));
   });
 
   it('exits 1 on other ApiError', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new ApiError(500, 'server error'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'remove', 'my-api', '--email', 'alice@example.com'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'remove', 'my-api', '--email', 'alice@example.com'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 
   it('exits 1 on non-ApiError', async () => {
-    mockApi.mockResolvedValueOnce([baseProject])
+    mockApi.mockResolvedValueOnce([baseRouter])
            .mockResolvedValueOnce([{ id: 'u1', email: 'alice@example.com' }])
            .mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'remove', 'my-api', '--email', 'alice@example.com'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'remove', 'my-api', '--email', 'alice@example.com'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -2045,7 +2045,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('regex rule: creates rule with patterns and target', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2059,7 +2059,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     expect(payload.guardrails.rules[0]!.type).toBe('regex');
@@ -2070,7 +2070,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('topic rule inject-only: creates rule with no target, inject=true, no block/log', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2084,7 +2084,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const rule = payload.guardrails.rules[0]!;
@@ -2097,7 +2097,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('moderation inject-only: creates rule with no target, inject=true, no judge params', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2111,7 +2111,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const rule = payload.guardrails.rules[0]!;
@@ -2123,7 +2123,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('topic rule with request+response+inject: target=both, inject=true, block=true, useJudgeResponse=true', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2137,7 +2137,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const rule = payload.guardrails.rules[0]!;
@@ -2150,7 +2150,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('moderation rule with inject+response: inject=true, target=response, block=true', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2163,7 +2163,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const rule = payload.guardrails.rules[0]!;
@@ -2174,7 +2174,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('topic rule with request only: target=request, no inject', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2187,7 +2187,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const rule = payload.guardrails.rules[0]!;
@@ -2197,7 +2197,7 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('topic rule with response only: target=response', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2210,7 +2210,7 @@ describe('runAddRuleWizard additional branches', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { guardrails: { rules: GuardrailRule[] } };
     const rule = payload.guardrails.rules[0]!;
@@ -2219,8 +2219,8 @@ describe('runAddRuleWizard additional branches', () => {
   });
 
   it('guardrails show: inject-only moderation shows "inject" target column', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -2229,18 +2229,18 @@ describe('runAddRuleWizard additional branches', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('inject');
     expect(out).toContain('[inject]');
   });
 
   it('guardrails show: inject+moderation with modelId shows model in summary', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -2250,20 +2250,20 @@ describe('runAddRuleWizard additional branches', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('gpt-4');
     expect(out).toContain('[inject]');
   });
 
   it('guardrails update: non-ApiError shows error message', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [{ type: 'regex' as const, target: 'request' as const, config: { patterns: ['x'] } }] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [{ type: 'regex' as const, target: 'request' as const, config: { patterns: ['x'] } }] } }])
            .mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--remove-rule', '0'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--remove-rule', '0'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -2271,14 +2271,14 @@ describe('runAddRuleWizard additional branches', () => {
   it('pii list: non-ApiError shows error message', async () => {
     mockApi.mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
 
   it('pii add: ApiError shows error message', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockRejectedValueOnce(new ApiError(403, 'forbidden'));
 
     vi.doMock('inquirer', () => ({
@@ -2289,17 +2289,17 @@ describe('runAddRuleWizard additional branches', () => {
     }));
 
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
     vi.doUnmock('inquirer');
   });
 
   it('pii remove: non-ApiError shows error message', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [{ enabled: true, target: 'both' as const }] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [{ enabled: true, target: 'both' as const }] } }])
            .mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });
@@ -2314,7 +2314,7 @@ describe('pii add outputBufferSize for response/both targets', () => {
   });
 
   it('prompts outputBufferSize when target=response', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2325,7 +2325,7 @@ describe('pii add outputBufferSize for response/both targets', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { pii: { policies: Array<{ outputBufferSize?: number }> } };
     expect(payload.pii.policies[0]!.outputBufferSize).toBe(100);
@@ -2333,7 +2333,7 @@ describe('pii add outputBufferSize for response/both targets', () => {
   });
 
   it('prompts outputBufferSize when target=both', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2344,7 +2344,7 @@ describe('pii add outputBufferSize for response/both targets', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { pii: { policies: Array<{ outputBufferSize?: number }> } };
     expect(payload.pii.policies[0]!.outputBufferSize).toBe(50);
@@ -2352,7 +2352,7 @@ describe('pii add outputBufferSize for response/both targets', () => {
   });
 
   it('pii add with customPatterns sets them on policy', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, pii: { policies: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, pii: { policies: [] } }])
            .mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
@@ -2362,7 +2362,7 @@ describe('pii add outputBufferSize for response/both targets', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { pii: { policies: Array<{ customPatterns?: string[] }> } };
     expect(payload.pii.policies[0]!.customPatterns).toEqual(['SSN-\\d+', 'ID-\\d+']);
@@ -2381,7 +2381,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('scope checkbox validate: accepts non-empty selection, rejects empty', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedScopeValidate: ((v: readonly string[]) => boolean | string) | undefined;
@@ -2399,7 +2399,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedScopeValidate).toBeDefined();
     expect(capturedScopeValidate!([])).toBe('Select at least one');
@@ -2409,7 +2409,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('regex patterns validate: accepts non-empty, rejects empty', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedPatternsValidate: ((v: string) => boolean | string) | undefined;
@@ -2426,7 +2426,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedPatternsValidate).toBeDefined();
     expect(capturedPatternsValidate!('')).toBe('At least one pattern required');
@@ -2437,7 +2437,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('semantic embeddingModelId/examples validates: accepts non-empty, rejects empty', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedEmbedValidate: ((v: string) => boolean | string) | undefined;
@@ -2457,7 +2457,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedEmbedValidate).toBeDefined();
     expect(capturedEmbedValidate!('')).toBe('Required');
@@ -2471,7 +2471,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('topic allowedTopics validate: accepts non-empty, rejects empty', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedTopicValidate: ((v: string) => boolean | string) | undefined;
@@ -2489,7 +2489,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedTopicValidate).toBeDefined();
     expect(capturedTopicValidate!('')).toBe('Required');
@@ -2500,7 +2500,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('topic modelId validate: accepts non-empty, rejects empty', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedModelIdValidate: ((v: string) => boolean | string) | undefined;
@@ -2518,7 +2518,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedModelIdValidate).toBeDefined();
     expect(capturedModelIdValidate!('')).toBe('Required');
@@ -2529,7 +2529,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('moderation systemPrompt validate: accepts non-empty, rejects empty (line 879)', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedSystemPromptValidate: ((v: string) => boolean | string) | undefined;
@@ -2547,7 +2547,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedSystemPromptValidate).toBeDefined();
     expect(capturedSystemPromptValidate!('')).toBe('Required');
@@ -2558,7 +2558,7 @@ describe('runAddRuleWizard validate callbacks', () => {
   });
 
   it('moderation judged modelId validate: accepts non-empty, rejects empty (line 884)', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [] } }])
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [] } }])
            .mockResolvedValueOnce(undefined);
 
     let capturedModJudgeValidate: ((v: string) => boolean | string) | undefined;
@@ -2576,7 +2576,7 @@ describe('runAddRuleWizard validate callbacks', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--add-rule']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--add-rule']);
 
     expect(capturedModJudgeValidate).toBeDefined();
     expect(capturedModJudgeValidate!('')).toBe('Required');
@@ -2598,10 +2598,10 @@ describe('guardrails update ApiError branch', () => {
   it('exits 1 on ApiError in guardrails patch (else branch line 1201)', async () => {
     const { ApiError } = await import('../api.js');
     mockApi
-      .mockResolvedValueOnce([{ ...baseProject, guardrails: { rules: [{ type: 'regex' as const, target: 'request' as const, config: { patterns: ['x'] } }] } }])
+      .mockResolvedValueOnce([{ ...baseRouter, guardrails: { rules: [{ type: 'regex' as const, target: 'request' as const, config: { patterns: ['x'] } }] } }])
       .mockRejectedValueOnce(new ApiError(403, 'forbidden guardrails'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api', '--remove-rule', '0'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api', '--remove-rule', '0'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden guardrails'));
   });
@@ -2616,25 +2616,25 @@ describe('branch coverage extras', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  // project list: tokens/members absent → ?? [] right side
-  it('project list: project without tokens/members/timeoutMs uses defaults', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [] };
-    mockApi.mockResolvedValueOnce([project]);
+  // router list: tokens/members absent → ?? [] right side
+  it('router list: router without tokens/members/timeoutMs uses defaults', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [] };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'list']);
+    await makeCmd().parseAsync(['node', 'router', 'list']);
     const out = lines.join('\n');
     expect(out).toContain('my-api');
-    expect(out).toContain('2s'); // timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS
+    expect(out).toContain('2s'); // timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS
   });
 
   // routing show: policies absent → ?? [] right side; routing show without fallbackRoutingModelIds
-  it('routing show: project without policies/fallbackRoutingModelIds uses defaults', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: false };
-    mockApi.mockResolvedValueOnce([project]);
+  it('routing show: router without policies/fallbackRoutingModelIds uses defaults', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: false };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('No routing policies');
     expect(out).toContain('(none)'); // fallbacks empty
@@ -2643,104 +2643,104 @@ describe('branch coverage extras', () => {
 
   // routing show: policy without config shows gray dash; disabled policy shows gray dash
   it('routing show: disabled policy without config shows both gray branches', async () => {
-    const project = {
+    const router = {
       id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true,
       fallbackRoutingModelIds: ['gpt-3.5'],
       policies: [{ type: 'cheapest' as const, enabled: false }],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('cheapest');
   });
 
   // routing policy list: disabled policy without config
   it('routing policy list: disabled policy without config covers both ternary branches', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       policies: [
         { type: 'health' as const, enabled: false },
         { type: 'cheapest' as const, enabled: true, config: { x: 1 } },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('health');
     expect(out).toContain('cheapest');
   });
 
-  // routing update: project without fallbackRoutingModelIds (the ?? branch)
-  it('routing update: project without fallbackRoutingModelIds uses undefined', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true, policies: [] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'update', 'my-api', '--auto-routing']);
+  // routing update: router without fallbackRoutingModelIds (the ?? branch)
+  it('routing update: router without fallbackRoutingModelIds uses undefined', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true, policies: [] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'update', 'my-api', '--auto-routing']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({ autoRouting: true });
   });
 
-  // routing policy enable/disable: project without policies ?? []
-  it('routing policy enable: project without policies field uses []', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'health']);
+  // routing policy enable/disable: router without policies ?? []
+  it('routing policy enable: router without policies field uses []', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'health']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string }> };
     expect(body.policies).toHaveLength(1);
     expect(body.policies[0]!.type).toBe('health');
   });
 
-  // routing policy disable: project without policies ?? []
-  it('routing policy disable: project without policies field (not configured branch)', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  // routing policy disable: router without policies ?? []
+  it('routing policy disable: router without policies field (not configured branch)', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'disable', 'my-api', 'health']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'disable', 'my-api', 'health']);
     expect(lines.join('\n')).toContain('not configured');
   });
 
-  // routing policy reorder: project without policies ?? []
-  it('routing policy reorder: project without policies field uses []', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+  // routing policy reorder: router without policies ?? []
+  it('routing policy reorder: router without policies field uses []', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'reorder', 'my-api', 'health']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'reorder', 'my-api', 'health']);
     expect(lines.join('\n')).toContain('reordered');
   });
 
   // token list: tokens absent → ?? []
-  it('token list: project without tokens field uses ?? []', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  it('token list: router without tokens field uses ?? []', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No tokens');
   });
 
   // member list: members absent → ?? []
-  it('member list: project without members field uses ?? []', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  it('member list: router without members field uses ?? []', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'member', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'member', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No members');
   });
 
-  // project show: without tokens and members
-  it('project show: project without tokens/members/policies/routingModelId uses defaults', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: false };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+  // router show: without tokens and members
+  it('router show: router without tokens/members/policies/routingModelId uses defaults', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: false };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('(none)'); // no tokens, members
     expect(out).toContain('disabled'); // autoRouting false
@@ -2749,8 +2749,8 @@ describe('branch coverage extras', () => {
 
   // rulesSummary: semantic with no threshold (uses ?? 0.82)
   it('guardrails show: semantic rule without threshold uses default 0.82', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'semantic' as const, target: 'request' as const,
@@ -2758,17 +2758,17 @@ describe('branch coverage extras', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('0.82');
   });
 
   // rulesSummary: topic without modelId (inject-only, shows "topics: ...")
   it('guardrails show: topic rule without modelId shows allowedTopics', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const,
@@ -2777,17 +2777,17 @@ describe('branch coverage extras', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('topics:');
   });
 
   // rulesSummary: topic without threshold (uses ?? 0.5)
   it('guardrails show: topic rule without threshold uses default 0.5', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'topic' as const, target: 'request' as const,
@@ -2795,17 +2795,17 @@ describe('branch coverage extras', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('0.5');
   });
 
   // rulesSummary: moderation without modelId (inject-only, shows "inject-only")
   it('guardrails show: moderation rule without modelId shows inject-only', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const,
@@ -2813,17 +2813,17 @@ describe('branch coverage extras', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('inject-only');
   });
 
   // rulesSummary: moderation without threshold (uses ?? 0.5)
   it('guardrails show: moderation rule without threshold uses default 0.5', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       guardrails: {
         rules: [{
           type: 'moderation' as const, target: 'request' as const,
@@ -2831,57 +2831,57 @@ describe('branch coverage extras', () => {
         }],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('0.5');
   });
 
-  // guardrails show: project without guardrails uses ?? { rules: [] }
-  it('guardrails show: project without guardrails field shows empty state', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  // guardrails show: router without guardrails uses ?? { rules: [] }
+  it('guardrails show: router without guardrails field shows empty state', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'guardrails', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'guardrails', 'my-api']);
     expect(lines.join('\n')).toContain('No rules configured');
   });
 
   // pii list: policy with enabled:false (dim branch), no entities, has customPatterns, has outputBufferSize
   it('pii list: disabled policy with customPatterns and outputBufferSize covers all ternary branches', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       pii: {
         policies: [
           { enabled: false, target: 'request' as const, customPatterns: ['\\d+'], outputBufferSize: 100 },
         ],
       },
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('request');
     expect(out).toContain('1'); // customPatterns.length
     expect(out).toContain('100'); // outputBufferSize
   });
 
-  // pii list: project without pii field → ?? { policies: [] }
-  it('pii list: project without pii field shows empty state', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  // pii list: router without pii field → ?? { policies: [] }
+  it('pii list: router without pii field shows empty state', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No PII policies');
   });
 
-  // pii add: project without pii field → ?? { policies: [] }
-  it('pii add: project without pii field initializes with empty policies', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+  // pii add: router without pii field → ?? { policies: [] }
+  it('pii add: router without pii field initializes with empty policies', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
       default: {
@@ -2890,7 +2890,7 @@ describe('branch coverage extras', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { pii: { policies: unknown[] } };
     expect(payload.pii.policies).toHaveLength(1);
@@ -2899,8 +2899,8 @@ describe('branch coverage extras', () => {
 
   // pii add: non-ApiError in PATCH → line 1293 true branch
   it('pii add: non-ApiError in PATCH shows error message (non-ApiError catch branch)', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]).mockRejectedValueOnce(new Error('patch failed'));
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('patch failed'));
 
     vi.doMock('inquirer', () => ({
       default: {
@@ -2910,33 +2910,33 @@ describe('branch coverage extras', () => {
     }));
 
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('patch failed'));
     vi.doUnmock('inquirer');
   });
 
-  // pii remove: project without pii field → ?? { policies: [] } → empty → invalid index
-  it('pii remove: project without pii field uses empty policies, invalid index exits 1', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  // pii remove: router without pii field → ?? { policies: [] } → empty → invalid index
+  it('pii remove: router without pii field uses empty policies, invalid index exits 1', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid index'));
   });
 
-  // project show: disabled autoRouting branch
-  it('project show: disabled autoRouting shows yellow disabled', async () => {
-    const project = {
-      ...baseProject,
+  // router show: disabled autoRouting branch
+  it('router show: disabled autoRouting shows yellow disabled', async () => {
+    const router = {
+      ...baseRouter,
       autoRouting: false,
       policies: [{ type: 'health' as const, enabled: true }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('disabled'); // autoRouting false branch
     expect(out).toContain('health'); // enabled policy listed
@@ -2949,7 +2949,7 @@ describe('branch coverage extras', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'show', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     // ApiError: the if-block is false, so console.error is NOT called
     expect(console.error).not.toHaveBeenCalled();
@@ -2960,7 +2960,7 @@ describe('branch coverage extras', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).not.toHaveBeenCalled();
   });
@@ -2970,7 +2970,7 @@ describe('branch coverage extras', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'model', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).not.toHaveBeenCalled();
   });
@@ -2980,7 +2980,7 @@ describe('branch coverage extras', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).not.toHaveBeenCalled();
   });
@@ -2990,7 +2990,7 @@ describe('branch coverage extras', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'member', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'member', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).not.toHaveBeenCalled();
   });
@@ -3000,52 +3000,52 @@ describe('branch coverage extras', () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).not.toHaveBeenCalled();
   });
 
   // routing policy enable: new policy with --config (line 226 true branch)
   it('routing policy enable: new policy with --config sets config on new policy', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true, policies: [] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'enable', 'my-api', 'llm', '--config', '{"memoryCount":3}']);
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true, policies: [] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'enable', 'my-api', 'llm', '--config', '{"memoryCount":3}']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { policies: Array<{ type: string; config: unknown }> };
     expect(body.policies[0]).toMatchObject({ type: 'llm', enabled: true, config: { memoryCount: 3 } });
   });
 
-  // routing policy list: project without policies field → ?? []
-  it('routing policy list: project without policies field uses ?? []', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  // routing policy list: router without policies field → ?? []
+  it('routing policy list: router without policies field uses ?? []', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'routing', 'policy', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No routing policies');
   });
 
   // model list: model with short prompt (< 60 chars) → uses m.prompt as-is
   it('model list: model with short prompt shows it as-is without truncation', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       models: [
         { modelId: 'openai/gpt-4', prompt: 'Short prompt' },
         { modelId: 'openai/gpt-3.5' },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'model', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('Short prompt');
   });
 
   // token list: token with models without limits (limits?.length ?? 0)
   it('token list: token models without limits array shows (0)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{
         id: 'tok-1',
         tokenSnippet: 'abc',
@@ -3053,18 +3053,18 @@ describe('branch coverage extras', () => {
         models: [{ modelId: 'gpt-4' }], // no limits array
       }],
     };
-    mockApi.mockResolvedValueOnce([project]);
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'token', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('gpt-4(0)');
   });
 
   // token edit: add limit to entry that already exists but has no limits array (covers line 553 true branch)
   it('token edit: addLimit to existing model entry without limits array initializes it', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{
         id: 'tok-1',
         tokenSnippet: 'abc',
@@ -3072,8 +3072,8 @@ describe('branch coverage extras', () => {
         models: [{ modelId: 'openai/gpt-4' }], // entry exists but no limits
       }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'openai/gpt-4:cost:period:hourly:10']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--add-limit', 'openai/gpt-4:cost:period:hourly:10']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; limits?: unknown[] }> };
     expect(body.models[0]!.limits).toHaveLength(1);
@@ -3081,8 +3081,8 @@ describe('branch coverage extras', () => {
 
   // token edit: removeLimit for a model that exists but has no limits (entry?.limits is falsy)
   it('token edit: removeLimit for model without limits is a no-op', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{
         id: 'tok-1',
         tokenSnippet: 'abc',
@@ -3090,8 +3090,8 @@ describe('branch coverage extras', () => {
         models: [{ modelId: 'openai/gpt-4' }], // no limits
       }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--remove-limit', 'openai/gpt-4:cost:period']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--remove-limit', 'openai/gpt-4:cost:period']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: unknown[] };
     // model entry without limits gets filtered out by the models.filter
@@ -3100,8 +3100,8 @@ describe('branch coverage extras', () => {
 
   // token edit: without --tag flag uses token.tags (line 576 false branch)
   it('token edit: without --tag uses existing token.tags', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{
         id: 'tok-1',
         tokenSnippet: 'abc',
@@ -3109,8 +3109,8 @@ describe('branch coverage extras', () => {
         tags: { env: 'prod' },
       }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'v1']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'v1']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { tags: Record<string, string> };
     expect(body.tags).toEqual({ env: 'prod' });
@@ -3118,12 +3118,12 @@ describe('branch coverage extras', () => {
 
   // token edit: token with no labels and no tags (undefined labels/tags passthroughs)
   it('token edit: token without labels or tags uses undefined (no spread)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       tokens: [{ id: 'tok-1', tokenSnippet: 'abc', createdAt: '2024-01-01' }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'v1']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'v1']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as Record<string, unknown>;
     expect(body.labels).toEqual(['v1']);
@@ -3131,90 +3131,90 @@ describe('branch coverage extras', () => {
     expect(body).not.toHaveProperty('tags');
   });
 
-  // project show: model without prompt shows empty string
-  it('project show: model without prompt shows no prompt in output', async () => {
-    const project = {
-      ...baseProject,
+  // router show: model without prompt shows empty string
+  it('router show: model without prompt shows no prompt in output', async () => {
+    const router = {
+      ...baseRouter,
       models: [
         { modelId: 'openai/gpt-4', prompt: 'A'.repeat(60) }, // exactly 60: no truncation
         { modelId: 'openai/gpt-3.5' },                        // no prompt → ''
       ],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('openai/gpt-3.5'); // no prompt model shown
     expect(out).toContain('openai/gpt-4'); // prompt model shown
   });
 
-  // project show: token without labels and without model overrides (empty string branches)
-  it('project show: token without labels or model overrides shows no decoration', async () => {
-    const project = {
-      ...baseProject,
+  // router show: token without labels and without model overrides (empty string branches)
+  it('router show: token without labels or model overrides shows no decoration', async () => {
+    const router = {
+      ...baseRouter,
       tokens: [{ id: 'tok-1', tokenSnippet: 'abc123', createdAt: '2024-01-01T00:00:00Z' }],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('abc123');
   });
 
-  // project show: timeoutMs absent falls back to DEFAULT_PROJECT_TIMEOUT_MS
-  it('project show: project without timeoutMs uses the default', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+  // router show: timeoutMs absent falls back to DEFAULT_ROUTER_TIMEOUT_MS
+  it('router show: router without timeoutMs uses the default', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     const out = lines.join('\n');
     expect(out).toContain('2s');
   });
 
-  it('project show: timeoutMs 0 prints "off"', async () => {
-    const project = { id: 'proj-1', name: 'my-api', models: [], autoRouting: true, timeoutMs: 0 };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce([]);
+  it('router show: timeoutMs 0 prints "off"', async () => {
+    const router = { id: 'proj-1', name: 'my-api', models: [], autoRouting: true, timeoutMs: 0 };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce([]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'show', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'show', 'my-api']);
     expect(lines.join('\n')).toContain('off');
   });
 
-  it('project create: --timeout 0 is sent as 0, not replaced by the default', async () => {
+  it('router create: --timeout 0 is sent as 0, not replaced by the default', async () => {
     mockApi.mockResolvedValueOnce({ id: 'proj-1', name: 'my-api', token: 'sk-rt-x' });
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    await makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api', '--timeout', '0']);
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--timeout', '0']);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({ timeoutMs: 0 });
   });
 
-  it('project create: a negative --timeout is refused', async () => {
+  it('router create: a negative --timeout is refused', async () => {
     const errs: string[] = [];
     vi.spyOn(console, 'error').mockImplementation((...a) => errs.push(a.join(' ')));
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
-    await expect(makeCmd().parseAsync(['node', 'project', 'create', '--name', 'my-api', '--timeout', '-1']))
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--timeout', '-1']))
       .rejects.toThrow('exit');
     expect(errs.join('\n')).toContain('non-negative integer');
     exit.mockRestore();
   });
 
-  // pii list: project pii without policies key → ?? []
+  // pii list: router pii without policies key → ?? []
   it('pii list: pii object without policies key uses ?? []', async () => {
-    const project = { ...baseProject, pii: {} };
-    mockApi.mockResolvedValueOnce([project]);
+    const router = { ...baseRouter, pii: {} };
+    mockApi.mockResolvedValueOnce([router]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'list', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api']);
     expect(lines.join('\n')).toContain('No PII policies');
   });
 
   // pii add: pii object without policies key → ?? []
   it('pii add: pii object without policies key uses ?? []', async () => {
-    const project = { ...baseProject, pii: {} };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
+    const router = { ...baseRouter, pii: {} };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
 
     vi.doMock('inquirer', () => ({
       default: {
@@ -3223,19 +3223,19 @@ describe('branch coverage extras', () => {
       },
     }));
 
-    await makeCmd().parseAsync(['node', 'project', 'pii', 'add', 'my-api']);
+    await makeCmd().parseAsync(['node', 'router', 'pii', 'add', 'my-api']);
     const patchCall = mockApi.mock.calls.find(c => c[0] === 'PATCH');
     const payload = patchCall![2] as { pii: { policies: unknown[] } };
     expect(payload.pii.policies).toHaveLength(1);
     vi.doUnmock('inquirer');
   });
 
-  // pii remove: project without pii field → pii ?? {policies:[]} → policies ?? []
+  // pii remove: router without pii field → pii ?? {policies:[]} → policies ?? []
   it('pii remove: pii without policies key uses ?? []', async () => {
-    const project = { ...baseProject, pii: {} };
-    mockApi.mockResolvedValueOnce([project]);
+    const router = { ...baseRouter, pii: {} };
+    mockApi.mockResolvedValueOnce([router]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'remove', 'my-api', '0'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid index'));
   });
@@ -3243,9 +3243,9 @@ describe('branch coverage extras', () => {
   // model set-prompt: opts.prompt truthy → includes prompt (already tested elsewhere, but line 416 check)
   // This verifies the FALSE branch: opts.prompt is empty string → { modelId } without prompt
   it('model set-prompt: empty prompt string uses { modelId } without prompt property (line 416 false)', async () => {
-    const project = { ...baseProject, models: [{ modelId: 'openai/gpt-4', prompt: 'old' }] };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', '']);
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4', prompt: 'old' }] };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', '']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(body.models[0]).not.toHaveProperty('prompt');
@@ -3253,15 +3253,15 @@ describe('branch coverage extras', () => {
 
   // model set-prompt: multiple models — only target is updated, others pass through (line 416 false branch = m unchanged)
   it('model set-prompt: non-target models pass through unchanged (line 416 false branch)', async () => {
-    const project = {
-      ...baseProject,
+    const router = {
+      ...baseRouter,
       models: [
         { modelId: 'openai/gpt-4', prompt: 'old' },
         { modelId: 'openai/gpt-3.5' },
       ],
     };
-    mockApi.mockResolvedValueOnce([project]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'project', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'new']);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'new']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     const body = putCall![2] as { models: Array<{ modelId: string; prompt?: string }> };
     expect(body.models).toHaveLength(2);
@@ -3269,13 +3269,13 @@ describe('branch coverage extras', () => {
     expect(body.models[1]).toEqual({ modelId: 'openai/gpt-3.5' }); // unchanged
   });
 
-  // token edit: project without tokens field → ?? [] for the find (line 540 right side)
-  it('token edit: project without tokens field uses ?? [] and exits 1 token not found', async () => {
-    // project has no tokens property at all
-    const project = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
-    mockApi.mockResolvedValueOnce([project]);
+  // token edit: router without tokens field → ?? [] for the find (line 540 right side)
+  it('token edit: router without tokens field uses ?? [] and exits 1 token not found', async () => {
+    // router has no tokens property at all
+    const router = { id: 'proj-1', name: 'my-api', models: [], timeoutMs: 5000, autoRouting: true };
+    mockApi.mockResolvedValueOnce([router]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'project', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });

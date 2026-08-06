@@ -12,7 +12,7 @@ import * as model from './model.js'
 const DEFAULT_KEEP_RATIO = 0.5
 
 function stepOf(ctx: ProxyContext): OptimizerStep | undefined {
-  return ctx.project.optimizers?.steps.find((s) => s.id === 'llmlingua-2')
+  return ctx.router.optimizers?.steps.find((s) => s.id === 'llmlingua-2')
 }
 
 /** Target fraction of tokens to KEEP, from the step's `threshold` (0..1). */
@@ -21,7 +21,7 @@ function ratioOf(ctx: ProxyContext): number {
   return typeof t === 'number' && t > 0 && t < 1 ? t : DEFAULT_KEEP_RATIO
 }
 
-/** Checkpoint key this project's step selected, or undefined for the default. */
+/** Checkpoint key this router's step selected, or undefined for the default. */
 function modelKeyOf(ctx: ProxyContext): string | undefined {
   return stepOf(ctx)?.model
 }
@@ -87,7 +87,7 @@ export const llmlingua2Optimizer: Optimizer = {
     if (!model.isModelAvailable(modelKeyOf(ctx))) {
       return `Checkpoint ${checkpoint.label} is not downloaded yet. Install it from the optimizer tab or with \`routerly optimizers model --install ${checkpoint.key}\`.`
     }
-    return 'Step is not enabled on this project.'
+    return 'Step is not enabled on this router.'
   },
 
   // No inference in the sync preview: apply the keep-ratio as a cheap heuristic.

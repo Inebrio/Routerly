@@ -1,33 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Outlet, NavLink, useLocation } from 'react-router-dom';
 import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard } from 'lucide-react';
-import { getProjects, type Project } from '../../api';
+import { getRouters, type Router } from '../../api';
 
-export function ProjectLayout() {
+export function RouterLayout() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const isNew = !id;
 
-  const [project, setProject] = useState<Project | null>(null);
+  const [router, setRouter] = useState<Router | null>(null);
   const [loading, setLoading] = useState(!isNew);
   const [err, setErr] = useState('');
 
   useEffect(() => {
     if (isNew) return;
     setLoading(true);
-    getProjects()
+    getRouters()
       .then(ps => {
         const found = ps.find(p => p.id === id);
-        if (found) setProject(found);
-        else setErr('Project not found');
+        if (found) setRouter(found);
+        else setErr('Router not found');
       })
       .catch(e => setErr(e.message))
       .finally(() => setLoading(false));
   }, [id, isNew]);
 
   const tabs = [
-    // Dashboard is the project landing page; a new project has no traffic yet,
+    // Dashboard is the router landing page; a new router has no traffic yet,
     // so it starts on General instead.
     ...(isNew ? [] : [{ id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> }]),
     { id: 'general', label: 'General', icon: <Settings size={16} /> },
@@ -43,15 +43,15 @@ export function ProjectLayout() {
     return (
       <div className="page-body">
         <div className="form-error">{err}</div>
-        <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate('/dashboard/projects')}>
-          Back to Projects
+        <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate('/dashboard/routers')}>
+          Back to Routers
         </button>
       </div>
     );
   }
 
-  // Determine current active tab from URL. On the bare `/projects/:id` the index
-  // route renders Dashboard, so the last path segment is the project id itself.
+  // Determine current active tab from URL. On the bare `/routers/:id` the index
+  // route renders Dashboard, so the last path segment is the router id itself.
   /* v8 ignore next */
   const currentTab = location.pathname.split('/').pop() || 'dashboard';
   const landingTab = isNew ? 'general' : 'dashboard';
@@ -60,14 +60,14 @@ export function ProjectLayout() {
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 24 }}>
-          <button className="btn-icon" onClick={() => navigate('/dashboard/projects')} title="Back to projects">
+          <button className="btn-icon" onClick={() => navigate('/dashboard/routers')} title="Back to routers">
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 style={{ margin: 0 }}>{isNew ? 'New Project' : project?.name || 'Loading...'}</h1>
-            {!isNew && project && (
+            <h1 style={{ margin: 0 }}>{isNew ? 'New Router' : router?.name || 'Loading...'}</h1>
+            {!isNew && router && (
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Project ID: <span className="mono">{project.id}</span>
+                Router ID: <span className="mono">{router.id}</span>
               </p>
             )}
           </div>
@@ -93,7 +93,7 @@ export function ProjectLayout() {
                     cursor: 'not-allowed',
                     borderBottom: '2px solid transparent',
                   }}
-                  title="Save the project first to unlock this tab"
+                  title="Save the router first to unlock this tab"
                 >
                   {tab.icon} {tab.label}
                 </div>
@@ -103,7 +103,7 @@ export function ProjectLayout() {
             return (
               <NavLink
                 key={tab.id}
-                to={isNew ? '#' : `/dashboard/projects/${id}/${tab.id}`}
+                to={isNew ? '#' : `/dashboard/routers/${id}/${tab.id}`}
                 style={{
                   padding: '0 4px 12px',
                   display: 'flex',
@@ -129,18 +129,18 @@ export function ProjectLayout() {
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
         ) : (
-          <Outlet context={{ project, setProject }} />
+          <Outlet context={{ router, setRouter }} />
         )}
       </div>
     </>
   );
 }
 
-// Custom hook to access project context inside tabs
+// Custom hook to access router context inside tabs
 import { useOutletContext } from 'react-router-dom';
-export function useProject() {
+export function useRouter() {
   return useOutletContext<{
-    project: Project | null;
-    setProject: React.Dispatch<React.SetStateAction<Project | null>>;
+    router: Router | null;
+    setRouter: React.Dispatch<React.SetStateAction<Router | null>>;
   }>();
 }

@@ -2,16 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vites
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectTokenCreatePage } from './ProjectTokenCreatePage';
+import { RouterTokenCreatePage } from './RouterTokenCreatePage';
 
 vi.mock('../../api', () => ({
-  createProjectToken: vi.fn(),
+  createRouterToken: vi.fn(),
 }));
 
-import { createProjectToken } from '../../api';
-const mockCreateProjectToken = vi.mocked(createProjectToken as (...a: unknown[]) => Promise<unknown>);
+import { createRouterToken } from '../../api';
+const mockCreateRouterToken = vi.mocked(createRouterToken as (...a: unknown[]) => Promise<unknown>);
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [],
@@ -20,18 +20,18 @@ const mockProject = {
   ],
 };
 
-function renderPage(project: Record<string, unknown> = mockProject) {
-  const setProject = vi.fn();
+function renderPage(router: Record<string, unknown> = mockRouter) {
+  const setRouter = vi.fn();
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject }} />;
+    return <Outlet context={{ router, setRouter }} />;
   }
   return {
-    setProject,
+    setRouter,
     ...render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token/new']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token/new']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token/new" element={<ProjectTokenCreatePage />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token/new" element={<RouterTokenCreatePage />} />
             <Route path="token" element={<div data-testid="token-list">token list</div>} />
           </Route>
         </Routes>
@@ -41,7 +41,7 @@ function renderPage(project: Record<string, unknown> = mockProject) {
 }
 
 beforeEach(() => {
-  mockCreateProjectToken.mockResolvedValue({
+  mockCreateRouterToken.mockResolvedValue({
     token: 'sk-rt-newtoken123',
     tokenInfo: { id: 'tok-new', tokenSnippet: 'sk-rt-new', createdAt: '2024-07-01T00:00:00Z', labels: [] },
   });
@@ -49,18 +49,18 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks());
 
-// ── null project guard ────────────────────────────────────────────────────────
+// ── null router guard ────────────────────────────────────────────────────────
 
-describe('ProjectTokenCreatePage — null project guard', () => {
-  it('renders nothing when project is null', () => {
+describe('RouterTokenCreatePage — null router guard', () => {
+  it('renders nothing when router is null', () => {
     function LayoutWrapper() {
-      return <Outlet context={{ project: null, setProject: vi.fn() }} />;
+      return <Outlet context={{ router: null, setRouter: vi.fn() }} />;
     }
     const { container } = render(
-      <MemoryRouter initialEntries={['/dashboard/projects/proj-1/token/new']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/proj-1/token/new']}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="token/new" element={<ProjectTokenCreatePage />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="token/new" element={<RouterTokenCreatePage />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -71,7 +71,7 @@ describe('ProjectTokenCreatePage — null project guard', () => {
 
 // ── Initial render ────────────────────────────────────────────────────────────
 
-describe('ProjectTokenCreatePage — initial render', () => {
+describe('RouterTokenCreatePage — initial render', () => {
   it('shows "New API Token" heading', () => {
     renderPage();
     expect(screen.getByText('New API Token')).toBeTruthy();
@@ -105,7 +105,7 @@ describe('ProjectTokenCreatePage — initial render', () => {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 
-describe('ProjectTokenCreatePage — navigation', () => {
+describe('RouterTokenCreatePage — navigation', () => {
   it('Back to tokens navigates to token list', async () => {
     renderPage();
     await userEvent.click(screen.getByText(/Back to tokens/));
@@ -121,11 +121,11 @@ describe('ProjectTokenCreatePage — navigation', () => {
 
 // ── Token creation ────────────────────────────────────────────────────────────
 
-describe('ProjectTokenCreatePage — token creation', () => {
-  it('submitting form calls createProjectToken', async () => {
+describe('RouterTokenCreatePage — token creation', () => {
+  it('submitting form calls createRouterToken', async () => {
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
-    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalledWith('proj-1', [], undefined, undefined));
+    await waitFor(() => expect(mockCreateRouterToken).toHaveBeenCalledWith('proj-1', [], undefined, undefined));
   });
 
   it('shows revealed token after successful creation', async () => {
@@ -176,15 +176,15 @@ describe('ProjectTokenCreatePage — token creation', () => {
     await waitFor(() => expect(screen.getByTestId('token-list')).toBeTruthy());
   });
 
-  it('shows error when createProjectToken rejects', async () => {
-    mockCreateProjectToken.mockRejectedValueOnce(new Error('Token creation failed'));
+  it('shows error when createRouterToken rejects', async () => {
+    mockCreateRouterToken.mockRejectedValueOnce(new Error('Token creation failed'));
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
     await waitFor(() => expect(screen.getByText('Token creation failed')).toBeTruthy());
   });
 
   it('shows generic error on non-Error rejection', async () => {
-    mockCreateProjectToken.mockRejectedValueOnce('oops');
+    mockCreateRouterToken.mockRejectedValueOnce('oops');
     renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
     await waitFor(() => expect(screen.getByText('Error creating token')).toBeTruthy());
@@ -200,7 +200,7 @@ function findAddTagButton() {
   ) as HTMLButtonElement | undefined;
 }
 
-describe('ProjectTokenCreatePage — tags', () => {
+describe('RouterTokenCreatePage — tags', () => {
   it('Add tag button disabled when key is empty', () => {
     renderPage();
     const addBtn = findAddTagButton();
@@ -233,14 +233,14 @@ describe('ProjectTokenCreatePage — tags', () => {
     await waitFor(() => expect(screen.queryByText((_, el) => el?.tagName === 'SPAN' && el?.textContent === 'env=prod')).toBeNull());
   });
 
-  it('createProjectToken called with tags when tags are set', async () => {
+  it('createRouterToken called with tags when tags are set', async () => {
     renderPage();
     const keyInput = screen.getByPlaceholderText('key');
     await userEvent.type(keyInput, 'env');
     await userEvent.click(findAddTagButton()!);
     await waitFor(() => screen.getByText((_, el) => el?.tagName === 'SPAN' && el?.textContent === 'env='));
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
-    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockCreateRouterToken).toHaveBeenCalledWith(
       'proj-1',
       [],
       expect.objectContaining({ env: '' }),
@@ -251,19 +251,19 @@ describe('ProjectTokenCreatePage — tags', () => {
 
 // ── Scopes ────────────────────────────────────────────────────────────────────
 
-describe('ProjectTokenCreatePage scopes', () => {
+describe('RouterTokenCreatePage scopes', () => {
   it('shows Scopes section', () => {
     renderPage();
     expect(screen.getByText('Scopes')).toBeTruthy();
   });
 
-  it('createProjectToken called with scopes when a scope is added', async () => {
+  it('createRouterToken called with scopes when a scope is added', async () => {
     renderPage();
     const scopeTextbox = screen.getAllByPlaceholderText('Search or create a label…')[1]!;
     await userEvent.type(scopeTextbox, 'mcp');
     await userEvent.keyboard('{Enter}');
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
-    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockCreateRouterToken).toHaveBeenCalledWith(
       'proj-1',
       [],
       undefined,
@@ -275,7 +275,7 @@ describe('ProjectTokenCreatePage scopes', () => {
 // ── clipboard fallback path ────────────────────────────────────────────────────
 // When navigator.clipboard throws, the execCommand fallback runs.
 
-describe('ProjectTokenCreatePage — clipboard fallback', () => {
+describe('RouterTokenCreatePage — clipboard fallback', () => {
   it('uses execCommand fallback when clipboard.writeText throws', async () => {
     const writeText = vi.fn().mockRejectedValue(new Error('no clipboard'));
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true, writable: true });
@@ -327,10 +327,10 @@ describe('ProjectTokenCreatePage — clipboard fallback', () => {
   });
 });
 
-// ── project.tokens undefined → allLabels fallback (line 26 branch 1) ─────────
+// ── router.tokens undefined → allLabels fallback (line 26 branch 1) ─────────
 
-describe('ProjectTokenCreatePage — no tokens property on project', () => {
-  it('renders without crash when project has no tokens property', () => {
+describe('RouterTokenCreatePage — no tokens property on router', () => {
+  it('renders without crash when router has no tokens property', () => {
     const proj = { id: 'proj-2', name: 'NoTokens', models: [] };
     renderPage(proj as unknown as Record<string, unknown>);
     expect(screen.getByText('New API Token')).toBeTruthy();
@@ -339,7 +339,7 @@ describe('ProjectTokenCreatePage — no tokens property on project', () => {
 
 // ── setTimeout callback in copyToClipboard (line 29 anonymous_4) ─────────────
 
-describe('ProjectTokenCreatePage — copied feedback clears after timeout', () => {
+describe('RouterTokenCreatePage — copied feedback clears after timeout', () => {
   it('Copied! disappears after 2 seconds via setTimeout callback', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true, writable: true });
@@ -355,8 +355,8 @@ describe('ProjectTokenCreatePage — copied feedback clears after timeout', () =
 
 // ── allLabels from existing tokens ────────────────────────────────────────────
 
-describe('ProjectTokenCreatePage — existing labels from project tokens', () => {
-  it('existing labels from project tokens are available as suggestions in LabelInput', async () => {
+describe('RouterTokenCreatePage — existing labels from router tokens', () => {
+  it('existing labels from router tokens are available as suggestions in LabelInput', async () => {
     renderPage();
     // Use placeholder to target the Labels LabelInput specifically (page has label + scope + tag inputs)
     const labelTextbox = screen.getAllByPlaceholderText('Search or create a label…')[0]!;
@@ -368,11 +368,11 @@ describe('ProjectTokenCreatePage — existing labels from project tokens', () =>
 
 // ── allLabels with tokens that have no labels field (line 26 || [] branch) ────
 
-describe('ProjectTokenCreatePage — tokens without labels field', () => {
-  it('renders without crash when project tokens have no labels property', () => {
+describe('RouterTokenCreatePage — tokens without labels field', () => {
+  it('renders without crash when router tokens have no labels property', () => {
     // token without labels field → t.labels || [] takes the [] branch
     const proj = {
-      ...mockProject,
+      ...mockRouter,
       tokens: [{ id: 'tok-nolabel', tokenSnippet: 'sk-rt-no', createdAt: '2024-01-01T00:00:00Z' }],
     };
     renderPage(proj);
@@ -380,20 +380,20 @@ describe('ProjectTokenCreatePage — tokens without labels field', () => {
   });
 });
 
-// ── setProject updater — all branches (line 56) ──────────────────────────────
+// ── setRouter updater — all branches (line 56) ──────────────────────────────
 
-describe('ProjectTokenCreatePage — setProject null guard', () => {
-  it('setProject updater handles null project gracefully', async () => {
-    // The setProject mock captures the updater; call it with null to hit the p ? ... : p false branch
-    const { setProject } = renderPage();
+describe('RouterTokenCreatePage — setRouter null guard', () => {
+  it('setRouter updater handles null router gracefully', async () => {
+    // The setRouter mock captures the updater; call it with null to hit the p ? ... : p false branch
+    const { setRouter } = renderPage();
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
-    await waitFor(() => expect(mockCreateProjectToken).toHaveBeenCalled());
-    const updater = (setProject.mock.calls[0] as [((p: unknown) => unknown)])[0];
+    await waitFor(() => expect(mockCreateRouterToken).toHaveBeenCalled());
+    const updater = (setRouter.mock.calls[0] as [((p: unknown) => unknown)])[0];
     expect(typeof updater).toBe('function');
     // false branch: p is null
     expect(updater(null)).toBeNull();
     // true branch, p.tokens exists: spread existing tokens array
-    const withTokens = { ...mockProject, tokens: [{ id: 'old' }] };
+    const withTokens = { ...mockRouter, tokens: [{ id: 'old' }] };
     const result = updater(withTokens) as typeof withTokens;
     expect(Array.isArray(result.tokens)).toBe(true);
     expect(result.tokens.length).toBeGreaterThan(1);
@@ -406,7 +406,7 @@ describe('ProjectTokenCreatePage — setProject null guard', () => {
 
 // ── onClick guard inside add-tag button (line 137 branch) ────────────────────
 
-describe('ProjectTokenCreatePage — add tag onClick internal guard', () => {
+describe('RouterTokenCreatePage — add tag onClick internal guard', () => {
   it('add tag onClick with whitespace-only key does nothing (internal guard)', async () => {
     renderPage();
     const keyInput = screen.getByPlaceholderText('key');
@@ -432,26 +432,26 @@ describe('ProjectTokenCreatePage — add tag onClick internal guard', () => {
   });
 });
 
-// ── projectId missing guard (line 53) ────────────────────────────────────────
+// ── routerId missing guard (line 53) ────────────────────────────────────────
 
-describe('ProjectTokenCreatePage — missing projectId guard', () => {
-  it('handleCreate returns early when projectId is undefined', async () => {
-    const setProject = vi.fn();
+describe('RouterTokenCreatePage — missing routerId guard', () => {
+  it('handleCreate returns early when routerId is undefined', async () => {
+    const setRouter = vi.fn();
     function LayoutWrapper() {
-      return <Outlet context={{ project: mockProject, setProject }} />;
+      return <Outlet context={{ router: mockRouter, setRouter }} />;
     }
     render(
       <MemoryRouter initialEntries={['/token/new']}>
         <Routes>
           <Route path="/token/new" element={<LayoutWrapper />}>
-            <Route index element={<ProjectTokenCreatePage />} />
+            <Route index element={<RouterTokenCreatePage />} />
           </Route>
         </Routes>
       </MemoryRouter>
     );
     await userEvent.click(screen.getByRole('button', { name: 'Create Token' }));
     await new Promise(r => setTimeout(r, 50));
-    // With no :id param, projectId is undefined → early return before API call
-    expect(mockCreateProjectToken).not.toHaveBeenCalled();
+    // With no :id param, routerId is undefined → early return before API call
+    expect(mockCreateRouterToken).not.toHaveBeenCalled();
   });
 });

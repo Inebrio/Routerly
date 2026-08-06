@@ -91,8 +91,8 @@ describe('notification cause', () => {
     );
   });
 
-  it('shows the project name on config events', () => {
-    expect(notificationCause('config.project_deleted', { name: 'Staging' })).toBe('Staging');
+  it('shows the router name on config events', () => {
+    expect(notificationCause('config.router_deleted', { name: 'Staging' })).toBe('Staging');
   });
 
   it('turns a machine reason into words', () => {

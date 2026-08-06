@@ -9,18 +9,18 @@ import { SetupPage } from './pages/SetupPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ModelsPage } from './pages/ModelsPage';
 import { ModelFormPage } from './pages/ModelFormPage';
-import { ProjectsPage } from './pages/ProjectsPage';
-import { ProjectLayout } from './pages/project/ProjectLayout';
-import { ProjectDashboardTab } from './pages/project/ProjectDashboardTab';
-import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
-import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
-import { ProjectOptimizerTab } from './pages/project/ProjectOptimizerTab';
-import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
-import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
-import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
-import { ProjectSecurityTab } from './pages/project/ProjectSecurityTab';
-import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
-import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
+import { RoutersPage } from './pages/RoutersPage';
+import { RouterLayout } from './pages/router/RouterLayout';
+import { RouterDashboardTab } from './pages/router/RouterDashboardTab';
+import { RouterGeneralTab } from './pages/router/RouterGeneralTab';
+import { RouterRoutingTab } from './pages/router/RouterRoutingTab';
+import { RouterOptimizerTab } from './pages/router/RouterOptimizerTab';
+import { RouterTokenTab } from './pages/router/RouterTokenTab';
+import { RouterUsersTab } from './pages/router/RouterUsersTab';
+import { RouterLogsTab } from './pages/router/RouterLogsTab';
+import { RouterSecurityTab } from './pages/router/RouterSecurityTab';
+import { RouterTokenCreatePage } from './pages/router/RouterTokenCreatePage';
+import { RouterTokenEditPage } from './pages/router/RouterTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
@@ -110,7 +110,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
   // One flat list, ordered the way the product is used: what you set up
-  // (Providers to Projects), then what it tells you back (Experiments, Usage),
+  // (Providers to Routers), then what it tells you back (Experiments, Usage),
   // and last the Playground, the bench you drop into to try things out. Connect
   // app is not here: it configures the tools around Routerly rather than
   // Routerly itself, so it sits in the footer next to Settings.
@@ -119,7 +119,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
     ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: 'Providers' }] : []),
     { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
     ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
-    { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
+    { to: '/dashboard/routers', icon: <FolderOpen size={17} />, label: 'Routers' },
     ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
     { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
     { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
@@ -405,41 +405,41 @@ const router = createBrowserRouter([
           { path: 'connect/:id', element: <ConnectClientPage /> },
           // Kept for links minted before the section was renamed.
           { path: 'clients', element: <Navigate to="/dashboard/connect" replace /> },
-          { path: 'projects', element: <ProjectsPage /> },
+          { path: 'routers', element: <RoutersPage /> },
           {
-            path: 'projects/new',
-            element: <ProjectLayout />,
+            path: 'routers/new',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectGeneralTab /> },
+              { index: true, element: <RouterGeneralTab /> },
             ],
           },
           {
-            path: 'projects/:id/token/new',
-            element: <ProjectLayout />,
+            path: 'routers/:id/token/new',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectTokenCreatePage /> },
+              { index: true, element: <RouterTokenCreatePage /> },
             ]
           },
           {
-            path: 'projects/:id/token/:tokenId',
-            element: <ProjectLayout />,
+            path: 'routers/:id/token/:tokenId',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectTokenEditPage /> },
+              { index: true, element: <RouterTokenEditPage /> },
             ]
           },
           {
-            path: 'projects/:id',
-            element: <ProjectLayout />,
+            path: 'routers/:id',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectDashboardTab /> },
-              { path: 'dashboard', element: <ProjectDashboardTab /> },
-              { path: 'general', element: <ProjectGeneralTab /> },
-              { path: 'routing', element: <ProjectRoutingTab /> },
-              { path: 'optimizer', element: <ProjectOptimizerTab /> },
-              { path: 'token', element: <ProjectTokenTab /> },
-              { path: 'users', element: <ProjectUsersTab /> },
-              { path: 'logs', element: <ProjectLogsTab /> },
-              { path: 'security', element: <ProjectSecurityTab /> },
+              { index: true, element: <RouterDashboardTab /> },
+              { path: 'dashboard', element: <RouterDashboardTab /> },
+              { path: 'general', element: <RouterGeneralTab /> },
+              { path: 'routing', element: <RouterRoutingTab /> },
+              { path: 'optimizer', element: <RouterOptimizerTab /> },
+              { path: 'token', element: <RouterTokenTab /> },
+              { path: 'users', element: <RouterUsersTab /> },
+              { path: 'logs', element: <RouterLogsTab /> },
+              { path: 'security', element: <RouterSecurityTab /> },
             ],
           },
           { path: 'experiments', element: <ExperimentsPage /> },

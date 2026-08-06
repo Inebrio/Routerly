@@ -25,7 +25,7 @@ import { startIntegrationRunner } from './runner.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const SNAPSHOT = { agg: {}, projects: [], models: [] };
+const SNAPSHOT = { agg: {}, routers: [], models: [] };
 
 function baseIntegration(type: string, overrides: Record<string, unknown> = {}) {
   return { id: '1', type, enabled: true, ...overrides };

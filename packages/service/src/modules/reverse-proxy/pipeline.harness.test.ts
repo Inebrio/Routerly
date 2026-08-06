@@ -48,7 +48,7 @@ describe('runProxy transport harness (dark pipeline, no live route)', () => {
     const reply: any = { send: (b: unknown) => sent.push(b), header: () => {}, code: () => reply }
     const ctx = {
       protocol: 'openai', reply, log: { info() {}, warn() {}, error() {} },
-      project: { id: 'p1', models: [] }, projectId: 'p1',
+      router: { id: 'p1', models: [] }, routerId: 'p1',
       traceId: 't1', request: { model: 'm', messages: [] }, original: {}, stream: false, passthrough: false,
       candidates: [{ model: 'model-a', weight: 1 }],
     } as unknown as ProxyContext

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { cheapestSelector } from './index.js'
 import type { ScoredCandidate, SelectorContext } from './types.js'
 
-const ctx: SelectorContext = { projectId: 'proj-cheapest', allAbstained: false }
+const ctx: SelectorContext = { routerId: 'proj-cheapest', allAbstained: false }
 
 describe('cheapestSelector', () => {
   it('returns empty result for no candidates', () => {

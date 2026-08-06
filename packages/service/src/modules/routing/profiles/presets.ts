@@ -12,7 +12,7 @@ import type {
  * These are code constants, never persisted to profiles.json and never
  * written through writeConfig(). Users customize a preset by cloning it
  * into a profiles.json overlay, not by mutating these objects. Because they
- * are code, a Routerly release can improve a preset and every project bound
+ * are code, a Routerly release can improve a preset and every router bound
  * to it picks the improvement up.
  */
 
@@ -131,10 +131,10 @@ export const BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
 
 /**
  * Presets that shipped in earlier versions and are no longer offered. They stay
- * resolvable so a project still pointing at one keeps routing exactly as before,
+ * resolvable so a router still pointing at one keeps routing exactly as before,
  * but they are not listed and cannot be picked or cloned from the UI.
  *
- * `balanced` is byte-identical to `auto`, which replaced it; projects referencing
+ * `balanced` is byte-identical to `auto`, which replaced it; routers referencing
  * it are rewritten to `auto` by the routing module's migration. `offline` has no
  * equivalent among the current presets, so it survives here untouched.
  */
@@ -162,8 +162,8 @@ export const LEGACY_BUILTIN_PROFILES: readonly Profile[] = Object.freeze([
 ]) as readonly Profile[];
 
 /**
- * The preset a project falls back to when it has neither a profile nor custom
- * config of that kind. Security has no entry on purpose: a project with no
+ * The preset a router falls back to when it has neither a profile nor custom
+ * config of that kind. Security has no entry on purpose: a router with no
  * security profile runs with no guardrails and no PII policy, which is the only
  * safe default for a router that must not alter a request it was not told to.
  */

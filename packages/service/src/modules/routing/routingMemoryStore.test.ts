@@ -26,7 +26,7 @@ describe('routingMemoryStore', () => {
     expect(history[1]!.model).toBe('mc')
   })
 
-  it('isolates by project:conversation key', () => {
+  it('isolates by router:conversation key', () => {
     addRoutingDecision('proj3', 'convA', 'x')
     addRoutingDecision('proj3', 'convB', 'y')
     expect(getRoutingHistory('proj3', 'convA', 5)).toHaveLength(1)

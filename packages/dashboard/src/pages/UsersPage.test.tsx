@@ -65,7 +65,7 @@ function makeUser(overrides: Record<string, unknown> = {}) {
     id: 'u1',
     email: 'alice@x.com',
     roleId: 'viewer',
-    projectIds: [],
+    routerIds: [],
     totpEnabled: false,
     ...overrides,
   };
@@ -135,14 +135,14 @@ describe('UsersPage — loaded state', () => {
     await waitFor(() => expect(screen.queryByText('2 users')).not.toBeNull());
   });
 
-  it('shows "All" for empty projectIds', async () => {
-    mockGetUsers.mockResolvedValue([makeUser({ projectIds: [] })]);
+  it('shows "All" for empty routerIds', async () => {
+    mockGetUsers.mockResolvedValue([makeUser({ routerIds: [] })]);
     renderPage();
     await waitFor(() => expect(screen.queryByText('All')).not.toBeNull());
   });
 
-  it('shows joined projectIds when non-empty', async () => {
-    mockGetUsers.mockResolvedValue([makeUser({ projectIds: ['p1', 'p2'] })]);
+  it('shows joined routerIds when non-empty', async () => {
+    mockGetUsers.mockResolvedValue([makeUser({ routerIds: ['p1', 'p2'] })]);
     renderPage();
     await waitFor(() => expect(screen.queryByText('p1, p2')).not.toBeNull());
   });

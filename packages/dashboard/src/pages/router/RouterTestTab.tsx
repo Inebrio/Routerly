@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import { useProject } from './ProjectLayout';
+import { useRouter } from './RouterLayout';
 import { TraceLog } from '../../components/TraceLog';
 import { TraceSummary } from '../../components/TraceSummary';
 import { getTrace, streamTraces, type TraceEntry } from '../../api';
@@ -14,8 +14,8 @@ interface Message {
   model?: string;
 }
 
-export function ProjectTestTab() {
-  const { project } = useProject();
+export function RouterTestTab() {
+  const { router } = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -47,10 +47,10 @@ export function ProjectTestTab() {
   // We no longer persist the API key per user request
 
   const matchedToken = useMemo(() => {
-    if (!apiKey || !project?.tokens) return null;
+    if (!apiKey || !router?.tokens) return null;
     const snippet = apiKey.substring(0, 10);
-    return project.tokens.find(t => t.tokenSnippet === snippet);
-  }, [apiKey, project?.tokens]);
+    return router.tokens.find(t => t.tokenSnippet === snippet);
+  }, [apiKey, router?.tokens]);
 
   async function handleSend() {
     /* v8 ignore next */
@@ -79,7 +79,7 @@ export function ProjectTestTab() {
     abortControllerRef.current = controller;
 
     const payload = {
-      model: project?.routingModelId || project?.models?.[0]?.modelId || '',
+      model: router?.routingModelId || router?.models?.[0]?.modelId || '',
       messages: newMessages,
       stream: true,
     };
@@ -262,7 +262,7 @@ export function ProjectTestTab() {
     /* v8 ignore next */ if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  if (!project) return null;
+  if (!router) return null;
 
   return (
     <div style={{ display: 'flex', gap: 24, height: 'calc(100vh - 180px)', animation: 'fade-in 0.2s ease' }}>
@@ -278,7 +278,7 @@ export function ProjectTestTab() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Project Token:</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Router Token:</span>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
                   type={showKey ? "text" : "password"}
@@ -326,7 +326,7 @@ export function ProjectTestTab() {
             <div className="empty-state" style={{ padding: '40px 0', margin: 'auto' }}>
               <p style={{ margin: 0 }}>No messages yet.</p>
               {!apiKey ? (
-                <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--danger)' }}>Please enter a Project Token above to send a message.</p>
+                <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--danger)' }}>Please enter a Router Token above to send a message.</p>
               ) : (
                 <p style={{ fontSize: '0.8rem', marginTop: 4 }}>Type a message below to start testing.</p>
               )}

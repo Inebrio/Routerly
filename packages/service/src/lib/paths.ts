@@ -9,7 +9,7 @@ export const CONFIG_PATHS = {
   data: join(base, 'data'),
   settings: join(base, 'config', 'settings.json'),
   models: join(base, 'config', 'models.json'),
-  projects: join(base, 'config', 'projects.json'),
+  routers: join(base, 'config', 'routers.json'),
   users: join(base, 'config', 'users.json'),
   roles: join(base, 'config', 'roles.json'),
   modules: join(base, 'config', 'modules.json'),

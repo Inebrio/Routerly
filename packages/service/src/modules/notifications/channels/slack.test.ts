@@ -13,7 +13,7 @@ const payload = {
   event:     'budget_exceeded',
   severity:  'critical' as const,
   timestamp: '2024-01-01T00:00:00.000Z',
-  details:   { project: 'my-project' },
+  details:   { router: 'my-router' },
 };
 
 afterEach(() => vi.clearAllMocks());

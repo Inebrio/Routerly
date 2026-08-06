@@ -253,14 +253,14 @@ describe('notification show', () => {
     vi.mocked(console.log).mockImplementation((...a) => { lines.push(a.map(String).join(' ')); });
     mockApi.mockResolvedValueOnce({
       id: 'n1', severity: 'warning', event: 'budget.threshold',
-      timestamp: '2024-01-01T00:00:00Z', details: { project: 'Acme', used: 95 }, read: false,
+      timestamp: '2024-01-01T00:00:00Z', details: { router: 'Acme', used: 95 }, read: false,
     });
     const cmd = makeNotificationCommand();
     await cmd.parseAsync(['node', 'routerly', 'show', 'n1']);
     expect(mockApi).toHaveBeenCalledWith('GET', '/api/notifications/inbox/n1');
     const out = lines.join('\n');
     expect(out).toContain('budget.threshold');
-    expect(out).toContain('project');
+    expect(out).toContain('router');
     expect(out).toContain('Acme');
     expect(out).toContain('unread');
   });
@@ -975,7 +975,7 @@ describe('notification channel add — email providers', () => {
   });
 });
 
-// ── channel edit — uncovered lines 456 (cooldownSeconds) and 515-516 (projects) ──
+// ── channel edit — uncovered lines 456 (cooldownSeconds) and 515-516 (routers) ──
 
 // ── providerSummary default branch (email providers, line 42) ─────────────────
 
@@ -1021,7 +1021,7 @@ describe('notification channel show — unknown provider', () => {
   });
 });
 
-describe('notification channel edit — cooldown and projects', () => {
+describe('notification channel edit — cooldown and routers', () => {
   it('patches cooldownSeconds when --cooldown-seconds is provided', async () => {
     mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x' });
     await runChannel('edit', 'ch1', '--cooldown-seconds', '300');
@@ -1030,19 +1030,19 @@ describe('notification channel edit — cooldown and projects', () => {
     }));
   });
 
-  it('patches projects when --projects is provided with comma-separated IDs', async () => {
+  it('patches routers when --routers is provided with comma-separated IDs', async () => {
     mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x' });
-    await runChannel('edit', 'ch1', '--projects', 'proj-1,proj-2');
+    await runChannel('edit', 'ch1', '--routers', 'proj-1,proj-2');
     expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({
-      projects: ['proj-1', 'proj-2'],
+      routers: ['proj-1', 'proj-2'],
     }));
   });
 
-  it('patches projects as empty array when --projects is empty string', async () => {
+  it('patches routers as empty array when --routers is empty string', async () => {
     mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x' });
-    await runChannel('edit', 'ch1', '--projects', '');
+    await runChannel('edit', 'ch1', '--routers', '');
     expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({
-      projects: [],
+      routers: [],
     }));
   });
 });

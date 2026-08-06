@@ -152,7 +152,7 @@ export interface CredentialValues {
   cfClearance: string;
   azureResourceName: string; azureDeploymentId: string; azureApiVersion: string;
   awsRegion: string; awsAccessKeyId: string; awsSecretAccessKey: string; awsSessionToken: string;
-  vertexProjectId: string; vertexLocation: string; vertexServiceAccountKey: string;
+  VERTEXROUTERIDPLACEHOLDER: string; vertexLocation: string; vertexServiceAccountKey: string;
 }
 
 export function emptyCredentialValues(): CredentialValues {
@@ -160,7 +160,7 @@ export function emptyCredentialValues(): CredentialValues {
     endpoint: '', apiKey: '', cfClearance: '',
     azureResourceName: '', azureDeploymentId: '', azureApiVersion: '',
     awsRegion: '', awsAccessKeyId: '', awsSecretAccessKey: '', awsSessionToken: '',
-    vertexProjectId: '', vertexLocation: '', vertexServiceAccountKey: '',
+    VERTEXROUTERIDPLACEHOLDER: '', vertexLocation: '', vertexServiceAccountKey: '',
   };
 }
 
@@ -367,10 +367,10 @@ export function ConnectionCredentialsFields(props: Props) {
       {provider === 'vertex' && (
         <>
           <div className="form-group">
-            <label className="form-label">GCP Project ID</label>
-            <input className="form-input" value={values.vertexProjectId}
-              onChange={e => onChange({ vertexProjectId: e.target.value })}
-              placeholder="my-gcp-project" required />
+            <label className="form-label">GCP Router ID</label>
+            <input className="form-input" value={values.VERTEXROUTERIDPLACEHOLDER}
+              onChange={e => onChange({ VERTEXROUTERIDPLACEHOLDER: e.target.value })}
+              placeholder="my-gcp-router" required />
           </div>
           <div className="form-group">
             <label className="form-label">Location <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(default: us-central1)</span></label>

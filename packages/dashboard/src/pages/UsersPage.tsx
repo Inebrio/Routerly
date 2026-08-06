@@ -92,7 +92,7 @@ export function UsersPage() {
       ) : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Email</th><th>Role</th><th>Projects</th><th></th></tr></thead>
+            <thead><tr><th>Email</th><th>Role</th><th>Routers</th><th></th></tr></thead>
             <tbody>
               {users.map(u => (
                 <tr
@@ -105,7 +105,7 @@ export function UsersPage() {
                   <td><strong style={{ color: 'var(--text-primary)' }}>{u.email}</strong></td>
                   <td><span className={`badge ${u.roleId === 'admin' ? 'badge-success' : 'badge-ollama'}`}>{u.roleId}</span></td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                    {u.projectIds.length === 0 ? 'All' : u.projectIds.join(', ')}
+                    {u.routerIds.length === 0 ? 'All' : u.routerIds.join(', ')}
                   </td>
                   <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                     {canWrite && u.totpEnabled && (

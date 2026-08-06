@@ -37,7 +37,7 @@ vi.mock('recharts', () => ({
 vi.mock('../api', () => ({
   getUsage: vi.fn(),
   getModels: vi.fn(),
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
   getClients: vi.fn(),
 }));
 
@@ -48,7 +48,7 @@ vi.mock('../ThemeContext.js', () => ({
 
 import { OverviewPage } from './OverviewPage';
 import { compactCost } from '../components/savings';
-import { getUsage, getModels, getProjects, getClients } from '../api';
+import { getUsage, getModels, getRouters, getClients } from '../api';
 
 /** "This month", the window the page opens on. */
 // Local calendar days, like the picker: toISOString() is UTC, so east of Greenwich
@@ -65,7 +65,7 @@ const openPicker = () => userEvent.click(document.querySelector('button.btn-seco
 
 const mockGetUsage    = vi.mocked(getUsage as (...a: unknown[]) => Promise<unknown>);
 const mockGetModels   = vi.mocked(getModels as () => Promise<unknown>);
-const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as () => Promise<unknown>);
 const mockGetClients  = vi.mocked(getClients as () => Promise<unknown>);
 
 function makeStats(overrides: Record<string, unknown> = {}) {
@@ -96,7 +96,7 @@ beforeEach(() => {
   mockUseTheme.mockReturnValue({ theme: 'light', setTheme: vi.fn() });
   mockGetUsage.mockResolvedValue(makeStats());
   mockGetModels.mockResolvedValue([{ id: 'm1' }, { id: 'm2' }]);
-  mockGetProjects.mockResolvedValue([{ id: 'p1' }]);
+  mockGetRouters.mockResolvedValue([{ id: 'p1' }]);
   mockGetClients.mockResolvedValue({ enabled: true, advertisedAddresses: [], clients: [] });
 });
 
@@ -171,10 +171,10 @@ describe('OverviewPage — loaded state', () => {
     expect(screen.queryByText('Models')).not.toBeNull();
   });
 
-  it('renders project count from getProjects', async () => {
+  it('renders router count from getRouters', async () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('1')).not.toBeNull());
-    expect(screen.queryByText('Projects')).not.toBeNull();
+    expect(screen.queryByText('Routers')).not.toBeNull();
   });
 
   it('links to the Connect section while the clients module is enabled', async () => {
@@ -332,8 +332,8 @@ describe('OverviewPage — cost by model', () => {
     expect(screen.queryByText('Total Cost')).not.toBeNull();
   });
 
-  it('getProjects error is caught silently', async () => {
-    mockGetProjects.mockRejectedValue(new Error('projects error'));
+  it('getRouters error is caught silently', async () => {
+    mockGetRouters.mockRejectedValue(new Error('routers error'));
     renderPage();
     await waitFor(() => screen.queryByText('Overview'));
     expect(screen.queryByText('Total Cost')).not.toBeNull();
@@ -570,7 +570,7 @@ describe('OverviewPage — stat card links', () => {
       'Success Rate': '/dashboard/usage',
       Errors: '/dashboard/usage',
       Models: '/dashboard/models',
-      Projects: '/dashboard/projects',
+      Routers: '/dashboard/routers',
     });
   });
 });

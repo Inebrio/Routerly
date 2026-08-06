@@ -32,7 +32,7 @@ async function upstreamProcessor() {
 
 function ctxOf(emit: ReturnType<typeof vi.fn>): ProxyContext {
   return {
-    project: { id: 'p1', models: [] },
+    router: { id: 'p1', models: [] },
     attempt: { model: { id: 'gpt-4o' } },
     emit,
   } as unknown as ProxyContext

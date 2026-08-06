@@ -67,8 +67,8 @@ export function ExperimentTokenTab() {
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
       <p className="section-desc" style={{ marginTop: 0 }}>
-        A client calls the experiment exactly like a project: same base URL, this token instead of a project token.
-        Each request lands on one variant and is billed to that variant's project.
+        A client calls the experiment exactly like a router: same base URL, this token instead of a router token.
+        Each request lands on one variant and is billed to that variant's router.
       </p>
 
       <div style={{ maxWidth: 620, marginBottom: 24 }}>

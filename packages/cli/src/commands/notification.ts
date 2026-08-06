@@ -505,7 +505,7 @@ export function makeNotificationCommand(): Command {
     .description('Edit a notification channel interactively')
     .option('--name <name>', 'New friendly name')
     .option('--events <patterns>', 'Comma-separated event patterns (empty string to clear)')
-    .option('--projects <ids>', 'Comma-separated project IDs (empty string to clear)')
+    .option('--routers <ids>', 'Comma-separated router IDs (empty string to clear)')
     .option('--cooldown-seconds <seconds>', 'Minimum seconds between dispatches (0 to disable)', (v) => parseInt(v, 10))
     .option('--target-roles <roles>', 'Comma-separated role IDs')
     .option('--target-permissions <perms>', 'Comma-separated permissions')
@@ -563,10 +563,10 @@ export function makeNotificationCommand(): Command {
           patch['events'] = ev ? ev.split(',').map(s => s.trim()).filter(Boolean) : [];
         }
 
-        // Projects
-        if (opts['projects'] !== undefined) {
-          const pr = String(opts['projects']).trim();
-          patch['projects'] = pr ? pr.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+        // Routers
+        if (opts['routers'] !== undefined) {
+          const pr = String(opts['routers']).trim();
+          patch['routers'] = pr ? pr.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
         }
 
         // Per-channel cooldown

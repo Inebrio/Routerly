@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
-import { createProject, updateProject, getSettings } from '../../api';
-import { useProject } from './ProjectLayout';
+import { createRouter, updateRouter, getSettings } from '../../api';
+import { useRouter } from './RouterLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { CopyBlock } from '../../components/CopyBlock';
 import { AUTO_MODEL, PLACEHOLDER_TOKEN } from '../connectShared';
 import { writeToClipboard } from '../../utils/clipboard';
-import { DEFAULT_PROJECT_TIMEOUT_MS } from '@routerly/shared';
+import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
 
 const SECTION_TITLE: React.CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -19,10 +19,10 @@ const SECTION_TEXT: React.CSSProperties = {
   fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.55,
 };
 
-export function ProjectGeneralTab() {
+export function RouterGeneralTab() {
   const navigate = useNavigate();
-  const { project, setProject } = useProject();
-  const isEdit = Boolean(project);
+  const { router, setRouter } = useRouter();
+  const isEdit = Boolean(router);
 
   const [saving, setSaving] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -53,29 +53,29 @@ export function ProjectGeneralTab() {
   }, []);
 
   // For the new token reveal modal
-  const [revealedToken, setRevealedToken] = useState<{ name: string; token: string; isNew: boolean; projectId: string } | null>(null);
+  const [revealedToken, setRevealedToken] = useState<{ name: string; token: string; isNew: boolean; routerId: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
-    timeoutMs: String(DEFAULT_PROJECT_TIMEOUT_MS),
+    timeoutMs: String(DEFAULT_ROUTER_TIMEOUT_MS),
     traceContent: false,
   });
 
   useEffect(() => {
-    if (project) {
+    if (router) {
       setForm({
-        name: project.name,
-        timeoutMs: String(project.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS),
-        traceContent: project.traceContent === true,
+        name: router.name,
+        timeoutMs: String(router.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS),
+        traceContent: router.traceContent === true,
       });
     }
-  }, [project]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = isEdit
-    ? form.name !== (/* v8 ignore next */ project?.name ?? '') ||
-      form.timeoutMs !== String(/* v8 ignore next */ project?.timeoutMs ?? DEFAULT_PROJECT_TIMEOUT_MS) ||
-      form.traceContent !== (/* v8 ignore next */ project?.traceContent === true)
+    ? form.name !== (/* v8 ignore next */ router?.name ?? '') ||
+      form.timeoutMs !== String(/* v8 ignore next */ router?.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS) ||
+      form.traceContent !== (/* v8 ignore next */ router?.traceContent === true)
     : form.name !== '';
 
   // Once the token is revealed the form is "done" — don't block navigation anymore.
@@ -89,8 +89,8 @@ export function ProjectGeneralTab() {
       const payload = isEdit
         ? {
             name: form.name,
-            ...(project!.routingModelId ? { routingModelId: project!.routingModelId } : {}),
-            models: project!.models.map(m => ({ modelId: m.modelId })),
+            ...(router!.routingModelId ? { routingModelId: router!.routingModelId } : {}),
+            models: router!.models.map(m => ({ modelId: m.modelId })),
             timeoutMs: parseInt(form.timeoutMs),
             traceContent: form.traceContent,
           }
@@ -100,22 +100,22 @@ export function ProjectGeneralTab() {
             timeoutMs: parseInt(form.timeoutMs),
           };
 
-      if (isEdit && project) {
-        await updateProject(project.id, payload);
+      if (isEdit && router) {
+        await updateRouter(router.id, payload);
         // Update context and reset form so isDirty becomes false — no navigation needed
-        const updated = { ...project, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent };
-        setProject(updated);
+        const updated = { ...router, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent };
+        setRouter(updated);
         setForm({ name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent });
       } else {
-        const proj = await createProject(payload);
+        const proj = await createRouter(payload);
         if (proj.token) {
-          setRevealedToken({ name: proj.name, token: proj.token, isNew: false, projectId: proj.id });
+          setRevealedToken({ name: proj.name, token: proj.token, isNew: false, routerId: proj.id });
         } else {
-          navigate(`/dashboard/projects/${proj.id}/general`);
+          navigate(`/dashboard/routers/${proj.id}/general`);
         }
       }
     } catch (err) {
-      setErr(err instanceof Error ? err.message : 'Error saving project');
+      setErr(err instanceof Error ? err.message : 'Error saving router');
     } finally {
       setSaving(false);
     }
@@ -130,7 +130,7 @@ export function ProjectGeneralTab() {
     } catch { setErr('Copy failed — please select and copy the token manually.'); }
   }
 
-  // ── Token reveal view (after project creation) ───────────────────────────────
+  // ── Token reveal view (after router creation) ───────────────────────────────
   if (revealedToken) {
     return (
       <div style={{ maxWidth: 480 }}>
@@ -157,9 +157,9 @@ export function ProjectGeneralTab() {
           type="button"
           className="btn btn-primary"
           style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6 }}
-          onClick={() => navigate(`/dashboard/projects/${revealedToken.projectId}/general`)}
+          onClick={() => navigate(`/dashboard/routers/${revealedToken.routerId}/general`)}
         >
-          Go to project <ArrowRight size={15} />
+          Go to router <ArrowRight size={15} />
         </button>
       </div>
     );
@@ -167,8 +167,8 @@ export function ProjectGeneralTab() {
 
   return (
     <>
-      {/* ── Connection info (only when editing an existing project) ────────────── */}
-      {isEdit && project && (() => {
+      {/* ── Connection info (only when editing an existing router) ────────────── */}
+      {isEdit && router && (() => {
         const root = (selectedEndpoint || window.location.origin).replace(/\/$/, '');
         // The two SDKs disagree on where the version prefix lives: the OpenAI
         // client appends the path to whatever base URL it is given, the
@@ -183,7 +183,7 @@ export function ProjectGeneralTab() {
               </div>
               <p style={SECTION_TEXT}>
                 Point any OpenAI or Anthropic SDK at Routerly and use a{' '}
-                <Link to={`/dashboard/projects/${project.id}/token`}>project token</Link> as
+                <Link to={`/dashboard/routers/${router.id}/token`}>router token</Link> as
                 the API key. Replace <code>{PLACEHOLDER_TOKEN}</code> below with yours.
                 Model <code>{AUTO_MODEL}</code> hands the choice to Routerly; any model id
                 from <Link to="/dashboard/models">Models</Link> works too.
@@ -247,7 +247,7 @@ message = client.messages.create(
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
         <div className="form-group">
-          <label className="form-label">Project Name</label>
+          <label className="form-label">Router Name</label>
           <input
             className="form-input"
             value={form.name}
@@ -306,7 +306,7 @@ message = client.messages.create(
 
         <div style={{ marginTop: 24 }}>
           <button type="submit" className="btn btn-primary" disabled={saving || (isEdit && !isDirty)}>
-            {saving ? <span className="spinner" /> : isEdit ? 'Save Changes' : 'Create Project'}
+            {saving ? <span className="spinner" /> : isEdit ? 'Save Changes' : 'Create Router'}
           </button>
         </div>
       </form>

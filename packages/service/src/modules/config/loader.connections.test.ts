@@ -11,7 +11,7 @@ vi.mock('../../lib/paths.js', () => ({
     data: '/test/data',
     settings: '/test/config/settings.json',
     models: '/test/config/models.json',
-    projects: '/test/config/projects.json',
+    routers: '/test/config/routers.json',
     users: '/test/config/users.json',
     roles: '/test/config/roles.json',
     modules: '/test/config/modules.json',

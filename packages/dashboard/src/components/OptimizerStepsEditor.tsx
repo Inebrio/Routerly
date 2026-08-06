@@ -181,7 +181,7 @@ function LlmLinguaPanel({ state, value, onPick, onState, editable }: {
       onMouseDown={e => e.stopPropagation()}
     >
       <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: 2 }}>
-        Checkpoints on the service host. They are shared: every project that picks one uses the same download.
+        Checkpoints on the service host. They are shared: every router that picks one uses the same download.
       </div>
       {state.checkpoints.map(c => (
         <CheckpointRow key={c.key} checkpoint={c} editable={editable} onInstall={() => void install(c.key)} />
@@ -223,7 +223,7 @@ interface OptimizerStepsEditorProps {
 
 /**
  * Ordered optimizer pipeline with per-step enable and threshold. Shared by the
- * project optimizer tab and the optimizer profile form, so both edit the exact
+ * router optimizer tab and the optimizer profile form, so both edit the exact
  * same pipeline.
  */
 export function OptimizerStepsEditor({ rows, setRows, disabled = false }: OptimizerStepsEditorProps) {

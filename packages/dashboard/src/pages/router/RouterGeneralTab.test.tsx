@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectGeneralTab } from './ProjectGeneralTab';
+import { RouterGeneralTab } from './RouterGeneralTab';
 
 vi.mock('../../api', () => ({
-  createProject: vi.fn(),
-  updateProject: vi.fn(),
+  createRouter: vi.fn(),
+  updateRouter: vi.fn(),
   getSettings: vi.fn(),
 }));
 
@@ -21,38 +21,38 @@ vi.mock('../../hooks/useUnsavedChanges', () => ({
   ),
 }));
 
-import { createProject, updateProject, getSettings } from '../../api';
+import { createRouter, updateRouter, getSettings } from '../../api';
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 
-const mockCreateProject = vi.mocked(createProject as (...a: unknown[]) => Promise<unknown>);
-const mockUpdateProject = vi.mocked(updateProject as (...a: unknown[]) => Promise<unknown>);
+const mockCreateRouter = vi.mocked(createRouter as (...a: unknown[]) => Promise<unknown>);
+const mockUpdateRouter = vi.mocked(updateRouter as (...a: unknown[]) => Promise<unknown>);
 const mockGetSettings = vi.mocked(getSettings as () => Promise<unknown>);
 const mockUseUnsavedChanges = vi.mocked(useUnsavedChanges);
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
-  name: 'Test Project',
+  name: 'Test Router',
   models: [{ modelId: 'openai/gpt-4o' }],
   tokens: [],
   timeoutMs: 5000,
   routingModelId: 'openai/gpt-4o',
 };
 
-function renderTab(project: Record<string, unknown> | null = mockProject) {
-  const setProject = vi.fn();
+function renderTab(router: Record<string, unknown> | null = mockRouter) {
+  const setRouter = vi.fn();
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject }} />;
+    return <Outlet context={{ router, setRouter }} />;
   }
   return {
-    setProject,
+    setRouter,
     ...render(
-      <MemoryRouter initialEntries={[`/dashboard/projects/${project ? 'proj-1' : 'new'}/general`]}>
+      <MemoryRouter initialEntries={[`/dashboard/routers/${router ? 'proj-1' : 'new'}/general`]}>
         <Routes>
-          <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-            <Route path="general" element={<ProjectGeneralTab />} />
+          <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+            <Route path="general" element={<RouterGeneralTab />} />
           </Route>
-          <Route path="/dashboard/projects/new" element={<LayoutWrapper />}>
-            <Route path="" element={<ProjectGeneralTab />} />
+          <Route path="/dashboard/routers/new" element={<LayoutWrapper />}>
+            <Route path="" element={<RouterGeneralTab />} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -61,19 +61,19 @@ function renderTab(project: Record<string, unknown> | null = mockProject) {
 }
 
 function renderNew() {
-  const setProject = vi.fn();
+  const setRouter = vi.fn();
   function LayoutWrapper() {
-    return <Outlet context={{ project: null, setProject }} />;
+    return <Outlet context={{ router: null, setRouter }} />;
   }
   return {
-    setProject,
+    setRouter,
     ...render(
-      <MemoryRouter initialEntries={['/dashboard/projects/new']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/new']}>
         <Routes>
-          <Route path="/dashboard/projects/new" element={<LayoutWrapper />}>
-            <Route index element={<ProjectGeneralTab />} />
+          <Route path="/dashboard/routers/new" element={<LayoutWrapper />}>
+            <Route index element={<RouterGeneralTab />} />
           </Route>
-          <Route path="/dashboard/projects/:id/general" element={<div>new project page</div>} />
+          <Route path="/dashboard/routers/:id/general" element={<div>new router page</div>} />
         </Routes>
       </MemoryRouter>
     ),
@@ -82,8 +82,8 @@ function renderNew() {
 
 beforeEach(() => {
   mockGetSettings.mockResolvedValue({ publicUrl: 'https://api.example.com', port: 3000 });
-  mockUpdateProject.mockResolvedValue({ ...mockProject });
-  mockCreateProject.mockResolvedValue({ id: 'proj-new', name: 'New', models: [], token: 'sk-rt-abc123' });
+  mockUpdateRouter.mockResolvedValue({ ...mockRouter });
+  mockCreateRouter.mockResolvedValue({ id: 'proj-new', name: 'New', models: [], token: 'sk-rt-abc123' });
   mockUseUnsavedChanges.mockReturnValue({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() });
 });
 
@@ -91,17 +91,17 @@ afterEach(() => vi.clearAllMocks());
 
 // ── Edit mode ────────────────────────────────────────────────────────────────
 
-describe('ProjectGeneralTab — edit mode render', () => {
+describe('RouterGeneralTab — edit mode render', () => {
   it('shows Save Changes button when editing', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByRole('button', { name: /Save Changes/i })).toBeTruthy());
   });
 
-  it('pre-fills name input from project', async () => {
+  it('pre-fills name input from router', async () => {
     renderTab();
     await waitFor(() => {
       const input = screen.getByPlaceholderText('My App') as HTMLInputElement;
-      expect(input.value).toBe('Test Project');
+      expect(input.value).toBe('Test Router');
     });
   });
 
@@ -155,18 +155,18 @@ describe('ProjectGeneralTab — edit mode render', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /Save Changes/i })).toBeTruthy());
   });
 
-  it('calls updateProject on save and updates form', async () => {
+  it('calls updateRouter on save and updates form', async () => {
     renderTab();
     await waitFor(() => screen.getByPlaceholderText('My App'));
     const input = screen.getByPlaceholderText('My App');
     await userEvent.clear(input);
     await userEvent.type(input, 'Updated Name');
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', expect.objectContaining({ name: 'Updated Name' })));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ name: 'Updated Name' })));
   });
 
-  it('shows error on updateProject failure', async () => {
-    mockUpdateProject.mockRejectedValueOnce(new Error('Server error'));
+  it('shows error on updateRouter failure', async () => {
+    mockUpdateRouter.mockRejectedValueOnce(new Error('Server error'));
     renderTab();
     await waitFor(() => screen.getByPlaceholderText('My App'));
     await userEvent.clear(screen.getByPlaceholderText('My App'));
@@ -176,13 +176,13 @@ describe('ProjectGeneralTab — edit mode render', () => {
   });
 
   it('shows generic error when non-Error thrown on save', async () => {
-    mockUpdateProject.mockRejectedValueOnce('string error');
+    mockUpdateRouter.mockRejectedValueOnce('string error');
     renderTab();
     await waitFor(() => screen.getByPlaceholderText('My App'));
     await userEvent.clear(screen.getByPlaceholderText('My App'));
     await userEvent.type(screen.getByPlaceholderText('My App'), 'Changed');
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
-    await waitFor(() => expect(screen.getByText('Error saving project')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Error saving router')).toBeTruthy());
   });
 
   it('includes payload with routingModelId when present', async () => {
@@ -191,26 +191,26 @@ describe('ProjectGeneralTab — edit mode render', () => {
     await userEvent.clear(screen.getByPlaceholderText('My App'));
     await userEvent.type(screen.getByPlaceholderText('My App'), 'New');
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith(
       'proj-1',
       expect.objectContaining({ routingModelId: 'openai/gpt-4o' })
     ));
   });
 
-  it('omits routingModelId when not set on project', async () => {
-    const proj = { ...mockProject, routingModelId: undefined };
+  it('omits routingModelId when not set on router', async () => {
+    const proj = { ...mockRouter, routingModelId: undefined };
     renderTab(proj as never);
     await waitFor(() => screen.getByPlaceholderText('My App'));
     await userEvent.clear(screen.getByPlaceholderText('My App'));
     await userEvent.type(screen.getByPlaceholderText('My App'), 'Changed');
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const [, payload] = mockUpdateProject.mock.calls[0]!;
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const [, payload] = mockUpdateRouter.mock.calls[0]!;
     expect(payload).not.toHaveProperty('routingModelId');
   });
 });
 
-describe('ProjectGeneralTab — Advanced settings toggle', () => {
+describe('RouterGeneralTab — Advanced settings toggle', () => {
   it('advanced settings hidden by default', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
@@ -241,18 +241,18 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
     expect((checkbox as HTMLInputElement).checked).toBe(false);
     await userEvent.click(checkbox);
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', expect.objectContaining({ traceContent: true })));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ traceContent: true })));
   });
 
-  it('pre-fills the trace content opt-in from the project', async () => {
-    renderTab({ ...mockProject, traceContent: true });
+  it('pre-fills the trace content opt-in from the router', async () => {
+    renderTab({ ...mockRouter, traceContent: true });
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
     const checkbox = await screen.findByLabelText(/Capture prompts and answers/i);
     expect((checkbox as HTMLInputElement).checked).toBe(true);
   });
 
-  it('pre-fills timeoutMs from project', async () => {
+  it('pre-fills timeoutMs from router', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
@@ -262,8 +262,8 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
     });
   });
 
-  it('timeoutMs falls back to the shared default when not set on project', async () => {
-    const proj = { ...mockProject, timeoutMs: undefined };
+  it('timeoutMs falls back to the shared default when not set on router', async () => {
+    const proj = { ...mockRouter, timeoutMs: undefined };
     renderTab(proj as never);
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
@@ -274,7 +274,7 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
   });
 
   it('accepts timeoutMs 0 (no timeout) as a valid value', async () => {
-    const proj = { ...mockProject, timeoutMs: 0 };
+    const proj = { ...mockRouter, timeoutMs: 0 };
     renderTab(proj as never);
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
@@ -300,7 +300,7 @@ describe('ProjectGeneralTab — Advanced settings toggle', () => {
 
 // ── Copy endpoint ────────────────────────────────────────────────────────────
 
-describe('ProjectGeneralTab — copy endpoint', () => {
+describe('RouterGeneralTab — copy endpoint', () => {
   it('Copy button copies endpoint and shows "Copied!"', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
@@ -313,17 +313,17 @@ describe('ProjectGeneralTab — copy endpoint', () => {
 
 });
 
-// ── New project mode ─────────────────────────────────────────────────────────
+// ── New router mode ─────────────────────────────────────────────────────────
 
-describe('ProjectGeneralTab — new project mode', () => {
-  it('shows "Create Project" button when project is null', () => {
+describe('RouterGeneralTab — new router mode', () => {
+  it('shows "Create Router" button when router is null', () => {
     renderNew();
-    expect(screen.getByRole('button', { name: /Create Project/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Create Router/i })).toBeTruthy();
   });
 
-  it('"Create Project" button not disabled when name is empty (form uses required attr)', () => {
+  it('"Create Router" button not disabled when name is empty (form uses required attr)', () => {
     renderNew();
-    const btn = screen.getByRole('button', { name: /Create Project/i }) as HTMLButtonElement;
+    const btn = screen.getByRole('button', { name: /Create Router/i }) as HTMLButtonElement;
     // disabled={saving || (isEdit && !isDirty)} — in new mode isEdit=false, so only saving disables it
     expect(btn.disabled).toBe(false);
   });
@@ -332,23 +332,23 @@ describe('ProjectGeneralTab — new project mode', () => {
     renderNew();
     const input = screen.getByPlaceholderText('My App');
     await userEvent.type(input, 'My App');
-    const btn = screen.getByRole('button', { name: /Create Project/i }) as HTMLButtonElement;
+    const btn = screen.getByRole('button', { name: /Create Router/i }) as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
   });
 
-  it('shows token reveal view after successful create (project has token)', async () => {
-    mockCreateProject.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
+  it('shows token reveal view after successful create (router has token)', async () => {
+    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
     renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
     await waitFor(() => expect(screen.queryByText('sk-rt-secret')).not.toBeNull());
   });
 
   it('token reveal view has Copy button', async () => {
-    mockCreateProject.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
+    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
     renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
     await waitFor(() => screen.queryByText('sk-rt-secret'));
     expect(screen.getByRole('button', { name: /Copy/i })).toBeTruthy();
   });
@@ -356,22 +356,22 @@ describe('ProjectGeneralTab — new project mode', () => {
   it('token reveal Copy button calls clipboard', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    mockCreateProject.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
+    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
     renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
     await waitFor(() => screen.queryByText('sk-rt-secret'));
     await userEvent.click(screen.getByRole('button', { name: /Copy/i }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('sk-rt-secret'));
   });
 
-  it('token reveal "Go to project" button navigates to project page', async () => {
-    mockCreateProject.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
+  it('token reveal "Go to router" button navigates to router page', async () => {
+    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
     const { container } = renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
     await waitFor(() => screen.queryByText('sk-rt-secret'));
-    // "Go to project" button navigates away — the revealed token view disappears
+    // "Go to router" button navigates away — the revealed token view disappears
     const goBtn = container.querySelector('button.btn-primary') as HTMLButtonElement;
     await userEvent.click(goBtn);
     await waitFor(() => expect(screen.queryByText('sk-rt-secret')).toBeNull());
@@ -380,37 +380,37 @@ describe('ProjectGeneralTab — new project mode', () => {
   it('shows "Copied!" on clipboard copy', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    mockCreateProject.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
+    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
     renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
     await waitFor(() => screen.queryByText('sk-rt-secret'));
     await userEvent.click(screen.getByRole('button', { name: /Copy/i }));
     await waitFor(() => expect(screen.queryByText('Copied!')).not.toBeNull());
   });
 
 
-  it('navigates to project page when no token returned', async () => {
-    mockCreateProject.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [] });
+  it('navigates to router page when no token returned', async () => {
+    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [] });
     renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
-    // Navigated away — Create Project button no longer in DOM
-    await waitFor(() => expect(screen.queryByRole('button', { name: /Create Project/i })).toBeNull());
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
+    // Navigated away — Create Router button no longer in DOM
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Create Router/i })).toBeNull());
   });
 
-  it('shows error on createProject failure', async () => {
-    mockCreateProject.mockRejectedValueOnce(new Error('Create failed'));
+  it('shows error on createRouter failure', async () => {
+    mockCreateRouter.mockRejectedValueOnce(new Error('Create failed'));
     renderNew();
     await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Project/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
     await waitFor(() => expect(screen.getByText('Create failed')).toBeTruthy());
   });
 });
 
 // ── Unsaved changes modal ────────────────────────────────────────────────────
 
-describe('ProjectGeneralTab — unsaved changes modal', () => {
+describe('RouterGeneralTab — unsaved changes modal', () => {
   it('renders modal when isBlocked=true', async () => {
     mockUseUnsavedChanges.mockReturnValue({
       isBlocked: true,

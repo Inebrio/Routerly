@@ -4,7 +4,7 @@ import { BookOpen, Bug, ExternalLink, Mail, ChevronDown, ChevronRight, MessageSq
 const FAQ_ITEMS = [
   {
     q: 'How do I connect my app to Routerly?',
-    a: `Point your OpenAI or Anthropic SDK to your Routerly instance. Replace the base URL with http://your-host:3000/v1 (OpenAI-compatible) or http://your-host:3000/anthropic (Anthropic-compatible), then use a project token as the API key. That's it — no other changes needed.`,
+    a: `Point your OpenAI or Anthropic SDK to your Routerly instance. Replace the base URL with http://your-host:3000/v1 (OpenAI-compatible) or http://your-host:3000/anthropic (Anthropic-compatible), then use a router token as the API key. That's it — no other changes needed.`,
   },
   {
     q: 'Is Routerly compatible with tools that use the OpenAI SDK?',
@@ -12,7 +12,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does model routing work?',
-    a: 'Each project has a routing policy that decides which model receives a request. Policies include round-robin, lowest cost, fastest response, fallback chains, and more. You configure them per project under Projects → Routing.',
+    a: 'Each router has a routing policy that decides which model receives a request. Policies include round-robin, lowest cost, fastest response, fallback chains, and more. You configure them per router under Routers → Routing.',
   },
   {
     q: 'How do I add a new AI model?',
@@ -20,11 +20,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Is my data stored? Are my prompts logged?',
-    a: 'Routerly is self-hosted and stores data only on your machine (in ~/.routerly/ by default). Prompts and responses are never sent anywhere by Routerly. Request logs are stored locally and only if you enable them per-project.',
+    a: 'Routerly is self-hosted and stores data only on your machine (in ~/.routerly/ by default). Prompts and responses are never sent anywhere by Routerly. Request logs are stored locally and only if you enable them per-router.',
   },
   {
-    q: 'What\'s a project token and how is it different from a provider API key?',
-    a: 'A project token is a credential you give to your app or team members to authenticate with Routerly. It\'s separate from your provider API keys, which Routerly stores securely on the server side. Your apps never see the real provider keys.',
+    q: 'What\'s a router token and how is it different from a provider API key?',
+    a: 'A router token is a credential you give to your app or team members to authenticate with Routerly. It\'s separate from your provider API keys, which Routerly stores securely on the server side. Your apps never see the real provider keys.',
   },
 ];
 

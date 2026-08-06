@@ -46,13 +46,13 @@ interface RoutingPoliciesEditorProps {
   setPolicies: React.Dispatch<React.SetStateAction<PolicyItem[]>>;
   /** Model pool the policy configs pick their routing and embedding models from. */
   availableModels: Model[];
-  /** Seeds a freshly added AI Routing policy. Projects pass their own routing model. */
+  /** Seeds a freshly added AI Routing policy. Routers pass their own routing model. */
   llmDefaults?: { routingModelId?: string; fallbackModelIds?: string[] };
 }
 
 /**
  * Ordered list of routing policies with their per-type config forms. Shared by
- * the project routing tab (inline project policies) and the profile form page
+ * the router routing tab (inline router policies) and the profile form page
  * (profile policies), so both edit routing the exact same way.
  */
 export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, llmDefaults }: RoutingPoliciesEditorProps) {

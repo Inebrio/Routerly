@@ -9,7 +9,7 @@ export { providersConf };
 
 // Static notification event list and secret-field map (safe for browser — plain data)
 export {
-  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_PROJECT_TIMEOUT_MS, CALL_TYPES, isCompletionCall,
+  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, CALL_TYPES, isCompletionCall,
   suggestConnectionLabel, isConnectionLabelTaken,
   UPDATE_CHANNELS, DEPRECATED_UPDATE_CHANNELS, normalizeUpdateChannel,
   updateChannelDeprecationWarning, isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
@@ -91,11 +91,11 @@ export type {
   TokenCost,
   BudgetThresholds,
   ModelConfig,
-  ProjectModelRef,
-  ProjectConfig,
-  ProjectToken,
-  ProjectMember,
-  ProjectRole,
+  RouterModelRef,
+  RouterConfig,
+  RouterToken,
+  RouterMember,
+  RouterRole,
   TokenModelRef,
   RoutingPolicy,
   RoutingPolicyType,

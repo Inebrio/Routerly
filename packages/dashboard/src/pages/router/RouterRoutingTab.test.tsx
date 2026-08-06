@@ -3,13 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
-import { ProjectRoutingTab } from './ProjectRoutingTab';
+import { RouterRoutingTab } from './RouterRoutingTab';
 
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
-  updateProject: vi.fn(),
+  updateRouter: vi.fn(),
   getProfiles: vi.fn(),
-  assignProjectProfiles: vi.fn(),
+  assignRouterProfiles: vi.fn(),
 }));
 
 // ponytail: useBlocker requires a data router; mock the hook so MemoryRouter works
@@ -50,11 +50,11 @@ vi.mock('../../components/SearchableSelect', () => ({
   ),
 }));
 
-import { getModels, updateProject, getProfiles, assignProjectProfiles } from '../../api';
+import { getModels, updateRouter, getProfiles, assignRouterProfiles } from '../../api';
 const mockGetModels = vi.mocked(getModels as () => Promise<unknown>);
-const mockUpdateProject = vi.mocked(updateProject as (...args: unknown[]) => Promise<unknown>);
+const mockUpdateRouter = vi.mocked(updateRouter as (...args: unknown[]) => Promise<unknown>);
 const mockGetProfiles = vi.mocked(getProfiles as () => Promise<unknown>);
-const mockAssignProfile = vi.mocked(assignProjectProfiles as (...args: unknown[]) => Promise<unknown>);
+const mockAssignProfile = vi.mocked(assignRouterProfiles as (...args: unknown[]) => Promise<unknown>);
 
 function makeModel(overrides: Record<string, unknown> = {}) {
   return {
@@ -75,14 +75,14 @@ const embeddingModel = makeModel({
   capabilities: { embedding: true },
 });
 
-const mockProject = {
+const mockRouter = {
   id: 'proj-1',
   name: 'Test',
   models: [],
   policies: [],
 };
 
-const mockProjectWithPolicies = {
+const mockRouterWithPolicies = {
   id: 'proj-2',
   name: 'TestPolicies',
   models: [
@@ -95,7 +95,7 @@ const mockProjectWithPolicies = {
   ],
 };
 
-const mockProjectWithLlmPolicy = {
+const mockRouterWithLlmPolicy = {
   id: 'proj-3',
   name: 'TestLlm',
   models: [],
@@ -108,7 +108,7 @@ const mockProjectWithLlmPolicy = {
   ],
 };
 
-const mockProjectWithSemanticIntent = {
+const mockRouterWithSemanticIntent = {
   id: 'proj-4',
   name: 'TestSemantic',
   models: [{ modelId: 'openai/gpt-4o' }],
@@ -128,15 +128,15 @@ const mockProjectWithSemanticIntent = {
   ],
 };
 
-function renderTab(project: Record<string, unknown> = mockProject) {
+function renderTab(router: Record<string, unknown> = mockRouter) {
   function LayoutWrapper() {
-    return <Outlet context={{ project, setProject: vi.fn() }} />;
+    return <Outlet context={{ router, setRouter: vi.fn() }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/routing']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/routing']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="routing" element={<ProjectRoutingTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="routing" element={<RouterRoutingTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -151,16 +151,16 @@ const sampleProfiles = [
 
 beforeEach(() => {
   mockGetModels.mockResolvedValue([chatModel, chatModel2, embeddingModel]);
-  mockUpdateProject.mockResolvedValue({ ...mockProject });
+  mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetProfiles.mockResolvedValue(sampleProfiles);
-  mockAssignProfile.mockResolvedValue({ ...mockProject, routingProfileId: 'builtin-balanced' });
+  mockAssignProfile.mockResolvedValue({ ...mockRouter, routingProfileId: 'builtin-balanced' });
 });
 
 afterEach(() => vi.clearAllMocks());
 
 // ── Initial render ────────────────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — initial render', () => {
+describe('RouterRoutingTab — initial render', () => {
   it('shows loading spinner while getModels is pending', async () => {
     let resolve!: (v: unknown) => void;
     mockGetModels.mockReturnValueOnce(new Promise(r => { resolve = r; }));
@@ -196,11 +196,11 @@ describe('ProjectRoutingTab — initial render', () => {
   });
 });
 
-// ── Project with existing policies loaded ─────────────────────────────────────
+// ── Router with existing policies loaded ─────────────────────────────────────
 
-describe('ProjectRoutingTab — loads existing policies', () => {
+describe('RouterRoutingTab — loads existing policies', () => {
   it('renders pre-existing policies', async () => {
-    renderTab(mockProjectWithPolicies);
+    renderTab(mockRouterWithPolicies);
     await waitFor(() => {
       expect(screen.queryByText('health Policy')).not.toBeNull();
       expect(screen.queryByText('cheapest Policy')).not.toBeNull();
@@ -208,7 +208,7 @@ describe('ProjectRoutingTab — loads existing policies', () => {
   });
 
   it('renders pre-existing target models', async () => {
-    renderTab(mockProjectWithPolicies);
+    renderTab(mockRouterWithPolicies);
     await waitFor(() => {
       // Two target-row model selects should appear
       const selects = document.querySelectorAll('[data-testid="searchable-Select model"]');
@@ -217,13 +217,13 @@ describe('ProjectRoutingTab — loads existing policies', () => {
   });
 
   it('shows correct name for llm policy type', async () => {
-    renderTab(mockProjectWithLlmPolicy);
+    renderTab(mockRouterWithLlmPolicy);
     await waitFor(() => screen.getByText('AI Routing Policy'));
   });
 
   it('shows correct name for rate-limit policy type', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'rate-limit', enabled: true }],
     });
     await waitFor(() => screen.getByText('Rate Limit Policy'));
@@ -231,7 +231,7 @@ describe('ProjectRoutingTab — loads existing policies', () => {
 
   it('shows correct name for budget-remaining policy type', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'budget-remaining', enabled: true }],
     });
     await waitFor(() => screen.getByText('Budget Remaining Policy'));
@@ -239,39 +239,39 @@ describe('ProjectRoutingTab — loads existing policies', () => {
 
   it('shows correct name for semantic-intent policy type', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'semantic-intent', enabled: true, config: { embedding_model: '', intents: {} } }],
     });
     await waitFor(() => screen.getByText('Semantic Intent Policy'));
   });
 
-  it('project without policies key → empty array (no crash)', async () => {
+  it('router without policies key → empty array (no crash)', async () => {
     renderTab({ id: 'proj-x', name: 'NoPolicies', models: [] });
     await waitFor(() => screen.getByText('No routing policies configured.'));
   });
 
-  it('project with timeoutMs propagated to save payload', async () => {
-    renderTab({ ...mockProject, timeoutMs: 5000 });
+  it('router with timeoutMs propagated to save payload', async () => {
+    renderTab({ ...mockRouter, timeoutMs: 5000 });
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const payload = mockUpdateProject.mock.calls[0]![1] as Record<string, unknown>;
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as Record<string, unknown>;
     expect(payload.timeoutMs).toBe(5000);
   });
 
-  it('project without timeoutMs → no timeoutMs in payload', async () => {
-    renderTab(mockProject);
+  it('router without timeoutMs → no timeoutMs in payload', async () => {
+    renderTab(mockRouter);
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const payload = mockUpdateProject.mock.calls[0]![1] as Record<string, unknown>;
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('timeoutMs');
   });
 });
 
 // ── Add / Remove policies ─────────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — add / remove policies', () => {
+describe('RouterRoutingTab — add / remove policies', () => {
   it('adds a health policy from the add-policy select', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -359,7 +359,7 @@ describe('ProjectRoutingTab — add / remove policies', () => {
 
 // ── LLM policy specific fields ────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — LLM policy fields', () => {
+describe('RouterRoutingTab — LLM policy fields', () => {
   it('renders Routing Models section for llm policy', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -410,7 +410,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
 
   it('llm policy with autoRouting=false shows prompt inputs in target models', async () => {
     renderTab({
-      ...mockProjectWithLlmPolicy,
+      ...mockRouterWithLlmPolicy,
       policies: [{ type: 'llm', enabled: true, config: { routingModelId: 'openai/gpt-4o', fallbackModelIds: [], autoRouting: false } }],
       models: [{ modelId: 'openai/gpt-4o' }],
     });
@@ -420,7 +420,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
   it('adds a fallback LLM model', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, chatModel2]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -438,7 +438,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
 
   it('removes a fallback LLM model', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -465,7 +465,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
   it('changes LLM routing model selection', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, chatModel2]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -593,7 +593,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
   it('editing TTL value updates the cache config', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -610,7 +610,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
   it('editing similarity threshold updates the cache config', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -627,7 +627,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
   it('toggles Extend TTL on hit checkbox', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -644,7 +644,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
   it('adds fallback embedding model in cache section', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel, makeModel({ id: 'openai/text-embedding-ada-002', name: 'Ada 002', capabilities: { embedding: true } })]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -665,7 +665,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
 
   it('llm policy pre-existing with memory=true shows memoryCount input', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -677,7 +677,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
 
   it('memoryCount input onChange fires', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -694,7 +694,7 @@ describe('ProjectRoutingTab — LLM policy fields', () => {
 
 // ── Semantic Intent policy fields ─────────────────────────────────────────────
 
-describe('ProjectRoutingTab — semantic-intent policy fields', () => {
+describe('RouterRoutingTab — semantic-intent policy fields', () => {
   it('renders Embedding Models section for semantic-intent policy', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -757,8 +757,8 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('pre-existing intents are rendered', async () => {
-    // Use a project without target models to avoid "support" badge appearing twice
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    // Use a router without target models to avoid "support" badge appearing twice
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => {
       const allSupport = screen.getAllByText('support');
       expect(allSupport.length).toBeGreaterThan(0);
@@ -767,7 +767,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('expanding intent shows examples', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     // Click the intent row (the one inside the intent list, not a badge)
     const intentRows = document.querySelectorAll('[title="Remove intent"]');
@@ -783,7 +783,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('adds an example to an intent', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -795,7 +795,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('Escape key clears example input', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -807,7 +807,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('removes an intent via X button', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const removeBtn = screen.getAllByTitle('Remove intent')[0]! as HTMLButtonElement;
     await userEvent.click(removeBtn);
@@ -815,7 +815,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('edits an existing example', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -827,7 +827,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('removes an example from intent', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -855,7 +855,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
       makeModel({ id: 'openai/text-embedding-ada-002', name: 'Ada 002', capabilities: { embedding: true } }),
     ]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -872,7 +872,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
 
   it('removes a sem embedding fallback model', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -895,14 +895,14 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('shows intent badge chips on target model when semantic-intent enabled', async () => {
-    renderTab(mockProjectWithSemanticIntent);
+    renderTab(mockRouterWithSemanticIntent);
     // "support" and "technical" appear as both intent list rows and badge buttons
     await waitFor(() => expect(screen.queryAllByText('support').length).toBeGreaterThan(0));
     expect(screen.queryAllByText('technical').length).toBeGreaterThan(0);
   });
 
   it('toggle intent association for a model', async () => {
-    renderTab(mockProjectWithSemanticIntent);
+    renderTab(mockRouterWithSemanticIntent);
     await waitFor(() => expect(screen.queryAllByText('technical').length).toBeGreaterThan(0));
     // The badge buttons are in the target model section (type="button")
     const technicalBtns = screen.getAllByRole('button').filter(b => b.textContent === 'technical');
@@ -913,7 +913,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
 
   it('show-all-examples toggle fires when >5 examples exist', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -942,7 +942,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
 
   it('shows empty-examples message when intent has no examples', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -956,7 +956,7 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
   });
 
   it('existing intent: Enter key with empty example input does nothing', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -971,10 +971,10 @@ describe('ProjectRoutingTab — semantic-intent policy fields', () => {
 
 // ── Fairness policy fields ────────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — fairness policy fields', () => {
+describe('RouterRoutingTab — fairness policy fields', () => {
   it('window minutes input defaults to 60 and is editable', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'fairness', enabled: true }],
     });
     await waitFor(() => screen.getByDisplayValue('60'));
@@ -987,10 +987,10 @@ describe('ProjectRoutingTab — fairness policy fields', () => {
 
 // ── Model preference policy fields ────────────────────────────────────────────
 
-describe('ProjectRoutingTab — model-preference policy fields', () => {
+describe('RouterRoutingTab — model-preference policy fields', () => {
   it('bonus input defaults to 1 and is editable', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'model-preference', enabled: true }],
     });
     await waitFor(() => screen.getByDisplayValue('1'));
@@ -1003,10 +1003,10 @@ describe('ProjectRoutingTab — model-preference policy fields', () => {
 
 // ── Rate-limit policy fields ──────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — rate-limit policy fields', () => {
+describe('RouterRoutingTab — rate-limit policy fields', () => {
   it('window minutes defaults to 1 and maxCallsPerWindow is empty', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'rate-limit', enabled: true }],
     });
     await waitFor(() => screen.getByDisplayValue('1'));
@@ -1018,7 +1018,7 @@ describe('ProjectRoutingTab — rate-limit policy fields', () => {
 
   it('max calls per window is editable', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'rate-limit', enabled: true }],
     });
     await waitFor(() => screen.getByPlaceholderText('none'));
@@ -1029,7 +1029,7 @@ describe('ProjectRoutingTab — rate-limit policy fields', () => {
 
   it('max calls per window emptied sets undefined', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'rate-limit', enabled: true, config: { windowMinutes: 1, maxCallsPerWindow: 50 } }],
     });
     await waitFor(() => screen.getByDisplayValue('50'));
@@ -1041,7 +1041,7 @@ describe('ProjectRoutingTab — rate-limit policy fields', () => {
 
 // ── Target Models ─────────────────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — target models', () => {
+describe('RouterRoutingTab — target models', () => {
   it('clicking Add Target Model adds a model row', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /add target model/i }));
@@ -1082,7 +1082,7 @@ describe('ProjectRoutingTab — target models', () => {
   it('Add Target Model is disabled when all models are used', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
     });
     await waitFor(() => screen.getByRole('button', { name: /add target model/i }));
@@ -1096,7 +1096,7 @@ describe('ProjectRoutingTab — target models', () => {
   it('duplicate target model ID shows validation error', async () => {
     // Start with two models already having the same id to force duplicate on load
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'openai/gpt-4o' }],
     });
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
@@ -1107,7 +1107,7 @@ describe('ProjectRoutingTab — target models', () => {
 
 // ── Save / Error handling ─────────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — save', () => {
+describe('RouterRoutingTab — save', () => {
   it('successful save shows Saved! state', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
@@ -1116,22 +1116,22 @@ describe('ProjectRoutingTab — save', () => {
   });
 
   it('save payload includes policies with enabled=true and stripped internalId', async () => {
-    renderTab(mockProjectWithPolicies);
+    renderTab(mockRouterWithPolicies);
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const payload = mockUpdateProject.mock.calls[0]![1] as Record<string, unknown>;
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as Record<string, unknown>;
     const policies = payload.policies as Array<Record<string, unknown>>;
     expect(policies.every(p => p.enabled === true)).toBe(true);
     expect(policies.every(p => !('internalId' in p))).toBe(true);
   });
 
   it('save payload includes models with prompt omitted when empty', async () => {
-    renderTab(mockProjectWithPolicies);
+    renderTab(mockRouterWithPolicies);
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
-    const payload = mockUpdateProject.mock.calls[0]![1] as Record<string, unknown>;
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as Record<string, unknown>;
     const models = payload.models as Array<Record<string, unknown>>;
     const noPromptModel = models.find(m => m.modelId === 'openai/gpt-4o');
     expect(noPromptModel).not.toHaveProperty('prompt');
@@ -1139,25 +1139,25 @@ describe('ProjectRoutingTab — save', () => {
     expect(withPromptModel?.prompt).toBe('Use for short tasks');
   });
 
-  it('shows error message when updateProject rejects with Error', async () => {
-    mockUpdateProject.mockRejectedValueOnce(new Error('Network error'));
+  it('shows error message when updateRouter rejects with Error', async () => {
+    mockUpdateRouter.mockRejectedValueOnce(new Error('Network error'));
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
     await waitFor(() => expect(screen.queryByText('Network error')).not.toBeNull());
   });
 
-  it('shows generic error message when updateProject rejects with non-Error', async () => {
-    mockUpdateProject.mockRejectedValueOnce('string error');
+  it('shows generic error message when updateRouter rejects with non-Error', async () => {
+    mockUpdateRouter.mockRejectedValueOnce('string error');
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
-    await waitFor(() => expect(screen.queryByText('Error saving project routing')).not.toBeNull());
+    await waitFor(() => expect(screen.queryByText('Error saving router routing')).not.toBeNull());
   });
 
   it('error is cleared on next save attempt', async () => {
-    mockUpdateProject.mockRejectedValueOnce(new Error('first error'));
-    mockUpdateProject.mockResolvedValueOnce({ ...mockProject });
+    mockUpdateRouter.mockRejectedValueOnce(new Error('first error'));
+    mockUpdateRouter.mockResolvedValueOnce({ ...mockRouter });
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
@@ -1169,7 +1169,7 @@ describe('ProjectRoutingTab — save', () => {
 
 // ── isDirty / UnsavedChanges ──────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — isDirty detection', () => {
+describe('RouterRoutingTab — isDirty detection', () => {
   it('adding a policy marks form as dirty (UnsavedChangesModal trigger ready)', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1181,10 +1181,10 @@ describe('ProjectRoutingTab — isDirty detection', () => {
 
 // ── POLICY_DESCRIPTIONS coverage ─────────────────────────────────────────────
 
-describe('ProjectRoutingTab — policy descriptions rendered', () => {
+describe('RouterRoutingTab — policy descriptions rendered', () => {
   it('health policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'health', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Scores models based on their recent error rate/));
@@ -1192,7 +1192,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('context policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'context', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Scores models based on available context window/));
@@ -1200,7 +1200,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('cheapest policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'cheapest', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Scores models inversely proportional/));
@@ -1208,7 +1208,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('performance policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'performance', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Scores models based on their recent average latency/));
@@ -1216,7 +1216,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('llm policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'llm', enabled: true, config: { routingModelId: '', fallbackModelIds: [], autoRouting: true } }],
     });
     await waitFor(() => screen.getByText(/Uses an AI model to score candidates/));
@@ -1224,7 +1224,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('capability policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'capability', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Hard filter/));
@@ -1232,7 +1232,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('rate-limit policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'rate-limit', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Penalizes models with a high recent call frequency/));
@@ -1240,7 +1240,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('fairness policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'fairness', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Distributes traffic evenly/));
@@ -1248,7 +1248,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('budget-remaining policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'budget-remaining', enabled: true }],
     });
     await waitFor(() => screen.getByText(/Scores models based on remaining budget headroom/));
@@ -1256,7 +1256,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('semantic-intent policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'semantic-intent', enabled: true, config: { embedding_model: '', intents: {} } }],
     });
     await waitFor(() => screen.getByText(/Classifies the request by semantic intent/));
@@ -1264,7 +1264,7 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
   it('model-preference policy shows its description', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'model-preference', enabled: true }],
     });
     await waitFor(() => screen.getByText(/When the client requests a specific model/));
@@ -1273,10 +1273,10 @@ describe('ProjectRoutingTab — policy descriptions rendered', () => {
 
 // ── getIntentsForModel + toggleIntentForModel ─────────────────────────────────
 
-describe('ProjectRoutingTab — semantic intent model association', () => {
+describe('RouterRoutingTab — semantic intent model association', () => {
   it('toggleIntentForModel adds model to intent candidate_models', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
       policies: [{
         type: 'semantic-intent',
@@ -1300,7 +1300,7 @@ describe('ProjectRoutingTab — semantic intent model association', () => {
   it('getIntentsForModel returns empty set when no semantic-intent policy', async () => {
     // No semantic-intent policy means no badges on the model card
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
       policies: [{ type: 'health', enabled: true }],
     });
@@ -1312,10 +1312,10 @@ describe('ProjectRoutingTab — semantic intent model association', () => {
 
 // ── getSemModelIds edge case: no primary, no fallbacks ───────────────────────
 
-describe('ProjectRoutingTab — getSemModelIds edge case', () => {
+describe('RouterRoutingTab — getSemModelIds edge case', () => {
   it('renders one empty embedding model row when config has no embedding_model', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -1331,10 +1331,10 @@ describe('ProjectRoutingTab — getSemModelIds edge case', () => {
 
 // ── getLlmModelIds edge case: no primary, no fallbacks ───────────────────────
 
-describe('ProjectRoutingTab — getLlmModelIds edge case', () => {
+describe('RouterRoutingTab — getLlmModelIds edge case', () => {
   it('renders fallback-only llm rows when config has no routingModelId but has fallbacks', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1350,19 +1350,19 @@ describe('ProjectRoutingTab — getLlmModelIds edge case', () => {
 
 // ── isDirty: policy config comparison ────────────────────────────────────────
 
-describe('ProjectRoutingTab — isDirty compares policy config', () => {
-  it('isDirty=false when project policies match current state (no change)', async () => {
-    renderTab(mockProjectWithPolicies);
+describe('RouterRoutingTab — isDirty compares policy config', () => {
+  it('isDirty=false when router policies match current state (no change)', async () => {
+    renderTab(mockRouterWithPolicies);
     // No change made — save should still work
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
   });
 });
 
 // ── getModels failure handling ─────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — getModels rejection', () => {
+describe('RouterRoutingTab — getModels rejection', () => {
   it('renders form even when getModels rejects', async () => {
     // ponytail: source chains .then().finally() with no .catch(), so the rejection
     // on the .finally() result is unhandled. Absorb it at the process level for this test only.
@@ -1379,7 +1379,7 @@ describe('ProjectRoutingTab — getModels rejection', () => {
 
 // ── addTargetModel: firstAvailable fallback ───────────────────────────────────
 
-describe('ProjectRoutingTab — addTargetModel picks first available', () => {
+describe('RouterRoutingTab — addTargetModel picks first available', () => {
   it('first available non-embedding model is auto-selected when adding target', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, chatModel2, embeddingModel]);
     renderTab();
@@ -1406,10 +1406,10 @@ describe('ProjectRoutingTab — addTargetModel picks first available', () => {
 
 // ── Prompt input hover ────────────────────────────────────────────────────────
 
-describe('ProjectRoutingTab — prompt hover disables drag', () => {
+describe('RouterRoutingTab — prompt hover disables drag', () => {
   it('hovering prompt textarea area sets promptHoverIdx', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
       policies: [{ type: 'llm', enabled: true, config: { routingModelId: '', fallbackModelIds: [], autoRouting: false } }],
     });
@@ -1426,10 +1426,10 @@ describe('ProjectRoutingTab — prompt hover disables drag', () => {
 
 // ── addPolicy with pre-existing routingModelId / fallbackRoutingModelIds ──────
 
-describe('ProjectRoutingTab — llm policy uses project routingModelId', () => {
-  it('llm policy config seeds from project.routingModelId and project.fallbackRoutingModelIds', async () => {
+describe('RouterRoutingTab — llm policy uses router routingModelId', () => {
+  it('llm policy config seeds from router.routingModelId and router.fallbackRoutingModelIds', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       routingModelId: 'openai/gpt-4o',
       fallbackRoutingModelIds: ['openai/gpt-4o-mini'],
     });
@@ -1445,10 +1445,10 @@ describe('ProjectRoutingTab — llm policy uses project routingModelId', () => {
 
 // ── onDragStart/End/Enter branch coverage via fireEvent ──────────────────────
 
-describe('ProjectRoutingTab — drag-and-drop event handlers', () => {
+describe('RouterRoutingTab — drag-and-drop event handlers', () => {
   it('policy drag handlers do not crash', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [
         { type: 'health', enabled: true },
         { type: 'cheapest', enabled: true },
@@ -1469,7 +1469,7 @@ describe('ProjectRoutingTab — drag-and-drop event handlers', () => {
 
   it('target model drag handlers do not crash', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'openai/gpt-4o-mini' }],
     });
     await waitFor(() => {
@@ -1486,7 +1486,7 @@ describe('ProjectRoutingTab — drag-and-drop event handlers', () => {
 
   it('llm model drag handlers do not crash', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1507,7 +1507,7 @@ describe('ProjectRoutingTab — drag-and-drop event handlers', () => {
 
   it('sem model drag handlers do not crash', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -1532,7 +1532,7 @@ describe('ProjectRoutingTab — drag-and-drop event handlers', () => {
 
   it('dragEnter with same idx is a no-op (no reorder)', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [
         { type: 'health', enabled: true },
         { type: 'cheapest', enabled: true },
@@ -1551,7 +1551,7 @@ describe('ProjectRoutingTab — drag-and-drop event handlers', () => {
 
 // ── max completion tokens: non-numeric input filtered ────────────────────────
 
-describe('ProjectRoutingTab — max completion tokens input: non-numeric filtering', () => {
+describe('RouterRoutingTab — max completion tokens input: non-numeric filtering', () => {
   it('non-numeric characters are stripped from max completion tokens', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1568,7 +1568,7 @@ describe('ProjectRoutingTab — max completion tokens input: non-numeric filteri
 
   it('max completion tokens input emptied sets undefined in config', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1587,7 +1587,7 @@ describe('ProjectRoutingTab — max completion tokens input: non-numeric filteri
 
 // ── onBlur clamp: value >= 50 should NOT clamp ───────────────────────────────
 
-describe('ProjectRoutingTab — max completion tokens onBlur clamp threshold', () => {
+describe('RouterRoutingTab — max completion tokens onBlur clamp threshold', () => {
   it('value >=50 on blur is not clamped', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1607,7 +1607,7 @@ describe('ProjectRoutingTab — max completion tokens onBlur clamp threshold', (
 
 // ── max prompt chars: non-numeric input filtered ─────────────────────────────
 
-describe('ProjectRoutingTab — max prompt chars input: non-numeric filtering', () => {
+describe('RouterRoutingTab — max prompt chars input: non-numeric filtering', () => {
   it('non-numeric characters are stripped from max prompt chars', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1624,7 +1624,7 @@ describe('ProjectRoutingTab — max prompt chars input: non-numeric filtering', 
 
   it('max prompt chars input emptied sets undefined', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1642,11 +1642,11 @@ describe('ProjectRoutingTab — max prompt chars input: non-numeric filtering', 
 
 // ── Cache embedding model change ──────────────────────────────────────────────
 
-describe('ProjectRoutingTab — cache embedding model change', () => {
+describe('RouterRoutingTab — cache embedding model change', () => {
   it('changing cache embedding model selection fires setCacheModelIds', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel, makeModel({ id: 'openai/ada-002', name: 'Ada 002', capabilities: { embedding: true } })]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1668,7 +1668,7 @@ describe('ProjectRoutingTab — cache embedding model change', () => {
   it('removing cache fallback embedding model works', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel, makeModel({ id: 'openai/ada-002', name: 'Ada 002', capabilities: { embedding: true } })]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1692,7 +1692,7 @@ describe('ProjectRoutingTab — cache embedding model change', () => {
   it('Add Fallback Model in cache disabled when no more embedding models', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1714,11 +1714,11 @@ describe('ProjectRoutingTab — cache embedding model change', () => {
 
 // ── Add Fallback Model: disabled when no more models ─────────────────────────
 
-describe('ProjectRoutingTab — Add Fallback Model disabled when exhausted', () => {
+describe('RouterRoutingTab — Add Fallback Model disabled when exhausted', () => {
   it('llm Add Fallback Model disabled when all models are already in the list', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -1733,11 +1733,11 @@ describe('ProjectRoutingTab — Add Fallback Model disabled when exhausted', () 
 
 // ── semantic-intent Add Fallback Model disabled ───────────────────────────────
 
-describe('ProjectRoutingTab — sem Add Fallback Model disabled when exhausted', () => {
+describe('RouterRoutingTab — sem Add Fallback Model disabled when exhausted', () => {
   it('sem Add Fallback Model disabled when only one embedding model and it is used', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -1752,20 +1752,20 @@ describe('ProjectRoutingTab — sem Add Fallback Model disabled when exhausted',
 
 // ── handleSubmit via form onSubmit ────────────────────────────────────────────
 
-describe('ProjectRoutingTab — form submit', () => {
+describe('RouterRoutingTab — form submit', () => {
   it('submitting the form via onSubmit calls doSave', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
     const { fireEvent } = await import('@testing-library/react');
     const form = document.querySelector('form') as HTMLFormElement;
     fireEvent.submit(form);
-    await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
   });
 });
 
 // ── sem embedding model onChange ──────────────────────────────────────────────
 
-describe('ProjectRoutingTab — sem embedding model onChange', () => {
+describe('RouterRoutingTab — sem embedding model onChange', () => {
   it('changing sem embedding model selection fires setSemModelIds', async () => {
     mockGetModels.mockResolvedValueOnce([
       chatModel,
@@ -1773,7 +1773,7 @@ describe('ProjectRoutingTab — sem embedding model onChange', () => {
       makeModel({ id: 'openai/text-embedding-ada-002', name: 'Ada 002', capabilities: { embedding: true } }),
     ]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -1789,9 +1789,9 @@ describe('ProjectRoutingTab — sem embedding model onChange', () => {
 
 // ── example row hover + input focus/blur/keydown ─────────────────────────────
 
-describe('ProjectRoutingTab — example row hover and input focus/blur', () => {
+describe('RouterRoutingTab — example row hover and input focus/blur', () => {
   it('example row mouseEnter/mouseLeave and input focus/blur/keydown do not crash', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -1815,7 +1815,7 @@ describe('ProjectRoutingTab — example row hover and input focus/blur', () => {
 
 // ── semantic-intent advanced threshold inputs onChange ────────────────────────
 
-describe('ProjectRoutingTab — semantic-intent advanced threshold inputs', () => {
+describe('RouterRoutingTab — semantic-intent advanced threshold inputs', () => {
   it('confidence threshold onChange fires', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1849,10 +1849,10 @@ describe('ProjectRoutingTab — semantic-intent advanced threshold inputs', () =
 
 // ── rate-limit windowMinutes onChange ─────────────────────────────────────────
 
-describe('ProjectRoutingTab — rate-limit windowMinutes onChange', () => {
+describe('RouterRoutingTab — rate-limit windowMinutes onChange', () => {
   it('rate-limit windowMinutes onChange fires', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{ type: 'rate-limit', enabled: true }],
     });
     await waitFor(() => screen.getByDisplayValue('1'));
@@ -1865,10 +1865,10 @@ describe('ProjectRoutingTab — rate-limit windowMinutes onChange', () => {
 
 // ── prompt textarea onChange in target model section ──────────────────────────
 
-describe('ProjectRoutingTab — prompt textarea onChange', () => {
+describe('RouterRoutingTab — prompt textarea onChange', () => {
   it('prompt textarea onChange updates model prompt', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o', prompt: 'initial prompt' }],
       policies: [{ type: 'llm', enabled: true, config: { routingModelId: '', fallbackModelIds: [], autoRouting: false } }],
     });
@@ -1882,7 +1882,7 @@ describe('ProjectRoutingTab — prompt textarea onChange', () => {
 
 // ── Add Target Model mouseEnter/mouseLeave ────────────────────────────────────
 
-describe('ProjectRoutingTab — Add Target Model hover', () => {
+describe('RouterRoutingTab — Add Target Model hover', () => {
   it('mouseEnter/mouseLeave on Add Target Model button do not crash', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /add target model/i }));
@@ -1896,11 +1896,11 @@ describe('ProjectRoutingTab — Add Target Model hover', () => {
 
 // ── addTargetModel with pre-existing models (covers map callback) ─────────────
 
-describe('ProjectRoutingTab — addTargetModel with pre-existing models', () => {
+describe('RouterRoutingTab — addTargetModel with pre-existing models', () => {
   it('adding a second target model covers the t.modelId map callback', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, chatModel2, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
     });
     await waitFor(() => screen.getByRole('button', { name: /add target model/i }));
@@ -1914,7 +1914,7 @@ describe('ProjectRoutingTab — addTargetModel with pre-existing models', () => 
 
 // ── additional prompt textarea drag events ────────────────────────────────────
 
-describe('ProjectRoutingTab — additional prompt textarea drag events', () => {
+describe('RouterRoutingTab — additional prompt textarea drag events', () => {
   it('onMouseDown and onDragStart on additional prompt textarea do not crash', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1932,7 +1932,7 @@ describe('ProjectRoutingTab — additional prompt textarea drag events', () => {
 
 // ── Advanced section close (onToggle false branch) ───────────────────────────
 
-describe('ProjectRoutingTab — Advanced section open then close', () => {
+describe('RouterRoutingTab — Advanced section open then close', () => {
   it('closing Advanced details fires next.delete(idx) branch via summary click twice', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
@@ -1971,9 +1971,9 @@ describe('ProjectRoutingTab — Advanced section open then close', () => {
 
 // ── collapse expanded intent (next.delete branch) ────────────────────────────
 
-describe('ProjectRoutingTab — collapse expanded intent', () => {
+describe('RouterRoutingTab — collapse expanded intent', () => {
   it('clicking an expanded intent collapses it', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader); // expand
@@ -1985,10 +1985,10 @@ describe('ProjectRoutingTab — collapse expanded intent', () => {
 
 // ── llm policy with undefined autoRouting (?? true right-side) ──────────────
 
-describe('ProjectRoutingTab — llm policy without autoRouting key', () => {
+describe('RouterRoutingTab — llm policy without autoRouting key', () => {
   it('llm policy with no autoRouting key defaults to true (??-right-side)', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -2004,10 +2004,10 @@ describe('ProjectRoutingTab — llm policy without autoRouting key', () => {
 
 // ── singular example count (1 example = no 's') ─────────────────────────────
 
-describe('ProjectRoutingTab — singular example count', () => {
+describe('RouterRoutingTab — singular example count', () => {
   it('shows "1 example" (no s) when intent has exactly one example', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -2027,12 +2027,12 @@ describe('ProjectRoutingTab — singular example count', () => {
 
 // ── intent with only one entry (no borderBottom on last) ─────────────────────
 
-describe('ProjectRoutingTab — single intent (last element no borderBottom)', () => {
+describe('RouterRoutingTab — single intent (last element no borderBottom)', () => {
   it('single intent renders without borderBottom (iIdx < arr.length-1 is false)', async () => {
     // This test relies on the "support" intent being the only one (already covered by existing tests with 2 intents).
     // With exactly 1 intent, iIdx=0 and arr.length-1=0 → condition false → borderBottom undefined.
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -2052,10 +2052,10 @@ describe('ProjectRoutingTab — single intent (last element no borderBottom)', (
 
 // ── examples with undefined (intentDef.examples ?? [] branch) ────────────────
 
-describe('ProjectRoutingTab — intent with undefined examples', () => {
+describe('RouterRoutingTab — intent with undefined examples', () => {
   it('intent with no examples key renders empty state', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -2077,11 +2077,11 @@ describe('ProjectRoutingTab — intent with undefined examples', () => {
 
 // ── cache config with undefined cache fields (??-right-side for ttl/threshold/extend) ──
 
-describe('ProjectRoutingTab — cache config ?? right-side branches', () => {
+describe('RouterRoutingTab — cache config ?? right-side branches', () => {
   it('llm policy with cache enabled but no embedded_fallback_models triggers ?? [] branch', async () => {
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -2103,7 +2103,7 @@ describe('ProjectRoutingTab — cache config ?? right-side branches', () => {
     // This test enables caching then immediately changes TTL
     mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'llm',
         enabled: true,
@@ -2124,7 +2124,7 @@ describe('ProjectRoutingTab — cache config ?? right-side branches', () => {
 
 // ── isBlocked modal (true branch) ────────────────────────────────────────────
 
-describe('ProjectRoutingTab — isBlocked modal renders when blocked', () => {
+describe('RouterRoutingTab — isBlocked modal renders when blocked', () => {
   it('renders UnsavedChangesModal when isBlocked=true', async () => {
     mockUseUnsavedChanges.mockReturnValue({ isBlocked: true, proceed: vi.fn(), reset: vi.fn() });
     renderTab();
@@ -2136,13 +2136,13 @@ describe('ProjectRoutingTab — isBlocked modal renders when blocked', () => {
 
 // ── addTargetModel with empty firstAvailable (|| '' branch) ─────────────────
 
-describe('ProjectRoutingTab — addTargetModel map callback with pre-existing + no available', () => {
+describe('RouterRoutingTab — addTargetModel map callback with pre-existing + no available', () => {
   it('modelId defaults to empty string when firstAvailable is undefined', async () => {
     // All models used up, but button not disabled (test accesses internals)
     // Set up: 1 chat model already used → firstAvailable=undefined → modelId=''
     mockGetModels.mockResolvedValueOnce([chatModel]);
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
     });
     // Button will be disabled, so we test a different scenario: trigger via form submit
@@ -2154,10 +2154,10 @@ describe('ProjectRoutingTab — addTargetModel map callback with pre-existing + 
 
 // ── semantic-intent config?.intents ?? {} in semanticIntents variable ─────────
 
-describe('ProjectRoutingTab — semanticIntents ?? {} right-side', () => {
+describe('RouterRoutingTab — semanticIntents ?? {} right-side', () => {
   it('sem-intent policy with no intents key shows empty intents panel', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }],
       policies: [{
         type: 'semantic-intent',
@@ -2174,10 +2174,10 @@ describe('ProjectRoutingTab — semanticIntents ?? {} right-side', () => {
 
 // ── onDragEnterPolicy with null draggedPolicyIdx (null || check) ─────────────
 
-describe('ProjectRoutingTab — onDragEnterPolicy with no active drag', () => {
+describe('RouterRoutingTab — onDragEnterPolicy with no active drag', () => {
   it('dragEnter without prior dragStart (draggedIdx=null) is a no-op', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [
         { type: 'health', enabled: true },
         { type: 'cheapest', enabled: true },
@@ -2196,10 +2196,10 @@ describe('ProjectRoutingTab — onDragEnterPolicy with no active drag', () => {
 
 // ── onDragEnterTarget with null draggedTargetIdx ─────────────────────────────
 
-describe('ProjectRoutingTab — onDragEnterTarget with no active drag', () => {
+describe('RouterRoutingTab — onDragEnterTarget with no active drag', () => {
   it('dragEnter on target without prior dragStart is a no-op', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       models: [{ modelId: 'openai/gpt-4o' }, { modelId: 'openai/gpt-4o-mini' }],
     });
     await waitFor(() => {
@@ -2216,10 +2216,10 @@ describe('ProjectRoutingTab — onDragEnterTarget with no active drag', () => {
 
 // ── remove example with intent that has undefined intents config ─────────────
 
-describe('ProjectRoutingTab — remove example onClick intents ?? {} branches', () => {
+describe('RouterRoutingTab — remove example onClick intents ?? {} branches', () => {
   it('removes an example and covers intents ?? {} in onClick', async () => {
     renderTab({
-      ...mockProjectWithSemanticIntent,
+      ...mockRouterWithSemanticIntent,
       models: [],
     });
     await waitFor(() => screen.getAllByText('support'));
@@ -2235,10 +2235,10 @@ describe('ProjectRoutingTab — remove example onClick intents ?? {} branches', 
 
 // ── edit example onChange covers ?? {} branch ────────────────────────────────
 
-describe('ProjectRoutingTab — edit example onChange ?? {} branches', () => {
+describe('RouterRoutingTab — edit example onChange ?? {} branches', () => {
   it('editing an example covers intents ?? {} in onChange', async () => {
     renderTab({
-      ...mockProjectWithSemanticIntent,
+      ...mockRouterWithSemanticIntent,
       models: [],
     });
     await waitFor(() => screen.getAllByText('support'));
@@ -2255,9 +2255,9 @@ describe('ProjectRoutingTab — edit example onChange ?? {} branches', () => {
 
 // ── add example Enter with empty trim (early return) ─────────────────────────
 
-describe('ProjectRoutingTab — add example Enter empty text (if (!text) return)', () => {
+describe('RouterRoutingTab — add example Enter empty text (if (!text) return)', () => {
   it('add example Enter with whitespace-only clears input without adding', async () => {
-    renderTab({ ...mockProjectWithSemanticIntent, models: [] });
+    renderTab({ ...mockRouterWithSemanticIntent, models: [] });
     await waitFor(() => screen.getAllByText('support'));
     const firstIntentHeader = document.querySelector('[style*="cursor: pointer"][style*="user-select"]') as HTMLElement;
     await userEvent.click(firstIntentHeader);
@@ -2274,10 +2274,10 @@ describe('ProjectRoutingTab — add example Enter empty text (if (!text) return)
 
 // ── "more example" singular (hidden === 1) ───────────────────────────────────
 
-describe('ProjectRoutingTab — singular hidden example count', () => {
+describe('RouterRoutingTab — singular hidden example count', () => {
   it('shows "+ 1 more example" (no s) when exactly 6 examples and PAGE=5', async () => {
     renderTab({
-      ...mockProject,
+      ...mockRouter,
       policies: [{
         type: 'semantic-intent',
         enabled: true,
@@ -2306,26 +2306,26 @@ function getProfileSelect() {
   return screen.getByTestId('searchable-select') as HTMLSelectElement;
 }
 
-const assignedProject = { ...mockProject, routingProfileId: 'builtin-balanced' };
+const assignedRouter = { ...mockRouter, routingProfileId: 'builtin-balanced' };
 
-/** Like renderTab, but keeps the project in state so setProject re-renders the tab. */
+/** Like renderTab, but keeps the router in state so setRouter re-renders the tab. */
 function renderStatefulTab(initial: Record<string, unknown>) {
   function LayoutWrapper() {
-    const [project, setProject] = React.useState(initial);
-    return <Outlet context={{ project, setProject }} />;
+    const [router, setRouter] = React.useState(initial);
+    return <Outlet context={{ router, setRouter }} />;
   }
   return render(
-    <MemoryRouter initialEntries={['/dashboard/projects/proj-1/routing']}>
+    <MemoryRouter initialEntries={['/dashboard/routers/proj-1/routing']}>
       <Routes>
-        <Route path="/dashboard/projects/:id" element={<LayoutWrapper />}>
-          <Route path="routing" element={<ProjectRoutingTab />} />
+        <Route path="/dashboard/routers/:id" element={<LayoutWrapper />}>
+          <Route path="routing" element={<RouterRoutingTab />} />
         </Route>
       </Routes>
     </MemoryRouter>
   );
 }
 
-describe('ProjectRoutingTab — routing profile assignment', () => {
+describe('RouterRoutingTab — routing profile assignment', () => {
   it('starts in custom mode: policy editor visible, no profile select', async () => {
     renderTab();
     await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
@@ -2365,36 +2365,36 @@ describe('ProjectRoutingTab — routing profile assignment', () => {
   });
 
   it('lists built-in and user profiles, without a Custom entry, when assigned', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     const opts = Array.from(sel.options).map(o => o.textContent);
     expect(opts).toContain('Balanced (built-in)');
     expect(opts).toContain('My Profile');
-    expect(opts).not.toContain("Custom (this project's own policies)");
+    expect(opts).not.toContain("Custom (this router's own policies)");
   });
 
   it('hides the policy editor while a profile is assigned', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     await waitFor(getProfileSelect);
     expect(screen.queryByTestId('searchable-Add a policy...')).toBeNull();
     screen.getByText(/Policies come from the profile/);
   });
 
   it('keeps target models configurable while a profile is assigned', async () => {
-    renderTab({ ...mockProjectWithPolicies, routingProfileId: 'builtin-balanced' });
+    renderTab({ ...mockRouterWithPolicies, routingProfileId: 'builtin-balanced' });
     await waitFor(getProfileSelect);
     expect(screen.getByRole('button', { name: /Add Target Model/ })).not.toBeNull();
   });
 
   it('selecting another profile assigns it', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     await userEvent.selectOptions(sel, 'user-custom');
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'user-custom' }));
   });
 
   it('switching to Custom clears the assignment', async () => {
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     await waitFor(getProfileSelect);
     await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: null }));
@@ -2408,17 +2408,17 @@ describe('ProjectRoutingTab — routing profile assignment', () => {
   });
 
   it('prefills the inline policies from the profile when switching to Custom', async () => {
-    mockAssignProfile.mockResolvedValueOnce({ ...mockProject });
-    renderStatefulTab({ ...mockProject, routingProfileId: 'auto' });
+    mockAssignProfile.mockResolvedValueOnce({ ...mockRouter });
+    renderStatefulTab({ ...mockRouter, routingProfileId: 'auto' });
     await waitFor(getProfileSelect);
     await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
-    // 'auto' carries a cheapest policy, which becomes this project's starting point
+    // 'auto' carries a cheapest policy, which becomes this router's starting point
     await waitFor(() => screen.getByText(/Scores models inversely proportional/));
   });
 
   it('shows an error when assignment fails', async () => {
     mockAssignProfile.mockRejectedValueOnce(new Error('assign failed'));
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     await userEvent.selectOptions(sel, 'user-custom');
     await waitFor(() => expect(screen.queryByText('assign failed')).not.toBeNull());
@@ -2426,7 +2426,7 @@ describe('ProjectRoutingTab — routing profile assignment', () => {
 
   it('shows a fallback message when assignment fails with a non-Error', async () => {
     mockAssignProfile.mockRejectedValueOnce('oops');
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     await userEvent.selectOptions(sel, 'user-custom');
     await waitFor(() => expect(screen.queryByText('Failed to assign routing profile')).not.toBeNull());
@@ -2434,7 +2434,7 @@ describe('ProjectRoutingTab — routing profile assignment', () => {
 
   it('tolerates a failed profiles fetch', async () => {
     mockGetProfiles.mockRejectedValueOnce(new Error('boom'));
-    renderTab(assignedProject);
+    renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     // Only the mocked SearchableSelect placeholder option remains
     expect(Array.from(sel.options).map(o => o.value)).toEqual(['']);

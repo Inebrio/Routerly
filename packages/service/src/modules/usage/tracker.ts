@@ -7,7 +7,7 @@ import type { ModelConfig } from '@routerly/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface TrackUsageParams {
-  projectId: string;
+  routerId: string;
   model: ModelConfig;
   inputTokens: number;
   outputTokens: number;
@@ -25,7 +25,7 @@ export interface TrackUsageParams {
   traceId?: string;
   /** End-user id from OpenAI `user` field (#96) */
   endUserId?: string;
-  /** Project token the call authenticated with, for per-caller attribution */
+  /** Router token the call authenticated with, for per-caller attribution */
   tokenId?: string;
   /** Session identifier — groups related calls for cost attribution */
   sessionId?: string;
@@ -68,7 +68,7 @@ export async function trackUsage(params: TrackUsageParams): Promise<void> {
   const record: UsageRecord = {
     id: uuidv4(),
     timestamp: new Date().toISOString(),
-    projectId: params.projectId,
+    routerId: params.routerId,
     modelId: params.model.id,
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
