@@ -116,6 +116,7 @@ export const API_REVERSE_PROXY = token<{
   openaiRoutes: typeof import('../modules/api-reverse-proxy/openai.js').openaiRoutes;
   anthropicRoutes: typeof import('../modules/api-reverse-proxy/anthropic.js').anthropicRoutes;
   passthroughHandler: typeof import('../modules/api-reverse-proxy/passthrough.js').passthroughHandler;
+  routerPassthroughRoutes: typeof import('../modules/api-reverse-proxy/router-passthrough.js').routerPassthroughRoutes;
 }>('api-reverse-proxy.registry');
 
 export const API_ROUTES = token<AlterableRegistry<RouteContribution>>('api.routes');
