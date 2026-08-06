@@ -1730,7 +1730,7 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     ])
   })
 
-  it('kind is inherited from the stored router when omitted, so an unrelated update to an existing orchestrator still enforces EC2', async () => {
+  it('kind is inherited from the stored router when omitted, and omitted candidates are preserved rather than wiped', async () => {
     setupAdminAuth()
     const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }
     const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
@@ -1740,20 +1740,25 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
       if (t === 'routers') return [orc, r1]
       return []
     })
+    mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
-    // Renaming only; kind/candidates absent from the body. Candidates is a
-    // full-replace field on PUT (same contract as `models`), so kind is still
-    // inherited as 'orchestrator' and the missing candidates trips EC2 —
-    // callers must resend the full candidate list on every orchestrator PUT.
+    // Renaming only; kind/candidates absent from the body. kind is still inherited
+    // as 'orchestrator', and the omitted candidates field means "leave unchanged" —
+    // same fallback contract as guardrails/pii/optimizers, not a full-replace like
+    // `models`. Regression test for RTR-02: PUT used to wipe (or, pre-fix-ordering,
+    // reject) a stored candidate list whenever the caller didn't resend it.
     const res = await app.inject({
       method: 'PUT', url: '/api/routers/orc-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({ name: 'Renamed Orc', models: [] }),
     })
     await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(res.json().error).toBe('An orchestrator needs at least one candidate router')
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.name).toBe('Renamed Orc')
+    expect(body.kind).toBe('orchestrator')
+    expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1 }])
   })
 
   it('a router update that neither sets nor inherits orchestrator kind is unaffected by candidate validation', async () => {
