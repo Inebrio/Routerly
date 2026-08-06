@@ -1358,7 +1358,7 @@ describe('UsagePage — stat card ternary fallbacks', () => {
 // ── record cost null fallback ─────────────────────────────────────────────────
 
 describe('UsagePage — record cost null fallback', () => {
-  it('null cost in record renders $0', async () => {
+  it('null cost in record renders "Unknown", never $0', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
       byModel: {},
@@ -1366,13 +1366,13 @@ describe('UsagePage — record cost null fallback', () => {
       records: [{
         id: 'r-null-cost', timestamp: new Date().toISOString(), routerId: 'p',
         modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
-        cost: null as unknown as number, latencyMs: 100, outcome: 'success',
+        cost: null, latencyMs: 100, outcome: 'success',
       }],
     } as never);
     renderPage();
     await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
-    // cost ?? 0 → "$0"
-    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Unknown').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$0')).toBeNull();
   });
 
   it('per-call cost keeps 3 significant digits, sub-microdollar collapses to a threshold', async () => {
