@@ -62,7 +62,6 @@ export function RouterGeneralTab() {
 
   const [form, setForm] = useState({
     name: '',
-    slug: '',
     timeoutMs: String(DEFAULT_ROUTER_TIMEOUT_MS),
     traceContent: false,
   });
@@ -71,7 +70,6 @@ export function RouterGeneralTab() {
     if (router) {
       setForm({
         name: router.name,
-        slug: router.slug ?? '',
         timeoutMs: String(router.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS),
         traceContent: router.traceContent === true,
       });
@@ -80,7 +78,6 @@ export function RouterGeneralTab() {
 
   const isDirty =
     form.name !== (/* v8 ignore next */ router?.name ?? '') ||
-    form.slug !== (/* v8 ignore next */ router?.slug ?? '') ||
     form.timeoutMs !== String(/* v8 ignore next */ router?.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS) ||
     form.traceContent !== (/* v8 ignore next */ router?.traceContent === true);
 
@@ -98,7 +95,6 @@ export function RouterGeneralTab() {
         models: router.models.map(m => ({ modelId: m.modelId })),
         timeoutMs: parseInt(form.timeoutMs),
         traceContent: form.traceContent,
-        ...(router.kind === 'passthrough' ? { slug: form.slug } : {}),
       };
       await updateRouter(router.id, payload);
       // Update context and reset form so isDirty becomes false — no navigation needed
@@ -320,17 +316,11 @@ message = client.messages.create(
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
               <Trans
                 i18nKey="routers.general.form.passthroughPathHint"
-                values={{ path: form.slug || '<path>' }}
+                values={{ path: router.slug || '<path>' }}
                 components={{ code: <code /> }}
               />
             </p>
-            <input
-              className="form-input"
-              value={form.slug}
-              onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
-              placeholder="my-provider"
-              required
-            />
+            <CopyBlock text={`${(selectedEndpoint || window.location.origin).replace(/\/$/, '')}/passthrough/${router.slug ?? ''}`} />
           </div>
         )}
 

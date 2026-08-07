@@ -15,10 +15,10 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
-import { validatePassthroughSlug } from '../routing/validate-passthrough.js';
+import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1103,7 +1103,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // `limits: z.array(z.any())` convention elsewhere in this file).
     limits: z.array(z.any()).optional(),
   })).optional();
-  const passthroughSlugSchema = z.string().min(1).optional();
 
   fastify.get('/api/routers', async (_req, reply) => {
     const routers = await readConfig('routers');
@@ -1126,7 +1125,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       optimizers?: OptimizerConfig | null;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
-      slug?: string;
     }
   }>('/api/routers', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1137,12 +1135,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
-    const parsedSlug = passthroughSlugSchema.safeParse(req.body.slug);
-    if (!parsedSlug.success) return reply.status(400).send({ error: 'Invalid slug', details: parsedSlug.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
-    const slug = parsedSlug.data;
     const kind: RouterKind = parsedKind.data ?? 'router';
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
@@ -1194,13 +1189,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(optimizers ? { optimizers } : {}),
       ...(kind !== 'router' ? { kind } : {}),
       ...(kind === 'orchestrator' && candidates !== undefined ? { candidates } : {}),
-      ...(slug !== undefined ? { slug } : {}),
     };
-    // Name-uniqueness and candidate/slug validation all need the freshest
+    // Name-uniqueness, candidate validation and slug generation all need the freshest
     // possible router list, and the push that follows must land on that exact
     // same snapshot — all happen inside one lock hold (B2/EC4), so a
     // concurrent creation can never observe a stale list or silently lose
-    // this router (or have this one silently lose a concurrent sibling).
+    // this router (or have this one silently lose a concurrent sibling), and two
+    // concurrent passthrough creations can never collide on slug either.
+    let createdRouter: RouterConfig = router;
     const finalRouters = await updateConfig('routers', (routers) => {
       if (routers.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
         throw new ConfigUpdateAbort(409, { error: `A router named "${trimmedName}" already exists` });
@@ -1209,14 +1205,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
       const policiesError = validateOrchestratorPolicies(kind, req.body.policies);
       if (policiesError) throw new ConfigUpdateAbort(400, { error: policiesError });
-      const slugError = validatePassthroughSlug({ kind, slug, models: req.body.models, routers });
-      if (slugError) throw new ConfigUpdateAbort(slugError.status, { error: slugError.message });
-      return [...routers, router];
+      const modelsError = validatePassthroughModels({ kind, models: req.body.models });
+      if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
+      if (kind === 'passthrough') {
+        const slug = suggestRouterSlug(trimmedName, routers.filter(r => r.kind === 'passthrough').map(r => r.slug ?? ''));
+        createdRouter = { ...router, slug };
+      }
+      return [...routers, createdRouter];
     });
-    void emitEvent('config.router_created', 'info', { routerId: router.id, name: router.name }, { routerId: router.id, log: req.log });
-    audit(req, 'router:create', 'success', { id: router.id });
+    void emitEvent('config.router_created', 'info', { routerId: createdRouter.id, name: createdRouter.name }, { routerId: createdRouter.id, log: req.log });
+    audit(req, 'router:create', 'success', { id: createdRouter.id });
     return reply.status(201).send({
-      ...router,
+      ...createdRouter,
       kind,
       ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, finalRouters) } : {}),
       ...(rawToken !== undefined ? { token: rawToken } : {}),
@@ -1239,7 +1239,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       traceContent?: boolean;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
-      slug?: string;
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
@@ -1250,12 +1249,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsedKind.success) return reply.status(400).send({ error: 'Invalid kind', details: parsedKind.error.issues });
     const parsedCandidates = orchestratorCandidatesSchema.safeParse(req.body.candidates);
     if (!parsedCandidates.success) return reply.status(400).send({ error: 'Invalid candidates', details: parsedCandidates.error.issues });
-    const parsedSlug = passthroughSlugSchema.safeParse(req.body.slug);
-    if (!parsedSlug.success) return reply.status(400).send({ error: 'Invalid slug', details: parsedSlug.error.issues });
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
-    const slug = parsedSlug.data;
     const trimmedName = req.body.name.trim();
     if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
 
@@ -1293,12 +1289,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         const policiesError = validateOrchestratorPolicies(kind, req.body.policies);
         if (policiesError) throw new ConfigUpdateAbort(400, { error: policiesError });
       }
-      // Slug: omitted = leave unchanged (same fallback as candidates above).
-      const effectiveSlug = slug !== undefined ? slug : routers[index]!.slug;
-      const slugError = validatePassthroughSlug({
-        kind, slug: effectiveSlug, models: req.body.models, routers, selfId: req.params.id,
-      });
-      if (slugError) throw new ConfigUpdateAbort(slugError.status, { error: slugError.message });
+      const modelsError = validatePassthroughModels({ kind, models: req.body.models });
+      if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
       // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
       let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
       if (req.body.guardrails === null) {
@@ -1351,7 +1343,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...optimizersUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
-        ...(slug !== undefined ? { slug } : {}),
       };
       const next = [...routers];
       next[index] = updated;
