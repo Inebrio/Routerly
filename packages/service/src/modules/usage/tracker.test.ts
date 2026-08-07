@@ -28,7 +28,7 @@ describe('trackUsage', () => {
   it('calls appendUsageRecord with correct fields', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       model: makeModel() as any,
       inputTokens: 1000,
       outputTokens: 500,
@@ -37,7 +37,7 @@ describe('trackUsage', () => {
     })
     expect(mockAppendUsageRecord).toHaveBeenCalledTimes(1)
     const record = mockAppendUsageRecord.mock.calls[0]![0]
-    expect(record.projectId).toBe('proj-1')
+    expect(record.routerId).toBe('proj-1')
     expect(record.modelId).toBe('m1')
     expect(record.inputTokens).toBe(1000)
     expect(record.outputTokens).toBe(500)
@@ -49,7 +49,7 @@ describe('trackUsage', () => {
   it('calculates cost correctly', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       model: makeModel() as any,
       inputTokens: 1_000_000,
       outputTokens: 1_000_000,
@@ -65,7 +65,7 @@ describe('trackUsage', () => {
     mockGetTrace.mockReturnValue(null)
     const model = { ...makeModel(), cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 0.5 } }
     await trackUsage({
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       model: model as any,
       inputTokens: 1_000,
       outputTokens: 100,
@@ -81,7 +81,7 @@ describe('trackUsage', () => {
     mockGetTrace.mockReturnValue(null)
     const model = { ...makeModel(), cost: { inputPerMillion: 5, outputPerMillion: 15, cacheWritePerMillion: 3.75 } }
     await trackUsage({
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       model: model as any,
       inputTokens: 1_000,
       outputTokens: 100,
@@ -96,7 +96,7 @@ describe('trackUsage', () => {
   it('includes tokensPerSec when latency > 0', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p',
+      routerId: 'p',
       model: makeModel() as any,
       inputTokens: 1000,
       outputTokens: 500,
@@ -110,7 +110,7 @@ describe('trackUsage', () => {
   it('does not include tokensPerSec when latency is 0', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 100, outputTokens: 50, latencyMs: 0, outcome: 'error',
     })
     const record = mockAppendUsageRecord.mock.calls[0]![0]
@@ -121,7 +121,7 @@ describe('trackUsage', () => {
     const trace = [{ panel: 'router-request', message: 'test', details: {} }]
     mockGetTrace.mockReturnValue(trace as any)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 100, outputTokens: 50, latencyMs: 500,
       outcome: 'success', traceId: 'trace-abc',
     })
@@ -134,7 +134,7 @@ describe('trackUsage', () => {
     mockGetTrace.mockReturnValue([] as any)
     mockIsTraceOpen.mockReturnValueOnce(true)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 100, outputTokens: 50, latencyMs: 500,
       outcome: 'success', traceId: 'trace-open',
     })
@@ -145,7 +145,7 @@ describe('trackUsage', () => {
   it('includes errorMessage when outcome is error', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 0, outputTokens: 0, latencyMs: 100,
       outcome: 'error', errorMessage: 'Connection refused',
     })
@@ -156,7 +156,7 @@ describe('trackUsage', () => {
   it('uses completion as default callType', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
     })
     const record = mockAppendUsageRecord.mock.calls[0]![0]
@@ -166,7 +166,7 @@ describe('trackUsage', () => {
   it('uses chat as default requestType', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
     })
     const record = mockAppendUsageRecord.mock.calls[0]![0]
@@ -176,7 +176,7 @@ describe('trackUsage', () => {
   it('keeps an explicit requestType', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 0, latencyMs: 100, outcome: 'success',
       requestType: 'embedding',
     })
@@ -187,7 +187,7 @@ describe('trackUsage', () => {
   it('omits tokensPerSec when latencyMs is 0 (line 61 false branch)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 0, outcome: 'success',
     })
     const record = mockAppendUsageRecord.mock.calls[0]![0]
@@ -197,7 +197,7 @@ describe('trackUsage', () => {
   it('includes ttftMs when provided (line 60 true branch)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 200, ttftMs: 50, outcome: 'success',
     })
     const record = mockAppendUsageRecord.mock.calls[0]![0]
@@ -207,7 +207,7 @@ describe('trackUsage', () => {
   it('uses empty trace array when getTrace returns null (line 65 ?? [] branch)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
       traceId: 'trace-null',
     })
@@ -218,7 +218,7 @@ describe('trackUsage', () => {
   it('includes optional fields when provided (lines 80-85)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
       endUserId: 'user-1',
       sessionId: 'sess-1',
@@ -241,7 +241,7 @@ describe('trackUsage', () => {
   it('writes optimizer stats under `optimizers` (T63)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
       optimizerStats: [{ id: 'ccr', tokensBefore: 100, tokensAfter: 60 }],
     })
@@ -252,7 +252,7 @@ describe('trackUsage', () => {
   it('omits `optimizers` when no step changed the prompt', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
       optimizerStats: [],
     })
@@ -263,7 +263,7 @@ describe('trackUsage', () => {
   it('stamps the experiment and variant that routed the call (T71)', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
       experimentId: 'exp-1', experimentVariantId: 'v-a',
     })
@@ -275,7 +275,7 @@ describe('trackUsage', () => {
   it('leaves the experiment fields off a call that no experiment routed', async () => {
     mockGetTrace.mockReturnValue(null)
     await trackUsage({
-      projectId: 'p', model: makeModel() as any,
+      routerId: 'p', model: makeModel() as any,
       inputTokens: 10, outputTokens: 5, latencyMs: 100, outcome: 'success',
     })
     const record = mockAppendUsageRecord.mock.calls[0]![0]

@@ -15,11 +15,15 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
     phase: 'routing.prepare',
     async run(ctx) {
       if (ctx.result) return
+      // An Orchestrator has no models of its own (`scoreCandidates` would throw
+      // no_models_available on its empty `models`) — its candidate Routers are scored
+      // separately by `forwardToRouter` (RTR-02), never through this model-oriented path.
+      if (ctx.router.kind === 'orchestrator') return
       // The trace routeRequest returns is for callers without an event bus (the MCP
       // read tool): here every entry already went out through ctx.emit.
       const { models } = await routeRequest(
         ctx.request,
-        ctx.project,
+        ctx.router,
         ctx.log,
         ctx.emit,
         ctx.token,
@@ -42,11 +46,11 @@ const memory: Processor<ProxyContext> = {
     if (!ctx.conversationId) return
     const top = ctx.candidates?.[0]
     if (!top) return
-    const memoryEnabled = (ctx.project.policies ?? []).some(
+    const memoryEnabled = (ctx.router.policies ?? []).some(
       (p) => p.type === 'llm' && p.enabled && (p.config as { memory?: unknown } | undefined)?.memory === true,
     )
     if (!memoryEnabled) return
-    addRoutingDecision(ctx.project.id, ctx.conversationId, top.model)
+    addRoutingDecision(ctx.router.id, ctx.conversationId, top.model)
   },
 }
 

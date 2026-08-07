@@ -51,7 +51,12 @@ vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn() }));
 vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn() }));
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn() }));
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn() }));
-vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }));
+vi.mock('./modules/config/migrate.js', () => ({
+  migrateProjectConfigs: vi.fn(async () => 0),
+  migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
+  migrateUsageToNdjson: vi.fn(async () => 0),
+}));
+vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }));
 
 import { startServer } from './server.js';
 

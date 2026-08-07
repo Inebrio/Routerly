@@ -14,7 +14,7 @@ import { messageText, readMessages, segment, tokensOf, writeMessages } from '../
  * inert for anyone who enabled it and saved.
  */
 function thresholdOf(ctx: ProxyContext): number {
-  const step = ctx.project.optimizers?.steps.find((s) => s.id === 'relevance')
+  const step = ctx.router.optimizers?.steps.find((s) => s.id === 'relevance')
   if (typeof step?.threshold === 'number') return step.threshold
   return OPTIMIZER_CATALOG.relevance.threshold!.default!
 }

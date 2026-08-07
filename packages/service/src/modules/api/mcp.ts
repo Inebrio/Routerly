@@ -49,7 +49,7 @@ function toView(entry: McpToolEntry): McpToolView {
  * Personal MCP surface, mounted inside apiRoutes so the JWT preHandler (which
  * populates req.dashUser) applies.
  *
- * MCP is per-user, not per-project: a token grants exactly its owner's
+ * MCP is per-user, not per-router: a token grants exactly its owner's
  * permissions, so these routes need no permission of their own beyond being
  * authenticated, exactly like the rest of `/api/me`. The tool list is the list
  * the caller's own token would expose, filtered by the caller's permissions.

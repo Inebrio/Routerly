@@ -116,7 +116,7 @@ export async function pushOtelTrace(integration: OtelIntegration, trace: TraceCo
       endTimeUnixNano: ns(end),
       attributes: toAttrs({
         'routerly.trace_id': trace.traceId,
-        ...(trace.projectId ? { 'routerly.project_id': trace.projectId } : {}),
+        ...(trace.routerId ? { 'routerly.router_id': trace.routerId } : {}),
       }),
     },
     ...phases.map((phase) => {
@@ -164,7 +164,7 @@ export async function pushWebhookTrace(integration: WebhookIntegration, trace: T
     timestamp: new Date().toISOString(),
     trace: {
       id: trace.traceId,
-      ...(trace.projectId ? { projectId: trace.projectId } : {}),
+      ...(trace.routerId ? { routerId: trace.routerId } : {}),
       entries: trace.entries,
     },
   });

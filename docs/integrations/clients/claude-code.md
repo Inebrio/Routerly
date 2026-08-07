@@ -21,15 +21,15 @@ this file for you.
 With the [CLI](../../cli/commands.md#routerly-clients) installed and logged in:
 
 ```bash
-routerly clients configure claude-code --project <your-project>
+routerly clients configure claude-code --router <your-router>
 ```
 
-This mints a project token (or reuses one you pass with `--token`), backs
+This mints a router token (or reuses one you pass with `--token`), backs
 up your existing `~/.claude/settings.json`, and merges in the `env` block
 below, every other key already in the file is left untouched.
 
-Minting a new token requires `project:write` permission on the target
-project (use `--token <existing-token>` to skip this).
+Minting a new token requires `router:write` permission on the target
+router (use `--token <existing-token>` to skip this).
 
 ## Manual configuration
 
@@ -39,15 +39,15 @@ Open `~/.claude/settings.json` and merge in:
 {
   "env": {
     "ANTHROPIC_BASE_URL": "http://localhost:3000",
-    "ANTHROPIC_AUTH_TOKEN": "sk-rt-YOUR_PROJECT_TOKEN"
+    "ANTHROPIC_AUTH_TOKEN": "sk-rt-YOUR_ROUTER_TOKEN"
   }
 }
 ```
 
 `ANTHROPIC_BASE_URL` has no `/v1` suffix. Claude Code talks to the root of
 the Anthropic-compatible endpoint. Replace `http://localhost:3000` with your
-Routerly instance's URL and `sk-rt-YOUR_PROJECT_TOKEN` with a project token
-(create one on the [Projects](../../dashboard/projects.md) page, or let
+Routerly instance's URL and `sk-rt-YOUR_ROUTER_TOKEN` with a router token
+(create one on the [Routers](../../dashboard/routers.md) page, or let
 `clients configure` mint one for you).
 
 ## Provider compatibility

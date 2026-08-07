@@ -3,8 +3,8 @@ import type {
   ChatCompletionRequest,
   ModelConfig,
   OptimizerCallStat,
-  ProjectConfig,
-  ProjectToken,
+  RouterConfig,
+  RouterToken,
   RoutingCandidate,
   UsageInfo,
 } from '@routerly/shared'
@@ -34,9 +34,9 @@ export interface ProxyContext {
   log: FastifyBaseLogger
 
   // auth (decorated by the existing auth plugin, unchanged)
-  project: ProjectConfig
-  projectId: string
-  token?: ProjectToken
+  router: RouterConfig
+  routerId: string
+  token?: RouterToken
 
   // trace
   traceId: string
@@ -48,7 +48,7 @@ export interface ProxyContext {
   correlationId?: string
   /** Publishes a trace entry on the kernel event bus. Installed by trace.ingress. */
   emit?: (entry: TraceEntry) => void
-  /** Mirror of `project.traceContent`, read once by trace.ingress. */
+  /** Mirror of `router.traceContent`, read once by trace.ingress. */
   captureContent?: boolean
   /** Phase currently being walked, stamped by runProxy so emitters need not repeat it. */
   phase?: string
@@ -63,6 +63,14 @@ export interface ProxyContext {
   // request is decoded to the chat view up front (responses-compat), so only egress
   // and the byte-writing block paths need to know.
   responsesApi?: boolean
+
+  /**
+   * Set by `forwardToRouter` (RTR-02) while forwarding through an Orchestrator, to the
+   * Orchestrator's own id — read back into `LLMCallContext.orchestratorId` by the lanes'
+   * `cctx` construction so `trackUsage` records it (AC5). Absent for a direct call to a
+   * plain Router.
+   */
+  orchestratorId?: string
 
   // routing / attempt loop
   candidates?: RoutingCandidate[]

@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../api', () => ({
   getExperiments: vi.fn(),
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
   deleteExperiment: vi.fn(),
 }));
 
@@ -28,17 +28,17 @@ vi.mock('../components/ConfirmDialog', () => ({
 }));
 
 import { ExperimentsPage, useExperimentsEnabled } from './ExperimentsPage';
-import { getExperiments, getProjects, deleteExperiment } from '../api';
+import { getExperiments, getRouters, deleteExperiment } from '../api';
 import { useAuth } from '../AuthContext';
 
 const mockGetExperiments = vi.mocked(getExperiments as () => Promise<unknown>);
-const mockGetProjects = vi.mocked(getProjects as () => Promise<unknown>);
+const mockGetRouters = vi.mocked(getRouters as () => Promise<unknown>);
 const mockDelete = vi.mocked(deleteExperiment as (...a: unknown[]) => Promise<unknown>);
 const mockUseAuth = vi.mocked(useAuth);
 
 const experiment = {
   id: 'exp-1', name: 'Cheap vs premium', description: 'Which one wins',
-  rotation: 'sticky', variants: [{ id: 'v1', projectId: 'p1' }, { id: 'v2', projectId: 'p2' }],
+  rotation: 'sticky', variants: [{ id: 'v1', routerId: 'p1' }, { id: 'v2', routerId: 'p2' }],
   tokens: [{ id: 't1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-07-01T00:00:00.000Z' }],
   createdAt: '2026-07-01T00:00:00.000Z',
 };
@@ -54,7 +54,7 @@ function renderPage() {
 
 beforeEach(() => {
   mockGetExperiments.mockResolvedValue([experiment, second]);
-  mockGetProjects.mockResolvedValue([{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }]);
+  mockGetRouters.mockResolvedValue([{ id: 'p1', name: 'Cheap' }, { id: 'p2', name: 'Premium' }]);
   mockDelete.mockResolvedValue(undefined);
   setAuth(['experiments:read', 'experiments:manage']);
 });
@@ -62,11 +62,11 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks());
 
 describe('ExperimentsPage', () => {
-  it('lists experiments with their rotation and the projects each variant routes to', async () => {
+  it('lists experiments with their rotation and the routers each variant routes to', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('Cheap vs premium')).toBeInTheDocument());
     expect(screen.getByText('Which one wins')).toBeInTheDocument();
-    // A variant with no label of its own is named after its project.
+    // A variant with no label of its own is named after its router.
     await waitFor(() => expect(screen.getAllByText('Cheap vs Premium')).toHaveLength(2));
     expect(screen.getByText('Sticky per session')).toBeInTheDocument();
     expect(screen.getByText('Random with weights')).toBeInTheDocument();

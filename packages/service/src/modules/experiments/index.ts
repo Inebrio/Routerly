@@ -12,7 +12,7 @@ export { judgeExperimentCall } from './judge.js';
 
 /**
  * Experiments module (T71, T72). It owns experiments.json, the rotation state,
- * the token resolution that lets a client call a test instead of a project, and
+ * the token resolution that lets a client call a test instead of a router, and
  * the optional judge that scores the answers each variant produced.
  *
  * Token resolution needs no register() work: the auth preHandler calls resolve.ts

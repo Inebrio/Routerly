@@ -13,9 +13,21 @@ the change itself — never reconstructed after the fact. See
 
 ### New features
 
+**Router, Orchestrator, and Passthrough kinds**
+Projects are now Routers throughout the management API, CLI, dashboard, configuration, and usage records. A Router can be a standard model router, an Orchestrator that selects among candidate Routers with weights and optional per-candidate limits, or a Passthrough Router that forwards requests unchanged with the client's upstream credential.
+
+**Dashboard localization (English, Spanish, Arabic)**
+The dashboard now ships with English, Spanish, and Arabic catalogs, selectable per-account from Profile → Preferences and persisted server-side. RTL layout is supported for Arabic. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
+
 ### Bug fixes
 
+- Secret config files (`models.json`, `connections.json`, `routers.json`, `users.json`) no longer revert to unsafe file permissions on every write — `writeConfig()` now preserves the `0600` mode instead of recreating the file at the umask default, which previously re-tripped the startup permission guard on the very next write after a fix.
+- Usage records no longer cause unbounded `usage.json` growth or an OOM kill under sustained traffic (#124) — usage is now appended to `usage.ndjson`, an append-only log with a retention sweep, instead of being rewritten in full on every request.
+- Dashboard: fixing unsafe config file permissions (from the blocking modal or from Settings → Security) now refreshes every permission-related UI on the page immediately — the top banner, the blocking modal, and the Settings section previously each polled independently and stayed stale until a manual reload.
+
 ### Breaking changes
+
+- The management surface uses `router` and `routers` instead of `project` and `projects`. API paths, CLI commands, dashboard routes, configuration fields, and usage fields have no backward aliases. Existing `projects.json` data migrates to `routers.json` automatically and idempotently on first start.
 
 ---
 

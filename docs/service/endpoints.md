@@ -9,9 +9,9 @@ The service exposes five groups of HTTP endpoints on the same port (default: `30
 
 | Group | Path prefix | Auth | Purpose |
 |-------|-------------|------|---------|
-| [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer project token (`sk-rt-…`) | Forward requests to LLM providers |
-| [Pass-Through Proxy](#pass-through-proxy) | any other path | Bearer project token (`sk-rt-…`) | Transparently forward any unhandled provider endpoint |
-| [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users |
+| [LLM Proxy](#llm-proxy) | `/v1/*` | Bearer router token (`sk-rt-…`) | Forward requests to LLM providers |
+| [Pass-Through Proxy](#pass-through-proxy) | any other path | Bearer router token (`sk-rt-…`) | Transparently forward any unhandled provider endpoint |
+| [Management API](#management-api) | `/api/*` | Bearer JWT (dashboard session) | Configure models, routers, users |
 | [MCP Server](#mcp-server) | `/mcp` | Bearer personal MCP token (`sk-rt-mcp-…`) | Model Context Protocol tools for MCP clients |
 | [Dashboard](#dashboard) | `/dashboard/*` | Browser session (cookie) | Serve the React web UI |
 | [Health](#health-check) | `/health` | None | Liveness probe |
@@ -22,7 +22,7 @@ For the full request/response schemas of each route, see [API — LLM Proxy](../
 
 ## LLM Proxy
 
-These routes accept the same request bodies as the original provider APIs. Authentication is via a **project token** (`Authorization: Bearer sk-rt-…`).
+These routes accept the same request bodies as the original provider APIs. Authentication is via a **router token** (`Authorization: Bearer sk-rt-…`).
 
 Every request goes through the full routing and budget stack before being forwarded to a provider.
 
@@ -32,7 +32,7 @@ OpenAI Chat Completions format. Supports both streaming (`"stream": true`) and n
 
 ```http
 POST /v1/chat/completions
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN
 Content-Type: application/json
 
 {
@@ -42,7 +42,7 @@ Content-Type: application/json
 }
 ```
 
-The `model` field is the model ID registered in your project. Routerly ignores it as an upstream model directive — the routing engine picks the actual provider model based on your policies.
+The `model` field is the model ID registered in your router. Routerly ignores it as an upstream model directive — the routing engine picks the actual provider model based on your policies.
 
 ### `POST /v1/responses`
 
@@ -52,7 +52,7 @@ OpenAI Responses API format (newer API surface). Uses `input` instead of `messag
 
 ```http
 POST /v1/responses
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN
 Content-Type: application/json
 
 {
@@ -67,7 +67,7 @@ Anthropic Messages API format. The request body matches the Anthropic SDK wire f
 
 ```http
 POST /v1/messages
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN
 Content-Type: application/json
 
 {
@@ -81,11 +81,11 @@ Routerly proxies this to the Anthropic provider adapter. If the selected model i
 
 ### `GET /v1/models`
 
-Returns the list of models available in the project associated with the token, in the OpenAI `GET /v1/models` response format.
+Returns the list of models available in the router associated with the token, in the OpenAI `GET /v1/models` response format.
 
 ```http
 GET /v1/models
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN
 ```
 
 ### Error format
@@ -106,18 +106,18 @@ Common status codes:
 
 | Code | Cause |
 |------|-------|
-| `401` | Missing or invalid project token |
+| `401` | Missing or invalid router token |
 | `503` | No model passed all routing filters (all excluded or over budget) |
-| `503` | Budget exhausted for the project or token |
+| `503` | Budget exhausted for the router or token |
 | `504` | Provider timeout |
 
 ---
 
 ## Pass-Through Proxy
 
-Any path that Routerly does not explicitly handle is transparently forwarded to the project's upstream provider. Only the API key is swapped — method, headers, body, and query string are passed through verbatim. This makes Routerly a true drop-in replacement for the full provider API surface, not just chat completions.
+Any path that Routerly does not explicitly handle is transparently forwarded to the router's upstream provider. Only the API key is swapped — method, headers, body, and query string are passed through verbatim. This makes Routerly a true drop-in replacement for the full provider API surface, not just chat completions.
 
-**Authentication:** same `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN` header required for the LLM Proxy.
+**Authentication:** same `Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN` header required for the LLM Proxy.
 
 ### What it enables
 
@@ -130,7 +130,7 @@ Any path that Routerly does not explicitly handle is transparently forwarded to 
 
 ### Model selection
 
-When the request body contains a `model` field, Routerly matches it against the project's configured models (by ID or upstream model ID) and uses the corresponding provider credentials. If no match is found, or the request has no body, it falls back to the first configured model in the project.
+When the request body contains a `model` field, Routerly matches it against the router's configured models (by ID or upstream model ID) and uses the corresponding provider credentials. If no match is found, or the request has no body, it falls back to the first configured model in the router.
 
 ### Reserved namespaces
 
@@ -143,13 +143,13 @@ The following paths are **never** proxied and always return a Routerly-native re
 | `/api/*` | Management API |
 | `/dashboard*` | Dashboard static files |
 
-Any request to these paths with a project token receives a standard 404, not a proxy attempt.
+Any request to these paths with a router token receives a standard 404, not a proxy attempt.
 
 ### Example: embeddings
 
 ```http
 POST /v1/embeddings
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN
 Content-Type: application/json
 
 {
@@ -164,8 +164,8 @@ Routerly finds the configured model matching `text-embedding-3-small`, injects t
 
 | Code | Cause |
 |------|-------|
-| `401` | Missing or invalid project token |
-| `502 no_upstream` | Project has no configured models |
+| `401` | Missing or invalid router token |
+| `502 no_upstream` | Router has no configured models |
 | `502 upstream_error` | Network error reaching the upstream provider |
 
 ---
@@ -185,8 +185,8 @@ Full endpoint catalogue: [API — Management](../api/management).
 | `POST` | `/api/models` | Register a new model |
 | `PUT` | `/api/models/:id` | Update a model |
 | `DELETE` | `/api/models/:id` | Remove a model |
-| `GET` | `/api/projects` | List projects |
-| `POST` | `/api/projects` | Create a project |
+| `GET` | `/api/routers` | List routers |
+| `POST` | `/api/routers` | Create a router |
 | `GET` | `/api/usage` | Query usage records |
 | `GET` | `/api/usage/:id` | Read one usage record by record id or trace id |
 | `GET` | `/api/settings` | Read service settings |
@@ -219,11 +219,11 @@ transports.
 ### `POST /mcp`
 
 Streamable HTTP transport, JSON-RPC 2.0. Self-authenticating: this route is
-excluded from the standard project-token auth guard and validates the token
+excluded from the standard router-token auth guard and validates the token
 itself.
 
 **Authentication:** `Authorization: Bearer sk-rt-mcp-YOUR_MCP_TOKEN`, a
-personal MCP token. Project tokens (`sk-rt-…`) are rejected: the token
+personal MCP token. Router tokens (`sk-rt-…`) are rejected: the token
 identifies a **user**, and the call runs with that user's permissions.
 
 ```http
@@ -274,7 +274,7 @@ instead of via the CLI.
 | Code | Cause |
 |------|-------|
 | `401` | Missing `Authorization` header |
-| `401` | Unknown or revoked token, or a project token used in place of an MCP token |
+| `401` | Unknown or revoked token, or a router token used in place of an MCP token |
 | `401` | Token past its `expiresAt` |
 
 A `tools/call` the caller lacks the permission for does not fail at the HTTP

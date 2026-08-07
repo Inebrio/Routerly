@@ -90,7 +90,7 @@ const securityProfile: SecurityProfile = {
   },
 };
 
-const baseProject = {
+const baseRouter = {
   id: 'proj-1',
   name: 'my-api',
   models: [],
@@ -386,7 +386,7 @@ describe('profiles delete', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'delete', 'user-1'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('still assigned to a project'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('still assigned to a router'));
   });
 
   it('exits 1 when the profile is a built-in', async () => {
@@ -407,47 +407,47 @@ describe('profiles set', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('assigns the routing profile of the resolved project', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce({ ...baseProject, routingProfileId: 'auto' });
+  it('assigns the routing profile of the resolved router', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce({ ...baseRouter, routingProfileId: 'auto' });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'routing', 'auto']);
-    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/projects');
-    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/projects/proj-1/profiles', { routing: 'auto' });
+    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/routers');
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/routers/proj-1/profiles', { routing: 'auto' });
     expect(lines.join('\n')).toContain('routing profile set to "auto"');
   });
 
   it('assigns an optimizer profile under its own key', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce({ ...baseProject, optimizerProfileId: 'optimizer-balanced' });
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce({ ...baseRouter, optimizerProfileId: 'optimizer-balanced' });
     await makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'optimizer', 'optimizer-balanced']);
-    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/projects/proj-1/profiles', { optimizer: 'optimizer-balanced' });
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/routers/proj-1/profiles', { optimizer: 'optimizer-balanced' });
   });
 
   it('clears one kind with --none', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(baseProject);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(baseRouter);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'security', '--none']);
-    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/projects/proj-1/profiles', { security: null });
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/routers/proj-1/profiles', { security: null });
     expect(lines.join('\n')).toContain('security profile cleared');
   });
 
   it('--none wins when both profileId and --none are given', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(baseProject);
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(baseRouter);
     await makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'routing', 'auto', '--none']);
-    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/projects/proj-1/profiles', { routing: null });
+    expect(mockApi).toHaveBeenNthCalledWith(2, 'PUT', '/api/routers/proj-1/profiles', { routing: null });
   });
 
   it('outputs valid JSON with --json', async () => {
-    const updated = { ...baseProject, routingProfileId: 'auto' };
-    mockApi.mockResolvedValueOnce([baseProject]).mockResolvedValueOnce(updated);
+    const updated = { ...baseRouter, routingProfileId: 'auto' };
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(updated);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'routing', 'auto', '--json']);
     expect(JSON.parse(lines.join('\n'))).toEqual(updated);
   });
 
-  it('rejects an unknown kind before resolving the project', async () => {
+  it('rejects an unknown kind before resolving the router', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'nope', 'auto'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
@@ -462,7 +462,7 @@ describe('profiles set', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('provide a profileId or --none'));
   });
 
-  it('exits 1 when project not found', async () => {
+  it('exits 1 when router not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'set', 'no-such', 'routing', 'auto'])).rejects.toThrow('exit');
@@ -472,7 +472,7 @@ describe('profiles set', () => {
 
   it('exits 1 on ApiError from the assign call', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseProject]).mockRejectedValueOnce(new ApiError(404, 'profile_not_found'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(404, 'profile_not_found'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'set', 'my-api', 'routing', 'bad-id'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
@@ -489,7 +489,7 @@ describe('profiles get', () => {
   });
 
   it('prints one row per kind, custom when unbound', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, routingProfileId: 'auto' }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, routingProfileId: 'auto' }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'profiles', 'get', 'my-api']);
@@ -500,14 +500,14 @@ describe('profiles get', () => {
   });
 
   it('outputs the bindings as JSON with --json', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseProject, routingProfileId: 'auto', securityProfileId: 'security-strict' }]);
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, routingProfileId: 'auto', securityProfileId: 'security-strict' }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'profiles', 'get', 'my-api', '--json']);
     expect(JSON.parse(lines.join('\n'))).toEqual({ routing: 'auto', optimizer: null, security: 'security-strict' });
   });
 
-  it('exits 1 when project not found', async () => {
+  it('exits 1 when router not found', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'profiles', 'get', 'no-such'])).rejects.toThrow('exit');

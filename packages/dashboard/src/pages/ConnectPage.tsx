@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Terminal } from 'lucide-react';
@@ -78,31 +79,32 @@ function EndpointRow({ label, children }: { label: string; children: ReactNode }
  * formats as they are.
  */
 function EndpointCard({ baseUrl }: { baseUrl: string }) {
+  const { t } = useTranslation();
   const root = gatewayRoot(baseUrl);
   const note: CSSProperties = { fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 };
 
   return (
     <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
-        <div style={GROUP_TITLE}>Point any client here</div>
+        <div style={GROUP_TITLE}>{t('connect.endpoint.title')}</div>
         <p style={{ ...note, marginTop: 4 }}>
-          Anything built on the OpenAI or Anthropic SDK works by changing the base URL
-          and the key. Nothing else changes: requests and responses cross Routerly as they are.
+          {t('connect.endpoint.description')}
         </p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, max-content) 1fr', gap: '10px 16px', alignItems: 'start' }}>
-        <EndpointRow label="OpenAI base URL"><CopyBlock text={`${root}/v1`} /></EndpointRow>
-        <EndpointRow label="Anthropic base URL"><CopyBlock text={root} /></EndpointRow>
-        <EndpointRow label="API key">
+        <EndpointRow label={t('connect.endpoint.openaiBaseUrl')}><CopyBlock text={`${root}/v1`} /></EndpointRow>
+        <EndpointRow label={t('connect.endpoint.anthropicBaseUrl')}><CopyBlock text={root} /></EndpointRow>
+        <EndpointRow label={t('connect.endpoint.apiKey')}>
           <p style={{ ...note, paddingTop: 10 }}>
-            A project token, sent as <code>Authorization: Bearer</code> or <code>x-api-key</code>.{' '}
-            <Link to="/dashboard/projects">Create one</Link> on the Projects page.
+            {t('connect.endpoint.apiKeyDescription')}{' '}
+            <code>Authorization: Bearer</code> {t('connect.endpoint.or')} <code>x-api-key</code>.{' '}
+            <Link to="/dashboard/routers">{t('connect.endpoint.createOne')}</Link> {t('connect.endpoint.onRoutersPage')}
           </p>
         </EndpointRow>
-        <EndpointRow label="Model">
+        <EndpointRow label={t('connect.endpoint.model')}>
           <p style={{ ...note, paddingTop: 10 }}>
-            <code>{AUTO_MODEL}</code> lets Routerly pick. Any model id from the{' '}
-            <Link to="/dashboard/models">Models</Link> page works too.
+            <code>{AUTO_MODEL}</code> {t('connect.endpoint.modelDescription')}{' '}
+            <Link to="/dashboard/models">{t('connect.endpoint.modelsLink')}</Link> {t('connect.endpoint.worksToo')}
           </p>
         </EndpointRow>
       </div>
@@ -124,6 +126,7 @@ function ClientGroup({ title, hint, clients }: { title: string; hint: string; cl
 }
 
 export function ConnectPage() {
+  const { t } = useTranslation();
   const [clients, setClients] = useState<ClientListItem[] | null>(null);
   const [notEnabled, setNotEnabled] = useState(false);
   const [error, setError] = useState('');
@@ -143,12 +146,12 @@ export function ConnectPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Connect</h1>
+        <h1>{t('connect.title')}</h1>
         <p>
-          Point an AI coding client at this gateway. Pick a client for its setup steps.
+          {t('connect.subtitle')}
           <br />
-          <strong>LLM</strong> routes that client model traffic through Routerly.{' '}
-          <strong>MCP</strong> loads Routerly as a tool server inside it.
+          <strong>{t('connect.llmLabel')}</strong> {t('connect.llmDescription')}{' '}
+          <strong>{t('connect.mcpLabel')}</strong> {t('connect.mcpDescription')}
         </p>
       </div>
       <div className="page-body">
@@ -158,23 +161,23 @@ export function ConnectPage() {
           <div className="empty-state">
             <Terminal size={40} />
             <p>
-              Client configurator is not enabled. Ask an admin to enable it with{' '}
+              {t('connect.notEnabledPrefix')}{' '}
               <code>routerly modules enable clients</code>.
             </p>
           </div>
         ) : error ? (
-          <div className="form-error">Failed to load clients: {error}</div>
+          <div className="form-error">{t('connect.errors.loadFailed', { error })}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
             {clients?.[0] && <EndpointCard baseUrl={clients[0].baseUrl} />}
             <ClientGroup
-              title="One command"
-              hint="The CLI writes the config file for you, with a backup you can undo."
+              title={t('connect.oneCommand.title')}
+              hint={t('connect.oneCommand.hint')}
               clients={(clients ?? []).filter(c => isAutoConfigurable(c.supportState))}
             />
             <ClientGroup
-              title="By hand"
-              hint="Copy the snippet from the client page into its settings, then restart it."
+              title={t('connect.byHand.title')}
+              hint={t('connect.byHand.hint')}
               clients={(clients ?? []).filter(c => !isAutoConfigurable(c.supportState))}
             />
           </div>

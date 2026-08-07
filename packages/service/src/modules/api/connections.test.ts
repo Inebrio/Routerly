@@ -49,7 +49,7 @@ async function buildApp() {
   return app
 }
 
-const testUser = { id: 'test-user-id', email: 'test@example.com', roleId: 'test-role', projectIds: [] }
+const testUser = { id: 'test-user-id', email: 'test@example.com', roleId: 'test-role', routerIds: [] }
 
 /** Parameterized auth header helper: grants exactly one permission via a custom role. */
 function auth(perm: string) {

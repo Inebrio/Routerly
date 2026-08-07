@@ -44,7 +44,7 @@ The Notifications tab is your personal in-app notification inbox.
 
 ![Profile Notifications tab showing the in-app inbox](../assets/screenshot-profile-notifications.png)
 
-It shows the notification events routed to you: those addressed to you by a `dashboard` channel's targets (or every event when no targeting is configured), minus what your permissions and project scope hide. Sign-in events need `audit:read`, model events `model:read`, project events `project:read`, service lifecycle events `settings:read`; an item about a project you cannot reach never appears. Items are listed newest-first.
+It shows the notification events routed to you: those addressed to you by a `dashboard` channel's targets (or every event when no targeting is configured), minus what your permissions and router scope hide. Sign-in events need `audit:read`, model events `model:read`, router events `router:read`, service lifecycle events `settings:read`; an item about a router you cannot reach never appears. Items are listed newest-first.
 
 ### Filtering the Inbox
 
@@ -72,7 +72,7 @@ Click on a notification row to open a detail drawer showing:
 - The notification **title** and, under it, the **cause**: one line built from the details, ending with the provider's own message when there is one (`ollama/qwen2.5:3b on ollama - TTFT timeout after 3000ms`)
 - **Event** name and **Category**
 - **Severity** and **Timestamp** (ISO 8601 with full precision)
-- **Details**, one row per key. Ids are links: `projectId` opens the project, `modelId` (also `primaryModelId` and `fallbackModelId`) opens the model, `traceId` opens the matching record in Usage
+- **Details**, one row per key. Ids are links: `routerId` opens the router, `modelId` (also `primaryModelId` and `fallbackModelId`) opens the model, `traceId` opens the matching record in Usage
 - **Events in this incident** - the full sequence in the order it happened, when the item folds more than one event
 - **Status** - read or unread with a toggle button
 - **Archive** button to remove this item from your inbox

@@ -64,7 +64,7 @@ describe('status --json', () => {
 
   it('includes account and service info when logged in and token valid', async () => {
     mockGetCurrentAccount.mockResolvedValueOnce(baseAccount);
-    // Promise.all: info, settings, models, projects
+    // Promise.all: info, settings, models, routers
     mockApi
       .mockResolvedValueOnce({ version: '1.2.3', uptimeSeconds: 3661, nodeVersion: 'v22.0.0' })
       .mockResolvedValueOnce({ host: '0.0.0.0', port: 3000, dashboardEnabled: true, logLevel: 'info' })
@@ -81,7 +81,7 @@ describe('status --json', () => {
     expect(out.service.reachable).toBe(true);
     expect(out.service.version).toBe('1.2.3');
     expect(out.service.modelCount).toBe(2);
-    expect(out.service.projectCount).toBe(3);
+    expect(out.service.routerCount).toBe(3);
     expect(out.service.dashboardUrl).toBe('http://localhost:3000/dashboard/');
   });
 
@@ -130,7 +130,7 @@ describe('status --json', () => {
     const out = JSON.parse(lines.join('\n'));
     expect(out.service.reachable).toBe(false);
     expect(out.service.modelCount).toBeNull();
-    expect(out.service.projectCount).toBeNull();
+    expect(out.service.routerCount).toBeNull();
   });
 
   it('outer catch fires when api throws synchronously in JSON mode', async () => {
@@ -223,7 +223,7 @@ describe('status (human-readable)', () => {
     expect(out).toContain('/dashboard/');
     expect(out).toContain('warn');
     expect(out).toContain('2');  // models count
-    expect(out).toContain('1');  // projects count
+    expect(out).toContain('1');  // routers count
   });
 
   it('shows dashboard disabled when dashboardEnabled is false', async () => {
@@ -339,19 +339,19 @@ describe('status (human-readable)', () => {
     expect(lines.join('\n')).toContain('45s');
   });
 
-  it('shows models and projects count only when not null', async () => {
+  it('shows models and routers count only when not null', async () => {
     mockGetCurrentAccount.mockResolvedValueOnce(baseAccount);
     mockApi
       .mockResolvedValueOnce({ version: '1.0.0', uptimeSeconds: 5 })
       .mockResolvedValueOnce({ dashboardEnabled: false, logLevel: 'info' })
       .mockResolvedValueOnce(null)   // models → null
-      .mockResolvedValueOnce(null);  // projects → null
+      .mockResolvedValueOnce(null);  // routers → null
 
     const lines: string[] = [];
     vi.mocked(console.log).mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'status']);
     const out = lines.join('\n');
     expect(out).not.toContain('Models:');
-    expect(out).not.toContain('Projects:');
+    expect(out).not.toContain('Routers:');
   });
 });

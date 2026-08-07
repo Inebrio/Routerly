@@ -27,7 +27,7 @@ async function buildApp() {
   return app
 }
 
-const testUser = { id: 'test-user-id', email: 'test@example.com', roleId: 'test-role', projectIds: [] }
+const testUser = { id: 'test-user-id', email: 'test@example.com', roleId: 'test-role', routerIds: [] }
 
 function authWith(perm: string, data: Record<string, any[]> = {}) {
   mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
@@ -39,7 +39,7 @@ function authWith(perm: string, data: Record<string, any[]> = {}) {
   return { authorization: 'Bearer valid-jwt-token' }
 }
 
-const projects = [
+const routers = [
   { id: 'proj-a', name: 'A', tokens: [], members: [], models: [] },
   { id: 'proj-b', name: 'B', tokens: [], members: [], models: [] },
 ]
@@ -49,7 +49,7 @@ function experiment(over: Record<string, any> = {}) {
     id: 'exp-1',
     name: 'Prompt A vs B',
     rotation: 'sticky',
-    variants: [{ id: 'v-a', projectId: 'proj-a' }, { id: 'v-b', projectId: 'proj-b' }],
+    variants: [{ id: 'v-a', routerId: 'proj-a' }, { id: 'v-b', routerId: 'proj-b' }],
     tokens: [{ id: 'tok-1', token: 'sk-rt-secret', tokenSnippet: 'sk-rt-secr', createdAt: '2026-08-01T00:00:00.000Z' }],
     createdAt: '2026-08-01T00:00:00.000Z',
     ...over,
@@ -112,16 +112,16 @@ describe('GET /api/experiments/:id', () => {
 
 describe('GET /api/experiments/:id/metrics', () => {
   const usage = [
-    { id: 'u1', timestamp: '2026-08-01T10:00:00.000Z', projectId: 'proj-a', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, latencyMs: 100, outcome: 'success', experimentId: 'exp-1', experimentVariantId: 'v-a' },
-    { id: 'u2', timestamp: '2026-08-01T10:00:01.000Z', projectId: 'proj-b', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.002, latencyMs: 300, outcome: 'error', experimentId: 'exp-1', experimentVariantId: 'v-b' },
-    { id: 'u3', timestamp: '2026-08-01T10:00:02.000Z', projectId: 'proj-a', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 9, latencyMs: 100, outcome: 'success' },
+    { id: 'u1', timestamp: '2026-08-01T10:00:00.000Z', routerId: 'proj-a', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.01, latencyMs: 100, outcome: 'success', experimentId: 'exp-1', experimentVariantId: 'v-a' },
+    { id: 'u2', timestamp: '2026-08-01T10:00:01.000Z', routerId: 'proj-b', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 0.002, latencyMs: 300, outcome: 'error', experimentId: 'exp-1', experimentVariantId: 'v-b' },
+    { id: 'u3', timestamp: '2026-08-01T10:00:02.000Z', routerId: 'proj-a', modelId: 'm1', inputTokens: 10, outputTokens: 5, cost: 9, latencyMs: 100, outcome: 'success' },
   ]
 
   it('reports one row per variant off the usage log', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'GET', url: '/api/experiments/exp-1/metrics',
-      headers: authWith('experiments:read', { experiments: [experiment()], usage, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage, routers }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -140,7 +140,7 @@ describe('GET /api/experiments/:id/metrics', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/experiments/exp-1/metrics?from=2026-08-01T10:00:00.500Z&to=2026-08-01T10:00:01.500Z',
-      headers: authWith('experiments:read', { experiments: [experiment()], usage, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage, routers }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -156,7 +156,7 @@ describe('GET /api/experiments/:id/metrics', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'GET', url: '/api/experiments/exp-1/metrics?from=2026-08-01&to=2026-08-01',
-      headers: authWith('experiments:read', { experiments: [experiment()], usage: sameDay, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage: sameDay, routers }),
     })
     await app.close()
     expect(JSON.parse(res.body).totalCalls).toBe(1)
@@ -166,7 +166,7 @@ describe('GET /api/experiments/:id/metrics', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'GET', url: '/api/experiments/exp-1/metrics?from=&to=',
-      headers: authWith('experiments:read', { experiments: [experiment()], usage, projects }),
+      headers: authWith('experiments:read', { experiments: [experiment()], usage, routers }),
     })
     await app.close()
     expect(JSON.parse(res.body).totalCalls).toBe(2)
@@ -203,8 +203,8 @@ describe('POST /api/experiments', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
-      headers: authWith('experiments:manage', { projects }),
-      payload: { name: 'New test', rotation: 'weighted', variants: [{ projectId: 'proj-a', weight: 50 }, { projectId: 'proj-b', weight: 50 }] },
+      headers: authWith('experiments:manage', { routers }),
+      payload: { name: 'New test', rotation: 'weighted', variants: [{ routerId: 'proj-a', weight: 50 }, { routerId: 'proj-b', weight: 50 }] },
     })
     await app.close()
     expect(res.statusCode).toBe(201)
@@ -219,7 +219,7 @@ describe('POST /api/experiments', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
-      headers: authWith('experiments:manage', { projects }),
+      headers: authWith('experiments:manage', { routers }),
       payload: { name: 'Minimal' },
     })
     await app.close()
@@ -230,30 +230,30 @@ describe('POST /api/experiments', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
-      headers: authWith('experiments:manage', { projects, experiments: [experiment()] }),
+      headers: authWith('experiments:manage', { routers, experiments: [experiment()] }),
       payload: { name: 'prompt a vs b' },
     })
     await app.close()
     expect(res.statusCode).toBe(409)
   })
 
-  it('rejects a variant pointing at an unknown project', async () => {
+  it('rejects a variant pointing at an unknown router', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
-      headers: authWith('experiments:manage', { projects }),
-      payload: { name: 'Bad', variants: [{ projectId: 'ghost' }] },
+      headers: authWith('experiments:manage', { routers }),
+      payload: { name: 'Bad', variants: [{ routerId: 'ghost' }] },
     })
     await app.close()
     expect(res.statusCode).toBe(404)
-    expect(JSON.parse(res.body)).toEqual({ error: 'project_not_found', projectIds: ['ghost'] })
+    expect(JSON.parse(res.body)).toEqual({ error: 'router_not_found', routerIds: ['ghost'] })
   })
 
   it('rejects an empty name', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
-      headers: authWith('experiments:manage', { projects }),
+      headers: authWith('experiments:manage', { routers }),
       payload: { name: '  ' },
     })
     await app.close()
@@ -264,7 +264,7 @@ describe('POST /api/experiments', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/experiments',
-      headers: authWith('experiments:read', { projects }),
+      headers: authWith('experiments:read', { routers }),
       payload: { name: 'Nope' },
     })
     await app.close()
@@ -277,8 +277,8 @@ describe('PATCH /api/experiments/:id', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'PATCH', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { projects, experiments: [experiment()] }),
-      payload: { rotation: 'round-robin', variants: [{ projectId: 'proj-a' }] },
+      headers: authWith('experiments:manage', { routers, experiments: [experiment()] }),
+      payload: { rotation: 'round-robin', variants: [{ routerId: 'proj-a' }] },
     })
     await app.close()
     expect(res.statusCode).toBe(200)
@@ -290,7 +290,7 @@ describe('PATCH /api/experiments/:id', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'PATCH', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { projects, experiments: [experiment()] }),
+      headers: authWith('experiments:manage', { routers, experiments: [experiment()] }),
       payload: { name: 'Renamed' },
     })
     await app.close()
@@ -300,7 +300,7 @@ describe('PATCH /api/experiments/:id', () => {
 
   it('rejects an empty body and an unknown id', async () => {
     const app = await buildApp()
-    const headers = authWith('experiments:manage', { projects, experiments: [experiment()] })
+    const headers = authWith('experiments:manage', { routers, experiments: [experiment()] })
     const empty = await app.inject({ method: 'PATCH', url: '/api/experiments/exp-1', headers, payload: {} })
     const missing = await app.inject({ method: 'PATCH', url: '/api/experiments/ghost', headers, payload: { name: 'x' } })
     await app.close()
@@ -308,12 +308,12 @@ describe('PATCH /api/experiments/:id', () => {
     expect(missing.statusCode).toBe(404)
   })
 
-  it('rejects a variant pointing at an unknown project', async () => {
+  it('rejects a variant pointing at an unknown router', async () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'PATCH', url: '/api/experiments/exp-1',
-      headers: authWith('experiments:manage', { projects, experiments: [experiment()] }),
-      payload: { variants: [{ projectId: 'ghost' }] },
+      headers: authWith('experiments:manage', { routers, experiments: [experiment()] }),
+      payload: { variants: [{ routerId: 'ghost' }] },
     })
     await app.close()
     expect(res.statusCode).toBe(404)

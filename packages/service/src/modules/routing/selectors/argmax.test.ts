@@ -3,7 +3,7 @@ import { argmaxSelector } from './index.js'
 import type { ScoredCandidate, SelectorContext } from './types.js'
 
 function ctx(overrides: Partial<SelectorContext> = {}): SelectorContext {
-  return { projectId: 'proj-argmax', allAbstained: false, ...overrides }
+  return { routerId: 'proj-argmax', allAbstained: false, ...overrides }
 }
 
 describe('argmaxSelector', () => {

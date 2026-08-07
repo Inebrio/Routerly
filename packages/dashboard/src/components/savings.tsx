@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { SavingsBaseline, SavingsSummary, UsageSeries } from '@routerly/shared';
 import { TimeSeriesChart, seriesColor, type ChartSeries } from './charts.js';
 import { formatCost, formatTokens } from '../utils/traceUtils.js';
@@ -10,7 +12,8 @@ export const shortModel = (id: string): string => id.split('/').pop() ?? id;
 /** What the savings chart is showing. */
 export type SavingsMetric = 'cost' | 'tokens';
 
-const SAVINGS_METRIC_LABEL: Record<SavingsMetric, string> = { cost: 'Cost', tokens: 'Tokens' };
+const savingsMetricLabel = (t: TFunction, m: SavingsMetric): string =>
+  m === 'cost' ? t('common.savings.metricCost') : t('common.savings.metricTokens');
 
 /** Colours the token split keeps in step with the Tokens series of the chart. */
 const TOKEN_IN_COLOR = seriesColor(5);
@@ -61,7 +64,7 @@ export const paidBaselines = (savings?: SavingsSummary): SavingsBaseline[] =>
 /**
  * The savings layer over time (T81): what the routed traffic cost and moved,
  * against what the same calls would have cost on every single model the
- * projects allow.
+ * routers allow.
  *
  * The counterfactual is drawn dashed because it never happened. Tokens have no
  * counterfactual at all: the same conversation is assumed to produce the same
@@ -82,6 +85,7 @@ export function SavingsCard({ data, baselineIds, savings, metric, onMetric, rese
   // The default is derived at render, not seeded into state: the card mounts
   // before the first fetch answers, when baselineIds is still empty, and a
   // seeded set would keep that empty default forever and draw every line.
+  const { t } = useTranslation();
   const [hidden, setHidden] = useState<Set<string> | null>(null);
   const hiddenKeys = hidden ?? new Set(
     baselineIds.flatMap((_, i) => (i === 0 || i === baselineIds.length - 1 ? [] : [`b${i}`])),
@@ -94,11 +98,11 @@ export function SavingsCard({ data, baselineIds, savings, metric, onMetric, rese
 
   const series: ChartSeries[] = (metric === 'tokens'
     ? [
-      { key: 'inputTokens', label: 'Input', color: TOKEN_IN_COLOR },
-      { key: 'outputTokens', label: 'Output', color: TOKEN_OUT_COLOR },
+      { key: 'inputTokens', label: t('common.savings.input'), color: TOKEN_IN_COLOR },
+      { key: 'outputTokens', label: t('common.savings.output'), color: TOKEN_OUT_COLOR },
     ]
     : [
-      { key: 'cost', label: 'Actual', color: seriesColor(0) },
+      { key: 'cost', label: t('common.savings.actual'), color: seriesColor(0) },
       ...baselineIds.map((id, i) => ({
         key: `b${i}`,
         label: shortModel(id),
@@ -117,13 +121,14 @@ export function SavingsCard({ data, baselineIds, savings, metric, onMetric, rese
     <div className="chart-card">
       <div className="chart-card-head">
         <div>
-          <h3>What routing saved</h3>
+          <h3>{t('common.savings.title')}</h3>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            {(savings?.comparedCalls ?? 0).toLocaleString()} client {savings?.comparedCalls === 1 ? 'call' : 'calls'}
+            {t('common.savings.clientCalls', { count: savings?.comparedCalls ?? 0 })}
             {baselineIds.length > 0 && (
               <>
-                {savings?.comparedCalls === 1 ? ', against sending it to each of the ' : ', against sending them all to each of the '}
-                <Link to="/dashboard/models" style={{ color: 'var(--accent)' }}>{baselineIds.length} paid models in play</Link>
+                {t('common.savings.comparedAgainst', { count: savings?.comparedCalls ?? 0 })}
+                {' '}
+                <Link to="/dashboard/models" style={{ color: 'var(--accent)' }}>{t('common.savings.paidModelsInPlay', { count: baselineIds.length })}</Link>
               </>
             )}
           </div>
@@ -136,7 +141,7 @@ export function SavingsCard({ data, baselineIds, savings, metric, onMetric, rese
               style={{ minWidth: 64 }}
               onClick={() => onMetric(m)}
             >
-              {SAVINGS_METRIC_LABEL[m]}
+              {savingsMetricLabel(t, m)}
             </button>
           ))}
         </div>
@@ -179,7 +184,7 @@ function SplitBar({ segments }: { segments: Array<{ value: number; color: string
 
 /**
  * What the traffic cost, against what it would have cost had every call gone to
- * the costliest single model the projects allow (T201). The bar is the whole
+ * the costliest single model the routers allow (T201). The bar is the whole
  * counterfactual bill, the coloured part is the bill that was actually paid, so
  * the gap between them is the saving without a second number to read.
  *
@@ -193,6 +198,7 @@ export function CostCard({ totalCost, savings, icon, accentColor, to }: {
   accentColor?: string;
   to?: string;
 }) {
+  const { t } = useTranslation();
   const paid = paidBaselines(savings);
   const anchor = paid[paid.length - 1];
   const saved = anchor && anchor.costDelta > 0 ? anchor : undefined;
@@ -203,16 +209,16 @@ export function CostCard({ totalCost, savings, icon, accentColor, to }: {
       {...(icon ? { icon } : {})}
       {...(accentColor ? { accentColor } : {})}
       {...(to ? { to } : {})}
-      label="Total Cost"
+      label={t('common.savings.totalCost')}
       value={`$${totalCost.toFixed(4)}`}
       extra={saved && (
         <SplitBar segments={[
-          { value: totalCost, color: accentColor ?? 'var(--accent)', label: `Routed: ${formatCost(totalCost)}` },
-          { value: saved.costDelta, color: 'transparent', label: `Saved: ${formatCost(saved.costDelta)}` },
+          { value: totalCost, color: accentColor ?? 'var(--accent)', label: t('common.savings.routed', { value: formatCost(totalCost) }) },
+          { value: saved.costDelta, color: 'transparent', label: t('common.savings.saved', { value: formatCost(saved.costDelta) }) },
         ]} />
       )}
-      sub="USD this period"
-      {...(saved ? { sub2: `${formatCost(saved.costDelta)} saved (${percent}%) vs always ${shortModel(saved.modelId)}` } : {})}
+      sub={t('common.savings.usdThisPeriod')}
+      {...(saved ? { sub2: t('common.savings.savedVsAlways', { value: formatCost(saved.costDelta), percent, model: shortModel(saved.modelId) }) } : {})}
     />
   );
 }
@@ -233,6 +239,7 @@ export function TokensCard({ inputTokens, outputTokens, cachedTokens = 0, saving
   accentColor?: string;
   to?: string;
 }) {
+  const { t } = useTranslation();
   const optimizerTokens = (savings?.optimizers ?? []).reduce((sum, o) => sum + o.tokensSaved, 0);
   const paid = paidBaselines(savings);
   const anchor = paid[paid.length - 1];
@@ -242,19 +249,21 @@ export function TokensCard({ inputTokens, outputTokens, cachedTokens = 0, saving
       {...(icon ? { icon } : {})}
       {...(accentColor ? { accentColor } : {})}
       {...(to ? { to } : {})}
-      label="Tokens"
+      label={t('common.savings.tokens')}
       value={compactTokens(inputTokens + outputTokens)}
       extra={(inputTokens + outputTokens) > 0 && (
         <SplitBar segments={[
-          { value: inputTokens, color: TOKEN_IN_COLOR, label: `In: ${formatTokens(inputTokens)}` },
-          { value: outputTokens, color: TOKEN_OUT_COLOR, label: `Out: ${formatTokens(outputTokens)}` },
+          { value: inputTokens, color: TOKEN_IN_COLOR, label: t('common.savings.in', { value: formatTokens(inputTokens) }) },
+          { value: outputTokens, color: TOKEN_OUT_COLOR, label: t('common.savings.out', { value: formatTokens(outputTokens) }) },
         ]} />
       )}
-      sub={`${compactTokens(inputTokens)} in · ${compactTokens(outputTokens)} out${cachedTokens > 0 ? ` · ${compactTokens(cachedTokens)} cached` : ''}`}
+      sub={cachedTokens > 0
+        ? t('common.savings.tokenSubWithCache', { in: compactTokens(inputTokens), out: compactTokens(outputTokens), cached: compactTokens(cachedTokens) })
+        : t('common.savings.tokenSub', { in: compactTokens(inputTokens), out: compactTokens(outputTokens) })}
       {...(optimizerTokens > 0
-        ? { sub2: `${compactTokens(optimizerTokens)} cut by optimizers` }
+        ? { sub2: t('common.savings.cutByOptimizers', { value: compactTokens(optimizerTokens) }) }
         : anchor && anchor.tokenDelta > 0
-          ? { sub2: `${compactTokens(anchor.tokenDelta)} fewer than always ${shortModel(anchor.modelId)}, estimated` }
+          ? { sub2: t('common.savings.fewerThanAlways', { value: compactTokens(anchor.tokenDelta), model: shortModel(anchor.modelId) }) }
           : {})}
     />
   );

@@ -5,6 +5,10 @@ import { CONFIG_STORE } from '../../core/tokens.js'
 vi.mock('./migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
   migrateSettings: vi.fn(async () => [] as string[]),
+  migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
+  migrateRolePermissions: vi.fn(async () => 0),
+  migrateUsageRouterId: vi.fn(async () => 0),
+  migrateNotificationChannelScope: vi.fn(async () => 0),
 }))
 vi.mock('./migrate-connections.js', () => ({
   migrateModelsToConnections: vi.fn(async () => ({ connections: 0, instances: 0 })),

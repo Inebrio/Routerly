@@ -121,8 +121,8 @@ const PATCH_SCHEMAS: Record<ProfileKind, z.ZodTypeAny> = {
   }).refine(b => Object.keys(b).length > 0, { message: 'At least one field must be provided' }),
 };
 
-/** Project field each kind binds to. Also the set of fields a delete has to check for use. */
-const PROJECT_FIELD = {
+/** Router field each kind binds to. Also the set of fields a delete has to check for use. */
+const ROUTER_FIELD = {
   routing: 'routingProfileId',
   optimizer: 'optimizerProfileId',
   security: 'securityProfileId',
@@ -216,9 +216,9 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
       if (getBuiltin(req.params.id)) return reply.status(409).send({ error: 'immutable_builtin_profile' });
       return reply.status(404).send({ error: 'Not found' });
     }
-    const projects = await readConfig('projects');
-    const inUse = projects.some(p =>
-      Object.values(PROJECT_FIELD).some(field => p[field] === req.params.id) || p.profileId === req.params.id,
+    const routers = await readConfig('routers');
+    const inUse = routers.some(p =>
+      Object.values(ROUTER_FIELD).some(field => p[field] === req.params.id) || p.profileId === req.params.id,
     );
     if (inUse) return reply.status(409).send({ error: 'profile_in_use' });
 
@@ -229,29 +229,29 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PROJECT PROFILE ASSIGNMENT
+  // ROUTER PROFILE ASSIGNMENT
   // ══════════════════════════════════════════════════════════════════════════
 
-  fastify.put<{ Params: { id: string }; Body: unknown }>('/api/projects/:id/profiles', async (req, reply) => {
-    if (!requirePerm(req, 'project:write', reply)) return;
+  fastify.put<{ Params: { id: string }; Body: unknown }>('/api/routers/:id/profiles', async (req, reply) => {
+    if (!requirePerm(req, 'router:write', reply)) return;
     if (!await checkProfilesModuleGate(reply)) return;
     const parsed = assignSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
     const body = parsed.data;
 
-    const projects = await readConfig('projects');
-    const idx = projects.findIndex(p => p.id === req.params.id);
+    const routers = await readConfig('routers');
+    const idx = routers.findIndex(p => p.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Not found' });
 
     // exactOptionalPropertyTypes: clear by omitting the key, never by setting it
     // to undefined. profileId is the pre-0.4.0 name, dropped on any assignment so
-    // a project cannot end up bound through two different fields.
-    const { profileId: _legacy, ...project } = projects[idx]!;
-    const next = { ...project };
+    // a router cannot end up bound through two different fields.
+    const { profileId: _legacy, ...router } = routers[idx]!;
+    const next = { ...router };
     for (const kind of ['routing', 'optimizer', 'security'] as const) {
       const value = body[kind];
       if (value === undefined) continue;
-      const field = PROJECT_FIELD[kind];
+      const field = ROUTER_FIELD[kind];
       if (value === null) {
         delete next[field];
         continue;
@@ -263,9 +263,9 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
       next[field] = value;
     }
 
-    projects[idx] = next;
-    await writeConfig('projects', projects);
-    audit(req, 'project:profiles:update', 'success', { id: req.params.id, ...body });
+    routers[idx] = next;
+    await writeConfig('routers', routers);
+    audit(req, 'router:profiles:update', 'success', { id: req.params.id, ...body });
     return reply.send({
       ...next,
       tokens: next.tokens?.map(t => ({ ...t, token: undefined })) || [],

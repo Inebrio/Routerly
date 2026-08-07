@@ -667,123 +667,123 @@ describe('testModel', () => {
   });
 });
 
-// ── Projects ──────────────────────────────────────────────────────────────────
+// ── Routers ──────────────────────────────────────────────────────────────────
 
-describe('getProjects', () => {
-  it('GET /projects', async () => {
-    const { getProjects } = await api();
+describe('getRouters', () => {
+  it('GET /routers', async () => {
+    const { getRouters } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
-    await getProjects();
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects');
+    await getRouters();
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/routers');
   });
 });
 
-describe('createProject', () => {
-  it('POST /projects', async () => {
-    const { createProject } = await api();
+describe('createRouter', () => {
+  it('POST /routers', async () => {
+    const { createRouter } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'p1' }));
-    await createProject({ name: 'P', models: [] });
+    await createRouter({ name: 'P', models: [] });
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
 });
 
-describe('updateProject', () => {
-  it('PUT /projects/:id', async () => {
-    const { updateProject } = await api();
+describe('updateRouter', () => {
+  it('PUT /routers/:id', async () => {
+    const { updateRouter } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'p1' }));
-    await updateProject('p1', { name: 'P', models: [] });
+    await updateRouter('p1', { name: 'P', models: [] });
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 });
 
-describe('deleteProject', () => {
-  it('DELETE /projects/:id', async () => {
-    const { deleteProject } = await api();
+describe('deleteRouter', () => {
+  it('DELETE /routers/:id', async () => {
+    const { deleteRouter } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
-    await deleteProject('p1');
+    await deleteRouter('p1');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
-describe('createProjectToken', () => {
-  it('POST /projects/:id/tokens', async () => {
-    const { createProjectToken } = await api();
+describe('createRouterToken', () => {
+  it('POST /routers/:id/tokens', async () => {
+    const { createRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', tokenInfo: {} }));
-    await createProjectToken('p1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects/p1/tokens');
+    await createRouterToken('p1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/routers/p1/tokens');
   });
 
   it('includes tags when provided', async () => {
-    const { createProjectToken } = await api();
+    const { createRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', tokenInfo: {} }));
-    await createProjectToken('p1', ['lbl'], { env: 'prod' });
+    await createRouterToken('p1', ['lbl'], { env: 'prod' });
     const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.tags).toEqual({ env: 'prod' });
     expect(body.labels).toEqual(['lbl']);
   });
 
   it('omits tags when not provided', async () => {
-    const { createProjectToken } = await api();
+    const { createRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', tokenInfo: {} }));
-    await createProjectToken('p1', ['lbl']);
+    await createRouterToken('p1', ['lbl']);
     const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.tags).toBeUndefined();
   });
 });
 
-describe('updateProjectToken', () => {
-  it('PUT /projects/:id/tokens/:tokenId', async () => {
-    const { updateProjectToken } = await api();
+describe('updateRouterToken', () => {
+  it('PUT /routers/:id/tokens/:tokenId', async () => {
+    const { updateRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
-    await updateProjectToken('p1', 'tk1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects/p1/tokens/tk1');
+    await updateRouterToken('p1', 'tk1');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/routers/p1/tokens/tk1');
   });
 
   it('includes tags in body when provided', async () => {
-    const { updateProjectToken } = await api();
+    const { updateRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
-    await updateProjectToken('p1', 'tk1', undefined, undefined, { env: 'prod' });
+    await updateRouterToken('p1', 'tk1', undefined, undefined, { env: 'prod' });
     const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect(body.tags).toEqual({ env: 'prod' });
   });
 
   it('omits tags when undefined', async () => {
-    const { updateProjectToken } = await api();
+    const { updateRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, {}));
-    await updateProjectToken('p1', 'tk1', undefined, undefined, undefined);
+    await updateRouterToken('p1', 'tk1', undefined, undefined, undefined);
     const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].body as string);
     expect('tags' in body).toBe(false);
   });
 });
 
-describe('deleteProjectToken', () => {
-  it('DELETE /projects/:id/tokens/:tokenId', async () => {
-    const { deleteProjectToken } = await api();
+describe('deleteRouterToken', () => {
+  it('DELETE /routers/:id/tokens/:tokenId', async () => {
+    const { deleteRouterToken } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
-    await deleteProjectToken('p1', 'tk1');
+    await deleteRouterToken('p1', 'tk1');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
 
-describe('project members', () => {
-  it('addProjectMember POST /projects/:id/members', async () => {
-    const { addProjectMember } = await api();
+describe('router members', () => {
+  it('addRouterMember POST /routers/:id/members', async () => {
+    const { addRouterMember } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { userId: 'u1', role: 'viewer' }));
-    const result = await addProjectMember('p1', 'u1', 'viewer');
+    const result = await addRouterMember('p1', 'u1', 'viewer');
     expect(result.role).toBe('viewer');
   });
 
-  it('updateProjectMember PUT /projects/:id/members/:userId', async () => {
-    const { updateProjectMember } = await api();
+  it('updateRouterMember PUT /routers/:id/members/:userId', async () => {
+    const { updateRouterMember } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { userId: 'u1', role: 'admin' }));
-    await updateProjectMember('p1', 'u1', 'admin');
+    await updateRouterMember('p1', 'u1', 'admin');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('PUT');
   });
 
-  it('removeProjectMember DELETE /projects/:id/members/:userId', async () => {
-    const { removeProjectMember } = await api();
+  it('removeRouterMember DELETE /routers/:id/members/:userId', async () => {
+    const { removeRouterMember } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
-    await removeProjectMember('p1', 'u1');
+    await removeRouterMember('p1', 'u1');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('DELETE');
   });
 });
@@ -880,7 +880,7 @@ describe('getUsage', () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
     await getUsage('daily', 'p1', '2024-01-01', '2024-01-31', 1, 20, {
-      projectIds: ['p1', 'p2'],
+      routerIds: ['p1', 'p2'],
       modelIds: ['m1'],
       callType: 'completion',
       requestType: 'embedding',
@@ -888,12 +888,12 @@ describe('getUsage', () => {
     });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
     expect(url).toContain('period=daily');
-    expect(url).toContain('projectId=p1');
+    expect(url).toContain('routerId=p1');
     expect(url).toContain('from=2024-01-01');
     expect(url).toContain('to=2024-01-31');
     expect(url).toContain('page=1');
     expect(url).toContain('pageSize=20');
-    expect(url).toContain('projectIds=p1%2Cp2');
+    expect(url).toContain('routerIds=p1%2Cp2');
     expect(url).toContain('modelIds=m1');
     expect(url).toContain('callType=completion');
     expect(url).toContain('requestType=embedding');
@@ -910,12 +910,12 @@ describe('getUsage', () => {
     expect(url).not.toContain('outcome');
   });
 
-  it('skips empty projectIds and modelIds arrays', async () => {
+  it('skips empty routerIds and modelIds arrays', async () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
-    await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { projectIds: [], modelIds: [] });
+    await getUsage('daily', undefined, undefined, undefined, undefined, undefined, { routerIds: [], modelIds: [] });
     const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
-    expect(url).not.toContain('projectIds');
+    expect(url).not.toContain('routerIds');
     expect(url).not.toContain('modelIds');
   });
 });
@@ -983,7 +983,7 @@ describe('streamTraces', () => {
   it('survives a fetch rejection', async () => {
     const { streamTraces } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('offline'));
-    const stop = await streamTraces({ projectId: 'p1' }, () => { throw new Error('must not fire'); });
+    const stop = await streamTraces({ routerId: 'p1' }, () => { throw new Error('must not fire'); });
     expect(typeof stop).toBe('function');
   });
 });
@@ -1266,16 +1266,16 @@ describe('deleteNotifications', () => {
 // ── Playground presets ────────────────────────────────────────────────────────
 
 describe('getPlaygroundPresets', () => {
-  it('GET /projects/:id/playground-presets', async () => {
+  it('GET /routers/:id/playground-presets', async () => {
     const { getPlaygroundPresets } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, []));
     await getPlaygroundPresets('p1');
-    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/projects/p1/playground-presets');
+    expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toContain('/routers/p1/playground-presets');
   });
 });
 
 describe('createPlaygroundPreset', () => {
-  it('POST /projects/:id/playground-presets', async () => {
+  it('POST /routers/:id/playground-presets', async () => {
     const { createPlaygroundPreset } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'pp1', name: 'P', systemPrompt: 'S' }));
     await createPlaygroundPreset('p1', { name: 'P', systemPrompt: 'S' });
@@ -1284,7 +1284,7 @@ describe('createPlaygroundPreset', () => {
 });
 
 describe('deletePlaygroundPreset', () => {
-  it('DELETE /projects/:id/playground-presets/:presetId', async () => {
+  it('DELETE /routers/:id/playground-presets/:presetId', async () => {
     const { deletePlaygroundPreset } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ status: 204, ok: true, text: vi.fn() } as unknown as Response);
     await deletePlaygroundPreset('p1', 'pp1');

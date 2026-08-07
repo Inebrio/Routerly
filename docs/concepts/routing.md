@@ -5,7 +5,14 @@ sidebar_position: 5
 
 # Routing
 
-Routerly's router selects which model to use for each request by running a configurable stack of **routing policies**. Policies are applied in priority order; each policy can score, filter, or directly pick a model from the candidate set.
+This page covers routing for a `router`-kind [Router](./routers.md): Routerly
+selects which model to use for each request by running a configurable stack
+of **routing policies**. Policies are applied in priority order; each policy
+can score, filter, or directly pick a model from the candidate set.
+
+An `orchestrator`-kind Router and a `passthrough`-kind Router do not use this
+policy layer at all — see [Orchestrators and Passthrough Routers](#orchestrators-and-passthrough-routers)
+below.
 
 :::tip Benchmarks
 Reproducible routing benchmarks — latency overhead, cost savings, and failover behaviour — are published at **[github.com/Inebrio/routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)**.
@@ -15,7 +22,7 @@ Reproducible routing benchmarks — latency overhead, cost savings, and failover
 
 ## How Routing Works
 
-1. The project's configured models are loaded as the candidate set.
+1. The Router's configured models are loaded as the candidate set.
 2. Policies run in the order they appear in the routing configuration.
 3. Each policy either **filters** some models out or **scores** them. At the end, the model with the highest combined score is selected.
 4. If no model passes all filters, Routerly returns a `503` error with a descriptive message.
@@ -127,6 +134,46 @@ Embeddings for intent examples are computed once and cached in memory for 1 hour
 
 ---
 
+## Orchestrators and Passthrough Routers
+
+Two other Router kinds sit alongside the policy-driven `router` kind covered
+above. Both are created the same way (`routerly router create --kind ...` or
+the dashboard's Routers page); see [Concepts: Architecture](./architecture.md#router-orchestrator-passthrough)
+for the full request-lifecycle detail.
+
+### Orchestrator
+
+An `orchestrator`-kind Router targets **other Routers**, not models. Instead
+of a model list and policies, it carries a weighted list of candidate
+Routers (`--candidate <routerId>:<weight>`, repeatable), with optional
+per-candidate usage limits. A request to an Orchestrator is scored across
+its candidates by weight and forwarded to the picked Router, which then
+applies its own routing (or is itself a Passthrough or another Orchestrator).
+The management API only ever returns a candidate's resolved name and weight,
+never its internal model list or policies — an Orchestrator's candidates are
+opaque to the client the same way a `router`-kind Router's provider
+configuration is.
+
+### Passthrough
+
+A `passthrough`-kind Router does not select a model at all. It requires a
+`slug` (`--slug <path>`), which becomes the URL path it is reached at:
+`/passthrough/<slug>/*`. Two things it does not require, unlike every other
+Router kind:
+
+- **No Routerly authentication.** The path carries no Router token; the
+  client's own `Authorization`/`x-api-key` header is forwarded unchanged to
+  the real `api.openai.com` or `api.anthropic.com`.
+- **No budgets or usage limits.** Cost is unknown for traffic Routerly never
+  priced, so budget and limit configuration do not apply to a Passthrough
+  Router.
+
+Guardrails and PII policies configured on the Router still run, and a
+Passthrough Router cannot carry a `models` list — the API rejects one if
+sent.
+
+---
+
 ## Routing Profiles
 
 A **routing profile** bundles the policy layer described above with two
@@ -135,8 +182,8 @@ further settings into one reusable, named unit:
 - a **selector**: how the final model is picked among the ranked candidates
 - a **fallback strategy**: what happens when the picked model fails
 
-A project either keeps its own inline policies (configured on its
-[Routing tab](../dashboard/projects.md#routing-tab)), or is assigned a shared
+A Router either keeps its own inline policies (configured on its
+[Routing tab](../dashboard/routers.md#routing-tab)), or is assigned a shared
 profile instead. Routing is one of three profile kinds, alongside optimizer
 and security profiles; see [Dashboard: Profiles](../dashboard/profiles.md)
 and [API: Profiles](../api/management.md#profiles) for how to manage and
@@ -154,9 +201,9 @@ Each can be cloned into an editable, user-owned copy.
 | **Fast** | performance, health | lowest-latency | retry-after-cooldown | Lowest response time |
 | **Coding** | capability, model-preference, performance, health | argmax | next-best | Capable, developer-preferred models for code tasks |
 
-Two earlier presets, `balanced` and `offline`, are no longer offered. Projects
+Two earlier presets, `balanced` and `offline`, are no longer offered. Routers
 still pointing at `balanced` are migrated to the byte-identical `auto`;
-projects on `offline` keep resolving it unchanged, but it cannot be picked or
+Routers on `offline` keep resolving it unchanged, but it cannot be picked or
 cloned any more.
 
 ### Selectors
@@ -198,7 +245,7 @@ behaviour. That is why neither the dashboard nor the CLI exposes it.
 
 ### Dashboard (recommended)
 
-1. Open the project → **Routing** tab
+1. Open the Router → **Routing** tab
 2. Drag a policy from the left panel into the active list
 3. Configure the policy's parameters in the settings panel on the right
 4. Drag to reorder — policies at the top have higher priority
@@ -207,17 +254,17 @@ behaviour. That is why neither the dashboard nor the CLI exposes it.
 ### CLI
 
 ```bash
-# Add a target model to a project, with a hint for the routing model
-routerly project model add "My App" gpt-5-mini --prompt "Short factual answers"
+# Add a target model to a Router, with a hint for the routing model
+routerly router model add "My App" gpt-5-mini --prompt "Short factual answers"
 
-# List the target models of a project
-routerly project model list "My App"
+# List the target models of a Router
+routerly router model list "My App"
 
 # Remove a model
-routerly project model remove "My App" gpt-5-mini
+routerly router model remove "My App" gpt-5-mini
 ```
 
-Budgets are not set here: they live on the model (`routerly model edit <id> --monthly-budget`) or on a project token. See [Budgets and Limits](./budgets-and-limits.md).
+Budgets are not set here: they live on the model (`routerly model edit <id> --monthly-budget`) or on a Router token. See [Budgets and Limits](./budgets-and-limits.md).
 
 ---
 

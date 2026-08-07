@@ -3,7 +3,7 @@ import { lowestLatencySelector } from './index.js'
 import type { ScoredCandidate, SelectorContext } from './types.js'
 
 function ctx(overrides: Partial<SelectorContext> = {}): SelectorContext {
-  return { projectId: 'proj-latency', allAbstained: false, ...overrides }
+  return { routerId: 'proj-latency', allAbstained: false, ...overrides }
 }
 
 describe('lowestLatencySelector', () => {

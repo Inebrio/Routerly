@@ -93,8 +93,8 @@ export function resolveTargetUsers(
 }
 
 interface EmitOptions {
-  /** Project ID — when set, the project's per-project channel override is merged in (#91). */
-  projectId?: string;
+  /** Router ID — when set, the router's per-router channel override is merged in (#91). */
+  routerId?: string;
   /** Optional logger for suppressed/failed dispatch diagnostics. */
   log?: { info: (o: object, m?: string) => void; warn: (o: object, m?: string) => void };
 }
@@ -152,11 +152,11 @@ export async function emitEvent(
       external.filter((c) => channelReceives(c, event)).map((c) => c.id),
     );
 
-    // Per-project override (#91): merge the project's channels for its own events.
-    if (opts.projectId) {
-      const projects = await readConfig('projects');
-      const project = projects.find((p) => p.id === opts.projectId);
-      for (const id of project?.notifications?.channels ?? []) {
+    // Per-router override (#91): merge the router's channels for its own events.
+    if (opts.routerId) {
+      const routers = await readConfig('routers');
+      const router = routers.find((p) => p.id === opts.routerId);
+      for (const id of router?.notifications?.channels ?? []) {
         if (external.some((c) => c.id === id)) matched.add(id);
       }
     }
@@ -164,13 +164,13 @@ export async function emitEvent(
 
     const payload = { event, severity, timestamp, details };
     // Every id in `matched` came from `external` (directly or via the external.some
-    // guard on the project override), so the lookup always resolves.
+    // guard on the router override), so the lookup always resolves.
     const matchedChannels = external.filter((c) => matched.has(c.id));
     await Promise.all(
       matchedChannels.map(async (channel) => {
-        // If channel is scoped to specific projects, skip if this event isn't from one of them
-        if ((channel as any).projects?.length > 0 && opts.projectId) {
-          if (!((channel as any).projects as string[]).includes(opts.projectId)) {
+        // If channel is scoped to specific routers, skip if this event isn't from one of them
+        if ((channel as any).routers?.length > 0 && opts.routerId) {
+          if (!((channel as any).routers as string[]).includes(opts.routerId)) {
             return;
           }
         }

@@ -1,5 +1,6 @@
 // RA-16 task 4: trivial change to exercise the single-page selector rule.
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell,
@@ -7,7 +8,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Coins, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
 import { CLIENT_REGISTRY } from '@routerly/shared';
-import { getUsage, getModels, getProjects, type UsageStats } from '../api.js';
+import { getUsage, getModels, getRouters, type UsageStats } from '../api.js';
 import { useClientsEnabled } from './ConnectPage.js';
 import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker.js';
@@ -16,6 +17,7 @@ import { useFilterState } from '../hooks/useFilterState.js';
 import { formatCost } from '../utils/traceUtils.js';
 
 export function OverviewPage() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsError, setStatsError] = useState(false);
   // Same picker the Usage page carries, so a window means the same thing on both (T203),
@@ -37,7 +39,7 @@ export function OverviewPage() {
   }, []);
 
   const [modelCount, setModelCount] = useState(0);
-  const [projectCount, setProjectCount] = useState(0);
+  const [routerCount, setRouterCount] = useState(0);
   const [savingsMetric, setSavingsMetric] = useState<SavingsMetric>('cost');
   const chartTheme = useChartTheme();
 
@@ -60,7 +62,7 @@ export function OverviewPage() {
 
   useEffect(() => {
     getModels().then(m => setModelCount(m.length)).catch(console.error);
-    getProjects().then(p => setProjectCount(p.length)).catch(console.error);
+    getRouters().then(p => setRouterCount(p.length)).catch(console.error);
   }, []);
 
   const barData = useMemo(() => {
@@ -96,15 +98,15 @@ export function OverviewPage() {
   }, [stats]);
 
   if (!stats) {
-    if (statsError) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No permission to view usage data.</div>;
+    if (statsError) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>{t('overview.noPermission')}</div>;
     return <div className="loading-center"><div className="spinner" /></div>;
   }
 
   return (
     <>
       <div className="page-header">
-        <h1>Overview</h1>
-        <p>Usage summary and cost breakdown</p>
+        <h1>{t('overview.title')}</h1>
+        <p>{t('overview.subtitle')}</p>
       </div>
       <div className="page-body">
 
@@ -127,21 +129,21 @@ export function OverviewPage() {
             inputTokens={totalIn} outputTokens={totalOut} cachedTokens={totalCached}
             {...(stats.savings ? { savings: stats.savings } : {})}
             to="/dashboard/usage" />
-          <StatCard icon={<Activity size={18} />} label="Total Calls" accentColor="#5A90F8"
+          <StatCard icon={<Activity size={18} />} label={t('overview.stats.totalCalls')} accentColor="#5A90F8"
             value={stats.summary.totalCalls}
-            sub={`${stats.summary.routingCalls} routing · ${stats.summary.completionCalls} completion`}
+            sub={t('overview.stats.callsBreakdown', { routing: stats.summary.routingCalls, completion: stats.summary.completionCalls })}
             to="/dashboard/usage" />
-          <StatCard icon={<TrendingUp size={18} />} label="Success Rate" accentColor="#10B981"
+          <StatCard icon={<TrendingUp size={18} />} label={t('overview.stats.successRate')} accentColor="#10B981"
             value={stats.summary.totalCalls > 0
               ? `${((stats.summary.successCalls / stats.summary.totalCalls) * 100).toFixed(1)}%`
               : '—'}
-            sub="of all requests" to="/dashboard/usage" />
-          <StatCard icon={<XCircle size={18} />} label="Errors" accentColor="#EF4444" valueColor="#EF4444"
-            value={stats.summary.errorCalls} sub="failed requests" to="/dashboard/usage" />
-          <StatCard icon={<Boxes size={18} />} label="Models" accentColor="#8B5CF6"
-            value={modelCount} sub="registered" to="/dashboard/models" />
-          <StatCard icon={<FolderOpen size={18} />} label="Projects" accentColor="#A78BFA"
-            value={projectCount} sub="active" to="/dashboard/projects" />
+            sub={t('overview.stats.ofAllRequests')} to="/dashboard/usage" />
+          <StatCard icon={<XCircle size={18} />} label={t('overview.stats.errors')} accentColor="#EF4444" valueColor="#EF4444"
+            value={stats.summary.errorCalls} sub={t('overview.stats.failedRequests')} to="/dashboard/usage" />
+          <StatCard icon={<Boxes size={18} />} label={t('overview.stats.models')} accentColor="#8B5CF6"
+            value={modelCount} sub={t('overview.stats.registered')} to="/dashboard/models" />
+          <StatCard icon={<FolderOpen size={18} />} label={t('overview.stats.routers')} accentColor="#A78BFA"
+            value={routerCount} sub={t('overview.stats.active')} to="/dashboard/routers" />
         </div>
 
         {/* What routing saved, over time (T81) */}
@@ -162,9 +164,9 @@ export function OverviewPage() {
 
           {/* Horizontal bar chart — top models by cost */}
           <div className="chart-card" style={{ marginBottom: 0 }}>
-            <h3>Cost by Model</h3>
+            <h3>{t('overview.costByModel')}</h3>
             {barData.length === 0 ? (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 8 }}>No cost recorded this period.</p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', paddingTop: 8 }}>{t('overview.noCostRecorded')}</p>
             ) : (
               <ResponsiveContainer key={dateRange.label} width="100%" height={Math.max(barData.length * 36, 120)}>
                 <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 32 }}>
@@ -192,15 +194,15 @@ export function OverviewPage() {
 
           {/* Calls by model table */}
           <div className="chart-card" style={{ marginBottom: 0 }}>
-            <h3>Calls by Model</h3>
+            <h3>{t('overview.callsByModel')}</h3>
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Model</th>
-                    <th style={{ textAlign: 'right' }}>Calls</th>
-                    <th style={{ textAlign: 'right' }}>Errors</th>
-                    <th style={{ textAlign: 'right' }}>Cost</th>
+                    <th>{t('overview.columns.model')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('overview.columns.calls')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('overview.columns.errors')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('overview.columns.cost')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -230,6 +232,7 @@ export function OverviewPage() {
  * module is enabled, same signal the sidebar entry uses.
  */
 function ConnectCard() {
+  const { t } = useTranslation();
   const enabled = useClientsEnabled();
   if (!enabled) return null;
 
@@ -241,9 +244,9 @@ function ConnectCard() {
     >
       <Terminal size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 2 }}>Connect a client</div>
+        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 2 }}>{t('overview.connectCard.title')}</div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-          Point Claude Code, Codex, Cursor and {CLIENT_REGISTRY.length - 3} more at this gateway.
+          {t('overview.connectCard.desc', { count: CLIENT_REGISTRY.length - 3 })}
         </div>
       </div>
       <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />

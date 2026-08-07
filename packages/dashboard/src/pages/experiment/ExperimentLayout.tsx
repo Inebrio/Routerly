@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Outlet, NavLink, useLocation, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Settings, Key, BarChart3 } from 'lucide-react';
 import { getExperiment, type MaskedExperiment } from '../../api';
 
 export function ExperimentLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -18,14 +20,14 @@ export function ExperimentLayout() {
     setLoading(true);
     getExperiment(id)
       .then(setExperiment)
-      .catch(e => setErr(e instanceof Error ? e.message : 'Experiment not found'))
+      .catch(e => setErr(e instanceof Error ? e.message : t('experiments.layout.errors.notFound')))
       .finally(() => setLoading(false));
   }, [id, isNew]);
 
   const tabs = [
-    { id: 'config', label: 'Configuration', icon: <Settings size={16} /> },
-    { id: 'metrics', label: 'Metrics', icon: <BarChart3 size={16} />, disabled: isNew },
-    { id: 'token', label: 'Token', icon: <Key size={16} />, disabled: isNew },
+    { id: 'config', label: t('experiments.layout.tabs.config'), icon: <Settings size={16} /> },
+    { id: 'metrics', label: t('experiments.layout.tabs.metrics'), icon: <BarChart3 size={16} />, disabled: isNew },
+    { id: 'token', label: t('experiments.layout.tabs.token'), icon: <Key size={16} />, disabled: isNew },
   ];
 
   if (err && !isNew) {
@@ -33,7 +35,7 @@ export function ExperimentLayout() {
       <div className="page-body">
         <div className="form-error">{err}</div>
         <button className="btn btn-secondary" style={{ marginTop: 16 }} onClick={() => navigate('/dashboard/experiments')}>
-          Back to Experiments
+          {t('experiments.layout.backToExperiments')}
         </button>
       </div>
     );
@@ -48,14 +50,14 @@ export function ExperimentLayout() {
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 24 }}>
-          <button className="btn-icon" onClick={() => navigate('/dashboard/experiments')} title="Back to experiments">
+          <button className="btn-icon" onClick={() => navigate('/dashboard/experiments')} title={t('experiments.layout.backToExperiments')}>
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 style={{ margin: 0 }}>{isNew ? 'New Experiment' : experiment?.name || 'Loading...'}</h1>
+            <h1 style={{ margin: 0 }}>{isNew ? t('experiments.layout.newExperiment') : experiment?.name || t('experiments.layout.loading')}</h1>
             {!isNew && experiment && (
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Experiment ID: <span className="mono">{experiment.id}</span>
+                {t('experiments.layout.experimentId')} <span className="mono">{experiment.id}</span>
               </p>
             )}
           </div>
@@ -80,7 +82,7 @@ export function ExperimentLayout() {
                     cursor: 'not-allowed',
                     borderBottom: '2px solid transparent',
                   }}
-                  title="Save the experiment first to unlock this tab"
+                  title={t('experiments.layout.disabledTabTitle')}
                 >
                   {tab.icon} {tab.label}
                 </div>

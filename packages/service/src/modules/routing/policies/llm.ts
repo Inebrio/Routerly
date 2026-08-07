@@ -1,4 +1,4 @@
-import type { ModelConfig, ProjectConfig } from '@routerly/shared';
+import type { ModelConfig, RouterConfig } from '@routerly/shared';
 import { readConfig } from '../../config/loader.js';
 import { listEffectiveModels } from '../../provider/list-effective.js';
 import { llmChat, BudgetExceededError } from '../../reverse-proxy/execute.js';
@@ -195,7 +195,7 @@ async function repairRoutingResponse(
   }
 }
 
-export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, projectId, token, traceId, conversationId }) => {
+export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, emit, routerId, token, traceId, conversationId }) => {
   log?.info(
     {
       messageCount: request.messages?.length ?? 0,
@@ -213,9 +213,9 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
 
   // routing: only models on enabled connections may be selected
   const allModels: ModelConfig[] = await listEffectiveModels();
-  const allProjects: ProjectConfig[] = await readConfig('projects');
-  const project = allProjects.find((p: ProjectConfig) => p.id === projectId)
-    ?? { id: projectId ?? '', models: [], name: '', tokens: [], members: [] };
+  const allRouters: RouterConfig[] = await readConfig('routers');
+  const router = allRouters.find((p: RouterConfig) => p.id === routerId)
+    ?? { id: routerId ?? '', models: [], name: '', tokens: [], members: [] };
 
   const fallbackModelIds: string[] = config?.fallbackModelIds ?? [];
   const candidateModelIds = [routingModelId, ...fallbackModelIds];
@@ -224,7 +224,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   const limitsMap: Record<string, LimitSnapshot[]> = {};
   await Promise.all(
     candidates.map(async c => {
-      const snapshots = await getLimitUsageSnapshot(c.model, project, token);
+      const snapshots = await getLimitUsageSnapshot(c.model, router, token);
       if (snapshots.length > 0) limitsMap[c.model.id as string] = snapshots;
     }),
   );
@@ -249,9 +249,9 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
 
   // Memory: recupera le ultime N decisioni di routing per questa conversazione
   let previousDecisions: { model: string }[] | undefined;
-  if (config?.memory === true && conversationId && projectId) {
+  if (config?.memory === true && conversationId && routerId) {
     const memoryCount: number = typeof config?.memoryCount === 'number' && config.memoryCount > 0 ? config.memoryCount : 5;
-    const history = getRoutingHistory(projectId, conversationId, memoryCount);
+    const history = getRoutingHistory(routerId, conversationId, memoryCount);
     previousDecisions = history.length > 0 ? history : undefined;
   }
 
@@ -286,8 +286,8 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
       : { ...model, capabilities: { ...model.capabilities, thinking: false } };
 
     const ctx: LLMCallContext = {
-      projectId: projectId ?? '',
-      project,
+      routerId: routerId ?? '',
+      router,
       callType: 'routing' as const,
       ...(token !== undefined ? { token } : {}),
       ...(traceId !== undefined ? { traceId } : {}),
