@@ -208,5 +208,5 @@ export async function forwardToRouter(
       return false;
     }
     return ctx.result !== undefined; // success: json / stream / passthrough, byte-identical (AC2)
-  }, () => setOrchestratorExhausted(ctx));
+  }, () => setOrchestratorExhausted(ctx), { presorted: true }); // `ordered` is already quality-ranked — don't let the loop re-sort by raw weight
 }

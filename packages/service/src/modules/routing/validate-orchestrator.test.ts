@@ -16,12 +16,22 @@ describe('validateOrchestratorCandidates', () => {
     })).toBeNull()
   })
 
-  it('rejects an orchestrator with no candidates (EC2)', () => {
+  it('allows a brand-new orchestrator to be created with zero candidates (RTR-09 2-step flow)', () => {
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator', candidates: undefined, routers: [],
-    })).toBe('An orchestrator needs at least one candidate router')
+    })).toBeNull()
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator', candidates: [], routers: [],
+    })).toBeNull()
+  })
+
+  it('rejects editing an existing orchestrator down to zero candidates (EC2, update)', () => {
+    const routers = [router('orc-1', 'orchestrator')]
+    expect(validateOrchestratorCandidates({
+      kind: 'orchestrator', candidates: undefined, routers, selfId: 'orc-1',
+    })).toBe('An orchestrator needs at least one candidate router')
+    expect(validateOrchestratorCandidates({
+      kind: 'orchestrator', candidates: [], routers, selfId: 'orc-1',
     })).toBe('An orchestrator needs at least one candidate router')
   })
 

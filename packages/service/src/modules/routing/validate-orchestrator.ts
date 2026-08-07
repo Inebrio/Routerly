@@ -14,12 +14,22 @@ export interface ValidateOrchestratorCandidatesParams {
  * Validates an Orchestrator's candidate list at write time (EC2, AC3, AC4).
  * Returns the 400 error message to send, or `null` when the candidates are
  * valid (or `kind !== 'orchestrator'`, where candidates are not read at all).
+ *
+ * Zero candidates is only valid on create (no `selfId`) — the RTR-09 2-step
+ * flow creates an orchestrator with name+timeout only, then adds candidates
+ * afterward via PUT. Any write that carries `selfId` (i.e. an update to an
+ * existing orchestrator) still requires at least one candidate.
  */
 export function validateOrchestratorCandidates(params: ValidateOrchestratorCandidatesParams): string | null {
   const { kind, candidates, routers, selfId } = params;
   if (kind !== 'orchestrator') return null;
 
   if (!candidates || candidates.length === 0) {
+    // `selfId` is only ever passed on PUT (the router already exists); a brand-new
+    // orchestrator (POST, no `selfId` yet) is allowed to start empty — the RTR-09
+    // 2-step flow creates it with name+timeout only and adds candidates afterward
+    // via a PUT that does carry `selfId`, where this rule still applies.
+    if (selfId === undefined) return null;
     return 'An orchestrator needs at least one candidate router';
   }
 

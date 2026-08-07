@@ -1156,14 +1156,13 @@
       "count": "1 router",
       "count_other": "{{count}} routers",
       "newRouter": "New Router",
+      "newOrchestrator": "New Orchestrator",
+      "newPassthrough": "New Passthrough",
+      "tabs": {
+        "all": "All"
+      },
       "empty": "No routers yet.",
       "emptyFiltered": "No routers of this kind.",
-      "tabs": {
-        "all": "All",
-        "router": "Router",
-        "orchestrator": "Orchestrator",
-        "passthrough": "Passthrough"
-      },
       "columns": {
         "name": "Name",
         "tokens": "Tokens",
@@ -1195,6 +1194,7 @@
       "backToRouters": "Back to Routers",
       "backToRoutersTitle": "Back to routers",
       "newRouter": "New Router",
+      "newKind": "New {{kind}}",
       "loading": "Loading...",
       "routerId": "Router ID:",
       "saveFirstHint": "Save the router first to unlock this tab"
@@ -1294,10 +1294,11 @@
       },
       "form": {
         "kind": "Kind",
-        "kindAriaLabel": "Router Kind",
         "kindFixedHint": "Fixed once the router is created.",
         "routerName": "Router Name",
         "routerNamePlaceholder": "My App",
+        "passthroughPath": "Path",
+        "passthroughPathHint": "Becomes part of the URL clients call: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Advanced settings",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration. Set it to 0 to wait as long as the provider takes.",
@@ -1305,7 +1306,9 @@
         "traceContentHint": "Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also record the prompts sent and the answers received. They are stored with the usage record and visible to anyone who can read reports.",
         "capturePromptsAndAnswers": "Capture prompts and answers",
         "saveChanges": "Save Changes",
-        "createRouter": "Create Router"
+        "createRouter": "Create Router",
+        "createOrchestrator": "Create Orchestrator",
+        "createPassthrough": "Create Passthrough"
       }
     },
     "orchestrator": {

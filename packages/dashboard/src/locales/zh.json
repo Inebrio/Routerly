@@ -1159,10 +1159,7 @@
       "empty": "还没有路由器。",
       "emptyFiltered": "没有此类型的路由器。",
       "tabs": {
-        "all": "全部",
-        "router": "路由器",
-        "orchestrator": "协调器",
-        "passthrough": "通道"
+        "all": "全部"
       },
       "columns": {
         "name": "名称",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "删除此路由器？",
       "errors": {
         "deleteFailed": "删除路由器出错"
-      }
+      },
+      "newOrchestrator": "新的编排器",
+      "newPassthrough": "新的直通"
     },
     "layout": {
       "notFound": "未找到路由器",
@@ -1197,7 +1196,8 @@
       "newRouter": "新建路由器",
       "loading": "加载中...",
       "routerId": "路由器ID:",
-      "saveFirstHint": "先保存路由器以解锁此标签页"
+      "saveFirstHint": "先保存路由器以解锁此标签页",
+      "newKind": "新的{{kind}}"
     },
     "dashboard": {
       "period": "周期",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "类型",
-        "kindAriaLabel": "路由器类型",
         "kindFixedHint": "路由器创建后固定。",
         "routerName": "路由器名称",
         "routerNamePlaceholder": "我的应用",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "跟踪总是记录元数据(模型、分数、令牌、成本、延迟)。启用此选项也可以记录发送的提示和接收的答案。它们与使用记录一起存储，对任何可以读取报告的人可见。",
         "capturePromptsAndAnswers": "捕获提示和答案",
         "saveChanges": "保存更改",
-        "createRouter": "创建路由器"
+        "createRouter": "创建路由器",
+        "passthroughPath": "路径",
+        "passthroughPathHint": "成为客户端调用的 URL 的一部分: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "创建编排器",
+        "createPassthrough": "创建直通"
       }
     },
     "orchestrator": {

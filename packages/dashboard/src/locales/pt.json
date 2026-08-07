@@ -1159,10 +1159,7 @@
       "empty": "Nenhum router ainda.",
       "emptyFiltered": "Nenhum roteador deste tipo.",
       "tabs": {
-        "all": "Todos",
-        "router": "Roteador",
-        "orchestrator": "Orquestrador",
-        "passthrough": "Passagem direta"
+        "all": "Todos"
       },
       "columns": {
         "name": "Nome",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Eliminar este router?",
       "errors": {
         "deleteFailed": "Erro ao eliminar router"
-      }
+      },
+      "newOrchestrator": "Novo Orquestrador",
+      "newPassthrough": "Novo Passthrough"
     },
     "layout": {
       "notFound": "Router não encontrado",
@@ -1197,7 +1196,8 @@
       "newRouter": "Novo Router",
       "loading": "A carregar...",
       "routerId": "ID do Router:",
-      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador"
+      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador",
+      "newKind": "Novo {{kind}}"
     },
     "dashboard": {
       "period": "Período",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Tipo",
-        "kindAriaLabel": "Tipo de Router",
         "kindFixedHint": "Fixo uma vez o router é criado.",
         "routerName": "Nome do Router",
         "routerNamePlaceholder": "Minha Aplicação",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Os rastreamentos sempre registam metadados (modelos, pontuações, tokens, custo, latência). Ative isto também para registar os prompts enviados e as respostas recebidas. Armazenam-se com o registo de utilização e são visíveis para qualquer um que possa ler relatórios.",
         "capturePromptsAndAnswers": "Capturar prompts e respostas",
         "saveChanges": "Guardar Alterações",
-        "createRouter": "Criar Router"
+        "createRouter": "Criar Router",
+        "passthroughPath": "Caminho",
+        "passthroughPathHint": "Torna-se parte da URL chamada pelos clientes: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Criar Orquestrador",
+        "createPassthrough": "Criar Passthrough"
       }
     },
     "orchestrator": {

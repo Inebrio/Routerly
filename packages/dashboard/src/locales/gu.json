@@ -1159,10 +1159,7 @@
       "empty": "હજુ કોઈ રાઉટર્સ નથી.",
       "emptyFiltered": "આ પ્રકારનો કોઈ રાઉટર નથી.",
       "tabs": {
-        "all": "બધું",
-        "router": "રાઉટર",
-        "orchestrator": "ઓર્કેસ્ટ્રેટર",
-        "passthrough": "પાસથ્રુ"
+        "all": "બધું"
       },
       "columns": {
         "name": "નામ",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "આ રાઉટર દૂર કરો?",
       "errors": {
         "deleteFailed": "રાઉટર દૂર કરવામાં ભૂલ"
-      }
+      },
+      "newOrchestrator": "નવો ઓર્કેસ્ટ્રેટર",
+      "newPassthrough": "નવો પાસથ્રુ"
     },
     "layout": {
       "notFound": "રાઉટર મળી નથી",
@@ -1197,7 +1196,8 @@
       "newRouter": "નવો રાઉટર",
       "loading": "લોડ કરી રહ્યા છીએ...",
       "routerId": "રાઉટર ID:",
-      "saveFirstHint": "આ ટેબ અનલૉક કરવા માટે રાઉટર પ્રથમ સાચવો"
+      "saveFirstHint": "આ ટેબ અનલૉક કરવા માટે રાઉટર પ્રથમ સાચવો",
+      "newKind": "નવો {{kind}}"
     },
     "dashboard": {
       "period": "સમયગાળો",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "પ્રકાર",
-        "kindAriaLabel": "રાઉટર પ્રકાર",
         "kindFixedHint": "રાઉટર બનાવ્યા એક બાર નિશ્ચિત.",
         "routerName": "રાઉટર નામ",
         "routerNamePlaceholder": "મારી એપ",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "ટ્રેસ્ સેધમાં મેટાડેટા (મોડલ્સ, સ્કોર્સ, ટોકન્સ, ખર્ચ, વિલંબ) મહત્ત્વપૂર્ણ છે. આ તમે પણ મોકલેલ પ્રોમ્પ્ટ્સ અને પ્રાપ્ત જવાબો રેકોર્ડ કરવા માટે સક્ષમ કરો. તે ઉપયોગ રેકોર્ડ સાથે સંગ્રહિત અને કોઈ પણ વાંચી શકે છે અહેવાલો રીપોર્ટ.",
         "capturePromptsAndAnswers": "પ્રોમ્પ્ટ્સ અને જવાબો કેપ્ચર કરો",
         "saveChanges": "પરિવર્તનો સાચવો",
-        "createRouter": "રાઉટર બનાવો"
+        "createRouter": "રાઉટર બનાવો",
+        "passthroughPath": "પાથ",
+        "passthroughPathHint": "ક્લાયેન્ટ્સ જે URL કૉલ કરે તેનો ભાગ બની જાય: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ઓર્કેસ્ટ્રેટર બનાવો",
+        "createPassthrough": "પાસથ્રુ બનાવો"
       }
     },
     "orchestrator": {

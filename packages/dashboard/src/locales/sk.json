@@ -1159,10 +1159,7 @@
       "empty": "Zatiaľ nie sú žiadne smerovacie moduly.",
       "emptyFiltered": "Žiadne smerovače tohto typu.",
       "tabs": {
-        "all": "Všetky",
-        "router": "Smerovač",
-        "orchestrator": "Orchester",
-        "passthrough": "Priechod"
+        "all": "Všetky"
       },
       "columns": {
         "name": "Názov",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Odstrániť tento smerovací modul?",
       "errors": {
         "deleteFailed": "Chyba pri odstraňovaní smerovaciho modulu"
-      }
+      },
+      "newOrchestrator": "Nový Orchestrator",
+      "newPassthrough": "Nový Passthrough"
     },
     "layout": {
       "notFound": "Smerovací modul sa nenašiel",
@@ -1197,7 +1196,8 @@
       "newRouter": "Nový smerovací modul",
       "loading": "Načítavanie...",
       "routerId": "ID smerovaciho modulu:",
-      "saveFirstHint": "Najskôr uložte smerovací modul, aby ste odomkli túto kartu"
+      "saveFirstHint": "Najskôr uložte smerovací modul, aby ste odomkli túto kartu",
+      "newKind": "Nový {{kind}}"
     },
     "dashboard": {
       "period": "Perioda",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Druh",
-        "kindAriaLabel": "Druh smerovaciho modulu",
         "kindFixedHint": "Fixné po vytvorení smerovaciho modulu.",
         "routerName": "Názov smerovaciho modulu",
         "routerNamePlaceholder": "Moja aplikácia",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Stopy vždy zaznamenávajú metaúdaje (modely, skóre, tokeny, náklady, latencie). Zapnite to aj na zaznamenávanie odoslaných výziev a prijatých odpovedí. Sú uložené so záznamom používania a viditeľné pre kohokoľvek, kto môže čítať správy.",
         "capturePromptsAndAnswers": "Zachytávať výzvy a odpovede",
         "saveChanges": "Uložiť zmeny",
-        "createRouter": "Vytvoriť smerovací modul"
+        "createRouter": "Vytvoriť smerovací modul",
+        "passthroughPath": "Cesta",
+        "passthroughPathHint": "Stáva sa súčasťou URL adresy, ktorú volajú klienti: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Vytvoriť Orchestrator",
+        "createPassthrough": "Vytvoriť Passthrough"
       }
     },
     "orchestrator": {

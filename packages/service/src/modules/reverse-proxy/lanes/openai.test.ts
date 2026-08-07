@@ -857,6 +857,27 @@ describe('openai:attempt', () => {
     )
   })
 
+  it('tries candidates in weight-descending order regardless of input array order (B2: plain-Router path unaffected by the Orchestrator presorted fix)', async () => {
+    const models: ModelConfig[] = [
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+      { id: 'model-b', name: 'model-b', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ]
+    await seedModels(models)
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute(fakeUpstream())
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'openai', stream: false, log: makeLog(),
+      router: { id: 'p1' }, traceId: 't1',
+      request: { model: 'm', messages: [] },
+      // Lower weight listed first in the input array — the loop must still re-sort and
+      // try model-b (weight 5) first, exactly as before the Orchestrator's `presorted` opt-out.
+      candidates: [{ model: 'model-a', weight: 1 }, { model: 'model-b', weight: 5 }],
+    } as unknown as ProxyContext
+    await openaiAttempt.run(ctx)
+    expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
+  })
+
   it('all candidates exhausted, non-streaming: returns a 503 block and emits routing.no_candidates', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },

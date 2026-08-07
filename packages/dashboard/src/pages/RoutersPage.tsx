@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, FolderOpen, Pencil } from 'lucide-react';
 import { getRouters, deleteRouter, type Router, type RouterKind } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../AuthContext';
 
 type KindTab = 'all' | RouterKind;
-
-const KIND_TABS: { key: KindTab; labelKey: string }[] = [
-  { key: 'all',          labelKey: 'routers.list.tabs.all' },
-  { key: 'router',       labelKey: 'routers.list.tabs.router' },
-  { key: 'orchestrator', labelKey: 'routers.list.tabs.orchestrator' },
-  { key: 'passthrough',  labelKey: 'routers.list.tabs.passthrough' },
-];
+const KIND_TABS: KindTab[] = ['all', 'router', 'orchestrator', 'passthrough'];
 
 export function RoutersPage() {
   const { t } = useTranslation();
@@ -24,11 +18,19 @@ export function RoutersPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [activeTab, setActiveTab] = useState<KindTab>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = (KIND_TABS.includes(searchParams.get('tab') as KindTab) ? searchParams.get('tab') : 'all') as KindTab;
+  const setTab = (next: KindTab) => setSearchParams(next === 'all' ? {} : { tab: next }, { replace: true });
+  const visibleRouters = tab === 'all' ? routers : routers.filter(r => (r.kind ?? 'router') === tab);
 
-  // Absent kind means the pre-RTR-02 default: a plain router.
-  const kindOf = (r: Router): RouterKind => r.kind ?? 'router';
-  const visibleRouters = activeTab === 'all' ? routers : routers.filter(r => kindOf(r) === activeTab);
+  const tabStyle = (target: KindTab): CSSProperties => ({
+    padding: '0 4px 12px',
+    fontSize: '0.9rem', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer',
+    color: tab === target ? 'var(--primary)' : 'var(--text-secondary)',
+    borderBottom: tab === target ? '2px solid var(--primary)' : '2px solid transparent',
+    transition: 'color 0.15s',
+    marginBottom: -1,
+  });
 
   useEffect(() => { load(); }, []);
 
@@ -54,58 +56,40 @@ export function RoutersPage() {
     });
   }
 
+  const NEW_BUTTON: Record<RouterKind, { label: string; path: string }> = {
+    router: { label: t('routers.list.newRouter'), path: '/dashboard/routers/new/router' },
+    orchestrator: { label: t('routers.list.newOrchestrator'), path: '/dashboard/routers/new/orchestrator' },
+    passthrough: { label: t('routers.list.newPassthrough'), path: '/dashboard/routers/new/passthrough' },
+  };
+  const newButton = tab === 'all' ? null : NEW_BUTTON[tab];
+
   return (
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
         <h1>{t('routers.list.title')}</h1>
         <p>{t('routers.list.subtitle')}</p>
-
-        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 16 }}>
-          {KIND_TABS.map(tab => {
-            const count = tab.key === 'all' ? routers.length : routers.filter(r => kindOf(r) === tab.key).length;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: '0 4px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                  borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-                  background: 'none',
-                  border: 'none',
-                  borderRadius: 0,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  marginBottom: -1,
-                }}
-              >
-                {t(tab.labelKey)}
-                <span className="badge badge-neutral">{count}</span>
-              </button>
-            );
-          })}
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 12 }}>
+          {KIND_TABS.map(k => (
+            <button key={k} style={tabStyle(k)} onClick={() => setTab(k)}>
+              {k === 'all' ? t('routers.list.tabs.all') : t(`routers.general.kind.${k}.label`)}
+            </button>
+          ))}
         </div>
       </div>
       {err && <div className="form-error" style={{ margin: '0 20px' }}>{err}</div>}
-      <div className="page-body">
+      <div className="page-body" style={{ paddingTop: 24 }}>
         <div className="toolbar">
           <span className="toolbar-title">{visibleRouters.length === 1 ? t('routers.list.count') : t('routers.list.count_other', { count: visibleRouters.length })}</span>
-          {canWrite && (
-            <button className="btn btn-primary" onClick={() => navigate('/dashboard/routers/new')}>
-              <Plus size={16} /> {t('routers.list.newRouter')}
+          {canWrite && newButton && (
+            <button className="btn btn-primary" onClick={() => navigate(newButton.path)}>
+              <Plus size={16} /> {newButton.label}
             </button>
           )}
         </div>
 
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
-        ) : routers.length === 0 ? (
+        ) : visibleRouters.length === 0 ? (
           <div className="empty-state"><FolderOpen size={40} /><p>{t('routers.list.empty')}</p></div>
         ) : visibleRouters.length === 0 ? (
           <div className="empty-state"><FolderOpen size={40} /><p>{t('routers.list.emptyFiltered')}</p></div>

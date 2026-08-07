@@ -1159,10 +1159,7 @@
       "empty": "Belum ada router.",
       "emptyFiltered": "Tidak ada router jenis ini.",
       "tabs": {
-        "all": "Semua",
-        "router": "Router",
-        "orchestrator": "Orkestrasi",
-        "passthrough": "Terusan"
+        "all": "Semua"
       },
       "columns": {
         "name": "Nama",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Hapus router ini?",
       "errors": {
         "deleteFailed": "Kesalahan menghapus router"
-      }
+      },
+      "newOrchestrator": "Orchestrator Baru",
+      "newPassthrough": "Passthrough Baru"
     },
     "layout": {
       "notFound": "Router tidak ditemukan",
@@ -1197,7 +1196,8 @@
       "newRouter": "Router Baru",
       "loading": "Memuat...",
       "routerId": "ID Router:",
-      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini"
+      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini",
+      "newKind": "{{kind}} Baru"
     },
     "dashboard": {
       "period": "Periode",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Jenis",
-        "kindAriaLabel": "Jenis Router",
         "kindFixedHint": "Tetap setelah router dibuat.",
         "routerName": "Nama Router",
         "routerNamePlaceholder": "Aplikasi Saya",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Jejak selalu merekam metadata (model, skor, token, biaya, latensi). Aktifkan ini untuk juga merekam prompt yang dikirim dan jawaban yang diterima. Mereka disimpan dengan catatan penggunaan dan terlihat oleh siapa pun yang dapat membaca laporan.",
         "capturePromptsAndAnswers": "Ambil prompt dan jawaban",
         "saveChanges": "Simpan Perubahan",
-        "createRouter": "Buat Router"
+        "createRouter": "Buat Router",
+        "passthroughPath": "Jalur",
+        "passthroughPathHint": "Menjadi bagian dari URL yang dipanggil klien: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Buat Orchestrator",
+        "createPassthrough": "Buat Passthrough"
       }
     },
     "orchestrator": {

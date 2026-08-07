@@ -1159,10 +1159,7 @@
       "empty": "Walang router pa.",
       "emptyFiltered": "Walang router na ganitong uri.",
       "tabs": {
-        "all": "Lahat",
-        "router": "Router",
-        "orchestrator": "Orkestrador",
-        "passthrough": "Dumaan"
+        "all": "Lahat"
       },
       "columns": {
         "name": "Pangalan",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Burahin ang router na ito?",
       "errors": {
         "deleteFailed": "Error sa pagbura ng router"
-      }
+      },
+      "newOrchestrator": "Bagong Orchestrator",
+      "newPassthrough": "Bagong Passthrough"
     },
     "layout": {
       "notFound": "Hindi natagpuan ang router",
@@ -1197,7 +1196,8 @@
       "newRouter": "Bagong Router",
       "loading": "Nag-lo-load...",
       "routerId": "Router ID:",
-      "saveFirstHint": "I-save muna ang router upang mabuksan ang tab na ito"
+      "saveFirstHint": "I-save muna ang router upang mabuksan ang tab na ito",
+      "newKind": "Bagong {{kind}}"
     },
     "dashboard": {
       "period": "Panahon",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Uri",
-        "kindAriaLabel": "Uri ng Router",
         "kindFixedHint": "Naayos kapag nagawa na ang router.",
         "routerName": "Pangalan ng Router",
         "routerNamePlaceholder": "Aking App",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Ang mga trace ay lagi ring naitatala ang metadata (mga model, score, tokens, gastos, latency). Buksan ito upang itala din ang mga prompt na ipinadala at ang mga sagot na natanggap. Naiimbak ito kasama ng usage record at nakikita ng sinumang makakabasa ng mga report.",
         "capturePromptsAndAnswers": "Itala ang mga prompt at sagot",
         "saveChanges": "I-save ang mga Pagbabago",
-        "createRouter": "Gumawa ng Router"
+        "createRouter": "Gumawa ng Router",
+        "passthroughPath": "Landas",
+        "passthroughPathHint": "Nagiging bahagi ng URL na tinatawag ng mga kliyente: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Lumikha ng Orchestrator",
+        "createPassthrough": "Lumikha ng Passthrough"
       }
     },
     "orchestrator": {

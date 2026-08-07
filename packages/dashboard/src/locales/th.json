@@ -1159,10 +1159,7 @@
       "empty": "ยังไม่มีเราเตอร์",
       "emptyFiltered": "ไม่มีรูเตอร์ประเภทนี้",
       "tabs": {
-        "all": "ทั้งหมด",
-        "router": "รูเตอร์",
-        "orchestrator": "คอร์ดิเนเตอร์",
-        "passthrough": "ผ่านโดยตรง"
+        "all": "ทั้งหมด"
       },
       "columns": {
         "name": "ชื่อ",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "ลบเราเตอร์นี้?",
       "errors": {
         "deleteFailed": "ข้อผิดพลาดในการลบเราเตอร์"
-      }
+      },
+      "newOrchestrator": "Orchestrator ใหม่",
+      "newPassthrough": "Passthrough ใหม่"
     },
     "layout": {
       "notFound": "ไม่พบเราเตอร์",
@@ -1197,7 +1196,8 @@
       "newRouter": "เราเตอร์ใหม่",
       "loading": "กำลังโหลด...",
       "routerId": "Router ID:",
-      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้"
+      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้",
+      "newKind": "{{kind}} ใหม่"
     },
     "dashboard": {
       "period": "ช่วงเวลา",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "ชนิด",
-        "kindAriaLabel": "ประเภทเราเตอร์",
         "kindFixedHint": "คงที่เมื่อสร้างเราเตอร์",
         "routerName": "ชื่อเราเตอร์",
         "routerNamePlaceholder": "แอปของฉัน",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "ร่องรอยบันทึกข้อมูลมูลค่า (รุ่น คะแนน โทเค็น ต้นทุน ความล่าช้า) เปิดนี้ให้บันทึกพรอมต์ที่ส่งและคำตอบที่ได้รับเช่นกัน พวกเขาจัดเก็บกับเรกคอร์ดการใช้งานและมองเห็นให้ใครก็ได้ที่สามารถอ่านรายงาน",
         "capturePromptsAndAnswers": "เก็บพรอมต์และคำตอบ",
         "saveChanges": "บันทึกการเปลี่ยนแปลง",
-        "createRouter": "สร้างเราเตอร์"
+        "createRouter": "สร้างเราเตอร์",
+        "passthroughPath": "เส้นทาง",
+        "passthroughPathHint": "กลายเป็นส่วนหนึ่งของ URL ที่ไคลเอนต์เรียก: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "สร้าง Orchestrator",
+        "createPassthrough": "สร้าง Passthrough"
       }
     },
     "orchestrator": {
