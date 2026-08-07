@@ -220,10 +220,11 @@ describe('writeConfig', () => {
 
     await writeConfig('models', [] as any)
     // Seed write uses the correct empty default for an array config, not '{}'.
+    // 'models' is a SECRET_KEYS entry, so the seed is written 0600 from the start.
     expect(mockWriteFile).toHaveBeenCalledWith(
       '/test/config/models.json',
       JSON.stringify([], null, 2),
-      'utf-8',
+      { encoding: 'utf-8', mode: 0o600 },
     )
   })
 
