@@ -18,6 +18,10 @@ vi.mock('../api.js', () => ({
 
 import { makeReportCommand } from './report.js';
 
+function stripAnsi(value: string): string {
+  return value.replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '');
+}
+
 afterEach(() => vi.clearAllMocks());
 
 function setup() {
@@ -340,8 +344,9 @@ describe('report calls', () => {
       ],
     });
     const { out } = await run('calls');
-    expect(out.join('\n')).toContain('3f2b1c4d');
-    expect(out.join('\n')).toMatch(/-\s*\u2502/);
+    const rendered = stripAnsi(out.join('\n'));
+    expect(rendered).toContain('3f2b1c4d');
+    expect(rendered).toMatch(/-\s*\u2502/);
   });
 
   it('prints the caller column, defaulting legacy records to completion', async () => {
