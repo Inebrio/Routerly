@@ -18,7 +18,7 @@ const DEFAULT_WINDOW = 3
 
 /** N (turns to keep) for this context, from the step's threshold or the default. */
 function windowOf(ctx: ProxyContext): number {
-  const step = ctx.project.optimizers?.steps.find((s) => s.id === 'ccr')
+  const step = ctx.router.optimizers?.steps.find((s) => s.id === 'ccr')
   return typeof step?.threshold === 'number' && step.threshold > 0 ? step.threshold : DEFAULT_WINDOW
 }
 

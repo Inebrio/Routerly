@@ -6,8 +6,9 @@ vi.mock('./store.js', () => ({
   saveAccount: vi.fn(),
 }));
 
-import { api, apiWith } from './api.js';
+import { api, apiWith, resetPermissionCheckCache, primePermissionCheckSafeForTests } from './api.js';
 import { requireAccount, saveAccount } from './store.js';
+import type { PermissionCheckStatus } from '@routerly/shared';
 
 const mockRequireAccount = vi.mocked(requireAccount);
 const mockSaveAccount = vi.mocked(saveAccount);
@@ -21,8 +22,15 @@ const ACCOUNT = {
   // exactOptionalPropertyTypes: omit optional key rather than set to undefined
 };
 
+const SAFE_STATUS: PermissionCheckStatus = { blocked: false, bypassActive: false, unsafe: [] };
+
 beforeEach(() => {
   mockRequireAccount.mockResolvedValue(ACCOUNT);
+  // RTR-04: every test outside the "permission guard" describe below is
+  // unrelated to the permission check — prime it as already-safe so it never
+  // issues a GET /api/system/permissions and never disturbs existing fetch
+  // call counts/ordering assertions.
+  primePermissionCheckSafeForTests();
 });
 
 afterEach(() => {
@@ -293,5 +301,119 @@ describe('trySilentRefresh', () => {
     const saved = mockSaveAccount.mock.calls[0]![0];
     expect(saved.expiresAt).toBe(exp);
     exitSpy.mockRestore();
+  });
+});
+
+// ── RTR-04: config-file permission guard ────────────────────────────────────
+function jsonResponse(status: number, body: unknown): Response {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    statusText: String(status),
+    json: vi.fn().mockResolvedValue(body),
+  } as unknown as Response;
+}
+
+describe('permission guard (RTR-04)', () => {
+  beforeEach(() => {
+    // Undo the default "already safe" priming from the top-level beforeEach —
+    // these tests exercise the real GET /api/system/permissions round trip.
+    resetPermissionCheckCache();
+  });
+
+  afterEach(() => {
+    vi.doUnmock('inquirer');
+  });
+
+  it('blocked: prompts, fixes on confirm, then proceeds with the original request', async () => {
+    const blocked: PermissionCheckStatus = {
+      blocked: true,
+      bypassActive: false,
+      unsafe: [{ file: 'users', path: '/config/users.json', mode: '644', severity: 'secret' }],
+    };
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/system/permissions')) return Promise.resolve(jsonResponse(200, blocked));
+      if (url.endsWith('/api/system/permissions/fix')) return Promise.resolve(jsonResponse(200, { fixed: ['users'] }));
+      if (url.endsWith('/api/models')) return Promise.resolve(jsonResponse(200, { models: [] }));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.doMock('inquirer', () => ({ default: { prompt: vi.fn().mockResolvedValue({ confirm: true }) } }));
+
+    const result = await api<{ models: unknown[] }>('GET', '/api/models');
+
+    expect(result).toMatchObject({ models: [] });
+    const urls = fetchMock.mock.calls.map(([u]) => String(u));
+    expect(urls.some(u => u.endsWith('/api/system/permissions'))).toBe(true);
+    expect(urls.some(u => u.endsWith('/api/system/permissions/fix'))).toBe(true);
+    expect(urls.some(u => u.endsWith('/api/models'))).toBe(true);
+    // Retry sees a resolved fix; confirmation must happen before the fix call —
+    // the fix request must carry { confirm: true } per the frozen contract.
+    const fixCall = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/fix'))!;
+    const fixInit = fixCall[1] as RequestInit;
+    expect(JSON.parse(fixInit.body as string)).toEqual({ confirm: true });
+  });
+
+  it('blocked: exits 1 and never calls fix or the original request when declined', async () => {
+    const blocked: PermissionCheckStatus = {
+      blocked: true,
+      bypassActive: false,
+      unsafe: [{ file: 'users', path: '/config/users.json', mode: '644', severity: 'secret' }],
+    };
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/system/permissions')) return Promise.resolve(jsonResponse(200, blocked));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.doMock('inquirer', () => ({ default: { prompt: vi.fn().mockResolvedValue({ confirm: false }) } }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);
+
+    await expect(api('GET', '/api/models')).rejects.toThrow('exit');
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const urls = fetchMock.mock.calls.map(([u]) => String(u));
+    expect(urls.some(u => u.endsWith('/fix'))).toBe(false);
+    expect(urls.some(u => u.endsWith('/api/models'))).toBe(false);
+    exitSpy.mockRestore();
+  });
+
+  it('warnings (general severity) print once per process across multiple api() calls, never block', async () => {
+    const warned: PermissionCheckStatus = {
+      blocked: false,
+      bypassActive: false,
+      unsafe: [{ file: 'settings', path: '/config/settings.json', mode: '664', severity: 'general' }],
+    };
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/system/permissions')) return Promise.resolve(jsonResponse(200, warned));
+      return Promise.resolve(jsonResponse(200, { ok: true }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const errLines: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...a) => { errLines.push(a.map(String).join(' ')); });
+
+    await api('GET', '/api/models');
+    await api('GET', '/api/projects');
+
+    const permissionsCalls = fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/api/system/permissions')).length;
+    expect(permissionsCalls).toBe(1); // memoized: one check for the whole process, not per HTTP call
+    const warningLines = errLines.filter(l => l.includes('unsafe permissions'));
+    expect(warningLines.length).toBe(1);
+  });
+
+  it('safe/bypass (service reports blocked: false): no-op, no prompt, no warning', async () => {
+    const bypass: PermissionCheckStatus = { blocked: false, bypassActive: true, unsafe: [] };
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/system/permissions')) return Promise.resolve(jsonResponse(200, bypass));
+      if (url.endsWith('/api/models')) return Promise.resolve(jsonResponse(200, { models: [] }));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await api<{ models: unknown[] }>('GET', '/api/models');
+
+    expect(result).toMatchObject({ models: [] });
+    expect(errSpy).not.toHaveBeenCalled();
   });
 });

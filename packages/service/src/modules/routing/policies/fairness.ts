@@ -19,7 +19,7 @@ import { readUsageRecords } from '../../usage/usageStore.js';
  * Configurazione (policy.config, tutti opzionali):
  *  - windowMinutes  {number}  Finestra temporale osservata   (default: 60)
  */
-export const fairnessPolicy: PolicyFn = async ({ candidates, config, projectId }) => {
+export const fairnessPolicy: PolicyFn = async ({ candidates, config, routerId }) => {
   const windowMinutes: number = config?.windowMinutes ?? 60;
 
   const records = await readUsageRecords();
@@ -30,7 +30,7 @@ export const fairnessPolicy: PolicyFn = async ({ candidates, config, projectId }
   // Solo le chiamate con esito positivo contribuiscono al conteggio
   const recent = records.filter(
     r => new Date(r.timestamp) >= since && r.outcome === 'success'
-         && (projectId === undefined || r.projectId === projectId),
+         && (routerId === undefined || r.routerId === routerId),
   );
 
   // ── Conta chiamate per candidato ─────────────────────────────────────────

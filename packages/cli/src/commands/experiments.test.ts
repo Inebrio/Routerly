@@ -27,7 +27,7 @@ vi.mock('../store.js', () => ({
 }));
 
 import { makeExperimentsCommand } from './experiments.js';
-import type { ExperimentConfig, ExperimentMetrics, ProjectConfig } from '@routerly/shared';
+import type { ExperimentConfig, ExperimentMetrics, RouterConfig } from '@routerly/shared';
 
 afterEach(() => vi.clearAllMocks());
 
@@ -48,7 +48,7 @@ function expectExit(): ReturnType<typeof vi.spyOn> {
   return vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
 }
 
-const projects: ProjectConfig[] = [
+const routers: RouterConfig[] = [
   { id: 'p-cheap', name: 'cheap-api', models: [], timeoutMs: 2000, autoRouting: true, tokens: [], members: [], policies: [] },
   { id: 'p-premium', name: 'premium-api', models: [], timeoutMs: 2000, autoRouting: true, tokens: [], members: [], policies: [] },
 ];
@@ -60,8 +60,8 @@ const experiment: ExperimentConfig = {
   rotation: 'sticky',
   stickyKey: 'end-user',
   variants: [
-    { id: 'v-a', projectId: 'p-cheap', name: 'Cheap' },
-    { id: 'v-b', projectId: 'p-premium' },
+    { id: 'v-a', routerId: 'p-cheap', name: 'Cheap' },
+    { id: 'v-b', routerId: 'p-premium' },
   ],
   tokens: [
     { id: 't-1', token: '', tokenSnippet: 'sk-rt-abcd', createdAt: '2026-07-01T10:00:00.000Z', lastUsedAt: '2026-07-20T10:00:00.000Z' },
@@ -76,8 +76,8 @@ const metrics: ExperimentMetrics = {
   totalCalls: 120,
   ready: true,
   variants: [
-    { variantId: 'v-a', projectId: 'p-cheap', name: 'Cheap', calls: 60, errors: 0, errorRate: 0, cost: 0.6, avgCostPerCall: 0.01, inputTokens: 100, outputTokens: 200, avgLatencyMs: 900, p95LatencyMs: 1400, judgedCalls: 10, avgScore: 6.4, enoughSamples: true },
-    { variantId: 'v-b', projectId: 'p-premium', name: 'Premium', calls: 60, errors: 3, errorRate: 0.05, cost: 3, avgCostPerCall: 0.05, inputTokens: 100, outputTokens: 220, avgLatencyMs: 1500, p95LatencyMs: 2600, judgedCalls: 10, avgScore: 8.2, enoughSamples: true },
+    { variantId: 'v-a', routerId: 'p-cheap', name: 'Cheap', calls: 60, errors: 0, errorRate: 0, cost: 0.6, avgCostPerCall: 0.01, inputTokens: 100, outputTokens: 200, avgLatencyMs: 900, p95LatencyMs: 1400, judgedCalls: 10, avgScore: 6.4, enoughSamples: true },
+    { variantId: 'v-b', routerId: 'p-premium', name: 'Premium', calls: 60, errors: 3, errorRate: 0.05, cost: 3, avgCostPerCall: 0.05, inputTokens: 100, outputTokens: 220, avgLatencyMs: 1500, p95LatencyMs: 2600, judgedCalls: 10, avgScore: 8.2, enoughSamples: true },
   ],
 };
 
@@ -128,7 +128,7 @@ describe('experiments list', () => {
 
 describe('experiments show', () => {
   it('prints the configuration, the variants and the tokens', async () => {
-    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce(projects);
+    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce(routers);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'show', 'exp-1']);
     const out = lines.join('\n');
@@ -142,8 +142,8 @@ describe('experiments show', () => {
     expect(out).toContain('sk-rt-abcd');
   });
 
-  it('flags a variant whose project was deleted', async () => {
-    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce([projects[0]!]);
+  it('flags a variant whose router was deleted', async () => {
+    mockApi.mockResolvedValueOnce(experiment).mockResolvedValueOnce([routers[0]!]);
     const lines = capture();
     await makeCmd().parseAsync(['node', 'experiments', 'show', 'exp-1']);
     expect(lines.join('\n')).toContain('p-premium (deleted)');
@@ -160,24 +160,24 @@ describe('experiments show', () => {
 // ─── experiments create ────────────────────────────────────────────────────
 
 describe('experiments create', () => {
-  it('resolves the variant projects by name and prints the token once', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'sk-rt-plaintext' });
+  it('resolves the variant routers by name and prints the token once', async () => {
+    mockApi.mockResolvedValueOnce(routers).mockResolvedValueOnce({ ...experiment, token: 'sk-rt-plaintext' });
     const lines = capture();
     await makeCmd().parseAsync([
       'node', 'experiments', 'create', '--name', 'Cheap vs premium',
       '--variant', 'cheap-api:Cheap', '--variant', 'premium-api',
     ]);
-    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/projects');
+    expect(mockApi).toHaveBeenNthCalledWith(1, 'GET', '/api/routers');
     expect(mockApi).toHaveBeenNthCalledWith(2, 'POST', '/api/experiments', {
       name: 'Cheap vs premium',
-      variants: [{ projectId: 'p-cheap', name: 'Cheap' }, { projectId: 'p-premium' }],
+      variants: [{ routerId: 'p-cheap', name: 'Cheap' }, { routerId: 'p-premium' }],
     });
     const out = lines.join('\n');
     expect(out).toContain('sk-rt-plaintext');
   });
 
   it('reads the weight off the variant spec', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'x' });
+    mockApi.mockResolvedValueOnce(routers).mockResolvedValueOnce({ ...experiment, token: 'x' });
     await makeCmd().parseAsync([
       'node', 'experiments', 'create', '--name', 'Split', '--rotation', 'weighted',
       '--variant', 'cheap-api=80', '--variant', 'premium-api:Premium=20',
@@ -185,12 +185,12 @@ describe('experiments create', () => {
     expect(mockApi).toHaveBeenNthCalledWith(2, 'POST', '/api/experiments', {
       name: 'Split',
       rotation: 'weighted',
-      variants: [{ projectId: 'p-cheap', weight: 80 }, { projectId: 'p-premium', name: 'Premium', weight: 20 }],
+      variants: [{ routerId: 'p-cheap', weight: 80 }, { routerId: 'p-premium', name: 'Premium', weight: 20 }],
     });
   });
 
   it('sends the judge sample rate as a fraction', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'x' });
+    mockApi.mockResolvedValueOnce(routers).mockResolvedValueOnce({ ...experiment, token: 'x' });
     await makeCmd().parseAsync([
       'node', 'experiments', 'create', '--name', 'Judged', '--variant', 'cheap-api', '--variant', 'premium-api',
       '--judge-model', 'gpt-4o', '--criteria', 'Stays factual', '--criteria', 'Keeps the format', '--sample-rate', '20',
@@ -200,7 +200,7 @@ describe('experiments create', () => {
   });
 
   it('defaults the judge to every call when no rate is given', async () => {
-    mockApi.mockResolvedValueOnce(projects).mockResolvedValueOnce({ ...experiment, token: 'x' });
+    mockApi.mockResolvedValueOnce(routers).mockResolvedValueOnce({ ...experiment, token: 'x' });
     await makeCmd().parseAsync(['node', 'experiments', 'create', '--name', 'Judged', '--variant', 'cheap-api', '--judge-model', 'gpt-4o']);
     const [, , body] = mockApi.mock.calls[1] as [string, string, { judge: { sampleRate: number } }];
     expect(body.judge.sampleRate).toBe(1);
@@ -214,12 +214,12 @@ describe('experiments create', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
-  it('rejects an unknown project before creating anything', async () => {
-    mockApi.mockResolvedValueOnce(projects);
+  it('rejects an unknown router before creating anything', async () => {
+    mockApi.mockResolvedValueOnce(routers);
     const exitSpy = expectExit();
     await expect(makeCmd().parseAsync(['node', 'experiments', 'create', '--name', 'X', '--variant', 'ghost'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Project "ghost" not found'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Router "ghost" not found'));
     expect(mockApi).toHaveBeenCalledTimes(1);
   });
 

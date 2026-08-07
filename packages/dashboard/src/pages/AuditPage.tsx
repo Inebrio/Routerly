@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { getAuditLog } from '../api';
 import type { AuditEntry } from '../api';
@@ -26,6 +27,7 @@ function fmt(ts: string): string {
 }
 
 export function AuditPage() {
+  const { t } = useTranslation();
   const [entries, setEntries]     = useState<AuditEntry[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
@@ -53,7 +55,7 @@ export function AuditPage() {
       setEntries(resp.entries);
       setPagination(resp.pagination);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load audit log');
+      setError(e instanceof Error ? e.message : t('audit.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -74,15 +76,15 @@ export function AuditPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Period</FilterLabel>
+            <FilterLabel>{t('audit.filters.period')}</FilterLabel>
             <DateRangePicker value={dateRange} onChange={setDateRange} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 180 }}>
-            <FilterLabel>User</FilterLabel>
+            <FilterLabel>{t('audit.filters.user')}</FilterLabel>
             <input
               className="form-input"
-              placeholder="Email or user ID"
+              placeholder={t('audit.filters.userPlaceholder')}
               value={emailFilter}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
@@ -90,10 +92,10 @@ export function AuditPage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 180 }}>
-            <FilterLabel>Action</FilterLabel>
+            <FilterLabel>{t('audit.filters.action')}</FilterLabel>
             <input
               className="form-input"
-              placeholder="e.g. model:create"
+              placeholder={t('audit.filters.actionPlaceholder')}
               value={actionFilter}
               onChange={e => setAction(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
@@ -101,7 +103,7 @@ export function AuditPage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Result</FilterLabel>
+            <FilterLabel>{t('audit.filters.result')}</FilterLabel>
             <div style={{ display: 'flex', gap: 4 }}>
               {(['all', 'success', 'forbidden', 'error'] as const).map(r => (
                 <button
@@ -109,7 +111,7 @@ export function AuditPage() {
                   className={`btn btn-sm ${resultFilter === r ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setResult(r)}
                 >
-                  {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)}
+                  {t(`audit.filters.results.${r}`)}
                 </button>
               ))}
             </div>
@@ -118,7 +120,7 @@ export function AuditPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <FilterLabel>&nbsp;</FilterLabel>
             <button className="btn btn-sm btn-secondary" onClick={() => handleSearch()} disabled={loading}>
-              <RefreshCw size={13} /> Refresh
+              <RefreshCw size={13} /> {t('audit.filters.refresh')}
             </button>
           </div>
 
@@ -131,7 +133,7 @@ export function AuditPage() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : entries.length === 0 ? (
         <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0' }}>
-          No audit entries found.
+          {t('audit.empty')}
         </div>
       ) : (
         <>
@@ -139,7 +141,10 @@ export function AuditPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-secondary)' }}>
-                  {['Timestamp', 'User', 'Action', 'Endpoint', 'Result', 'Details'].map(h => (
+                  {[
+                    t('audit.columns.timestamp'), t('audit.columns.user'), t('audit.columns.action'),
+                    t('audit.columns.endpoint'), t('audit.columns.result'), t('audit.columns.details'),
+                  ].map(h => (
                     <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -172,12 +177,12 @@ export function AuditPage() {
               disabled={page <= 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
             >
-              ← Previous
+              ← {t('audit.pagination.previous')}
             </button>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Page {pagination.page} of {pagination.totalPages}
+              {t('audit.pagination.page', { page: pagination.page, totalPages: pagination.totalPages })}
               <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-                ({pagination.totalRecords} total)
+                {t('audit.pagination.total', { count: pagination.totalRecords })}
               </span>
             </span>
             <button
@@ -185,7 +190,7 @@ export function AuditPage() {
               disabled={page >= pagination.totalPages}
               onClick={() => setPage(p => p + 1)}
             >
-              Next →
+              {t('audit.pagination.next')} →
             </button>
           </div>
         </>

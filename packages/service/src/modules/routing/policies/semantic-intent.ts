@@ -39,7 +39,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
   config,
   log,
   emit,
-  projectId,
+  routerId,
   token,
   traceId,
 }) => {
@@ -114,10 +114,10 @@ export const semanticIntentPolicy: PolicyFn = async ({
     // Track the embedding API call as a routing-type usage record so it appears
     // in the dashboard alongside llm-policy routing calls.
     // The embedding model is not in models.json, so we build a synthetic ModelConfig.
-    if (projectId) {
+    if (routerId) {
       const inputPerMillion = await getEmbeddingInputCost(cfg.embedding_provider, cfg.embedding_model);
       await trackUsage({
-        projectId,
+        routerId,
         model: {
           id: cfg.embedding_model,
           name: cfg.embedding_model,
@@ -175,9 +175,9 @@ export const semanticIntentPolicy: PolicyFn = async ({
     if (!intentName) return candidateIds;
     const intentDef = cfg.intents[intentName];
     if (!intentDef) return candidateIds;
-    // Only keep models that are both in the intent pool AND in the project's candidate list.
+    // Only keep models that are both in the intent pool AND in the router's candidate list.
     const pool = new Set(intentDef.candidate_models.filter(id => candidateIds.has(id)));
-    // If the intent's candidate_models are all unknown (not in project), fall back to all.
+    // If the intent's candidate_models are all unknown (not in router), fall back to all.
     return pool.size > 0 ? pool : candidateIds;
   };
 

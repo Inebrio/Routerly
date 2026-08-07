@@ -135,7 +135,7 @@ export function computeSavings(
   let cacheCost = 0;
 
   for (const r of compared) {
-    comparedCost += r.cost;
+    comparedCost += r.cost ?? 0;
     comparedLatencyMs += r.latencyMs;
     comparedInputTokens += r.inputTokens;
     comparedOutputTokens += r.outputTokens;
@@ -220,7 +220,7 @@ const bucketKey = (timestamp: string, bucket: 'hour' | 'day'): string =>
  * Every paid baseline is priced, not only the costliest: the overview draws one
  * line per model and lets the reader turn any of them off (T100). Free models
  * are left out, a flat zero line says nothing. `baselineCost` stays the
- * costliest of them, the headline the project dashboard and the CLI already read.
+ * costliest of them, the headline the router dashboard and the CLI already read.
  *
  * Per-bucket baseline latency reuses the costliest baseline's whole-window
  * throughput (`latencyMs / comparedOutputTokens`) rather than recomputing a
@@ -262,7 +262,7 @@ export function computeSeries(
       buckets.set(key, point);
     }
     point.calls += 1;
-    point.cost += r.cost;
+    point.cost += r.cost ?? 0;
     point.inputTokens += r.inputTokens;
     point.outputTokens += r.outputTokens;
     point.cachedInputTokens += r.cachedInputTokens ?? 0;

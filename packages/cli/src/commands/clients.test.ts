@@ -102,7 +102,7 @@ const account = {
   expiresAt: Date.now() + 3_600_000,
 };
 
-const baseProject = {
+const baseRouter = {
   id: 'proj-1',
   name: 'my-api',
   models: [],
@@ -413,35 +413,35 @@ describe('clients configure', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('unknown client id -> stderr + exit 1 before any project lookup', async () => {
+  it('unknown client id -> stderr + exit 1 before any router lookup', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'clients', 'configure', 'no-such-client'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(mockApi).not.toHaveBeenCalled();
   });
 
-  it('--project not found -> stderr + exit 1', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+  it('--router not found -> stderr + exit 1', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(
-      makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'no-such-project', '--yes'])
+      makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'no-such-router', '--yes'])
     ).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
 
-  it('no projects at all -> stderr + exit 1', async () => {
+  it('no routers at all -> stderr + exit 1', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(
       makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--yes'])
     ).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('No projects found'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('No routers found'));
   });
 
-  it('prompts for project selection when --project is omitted', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+  it('prompts for router selection when --router is omitted', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('minted-token');
     claudeCodeMock.plan.mockResolvedValueOnce(fakePlan);
@@ -449,16 +449,16 @@ describe('clients configure', () => {
     claudeCodeMock.validate.mockResolvedValueOnce(fakeValidate);
     vi.doMock('inquirer', () => ({
       default: {
-        prompt: vi.fn().mockResolvedValueOnce({ projectId: 'proj-1' }),
+        prompt: vi.fn().mockResolvedValueOnce({ routerId: 'proj-1' }),
       },
     }));
     await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--yes']);
-    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1', explicitToken: undefined });
+    expect(mockAcquireToken).toHaveBeenCalledWith({ routerId: 'proj-1', explicitToken: undefined });
     vi.doUnmock('inquirer');
   });
 
   it('prompts for consent before minting unless --token/--yes is given, proceeds on confirm', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('minted-token');
     claudeCodeMock.plan.mockResolvedValueOnce(fakePlan);
@@ -470,14 +470,14 @@ describe('clients configure', () => {
       },
     }));
     const lines = collectLog();
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'my-api']);
-    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1', explicitToken: undefined });
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api']);
+    expect(mockAcquireToken).toHaveBeenCalledWith({ routerId: 'proj-1', explicitToken: undefined });
     expect(lines.join('\n')).toContain('configured');
     vi.doUnmock('inquirer');
   });
 
   it('aborts without minting or applying when consent is declined', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     vi.doMock('inquirer', () => ({
       default: {
@@ -485,7 +485,7 @@ describe('clients configure', () => {
       },
     }));
     const lines = collectLog();
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'my-api']);
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api']);
     expect(mockAcquireToken).not.toHaveBeenCalled();
     expect(claudeCodeMock.plan).not.toHaveBeenCalled();
     expect(lines.join('\n')).toContain('Aborted');
@@ -493,36 +493,36 @@ describe('clients configure', () => {
   });
 
   it('--token supplied skips the consent prompt entirely', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('explicit-token');
     claudeCodeMock.plan.mockResolvedValueOnce(fakePlan);
     claudeCodeMock.apply.mockResolvedValueOnce(fakeApply);
     claudeCodeMock.validate.mockResolvedValueOnce(fakeValidate);
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'my-api', '--token', 'explicit-token']);
-    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1', explicitToken: 'explicit-token' });
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api', '--token', 'explicit-token']);
+    expect(mockAcquireToken).toHaveBeenCalledWith({ routerId: 'proj-1', explicitToken: 'explicit-token' });
   });
 
   it('--yes supplied skips the consent prompt without a token', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('minted-token');
     claudeCodeMock.plan.mockResolvedValueOnce(fakePlan);
     claudeCodeMock.apply.mockResolvedValueOnce(fakeApply);
     claudeCodeMock.validate.mockResolvedValueOnce(fakeValidate);
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'my-api', '--yes']);
-    expect(mockAcquireToken).toHaveBeenCalledWith({ projectId: 'proj-1', explicitToken: undefined });
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api', '--yes']);
+    expect(mockAcquireToken).toHaveBeenCalledWith({ routerId: 'proj-1', explicitToken: undefined });
   });
 
   it('shows the plan before/after diff, then applies and validates', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('minted-token');
     claudeCodeMock.plan.mockResolvedValueOnce(fakePlan);
     claudeCodeMock.apply.mockResolvedValueOnce(fakeApply);
     claudeCodeMock.validate.mockResolvedValueOnce(fakeValidate);
     const lines = collectLog();
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'my-api', '--yes']);
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api', '--yes']);
     expect(claudeCodeMock.plan).toHaveBeenCalledWith({ baseUrl: account.serverUrl, token: 'minted-token', wireFormat: 'anthropic' });
     expect(claudeCodeMock.apply).toHaveBeenCalledWith(fakePlan);
     expect(claudeCodeMock.validate).toHaveBeenCalled();
@@ -534,14 +534,14 @@ describe('clients configure', () => {
   });
 
   it('outputs a parseable JSON result with --json', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('minted-token');
     claudeCodeMock.plan.mockResolvedValueOnce(fakePlan);
     claudeCodeMock.apply.mockResolvedValueOnce(fakeApply);
     claudeCodeMock.validate.mockResolvedValueOnce(fakeValidate);
     const lines = collectLog();
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--project', 'my-api', '--yes', '--json']);
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-code', '--router', 'my-api', '--yes', '--json']);
     const parsed = JSON.parse(lines.join('\n'));
     expect(parsed.plan).toEqual(fakePlan);
     expect(parsed.applied).toEqual(fakeApply);
@@ -549,11 +549,11 @@ describe('clients configure', () => {
   });
 
   it('prints manual steps with the real token for a documented client, without calling plan()', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('sk-rt-minted');
     const lines = collectLog();
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--project', 'my-api', '--yes']);
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--router', 'my-api', '--yes']);
     const out = lines.join('\n');
     expect(clineMock.plan).not.toHaveBeenCalled();
     expect(clineMock.apply).not.toHaveBeenCalled();
@@ -564,17 +564,17 @@ describe('clients configure', () => {
   });
 
   it('documented client with --json emits a parseable manual result', async () => {
-    mockApi.mockResolvedValueOnce([baseProject]);
+    mockApi.mockResolvedValueOnce([baseRouter]);
     mockRequireAccount.mockResolvedValueOnce(account);
     mockAcquireToken.mockResolvedValueOnce('sk-rt-minted');
     const lines = collectLog();
-    await makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--project', 'my-api', '--yes', '--json']);
+    await makeCmd().parseAsync(['node', 'clients', 'configure', 'cline', '--router', 'my-api', '--yes', '--json']);
     const parsed = JSON.parse(lines.join('\n'));
     expect(parsed).toMatchObject({ id: 'cline', manual: true, mode: 'llm' });
     expect(parsed.steps).toContain('http://localhost:3000/v1');
   });
 
-  it('MCP-only client prints the MCP wiring and never mints a project token', async () => {
+  it('MCP-only client prints the MCP wiring and never mints a router token', async () => {
     mockRequireAccount.mockResolvedValueOnce(account);
     const lines = collectLog();
     await makeCmd().parseAsync(['node', 'clients', 'configure', 'claude-desktop', '--yes']);

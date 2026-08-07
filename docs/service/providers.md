@@ -188,7 +188,7 @@ Credentials are encrypted at rest (`encryptCredential`/`decryptCredential`, AES-
 
 ## Timeout Handling
 
-Each adapter respects the `timeout` field in the model config (in milliseconds). If not set, it falls back to the project's `timeoutMs` (default `2000` ms, `0` disables it) — a time-to-first-token budget, not a total-duration cap. Timed-out requests are recorded as `outcome: "timeout"` in usage records and the `health` policy will penalise the model accordingly.
+Each adapter respects the `timeout` field in the model config (in milliseconds). If not set, it falls back to the router's `timeoutMs` (default `2000` ms, `0` disables it) — a time-to-first-token budget, not a total-duration cap. Timed-out requests are recorded as `outcome: "timeout"` in usage records and the `health` policy will penalise the model accordingly.
 
 ---
 

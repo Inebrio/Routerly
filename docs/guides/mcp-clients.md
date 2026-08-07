@@ -79,8 +79,8 @@ claude mcp add --transport stdio routerly -- routerly mcp serve
 
 Everything after `--` is the command Claude Code runs, untouched.
 
-Add `--scope user` to make the server available in every project instead of
-just the current one, or `--scope project` to write it into the repository's
+Add `--scope user` to make the server available in every router instead of
+just the current one, or `--scope router` to write it into the repository's
 `.mcp.json` for the whole team. Check the result with:
 
 ```bash
@@ -153,8 +153,8 @@ and `args`.
 
 ## OpenCode
 
-OpenCode reads `opencode.json` (project root, or `~/.config/opencode/opencode.json`
-for every project). Remote:
+OpenCode reads `opencode.json` (router root, or `~/.config/opencode/opencode.json`
+for every router). Remote:
 
 ```json
 {
@@ -226,8 +226,8 @@ openclaw mcp probe routerly --json
 
 ## Cursor
 
-Cursor reads `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json`
-inside a repository to scope the server to that project alone:
+Cursor reads `~/.cursor/mcp.json` for every router, or `.cursor/mcp.json`
+inside a repository to scope the server to that router alone:
 
 ```json
 {
@@ -244,7 +244,7 @@ inside a repository to scope the server to that project alone:
 
 An entry with a `url` is remote by definition, so there is no transport field
 to set. The server then appears under **Settings → Tools & Integrations →
-MCP**, where it can be toggled per project.
+MCP**, where it can be toggled per router.
 
 ---
 
@@ -322,11 +322,11 @@ curl -s http://localhost:3000/mcp \
 
 | Symptom | Cause |
 |---------|-------|
-| `401 Invalid MCP token.` | The token was revoked, mistyped, or is a project token (`sk-rt-…`) rather than an MCP token (`sk-rt-mcp-…`). |
+| `401 Invalid MCP token.` | The token was revoked, mistyped, or is a router token (`sk-rt-…`) rather than an MCP token (`sk-rt-mcp-…`). |
 | `401 MCP token expired.` | The token passed its expiry date. Create a new one. |
 | Fewer tools than expected | `tools/list` only advertises the tools your role permits. Check your role in [Users & Roles](../dashboard/users-and-roles.md). |
 | `Permission denied: … is required to call …` | Same cause, seen at call time instead of at listing time. |
-| `projectId is required: this token can reach several projects` | Pass `projectId` in the tool arguments; it is optional only when you can reach exactly one project. |
+| `routerId is required: this token can reach several routers` | Pass `routerId` in the tool arguments; it is optional only when you can reach exactly one router. |
 | The client cannot start `routerly mcp serve` | The binary is not on the app's `PATH`. Use an absolute path in `command`. |
 
 ---

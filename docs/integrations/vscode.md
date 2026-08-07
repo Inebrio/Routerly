@@ -11,10 +11,10 @@ sidebar_label: VS Code
 
 ## GitHub Copilot
 
-GitHub Copilot authenticates exclusively via **GitHub OAuth** — it sends a GitHub-issued token to the upstream server, not an `sk-rt-*` project token. Routerly expects a Bearer project token and returns **401** for any other credential, so routing Copilot through Routerly is not possible. The authentication schemes are fundamentally incompatible.
+GitHub Copilot authenticates exclusively via **GitHub OAuth** — it sends a GitHub-issued token to the upstream server, not an `sk-rt-*` router token. Routerly expects a Bearer router token and returns **401** for any other credential, so routing Copilot through Routerly is not possible. The authentication schemes are fundamentally incompatible.
 
 :::info Alternativa consigliata
-Usa [Continue](./continue) o [Cline](./cline) in VS Code. Entrambe le estensioni supportano un base URL OpenAI-compatible personalizzato e si autenticano con un project token esattamente come Routerly si aspetta.
+Usa [Continue](./continue) o [Cline](./cline) in VS Code. Entrambe le estensioni supportano un base URL OpenAI-compatible personalizzato e si autenticano con un router token esattamente come Routerly si aspetta.
 :::
 
 ---
@@ -28,7 +28,7 @@ Le estensioni che usano l'API OpenAI e accettano un base URL personalizzato funz
 | Continue | [Marketplace](https://marketplace.visualstudio.com/items?itemName=Continue.continue) | [Continue → Routerly](./continue) |
 | Cline | [Marketplace](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) | [Cline → Routerly](./cline) |
 
-Entrambe seguono lo stesso schema: imposta il **base URL** su `http://localhost:3000/v1` e l'**API key** sul tuo project token.
+Entrambe seguono lo stesso schema: imposta il **base URL** su `http://localhost:3000/v1` e l'**API key** sul tuo router token.
 
 ---
 

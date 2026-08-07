@@ -32,7 +32,7 @@ afterEach(() => vi.clearAllMocks())
 
 const adminUser: any = {
   id: 'admin-id', email: 'admin@example.com',
-  passwordHash: '$2b$12$hashed', roleId: 'admin', projectIds: [],
+  passwordHash: '$2b$12$hashed', roleId: 'admin', routerIds: [],
 }
 
 async function buildApp() {
@@ -59,7 +59,7 @@ function makeRecord(overrides: Record<string, any> = {}) {
   return {
     id: `rec-${Math.random()}`,
     timestamp: '2024-06-01T10:00:00.000Z',
-    projectId: 'p1',
+    routerId: 'p1',
     modelId: 'm1',
     inputTokens: 100,
     outputTokens: 50,
@@ -135,11 +135,11 @@ describe('GET /api/sessions', () => {
     expect(sessions[1].sessionId).toBe('s-old')
   })
 
-  it('filters by projectId query param', async () => {
+  it('filters by routerId query param', async () => {
     setupAdminAuth()
     const records = [
-      makeRecord({ sessionId: 's1', projectId: 'p1' }),
-      makeRecord({ sessionId: 's2', projectId: 'p2' }),
+      makeRecord({ sessionId: 's1', routerId: 'p1' }),
+      makeRecord({ sessionId: 's2', routerId: 'p2' }),
     ]
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -149,7 +149,7 @@ describe('GET /api/sessions', () => {
     })
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/sessions?projectId=p1', headers: adminAuthHeaders() })
+    const res = await app.inject({ method: 'GET', url: '/api/sessions?routerId=p1', headers: adminAuthHeaders() })
     await app.close()
     const { sessions } = res.json()
     expect(sessions).toHaveLength(1)

@@ -5,7 +5,7 @@ sidebar_position: 11
 
 # Dashboard: Profiles
 
-The Profiles page manages reusable configurations that any number of projects
+The Profiles page manages reusable configurations that any number of routers
 can adopt. A profile comes in one of three kinds:
 
 | Kind | What it bundles |
@@ -14,9 +14,9 @@ can adopt. A profile comes in one of three kinds:
 | **Optimizer** | the ordered list of optimizer steps and which of them are enabled |
 | **Security** | content guardrail rules and PII redaction policies |
 
-A project can be assigned one profile per kind, independently: routing from a
+A router can be assigned one profile per kind, independently: routing from a
 profile, security custom, optimizer from another profile. See
-[Projects](./projects.md#routing-tab) for the assignment controls.
+[Routers](./routers.md#routing-tab) for the assignment controls.
 
 Navigate to `/dashboard/profiles`.
 
@@ -50,7 +50,7 @@ Routerly ships these built-in profiles:
 - Optimizer: **Safe**, **Balanced**, **Aggressive**
 
 Security ships no built-in profile. Guardrails and PII policies rewrite the
-request, so a project never inherits them from a preset it did not choose: every
+request, so a router never inherits them from a preset it did not choose: every
 security profile is written by you, from scratch or by cloning one of your own.
 
 Built-in profiles cannot be edited or deleted, so their row shows a **View**
@@ -132,8 +132,8 @@ click.
   models configured on this instance
 - **PII Policies**: which entities to redact and on which target
 
-Both editors are the same ones the project Security tab uses, so a profile and
-an inline project configuration are always edited identically.
+Both editors are the same ones the router Security tab uses, so a profile and
+an inline router configuration are always edited identically.
 
 ---
 
@@ -143,8 +143,8 @@ Click **Delete** (trash icon) on a custom profile row. A confirmation dialog
 warns the action cannot be undone.
 
 Delete can fail with:
-- **In use**: a project currently has this profile assigned. Unassign it from
-  every project (switch those projects back to Custom, or assign a different
+- **In use**: a router currently has this profile assigned. Unassign it from
+  every router (switch those routers back to Custom, or assign a different
   profile) before deleting.
 - **Built-in**: built-in profiles cannot be deleted at all; the Delete button
   is not shown for them.
@@ -156,4 +156,4 @@ Delete can fail with:
 - [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles): what a routing profile is, built-in presets, selectors, fallback strategies
 - [API: Profiles](../api/management.md#profiles): endpoint reference
 - [CLI: profiles](../cli/commands.md#routerly-profiles): the same operations from the terminal
-- [Dashboard: Projects](./projects.md#routing-tab): assigning profiles to a project
+- [Dashboard: Routers](./routers.md#routing-tab): assigning profiles to a router

@@ -1,9 +1,11 @@
-import { mkdir, readFile, writeFile, rename, unlink, chmod } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, unlink, chmod, stat } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
-import type { ModelConfig, ProjectConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
+import { readUsageNdjson, writeUsageNdjson, appendUsageRecordsNdjson } from './usageNdjson.js';
+import { SECRET_KEYS } from './permission-guard.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
 export interface AuditEntry {
@@ -37,7 +39,7 @@ const DEFAULTS: Record<string, unknown> = {
     channel: 'latest',
   } satisfies Settings,
   models: [] as ModelConfig[],
-  projects: [] as ProjectConfig[],
+  routers: [] as RouterConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
   // 'provider-web' defaults DISABLED (unofficial, ToS-risk web-cookie adapters) —
@@ -59,7 +61,7 @@ const DEFAULTS: Record<string, unknown> = {
 type StoredTypeMap = {
   settings: Settings;
   models: ModelConfig[];
-  projects: ProjectConfig[];
+  routers: RouterConfig[];
   users: UserConfig[];
   roles: RoleConfig[];
   modules: ModuleRecord[];
@@ -88,7 +90,7 @@ export async function initConfigDirs(): Promise<void> {
  *
  * A transient-empty read (another process mid-write under the old, non-atomic
  * writeConfig) MUST NOT persist anything: doing so clobbered a populated file
- * with `[]` and wiped projects.json. Writes are now atomic (temp + rename), but
+ * with `[]` and wiped routers.json. Writes are now atomic (temp + rename), but
  * we also defend the read: an existing-but-empty file is re-read a couple of
  * times to ride out any racing write, and if still empty we return the default
  * IN MEMORY only — never writing it back. Only ENOENT (file truly missing,
@@ -97,6 +99,11 @@ export async function initConfigDirs(): Promise<void> {
 export async function readConfig<K extends keyof StoredTypeMap>(
   key: K,
 ): Promise<StoredTypeMap[K]> {
+  // Usage history lives in append-only NDJSON (RTR-06), not a JSON array file —
+  // delegate to its own reader instead of the generic read-modify-write path below.
+  if (key === 'usage') {
+    return (await readUsageNdjson()) as StoredTypeMap[K];
+  }
   const filePath = CONFIG_PATHS[key];
   try {
     let raw = await readFile(filePath, 'utf-8');
@@ -139,12 +146,19 @@ let tmpCounter = 0;
  * The write is atomic: data goes to a sibling temp file which is then renamed
  * over the target. rename() is atomic on POSIX, so a concurrent reader always
  * sees either the complete old file or the complete new one — never the empty,
- * truncated window that a direct writeFile() opens (and that wiped projects.json).
+ * truncated window that a direct writeFile() opens (and that wiped routers.json).
  */
 export async function writeConfig<K extends keyof StoredTypeMap>(
   key: K,
   data: StoredTypeMap[K],
 ): Promise<void> {
+  // Usage history: same NDJSON delegation as readConfig above. Still a full
+  // atomic rewrite (used by pruneOrphanUsage and the retention sweep — both
+  // occasional, off the per-request hot path), just via the NDJSON writer.
+  if (key === 'usage') {
+    await writeUsageNdjson(data as UsageRecord[]);
+    return;
+  }
   const filePath = CONFIG_PATHS[key];
 
   // Ensure parent dir exists
@@ -156,26 +170,115 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   } catch {
     // Seed with the correct empty default, not '{}', so a crash between here
     // and the rename never leaves a type-wrong placeholder on disk.
+    const seedOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
+    if ((SECRET_KEYS as readonly string[]).includes(key)) seedOptions.mode = 0o600;
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), seedOptions);
+  }
+
+  const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
+  let release: (() => Promise<void>) | undefined;
+  try {
+    // Budget bumped (5→10 retries, capped 500ms backoff) so transient lock
+    // contention on any config key rides out instead of throwing a dropped
+    // write; kept modest so a real deadlock still surfaces. Usage records no
+    // longer go through this path per-write (RTR-06: append-only NDJSON,
+    // usageNdjson.ts) — this write path is now only the occasional full
+    // rewrite (settings/projects/etc., plus usage's pruneOrphanUsage/retention
+    // sweep via writeUsageNdjson's own identical lock).
+    release = await lockfile.lock(filePath, {
+      retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
+    });
+    // Atomic publish: full content to temp, then rename over the target.
+    // Secret-tier files (SECRET_KEYS) are always written 0600. General-tier
+    // files preserve whatever mode the existing target currently has — once
+    // an operator has explicitly chmod'd a file (via permission-guard's
+    // fixPermissions()), a later writeConfig() call (e.g. the audit-log
+    // write triggered by the fix action itself) must not silently regress it
+    // back to the umask default. A file that doesn't exist yet has no mode
+    // to preserve and falls back to whatever writeFile() naturally produces.
+    let mode: number | undefined;
+    if ((SECRET_KEYS as readonly string[]).includes(key)) {
+      mode = 0o600;
+    } else {
+      try {
+        mode = (await stat(filePath)).mode & 0o777;
+      } catch {
+        // File doesn't exist yet — no mode to preserve, use the default.
+      }
+    }
+    const writeOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
+    if (mode !== undefined) writeOptions.mode = mode;
+    await writeFile(tmpPath, JSON.stringify(data, null, 2), writeOptions);
+    await rename(tmpPath, filePath);
+  } catch (err) {
+    // Best-effort cleanup of the temp file on failure (rename never ran).
+    await unlink(tmpPath).catch(() => {});
+    throw err;
+  } finally {
+    if (release) await release();
+  }
+}
+
+/**
+ * Thrown from an `updateConfig` mutator to abort the read-mutate-write cycle
+ * without persisting anything, while still carrying the HTTP status/body an
+ * API route should reply with. The lock is released (via the same
+ * try/finally as any other failure) before this propagates to the caller.
+ */
+export class ConfigUpdateAbort extends Error {
+  constructor(public readonly status: number, public readonly body: unknown) {
+    super(`config update aborted (status ${status})`);
+  }
+}
+
+/**
+ * Atomically reads, mutates and writes back one config file under a single
+ * hold of the same `proper-lockfile` lock `writeConfig` uses — closing the
+ * read-modify-write race a bare `readConfig()` ... `writeConfig()` pair left
+ * open (B2/EC4): two concurrent callers each captured their own stale
+ * in-memory copy of the array, and whichever's write landed last silently
+ * discarded the other's addition even though both requests had already been
+ * told 201/200.
+ *
+ * `mutate` receives the freshest possible read (taken after the lock is
+ * held, so no other writer can interleave) and returns the value to persist.
+ * Returning the exact same reference it was given is a no-op: signals
+ * "nothing changed" and skips the write entirely (mirrors the historical
+ * conditional-write call sites this replaces).
+ *
+ * Retries are bumped from writeConfig's 10/50-500ms: the critical section is
+ * now the read+validate+write, not just the write, so a burst of concurrent
+ * callers holds the lock slightly longer each — a wider margin avoids
+ * trading the data-loss bug for a wave of ELOCKED failures under load.
+ */
+export async function updateConfig<K extends keyof StoredTypeMap>(
+  key: K,
+  mutate: (current: StoredTypeMap[K]) => StoredTypeMap[K] | Promise<StoredTypeMap[K]>,
+): Promise<StoredTypeMap[K]> {
+  if (key === 'usage') {
+    throw new Error(`updateConfig does not support 'usage' — it is append-only NDJSON, see appendUsageRecords`);
+  }
+  const filePath = CONFIG_PATHS[key];
+  await mkdir(dirname(filePath), { recursive: true });
+  try {
+    await readFile(filePath);
+  } catch {
     await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), 'utf-8');
   }
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
   try {
-    // ponytail: whole-file read-modify-write per usage append under this global
-    // lock is O(n) per record; if write throughput ever demands it the upgrade is
-    // append-only usage writes (NDJSON append), not a bigger retry budget. Budget
-    // bumped (5→10 retries, capped 500ms backoff) so transient contention — e.g.
-    // appendUsageRecord on the request hot path — rides out instead of throwing a
-    // dropped write; kept modest so a real deadlock still surfaces.
     release = await lockfile.lock(filePath, {
-      retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
+      retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 },
     });
-    // Atomic publish: full content to temp, then rename over the target.
-    await writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+    const current = await readConfig(key);
+    const next = await mutate(current);
+    if (next === current) return next; // no-op: mutator made no change, nothing to publish
+    await writeFile(tmpPath, JSON.stringify(next, null, 2), 'utf-8');
     await rename(tmpPath, filePath);
+    return next;
   } catch (err) {
-    // Best-effort cleanup of the temp file on failure (rename never ran).
     await unlink(tmpPath).catch(() => {});
     throw err;
   } finally {
@@ -190,30 +293,31 @@ export async function appendUsageRecord(record: UsageRecord): Promise<void> {
   await appendUsageRecords([record]);
 }
 
-/** Same, for records that finish together: one read-modify-write for all of them. */
+/**
+ * Same, for records that finish together. Appends without reading or parsing
+ * any existing content (RTR-06/AC2) — cost does not grow as the history grows.
+ */
 export async function appendUsageRecords(records: UsageRecord[]): Promise<void> {
   if (process.env['ROUTERLY_SKIP_TRACKING']) return; // ponytail: env guard, skips write in e2e/test runs
   if (records.length === 0) return;
-  const existing = await readConfig('usage');
-  existing.push(...records);
-  await writeConfig('usage', existing);
+  await appendUsageRecordsNdjson(records);
 }
 
 /**
  * One-shot cleanup of orphan usage records (#77, BUG-5).
  *
- * Drops usage rows whose projectId matches no existing project — residue from
+ * Drops usage rows whose routerId matches no existing router — residue from
  * the pre-fix guardrail path which wrote records under a fictitious
- * projectId 'guardrail'. Real projects' records are kept. Only rewrites the
+ * routerId 'guardrail'. Real routers' records are kept. Only rewrites the
  * file when something was actually removed. Returns the number removed.
  */
 export async function pruneOrphanUsage(): Promise<number> {
-  const [usage, projects] = await Promise.all([
+  const [usage, routers] = await Promise.all([
     readConfig('usage'),
-    readConfig('projects'),
+    readConfig('routers'),
   ]);
-  const validIds = new Set(projects.map((p) => p.id));
-  const kept = usage.filter((r) => validIds.has(r.projectId));
+  const validIds = new Set(routers.map((r) => r.id));
+  const kept = usage.filter((r) => validIds.has(r.routerId));
   const removed = usage.length - kept.length;
   if (removed > 0) await writeConfig('usage', kept);
   return removed;

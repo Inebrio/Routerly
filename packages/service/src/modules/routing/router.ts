@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, ModelConfig, ProjectConfig, ProjectToken, ResilienceStore, RoutingCandidate, RoutingProfile } from '@routerly/shared';
+import type { ChatCompletionRequest, ModelConfig, RouterConfig, RouterToken, ResilienceStore, RoutingCandidate, RoutingProfile } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
@@ -71,11 +71,11 @@ export interface ScoringResult {
 
 export async function scoreCandidates(
   request: ChatCompletionRequest,
-  project: ProjectConfig,
+  router: RouterConfig,
   profile: RoutingProfile,
   log?: Logger,
   emit?: (entry: TraceEntry) => void,
-  token?: ProjectToken,
+  token?: RouterToken,
   traceId?: string,
   conversationId?: string,
   store?: ResilienceStore,
@@ -99,7 +99,7 @@ export async function scoreCandidates(
   // routing must only consider models on enabled connections
   const allModels: ModelConfig[] = await listEffectiveModels();
   const missingModelIds: string[] = [];
-  let candidates: CandidateModel[] = project.models
+  let candidates: CandidateModel[] = router.models
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
       if (!model) {
@@ -112,13 +112,13 @@ export async function scoreCandidates(
 
   if (missingModelIds.length > 0) {
     log?.warn(
-      { projectId: project.id, missingModelIds },
-      'routing: project references models not found in registry',
+      { routerId: router.id, missingModelIds },
+      'routing: router references models not found in registry',
     );
   }
 
   if (candidates.length === 0) {
-    throw new Error(`no_models_available: project has no resolvable models (referenced: [${project.models.map(m => m.modelId).join(', ')}])`);
+    throw new Error(`no_models_available: router has no resolvable models (referenced: [${router.models.map(m => m.modelId).join(', ')}])`);
   }
 
   // ── Pre-filtro resilienza ────────────────────────────────────────────────
@@ -145,9 +145,9 @@ export async function scoreCandidates(
 
   await Promise.all(
     candidates.map(async (c) => {
-      const allowed = await isAllowed(c.model, project, token);
+      const allowed = await isAllowed(c.model, router, token);
       if (!allowed) {
-        const violated = await getViolatedLimits(c.model, project, token);
+        const violated = await getViolatedLimits(c.model, router, token);
         excludedByLimits.push({ modelId: c.model.id, violated });
       } else {
         validCandidates.push(c);
@@ -181,7 +181,7 @@ export async function scoreCandidates(
   const intakeEntry = te('router-request', 'router:intake', {
     model: request.model,
     messageCount: request.messages?.length ?? 0,
-    projectId: project.id,
+    routerId: router.id,
     ...(excludedByLimits.length > 0
       ? {
           excludedByLimits: excludedByLimits.map(e => ({
@@ -263,7 +263,7 @@ export async function scoreCandidates(
         return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
       }
       try {
-        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), projectId: project.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}), ...(conversationId !== undefined ? { conversationId } : {}) });
+        const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), routerId: router.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}), ...(conversationId !== undefined ? { conversationId } : {}) });
         return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
@@ -361,7 +361,7 @@ export async function scoreCandidates(
 
   // When every active policy abstained (or none were configured), no policy has a
   // preference. Use random weights so the router distributes traffic uniformly over
-  // time instead of always picking the first model in the project config.
+  // time instead of always picking the first model in the router config.
   const allPoliciesAbstained = abstainedPolicies.length === successfulResults.length;
 
   const scored: ScoredCandidate[] = scoringCandidates.map(c => {
@@ -409,21 +409,21 @@ export async function scoreCandidates(
 
 export async function routeRequest(
   request: ChatCompletionRequest,
-  project: ProjectConfig,
+  router: RouterConfig,
   log?: Logger,
   emit?: (entry: TraceEntry) => void,
-  token?: ProjectToken,
+  token?: RouterToken,
   traceId?: string,
   conversationId?: string,
   store?: ResilienceStore,
 ): Promise<RouteResult> {
-  const profile = await resolveRoutingProfile(project);
-  const sc = await scoreCandidates(request, project, profile, log, emit, token, traceId, conversationId, store);
+  const profile = await resolveRoutingProfile(router);
+  const sc = await scoreCandidates(request, router, profile, log, emit, token, traceId, conversationId, store);
   if (sc.bypass) return sc.bypass;
   const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, trace: preTrace } = sc;
 
   const selectorCtx: SelectorContext = {
-    projectId: project.id,
+    routerId: router.id,
     ...(conversationId !== undefined ? { conversationId } : {}),
     allAbstained,
   };

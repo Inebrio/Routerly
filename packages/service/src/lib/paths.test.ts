@@ -28,7 +28,7 @@ describe('CONFIG_PATHS', () => {
     expect(join(base, 'data')).toBeTruthy()
     expect(join(base, 'config', 'settings.json')).toBeTruthy()
     expect(join(base, 'config', 'models.json')).toBeTruthy()
-    expect(join(base, 'config', 'projects.json')).toBeTruthy()
+    expect(join(base, 'config', 'routers.json')).toBeTruthy()
     expect(join(base, 'config', 'users.json')).toBeTruthy()
     expect(join(base, 'config', 'roles.json')).toBeTruthy()
     expect(join(base, 'data', 'usage.json')).toBeTruthy()

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface DateRange {
   from: string; // ISO datetime string, YYYY-MM-DD, or ''
@@ -175,6 +176,7 @@ interface Props {
 }
 
 export function DateRangePicker({ value, onChange }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const now = new Date();
   const [viewYear,  setViewYear]  = useState(now.getFullYear());
@@ -306,7 +308,7 @@ export function DateRangePicker({ value, onChange }: Props) {
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Calendar size={13} />
-          {value.label || 'Select period'}
+          {value.label || t('common.dateRangePicker.selectPeriod')}
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {(value.from || value.to) ? (
@@ -335,7 +337,7 @@ export function DateRangePicker({ value, onChange }: Props) {
             }}>
               {/* Section: rolling windows relative to now */}
               <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', padding: '6px 12px 2px' }}>
-                Recent
+                {t('common.dateRangePicker.recent')}
               </div>
               {/* "From now" — freezes 'from' to the clicked instant, open-ended 'to' */}
               {(() => {
@@ -387,7 +389,7 @@ export function DateRangePicker({ value, onChange }: Props) {
               <div style={{ height: 1, background: 'var(--border)', margin: '6px 12px' }} />
               {/* Section: calendar-aligned ranges */}
               <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', padding: '4px 12px 2px' }}>
-                Ranges
+                {t('common.dateRangePicker.ranges')}
               </div>
               {PRESETS.map(p => {
                 const r = p.range();
@@ -528,7 +530,7 @@ export function DateRangePicker({ value, onChange }: Props) {
               {/* Time inputs */}
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>From</label>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('common.dateRangePicker.from')}</label>
                   <input type="time" step="1" value={pendingFromTime}
                     onChange={e => { let t = e.target.value; if (t.length === 5) t += ':00'; setPendingFromTime(t || '00:00:00'); }}
                     style={{
@@ -538,7 +540,7 @@ export function DateRangePicker({ value, onChange }: Props) {
                   />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>To</label>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('common.dateRangePicker.to')}</label>
                   <input type="time" step="1" value={pendingToTime}
                     onChange={e => { let t = e.target.value; if (t.length === 5) t += ':00'; setPendingToTime(t || '23:59:59'); }}
                     style={{
@@ -553,8 +555,8 @@ export function DateRangePicker({ value, onChange }: Props) {
 
           {/* Footer */}
           <div style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button className="btn btn-secondary btn-sm" onClick={handleCancel}>Cancel</button>
-            <button className="btn btn-primary btn-sm" onClick={handleConfirm}>Apply</button>
+            <button className="btn btn-secondary btn-sm" onClick={handleCancel}>{t('common.cancel')}</button>
+            <button className="btn btn-primary btn-sm" onClick={handleConfirm}>{t('common.apply')}</button>
           </div>
         </div>
       )}

@@ -72,7 +72,7 @@ describe('ConnectPage', () => {
     const card = screen.getByText('Point any client here').closest('section')!;
     expect(card.textContent).toContain('http://localhost:3000/v1');
     expect(card.textContent).toContain('routerly/ada');
-    expect(card.querySelector('a')!.getAttribute('href')).toBe('/dashboard/projects');
+    expect(card.querySelector('a')!.getAttribute('href')).toBe('/dashboard/routers');
     // Two copy buttons: the OpenAI base URL and the Anthropic one.
     expect(card.querySelectorAll('button').length).toBe(2);
   });

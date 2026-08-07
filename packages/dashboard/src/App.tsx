@@ -1,26 +1,31 @@
+import './i18n';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings } from './api';
+import { LanguageProvider } from './LanguageContext';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getPermissionStatus } from './api';
 import type { UpdateInfo } from './api';
+import { PermissionGuardModal, type PermissionBlockedDetail } from './components/PermissionGuardModal';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { ModelsPage } from './pages/ModelsPage';
 import { ModelFormPage } from './pages/ModelFormPage';
-import { ProjectsPage } from './pages/ProjectsPage';
-import { ProjectLayout } from './pages/project/ProjectLayout';
-import { ProjectDashboardTab } from './pages/project/ProjectDashboardTab';
-import { ProjectGeneralTab } from './pages/project/ProjectGeneralTab';
-import { ProjectRoutingTab } from './pages/project/ProjectRoutingTab';
-import { ProjectOptimizerTab } from './pages/project/ProjectOptimizerTab';
-import { ProjectTokenTab } from './pages/project/ProjectTokenTab';
-import { ProjectUsersTab } from './pages/project/ProjectUsersTab';
-import { ProjectLogsTab } from './pages/project/ProjectLogsTab';
-import { ProjectSecurityTab } from './pages/project/ProjectSecurityTab';
-import { ProjectTokenCreatePage } from './pages/project/ProjectTokenCreatePage';
-import { ProjectTokenEditPage } from './pages/project/ProjectTokenEditPage';
+import { RoutersPage } from './pages/RoutersPage';
+import { RouterLayout } from './pages/router/RouterLayout';
+import { RouterDashboardTab } from './pages/router/RouterDashboardTab';
+import { RouterGeneralTab } from './pages/router/RouterGeneralTab';
+import { RouterRoutingTab } from './pages/router/RouterRoutingTab';
+import { RouterOptimizerTab } from './pages/router/RouterOptimizerTab';
+import { RouterTokenTab } from './pages/router/RouterTokenTab';
+import { RouterUsersTab } from './pages/router/RouterUsersTab';
+import { RouterLogsTab } from './pages/router/RouterLogsTab';
+import { RouterSecurityTab } from './pages/router/RouterSecurityTab';
+import { RouterOrchestratorTab } from './pages/router/RouterOrchestratorTab';
+import { RouterTokenCreatePage } from './pages/router/RouterTokenCreatePage';
+import { RouterTokenEditPage } from './pages/router/RouterTokenEditPage';
 import { UsersPage } from './pages/UsersPage';
 import { UsagePage } from './pages/UsagePage';
 import { UsageRecordPage } from './pages/UsageRecordPage';
@@ -53,14 +58,18 @@ import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, 
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
-const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
-  { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
-  { value: 'dark',  icon: <Moon size={14} />, label: 'Dark' },
-  { value: 'light', icon: <Sun size={14} />, label: 'Light' },
-];
+function useThemeOptions(): { value: Theme; icon: ReactNode; label: string }[] {
+  const { t } = useTranslation();
+  return [
+    { value: 'auto',  icon: <Monitor size={14} />, label: t('app.theme.auto') },
+    { value: 'dark',  icon: <Moon size={14} />, label: t('app.theme.dark') },
+    { value: 'light', icon: <Sun size={14} />, label: t('app.theme.light') },
+  ];
+}
 
 function ThemeSelector() {
   const { theme, setTheme } = useTheme();
+  const THEME_OPTIONS = useThemeOptions();
   return (
     <div className="theme-selector">
       {THEME_OPTIONS.map(opt => (
@@ -79,6 +88,7 @@ function ThemeSelector() {
 }
 
 function ThemeCycleButton() {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const order: Theme[] = ['auto', 'dark', 'light'];
   const icons: Record<Theme, ReactNode> = {
@@ -91,13 +101,14 @@ function ThemeCycleButton() {
     setTheme(next);
   }
   return (
-    <button className="nav-item" title={`Theme: ${theme}`} onClick={cycle}>
+    <button className="nav-item" title={t('app.themeCycle.title', { theme })} onClick={cycle}>
       {icons[theme]}
     </button>
   );
 }
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const profileRowRef = useRef<HTMLDivElement>(null);
@@ -110,19 +121,19 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   function handleLogout() { logout(); navigate('/dashboard/login'); }
 
   // One flat list, ordered the way the product is used: what you set up
-  // (Providers to Projects), then what it tells you back (Experiments, Usage),
+  // (Providers to Routers), then what it tells you back (Experiments, Usage),
   // and last the Playground, the bench you drop into to try things out. Connect
   // app is not here: it configures the tools around Routerly rather than
   // Routerly itself, so it sits in the footer next to Settings.
   const navItems = [
-    { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
-    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: 'Providers' }] : []),
-    { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
-    ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
-    { to: '/dashboard/projects', icon: <FolderOpen size={17} />, label: 'Projects' },
-    ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
-    { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
-    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
+    { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: t('app.nav.overview') },
+    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: t('app.nav.providers') }] : []),
+    { to: '/dashboard/models', icon: <Cpu size={17} />, label: t('app.nav.models') },
+    ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: t('app.nav.profiles') }] : []),
+    { to: '/dashboard/routers', icon: <FolderOpen size={17} />, label: t('app.nav.routers') },
+    ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: t('app.nav.experiments') }] : []),
+    { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: t('app.nav.usage') },
+    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: t('app.nav.playground') },
   ];
 
   return (
@@ -132,10 +143,10 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <Logo size={28} className="sidebar-logo-icon" />
           <span className="nav-label logo-full">
             <span className="logo-name-full">Routerly.ai</span>
-            <span className="logo-tag">One gateway. Any AI model. Total control.</span>
+            <span className="logo-tag">{t('app.tagline')}</span>
           </span>
         </div>
-        <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+        <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? t('app.sidebar.expand') : t('app.sidebar.collapse')}>
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </button>
       </div>
@@ -173,40 +184,53 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         </div>
         <NavLink
           to="/dashboard/settings"
-          title={collapsed ? 'Settings' : undefined}
+          title={collapsed ? t('app.nav.settings') : undefined}
           className={({ isActive }) => `nav-item${/* v8 ignore next */ isActive ? ' active' : ''}`}
         >
           <SettingsIcon size={15} />
-          <span className="nav-label">Settings</span>
+          <span className="nav-label">{t('app.nav.settings')}</span>
         </NavLink>
         {clientsEnabled && (
           <NavLink
             to="/dashboard/connect"
-            title={collapsed ? 'Connect app' : undefined}
+            title={collapsed ? t('app.nav.connectApp') : undefined}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
             <AppWindow size={15} />
-            <span className="nav-label">Connect app</span>
+            <span className="nav-label">{t('app.nav.connectApp')}</span>
           </NavLink>
         )}
         <NavLink
           to="/dashboard/help"
-          title={collapsed ? 'Help' : undefined}
+          title={collapsed ? t('app.nav.help') : undefined}
           className={({ isActive }) => `nav-item${/* v8 ignore next */ isActive ? ' active' : ''}`}
         >
           <HelpCircle size={15} />
-          <span className="nav-label">Help</span>
+          <span className="nav-label">{t('app.nav.help')}</span>
         </NavLink>
-        <button className="nav-item sign-out" title="Sign Out" onClick={handleLogout}>
+        <button className="nav-item sign-out" title={t('app.nav.signOut')} onClick={handleLogout}>
           <LogOut size={15} />
-          <span className="nav-label">Sign Out</span>
+          <span className="nav-label">{t('app.nav.signOut')}</span>
         </button>
       </div>
     </aside>
   );
 }
 
+// Permission warning banner is checked once per session, not once per page instance:
+// a module-level flag survives navigation (component remounts) but resets on full reload,
+// which is fine — a fresh reload is a fresh session-level check (EC4: no re-prompt storm).
+let permissionCheckDone = false;
+let permissionWarningFiles: string[] = [];
+
+/** Test-only: clears the module-level "checked this session" flag between test cases. */
+export function __resetPermissionCheckForTests() {
+  permissionCheckDone = false;
+  permissionWarningFiles = [];
+}
+
 function ProtectedLayout() {
+  const { t } = useTranslation();
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -218,6 +242,9 @@ function ProtectedLayout() {
   });
   const [telemetryUndecided, setTelemetryUndecided] = useState(false);
   const [requireMfa, setRequireMfa] = useState(false);
+  const [permissionWarning, setPermissionWarning] = useState<string[]>(permissionWarningFiles);
+  const [permissionWarningDismissed, setPermissionWarningDismissed] = useState(false);
+  const [permissionBlockedDetail, setPermissionBlockedDetail] = useState<PermissionBlockedDetail | null>(null);
 
   useEffect(() => {
     getSystemInfo()
@@ -226,6 +253,46 @@ function ProtectedLayout() {
         if (info.updateInfo?.available) setUpdateInfo(info.updateInfo);
       })
       .catch(/* v8 ignore next */ () => { /* non-critical */ });
+  }, []);
+
+  // AC6/AC8/EC4: fetch permission status once per session (module-level flag), show a
+  // warning banner if any general-severity file is unsafe, never block on it.
+  useEffect(() => {
+    if (permissionCheckDone) {
+      setPermissionWarning(permissionWarningFiles);
+      return;
+    }
+    permissionCheckDone = true;
+    getPermissionStatus()
+      .then(status => {
+        const warnings = status.unsafe.filter(u => u.severity === 'general').map(u => u.file);
+        permissionWarningFiles = warnings;
+        setPermissionWarning(warnings);
+      })
+      .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
+  }, []);
+
+  // AC6: any 423 from api.ts surfaces here as a blocking modal.
+  useEffect(() => {
+    function onBlocked(e: Event) {
+      const detail = (e as CustomEvent<PermissionBlockedDetail>).detail;
+      if (detail) setPermissionBlockedDetail(detail);
+    }
+    window.addEventListener('lr-permission-blocked', onBlocked);
+    return () => window.removeEventListener('lr-permission-blocked', onBlocked);
+  }, []);
+
+  function handlePermissionFixed() {
+    setPermissionBlockedDetail(null);
+    permissionWarningFiles = [];
+    setPermissionWarning([]);
+  }
+
+  // Fix can also happen from FilePermissionsSection (Settings → Security),
+  // not just this modal — pick that up too so the top banner clears either way.
+  useEffect(() => {
+    window.addEventListener('lr-permission-fixed', handlePermissionFixed);
+    return () => window.removeEventListener('lr-permission-fixed', handlePermissionFixed);
   }, []);
 
   useEffect(() => {
@@ -263,6 +330,7 @@ function ProtectedLayout() {
   }
 
   const showUpdateBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
+  const showPermissionWarning = !permissionWarningDismissed && permissionWarning.length > 0;
 
   if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
   /* v8 ignore next */
@@ -271,6 +339,36 @@ function ProtectedLayout() {
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={collapsed} onToggle={handleToggle} />
       <main className="main-content">
+        {showPermissionWarning && (
+          <div style={{
+            background: 'var(--warning-bg, #fffbeb)',
+            borderBottom: '1px solid var(--warning-border, #f6e05e)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--warning-text, #744210)',
+          }}>
+            <span>
+              {t('app.banner.permissionWarning', { files: permissionWarning.join(', ') })}
+            </span>
+            <button
+              onClick={() => setPermissionWarningDismissed(true)}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
+              title={t('app.banner.dismiss')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {permissionBlockedDetail && (
+          <PermissionGuardModal
+            detail={permissionBlockedDetail}
+            onFixed={handlePermissionFixed}
+            onCancel={() => setPermissionBlockedDetail(null)}
+          />
+        )}
         {showUpdateBanner && (
           <div style={{
             background: 'var(--warning-bg, #fffbeb)',
@@ -283,15 +381,15 @@ function ProtectedLayout() {
             color: 'var(--warning-text, #744210)',
           }}>
             <span>
-              Routerly <strong>v{updateInfo!.latestVersion}</strong> is available. You are on v{updateInfo!.currentVersion}.{' '}
+              {t('app.banner.updateAvailable', { latest: updateInfo!.latestVersion, current: updateInfo!.currentVersion })}{' '}
               <Link to="/dashboard/settings/about" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
-                Update in Settings
+                {t('app.banner.updateLink')}
               </Link>
             </span>
             <button
               onClick={dismissBanner}
               style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
-              title="Dismiss"
+              title={t('app.banner.dismiss')}
             >
               ×
             </button>
@@ -309,11 +407,11 @@ function ProtectedLayout() {
             color: 'var(--warning-text, #744210)',
           }}>
             <span>
-              Two-factor authentication is required for this instance.{' '}
+              {t('app.banner.mfaRequired')}{' '}
               <Link to="/dashboard/profile" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
-                Set up 2FA in your Profile
+                {t('app.banner.mfaLink')}
               </Link>
-              {' '}to secure your account.
+              {' '}{t('app.banner.mfaSuffix')}
             </span>
           </div>
         )}
@@ -329,28 +427,28 @@ function ProtectedLayout() {
             color: 'var(--info-text, #1e40af)',
           }}>
             <span style={{ flex: 1 }}>
-              <strong>Routerly never sends data automatically.</strong>{' '}
-              Would you like to help by sending anonymous install metrics? Only event type, version, platform, and a random ID — no personal data, no IP.{' '}
+              <strong>{t('app.banner.telemetryTitle')}</strong>{' '}
+              {t('app.banner.telemetryBody')}{' '}
               <a
                 href="https://doc.routerly.ai/next/reference/telemetry"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'inherit', textDecoration: 'underline' }}
               >
-                What is sent?
+                {t('app.banner.telemetryLink')}
               </a>
             </span>
             <button
               onClick={() => handleTelemetryChoice(true)}
               style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid currentColor', cursor: 'pointer', background: 'none', fontSize: '0.82rem', fontWeight: 600, color: 'inherit', whiteSpace: 'nowrap' }}
             >
-              Yes, help out
+              {t('app.banner.telemetryYes')}
             </button>
             <button
               onClick={() => handleTelemetryChoice(false)}
               style={{ padding: '4px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', background: 'none', fontSize: '0.82rem', opacity: 0.7, color: 'inherit', whiteSpace: 'nowrap' }}
             >
-              No thanks
+              {t('app.banner.telemetryNo')}
             </button>
           </div>
         )}
@@ -405,41 +503,42 @@ const router = createBrowserRouter([
           { path: 'connect/:id', element: <ConnectClientPage /> },
           // Kept for links minted before the section was renamed.
           { path: 'clients', element: <Navigate to="/dashboard/connect" replace /> },
-          { path: 'projects', element: <ProjectsPage /> },
+          { path: 'routers', element: <RoutersPage /> },
           {
-            path: 'projects/new',
-            element: <ProjectLayout />,
+            path: 'routers/new',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectGeneralTab /> },
+              { index: true, element: <RouterGeneralTab /> },
             ],
           },
           {
-            path: 'projects/:id/token/new',
-            element: <ProjectLayout />,
+            path: 'routers/:id/token/new',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectTokenCreatePage /> },
+              { index: true, element: <RouterTokenCreatePage /> },
             ]
           },
           {
-            path: 'projects/:id/token/:tokenId',
-            element: <ProjectLayout />,
+            path: 'routers/:id/token/:tokenId',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectTokenEditPage /> },
+              { index: true, element: <RouterTokenEditPage /> },
             ]
           },
           {
-            path: 'projects/:id',
-            element: <ProjectLayout />,
+            path: 'routers/:id',
+            element: <RouterLayout />,
             children: [
-              { index: true, element: <ProjectDashboardTab /> },
-              { path: 'dashboard', element: <ProjectDashboardTab /> },
-              { path: 'general', element: <ProjectGeneralTab /> },
-              { path: 'routing', element: <ProjectRoutingTab /> },
-              { path: 'optimizer', element: <ProjectOptimizerTab /> },
-              { path: 'token', element: <ProjectTokenTab /> },
-              { path: 'users', element: <ProjectUsersTab /> },
-              { path: 'logs', element: <ProjectLogsTab /> },
-              { path: 'security', element: <ProjectSecurityTab /> },
+              { index: true, element: <RouterDashboardTab /> },
+              { path: 'dashboard', element: <RouterDashboardTab /> },
+              { path: 'general', element: <RouterGeneralTab /> },
+              { path: 'routing', element: <RouterRoutingTab /> },
+              { path: 'optimizer', element: <RouterOptimizerTab /> },
+              { path: 'token', element: <RouterTokenTab /> },
+              { path: 'users', element: <RouterUsersTab /> },
+              { path: 'logs', element: <RouterLogsTab /> },
+              { path: 'security', element: <RouterSecurityTab /> },
+              { path: 'orchestrator', element: <RouterOrchestratorTab /> },
             ],
           },
           { path: 'experiments', element: <ExperimentsPage /> },
@@ -490,6 +589,7 @@ const router = createBrowserRouter([
           { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
           { path: 'profile/mcp', element: <ProfilePage initialTab="mcp" /> },
           { path: 'profile/mcp/new', element: <McpTokenNewPage /> },
+          { path: 'profile/preferences', element: <ProfilePage initialTab="preferences" /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],
@@ -502,7 +602,9 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <LanguageProvider>
+        <RouterProvider router={router} />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

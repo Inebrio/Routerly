@@ -1,32 +1,18 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { BookOpen, Bug, ExternalLink, Mail, ChevronDown, ChevronRight, MessageSquarePlus } from 'lucide-react';
 
-const FAQ_ITEMS = [
-  {
-    q: 'How do I connect my app to Routerly?',
-    a: `Point your OpenAI or Anthropic SDK to your Routerly instance. Replace the base URL with http://your-host:3000/v1 (OpenAI-compatible) or http://your-host:3000/anthropic (Anthropic-compatible), then use a project token as the API key. That's it — no other changes needed.`,
-  },
-  {
-    q: 'Is Routerly compatible with tools that use the OpenAI SDK?',
-    a: 'Yes. Routerly is a drop-in replacement: any tool that supports a custom base URL and API key (LangChain, LlamaIndex, Cursor, Continue, etc.) works out of the box. For Anthropic-format clients, use the /anthropic endpoint instead.',
-  },
-  {
-    q: 'How does model routing work?',
-    a: 'Each project has a routing policy that decides which model receives a request. Policies include round-robin, lowest cost, fastest response, fallback chains, and more. You configure them per project under Projects → Routing.',
-  },
-  {
-    q: 'How do I add a new AI model?',
-    a: 'Go to Models → Add model. You can add any OpenAI-compatible provider (Ollama, LM Studio, custom endpoints) or a native Anthropic endpoint. Fill in the base URL, API key, and model ID — Routerly will handle the rest.',
-  },
-  {
-    q: 'Is my data stored? Are my prompts logged?',
-    a: 'Routerly is self-hosted and stores data only on your machine (in ~/.routerly/ by default). Prompts and responses are never sent anywhere by Routerly. Request logs are stored locally and only if you enable them per-project.',
-  },
-  {
-    q: 'What\'s a project token and how is it different from a provider API key?',
-    a: 'A project token is a credential you give to your app or team members to authenticate with Routerly. It\'s separate from your provider API keys, which Routerly stores securely on the server side. Your apps never see the real provider keys.',
-  },
-];
+function getFaqItems(t: TFunction): Array<{ q: string; a: string }> {
+  return [
+    { q: t('help.faq.items.connect.q'), a: t('help.faq.items.connect.a') },
+    { q: t('help.faq.items.openaiCompat.q'), a: t('help.faq.items.openaiCompat.a') },
+    { q: t('help.faq.items.routing.q'), a: t('help.faq.items.routing.a') },
+    { q: t('help.faq.items.addModel.q'), a: t('help.faq.items.addModel.a') },
+    { q: t('help.faq.items.dataStored.q'), a: t('help.faq.items.dataStored.a') },
+    { q: t('help.faq.items.routerToken.q'), a: t('help.faq.items.routerToken.a') },
+  ];
+}
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -84,21 +70,26 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   );
 }
 
-const ISSUE_TEMPLATE = `**What happened?**
-(Describe the problem in plain words)
+function getIssueTemplate(t: TFunction): string {
+  return `**${t('help.issueTemplate.whatHappened')}**
+(${t('help.issueTemplate.whatHappenedHint')})
 
-**Steps to reproduce**
+**${t('help.issueTemplate.stepsToReproduce')}**
 1.
 2.
 
-**Expected behaviour**
-(What you expected to see)
+**${t('help.issueTemplate.expectedBehaviour')}**
+(${t('help.issueTemplate.expectedBehaviourHint')})
 
-**Routerly version**
-(Run \`routerly --version\` or check Settings → About)`;
+**${t('help.issueTemplate.version')}**
+(${t('help.issueTemplate.versionHint')})`;
+}
 
 export function HelpPage() {
+  const { t } = useTranslation();
   const [templateVisible, setTemplateVisible] = useState(false);
+  const faqItems = getFaqItems(t);
+  const issueTemplate = getIssueTemplate(t);
 
   const issueUrl = `https://github.com/Inebrio/Routerly/issues/new?labels=bug&template=bug_report.md`;
   const featureUrl = `https://github.com/Inebrio/Routerly/issues/new?labels=enhancement&template=feature_request.md`;
@@ -106,8 +97,8 @@ export function HelpPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Help &amp; Support</h1>
-        <p>We're here to help — find answers or reach out anytime.</p>
+        <h1>{t('help.title')}</h1>
+        <p>{t('help.subtitle')}</p>
       </div>
 
       <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 640 }}>
@@ -123,12 +114,12 @@ export function HelpPage() {
               <BookOpen size={17} color="#8b5cf6" />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Documentation</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>Guides, API reference, and configuration docs</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t('help.docs.title')}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>{t('help.docs.subtitle')}</div>
             </div>
           </div>
           <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>
-            The official docs cover everything from getting started to advanced routing policies, provider setup, budgets, and the full API reference.
+            {t('help.docs.body')}
           </p>
           <a
             href="https://doc.routerly.ai/next/"
@@ -137,7 +128,7 @@ export function HelpPage() {
             className="btn btn-secondary btn-sm"
             style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            <ExternalLink size={13} /> Open documentation
+            <ExternalLink size={13} /> {t('help.docs.openLink')}
           </a>
         </Card>
 
@@ -152,13 +143,13 @@ export function HelpPage() {
               <Bug size={17} color="var(--accent)" />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Report a bug or suggest a feature</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>Open a GitHub issue — it takes 2 minutes</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t('help.issues.title')}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>{t('help.issues.subtitle')}</div>
             </div>
           </div>
 
           <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>
-            GitHub issues are the best way to report bugs or propose improvements. To help us fix things faster, include: what you did, what you expected to happen, and what actually happened.
+            {t('help.issues.body')}
           </p>
 
           <div style={{ marginBottom: 14 }}>
@@ -170,7 +161,7 @@ export function HelpPage() {
               }}
             >
               {templateVisible ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-              Show issue template
+              {t('help.issues.showTemplate')}
             </button>
             {templateVisible && (
               <pre style={{
@@ -185,7 +176,7 @@ export function HelpPage() {
                 whiteSpace: 'pre-wrap',
                 fontFamily: 'var(--font-mono, monospace)',
               }}>
-                {ISSUE_TEMPLATE}
+                {issueTemplate}
               </pre>
             )}
           </div>
@@ -198,7 +189,7 @@ export function HelpPage() {
               className="btn btn-primary btn-sm"
               style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <ExternalLink size={13} /> Report a bug
+              <ExternalLink size={13} /> {t('help.issues.reportBug')}
             </a>
             <a
               href={featureUrl}
@@ -207,7 +198,7 @@ export function HelpPage() {
               className="btn btn-secondary btn-sm"
               style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <MessageSquarePlus size={13} /> Request a feature
+              <MessageSquarePlus size={13} /> {t('help.issues.requestFeature')}
             </a>
           </div>
         </Card>
@@ -223,13 +214,13 @@ export function HelpPage() {
               <Mail size={17} color="#10b981" />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Contact support</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>We read every message and reply as soon as we can</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t('help.email.title')}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 1 }}>{t('help.email.subtitle')}</div>
             </div>
           </div>
 
           <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>
-            For anything that doesn't fit a GitHub issue — billing questions, private concerns, or if you just want to say hi — drop us a line.
+            {t('help.email.body')}
           </p>
 
           <a
@@ -244,13 +235,13 @@ export function HelpPage() {
         {/* ── FAQ ───────────────────────────────────────────────────────────── */}
         <Card>
           <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 4 }}>
-            Frequently asked questions
+            {t('help.faq.title')}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-            Quick answers to the most common questions
+            {t('help.faq.subtitle')}
           </div>
           <div>
-            {FAQ_ITEMS.map(item => (
+            {faqItems.map(item => (
               <FaqItem key={item.q} q={item.q} a={item.a} />
             ))}
           </div>

@@ -3,6 +3,7 @@ import { API_REVERSE_PROXY } from '../../core/tokens.js';
 import { openaiRoutes } from './openai.js';
 import { anthropicRoutes } from './anthropic.js';
 import { passthroughHandler } from './passthrough.js';
+import { routerPassthroughRoutes } from './router-passthrough.js';
 
 /**
  * Api-reverse-proxy module: owns the real HTTP-facing OpenAI/Anthropic
@@ -18,6 +19,7 @@ export const apiReverseProxyModule = defineModule({
       openaiRoutes,
       anthropicRoutes,
       passthroughHandler,
+      routerPassthroughRoutes,
     });
   },
 });

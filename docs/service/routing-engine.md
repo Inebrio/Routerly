@@ -13,15 +13,15 @@ The routing engine is the component responsible for selecting which model receiv
 
 For each incoming request the engine performs the following steps:
 
-1. **Load candidates** — Read the project's model list. Each candidate carries its `ModelConfig` (id, provider, cost, context window, capabilities, limits) plus any per-model routing guidance (`prompt`) configured on the project.
+1. **Load candidates** — Read the router's model list. Each candidate carries its `ModelConfig` (id, provider, cost, context window, capabilities, limits) plus any per-model routing guidance (`prompt`) configured on the router.
 
 2. **Pre-filter: budget limits** — Any model that has already exceeded one of its configured spending or token limits is excluded before the policies run. This is a hard pre-check so exhausted models never consume policy computation.
 
-3. **Run policies in priority order** — Enabled policies execute in the order they appear in the project's policy list. Each policy receives the full candidate set and returns:
+3. **Run policies in priority order** — Enabled policies execute in the order they appear in the router's policy list. Each policy receives the full candidate set and returns:
    - A **score** for each model (`0.0` – `1.0`)
    - Optionally an **excludes** set (hard filters: excluded models are dropped from the candidate set entirely)
 
-4. **Positional scoring** — A base weight is derived from the model's position in the project model list:
+4. **Positional scoring** — A base weight is derived from the model's position in the router model list:
    ```
    weight = totalPolicies - policyIndex
    ```
@@ -29,7 +29,7 @@ For each incoming request the engine performs the following steps:
 
 5. **Aggregate scores** — For each model: `totalScore = sum(policy.score × policy.weight)`.
 
-6. **Select winner** — The model with the highest `totalScore` among non-excluded candidates is chosen. On a tie the first in the project list wins.
+6. **Select winner** — The model with the highest `totalScore` among non-excluded candidates is chosen. On a tie the first in the router list wins.
 
 7. **Fallback** — If the winning model returns a provider error or timeout, the engine retries with the next-highest scoring candidate. This continues until a model succeeds or the candidate set is exhausted (→ `503`).
 
@@ -65,7 +65,7 @@ Estimates the token count of the request and checks it against each model's `con
 
 No configuration options.
 
-**Use when:** your project mixes models with different context window sizes.
+**Use when:** your router mixes models with different context window sizes.
 
 ---
 
@@ -128,7 +128,7 @@ Only successful calls (`outcome !== 'error' && outcome !== 'timeout'`) contribut
 
 Sends the candidate list and the request to a small "routing LLM" and asks it to score each model's fit for the task. Scores are returned as JSON (`0.0`–`1.0`). The system prompt instructs the routing LLM to match task complexity to model capability (simple tasks → smaller models; complex tasks → stronger models).
 
-Per-model `prompt` guidance (set on the project model entry) is included in the system prompt to give the routing LLM operator-defined hints (e.g. "prefer this model for code tasks").
+Per-model `prompt` guidance (set on the router model entry) is included in the system prompt to give the routing LLM operator-defined hints (e.g. "prefer this model for code tasks").
 
 | Config key | Default | Description |
 |------------|---------|-------------|
@@ -161,7 +161,7 @@ Models that do not declare a capability (i.e. the field is absent) are assumed c
 
 No configuration options.
 
-**Use when:** your project includes a mix of models with different capability sets.
+**Use when:** your router includes a mix of models with different capability sets.
 
 ---
 
@@ -178,7 +178,7 @@ Only models that have a `calls` limit configured are scored by this policy; mode
 | `windowMinutes` | `1` | Look-back window |
 | `maxCallsPerWindow` | — | Hard threshold — models over this are excluded |
 
-**Use when:** you have multiple projects sharing a provider API key with a strict RPM limit.
+**Use when:** you have multiple routers sharing a provider API key with a strict RPM limit.
 
 ---
 
@@ -200,9 +200,9 @@ Distributes traffic evenly across candidates by penalising models that have rece
 
 **Type:** scoring
 
-Scores models by how much budget headroom they have left across all configured limits (global thresholds, project budgets, token budgets). The score is the minimum headroom ratio across all active limits: `(limit - used) / limit`. A model with 80% budget remaining scores `0.8`; a fully exhausted model scores `0.0`.
+Scores models by how much budget headroom they have left across all configured limits (global thresholds, router budgets, token budgets). The score is the minimum headroom ratio across all active limits: `(limit - used) / limit`. A model with 80% budget remaining scores `0.8`; a fully exhausted model scores `0.0`.
 
-No configuration options (reads limits from the project and model config).
+No configuration options (reads limits from the router and model config).
 
 **Use when:** you want to spread spending across multiple models before any single one runs dry.
 
@@ -228,7 +228,7 @@ Classifies the incoming request by semantic intent using embedding-based similar
 | `ambiguous` | `topScore ≥ absolute_threshold` but `margin < ambiguity_threshold` | Union of top-2 intents' `candidate_models` |
 | `unknown` | `topScore < absolute_threshold` | All candidates (no filtering) |
 
-**Credential resolution:** When `embedding_model` is set, the policy automatically looks up `apiKey` and `endpoint` from the service's `models.json` registry. This lets the dashboard save only the model ID without storing API keys in project config. If the embedding model is not found in the registry, the policy logs a warning and passes all candidates through.
+**Credential resolution:** When `embedding_model` is set, the policy automatically looks up `apiKey` and `endpoint` from the service's `models.json` registry. This lets the dashboard save only the model ID without storing API keys in router config. If the embedding model is not found in the registry, the policy logs a warning and passes all candidates through.
 
 If the embedding call itself fails (e.g. provider is unavailable), the policy degrades gracefully and passes all candidates through unchanged.
 
@@ -300,10 +300,10 @@ Suggested order: `health` → `context` → `capability` → `budget-remaining` 
 A **routing profile** (`RoutingProfile`, `kind: 'routing'`) packages a policy
 list, a **selector**, and a **fallback strategy** into one reusable, versioned
 unit, stored via [`GET/POST/PATCH/DELETE /api/profiles`](../api/management.md#profiles)
-alongside the optimizer and security profile kinds. A project resolves its
-effective routing profile at request time: if the project has a
+alongside the optimizer and security profile kinds. A router resolves its
+effective routing profile at request time: if the router has a
 `routingProfileId` set, that profile's policies/selector/fallback are used
-instead of the project's own inline policy list; otherwise the project's own
+instead of the router's own inline policy list; otherwise the router's own
 inline policies run through the default selector/fallback behaviour described
 above (argmax-equivalent, no live fallback wiring, see the caution below).
 
@@ -311,7 +311,7 @@ above (argmax-equivalent, no live fallback wiring, see the caution below).
 
 4 routing built-ins ship as code constants (never persisted, never mutable):
 `auto`, `cheap`, `fast`, `coding`. Two retired presets, `balanced` and
-`offline`, still resolve for projects that reference them but are never listed;
+`offline`, still resolve for routers that reference them but are never listed;
 `balanced` is rewritten to `auto` by the routing module's config migration.
 Cloning a built-in (`POST /api/profiles/clone`) writes a new, editable copy to
 `profiles.json` with `builtin: false` and `version: 1`; every subsequent
@@ -328,7 +328,7 @@ profile's **selector** picks the final model from the ranked list:
 |----------|-----------|
 | `argmax` | Highest score wins; near-ties (within a small tolerance) resolve by weighted-random among the tied group. |
 | `weighted-random` | One candidate is picked at random with probability proportional to its score. |
-| `round-robin` | Deterministic rotation through candidates, keyed by project id, ignoring score. |
+| `round-robin` | Deterministic rotation through candidates, keyed by router id, ignoring score. |
 | `cheapest` | Lowest `cost` wins; undefined cost sorts last; ties break by score. |
 | `lowest-latency` | Lowest recently-observed latency wins; unknown latency sorts last. |
 
@@ -359,7 +359,7 @@ change, not a bug in the current profile CRUD endpoints.
 
 ## Policy Ordering and Weights
 
-Policies are applied in the order configured in the project. Their positional weight (`total − index`) means policies near the top of the list have more influence on the final score. Reorder policies via the dashboard (**Projects → your project → Routing**) or the CLI.
+Policies are applied in the order configured in the router. Their positional weight (`total − index`) means policies near the top of the list have more influence on the final score. Reorder policies via the dashboard (**Routers → your router → Routing**) or the CLI.
 
 **Example** — 3 policies enabled (health, cheapest, performance):
 

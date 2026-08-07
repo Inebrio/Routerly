@@ -1,20 +1,20 @@
 // ─── MCP (Model Context Protocol) types ──────────────────────────────────────
 
-import type { McpToken, Permission, ProjectConfig } from './config.js';
+import type { McpToken, Permission, RouterConfig } from './config.js';
 
 /**
  * Auth context resolved from a user's MCP token.
  *
- * An MCP token belongs to a user, not to a project: every tool therefore runs
- * with that user's dashboard permissions and can only touch the projects the
+ * An MCP token belongs to a user, not to a router: every tool therefore runs
+ * with that user's dashboard permissions and can only touch the routers the
  * user has access to.
  */
 export interface McpAuthContext {
   user: { id: string; email: string; roleId: string };
   /** Permissions of the user's role, resolved at request time. */
   permissions: Permission[];
-  /** Projects the token owner may act on. Never the full project list. */
-  projects: ProjectConfig[];
+  /** Routers the token owner may act on. Never the full router list. */
+  routers: RouterConfig[];
   token: McpToken;
 }
 

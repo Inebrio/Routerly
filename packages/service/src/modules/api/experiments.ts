@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { ExperimentConfig, ExperimentVariant, Permission, ProjectToken } from '@routerly/shared';
+import type { ExperimentConfig, ExperimentVariant, Permission, RouterToken } from '@routerly/shared';
 import { EXPERIMENT_ROTATIONS, STICKY_KEYS } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
@@ -38,22 +38,22 @@ async function checkModuleGate(reply: FastifyReply): Promise<boolean> {
   return false;
 }
 
-/** The token value is written once, at creation, and never read back — same rule as project tokens. */
+/** The token value is written once, at creation, and never read back — same rule as router tokens. */
 function mask(experiment: ExperimentConfig) {
   return { ...experiment, tokens: experiment.tokens.map(t => ({ ...t, token: undefined })) };
 }
 
 /** Zod leaves every optional field as `key: undefined`; exactOptionalPropertyTypes wants the key gone. */
-function toVariant(v: { id?: string | undefined; projectId: string; name?: string | undefined; weight?: number | undefined }): ExperimentVariant {
+function toVariant(v: { id?: string | undefined; routerId: string; name?: string | undefined; weight?: number | undefined }): ExperimentVariant {
   return {
     id: v.id ?? randomUUID(),
-    projectId: v.projectId,
+    routerId: v.routerId,
     ...(v.name !== undefined ? { name: v.name } : {}),
     ...(v.weight !== undefined ? { weight: v.weight } : {}),
   };
 }
 
-function newToken(): ProjectToken {
+function newToken(): RouterToken {
   const raw = `sk-rt-${randomBytes(32).toString('hex')}`;
   return { id: randomUUID(), token: raw, tokenSnippet: raw.substring(0, 10), createdAt: new Date().toISOString() };
 }
@@ -62,7 +62,7 @@ function newToken(): ProjectToken {
 
 const variantSchema = z.object({
   id: z.string().trim().min(1).optional(),
-  projectId: z.string().trim().min(1),
+  routerId: z.string().trim().min(1),
   name: z.string().trim().min(1).optional(),
   weight: z.number().min(0).optional(),
 });
@@ -118,7 +118,7 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!await checkModuleGate(reply)) return;
     const found = (await readConfig('experiments')).find(e => e.id === req.params.id);
     if (!found) return reply.status(404).send({ error: 'Not found' });
-    const [records, projects] = await Promise.all([readConfig('usage'), readConfig('projects')]);
+    const [records, routers] = await Promise.all([readConfig('usage'), readConfig('routers')]);
     // ponytail: an explicit ISO window, not the period vocabulary /api/usage uses.
     // The caller already knows which window it wants; the server needs no names for them.
     const { from, to } = req.query;
@@ -133,7 +133,7 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
         return (!since || ts >= since) && (!until || ts <= until);
       })
       : records;
-    return reply.send(computeExperimentMetrics(found, windowed, projects));
+    return reply.send(computeExperimentMetrics(found, windowed, routers));
   });
 
   fastify.post<{ Body: unknown }>('/api/experiments', async (req, reply) => {
@@ -146,8 +146,8 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     if (experiments.some(e => e.name.trim().toLowerCase() === parsed.data.name.toLowerCase())) {
       return reply.status(409).send({ error: `An experiment named "${parsed.data.name}" already exists` });
     }
-    const unknown = await unknownProjects(parsed.data.variants.map(v => v.projectId));
-    if (unknown.length > 0) return reply.status(404).send({ error: 'project_not_found', projectIds: unknown });
+    const unknown = await unknownRouters(parsed.data.variants.map(v => v.routerId));
+    if (unknown.length > 0) return reply.status(404).send({ error: 'router_not_found', routerIds: unknown });
 
     const token = newToken();
     const experiment: ExperimentConfig = {
@@ -165,7 +165,7 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     experiments.push(experiment);
     await writeConfig('experiments', experiments);
     audit(req, 'experiment:create', 'success', { id: experiment.id });
-    // The raw token is returned here and nowhere else, exactly like a project's first token.
+    // The raw token is returned here and nowhere else, exactly like a router's first token.
     return reply.status(201).send({ ...mask(experiment), token: token.token });
   });
 
@@ -181,8 +181,8 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     const current = experiments[idx]!;
 
     if (parsed.data.variants) {
-      const unknown = await unknownProjects(parsed.data.variants.map(v => v.projectId));
-      if (unknown.length > 0) return reply.status(404).send({ error: 'project_not_found', projectIds: unknown });
+      const unknown = await unknownRouters(parsed.data.variants.map(v => v.routerId));
+      if (unknown.length > 0) return reply.status(404).send({ error: 'router_not_found', routerIds: unknown });
     }
 
     const d = parsed.data;
@@ -245,8 +245,8 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-async function unknownProjects(projectIds: string[]): Promise<string[]> {
-  const projects = await readConfig('projects');
-  const known = new Set(projects.map(p => p.id));
-  return [...new Set(projectIds.filter(id => !known.has(id)))];
+async function unknownRouters(routerIds: string[]): Promise<string[]> {
+  const routers = await readConfig('routers');
+  const known = new Set(routers.map(p => p.id));
+  return [...new Set(routerIds.filter(id => !known.has(id)))];
 }

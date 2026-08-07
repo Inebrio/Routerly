@@ -236,7 +236,7 @@ describe('semanticIntentPolicy', () => {
     }));
   });
 
-  it('falls back to all candidates when intent pool has no overlap with project candidates', async () => {
+  it('falls back to all candidates when intent pool has no overlap with router candidates', async () => {
     const codingVec = [1, 0, 0];
     const requestVec = [0.99, 0, 0];
 
@@ -250,7 +250,7 @@ describe('semanticIntentPolicy', () => {
       };
     });
 
-    // Project candidates don't include any model from the coding pool
+    // Router candidates don't include any model from the coding pool
     const result = await semanticIntentPolicy({
       request: makeRequest('some text'),
       candidates: [makeCandidate('some-other-model')],
@@ -295,7 +295,7 @@ describe('semanticIntentPolicy', () => {
     expect(result.routing.every(r => r.point === 1.0)).toBe(true);
   });
 
-  it('tracks usage when projectId is provided and classification succeeds', async () => {
+  it('tracks usage when routerId is provided and classification succeeds', async () => {
     const vec = [1, 0, 0];
     mockProvider.embed.mockImplementation(async (texts: string[]) => ({
       embeddings: texts.map(() => vec),
@@ -308,7 +308,7 @@ describe('semanticIntentPolicy', () => {
       request: makeRequest('some coding question'),
       candidates: [makeCandidate('coder-model')],
       config: { ...baseConfig, absolute_threshold: 0.0 },
-      projectId: 'proj-test',
+      routerId: 'proj-test',
       log,
       traceId: 'trace-1',
     });
@@ -342,8 +342,8 @@ describe('semanticIntentPolicy', () => {
     expect(result.routing.every(r => r.point === 1.0)).toBe(true);
   });
 
-  // ── Line 108: traceId === undefined inside projectId block ───────────────────
-  it('tracks usage without traceId when projectId is set but traceId is omitted', async () => {
+  // ── Line 108: traceId === undefined inside routerId block ───────────────────
+  it('tracks usage without traceId when routerId is set but traceId is omitted', async () => {
     const vec = [1, 0, 0];
     mockProvider.embed.mockImplementation(async (texts: string[]) => ({
       embeddings: texts.map(() => vec),
@@ -354,7 +354,7 @@ describe('semanticIntentPolicy', () => {
       request: makeRequest('write code'),
       candidates: [makeCandidate('coder-model')],
       config: { ...baseConfig, absolute_threshold: 0.0 },
-      projectId: 'proj-no-trace',
+      routerId: 'proj-no-trace',
       // traceId intentionally omitted → hits the false branch of `traceId !== undefined`
     });
 
@@ -468,7 +468,7 @@ describe('semanticIntentPolicy', () => {
         embedding_model: 'nonexistent-model',
         absolute_threshold: 0.0,
       },
-      projectId: 'proj-cost-zero',
+      routerId: 'proj-cost-zero',
     });
 
     // trackUsage should be called with inputPerMillion: 0
@@ -610,7 +610,7 @@ describe('semanticIntentPolicy — line 15: getEmbeddingInputCost catch branch',
       request: makeRequest('compute something'),
       candidates: [makeCandidate('coder-model')],
       config: { ...baseConfig, absolute_threshold: 0.0 },
-      projectId: 'proj-catch-test',
+      routerId: 'proj-catch-test',
     });
 
     // Policy still runs; embedding cost falls back to 0

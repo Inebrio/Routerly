@@ -68,11 +68,11 @@ export const weightedRandomSelector: SelectorFn = (candidates, ctx) => {
   return { models: toWeighted([picked, ...rest]), trace: [] };
 };
 
-/** round-robin: deterministic order by model id, pick index nextCursor(projectId, n). */
+/** round-robin: deterministic order by model id, pick index nextCursor(routerId, n). */
 export const roundRobinSelector: SelectorFn = (candidates, ctx) => {
   if (candidates.length === 0) return { models: [], trace: [] };
   const sorted = [...candidates].sort((a, b) => a.model.localeCompare(b.model));
-  const idx = nextCursor(ctx.projectId, sorted.length);
+  const idx = nextCursor(ctx.routerId, sorted.length);
   const picked = sorted[idx]!;
   const rest = sorted.filter((_, i) => i !== idx);
   return { models: toWeighted([picked, ...rest]), trace: [] };

@@ -280,7 +280,7 @@ export function buildSnippet(meta: ClientMeta, baseUrl: string, token: string): 
         '1. API Provider: OpenAI Compatible.',
         `2. Base URL: ${v1}`,
         `3. API Key: ${token}`,
-        '4. Model ID: routerly/ada, or any model registered in your project.',
+        '4. Model ID: routerly/ada, or any model registered in your router.',
       ].join('\n');
     }
     default: {
@@ -299,7 +299,7 @@ export function buildSnippet(meta: ClientMeta, baseUrl: string, token: string): 
  * (`modes` contains `mcp`). Returns `''` for the others, so a caller can
  * simply hide the section.
  *
- * `mcpToken` is a personal MCP token (`sk-rt-mcp-…`), never a project token:
+ * `mcpToken` is a personal MCP token (`sk-rt-mcp-…`), never a router token:
  * the MCP surface only accepts the former.
  */
 export function buildMcpSnippet(meta: ClientMeta, baseUrl: string, mcpToken: string): string {

@@ -59,9 +59,9 @@ describe('startStdioServer', () => {
 
     const listed = await client.listTools()
     const names = listed.tools.map((t) => t.name)
-    expect(names).toContain('list_projects')
+    expect(names).toContain('list_routers')
 
-    const called = await client.callTool({ name: 'list_projects', arguments: {} })
+    const called = await client.callTool({ name: 'list_routers', arguments: {} })
     const content = called.content as { type: string; text: string }[]
     expect(content[0]?.text).toContain('Alpha')
 

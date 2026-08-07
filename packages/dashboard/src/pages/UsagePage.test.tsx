@@ -7,7 +7,7 @@ import { UsagePage } from './UsagePage';
 // ponytail: mock api at module level; only stub what UsagePage calls
 vi.mock('../api', () => ({
   getUsage: vi.fn(),
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
   getModels: vi.fn(),
 }));
 
@@ -28,7 +28,7 @@ vi.mock('../components/DateRangePicker', () => ({
 vi.mock('../components/MultiSelect', () => ({
   MultiSelect: () => <div data-testid="multi-select" />,
 }));
-import { getUsage, getProjects, getModels } from '../api';
+import { getUsage, getRouters, getModels } from '../api';
 
 // useFilterState mock must be after imports so hoisting works
 vi.mock('../hooks/useFilterState', async () => {
@@ -72,7 +72,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  vi.mocked(getProjects).mockResolvedValue([]);
+  vi.mocked(getRouters).mockResolvedValue([]);
   vi.mocked(getModels).mockResolvedValue([]);
 });
 
@@ -211,7 +211,7 @@ describe('UsagePage — blocked outcome', () => {
       byModel: {},
       timeline: [],
       records: [{
-        id: 'r1', timestamp: new Date().toISOString(), projectId: 'p1', modelId: 'openai/gpt-4o',
+        id: 'r1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'openai/gpt-4o',
         inputTokens: 10, outputTokens: 5, cost: 0.001, latencyMs: 500, outcome: outcomeVal,
       }],
     };
@@ -492,7 +492,7 @@ describe('UsagePage — records table', () => {
     return {
       id: 'rec1',
       timestamp: new Date().toISOString(),
-      projectId: 'proj-abc',
+      routerId: 'proj-abc',
       modelId: 'openai/gpt-4o',
       inputTokens: 100,
       outputTokens: 50,
@@ -527,16 +527,16 @@ describe('UsagePage — records table', () => {
     await waitFor(() => expect(screen.getAllByText('openai/gpt-4o').length).toBeGreaterThan(0));
   });
 
-  it('shows project name when project is loaded', async () => {
-    vi.mocked(getProjects).mockResolvedValue([{ id: 'proj-abc', name: 'MyProject' } as never]);
+  it('shows router name when router is loaded', async () => {
+    vi.mocked(getRouters).mockResolvedValue([{ id: 'proj-abc', name: 'MyRouter' } as never]);
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
     renderPage();
-    await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('MyRouter')).toBeTruthy());
   });
 
   it('names the token a call came in on, and offers it as a filter', async () => {
-    vi.mocked(getProjects).mockResolvedValue([{
-      id: 'proj-abc', name: 'MyProject',
+    vi.mocked(getRouters).mockResolvedValue([{
+      id: 'proj-abc', name: 'MyRouter',
       tokens: [
         { id: 'tok-1', tokenSnippet: 'sk-rt-aaa', createdAt: '2026-01-01T00:00:00Z', labels: ['ci'] },
         { id: 'tok-2', tokenSnippet: 'sk-rt-bbb', createdAt: '2026-01-01T00:00:00Z' },
@@ -545,22 +545,22 @@ describe('UsagePage — records table', () => {
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ tokenId: 'tok-1' })]));
     renderPage();
     // The label wins over the snippet on the record row, and the filter is
-    // offered because the project has more than one token.
+    // offered because the router has more than one token.
     await waitFor(() => expect(screen.getAllByText('ci').length).toBeGreaterThan(0));
     expect(screen.getByText('Token')).toBeTruthy();
   });
 
   it('shows no token line on a record written before tokens were tracked', async () => {
-    vi.mocked(getProjects).mockResolvedValue([{ id: 'proj-abc', name: 'MyProject', tokens: [] } as never]);
+    vi.mocked(getRouters).mockResolvedValue([{ id: 'proj-abc', name: 'MyRouter', tokens: [] } as never]);
     vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord()]));
     renderPage();
-    await waitFor(() => expect(screen.getByText('MyProject')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('MyRouter')).toBeTruthy());
     expect(screen.queryByText('Token')).toBeNull();
   });
 
-  it('falls back to projectId span when project not found', async () => {
-    vi.mocked(getProjects).mockResolvedValue([]);
-    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ projectId: 'unknown-proj' })]));
+  it('falls back to routerId span when router not found', async () => {
+    vi.mocked(getRouters).mockResolvedValue([]);
+    vi.mocked(getUsage).mockResolvedValue(makeStatsWithRecords([makeRecord({ routerId: 'unknown-proj' })]));
     renderPage();
     await waitFor(() => expect(screen.getByText('unknown-proj')).toBeTruthy());
   });
@@ -652,7 +652,7 @@ describe('UsagePage — pagination controls', () => {
       summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
       byModel: {},
       timeline: [],
-      records: [{ id: 'r1', timestamp: new Date().toISOString(), projectId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
+      records: [{ id: 'r1', timestamp: new Date().toISOString(), routerId: 'p', modelId: 'm', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
       pagination: { page, pageSize: 20, totalPages, totalRecords: totalPages * 100 },
     } as never;
   }
@@ -936,7 +936,7 @@ describe('UsagePage — prevMax new-row detection', () => {
       summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
       byModel: {},
       timeline: [],
-      records: [{ id, timestamp: ts, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
+      records: [{ id, timestamp: ts, routerId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
     });
 
     // All fetches return a record; first sets maxTs, subsequent fetches exercise prevMax logic
@@ -960,7 +960,7 @@ describe('UsagePage — prevMax new-row detection', () => {
       summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
       byModel: {},
       timeline: [],
-      records: [{ id, timestamp: ts, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
+      records: [{ id, timestamp: ts, routerId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' }],
     });
 
     vi.mocked(getUsage).mockResolvedValue(statsWithRecord('rec-same', ts1));
@@ -993,8 +993,8 @@ describe('UsagePage — prevMax new-row detection', () => {
       summary: { totalCost: 0, totalCalls: 2, successCalls: 2, errorCalls: 0, routingCalls: 0, completionCalls: 2, routingCost: 0, completionCost: 0 },
       byModel: {}, timeline: [],
       records: [
-        { id: 'r-newer', timestamp: ts1, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' },
-        { id: 'r-older', timestamp: ts0, projectId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' },
+        { id: 'r-newer', timestamp: ts1, routerId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' },
+        { id: 'r-older', timestamp: ts0, routerId: 'p', modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 0, outcome: 'success' },
       ],
     };
     vi.mocked(getUsage).mockResolvedValue(twoRecords);
@@ -1358,26 +1358,26 @@ describe('UsagePage — stat card ternary fallbacks', () => {
 // ── record cost null fallback ─────────────────────────────────────────────────
 
 describe('UsagePage — record cost null fallback', () => {
-  it('null cost in record renders $0', async () => {
+  it('null cost in record renders "Unknown", never $0', async () => {
     vi.mocked(getUsage).mockResolvedValue({
       summary: { totalCost: 0, totalCalls: 1, successCalls: 1, errorCalls: 0, routingCalls: 0, completionCalls: 1, routingCost: 0, completionCost: 0 },
       byModel: {},
       timeline: [],
       records: [{
-        id: 'r-null-cost', timestamp: new Date().toISOString(), projectId: 'p',
+        id: 'r-null-cost', timestamp: new Date().toISOString(), routerId: 'p',
         modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
-        cost: null as unknown as number, latencyMs: 100, outcome: 'success',
+        cost: null, latencyMs: 100, outcome: 'success',
       }],
     } as never);
     renderPage();
     await waitFor(() => screen.getAllByText('openai/gpt-4o').length > 0);
-    // cost ?? 0 → "$0"
-    expect(screen.getAllByText('$0').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Unknown').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$0')).toBeNull();
   });
 
   it('per-call cost keeps 3 significant digits, sub-microdollar collapses to a threshold', async () => {
     const rec = (id: string, cost: number) => ({
-      id, timestamp: new Date().toISOString(), projectId: 'p',
+      id, timestamp: new Date().toISOString(), routerId: 'p',
       modelId: 'openai/gpt-4o', inputTokens: 1, outputTokens: 1,
       cost, latencyMs: 100, outcome: 'success',
     });
@@ -1422,7 +1422,7 @@ describe('UsagePage — dateRange init: RECENT_PRESETS match (isRecentPreset=tru
         summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
         byModel: {}, timeline: [], records: [],
       }),
-      getProjects: vi.fn().mockResolvedValue([]),
+      getRouters: vi.fn().mockResolvedValue([]),
       getModels: vi.fn().mockResolvedValue([]),
     }));
     vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
@@ -1465,7 +1465,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
         summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
         byModel: {}, timeline: [], records: [],
       }),
-      getProjects: vi.fn().mockResolvedValue([]),
+      getRouters: vi.fn().mockResolvedValue([]),
       getModels: vi.fn().mockResolvedValue([]),
     }));
     vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
@@ -1509,7 +1509,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
         summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
         byModel: {}, timeline: [], records: [],
       }),
-      getProjects: vi.fn().mockResolvedValue([]),
+      getRouters: vi.fn().mockResolvedValue([]),
       getModels: vi.fn().mockResolvedValue([]),
     }));
     vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
@@ -1551,7 +1551,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
         summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
         byModel: {}, timeline: [], records: [],
       }),
-      getProjects: vi.fn().mockResolvedValue([]),
+      getRouters: vi.fn().mockResolvedValue([]),
       getModels: vi.fn().mockResolvedValue([]),
     }));
     vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
@@ -1595,7 +1595,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
         summary: { totalCost: 0, totalCalls: 0, successCalls: 0, errorCalls: 0, routingCalls: 0, completionCalls: 0, routingCost: 0, completionCost: 0 },
         byModel: {}, timeline: [], records: [],
       }),
-      getProjects: vi.fn().mockResolvedValue([]),
+      getRouters: vi.fn().mockResolvedValue([]),
       getModels: vi.fn().mockResolvedValue([]),
     }));
     vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));
@@ -1639,7 +1639,7 @@ describe('UsagePage — dateRange init: stale preset re-apply (line 87-91)', () 
     });
     vi.doMock('../api', () => ({
       getUsage: mockGetUsage,
-      getProjects: vi.fn().mockResolvedValue([]),
+      getRouters: vi.fn().mockResolvedValue([]),
       getModels: vi.fn().mockResolvedValue([]),
     }));
     vi.doMock('../components/MultiSelect', () => ({ MultiSelect: () => <div /> }));

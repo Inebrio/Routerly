@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Dashboard: Models
 
-The Models page lets you register, edit, clone, and remove LLM models. All models registered here become available for use in project routing configurations.
+The Models page lets you register, edit, clone, and remove LLM models. All models registered here become available for use in router routing configurations.
 
 Health status is shown inline in the same table as configuration -- no separate tab is needed.
 
@@ -153,7 +153,7 @@ Toggle the **Enabled** switch to `off` to temporarily remove a model from routin
 Click the **Delete** (trash) icon. You will be asked to confirm.
 
 :::warning
-Removing a model that is assigned to active project routing configurations will cause routing failures for those projects. Remove the model from all project routing configs before deleting it.
+Removing a model that is assigned to active router routing configurations will cause routing failures for those routers. Remove the model from all router routing configs before deleting it.
 :::
 
 ---

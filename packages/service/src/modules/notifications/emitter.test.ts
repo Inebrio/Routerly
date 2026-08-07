@@ -16,12 +16,12 @@ const mockDispatch = vi.mocked(dispatchNotification);
 beforeEach(() => { _resetCooldowns(); });
 afterEach(() => vi.clearAllMocks());
 
-/** Set up readConfig for settings + empty users/roles/projects/notifications. */
+/** Set up readConfig for settings + empty users/roles/routers/notifications. */
 function settings(notifications: any, extra: Record<string, any> = {}) {
   mockRead.mockImplementation(async (key: string) => {
     if (key === 'settings') return { notifications };
     if (key === 'notifications') return extra['notifications'] ?? [];
-    if (key === 'projects') return extra['projects'] ?? [];
+    if (key === 'routers') return extra['routers'] ?? [];
     if (key === 'users') return extra['users'] ?? [];
     if (key === 'roles') return extra['roles'] ?? [];
     return [];
@@ -273,42 +273,42 @@ describe('email recipient resolution (U5)', () => {
   });
 });
 
-describe('per-project override + cooldown (preserved)', () => {
-  it('merges per-project channel override', async () => {
+describe('per-router override + cooldown (preserved)', () => {
+  it('merges per-router channel override', async () => {
     settings(
       { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
-      { projects: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
+      { routers: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
     );
-    await emitEvent('config.project_created', 'info', {}, { projectId: 'p1' });
+    await emitEvent('config.router_created', 'info', {}, { routerId: 'p1' });
     expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'proj-ch' }), expect.anything(), undefined,
     );
   });
 
-  it('per-project override referencing a non-external (unknown) channel id is ignored', async () => {
+  it('per-router override referencing a non-external (unknown) channel id is ignored', async () => {
     settings(
       { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
-      { projects: [{ id: 'p1', notifications: { channels: ['does-not-exist'] } }] },
+      { routers: [{ id: 'p1', notifications: { channels: ['does-not-exist'] } }] },
     );
-    await emitEvent('config.project_created', 'info', {}, { projectId: 'p1' });
+    await emitEvent('config.router_created', 'info', {}, { routerId: 'p1' });
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('projectId pointing to an unknown project adds nothing', async () => {
+  it('routerId pointing to an unknown router adds nothing', async () => {
     settings(
       { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
-      { projects: [] },
+      { routers: [] },
     );
-    await emitEvent('config.project_created', 'info', {}, { projectId: 'ghost' });
+    await emitEvent('config.router_created', 'info', {}, { routerId: 'ghost' });
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('project found without notifications config adds nothing', async () => {
+  it('router found without notifications config adds nothing', async () => {
     settings(
       { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
-      { projects: [{ id: 'p1' }] },
+      { routers: [{ id: 'p1' }] },
     );
-    await emitEvent('config.project_created', 'info', {}, { projectId: 'p1' });
+    await emitEvent('config.router_created', 'info', {}, { routerId: 'p1' });
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
@@ -340,15 +340,15 @@ describe('per-project override + cooldown (preserved)', () => {
     await expect(emitEvent('system.startup', 'info', {})).resolves.toBeUndefined();
   });
 
-  it('never throws when the external-channel block errors (projects read fails)', async () => {
+  it('never throws when the external-channel block errors (routers read fails)', async () => {
     mockRead.mockImplementation(async (key: string) => {
       if (key === 'settings') return { notifications: { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['*'] }] } };
       if (key === 'notifications') return [];
-      if (key === 'projects') throw new Error('projects boom');
+      if (key === 'routers') throw new Error('routers boom');
       return [];
     });
     mockWrite.mockResolvedValue(undefined);
-    await expect(emitEvent('provider.error', 'critical', {}, { projectId: 'p1' })).resolves.toBeUndefined();
+    await expect(emitEvent('provider.error', 'critical', {}, { routerId: 'p1' })).resolves.toBeUndefined();
   });
 
   it('survives readConfig(settings) throwing', async () => {
@@ -364,41 +364,41 @@ describe('per-project override + cooldown (preserved)', () => {
   });
 });
 
-describe('project-scoped channel filtering (lines 165-166)', () => {
-  it('dispatches when channel has projects filter and event is from one of them (line 166 if branch=0)', async () => {
-    // Channel has projects: ['p1'] and event is from project p1 → dispatch (branch=0 = includes → not returned)
+describe('router-scoped channel filtering (lines 165-166)', () => {
+  it('dispatches when channel has routers filter and event is from one of them (line 166 if branch=0)', async () => {
+    // Channel has routers: ['p1'] and event is from router p1 → dispatch (branch=0 = includes → not returned)
     settings(
-      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], projects: ['p1'] }] },
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], routers: ['p1'] }] },
     );
-    await emitEvent('provider.error', 'critical', {}, { projectId: 'p1' });
+    await emitEvent('provider.error', 'critical', {}, { routerId: 'p1' });
     expect(mockDispatch).toHaveBeenCalledTimes(1);
   });
 
-  it('skips dispatch when channel has projects filter and event is from a different project (line 166 if branch=1)', async () => {
-    // Channel has projects: ['p1'] but event is from project p2 → skip (branch=1 = not includes → return)
+  it('skips dispatch when channel has routers filter and event is from a different router (line 166 if branch=1)', async () => {
+    // Channel has routers: ['p1'] but event is from router p2 → skip (branch=1 = not includes → return)
     settings(
-      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], projects: ['p1'] }] },
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], routers: ['p1'] }] },
     );
-    await emitEvent('provider.error', 'critical', {}, { projectId: 'p2' });
+    await emitEvent('provider.error', 'critical', {}, { routerId: 'p2' });
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('dispatches when channel has projects filter but no projectId in opts (line 165 binary-expr branch=1)', async () => {
-    // channel.projects.length > 0 BUT opts.projectId is undefined → second condition false → short-circuit → no skip
+  it('dispatches when channel has routers filter but no routerId in opts (line 165 binary-expr branch=1)', async () => {
+    // channel.routers.length > 0 BUT opts.routerId is undefined → second condition false → short-circuit → no skip
     settings(
-      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], projects: ['p1'] }] },
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], routers: ['p1'] }] },
     );
-    // No projectId in opts → the && short-circuits → channel is not filtered → dispatch
+    // No routerId in opts → the && short-circuits → channel is not filtered → dispatch
     await emitEvent('provider.error', 'critical', {});
     expect(mockDispatch).toHaveBeenCalledTimes(1);
   });
 
-  it('dispatches when channel has no projects filter (line 165 if branch=0)', async () => {
-    // channel.projects is empty/undefined → projects?.length > 0 is false → if is false → no skip
+  it('dispatches when channel has no routers filter (line 165 if branch=0)', async () => {
+    // channel.routers is empty/undefined → routers?.length > 0 is false → if is false → no skip
     settings(
       { channels: [{ id: 'any', provider: 'webhook', url: 'https://x', events: ['provider.error'] }] },
     );
-    await emitEvent('provider.error', 'critical', {}, { projectId: 'p1' });
+    await emitEvent('provider.error', 'critical', {}, { routerId: 'p1' });
     expect(mockDispatch).toHaveBeenCalledTimes(1);
   });
 });

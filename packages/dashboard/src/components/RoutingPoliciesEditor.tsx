@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, GripVertical, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { Model, RoutingPolicy } from '../api';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -9,33 +11,13 @@ export type PolicyItem = RoutingPolicy & {
 
 export const ALL_POLICY_TYPES = ['health', 'context', 'capability', 'budget-remaining', 'rate-limit', 'semantic-intent', 'llm', 'performance', 'fairness', 'cheapest', 'model-preference'] as const;
 
-export const POLICY_LABELS: Record<string, string> = {
-  llm:               'AI Routing Policy',
-  'rate-limit':      'Rate Limit Policy',
-  'budget-remaining':'Budget Remaining Policy',
-  'semantic-intent': 'Semantic Intent Policy',
-  health:            'Health Policy',
-  context:           'Context Policy',
-  capability:        'Capability Policy',
-  performance:       'Performance Policy',
-  fairness:          'Fairness Policy',
-  cheapest:          'Cheapest Policy',
-  'model-preference':'Model Preference Policy',
-};
+export function policyLabel(t: TFunction, type: string): string {
+  return t(`common.routingPolicies.labels.${type}`, { defaultValue: `${type} Policy` });
+}
 
-export const POLICY_DESCRIPTIONS: Record<string, string> = {
-  context:          'Scores models based on available context window. Assigns 0 to models whose context window is smaller than the estimated request length, preventing truncation errors.',
-  cheapest:         'Scores models inversely proportional to their token cost. The cheapest model gets 1.0, the most expensive gets 0.0, helping reduce API spend across requests.',
-  health:           'Scores models based on their recent error rate using exponential decay (recent errors weigh more). Applies a circuit breaker that sets the score to 0 when the weighted error rate exceeds a critical threshold.',
-  performance:      'Scores models based on their recent average latency using exponential decay. The fastest model gets 1.0, the slowest gets 0.0. Models without recent data default to 1.0.',
-  llm:              'Uses an AI model to score candidates based on the semantic content of the request. Supports routing guidance prompts per model and considers budget headroom when limits are configured.',
-  capability:       'Hard filter: assigns 0 to models that explicitly lack a feature required by the request (vision, function calling, JSON mode). Models without explicit capability declarations are not penalized.',
-  'rate-limit':     'Penalizes models with a high recent call frequency to reduce the risk of hitting provider rate limits (HTTP 429). Supports a configurable hard threshold that forces the score to 0.',
-  fairness:         'Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.',
-  'budget-remaining': 'Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.',
-  'semantic-intent':  'Classifies the request by semantic intent using embeddings, then restricts the candidate pool to the models mapped to that intent. Confident matches hard-filter the pool; ambiguous matches merge top-2 pools; unknown requests pass all candidates through.',
-  'model-preference': 'When the client requests a specific model (not routerly/ada), awards a configurable bonus score to that model. When no preference is expressed, the policy abstains. Position in the list controls how much the preference weighs against other policies.',
-};
+export function policyDescription(t: TFunction, type: string): string {
+  return t(`common.routingPolicies.descriptions.${type}`, { defaultValue: '' });
+}
 
 export function mkPolicyId(): string {
   return Math.random().toString(36).substring(7);
@@ -46,16 +28,17 @@ interface RoutingPoliciesEditorProps {
   setPolicies: React.Dispatch<React.SetStateAction<PolicyItem[]>>;
   /** Model pool the policy configs pick their routing and embedding models from. */
   availableModels: Model[];
-  /** Seeds a freshly added AI Routing policy. Projects pass their own routing model. */
+  /** Seeds a freshly added AI Routing policy. Routers pass their own routing model. */
   llmDefaults?: { routingModelId?: string; fallbackModelIds?: string[] };
 }
 
 /**
  * Ordered list of routing policies with their per-type config forms. Shared by
- * the project routing tab (inline project policies) and the profile form page
+ * the router routing tab (inline router policies) and the profile form page
  * (profile policies), so both edit routing the exact same way.
  */
 export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, llmDefaults }: RoutingPoliciesEditorProps) {
+  const { t } = useTranslation();
   // Advanced section open state per policy index
   const [advancedOpen, setAdvancedOpen] = useState<Set<number>>(new Set());
 
@@ -223,9 +206,9 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
 
   return (
           <div className="form-group">
-            <label className="form-label">Routing Policies</label>
+            <label className="form-label">{t('common.routingPolicies.title')}</label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-              Policies determine how requests are routed. They are executed in order from top to bottom.
+              {t('common.routingPolicies.subtitle')}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -250,22 +233,18 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                     <div style={{ color: 'var(--text-muted)' }}><GripVertical size={16} /></div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>
-                        {policy.type === 'llm' ? 'AI Routing'
-                          : policy.type === 'rate-limit' ? 'Rate Limit'
-                          : policy.type === 'budget-remaining' ? 'Budget Remaining'
-                          : policy.type === 'semantic-intent' ? 'Semantic Intent'
-                          : policy.type} Policy
+                        {policyLabel(t, policy.type)}
                       </div>
-                      {POLICY_DESCRIPTIONS[policy.type] && (
+                      {policyDescription(t, policy.type) && (
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>
-                          {POLICY_DESCRIPTIONS[policy.type]}
+                          {policyDescription(t, policy.type)}
                         </div>
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => removePolicy(idx)}
-                      title="Remove policy"
+                      title={t('common.routingPolicies.removePolicy')}
                       style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
                     >
                       <Trash2 size={14} />
@@ -276,7 +255,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                   {policy.type === 'llm' && policy.enabled && (
                     <div style={{ paddingLeft: 30, paddingTop: 4, display: 'flex', flexDirection: 'column', gap: 12 }}>
                       <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Routing Models</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>{t('common.routingPolicies.routingModels')}</label>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, marginTop: -4 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {getLlmModelIds(policy).map((modelId, mIdx) => {
@@ -307,7 +286,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                     copy[mIdx] = val;
                                     setLlmModelIds(idx, copy);
                                   }}
-                                  placeholder="Select model"
+                                  placeholder={t('common.routingPolicies.selectModel')}
                                   style={{ flex: 1 }}
                                 />
                                 {mIdx === 0 && (
@@ -340,7 +319,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                           disabled={availableModels.filter(m => !new Set(getLlmModelIds(policy)).has(m.id)).length === 0}
                           style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content', opacity: availableModels.filter(m => !new Set(getLlmModelIds(policy)).has(m.id)).length === 0 ? 0.4 : 1 }}
                         >
-                          <Plus size={12} /> Add Fallback Model
+                          <Plus size={12} /> {t('common.routingPolicies.addFallbackModel')}
                         </button>
                       </div>
 
@@ -355,18 +334,18 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                             }}
                             style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
                           />
-                          Auto Routing
+                          {t('common.routingPolicies.autoRoutingLabel')}
                         </label>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: !(policy.config?.autoRouting /* v8 ignore next */ ?? true) ? 8 : 12 }}>
-                          If enabled, traffic is distributed without custom prompts. If disabled, you can write specific prompts instructing the AI when to select each target model.
+                          {t('common.routingPolicies.autoRoutingHint')}
                         </p>
                         {!(policy.config?.autoRouting /* v8 ignore next */ ?? true) && (
                           <div style={{ marginLeft: 22, marginBottom: 12 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Additional Prompt Info <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>{t('common.routingPolicies.additionalPromptInfoLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('common.connectionFields.optional')})</span></label>
                             <textarea
                               className="form-input"
                               rows={3}
-                              placeholder="Extra instructions to include in the routing prompt..."
+                              placeholder={t('common.routingPolicies.additionalPromptInfoPlaceholder')}
                               value={policy.config?.additionalPromptInfo ?? ''}
                               onChange={e => updatePolicyConfig(idx, { additionalPromptInfo: e.target.value })}
                               /* v8 ignore next 2 */
@@ -410,7 +389,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                               </p>
                               {(policy.config?.memory ?? false) && (
                                 <div style={{ marginLeft: 22, marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Previous messages</label>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{t('common.routingPolicies.previousMessages')}</label>
                                   <input
                                     type="number"
                                     min={1}
@@ -458,7 +437,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
 
                             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Max completion tokens</label>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>{t('common.routingPolicies.maxCompletionTokens')}</label>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -485,7 +464,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
 
                             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Max prompt chars</label>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>{t('common.routingPolicies.maxPromptChars')}</label>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -557,7 +536,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                             <div style={{ marginLeft: 22, marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {/* Embedding Models */}
                               <div>
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Embedding Models</label>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>{t('common.routingPolicies.embeddingModels')}</label>
                                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 6, marginTop: -2 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                   {cacheModelIds.map((modelId, mIdx) => {
@@ -577,7 +556,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                             copy[mIdx] = val;
                                             setCacheModelIds(copy);
                                           }}
-                                          placeholder="Select model"
+                                          placeholder={t('common.routingPolicies.selectModel')}
                                           style={{ flex: 1 }}
                                         />
                                         {mIdx === 0 && (
@@ -610,7 +589,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                   onMouseDown={e => e.stopPropagation()}
                                   style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content' }}
                                 >
-                                  <Plus size={12} /> Add Fallback Model
+                                  <Plus size={12} /> {t('common.routingPolicies.addFallbackModel')}
                                 </button>
                               </div>
                               {/* TTL + Threshold */}
@@ -632,7 +611,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                   />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Similarity threshold</label>
+                                  <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{t('common.routingPolicies.similarityThreshold')}</label>
                                   <input
                                     type="number"
                                     min={0} max={1} step={0.01}
@@ -679,7 +658,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
 
                       {/* --- Embedding Model --- */}
                       <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Embedding Models</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>{t('common.routingPolicies.embeddingModels')}</label>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, marginTop: -4 }}>The first model is the primary. The others are tried in order if the primary fails.</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {getSemModelIds(policy).map((modelId, mIdx) => {
@@ -711,7 +690,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                     copy[mIdx] = val;
                                     setSemModelIds(idx, copy);
                                   }}
-                                  placeholder="Select model"
+                                  placeholder={t('common.routingPolicies.selectModel')}
                                   style={{ flex: 1 }}
                                 />
                                 {mIdx === 0 && (
@@ -745,13 +724,13 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                           disabled={availableModels.filter(m => m.capabilities?.embedding === true && !new Set(getSemModelIds(policy)).has(m.id)).length === 0}
                           style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'none', border: '1px dashed var(--border)', borderRadius: 4, color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', marginTop: 6, width: 'fit-content', opacity: availableModels.filter(m => m.capabilities?.embedding === true && !new Set(getSemModelIds(policy)).has(m.id)).length === 0 ? 0.4 : 1 }}
                         >
-                          <Plus size={12} /> Add Fallback Model
+                          <Plus size={12} /> {t('common.routingPolicies.addFallbackModel')}
                         </button>
                       </div>
 
                       {/* --- Intents --- */}
                       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Intents</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>{t('common.routingPolicies.intents')}</label>
                         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4 }}>
                           Each intent groups example utterances that represent a category of requests. The closer a user message is to an intent's examples, the higher its score.
                         </p>
@@ -808,7 +787,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                       updatePolicyConfig(idx, { intents });
                                     }}
                                     style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', borderRadius: 4, flexShrink: 0 }}
-                                    title="Remove intent"
+                                    title={t('common.routingPolicies.removeIntent')}
                                   >
                                     <X size={14} />
                                   </button>
@@ -878,7 +857,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                                   updatePolicyConfig(idx, { intents });
                                                 }}
                                                 style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', flexShrink: 0, opacity: 0.5 }}
-                                                title="Remove example"
+                                                title={t('common.routingPolicies.removeExample')}
                                               >
                                                 <X size={12} />
                                               </button>
@@ -899,7 +878,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                               onClick={() => setShowAllExamples(prev => { const n = new Set(prev); n.delete(exampleKey); return n; })}
                                               style={{ background: 'none', border: 'none', padding: '6px 0 2px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
                                             >
-                                              Show less
+                                              {t('common.showLess')}
                                             </button>
                                           )}
                                         </>
@@ -910,7 +889,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                                       <Plus size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                                       <input
                                         type="text"
-                                        placeholder="Add example and press Enter…"
+                                        placeholder={t('common.routingPolicies.addExamplePlaceholder')}
                                         value={addExampleVal}
                                         onChange={e => setAddExampleInputs(prev => ({ ...prev, [exampleKey]: e.target.value }))}
                                         onMouseDown={e => e.stopPropagation()}
@@ -944,7 +923,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                             <Plus size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                             <input
                               type="text"
-                              placeholder="Add intent and press Enter…"
+                              placeholder={t('common.routingPolicies.addIntentPlaceholder')}
                               value={addIntentInputs[idx] ?? ''}
                               onChange={e => setAddIntentInputs(prev => ({ ...prev, [idx]: e.target.value }))}
                               onMouseDown={e => e.stopPropagation()}
@@ -1012,7 +991,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
 
                             <div style={{ paddingBottom: 10 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Confidence threshold</label>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>{t('common.routingPolicies.confidenceThreshold')}</label>
                                 <input
                                   type="number"
                                   min={0} max={1} step={0.05}
@@ -1030,7 +1009,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
 
                             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, paddingBottom: 10 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>Ambiguity margin</label>
+                                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: 160 }}>{t('common.routingPolicies.ambiguityMargin')}</label>
                                 <input
                                   type="number"
                                   min={0} max={0.5} step={0.01}
@@ -1095,7 +1074,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                           />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Max calls per window</label>
+                          <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{t('common.routingPolicies.maxCallsPerWindow')}</label>
                           <input
                             type="number" min={1}
                             className="form-input"
@@ -1127,21 +1106,21 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
             <div style={{ marginTop: 10, border: '1.5px dashed var(--border)', borderRadius: 8, padding: '6px 10px' }}>
               <SearchableSelect
                 options={ALL_POLICY_TYPES
-                  .filter(t => !policies.some(p => p.type === t))
-                  .map(t => {
-                    /* v8 ignore next */
-                    const label = POLICY_LABELS[t] ?? t;
+                  .filter(pt => !policies.some(p => p.type === pt))
+                  .map(pt => {
+                    const label = policyLabel(t, pt);
+                    const description = policyDescription(t, pt);
                     return {
-                      value: t,
+                      value: pt,
                       label,
                       /* v8 ignore next */
-                      ...(POLICY_DESCRIPTIONS[t] ? { description: POLICY_DESCRIPTIONS[t] } : {}),
+                      ...(description ? { description } : {}),
                     };
                   })}
                 value=""
                 onChange={addPolicy}
-                placeholder="Add a policy..."
-                disabled={ALL_POLICY_TYPES.every(t => policies.some(p => p.type === t))}
+                placeholder={t('common.routingPolicies.addPolicyPlaceholder')}
+                disabled={ALL_POLICY_TYPES.every(pt => policies.some(p => p.type === pt))}
               />
             </div>
           </div>

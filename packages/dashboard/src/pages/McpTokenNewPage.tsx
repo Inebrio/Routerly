@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Copy } from 'lucide-react';
 import { createMyMcpToken } from '../api';
@@ -21,6 +22,7 @@ const HINT: React.CSSProperties = {
  * follows only makes sense while it is on screen.
  */
 export function McpTokenNewPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
@@ -43,7 +45,7 @@ export function McpTokenNewPage() {
       });
       setRevealed(created.token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create the token');
+      setError(e instanceof Error ? e.message : t('profile.mcp.newToken.errors.createFailed'));
     } finally {
       setBusy(false);
     }
@@ -55,7 +57,7 @@ export function McpTokenNewPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError('Copy failed, select and copy the token manually.');
+      setError(t('profile.mcp.newToken.errors.copyFailed'));
     }
   }
 
@@ -66,7 +68,7 @@ export function McpTokenNewPage() {
       style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}
     >
       <ArrowLeft size={16} />
-      <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to MCP</span>
+      <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>{t('profile.mcp.newToken.backToMcp')}</span>
     </button>
   );
 
@@ -74,8 +76,8 @@ export function McpTokenNewPage() {
     <>
       <div className="page-header">
         {back}
-        <h1>New MCP Token</h1>
-        <p>The token acts as you: it exposes exactly the tools your role permits.</p>
+        <h1>{t('profile.mcp.newToken.title')}</h1>
+        <p>{t('profile.mcp.newToken.subtitle')}</p>
       </div>
 
       <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 760 }}>
@@ -84,23 +86,23 @@ export function McpTokenNewPage() {
         {revealed === '' ? (
           <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="mcp-token-name">Name</label>
+              <label className="form-label" htmlFor="mcp-token-name">{t('profile.mcp.newToken.nameLabel')}</label>
               <input
                 id="mcp-token-name"
                 type="text"
                 className="form-input"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="laptop"
+                placeholder={t('profile.mcp.newToken.namePlaceholder')}
                 maxLength={60}
                 required
                 autoFocus
               />
-              <p style={HINT}>Where this token is used, for example "laptop" or "claude-desktop".</p>
+              <p style={HINT}>{t('profile.mcp.newToken.nameHint')}</p>
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" htmlFor="mcp-token-expiry">Expires on</label>
+              <label className="form-label" htmlFor="mcp-token-expiry">{t('profile.mcp.newToken.expiryLabel')}</label>
               <input
                 id="mcp-token-expiry"
                 type="date"
@@ -108,54 +110,54 @@ export function McpTokenNewPage() {
                 value={expiry}
                 onChange={e => setExpiry(e.target.value)}
               />
-              <p style={HINT}>Optional. Leave it empty and the token never expires, until you revoke it.</p>
+              <p style={HINT}>{t('profile.mcp.newToken.expiryHint')}</p>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="submit" className="btn btn-primary" disabled={busy || !name.trim()}>
-                {busy ? 'Creating…' : 'Create token'}
+                {busy ? t('profile.mcp.newToken.creatingButton') : t('profile.mcp.newToken.createButton')}
               </button>
               <button type="button" className="btn btn-secondary" onClick={() => navigate('/dashboard/profile/mcp')} disabled={busy}>
-                Cancel
+                {t('profile.mcp.newToken.cancelButton')}
               </button>
             </div>
           </form>
         ) : (
           <>
             <section>
-              <div style={SECTION_TITLE}>Your token</div>
+              <div style={SECTION_TITLE}>{t('profile.mcp.newToken.tokenSection.title')}</div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
-                Copy it now. It is not shown again, and a lost token can only be replaced.
+                {t('profile.mcp.newToken.tokenSection.hint')}
               </p>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>
                   {revealed}
                 </div>
-                <button className="btn btn-secondary" onClick={handleCopy} title="Copy token" style={{ flexShrink: 0 }}>
+                <button className="btn btn-secondary" onClick={handleCopy} title={copied ? t('profile.mcp.newToken.tokenSection.copiedTitle') : t('profile.mcp.newToken.tokenSection.copyTitle')} style={{ flexShrink: 0 }}>
                   {copied ? <Check size={15} /> : <Copy size={15} />}
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? t('profile.mcp.newToken.tokenSection.copiedButton') : t('profile.mcp.newToken.tokenSection.copyButton')}
                 </button>
               </div>
             </section>
 
             <section>
-              <div style={SECTION_TITLE}>Connect a client</div>
+              <div style={SECTION_TITLE}>{t('profile.mcp.newToken.connectSection.title')}</div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
-                Pick the client you are wiring up. The snippet already carries this token.
+                {t('profile.mcp.newToken.connectSection.hint')}
               </p>
               <McpClientGuide token={revealed} />
             </section>
 
             <section>
-              <div style={SECTION_TITLE}>Or use the local bridge</div>
+              <div style={SECTION_TITLE}>{t('profile.mcp.newToken.bridgeSection.title')}</div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
-                For a client that only speaks stdio, the CLI bridges it and passes your token through.
+                {t('profile.mcp.newToken.bridgeSection.hint')}
               </p>
               <CopyBlock text="routerly mcp serve" />
             </section>
 
             <div>
-              <button className="btn btn-primary" onClick={() => navigate('/dashboard/profile/mcp')}>Done</button>
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/profile/mcp')}>{t('profile.mcp.newToken.doneButton')}</button>
             </div>
           </>
         )}

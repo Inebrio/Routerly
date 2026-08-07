@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Message, OptimizerStep, ProjectConfig } from '@routerly/shared'
+import type { Message, OptimizerStep, RouterConfig } from '@routerly/shared'
 import { optimizerFixture } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import { jsonTableOptimizer, jsonTableModule } from './index.js'
@@ -13,8 +13,8 @@ function makeCtx(
   return {
     request,
     original: request,
-    project: { id: 'p1', optimizers: { steps } } as unknown as ProjectConfig,
-    projectId: 'p1',
+    router: { id: 'p1', optimizers: { steps } } as unknown as RouterConfig,
+    routerId: 'p1',
   } as unknown as ProxyContext
 }
 

@@ -11,7 +11,7 @@ const input: Processor<ProxyContext> = {
   weight: -10, // runs first: the judge (guardrail.request) must never see raw PII.
   run(ctx) {
     if (ctx.result) return
-    const policies = ctx.project.pii?.policies
+    const policies = ctx.router.pii?.policies
     if (!policies?.length) return
     const effective = mergePolicies(policies, 'input')
     if (!(effective.entities?.length || effective.customPatterns?.length)) return
@@ -50,7 +50,7 @@ const output: Processor<ProxyContext> = {
   run(ctx) {
     // Asymmetry: output PII is an OpenAI-lane concern only (routes/anthropic.ts has none).
     if (ctx.protocol !== 'openai') return
-    const policies = ctx.project.pii?.policies
+    const policies = ctx.router.pii?.policies
     if (!policies?.length) return
     const effective = mergePolicies(policies, 'output')
     if (!(effective.entities?.length || effective.customPatterns?.length)) return
