@@ -192,9 +192,8 @@ export function ConnectionCredentialsFields(props: Props) {
           <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
           <div style={{ fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
             <p style={{ margin: '0 0 6px' }}>
-              <strong>Unofficial provider — use at your own risk.</strong>{' '}
-              This integration relies on an undocumented internal API that may change or break without notice.
-              It may violate the provider&apos;s Terms of Service and could result in account suspension.
+              <strong>{t('common.connectionFields.webProvider.unofficialWarningTitle')}</strong>{' '}
+              {t('common.connectionFields.webProvider.unofficialWarningBody')}
             </p>
             <p style={{ margin: 0 }}>{WEB_PROVIDER_INSTRUCTIONS[provider as WebProvider]}</p>
           </div>
@@ -218,7 +217,7 @@ export function ConnectionCredentialsFields(props: Props) {
       {props.showEndpoint !== false && (
         <div className="form-group">
           <label className="form-label">
-            Endpoint URL{!endpointRequired && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> (optional)</span>}
+            {t('common.connectionFields.endpointUrl')}{!endpointRequired && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> {t('common.connectionFields.optional')}</span>}
           </label>
           <input className="form-input" value={values.endpoint}
             onChange={e => onChange({ endpoint: e.target.value })} required={endpointRequired} />
@@ -308,21 +307,21 @@ export function ConnectionCredentialsFields(props: Props) {
             <label className="form-label">{t('common.connectionFields.azureResourceName')}</label>
             <input className="form-input" value={values.azureResourceName}
               onChange={e => onChange({ azureResourceName: e.target.value })}
-              placeholder="myresource" required />
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The Azure OpenAI resource name (from the Azure portal).</div>
+              placeholder={t('common.connectionFields.azureResourceNamePlaceholder')} required />
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('common.connectionFields.azureResourceNameHint')}</div>
           </div>
           <div className="form-group">
             <label className="form-label">{t('common.connectionFields.deploymentId')}</label>
             <input className="form-input" value={values.azureDeploymentId}
               onChange={e => onChange({ azureDeploymentId: e.target.value })}
-              placeholder="gpt-4o-deployment" required />
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The deployment name you created in Azure OpenAI Studio.</div>
+              placeholder={t('common.connectionFields.deploymentIdPlaceholder')} required />
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('common.connectionFields.deploymentIdHint')}</div>
           </div>
           <div className="form-group">
-            <label className="form-label">API Version <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(default: 2024-02-01)</span></label>
+            <label className="form-label">{t('common.connectionFields.azureApiVersionLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('common.connectionFields.azureApiVersionDefaultHint')}</span></label>
             <input className="form-input" value={values.azureApiVersion}
               onChange={e => onChange({ azureApiVersion: e.target.value })}
-              placeholder="2024-02-01" />
+              placeholder={t('common.connectionFields.azureApiVersionPlaceholder')} />
           </div>
         </>
       )}
@@ -334,27 +333,27 @@ export function ConnectionCredentialsFields(props: Props) {
             <label className="form-label">{t('common.connectionFields.awsRegion')}</label>
             <input className="form-input" value={values.awsRegion}
               onChange={e => onChange({ awsRegion: e.target.value })}
-              placeholder="us-east-1" required />
+              placeholder={t('common.connectionFields.awsRegionPlaceholder')} required />
           </div>
           <div className="form-group">
             <label className="form-label">{t('common.connectionFields.awsAccessKeyId')}</label>
             <input className="form-input" value={values.awsAccessKeyId}
               onChange={e => onChange({ awsAccessKeyId: e.target.value })}
-              placeholder="AKIAIOSFODNN7EXAMPLE" required />
+              placeholder={t('common.connectionFields.awsAccessKeyIdPlaceholder')} required />
           </div>
           <div className="form-group">
             <label className="form-label">{t('common.connectionFields.awsSecretAccessKey')}</label>
             <input className="form-input" type="password" autoComplete="new-password"
               value={values.awsSecretAccessKey}
               onChange={e => onChange({ awsSecretAccessKey: e.target.value })}
-              placeholder={editing ? 'Leave blank to keep existing' : 'wJalrXUtnFEMI/K7MDENG/…'} />
+              placeholder={editing ? t('common.connectionFields.awsSecretAccessKeyPlaceholderExisting') : t('common.connectionFields.awsSecretAccessKeyPlaceholderNew')} />
           </div>
           <div className="form-group">
-            <label className="form-label">Session Token <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional, for temporary credentials)</span></label>
+            <label className="form-label">{t('common.connectionFields.awsSessionTokenLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('common.connectionFields.awsSessionTokenOptionalHint')}</span></label>
             <input className="form-input" type="password" autoComplete="new-password"
               value={values.awsSessionToken}
               onChange={e => onChange({ awsSessionToken: e.target.value })}
-              placeholder="AQoDYXdz…" />
+              placeholder={t('common.connectionFields.awsSessionTokenPlaceholder')} />
           </div>
         </>
       )}
@@ -366,16 +365,16 @@ export function ConnectionCredentialsFields(props: Props) {
             <label className="form-label">{t('common.connectionFields.gcpRouterId')}</label>
             <input className="form-input" value={values.VERTEXROUTERIDPLACEHOLDER}
               onChange={e => onChange({ VERTEXROUTERIDPLACEHOLDER: e.target.value })}
-              placeholder="my-gcp-router" required />
+              placeholder={t('common.connectionFields.gcpRouterIdPlaceholder')} required />
           </div>
           <div className="form-group">
-            <label className="form-label">Location <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(default: us-central1)</span></label>
+            <label className="form-label">{t('common.connectionFields.gcpLocationLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('common.connectionFields.gcpLocationDefaultHint')}</span></label>
             <input className="form-input" value={values.vertexLocation}
               onChange={e => onChange({ vertexLocation: e.target.value })}
-              placeholder="us-central1" />
+              placeholder={t('common.connectionFields.gcpLocationPlaceholder')} />
           </div>
           <div className="form-group">
-            <label className="form-label">Service Account Key <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(JSON)</span></label>
+            <label className="form-label">{t('common.connectionFields.gcpServiceAccountKeyLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('common.connectionFields.gcpServiceAccountKeyJsonHint')}</span></label>
             <textarea className="form-input" rows={6}
               value={values.vertexServiceAccountKey}
               onChange={e => onChange({ vertexServiceAccountKey: e.target.value })}
