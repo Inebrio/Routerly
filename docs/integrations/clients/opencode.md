@@ -21,16 +21,16 @@ this file for you.
 With the [CLI](../../cli/commands.md#routerly-clients) installed and logged in:
 
 ```bash
-routerly clients configure opencode --project <your-project>
+routerly clients configure opencode --router <your-router>
 ```
 
-This mints a project token (or reuses one you pass with `--token`), backs
+This mints a router token (or reuses one you pass with `--token`), backs
 up your existing `~/.config/opencode/opencode.json`, and merges in a
 `provider.routerly` entry. Any other provider already in the file is left
 untouched.
 
-Minting a new token requires `project:write` permission on the target
-project (use `--token <existing-token>` to skip this).
+Minting a new token requires `router:write` permission on the target
+router (use `--token <existing-token>` to skip this).
 
 ## Manual configuration
 
@@ -45,7 +45,7 @@ Open `~/.config/opencode/opencode.json` and merge in:
       "name": "Routerly",
       "options": {
         "baseURL": "http://localhost:3000/v1",
-        "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
+        "apiKey": "sk-rt-YOUR_ROUTER_TOKEN"
       },
       "models": {
         "routerly/ada": { "name": "Routerly (auto-routed)" }
@@ -60,8 +60,8 @@ Open `~/.config/opencode/opencode.json` and merge in:
 single model entry `routerly/ada` is the auto-routing sentinel: selecting
 it in OpenCode lets Routerly pick the actual upstream model per request.
 Replace `http://localhost:3000/v1` with your Routerly instance's URL and
-`sk-rt-YOUR_PROJECT_TOKEN` with a project token (create one on the
-[Projects](../../dashboard/projects.md) page, or let `clients configure`
+`sk-rt-YOUR_ROUTER_TOKEN` with a router token (create one on the
+[Routers](../../dashboard/routers.md) page, or let `clients configure`
 mint one for you).
 
 ## Undo

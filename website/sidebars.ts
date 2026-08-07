@@ -20,7 +20,7 @@ const sidebars: SidebarsConfig = {
         'concepts/architecture',
         'concepts/providers',
         'concepts/models',
-        'concepts/projects',
+        'concepts/routers',
         'concepts/routing',
         'concepts/budgets-and-limits',
         'concepts/notifications',

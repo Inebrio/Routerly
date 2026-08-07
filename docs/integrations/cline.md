@@ -27,19 +27,19 @@ Install the [Cline extension](https://marketplace.visualstudio.com/items?itemNam
 2. Set **API Provider** to `OpenAI Compatible`.
 3. Fill in:
    - **Base URL** → `http://localhost:3000/v1`
-   - **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
-   - **Model** → any model registered in your Routerly project (e.g. `gpt-5-mini`)
+   - **API Key** → `sk-rt-YOUR_ROUTER_TOKEN`
+   - **Model** → any model registered in your Routerly router (e.g. `gpt-5-mini`)
 4. Set **Context Window** to at least `32000` — agentic tasks require a large context.
 
 To use Anthropic via Routerly:
 
 1. Set **API Provider** to `Anthropic`.
 2. Set **Base URL** to `http://localhost:3000` (no `/v1`).
-3. Set **API Key** to `sk-rt-YOUR_PROJECT_TOKEN`.
+3. Set **API Key** to `sk-rt-YOUR_ROUTER_TOKEN`.
 4. Pick a model (e.g. `claude-haiku-4-5`).
 
 :::note
-Agentic tasks consume many tokens per step. Set a [budget limit](../concepts/budgets-and-limits) on your project token to cap spending automatically.
+Agentic tasks consume many tokens per step. Set a [budget limit](../concepts/budgets-and-limits) on your router token to cap spending automatically.
 :::
 
 ---
@@ -68,7 +68,7 @@ paste it into **MCP Servers → Configure MCP Servers** in the Cline panel:
 
 `"type": "streamableHttp"` is required: without it Cline falls back to the
 legacy `sse` transport, which Routerly does not serve. The token is a
-personal MCP token (`sk-rt-mcp-…`), not a project token: create one with
+personal MCP token (`sk-rt-mcp-…`), not a router token: create one with
 `routerly mcp token create cline` or from **Profile → MCP** in the
 dashboard. See [Connect an MCP client](../guides/mcp-clients.md#cline).
 

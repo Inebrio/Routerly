@@ -5,7 +5,7 @@ sidebar_position: 6
 
 # Dashboard: Usage
 
-The Usage page provides aggregate analytics, per-model performance breakdown, and per-request logs across all projects. Use it to understand spending patterns, investigate errors, and drill into individual request traces.
+The Usage page provides aggregate analytics, per-model performance breakdown, and per-request logs across all routers. Use it to understand spending patterns, investigate errors, and drill into individual request traces.
 
 ---
 
@@ -30,7 +30,7 @@ The **Completion Calls** and **Router Calls** cards double as filters: clicking
 one sets the Caller filter to that kind and outlines the card, clicking it again
 clears the filter.
 
-Guardrail judge calls are charged to the project like any other model call and are subject to the project's budget limits. Blocked requests record zero cost and zero tokens.
+Guardrail judge calls are charged to the router like any other model call and are subject to the router's budget limits. Blocked requests record zero cost and zero tokens.
 
 What routing saved is read on the two cards that carry the numbers it changed:
 money on **Total Cost**, tokens on **Tokens**. There is no separate saving card,
@@ -58,17 +58,17 @@ change, not every two seconds.
 | Filter | Description |
 |--------|-------------|
 | **Period** | Preset time window (today, this month, etc.) or custom range |
-| **Project** | Filter to a specific project |
+| **Router** | Filter to a specific router |
 | **Model** | Filter to specific model IDs |
-| **Token** | Filter to the traffic that came in on specific project tokens |
+| **Token** | Filter to the traffic that came in on specific router tokens |
 | **Caller** | Who made the call: the client (`Completion`), the router, the guardrail pipeline, or an experiment judge |
 | **Type** | What the call asked for, taken from the endpoint the client hit: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
 | **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
 | **Tags** | Filter by token metadata (e.g., `environment: production`) |
 
-**Token** lists every token of the selected projects, or of all projects when no
-project is picked, and appears only when there is more than one to choose from.
+**Token** lists every token of the selected routers, or of all routers when no
+router is picked, and appears only when there is more than one to choose from.
 A token is named by its first label, and by the visible head of the secret when
 it has none. Records written before 0.4.0 carry no token and drop out of the
 result as soon as the filter is set.
@@ -134,7 +134,7 @@ many records the active filters kept out of the period's total.
 | Column | Description |
 |--------|-------------|
 | Time | When the request arrived |
-| Project | The project the request belonged to, with the token the call came in on underneath it |
+| Router | The router the request belonged to, with the token the call came in on underneath it |
 | Model | Provider model used |
 | Type | What the call asked for: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
 | Caller | Who made the call: `completion` (the client), `router`, `guardrail`, or `judge` |
@@ -197,7 +197,7 @@ of the pipeline that produced them:
 
 | Phase | What happened there |
 |-------|---------------------|
-| **Ingress** | The request arrived and was identified: project, token, session |
+| **Ingress** | The request arrived and was identified: router, token, session |
 | **Request · Preprocess** | Everything that ran on the way in: PII scan and scrub, guardrail rules, optimizers |
 | **Routing · Prepare** | The routing engine's input and its decision: active policies, scored candidates, selected model |
 | **Routing · Execute** | The call to the provider: payload sent, response received, retries and fallbacks |
@@ -211,7 +211,7 @@ phase took. Click it to fold the phase away. Inside, every entry is stamped with
 its offset from the start of the request (`+83 ms`), so a slow phase is visible
 without reading the numbers.
 
-A phase only appears when a module emitted something in it: a project with no
+A phase only appears when a module emitted something in it: a router with no
 guardrails and no PII scrubbing gets no **Request · Preprocess** section.
 
 :::note Traces recorded before 0.4.0

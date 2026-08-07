@@ -19,12 +19,12 @@ Routerly is a self-hosted LLM API gateway with intelligent routing, cost trackin
 | Feature | Description |
 |---------|-------------|
 | **Intelligent routing** | 9 configurable policies score every request in parallel — cheapest, fastest, healthiest, most capable, or LLM-powered |
-| **Budget enforcement** | Hard limits per model, project, and token. Requests are blocked before being sent to providers |
+| **Budget enforcement** | Hard limits per model, router, and token. Requests are blocked before being sent to providers |
 | **Full cost tracking** | Every API call logged with tokens, USD cost, latency, and routing trace |
-| **Multi-project isolation** | Each project has its own API token, model list, routing config, and budget envelope |
+| **Multi-router isolation** | Each router has its own API token, model list, routing config, and budget envelope |
 | **OpenAI + Anthropic compatible** | Drop-in replacement for both APIs — `/v1/chat/completions` and `/v1/messages` |
 | **Zero infrastructure** | No database, no Redis, no PostgreSQL — config lives in JSON files |
-| **Web dashboard** | Register models, configure projects, monitor usage, manage users |
+| **Web dashboard** | Register models, configure routers, monitor usage, manage users |
 | **Admin CLI** | Full management from the terminal with `routerly` commands |
 | **RBAC** | Role-based access control with 7 granular permissions and custom roles |
 | **Notifications** | Email and webhook alerts via SMTP, SES, SendGrid, Azure, Google, or custom webhook |
@@ -47,8 +47,8 @@ LangChain   completions   Track cost     ◀──  ...
            ◀──            Return response
 ```
 
-1. Your app sends a request to Routerly using a **project token** as the Bearer header
-2. Routerly authenticates the token and resolves the project
+1. Your app sends a request to Routerly using a **router token** as the Bearer header
+2. Routerly authenticates the token and resolves the router
 3. Enabled routing policies run in parallel and score each candidate model
 4. The highest-scoring model within budget receives the request
 5. Response is forwarded back; tokens, cost, and latency are recorded
@@ -60,7 +60,7 @@ LangChain   completions   Track cost     ◀──  ...
 
 | Scenario | How Routerly helps |
 |----------|--------------------|
-| **SaaS & multi-tenant** | One project per tenant, hard spend caps, automatic cheapest-model routing |
+| **SaaS & multi-tenant** | One router per tenant, hard spend caps, automatic cheapest-model routing |
 | **Local-first development** | Develop against Ollama locally, promote to GPT-4o in production — same API, same code |
 | **Automatic cost reduction** | Route simple tasks to cheap models, complex ones to capable models |
 | **Resilience & failover** | Register the same capability across OpenAI, Claude, and Gemini — Routerly detects failures and reroutes in real time |
@@ -91,12 +91,12 @@ powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel latest"
 ```
 
-Then register a model, create a project, and start:
+Then register a model, create a router, and start:
 
 ```bash
 routerly model add --id gpt-5-mini --provider openai --api-key sk-YOUR_KEY
-routerly project create --name "My App"
-routerly project model add "My App" gpt-5-mini
+routerly router create --name "My App"
+routerly router model add "My App" gpt-5-mini
 routerly start
 ```
 

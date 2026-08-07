@@ -29,7 +29,7 @@ from haystack.utils import Secret
 generator = OpenAIChatGenerator(
     model="gpt-5-mini",
     api_base_url="http://localhost:3000/v1",
-    api_key=Secret.from_token("sk-rt-YOUR_PROJECT_TOKEN"),
+    api_key=Secret.from_token("sk-rt-YOUR_ROUTER_TOKEN"),
 )
 ```
 
@@ -41,7 +41,7 @@ from haystack.components.embedders import OpenAITextEmbedder
 embedder = OpenAITextEmbedder(
     model="text-embedding-3-small",
     api_base_url="http://localhost:3000/v1",
-    api_key=Secret.from_token("sk-rt-YOUR_PROJECT_TOKEN"),
+    api_key=Secret.from_token("sk-rt-YOUR_ROUTER_TOKEN"),
 )
 ```
 
@@ -69,5 +69,5 @@ print(result["generator"]["replies"][0].content)
 All inference calls in the pipeline are routed through Routerly's engine.
 
 :::tip
-If your pipeline uses both a generator and an embedder, you can register both models in the same Routerly project and control costs and limits centrally.
+If your pipeline uses both a generator and an embedder, you can register both models in the same Routerly router and control costs and limits centrally.
 :::

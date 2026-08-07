@@ -16,12 +16,12 @@ Routerly stores all configuration as JSON files under `~/.routerly/`. This page 
 ├── config/
 │   ├── settings.json     # Port, log level, notifications, …
 │   ├── models.json       # Registered LLM models (API keys encrypted)
-│   ├── projects.json     # Projects, routing policies, tokens, members
+│   ├── routers.json     # Routers, routing policies, tokens, members
 │   ├── users.json        # Dashboard users (passwords bcrypt-hashed)
 │   ├── roles.json        # Custom RBAC role definitions
 │   └── secret            # AES-256 encryption key (auto-generated)
 └── data/
-    └── usage.json        # Append-only usage records
+    └── usage.ndjson     # Append-only usage records (NDJSON)
 ```
 
 Override the base directory with the `ROUTERLY_HOME` environment variable — useful for Docker volumes or multi-instance setups.
@@ -80,12 +80,12 @@ Open **Settings → General** in the dashboard. Changes take effect immediately 
 
 ## Security Notes
 
-- **API keys** (in `models.json`) and **project tokens** (in `projects.json`) are AES-256 encrypted using the key stored in the `secret` file.
+- **API keys** (in `models.json`) and **router tokens** (in `routers.json`) are AES-256 encrypted using the key stored in the `secret` file.
 - **User passwords** (in `users.json`) are bcrypt-hashed and never stored in plain text.
 - The `secret` file is generated automatically on first run.
 
 :::warning Back up the `secret` file
-If you lose the `secret` file, all API keys and project tokens become unreadable. Always include it in your backups alongside the rest of `~/.routerly/config/`.
+If you lose the `secret` file, all API keys and router tokens become unreadable. Always include it in your backups alongside the rest of `~/.routerly/config/`.
 :::
 
 ---

@@ -13,8 +13,8 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 
 | Permission | Description |
 |-----------|-------------|
-| `project:read` | View projects and their configuration |
-| `project:write` | Create, edit, and delete projects |
+| `router:read` | View routers and their configuration |
+| `router:write` | Create, edit, and delete routers |
 | `model:read` | View registered models |
 | `model:write` | Create, edit, and delete models |
 | `user:read` | View dashboard users |
@@ -23,8 +23,8 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `settings:read` | View global settings |
 | `settings:write` | Change global settings |
 | `notification:write` | Manage notification channels and rules |
-| `token:read` | View project tokens |
-| `token:write` | Create and revoke project tokens |
+| `token:read` | View router tokens |
+| `token:write` | Create and revoke router tokens |
 | `role:write` | Create, edit, and delete custom roles |
 | `audit:read` | Read the audit log |
 | `modules:read` | View which modules are installed and enabled |
@@ -36,7 +36,7 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `profiles:read` | View [routing profiles](./profiles.md) |
 | `profiles:manage` | Create, edit, and delete routing profiles |
 | `optimizers:read` | View the [optimizer](../concepts/optimizers.md) catalog, samples, and previews |
-| `optimizers:manage` | Change a project's optimizer pipeline |
+| `optimizers:manage` | Change a router's optimizer pipeline |
 | `experiments:read` | View [experiments](./experiments.md) and their metrics |
 | `experiments:manage` | Create, edit, and delete experiments, manage their tokens |
 
@@ -51,7 +51,7 @@ Permissions gated by a module (`experiments:*`, for instance) still answer
 |------|-------------|
 | `admin` | All permissions |
 | `operator` | Everything except `user:write`, `role:write`, `settings:write`, `audit:read`, `modules:manage`, `resilience:*` |
-| `viewer` | `project:read`, `model:read`, `report:read`, `settings:read`, `token:read`, `audit:read`, `modules:read`, `connections:read`, `profiles:read`, `optimizers:read`, `experiments:read` |
+| `viewer` | `router:read`, `model:read`, `report:read`, `settings:read`, `token:read`, `audit:read`, `modules:read`, `connections:read`, `profiles:read`, `optimizers:read`, `experiments:read` |
 
 ---
 
@@ -103,9 +103,9 @@ Click **Delete** to remove the role. Users who had this role will lose their das
 
 ---
 
-## Project-Level User Assignment
+## Router-Level User Assignment
 
-Users can also be assigned to specific projects (from the project's **Users** tab). This limits their access to that project without changing their global role.
+Users can also be assigned to specific routers (from the router's **Users** tab). This limits their access to that router without changing their global role.
 
 ---
 

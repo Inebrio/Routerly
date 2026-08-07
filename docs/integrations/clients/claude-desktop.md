@@ -9,7 +9,7 @@ sidebar_label: Claude Desktop
 talks to Anthropic's own backend and exposes no base-URL override, so its
 chat traffic **cannot** be routed through Routerly. What it can do is load
 Routerly as an MCP server, which gives Claude your gateway's tools:
-projects, models, usage, routing.
+routers, models, usage, routing.
 
 **Support state:** `documented`. Configured by hand.
 **Config file:** `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -30,7 +30,7 @@ dashboard under **Connect → Claude Desktop**.
 
 ## Create an MCP token
 
-MCP tokens are personal, not per project:
+MCP tokens are personal, not per router:
 
 ```bash
 routerly mcp token create --label claude-desktop

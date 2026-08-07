@@ -26,7 +26,7 @@ When the service starts it performs the following steps in order:
    - LLM Proxy routes (`/v1/*`)
    - Root redirect (`/` → `/dashboard/`)
    - Health check (`/health`)
-   - Pass-through proxy (`setNotFoundHandler`) — any unmatched path is forwarded to the project's upstream provider
+   - Pass-through proxy (`setNotFoundHandler`) — any unmatched path is forwarded to the router's upstream provider
 5. **`server.listen`** — Binds to `host:port` from settings (defaults: `0.0.0.0:3000`).
 
 ---
@@ -79,12 +79,12 @@ All state is stored as JSON files on disk — there is no external database. The
 ├── config/
 │   ├── settings.json     # Port, log level, dashboard toggle, timeout, public URL
 │   ├── models.json       # Registered LLM models (API keys AES-256 encrypted)
-│   ├── projects.json     # Projects, routing policies, tokens, members, budgets
+│   ├── routers.json     # Routers, routing policies, tokens, members, budgets
 │   ├── users.json        # Dashboard users (passwords bcrypt-hashed)
 │   ├── roles.json        # Custom RBAC role definitions
 │   └── secret            # AES-256 encryption key (auto-generated, never commit)
 └── data/
-    └── usage.json        # Append-only call records (tokens, cost, latency, outcome)
+    └── usage.ndjson     # Append-only call records (tokens, cost, latency, outcome)
 ```
 
 All writes to config files use a file lock (`proper-lockfile`) to prevent concurrent corruption. Missing files are auto-created with their defaults on first read.
