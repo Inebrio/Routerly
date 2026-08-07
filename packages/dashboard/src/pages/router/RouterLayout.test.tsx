@@ -107,12 +107,12 @@ describe('RouterLayout — loaded state', () => {
 });
 
 describe('RouterLayout — new router (no id)', () => {
-  it('shows "New Router" heading when no id in URL', () => {
+  it('shows "New Router" heading on the router creation route', () => {
     // no API call for new router
     render(
-      <MemoryRouter initialEntries={['/dashboard/routers/new']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/new/router']}>
         <Routes>
-          <Route path="/dashboard/routers/new" element={<RouterLayout />}>
+          <Route path="/dashboard/routers/new/router" element={<RouterLayout />}>
             <Route index element={<div>New content</div>} />
           </Route>
         </Routes>
@@ -122,11 +122,24 @@ describe('RouterLayout — new router (no id)', () => {
     expect(mockGetRouters).not.toHaveBeenCalled();
   });
 
+  it('shows "New Orchestrator" heading on the orchestrator creation route', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard/routers/new/orchestrator']}>
+        <Routes>
+          <Route path="/dashboard/routers/new/orchestrator" element={<RouterLayout />}>
+            <Route index element={<div>New content</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    expect(screen.getByText('New Orchestrator')).toBeTruthy();
+  });
+
   it('disabled tabs show cursor:not-allowed title', () => {
     render(
-      <MemoryRouter initialEntries={['/dashboard/routers/new']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/new/router']}>
         <Routes>
-          <Route path="/dashboard/routers/new" element={<RouterLayout />}>
+          <Route path="/dashboard/routers/new/router" element={<RouterLayout />}>
             <Route index element={<div />} />
           </Route>
         </Routes>
@@ -139,9 +152,9 @@ describe('RouterLayout — new router (no id)', () => {
 
   it('hides the Dashboard tab: a router with no traffic has nothing to show', () => {
     render(
-      <MemoryRouter initialEntries={['/dashboard/routers/new']}>
+      <MemoryRouter initialEntries={['/dashboard/routers/new/router']}>
         <Routes>
-          <Route path="/dashboard/routers/new" element={<RouterLayout />}>
+          <Route path="/dashboard/routers/new/router" element={<RouterLayout />}>
             <Route index element={<div />} />
           </Route>
         </Routes>

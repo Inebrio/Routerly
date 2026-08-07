@@ -60,26 +60,6 @@ function renderTab(router: Record<string, unknown> | null = mockRouter) {
   };
 }
 
-function renderNew() {
-  const setRouter = vi.fn();
-  function LayoutWrapper() {
-    return <Outlet context={{ router: null, setRouter }} />;
-  }
-  return {
-    setRouter,
-    ...render(
-      <MemoryRouter initialEntries={['/dashboard/routers/new']}>
-        <Routes>
-          <Route path="/dashboard/routers/new" element={<LayoutWrapper />}>
-            <Route index element={<RouterGeneralTab />} />
-          </Route>
-          <Route path="/dashboard/routers/:id/general" element={<div>new router page</div>} />
-        </Routes>
-      </MemoryRouter>
-    ),
-  };
-}
-
 beforeEach(() => {
   mockGetSettings.mockResolvedValue({ publicUrl: 'https://api.example.com', port: 3000 });
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
@@ -313,132 +293,24 @@ describe('RouterGeneralTab — copy endpoint', () => {
 
 });
 
-// ── New router mode ─────────────────────────────────────────────────────────
+// ── Kind label (read-only, fixed at creation) ───────────────────────────────
 
-describe('RouterGeneralTab — new router mode', () => {
-  it('shows "Create Router" button when router is null', () => {
-    renderNew();
-    expect(screen.getByRole('button', { name: /Create Router/i })).toBeTruthy();
-  });
-
-  it('"Create Router" button not disabled when name is empty (form uses required attr)', () => {
-    renderNew();
-    const btn = screen.getByRole('button', { name: /Create Router/i }) as HTMLButtonElement;
-    // disabled={saving || (isEdit && !isDirty)} — in new mode isEdit=false, so only saving disables it
-    expect(btn.disabled).toBe(false);
-  });
-
-  it('Create button enabled when name is typed', async () => {
-    renderNew();
-    const input = screen.getByPlaceholderText('My App');
-    await userEvent.type(input, 'My App');
-    const btn = screen.getByRole('button', { name: /Create Router/i }) as HTMLButtonElement;
-    expect(btn.disabled).toBe(false);
-  });
-
-  it('shows token reveal view after successful create (router has token)', async () => {
-    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => expect(screen.queryByText('sk-rt-secret')).not.toBeNull());
-  });
-
-  it('token reveal view has Copy button', async () => {
-    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => screen.queryByText('sk-rt-secret'));
-    expect(screen.getByRole('button', { name: /Copy/i })).toBeTruthy();
-  });
-
-  it('token reveal Copy button calls clipboard', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => screen.queryByText('sk-rt-secret'));
-    await userEvent.click(screen.getByRole('button', { name: /Copy/i }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('sk-rt-secret'));
-  });
-
-  it('token reveal "Go to router" button navigates to router page', async () => {
-    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
-    const { container } = renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => screen.queryByText('sk-rt-secret'));
-    // "Go to router" button navigates away — the revealed token view disappears
-    const goBtn = container.querySelector('button.btn-primary') as HTMLButtonElement;
-    await userEvent.click(goBtn);
-    await waitFor(() => expect(screen.queryByText('sk-rt-secret')).toBeNull());
-  });
-
-  it('shows "Copied!" on clipboard copy', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [], token: 'sk-rt-secret' });
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => screen.queryByText('sk-rt-secret'));
-    await userEvent.click(screen.getByRole('button', { name: /Copy/i }));
-    await waitFor(() => expect(screen.queryByText('Copied!')).not.toBeNull());
-  });
-
-
-  it('navigates to router page when no token returned', async () => {
-    mockCreateRouter.mockResolvedValueOnce({ id: 'proj-new', name: 'My App', models: [] });
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    // Navigated away — Create Router button no longer in DOM
-    await waitFor(() => expect(screen.queryByRole('button', { name: /Create Router/i })).toBeNull());
-  });
-
-  it('shows error on createRouter failure', async () => {
-    mockCreateRouter.mockRejectedValueOnce(new Error('Create failed'));
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My App');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => expect(screen.getByText('Create failed')).toBeTruthy());
-  });
-});
-
-// ── Router Kind picker ───────────────────────────────────────────────────────
-
-describe('RouterGeneralTab — Kind picker', () => {
-  it('is not rendered in edit mode', async () => {
+describe('RouterGeneralTab — kind label', () => {
+  it('shows the fixed kind label, never a selector', async () => {
     renderTab();
     await waitFor(() => screen.getByPlaceholderText('My App'));
-    expect(screen.queryByText('Kind')).toBeNull();
+    expect(screen.getByText('Router')).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: /Kind/i })).toBeNull();
   });
 
-  it('is rendered in new router mode', () => {
-    renderNew();
-    expect(screen.getByText('Kind')).toBeTruthy();
-  });
-
-  it('sends kind: orchestrator in the create payload when selected', async () => {
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My Orchestrator');
-    await userEvent.click(screen.getByRole('combobox', { name: /Router Kind/i }));
-    await userEvent.click(screen.getByText('Orchestrator'));
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => expect(mockCreateRouter).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'orchestrator' })
-    ));
-  });
-
-  it('omits kind from the create payload for the default "router" kind', async () => {
-    renderNew();
-    await userEvent.type(screen.getByPlaceholderText('My App'), 'My Router');
-    await userEvent.click(screen.getByRole('button', { name: /Create Router/i }));
-    await waitFor(() => expect(mockCreateRouter).toHaveBeenCalled());
-    const [payload] = mockCreateRouter.mock.calls[0]!;
+  it('never sends a kind field on save', async () => {
+    renderTab();
+    await waitFor(() => screen.getByPlaceholderText('My App'));
+    await userEvent.clear(screen.getByPlaceholderText('My App'));
+    await userEvent.type(screen.getByPlaceholderText('My App'), 'Changed');
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const [, payload] = mockUpdateRouter.mock.calls[0]!;
     expect(payload).not.toHaveProperty('kind');
   });
 });
