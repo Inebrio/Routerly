@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Denne ruteren er ikke en orkestrator.",
       "candidateRouters": "Kandidat rutere",
       "candidateRoutersHint": "Ruterene denne orkestratoren videresender forespørsler til. Vekt påvirker hvor ofte hver kandidat velges; bare navn, id, vekt og valgfri per-kandidat-grenser vises her.",
+      "routingPolicies": "Rutingspolicyer",
+      "routingPoliciesHint": "En Orchestrator scorer hver kandidatruter som helhet, så bare helse-, hastighetsbegrensnings- og rettferdighetsregler gjelder her. Andre policytyper velger fra en routers egne modeller, som en Orchestrator ikke har.",
       "router": "Ruter",
       "selectRouter": "Velg ruter",
       "weight": "Vekt",

@@ -1312,6 +1312,8 @@
       "notOrchestrator": "此路由器不是协调器。",
       "candidateRouters": "候选路由器",
       "candidateRoutersHint": "此协调器转发请求的路由器。权重影响每个候选被选择的频率；这里只显示其名称、ID、权重和可选的每候选限制。",
+      "routingPolicies": "路由策略",
+      "routingPoliciesHint": "Orchestrator 将每个候选路由器作为一个整体进行评分，因此这里只适用健康、速率限制和公平性策略。其他策略类型从路由器自己的模型中选择，这些模型 Orchestrator 没有。",
       "router": "路由器",
       "selectRouter": "选择路由器",
       "weight": "权重",

@@ -32,6 +32,7 @@ Creating a Router, Orchestrator, or Passthrough no longer goes through one share
 - Dashboard: fixing unsafe config file permissions (from the blocking modal or from Settings → Security) now refreshes every permission-related UI on the page immediately — the top banner, the blocking modal, and the Settings section previously each polled independently and stayed stale until a manual reload.
 - Orchestrators now honor their own `health`/`rate-limit`/`fairness` routing policies (including `enabled: false` and custom windows) when scoring candidate routers, instead of always applying hardcoded defaults regardless of what was saved.
 - Creating or updating an Orchestrator now rejects (HTTP 400) any policy type other than `health`, `rate-limit`, or `fairness` — the ones that score a candidate Router as a whole. The other types (`cheapest`, `capability`, `context`, `performance`, `llm`, `semantic-intent`, `model-preference`, `budget-remaining`) pick among a pool of models, which an Orchestrator has none of; previously they were silently accepted and had no effect.
+- Dashboard: the Orchestrator's Routing tab now has a Routing Policies section (same layout as a plain Router's Routing tab, with the candidate-router list in place of target models), offering only `health`/`rate-limit`/`fairness` — the ones an Orchestrator could never configure before.
 
 ### Breaking changes
 

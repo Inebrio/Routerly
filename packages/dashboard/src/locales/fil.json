@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Hindi Orchestrator ang router na ito.",
       "candidateRouters": "Mga Kandidatong Router",
       "candidateRoutersHint": "Ang mga router na ipinapasa ng Orchestrator na ito ng mga request. Ang timbang ay nakakaapekto kung gaano kadalas napipili ang bawat kandidato; ang pangalan lamang, id, timbang, at opsyonal na per-candidate na limitasyon nito ang ipinapakita dito.",
+      "routingPolicies": "Mga Patakaran sa Pag-route",
+      "routingPoliciesHint": "Ang isang Orchestrator ay nagsuscore ng bawat candidate Router bilang isang kabuuan, kaya dito ay nag-apply lamang ang mga patakaran sa kalusugan, rate limit, at katapatan. Ang ibang uri ng patakaran ay pumipili mula sa sariling mga modelo ng isang router, na walang Orchestrator.",
       "router": "Router",
       "selectRouter": "Piliin ang router",
       "weight": "Timbang",

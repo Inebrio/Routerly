@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Dieser Router ist kein Orchestrator.",
       "candidateRouters": "Kandidaten-Router",
       "candidateRoutersHint": "Die Router, an die dieser Orchestrator Anfragen weiterleitet. Die Gewichtung beeinflusst, wie oft jeder Kandidat gewählt wird; hier werden nur Name, ID, Gewichtung und optionale kandidatenspezifische Limits angezeigt.",
+      "routingPolicies": "Routing-Richtlinien",
+      "routingPoliciesHint": "Ein Orchestrator bewertet jeden Kandidaten-Router als Ganzes, daher gelten hier nur Integritäts-, Ratenlimit- und Fairness-Richtlinien. Die anderen Richtlinientypen wählen zwischen den eigenen Modellen eines Routers, die ein Orchestrator nicht hat.",
       "router": "Router",
       "selectRouter": "Router auswählen",
       "weight": "Gewichtung",

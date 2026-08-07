@@ -1312,6 +1312,8 @@
       "notOrchestrator": "This router is not an Orchestrator.",
       "candidateRouters": "Candidate Routers",
       "candidateRoutersHint": "The routers this Orchestrator forwards requests to. Weight influences how often each candidate is picked; only its name, id, weight and optional per-candidate limits are shown here.",
+      "routingPolicies": "Routing Policies",
+      "routingPoliciesHint": "An Orchestrator scores each candidate Router as a whole, so only health, rate limit and fairness policies apply here. The other policy types pick among a router's own models, which an Orchestrator has none of.",
       "router": "Router",
       "selectRouter": "Select router",
       "weight": "Weight",

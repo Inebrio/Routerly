@@ -195,6 +195,42 @@ describe('RouterOrchestratorTab — per-candidate limits', () => {
   });
 });
 
+describe('RouterOrchestratorTab — routing policies (allow-list, orchestrator-compatible only)', () => {
+  it('offers only health, rate-limit and fairness in the add-policy dropdown', async () => {
+    renderTab();
+    const select = await screen.findByTestId('searchable-Add a policy...');
+    const optionLabels = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
+
+    expect(optionLabels).toContain('Health Policy');
+    expect(optionLabels).toContain('Rate Limit Policy');
+    expect(optionLabels).toContain('Fairness Policy');
+    expect(optionLabels).not.toContain('Cheapest Policy');
+    expect(optionLabels).not.toContain('Semantic Intent Policy');
+    expect(optionLabels).not.toContain('AI Routing Policy');
+  });
+
+  it('adds a policy and includes it in the save payload', async () => {
+    renderTab();
+    const select = await screen.findByTestId('searchable-Add a policy...');
+    await userEvent.selectOptions(select, 'fairness');
+
+    await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
+
+    await waitFor(() =>
+      expect(mockUpdateRouter).toHaveBeenCalledWith(
+        'orch-1',
+        expect.objectContaining({ policies: [{ type: 'fairness', enabled: true }] })
+      )
+    );
+  });
+
+  it('loads existing orchestrator policies into the editor', async () => {
+    const withPolicies = { ...orchestrator, policies: [{ type: 'health', enabled: true }] };
+    renderTab(withPolicies);
+    await waitFor(() => expect(screen.getByText('Health Policy')).toBeTruthy());
+  });
+});
+
 describe('RouterOrchestratorTab — save failure', () => {
   it('renders the server error message verbatim on a failed save', async () => {
     mockUpdateRouter.mockRejectedValueOnce(new Error('An orchestrator cannot target itself'));

@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Bộ định tuyến này không phải là Nhạc trưởng.",
       "candidateRouters": "Bộ định tuyến ứng cử viên",
       "candidateRoutersHint": "Các bộ định tuyến mà Nhạc trưởng này chuyển tiếp yêu cầu đến. Trọng lượng ảnh hưởng đến tần suất chọn mỗi ứng cử viên; chỉ tên, id, trọng lượng và giới hạn tùy chọn theo ứng cử viên của nó được hiển thị ở đây.",
+      "routingPolicies": "Chính sách định tuyến",
+      "routingPoliciesHint": "Một Orchestrator chấm điểm mỗi Router ứng cử viên như một toàn thể, vì vậy chỉ các chính sách sức khỏe, giới hạn tỷ lệ và công bằng áp dụng ở đây. Các loại chính sách khác chọn từ các mô hình riêng của bộ định tuyến, mà Orchestrator không có.",
       "router": "Bộ định tuyến",
       "selectRouter": "Chọn bộ định tuyến",
       "weight": "Trọng lượng",

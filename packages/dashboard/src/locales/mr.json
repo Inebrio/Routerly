@@ -1312,6 +1312,8 @@
       "notOrchestrator": "This router is not an Orchestrator.",
       "candidateRouters": "Candidate Routers",
       "candidateRoutersHint": "The routers this Orchestrator forwards requests to. Weight influences how often each candidate is picked; only its name, id, weight and optional per-candidate limits are shown here.",
+      "routingPolicies": "रूटिंग धोरणा",
+      "routingPoliciesHint": "एक ऑर्केस्ट्रेटर प्रत्येक उमेदवार राउटरला संपूर्ण म्हणून स्कोर करतो, त्यामुळे येथे केवळ आरोग्य, दर मर्यादा आणि न्याय धोरणा लागू होतात. इतर नीती प्रकार राउटरचे स्वतःचे मॉडेल निवडतात, जे ऑर्केस्ट्रेटरकडे नाहीत.",
       "router": "Router",
       "selectRouter": "Select router",
       "weight": "Weight",

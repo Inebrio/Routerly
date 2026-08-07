@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Tento smerovací modul nie je Orchestrátor.",
       "candidateRouters": "Kandidátni smerovacie moduly",
       "candidateRoutersHint": "Smerovacie moduly, na ktoré tento Orchestrátor presúva požiadavky. Váha vplýva na to, ako často je každý kandidát vybraný; iba jeho názov, ID, váha a voliteľné limity na kandidáta sú tu zobrazené.",
+      "routingPolicies": "Politiky smerovania",
+      "routingPoliciesHint": "Orchestrator hodnotí každý Router kandidáta ako celok, takže tu platia iba politiky zdravia, limitu sadzby a spravodlivosti. Ostatné typy politík volia z vlastných modelov smernika, ktoré orchestrator nemá.",
       "router": "Smerovací modul",
       "selectRouter": "Vybrať smerovací modul",
       "weight": "Váha",

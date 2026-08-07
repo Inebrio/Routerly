@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Bu yönlendirici bir Orkestratör değildir.",
       "candidateRouters": "Aday Yönlendiriciler",
       "candidateRoutersHint": "Bu Orkestratörün istekleri ileten yönlendiriciler. Ağırlık, her adayın seçilme sıklığını etkiler; yalnızca adı, kimliği, ağırlığı ve isteğe bağlı adaya özgü limitler gösterilir.",
+      "routingPolicies": "Yönlendirme İlkeleri",
+      "routingPoliciesHint": "Bir Orkestratör, her aday Router'ı bütün olarak puanlar, bu nedenle burada yalnızca sağlık, hız sınırı ve adalet ilkeleri geçerlidir. Diğer ilke türleri, bir yönlendiricinin kendi modellerinden seçim yapar, ancak bir Orkestratörün bunları yoktur.",
       "router": "Yönlendirici",
       "selectRouter": "Yönlendirici seç",
       "weight": "Ağırlık",

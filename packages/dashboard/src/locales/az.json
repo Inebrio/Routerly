@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Bu router Orkestrator deyil.",
       "candidateRouters": "Namizəd Routerlər",
       "candidateRoutersHint": "Bu Orkestratorun sorğuları yönləndirdiyi routerlər. Çəki hər namizədin nə qədər tez-tez seçildiyinə təsir edir; burada yalnız onun adı, ID-si, çəkisi və isteğe bağlı namizəd üzrə limitlər göstərilir.",
+      "routingPolicies": "Marşrutlaşdırma Siyasətləri",
+      "routingPoliciesHint": "Bir Orkestr hər bir namizəd Routeri bir tam kimi qiymətləndirir, buna görə də burada yalnız sağlamlıq, sıra limiti və ədalətlilik siyasətləri tətbiq olunur. Digər siyasət növləri routerin öz modelləri arasından seçim edir, bunları Orkestr heç bir şeyə malikdir.",
       "router": "Router",
       "selectRouter": "Router seçin",
       "weight": "Çəki",

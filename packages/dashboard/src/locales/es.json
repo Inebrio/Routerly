@@ -937,6 +937,8 @@
       "notOrchestrator": "Este enrutador no es un Orquestador.",
       "candidateRouters": "Enrutadores candidatos",
       "candidateRoutersHint": "Los enrutadores a los que este Orquestador reenvía las solicitudes. El peso influye en la frecuencia con la que se elige cada candidato; aquí solo se muestran su nombre, id, peso y límites opcionales por candidato.",
+      "routingPolicies": "Políticas de enrutamiento",
+      "routingPoliciesHint": "Un Orchestrator puntúa cada Router candidato como un todo, por lo que aquí solo se aplican políticas de salud, límite de tasa y equidad. Los otros tipos de políticas eligen entre los propios modelos de un router, que un Orchestrator no tiene.",
       "router": "Enrutador",
       "selectRouter": "Seleccionar enrutador",
       "weight": "Peso",

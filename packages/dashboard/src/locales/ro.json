@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Acest router nu este un orchestrator.",
       "candidateRouters": "Rutere candidate",
       "candidateRoutersHint": "Ruterii pe care acest orchestrator le transmite cererile. Greutatea influențează cât de des este ales fiecare candidat; doar numele, id, greutate și limite opționale per candidat sunt afișate aici.",
+      "routingPolicies": "Politici de rutare",
+      "routingPoliciesHint": "Un Orchestrator evaluează fiecare Router candidat în ansamblu, deci doar politicile de sănătate, limită de rată și corectitudine se aplică aici. Alte tipuri de politici aleg din modelele proprii ale unui router, pe care un Orchestrator nu le are.",
       "router": "Router",
       "selectRouter": "Selectează router",
       "weight": "Greutate",

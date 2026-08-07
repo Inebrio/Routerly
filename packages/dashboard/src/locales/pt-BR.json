@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Este roteador não é um Orquestrador.",
       "candidateRouters": "Roteadores Candidatos",
       "candidateRoutersHint": "Os roteadores para os quais este Orquestrador encaminha solicitações. O peso influencia com que frequência cada candidato é escolhido; apenas seu nome, id, peso e limites opcionais por candidato são mostrados aqui.",
+      "routingPolicies": "Políticas de roteamento",
+      "routingPoliciesHint": "Um Orchestrator pontua cada Roteador candidato como um todo, portanto apenas políticas de saúde, limite de taxa e equidade se aplicam aqui. Os outros tipos de política escolhem entre os próprios modelos de um roteador, que um Orchestrator não possui.",
       "router": "Roteador",
       "selectRouter": "Selecionar roteador",
       "weight": "Peso",
