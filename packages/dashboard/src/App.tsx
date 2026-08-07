@@ -19,6 +19,9 @@ import { RoutersPage } from './pages/RoutersPage';
 import { RouterLayout } from './pages/router/RouterLayout';
 import { RouterDashboardTab } from './pages/router/RouterDashboardTab';
 import { RouterGeneralTab } from './pages/router/RouterGeneralTab';
+import { RouterFormRouter } from './pages/router/RouterFormRouter';
+import { RouterFormOrchestrator } from './pages/router/RouterFormOrchestrator';
+import { RouterFormPassthrough } from './pages/router/RouterFormPassthrough';
 import { RouterRoutingTab } from './pages/router/RouterRoutingTab';
 import { RouterOptimizerTab } from './pages/router/RouterOptimizerTab';
 import { RouterTokenTab } from './pages/router/RouterTokenTab';
@@ -522,11 +525,27 @@ const router = createBrowserRouter([
           // Kept for links minted before the section was renamed.
           { path: 'clients', element: <Navigate to="/dashboard/connect" replace /> },
           { path: 'routers', element: <RoutersPage /> },
+          // Kept for links minted before per-kind creation routes existed.
+          { path: 'routers/new', element: <Navigate to="/dashboard/routers/new/router" replace /> },
           {
-            path: 'routers/new',
+            path: 'routers/new/router',
             element: <RouterLayout />,
             children: [
-              { index: true, element: <RouterGeneralTab /> },
+              { index: true, element: <RouterFormRouter /> },
+            ],
+          },
+          {
+            path: 'routers/new/orchestrator',
+            element: <RouterLayout />,
+            children: [
+              { index: true, element: <RouterFormOrchestrator /> },
+            ],
+          },
+          {
+            path: 'routers/new/passthrough',
+            element: <RouterLayout />,
+            children: [
+              { index: true, element: <RouterFormPassthrough /> },
             ],
           },
           {
