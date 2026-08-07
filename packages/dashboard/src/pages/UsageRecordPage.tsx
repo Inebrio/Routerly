@@ -149,7 +149,7 @@ export function UsageRecordPage() {
               <Field label="Input Tokens" value={record.inputTokens.toLocaleString()} />
               <Field label="Output Tokens" value={record.outputTokens.toLocaleString()} />
               <Field label="Total Tokens" value={totalTokens.toLocaleString()} />
-              <Field label="Cost (USD)" value={<span className="mono">${record.cost.toFixed(8)}</span>} />
+              <Field label="Cost (USD)" value={<span className="mono">{record.cost == null ? 'Unknown' : `$${record.cost.toFixed(8)}`}</span>} />
             </div>
           </div>
 

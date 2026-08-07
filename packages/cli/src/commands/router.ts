@@ -1003,12 +1003,13 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['ID', 'Name', 'Models', 'Tokens', 'Members', 'Timeout'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Name', 'Slug', 'Models', 'Tokens', 'Members', 'Timeout'].map(h => chalk.cyan(h)),
         });
         for (const p of routers) {
           table.push([
             chalk.gray(p.id.slice(0, 8) + '…'),
             p.name,
+            p.slug ?? chalk.gray('—'),
             p.models.length,
             (p.tokens ?? []).length,
             (p.members ?? []).length,
@@ -1044,6 +1045,9 @@ Examples:
         console.log(chalk.bold(`\n── ${router.name} ──────────────────────────────────`));
         console.log(chalk.gray(`  ID:      `) + router.id);
         console.log(chalk.gray(`  Kind:    `) + (router.kind ?? 'router'));
+        if (router.slug) {
+          console.log(chalk.gray(`  Slug:    `) + router.slug);
+        }
         console.log(chalk.gray(`  Timeout: `) + formatTimeout(router.timeoutMs));
         console.log(chalk.gray(`  Traces:  `) + (router.traceContent ? 'metadata + content' : 'metadata only'));
 
@@ -1129,6 +1133,10 @@ Examples:
   # With auto-routing enabled and a routing model
   routerly router create --name "Smart API" --routing-model ollama/qwen3.5:9b --auto-routing
 
+  # A passthrough router: forwards the client's own credential unchanged
+  routerly router create --name "My OpenAI" --kind passthrough --slug my-openai
+  # Note: budgets/limits do not apply to a passthrough router (cost is unknown for that traffic)
+
   # An orchestrator, routing to two candidate routers by weight
   routerly router create --name "Global" --kind orchestrator --candidate <router-id-1>:2 --candidate <router-id-2>:1
 
@@ -1150,10 +1158,11 @@ Units:    second | minute | hour | day | week | month
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
-    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough (default: router)')
+    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough (default: router). Budgets/limits do not apply to passthrough.')
+    .option('--slug <path>', 'URL path segment for a passthrough router (required when --kind passthrough)')
     .option('--candidate <routerId:weight>', 'Candidate router for an orchestrator (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
-    .action(async (opts: { name: string; timeout?: string; routingModel?: string; autoRouting?: boolean; kind?: string; candidate: string[]; candidateLimit: string[] }) => {
+    .action(async (opts: { name: string; timeout?: string; routingModel?: string; autoRouting?: boolean; kind?: string; slug?: string; candidate: string[]; candidateLimit: string[] }) => {
       try {
         const body: Record<string, unknown> = {
           name: opts.name,
@@ -1163,6 +1172,7 @@ Units:    second | minute | hour | day | week | month
         };
         if (opts.routingModel) body.routingModelId = opts.routingModel;
         if (opts.kind !== undefined) body.kind = parseKindOption(opts.kind);
+        if (opts.slug !== undefined) body.slug = opts.slug;
         if (opts.candidate.length) body.candidates = opts.candidate.map(parseCandidateSpec);
         if (opts.candidateLimit.length) {
           if (!body.candidates) {
@@ -1179,6 +1189,9 @@ Units:    second | minute | hour | day | week | month
         if ((router.kind ?? 'router') !== 'router') {
           console.log(chalk.gray(`  Kind: ${router.kind}`));
         }
+        if (router.slug) {
+          console.log(chalk.gray(`  Slug: ${router.slug}`));
+        }
         if (router.candidates?.length) {
           const candidates = router.candidates as unknown as OrchestratorCandidateWire[];
           console.log(chalk.gray(`  Candidates: ${candidates.map(c => `${c.name} (${c.weight})`).join(', ')}`));
@@ -1192,7 +1205,7 @@ Units:    second | minute | hour | day | week | month
         console.log(chalk.gray(`  Set routing:  routerly router routing update "${opts.name}" --routing-model <id>`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`A router named "${opts.name}" already exists.`));
+          console.error(chalk.red(err.message));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {
@@ -1235,12 +1248,13 @@ Units:    second | minute | hour | day | week | month
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
     .option('--candidate <routerId:weight>', "Candidate router for an orchestrator (repeatable); replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); requires --candidate; see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .option('--slug <path>', 'New URL path segment for a passthrough router')
     // --trace-content declared before --no-trace-content, so an untouched flag stays
     // undefined and leaves the stored value alone.
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; candidate: string[]; candidateLimit: string[] }) => {
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; candidate: string[]; candidateLimit: string[]; slug?: string }) => {
       const traceContent = opts.traceContent;
-      if (!opts.name && opts.timeout === undefined && traceContent === undefined && !opts.candidate.length && !opts.candidateLimit.length) {
-        console.error(chalk.red('Provide at least --name, --timeout, --trace-content or --candidate (or --candidate-limit).'));
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined && !opts.candidate.length && !opts.candidateLimit.length && opts.slug === undefined) {
+        console.error(chalk.red('Provide at least --name, --timeout, --trace-content or --candidate (or --candidate-limit or --slug).'));
         process.exit(1);
       }
       try {
@@ -1267,11 +1281,12 @@ Units:    second | minute | hour | day | week | month
           models: router.models,
           ...(traceContent !== undefined ? { traceContent } : {}),
           ...(candidates !== undefined ? { candidates } : {}),
+          ...(opts.slug !== undefined ? { slug: opts.slug } : {}),
         });
         console.log(chalk.green(`✓ Router "${router.name}" updated.`));
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          console.error(chalk.red(`A router named "${opts.name}" already exists.`));
+          console.error(chalk.red(err.message));
         } else if (!(err instanceof ApiError)) {
           console.error(chalk.red(`Error: ${(err as Error).message}`));
         } else {

@@ -140,7 +140,7 @@ function checkLimits(limits: Limit[], records: UsageRecord[], now: Date): boolea
     const windowRecords = records.filter(r => new Date(r.timestamp) >= start);
 
     const total =
-      lim.metric === 'cost'         ? windowRecords.reduce((s, r) => s + r.cost, 0) :
+      lim.metric === 'cost'         ? windowRecords.reduce((s, r) => s + (r.cost ?? 0), 0) :
       lim.metric === 'calls'        ? windowRecords.length :
       lim.metric === 'input_tokens' ? windowRecords.reduce((s, r) => s + r.inputTokens, 0) :
       lim.metric === 'output_tokens'? windowRecords.reduce((s, r) => s + r.outputTokens, 0) :
@@ -218,7 +218,7 @@ export async function getLimitUsageSnapshot(
     const windowRecords = relevant.filter(r => new Date(r.timestamp) >= start);
 
     const current =
-      lim.metric === 'cost'          ? windowRecords.reduce((s, r) => s + r.cost, 0) :
+      lim.metric === 'cost'          ? windowRecords.reduce((s, r) => s + (r.cost ?? 0), 0) :
       lim.metric === 'calls'         ? windowRecords.length :
       lim.metric === 'input_tokens'  ? windowRecords.reduce((s, r) => s + r.inputTokens, 0) :
       lim.metric === 'output_tokens' ? windowRecords.reduce((s, r) => s + r.outputTokens, 0) :
