@@ -156,10 +156,13 @@ configuration is.
 
 ### Passthrough
 
-A `passthrough`-kind Router does not select a model at all. It requires a
-`slug` (`--slug <path>`), which becomes the URL path it is reached at:
-`/passthrough/<slug>/*`. Two things it does not require, unlike every other
-Router kind:
+A `passthrough`-kind Router does not select a model at all. It is reached at
+`/passthrough/<slug>/*`, where `slug` is derived automatically from the
+Router's name at creation (disambiguated with a numeric suffix if another
+Passthrough Router already slugs to the same value) — there is no `--slug`
+flag or manual path field; the slug never changes afterward, even if the
+Router is renamed. Two things it does not require, unlike every other Router
+kind:
 
 - **No Routerly authentication.** The path carries no Router token; the
   client's own `Authorization`/`x-api-key` header is forwarded unchanged to
