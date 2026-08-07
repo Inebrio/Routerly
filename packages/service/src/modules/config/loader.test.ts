@@ -19,6 +19,7 @@ vi.mock('../../lib/paths.js', () => ({
     usage: '/test/data/usage.ndjson',
     usageLegacyJson: '/test/data/usage.json',
     secret: '/test/config/secret',
+    audit: '/test/data/audit.json',
   },
 }))
 
@@ -30,6 +31,7 @@ vi.mock('node:fs/promises', () => ({
   rename: vi.fn().mockResolvedValue(undefined),
   unlink: vi.fn().mockResolvedValue(undefined),
   chmod: vi.fn().mockResolvedValue(undefined),
+  stat: vi.fn().mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
 }))
 
 import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, pruneOrphanUsage } from './loader.js'
@@ -43,6 +45,7 @@ const mockRename = vi.mocked(fs.rename)
 const mockUnlink = vi.mocked(fs.unlink)
 const mockMkdir = vi.mocked(fs.mkdir)
 const mockChmod = vi.mocked(fs.chmod)
+const mockStat = vi.mocked(fs.stat)
 const mockLock = vi.mocked(lockfile.lock)
 
 afterEach(() => { vi.clearAllMocks() })
@@ -226,6 +229,50 @@ describe('writeConfig', () => {
       JSON.stringify([], null, 2),
       { encoding: 'utf-8', mode: 0o600 },
     )
+  })
+
+  it('preserves a general-tier file\'s existing mode across writes (RTR-08 durability)', async () => {
+    // 'audit' is a GENERAL_KEYS entry, externally chmod\'d 0600 (e.g. by
+    // permission-guard's fixPermissions()) before this write runs.
+    const releaseFn = vi.fn().mockResolvedValue(undefined)
+    mockLock.mockResolvedValue(releaseFn)
+    mockReadFile.mockResolvedValue('[]' as any)
+    mockStat.mockResolvedValueOnce({ mode: 0o100600 } as any)
+
+    await writeConfig('audit', [] as any)
+
+    expect(mockStat).toHaveBeenCalledWith('/test/data/audit.json')
+    const publishWrite = mockWriteFile.mock.calls.find(c => c[1] === JSON.stringify([], null, 2))
+    expect(publishWrite).toBeDefined()
+    expect(publishWrite![2]).toEqual({ encoding: 'utf-8', mode: 0o600 })
+  })
+
+  it('a fresh general-tier file with no prior mode is still created successfully', async () => {
+    // No existing file → stat rejects ENOENT (default mock) → no mode forced.
+    const releaseFn = vi.fn().mockResolvedValue(undefined)
+    mockLock.mockResolvedValue(releaseFn)
+    mockReadFile.mockResolvedValue('[]' as any)
+
+    await expect(writeConfig('audit', [] as any)).resolves.toBeUndefined()
+
+    const publishWrite = mockWriteFile.mock.calls.find(c => c[1] === JSON.stringify([], null, 2))
+    expect(publishWrite).toBeDefined()
+    expect(publishWrite![2]).toEqual({ encoding: 'utf-8' })
+  })
+
+  it('still forces 0600 on a SECRET_KEYS file regardless of its current on-disk mode', async () => {
+    const releaseFn = vi.fn().mockResolvedValue(undefined)
+    mockLock.mockResolvedValue(releaseFn)
+    mockReadFile.mockResolvedValue('[]' as any)
+    // Even if stat somehow reported something looser, secret tier is always 0600.
+    mockStat.mockResolvedValueOnce({ mode: 0o100644 } as any)
+
+    await writeConfig('models', [] as any)
+
+    // stat is not even consulted for SECRET_KEYS — mode is forced unconditionally.
+    expect(mockStat).not.toHaveBeenCalled()
+    const publishWrite = mockWriteFile.mock.calls.find(c => c[1] === JSON.stringify([], null, 2))
+    expect(publishWrite![2]).toEqual({ encoding: 'utf-8', mode: 0o600 })
   })
 
   it('rethrows when lock acquisition fails and does not publish', async () => {
