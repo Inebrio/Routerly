@@ -1159,10 +1159,7 @@
       "empty": "Nincsenek útválasztók.",
       "emptyFiltered": "Nincs ilyen típusú útválasztó.",
       "tabs": {
-        "all": "Összes",
-        "router": "Útválasztó",
-        "orchestrator": "Dirigens",
-        "passthrough": "Áteresztés"
+        "all": "Összes"
       },
       "columns": {
         "name": "Név",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Törli ezt az útválasztót?",
       "errors": {
         "deleteFailed": "Hiba az útválasztó törlésénél"
-      }
+      },
+      "newOrchestrator": "Új Orchestrator",
+      "newPassthrough": "Új Passthrough"
     },
     "layout": {
       "notFound": "Az útválasztó nem található",
@@ -1197,7 +1196,8 @@
       "newRouter": "Új Útválasztó",
       "loading": "Betöltés...",
       "routerId": "Útválasztó azonosítója:",
-      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához"
+      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához",
+      "newKind": "Új {{kind}}"
     },
     "dashboard": {
       "period": "Időszak",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Típus",
-        "kindAriaLabel": "Útválasztó Típusa",
         "kindFixedHint": "Az útválasztó létrehozása után rögzítve.",
         "routerName": "Útválasztó Neve",
         "routerNamePlaceholder": "Saját Alkalmazás",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "A nyomok mindig rögzítik a metaadatokat (modellek, pontszámok, tokenek, költség, latentu). Kapcsolja be ezt is a küldött kérések és az kapott válaszok rögzítéséhez. Az használat rekordjaival tárolódnak, és bárki láthatja, aki jelentéseket olvashat.",
         "capturePromptsAndAnswers": "Rögzítse az kéréseket és válaszokat",
         "saveChanges": "Módosítások Mentése",
-        "createRouter": "Útválasztó Létrehozása"
+        "createRouter": "Útválasztó Létrehozása",
+        "passthroughPath": "Elérési út",
+        "passthroughPathHint": "Az ügyfelek által meghívott URL része lesz: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orchestrator létrehozása",
+        "createPassthrough": "Passthrough létrehozása"
       }
     },
     "orchestrator": {

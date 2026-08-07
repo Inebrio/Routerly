@@ -1159,10 +1159,7 @@
       "empty": "Noch keine Router.",
       "emptyFiltered": "Keine Router dieses Typs.",
       "tabs": {
-        "all": "Alle",
-        "router": "Router",
-        "orchestrator": "Orchestrator",
-        "passthrough": "Durchgang"
+        "all": "Alle"
       },
       "columns": {
         "name": "Name",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Diesen Router löschen?",
       "errors": {
         "deleteFailed": "Fehler beim Löschen des Routers"
-      }
+      },
+      "newOrchestrator": "Neuer Orchestrator",
+      "newPassthrough": "Neuer Passthrough"
     },
     "layout": {
       "notFound": "Router nicht gefunden",
@@ -1197,7 +1196,8 @@
       "newRouter": "Neuer Router",
       "loading": "Wird geladen...",
       "routerId": "Router-ID:",
-      "saveFirstHint": "Router zuerst speichern, um diesen Tab freizuschalten"
+      "saveFirstHint": "Router zuerst speichern, um diesen Tab freizuschalten",
+      "newKind": "Neuer {{kind}}"
     },
     "dashboard": {
       "period": "Zeitraum",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Art",
-        "kindAriaLabel": "Router-Art",
         "kindFixedHint": "Fest, sobald der Router erstellt ist.",
         "routerName": "Router-Name",
         "routerNamePlaceholder": "Meine App",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Spuren erfassen immer Metadaten (Modelle, Bewertungen, Tokens, Kosten, Latenz). Aktiviere dies, um auch die gesendeten Prompts und erhaltenen Antworten zu erfassen. Sie werden mit dem Nutzungsdatensatz gespeichert und sind für jeden sichtbar, der Berichte lesen kann.",
         "capturePromptsAndAnswers": "Prompts und Antworten erfassen",
         "saveChanges": "Änderungen speichern",
-        "createRouter": "Router erstellen"
+        "createRouter": "Router erstellen",
+        "passthroughPath": "Pfad",
+        "passthroughPathHint": "Wird Teil der URL, die Clients aufrufen: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orchestrator erstellen",
+        "createPassthrough": "Passthrough erstellen"
       }
     },
     "orchestrator": {

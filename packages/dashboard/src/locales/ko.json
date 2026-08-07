@@ -1159,10 +1159,7 @@
       "empty": "아직 라우터가 없습니다.",
       "emptyFiltered": "이 유형의 라우터가 없습니다.",
       "tabs": {
-        "all": "모두",
-        "router": "라우터",
-        "orchestrator": "오케스트레이터",
-        "passthrough": "통과"
+        "all": "모두"
       },
       "columns": {
         "name": "이름",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "이 라우터를 삭제하시겠어요?",
       "errors": {
         "deleteFailed": "라우터 삭제 오류"
-      }
+      },
+      "newOrchestrator": "새 오케스트레이터",
+      "newPassthrough": "새 패스스루"
     },
     "layout": {
       "notFound": "라우터를 찾을 수 없습니다",
@@ -1197,7 +1196,8 @@
       "newRouter": "새 라우터",
       "loading": "로드 중...",
       "routerId": "라우터 ID:",
-      "saveFirstHint": "이 탭을 잠금 해제하려면 먼저 라우터를 저장하세요"
+      "saveFirstHint": "이 탭을 잠금 해제하려면 먼저 라우터를 저장하세요",
+      "newKind": "새 {{kind}}"
     },
     "dashboard": {
       "period": "기간",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "유형",
-        "kindAriaLabel": "라우터 유형",
         "kindFixedHint": "라우터가 생성되면 고정됩니다.",
         "routerName": "라우터 이름",
         "routerNamePlaceholder": "내 앱",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "추적은 항상 메타데이터(모델, 점수, 토큰, 비용, 레이턴시)를 기록합니다. 보낸 프롬프트와 받은 답변도 기록하려면 켜십시오. 사용 기록과 함께 저장되며 보고서를 읽을 수 있는 모든 사람이 볼 수 있습니다.",
         "capturePromptsAndAnswers": "프롬프트 및 답변 캡처",
         "saveChanges": "변경 사항 저장",
-        "createRouter": "라우터 생성"
+        "createRouter": "라우터 생성",
+        "passthroughPath": "경로",
+        "passthroughPathHint": "클라이언트가 호출하는 URL의 일부가 됩니다: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "오케스트레이터 생성",
+        "createPassthrough": "패스스루 생성"
       }
     },
     "orchestrator": {

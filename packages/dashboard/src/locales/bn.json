@@ -1159,10 +1159,7 @@
       "empty": "কোন রাউটার এখনও নেই।",
       "emptyFiltered": "এই ধরনের কোনো রাউটার নেই।",
       "tabs": {
-        "all": "সব",
-        "router": "রাউটার",
-        "orchestrator": "অর্কেস্ট্রেটর",
-        "passthrough": "পাসথ্রু"
+        "all": "সব"
       },
       "columns": {
         "name": "নাম",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "এই রাউটার মুছুন?",
       "errors": {
         "deleteFailed": "রাউটার মুছতে ত্রুটি"
-      }
+      },
+      "newOrchestrator": "নতুন অর্কেস্ট্রেটর",
+      "newPassthrough": "নতুন পাস-থ্রু"
     },
     "layout": {
       "notFound": "রাউটার পাওয়া যায় না",
@@ -1197,7 +1196,8 @@
       "newRouter": "নতুন রাউটার",
       "loading": "লোড করা হচ্ছে...",
       "routerId": "রাউটার আইডি:",
-      "saveFirstHint": "এই ট্যাব আনলক করতে প্রথমে রাউটার সংরক্ষণ করুন"
+      "saveFirstHint": "এই ট্যাব আনলক করতে প্রথমে রাউটার সংরক্ষণ করুন",
+      "newKind": "নতুন {{kind}}"
     },
     "dashboard": {
       "period": "সময়কাল",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "ধরনের",
-        "kindAriaLabel": "রাউটার ধরনের",
         "kindFixedHint": "রাউটার তৈরি করার পরে নির্ধারিত।",
         "routerName": "রাউটার নাম",
         "routerNamePlaceholder": "আমার অ্যাপ",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "ট্রেসগুলি সর্বদা মেটাডেটা রেকর্ড করে (মডেল, স্কোর, টোকেন, খরচ, বিলম্ব)। ব্যবহার লগ করা প্রম্পট এবং উত্তর রেকর্ড করতেও এটি চালু করুন। তারা ব্যবহার রেকর্ডের সাথে সংরক্ষিত এবং রিপোর্ট পড়তে পারে যে কারও কাছে দৃশ্যমান।",
         "capturePromptsAndAnswers": "প্রম্পট এবং উত্তর ক্যাপচার করুন",
         "saveChanges": "পরিবর্তন সংরক্ষণ করুন",
-        "createRouter": "রাউটার তৈরি করুন"
+        "createRouter": "রাউটার তৈরি করুন",
+        "passthroughPath": "পাথ",
+        "passthroughPathHint": "ক্লায়েন্টরা যে URL কল করে তার অংশ হয়ে ওঠে: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "অর্কেস্ট্রেটর তৈরি করুন",
+        "createPassthrough": "পাস-থ্রু তৈরি করুন"
       }
     },
     "orchestrator": {

@@ -1159,10 +1159,7 @@
       "empty": "هنوز روتری وجود ندارد.",
       "emptyFiltered": "هیچ مسیریابی از این نوع وجود ندارد.",
       "tabs": {
-        "all": "همه",
-        "router": "مسیریاب",
-        "orchestrator": "هماهنگ کننده",
-        "passthrough": "عبور مستقیم"
+        "all": "همه"
       },
       "columns": {
         "name": "نام",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "این روتر حذف شود؟",
       "errors": {
         "deleteFailed": "خطا در حذف روتر"
-      }
+      },
+      "newOrchestrator": "ارکستریتور جدید",
+      "newPassthrough": "Passthrough جدید"
     },
     "layout": {
       "notFound": "روتر یافت نشد",
@@ -1197,7 +1196,8 @@
       "newRouter": "روتر جدید",
       "loading": "در حال بارگذاری…",
       "routerId": "شناسه روتر:",
-      "saveFirstHint": "ابتدا روتر را ذخیره کنید تا این زبانه باز شود"
+      "saveFirstHint": "ابتدا روتر را ذخیره کنید تا این زبانه باز شود",
+      "newKind": "{{kind}} جدید"
     },
     "dashboard": {
       "period": "دوره",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "نوع",
-        "kindAriaLabel": "نوع روتر",
         "kindFixedHint": "پس از ایجاد روتر ثابت می‌شود.",
         "routerName": "نام روتر",
         "routerNamePlaceholder": "برنامه من",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "ردیابی‌ها همیشه فراداده (مدل‌ها، امتیازها، توکن‌ها، هزینه، تأخیر) را ثبت می‌کنند. این را فعال کنید تا پرامپت‌های ارسال‌شده و پاسخ‌های دریافت‌شده نیز ثبت شوند. آن‌ها با رکورد مصرف ذخیره می‌شوند و برای هرکسی که می‌تواند گزارش‌ها را بخواند قابل مشاهده هستند.",
         "capturePromptsAndAnswers": "ثبت پرامپت‌ها و پاسخ‌ها",
         "saveChanges": "ذخیره تغییرات",
-        "createRouter": "ایجاد روتر"
+        "createRouter": "ایجاد روتر",
+        "passthroughPath": "مسیر",
+        "passthroughPathHint": "بخشی از URL شود که مشتریان فراخوانی می‌کنند: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ارکستریتور ایجاد کنید",
+        "createPassthrough": "Passthrough ایجاد کنید"
       }
     },
     "orchestrator": {

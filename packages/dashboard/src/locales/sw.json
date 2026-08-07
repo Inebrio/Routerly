@@ -1159,10 +1159,7 @@
       "empty": "Hakuna njia bado.",
       "emptyFiltered": "Hakuna routers ya aina hii.",
       "tabs": {
-        "all": "Zote",
-        "router": "Router",
-        "orchestrator": "Orkestrator",
-        "passthrough": "Kupitia"
+        "all": "Zote"
       },
       "columns": {
         "name": "Jina",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Futa njia hii?",
       "errors": {
         "deleteFailed": "Hitilafu funika njia"
-      }
+      },
+      "newOrchestrator": "Mtandao Mpya",
+      "newPassthrough": "Passthrough Mpya"
     },
     "layout": {
       "notFound": "Njia haijulikani",
@@ -1197,7 +1196,8 @@
       "newRouter": "Njia Jipya",
       "loading": "Inakupakia...",
       "routerId": "Kitambulisho cha Njia:",
-      "saveFirstHint": "Kutengeneza njia kwanza kuanguka kichupo hiki"
+      "saveFirstHint": "Kutengeneza njia kwanza kuanguka kichupo hiki",
+      "newKind": "{{kind}} Mpya"
     },
     "dashboard": {
       "period": "Kipindi",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Aina",
-        "kindAriaLabel": "Aina ya Njia",
         "kindFixedHint": "Imebadhi wakati njia itengenezwa.",
         "routerName": "Jina la Njia",
         "routerNamePlaceholder": "Programu Yangu",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Kuchukuza daima kuandika metadata (modeli, alama, tokens, gharama, kabila). Weza hii pia kuandika onyo zilizotumwa na majibu yalipata. Husambaza na kukamatia matumizi na kuonekana kwa kila mtu anaweza kusoma ripoti.",
         "capturePromptsAndAnswers": "Kamatia onyo na majibu",
         "saveChanges": "Kutengeneza Mabadiliko",
-        "createRouter": "Tengeneza Njia"
+        "createRouter": "Tengeneza Njia",
+        "passthroughPath": "Njia",
+        "passthroughPathHint": "Inakuwa sehemu ya URL inayoitwa na wateja: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Tengeneza Mtandao",
+        "createPassthrough": "Tengeneza Passthrough"
       }
     },
     "orchestrator": {

@@ -48,9 +48,9 @@ function makeRouter(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function renderPage() {
+function renderPage(path = '/dashboard/routers') {
   return render(
-    <MemoryRouter initialEntries={['/dashboard/routers']}>
+    <MemoryRouter initialEntries={[path]}>
       <RoutersPage />
     </MemoryRouter>
   );
@@ -153,11 +153,31 @@ describe('RoutersPage — loaded state', () => {
 // ── Navigation ────────────────────────────────────────────────────────────────
 
 describe('RoutersPage — navigation', () => {
-  it('navigates to new router on button click', async () => {
+  it('shows no creation button on the "All" tab', async () => {
     renderPage();
+    await waitFor(() => screen.getByText('0 routers'));
+    expect(screen.queryByRole('button', { name: /^New/ })).toBeNull();
+  });
+
+  it('"New Router" button on the Router tab navigates to the dedicated router form', async () => {
+    renderPage('/dashboard/routers?tab=router');
     await waitFor(() => screen.getByRole('button', { name: /New Router/ }));
     await userEvent.click(screen.getByRole('button', { name: /New Router/ }));
-    expect(navigateFn).toHaveBeenCalledWith('/dashboard/routers/new');
+    expect(navigateFn).toHaveBeenCalledWith('/dashboard/routers/new/router');
+  });
+
+  it('"New Orchestrator" button on the Orchestrator tab navigates to the dedicated orchestrator form', async () => {
+    renderPage('/dashboard/routers?tab=orchestrator');
+    await waitFor(() => screen.getByRole('button', { name: /New Orchestrator/ }));
+    await userEvent.click(screen.getByRole('button', { name: /New Orchestrator/ }));
+    expect(navigateFn).toHaveBeenCalledWith('/dashboard/routers/new/orchestrator');
+  });
+
+  it('"New Passthrough" button on the Passthrough tab navigates to the dedicated passthrough form', async () => {
+    renderPage('/dashboard/routers?tab=passthrough');
+    await waitFor(() => screen.getByRole('button', { name: /New Passthrough/ }));
+    await userEvent.click(screen.getByRole('button', { name: /New Passthrough/ }));
+    expect(navigateFn).toHaveBeenCalledWith('/dashboard/routers/new/passthrough');
   });
 
   it('navigates to the router settings form on edit click', async () => {
@@ -240,7 +260,7 @@ describe('RoutersPage — permissions', () => {
   it('hides create and delete affordances without router:write', async () => {
     mockCan = false;
     mockGetRouters.mockResolvedValue([makeRouter()]);
-    renderPage();
+    renderPage('/dashboard/routers?tab=router');
     await waitFor(() => screen.getByText('My Router'));
     expect(screen.queryByRole('button', { name: /New Router/i })).toBeNull();
     expect(screen.queryByTitle('Delete router')).toBeNull();

@@ -1159,10 +1159,7 @@
       "empty": "Aucun routeur pour l'instant.",
       "emptyFiltered": "Aucun routeur de ce type.",
       "tabs": {
-        "all": "Tous",
-        "router": "Routeur",
-        "orchestrator": "Orchestrateur",
-        "passthrough": "Passage direct"
+        "all": "Tous"
       },
       "columns": {
         "name": "Nom",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Supprimer ce routeur ?",
       "errors": {
         "deleteFailed": "Erreur lors de la suppression du routeur"
-      }
+      },
+      "newOrchestrator": "Nouvel Orchestrateur",
+      "newPassthrough": "Nouveau Passthrough"
     },
     "layout": {
       "notFound": "Routeur non trouvé",
@@ -1197,7 +1196,8 @@
       "newRouter": "Nouveau routeur",
       "loading": "Chargement...",
       "routerId": "ID du routeur :",
-      "saveFirstHint": "Enregistrez d'abord le routeur pour déverrouiller cet onglet"
+      "saveFirstHint": "Enregistrez d'abord le routeur pour déverrouiller cet onglet",
+      "newKind": "Nouveau {{kind}}"
     },
     "dashboard": {
       "period": "Période",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Type",
-        "kindAriaLabel": "Type de routeur",
         "kindFixedHint": "Fixe une fois le routeur créé.",
         "routerName": "Nom du routeur",
         "routerNamePlaceholder": "Mon app",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Les traces enregistrent toujours les métadonnées (modèles, scores, jetons, coût, latence). Activez ceci pour aussi enregistrer les prompts envoyés et les réponses reçues. Elles sont stockées avec l'enregistrement d'utilisation et visibles à tous ceux qui peuvent lire les rapports.",
         "capturePromptsAndAnswers": "Capturer les prompts et les réponses",
         "saveChanges": "Enregistrer les modifications",
-        "createRouter": "Créer un routeur"
+        "createRouter": "Créer un routeur",
+        "passthroughPath": "Chemin",
+        "passthroughPathHint": "Devient partie de l'URL appelée par les clients : <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Créer un Orchestrateur",
+        "createPassthrough": "Créer un Passthrough"
       }
     },
     "orchestrator": {
