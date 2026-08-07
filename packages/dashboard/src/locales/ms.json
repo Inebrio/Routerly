@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automatik",
+      "dark": "Gelap",
+      "light": "Cerah"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Perluas sidebar",
+      "collapse": "Lipat sidebar"
+    },
+    "tagline": "Satu gateway. Model AI apa saja. Kontrol penuh.",
+    "nav": {
+      "overview": "Ikhtisar",
+      "providers": "Penyedia",
+      "models": "Model",
+      "profiles": "Profil",
+      "routers": "Router",
+      "experiments": "Eksperimen",
+      "usage": "Penggunaan",
+      "playground": "Playground",
+      "settings": "Pengaturan",
+      "connectApp": "Hubungkan aplikasi",
+      "help": "Bantuan",
+      "signOut": "Keluar"
+    },
+    "banner": {
+      "permissionWarning": "Beberapa file konfigurasi memiliki akses permisif ({{files}}). Startup dan permintaan masih berfungsi, tetapi perbaiki ini dari sistem file host ketika praktis.",
+      "dismiss": "Tutup",
+      "updateAvailable": "Routerly v{{latest}} tersedia. Anda menggunakan v{{current}}.",
+      "updateLink": "Perbarui di Pengaturan",
+      "mfaRequired": "Autentikasi dua faktor diperlukan untuk instance ini.",
+      "mfaLink": "Atur 2FA di Profil Anda",
+      "mfaSuffix": "untuk mengamankan akun Anda.",
+      "telemetryTitle": "Routerly tidak pernah mengirim data secara otomatis.",
+      "telemetryBody": "Apakah Anda ingin membantu dengan mengirim metrik instalasi anonim? Hanya jenis acara, versi, platform, dan ID acak — tidak ada data pribadi, tidak ada IP.",
+      "telemetryLink": "Apa yang dikirim?",
+      "telemetryYes": "Ya, bantu",
+      "telemetryNo": "Tidak terima kasih"
+    },
+    "language": {
+      "label": "Bahasa"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} detik lalu",
+      "secondsAgo_other": "{{count}} detik lalu",
+      "minutesAgo": "{{count}} menit lalu",
+      "minutesAgo_other": "{{count}} menit lalu",
+      "hoursAgo": "{{count}} jam lalu",
+      "hoursAgo_other": "{{count}} jam lalu",
+      "daysAgo": "{{count}} hari lalu",
+      "daysAgo_other": "{{count}} hari lalu"
+    },
+    "confirm": "Konfirmasi",
+    "cancel": "Batal",
+    "remove": "Hapus",
+    "select": "Pilih...",
+    "search": "Cari...",
+    "noResults": "Tidak ada hasil",
+    "noRemainingOptions": "Tidak ada opsi yang tersisa",
+    "apply": "Terapkan",
+    "saved": "Tersimpan",
+    "showLess": "Tampilkan lebih sedikit",
+    "roles": "Peran",
+    "permissions": "Izin",
+    "notifications": {
+      "title": "Notifikasi",
+      "markAllRead": "Tandai semua terbaca",
+      "empty": "Tidak ada notifikasi",
+      "viewAll": "Lihat semua notifikasi"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Pilih periode",
+      "recent": "Terbaru",
+      "ranges": "Rentang",
+      "from": "Dari",
+      "to": "Ke"
+    },
+    "permissionGuard": {
+      "fixFailed": "Gagal memperbaiki izin",
+      "title": "Izin file tidak aman",
+      "defaultMessage": "Beberapa file memiliki izin tidak aman.",
+      "fixing": "Memperbaiki…",
+      "fixNow": "Perbaiki sekarang"
+    },
+    "limitRows": {
+      "noLimits": "Tidak ada batas yang ditetapkan.",
+      "metricLabel": "Metrik",
+      "typeLabel": "Jenis",
+      "periodLabel": "Periode",
+      "everyLabel": "Setiap",
+      "maxCost": "Biaya maksimal",
+      "maxCount": "Hitungan maksimal",
+      "maxTokens": "Token maksimal",
+      "allCombosSet": "Semua kombinasi metrik/periode sudah ditetapkan",
+      "addLimit": "Tambah batas",
+      "metric": {
+        "cost": "Biaya",
+        "calls": "Panggilan",
+        "input_tokens": "Token masukan",
+        "output_tokens": "Token keluaran",
+        "total_tokens": "Total token"
+      },
+      "period": {
+        "hourly": "Per jam",
+        "daily": "Per hari",
+        "weekly": "Per minggu",
+        "monthly": "Per bulan",
+        "yearly": "Per tahun"
+      },
+      "rollingUnit": {
+        "second": "detik",
+        "minute": "menit",
+        "hour": "jam",
+        "day": "hari",
+        "week": "minggu",
+        "month": "bulan"
+      },
+      "windowType": {
+        "period": "Periode",
+        "rolling": "Bergulir"
+      },
+      "fmt": {
+        "requests": "{{value}} permintaan",
+        "inputTokens": "{{value}} token masukan",
+        "outputTokens": "{{value}} token keluaran",
+        "totalTokens": "{{value}} total token",
+        "everyRolling": "{{metric}} setiap {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Apa yang dihemat routing",
+      "input": "Masukan",
+      "output": "Keluaran",
+      "actual": "Aktual",
+      "clientCalls": "{{count}} panggilan klien",
+      "clientCalls_other": "{{count}} panggilan klien",
+      "comparedAgainst": ", dibandingkan dengan mengirimnya ke masing-masing dari",
+      "comparedAgainst_other": ", dibandingkan dengan mengirim semuanya ke masing-masing dari",
+      "paidModelsInPlay": "{{count}} model berbayar dalam permainan",
+      "paidModelsInPlay_other": "{{count}} model berbayar dalam permainan",
+      "metricCost": "Biaya",
+      "metricTokens": "Token",
+      "totalCost": "Biaya Total",
+      "routed": "Dirutkan: {{value}}",
+      "saved": "Dihemat: {{value}}",
+      "usdThisPeriod": "USD periode ini",
+      "savedVsAlways": "{{value}} dihemat ({{percent}}%) vs selalu {{model}}",
+      "tokens": "Token",
+      "in": "Masuk: {{value}}",
+      "out": "Keluar: {{value}}",
+      "tokenSubWithCache": "{{in}} masuk · {{out}} keluar · {{cached}} disimpan dalam cache",
+      "tokenSub": "{{in}} masuk · {{out}} keluar",
+      "cutByOptimizers": "{{value}} dipotong oleh pengoptimal",
+      "fewerThanAlways": "{{value}} lebih sedikit dari selalu {{model}}, diperkirakan"
+    },
+    "optimizerSteps": {
+      "downloaded": "Diunduh",
+      "thisStepRunsOn": "Langkah ini berjalan pada",
+      "defaultCheckpoint": "Checkpoint default"
+    },
+    "routingPolicies": {
+      "title": "Kebijakan Routing",
+      "subtitle": "Kebijakan menentukan bagaimana permintaan dirutkan. Mereka dieksekusi secara berurutan dari atas ke bawah.",
+      "removePolicy": "Hapus kebijakan",
+      "removeIntent": "Hapus niat",
+      "removeExample": "Hapus contoh",
+      "routingModels": "Model Routing",
+      "embeddingModels": "Model Embedding",
+      "maxCompletionTokens": "Token penyelesaian maksimal",
+      "maxPromptChars": "Karakter prompt maksimal",
+      "similarityThreshold": "Ambang batas kesamaan",
+      "previousMessages": "Pesan sebelumnya",
+      "intents": "Niat",
+      "confidenceThreshold": "Ambang batas kepercayaan diri",
+      "ambiguityMargin": "Margin ambiguitas",
+      "maxCallsPerWindow": "Panggilan maksimal per jendela",
+      "addFallbackModel": "Tambah Model Fallback",
+      "autoRoutingLabel": "Routing Otomatis",
+      "autoRoutingHint": "Jika diaktifkan, lalu lintas didistribusikan tanpa prompt khusus. Jika dinonaktifkan, Anda dapat menulis prompt spesifik yang menginstruksikan AI kapan memilih setiap model target.",
+      "additionalPromptInfoLabel": "Informasi Prompt Tambahan",
+      "additionalPromptInfoPlaceholder": "Instruksi tambahan untuk dimasukkan dalam prompt routing...",
+      "addExamplePlaceholder": "Tambah contoh dan tekan Enter…",
+      "addIntentPlaceholder": "Tambah niat dan tekan Enter…",
+      "addPolicyPlaceholder": "Tambah kebijakan...",
+      "labels": {
+        "llm": "Kebijakan Routing AI",
+        "rate-limit": "Kebijakan Batas Laju",
+        "budget-remaining": "Kebijakan Anggaran Tersisa",
+        "semantic-intent": "Kebijakan Niat Semantik",
+        "health": "Kebijakan Kesehatan",
+        "context": "Kebijakan Konteks",
+        "capability": "Kebijakan Kemampuan",
+        "performance": "Kebijakan Performa",
+        "fairness": "Kebijakan Keadilan",
+        "cheapest": "Kebijakan Termurah",
+        "model-preference": "Kebijakan Preferensi Model"
+      },
+      "descriptions": {
+        "context": "Mencetak model berdasarkan jendela konteks yang tersedia. Memberikan 0 ke model yang jendela konteksnya lebih kecil dari perkiraan panjang permintaan, mencegah kesalahan pemotongan.",
+        "cheapest": "Mencetak model berbanding terbalik dengan biaya token mereka. Model termurah mendapat 1,0, yang paling mahal mendapat 0,0, membantu mengurangi pengeluaran API di seluruh permintaan.",
+        "health": "Mencetak model berdasarkan tingkat kesalahan terakhirnya menggunakan peluruhan eksponensial (kesalahan terbaru memiliki bobot lebih). Menerapkan pemutus sirkuit yang menetapkan skor ke 0 ketika tingkat kesalahan tertimbang melebihi ambang batas kritis.",
+        "performance": "Mencetak model berdasarkan latensi rata-rata terakhirnya menggunakan peluruhan eksponensial. Model tercepat mendapat 1,0, yang paling lambat mendapat 0,0. Model tanpa data terakhir default ke 1,0.",
+        "llm": "Menggunakan model AI untuk mencetak kandidat berdasarkan konten semantik permintaan. Mendukung prompt panduan routing per model dan mempertimbangkan ruang kepala anggaran ketika batas dikonfigurasi.",
+        "capability": "Filter keras: memberikan 0 ke model yang secara eksplisit kekurangan fitur yang diperlukan oleh permintaan (penglihatan, pemanggilan fungsi, mode JSON). Model tanpa deklarasi kemampuan eksplisit tidak dihukum.",
+        "rate-limit": "Menghukum model dengan frekuensi panggilan terakhir yang tinggi untuk mengurangi risiko mencapai batas laju penyedia (HTTP 429). Mendukung ambang batas keras yang dapat dikonfigurasi yang memaksa skor ke 0.",
+        "fairness": "Mendistribusikan lalu lintas secara merata dengan menghukum model yang menerima lebih banyak panggilan sukses baru-baru ini. Bertindak sebagai round-robin lunak untuk mencegah beban terkonsentrasi pada satu model.",
+        "budget-remaining": "Mencetak model berdasarkan ruang kepala anggaran yang tersisa di seluruh batas yang dikonfigurasi. Lebih suka model dengan lebih banyak ruang sebelum ambang batas mereka tercapai, menyebarkan konsumsi secara proaktif.",
+        "semantic-intent": "Mengklasifikasikan permintaan berdasarkan niat semantik menggunakan embedding, kemudian membatasi kumpulan kandidat ke model yang dipetakan ke niat itu. Kecocokan percaya diri hard-filter kumpulan; kecocokan ambigu menggabungkan kumpulan top-2; permintaan yang tidak diketahui melewatkan semua kandidat.",
+        "model-preference": "Ketika klien meminta model spesifik (bukan routerly/ada), memberikan skor bonus yang dapat dikonfigurasi ke model itu. Ketika tidak ada preferensi yang dinyatakan, kebijakan abstain. Posisi dalam daftar mengontrol seberapa banyak preferensi ditimbang terhadap kebijakan lain."
+      },
+      "selectModel": "Pilih model"
+    },
+    "securityRules": {
+      "applyTo": "Terapkan ke",
+      "streamingBufferSize": "Ukuran buffer streaming (karakter)",
+      "entityTypes": "Jenis entitas",
+      "target": "Target",
+      "embeddingModel": "Model embedding",
+      "judgeModel": "Model hakim",
+      "contentGuardrails": "Penjaga Konten",
+      "piiPolicies": "Kebijakan PII",
+      "addSecurityPolicyPlaceholder": "Tambah kebijakan keamanan...",
+      "removePolicyTooltip": "Hapus kebijakan",
+      "deleteRuleAriaLabel": "Hapus aturan",
+      "embeddingModelPlaceholder": "Pilih model embedding...",
+      "fallbackModelsLabel": "Model fallback (opsional, dicoba secara berurutan)",
+      "fallbackModelsPlaceholder": "Tidak ada model fallback...",
+      "exampleTextsLabel": "Contoh teks untuk diblokir (satu per baris)",
+      "exampleTextsPlaceholder": "Bagaimana cara meretas...\n...",
+      "similarityThresholdLabel": "Ambang batas kesamaan:",
+      "judgeModelPlaceholder": "Pilih model hakim...",
+      "allowedTopicsLabel": "Topik yang diizinkan (bahasa alami)",
+      "allowedTopicsPlaceholder": "Dukungan pelanggan untuk produk perangkat lunak. Pemecahan masalah teknis. Pertanyaan penagihan.",
+      "onTopicThresholdLabel": "Blokir jika skor on-topic di bawah:",
+      "harmThresholdLabel": "Blokir jika skor kerusakan di atas:",
+      "customInstructionsLabel": "Instruksi khusus",
+      "customInstructionsPlaceholder": "Anda adalah pengklasifikasi keamanan konten. Evaluasi teks berikut untuk konten berbahaya.\nKategori: ujaran kebencian, kekerasan, konten seksual, menyakiti diri sendiri.\nRespons HANYA dengan objek JSON: {\"score\": <angka antara 0 dan 1>}",
+      "customInstructionsRequired": "Instruksi khusus diperlukan.",
+      "enabledLabel": "Diaktifkan",
+      "contentGuardrailsHint": "Inspeksi permintaan dan respons terhadap aturan yang dikonfigurasi. Aktif ketika setidaknya satu aturan dikonfigurasi.",
+      "securityPoliciesHeading": "Kebijakan Keamanan",
+      "noSecurityPolicies": "Tidak ada kebijakan keamanan yang dikonfigurasi.",
+      "piiPoliciesHint": "Deteksi dan redaksi data pribadi. Setiap kebijakan menargetkan masukan model, respons model, atau keduanya, dan mengontrol serangkaian entitasnya sendiri.",
+      "noPiiPolicies": "Tidak ada kebijakan PII yang dikonfigurasi.",
+      "addPolicyButton": "+ Tambah Kebijakan",
+      "injectionWarningTitle": "Muatan permintaan diubah oleh injeksi",
+      "injectionWarningBody": "Satu atau lebih aturan menyuntikkan instruksi mereka ke dalam prompt sistem permintaan keluar, jadi muatan yang dikirim ke penyedia diubah. Tidak ada panggilan model tambahan yang dilakukan dan tidak ada yang diblokir; model yang melayani menerapkan instruksi sendiri.",
+      "streamingDisabledWarningTitle": "Streaming dinonaktifkan untuk router ini",
+      "streamingDisabledWarningBody": "Satu atau lebih aturan dikonfigurasi untuk memblokir respons (target: respons atau keduanya). Karena seluruh respons harus diperiksa sebelum keputusan pemblokiran dapat dibuat, Routerly menahan respons sepenuhnya sebelum mengembalikannya ke klien. Streaming tidak tersedia saat aturan pemblokiran respons aktif; klien akan menerima respons lengkap sekaligus daripada dalam potongan inkremental."
+    },
+    "connectionFields": {
+      "azureResourceName": "Nama Sumber Daya Azure",
+      "azureResourceNamePlaceholder": "sumberayasaya",
+      "azureResourceNameHint": "Nama sumber daya Azure OpenAI (dari portal Azure).",
+      "deploymentId": "ID Deployment",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Nama deployment yang Anda buat di Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Versi API",
+      "azureApiVersionDefaultHint": "(default: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Region AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID Kunci Akses AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Kunci Akses Rahasia AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Biarkan kosong untuk mempertahankan yang ada",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Token Sesi",
+      "awsSessionTokenOptionalHint": "(opsional, untuk kredensial sementara)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID Router GCP",
+      "gcpRouterIdPlaceholder": "router-gcp-saya",
+      "gcpLocationLabel": "Lokasi",
+      "gcpLocationDefaultHint": "(default: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Kunci Akun Layanan",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL Endpoint",
+      "optional": "(opsional)",
+      "webProvider": {
+        "unofficialWarningTitle": "Penyedia tidak resmi — gunakan atas risiko Anda sendiri.",
+        "unofficialWarningBody": "Integrasi ini mengandalkan API internal yang tidak terdokumentasi yang mungkin berubah atau rusak tanpa pemberitahuan. Mungkin melanggar Syarat Layanan penyedia dan dapat mengakibatkan penangguhan akun.",
+        "accessTokenLabel": "Token Akses",
+        "sessionTokenLabel": "Token Sesi",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Tempel nilai cookie sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token berakhir setiap ~24 jam. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
+        "anthropicInstructions": "<strong>Cara mendapatkan kunci sesi Anda:</strong> Saat login ke Claude, buka DevTools (F12) → Application → Cookies → <code>claude.ai</code> → salin nilai cookie <code>sessionKey</code> (dimulai dengan <code>sk-ant-sid01-</code>). Kunci tetap valid sampai Anda logout."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth Langganan",
+        "authFilePathLabel": "Path file auth",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (default)",
+        "anthropicTitle": "Gunakan langganan Claude Pro/Max Anda.",
+        "anthropicRunCommandStep": "Jalankan perintah ini dan salin token yang dicetak:",
+        "anthropicPasteTokenStep": "Tempel token ke bidang <em>Token OAuth Langganan</em> di bawah.",
+        "termsNote": "Buat ulang ketika berakhir. Penggunaan langganan melalui gateway mungkin bertentangan dengan Syarat Layanan penyedia.",
+        "openaiTitle": "Gunakan langganan ChatGPT Plus/Pro Anda melalui aplikasi Codex.",
+        "openaiLoginStep": "Login ke aplikasi desktop Codex dengan akun ChatGPT Plus/Pro Anda.",
+        "openaiAutoRefreshStep": "Routerly membaca token akses Anda dari <code>~/.codex/auth.json</code> dan menyegarkannya secara otomatis. Tidak perlu copy/paste manual.",
+        "openaiAuthFilePathStep": "Biarkan bidang <em>Path file Auth</em> kosong untuk menggunakan default, atau masukkan path khusus jika aplikasi Codex Anda menyimpan auth di tempat lain.",
+        "openaiTermsNote": "Penggunaan langganan melalui gateway mungkin bertentangan dengan Syarat Layanan penyedia."
+      },
+      "copyCode": {
+        "copiedTooltip": "Disalin!",
+        "copyTooltip": "Salin ke clipboard",
+        "copiedLabel": "Disalin",
+        "copyLabel": "Salin"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Salin",
+      "copiedLabel": "Disalin!",
+      "copyErrorHint": "Gagal menyalin, pilih dan salin secara manual."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Klien MCP",
+      "hints": {
+        "claudeCode": "Jalankan ini sekali, di mana saja. Claude Code menyimpan server di <code>~/.claude.json</code>.",
+        "claudeDesktop": "Letakkan ini di <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (di Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), lalu mulai ulang aplikasi. Ini menghasilkan CLI, jadi <code>routerly</code> harus di PATH Anda.",
+        "codex": "Letakkan ini di <code>~/.codex/config.toml</code>. Codex membaca token dari lingkungan, jadi ekspor dalam shell tempat Anda memulai Codex.",
+        "opencode": "Letakkan ini di <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Jalankan ini sekali. OpenClaw default ke transportasi sse, yang tidak Routerly layani, jadi transportasi disetel secara eksplisit.",
+        "cursor": "Letakkan ini di <code>~/.cursor/mcp.json</code>, atau di <code>.cursor/mcp.json</code> untuk membatasi ke satu proyek.",
+        "cline": "Letakkan ini di <code>~/.cline/mcp.json</code>, atau tempel ke Configure MCP Servers di panel Cline.",
+        "zed": "Letakkan ini di <code>settings.json</code> Zed Anda, bersama server konteks lainnya."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Perubahan Tidak Tersimpan",
+      "message": "Anda memiliki perubahan yang tidak tersimpan. Jika Anda pergi sekarang, perubahan Anda akan hilang.",
+      "stay": "Tetap",
+      "leaveAnyway": "Pergi saja"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Penjaga",
+        "pii": "PII",
+        "optimizers": "Pengoptimal",
+        "routerOverhead": "Overhead router"
+      },
+      "policyType": {
+        "llm": "Routing AI",
+        "rateLimit": "Batas Laju",
+        "budgetRemaining": "Anggaran Tersisa",
+        "semanticIntent": "Niat Semantik",
+        "modelPreference": "Preferensi Model"
+      },
+      "rawDetails": "detail mentah",
+      "technicalDetails": "detail teknis",
+      "systemPrompt": "prompt sistem",
+      "responseText": "teks respons",
+      "responseJson": "respons JSON",
+      "cacheEmbeddingCall": "PANGGILAN EMBEDDING CACHE",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Model Embedding",
+      "upstreamModel": "Model Upstream",
+      "provider": "Penyedia",
+      "source": "Sumber",
+      "endpoint": "Endpoint",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL diperpanjang",
+      "model": "Model",
+      "similarity": "Kesamaan",
+      "embedding": "Embedding",
+      "cacheMiss": "CACHE MISS",
+      "details": "detail",
+      "excludedByLimits": "DIKECUALIKAN OLEH BATAS",
+      "finalRanking": "PERINGKAT AKHIR",
+      "noRankingData": "Tidak ada data peringkat (catatan mungkin rusak atau dari versi yang lebih lama)",
+      "policyScores": "SKOR KEBIJAKAN",
+      "weight": "berat {{value}}",
+      "allScores": "semua skor",
+      "noPolicyData": "Tidak ada data kebijakan (catatan mungkin rusak atau dari versi yang lebih lama)",
+      "requestGuardrailBlocked": "PERMINTAAN PENJAGA DIBLOKIR",
+      "requestGuardrailTriggered": "PERMINTAAN PENJAGA DIPICU",
+      "responseGuardrailBlocked": "RESPONS PENJAGA DIBLOKIR",
+      "responseGuardrailTriggered": "RESPONS PENJAGA DIPICU",
+      "rule": "Aturan",
+      "action": "Tindakan",
+      "guardrailsEvaluated": "PENJAGA DIEVALUASI ({{target}})",
+      "ruleCount": "{{count}} aturan",
+      "ruleCount_other": "{{count}} aturan",
+      "promptInjection": "Injeksi prompt",
+      "injects": "menyuntikkan",
+      "judgeResponse": "Respons hakim",
+      "piiScrubbed": "PII DISAPU",
+      "piiScanned": "PII DIPINDAI ({{target}})",
+      "policies": "kebijakan",
+      "entityTypes": "jenis entitas",
+      "customPatterns": "pola khusus",
+      "scanned": "dipindai",
+      "redacted": "diredaksi",
+      "took": "mengambil",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "jenis entitas dipindai",
+      "guardrailInjection": "INJEKSI PENJAGA",
+      "rules": "aturan",
+      "chars": "karakter",
+      "injectedText": "teks yang disuntikkan",
+      "optimizer": "PENGOPTIMAL {{id}}",
+      "tokens": "token",
+      "saved": "disimpan",
+      "tok": "{{value}} tok",
+      "reason": "alasan",
+      "budgetBlocked": "ANGGARAN DIBLOKIR",
+      "budgetOk": "ANGGARAN OK",
+      "egressSent": "KELUAR DIKIRIM",
+      "status": "status",
+      "encoding": "pengodean",
+      "frames": "bingkai",
+      "bytes": "byte"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Profil Saya",
+      "subtitle": "Kelola pengaturan akun Anda"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Notifikasi",
+      "mcp": "MCP",
+      "preferences": "Preferensi"
+    },
+    "notifications": {
+      "close": "Tutup",
+      "refresh": "Segarkan",
+      "clear": "Hapus",
+      "empty": "Tidak ada notifikasi yang ditemukan.",
+      "markAllRead": "Tandai semua terbaca",
+      "allCaughtUp": "Semua ketinggalan",
+      "unreadCount": "{{count}} belum dibaca",
+      "selectedCount": "{{count}} dipilih",
+      "severity": {
+        "all": "Semua",
+        "info": "Info",
+        "warning": "Peringatan",
+        "critical": "Kritis"
+      },
+      "status": {
+        "read": "Dibaca",
+        "unread": "Belum dibaca"
+      },
+      "filters": {
+        "severity": "Keparahan",
+        "category": "Kategori",
+        "event": "Acara",
+        "date": "Tanggal",
+        "period": "Periode",
+        "status": "Status",
+        "all": "Semua",
+        "allCategories": "Semua kategori",
+        "allEvents": "Semua acara",
+        "unreadOnly": "Hanya yang belum dibaca"
+      },
+      "actions": {
+        "markRead": "Tandai sebagai dibaca",
+        "markUnread": "Tandai sebagai belum dibaca",
+        "archive": "Arsip"
+      },
+      "table": {
+        "severity": "Keparahan",
+        "event": "Acara",
+        "date": "Tanggal",
+        "status": "Status",
+        "selectAll": "Pilih semua",
+        "selectRow": "Pilih {{event}}",
+        "eventCount": "{{count}} acara"
+      },
+      "pagination": {
+        "previous": "← Sebelumnya",
+        "next": "Berikutnya →",
+        "page": "Halaman {{page}} dari {{totalPages}}",
+        "total": "({{count}} total)"
+      },
+      "detail": {
+        "ariaLabel": "Detail notifikasi",
+        "details": "Detail",
+        "noDetails": "Tidak ada detail tambahan.",
+        "eventsInIncident": "Acara dalam insiden ini"
+      }
+    },
+    "security": {
+      "roleLabel": "Peran:",
+      "password": {
+        "heading": "Ubah Kata Sandi",
+        "currentLabel": "Kata Sandi Saat Ini",
+        "newLabel": "Kata Sandi Baru",
+        "newPlaceholder": "Minimum 8 karakter",
+        "confirmLabel": "Konfirmasi Kata Sandi Baru",
+        "success": "Kata sandi berhasil diubah.",
+        "saving": "Menyimpan...",
+        "submit": "Ubah Kata Sandi",
+        "errors": {
+          "mismatch": "Kata sandi tidak cocok.",
+          "tooShort": "Kata sandi baru harus minimal 8 karakter.",
+          "updateFailed": "Pembaruan gagal"
+        }
+      },
+      "tfa": {
+        "heading": "Autentikasi Dua Faktor",
+        "notEnabled": "2FA tidak diaktifkan. Lindungi akun Anda dengan kata sandi sekali pakai berbasis waktu.",
+        "enableButton": "Aktifkan Autentikasi Dua Faktor",
+        "scanInstructions": "Pindai kode QR ini dengan aplikasi autentikator Anda (Google Authenticator, Authy, dll.), lalu masukkan kode 6 digit untuk mengonfirmasi.",
+        "qrAlt": "Kode QR setup 2FA",
+        "addAccountInstructions": "Buka aplikasi autentikator Anda (Google Authenticator, Authy, 1Password, dll.) dan tambahkan akun baru:",
+        "setup": {
+          "step1": "Ketuk <strong>Tambah akun</strong> atau tombol <strong>+</strong>",
+          "step2": "Pilih <strong>Masukkan kunci setup</strong> (atau pindai kode QR jika di mobile)",
+          "step3": "Masukkan rahasia yang ditampilkan di bawah"
+        },
+        "mobileLink": "Ketuk di sini di mobile untuk membuka autentikator",
+        "manualEntryLabel": "Rahasia entri manual:",
+        "saveBackupCodes": "Simpan kode backup ini. Masing-masing dapat digunakan sekali jika Anda kehilangan akses ke autentikator Anda.",
+        "copyBackupCodes": "Salin kode backup",
+        "confirmCodeLabel": "Masukkan kode dari aplikasi Anda untuk mengaktifkan",
+        "activate": "Aktifkan 2FA",
+        "cancel": "Batal",
+        "enabledBadge": "2FA diaktifkan",
+        "newBackupCodesLabel": "Kode backup baru (simpan sekarang):",
+        "copy": "Salin",
+        "regenLabel": "Masukkan kode autentikator untuk membuat ulang kode backup",
+        "regenerate": "Buat ulang",
+        "regenerateBackupCodes": "Buat ulang kode backup",
+        "disableLabel": "Nonaktifkan 2FA (masukkan kode autentikator)",
+        "disable": "Nonaktifkan 2FA",
+        "errors": {
+          "setupFailed": "Setup gagal",
+          "confirmFailed": "Konfirmasi gagal",
+          "disableFailed": "Nonaktifkan gagal",
+          "regenFailed": "Pembuatan ulang gagal"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Gagal memuat permukaan MCP",
+        "revokeFailed": "Gagal mencabut token"
+      },
+      "revokeConfirm": "Cabut token MCP \"{{name}}\"? Klien yang menggunakannya berhenti bekerja segera.",
+      "tokens": {
+        "heading": "Token MCP",
+        "newToken": "Token Baru",
+        "description": "Setiap token bertindak sebagai Anda: mengekspos persis alat yang peran Anda izinkan. Nilai lengkap ditampilkan sekali, di halaman yang membuatnya.",
+        "empty": "Tidak ada token MCP. Buat satu untuk menghubungkan klien MCP.",
+        "created": "Dibuat",
+        "lastUsed": "Terakhir digunakan",
+        "expires": "Berakhir",
+        "never": "Tidak pernah",
+        "revokeTitle": "Cabut token"
+      },
+      "tools": {
+        "heading": "Alat yang Token Anda Ekspos",
+        "empty": "Peran Anda tidak memberikan alat MCP. Minta administrator untuk izin yang Anda butuhkan.",
+        "table": {
+          "name": "Nama",
+          "scope": "Ruang Lingkup",
+          "description": "Deskripsi",
+          "sourceModule": "Modul sumber",
+          "permission": "Izin"
+        }
+      },
+      "connect": {
+        "heading": "Hubungkan Klien MCP",
+        "descriptionPre": "Pilih klien yang Anda sambungkan, lalu ganti",
+        "descriptionPost": "dengan salah satu token Anda. Membuat token menampilkan snippet yang sama dengan nilai sudah ada di dalamnya.",
+        "otherClient": "Klien lain apa pun",
+        "httpInstructionsPre": "Melalui HTTP, arahkan ke endpoint ini dan autentikasi dengan",
+        "httpInstructionsPost": ". Ini adalah JSON-RPC 2.0 melalui HTTP yang dapat dialirkan.",
+        "stdioInstructionsPre": "Melalui stdio, CLI menjembatani dan melewatkan token Anda. Menjalankan layanan secara langsung? Atur",
+        "stdioInstructionsAnd": "dan",
+        "stdioInstructionsPost": "sendiri."
+      },
+      "newToken": {
+        "backToMcp": "Kembali ke MCP",
+        "title": "Token MCP Baru",
+        "subtitle": "Token bertindak sebagai Anda: mengekspos persis alat yang peran Anda izinkan.",
+        "nameLabel": "Nama",
+        "namePlaceholder": "laptop",
+        "nameHint": "Di mana token ini digunakan, misalnya \"laptop\" atau \"claude-desktop\".",
+        "expiryLabel": "Berakhir pada",
+        "expiryHint": "Opsional. Biarkan kosong dan token tidak pernah berakhir, sampai Anda mencabutnya.",
+        "createButton": "Buat token",
+        "creatingButton": "Membuat…",
+        "cancelButton": "Batal",
+        "tokenSection": {
+          "title": "Token Anda",
+          "hint": "Salin sekarang. Ini tidak ditampilkan lagi, dan token yang hilang hanya dapat diganti.",
+          "copyButton": "Salin",
+          "copiedButton": "Disalin!",
+          "copyTitle": "Salin token",
+          "copiedTitle": "Disalin!"
+        },
+        "connectSection": {
+          "title": "Hubungkan klien",
+          "hint": "Pilih klien yang Anda sambungkan. Snippet sudah membawa token ini."
+        },
+        "bridgeSection": {
+          "title": "Atau gunakan jembatan lokal",
+          "hint": "Untuk klien yang hanya berbicara stdio, CLI menjembatani dan melewatkan token Anda."
+        },
+        "doneButton": "Selesai",
+        "errors": {
+          "createFailed": "Gagal membuat token",
+          "copyFailed": "Gagal menyalin, pilih dan salin token secara manual."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Bahasa",
+      "description": "Pilih bahasa untuk menampilkan dashboard.",
+      "languageLabel": "Bahasa",
+      "saved": "Preferensi bahasa disimpan."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Gagal memuat pengaturan",
+        "loadFailedPeriod": "Gagal memuat pengaturan.",
+        "saveFailed": "Gagal menyimpan",
+        "saveSettingsFailed": "Gagal menyimpan pengaturan"
+      },
+      "savedSuccess": "Pengaturan berhasil disimpan.",
+      "saving": "Menyimpan…",
+      "saveSettings": "Simpan Pengaturan",
+      "serverInfo": {
+        "heading": "Info Server",
+        "readOnly": "Baca saja. Host dan port berasal dari lingkungan atau file pengaturan, bukan dari sini.",
+        "reachableAt": "Dapat dijangkau di",
+        "reachableAtAny": "Dapat dijangkau di salah satu dari alamat ini",
+        "thisMachine": "Mesin ini",
+        "network": "Jaringan",
+        "copyAddress": "Salin {{address}}",
+        "copied": "Disalin!",
+        "copy": "Salin",
+        "hostAndPort": "Host dan port",
+        "version": "Versi",
+        "uptime": "Waktu aktif"
+      },
+      "runtime": {
+        "heading": "Pengaturan Runtime",
+        "logLevel": "Tingkat Log",
+        "logLevelHint": "Mengontrol verbositas log layanan.",
+        "publicUrl": "URL Publik",
+        "publicUrlHint": "URL dasar tempat layanan dapat dijangkau dari klien eksternal (misal <code>http://192.168.1.10:3000</code>). Digunakan di bagian <strong>Cara menghubungkan</strong> setiap router. Berguna saat dashboard berjalan di mesin atau port berbeda dari layanan.",
+        "usageRetention": "Retensi Penggunaan",
+        "noLimit": "Tidak ada batas",
+        "maxAgeDays": "Umur maksimal (hari)",
+        "maxSizeMb": "Ukuran maksimal (MB)",
+        "retentionHint": "Riwayat penggunaan/penagihan lebih lama dari hari-hari ini, atau melebihi ukuran ini, dihapus dari log aktif. Biarkan keduanya kosong untuk tidak ada batas retensi."
+      },
+      "internationalization": {
+        "heading": "Internasionalisasi",
+        "defaultLanguage": "Bahasa Lalai",
+        "defaultLanguageHint": "Bahasa papan pemuka untuk pengguna yang belum memilih bahasa mereka sendiri. Tidak mengatasi pilihan peribadi pengguna."
+      },
+      "telemetry": {
+        "heading": "Metrik Anonim",
+        "neverAutomatic": "Routerly tidak pernah mengirim data secara otomatis.",
+        "noChoice": "Anda belum membuat pilihan.",
+        "enabledStatus": "Metrik instalasi anonim diaktifkan.",
+        "disabledStatus": "Metrik instalasi anonim dinonaktifkan.",
+        "explanation": "Ketika diaktifkan, Routerly hanya mengirim: jenis acara (pasang/upgrade/uninstall), versi, platform, dan ID acak. Tidak ada data pribadi, tidak ada data penggunaan, tidak ada IP yang disimpan.",
+        "whatIsSent": "Apa yang dikirim?",
+        "installId": "ID Instalasi: {{id}}",
+        "saving": "Menyimpan…",
+        "enable": "Aktifkan",
+        "disable": "Nonaktifkan"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Dashboard (kotak masuk dalam aplikasi)",
+          "description": "Peristiwa rute ke kotak masuk dalam aplikasi"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Server mail khusus"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "Layanan Email Sederhana AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Layanan Komunikasi Azure"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail melalui OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Callback webhook HTTP"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Tim Webhook Masuk"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Webhook Discord"
+        }
+      },
+      "events": {
+        "providerError": "Penyedia – Kesalahan",
+        "providerDegraded": "Penyedia – Berkurang",
+        "providerRecovered": "Penyedia – Pulih",
+        "providerRateLimited": "Penyedia – Batas Laju",
+        "routingNoCandidates": "Routing – Tanpa Kandidat",
+        "routingFallbackUsed": "Routing – Fallback Digunakan",
+        "authLoginFailed": "Auth – Login Gagal",
+        "authTokenInvalid": "Auth – Token Tidak Valid",
+        "configModelAdded": "Config – Model Ditambahkan",
+        "configModelDeleted": "Config – Model Dihapus",
+        "configRouterCreated": "Config – Router Dibuat",
+        "configRouterDeleted": "Config – Router Dihapus",
+        "budgetThresholdReached": "Anggaran – Ambang Batas Tercapai",
+        "budgetExceeded": "Anggaran – Terlampaui",
+        "budgetReset": "Anggaran – Setel Ulang",
+        "systemStartup": "Sistem – Startup",
+        "systemShutdown": "Sistem – Shutdown",
+        "systemUpdateAvailable": "Sistem – Update Tersedia"
+      },
+      "removeChannelTooltip": "Hapus saluran",
+      "removeChannelConfirm": "Hapus saluran?",
+      "formUpdatedHint": "Formulir diperbarui — simpan untuk menerapkan.",
+      "hmacSigningKeyPlaceholder": "Kunci penandatanganan HMAC",
+      "perms": {
+        "routerRead": "Router – Baca",
+        "routerWrite": "Router – Tulis",
+        "modelRead": "Model – Baca",
+        "modelWrite": "Model – Tulis",
+        "userRead": "Pengguna – Baca",
+        "userWrite": "Pengguna – Tulis",
+        "reportRead": "Laporan – Baca",
+        "settingsRead": "Pengaturan – Baca",
+        "settingsWrite": "Pengaturan – Tulis",
+        "notificationWrite": "Notifikasi – Tulis",
+        "tokenRead": "Token – Baca",
+        "tokenWrite": "Token – Tulis",
+        "roleWrite": "Peran – Tulis",
+        "auditRead": "Log Audit – Baca",
+        "modulesRead": "Modul – Baca",
+        "modulesManage": "Modul – Kelola",
+        "connectionsRead": "Koneksi – Baca",
+        "connectionsManage": "Koneksi – Kelola",
+        "resilienceRead": "Ketangguhan – Baca",
+        "resilienceManage": "Ketangguhan – Kelola",
+        "profilesRead": "Profil Routing – Baca",
+        "profilesManage": "Profil Routing – Kelola",
+        "optimizersRead": "Pengoptimal – Baca",
+        "optimizersManage": "Pengoptimal – Kelola",
+        "experimentsRead": "Eksperimen – Baca",
+        "experimentsManage": "Eksperimen – Kelola"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Untuk jenis saluran ini, target tidak mengubah pengiriman (endpoint tetap). Mereka memfilter peristiwa mana yang dicatat di jejak audit per penerima.",
+        "dashboard": "Target mengontrol visibilitas kotak masuk — hanya pengguna yang cocok yang akan melihat notifikasi ini di kotak masuk dalam aplikasi mereka.",
+        "email": "Target menentukan pengguna mana yang menerima email ini. Biarkan semua kosong untuk mengirim ke semua pengguna."
+      },
+      "summary": {
+        "allEvents": "Semua acara",
+        "eventCount": "{{count}} acara",
+        "eventCount_other": "{{count}} acara",
+        "roleCount": "{{count}} peran",
+        "roleCount_other": "{{count}} peran",
+        "permCount": "{{count}} izin",
+        "permCount_other": "{{count}} izin",
+        "userCount": "{{count}} pengguna",
+        "userCount_other": "{{count}} pengguna",
+        "everyone": "Semua orang"
+      },
+      "errors": {
+        "loadFailed": "Gagal memuat"
+      },
+      "fields": {
+        "dashboardHint": "Peristiwa rute yang cocok ke kotak masuk notifikasi dalam aplikasi. Tidak diperlukan kredensial.",
+        "labels": {
+          "fromAddress": "Alamat Dari",
+          "fromName": "Nama Dari",
+          "host": "Host",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Nama Pengguna",
+          "password": "Kata Sandi",
+          "awsRegion": "Region AWS",
+          "accessKeyId": "ID Kunci Akses",
+          "secretAccessKey": "Kunci Akses Rahasia",
+          "apiKey": "Kunci API",
+          "connectionString": "String Koneksi",
+          "clientId": "ID Klien",
+          "clientSecret": "Rahasia Klien",
+          "refreshToken": "Token Segarkan",
+          "url": "URL",
+          "method": "Metode",
+          "signingSecret": "Rahasia Penandatanganan",
+          "botToken": "Token Bot",
+          "channelId": "ID Saluran",
+          "webhookUrl": "URL Webhook",
+          "integrationKey": "Kunci Integrasi"
+        },
+        "values": {
+          "enabled": "Diaktifkan",
+          "disabled": "Dinonaktifkan",
+          "configured": "Dikonfigurasi",
+          "notSet": "Tidak diatur"
+        },
+        "optional": "(opsional)",
+        "keepCurrentPlaceholder": "Biarkan kosong untuk mempertahankan yang sekarang",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Gunakan TLS / SSL",
+        "smtpTlsOnHint": "(port 465 — SSL langsung)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Biarkan kredensial kosong untuk menggunakan peran instance IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Kunci penandatanganan HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "Kunci perutean 32 karakter",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Acara",
+          "eventsPlaceholder": "Semua acara (biarkan kosong untuk semua)",
+          "eventsHint": "Biarkan kosong untuk menerima semua acara. Pilih acara spesifik untuk memfilter.",
+          "routersHeading": "Router",
+          "routersPlaceholder": "Semua router (biarkan kosong untuk semua)",
+          "routersHint": "Biarkan kosong untuk menerima acara dari semua router.",
+          "cooldownHeading": "Cooldown",
+          "cooldownSuffix": "detik (0 = tidak ada cooldown)",
+          "cooldownHint": "Interval minimum sebelum saluran ini dapat dipecat lagi untuk acara yang sama."
+        },
+        "recipients": {
+          "heading": "Penerima / Target",
+          "rolesLabel": "Peran",
+          "rolesPlaceholder": "Semua peran (semua orang)",
+          "permissionsLabel": "Izin",
+          "permissionsPlaceholder": "Semua izin (semua orang)",
+          "usersLabel": "Pengguna individual",
+          "usersPlaceholder": "Semua pengguna (semua orang)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "koneksi",
+          "routing": "routing",
+          "recipients": "penerima"
+        },
+        "sections": {
+          "channelSettings": "Pengaturan saluran",
+          "eventsRouting": "Acara dan routing",
+          "recipients": "Penerima"
+        },
+        "nameLabel": "Nama",
+        "namePlaceholder": "Label untuk saluran ini",
+        "cancelButton": "Batal"
+      },
+      "list": {
+        "countLabel": "{{count}} saluran",
+        "countLabel_other": "{{count}} saluran",
+        "filteredLabel": "{{shown}} dari {{count}} saluran",
+        "filteredLabel_other": "{{shown}} dari {{count}} saluran",
+        "allTypes": "Semua jenis",
+        "searchPlaceholder": "Filter saluran…",
+        "searchChannelsPlaceholder": "Cari saluran…",
+        "addButton": "Tambah Saluran",
+        "addSearchPlaceholder": "Cari saluran…",
+        "noResults": "Tidak ada hasil",
+        "emptyTitle": "Tidak ada saluran notifikasi yang dikonfigurasi.",
+        "noMatch": "Tidak ada saluran yang cocok dengan filter aktif.",
+        "nameInlinePlaceholder": "Label (opsional)",
+        "columns": {
+          "name": "Nama",
+          "type": "Jenis",
+          "summary": "Acara / Target"
+        },
+        "testTitle": "Kirim tes",
+        "editTitle": "Edit saluran",
+        "deleteTitle": "Hapus saluran",
+        "deleteConfirm": "Hapus saluran \"{{name}}\"? Ini tidak dapat dibatalkan.",
+        "deleteConfirmButton": "Hapus",
+        "errors": {
+          "deleteFailed": "Gagal menghapus"
+        }
+      },
+      "edit": {
+        "backToList": "Kembali ke Notifikasi",
+        "back": "Kembali",
+        "heading": "Edit saluran {{provider}}",
+        "subtitle": "Perbarui konfigurasi untuk saluran notifikasi ini.",
+        "testSection": {
+          "title": "Kirim tes",
+          "recipientPlaceholder": "penerima@example.com",
+          "sendButton": "Kirim Tes",
+          "sendingButton": "Mengirim…",
+          "hintEmail": "Biarkan kosong untuk mengirim ke email akun Anda. Tes menggunakan konfigurasi saluran yang disimpan.",
+          "hintOther": "Tes menggunakan konfigurasi saluran yang disimpan. Simpan perubahan terlebih dahulu untuk menguji pengaturan yang diperbarui."
+        },
+        "saveButton": "Simpan Perubahan",
+        "savingButton": "Menyimpan…",
+        "errors": {
+          "loadFailed": "Gagal memuat",
+          "saveFailed": "Gagal menyimpan"
+        }
+      },
+      "create": {
+        "backToList": "Kembali ke Notifikasi",
+        "changeType": "Ubah jenis",
+        "pickerHeading": "Pilih jenis saluran",
+        "pickerSubtitle": "Pilih penyedia notifikasi untuk dikonfigurasi.",
+        "heading": "Saluran {{provider}} baru",
+        "subtitle": "Konfigurasi saluran notifikasi baru.",
+        "createButton": "Buat Saluran",
+        "creatingButton": "Membuat…",
+        "errors": {
+          "createFailed": "Gagal membuat"
+        }
+      },
+      "sendTest": "Kirim tes",
+      "fromAddress": "Alamat Dari",
+      "individualUsers": "Pengguna individual",
+      "host": "Host",
+      "port": "Port",
+      "apiKey": "Kunci API",
+      "connectionString": "String Koneksi",
+      "clientId": "ID Klien",
+      "clientSecret": "Rahasia Klien",
+      "refreshToken": "Token Segarkan",
+      "method": "Metode",
+      "botToken": "Token Bot",
+      "channelId": "ID Saluran",
+      "webhookUrl": "URL Webhook",
+      "integrationKey": "Kunci Integrasi"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "tarik — mengekspos /metrik"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "dorong — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "dorong — API metrik"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "dorong — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "dorong — protokol garis"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "dorong — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Ekspor jejak permintaan",
+        "description": "Pengiriman jejak penuh setiap permintaan yang diproksi: setiap fase, setiap modul yang berbicara, dan petunjuk serta jawaban untuk proyek yang memilih masuk.",
+        "sampleRateLabel": "Laju sampel",
+        "sampleRateHint": "1 mengekspor setiap permintaan, 0,1 satu dari sepuluh."
+      },
+      "optional": "(opsional)",
+      "headersHint": "(opsional, satu per baris: Kunci: Nilai)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Token Pembawa",
+          "placeholder": "Biarkan kosong untuk akses terbuka",
+          "description": "Mengekspos <code>/metrics</code> dalam format teks Prometheus. Atur token untuk memerlukan auth Bearer."
+        },
+        "otel": {
+          "endpoint": "Endpoint kolektor",
+          "description": "URL dasar penerima OTLP Anda. Routerly menambahkan <code>/v1/metrics</code>, dan <code>/v1/traces</code> ketika ekspor jejak aktif. Port HTTP default adalah 4318, gRPC adalah 4317.",
+          "protocol": "Protokol",
+          "headers": "Header"
+        },
+        "datadog": {
+          "apiKey": "Kunci API",
+          "placeholder": "Kunci API Datadog Anda",
+          "description": "Ditemukan di <strong>Pengaturan Organisasi → Kunci API</strong> di akun Datadog Anda.",
+          "site": "Situs"
+        },
+        "grafana": {
+          "remoteWriteUrl": "URL Tulis Jarak Jauh",
+          "description": "Ditemukan di <strong>Grafana Cloud → Koneksi → Prometheus → Detail</strong> sebagai \"Titik Akhir Tulis Jarak Jauh\".",
+          "username": "Nama Pengguna / ID Stack",
+          "usernameHint": "ID numerik yang ditampilkan di detail koneksi Prometheus.",
+          "apiKey": "Kunci API / Token",
+          "apiKeyHint": "Token Grafana Cloud dengan peran <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL instance InfluxDB v2. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Token API InfluxDB Anda",
+          "tokenHint": "Harus memiliki akses <strong>tulis</strong> ke ember.",
+          "org": "Organisasi",
+          "bucket": "Ember"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Rahasia",
+          "secretHint": "(opsional — kunci penandatanganan HMAC-SHA256)",
+          "headers": "Header"
+        }
+      },
+      "errors": {
+        "loadFailed": "Gagal memuat integrasi",
+        "updateFailed": "Gagal memperbarui integrasi",
+        "saveFailed": "Gagal menyimpan integrasi",
+        "deleteFailed": "Gagal menghapus integrasi"
+      },
+      "empty": "Tidak ada integrasi yang dikonfigurasi.",
+      "enabled": "Diaktifkan",
+      "testing": "Menguji…",
+      "test": "Tes",
+      "removeConfirm": "Hapus?",
+      "remove": "Hapus",
+      "cancel": "Batal",
+      "removeTooltip": "Hapus integrasi",
+      "saving": "Menyimpan…",
+      "save": "Simpan",
+      "addButton": "Tambah Integrasi"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Gagal memuat pengaturan",
+        "duplicateUrl": "URL ini sudah ada dalam daftar.",
+        "unreachable": "Tidak dapat menjangkau katalog penyedia yang valid di URL ini."
+      },
+      "saved": "Tersimpan.",
+      "refreshed": "Disegari.",
+      "heading": "Repositori Katalog Penyedia",
+      "refreshing": "Menyegarkan…",
+      "refresh": "Segarkan",
+      "nextRefresh": "Berikutnya: {{date}}",
+      "priorityHint": "Urutan baris menentukan prioritas penggabungan — baris 1 menang saat konflik. Gunakan panah untuk mengurutkan kembali.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Diperbarui",
+        "lastCheck": "Pemeriksaan Terakhir",
+        "status": "Status"
+      },
+      "empty": "Tidak ada repositori yang dikonfigurasi. Katalog publik Routerly default akan digunakan.",
+      "status": {
+        "error": "Kesalahan",
+        "active": "Aktif",
+        "disabled": "Dinonaktifkan"
+      },
+      "edit": "Edit",
+      "removeTooltip": "Hapus",
+      "addRepository": "Tambah Repositori",
+      "checking": "Memeriksa…",
+      "add": "Tambah",
+      "removeConfirm": "Hapus repositori \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Aplikasi",
+        "runtime": "Runtime",
+        "storage": "Penyimpanan",
+        "softwareUpdate": "Pembaruan Perangkat Lunak"
+      },
+      "labels": {
+        "version": "Versi",
+        "uptime": "Waktu aktif",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Direktori konfigurasi",
+        "dataDir": "Direktori data",
+        "currentVersion": "Versi saat ini",
+        "availableVersion": "Versi yang tersedia",
+        "upToDate": "Terbaru",
+        "lastChecked": "Terakhir diperiksa"
+      },
+      "noCheckPerformed": "Tidak ada pemeriksaan pembaruan yang dilakukan.",
+      "checkForUpdates": "Periksa pembaruan",
+      "checking": "Memeriksa…",
+      "updateTo": "Perbarui ke v{{version}}",
+      "updating": "Memperbarui…",
+      "dockerHint": "Berjalan di Docker — tarik gambar terbaru untuk memperbarui.",
+      "confirmUpdate": "Ini akan mengunduh dan menginstal versi terbaru. Layanan akan dimulai ulang. Lanjutkan?",
+      "updateComplete": "Pembaruan selesai! Memuat ulang…",
+      "serviceRestarting": "Layanan sedang dimulai ulang. Silakan muat ulang halaman sebentar.",
+      "errors": {
+        "loadFailed": "Gagal memuat",
+        "checkFailed": "Pemeriksaan gagal",
+        "updateFailed": "Pembaruan gagal"
+      },
+      "channel": "Saluran"
+    },
+    "security": {
+      "authentication": "Autentikasi",
+      "requireMfa": "Butuh Autentikasi Dua Faktor untuk semua pengguna",
+      "requireMfaHint": "Ketika diaktifkan, pengguna yang belum menyiapkan 2FA akan melihat prompt untuk melakukannya setelah login. Pengguna dapat mengonfigurasi 2FA di halaman Profil mereka.",
+      "savedSuccess": "Pengaturan berhasil disimpan.",
+      "saving": "Menyimpan…",
+      "saveSettings": "Simpan Pengaturan",
+      "errors": {
+        "loadFailed": "Gagal memuat pengaturan",
+        "saveFailed": "Gagal menyimpan pengaturan"
+      }
+    },
+    "title": "Pengaturan",
+    "subtitle": "Konfigurasi untuk Routerly",
+    "tabs": {
+      "general": "Umum",
+      "security": "Keamanan",
+      "notifications": "Notifikasi",
+      "integrations": "Integrasi",
+      "catalog": "Katalog Penyedia",
+      "users": "Pengguna",
+      "roles": "Peran",
+      "audit": "Log Audit",
+      "about": "Tentang"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Router",
+      "subtitle": "Aplikasi klien yang mengakses Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} router",
+      "newRouter": "Router Baru",
+      "empty": "Tidak ada router.",
+      "emptyFiltered": "Tiada pekeliling jenis ini.",
+      "tabs": {
+        "all": "Semua",
+        "router": "Pekeliling",
+        "orchestrator": "Orkestrator",
+        "passthrough": "Lulus terus"
+      },
+      "columns": {
+        "name": "Nama",
+        "tokens": "Token",
+        "policies": "Kebijakan",
+        "models": "Model"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} token",
+      "editRouter": "Edit router",
+      "deleteRouter": "Hapus router",
+      "deleteConfirm": "Hapus router ini?",
+      "errors": {
+        "deleteFailed": "Kesalahan menghapus router"
+      }
+    },
+    "layout": {
+      "notFound": "Router tidak ditemukan",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "general": "Umum",
+        "orchestrator": "Orkestrator",
+        "routing": "Routing",
+        "optimizer": "Pengoptimal",
+        "security": "Keamanan",
+        "token": "Token",
+        "users": "Pengguna",
+        "logs": "Log"
+      },
+      "backToRouters": "Kembali ke Router",
+      "backToRoutersTitle": "Kembali ke router",
+      "newRouter": "Router Baru",
+      "loading": "Memuat...",
+      "routerId": "ID Router:",
+      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini"
+    },
+    "dashboard": {
+      "period": "Periode",
+      "noTraffic": "Tidak ada lalu lintas untuk router ini dalam periode yang dipilih.",
+      "stats": {
+        "savings": "Penghematan",
+        "vsPrefix": "vs",
+        "forEverything": "untuk semuanya",
+        "noTargetToCompare": "tidak ada model target untuk dibandingkan",
+        "cost": "Biaya",
+        "callCount": "1 panggilan",
+        "callCount_other": "{{count}} panggilan",
+        "latency": "Latensi",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Waktu ke token pertama",
+        "notMeasured": "tidak diukur pada panggilan ini",
+        "reliability": "Keandalan",
+        "errorsAndBlocked": "{{errors}} kesalahan · {{blocked}} diblokir"
+      },
+      "tokens": {
+        "input": "Token masukan:",
+        "output": "Token keluaran:",
+        "fromCache": "Dari cache:",
+        "cacheSaved": "({{amount}} disimpan)"
+      },
+      "oneModel": {
+        "heading": "Jika semuanya pergi ke satu model",
+        "empty": "Tambahkan model target ke router ini untuk melihat perbandingannya.",
+        "columns": {
+          "targetModel": "Model target",
+          "wouldHaveCost": "Biaya",
+          "saved": "Dihemat"
+        },
+        "costsHint": "Biaya adalah token yang diamati harga ulang pada tarif setiap target."
+      },
+      "optimizers": {
+        "heading": "Apa yang pengoptimal hapus",
+        "columns": {
+          "optimizer": "Pengoptimal",
+          "callsChanged": "Panggilan berubah",
+          "tokensSaved": "Token dihemat",
+          "costSaved": "Biaya dihemat",
+          "rolledBack": "Dikembalikan"
+        },
+        "hint": "Diukur pada panggilan itu sendiri, dihargai pada model yang melayani masing-masing. Pengembalian jalankan berarti output langkah ditolak sebagai tidak aman dan prompt dipulihkan: ia tidak menyelamatkan apa pun, dan hitungan tinggi berarti ambang batas terlalu agresif."
+      },
+      "traffic": {
+        "heading": "Ke mana lalu lintas pergi",
+        "columns": {
+          "model": "Model",
+          "calls": "Panggilan",
+          "share": "Bagian",
+          "cost": "Biaya",
+          "p95Latency": "latensi p95",
+          "errors": "Kesalahan"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Kesalahan menyimpan router",
+        "copyFailed": "Gagal menyalin — silakan pilih dan salin token secara manual."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Merutekan permintaan di seluruh kandidat model."
+        },
+        "orchestrator": {
+          "label": "Orkestrator",
+          "description": "Merutekan permintaan di seluruh router lain alih-alih model."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Meneruskan permintaan tanpa modifikasi."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Simpan token ini sekarang.",
+        "saveNowHint": "Itu tidak akan ditampilkan lagi — setelah Anda meninggalkan layar ini itu tidak dapat dipulihkan.",
+        "copied": "Disalin!",
+        "copy": "Salin",
+        "goToRouter": "Buka router"
+      },
+      "connect": {
+        "heading": "Cara menghubungkan",
+        "intro": "Arahkan SDK OpenAI atau Anthropic apa pun ke Routerly dan gunakan <tokenLink>token router</tokenLink> sebagai kunci API. Ganti <code>{{token}}</code> di bawah dengan milik Anda. Model <code>{{model}}</code> menyerahkan pilihan ke Routerly; id model apa pun dari <modelsLink>Model</modelsLink> juga berfungsi.",
+        "openaiSdk": "SDK OpenAI",
+        "openaiBaseUrlHint": "URL dasar <code>{{baseUrl}}</code>, yang sama dengan bidang penyedia \"kompatibel OpenAI\" apa pun.",
+        "anthropicSdk": "SDK Anthropic",
+        "anthropicBaseUrlHint": "URL dasar <code>{{baseUrl}}</code>, tanpa <code>/v1</code>: SDK menambahkannya.",
+        "curl": "curl",
+        "curlHint": "Periksa wiring tanpa menginstal apa pun, lalu cari panggilan di <usageLink>Penggunaan</usageLink>."
+      },
+      "form": {
+        "kind": "Jenis",
+        "kindAriaLabel": "Jenis Router",
+        "kindFixedHint": "Tetap setelah router dibuat.",
+        "routerName": "Nama Router",
+        "routerNamePlaceholder": "Aplikasi Saya",
+        "advancedSettings": "Pengaturan lanjutan",
+        "ttftTimeout": "Timeout TTFT (ms)",
+        "ttftTimeoutHint": "Jika model tidak mengirim byte respons pertama dalam waktu ini, Routerly menghentikannya dan mencoba kandidat berikutnya. Tidak membatasi durasi respons total. Atur ke 0 untuk menunggu selama penyedia.",
+        "traceContent": "Konten jejak",
+        "traceContentHint": "Jejak selalu mencatat metadata (model, skor, token, biaya, latensi). Aktifkan ini untuk juga merekam prompt yang dikirim dan jawaban yang diterima. Mereka disimpan dengan catatan penggunaan dan terlihat oleh siapa pun yang dapat membaca laporan.",
+        "capturePromptsAndAnswers": "Tangkap prompt dan jawaban",
+        "saveChanges": "Simpan Perubahan",
+        "createRouter": "Buat Router"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Router ini bukan Orkestrator.",
+      "candidateRouters": "Router Kandidat",
+      "candidateRoutersHint": "Router yang Orkestrator ini meneruskan permintaan ke. Berat mempengaruhi seberapa sering setiap kandidat dipilih; hanya nama, id, berat dan batas opsional per kandidat ditampilkan di sini.",
+      "router": "Router",
+      "selectRouter": "Pilih router",
+      "weight": "Berat",
+      "removeCandidate": "Hapus kandidat",
+      "usageLimits": "Batas penggunaan untuk kandidat ini",
+      "limitCount": "{{count}} batas",
+      "limitCount_other": "{{count}} batas",
+      "usageLimitsHint": "Batas penggunaan opsional yang diterapkan hanya pada permintaan yang Orkestrator ini teruskan ke kandidat ini.",
+      "empty": "Tidak ada router kandidat. Orkestrator memerlukan minimal satu sebelum dapat meneruskan permintaan.",
+      "addCandidate": "Tambah Kandidat",
+      "saved": "Tersimpan!",
+      "saveCandidates": "Simpan Kandidat",
+      "errors": {
+        "loadFailed": "Gagal memuat router",
+        "saveFailed": "Kesalahan menyimpan kandidat orkestrator"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Gagal menugaskan profil routing",
+        "duplicateTargets": "Model target tidak boleh berisi duplikat.",
+        "saveFailed": "Kesalahan menyimpan routing router",
+        "noProfileAvailable": "Tidak ada profil routing yang tersedia. Buat satu dari halaman Profil."
+      },
+      "form": {
+        "routing": "Routing",
+        "routingHint": "Gunakan profil routing bersama, atau tentukan kebijakan router ini sendiri. Model target tetap dapat dikonfigurasi baik cara.",
+        "profileMode": "Profil",
+        "customMode": "Khusus",
+        "routingProfile": "Profil Routing",
+        "builtinSuffix": "(built-in)",
+        "profileHint": "Kebijakan berasal dari profil dan mengikuti perubahannya. Edit di halaman Profil, atau beralih ke Khusus untuk memulai dari salinannya.",
+        "saved": "Tersimpan!",
+        "saveRoutingConfiguration": "Simpan Konfigurasi Routing"
+      },
+      "targetModels": {
+        "heading": "Model Target",
+        "hint": "Tentukan kumpulan model yang akan disaring dan dipilih oleh Kebijakan. Prompt opsional menginstruksikan Router AI tentang kapan harus memilih setiap model.",
+        "endpointModel": "Model Endpoint",
+        "selectModel": "Pilih model",
+        "promptDefinition": "Definisi Prompt",
+        "promptPlaceholder": "Jelaskan secara tepat kapan dan mengapa router harus memilih model ini...",
+        "intents": "Niat",
+        "removeTarget": "Hapus model target",
+        "empty": "Tidak ada model target yang dikonfigurasi.",
+        "addTarget": "Tambah Model Target"
+      }
+    },
+    "optimizer": {
+      "title": "Pengoptimal",
+      "description": "Pengoptimal mengurangi token prompt sebelum permintaan mencapai penyedia. Mereka berjalan secara berurutan dari atas ke bawah. Gunakan profil pengoptimal bersama, atau tentukan pipeline router ini sendiri.",
+      "noPermission": "Anda tidak memiliki izin untuk melihat pengoptimal.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Khusus"
+      },
+      "profileSelect": {
+        "ariaLabel": "Profil Pengoptimal",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Langkah berasal dari profil dan mengikuti perubahannya. Edit di halaman Profil, atau beralih ke Khusus untuk memulai dari salinannya.",
+        "disabledSuffix": "(dinonaktifkan)",
+        "thresholdSuffix": ", ambang batas {{threshold}}"
+      },
+      "customHint": "Seret untuk mengurutkan kembali, alihkan untuk mengaktifkan. Beberapa pengoptimal menggunakan ambang batas untuk mengontrol seberapa agresif mereka memangkas.",
+      "saveButton": "Simpan Pengoptimal",
+      "saving": "Menyimpan...",
+      "saved": "Tersimpan",
+      "preview": {
+        "title": "Pratinjau penghematan token",
+        "description": "Jalankan pipeline saat ini (tidak tersimpan) melalui prompt untuk melihat apa yang setiap langkah hapus dan biayanya. Pilih salah satu percakapan sampel, atau ketik prompt Anda sendiri.",
+        "promptLabel": "Prompt",
+        "promptAriaLabel": "Prompt untuk pratinjau",
+        "typePromptOption": "Ketik prompt di bawah",
+        "fixturesHint": "Percakapan sampel yang dikirim dengan Routerly. Routerly tidak merekam prompt asli.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model untuk pratinjau terhadap",
+        "modelWithContext": "{{id}} ({{k}}k konteks)",
+        "noModelOption": "Tidak ada model",
+        "modelHint": "Langkah yang memangkas agar sesuai dengan jendela konteks perlu mengetahui jendela mana. Tanpa model mereka dilewati, seperti halnya permintaan yang menamai model Routerly tidak memiliki jendela.",
+        "sampleAriaLabel": "Prompt sampel",
+        "samplePlaceholder": "Tempel pesan pengguna sampel...",
+        "runButton": "Jalankan Pratinjau",
+        "running": "Menjalankan...",
+        "before": "Sebelum",
+        "after": "Sesudah",
+        "saved": "Tersimpan",
+        "columns": {
+          "optimizer": "Pengoptimal",
+          "before": "Sebelum",
+          "after": "Sesudah",
+          "saved": "Tersimpan"
+        },
+        "rolledBackNote": "dikembalikan: perubahan ditolak sebagai tidak aman",
+        "skippedNote": "dilewatkan: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Perubahan yang langkah ini hasilkan dikembalikan, jadi prompt mencapai langkah berikutnya tanpa berubah.",
+          "skipped": "Langkah ini tidak berjalan: {{reason}}",
+          "unchanged": "Langkah ini membiarkan prompt tidak berubah."
+        }
+      },
+      "errors": {
+        "assignFailed": "Gagal menugaskan profil pengoptimal",
+        "saveFailed": "Kesalahan menyimpan pengoptimal",
+        "previewFailed": "Kesalahan menjalankan pratinjau",
+        "noProfileAvailable": "Tidak ada profil pengoptimal yang tersedia. Buat satu dari halaman Profil."
+      }
+    },
+    "token": {
+      "newButton": "Token Baru",
+      "empty": "Tidak ada token API. Buat satu untuk mulai mengautentikasi permintaan.",
+      "budgetOverrides": "Penggantian Anggaran",
+      "created": "Dibuat",
+      "lastUsed": "Terakhir digunakan",
+      "expires": "Berakhir",
+      "never": "Tidak pernah",
+      "editTitle": "Edit Konfigurasi",
+      "revokeTitle": "Cabut Token",
+      "revokeConfirm": "Cabut token \"{{snippet}}...\"? Aplikasi yang menggunakannya akan berhenti bekerja segera.",
+      "labelInput": {
+        "placeholder": "Cari atau buat label…",
+        "createPrefix": "Buat",
+        "noMatches": "Tidak ada label yang cocok ditemukan."
+      },
+      "errors": {
+        "deleteFailed": "Kesalahan menghapus token"
+      },
+      "create": {
+        "backToTokens": "Kembali ke token",
+        "title": "Token API Baru",
+        "subtitle": "Token lengkap ditampilkan hanya sekali setelah pembuatan — simpan dengan aman.",
+        "tokenCreated": "Token berhasil dibuat. Salin sekarang — tidak akan ditampilkan lagi.",
+        "copied": "Disalin!",
+        "copy": "Salin",
+        "done": "Selesai",
+        "optional": "opsional",
+        "labels": "Label",
+        "labelsHint": "Tag token ini untuk mengidentifikasi di mana digunakan (misal \"produksi\", \"ci\").",
+        "scopes": "Ruang Lingkup",
+        "scopesHint": "Ruang lingkup bebas bentuk yang terlampir pada token ini (misal \"batch\", \"internal\"), disimpan dengan token untuk pembukuan Anda sendiri.",
+        "tags": "Tag",
+        "tagsHint": "Metadata kunci-nilai yang diteruskan ke catatan penggunaan (misal env=production).",
+        "keyPlaceholder": "kunci",
+        "valuePlaceholder": "nilai",
+        "createButton": "Buat Token",
+        "cancel": "Batal",
+        "copyFailed": "Gagal menyalin — silakan pilih dan salin token secara manual.",
+        "errors": {
+          "createFailed": "Kesalahan membuat token"
+        }
+      },
+      "edit": {
+        "title": "Edit Token",
+        "subtitle": "Perbarui label dan penggantian batas per model untuk token ini.",
+        "token": "Token",
+        "labels": "Label",
+        "perModelLimits": "Batas per model",
+        "perModelLimitsHint": "Ganti batas global dan tingkat router untuk permintaan menggunakan token ini.",
+        "noTargetModels": "Tambahkan model target di tab Routing terlebih dahulu.",
+        "noOverride": "tidak ada penggantian",
+        "noLimits": "Tidak ada batas",
+        "noLimitsSet": "Tidak ada batas yang ditetapkan — mewarisi dari induk. Tambahkan batas di bawah untuk mengganti.",
+        "metric": "Metrik",
+        "type": "Jenis",
+        "periodLabel": "Periode",
+        "every": "Setiap",
+        "maxCost": "Maks ($)",
+        "maxCalls": "Maks (n.)",
+        "maxTokens": "Maks (token)",
+        "allCombosSet": "Semua kombinasi metrik/periode sudah ditetapkan",
+        "addLimit": "Tambah batas",
+        "windowType": {
+          "period": "Periode",
+          "rolling": "Bergulir"
+        },
+        "limitMetric": {
+          "cost": "Biaya (USD)",
+          "calls": "Permintaan",
+          "input_tokens": "Token masukan",
+          "output_tokens": "Token keluaran",
+          "total_tokens": "Total token"
+        },
+        "period": {
+          "hourly": "Per jam",
+          "daily": "Per hari",
+          "weekly": "Per minggu",
+          "monthly": "Per bulan",
+          "yearly": "Per tahun"
+        },
+        "rollingUnit": {
+          "second": "detik",
+          "minute": "menit",
+          "hour": "jam",
+          "day": "hari",
+          "week": "minggu",
+          "month": "bulan"
+        },
+        "fmt": {
+          "requests": "{{value}} permintaan",
+          "inputTokens": "{{value}} token masukan",
+          "outputTokens": "{{value}} token keluaran",
+          "totalTokens": "{{value}} token",
+          "everyRolling": "{{metric}} / setiap {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Kesalahan menyimpan token"
+        }
+      }
+    },
+    "users": {
+      "title": "Anggota Router",
+      "description": "Kelola pengguna yang memiliki akses ke router ini.",
+      "addButton": "Tambah Anggota",
+      "addNewTitle": "Tambah Anggota Baru",
+      "selectUserPlaceholder": "Pilih pengguna...",
+      "addConfirmButton": "Tambah",
+      "cancelButton": "Batal",
+      "empty": "Tidak ada anggota yang ditemukan.",
+      "removeConfirm": "Apakah Anda yakin ingin menghapus anggota ini?",
+      "saveTitle": "Simpan perubahan",
+      "changeRoleTitle": "Ubah Peran",
+      "removeTitle": "Hapus Anggota",
+      "roles": {
+        "viewer": "Penampil",
+        "editor": "Editor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "Pengguna",
+        "role": "Peran",
+        "actions": "Tindakan"
+      },
+      "errors": {
+        "loadFailed": "Gagal memuat pengguna",
+        "addFailed": "Kesalahan menambahkan anggota",
+        "updateFailed": "Kesalahan memperbarui anggota",
+        "removeFailed": "Kesalahan menghapus anggota"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Mati"
+      },
+      "autoRefreshOff": "Penyegaran otomatis dinonaktifkan",
+      "autoRefreshEvery": "Segarkan otomatis setiap {{interval}}",
+      "lastUpdated": "terakhir diperbarui: {{time}}",
+      "refresh": "Segarkan",
+      "refreshNowTitle": "Segarkan sekarang",
+      "refreshNowButton": "↻ Sekarang",
+      "filters": {
+        "period": "Periode",
+        "model": "Model",
+        "allModels": "Semua Model",
+        "type": "Jenis",
+        "all": "Semua",
+        "completion": "Penyelesaian",
+        "router": "Router",
+        "status": "Status",
+        "success": "Berhasil",
+        "blocked": "Diblokir",
+        "error": "Kesalahan",
+        "resetButton": "Setel ulang filter"
+      },
+      "stats": {
+        "totalCost": "Biaya Total",
+        "totalCalls": "Total Panggilan",
+        "completionCalls": "Panggilan Penyelesaian",
+        "routerCalls": "Panggilan Router",
+        "errors": "Kesalahan"
+      },
+      "requestLogs": "Log Permintaan",
+      "emptyNoRequests": "Tidak ada permintaan untuk router ini dalam periode yang dipilih.",
+      "emptyNoMatches": "Tidak ada catatan yang cocok dengan filter aktif.",
+      "columns": {
+        "time": "Waktu",
+        "model": "Model",
+        "type": "Jenis",
+        "in": "Masuk",
+        "out": "Keluar",
+        "cost": "Biaya",
+        "latency": "Latensi",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/d",
+        "status": "Status"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "penyelesaian",
+      "pagination": {
+        "previous": "← Sebelumnya",
+        "next": "Berikutnya →",
+        "pageOf": "Halaman {{page}} dari {{totalPages}}",
+        "totalRecords": "({{count}} total catatan)"
+      }
+    },
+    "security": {
+      "title": "Keamanan",
+      "description": "Gunakan profil keamanan bersama, atau tentukan penjaga dan kebijakan PII router ini sendiri.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Khusus"
+      },
+      "profileSelect": {
+        "ariaLabel": "Profil Keamanan",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Penjaga dan kebijakan PII berasal dari profil dan mengikuti perubahannya. Edit di halaman Profil, atau beralih ke Khusus untuk memulai dari salinannya.",
+        "blockingSuffix": ", memblokir",
+        "disabledSuffix": ", dinonaktifkan",
+        "piiRedaction": "Redaksi PII ({{target}})"
+      },
+      "saveButton": "Simpan Pengaturan Keamanan",
+      "saved": "Tersimpan!",
+      "errors": {
+        "assignFailed": "Gagal menugaskan profil keamanan",
+        "saveFailed": "Kesalahan menyimpan pengaturan keamanan",
+        "noProfileAvailable": "Tidak ada profil keamanan yang tersedia. Buat satu dari halaman Profil."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Anda adalah asisten AI yang membantu.",
+      "errors": {
+        "unknown": "Kesalahan tidak diketahui terjadi",
+        "onlyImages": "Hanya lampiran gambar yang didukung untuk model visi saat ini."
+      },
+      "title": "Obrolan Tes",
+      "subtitle": "Kirim pertanyaan tes melalui gateway routing.",
+      "routerToken": "Token Router:",
+      "hideToken": "Sembunyikan Token",
+      "showToken": "Tampilkan Token",
+      "recognizedToken": "Token yang Dikenali",
+      "unrecognizedToken": "Token Tidak Dikenali",
+      "noMessages": "Tidak ada pesan.",
+      "enterTokenHint": "Silakan masukkan Token Router di atas untuk mengirim pesan.",
+      "typeMessageHint": "Ketik pesan di bawah untuk mulai menguji.",
+      "reasoning": "Penalaran",
+      "attachedAlt": "Terlampir",
+      "attachmentAlt": "Lampiran",
+      "attachImage": "Lampirkan gambar",
+      "typeMessagePlaceholder": "Ketik pesan...",
+      "stopGeneration": "Hentikan generasi",
+      "sendEnter": "Kirim (Enter)",
+      "debugLog": "Log Debug",
+      "clear": "Hapus",
+      "noRequestSent": "Belum ada permintaan yang dikirim.",
+      "turnTraceLog": "Log jejak giliran #{{turn}} · {{count}} acara",
+      "turnTraceLog_other": "Log jejak giliran #{{turn}} · {{count}} acara"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Koneksi",
+      "subtitle": "Akun penyedia yang digunakan untuk menjalankan instance model",
+      "noPermission": "Anda tidak memiliki izin untuk melihat koneksi.",
+      "count": "{{count}} koneksi",
+      "count_other": "{{count}} koneksi",
+      "addConnection": "Tambah Koneksi",
+      "empty": "Tidak ada koneksi. Tambahkan satu untuk memulai.",
+      "deleteConfirm": "Hapus koneksi \"{{label}}\"? Instance yang terikat padanya akan berhenti bekerja.",
+      "errors": {
+        "loadFailed": "Gagal memuat koneksi",
+        "deleteFailed": "Gagal menghapus koneksi"
+      },
+      "columns": {
+        "label": "Label",
+        "provider": "Penyedia",
+        "endpoint": "Endpoint",
+        "status": "Status"
+      },
+      "status": {
+        "enabled": "Diaktifkan",
+        "disabled": "Dinonaktifkan"
+      },
+      "actions": {
+        "models": "Model",
+        "edit": "Edit",
+        "remove": "Hapus"
+      }
+    },
+    "form": {
+      "backToConnections": "Kembali ke Koneksi",
+      "editTitle": "Edit Koneksi",
+      "addTitle": "Tambah Koneksi",
+      "enabled": "Diaktifkan",
+      "editSubtitle": "Perbarui pengaturan akun penyedia",
+      "addSubtitle": "Daftarkan akun penyedia baru",
+      "sectionTitle": "Detail koneksi",
+      "sectionDesc": "Akun penyedia, kredensial, dan endpoint yang digunakan untuk melakukan permintaan.",
+      "provider": "Penyedia",
+      "groups": {
+        "directApi": "API Langsung",
+        "cloudPlatform": "Platform cloud",
+        "subscription": "Langganan",
+        "browserSession": "Sesi browser",
+        "selfHosted": "Self-hosted"
+      },
+      "upstreamProvider": {
+        "label": "Penyedia",
+        "hintLabel": "(nama penyedia upstream)",
+        "placeholder": "mis. deepseek, mistral, groq",
+        "description": "Menamakan layanan yang endpoint ini milik. Model pada koneksi ini menggunakannya sebagai awalan ID mereka (mis. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Nama",
+        "hint": "Mengidentifikasi koneksi ini di mana pun direferensikan, jadi harus unik. Biarkan kosong untuk menggunakan <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Biarkan bidang kredensial kosong untuk mempertahankan nilai yang ada.",
+      "save": "Simpan",
+      "create": "Buat",
+      "cancel": "Batal",
+      "oauth": {
+        "unknown": "tidak diketahui",
+        "accountExpires": "Akun: {{account}} — berakhir {{expires}}",
+        "unknownError": "Kesalahan tidak diketahui"
+      },
+      "errors": {
+        "notFound": "Koneksi tidak ditemukan",
+        "loadFailed": "Gagal memuat koneksi",
+        "updateFailed": "Gagal memperbarui koneksi",
+        "createFailed": "Gagal membuat koneksi"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Kembali ke Model",
+      "title": "Penemuan Model",
+      "subtitle": "Jelajahi model yang tersedia dan tambahkan ke konfigurasi routing Anda",
+      "count": "{{count}} model",
+      "filteredCount": "{{filtered}} dari {{count}}",
+      "free": "gratis",
+      "add": "Tambah",
+      "addAgain": "Tambah lagi",
+      "loadFailed": "Gagal memuat katalog: {{error}}",
+      "filters": {
+        "search": "Cari",
+        "searchPlaceholder": "ID atau nama model…",
+        "provider": "Penyedia",
+        "allProviders": "Semua penyedia",
+        "context": "Konteks",
+        "ctxOptions": {
+          "all": "Semua",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Harga / 1M",
+        "priceOptions": {
+          "all": "Semua",
+          "free": "Gratis",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Tampilkan",
+        "configured": "Dikonfigurasi",
+        "embedding": "Embedding",
+        "resetFilters": "Setel ulang filter"
+      },
+      "empty": {
+        "noMatches": "Tidak ada model yang cocok dengan filter Anda."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Penyedia",
+        "context": "Konteks",
+        "input": "Masukan / 1M",
+        "output": "Keluaran / 1M"
+      },
+      "badges": {
+        "configured": "Dikonfigurasi",
+        "embedding": "embedding",
+        "runsLocally": "Berjalan lokal"
+      },
+      "pagination": {
+        "prev": "Sebelumnya",
+        "next": "Berikutnya",
+        "range": "{{start}}–{{end}} dari {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Kembali ke Model",
+      "title": {
+        "add": "Tambah Model",
+        "edit": "Edit Model",
+        "clone": "Klon Model"
+      },
+      "subtitle": {
+        "add": "Daftarkan model penyedia LLM baru",
+        "edit": "Memodifikasi konfigurasi untuk {{id}}",
+        "clone": "Mengklon dari {{id}} — tetapkan ID baru untuk menyimpan"
+      },
+      "errors": {
+        "modelNotFound": "Model tidak ditemukan",
+        "sourceModelNotFound": "Model sumber tidak ditemukan",
+        "loadFailed": "Kesalahan memuat model",
+        "idRequired": "ID Model diperlukan",
+        "duplicateId": "Model \"{{id}}\" sudah ada — tetapkan ID Khusus yang berbeda",
+        "selectConnection": "Pilih koneksi",
+        "saveFailed": "Kesalahan"
+      },
+      "badge": {
+        "yes": "ya",
+        "no": "tidak",
+        "override": "Ganti",
+        "auto": "Otomatis",
+        "default": "Default: {{value}}",
+        "reset": "Setel ulang"
+      },
+      "oauth": {
+        "unknownExpiry": "tidak diketahui",
+        "accountOk": "Akun: {{account}} — berakhir {{expires}}",
+        "unknownError": "Kesalahan tidak diketahui"
+      },
+      "identification": {
+        "title": "Identifikasi Model",
+        "description": "Pengenal unik dan pengaturan penyedia untuk konfigurasi model ini.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(opsional — default:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Pengenal yang digunakan saat mereferensikan model ini dalam panggilan API Routerly.",
+        "provider": "Penyedia",
+        "upstreamProviderHint": "(nama penyedia upstream)",
+        "upstreamProviderPlaceholder": "mis. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Digunakan sebagai awalan untuk ID Routerly (mis.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(ID model upstream)",
+        "upstreamModelPlaceholder": "mis. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Pengenal model yang dikirim ke endpoint API upstream.",
+        "modelPreset": "Preset Model",
+        "customModelOption": "— nama model khusus —",
+        "customModelPlaceholder": "mis. model-fine-tuned-saya"
+      },
+      "connection": {
+        "title": "Detail koneksi",
+        "description": "Endpoint API dan kredensial autentikasi yang diperlukan untuk melakukan permintaan.",
+        "preconfigured": "Dikonfigurasi sebelumnya",
+        "custom": "Khusus",
+        "connection": "Koneksi",
+        "selectPlaceholder": "— pilih koneksi —",
+        "noneAvailable": "Tidak ada koneksi yang dikonfigurasi sebelumnya untuk penyedia ini. Beralih ke Khusus, atau buat satu di halaman Koneksi.",
+        "editHint": "Mengedit koneksi ini nanti memperbarui setiap model yang terikat padanya."
+      },
+      "capabilities": {
+        "title": "Kemampuan",
+        "description": "Tentukan jenis dan kemampuan model ini.",
+        "embeddingModel": "Model embedding",
+        "embeddingModelHint": "Model ini menghasilkan embedding vektor (bukan penyelesaian obrolan)"
+      },
+      "pricing": {
+        "title": "Harga & konteks",
+        "description": "Parameter biaya dan batas pemrosesan yang digunakan untuk penagihan dan routing.",
+        "inputPerMillion": "Masukan $/1M",
+        "outputPerMillion": "Keluaran $/1M",
+        "cachePerMillion": "Baca cache $/1M",
+        "cacheWritePerMillion": "Tulis cache $/1M",
+        "optional": "(pilihan)",
+        "contextWindow": "Jendela Konteks",
+        "contextWindowHint": "(token, opsional)"
+      },
+      "tiers": {
+        "title": "Lanjutan — Tingkat harga",
+        "description": "Ganti harga ketika metrik melebihi ambang batas. Misalnya: \"Di atas 200.000 token konteks, harga berubah.\"",
+        "removeTier": "Hapus tingkat",
+        "above": "Di atas",
+        "metric": "Metrik",
+        "metricContextTokens": "Token konteks",
+        "overridePricing": "Ganti harga",
+        "addTier": "Tambah tingkat harga"
+      },
+      "limits": {
+        "title": "Batas",
+        "description": "Batas penggunaan untuk model ini. Beberapa aturan dapat digabungkan.",
+        "metric": "Metrik",
+        "type": "Jenis",
+        "addLimit": "Tambah batas"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (langganan Pro/Max)",
+        "openaiOauth": "OpenAI (langganan ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "Simpan Perubahan",
+      "createClone": "Buat Klon",
+      "createModel": "Buat Model"
+    },
+    "page": {
+      "title": "Model",
+      "subtitle": "Penyedia LLM yang terdaftar dengan Routerly",
+      "tabs": {
+        "models": "Model",
+        "health": "Kesehatan"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} model",
+        "filteredCount": "{{filtered}} dari {{count}} model",
+        "filteredCount_other": "{{filtered}} dari {{count}} model"
+      },
+      "filters": {
+        "allProviders": "Semua penyedia",
+        "allConnections": "Semua koneksi",
+        "searchPlaceholder": "Filter model…"
+      },
+      "discover": "Temukan",
+      "addModel": "Tambah Model",
+      "deleteConfirm": "Hapus model \"{{id}}\"?",
+      "empty": {
+        "noModels": "Tidak ada model. Tambahkan satu untuk memulai.",
+        "noMatches": "Tidak ada model yang cocok dengan filter aktif."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Penyedia",
+        "endpoint": "Endpoint",
+        "input": "Masukan $/1M",
+        "output": "Keluaran $/1M",
+        "cache": "Cache $/1M",
+        "context": "Ukuran Konteks"
+      },
+      "actions": {
+        "test": "Tes",
+        "clone": "Klon",
+        "edit": "Edit",
+        "remove": "Hapus"
+      },
+      "pagination": {
+        "previous": "← Sebelumnya",
+        "next": "Berikutnya →",
+        "pageOf": "Halaman {{page}} dari {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} model)"
+      },
+      "health": {
+        "emptyNoModels": "Tidak ada model yang dikonfigurasi.",
+        "emptyNoMatches": "Tidak ada model yang cocok dengan filter.",
+        "resetAll": "Setel ulang semua",
+        "resetAllTitle": "Setel ulang setiap pemutus sirkuit, cooldown, dan lockout",
+        "resetTitle": "Setel ulang pemutus sirkuit",
+        "confirmResetModel": "Setel ulang pemutus sirkuit untuk model \"{{id}}\"?",
+        "confirmResetAll": "Setel ulang semua keadaan ketahanan? Ini menghapus setiap pemutus sirkuit, cooldown, dan lockout.",
+        "errors": {
+          "resetModelFailed": "Gagal menyetel ulang pemutus sirkuit",
+          "resetAllFailed": "Gagal menyetel ulang keadaan ketahanan"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Penyedia",
+          "status": "Status",
+          "circuit": "Sirkuit",
+          "errorRate": "Tingkat kesalahan (5m)",
+          "p95Latency": "Latensi P95 (1j)",
+          "requests": "Permintaan (1j)",
+          "lastSuccess": "Keberhasilan terakhir",
+          "cooldownLockout": "Cooldown / lockout"
+        },
+        "status": {
+          "healthy": "Sehat",
+          "degraded": "Berkurang",
+          "unavailable": "Tidak tersedia",
+          "cooldown": "Cooldown",
+          "nodata": "Tidak ada data"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Memulihkan",
+          "tripped": "Terpicu"
+        },
+        "time": {
+          "never": "tidak pernah",
+          "now": "sekarang",
+          "secondsAgo": "{{count}}d lalu",
+          "minutesAgo": "{{count}}m lalu",
+          "hoursAgo": "{{count}}j lalu",
+          "daysAgo": "{{count}}h lalu",
+          "minSec": "{{min}}m {{sec}}d",
+          "sec": "{{sec}}d",
+          "cooldown": "cooldown {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Eksperimen",
+      "subtitle": "Uji A/B router satu sama lain",
+      "noPermission": "Anda tidak memiliki izin untuk melihat eksperimen.",
+      "count": "{{count}} eksperimen",
+      "count_other": "{{count}} eksperimen",
+      "newExperiment": "Eksperimen Baru",
+      "empty": "Tidak ada eksperimen. Buat satu untuk membandingkan router head to head.",
+      "deleteConfirm": "Hapus eksperimen \"{{name}}\"? Ini tidak dapat dibatalkan.",
+      "noToken": "Tidak ada token",
+      "noTokenTitle": "Tanpa token tidak ada klien yang dapat menjangkau eksperimen ini",
+      "errors": {
+        "loadFailed": "Gagal memuat eksperimen",
+        "deleteFailed": "Gagal menghapus eksperimen"
+      },
+      "columns": {
+        "name": "Nama",
+        "variants": "Varian",
+        "rotation": "Rotasi",
+        "created": "Dibuat"
+      },
+      "actions": {
+        "edit": "Edit eksperimen",
+        "remove": "Hapus"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Kembali ke eksperimen",
+      "newExperiment": "Eksperimen Baru",
+      "loading": "Memuat...",
+      "experimentId": "ID Eksperimen:",
+      "disabledTabTitle": "Simpan eksperimen terlebih dahulu untuk membuka kunci tab ini",
+      "errors": {
+        "notFound": "Eksperimen tidak ditemukan"
+      },
+      "tabs": {
+        "config": "Konfigurasi",
+        "metrics": "Metrik",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Tersimpan.",
+      "created": "Eksperimen dibuat. Arahkan klien Anda ke token ini alih-alih token router. Itu tidak akan ditampilkan lagi.",
+      "copy": "Salin",
+      "copied": "Disalin!",
+      "done": "Selesai",
+      "saving": "Menyimpan...",
+      "create": "Buat Eksperimen",
+      "save": "Simpan Perubahan",
+      "cancel": "Batal",
+      "trafficSplit": "Pemisahan lalu lintas",
+      "errors": {
+        "loadRoutersFailed": "Gagal memuat router",
+        "saveFailed": "Gagal menyimpan eksperimen",
+        "copyFailed": "Gagal menyalin: pilih dan salin token secara manual."
+      },
+      "fields": {
+        "name": "Nama",
+        "namePlaceholder": "Routing murah vs premium",
+        "description": "Deskripsi",
+        "optional": "(opsional)",
+        "descriptionPlaceholder": "Apa yang tes ini coba selesaikan",
+        "minSamples": "Panggilan minimum per varian",
+        "minSamplesHint": "Di bawah ini, tab Metrik menandai perbandingan sebagai belum final.",
+        "rotation": "Rotasi",
+        "stickyOn": "Lengket pada",
+        "stickyKey": "Kunci lengket"
+      },
+      "variants": {
+        "title": "Varian",
+        "desc": "Setiap varian adalah router yang ada, diambil utuh: model, routing dan penjaganya semua berlaku. Tes membutuhkan setidaknya dua.",
+        "routerAriaLabel": "Router varian {{index}}",
+        "routerPlaceholder": "Pilih router",
+        "labelAriaLabel": "Label varian {{index}}",
+        "labelPlaceholder": "Label (opsional)",
+        "weightAriaLabel": "Berat varian {{index}}",
+        "weightPlaceholder": "Berat",
+        "removeTitle": "Hapus varian {{index}}",
+        "add": "Tambah varian"
+      },
+      "judge": {
+        "title": "Hakim",
+        "desc": "Opsional: model membaca setiap jawaban sampel dan mencetak 0-10 terhadap kriteria Anda. Setiap panggilan yang dihakimi adalah panggilan model tambahan, ditagih seperti yang lain.",
+        "enable": "Cetak jawaban dengan model hakim",
+        "model": "Model hakim",
+        "modelPlaceholder": "Pilih model",
+        "criteria": "Kriteria",
+        "criteriaPlaceholder": "Satu per baris, mis.\nMenjawab pertanyaan yang diajukan\nTetap faktual\nTetap pada format yang diminta",
+        "sampleRate": "Bagian panggilan yang dihakimi (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Memuat...",
+      "callsMeasured": "{{count}} panggilan diukur",
+      "callsMeasured_other": "{{count}} panggilan diukur",
+      "empty": "Tidak ada panggilan dalam jendela ini. Arahkan klien ke token eksperimen untuk memulai perbandingan.",
+      "notConclusive": "Belum final: setiap varian membutuhkan setidaknya {{minSamples}} panggilan dalam jendela ini.",
+      "explanation": "Angka yang lebih baik dari setiap pasangan disorot: lebih murah per panggilan, lebih cepat, skor hakim lebih tinggi. Persentase di bawah nilai adalah jaraknya dari lengan terbaik. Skor hakim adalah rata-rata yang sedang berjalan sepanjang hidup eksperimen, jadi itu adalah angka yang tidak diatur jendela.",
+      "lowSample": "Sampel rendah",
+      "lowSampleTitle": "Di bawah {{minSamples}} panggilan dalam jendela ini",
+      "judgedCallsTitle": "{{count}} jawaban yang dicetak oleh hakim sejak eksperimen dimulai",
+      "judgedCallsTitle_other": "{{count}} jawaban yang dicetak oleh hakim sejak eksperimen dimulai",
+      "errors": {
+        "loadFailed": "Gagal memuat metrik"
+      },
+      "columns": {
+        "variant": "Varian",
+        "calls": "Panggilan",
+        "share": "Bagian",
+        "errors": "Kesalahan",
+        "tokens": "Token masuk / keluar",
+        "cost": "Biaya",
+        "costPerCall": "Biaya / panggilan",
+        "avgLatency": "Rata-rata latensi",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Skor hakim"
+      }
+    },
+    "token": {
+      "desc": "Klien memanggil eksperimen persis seperti router: URL dasar yang sama, token ini alih-alih token router. Setiap permintaan mendarat di satu varian dan ditagih ke router varian itu.",
+      "baseUrlLabel": "URL dasar untuk SDK OpenAI atau Anthropic, dengan token eksperimen sebagai kunci API:",
+      "created": "Token dibuat. Salin sekarang, tidak akan ditampilkan lagi.",
+      "copy": "Salin",
+      "copied": "Disalin!",
+      "newToken": "Token Baru",
+      "empty": "Tidak ada token pada eksperimen ini. Buat satu agar klien dapat memanggilnya.",
+      "revokeConfirm": "Cabut token \"{{snippet}}...\"? Klien yang menggunakannya berhenti bekerja segera.",
+      "revokeTitle": "Cabut Token",
+      "errors": {
+        "createFailed": "Gagal membuat token",
+        "revokeFailed": "Gagal mencabut token",
+        "copyFailed": "Gagal menyalin: pilih dan salin token secara manual."
+      },
+      "columns": {
+        "created": "Dibuat",
+        "lastUsed": "Terakhir digunakan"
+      }
+    }
+  },
+  "overview": {
+    "title": "Ikhtisar",
+    "subtitle": "Ringkasan penggunaan dan rincian biaya",
+    "noPermission": "Tidak ada izin untuk melihat data penggunaan.",
+    "costByModel": "Biaya berdasarkan Model",
+    "noCostRecorded": "Tidak ada biaya yang dicatat periode ini.",
+    "callsByModel": "Panggilan berdasarkan Model",
+    "columns": {
+      "model": "Model",
+      "calls": "Panggilan",
+      "errors": "Kesalahan",
+      "cost": "Biaya"
+    },
+    "stats": {
+      "totalCalls": "Total Panggilan",
+      "callsBreakdown": "{{routing}} routing · {{completion}} penyelesaian",
+      "successRate": "Tingkat Keberhasilan",
+      "ofAllRequests": "dari semua permintaan",
+      "errors": "Kesalahan",
+      "failedRequests": "permintaan yang gagal",
+      "models": "Model",
+      "registered": "terdaftar",
+      "routers": "Router",
+      "active": "aktif"
+    },
+    "connectCard": {
+      "title": "Hubungkan klien",
+      "desc": "Arahkan Claude Code, Codex, Cursor dan {{count}} lagi ke gateway ini."
+    }
+  },
+  "login": {
+    "emailLabel": "Email",
+    "passwordLabel": "Kata Sandi",
+    "signIn": "Masuk",
+    "errors": {
+      "loginFailed": "Login gagal",
+      "totpFailed": "Verifikasi 2FA gagal"
+    },
+    "totp": {
+      "title": "Autentikasi Dua Faktor",
+      "backupPrompt": "Masukkan kode backup.",
+      "appPrompt": "Masukkan kode 6 digit dari aplikasi autentikator Anda.",
+      "backupCodeLabel": "Kode Backup",
+      "authenticatorCodeLabel": "Kode Autentikator",
+      "verify": "Verifikasi",
+      "useAuthenticatorInstead": "Gunakan aplikasi autentikator sebagai gantinya",
+      "useBackupInstead": "Gunakan kode backup sebagai gantinya"
+    }
+  },
+  "setup": {
+    "welcome": "Selamat datang! Mari kita siapkan Anda.",
+    "welcomeSubtitle": "Buat akun admin pertama untuk mulai mengelola Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly berkembang pesat. Bug dapat terjadi.",
+    "betaFeedback": "Umpan balik Anda membantu membentuk apa yang menjadi —",
+    "betaLink": "laporkan masalah atau bagikan ide",
+    "emailLabel": "Email Admin",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Kata Sandi",
+    "passwordPlaceholder": "Minimum 8 karakter",
+    "confirmLabel": "Konfirmasi Kata Sandi",
+    "confirmPlaceholder": "Masukkan ulang kata sandi",
+    "submit": "Buat Akun Admin",
+    "errors": {
+      "mismatch": "Kata sandi tidak cocok",
+      "tooShort": "Kata sandi harus minimal 8 karakter",
+      "setupFailed": "Setup gagal"
+    }
+  },
+  "audit": {
+    "empty": "Tidak ada entri audit yang ditemukan.",
+    "errors": {
+      "loadFailed": "Gagal memuat log audit"
+    },
+    "filters": {
+      "period": "Periode",
+      "user": "Pengguna",
+      "userPlaceholder": "Email atau ID pengguna",
+      "action": "Tindakan",
+      "actionPlaceholder": "mis. model:create",
+      "result": "Hasil",
+      "results": {
+        "all": "Semua",
+        "success": "Berhasil",
+        "forbidden": "Terlarang",
+        "error": "Kesalahan"
+      },
+      "refresh": "Segarkan"
+    },
+    "columns": {
+      "timestamp": "Stempel waktu",
+      "user": "Pengguna",
+      "action": "Tindakan",
+      "endpoint": "Endpoint",
+      "result": "Hasil",
+      "details": "Detail"
+    },
+    "pagination": {
+      "previous": "Sebelumnya",
+      "next": "Berikutnya",
+      "page": "Halaman {{page}} dari {{totalPages}}",
+      "total": "({{count}} total)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Penggunaan",
+      "live": "LIVE",
+      "subtitle": "Log panggilan terperinci dan rincian per model",
+      "updatedAt": "· diperbarui pada {{time}}",
+      "poll": {
+        "off": "Mati",
+        "5s": "5d",
+        "15s": "15d",
+        "30s": "30d",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Nonaktifkan mode live",
+        "enable": "Aktifkan mode live (segarkan setiap 2d)"
+      },
+      "refreshNow": "↻ Sekarang",
+      "refreshNowTitle": "Segarkan sekarang",
+      "filters": {
+        "period": "Periode",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Penelepon",
+        "type": "Jenis",
+        "status": "Status",
+        "allRouters": "Semua Router",
+        "allModels": "Semua Model",
+        "allTokens": "Semua Token",
+        "resetFilters": "Setel ulang filter",
+        "all": "Semua",
+        "success": "Berhasil",
+        "blocked": "Diblokir",
+        "error": "Kesalahan"
+      },
+      "caller": {
+        "all": "Semua",
+        "completion": "Penyelesaian",
+        "routing": "Router",
+        "guardrail": "Penjaga",
+        "judge": "Hakim"
+      },
+      "callerBadge": {
+        "completion": "penyelesaian",
+        "routing": "router",
+        "guardrail": "penjaga",
+        "judge": "hakim"
+      },
+      "errors": {
+        "loadFailedPrefix": "Gagal memuat data penggunaan:",
+        "retry": "Coba Lagi"
+      },
+      "stats": {
+        "totalCalls": "Total Panggilan",
+        "completionCalls": "Panggilan Penyelesaian",
+        "routerCalls": "Panggilan Router",
+        "guardrailCalls": "Panggilan Penjaga",
+        "blockedCalls": "Panggilan Diblokir",
+        "errors": "Kesalahan"
+      },
+      "table": {
+        "rank": "Peringkat",
+        "model": "Model",
+        "provider": "Penyedia",
+        "calls": "Panggilan",
+        "errors": "Kesalahan",
+        "successRate": "Tingkat keberhasilan",
+        "avgLatency": "Rata-rata latensi",
+        "p95Latency": "Latensi P95",
+        "inputTokens": "Token masukan",
+        "outputTokens": "Token keluaran",
+        "costPer1k": "Biaya / 1K",
+        "cost": "Biaya (USD)",
+        "bestCostPerformance": "Biaya-kinerja terbaik"
+      },
+      "showMoreModels": "Tampilkan {{count}} model lagi",
+      "showMoreModels_other": "Tampilkan {{count}} model lagi",
+      "showFewerModels": "Tampilkan lebih sedikit model",
+      "recentCalls": {
+        "title": "Panggilan Terbaru",
+        "empty": "Tidak ada catatan penggunaan untuk periode ini.",
+        "columns": {
+          "time": "Waktu",
+          "router": "Router",
+          "model": "Model",
+          "type": "Jenis",
+          "caller": "Penelepon",
+          "in": "Masuk",
+          "out": "Keluar",
+          "cost": "Biaya",
+          "latency": "Latensi",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/d",
+          "status": "Status"
+        }
+      },
+      "pagination": {
+        "previous": "Sebelumnya",
+        "next": "Berikutnya",
+        "pageOf": "Halaman {{page}} dari {{totalPages}}",
+        "totalRecords": "({{count}} total catatan)"
+      }
+    },
+    "record": {
+      "back": "Kembali",
+      "title": "Detail Panggilan",
+      "notFoundTitle": "Catatan Tidak Ditemukan",
+      "notFoundBody": "Catatan penggunaan {{id}} tidak dapat dimuat.",
+      "errors": {
+        "loadFailed": "Gagal memuat catatan"
+      },
+      "sections": {
+        "identity": "Identitas",
+        "tokensAndCost": "Token & Biaya",
+        "performanceAndOutcome": "Performa & Hasil",
+        "traceLog": "Log Jejak"
+      },
+      "fields": {
+        "recordId": "ID Catatan",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Jenis Panggilan",
+        "requestType": "Jenis Permintaan",
+        "inputTokens": "Token Masukan",
+        "outputTokens": "Token Keluaran",
+        "totalTokens": "Total Token",
+        "costUsd": "Biaya (USD)",
+        "costUnknown": "Tidak diketahui",
+        "latency": "Latensi",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/d",
+        "outcome": "Hasil",
+        "timestamp": "Stempel waktu",
+        "guardrailTriggered": "Penjaga Dipicu",
+        "blockedBy": "Diblokir Oleh",
+        "piiRedacted": "PII Diredaksi"
+      },
+      "errorMessage": "Pesan Kesalahan",
+      "eventCount": "{{count}} acara",
+      "eventCount_other": "{{count}} acara",
+      "noTrace": "Tidak ada jejak tersedia. Data jejak ditangkap untuk panggilan baru saja."
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "subtitle": "Uji model, bandingkan respons, dan simpan preset prompt.",
+    "mode": {
+      "single": "Tunggal",
+      "compare": "Bandingkan"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "sama seperti A",
+      "unknownToken": "Token tidak diketahui"
+    },
+    "presets": {
+      "button": "Preset",
+      "panelTitle": "Preset",
+      "saveCurrent": "Simpan saat ini",
+      "namePlaceholder": "Nama preset...",
+      "save": "Simpan",
+      "empty": "Tidak ada preset.",
+      "delete": "Hapus preset"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming tidak tersedia",
+      "bannerBody": "router ini memiliki penjaga pemblokiran respons aktif. Routerly harus memeriksa respons lengkap sebelum pengiriman, jadi respons tiba sekaligus.",
+      "tooltip": "Streaming tidak tersedia: penjaga pemblokiran respons memerlukan respons lengkap untuk diperiksa sebelum pengiriman.",
+      "ariaLabel": "Streaming tidak tersedia"
+    },
+    "systemPrompt": "Prompt sistem",
+    "model": "Model",
+    "modelPlaceholder": "Otomatis (default router)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Token maks",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Hapus",
+    "empty": {
+      "noMessages": "Tidak ada pesan.",
+      "enterToken": "Masukkan Token Router di atas untuk memulai."
+    },
+    "reasoning": "Penalaran",
+    "blockedDefault": "Pesan ini diblokir oleh penjaga.",
+    "truncated": "Terpotong — respons dipotong oleh token maks",
+    "bufferedNote": "Ditahan untuk review keamanan",
+    "errors": {
+      "onlyImages": "Hanya lampiran gambar yang didukung."
+    },
+    "rawToggle": {
+      "rendered": "dirender",
+      "raw": "mentah"
+    },
+    "inputPlaceholder": "Ketik pesan...",
+    "attachImage": "Lampirkan gambar",
+    "attachedImageAlt": "Terlampir",
+    "attachmentAlt": "Lampiran",
+    "debug": {
+      "title": "Debug",
+      "clear": "Hapus",
+      "hide": "Sembunyikan debug",
+      "show": "Tampilkan debug",
+      "empty": "Tidak ada data debug.",
+      "emptyHint": "Kirim pesan untuk melihat detail routing.",
+      "turnTraceLog": "Giliran #{{turn}} log jejak"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Pilih model...",
+      "noMessages": "Tidak ada pesan.",
+      "debugTurns": "Debug ({{count}} giliran)",
+      "debugTurns_other": "Debug ({{count}} giliran)",
+      "guardrailTokensTitle": "Token hakim penjaga",
+      "stop": "Berhenti",
+      "inputPlaceholder": "Kirim pesan yang sama ke kedua model..."
+    }
+  },
+  "help": {
+    "title": "Bantuan & Dukungan",
+    "subtitle": "Kami di sini untuk membantu — temukan jawaban atau hubungi kapan saja.",
+    "docs": {
+      "title": "Dokumentasi",
+      "subtitle": "Panduan, referensi API, dan dokumen konfigurasi",
+      "body": "Dokumen resmi mencakup semuanya dari memulai hingga kebijakan routing lanjutan, pengaturan penyedia, anggaran, dan referensi API lengkap.",
+      "openLink": "Buka dokumentasi"
+    },
+    "issues": {
+      "title": "Laporkan bug atau sarankan fitur",
+      "subtitle": "Buka masalah GitHub — dibutuhkan 2 menit",
+      "body": "Masalah GitHub adalah cara terbaik untuk melaporkan bug atau mengusulkan peningkatan. Untuk membantu kami memperbaiki lebih cepat, sertakan: apa yang Anda lakukan, apa yang Anda harapkan terjadi, dan apa yang sebenarnya terjadi.",
+      "showTemplate": "Tampilkan templat masalah",
+      "reportBug": "Laporkan bug",
+      "requestFeature": "Minta fitur"
+    },
+    "issueTemplate": {
+      "whatHappened": "Apa yang terjadi?",
+      "whatHappenedHint": "Jelaskan masalah dengan kata-kata sederhana",
+      "stepsToReproduce": "Langkah untuk mereproduksi",
+      "expectedBehaviour": "Perilaku yang diharapkan",
+      "expectedBehaviourHint": "Apa yang Anda harapkan untuk dilihat",
+      "version": "Versi Routerly",
+      "versionHint": "Jalankan `routerly --version` atau periksa Pengaturan → Tentang"
+    },
+    "email": {
+      "title": "Hubungi dukungan",
+      "subtitle": "Kami membaca setiap pesan dan membalas segera mungkin",
+      "body": "Untuk apa pun yang tidak sesuai dengan masalah GitHub — pertanyaan penagihan, kekhawatiran pribadi, atau jika Anda hanya ingin menyapa — kirim kami pesan."
+    },
+    "faq": {
+      "title": "Pertanyaan yang sering diajukan",
+      "subtitle": "Jawaban cepat untuk pertanyaan paling umum",
+      "items": {
+        "connect": {
+          "q": "Bagaimana saya menghubungkan aplikasi saya ke Routerly?",
+          "a": "Arahkan SDK OpenAI atau Anthropic Anda ke instance Routerly. Ganti URL dasar dengan http://your-host:3000/v1 (kompatibel OpenAI) atau http://your-host:3000/anthropic (kompatibel Anthropic), lalu gunakan token router sebagai kunci API. Itu saja — tidak ada perubahan lain yang diperlukan."
+        },
+        "openaiCompat": {
+          "q": "Apakah Routerly kompatibel dengan alat yang menggunakan SDK OpenAI?",
+          "a": "Ya. Routerly adalah pengganti drop-in: alat apa pun yang mendukung URL dasar khusus dan kunci API (LangChain, LlamaIndex, Cursor, Continue, dll.) berfungsi di luar kotak. Untuk klien format Anthropic, gunakan endpoint /anthropic sebagai gantinya."
+        },
+        "routing": {
+          "q": "Bagaimana cara kerja perutean model?",
+          "a": "Setiap router memiliki kebijakan routing yang menentukan model mana yang menerima permintaan. Kebijakan termasuk round-robin, biaya terendah, respons tercepat, rantai fallback, dan lainnya. Anda mengkonfigurasinya per router di bawah Router → Routing."
+        },
+        "addModel": {
+          "q": "Bagaimana cara menambahkan model AI baru?",
+          "a": "Buka Model → Tambah model. Anda dapat menambahkan penyedia kompatibel OpenAI apa pun (Ollama, LM Studio, endpoint khusus) atau endpoint Anthropic asli. Isi URL dasar, kunci API, dan ID model — Routerly akan menangani sisanya."
+        },
+        "dataStored": {
+          "q": "Apakah data saya disimpan? Apakah prompt saya dicatat?",
+          "a": "Routerly self-hosted dan hanya menyimpan data di mesin Anda (di ~/.routerly/ secara default). Prompt dan respons tidak pernah dikirim di mana pun oleh Routerly. Log permintaan disimpan secara lokal dan hanya jika Anda mengaktifkannya per-router."
+        },
+        "routerToken": {
+          "q": "Apa itu token router dan apa perbedaannya dengan kunci API penyedia?",
+          "a": "Token router adalah kredensial yang Anda berikan kepada aplikasi atau anggota tim untuk mengautentikasi dengan Routerly. Itu terpisah dari kunci API penyedia Anda, yang Routerly simpan dengan aman di sisi server. Aplikasi Anda tidak pernah melihat kunci penyedia yang sebenarnya."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} pengguna",
+    "countLabel_other": "{{count}} pengguna",
+    "addButton": "Tambah Pengguna",
+    "columns": {
+      "email": "Email",
+      "role": "Peran",
+      "routers": "Router"
+    },
+    "allRouters": "Semua",
+    "resetTwoFaTitle": "Setel Ulang 2FA",
+    "resetTwoFaConfirm": "Setel ulang 2FA untuk {{email}}? Mereka perlu mendaftar ulang.",
+    "deleteConfirm": "Hapus pengguna ini?",
+    "emptyTitle": "Belum ada pengguna.",
+    "noPermission": "Anda tidak memiliki izin untuk melihat pengguna.",
+    "modal": {
+      "title": "Tambah Pengguna",
+      "emailLabel": "Email",
+      "emailPlaceholder": "pengguna@example.com",
+      "passwordLabel": "Kata Sandi",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Peran",
+      "roleAdmin": "Admin",
+      "roleViewer": "Penampil",
+      "cancelButton": "Batal",
+      "submitButton": "Tambah Pengguna"
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat pengguna",
+      "addFailed": "Kesalahan"
+    }
+  },
+  "userEdit": {
+    "title": "Edit Pengguna",
+    "account": "Akun",
+    "email": "Email",
+    "role": "Peran",
+    "changePassword": "Ubah Kata Sandi",
+    "newPassword": "Kata Sandi Baru",
+    "newPasswordHint": "(biarkan kosong untuk mempertahankan yang sekarang)",
+    "save": "Simpan",
+    "saved": "Tersimpan!",
+    "errors": {
+      "loadFailed": "Gagal memuat pengguna",
+      "saveFailed": "Gagal menyimpan"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Kelola peran dan izin. Peran built-in tidak dapat diubah.",
+    "newRole": "Peran Baru",
+    "builtin": "built-in",
+    "edit": "Edit",
+    "deleteConfirm": "Hapus peran ini? Pengguna dengan peran ini akan terpengaruh.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "mis. operator",
+      "name": "Nama",
+      "namePlaceholder": "Nama peran",
+      "permissions": "Izin",
+      "create": "Buat",
+      "save": "Simpan",
+      "cancel": "Batal"
+    },
+    "permissions": {
+      "routerRead": "Router – Baca",
+      "routerWrite": "Router – Tulis",
+      "modelRead": "Model – Baca",
+      "modelWrite": "Model – Tulis",
+      "userRead": "Pengguna – Baca",
+      "userWrite": "Pengguna – Tulis",
+      "reportRead": "Laporan – Baca",
+      "settingsRead": "Pengaturan – Baca",
+      "settingsWrite": "Pengaturan – Tulis",
+      "notificationWrite": "Notifikasi – Tulis",
+      "tokenRead": "Token – Baca",
+      "tokenWrite": "Token – Tulis",
+      "roleWrite": "Peran – Tulis",
+      "auditRead": "Log Audit – Baca",
+      "modulesRead": "Modul – Baca",
+      "modulesManage": "Modul – Kelola",
+      "connectionsRead": "Koneksi – Baca",
+      "connectionsManage": "Koneksi – Kelola",
+      "resilienceRead": "Ketangguhan – Baca",
+      "resilienceManage": "Ketangguhan – Kelola",
+      "profilesRead": "Profil Routing – Baca",
+      "profilesManage": "Profil Routing – Kelola",
+      "optimizersRead": "Pengoptimal – Baca",
+      "optimizersManage": "Pengoptimal – Kelola",
+      "experimentsRead": "Eksperimen – Baca",
+      "experimentsManage": "Eksperimen – Kelola"
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat peran",
+      "updateFailed": "Gagal memperbarui peran",
+      "createFailed": "Gagal membuat peran",
+      "deleteFailed": "Gagal menghapus peran"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profil",
+      "subtitle": "Konfigurasi routing, pengoptimal dan keamanan yang dapat digunakan kembali",
+      "noPermission": "Anda tidak memiliki izin untuk melihat profil.",
+      "newProfile": "Profil {{kind}} Baru",
+      "empty": "Belum ada profil {{kind}}.",
+      "builtin": "Built-in",
+      "custom": "Khusus",
+      "view": "Lihat",
+      "edit": "Edit",
+      "clone": "Klon",
+      "delete": "Hapus",
+      "deleteConfirm": "Hapus profil \"{{label}}\"? Ini tidak dapat dibatalkan.",
+      "kindDescriptions": {
+        "routing": "Model mana yang menjawab permintaan, dan apa yang terjadi ketika tidak dapat",
+        "optimizer": "Apa yang dipotong dari prompt sebelum dikirim",
+        "security": "Penjaga dan kebijakan PII yang diterapkan pada lalu lintas"
+      },
+      "columns": {
+        "label": "Label",
+        "type": "Jenis",
+        "configuration": "Konfigurasi",
+        "version": "Versi"
+      },
+      "errors": {
+        "loadFailed": "Gagal memuat profil",
+        "deleteFailed": "Gagal menghapus profil"
+      }
+    },
+    "form": {
+      "backToProfiles": "Kembali ke Profil",
+      "newProfileTitle": "Profil {{kind}} Baru",
+      "editProfileTitle": "Edit {{label}}",
+      "builtinHint": "Profil built-in tidak dapat diubah. Klon satu untuk menyesuaikan.",
+      "assignHint": "{{article}} profil {{kind}} dapat ditetapkan ke router apa pun.",
+      "noPermission": "Anda tidak memiliki izin untuk melihat profil.",
+      "label": "Label",
+      "optimizers": "Pengoptimal",
+      "optimizersHint": "Seret untuk mengurutkan kembali, alihkan untuk mengaktifkan. Mereka berjalan secara berurutan dari atas ke bawah.",
+      "createProfile": "Buat Profil",
+      "saveProfile": "Simpan Profil",
+      "cancel": "Batal",
+      "copySuffix": "{{label}} salinan",
+      "labelPlaceholders": {
+        "routing": "mis. Routing Seimbang Saya",
+        "optimizer": "mis. Pemotong Prompt Saya",
+        "security": "mis. Penjaga Ketat Saya"
+      },
+      "errors": {
+        "notFound": "Profil tidak ditemukan.",
+        "loadFailed": "Gagal memuat profil",
+        "saveFailed": "Gagal menyimpan profil"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Kembali ke Hubung",
+    "title": "Hubung",
+    "docs": "Dokumen",
+    "notEnabledPrefix": "Konfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
+    "noClientPrefix": "Tidak ada klien bernama",
+    "errors": {
+      "loadFailed": "Gagal memuat klien: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Tercepat: satu perintah",
+      "description": "Jalankan di mesin tempat {{client}} diinstal. Ini menulis {{configPath}}, menyimpan backup yang dapat Anda batalkan."
+    },
+    "byHand": {
+      "titleAlt": "Atau atur secara manual",
+      "titleUi": "Atur secara manual",
+      "titleConfigFile": "Atur file konfigurasi",
+      "setValuesIn": "Atur nilai ini di {{configPath}}.",
+      "putThisIn": "Letakkan ini di",
+      "replaceToken": "Ganti",
+      "withRouterToken": "dengan token router:",
+      "createOne": "buat satu",
+      "onRoutersPage": "di halaman Router.",
+      "modelLabel": "Model:",
+      "modelHint": "menyerahkan pilihan ke Routerly, id model apa pun dari",
+      "modelsLink": "Model",
+      "worksToo": "bekerja juga.",
+      "openaiCompatHint": "URL dasar, kunci dan model yang sama cocok untuk klien apa pun yang menawarkan penyedia \"kompatibel OpenAI\"."
+    },
+    "mcp": {
+      "title": "Server MCP",
+      "description": "Terpisah dari langkah di atas: ini memungkinkan {{client}} memanggil alat Routerly. Dibutuhkan token MCP pribadi, dicetak dengan",
+      "orFromYour": "atau dari",
+      "profileLink": "profil"
+    },
+    "checkItWorked": {
+      "title": "Periksa itu berhasil",
+      "restart": "Mulai ulang {{client}}, kirimkan prompt, lalu cari panggilan di",
+      "usageLink": "Penggunaan",
+      "cliReports": "Dari mesin yang sama, CLI melaporkan apa yang ditemukannya:"
+    }
+  },
+  "connect": {
+    "title": "Hubung",
+    "subtitle": "Arahkan klien AI coding ke gateway ini. Pilih klien untuk langkah setup-nya.",
+    "llmLabel": "LLM",
+    "llmDescription": "merutingkan lalu lintas model klien itu melalui Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "memuat Routerly sebagai server alat di dalamnya.",
+    "notEnabledPrefix": "Konfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
+    "errors": {
+      "loadFailed": "Gagal memuat klien: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Satu perintah",
+      "hint": "CLI menulis file konfigurasi untuk Anda, dengan backup yang dapat Anda batalkan."
+    },
+    "byHand": {
+      "title": "Secara manual",
+      "hint": "Salin snippet dari halaman klien ke pengaturannya, lalu mulai ulang."
+    },
+    "endpoint": {
+      "title": "Arahkan klien apa pun ke sini",
+      "description": "Apa pun yang dibangun di atas SDK OpenAI atau Anthropic berfungsi dengan mengubah URL dasar dan kuncinya. Tidak ada lagi yang berubah: permintaan dan respons melintasi Routerly seperti apa adanya.",
+      "openaiBaseUrl": "URL dasar OpenAI",
+      "anthropicBaseUrl": "URL dasar Anthropic",
+      "apiKey": "Kunci API",
+      "apiKeyDescription": "Token router, dikirim sebagai",
+      "or": "atau",
+      "createOne": "Buat satu",
+      "onRoutersPage": "di halaman Router.",
+      "model": "Model",
+      "modelDescription": "memungkinkan Routerly untuk memilih. Id model apa pun dari",
+      "modelsLink": "Model",
+      "worksToo": "halaman juga berfungsi."
+    }
+  }
+}

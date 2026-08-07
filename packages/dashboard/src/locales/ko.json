@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "자동",
+      "dark": "어두운 테마",
+      "light": "밝은 테마"
+    },
+    "themeCycle": {
+      "title": "테마: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "사이드바 확장",
+      "collapse": "사이드바 축소"
+    },
+    "tagline": "One gateway. Any AI model. Total control.",
+    "nav": {
+      "overview": "개요",
+      "providers": "제공업체",
+      "models": "모델",
+      "profiles": "프로필",
+      "routers": "라우터",
+      "experiments": "실험",
+      "usage": "사용량",
+      "playground": "플레이그라운드",
+      "settings": "설정",
+      "connectApp": "앱 연결",
+      "help": "도움말",
+      "signOut": "로그아웃"
+    },
+    "banner": {
+      "permissionWarning": "일부 구성 파일의 액세스 권한이 너무 광범위합니다({{files}}). 시작 및 요청은 작동하지만 편한 시간에 호스트 파일 시스템에서 이를 수정하십시오.",
+      "dismiss": "닫기",
+      "updateAvailable": "Routerly v{{latest}}를 사용할 수 있습니다. 현재 v{{current}}를 사용 중입니다.",
+      "updateLink": "설정에서 업데이트",
+      "mfaRequired": "이 인스턴스에는 이중 인증이 필요합니다.",
+      "mfaLink": "프로필에서 2FA 설정",
+      "mfaSuffix": "계정을 보호하려면",
+      "telemetryTitle": "Routerly은 자동으로 데이터를 전송하지 않습니다.",
+      "telemetryBody": "익명의 설치 메트릭을 보내서 도움을 주시겠어요? 이벤트 유형, 버전, 플랫폼, 무작위 ID만 전송됩니다. 개인 데이터나 IP는 없습니다.",
+      "telemetryLink": "무엇이 전송되나요?",
+      "telemetryYes": "네, 도움을 드릴게요",
+      "telemetryNo": "괜찮습니다"
+    },
+    "language": {
+      "label": "언어"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}}초 전",
+      "secondsAgo_other": "{{count}}초 전",
+      "minutesAgo": "{{count}}분 전",
+      "minutesAgo_other": "{{count}}분 전",
+      "hoursAgo": "{{count}}시간 전",
+      "hoursAgo_other": "{{count}}시간 전",
+      "daysAgo": "{{count}}일 전",
+      "daysAgo_other": "{{count}}일 전"
+    },
+    "confirm": "확인",
+    "cancel": "취소",
+    "remove": "제거",
+    "select": "선택...",
+    "search": "검색...",
+    "noResults": "결과 없음",
+    "noRemainingOptions": "남은 옵션 없음",
+    "apply": "적용",
+    "saved": "저장됨",
+    "showLess": "더 적게 표시",
+    "roles": "역할",
+    "permissions": "권한",
+    "notifications": {
+      "title": "알림",
+      "markAllRead": "모두 읽음으로 표시",
+      "empty": "알림 없음",
+      "viewAll": "모든 알림 보기"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "기간 선택",
+      "recent": "최근",
+      "ranges": "범위",
+      "from": "시작",
+      "to": "종료"
+    },
+    "permissionGuard": {
+      "fixFailed": "권한 수정 실패",
+      "title": "안전하지 않은 파일 권한",
+      "defaultMessage": "일부 파일의 권한이 안전하지 않습니다.",
+      "fixing": "수정 중…",
+      "fixNow": "지금 수정"
+    },
+    "limitRows": {
+      "noLimits": "제한 없음",
+      "metricLabel": "메트릭",
+      "typeLabel": "유형",
+      "periodLabel": "기간",
+      "everyLabel": "매",
+      "maxCost": "최대 비용",
+      "maxCount": "최대 개수",
+      "maxTokens": "최대 토큰",
+      "allCombosSet": "모든 메트릭/기간 조합이 이미 설정되었습니다",
+      "addLimit": "제한 추가",
+      "metric": {
+        "cost": "비용",
+        "calls": "호출",
+        "input_tokens": "입력 토큰",
+        "output_tokens": "출력 토큰",
+        "total_tokens": "전체 토큰"
+      },
+      "period": {
+        "hourly": "시간당",
+        "daily": "일당",
+        "weekly": "주당",
+        "monthly": "월당",
+        "yearly": "연당"
+      },
+      "rollingUnit": {
+        "second": "초",
+        "minute": "분",
+        "hour": "시간",
+        "day": "일",
+        "week": "주",
+        "month": "월"
+      },
+      "windowType": {
+        "period": "기간",
+        "rolling": "롤링"
+      },
+      "fmt": {
+        "requests": "{{value}}개 요청",
+        "inputTokens": "{{value}}개 입력 토큰",
+        "outputTokens": "{{value}}개 출력 토큰",
+        "totalTokens": "{{value}}개 전체 토큰",
+        "everyRolling": "{{metric}} 매 {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} 당 {{period}}"
+      }
+    },
+    "savings": {
+      "title": "라우팅이 절약한 비용",
+      "input": "입력",
+      "output": "출력",
+      "actual": "실제",
+      "clientCalls": "{{count}}개 클라이언트 호출",
+      "clientCalls_other": "{{count}}개 클라이언트 호출",
+      "comparedAgainst": ", 모든 것을 다음의 각각에 보낼 때와 비교",
+      "comparedAgainst_other": ", 모든 것을 다음의 각각에 보낼 때와 비교",
+      "paidModelsInPlay": "{{count}}개 유료 모델 사용 중",
+      "paidModelsInPlay_other": "{{count}}개 유료 모델 사용 중",
+      "metricCost": "비용",
+      "metricTokens": "토큰",
+      "totalCost": "전체 비용",
+      "routed": "라우팅됨: {{value}}",
+      "saved": "절약: {{value}}",
+      "usdThisPeriod": "이 기간 USD",
+      "savedVsAlways": "{{value}} 절약({{percent}}%) vs 항상 {{model}}",
+      "tokens": "토큰",
+      "in": "입력: {{value}}",
+      "out": "출력: {{value}}",
+      "tokenSubWithCache": "{{in}} 입력 · {{out}} 출력 · {{cached}} 캐시됨",
+      "tokenSub": "{{in}} 입력 · {{out}} 출력",
+      "cutByOptimizers": "{{value}} 최적화기에서 제거됨",
+      "fewerThanAlways": "{{value}} {{model}}보다 더 적음, 추정"
+    },
+    "optimizerSteps": {
+      "downloaded": "다운로드됨",
+      "thisStepRunsOn": "이 단계는 다음에서 실행됩니다",
+      "defaultCheckpoint": "기본 체크포인트"
+    },
+    "routingPolicies": {
+      "title": "라우팅 정책",
+      "subtitle": "정책은 요청이 라우팅되는 방식을 결정합니다. 위에서 아래로 순서대로 실행됩니다.",
+      "removePolicy": "정책 제거",
+      "removeIntent": "의도 제거",
+      "removeExample": "예시 제거",
+      "routingModels": "라우팅 모델",
+      "embeddingModels": "임베딩 모델",
+      "maxCompletionTokens": "최대 완료 토큰",
+      "maxPromptChars": "최대 프롬프트 문자",
+      "similarityThreshold": "유사성 임계값",
+      "previousMessages": "이전 메시지",
+      "intents": "의도",
+      "confidenceThreshold": "신뢰도 임계값",
+      "ambiguityMargin": "모호함 여백",
+      "maxCallsPerWindow": "창당 최대 호출",
+      "addFallbackModel": "대체 모델 추가",
+      "autoRoutingLabel": "자동 라우팅",
+      "autoRoutingHint": "활성화되면 트래픽이 사용자 지정 프롬프트 없이 분배됩니다. 비활성화되면 AI가 각 대상 모델을 선택할 시기를 지시하는 구체적인 프롬프트를 작성할 수 있습니다.",
+      "additionalPromptInfoLabel": "추가 프롬프트 정보",
+      "additionalPromptInfoPlaceholder": "라우팅 프롬프트에 포함할 추가 지침...",
+      "addExamplePlaceholder": "예시를 추가하고 Enter를 누르세요…",
+      "addIntentPlaceholder": "의도를 추가하고 Enter를 누르세요…",
+      "addPolicyPlaceholder": "정책 추가...",
+      "labels": {
+        "llm": "AI 라우팅 정책",
+        "rate-limit": "요청 제한 정책",
+        "budget-remaining": "남은 예산 정책",
+        "semantic-intent": "의미론적 의도 정책",
+        "health": "상태 정책",
+        "context": "문맥 정책",
+        "capability": "능력 정책",
+        "performance": "성능 정책",
+        "fairness": "공정성 정책",
+        "cheapest": "가장 저렴한 정책",
+        "model-preference": "모델 기본 설정 정책"
+      },
+      "descriptions": {
+        "context": "사용 가능한 문맥 윈도우를 기반으로 모델에 점수를 매깁니다. 문맥 윈도우가 예상 요청 길이보다 작은 모델에 0을 할당하여 잘림 오류를 방지합니다.",
+        "cheapest": "토큰 비용에 반비례하여 모델에 점수를 매깁니다. 가장 저렴한 모델은 1.0을, 가장 비싼 모델은 0.0을 얻으므로 요청 간 API 지출을 줄이는 데 도움이 됩니다.",
+        "health": "지수 감소를 사용한 최근 오류율을 기반으로 모델에 점수를 매깁니다(최근 오류는 더 많은 가중치). 가중된 오류율이 중요한 임계값을 초과하면 점수를 0으로 설정하는 서킷 브레이커를 적용합니다.",
+        "performance": "지수 감소를 사용한 최근 평균 레이턴시를 기반으로 모델에 점수를 매깁니다. 가장 빠른 모델은 1.0을, 가장 느린 모델은 0.0을 얻습니다. 최근 데이터가 없는 모델은 기본값 1.0입니다.",
+        "llm": "AI 모델을 사용하여 요청의 의미론적 내용을 기반으로 후보자에게 점수를 매깁니다. 모델당 라우팅 지도 프롬프트를 지원하며 제한이 구성되어 있을 때 예산 여유를 고려합니다.",
+        "capability": "하드 필터: 요청이 필요로 하는 기능(시각, 함수 호출, JSON 모드)을 명시적으로 부족한 모델에 0을 할당합니다. 명시적 능력 선언이 없는 모델은 페널티가 없습니다.",
+        "rate-limit": "높은 최근 호출 빈도를 가진 모델에 페널티를 주어 제공업체 요청 제한(HTTP 429)을 초과할 위험을 줄입니다. 점수를 0으로 강제하는 구성 가능한 하드 임계값을 지원합니다.",
+        "fairness": "최근에 더 많은 성공적인 호출을 받은 모델에 페널티를 주어 트래픽을 균등하게 배포합니다. 단일 모델에 부하가 집중되는 것을 방지하는 소프트 라운드 로빈 역할을 합니다.",
+        "budget-remaining": "모든 구성된 제한에 걸친 남은 예산 여유를 기반으로 모델에 점수를 매깁니다. 임계값에 도달하기 전에 더 많은 여유가 있는 모델을 선호하므로 소비를 사전에 분산합니다.",
+        "semantic-intent": "임베딩을 사용하여 의미론적 의도로 요청을 분류하고 후보자 풀을 해당 의도로 매핑된 모델로 제한합니다. 신뢰도가 높은 일치는 풀을 하드 필터합니다. 모호한 일치는 상위 2개 풀을 병합합니다. 알 수 없는 요청은 모든 후보를 통과시킵니다.",
+        "model-preference": "클라이언트가 특정 모델을 요청할 때(routerly/ada 아님) 해당 모델에 구성 가능한 보너스 점수를 부여합니다. 기본 설정이 표현되지 않으면 정책은 기권합니다. 리스트의 위치는 기본 설정이 다른 정책에 대해 얼마나 많은 무게를 가지는지를 제어합니다."
+      },
+      "selectModel": "모델 선택"
+    },
+    "securityRules": {
+      "applyTo": "적용 대상",
+      "streamingBufferSize": "스트리밍 버퍼 크기(문자)",
+      "entityTypes": "엔티티 유형",
+      "target": "대상",
+      "embeddingModel": "임베딩 모델",
+      "judgeModel": "판사 모델",
+      "contentGuardrails": "콘텐츠 가드레일",
+      "piiPolicies": "개인정보 정책",
+      "addSecurityPolicyPlaceholder": "보안 정책 추가...",
+      "removePolicyTooltip": "정책 제거",
+      "deleteRuleAriaLabel": "규칙 삭제",
+      "embeddingModelPlaceholder": "임베딩 모델 선택...",
+      "fallbackModelsLabel": "대체 모델(선택 사항, 순서대로 시도)",
+      "fallbackModelsPlaceholder": "대체 모델 없음...",
+      "exampleTextsLabel": "차단할 예시 텍스트(라인당 하나)",
+      "exampleTextsPlaceholder": "어떻게 해킹할 수 있나요...\n...",
+      "similarityThresholdLabel": "유사성 임계값:",
+      "judgeModelPlaceholder": "판사 모델 선택...",
+      "allowedTopicsLabel": "허용된 주제(자연어)",
+      "allowedTopicsPlaceholder": "소프트웨어 제품용 고객 지원. 기술 문제 해결. 청구 질문.",
+      "onTopicThresholdLabel": "주제 내 점수가 다음보다 낮으면 차단:",
+      "harmThresholdLabel": "해로움 점수가 다음보다 높으면 차단:",
+      "customInstructionsLabel": "사용자 정의 지침",
+      "customInstructionsPlaceholder": "당신은 콘텐츠 안전 분류자입니다. 해로운 콘텐츠에 대해 다음 텍스트를 평가하세요.\n카테고리: 혐오 발언, 폭력, 성적 콘텐츠, 자해.\n0과 1 사이의 점수를 포함하는 JSON 개체만 응답하세요: {\"score\": <숫자>}",
+      "customInstructionsRequired": "사용자 정의 지침이 필요합니다.",
+      "enabledLabel": "활성화됨",
+      "contentGuardrailsHint": "구성된 규칙에 대해 요청 및 응답을 검사합니다. 최소한 하나의 규칙이 구성되어 있으면 활성화됩니다.",
+      "securityPoliciesHeading": "보안 정책",
+      "noSecurityPolicies": "보안 정책이 구성되지 않았습니다.",
+      "piiPoliciesHint": "개인 데이터를 감지하고 수정합니다. 각 정책은 요청 입력, 모델 응답 또는 둘 다를 대상으로 하며 자체 엔티티 세트를 제어합니다.",
+      "noPiiPolicies": "개인정보 정책이 구성되지 않았습니다.",
+      "addPolicyButton": "+ 정책 추가",
+      "injectionWarningTitle": "요청 페이로드가 주입으로 수정됨",
+      "injectionWarningBody": "하나 이상의 규칙이 나가는 요청의 시스템 프롬프트에 지침을 주입하므로 제공업체에 전송되는 페이로드가 수정됩니다. 추가 모델 호출이 없으며 아무것도 차단되지 않습니다. 제공 모델은 지침을 자체 시행합니다.",
+      "streamingDisabledWarningTitle": "이 라우터의 스트리밍이 비활성화됨",
+      "streamingDisabledWarningBody": "하나 이상의 규칙이 응답을 차단하도록 구성되어 있으면(대상: 응답 또는 둘 다) 차단 결정을 내리기 전에 전체 응답을 검사해야 하므로 Routerly은 응답을 완전히 보유한 후 클라이언트에 반환합니다. 응답 차단 규칙이 활성 상태인 동안 스트리밍을 사용할 수 없습니다. 클라이언트는 증분 청크 대신 한 번에 전체 응답을 받습니다."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure 리소스 이름",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI 리소스 이름(Azure 포털에서).",
+      "deploymentId": "배포 ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI Studio에서 만든 배포 이름.",
+      "azureApiVersionLabel": "API 버전",
+      "azureApiVersionDefaultHint": "(기본값: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS 리전",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS 액세스 키 ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS 비밀 액세스 키",
+      "awsSecretAccessKeyPlaceholderExisting": "기존 상태를 유지하려면 비워두세요",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "세션 토큰",
+      "awsSessionTokenOptionalHint": "(선택 사항, 임시 자격 증명용)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP 라우터 ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "위치",
+      "gcpLocationDefaultHint": "(기본값: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "서비스 계정 키",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "엔드포인트 URL",
+      "optional": "(선택 사항)",
+      "webProvider": {
+        "unofficialWarningTitle": "공식 지원되지 않는 제공업체 - 자신의 책임 하에 사용하세요.",
+        "unofficialWarningBody": "이 통합은 문서화되지 않은 내부 API에 의존하며 예고 없이 변경되거나 손상될 수 있습니다. 제공업체의 서비스 약관을 위반할 수 있으며 계정 정지로 이어질 수 있습니다.",
+        "accessTokenLabel": "액세스 토큰",
+        "sessionTokenLabel": "세션 토큰",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "sessionKey 쿠키 값 붙여넣기(sk-ant-sid01-…)",
+        "openaiInstructions": "ChatGPT에 로그인한 상태에서 새 탭에 <code>https://chatgpt.com/api/auth/session</code>을 엽니다. <code>accessToken</code> 필드의 값을 복사합니다(<code>eyJ</code>로 시작). 토큰은 약 24시간마다 만료됩니다. 안정적인 액세스를 위해 아래 <strong>cf_clearance</strong> 필드도 채우세요.",
+        "anthropicInstructions": "<strong>세션 키 받는 방법:</strong> Claude에 로그인한 상태에서 DevTools(F12) → 애플리케이션 → 쿠키 → <code>claude.ai</code> → <code>sessionKey</code> 쿠키의 값을 복사합니다(<code>sk-ant-sid01-</code>으로 시작). 로그아웃할 때까지 키는 유효합니다."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "구독 OAuth 토큰",
+        "authFilePathLabel": "인증 파일 경로",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json(기본값)",
+        "anthropicTitle": "Claude Pro/Max 구독을 사용하세요.",
+        "anthropicRunCommandStep": "이 명령을 실행하고 인쇄된 토큰을 복사하세요:",
+        "anthropicPasteTokenStep": "토큰을 아래의 <em>구독 OAuth 토큰</em> 필드에 붙여넣으세요.",
+        "termsNote": "만료되면 재생성하세요. 게이트웨이를 통한 구독 사용은 제공업체의 서비스 약관을 위반할 수 있습니다.",
+        "openaiTitle": "Codex 앱을 통해 ChatGPT Plus/Pro 구독을 사용하세요.",
+        "openaiLoginStep": "ChatGPT Plus/Pro 계정으로 Codex 데스크톱 앱에 로그인하세요.",
+        "openaiAutoRefreshStep": "Routerly은 <code>~/.codex/auth.json</code>에서 액세스 토큰을 읽고 자동으로 새로고침합니다. 수동 복사/붙여넣기가 필요하지 않습니다.",
+        "openaiAuthFilePathStep": "<em>인증 파일 경로</em> 필드를 비워두어 기본값을 사용하거나, Codex 앱이 인증을 다른 곳에 저장하는 경우 사용자 정의 경로를 입력하세요.",
+        "openaiTermsNote": "게이트웨이를 통한 구독 사용은 제공업체의 서비스 약관을 위반할 수 있습니다."
+      },
+      "copyCode": {
+        "copiedTooltip": "복사됨!",
+        "copyTooltip": "클립보드에 복사",
+        "copiedLabel": "복사됨",
+        "copyLabel": "복사"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "복사",
+      "copiedLabel": "복사됨!",
+      "copyErrorHint": "복사 실패, 수동으로 선택 및 복사하세요."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP 클라이언트",
+      "hints": {
+        "claudeCode": "어디서나 한 번 실행하세요. Claude Code는 <code>~/.claude.json</code>에 서버를 저장합니다.",
+        "claudeDesktop": "<code>~/Library/Application Support/Claude/claude_desktop_config.json</code>(Windows: <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>)에 넣고 앱을 다시 시작하세요. CLI를 생성하므로 <code>routerly</code>이 PATH에 있어야 합니다.",
+        "codex": "<code>~/.codex/config.toml</code>에 넣으세요. Codex는 환경에서 토큰을 읽으므로 Codex를 시작하는 셸에서 내보내세요.",
+        "opencode": "<code>~/.config/opencode/opencode.json</code>에 넣으세요.",
+        "openclaw": "한 번 실행하세요. OpenClaw는 기본값으로 sse 전송을 사용하는데 Routerly은 이를 제공하지 않으므로 전송이 명시적으로 설정됩니다.",
+        "cursor": "<code>~/.cursor/mcp.json</code>에 또는 한 프로젝트에 범위를 지정하려면 <code>.cursor/mcp.json</code>에 넣으세요.",
+        "cline": "<code>~/.cline/mcp.json</code>에 또는 Cline 패널의 MCP 서버 구성에 붙여넣으세요.",
+        "zed": "Zed <code>settings.json</code>에 다른 문맥 서버와 함께 넣으세요."
+      }
+    },
+    "unsavedChanges": {
+      "title": "저장되지 않은 변경 사항",
+      "message": "저장되지 않은 변경 사항이 있습니다. 지금 나가면 변경 사항이 손실됩니다.",
+      "stay": "머물기",
+      "leaveAnyway": "어쨌든 나가기"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "가드레일",
+        "pii": "개인정보",
+        "optimizers": "최적화기",
+        "routerOverhead": "라우터 오버헤드"
+      },
+      "policyType": {
+        "llm": "AI 라우팅",
+        "rateLimit": "요청 제한",
+        "budgetRemaining": "남은 예산",
+        "semanticIntent": "의미론적 의도",
+        "modelPreference": "모델 기본 설정"
+      },
+      "rawDetails": "raw details",
+      "technicalDetails": "technical details",
+      "systemPrompt": "system prompt",
+      "responseText": "response text",
+      "responseJson": "response JSON",
+      "cacheEmbeddingCall": "캐시 임베딩 호출",
+      "fallbackAttempt": "대체 #{{attempt}}",
+      "embeddingModel": "임베딩 모델",
+      "upstreamModel": "업스트림 모델",
+      "provider": "제공업체",
+      "source": "소스",
+      "endpoint": "엔드포인트",
+      "cacheHit": "캐시 히트",
+      "ttlExtended": "TTL 연장됨",
+      "model": "모델",
+      "similarity": "유사성",
+      "embedding": "임베딩",
+      "cacheMiss": "캐시 미스",
+      "details": "details",
+      "excludedByLimits": "제한으로 제외됨",
+      "finalRanking": "최종 순위",
+      "noRankingData": "순위 데이터 없음(기록이 손상되었거나 이전 버전일 수 있음)",
+      "policyScores": "정책 점수",
+      "weight": "가중치 {{value}}",
+      "allScores": "all scores",
+      "noPolicyData": "정책 데이터 없음(기록이 손상되었거나 이전 버전일 수 있음)",
+      "requestGuardrailBlocked": "요청 가드레일 차단됨",
+      "requestGuardrailTriggered": "요청 가드레일 트리거됨",
+      "responseGuardrailBlocked": "응답 가드레일 차단됨",
+      "responseGuardrailTriggered": "응답 가드레일 트리거됨",
+      "rule": "규칙",
+      "action": "작업",
+      "guardrailsEvaluated": "평가된 가드레일({{target}})",
+      "ruleCount": "{{count}}개 규칙",
+      "ruleCount_other": "{{count}}개 규칙",
+      "promptInjection": "프롬프트 주입",
+      "injects": "injects",
+      "judgeResponse": "판사 응답",
+      "piiScrubbed": "개인정보 제거됨",
+      "piiScanned": "개인정보 스캔됨({{target}})",
+      "policies": "policies",
+      "entityTypes": "entity types",
+      "customPatterns": "custom patterns",
+      "scanned": "scanned",
+      "redacted": "redacted",
+      "took": "took",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "entity types scanned",
+      "guardrailInjection": "가드레일 주입",
+      "rules": "규칙",
+      "chars": "문자",
+      "injectedText": "주입된 텍스트",
+      "optimizer": "최적화기 {{id}}",
+      "tokens": "토큰",
+      "saved": "저장됨",
+      "tok": "{{value}} tok",
+      "reason": "reason",
+      "budgetBlocked": "예산 차단됨",
+      "budgetOk": "예산 OK",
+      "egressSent": "나가는 트래픽 전송됨",
+      "status": "상태",
+      "encoding": "인코딩",
+      "frames": "프레임",
+      "bytes": "바이트"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "내 프로필",
+      "subtitle": "계정 설정 관리"
+    },
+    "tabs": {
+      "profile": "프로필",
+      "notifications": "알림",
+      "mcp": "MCP",
+      "preferences": "기본 설정"
+    },
+    "notifications": {
+      "close": "닫기",
+      "refresh": "새로고침",
+      "clear": "지우기",
+      "empty": "알림 없음.",
+      "markAllRead": "모두 읽음으로 표시",
+      "allCaughtUp": "모두 따라잡음",
+      "unreadCount": "{{count}}개 읽지 않음",
+      "selectedCount": "{{count}}개 선택됨",
+      "severity": {
+        "all": "모두",
+        "info": "정보",
+        "warning": "경고",
+        "critical": "중요"
+      },
+      "status": {
+        "read": "읽음",
+        "unread": "읽지 않음"
+      },
+      "filters": {
+        "severity": "심각도",
+        "category": "카테고리",
+        "event": "이벤트",
+        "date": "날짜",
+        "period": "기간",
+        "status": "상태",
+        "all": "모두",
+        "allCategories": "모든 카테고리",
+        "allEvents": "모든 이벤트",
+        "unreadOnly": "읽지 않음만"
+      },
+      "actions": {
+        "markRead": "읽음으로 표시",
+        "markUnread": "읽지 않음으로 표시",
+        "archive": "보관"
+      },
+      "table": {
+        "severity": "심각도",
+        "event": "이벤트",
+        "date": "날짜",
+        "status": "상태",
+        "selectAll": "모두 선택",
+        "selectRow": "{{event}} 선택",
+        "eventCount": "{{count}}개 이벤트"
+      },
+      "pagination": {
+        "previous": "← 이전",
+        "next": "다음 →",
+        "page": "페이지 {{page}}/{{totalPages}}",
+        "total": "({{count}}개 총계)"
+      },
+      "detail": {
+        "ariaLabel": "알림 상세",
+        "details": "상세",
+        "noDetails": "추가 상세 없음.",
+        "eventsInIncident": "이 사건의 이벤트"
+      }
+    },
+    "security": {
+      "roleLabel": "역할:",
+      "password": {
+        "heading": "비밀번호 변경",
+        "currentLabel": "현재 비밀번호",
+        "newLabel": "새 비밀번호",
+        "newPlaceholder": "최소 8자",
+        "confirmLabel": "새 비밀번호 확인",
+        "success": "비밀번호가 성공적으로 변경되었습니다.",
+        "saving": "저장 중...",
+        "submit": "비밀번호 변경",
+        "errors": {
+          "mismatch": "비밀번호가 일치하지 않습니다.",
+          "tooShort": "새 비밀번호는 최소 8자여야 합니다.",
+          "updateFailed": "업데이트 실패"
+        }
+      },
+      "tfa": {
+        "heading": "이중 인증",
+        "notEnabled": "2FA가 활성화되지 않았습니다. 시간 기반 일회용 암호로 계정을 보호하세요.",
+        "enableButton": "이중 인증 활성화",
+        "scanInstructions": "이 QR 코드를 인증 앱(Google Authenticator, Authy 등)으로 스캔한 후 6자리 코드를 입력하여 확인하세요.",
+        "qrAlt": "2FA 설정 QR 코드",
+        "addAccountInstructions": "인증 앱(Google Authenticator, Authy, 1Password 등)을 열고 새 계정을 추가하세요:",
+        "setup": {
+          "step1": "<strong>계정 추가</strong> 또는 <strong>+</strong> 버튼 탭하기",
+          "step2": "<strong>설정 키 입력</strong> 선택(또는 모바일에서 QR 코드 스캔)",
+          "step3": "아래 표시된 비밀 입력"
+        },
+        "mobileLink": "모바일에서 탭하여 인증 앱 열기",
+        "manualEntryLabel": "수동 입력 비밀:",
+        "saveBackupCodes": "이 백업 코드를 저장하세요. 각 코드는 인증 앱에 대한 액세스를 잃은 경우 한 번씩 사용할 수 있습니다.",
+        "copyBackupCodes": "백업 코드 복사",
+        "confirmCodeLabel": "앱의 코드를 입력하여 활성화",
+        "activate": "2FA 활성화",
+        "cancel": "취소",
+        "enabledBadge": "2FA가 활성화됨",
+        "newBackupCodesLabel": "새 백업 코드(지금 저장하세요):",
+        "copy": "복사",
+        "regenLabel": "인증 코드를 입력하여 백업 코드 재생성",
+        "regenerate": "재생성",
+        "regenerateBackupCodes": "백업 코드 재생성",
+        "disableLabel": "2FA 비활성화(인증 코드 입력)",
+        "disable": "2FA 비활성화",
+        "errors": {
+          "setupFailed": "설정 실패",
+          "confirmFailed": "확인 실패",
+          "disableFailed": "비활성화 실패",
+          "regenFailed": "재생성 실패"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP 표면 로드 실패",
+        "revokeFailed": "토큰 취소 실패"
+      },
+      "revokeConfirm": "MCP 토큰 \"{{name}}\"를 취소하시겠어요? 이를 사용하는 클라이언트가 즉시 작동 중지됩니다.",
+      "tokens": {
+        "heading": "MCP 토큰",
+        "newToken": "새 토큰",
+        "description": "각 토큰은 당신의 역할로 작동합니다: 정확히 당신의 역할이 허용하는 도구를 노출합니다. 전체 값은 한 번만 표시되며, 이를 작성하는 페이지에서만 표시됩니다.",
+        "empty": "MCP 토큰이 아직 없습니다. MCP 클라이언트를 연결하려면 토큰을 작성하세요.",
+        "created": "만들어진",
+        "lastUsed": "마지막 사용",
+        "expires": "만료",
+        "never": "절대",
+        "revokeTitle": "토큰 취소"
+      },
+      "tools": {
+        "heading": "토큰이 노출하는 도구",
+        "empty": "당신의 역할은 MCP 도구를 허용하지 않습니다. 필요한 권한에 대해 관리자에게 문의하세요.",
+        "table": {
+          "name": "이름",
+          "scope": "범위",
+          "description": "설명",
+          "sourceModule": "소스 모듈",
+          "permission": "권한"
+        }
+      },
+      "connect": {
+        "heading": "MCP 클라이언트 연결",
+        "descriptionPre": "연결 중인 클라이언트를 선택한 후",
+        "descriptionPost": "를 토큰 중 하나로 바꾸세요. 토큰을 작성하면 값이 이미 포함된 동일한 스니펫을 표시합니다.",
+        "otherClient": "다른 클라이언트",
+        "httpInstructionsPre": "HTTP에서 이 엔드포인트를 가리키고 다음을 사용하여 인증합니다",
+        "httpInstructionsPost": ". 스트리밍 가능한 HTTP를 통한 JSON-RPC 2.0입니다.",
+        "stdioInstructionsPre": "stdio에서 CLI는 이를 브릿지하고 토큰을 통과시킵니다. 서비스를 직접 실행하는 경우",
+        "stdioInstructionsAnd": "및",
+        "stdioInstructionsPost": "를 직접 설정하세요."
+      },
+      "newToken": {
+        "backToMcp": "MCP로 돌아가기",
+        "title": "새 MCP 토큰",
+        "subtitle": "토큰은 당신의 역할로 작동합니다: 정확히 당신의 역할이 허용하는 도구를 노출합니다.",
+        "nameLabel": "이름",
+        "namePlaceholder": "laptop",
+        "nameHint": "이 토큰이 사용되는 위치(예: \"laptop\" 또는 \"claude-desktop\").",
+        "expiryLabel": "만료",
+        "expiryHint": "선택 사항. 비워두면 취소할 때까지 토큰이 절대 만료되지 않습니다.",
+        "createButton": "토큰 생성",
+        "creatingButton": "생성 중…",
+        "cancelButton": "취소",
+        "tokenSection": {
+          "title": "당신의 토큰",
+          "hint": "지금 복사하세요. 다시 표시되지 않으며 잃어버린 토큰은 교체할 수만 있습니다.",
+          "copyButton": "복사",
+          "copiedButton": "복사됨!",
+          "copyTitle": "토큰 복사",
+          "copiedTitle": "복사됨!"
+        },
+        "connectSection": {
+          "title": "클라이언트 연결",
+          "hint": "연결 중인 클라이언트를 선택하세요. 스니펫에는 이미 이 토큰이 포함되어 있습니다."
+        },
+        "bridgeSection": {
+          "title": "또는 로컬 브릿지 사용",
+          "hint": "stdio만 지원하는 클라이언트의 경우 CLI가 이를 브릿지하고 토큰을 통과시킵니다."
+        },
+        "doneButton": "완료",
+        "errors": {
+          "createFailed": "토큰 생성 실패",
+          "copyFailed": "복사 실패, 토큰을 수동으로 선택 및 복사하세요."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "언어",
+      "description": "대시보드가 표시되는 언어를 선택하세요.",
+      "languageLabel": "언어",
+      "saved": "언어 기본 설정이 저장되었습니다."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "설정 로드 실패",
+        "loadFailedPeriod": "설정 로드 실패.",
+        "saveFailed": "저장 실패",
+        "saveSettingsFailed": "설정 저장 실패"
+      },
+      "savedSuccess": "설정이 성공적으로 저장되었습니다.",
+      "saving": "저장 중…",
+      "saveSettings": "설정 저장",
+      "serverInfo": {
+        "heading": "서버 정보",
+        "readOnly": "읽기 전용. 호스트 및 포트는 환경 또는 설정 파일에서 제공되며 여기에서 제공되지 않습니다.",
+        "reachableAt": "다음에서 액세스 가능",
+        "reachableAtAny": "이 주소 중 하나에서 액세스 가능",
+        "thisMachine": "이 컴퓨터",
+        "network": "네트워크",
+        "copyAddress": "{{address}} 복사",
+        "copied": "복사됨!",
+        "copy": "복사",
+        "hostAndPort": "호스트 및 포트",
+        "version": "버전",
+        "uptime": "작동 시간"
+      },
+      "runtime": {
+        "heading": "런타임 설정",
+        "logLevel": "로그 수준",
+        "logLevelHint": "서비스 로그의 상세도를 제어합니다.",
+        "publicUrl": "공개 URL",
+        "publicUrlHint": "외부 클라이언트에서 서비스에 액세스할 수 있는 기본 URL(예: <code>http://192.168.1.10:3000</code>). 각 라우터의 <strong>연결 방법</strong> 섹션에서 사용됩니다. 대시보드가 서비스와 다른 컴퓨터 또는 포트에서 실행될 때 유용합니다.",
+        "usageRetention": "사용량 보존",
+        "noLimit": "제한 없음",
+        "maxAgeDays": "최대 나이(일)",
+        "maxSizeMb": "최대 크기(MB)",
+        "retentionHint": "이 며칠보다 오래되거나 이 크기를 초과하는 사용량/청구 기록은 활성 로그에서 삭제됩니다. 보존 제한이 없으려면 둘 다 비워두세요."
+      },
+      "internationalization": {
+        "heading": "국제화",
+        "defaultLanguage": "기본 언어",
+        "defaultLanguageHint": "아직 자신의 언어를 선택하지 않은 사용자를 위한 대시보드 언어입니다. 사용자의 개인적 선택을 무시하지 않습니다."
+      },
+      "telemetry": {
+        "heading": "익명 메트릭",
+        "neverAutomatic": "Routerly은 자동으로 데이터를 전송하지 않습니다.",
+        "noChoice": "아직 선택을 하지 않았습니다.",
+        "enabledStatus": "익명 설치 메트릭이 활성화됩니다.",
+        "disabledStatus": "익명 설치 메트릭이 비활성화됩니다.",
+        "explanation": "활성화되면 Routerly은 다음만 전송합니다: 이벤트 유형(설치/업그레이드/제거), 버전, 플랫폼, 무작위 ID. 개인 데이터, 사용 데이터, 저장된 IP 없음.",
+        "whatIsSent": "무엇이 전송되나요?",
+        "installId": "설치 ID: {{id}}",
+        "saving": "저장 중…",
+        "enable": "활성화",
+        "disable": "비활성화"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "대시보드(앱 내 받은편지함)",
+          "description": "이벤트를 앱 내 받은편지함으로 라우팅합니다"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "사용자 정의 메일 서버"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure 커뮤니케이션",
+          "description": "Azure 커뮤니케이션 서비스"
+        },
+        "google": {
+          "label": "Google/Gmail",
+          "description": "OAuth2를 통한 Gmail"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook 콜백"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams 수신 Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "제공업체 - 오류",
+        "providerDegraded": "제공업체 - 성능 저하",
+        "providerRecovered": "제공업체 - 복구됨",
+        "providerRateLimited": "제공업체 - 요청 제한됨",
+        "routingNoCandidates": "라우팅 - 후보 없음",
+        "routingFallbackUsed": "라우팅 - 대체 사용됨",
+        "authLoginFailed": "인증 - 로그인 실패",
+        "authTokenInvalid": "인증 - 토큰 무효",
+        "configModelAdded": "구성 - 모델 추가됨",
+        "configModelDeleted": "구성 - 모델 삭제됨",
+        "configRouterCreated": "구성 - 라우터 생성됨",
+        "configRouterDeleted": "구성 - 라우터 삭제됨",
+        "budgetThresholdReached": "예산 - 임계값 도달",
+        "budgetExceeded": "예산 - 초과됨",
+        "budgetReset": "예산 - 재설정됨",
+        "systemStartup": "시스템 - 시작됨",
+        "systemShutdown": "시스템 - 종료됨",
+        "systemUpdateAvailable": "시스템 - 업데이트 사용 가능"
+      },
+      "removeChannelTooltip": "채널 제거",
+      "removeChannelConfirm": "채널을 제거하시겠어요?",
+      "formUpdatedHint": "양식이 업데이트됨 - 적용하려면 저장하세요.",
+      "hmacSigningKeyPlaceholder": "HMAC 서명 키",
+      "perms": {
+        "routerRead": "라우터 - 읽기",
+        "routerWrite": "라우터 - 쓰기",
+        "modelRead": "모델 - 읽기",
+        "modelWrite": "모델 - 쓰기",
+        "userRead": "사용자 - 읽기",
+        "userWrite": "사용자 - 쓰기",
+        "reportRead": "보고서 - 읽기",
+        "settingsRead": "설정 - 읽기",
+        "settingsWrite": "설정 - 쓰기",
+        "notificationWrite": "알림 - 쓰기",
+        "tokenRead": "토큰 - 읽기",
+        "tokenWrite": "토큰 - 쓰기",
+        "roleWrite": "역할 - 쓰기",
+        "auditRead": "감사 로그 - 읽기",
+        "modulesRead": "모듈 - 읽기",
+        "modulesManage": "모듈 - 관리",
+        "connectionsRead": "연결 - 읽기",
+        "connectionsManage": "연결 - 관리",
+        "resilienceRead": "복원력 - 읽기",
+        "resilienceManage": "복원력 - 관리",
+        "profilesRead": "라우팅 프로필 - 읽기",
+        "profilesManage": "라우팅 프로필 - 관리",
+        "optimizersRead": "최적화기 - 읽기",
+        "optimizersManage": "최적화기 - 관리",
+        "experimentsRead": "실험 - 읽기",
+        "experimentsManage": "실험 - 관리"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "이 채널 유형의 경우 대상이 배달을 변경하지 않습니다(엔드포인트가 고정됨). 수신자당 감사 추적에서 기록되는 이벤트를 필터링합니다.",
+        "dashboard": "대상은 받은편지함 표시 가능성을 제어합니다. 일치하는 사용자만 앱 내 받은편지함에서 이 알림을 볼 수 있습니다.",
+        "email": "대상은 이 이메일을 받을 사용자를 결정합니다. 모든 사용자에게 보내려면 모두 비워두세요."
+      },
+      "summary": {
+        "allEvents": "모든 이벤트",
+        "eventCount": "{{count}}개 이벤트",
+        "eventCount_other": "{{count}}개 이벤트",
+        "roleCount": "{{count}}개 역할",
+        "roleCount_other": "{{count}}개 역할",
+        "permCount": "{{count}}개 권한",
+        "permCount_other": "{{count}}개 권한",
+        "userCount": "{{count}}개 사용자",
+        "userCount_other": "{{count}}개 사용자",
+        "everyone": "모두"
+      },
+      "errors": {
+        "loadFailed": "로드 실패"
+      },
+      "fields": {
+        "dashboardHint": "일치하는 이벤트를 앱 내 알림 받은편지함으로 라우팅합니다. 자격 증명이 필요하지 않습니다.",
+        "labels": {
+          "fromAddress": "발신자 주소",
+          "fromName": "발신자 이름",
+          "host": "호스트",
+          "port": "포트",
+          "tls": "TLS/SSL",
+          "username": "사용자명",
+          "password": "비밀번호",
+          "awsRegion": "AWS 리전",
+          "accessKeyId": "액세스 키 ID",
+          "secretAccessKey": "비밀 액세스 키",
+          "apiKey": "API 키",
+          "connectionString": "연결 문자열",
+          "clientId": "클라이언트 ID",
+          "clientSecret": "클라이언트 비밀",
+          "refreshToken": "새로고침 토큰",
+          "url": "URL",
+          "method": "방법",
+          "signingSecret": "서명 비밀",
+          "botToken": "봇 토큰",
+          "channelId": "채널 ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "통합 키"
+        },
+        "values": {
+          "enabled": "활성화됨",
+          "disabled": "비활성화됨",
+          "configured": "구성됨",
+          "notSet": "설정되지 않음"
+        },
+        "optional": "(선택 사항)",
+        "keepCurrentPlaceholder": "현재 상태를 유지하려면 비워두세요",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS/SSL 사용",
+        "smtpTlsOnHint": "(포트 465 - 직접 SSL)",
+        "smtpTlsOffHint": "(포트 587 - STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAM 인스턴스 역할을 사용하려면 자격 증명을 비워두세요.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC 서명 키",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32자 라우팅 키",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "이벤트",
+          "eventsPlaceholder": "모든 이벤트(모두를 위해 비워두기)",
+          "eventsHint": "모든 이벤트를 수신하려면 비워두세요. 특정 이벤트를 선택하여 필터링하세요.",
+          "routersHeading": "라우터",
+          "routersPlaceholder": "모든 라우터(모두를 위해 비워두기)",
+          "routersHint": "모든 라우터에서 이벤트를 수신하려면 비워두세요.",
+          "cooldownHeading": "쿨다운",
+          "cooldownSuffix": "초(0 = 쿨다운 없음)",
+          "cooldownHint": "이 채널이 동일한 이벤트에 대해 다시 실행되기 전의 최소 간격."
+        },
+        "recipients": {
+          "heading": "수신자/대상",
+          "rolesLabel": "역할",
+          "rolesPlaceholder": "모든 역할(모두)",
+          "permissionsLabel": "권한",
+          "permissionsPlaceholder": "모든 권한(모두)",
+          "usersLabel": "개별 사용자",
+          "usersPlaceholder": "모든 사용자(모두)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "connection",
+          "routing": "routing",
+          "recipients": "recipients"
+        },
+        "sections": {
+          "channelSettings": "채널 설정",
+          "eventsRouting": "이벤트 및 라우팅",
+          "recipients": "수신자"
+        },
+        "nameLabel": "이름",
+        "namePlaceholder": "이 채널의 레이블",
+        "cancelButton": "취소"
+      },
+      "list": {
+        "countLabel": "{{count}}개 채널",
+        "countLabel_other": "{{count}}개 채널",
+        "filteredLabel": "{{count}}개 채널 중 {{shown}}개",
+        "filteredLabel_other": "{{count}}개 채널 중 {{shown}}개",
+        "allTypes": "모든 유형",
+        "searchPlaceholder": "채널 필터링…",
+        "searchChannelsPlaceholder": "채널 검색…",
+        "addButton": "채널 추가",
+        "addSearchPlaceholder": "채널 검색…",
+        "noResults": "결과 없음",
+        "emptyTitle": "아직 알림 채널이 구성되지 않았습니다.",
+        "noMatch": "활성 필터와 일치하는 채널이 없습니다.",
+        "nameInlinePlaceholder": "레이블(선택 사항)",
+        "columns": {
+          "name": "이름",
+          "type": "유형",
+          "summary": "이벤트/대상"
+        },
+        "testTitle": "테스트 보내기",
+        "editTitle": "채널 편집",
+        "deleteTitle": "채널 삭제",
+        "deleteConfirm": "채널 \"{{name}}\"을 제거하시겠어요? 이는 실행 취소할 수 없습니다.",
+        "deleteConfirmButton": "삭제",
+        "errors": {
+          "deleteFailed": "삭제 실패"
+        }
+      },
+      "edit": {
+        "backToList": "알림으로 돌아가기",
+        "back": "뒤로",
+        "heading": "{{provider}} 채널 편집",
+        "subtitle": "이 알림 채널의 구성을 업데이트하세요.",
+        "testSection": {
+          "title": "테스트 보내기",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "테스트 보내기",
+          "sendingButton": "전송 중…",
+          "hintEmail": "계정 이메일로 보내려면 비워두세요. 테스트는 저장된 채널 구성을 사용합니다.",
+          "hintOther": "테스트는 저장된 채널 구성을 사용합니다. 업데이트된 설정을 테스트하려면 먼저 변경 사항을 저장하세요."
+        },
+        "saveButton": "변경 사항 저장",
+        "savingButton": "저장 중…",
+        "errors": {
+          "loadFailed": "로드 실패",
+          "saveFailed": "저장 실패"
+        }
+      },
+      "create": {
+        "backToList": "알림으로 돌아가기",
+        "changeType": "유형 변경",
+        "pickerHeading": "채널 유형 선택",
+        "pickerSubtitle": "구성할 알림 제공업체를 선택합니다.",
+        "heading": "새 {{provider}} 채널",
+        "subtitle": "새 알림 채널을 구성합니다.",
+        "createButton": "채널 생성",
+        "creatingButton": "생성 중…",
+        "errors": {
+          "createFailed": "생성 실패"
+        }
+      },
+      "sendTest": "테스트 보내기",
+      "fromAddress": "발신자 주소",
+      "individualUsers": "개별 사용자",
+      "host": "호스트",
+      "port": "포트",
+      "apiKey": "API 키",
+      "connectionString": "연결 문자열",
+      "clientId": "클라이언트 ID",
+      "clientSecret": "클라이언트 비밀",
+      "refreshToken": "새로고침 토큰",
+      "method": "방법",
+      "botToken": "봇 토큰",
+      "channelId": "채널 ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "통합 키"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — /metrics 노출"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — 메트릭 API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "요청 추적 내보내기",
+        "description": "각 프록시된 요청의 전체 추적을 보냅니다: 모든 단계, 발언한 모든 모듈, 옵트인한 프로젝트의 프롬프트 및 답변.",
+        "sampleRateLabel": "샘플 레이트",
+        "sampleRateHint": "1은 모든 요청을 내보냅니다. 0.1은 10개 중 1개입니다."
+      },
+      "optional": "(선택 사항)",
+      "headersHint": "(선택 사항, 라인당 하나: 키: 값)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer 토큰",
+          "placeholder": "공개 액세스를 위해 비워두기",
+          "description": "Prometheus 텍스트 형식으로 <code>/metrics</code>를 노출합니다. 토큰을 설정하여 Bearer 인증을 요청합니다."
+        },
+        "otel": {
+          "endpoint": "수집기 엔드포인트",
+          "description": "OTLP 수신기의 기본 URL. Routerly은 <code>/v1/metrics</code>, 및 추적 내보내기가 켜져 있을 때 <code>/v1/traces</code>를 추가합니다. 기본 HTTP 포트는 4318, gRPC는 4317입니다.",
+          "protocol": "프로토콜",
+          "headers": "헤더"
+        },
+        "datadog": {
+          "apiKey": "API 키",
+          "placeholder": "Datadog API 키",
+          "description": "Datadog 계정의 <strong>조직 설정 → API 키</strong>에서 찾을 수 있습니다.",
+          "site": "사이트"
+        },
+        "grafana": {
+          "remoteWriteUrl": "원격 쓰기 URL",
+          "description": "<strong>Grafana Cloud → 연결 → Prometheus → 상세</strong>에서 \"Remote Write Endpoint\"로 찾을 수 있습니다.",
+          "username": "사용자명/스택 ID",
+          "usernameHint": "Prometheus 연결 상세에 표시된 숫자 ID.",
+          "apiKey": "API 키/토큰",
+          "apiKeyHint": "<strong>MetricsPublisher</strong> 역할을 가진 Grafana Cloud 토큰."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 인스턴스 URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "토큰",
+          "tokenPlaceholder": "InfluxDB API 토큰",
+          "tokenHint": "버킷에 대한 <strong>쓰기</strong> 액세스 권한이 있어야 합니다.",
+          "org": "조직",
+          "bucket": "버킷"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "비밀",
+          "secretHint": "(선택 사항 — HMAC-SHA256 서명 키)",
+          "headers": "헤더"
+        }
+      },
+      "errors": {
+        "loadFailed": "통합 로드 실패",
+        "updateFailed": "통합 업데이트 실패",
+        "saveFailed": "통합 저장 실패",
+        "deleteFailed": "통합 삭제 실패"
+      },
+      "empty": "아직 통합이 구성되지 않았습니다.",
+      "enabled": "활성화됨",
+      "testing": "테스트 중…",
+      "test": "테스트",
+      "removeConfirm": "제거하시겠어요?",
+      "remove": "제거",
+      "cancel": "취소",
+      "removeTooltip": "통합 제거",
+      "saving": "저장 중…",
+      "save": "저장",
+      "addButton": "통합 추가"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "설정 로드 실패",
+        "duplicateUrl": "이 URL은 이미 리스트에 있습니다.",
+        "unreachable": "이 URL에서 유효한 제공업체 카탈로그에 도달할 수 없습니다."
+      },
+      "saved": "저장됨.",
+      "refreshed": "새로고침됨.",
+      "heading": "제공업체 카탈로그 저장소",
+      "refreshing": "새로고침 중…",
+      "refresh": "새로고침",
+      "nextRefresh": "다음: {{date}}",
+      "priorityHint": "행 순서에 따라 병합 우선순위가 결정됩니다 — 행 1이 충돌할 때 승리합니다. 화살표를 사용하여 재정렬하세요.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "업데이트됨",
+        "lastCheck": "마지막 확인",
+        "status": "상태"
+      },
+      "empty": "구성된 저장소가 없습니다. 기본 Routerly 공개 카탈로그가 사용됩니다.",
+      "status": {
+        "error": "오류",
+        "active": "활성",
+        "disabled": "비활성화됨"
+      },
+      "edit": "편집",
+      "removeTooltip": "제거",
+      "addRepository": "저장소 추가",
+      "checking": "확인 중…",
+      "add": "추가",
+      "removeConfirm": "저장소 \"{{url}}\"을 제거하시겠어요?"
+    },
+    "about": {
+      "headings": {
+        "application": "애플리케이션",
+        "runtime": "런타임",
+        "storage": "저장소",
+        "softwareUpdate": "소프트웨어 업데이트"
+      },
+      "labels": {
+        "version": "버전",
+        "uptime": "작동 시간",
+        "nodeVersion": "Node.js",
+        "platform": "플랫폼",
+        "configDir": "구성 디렉토리",
+        "dataDir": "데이터 디렉토리",
+        "currentVersion": "현재 버전",
+        "availableVersion": "사용 가능한 버전",
+        "upToDate": "최신 버전",
+        "lastChecked": "마지막 확인"
+      },
+      "noCheckPerformed": "아직 업데이트 확인이 수행되지 않았습니다.",
+      "checkForUpdates": "업데이트 확인",
+      "checking": "확인 중…",
+      "updateTo": "v{{version}}으로 업데이트",
+      "updating": "업데이트 중…",
+      "dockerHint": "Docker에서 실행 중 - 최신 이미지를 가져와 업데이트하세요.",
+      "confirmUpdate": "최신 버전을 다운로드하여 설치합니다. 서비스가 다시 시작됩니다. 계속하시겠어요?",
+      "updateComplete": "업데이트 완료! 새로고침 중…",
+      "serviceRestarting": "서비스를 다시 시작 중입니다. 잠시 후 페이지를 새로고침하세요.",
+      "errors": {
+        "loadFailed": "로드 실패",
+        "checkFailed": "확인 실패",
+        "updateFailed": "업데이트 실패"
+      },
+      "channel": "채널"
+    },
+    "security": {
+      "authentication": "인증",
+      "requireMfa": "모든 사용자에게 이중 인증 필수",
+      "requireMfaHint": "활성화되면 2FA를 설정하지 않은 사용자는 로그인 후 설정 프롬프트를 볼 수 있습니다. 사용자는 프로필 페이지에서 2FA를 구성할 수 있습니다.",
+      "savedSuccess": "설정이 성공적으로 저장되었습니다.",
+      "saving": "저장 중…",
+      "saveSettings": "설정 저장",
+      "errors": {
+        "loadFailed": "설정 로드 실패",
+        "saveFailed": "설정 저장 실패"
+      }
+    },
+    "title": "설정",
+    "subtitle": "Routerly 구성",
+    "tabs": {
+      "general": "일반",
+      "security": "보안",
+      "notifications": "알림",
+      "integrations": "통합",
+      "catalog": "제공업체 카탈로그",
+      "users": "사용자",
+      "roles": "역할",
+      "audit": "감사 로그",
+      "about": "정보"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "라우터",
+      "subtitle": "Routerly에 액세스하는 클라이언트 애플리케이션",
+      "count": "1개 라우터",
+      "count_other": "{{count}}개 라우터",
+      "newRouter": "새 라우터",
+      "empty": "아직 라우터가 없습니다.",
+      "emptyFiltered": "이 유형의 라우터가 없습니다.",
+      "tabs": {
+        "all": "모두",
+        "router": "라우터",
+        "orchestrator": "오케스트레이터",
+        "passthrough": "통과"
+      },
+      "columns": {
+        "name": "이름",
+        "tokens": "토큰",
+        "policies": "정책",
+        "models": "모델"
+      },
+      "tokenCount": "1개 토큰",
+      "tokenCount_other": "{{count}}개 토큰",
+      "editRouter": "라우터 편집",
+      "deleteRouter": "라우터 삭제",
+      "deleteConfirm": "이 라우터를 삭제하시겠어요?",
+      "errors": {
+        "deleteFailed": "라우터 삭제 오류"
+      }
+    },
+    "layout": {
+      "notFound": "라우터를 찾을 수 없습니다",
+      "tabs": {
+        "dashboard": "대시보드",
+        "general": "일반",
+        "orchestrator": "오케스트레이터",
+        "routing": "라우팅",
+        "optimizer": "최적화기",
+        "security": "보안",
+        "token": "토큰",
+        "users": "사용자",
+        "logs": "로그"
+      },
+      "backToRouters": "라우터로 돌아가기",
+      "backToRoutersTitle": "라우터로 돌아가기",
+      "newRouter": "새 라우터",
+      "loading": "로드 중...",
+      "routerId": "라우터 ID:",
+      "saveFirstHint": "이 탭을 잠금 해제하려면 먼저 라우터를 저장하세요"
+    },
+    "dashboard": {
+      "period": "기간",
+      "noTraffic": "선택한 기간에 이 라우터의 트래픽이 없습니다.",
+      "stats": {
+        "savings": "절약",
+        "vsPrefix": "vs",
+        "forEverything": "모든 것에 대해",
+        "noTargetToCompare": "비교할 대상 모델 없음",
+        "cost": "비용",
+        "callCount": "1개 호출",
+        "callCount_other": "{{count}}개 호출",
+        "latency": "레이턴시",
+        "medianP95": "중간값 · p95 {{value}}",
+        "ttft": "첫 토큰까지의 시간",
+        "notMeasured": "이 호출에서 측정되지 않음",
+        "reliability": "안정성",
+        "errorsAndBlocked": "{{errors}}개 오류 · {{blocked}}개 차단됨"
+      },
+      "tokens": {
+        "input": "입력 토큰:",
+        "output": "출력 토큰:",
+        "fromCache": "캐시에서:",
+        "cacheSaved": "({{amount}} 절약)"
+      },
+      "oneModel": {
+        "heading": "모든 것이 한 모델로 갔다면",
+        "empty": "이 라우터에 대상 모델을 추가하여 비교를 확인하세요.",
+        "columns": {
+          "targetModel": "대상 모델",
+          "wouldHaveCost": "비용이 들었을 것",
+          "saved": "절약"
+        },
+        "costsHint": "비용은 관찰된 토큰을 각 대상의 요율로 재계산한 것입니다."
+      },
+      "optimizers": {
+        "heading": "최적화기가 제거한 것",
+        "columns": {
+          "optimizer": "최적화기",
+          "callsChanged": "변경된 호출",
+          "tokensSaved": "토큰 절약",
+          "costSaved": "비용 절약",
+          "rolledBack": "롤백됨"
+        },
+        "hint": "호출 자체에서 측정되고 각 호출을 제공한 모델에서 가격이 책정됩니다. 롤백된 실행은 단계의 출력이 안전하지 않은 것으로 거부되고 프롬프트가 복원되었음을 의미합니다: 아무것도 절약하지 못했으며 개수가 높다는 것은 임계값이 너무 공격적임을 의미합니다."
+      },
+      "traffic": {
+        "heading": "트래픽이 어디로 갔는지",
+        "columns": {
+          "model": "모델",
+          "calls": "호출",
+          "share": "공유",
+          "cost": "비용",
+          "p95Latency": "p95 레이턴시",
+          "errors": "오류"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "라우터 저장 오류",
+        "copyFailed": "복사 실패 - 토큰을 수동으로 선택 및 복사해주세요."
+      },
+      "kind": {
+        "router": {
+          "label": "라우터",
+          "description": "모델 후보 간 요청을 라우팅합니다."
+        },
+        "orchestrator": {
+          "label": "오케스트레이터",
+          "description": "모델 대신 다른 라우터 간 요청을 라우팅합니다."
+        },
+        "passthrough": {
+          "label": "통과",
+          "description": "수정 없이 요청을 전달합니다."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "이 토큰을 지금 저장하세요.",
+        "saveNowHint": "다시 표시되지 않습니다 - 이 화면을 떠나면 복구할 수 없습니다.",
+        "copied": "복사됨!",
+        "copy": "복사",
+        "goToRouter": "라우터로 이동"
+      },
+      "connect": {
+        "heading": "연결 방법",
+        "intro": "모든 OpenAI 또는 Anthropic SDK를 Routerly에 가리키고 <tokenLink>라우터 토큰</tokenLink>을 API 키로 사용하세요. 아래에서 <code>{{token}}</code>을 당신의 것으로 바꾸세요. 모델 <code>{{model}}</code>은 선택을 Routerly에 넘깁니다. <modelsLink>모델</modelsLink>의 모든 모델 ID도 작동합니다.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "기본 URL <code>{{baseUrl}}</code>, 모든 \"OpenAI 호환\" 제공업체 필드가 받는 것과 동일합니다.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "기본 URL <code>{{baseUrl}}</code>, <code>/v1</code> 제외: SDK가 추가합니다.",
+        "curl": "curl",
+        "curlHint": "아무것도 설치하지 않고 배선을 확인한 다음 <usageLink>사용량</usageLink>에서 호출을 찾으세요."
+      },
+      "form": {
+        "kind": "유형",
+        "kindAriaLabel": "라우터 유형",
+        "kindFixedHint": "라우터가 생성되면 고정됩니다.",
+        "routerName": "라우터 이름",
+        "routerNamePlaceholder": "내 앱",
+        "advancedSettings": "고급 설정",
+        "ttftTimeout": "TTFT 시간 제한(ms)",
+        "ttftTimeoutHint": "모델이 이 시간 내에 첫 응답 바이트를 전송하지 않으면 Routerly은 중단하고 다음 후보를 시도합니다. 총 응답 지속 시간을 제한하지 않습니다. 제공업체가 원하는 만큼 대기하려면 0으로 설정하세요.",
+        "traceContent": "추적 콘텐츠",
+        "traceContentHint": "추적은 항상 메타데이터(모델, 점수, 토큰, 비용, 레이턴시)를 기록합니다. 보낸 프롬프트와 받은 답변도 기록하려면 켜십시오. 사용 기록과 함께 저장되며 보고서를 읽을 수 있는 모든 사람이 볼 수 있습니다.",
+        "capturePromptsAndAnswers": "프롬프트 및 답변 캡처",
+        "saveChanges": "변경 사항 저장",
+        "createRouter": "라우터 생성"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "이 라우터는 오케스트레이터가 아닙니다.",
+      "candidateRouters": "후보 라우터",
+      "candidateRoutersHint": "이 오케스트레이터가 요청을 전달하는 라우터. 가중치는 각 후보가 선택되는 빈도에 영향을 미칩니다. 이름, ID, 가중치 및 선택적 후보별 제한만 여기에 표시됩니다.",
+      "router": "라우터",
+      "selectRouter": "라우터 선택",
+      "weight": "가중치",
+      "removeCandidate": "후보 제거",
+      "usageLimits": "이 후보에 대한 사용량 제한",
+      "limitCount": "{{count}}개 제한",
+      "limitCount_other": "{{count}}개 제한",
+      "usageLimitsHint": "이 오케스트레이터가 이 후보에게 전달하는 요청에만 적용되는 선택적 사용량 제한.",
+      "empty": "아직 후보 라우터가 없습니다. 오케스트레이터는 요청을 전달하려면 최소 하나가 필요합니다.",
+      "addCandidate": "후보 추가",
+      "saved": "저장됨!",
+      "saveCandidates": "후보 저장",
+      "errors": {
+        "loadFailed": "라우터 로드 실패",
+        "saveFailed": "오케스트레이터 후보 저장 오류"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "라우팅 프로필 할당 실패",
+        "duplicateTargets": "대상 모델은 중복이 없어야 합니다.",
+        "saveFailed": "라우터 라우팅 저장 오류",
+        "noProfileAvailable": "사용 가능한 라우팅 프로필이 없습니다. 프로필 페이지에서 새로 만드세요."
+      },
+      "form": {
+        "routing": "라우팅",
+        "routingHint": "공유 라우팅 프로필을 사용하거나 이 라우터의 고유 정책을 정의합니다. 어느 쪽이든 대상 모델은 구성 가능합니다.",
+        "profileMode": "프로필",
+        "customMode": "사용자 정의",
+        "routingProfile": "라우팅 프로필",
+        "builtinSuffix": "(기본 제공)",
+        "profileHint": "정책은 프로필에서 나오며 변경 사항을 따릅니다. 프로필 페이지에서 편집하거나 사용자 정의로 전환하여 복사본에서 시작하세요.",
+        "saved": "저장됨!",
+        "saveRoutingConfiguration": "라우팅 구성 저장"
+      },
+      "targetModels": {
+        "heading": "대상 모델",
+        "hint": "정책이 필터링하고 선택할 모델 풀을 정의합니다. 선택적 프롬프트는 AI 라우터에 각 모델을 선택할 시기를 지시합니다.",
+        "endpointModel": "엔드포인트 모델",
+        "selectModel": "모델 선택",
+        "promptDefinition": "프롬프트 정의",
+        "promptPlaceholder": "라우터가 이 모델을 선택해야 할 정확한 시기와 이유를 설명하세요...",
+        "intents": "의도",
+        "removeTarget": "대상 모델 제거",
+        "empty": "구성된 대상 모델이 없습니다.",
+        "addTarget": "대상 모델 추가"
+      }
+    },
+    "optimizer": {
+      "title": "최적화기",
+      "description": "최적화기는 요청이 제공업체에 도달하기 전에 프롬프트 토큰을 줄입니다. 위에서 아래로 순서대로 실행됩니다. 공유 최적화기 프로필을 사용하거나 이 라우터의 고유 파이프라인을 정의합니다.",
+      "noPermission": "최적화기를 볼 권한이 없습니다.",
+      "mode": {
+        "profile": "프로필",
+        "custom": "사용자 정의"
+      },
+      "profileSelect": {
+        "ariaLabel": "최적화기 프로필",
+        "builtinLabel": "{{label}}(기본 제공)",
+        "hint": "단계는 프로필에서 나오며 변경 사항을 따릅니다. 프로필 페이지에서 편집하거나 사용자 정의로 전환하여 복사본에서 시작하세요.",
+        "disabledSuffix": "(비활성화됨)",
+        "thresholdSuffix": ", threshold {{threshold}}"
+      },
+      "customHint": "끌어서 재정렬하고 토글하여 활성화합니다. 일부 최적화기는 임계값을 사용하여 트리밍 공격성을 제어합니다.",
+      "saveButton": "최적화기 저장",
+      "saving": "저장 중...",
+      "saved": "저장됨",
+      "preview": {
+        "title": "토큰 절약 미리보기",
+        "description": "현재(저장되지 않음) 파이프라인을 프롬프트에 대해 실행하여 각 단계가 제거하는 것과 비용을 확인합니다. 샘플 대화 중 하나를 선택하거나 고유 프롬프트를 입력하세요.",
+        "promptLabel": "프롬프트",
+        "promptAriaLabel": "미리보기할 프롬프트",
+        "typePromptOption": "아래에 프롬프트 입력",
+        "fixturesHint": "Routerly과 함께 제공되는 샘플 대화. Routerly은 실제 프롬프트를 기록하지 않습니다.",
+        "modelLabel": "모델",
+        "modelAriaLabel": "미리보기할 모델",
+        "modelWithContext": "{{id}}({{k}}k 문맥)",
+        "noModelOption": "모델 없음",
+        "modelHint": "문맥 윈도우에 맞게 트리밍하는 단계는 어느 윈도우인지 알아야 합니다. 모델이 없으면 건너뛰어지며 Routerly이 윈도우가 없는 모델에 이름을 지은 요청에서처럼 작동합니다.",
+        "sampleAriaLabel": "샘플 프롬프트",
+        "samplePlaceholder": "샘플 사용자 메시지 붙여넣기...",
+        "runButton": "미리보기 실행",
+        "running": "실행 중...",
+        "before": "이전",
+        "after": "이후",
+        "saved": "저장됨",
+        "columns": {
+          "optimizer": "최적화기",
+          "before": "이전",
+          "after": "이후",
+          "saved": "저장됨"
+        },
+        "rolledBackNote": "rolled back: the change was rejected as unsafe",
+        "skippedNote": "skipped: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "이 단계가 생성한 변경 사항이 롤백되었으므로 프롬프트가 다음 단계에 손상되지 않은 상태로 도달했습니다.",
+          "skipped": "이 단계는 실행되지 않았습니다: {{reason}}",
+          "unchanged": "이 단계는 프롬프트를 변경 없이 남겼습니다."
+        }
+      },
+      "errors": {
+        "assignFailed": "최적화기 프로필 할당 실패",
+        "saveFailed": "최적화기 저장 오류",
+        "previewFailed": "미리보기 실행 오류",
+        "noProfileAvailable": "사용 가능한 최적화기 프로필이 없습니다. 프로필 페이지에서 새로 만드세요."
+      }
+    },
+    "token": {
+      "newButton": "새 토큰",
+      "empty": "아직 API 토큰이 없습니다. 요청 인증을 시작하려면 새 토큰을 생성하세요.",
+      "budgetOverrides": "예산 재정의",
+      "created": "생성됨",
+      "lastUsed": "마지막 사용",
+      "expires": "만료",
+      "never": "절대",
+      "editTitle": "구성 편집",
+      "revokeTitle": "토큰 취소",
+      "revokeConfirm": "토큰 \"{{snippet}}...\"을 취소하시겠어요? 이를 사용하는 앱이 즉시 작동 중지됩니다.",
+      "labelInput": {
+        "placeholder": "레이블 검색 또는 생성…",
+        "createPrefix": "생성",
+        "noMatches": "일치하는 레이블 없음."
+      },
+      "errors": {
+        "deleteFailed": "토큰 삭제 오류"
+      },
+      "create": {
+        "backToTokens": "토큰으로 돌아가기",
+        "title": "새 API 토큰",
+        "subtitle": "전체 토큰은 생성 후 한 번만 표시됩니다 - 안전하게 저장하세요.",
+        "tokenCreated": "토큰이 성공적으로 생성되었습니다. 지금 복사하세요 - 다시 표시되지 않습니다.",
+        "copied": "복사됨!",
+        "copy": "복사",
+        "done": "완료",
+        "optional": "선택 사항",
+        "labels": "레이블",
+        "labelsHint": "이 토큰을 태그하여 사용 위치를 식별합니다(예: \"production\", \"ci\").",
+        "scopes": "범위",
+        "scopesHint": "이 토큰에 첨부된 자유 형식 범위(예: \"batch\", \"internal\"), 자체 기록 목적으로 저장됩니다.",
+        "tags": "태그",
+        "tagsHint": "사용 기록으로 전달되는 키-값 메타데이터(예: env=production).",
+        "keyPlaceholder": "key",
+        "valuePlaceholder": "value",
+        "createButton": "토큰 생성",
+        "cancel": "취소",
+        "copyFailed": "복사 실패 - 토큰을 수동으로 선택 및 복사해주세요.",
+        "errors": {
+          "createFailed": "토큰 생성 오류"
+        }
+      },
+      "edit": {
+        "title": "토큰 편집",
+        "subtitle": "이 토큰에 대한 레이블 및 모델별 제한 재정의를 업데이트합니다.",
+        "token": "토큰",
+        "labels": "레이블",
+        "perModelLimits": "모델별 제한",
+        "perModelLimitsHint": "이 토큰을 사용하는 요청에 대해 전역 및 라우터 수준 제한을 재정의합니다.",
+        "noTargetModels": "먼저 라우팅 탭에서 대상 모델을 추가하세요.",
+        "noOverride": "재정의 없음",
+        "noLimits": "제한 없음",
+        "noLimitsSet": "제한이 설정되지 않음 - 상위에서 상속합니다. 아래에 제한을 추가하여 재정의합니다.",
+        "metric": "메트릭",
+        "type": "유형",
+        "periodLabel": "기간",
+        "every": "매",
+        "maxCost": "최대($)",
+        "maxCalls": "최대(n.)",
+        "maxTokens": "최대(토큰)",
+        "allCombosSet": "모든 메트릭/기간 조합이 이미 설정되었습니다",
+        "addLimit": "제한 추가",
+        "windowType": {
+          "period": "기간",
+          "rolling": "롤링"
+        },
+        "limitMetric": {
+          "cost": "비용(USD)",
+          "calls": "요청",
+          "input_tokens": "입력 토큰",
+          "output_tokens": "출력 토큰",
+          "total_tokens": "전체 토큰"
+        },
+        "period": {
+          "hourly": "시간당",
+          "daily": "일당",
+          "weekly": "주당",
+          "monthly": "월당",
+          "yearly": "연당"
+        },
+        "rollingUnit": {
+          "second": "초",
+          "minute": "분",
+          "hour": "시간",
+          "day": "일",
+          "week": "주",
+          "month": "월"
+        },
+        "fmt": {
+          "requests": "{{value}}개 req",
+          "inputTokens": "{{value}}개 in-tok",
+          "outputTokens": "{{value}}개 out-tok",
+          "totalTokens": "{{value}}개 tok",
+          "everyRolling": "{{metric}} / 매 {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "토큰 저장 오류"
+        }
+      }
+    },
+    "users": {
+      "title": "라우터 멤버",
+      "description": "이 라우터에 액세스할 수 있는 사용자를 관리합니다.",
+      "addButton": "멤버 추가",
+      "addNewTitle": "새 멤버 추가",
+      "selectUserPlaceholder": "사용자 선택...",
+      "addConfirmButton": "추가",
+      "cancelButton": "취소",
+      "empty": "멤버를 찾을 수 없습니다.",
+      "removeConfirm": "이 멤버를 제거하시겠어요?",
+      "saveTitle": "변경 사항 저장",
+      "changeRoleTitle": "역할 변경",
+      "removeTitle": "멤버 제거",
+      "roles": {
+        "viewer": "뷰어",
+        "editor": "편집기",
+        "admin": "관리자"
+      },
+      "columns": {
+        "user": "사용자",
+        "role": "역할",
+        "actions": "작업"
+      },
+      "errors": {
+        "loadFailed": "사용자 로드 실패",
+        "addFailed": "멤버 추가 오류",
+        "updateFailed": "멤버 업데이트 오류",
+        "removeFailed": "멤버 제거 오류"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "끄기"
+      },
+      "autoRefreshOff": "자동 새로고침 비활성화됨",
+      "autoRefreshEvery": "매 {{interval}}마다 자동 새로고침",
+      "lastUpdated": "last updated: {{time}}",
+      "refresh": "새로고침",
+      "refreshNowTitle": "지금 새로고침",
+      "refreshNowButton": "↻ 지금",
+      "filters": {
+        "period": "기간",
+        "model": "모델",
+        "allModels": "모든 모델",
+        "type": "유형",
+        "all": "모두",
+        "completion": "완료",
+        "router": "라우터",
+        "status": "상태",
+        "success": "성공",
+        "blocked": "차단됨",
+        "error": "오류",
+        "resetButton": "필터 재설정"
+      },
+      "stats": {
+        "totalCost": "총 비용",
+        "totalCalls": "총 호출",
+        "completionCalls": "완료 호출",
+        "routerCalls": "라우터 호출",
+        "errors": "오류"
+      },
+      "requestLogs": "요청 로그",
+      "emptyNoRequests": "선택한 기간에 이 라우터의 요청이 없습니다.",
+      "emptyNoMatches": "활성 필터와 일치하는 기록이 없습니다.",
+      "columns": {
+        "time": "시간",
+        "model": "모델",
+        "type": "유형",
+        "in": "입력",
+        "out": "출력",
+        "cost": "비용",
+        "latency": "레이턴시",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "상태"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "completion",
+      "pagination": {
+        "previous": "← 이전",
+        "next": "다음 →",
+        "pageOf": "페이지 {{page}}/{{totalPages}}",
+        "totalRecords": "({{count}}개 총 기록)"
+      }
+    },
+    "security": {
+      "title": "보안",
+      "description": "공유 보안 프로필을 사용하거나 이 라우터의 고유 가드레일 및 개인정보 정책을 정의합니다.",
+      "mode": {
+        "profile": "프로필",
+        "custom": "사용자 정의"
+      },
+      "profileSelect": {
+        "ariaLabel": "보안 프로필",
+        "builtinLabel": "{{label}}(기본 제공)",
+        "hint": "가드레일 및 개인정보 정책은 프로필에서 나오며 변경 사항을 따릅니다. 프로필 페이지에서 편집하거나 사용자 정의로 전환하여 복사본에서 시작하세요.",
+        "blockingSuffix": ", blocking",
+        "disabledSuffix": ", disabled",
+        "piiRedaction": "개인정보 수정({{target}})"
+      },
+      "saveButton": "보안 설정 저장",
+      "saved": "저장됨!",
+      "errors": {
+        "assignFailed": "보안 프로필 할당 실패",
+        "saveFailed": "보안 설정 저장 오류",
+        "noProfileAvailable": "사용 가능한 보안 프로필이 없습니다. 프로필 페이지에서 새로 만드세요."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "당신은 도움이 되는 AI 어시스턴트입니다.",
+      "errors": {
+        "unknown": "알 수 없는 오류 발생",
+        "onlyImages": "현재 시각 모델에는 이미지 첨부만 지원됩니다."
+      },
+      "title": "테스트 채팅",
+      "subtitle": "라우팅 게이트웨이를 통해 테스트 쿼리를 보냅니다.",
+      "routerToken": "라우터 토큰:",
+      "hideToken": "토큰 숨기기",
+      "showToken": "토큰 표시",
+      "recognizedToken": "인식된 토큰",
+      "unrecognizedToken": "인식되지 않은 토큰",
+      "noMessages": "아직 메시지가 없습니다.",
+      "enterTokenHint": "메시지를 보내려면 위에 라우터 토큰을 입력하세요.",
+      "typeMessageHint": "테스트를 시작하려면 아래에 메시지를 입력하세요.",
+      "reasoning": "추론",
+      "attachedAlt": "첨부됨",
+      "attachmentAlt": "첨부 파일",
+      "attachImage": "이미지 첨부",
+      "typeMessagePlaceholder": "메시지 입력...",
+      "stopGeneration": "생성 중지",
+      "sendEnter": "보내기(Enter)",
+      "debugLog": "디버그 로그",
+      "clear": "지우기",
+      "noRequestSent": "아직 요청을 보내지 않았습니다.",
+      "turnTraceLog": "턴 #{{turn}} 추적 로그 · {{count}}개 이벤트",
+      "turnTraceLog_other": "턴 #{{turn}} 추적 로그 · {{count}}개 이벤트"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "연결",
+      "subtitle": "모델 인스턴스를 실행하는 데 사용되는 제공업체 계정",
+      "noPermission": "연결을 볼 권한이 없습니다.",
+      "count": "{{count}}개 연결",
+      "count_other": "{{count}}개 연결",
+      "addConnection": "연결 추가",
+      "empty": "아직 연결이 없습니다. 시작하려면 새로 추가하세요.",
+      "deleteConfirm": "연결 \"{{label}}\"을 제거하시겠어요? 바인딩된 인스턴스가 작동 중지됩니다.",
+      "errors": {
+        "loadFailed": "연결 로드 실패",
+        "deleteFailed": "연결 삭제 실패"
+      },
+      "columns": {
+        "label": "레이블",
+        "provider": "제공업체",
+        "endpoint": "엔드포인트",
+        "status": "상태"
+      },
+      "status": {
+        "enabled": "활성화됨",
+        "disabled": "비활성화됨"
+      },
+      "actions": {
+        "models": "모델",
+        "edit": "편집",
+        "remove": "제거"
+      }
+    },
+    "form": {
+      "backToConnections": "연결로 돌아가기",
+      "editTitle": "연결 편집",
+      "addTitle": "연결 추가",
+      "enabled": "활성화됨",
+      "editSubtitle": "제공업체 계정 설정 업데이트",
+      "addSubtitle": "새 제공업체 계정 등록",
+      "sectionTitle": "연결 세부 사항",
+      "sectionDesc": "요청을 수행하는 데 사용되는 제공업체 계정, 자격 증명 및 엔드포인트.",
+      "provider": "제공업체",
+      "groups": {
+        "directApi": "직접 API",
+        "cloudPlatform": "클라우드 플랫폼",
+        "subscription": "구독",
+        "browserSession": "브라우저 세션",
+        "selfHosted": "자체 호스팅"
+      },
+      "upstreamProvider": {
+        "label": "제공업체",
+        "hintLabel": "(업스트림 제공업체 이름)",
+        "placeholder": "예: deepseek, mistral, groq",
+        "description": "이 엔드포인트가 속한 서비스의 이름을 지정합니다. 이 연결의 모델은 이를 ID 접두사로 사용합니다(예: <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "이름",
+        "hint": "참조되는 모든 위치에서 이 연결을 식별하므로 고유해야 합니다. 비워두면 <code>{{suggested}}</code>를 사용합니다."
+      },
+      "credentialsBlankHint": "기존 값을 유지하려면 자격 증명 필드를 비워두세요.",
+      "save": "저장",
+      "create": "생성",
+      "cancel": "취소",
+      "oauth": {
+        "unknown": "unknown",
+        "accountExpires": "계정: {{account}} — {{expires}}에 만료",
+        "unknownError": "알 수 없는 오류"
+      },
+      "errors": {
+        "notFound": "연결을 찾을 수 없습니다",
+        "loadFailed": "연결 로드 실패",
+        "updateFailed": "연결 업데이트 실패",
+        "createFailed": "연결 생성 실패"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "모델로 돌아가기",
+      "title": "모델 검색",
+      "subtitle": "사용 가능한 모델을 찾아보고 라우팅 구성에 추가합니다",
+      "count": "{{count}}개 모델",
+      "filteredCount": "{{count}}개 중 {{filtered}}개",
+      "free": "무료",
+      "add": "추가",
+      "addAgain": "다시 추가",
+      "loadFailed": "카탈로그 로드 실패: {{error}}",
+      "filters": {
+        "search": "검색",
+        "searchPlaceholder": "모델 ID 또는 이름…",
+        "provider": "제공업체",
+        "allProviders": "모든 제공업체",
+        "context": "문맥",
+        "ctxOptions": {
+          "all": "모두",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "가격/1M",
+        "priceOptions": {
+          "all": "모두",
+          "free": "무료",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "표시",
+        "configured": "구성됨",
+        "embedding": "임베딩",
+        "resetFilters": "필터 재설정"
+      },
+      "empty": {
+        "noMatches": "필터와 일치하는 모델이 없습니다."
+      },
+      "columns": {
+        "model": "모델",
+        "provider": "제공업체",
+        "context": "문맥",
+        "input": "입력/1M",
+        "output": "출력/1M"
+      },
+      "badges": {
+        "configured": "구성됨",
+        "embedding": "embedding",
+        "runsLocally": "로컬에서 실행"
+      },
+      "pagination": {
+        "prev": "이전",
+        "next": "다음",
+        "range": "{{count}}개 중 {{start}}–{{end}}"
+      }
+    },
+    "form": {
+      "backToModels": "모델로 돌아가기",
+      "title": {
+        "add": "모델 추가",
+        "edit": "모델 편집",
+        "clone": "모델 복제"
+      },
+      "subtitle": {
+        "add": "새 LLM 제공업체 모델 등록",
+        "edit": "{{id}} 구성 수정",
+        "clone": "{{id}}에서 복제 - 저장하려면 새 ID 할당"
+      },
+      "errors": {
+        "modelNotFound": "모델을 찾을 수 없습니다",
+        "sourceModelNotFound": "소스 모델을 찾을 수 없습니다",
+        "loadFailed": "모델 로드 오류",
+        "idRequired": "모델 ID 필수",
+        "duplicateId": "모델 \"{{id}}\"는 이미 존재합니다 - 다른 사용자 정의 ID 설정",
+        "selectConnection": "연결 선택",
+        "saveFailed": "오류"
+      },
+      "badge": {
+        "yes": "yes",
+        "no": "no",
+        "override": "Override",
+        "auto": "Auto",
+        "default": "기본값: {{value}}",
+        "reset": "재설정"
+      },
+      "oauth": {
+        "unknownExpiry": "unknown",
+        "accountOk": "계정: {{account}} — {{expires}}에 만료",
+        "unknownError": "알 수 없는 오류"
+      },
+      "identification": {
+        "title": "모델 식별",
+        "description": "이 모델 구성의 고유 식별자 및 제공업체 설정.",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(선택 사항 — 기본값:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Routerly API 호출에서 이 모델을 참조할 때 사용되는 식별자.",
+        "provider": "제공업체",
+        "upstreamProviderHint": "(업스트림 제공업체 이름)",
+        "upstreamProviderPlaceholder": "예: deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly ID의 접두사로 사용됩니다(예:",
+        "upstreamProviderDescPost": ").",
+        "model": "모델",
+        "upstreamModelHint": "(업스트림 모델 ID)",
+        "upstreamModelPlaceholder": "예: deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "업스트림 API 엔드포인트로 전송되는 모델 식별자.",
+        "modelPreset": "모델 프리셋",
+        "customModelOption": "— custom model name —",
+        "customModelPlaceholder": "예: my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "연결 세부 사항",
+        "description": "요청을 수행하는 데 필요한 API 엔드포인트 및 인증 자격 증명.",
+        "preconfigured": "사전 구성됨",
+        "custom": "사용자 정의",
+        "connection": "연결",
+        "selectPlaceholder": "— 연결 선택 —",
+        "noneAvailable": "이 제공업체에 대해 사전 구성된 연결이 없습니다. 사용자 정의로 전환하거나 연결 페이지에서 새로 만드세요.",
+        "editHint": "나중에 이 연결을 편집하면 바인딩된 모든 모델이 업데이트됩니다."
+      },
+      "capabilities": {
+        "title": "기능",
+        "description": "이 모델의 유형 및 기능을 지정합니다.",
+        "embeddingModel": "임베딩 모델",
+        "embeddingModelHint": "이 모델은 벡터 임베딩을 생성합니다(채팅 완료 아님)"
+      },
+      "pricing": {
+        "title": "가격 & 문맥",
+        "description": "청구 및 라우팅에 사용되는 비용 매개변수 및 처리 제한.",
+        "inputPerMillion": "입력 $/1M",
+        "outputPerMillion": "출력 $/1M",
+        "cachePerMillion": "캐시 읽기 $/1M",
+        "cacheWritePerMillion": "캐시 쓰기 $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "문맥 윈도우",
+        "contextWindowHint": "(토큰, 선택 사항)"
+      },
+      "tiers": {
+        "title": "고급 — 가격 책정 계층",
+        "description": "메트릭이 임계값을 초과할 때 가격을 재정의합니다. 예: \"200,000개 문맥 토큰 이상에서 가격이 변경됩니다.\"",
+        "removeTier": "계층 제거",
+        "above": "위",
+        "metric": "메트릭",
+        "metricContextTokens": "문맥 토큰",
+        "overridePricing": "가격 재정의",
+        "addTier": "가격 책정 계층 추가"
+      },
+      "limits": {
+        "title": "제한",
+        "description": "이 모델에 대한 사용량 제한. 여러 규칙을 조합할 수 있습니다.",
+        "metric": "메트릭",
+        "type": "유형",
+        "addLimit": "제한 추가"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic(Pro/Max 구독)",
+        "openaiOauth": "OpenAI(ChatGPT Plus/Pro 구독)"
+      },
+      "saveChanges": "변경 사항 저장",
+      "createClone": "복제 생성",
+      "createModel": "모델 생성"
+    },
+    "page": {
+      "title": "모델",
+      "subtitle": "Routerly에 등록된 LLM 제공업체",
+      "tabs": {
+        "models": "모델",
+        "health": "상태"
+      },
+      "toolbar": {
+        "count": "{{count}}개 모델",
+        "count_other": "{{count}}개 모델",
+        "filteredCount": "{{count}}개 모델 중 {{filtered}}개",
+        "filteredCount_other": "{{count}}개 모델 중 {{filtered}}개"
+      },
+      "filters": {
+        "allProviders": "모든 제공업체",
+        "allConnections": "모든 연결",
+        "searchPlaceholder": "모델 필터링…"
+      },
+      "discover": "검색",
+      "addModel": "모델 추가",
+      "deleteConfirm": "모델 \"{{id}}\"을 제거하시겠어요?",
+      "empty": {
+        "noModels": "아직 모델이 없습니다. 시작하려면 새로 추가하세요.",
+        "noMatches": "활성 필터와 일치하는 모델이 없습니다."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "제공업체",
+        "endpoint": "엔드포인트",
+        "input": "입력 $/1M",
+        "output": "출력 $/1M",
+        "cache": "캐시 $/1M",
+        "context": "문맥 크기"
+      },
+      "actions": {
+        "test": "테스트",
+        "clone": "복제",
+        "edit": "편집",
+        "remove": "제거"
+      },
+      "pagination": {
+        "previous": "← 이전",
+        "next": "다음 →",
+        "pageOf": "페이지 {{page}}/{{totalPages}}",
+        "total": "({{count}}개 모델)",
+        "total_other": "({{count}}개 모델)"
+      },
+      "health": {
+        "emptyNoModels": "구성된 모델이 없습니다.",
+        "emptyNoMatches": "필터와 일치하는 모델이 없습니다.",
+        "resetAll": "모두 재설정",
+        "resetAllTitle": "모든 서킷 브레이커, 쿨다운 및 잠금 재설정",
+        "resetTitle": "서킷 브레이커 재설정",
+        "confirmResetModel": "모델 \"{{id}}\"의 서킷 브레이커를 재설정하시겠어요?",
+        "confirmResetAll": "모든 복원력 상태를 재설정하시겠어요? 이는 모든 서킷 브레이커, 쿨다운 및 잠금을 지웁니다.",
+        "errors": {
+          "resetModelFailed": "서킷 브레이커 재설정 실패",
+          "resetAllFailed": "복원력 상태 재설정 실패"
+        },
+        "columns": {
+          "model": "모델",
+          "provider": "제공업체",
+          "status": "상태",
+          "circuit": "서킷",
+          "errorRate": "오류율(5m)",
+          "p95Latency": "P95 레이턴시(1h)",
+          "requests": "요청(1h)",
+          "lastSuccess": "마지막 성공",
+          "cooldownLockout": "쿨다운/잠금"
+        },
+        "status": {
+          "healthy": "건강함",
+          "degraded": "성능 저하",
+          "unavailable": "사용 불가",
+          "cooldown": "쿨다운",
+          "nodata": "데이터 없음"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "복구 중",
+          "tripped": "트립됨"
+        },
+        "time": {
+          "never": "never",
+          "now": "now",
+          "secondsAgo": "{{count}}s ago",
+          "minutesAgo": "{{count}}m ago",
+          "hoursAgo": "{{count}}h ago",
+          "daysAgo": "{{count}}d ago",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "cooldown {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "실험",
+      "subtitle": "라우터를 서로 비교하는 A/B 테스트",
+      "noPermission": "실험을 볼 권한이 없습니다.",
+      "count": "{{count}}개 실험",
+      "count_other": "{{count}}개 실험",
+      "newExperiment": "새 실험",
+      "empty": "아직 실험이 없습니다. 라우터를 직접 비교하려면 새로 만드세요.",
+      "deleteConfirm": "실험 \"{{name}}\"을 삭제하시겠어요? 이는 실행 취소할 수 없습니다.",
+      "noToken": "토큰 없음",
+      "noTokenTitle": "토큰이 없으면 클라이언트가 이 실험에 도달할 수 없습니다",
+      "errors": {
+        "loadFailed": "실험 로드 실패",
+        "deleteFailed": "실험 삭제 실패"
+      },
+      "columns": {
+        "name": "이름",
+        "variants": "변형",
+        "rotation": "회전",
+        "created": "생성됨"
+      },
+      "actions": {
+        "edit": "실험 편집",
+        "remove": "삭제"
+      }
+    },
+    "layout": {
+      "backToExperiments": "실험으로 돌아가기",
+      "newExperiment": "새 실험",
+      "loading": "로드 중...",
+      "experimentId": "실험 ID:",
+      "disabledTabTitle": "이 탭을 잠금 해제하려면 먼저 실험을 저장하세요",
+      "errors": {
+        "notFound": "실험을 찾을 수 없습니다"
+      },
+      "tabs": {
+        "config": "구성",
+        "metrics": "메트릭",
+        "token": "토큰"
+      }
+    },
+    "config": {
+      "saved": "저장됨.",
+      "created": "실험이 생성되었습니다. 라우터 토큰 대신 이 토큰을 클라이언트에 가리킵니다. 다시 표시되지 않습니다.",
+      "copy": "복사",
+      "copied": "복사됨!",
+      "done": "완료",
+      "saving": "저장 중...",
+      "create": "실험 생성",
+      "save": "변경 사항 저장",
+      "cancel": "취소",
+      "trafficSplit": "트래픽 분할",
+      "errors": {
+        "loadRoutersFailed": "라우터 로드 실패",
+        "saveFailed": "실험 저장 실패",
+        "copyFailed": "복사 실패: 토큰을 수동으로 선택 및 복사하세요."
+      },
+      "fields": {
+        "name": "이름",
+        "namePlaceholder": "저렴한 vs 프리미엄 라우팅",
+        "description": "설명",
+        "optional": "(선택 사항)",
+        "descriptionPlaceholder": "이 테스트가 해결하려는 것",
+        "minSamples": "변형당 최소 호출",
+        "minSamplesHint": "이 이하이면 메트릭 탭이 비교를 아직 결정적이지 않다고 표시합니다.",
+        "rotation": "회전",
+        "stickyOn": "다음에 고정",
+        "stickyKey": "고정 키"
+      },
+      "variants": {
+        "title": "변형",
+        "desc": "각 변형은 기존 라우터이며 전체적으로: 모델, 라우팅 및 가드레일이 모두 적용됩니다. 테스트는 최소 2개가 필요합니다.",
+        "routerAriaLabel": "변형 {{index}} 라우터",
+        "routerPlaceholder": "라우터 선택",
+        "labelAriaLabel": "변형 {{index}} 레이블",
+        "labelPlaceholder": "레이블(선택 사항)",
+        "weightAriaLabel": "변형 {{index}} 가중치",
+        "weightPlaceholder": "가중치",
+        "removeTitle": "변형 {{index}} 제거",
+        "add": "변형 추가"
+      },
+      "judge": {
+        "title": "판사",
+        "desc": "선택 사항: 모델이 각 샘플 답변을 읽고 기준에 대해 0-10으로 점수를 매깁니다. 모든 판단된 호출은 다른 모든 모델 호출처럼 청구되는 추가 모델 호출입니다.",
+        "enable": "판사 모델로 답변 점수 매기기",
+        "model": "판사 모델",
+        "modelPlaceholder": "모델 선택",
+        "criteria": "기준",
+        "criteriaPlaceholder": "라인당 하나, 예:\n질문한 질문에 답합니다\n사실을 유지합니다\n요청된 형식을 유지합니다",
+        "sampleRate": "판단된 호출의 비율(%)"
+      }
+    },
+    "metrics": {
+      "loading": "로드 중...",
+      "callsMeasured": "{{count}}개 호출 측정됨",
+      "callsMeasured_other": "{{count}}개 호출 측정됨",
+      "empty": "이 창에 아직 호출이 없습니다. 클라이언트를 실험 토큰에 가리켜서 비교를 시작하세요.",
+      "notConclusive": "아직 결정적이지 않습니다: 모든 변형이 이 창에서 최소 {{minSamples}}개 호출이 필요합니다.",
+      "explanation": "각 쌍의 더 좋은 그림이 강조됩니다: 호출당 더 저렴, 더 빠름, 더 높은 판사 점수. 값 아래의 백분율은 최상 옵션으로부터의 거리입니다. 판사 점수는 실험의 전체 수명에 걸친 실행 평균이므로 창이 좁혀지지 않는 유일한 그림입니다.",
+      "lowSample": "낮은 샘플",
+      "lowSampleTitle": "이 창에서 {{minSamples}}개 호출 미만",
+      "judgedCallsTitle": "실험이 시작된 이후 판사가 점수를 매긴 {{count}}개 답변",
+      "judgedCallsTitle_other": "실험이 시작된 이후 판사가 점수를 매긴 {{count}}개 답변",
+      "errors": {
+        "loadFailed": "메트릭 로드 실패"
+      },
+      "columns": {
+        "variant": "변형",
+        "calls": "호출",
+        "share": "공유",
+        "errors": "오류",
+        "tokens": "토큰 입력/출력",
+        "cost": "비용",
+        "costPerCall": "비용/호출",
+        "avgLatency": "평균 레이턴시",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "판사 점수"
+      }
+    },
+    "token": {
+      "desc": "클라이언트는 라우터처럼 실험을 정확히 호출합니다: 동일한 기본 URL, 라우터 토큰 대신 이 토큰. 각 요청은 한 변형에 착지하고 해당 변형의 라우터에 청구됩니다.",
+      "baseUrlLabel": "OpenAI 또는 Anthropic SDK의 기본 URL, API 키로서의 실험 토큰 포함:",
+      "created": "토큰이 생성되었습니다. 지금 복사하세요, 다시 표시되지 않습니다.",
+      "copy": "복사",
+      "copied": "복사됨!",
+      "newToken": "새 토큰",
+      "empty": "이 실험에 토큰이 없습니다. 클라이언트가 호출할 수 있도록 새로 만드세요.",
+      "revokeConfirm": "토큰 \"{{snippet}}...\"을 취소하시겠어요? 이를 사용하는 클라이언트가 즉시 작동 중지됩니다.",
+      "revokeTitle": "토큰 취소",
+      "errors": {
+        "createFailed": "토큰 생성 실패",
+        "revokeFailed": "토큰 취소 실패",
+        "copyFailed": "복사 실패: 토큰을 수동으로 선택 및 복사하세요."
+      },
+      "columns": {
+        "created": "생성됨",
+        "lastUsed": "마지막 사용"
+      }
+    }
+  },
+  "overview": {
+    "title": "개요",
+    "subtitle": "사용량 요약 및 비용 분류",
+    "noPermission": "사용량 데이터를 볼 권한이 없습니다.",
+    "costByModel": "모델별 비용",
+    "noCostRecorded": "이 기간에 기록된 비용이 없습니다.",
+    "callsByModel": "모델별 호출",
+    "columns": {
+      "model": "모델",
+      "calls": "호출",
+      "errors": "오류",
+      "cost": "비용"
+    },
+    "stats": {
+      "totalCalls": "총 호출",
+      "callsBreakdown": "{{routing}} 라우팅 · {{completion}} 완료",
+      "successRate": "성공률",
+      "ofAllRequests": "모든 요청 중",
+      "errors": "오류",
+      "failedRequests": "실패한 요청",
+      "models": "모델",
+      "registered": "등록됨",
+      "routers": "라우터",
+      "active": "활성"
+    },
+    "connectCard": {
+      "title": "클라이언트 연결",
+      "desc": "Claude Code, Codex, Cursor 및 {{count}}개 더를 이 게이트웨이에 가리킵니다."
+    }
+  },
+  "login": {
+    "emailLabel": "이메일",
+    "passwordLabel": "비밀번호",
+    "signIn": "로그인",
+    "errors": {
+      "loginFailed": "로그인 실패",
+      "totpFailed": "2FA 확인 실패"
+    },
+    "totp": {
+      "title": "이중 인증",
+      "backupPrompt": "백업 코드를 입력하세요.",
+      "appPrompt": "인증 앱의 6자리 코드를 입력하세요.",
+      "backupCodeLabel": "백업 코드",
+      "authenticatorCodeLabel": "인증 코드",
+      "verify": "확인",
+      "useAuthenticatorInstead": "대신 인증 앱 사용",
+      "useBackupInstead": "대신 백업 코드 사용"
+    }
+  },
+  "setup": {
+    "welcome": "환영합니다! 설정을 시작해보겠습니다.",
+    "welcomeSubtitle": "첫 관리자 계정을 만들어서 Routerly 관리를 시작하세요.",
+    "betaBadge": "🚧 베타",
+    "betaNotice": "Routerly은 활발히 진화하고 있습니다. 버그가 발생할 수 있습니다.",
+    "betaFeedback": "당신의 피드백은 그것이 무엇이 되는지 형성하는 데 도움이 됩니다 -",
+    "betaLink": "문제 보고 또는 아이디어 공유",
+    "emailLabel": "관리자 이메일",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "비밀번호",
+    "passwordPlaceholder": "최소 8자",
+    "confirmLabel": "비밀번호 확인",
+    "confirmPlaceholder": "비밀번호 다시 입력",
+    "submit": "관리자 계정 생성",
+    "errors": {
+      "mismatch": "비밀번호가 일치하지 않습니다",
+      "tooShort": "비밀번호는 최소 8자여야 합니다",
+      "setupFailed": "설정 실패"
+    }
+  },
+  "audit": {
+    "empty": "감사 항목을 찾을 수 없습니다.",
+    "errors": {
+      "loadFailed": "감사 로그 로드 실패"
+    },
+    "filters": {
+      "period": "기간",
+      "user": "사용자",
+      "userPlaceholder": "이메일 또는 사용자 ID",
+      "action": "작업",
+      "actionPlaceholder": "예: model:create",
+      "result": "결과",
+      "results": {
+        "all": "모두",
+        "success": "성공",
+        "forbidden": "금지됨",
+        "error": "오류"
+      },
+      "refresh": "새로고침"
+    },
+    "columns": {
+      "timestamp": "타임스탬프",
+      "user": "사용자",
+      "action": "작업",
+      "endpoint": "엔드포인트",
+      "result": "결과",
+      "details": "상세"
+    },
+    "pagination": {
+      "previous": "이전",
+      "next": "다음",
+      "page": "페이지 {{page}}/{{totalPages}}",
+      "total": "({{count}}개 총계)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "사용량",
+      "live": "라이브",
+      "subtitle": "상세 호출 로그 및 모델별 분류",
+      "updatedAt": "· {{time}}에 업데이트됨",
+      "poll": {
+        "off": "끄기",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● 라이브",
+      "liveButtonTitle": {
+        "disable": "라이브 모드 비활성화",
+        "enable": "라이브 모드 활성화(매 2초 새로고침)"
+      },
+      "refreshNow": "↻ 지금",
+      "refreshNowTitle": "지금 새로고침",
+      "filters": {
+        "period": "기간",
+        "router": "라우터",
+        "model": "모델",
+        "token": "토큰",
+        "caller": "호출자",
+        "type": "유형",
+        "status": "상태",
+        "allRouters": "모든 라우터",
+        "allModels": "모든 모델",
+        "allTokens": "모든 토큰",
+        "resetFilters": "필터 재설정",
+        "all": "모두",
+        "success": "성공",
+        "blocked": "차단됨",
+        "error": "오류"
+      },
+      "caller": {
+        "all": "모두",
+        "completion": "완료",
+        "routing": "라우터",
+        "guardrail": "가드레일",
+        "judge": "판사"
+      },
+      "callerBadge": {
+        "completion": "completion",
+        "routing": "router",
+        "guardrail": "guardrail",
+        "judge": "judge"
+      },
+      "errors": {
+        "loadFailedPrefix": "사용량 데이터 로드 실패:",
+        "retry": "다시 시도"
+      },
+      "stats": {
+        "totalCalls": "총 호출",
+        "completionCalls": "완료 호출",
+        "routerCalls": "라우터 호출",
+        "guardrailCalls": "가드레일 호출",
+        "blockedCalls": "차단된 호출",
+        "errors": "오류"
+      },
+      "table": {
+        "rank": "순위",
+        "model": "모델",
+        "provider": "제공업체",
+        "calls": "호출",
+        "errors": "오류",
+        "successRate": "성공률",
+        "avgLatency": "평균 레이턴시",
+        "p95Latency": "P95 레이턴시",
+        "inputTokens": "입력 토큰",
+        "outputTokens": "출력 토큰",
+        "costPer1k": "비용/1K",
+        "cost": "비용(USD)",
+        "bestCostPerformance": "최고 비용-성능"
+      },
+      "showMoreModels": "{{count}}개 더 많은 모델 표시",
+      "showMoreModels_other": "{{count}}개 더 많은 모델 표시",
+      "showFewerModels": "더 적은 모델 표시",
+      "recentCalls": {
+        "title": "최근 호출",
+        "empty": "이 기간의 사용 기록이 없습니다.",
+        "columns": {
+          "time": "시간",
+          "router": "라우터",
+          "model": "모델",
+          "type": "유형",
+          "caller": "호출자",
+          "in": "입력",
+          "out": "출력",
+          "cost": "비용",
+          "latency": "레이턴시",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "상태"
+        }
+      },
+      "pagination": {
+        "previous": "이전",
+        "next": "다음",
+        "pageOf": "페이지 {{page}}/{{totalPages}}",
+        "totalRecords": "({{count}}개 총 기록)"
+      }
+    },
+    "record": {
+      "back": "뒤로",
+      "title": "호출 상세",
+      "notFoundTitle": "기록을 찾을 수 없습니다",
+      "notFoundBody": "사용량 기록 {{id}}을 로드할 수 없습니다.",
+      "errors": {
+        "loadFailed": "기록 로드 실패"
+      },
+      "sections": {
+        "identity": "식별",
+        "tokensAndCost": "토큰 & 비용",
+        "performanceAndOutcome": "성능 & 결과",
+        "traceLog": "추적 로그"
+      },
+      "fields": {
+        "recordId": "기록 ID",
+        "router": "라우터",
+        "token": "토큰",
+        "model": "모델",
+        "callType": "호출 유형",
+        "requestType": "요청 유형",
+        "inputTokens": "입력 토큰",
+        "outputTokens": "출력 토큰",
+        "totalTokens": "전체 토큰",
+        "costUsd": "비용(USD)",
+        "costUnknown": "알 수 없음",
+        "latency": "레이턴시",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "결과",
+        "timestamp": "타임스탬프",
+        "guardrailTriggered": "가드레일 트리거됨",
+        "blockedBy": "다음에 의해 차단됨",
+        "piiRedacted": "개인정보 제거됨"
+      },
+      "errorMessage": "오류 메시지",
+      "eventCount": "{{count}}개 이벤트",
+      "eventCount_other": "{{count}}개 이벤트",
+      "noTrace": "추적 사용 가능하지 않습니다. 추적 데이터는 새 호출에 대해서만 캡처됩니다."
+    }
+  },
+  "playground": {
+    "title": "플레이그라운드",
+    "subtitle": "모델 테스트, 응답 비교 및 프롬프트 프리셋 저장.",
+    "mode": {
+      "single": "단일",
+      "compare": "비교"
+    },
+    "token": {
+      "label": "토큰:",
+      "labelA": "토큰 A",
+      "labelB": "토큰 B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "A와 동일",
+      "unknownToken": "알 수 없는 토큰"
+    },
+    "presets": {
+      "button": "프리셋",
+      "panelTitle": "프리셋",
+      "saveCurrent": "현재 저장",
+      "namePlaceholder": "프리셋 이름...",
+      "save": "저장",
+      "empty": "아직 프리셋이 없습니다.",
+      "delete": "프리셋 삭제"
+    },
+    "streamingDisabled": {
+      "banner": "스트리밍을 사용할 수 없습니다",
+      "bannerBody": "이 라우터에는 활성 응답 차단 가드레일이 있습니다. Routerly는 전달 전에 전체 응답을 검사해야 하므로 응답이 모두 한 번에 도착합니다.",
+      "tooltip": "스트리밍을 사용할 수 없습니다: 응답 차단 가드레일은 전달 전에 전체 응답을 검사하도록 요구합니다.",
+      "ariaLabel": "스트리밍 불가"
+    },
+    "systemPrompt": "시스템 프롬프트",
+    "model": "모델",
+    "modelPlaceholder": "자동(라우터 기본값)",
+    "params": {
+      "temp": "온도",
+      "maxTokens": "최대 토큰",
+      "topP": "Top-p"
+    },
+    "stream": "스트림",
+    "clear": "지우기",
+    "empty": {
+      "noMessages": "아직 메시지가 없습니다.",
+      "enterToken": "위에 라우터 토큰을 입력하여 시작하세요."
+    },
+    "reasoning": "추론",
+    "blockedDefault": "이 메시지는 가드레일에 의해 차단되었습니다.",
+    "truncated": "잘림 — 최대 토큰으로 응답이 잘렸습니다",
+    "bufferedNote": "보안 검토를 위해 보유 중",
+    "errors": {
+      "onlyImages": "이미지 첨부만 지원됩니다."
+    },
+    "rawToggle": {
+      "rendered": "렌더링됨",
+      "raw": "raw"
+    },
+    "inputPlaceholder": "메시지 입력...",
+    "attachImage": "이미지 첨부",
+    "attachedImageAlt": "첨부됨",
+    "attachmentAlt": "첨부 파일",
+    "debug": {
+      "title": "디버그",
+      "clear": "지우기",
+      "hide": "디버그 숨기기",
+      "show": "디버그 표시",
+      "empty": "아직 디버그 데이터가 없습니다.",
+      "emptyHint": "메시지를 보내 라우팅 상세를 확인합니다.",
+      "turnTraceLog": "턴 #{{turn}} 추적 로그"
+    },
+    "compare": {
+      "modelLabel": "모델 {{label}}:",
+      "modelSelectPlaceholder": "모델 선택...",
+      "noMessages": "아직 메시지가 없습니다.",
+      "debugTurns": "디버그({{count}}개 턴)",
+      "debugTurns_other": "디버그({{count}}개 턴)",
+      "guardrailTokensTitle": "가드레일 판사 토큰",
+      "stop": "중지",
+      "inputPlaceholder": "동일한 메시지를 두 모델로 보내기..."
+    }
+  },
+  "help": {
+    "title": "도움말 & 지원",
+    "subtitle": "저희가 도와드릴 준비가 되어 있습니다 — 언제든지 답변을 찾거나 연락하세요.",
+    "docs": {
+      "title": "문서",
+      "subtitle": "가이드, API 참조 및 구성 문서",
+      "body": "공식 문서는 시작하기부터 고급 라우팅 정책, 제공업체 설정, 예산 및 전체 API 참조까지 모든 것을 다룹니다.",
+      "openLink": "문서 열기"
+    },
+    "issues": {
+      "title": "버그 보고 또는 기능 제안",
+      "subtitle": "GitHub 이슈 열기 — 2분이면 됩니다",
+      "body": "GitHub 이슈는 버그를 보고하거나 개선을 제안하는 가장 좋은 방법입니다. 더 빨리 해결할 수 있도록 다음을 포함하세요: 무엇을 했는지, 어떤 일이 일어날 것으로 예상했는지, 실제로 무엇이 일어났는지.",
+      "showTemplate": "이슈 템플릿 표시",
+      "reportBug": "버그 보고",
+      "requestFeature": "기능 요청"
+    },
+    "issueTemplate": {
+      "whatHappened": "무엇이 일어났나요?",
+      "whatHappenedHint": "평범한 말로 문제를 설명하세요",
+      "stepsToReproduce": "재현 단계",
+      "expectedBehaviour": "예상 동작",
+      "expectedBehaviourHint": "보고 싶었던 것",
+      "version": "Routerly 버전",
+      "versionHint": "`routerly --version` 실행 또는 설정 → 정보 확인"
+    },
+    "email": {
+      "title": "지원팀에 문의",
+      "subtitle": "모든 메시지를 읽고 최대한 빨리 답변해 드립니다",
+      "body": "GitHub 이슈에 맞지 않는 모든 것 - 청구 질문, 개인적인 우려 또는 그냥 인사를 하고 싶으면 저희에게 연락하세요."
+    },
+    "faq": {
+      "title": "자주 묻는 질문",
+      "subtitle": "가장 일반적인 질문에 대한 빠른 답변",
+      "items": {
+        "connect": {
+          "q": "앱을 Routerly에 연결하려면 어떻게 하나요?",
+          "a": "OpenAI 또는 Anthropic SDK를 Routerly 인스턴스에 가리킵니다. 기본 URL을 http://your-host:3000/v1(OpenAI 호환) 또는 http://your-host:3000/anthropic(Anthropic 호환)으로 바꾸고, API 키로 라우터 토큰을 사용합니다. 끝입니다 - 다른 변경은 필요 없습니다."
+        },
+        "openaiCompat": {
+          "q": "Routerly은 OpenAI SDK를 사용하는 도구와 호환되나요?",
+          "a": "예. Routerly은 드롭인 교체: 사용자 정의 기본 URL 및 API 키를 지원하는 모든 도구(LangChain, LlamaIndex, Cursor, Continue 등)가 즉시 작동합니다. Anthropic 형식 클라이언트의 경우 /anthropic 엔드포인트를 사용합니다."
+        },
+        "routing": {
+          "q": "모델 라우팅은 어떻게 작동하나요?",
+          "a": "각 라우터에는 요청을 받을 모델을 결정하는 라우팅 정책이 있습니다. 정책에는 라운드 로빈, 가장 저렴한, 가장 빠른 응답, 대체 체인 등이 포함됩니다. 라우터 → 라우팅 아래의 라우터별로 구성합니다."
+        },
+        "addModel": {
+          "q": "새 AI 모델을 어떻게 추가하나요?",
+          "a": "모델 → 모델 추가로 이동합니다. OpenAI 호환 제공업체(Ollama, LM Studio, 사용자 정의 엔드포인트) 또는 네이티브 Anthropic 엔드포인트를 추가할 수 있습니다. 기본 URL, API 키 및 모델 ID를 입력하면 Routerly이 나머지를 처리합니다."
+        },
+        "dataStored": {
+          "q": "내 데이터가 저장되나요? 프롬프트가 기록되나요?",
+          "a": "Routerly은 자체 호스팅되며 데이터를 기계에만 저장합니다(기본적으로 ~/.routerly/). 프롬프트와 응답은 Routerly에서 절대 어디론가 전송되지 않습니다. 요청 로그는 로컬에 저장되며 라우터별로 활성화한 경우에만 저장됩니다."
+        },
+        "routerToken": {
+          "q": "라우터 토큰이란 무엇이며 제공업체 API 키와 어떻게 다른가요?",
+          "a": "라우터 토큰은 앱 또는 팀원이 Routerly로 인증하기 위해 주는 자격 증명입니다. 제공업체 API 키와는 별개이며 Routerly이 서버 측에 안전하게 저장합니다. 앱은 실제 제공업체 키를 절대 볼 수 없습니다."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}}개 사용자",
+    "countLabel_other": "{{count}}개 사용자",
+    "addButton": "사용자 추가",
+    "columns": {
+      "email": "이메일",
+      "role": "역할",
+      "routers": "라우터"
+    },
+    "allRouters": "모두",
+    "resetTwoFaTitle": "2FA 재설정",
+    "resetTwoFaConfirm": "{{email}}의 2FA를 재설정하시겠어요? 다시 등록해야 합니다.",
+    "deleteConfirm": "이 사용자를 삭제하시겠어요?",
+    "emptyTitle": "아직 사용자가 없습니다.",
+    "noPermission": "사용자를 볼 권한이 없습니다.",
+    "modal": {
+      "title": "사용자 추가",
+      "emailLabel": "이메일",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "비밀번호",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "역할",
+      "roleAdmin": "관리자",
+      "roleViewer": "뷰어",
+      "cancelButton": "취소",
+      "submitButton": "사용자 추가"
+    },
+    "errors": {
+      "loadFailed": "사용자 로드 실패",
+      "addFailed": "오류"
+    }
+  },
+  "userEdit": {
+    "title": "사용자 편집",
+    "account": "계정",
+    "email": "이메일",
+    "role": "역할",
+    "changePassword": "비밀번호 변경",
+    "newPassword": "새 비밀번호",
+    "newPasswordHint": "(현재를 유지하려면 비워두기)",
+    "save": "저장",
+    "saved": "저장됨!",
+    "errors": {
+      "loadFailed": "사용자 로드 실패",
+      "saveFailed": "저장 실패"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "역할 및 권한을 관리합니다. 기본 제공 역할은 수정할 수 없습니다.",
+    "newRole": "새 역할",
+    "builtin": "built-in",
+    "edit": "편집",
+    "deleteConfirm": "이 역할을 삭제하시겠어요? 이 역할의 사용자가 영향을 받을 것입니다.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "예: operator",
+      "name": "이름",
+      "namePlaceholder": "역할 이름",
+      "permissions": "권한",
+      "create": "생성",
+      "save": "저장",
+      "cancel": "취소"
+    },
+    "permissions": {
+      "routerRead": "라우터 - 읽기",
+      "routerWrite": "라우터 - 쓰기",
+      "modelRead": "모델 - 읽기",
+      "modelWrite": "모델 - 쓰기",
+      "userRead": "사용자 - 읽기",
+      "userWrite": "사용자 - 쓰기",
+      "reportRead": "보고서 - 읽기",
+      "settingsRead": "설정 - 읽기",
+      "settingsWrite": "설정 - 쓰기",
+      "notificationWrite": "알림 - 쓰기",
+      "tokenRead": "토큰 - 읽기",
+      "tokenWrite": "토큰 - 쓰기",
+      "roleWrite": "역할 - 쓰기",
+      "auditRead": "감사 로그 - 읽기",
+      "modulesRead": "모듈 - 읽기",
+      "modulesManage": "모듈 - 관리",
+      "connectionsRead": "연결 - 읽기",
+      "connectionsManage": "연결 - 관리",
+      "resilienceRead": "복원력 - 읽기",
+      "resilienceManage": "복원력 - 관리",
+      "profilesRead": "라우팅 프로필 - 읽기",
+      "profilesManage": "라우팅 프로필 - 관리",
+      "optimizersRead": "최적화기 - 읽기",
+      "optimizersManage": "최적화기 - 관리",
+      "experimentsRead": "실험 - 읽기",
+      "experimentsManage": "실험 - 관리"
+    },
+    "errors": {
+      "loadFailed": "역할 로드 실패",
+      "updateFailed": "역할 업데이트 실패",
+      "createFailed": "역할 생성 실패",
+      "deleteFailed": "역할 삭제 실패"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "프로필",
+      "subtitle": "재사용 가능한 라우팅, 최적화기 및 보안 구성",
+      "noPermission": "프로필을 볼 권한이 없습니다.",
+      "newProfile": "새 {{kind}} 프로필",
+      "empty": "아직 {{kind}} 프로필이 없습니다.",
+      "builtin": "기본 제공",
+      "custom": "사용자 정의",
+      "view": "보기",
+      "edit": "편집",
+      "clone": "복제",
+      "delete": "삭제",
+      "deleteConfirm": "프로필 \"{{label}}\"을 삭제하시겠어요? 이는 실행 취소할 수 없습니다.",
+      "kindDescriptions": {
+        "routing": "요청에 어느 모델이 응답할지, 할 수 없을 때 무슨 일이 일어날지",
+        "optimizer": "제공업체로 전송되기 전에 프롬프트에서 제거할 내용",
+        "security": "트래픽에 적용되는 가드레일 및 개인정보 정책"
+      },
+      "columns": {
+        "label": "레이블",
+        "type": "유형",
+        "configuration": "구성",
+        "version": "버전"
+      },
+      "errors": {
+        "loadFailed": "프로필 로드 실패",
+        "deleteFailed": "프로필 삭제 실패"
+      }
+    },
+    "form": {
+      "backToProfiles": "프로필로 돌아가기",
+      "newProfileTitle": "새 {{kind}} 프로필",
+      "editProfileTitle": "{{label}} 편집",
+      "builtinHint": "기본 제공 프로필은 편집할 수 없습니다. 하나를 복제하여 사용자 정의하세요.",
+      "assignHint": "{{article}} {{kind}} 프로필은 모든 수의 라우터에 할당할 수 있습니다.",
+      "noPermission": "프로필을 볼 권한이 없습니다.",
+      "label": "레이블",
+      "optimizers": "최적화기",
+      "optimizersHint": "끌어서 재정렬하고 토글하여 활성화합니다. 위에서 아래로 순서대로 실행됩니다.",
+      "createProfile": "프로필 생성",
+      "saveProfile": "프로필 저장",
+      "cancel": "취소",
+      "copySuffix": "{{label}} copy",
+      "labelPlaceholders": {
+        "routing": "예: My Balanced Routing",
+        "optimizer": "예: My Prompt Trimmer",
+        "security": "예: My Strict Guardrails"
+      },
+      "errors": {
+        "notFound": "프로필을 찾을 수 없습니다.",
+        "loadFailed": "프로필 로드 실패",
+        "saveFailed": "프로필 저장 실패"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "연결로 돌아가기",
+    "title": "연결",
+    "docs": "문서",
+    "notEnabledPrefix": "클라이언트 구성기가 활성화되지 않았습니다. 관리자에게 다음 항목으로 활성화하도록 요청하세요",
+    "noClientPrefix": "이름이 지정된 클라이언트 없음",
+    "errors": {
+      "loadFailed": "클라이언트 로드 실패: {{error}}"
+    },
+    "oneCommand": {
+      "title": "가장 빠른: 한 명령",
+      "description": "{{client}}이 설치된 컴퓨터에서 실행합니다. {{configPath}}을 작성하면서 실행 취소할 수 있는 백업을 유지합니다."
+    },
+    "byHand": {
+      "titleAlt": "또는 수동으로 설정합니다",
+      "titleUi": "수동으로 설정합니다",
+      "titleConfigFile": "구성 파일을 설정합니다",
+      "setValuesIn": "{{configPath}}에서 이 값들을 설정합니다.",
+      "putThisIn": "이를 {{configPath}}에 넣으세요",
+      "replaceToken": "바꾸기",
+      "withRouterToken": "라우터 토큰으로:",
+      "createOne": "하나 만들기",
+      "onRoutersPage": "라우터 페이지에서.",
+      "modelLabel": "모델:",
+      "modelHint": "선택을 Routerly에 넘깁니다. 모든 모델 ID",
+      "modelsLink": "모델",
+      "worksToo": "도 작동합니다.",
+      "openaiCompatHint": "동일한 기본 URL, 키 및 모델은 \"OpenAI 호환\" 제공업체를 제공하는 모든 클라이언트에 적합합니다."
+    },
+    "mcp": {
+      "title": "MCP 서버",
+      "description": "위의 단계와는 별개: 이 단계는 {{client}}가 Routerly 도구를 호출할 수 있게 합니다. 다음을 사용하여 만든 개인 MCP 토큰이 필요합니다",
+      "orFromYour": "또는 당신의",
+      "profileLink": "profile"
+    },
+    "checkItWorked": {
+      "title": "작동했는지 확인하세요",
+      "restart": "{{client}}을 다시 시작하고, 메시지를 보낸 다음",
+      "usageLink": "사용량",
+      "cliReports": "동일한 컴퓨터에서 CLI는 찾는 것을 보고합니다:"
+    }
+  },
+  "connect": {
+    "title": "연결",
+    "subtitle": "AI 코딩 클라이언트를 이 게이트웨이에 가리킵니다. 설정 단계별로 클라이언트를 선택합니다.",
+    "llmLabel": "LLM",
+    "llmDescription": "해당 클라이언트 모델 트래픽을 Routerly 통해 라우팅합니다.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Routerly을 도구 서버로 로드합니다.",
+    "notEnabledPrefix": "클라이언트 구성기가 활성화되지 않았습니다. 관리자에게 다음 항목으로 활성화하도록 요청하세요",
+    "errors": {
+      "loadFailed": "클라이언트 로드 실패: {{error}}"
+    },
+    "oneCommand": {
+      "title": "한 명령",
+      "hint": "CLI가 구성 파일을 작성하므로 실행 취소할 수 있는 백업을 사용합니다."
+    },
+    "byHand": {
+      "title": "손으로",
+      "hint": "클라이언트 페이지에서 스니펫을 설정에 복사한 다음 다시 시작합니다."
+    },
+    "endpoint": {
+      "title": "모든 클라이언트를 여기에 가리킵니다",
+      "description": "OpenAI 또는 Anthropic SDK로 구축된 모든 것은 기본 URL과 키를 변경하여 작동합니다. 다른 것은 변경되지 않습니다: 요청 및 응답은 Routerly을 통해 이동합니다.",
+      "openaiBaseUrl": "OpenAI 기본 URL",
+      "anthropicBaseUrl": "Anthropic 기본 URL",
+      "apiKey": "API 키",
+      "model": "모델",
+      "apiKeyDescription": "라우터 토큰이 다음으로 전송됨",
+      "or": "또는",
+      "createOne": "하나 만들기",
+      "onRoutersPage": "라우터 페이지에서.",
+      "modelDescription": "Routerly이 선택할 수 있게 합니다. 모든 모델 ID",
+      "modelsLink": "모델",
+      "worksToo": "페이지도 작동합니다."
+    }
+  }
+}

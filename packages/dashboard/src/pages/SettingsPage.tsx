@@ -12,6 +12,7 @@ import { writeToClipboard } from '../utils/clipboard';
 import { isCaptureMode } from '../utils/captureMode';
 import { useAuth } from '../AuthContext';
 import { NOTIFICATION_EVENTS, normalizeUpdateChannel } from '@routerly/shared';
+import { SUPPORTED_LANGUAGES } from '../locales/languages';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
 
@@ -117,7 +118,7 @@ export function SettingsGeneralTab() {
     try {
       const s = await getSettings();
       setSettings(s);
-      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, usageRetention: s.usageRetention ?? {}, ...(s.notifications ? { notifications: s.notifications } : {}) });
+      setForm({ logLevel: s.logLevel, publicUrl: s.publicUrl || `http://localhost:${s.port}`, usageRetention: s.usageRetention ?? {}, defaultLanguage: s.defaultLanguage ?? 'en', ...(s.notifications ? { notifications: s.notifications } : {}) });
       // Version and uptime live on /api/system/info; a failure there must not hide the settings form.
       getSystemInfo().then(setInfo).catch(() => setInfo(null));
     } catch (e) {
@@ -288,6 +289,26 @@ export function SettingsGeneralTab() {
           </p>
         </div>
 
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Globe size={13} /> {t('settings.general.internationalization.heading')}
+        </h3>
+
+        <div className="form-group">
+          <label className="form-label">{t('settings.general.internationalization.defaultLanguage')}</label>
+          <SearchableSelect
+            options={SUPPORTED_LANGUAGES.map(l => ({ value: l.code, label: l.name }))}
+            value={form.defaultLanguage ?? 'en'}
+            placeholder={t('settings.general.internationalization.defaultLanguage')}
+            ariaLabel={t('settings.general.internationalization.defaultLanguage')}
+            onChange={v => field('defaultLanguage', v)}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            {t('settings.general.internationalization.defaultLanguageHint')}
+          </p>
+        </div>
       </div>
 
       <TelemetrySection
