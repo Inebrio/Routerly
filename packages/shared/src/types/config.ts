@@ -1188,8 +1188,8 @@ export interface UsageRecord {
   cachedInputTokens?: number;
   /** Input tokens written to prompt cache (Anthropic only; charged at cacheWritePerMillion rate) */
   cacheCreationInputTokens?: number;
-  /** Cost in USD */
-  cost: number;
+  /** Cost in USD. Null when no ModelConfig was resolved to price against (e.g. Passthrough traffic). */
+  cost: number | null;
   /** Latency in ms (from forwarding start to last byte received) */
   latencyMs: number;
   /** Time to first token in ms (streaming only) */

@@ -65,6 +65,7 @@ export function RouterGeneralTab() {
   const [form, setForm] = useState({
     name: '',
     kind: 'router' as RouterKind,
+    slug: '',
     timeoutMs: String(DEFAULT_ROUTER_TIMEOUT_MS),
     traceContent: false,
   });
@@ -74,6 +75,7 @@ export function RouterGeneralTab() {
       setForm({
         name: router.name,
         kind: router.kind ?? 'router',
+        slug: router.slug ?? '',
         timeoutMs: String(router.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS),
         traceContent: router.traceContent === true,
       });
@@ -82,6 +84,7 @@ export function RouterGeneralTab() {
 
   const isDirty = isEdit
     ? form.name !== (/* v8 ignore next */ router?.name ?? '') ||
+      form.slug !== (/* v8 ignore next */ router?.slug ?? '') ||
       form.timeoutMs !== String(/* v8 ignore next */ router?.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS) ||
       form.traceContent !== (/* v8 ignore next */ router?.traceContent === true)
     : form.name !== '';
@@ -101,12 +104,14 @@ export function RouterGeneralTab() {
             models: router!.models.map(m => ({ modelId: m.modelId })),
             timeoutMs: parseInt(form.timeoutMs),
             traceContent: form.traceContent,
+            ...(router!.kind === 'passthrough' ? { slug: form.slug } : {}),
           }
         : {
             name: form.name,
             ...(form.kind !== 'router' ? { kind: form.kind } : {}),
             models: [],
             timeoutMs: parseInt(form.timeoutMs),
+            ...(form.kind === 'passthrough' ? { slug: form.slug } : {}),
           };
 
       if (isEdit && router) {
@@ -177,7 +182,82 @@ export function RouterGeneralTab() {
   return (
     <>
       {/* ── Connection info (only when editing an existing router) ────────────── */}
-      {isEdit && router && (() => {
+      {isEdit && router && router.kind === 'passthrough' && (() => {
+        const root = (selectedEndpoint || window.location.origin).replace(/\/$/, '');
+        const passthroughBase = `${root}/passthrough/${router.slug ?? ''}`;
+        return (
+          <section style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 900 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                <Plug size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>How to connect</h2>
+              </div>
+              <p style={SECTION_TEXT}>
+                Passthrough forwards every request unmodified — use <strong>your own</strong>{' '}
+                upstream provider key as the API key, never a Routerly token. Routerly does
+                not store or issue a credential for this router; whatever the client sends
+                goes straight to the provider.
+              </p>
+              <p style={SECTION_TEXT}>
+                Budgets and limits do not apply to this router: cost is unknown for
+                Passthrough traffic, so it is never checked against or counted toward any
+                spend limit.
+              </p>
+              {endpointOptions.length > 1 && (
+                <SearchableSelect
+                  value={selectedEndpoint}
+                  onChange={setSelectedEndpoint}
+                  options={endpointOptions.map(opt => ({ value: opt, label: opt }))}
+                  style={{ marginBottom: 10, fontSize: '0.82rem', fontFamily: 'monospace', maxWidth: 420 }}
+                />
+              )}
+            </div>
+
+            <div>
+              <div style={SECTION_TITLE}>OpenAI SDK</div>
+              <p style={SECTION_TEXT}>
+                Base URL <code>{passthroughBase}</code> — no <code>/v1</code> suffix, the SDK
+                still appends its own path exactly as it would against the real OpenAI API.
+              </p>
+              <CopyBlock text={`from openai import OpenAI
+
+client = OpenAI(
+    base_url="${passthroughBase}",
+    api_key="<your OpenAI API key>",
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello!"}],
+)`} />
+            </div>
+
+            <div>
+              <div style={SECTION_TITLE}>Anthropic SDK</div>
+              <p style={SECTION_TEXT}>
+                Base URL <code>{passthroughBase}</code> — the SDK still appends{' '}
+                <code>/v1/messages</code> itself, exactly as it would against the real
+                Anthropic API.
+              </p>
+              <CopyBlock text={`from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="${passthroughBase}",
+    api_key="<your Anthropic API key>",
+)
+
+message = client.messages.create(
+    model="claude-opus-4-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}],
+)`} />
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* ── Connection info (only when editing an existing non-passthrough router) ────────────── */}
+      {isEdit && router && router.kind !== 'passthrough' && (() => {
         const root = (selectedEndpoint || window.location.origin).replace(/\/$/, '');
         // The two SDKs disagree on where the version prefix lives: the OpenAI
         // client appends the path to whatever base URL it is given, the
@@ -281,6 +361,22 @@ message = client.messages.create(
             required
           />
         </div>
+
+        {form.kind === 'passthrough' && (
+          <div className="form-group">
+            <label className="form-label">Path</label>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+              Becomes part of the URL clients call: <code>/passthrough/{form.slug || '<path>'}/...</code>
+            </p>
+            <input
+              className="form-input"
+              value={form.slug}
+              onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
+              placeholder="my-provider"
+              required
+            />
+          </div>
+        )}
 
         {/* ── Advanced Settings ─────────────────────────── */}
         <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 12 }}>

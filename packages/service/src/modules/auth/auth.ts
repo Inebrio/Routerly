@@ -66,7 +66,10 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     const url = request.url;
     // /mcp is self-authenticating (see modules/mcp/http.ts): it resolves the
     // router token and enforces the mcp scope itself, so skip the proxy auth here.
-    if (url === '/' || url === '/health' || url === '/metrics' || url.startsWith('/dashboard') || url.startsWith('/api/') || url.startsWith('/mcp')) return;
+    // /passthrough/* authenticates nothing of its own (RTR-03): the client's own
+    // upstream credential is forwarded byte-for-byte, never checked against a
+    // Routerly-issued token.
+    if (url === '/' || url === '/health' || url === '/metrics' || url.startsWith('/dashboard') || url.startsWith('/api/') || url.startsWith('/mcp') || url.startsWith('/passthrough/')) return;
 
     const incomingToken = extractRouterToken(request.headers);
     if (!incomingToken) {

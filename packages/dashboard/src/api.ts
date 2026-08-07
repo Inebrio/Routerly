@@ -404,6 +404,7 @@ export const getRouters = () => request<Router[]>('/routers');
 export const createRouter = (data: {
   name: string;
   kind?: RouterKind;
+  slug?: string;
   candidates?: { routerId: string; weight: number; limits?: Limit[] }[];
   routingModelId?: string;
   autoRouting?: boolean;
@@ -416,6 +417,7 @@ export const createRouter = (data: {
 export const updateRouter = (id: string, data: {
   name: string;
   kind?: RouterKind;
+  slug?: string;
   candidates?: { routerId: string; weight: number; limits?: Limit[] }[];
   routingModelId?: string;
   autoRouting?: boolean;

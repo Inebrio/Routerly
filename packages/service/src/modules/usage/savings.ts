@@ -135,7 +135,7 @@ export function computeSavings(
   let cacheCost = 0;
 
   for (const r of compared) {
-    comparedCost += r.cost;
+    comparedCost += r.cost ?? 0;
     comparedLatencyMs += r.latencyMs;
     comparedInputTokens += r.inputTokens;
     comparedOutputTokens += r.outputTokens;
@@ -262,7 +262,7 @@ export function computeSeries(
       buckets.set(key, point);
     }
     point.calls += 1;
-    point.cost += r.cost;
+    point.cost += r.cost ?? 0;
     point.inputTokens += r.inputTokens;
     point.outputTokens += r.outputTokens;
     point.cachedInputTokens += r.cachedInputTokens ?? 0;
