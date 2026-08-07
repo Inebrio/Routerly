@@ -1558,7 +1558,7 @@ describe('POST /api/routers', () => {
 // ─── Orchestrator (RTR-02) ────────────────────────────────────────────────────
 
 describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
-  it('returns 400 when an orchestrator is created with zero candidates (EC2)', async () => {
+  it('creates an orchestrator with zero candidates (RTR-09 2-step flow: create name+timeout only, add candidates via PUT after)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1574,8 +1574,9 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
       payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator' }),
     })
     await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(res.json().error).toBe('An orchestrator needs at least one candidate router')
+    expect(res.statusCode).toBe(201)
+    expect(res.json().kind).toBe('orchestrator')
+    expect(res.json().candidates).toEqual([])
   })
 
   it('returns 400 when a candidate targets another orchestrator (AC3)', async () => {

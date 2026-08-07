@@ -14,8 +14,22 @@ export interface CandidateLoopItem {
   weight: number;
 }
 
+export interface RunCandidateLoopOptions {
+  /**
+   * The Orchestrator's candidate loop (`orchestrate.ts`'s `forwardToRouter`) passes candidates
+   * already ranked by `scoreOrchestratorCandidates` (health/rate-limit/fairness blend, `weight`
+   * only a 0.0001 tiebreak) — re-sorting them here by raw `weight` would discard that ranking
+   * and route every request to the highest-weight candidate regardless of quality. Set `true` to
+   * try `candidates` in the order given, unsorted. Defaults to `false` (sort by weight
+   * descending), which is the correct behavior for the plain-Router model loop this was
+   * originally written for.
+   */
+  presorted?: boolean;
+}
+
 /**
- * @param candidates Unsorted candidate list; sorted by descending weight before iterating.
+ * @param candidates Candidate list. Sorted by descending weight before iterating, unless
+ *   `options.presorted` is set, in which case it is tried in the order given.
  * @param attempt Try one candidate. Return `true` once it has produced a result (success or a
  *   terminal outcome the caller wants to stop on) — the loop stops immediately. Return `false`
  *   to fall back to the next candidate.
@@ -25,9 +39,10 @@ export async function runCandidateLoop<T extends CandidateLoopItem>(
   candidates: T[],
   attempt: (candidate: T) => Promise<boolean>,
   onExhausted: () => void,
+  options?: RunCandidateLoopOptions,
 ): Promise<void> {
-  const sorted = [...candidates].sort((a, b) => b.weight - a.weight);
-  for (const candidate of sorted) {
+  const ordered = options?.presorted ? candidates : [...candidates].sort((a, b) => b.weight - a.weight);
+  for (const candidate of ordered) {
     const produced = await attempt(candidate);
     if (produced) return;
   }

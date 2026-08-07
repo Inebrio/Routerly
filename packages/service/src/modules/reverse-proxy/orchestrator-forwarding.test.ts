@@ -190,6 +190,39 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     expect(calledModelIds.every((id) => id === modelA.id || id === modelB.id)).toBe(true)
   })
 
+  it('B2: tries the quality-ranked candidate first, not the highest-weight one — the loop must not re-sort scoreOrchestratorCandidates\' order by raw weight', async () => {
+    buildPipeline()
+    const modelA = makeModel(`m-${randomUUID()}`)
+    const modelB = makeModel(`m-${randomUUID()}`)
+    await seedModels([modelA, modelB])
+    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id]) // weight 70, but recently all errors
+    const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id]) // weight 30, no history (perfect score)
+    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
+      { routerId: routerA.id, weight: 70 }, { routerId: routerB.id, weight: 30 },
+    ])
+    await writeConfig('routers', [orchestrator, routerA, routerB])
+
+    // Recent error history crashes candidate A's health score to 0 (weighted error rate
+    // over the circuit-breaker threshold) — a quality gap far above scoreOrchestratorCandidates'
+    // 0.0001 weight-tiebreak, so B must be tried first despite A's more-than-double weight.
+    const now = Date.now()
+    for (let i = 0; i < 5; i++) {
+      await appendUsageRecord({
+        id: randomUUID(), timestamp: new Date(now - i * 1000).toISOString(),
+        routerId: routerA.id, modelId: modelA.id, inputTokens: 1, outputTokens: 1, cost: 0,
+        latencyMs: 1, outcome: 'error', orchestratorId: orchestrator.id,
+      })
+    }
+
+    mockLlmChat.mockResolvedValueOnce(makeResponse(modelB.id))
+
+    const ctx = buildCtx(orchestrator)
+    await openaiAttempt.run(ctx)
+
+    expect(mockLlmChat).toHaveBeenCalledTimes(1)
+    expect((mockLlmChat.mock.calls[0]![1] as ModelConfig).id).toBe(modelB.id)
+  })
+
   it('EC3: a candidate deleted from the router config since it was scored is never attempted; the surviving candidate is used', async () => {
     buildPipeline()
     const survivorModel = makeModel(`m-${randomUUID()}`)
