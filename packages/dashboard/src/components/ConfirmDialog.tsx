@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface Props {
   message: string;
   onConfirm: () => void;
@@ -6,7 +8,8 @@ interface Props {
   danger?: boolean;
 }
 
-export function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = 'Confirm', danger = true }: Props) {
+export function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel, danger = true }: Props) {
+  const { t } = useTranslation();
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
@@ -16,12 +19,12 @@ export function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = 'Co
       <div className="card" style={{ maxWidth: 420, width: '90%', padding: 24 }}>
         <p style={{ marginBottom: 20 }}>{message}</p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-secondary" onClick={onCancel}>{t('common.cancel')}</button>
           <button
             className={danger ? 'btn btn-danger' : 'btn btn-primary'}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {confirmLabel ?? t('common.confirm')}
           </button>
         </div>
       </div>

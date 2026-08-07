@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Boxes, Plug, ShieldOff } from 'lucide-react';
 import {
@@ -9,6 +10,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../AuthContext';
 
 export function ConnectionsPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const canRead = can('connections:read');
   const canManage = can('connections:manage');
@@ -28,7 +30,7 @@ export function ConnectionsPage() {
       const conns = await getConnections();
       setConnections(conns);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load connections');
+      setError(e instanceof Error ? e.message : t('connections.list.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -36,7 +38,7 @@ export function ConnectionsPage() {
 
   function handleDelete(conn: Connection) {
     setConfirmState({
-      message: `Remove connection "${conn.label}"? Instances bound to it will stop working.`,
+      message: t('connections.list.deleteConfirm', { label: conn.label }),
       onConfirm: async () => {
         setConfirmState(null);
         setError('');
@@ -44,7 +46,7 @@ export function ConnectionsPage() {
           await deleteConnection(conn.id);
           setConnections(cs => cs.filter(c => c.id !== conn.id));
         } catch (e) {
-          setError(e instanceof Error ? e.message : 'Failed to delete connection');
+          setError(e instanceof Error ? e.message : t('connections.list.errors.deleteFailed'));
         }
       },
     });
@@ -54,11 +56,11 @@ export function ConnectionsPage() {
     return (
       <>
         <div className="page-header">
-          <h1>Connections</h1>
-          <p>Provider accounts used to run model instances</p>
+          <h1>{t('connections.list.title')}</h1>
+          <p>{t('connections.list.subtitle')}</p>
         </div>
         <div className="page-body">
-          <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view connections.</p></div>
+          <div className="empty-state"><ShieldOff size={40} /><p>{t('connections.list.noPermission')}</p></div>
         </div>
       </>
     );
@@ -67,8 +69,8 @@ export function ConnectionsPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Connections</h1>
-        <p>Provider accounts used to run model instances</p>
+        <h1>{t('connections.list.title')}</h1>
+        <p>{t('connections.list.subtitle')}</p>
       </div>
       <div className="page-body">
         {error && <div className="form-error" style={{ marginBottom: 20 }}>{error}</div>}
@@ -79,26 +81,26 @@ export function ConnectionsPage() {
           <>
             <div className="toolbar">
               <span className="toolbar-title">
-                {connections.length} connection{connections.length !== 1 ? 's' : ''}
+                {t('connections.list.count', { count: connections.length })}
               </span>
               {canManage && (
                 <button className="btn btn-primary" onClick={() => navigate('/dashboard/connections/new')}>
-                  <Plus size={16} /> Add Connection
+                  <Plus size={16} /> {t('connections.list.addConnection')}
                 </button>
               )}
             </div>
 
             {connections.length === 0 ? (
-              <div className="empty-state"><Plug size={40} /><p>No connections yet. Add one to get started.</p></div>
+              <div className="empty-state"><Plug size={40} /><p>{t('connections.list.empty')}</p></div>
             ) : (
               <div className="table-wrap" style={{ overflowX: 'auto' }}>
                 <table style={{ minWidth: 700 }}>
                   <thead>
                     <tr>
-                      <th>Label</th>
-                      <th>Provider</th>
-                      <th>Endpoint</th>
-                      <th>Status</th>
+                      <th>{t('connections.list.columns.label')}</th>
+                      <th>{t('connections.list.columns.provider')}</th>
+                      <th>{t('connections.list.columns.endpoint')}</th>
+                      <th>{t('connections.list.columns.status')}</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -122,19 +124,19 @@ export function ConnectionsPage() {
                         <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{conn.endpoint || '—'}</span></td>
                         <td>
                           <span style={{ fontSize: '0.8rem', color: conn.enabled ? 'var(--success)' : 'var(--text-muted)' }}>
-                            {conn.enabled ? 'Enabled' : 'Disabled'}
+                            {conn.enabled ? t('connections.list.status.enabled') : t('connections.list.status.disabled')}
                           </span>
                         </td>
                         <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
-                          <Link to={`/dashboard/models?connection=${encodeURIComponent(conn.id)}`} className="btn-icon" title="Models">
+                          <Link to={`/dashboard/models?connection=${encodeURIComponent(conn.id)}`} className="btn-icon" title={t('connections.list.actions.models')}>
                             <Boxes size={15} />
                           </Link>
                           {canManage && (
                             <>
-                              <button className="btn-icon" onClick={() => navigate(`/dashboard/connections/${encodeURIComponent(conn.id)}/edit`)} title="Edit">
+                              <button className="btn-icon" onClick={() => navigate(`/dashboard/connections/${encodeURIComponent(conn.id)}/edit`)} title={t('connections.list.actions.edit')}>
                                 <Edit2 size={15} />
                               </button>
-                              <button className="btn-icon danger" onClick={() => handleDelete(conn)} title="Remove">
+                              <button className="btn-icon danger" onClick={() => handleDelete(conn)} title={t('connections.list.actions.remove')}>
                                 <Trash2 size={15} />
                               </button>
                             </>

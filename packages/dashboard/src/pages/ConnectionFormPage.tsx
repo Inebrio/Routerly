@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import { providersConf, suggestConnectionLabel } from '@routerly/shared';
@@ -31,17 +32,18 @@ function defaultEndpoint(providerId: string): string {
  */
 const CLOUD_PROVIDERS = new Set(['azure-openai', 'bedrock', 'vertex']);
 const SELF_HOSTED_PROVIDERS = new Set(['ollama', 'custom']);
-const PROVIDER_GROUPS = ['Direct API', 'Cloud platform', 'Subscription', 'Browser session', 'Self-hosted'] as const;
+const PROVIDER_GROUPS = ['directApi', 'cloudPlatform', 'subscription', 'browserSession', 'selfHosted'] as const;
 
-function providerGroup(p: ProviderDescriptor): string {
-  if (p.supportLevel === 'oauth') return 'Subscription';
-  if (p.supportLevel === 'web') return 'Browser session';
-  if (CLOUD_PROVIDERS.has(p.id)) return 'Cloud platform';
-  if (SELF_HOSTED_PROVIDERS.has(p.id)) return 'Self-hosted';
-  return 'Direct API';
+function providerGroup(p: ProviderDescriptor): typeof PROVIDER_GROUPS[number] {
+  if (p.supportLevel === 'oauth') return 'subscription';
+  if (p.supportLevel === 'web') return 'browserSession';
+  if (CLOUD_PROVIDERS.has(p.id)) return 'cloudPlatform';
+  if (SELF_HOSTED_PROVIDERS.has(p.id)) return 'selfHosted';
+  return 'directApi';
 }
 
 export function ConnectionFormPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
@@ -89,7 +91,7 @@ export function ConnectionFormPage() {
               vertexLocation: c.vertexLocation ?? '',
             });
           } else {
-            setErr('Connection not found');
+            setErr(t('connections.form.errors.notFound'));
           }
         } else {
           const first = descriptors[0]?.id ?? '';
@@ -97,7 +99,7 @@ export function ConnectionFormPage() {
           setValues(v => ({ ...v, endpoint: defaultEndpoint(first) }));
         }
       } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Failed to load connection');
+        setErr(e instanceof Error ? e.message : t('connections.form.errors.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -110,10 +112,10 @@ export function ConnectionFormPage() {
     try {
       const res = await testOpenAIOAuth(values.apiKey || undefined);
       if (res.ok) {
-        const expStr = res.expiresAt ? new Date(res.expiresAt).toLocaleString() : 'unknown';
-        setOauthTest({ status: 'ok', msg: `Account: ${res.accountId} — expires ${expStr}` });
+        const expStr = res.expiresAt ? new Date(res.expiresAt).toLocaleString() : t('connections.form.oauth.unknown');
+        setOauthTest({ status: 'ok', msg: t('connections.form.oauth.accountExpires', { account: res.accountId, expires: expStr }) });
       } else {
-        setOauthTest({ status: 'error', msg: res.error ?? 'Unknown error' });
+        setOauthTest({ status: 'error', msg: res.error ?? t('connections.form.oauth.unknownError') });
       }
     } catch (e) {
       setOauthTest({ status: 'error', msg: e instanceof Error ? e.message : String(e) });
@@ -166,7 +168,7 @@ export function ConnectionFormPage() {
       }
       navigate('/dashboard/connections');
     } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${isEditing ? 'update' : 'create'} connection`);
+      setErr(e instanceof Error ? e.message : (isEditing ? t('connections.form.errors.updateFailed') : t('connections.form.errors.createFailed')));
       setSaving(false);
     }
   }
@@ -192,12 +194,12 @@ export function ConnectionFormPage() {
     <>
       <div className="page-header">
         <button className="btn-icon" onClick={goBack} style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}>
-          <ArrowLeft size={16} /><span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Connections</span>
+          <ArrowLeft size={16} /><span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>{t('connections.form.backToConnections')}</span>
         </button>
         {/* Same width as the form below, so the toggle sits over the form column
             instead of drifting to the far edge of the page. */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, maxWidth: 800 }}>
-          <h1>{isEditing ? 'Edit Connection' : 'Add Connection'}</h1>
+          <h1>{isEditing ? t('connections.form.editTitle') : t('connections.form.addTitle')}</h1>
           {/* Whether the connection is live is a property of the whole page, not one more
               field to fill in, so it sits by the title instead of mid-form. */}
           <label htmlFor="conn-enabled" style={{
@@ -206,10 +208,10 @@ export function ConnectionFormPage() {
           }}>
             <input type="checkbox" id="conn-enabled" checked={enabled}
               onChange={e => setEnabled(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
-            Enabled
+            {t('connections.form.enabled')}
           </label>
         </div>
-        <p>{isEditing ? 'Update the provider account settings' : 'Register a new provider account'}</p>
+        <p>{isEditing ? t('connections.form.editSubtitle') : t('connections.form.addSubtitle')}</p>
       </div>
 
       <div className="page-body">
@@ -217,18 +219,19 @@ export function ConnectionFormPage() {
           {err && <div className="form-error">{err}</div>}
 
           <div className="form-section">
-            <h3 className="section-title">Connection details</h3>
-            <p className="section-desc">Provider account, credentials, and endpoint used to perform requests.</p>
+            <h3 className="section-title">{t('connections.form.sectionTitle')}</h3>
+            <p className="section-desc">{t('connections.form.sectionDesc')}</p>
 
             <div className="form-group">
-              <label className="form-label">Provider</label>
+              <label className="form-label">{t('connections.form.provider')}</label>
               {PROVIDER_GROUPS.map(group => {
                 const inGroup = providers.filter(p => providerGroup(p) === group);
                 if (inGroup.length === 0) return null;
+                const groupLabel = t(`connections.form.groups.${group}`);
                 return (
                   <div key={group} className="provider-group">
-                    <div className="provider-group-title">{group}</div>
-                    <div className="provider-grid" role="group" aria-label={group}>
+                    <div className="provider-group-title">{groupLabel}</div>
+                    <div className="provider-grid" role="group" aria-label={groupLabel}>
                       {inGroup.map(p => (
                         <button key={p.id} type="button" className="provider-tile"
                           aria-pressed={p.id === providerId}
@@ -251,24 +254,23 @@ export function ConnectionFormPage() {
             {providerId === 'custom' && (
               <div className="form-group">
                 <label className="form-label" htmlFor="conn-provider-name">
-                  Provider <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(upstream provider name)</span>
+                  {t('connections.form.upstreamProvider.label')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('connections.form.upstreamProvider.hintLabel')}</span>
                 </label>
                 <input id="conn-provider-name" className="form-input"
                   value={providerName} onChange={e => setProviderName(e.target.value)}
-                  placeholder="e.g. deepseek, mistral, groq" required />
+                  placeholder={t('connections.form.upstreamProvider.placeholder')} required />
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  Names the service this endpoint belongs to. Models on this connection use it as their ID prefix (e.g. <code style={{ fontSize: '0.72rem' }}>deepseek/deepseek-r1</code>).
+                  <Trans i18nKey="connections.form.upstreamProvider.description" components={{ code: <code style={{ fontSize: '0.72rem' }} /> }} />
                 </div>
               </div>
             )}
 
             <div className="form-group">
-              <label className="form-label" htmlFor="conn-name">Name</label>
+              <label className="form-label" htmlFor="conn-name">{t('connections.form.name.label')}</label>
               <input id="conn-name" className="form-input" placeholder={suggestedLabel}
                 value={label} onChange={e => setLabel(e.target.value)} />
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Identifies this connection everywhere it is referenced, so it has to be unique.
-                Leave it blank to use <code style={{ fontSize: '0.72rem' }}>{suggestedLabel}</code>.
+                <Trans i18nKey="connections.form.name.hint" values={{ suggested: suggestedLabel }} components={{ code: <code style={{ fontSize: '0.72rem' }} /> }} />
               </div>
             </div>
 
@@ -283,16 +285,16 @@ export function ConnectionFormPage() {
                 : undefined}
             />
             {isEditing && (
-              <p className="section-desc" style={{ marginTop: 4 }}>Leave credential fields blank to keep existing values.</p>
+              <p className="section-desc" style={{ marginTop: 4 }}>{t('connections.form.credentialsBlankHint')}</p>
             )}
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? <span className="spinner" /> : <><Save size={14} /> {isEditing ? 'Save' : 'Create'}</>}
+              {saving ? <span className="spinner" /> : <><Save size={14} /> {isEditing ? t('connections.form.save') : t('connections.form.create')}</>}
             </button>
             <button type="button" className="btn btn-secondary" onClick={goBack}>
-              <X size={14} /> Cancel
+              <X size={14} /> {t('connections.form.cancel')}
             </button>
           </div>
         </form>

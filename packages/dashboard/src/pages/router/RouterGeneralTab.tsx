@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { Copy, Check, ChevronDown, ArrowRight, Plug } from 'lucide-react';
 import { createRouter, updateRouter, getSettings, type RouterKind } from '../../api';
@@ -10,11 +11,13 @@ import { AUTO_MODEL, PLACEHOLDER_TOKEN } from '../connectShared';
 import { writeToClipboard } from '../../utils/clipboard';
 import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
 
-const KIND_OPTIONS: { value: RouterKind; label: string; description: string }[] = [
-  { value: 'router', label: 'Router', description: 'Routes requests across model candidates.' },
-  { value: 'orchestrator', label: 'Orchestrator', description: 'Routes requests across other routers instead of models.' },
-  { value: 'passthrough', label: 'Passthrough', description: 'Forwards requests unmodified.' },
-];
+function useKindOptions(t: (k: string) => string): { value: RouterKind; label: string; description: string }[] {
+  return [
+    { value: 'router', label: t('routers.general.kind.router.label'), description: t('routers.general.kind.router.description') },
+    { value: 'orchestrator', label: t('routers.general.kind.orchestrator.label'), description: t('routers.general.kind.orchestrator.description') },
+    { value: 'passthrough', label: t('routers.general.kind.passthrough.label'), description: t('routers.general.kind.passthrough.description') },
+  ];
+}
 
 const SECTION_TITLE: React.CSSProperties = {
   fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -26,6 +29,8 @@ const SECTION_TEXT: React.CSSProperties = {
 };
 
 export function RouterGeneralTab() {
+  const { t } = useTranslation();
+  const KIND_OPTIONS = useKindOptions(t);
   const navigate = useNavigate();
   const { router, setRouter } = useRouter();
   const isEdit = Boolean(router);
@@ -129,7 +134,7 @@ export function RouterGeneralTab() {
         }
       }
     } catch (err) {
-      setErr(err instanceof Error ? err.message : 'Error saving router');
+      setErr(err instanceof Error ? err.message : t('routers.general.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -141,7 +146,7 @@ export function RouterGeneralTab() {
       await writeToClipboard(token);
       setCopied(true);
       setTimeout(/* v8 ignore next */ () => setCopied(false), 2000);
-    } catch { setErr('Copy failed — please select and copy the token manually.'); }
+    } catch { setErr(t('routers.general.errors.copyFailed')); }
   }
 
   // ── Token reveal view (after router creation) ───────────────────────────────
@@ -152,7 +157,7 @@ export function RouterGeneralTab() {
         <div style={{ display: 'flex', gap: 10, padding: '10px 14px', marginBottom: 16, background: 'color-mix(in srgb, var(--color-warning, #f59e0b) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 40%, transparent)', borderRadius: 8 }}>
           <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
           <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.55, color: 'var(--text-primary)' }}>
-            <strong>Save this token now.</strong> It won't be shown again — once you leave this screen it cannot be recovered.
+            <strong>{t('routers.general.tokenReveal.saveNow')}</strong> {t('routers.general.tokenReveal.saveNowHint')}
           </p>
         </div>
 
@@ -163,7 +168,7 @@ export function RouterGeneralTab() {
           </div>
           <button type="button" className="btn btn-secondary" onClick={() => copyToken(revealedToken.token)} style={{ flexShrink: 0 }}>
             {copied ? <Check size={15} /> : <Copy size={15} />}
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? t('routers.general.tokenReveal.copied') : t('routers.general.tokenReveal.copy')}
           </button>
         </div>
 
@@ -173,7 +178,7 @@ export function RouterGeneralTab() {
           style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6 }}
           onClick={() => navigate(`/dashboard/routers/${revealedToken.routerId}/general`)}
         >
-          Go to router <ArrowRight size={15} />
+          {t('routers.general.tokenReveal.goToRouter')} <ArrowRight size={15} />
         </button>
       </div>
     );
@@ -268,14 +273,18 @@ message = client.messages.create(
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
                 <Plug size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>How to connect</h2>
+                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>{t('routers.general.connect.heading')}</h2>
               </div>
               <p style={SECTION_TEXT}>
-                Point any OpenAI or Anthropic SDK at Routerly and use a{' '}
-                <Link to={`/dashboard/routers/${router.id}/token`}>router token</Link> as
-                the API key. Replace <code>{PLACEHOLDER_TOKEN}</code> below with yours.
-                Model <code>{AUTO_MODEL}</code> hands the choice to Routerly; any model id
-                from <Link to="/dashboard/models">Models</Link> works too.
+                <Trans
+                  i18nKey="routers.general.connect.intro"
+                  values={{ token: PLACEHOLDER_TOKEN, model: AUTO_MODEL }}
+                  components={{
+                    tokenLink: <Link to={`/dashboard/routers/${router.id}/token`} />,
+                    code: <code />,
+                    modelsLink: <Link to="/dashboard/models" />,
+                  }}
+                />
               </p>
               {endpointOptions.length > 1 && (
                 <SearchableSelect
@@ -288,8 +297,14 @@ message = client.messages.create(
             </div>
 
             <div>
-              <div style={SECTION_TITLE}>OpenAI SDK</div>
-              <p style={SECTION_TEXT}>Base URL <code>{openaiBase}</code>, the same one any &quot;OpenAI compatible&quot; provider field takes.</p>
+              <div style={SECTION_TITLE}>{t('routers.general.connect.openaiSdk')}</div>
+              <p style={SECTION_TEXT}>
+                <Trans
+                  i18nKey="routers.general.connect.openaiBaseUrlHint"
+                  components={{ code: <code /> }}
+                  values={{ baseUrl: openaiBase }}
+                />
+              </p>
               <CopyBlock text={`from openai import OpenAI
 
 client = OpenAI(
@@ -304,8 +319,14 @@ response = client.chat.completions.create(
             </div>
 
             <div>
-              <div style={SECTION_TITLE}>Anthropic SDK</div>
-              <p style={SECTION_TEXT}>Base URL <code>{root}</code>, without the <code>/v1</code>: the SDK adds it.</p>
+              <div style={SECTION_TITLE}>{t('routers.general.connect.anthropicSdk')}</div>
+              <p style={SECTION_TEXT}>
+                <Trans
+                  i18nKey="routers.general.connect.anthropicBaseUrlHint"
+                  components={{ code: <code /> }}
+                  values={{ baseUrl: root }}
+                />
+              </p>
               <CopyBlock text={`from anthropic import Anthropic
 
 client = Anthropic(
@@ -321,8 +342,13 @@ message = client.messages.create(
             </div>
 
             <div>
-              <div style={SECTION_TITLE}>curl</div>
-              <p style={SECTION_TEXT}>Check the wiring without installing anything, then look for the call in <Link to="/dashboard/usage">Usage</Link>.</p>
+              <div style={SECTION_TITLE}>{t('routers.general.connect.curl')}</div>
+              <p style={SECTION_TEXT}>
+                <Trans
+                  i18nKey="routers.general.connect.curlHint"
+                  components={{ usageLink: <Link to="/dashboard/usage" /> }}
+                />
+              </p>
               <CopyBlock text={`curl ${openaiBase}/chat/completions \\
   -H "Authorization: Bearer ${PLACEHOLDER_TOKEN}" \\
   -H "Content-Type: application/json" \\
@@ -337,12 +363,12 @@ message = client.messages.create(
 
         {!isEdit && (
           <div className="form-group">
-            <label className="form-label">Kind</label>
+            <label className="form-label">{t('routers.general.form.kind')}</label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-              Fixed once the router is created.
+              {t('routers.general.form.kindFixedHint')}
             </p>
             <SearchableSelect
-              ariaLabel="Router Kind"
+              ariaLabel={t('routers.general.form.kindAriaLabel')}
               value={form.kind}
               onChange={v => setForm(f => ({ ...f, kind: v as RouterKind }))}
               options={KIND_OPTIONS.map(k => ({ value: k.value, label: k.label, description: k.description }))}
@@ -352,12 +378,12 @@ message = client.messages.create(
         )}
 
         <div className="form-group">
-          <label className="form-label">Router Name</label>
+          <label className="form-label">{t('routers.general.form.routerName')}</label>
           <input
             className="form-input"
             value={form.name}
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-            placeholder="My App"
+            placeholder={t('routers.general.form.routerNamePlaceholder')}
             required
           />
         </div>
@@ -383,15 +409,15 @@ message = client.messages.create(
           <button type="button" onClick={() => setShowAdvanced(v => !v)}
             style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.82rem', fontWeight: 500, padding: '2px 0', userSelect: 'none' }}>
             <ChevronDown size={15} style={{ transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
-            Advanced settings
+            {t('routers.general.form.advancedSettings')}
           </button>
 
           {showAdvanced && (
             <div style={{ marginTop: 16 }}>
               <div className="form-group">
-                <label className="form-label">TTFT Timeout (ms)</label>
+                <label className="form-label">{t('routers.general.form.ttftTimeout')}</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                  If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration. Set it to 0 to wait as long as the provider takes.
+                  {t('routers.general.form.ttftTimeoutHint')}
                 </p>
                 <input
                   className="form-input"
@@ -404,11 +430,9 @@ message = client.messages.create(
               </div>
 
               <div className="form-group">
-                <label className="form-label">Trace content</label>
+                <label className="form-label">{t('routers.general.form.traceContent')}</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                  Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also
-                  record the prompts sent and the answers received. They are stored with the usage record and
-                  visible to anyone who can read reports.
+                  {t('routers.general.form.traceContentHint')}
                 </p>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer' }}>
                   <input
@@ -417,7 +441,7 @@ message = client.messages.create(
                     onChange={e => setForm(f => ({ ...f, traceContent: e.target.checked }))}
                     style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
                   />
-                  Capture prompts and answers
+                  {t('routers.general.form.capturePromptsAndAnswers')}
                 </label>
               </div>
 
@@ -427,7 +451,7 @@ message = client.messages.create(
 
         <div style={{ marginTop: 24 }}>
           <button type="submit" className="btn btn-primary" disabled={saving || (isEdit && !isDirty)}>
-            {saving ? <span className="spinner" /> : isEdit ? 'Save Changes' : 'Create Router'}
+            {saving ? <span className="spinner" /> : isEdit ? t('routers.general.form.saveChanges') : t('routers.general.form.createRouter')}
           </button>
         </div>
       </form>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, GripVertical } from 'lucide-react';
 import { OPTIMIZER_CATALOG, type OptimizerClass } from '@routerly/shared';
 import {
@@ -82,6 +83,7 @@ function CheckpointRow({ checkpoint, editable, onInstall }: {
   editable: boolean;
   onInstall: () => void;
 }) {
+  const { t } = useTranslation();
   const c = checkpoint;
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0' }}>
@@ -124,7 +126,7 @@ function CheckpointRow({ checkpoint, editable, onInstall }: {
         )}
       </div>
       {c.state === 'ready' ? (
-        <span style={{ fontSize: '0.68rem', color: 'var(--success)', whiteSpace: 'nowrap', paddingTop: 2 }}>Downloaded</span>
+        <span style={{ fontSize: '0.68rem', color: 'var(--success)', whiteSpace: 'nowrap', paddingTop: 2 }}>{t('common.optimizerSteps.downloaded')}</span>
       ) : c.state === 'absent' ? (
         <button
           type="button"
@@ -152,6 +154,7 @@ function LlmLinguaPanel({ state, value, onPick, onState, editable }: {
   onState: (next: LlmLinguaModelState) => void;
   editable: boolean;
 }) {
+  const { t } = useTranslation();
   const [err, setErr] = useState('');
   const ready = state.checkpoints.filter(c => c.state === 'ready');
   const picked = value === '' ? state.checkpoints.find(c => c.isDefault) : state.checkpoints.find(c => c.key === value);
@@ -189,7 +192,7 @@ function LlmLinguaPanel({ state, value, onPick, onState, editable }: {
       {err && <div style={{ fontSize: '0.68rem', color: 'var(--danger)', marginTop: 4 }}>{err}</div>}
       {ready.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>This step runs on</span>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{t('common.optimizerSteps.thisStepRunsOn')}</span>
           <SearchableSelect
             style={{ width: 260 }}
             ariaLabel="LLMLingua-2 checkpoint"
@@ -197,7 +200,7 @@ function LlmLinguaPanel({ state, value, onPick, onState, editable }: {
             disabled={!editable}
             onChange={onPick}
             options={[
-              { value: '', label: 'Default checkpoint' },
+              { value: '', label: t('common.optimizerSteps.defaultCheckpoint') },
               ...ready.map(c => ({ value: c.key, label: c.label })),
             ]}
           />

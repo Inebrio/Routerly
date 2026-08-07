@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { createNotificationChannel, getRoles, getUsers } from '../api';
 import type { Role, User } from '../api';
 import {
-  CHANNEL_PROVIDER_META,
+  getChannelProviderMeta,
   ChannelEditFields,
   RoutingEditFields,
   RecipientsEditFields,
@@ -42,6 +43,7 @@ function buildDefaults(provider: ChannelProvider): Record<string, unknown> {
 }
 
 export function NotificationChannelCreatePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const providerParam = searchParams.get('provider') as ChannelProvider | null;
@@ -60,6 +62,8 @@ export function NotificationChannelCreatePage() {
     getRoles().then(setRoles).catch(() => {});
     getUsers().then(setUsers).catch(() => {});
   }, []);
+
+  const channelProviderMeta = useMemo(() => getChannelProviderMeta(t), [t]);
 
   function selectProvider(p: ChannelProvider) {
     setProvider(p);
@@ -84,11 +88,11 @@ export function NotificationChannelCreatePage() {
         delete body['events'];
       }
       if (body['targets']) {
-        const t = body['targets'] as Record<string, unknown>;
+        const targets = body['targets'] as Record<string, unknown>;
         const clean: Record<string, unknown> = {};
-        if (Array.isArray(t['roles']) && (t['roles'] as string[]).length)             clean['roles']       = t['roles'];
-        if (Array.isArray(t['permissions']) && (t['permissions'] as string[]).length) clean['permissions'] = t['permissions'];
-        if (Array.isArray(t['users']) && (t['users'] as string[]).length)             clean['users']       = t['users'];
+        if (Array.isArray(targets['roles']) && (targets['roles'] as string[]).length)             clean['roles']       = targets['roles'];
+        if (Array.isArray(targets['permissions']) && (targets['permissions'] as string[]).length) clean['permissions'] = targets['permissions'];
+        if (Array.isArray(targets['users']) && (targets['users'] as string[]).length)             clean['users']       = targets['users'];
         if (Object.keys(clean).length) body['targets'] = clean;
         else delete body['targets'];
       }
@@ -100,7 +104,7 @@ export function NotificationChannelCreatePage() {
       const created = await createNotificationChannel(body);
       navigate(`/dashboard/settings/notifications/${created.id}`, { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create');
+      setError(e instanceof Error ? e.message : t('settings.notifications.create.errors.createFailed'));
     } finally {
       setSaving(false);
     }
@@ -118,21 +122,21 @@ export function NotificationChannelCreatePage() {
             onClick={() => navigate('/dashboard/settings/notifications')}
           >
             <ArrowLeft size={16} />
-            <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back to Notifications</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{t('settings.notifications.create.backToList')}</span>
           </button>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Choose a channel type</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>Select the notification provider to configure.</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('settings.notifications.create.pickerHeading')}</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>{t('settings.notifications.create.pickerSubtitle')}</p>
         </div>
 
         <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', maxWidth: 500 }}>
-          {CHANNEL_PROVIDER_META.map((p, i) => (
+          {channelProviderMeta.map((p, i) => (
             <button key={p.key} type="button"
               onClick={() => selectProvider(p.key)}
               style={{
                 display: 'flex', flexDirection: 'column', width: '100%',
                 padding: '12px 16px', background: 'none', border: 'none',
                 cursor: 'pointer', textAlign: 'left',
-                borderBottom: i < CHANNEL_PROVIDER_META.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: i < channelProviderMeta.length - 1 ? '1px solid var(--border)' : 'none',
               }}>
               <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{p.label}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.description}</span>
@@ -153,10 +157,10 @@ export function NotificationChannelCreatePage() {
           onClick={() => { setProvider(null); setForm({}); }}
         >
           <ArrowLeft size={16} />
-          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Change type</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{t('settings.notifications.create.changeType')}</span>
         </button>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>New {providerLabel(provider)} channel</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>Configure a new notification channel.</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{t('settings.notifications.create.heading', { provider: providerLabel(provider, t) })}</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>{t('settings.notifications.create.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} autoComplete="off" style={{ maxWidth: 600 }}>
@@ -180,40 +184,40 @@ export function NotificationChannelCreatePage() {
                 textTransform: 'capitalize',
               }}
             >
-              {tab}
+              {t(`settings.notifications.form.tabs.${tab}`)}
             </button>
           ))}
         </div>
 
         {activeTab === 'connection' && (
           <div className="form-section">
-            <h3 className="section-title">Channel settings</h3>
+            <h3 className="section-title">{t('settings.notifications.form.sections.channelSettings')}</h3>
             <div className="form-group">
               <label className="form-label">
-                Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                {t('settings.notifications.form.nameLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span>
               </label>
               <input
                 className="form-input"
                 value={typeof form['name'] === 'string' ? form['name'] : ''}
                 onChange={e => onChange('name', e.target.value || undefined)}
-                placeholder="Label for this channel"
+                placeholder={t('settings.notifications.form.namePlaceholder')}
               />
             </div>
-            <ChannelEditFields form={form} onChange={onChange} isEdit={false} />
+            <ChannelEditFields form={form} onChange={onChange} isEdit={false} t={t} />
           </div>
         )}
 
         {activeTab === 'routing' && (
           <div className="form-section">
-            <h3 className="section-title">Events and routing</h3>
-            <RoutingEditFields form={form} onChange={onChange} />
+            <h3 className="section-title">{t('settings.notifications.form.sections.eventsRouting')}</h3>
+            <RoutingEditFields form={form} onChange={onChange} t={t} />
           </div>
         )}
 
         {activeTab === 'recipients' && (
           <div className="form-section">
-            <h3 className="section-title">Recipients</h3>
-            <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+            <h3 className="section-title">{t('settings.notifications.form.sections.recipients')}</h3>
+            <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} t={t} />
           </div>
         )}
 
@@ -224,12 +228,12 @@ export function NotificationChannelCreatePage() {
             onClick={() => navigate('/dashboard/settings/notifications')}
             disabled={saving}
           >
-            Cancel
+            {t('settings.notifications.form.cancelButton')}
           </button>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving
-              ? <><span className="spinner" style={{ width: 14, height: 14 }} /> Creating…</>
-              : 'Create Channel'}
+              ? <><span className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.notifications.create.creatingButton')}</>
+              : t('settings.notifications.create.createButton')}
           </button>
         </div>
       </form>

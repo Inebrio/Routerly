@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 /**
  * TraceEntryRenderer
@@ -72,7 +74,21 @@ const OPTIMIZER_COLORS: Record<string, string> = {
   'applied': '#4ade80', 'unchanged': '#94a3b8', 'skipped': '#94a3b8', 'rolled-back': '#f59e0b',
 };
 
+const POLICY_TYPE_LABEL_KEY: Record<string, string> = {
+  'llm': 'common.trace.policyType.llm',
+  'rate-limit': 'common.trace.policyType.rateLimit',
+  'budget-remaining': 'common.trace.policyType.budgetRemaining',
+  'semantic-intent': 'common.trace.policyType.semanticIntent',
+  'model-preference': 'common.trace.policyType.modelPreference',
+};
+
+function policyTypeLabel(t: TFunction, type: string): string {
+  const key = POLICY_TYPE_LABEL_KEY[type];
+  return key ? t(key) : type;
+}
+
 export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
+  const { t } = useTranslation();
   const isModelPrompt  = e.message === 'model:prompt';
   const isModelRequest = e.message === 'model:request';
   const isModelSuccess = e.message === 'model:success';
@@ -116,7 +132,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
   const rawDetails = hasDetails ? (
     <details>
-      <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>raw details</summary>
+      <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.rawDetails')}</summary>
       <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
     </details>
   ) : null;
@@ -149,7 +165,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         <details>
           <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
             {thinkingText.substring(0, 80)}
-            {thinkingText.length > 80 ? '\u2026' : ''}
+            {thinkingText.length > 80 ? '…' : ''}
           </summary>
           <pre style={{ ...preStyle, margin: '4px 0 0', border: '1px solid rgba(167,139,250,0.3)' }}>
             {thinkingText}
@@ -160,14 +176,14 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {/* Metadati tecnici */}
           <details>
-            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>technical details</summary>
+            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.technicalDetails')}</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(baseDetails, null, 2)}</pre>
           </details>
 
           {/* System prompt sempre espanso (solo chiamate routing) */}
           {systemPrompt != null && (
             <>
-              <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 600, marginTop: 2 }}>system prompt</div>
+              <div style={{ fontSize: '0.75rem', color: '#a5b4fc', fontWeight: 600, marginTop: 2 }}>{t('common.trace.systemPrompt')}</div>
               <pre style={{ ...preStyle, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', color: '#c4b5fd' }}>
                 {String(systemPrompt)}
               </pre>
@@ -177,7 +193,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Response text (solo chiamate routing) */}
           {responseText != null && (
             <>
-              <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600, marginTop: 2 }}>response text</div>
+              <div style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600, marginTop: 2 }}>{t('common.trace.responseText')}</div>
               <pre style={{ ...preStyle, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', color: '#86efac' }}>
                 {String(responseText)}
               </pre>
@@ -188,7 +204,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {responseJSON != null && (
             <details>
               <summary style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
-                response JSON
+                {t('common.trace.responseJson')}
               </summary>
               <pre style={{ ...preStyle, margin: '4px 0 0' }}>
                 {JSON.stringify(responseJSON, null, 2)}
@@ -202,32 +218,32 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isCacheEmbedding ? (
         <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.32)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE EMBEDDING CALL</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('common.trace.cacheEmbeddingCall')}</span>
             {e.details?.fallback && (
               <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#7dd3fc', background: 'rgba(56,189,248,0.14)', padding: '1px 6px', borderRadius: 99 }}>
-                fallback #{String(e.details?.attempt ?? '—')}
+                {t('common.trace.fallbackAttempt', { attempt: String(e.details?.attempt ?? '—') })}
               </span>
             )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Embedding Model</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.embeddingModel')}</span>
               <span style={{ fontSize: '0.82rem', color: '#e0f2fe', fontFamily: 'monospace', fontWeight: 600 }}>{String(e.details?.modelId ?? '—')}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Upstream Model</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.upstreamModel')}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{String(e.details?.upstreamModelId ?? '—')}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Provider</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.provider')}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{String(e.details?.provider ?? '—')}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Source</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.source')}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{String(e.details?.source ?? '—')}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Endpoint</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.endpoint')}</span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{String(e.details?.endpoint ?? '—')}</span>
             </div>
           </div>
@@ -237,23 +253,23 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isCacheHit ? (
         <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE HIT</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('common.trace.cacheHit')}</span>
             {e.details?.ttlExtended && (
-              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#6ee7b7', background: 'rgba(16,185,129,0.15)', padding: '1px 6px', borderRadius: 99 }}>TTL extended</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#6ee7b7', background: 'rgba(16,185,129,0.15)', padding: '1px 6px', borderRadius: 99 }}>{t('common.trace.ttlExtended')}</span>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Model</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.model')}</span>
               <span style={{ fontSize: '0.82rem', color: '#10b981', fontFamily: 'monospace', fontWeight: 600 }}>{e.details?.modelId ?? '—'}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Similarity</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.similarity')}</span>
               <ScoreBar value={e.details?.similarity} />
             </div>
             {e.details?.embeddingModel && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Embedding</span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('common.trace.embedding')}</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.details.embeddingModel}</span>
               </div>
             )}
@@ -262,7 +278,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : isCacheMiss ? (
         <div style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>CACHE MISS</span>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('common.trace.cacheMiss')}</span>
           {e.details?.embeddingModel && (
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.details.embeddingModel}</span>
           )}
@@ -271,7 +287,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isIntake ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <details>
-            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>details</summary>
+            <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.details')}</summary>
             <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify({
               model: e.details?.model,
               messageCount: e.details?.messageCount,
@@ -280,7 +296,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           </details>
           {(e.details?.excludedByLimits ?? []).length > 0 && (
             <div>
-              <div style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>EXCLUDED BY LIMITS</div>
+              <div style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>{t('common.trace.excludedByLimits')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {(e.details.excludedByLimits as any[]).map((exc: any, i: number) => (
                   <div key={i} style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '5px 10px' }}>
@@ -306,7 +322,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Final ranking */}
           {e.details?.final?.length > 0 ? (
             <>
-              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>{t('common.trace.finalRanking')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {e.details.final.map((f: any) => (
                   <div key={f.rank} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-surface)', border: f.rank === 1 ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px' }}>
@@ -319,23 +335,23 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             </>
           ) : (
             <>
-              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>FINAL RANKING</div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>{t('common.trace.finalRanking')}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-                No ranking data (record may be corrupted or from older version)
+                {t('common.trace.noRankingData')}
               </div>
             </>
           )}
           {/* Per-policy winner table */}
-          <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>POLICY SCORES</div>
+          <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>{t('common.trace.policyScores')}</div>
           {(e.details?.policies ?? []).length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {e.details.policies.map((p: any, i: number) => (
                 <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
                     <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                      {p.type === 'llm' ? 'AI Routing' : p.type === 'rate-limit' ? 'Rate Limit' : p.type === 'budget-remaining' ? 'Budget Remaining' : p.type === 'semantic-intent' ? 'Semantic Intent' : p.type === 'model-preference' ? 'Model Preference' : p.type}
+                      {policyTypeLabel(t, p.type)}
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>weight {p.weight?.toFixed(2)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('common.trace.weight', { value: p.weight?.toFixed(2) })}</span>
                   </div>
                   {p.winner && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
@@ -345,7 +361,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                 )}
                 {p.scores?.length > 1 && (
                   <details>
-                    <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>all scores</summary>
+                    <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.allScores')}</summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
                       {p.scores.map((s: any, j: number) => (
                         <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -361,7 +377,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             </div>
           ) : (
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-              No policy data (record may be corrupted or from older version)
+              {t('common.trace.noPolicyData')}
             </div>
           )}
 
@@ -372,7 +388,9 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {e.details?.target === 'request' ? 'REQUEST' : 'RESPONSE'} GUARDRAIL {e.details?.block === true ? 'BLOCKED' : 'TRIGGERED'}
+              {e.details?.target === 'request'
+                ? (e.details?.block === true ? t('common.trace.requestGuardrailBlocked') : t('common.trace.requestGuardrailTriggered'))
+                : (e.details?.block === true ? t('common.trace.responseGuardrailBlocked') : t('common.trace.responseGuardrailTriggered'))}
             </span>
             <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#fca5a5', background: 'rgba(239,68,68,0.12)', padding: '1px 7px', borderRadius: 99, border: '1px solid rgba(239,68,68,0.25)' }}>
               {String(e.details?.target ?? '—')}
@@ -380,11 +398,11 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
             <div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Rule</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{t('common.trace.rule')}</div>
               <div style={{ fontSize: '0.82rem', color: '#fca5a5', fontFamily: 'monospace', fontWeight: 600 }}>{String(e.details?.rule ?? '—')}</div>
             </div>
             <div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>Action</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{t('common.trace.action')}</div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{[e.details?.block && 'block', e.details?.log && 'log'].filter(Boolean).join('+') || '—'}</div>
             </div>
           </div>
@@ -398,10 +416,10 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isGuardrailEvaluated ? (
         <div style={{ background: 'rgba(251,146,60,0.07)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fb923c', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            GUARDRAILS EVALUATED ({String(e.details?.target ?? '').toUpperCase()})
+            {t('common.trace.guardrailsEvaluated', { target: String(e.details?.target ?? '').toUpperCase() })}
             {Array.isArray(e.details?.rules) && (
               <span style={{ fontWeight: 500, marginLeft: 6, color: 'var(--text-muted)' }}>
-                {e.details.rules.length} rule{e.details.rules.length !== 1 ? 's' : ''}
+                {t('common.trace.ruleCount', { count: e.details.rules.length })}
               </span>
             )}
           </span>
@@ -423,11 +441,11 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                 borderRadius: isInjection ? 'var(--radius-sm)' : undefined,
               }}>
                 <span style={{ fontSize: '0.82rem', color: isInjection ? '#fca5a5' : 'var(--text-primary)', fontFamily: 'monospace', fontWeight: isInjection ? 700 : 400, flex: 1, minWidth: 0 }}>
-                  {isInjection ? 'Prompt injection' : r.rule}
+                  {isInjection ? t('common.trace.promptInjection') : r.rule}
                 </span>
                 {r.type && <Pill text={String(r.type)} color="#fb923c" />}
                 {r.target && <Pill text={String(r.target)} color="#94a3b8" />}
-                {r.injects === true && <Pill text="injects" color="#a78bfa" />}
+                {r.injects === true && <Pill text={t('common.trace.injects')} color="#a78bfa" />}
                 {typeof r.score === 'number' && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <ScoreBar value={r.score} />
@@ -439,7 +457,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                   </span>
                 )}
                 {typeof r.ms === 'number' && (
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{r.ms} ms</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{t('common.trace.ms', { value: r.ms })}</span>
                 )}
                 <span style={{ fontSize: '0.68rem', fontWeight: 700, color: outcomeColor, background: outcomeBg, border: `1px solid ${outcomeBorder}`, padding: '1px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>
                   {r.outcome}
@@ -454,7 +472,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                   try { parsed = JSON.parse(r.judgeRaw); } catch { /* non-JSON raw */ }
                   return (
                     <details style={{ width: '100%', marginTop: 2 }}>
-                      <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>Judge response</summary>
+                      <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.judgeResponse')}</summary>
                       <pre style={{ margin: '4px 0 0', fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowX: 'auto', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 8px' }}>
                         {parsed != null ? JSON.stringify(parsed, null, 2) : r.judgeRaw}
                       </pre>
@@ -468,7 +486,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : isPiiScrubbed ? (
         <div style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.06em' }}>PII SCRUBBED</span>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('common.trace.piiScrubbed')}</span>
           {Array.isArray(e.details?.entities) && e.details.entities.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {(e.details.entities as string[]).map((entity: string, i: number) => (
@@ -490,16 +508,16 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         return (
           <Box
             color={redacted.length > 0 ? '#f97316' : '#34d399'}
-            title={`PII SCANNED (${String(e.details?.target ?? e.panel ?? '').toUpperCase()})`}
+            title={t('common.trace.piiScanned', { target: String(e.details?.target ?? e.panel ?? '').toUpperCase() })}
             badge={e.details?.mode ? <Pill text={String(e.details.mode)} color="#94a3b8" /> : undefined}
           >
             <Facts items={[
-              ...(policies ? [['policies', `${policies.active ?? 0}/${policies.configured ?? 0}`] as [string, React.ReactNode]] : []),
-              ['entity types', entities.length],
-              ...(e.details?.customPatterns ? [['custom patterns', String(e.details.customPatterns)] as [string, React.ReactNode]] : []),
-              ...(e.details?.scanned != null ? [['scanned', String(e.details.scanned)] as [string, React.ReactNode]] : []),
-              ['redacted', redacted.length],
-              ...(e.details?.ms != null ? [['took', `${String(e.details.ms)} ms`] as [string, React.ReactNode]] : []),
+              ...(policies ? [[t('common.trace.policies'), `${policies.active ?? 0}/${policies.configured ?? 0}`] as [string, React.ReactNode]] : []),
+              [t('common.trace.entityTypes'), entities.length],
+              ...(e.details?.customPatterns ? [[t('common.trace.customPatterns'), String(e.details.customPatterns)] as [string, React.ReactNode]] : []),
+              ...(e.details?.scanned != null ? [[t('common.trace.scanned'), String(e.details.scanned)] as [string, React.ReactNode]] : []),
+              [t('common.trace.redacted'), redacted.length],
+              ...(e.details?.ms != null ? [[t('common.trace.took'), t('common.trace.ms', { value: String(e.details.ms) })] as [string, React.ReactNode]] : []),
             ]} />
             {redacted.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -512,7 +530,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             )}
             {entities.length > 0 && (
               <details>
-                <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>entity types scanned</summary>
+                <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.entityTypesScanned')}</summary>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
                   {entities.map((entity: string, i: number) => (
                     <span key={i} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border)', padding: '1px 7px', borderRadius: 99 }}>
@@ -527,10 +545,10 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       })()
 
       : isGuardrailInjected ? (
-        <Box color="#a78bfa" title="GUARDRAIL INJECTION" badge={<Pill text={String(e.details?.target ?? 'request')} color="#94a3b8" />}>
+        <Box color="#a78bfa" title={t('common.trace.guardrailInjection')} badge={<Pill text={String(e.details?.target ?? 'request')} color="#94a3b8" />}>
           <Facts items={[
-            ['rules', Array.isArray(e.details?.rules) ? e.details.rules.length : 0],
-            ['chars', String(e.details?.chars ?? 0)],
+            [t('common.trace.rules'), Array.isArray(e.details?.rules) ? e.details.rules.length : 0],
+            [t('common.trace.chars'), String(e.details?.chars ?? 0)],
           ]} />
           {Array.isArray(e.details?.rules) && e.details.rules.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -543,7 +561,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* The injected text itself is captured only for routers that opted in. */}
           {e.content?.injection != null && (
             <details>
-              <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>injected text</summary>
+              <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.injectedText')}</summary>
               <pre style={{ ...preStyle, margin: '4px 0 0', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.3)', color: '#c4b5fd' }}>
                 {String(e.content.injection)}
               </pre>
@@ -554,7 +572,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isOptimizerStep ? (
         <Box
           color={OPTIMIZER_COLORS[String(e.details?.outcome)] ?? '#94a3b8'}
-          title={`OPTIMIZER ${String(e.details?.id ?? '')}`}
+          title={t('common.trace.optimizer', { id: String(e.details?.id ?? '') })}
           badge={<>
             <Pill text={String(e.details?.outcome ?? '')} color={OPTIMIZER_COLORS[String(e.details?.outcome)] ?? '#94a3b8'} />
             {e.details?.klass && <Pill text={String(e.details.klass)} color="#94a3b8" />}
@@ -562,21 +580,21 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
         >
           <Facts items={[
             ...(e.details?.tokensBefore != null
-              ? [['tokens', `${String(e.details.tokensBefore)} → ${String(e.details.tokensAfter ?? e.details.tokensBefore)}`] as [string, React.ReactNode]]
+              ? [[t('common.trace.tokens'), `${String(e.details.tokensBefore)} → ${String(e.details.tokensAfter ?? e.details.tokensBefore)}`] as [string, React.ReactNode]]
               : []),
-            ...(e.details?.saved != null ? [['saved', `${String(e.details.saved)} tok`] as [string, React.ReactNode]] : []),
-            ...(e.details?.ms != null ? [['took', `${String(e.details.ms)} ms`] as [string, React.ReactNode]] : []),
-            ...(e.details?.reason ? [['reason', String(e.details.reason)] as [string, React.ReactNode]] : []),
+            ...(e.details?.saved != null ? [[t('common.trace.saved'), t('common.trace.tok', { value: String(e.details.saved) })] as [string, React.ReactNode]] : []),
+            ...(e.details?.ms != null ? [[t('common.trace.took'), t('common.trace.ms', { value: String(e.details.ms) })] as [string, React.ReactNode]] : []),
+            ...(e.details?.reason ? [[t('common.trace.reason'), String(e.details.reason)] as [string, React.ReactNode]] : []),
           ]} />
         </Box>
 
       ) : isBudgetChecked ? (
         <Box
           color={e.details?.allowed === false ? '#ef4444' : '#4ade80'}
-          title={e.details?.allowed === false ? 'BUDGET BLOCKED' : 'BUDGET OK'}
+          title={e.details?.allowed === false ? t('common.trace.budgetBlocked') : t('common.trace.budgetOk')}
           badge={<Pill text={String(e.details?.model ?? '—')} color={e.details?.allowed === false ? '#ef4444' : '#4ade80'} />}
         >
-          {e.details?.ms != null && <Facts items={[['took', `${String(e.details.ms)} ms`]]} />}
+          {e.details?.ms != null && <Facts items={[[t('common.trace.took'), t('common.trace.ms', { value: String(e.details.ms) })]]} />}
           {Array.isArray(e.details?.violated) && (e.details.violated as any[]).map((v: any, i: number) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               <span style={{ color: '#fca5a5', fontWeight: 600 }}>{String(v.metric)}</span>
@@ -589,17 +607,17 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
       ) : isEgressSent ? (
         <Box
           color={e.details?.error ? '#ef4444' : '#0ea5e9'}
-          title="EGRESS SENT"
+          title={t('common.trace.egressSent')}
           badge={<>
             <Pill text={String(e.details?.kind ?? '')} color={e.details?.error ? '#ef4444' : '#0ea5e9'} />
             {e.details?.protocol && <Pill text={String(e.details.protocol)} color="#94a3b8" />}
           </>}
         >
           <Facts items={[
-            ...(e.details?.status != null ? [['status', String(e.details.status)] as [string, React.ReactNode]] : []),
-            ...(e.details?.encoding ? [['encoding', String(e.details.encoding)] as [string, React.ReactNode]] : []),
-            ...(e.details?.frames != null ? [['frames', String(e.details.frames)] as [string, React.ReactNode]] : []),
-            ...(e.details?.bytes != null ? [['bytes', String(e.details.bytes)] as [string, React.ReactNode]] : []),
+            ...(e.details?.status != null ? [[t('common.trace.status'), String(e.details.status)] as [string, React.ReactNode]] : []),
+            ...(e.details?.encoding ? [[t('common.trace.encoding'), String(e.details.encoding)] as [string, React.ReactNode]] : []),
+            ...(e.details?.frames != null ? [[t('common.trace.frames'), String(e.details.frames)] as [string, React.ReactNode]] : []),
+            ...(e.details?.bytes != null ? [[t('common.trace.bytes'), String(e.details.bytes)] as [string, React.ReactNode]] : []),
           ]} />
           {e.details?.error && (
             <div style={{ fontSize: '0.78rem', color: 'var(--danger)', fontFamily: 'monospace' }}>{String(e.details.error)}</div>
@@ -608,7 +626,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
 
       ) : (
         <details>
-          <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>raw details</summary>
+          <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.rawDetails')}</summary>
           <pre style={{ ...preStyle, margin: '4px 0 0' }}>{JSON.stringify(e.details, null, 2)}</pre>
         </details>
       )}

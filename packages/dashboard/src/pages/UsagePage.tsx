@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { CALL_TYPES, REQUEST_TYPES, requestTypeLabel, type RequestType } from '@routerly/shared';
@@ -51,8 +53,9 @@ function fmtCallCost(n: number): string {
 }
 
 /** Who made the call: the client, or Routerly on its own behalf (routing, guardrail, experiment judge). */
-const CALLER_FILTER_LABELS = { all: 'All', completion: 'Completion', routing: 'Router', guardrail: 'Guardrail', judge: 'Judge' } as const;
-const CALLER_BADGE_LABELS = { completion: 'completion', routing: 'router', guardrail: 'guardrail', judge: 'judge' } as const;
+function callerFilterLabel(t: TFunction, key: 'all' | 'completion' | 'routing' | 'guardrail' | 'judge'): string {
+  return t(`usage.page.caller.${key}`);
+}
 /** Only the calls Routerly makes on its own behalf are colour-coded: most rows
  *  are completions, so badging those too would just tint the whole table. */
 const CALLER_COLORS: Record<string, string> = { routing: 'var(--accent)', guardrail: '#ef4444', judge: 'var(--warning)' };
@@ -68,6 +71,7 @@ const ALL_TIME: DateRange = { from: '', to: '', label: 'All time' };
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function UsagePage() {
+  const { t } = useTranslation();
   const providerLabel = useProviderLabels();
   const [stats, setStats]               = useState<UsageStats | null>(null);
   const [routers, setRouters]         = useState<Router[]>([]);
@@ -108,12 +112,12 @@ export function UsagePage() {
   const navigate = useNavigate();
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
-    { label: 'Off',  value: 0 },
-    { label: '5s',   value: 5_000 },
-    { label: '15s',  value: 15_000 },
-    { label: '30s',  value: 30_000 },
-    { label: '1m',   value: 60_000 },
-    { label: '5m',   value: 300_000 },
+    { label: t('usage.page.poll.off'), value: 0 },
+    { label: t('usage.page.poll.5s'),  value: 5_000 },
+    { label: t('usage.page.poll.15s'), value: 15_000 },
+    { label: t('usage.page.poll.30s'), value: 30_000 },
+    { label: t('usage.page.poll.1m'),  value: 60_000 },
+    { label: t('usage.page.poll.5m'),  value: 300_000 },
   ];
 
   const handleToggleLive = useCallback(() => {
@@ -377,7 +381,7 @@ export function UsagePage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              Usage
+              {t('usage.page.title')}
               {liveMode && (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -394,13 +398,13 @@ export function UsagePage() {
               )}
             </h1>
             <p style={{ margin: 0 }}>
-              Detailed call logs and per-model breakdown
+              {t('usage.page.subtitle')}
               {lastUpdated && (
                 <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: 8 }}>
                   {/* Fixed placeholder while capturing documentation screenshots: the real
                       clock is wall-clock derived and differs between two runs of the same
                       commit. See ../utils/captureMode. */}
-                  · updated at {isCaptureMode() ? '12:00:00 PM' : lastUpdated.toLocaleTimeString()}
+                  {t('usage.page.updatedAt', { time: isCaptureMode() ? '12:00:00 PM' : lastUpdated.toLocaleTimeString() })}
                 </span>
               )}
             </p>
@@ -422,18 +426,18 @@ export function UsagePage() {
                 marginLeft: 4,
                 ...(liveMode ? { background: '#ef4444', borderColor: '#ef4444', color: 'white' } : {}),
               }}
-              title={liveMode ? 'Disable live mode' : 'Enable live mode (refresh every 2s)'}
+              title={liveMode ? t('usage.page.liveButtonTitle.disable') : t('usage.page.liveButtonTitle.enable')}
             >
-              ● Live
+              {t('usage.page.liveButton')}
             </button>
             <button
               className="btn btn-sm btn-secondary"
               onClick={handleRefreshNow}
               disabled={refreshing}
-              title="Refresh now"
+              title={t('usage.page.refreshNowTitle')}
               style={{ marginLeft: 4 }}
             >
-              {refreshing ? '…' : '↻ Now'}
+              {refreshing ? '…' : t('usage.page.refreshNow')}
             </button>
           </div>
         </div>
@@ -444,50 +448,50 @@ export function UsagePage() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Period</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.period')}</FilterLabel>
               <DateRangePicker value={dateRange} onChange={setDateRange} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-              <FilterLabel>Router</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.router')}</FilterLabel>
               <MultiSelect
                 options={routerOptions}
                 value={routerIds}
                 onChange={setRouterIds}
-                placeholder="All Routers"
+                placeholder={t('usage.page.filters.allRouters')}
               />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-              <FilterLabel>Model</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.model')}</FilterLabel>
               <MultiSelect
                 options={modelOptions}
                 value={modelIds}
                 onChange={setModelIds}
-                placeholder="All Models"
+                placeholder={t('usage.page.filters.allModels')}
               />
             </div>
 
             {(tokenOptions.length > 1 || tokenIds.length > 0) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-                <FilterLabel>Token</FilterLabel>
+                <FilterLabel>{t('usage.page.filters.token')}</FilterLabel>
                 <MultiSelect
                   options={tokenOptions}
                   value={tokenIds}
                   onChange={setTokenIds}
-                  placeholder="All Tokens"
+                  placeholder={t('usage.page.filters.allTokens')}
                 />
               </div>
             )}
 
             {(callerOptions.length > 1 || callTypeFilter !== 'all') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <FilterLabel>Caller</FilterLabel>
+                <FilterLabel>{t('usage.page.filters.caller')}</FilterLabel>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {(['all', ...callerOptions] as const).map(f => (
                     <button key={f} className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                       onClick={() => setCallTypeFilter(f)}>
-                      {CALLER_FILTER_LABELS[f]}
+                      {callerFilterLabel(t, f)}
                       {f !== 'all' && <span style={{ opacity: 0.6, marginLeft: 5 }}>{stats?.byCallType?.[f] ?? 0}</span>}
                     </button>
                   ))}
@@ -497,12 +501,12 @@ export function UsagePage() {
 
             {(requestTypeOptions.length > 1 || requestTypeFilter !== 'all') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <FilterLabel>Type</FilterLabel>
+                <FilterLabel>{t('usage.page.filters.type')}</FilterLabel>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {(['all', ...requestTypeOptions] as const).map(f => (
                     <button key={f} className={`btn btn-sm ${requestTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                       onClick={() => setRequestTypeFilter(f)}>
-                      {f === 'all' ? 'All' : requestTypeLabel(f)}
+                      {f === 'all' ? t('usage.page.filters.all') : requestTypeLabel(f)}
                       {f !== 'all' && <span style={{ opacity: 0.6, marginLeft: 5 }}>{stats?.byRequestType?.[f] ?? 0}</span>}
                     </button>
                   ))}
@@ -511,12 +515,12 @@ export function UsagePage() {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <FilterLabel>Status</FilterLabel>
+              <FilterLabel>{t('usage.page.filters.status')}</FilterLabel>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(['all', 'success', 'blocked', 'error'] as const).map(f => (
                   <button key={f} className={`btn btn-sm ${outcomeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setOutcomeFilter(f)}>
-                    {f === 'all' ? 'All' : f === 'success' ? 'Success' : f === 'blocked' ? 'Blocked' : 'Error'}
+                    {f === 'all' ? t('usage.page.filters.all') : f === 'success' ? t('usage.page.filters.success') : f === 'blocked' ? t('usage.page.filters.blocked') : t('usage.page.filters.error')}
                   </button>
                 ))}
               </div>
@@ -527,7 +531,7 @@ export function UsagePage() {
                 <FilterLabel>&nbsp;</FilterLabel>
                 <button className="btn btn-sm btn-secondary"
                   onClick={() => { setRouterIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
-                  Reset filters
+                  {t('usage.page.filters.resetFilters')}
                 </button>
               </div>
             )}
@@ -538,8 +542,8 @@ export function UsagePage() {
           <div className="loading-center"><div className="spinner" /></div>
         ) : fetchError ? (
           <div className="empty-state" style={{ color: 'var(--danger)' }}>
-            <p>Failed to load usage data: <strong>{fetchError}</strong></p>
-            <button className="btn btn-sm btn-secondary" style={{ marginTop: 8 }} onClick={handleRefreshNow}>Retry</button>
+            <p>{t('usage.page.errors.loadFailedPrefix')} <strong>{fetchError}</strong></p>
+            <button className="btn btn-sm btn-secondary" style={{ marginTop: 8 }} onClick={handleRefreshNow}>{t('usage.page.errors.retry')}</button>
           </div>
         ) : !stats ? null : (
           <>
@@ -551,14 +555,14 @@ export function UsagePage() {
               <TokensCard inputTokens={tokenTotals.input} outputTokens={tokenTotals.output} cachedTokens={tokenTotals.cached}
                 {...(savingsStats?.savings ? { savings: savingsStats.savings } : {})} />
               <div className="stat-card">
-                <div className="stat-label">Total Calls</div>
+                <div className="stat-label">{t('usage.page.stats.totalCalls')}</div>
                 <div className="stat-value">{stats.summary.totalCalls}</div>
               </div>
               <div className="stat-card" style={{ cursor: 'pointer', outline: callTypeFilter === 'completion' ? '2px solid var(--primary)' : 'none', outlineOffset: 2 }}
                 onClick={() => setCallTypeFilter(f => f === 'completion' ? 'all' : 'completion')}>
                 <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', display: 'inline-block' }} />
-                  Completion Calls
+                  {t('usage.page.stats.completionCalls')}
                 </div>
                 <div className="stat-value">{stats.summary.completionCalls ?? stats.summary.totalCalls}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.completionCost ?? stats.summary.totalCost).toFixed(4)}</div>
@@ -567,7 +571,7 @@ export function UsagePage() {
                 onClick={() => setCallTypeFilter(f => f === 'routing' ? 'all' : 'routing')}>
                 <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
-                  Router Calls
+                  {t('usage.page.stats.routerCalls')}
                 </div>
                 <div className="stat-value">{stats.summary.routingCalls ?? 0}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.routingCost ?? 0).toFixed(4)}</div>
@@ -576,7 +580,7 @@ export function UsagePage() {
                 <div className="stat-card">
                   <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
-                    Guardrail Calls
+                    {t('usage.page.stats.guardrailCalls')}
                   </div>
                   <div className="stat-value">{stats.summary.guardrailCalls}</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>${(stats.summary.guardrailCost ?? 0).toFixed(4)}</div>
@@ -586,13 +590,13 @@ export function UsagePage() {
                 <div className="stat-card">
                   <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-warning, #f59e0b)', display: 'inline-block' }} />
-                    Blocked Calls
+                    {t('usage.page.stats.blockedCalls')}
                   </div>
                   <div className="stat-value">{stats.summary.blockedCalls}</div>
                 </div>
               )}
               <div className="stat-card">
-                <div className="stat-label">Errors</div>
+                <div className="stat-label">{t('usage.page.stats.errors')}</div>
                 <div className="stat-value" style={{ color: stats.summary.errorCalls > 0 ? 'var(--danger)' : 'var(--success)' }}>
                   {stats.summary.errorCalls}
                 </div>
@@ -630,18 +634,18 @@ export function UsagePage() {
                   <table>
                     <thead>
                       <tr>
-                        {th('Rank', 'rank')}
-                        {th('Model', 'model')}
-                        {th('Provider', 'provider')}
-                        {th('Calls', 'calls', 'right')}
-                        {th('Errors', 'errors', 'right')}
-                        {th('Success rate', 'successRate', 'right')}
-                        {th('Avg latency', 'avgLatency', 'right')}
-                        {th('P95 latency', 'p95Latency', 'right')}
-                        {th('Input tokens', 'inputTokens', 'right')}
-                        {th('Output tokens', 'outputTokens', 'right')}
-                        {th('Cost / 1K', 'costPer1k', 'right')}
-                        {th('Cost (USD)', 'cost', 'right')}
+                        {th(t('usage.page.table.rank'), 'rank')}
+                        {th(t('usage.page.table.model'), 'model')}
+                        {th(t('usage.page.table.provider'), 'provider')}
+                        {th(t('usage.page.table.calls'), 'calls', 'right')}
+                        {th(t('usage.page.table.errors'), 'errors', 'right')}
+                        {th(t('usage.page.table.successRate'), 'successRate', 'right')}
+                        {th(t('usage.page.table.avgLatency'), 'avgLatency', 'right')}
+                        {th(t('usage.page.table.p95Latency'), 'p95Latency', 'right')}
+                        {th(t('usage.page.table.inputTokens'), 'inputTokens', 'right')}
+                        {th(t('usage.page.table.outputTokens'), 'outputTokens', 'right')}
+                        {th(t('usage.page.table.costPer1k'), 'costPer1k', 'right')}
+                        {th(t('usage.page.table.cost'), 'cost', 'right')}
                       </tr>
                     </thead>
                     <tbody>
@@ -653,7 +657,7 @@ export function UsagePage() {
                             <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                               {isBest
                                 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                    <Star size={13} fill="var(--warning)" color="var(--warning)" aria-label="Best cost-performance" />
+                                    <Star size={13} fill="var(--warning)" color="var(--warning)" aria-label={t('usage.page.table.bestCostPerformance')} />
                                     {displayRank}
                                   </span>
                                 : displayRank}
@@ -683,7 +687,7 @@ export function UsagePage() {
                       style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', justifyContent: 'center', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500, padding: '8px 0' }}
                     >
                       <ChevronDown size={14} style={{ transform: showAllModels ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
-                      {showAllModels ? 'Show fewer models' : `Show ${hidden} more model${hidden !== 1 ? 's' : ''}`}
+                      {showAllModels ? t('usage.page.showFewerModels') : t('usage.page.showMoreModels', { count: hidden })}
                     </button>
                   )}
                 </div>
@@ -693,7 +697,7 @@ export function UsagePage() {
             {/* Recent calls */}
             <>
               <h3 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
-                Recent Calls
+                {t('usage.page.recentCalls.title')}
                 <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>
                   ({stats.pagination ? `${displayRecords.length} / ${stats.pagination.totalRecords}` : displayRecords.length})
                 </span>
@@ -701,7 +705,7 @@ export function UsagePage() {
 
               {displayRecords.length === 0 ? (
                 <div className="empty-state">
-                  <p>No usage records for this period.</p>
+                  <p>{t('usage.page.recentCalls.empty')}</p>
                 </div>
               ) : (
                 <>
@@ -709,10 +713,10 @@ export function UsagePage() {
                   <table>
                     <thead>
                       <tr>
-                        <th>Time</th><th>Router</th><th>Model</th><th>Type</th><th>Caller</th>
-                        <th style={numTh}>In</th><th style={numTh}>Out</th><th style={numTh}>Cost</th>
-                        <th style={numTh}>Latency</th><th style={numTh}>TTFT</th><th style={numTh}>Tok/s</th>
-                        <th>Status</th>
+                        <th>{t('usage.page.recentCalls.columns.time')}</th><th>{t('usage.page.recentCalls.columns.router')}</th><th>{t('usage.page.recentCalls.columns.model')}</th><th>{t('usage.page.recentCalls.columns.type')}</th><th>{t('usage.page.recentCalls.columns.caller')}</th>
+                        <th style={numTh}>{t('usage.page.recentCalls.columns.in')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.out')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.cost')}</th>
+                        <th style={numTh}>{t('usage.page.recentCalls.columns.latency')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.ttft')}</th><th style={numTh}>{t('usage.page.recentCalls.columns.tokensPerSec')}</th>
+                        <th>{t('usage.page.recentCalls.columns.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -756,11 +760,11 @@ export function UsagePage() {
                                   background: 'var(--bg-surface)',
                                   color: callerColor,
                                 }}>
-                                  {CALLER_BADGE_LABELS[caller]}
+                                  {t(`usage.page.callerBadge.${caller}`)}
                                 </span>
                               ) : (
                                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                  {CALLER_BADGE_LABELS[caller]}
+                                  {t(`usage.page.callerBadge.${caller}`)}
                                 </span>
                               )}
                             </td>
@@ -793,12 +797,12 @@ export function UsagePage() {
                       disabled={page <= 1}
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                     >
-                      Previous
+                      {t('usage.page.pagination.previous')}
                     </button>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                      Page {stats.pagination.page} of {stats.pagination.totalPages}
+                      {t('usage.page.pagination.pageOf', { page: stats.pagination.page, totalPages: stats.pagination.totalPages })}
                       <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-                        ({stats.pagination.totalRecords} total records)
+                        {t('usage.page.pagination.totalRecords', { count: stats.pagination.totalRecords })}
                       </span>
                     </span>
                     <button
@@ -806,7 +810,7 @@ export function UsagePage() {
                       disabled={page >= stats.pagination.totalPages}
                       onClick={() => setPage(p => p + 1)}
                     >
-                      Next
+                      {t('usage.page.pagination.next')}
                     </button>
                   </div>
                 )}

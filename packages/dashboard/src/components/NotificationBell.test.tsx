@@ -43,25 +43,33 @@ describe('severityIcon', () => {
 
 // ── timeAgo ───────────────────────────────────────────────────────────────────
 
+// Minimal stand-in for TFunction: interpolates {{count}} and mirrors the
+// short "Xs/Xm/Xh/Xd ago" shape the old hardcoded strings used.
+const fakeT = ((key: string, opts?: { count?: number }) => {
+  const count = opts?.count ?? 0;
+  const unit = key.includes('seconds') ? 's' : key.includes('minutes') ? 'm' : key.includes('hours') ? 'h' : 'd';
+  return `${count}${unit} ago`;
+}) as unknown as import('i18next').TFunction;
+
 describe('timeAgo', () => {
   it('shows seconds ago for < 60s', () => {
     const iso = new Date(Date.now() - 30_000).toISOString();
-    expect(timeAgo(iso)).toBe('30s ago');
+    expect(timeAgo(iso, fakeT)).toBe('30s ago');
   });
 
   it('shows minutes ago for < 60m', () => {
     const iso = new Date(Date.now() - 5 * 60_000).toISOString();
-    expect(timeAgo(iso)).toBe('5m ago');
+    expect(timeAgo(iso, fakeT)).toBe('5m ago');
   });
 
   it('shows hours ago for < 24h', () => {
     const iso = new Date(Date.now() - 3 * 3_600_000).toISOString();
-    expect(timeAgo(iso)).toBe('3h ago');
+    expect(timeAgo(iso, fakeT)).toBe('3h ago');
   });
 
   it('shows days ago for >= 24h', () => {
     const iso = new Date(Date.now() - 2 * 86_400_000).toISOString();
-    expect(timeAgo(iso)).toBe('2d ago');
+    expect(timeAgo(iso, fakeT)).toBe('2d ago');
   });
 });
 

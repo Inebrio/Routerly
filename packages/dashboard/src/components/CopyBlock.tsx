@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, Copy } from 'lucide-react';
 import { writeToClipboard } from '../utils/clipboard';
 
@@ -11,6 +12,7 @@ const CODE_BLOCK: React.CSSProperties = {
 /** A snippet next to the button that copies it. Used wherever the dashboard
  *  hands out something meant to be pasted somewhere else. */
 export function CopyBlock({ text }: { text: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,7 +23,7 @@ export function CopyBlock({ text }: { text: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError('Copy failed, select and copy manually.');
+      setError(t('common.copyBlock.copyErrorHint'));
     }
   }
 
@@ -31,7 +33,7 @@ export function CopyBlock({ text }: { text: string }) {
         <pre className="mono" style={{ ...CODE_BLOCK, flex: 1 }}>{text}</pre>
         <button type="button" className="btn btn-secondary" onClick={handleCopy} style={{ flexShrink: 0 }}>
           {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? 'Copied!' : 'Copy'}
+          {copied ? t('common.copyBlock.copiedLabel') : t('common.copyBlock.copyLabel')}
         </button>
       </div>
       {error && <div className="form-error" style={{ marginTop: 6 }}>{error}</div>}

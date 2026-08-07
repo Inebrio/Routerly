@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronRight, ShieldOff } from 'lucide-react';
 import type { Message } from '@routerly/shared';
 import { OPTIMIZER_FIXTURES, optimizerFixture, optimizerLabel } from '@routerly/shared';
@@ -26,6 +27,7 @@ import {
 } from '../../components/OptimizerStepsEditor';
 
 export function RouterOptimizerTab() {
+  const { t } = useTranslation();
   const { router, setRouter } = useRouter();
   const { can } = useAuth();
   const canRead = can('optimizers:read');
@@ -96,7 +98,7 @@ export function RouterOptimizerTab() {
       const updated = await assignRouterProfiles(router.id, { optimizer: profileId === '' ? null : profileId });
       setRouter(updated);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to assign optimizer profile');
+      setErr(e instanceof Error ? e.message : t('routers.optimizer.errors.assignFailed'));
     }
   }
 
@@ -116,7 +118,7 @@ export function RouterOptimizerTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error saving optimizers');
+      setErr(e instanceof Error ? e.message : t('routers.optimizer.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -150,7 +152,7 @@ export function RouterOptimizerTab() {
       setPreviewInput(previewMessages);
       setPreview(result);
     } catch (e) {
-      setPreviewErr(e instanceof Error ? e.message : 'Error running preview');
+      setPreviewErr(e instanceof Error ? e.message : t('routers.optimizer.errors.previewFailed'));
     } finally {
       setPreviewing(false);
     }
@@ -160,7 +162,7 @@ export function RouterOptimizerTab() {
     return (
       <div className="empty-state" style={{ maxWidth: 800 }}>
         <ShieldOff size={40} />
-        <p>You don't have permission to view optimizers.</p>
+        <p>{t('routers.optimizer.noPermission')}</p>
       </div>
     );
   }
@@ -179,7 +181,7 @@ export function RouterOptimizerTab() {
   const modelOptions = (router?.models.length ? router.models.map(m => m.modelId) : models.map(m => m.id))
     .map(id => {
       const window = models.find(m => m.id === id)?.contextWindow;
-      return { value: id, label: window ? `${id} (${Math.round(window / 1000)}k context)` : id };
+      return { value: id, label: window ? t('routers.optimizer.preview.modelWithContext', { id, k: Math.round(window / 1000) }) : id };
     });
 
   const assignedProfileId = router?.optimizerProfileId ?? '';
@@ -191,7 +193,7 @@ export function RouterOptimizerTab() {
     if ((next === 'profile') === profileAssigned) return;
     if (next === 'profile') {
       if (!defaultProfileId) {
-        setErr('No optimizer profile available. Create one from the Profiles page.');
+        setErr(t('routers.optimizer.errors.noProfileAvailable'));
         return;
       }
       await onAssignProfile(defaultProfileId);
@@ -207,10 +209,9 @@ export function RouterOptimizerTab() {
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
       <div className="form-group">
-        <label className="form-label">Optimizers</label>
+        <label className="form-label">{t('routers.optimizer.title')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Optimizers reduce prompt tokens before requests reach the provider. They run in order from top to bottom.
-          Use a shared optimizer profile, or define this router's own pipeline.
+          {t('routers.optimizer.description')}
         </p>
 
         {canManage && (
@@ -220,14 +221,14 @@ export function RouterOptimizerTab() {
               className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => void onSelectMode('profile')}
             >
-              Profile
+              {t('routers.optimizer.mode.profile')}
             </button>
             <button
               type="button"
               className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
               onClick={() => void onSelectMode('custom')}
             >
-              Custom
+              {t('routers.optimizer.mode.custom')}
             </button>
           </div>
         )}
@@ -236,25 +237,25 @@ export function RouterOptimizerTab() {
           <>
             <SearchableSelect
               style={{ maxWidth: 420 }}
-              ariaLabel="Optimizer Profile"
+              ariaLabel={t('routers.optimizer.profileSelect.ariaLabel')}
               value={assignedProfileId}
               onChange={v => void onAssignProfile(v)}
               disabled={!canManage}
               options={[
-                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} (built-in)` })),
+                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: t('routers.optimizer.profileSelect.builtinLabel', { label: p.label }) })),
                 ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
               ]}
             />
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
-              Steps come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.
+              {t('routers.optimizer.profileSelect.hint')}
             </p>
             {assignedProfile && assignedProfile.optimizers.steps.length > 0 && (
               <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {assignedProfile.optimizers.steps.map(s => (
                   <li key={s.id}>
                     {optimizerLabel(s.id)}
-                    {s.enabled ? '' : ' (disabled)'}
-                    {s.threshold != null ? `, threshold ${s.threshold}` : ''}
+                    {s.enabled ? '' : ` ${t('routers.optimizer.profileSelect.disabledSuffix')}`}
+                    {s.threshold != null ? t('routers.optimizer.profileSelect.thresholdSuffix', { threshold: s.threshold }) : ''}
                   </li>
                 ))}
               </ul>
@@ -263,7 +264,7 @@ export function RouterOptimizerTab() {
         ) : (
           <>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-              Drag to reorder, toggle to enable. Some optimizers use a threshold to control how aggressively they trim.
+              {t('routers.optimizer.customHint')}
             </p>
             <OptimizerStepsEditor rows={rows} setRows={setRows} disabled={!canManage} />
           </>
@@ -274,11 +275,11 @@ export function RouterOptimizerTab() {
       {canManage && !profileAssigned && rows.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
           <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void doSave()}>
-            {saving ? 'Saving...' : 'Save Optimizers'}
+            {saving ? t('routers.optimizer.saving') : t('routers.optimizer.saveButton')}
           </button>
           {saved && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--success, #22c55e)', fontSize: '0.85rem' }}>
-              <Check size={16} /> Saved
+              <Check size={16} /> {t('routers.optimizer.saved')}
             </span>
           )}
         </div>
@@ -288,41 +289,39 @@ export function RouterOptimizerTab() {
 
       {/* Preview token savings */}
       <div className="form-group">
-        <span className="form-label">Preview token savings</span>
+        <span className="form-label">{t('routers.optimizer.preview.title')}</span>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Run the current (unsaved) pipeline over a prompt to see what each step removes and what it costs.
-          Pick one of the sample conversations, or type your own prompt.
+          {t('routers.optimizer.preview.description')}
         </p>
 
         <div style={{ marginBottom: 12 }}>
-          <span className="form-label" style={{ fontSize: '0.75rem' }}>Prompt</span>
+          <span className="form-label" style={{ fontSize: '0.75rem' }}>{t('routers.optimizer.preview.promptLabel')}</span>
           <SearchableSelect
             style={{ maxWidth: 420 }}
-            ariaLabel="Prompt to preview"
+            ariaLabel={t('routers.optimizer.preview.promptAriaLabel')}
             value={pickedFixture}
             onChange={v => { setPickedFixture(v); setPreview(null); }}
             options={[
-              { value: '', label: 'Type a prompt below' },
+              { value: '', label: t('routers.optimizer.preview.typePromptOption') },
               ...OPTIMIZER_FIXTURES.map(f => ({ value: f.id, label: f.label })),
             ]}
           />
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
-            Sample conversations shipped with Routerly. Routerly does not record real prompts.
+            {t('routers.optimizer.preview.fixturesHint')}
           </p>
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <span className="form-label" style={{ fontSize: '0.75rem' }}>Model</span>
+          <span className="form-label" style={{ fontSize: '0.75rem' }}>{t('routers.optimizer.preview.modelLabel')}</span>
           <SearchableSelect
             style={{ maxWidth: 420 }}
-            ariaLabel="Model to preview against"
+            ariaLabel={t('routers.optimizer.preview.modelAriaLabel')}
             value={previewModel}
             onChange={v => { setPreviewModel(v); setPreview(null); }}
-            options={[{ value: '', label: 'No model' }, ...modelOptions]}
+            options={[{ value: '', label: t('routers.optimizer.preview.noModelOption') }, ...modelOptions]}
           />
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.45 }}>
-            Steps that trim to fit a context window need to know which window. Without a model they are skipped, exactly
-            as they would be on a request that names a model Routerly has no window for.
+            {t('routers.optimizer.preview.modelHint')}
           </p>
         </div>
 
@@ -341,10 +340,10 @@ export function RouterOptimizerTab() {
         ) : (
           <textarea
             id="optimizer-sample"
-            aria-label="Sample prompt"
+            aria-label={t('routers.optimizer.preview.sampleAriaLabel')}
             className="form-input"
             rows={4}
-            placeholder="Paste a sample user message..."
+            placeholder={t('routers.optimizer.preview.samplePlaceholder')}
             value={sample}
             onChange={e => setSample(e.target.value)}
             style={{ width: '100%', resize: 'vertical', fontSize: '0.85rem', fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box' }}
@@ -357,7 +356,7 @@ export function RouterOptimizerTab() {
             disabled={previewing || (!chosenFixture && sample.trim() === '')}
             onClick={() => void runPreview()}
           >
-            {previewing ? 'Running...' : 'Run Preview'}
+            {previewing ? t('routers.optimizer.preview.running') : t('routers.optimizer.preview.runButton')}
           </button>
         </div>
 
@@ -367,15 +366,15 @@ export function RouterOptimizerTab() {
           <div style={{ marginTop: 16, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
             <div style={{ display: 'flex', gap: 24, padding: '12px 16px', background: 'var(--surface-active)', flexWrap: 'wrap' }}>
               <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Before</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('routers.optimizer.preview.before')}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{preview.estimatedTokensBefore}</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>After</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('routers.optimizer.preview.after')}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{preview.estimatedTokensAfter}</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Saved</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('routers.optimizer.preview.saved')}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 600, color: savedDelta > 0 ? 'var(--success, #22c55e)' : 'var(--text-primary)' }}>
                   {savedDelta} {preview.estimatedTokensBefore > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>({Math.round((savedDelta / preview.estimatedTokensBefore) * 100)}%)</span>}
                 </div>
@@ -385,10 +384,10 @@ export function RouterOptimizerTab() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                 <thead>
                   <tr style={{ textAlign: 'left', color: 'var(--text-muted)' }}>
-                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)' }}>Optimizer</th>
-                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)', textAlign: 'right' }}>Before</th>
-                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)', textAlign: 'right' }}>After</th>
-                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)', textAlign: 'right' }}>Saved</th>
+                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)' }}>{t('routers.optimizer.preview.columns.optimizer')}</th>
+                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)', textAlign: 'right' }}>{t('routers.optimizer.preview.columns.before')}</th>
+                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)', textAlign: 'right' }}>{t('routers.optimizer.preview.columns.after')}</th>
+                    <th style={{ padding: '8px 16px', fontWeight: 500, borderTop: '1px solid var(--border)', textAlign: 'right' }}>{t('routers.optimizer.preview.columns.saved')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,14 +412,14 @@ export function RouterOptimizerTab() {
                             </button>
                             {s.rolledBack && (
                               <div style={{ fontSize: '0.68rem', color: 'var(--warning)', marginTop: 2, paddingLeft: 20 }}>
-                                rolled back: the change was rejected as unsafe
+                                {t('routers.optimizer.preview.rolledBackNote')}
                               </div>
                             )}
                             {/* Saved 0 reads the same whether a step found nothing or never
                                 ran. This line is the difference. */}
                             {s.skipReason && (
                               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2, paddingLeft: 20 }}>
-                                skipped: {s.skipReason}
+                                {t('routers.optimizer.preview.skippedNote', { reason: s.skipReason })}
                               </div>
                             )}
                           </td>
@@ -435,10 +434,10 @@ export function RouterOptimizerTab() {
                                 before={promptText(previous)}
                                 after={promptText(s.messages)}
                                 emptyLabel={s.rolledBack
-                                  ? 'The change this step produced was rolled back, so the prompt reached the next step untouched.'
+                                  ? t('routers.optimizer.preview.diffEmpty.rolledBack')
                                   : s.skipReason
-                                    ? `This step did not run: ${s.skipReason}`
-                                    : 'This step left the prompt unchanged.'}
+                                    ? t('routers.optimizer.preview.diffEmpty.skipped', { reason: s.skipReason })
+                                    : t('routers.optimizer.preview.diffEmpty.unchanged')}
                               />
                             </td>
                           </tr>
