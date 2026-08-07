@@ -191,7 +191,7 @@ export { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from './cl
 // Notification event taxonomy (runtime value + derived type)
 export {
   NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, CALL_TYPES, isCompletionCall,
-  suggestConnectionLabel, isConnectionLabelTaken,
+  suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
 } from './types/config.js';
 export type { NotificationEvent } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';

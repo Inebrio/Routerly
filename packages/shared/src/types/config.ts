@@ -34,13 +34,16 @@ export interface ProviderConnection {
  * Shared so the dashboard can show the exact name the server would generate, instead of a
  * vague hint, and so the CLI and the API agree on what "already taken" means.
  */
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 export function suggestConnectionLabel(
   providerId: string,
   providerName: string | undefined,
   taken: readonly string[],
 ): string {
-  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  const base = slug(providerName ?? '') || slug(providerId) || 'connection';
+  const base = slugify(providerName ?? '') || slugify(providerId) || 'connection';
   const used = new Set(taken.map(l => l.trim().toLowerCase()));
   if (!used.has(base)) return base;
   // Bounded by the number of existing names: one of the first `taken.length + 1` is free.
@@ -54,6 +57,22 @@ export function suggestConnectionLabel(
 export function isConnectionLabelTaken(label: string, taken: readonly string[]): boolean {
   const wanted = label.trim().toLowerCase();
   return taken.some(l => l.trim().toLowerCase() === wanted);
+}
+
+/**
+ * Slug a passthrough router's `name` into its permanent `/passthrough/<slug>/...` path
+ * segment, computed once at creation and never touched again (see `RouterConfig.slug`).
+ * Same base+numeric-suffix disambiguation as `suggestConnectionLabel`, scoped to the slugs
+ * of existing passthrough routers only.
+ */
+export function suggestRouterSlug(name: string, taken: readonly string[]): string {
+  const base = slugify(name) || 'router';
+  const used = new Set(taken.map(s => s.trim().toLowerCase()));
+  if (!used.has(base)) return base;
+  for (let n = 2; ; n++) {
+    const candidate = `${base}-${n}`;
+    if (!used.has(candidate)) return candidate;
+  }
 }
 
 export interface ModelInstance {

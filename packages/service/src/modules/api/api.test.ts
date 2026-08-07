@@ -1778,26 +1778,6 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
 })
 
 describe('POST /api/routers — passthrough kind (RTR-03)', () => {
-  it('returns 400 when a passthrough router is created without a slug', async () => {
-    setupAdminAuth()
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'routers') return []
-      return []
-    })
-
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'POST', url: '/api/routers',
-      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'PT', kind: 'passthrough' }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(res.json().error).toBe('A passthrough router needs a slug')
-  })
-
   it('returns 400 when a passthrough router is created with a non-empty model list', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1811,35 +1791,36 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', slug: 'my-openai', models: [{ modelId: 'gpt-4o' }] }),
+      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', models: [{ modelId: 'gpt-4o' }] }),
     })
     await app.close()
     expect(res.statusCode).toBe(400)
     expect(res.json().error).toBe('A passthrough router cannot have models')
   })
 
-  it('returns 409 when the slug is already used by another passthrough router', async () => {
+  it('disambiguates the slug when another passthrough router already slugs to the same name', async () => {
     setupAdminAuth()
-    const other = { id: 'pt-1', name: 'Other', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [] }
+    const other = { id: 'pt-1', name: 'My OpenAI', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return [other]
       return []
     })
+    mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', slug: 'my-openai' }),
+      payload: JSON.stringify({ name: 'My OpenAI!!', kind: 'passthrough' }),
     })
     await app.close()
-    expect(res.statusCode).toBe(409)
-    expect(res.json().error).toBe('A passthrough router already uses slug "my-openai"')
+    expect(res.statusCode).toBe(201)
+    expect(res.json().slug).toBe('my-openai-2')
   })
 
-  it('creates a passthrough router with an empty token array and the slug in the response', async () => {
+  it('creates a passthrough router with an empty token array and a slug derived from the name', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1853,7 +1834,7 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', slug: 'my-openai' }),
+      payload: JSON.stringify({ name: 'My OpenAI', kind: 'passthrough' }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
@@ -1863,35 +1844,13 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
     expect(body.token).toBeUndefined()
     const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
     const written = routersCall![1] as any[]
-    const persisted = written.find(r => r.name === 'PT')
+    const persisted = written.find(r => r.name === 'My OpenAI')
     expect(persisted.tokens).toEqual([])
   })
 })
 
 describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
-  it('returns 409 when an update sets a slug already used by another passthrough router', async () => {
-    setupAdminAuth()
-    const target = { id: 'pt-1', name: 'PT', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [] }
-    const other = { id: 'pt-2', name: 'Other', kind: 'passthrough', slug: 'taken', tokens: [], members: [], models: [] }
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [adminUser]
-      if (t === 'roles') return []
-      if (t === 'routers') return [target, other]
-      return []
-    })
-
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'PUT', url: '/api/routers/pt-1',
-      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', slug: 'taken', models: [] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-    expect(res.json().error).toBe('A passthrough router already uses slug "taken"')
-  })
-
-  it('leaves the slug unchanged when the update omits it', async () => {
+  it('leaves the slug unchanged on rename — slug is computed once at creation, never re-derived (see suggestRouterSlug)', async () => {
     setupAdminAuth()
     const target = { id: 'pt-1', name: 'PT', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
