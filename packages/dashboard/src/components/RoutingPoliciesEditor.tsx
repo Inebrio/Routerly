@@ -30,6 +30,8 @@ interface RoutingPoliciesEditorProps {
   availableModels: Model[];
   /** Seeds a freshly added AI Routing policy. Routers pass their own routing model. */
   llmDefaults?: { routingModelId?: string; fallbackModelIds?: string[] };
+  /** Restricts which types can be added. Defaults to every type (plain routers/profiles). */
+  allowedTypes?: readonly string[];
 }
 
 /**
@@ -37,7 +39,7 @@ interface RoutingPoliciesEditorProps {
  * the router routing tab (inline router policies) and the profile form page
  * (profile policies), so both edit routing the exact same way.
  */
-export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, llmDefaults }: RoutingPoliciesEditorProps) {
+export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, llmDefaults, allowedTypes = ALL_POLICY_TYPES }: RoutingPoliciesEditorProps) {
   const { t } = useTranslation();
   // Advanced section open state per policy index
   const [advancedOpen, setAdvancedOpen] = useState<Set<number>>(new Set());
@@ -1105,7 +1107,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
             {/* Add Policy */}
             <div style={{ marginTop: 10, border: '1.5px dashed var(--border)', borderRadius: 8, padding: '6px 10px' }}>
               <SearchableSelect
-                options={ALL_POLICY_TYPES
+                options={allowedTypes
                   .filter(pt => !policies.some(p => p.type === pt))
                   .map(pt => {
                     const label = policyLabel(t, pt);
@@ -1120,7 +1122,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                 value=""
                 onChange={addPolicy}
                 placeholder={t('common.routingPolicies.addPolicyPlaceholder')}
-                disabled={ALL_POLICY_TYPES.every(pt => policies.some(p => p.type === pt))}
+                disabled={allowedTypes.every(pt => policies.some(p => p.type === pt))}
               />
             </div>
           </div>

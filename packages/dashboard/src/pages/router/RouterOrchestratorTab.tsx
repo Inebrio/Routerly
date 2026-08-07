@@ -6,6 +6,14 @@ import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { LimitRowsEditor, limitsToRows, limitRowsToLimits, type LimitRow } from '../../components/LimitRowsEditor';
+import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
+
+// An Orchestrator scores a candidate Router as a whole (weight/health/rate-limit/
+// fairness) — it has no models of its own, so the model-attribute policy types
+// (cheapest, capability, context, performance, llm, semantic-intent,
+// model-preference, budget-remaining) are not offered here. Kept in sync with
+// ORCHESTRATOR_POLICY_TYPES in packages/service/src/modules/routing/validate-orchestrator-policies.ts.
+const ORCHESTRATOR_POLICY_TYPES = ['health', 'rate-limit', 'fairness'] as const;
 
 type CandidateRow = {
   internalId: string; // for React keys
@@ -32,6 +40,7 @@ export function RouterOrchestratorTab() {
   const [err, setErr] = useState('');
   const [candidateRouters, setCandidateRouters] = useState<Router[]>([]);
   const [rows, setRows] = useState<CandidateRow[]>([]);
+  const [policies, setPolicies] = useState<PolicyItem[]>([]);
 
   useEffect(() => {
     getRouters()
@@ -48,6 +57,7 @@ export function RouterOrchestratorTab() {
     setRows((router.candidates ?? []).map(c => ({
       internalId: mkId(), routerId: c.routerId, weight: c.weight, limitRows: limitsToRows(c.limits),
     })));
+    setPolicies((router.policies ?? []).map(p => ({ ...p, internalId: mkPolicyId() })));
   }, [router]);
 
   const isDirty = (() => {
@@ -55,10 +65,18 @@ export function RouterOrchestratorTab() {
     if (!router) return false;
     const savedCandidates = router.candidates ?? [];
     if (rows.length !== savedCandidates.length) return true;
-    return rows.some((r, i) =>
+    if (rows.some((r, i) =>
       r.routerId !== savedCandidates[i]!.routerId ||
       r.weight !== savedCandidates[i]!.weight ||
       JSON.stringify(limitRowsToLimits(r.limitRows)) !== JSON.stringify(savedCandidates[i]!.limits ?? [])
+    )) return true;
+
+    const savedPolicies = router.policies ?? [];
+    if (policies.length !== savedPolicies.length) return true;
+    return policies.some((p, i) =>
+      p.type !== savedPolicies[i]!.type ||
+      p.enabled !== savedPolicies[i]!.enabled ||
+      JSON.stringify(p.config || {}) !== JSON.stringify(savedPolicies[i]!.config || {})
     );
   })();
 
@@ -106,6 +124,10 @@ export function RouterOrchestratorTab() {
           const limits = limitRowsToLimits(r.limitRows);
           return { routerId: r.routerId, weight: r.weight, ...(limits.length > 0 ? { limits } : {}) };
         }),
+        policies: policies.map(p => {
+          const { internalId, ...rest } = p;
+          return { ...rest, enabled: true };
+        }),
       };
       const updated = await updateRouter(router.id, payload);
       setRouter(updated);
@@ -138,6 +160,21 @@ export function RouterOrchestratorTab() {
     <>
       <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+
+        <div className="form-group">
+          <label className="form-label">{t('routers.orchestrator.routingPolicies')}</label>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
+            {t('routers.orchestrator.routingPoliciesHint')}
+          </p>
+          <RoutingPoliciesEditor
+            policies={policies}
+            setPolicies={setPolicies}
+            availableModels={[]}
+            allowedTypes={ORCHESTRATOR_POLICY_TYPES}
+          />
+        </div>
+
+        <div style={{ margin: '32px 0 24px', borderTop: '1px solid var(--border)' }} />
 
         <div className="form-group">
           <label className="form-label">{t('routers.orchestrator.candidateRouters')}</label>

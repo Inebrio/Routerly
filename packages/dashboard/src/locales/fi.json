@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Tämä reititin ei ole orkestraattori.",
       "candidateRouters": "Ehdokasreitittimet",
       "candidateRoutersHint": "Reitittimet, joille tämä orkestraattori välittää pyynnöt. Paino vaikuttaa siihen, kuinka usein kukin ehdokas valitaan; tässä näkyy vain sen nimi, tunniste, paino ja valinnaiset ehdokaskohtaiset rajat.",
+      "routingPolicies": "Reitityskäytännöt",
+      "routingPoliciesHint": "Orkestroija pisteyttää jokaisen ehdokas-Routerin kokonaisuutena, joten vain terveys-, korko- ja oikeudenmukaisuuskäytännöt pätevät tässä. Muut käytäntötyypit valitsevat Routerin omista malleista, joita Orkestroijalla ei ole.",
       "router": "Reititin",
       "selectRouter": "Valitse reititin",
       "weight": "Paino",

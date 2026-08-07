@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Ez az útválasztó nem egy Orcesztrálás.",
       "candidateRouters": "Jelölt Útválasztók",
       "candidateRoutersHint": "Az útválasztók, amelyeket ez az Orcesztrálás a kéréseket. A súly befolyásolja, milyen gyakran választódik ki minden jelölt; csak az neve, azonosítója, súlya és opcionális jelölt-specifikus korlátjai jelennek meg itt.",
+      "routingPolicies": "Útválasztási szabályzatok",
+      "routingPoliciesHint": "Az Orchestrator minden jelölt Routert egészként értékel, így csak az egészség-, sebesség- és méltányossági szabályzatok vonatkoznak itt. A többi szabályzat-típus az útválasztó saját modelljei közül választ, melyekkel az Orchestrator nem rendelkezik.",
       "router": "Útválasztó",
       "selectRouter": "Útválasztó kiválasztása",
       "weight": "Súly",

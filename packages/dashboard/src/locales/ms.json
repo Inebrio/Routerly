@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Router ini bukan Orkestrator.",
       "candidateRouters": "Router Kandidat",
       "candidateRoutersHint": "Router yang Orkestrator ini meneruskan permintaan ke. Berat mempengaruhi seberapa sering setiap kandidat dipilih; hanya nama, id, berat dan batas opsional per kandidat ditampilkan di sini.",
+      "routingPolicies": "Dasar Penghalaan",
+      "routingPoliciesHint": "Pengorkestra menilai setiap Router calon secara keseluruhan, jadi hanya dasar kesehatan, batas laju, dan keadilan yang berlaku di sini. Jenis dasar lain memilih dari model router sendiri, yang tidak dimiliki Pengorkestra.",
       "router": "Router",
       "selectRouter": "Pilih router",
       "weight": "Berat",

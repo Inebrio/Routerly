@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Deze router is geen Orchestrator.",
       "candidateRouters": "Kandidaat-routers",
       "candidateRoutersHint": "De routers waar deze Orchestrator verzoeken naar stuurt. Gewicht beïnvloedt hoe vaak elke kandidaat wordt gekozen; alleen de naam, ID, gewicht en optionele per-kandidaat limieten worden hier weergegeven.",
+      "routingPolicies": "Routeringsbeleid",
+      "routingPoliciesHint": "Een Orchestrator beoordeelt elke kandidaat-Router als geheel, dus hier gelden alleen status-, snelheids- en billijkheidsbeleid. Andere beleidstypen kiezen uit de eigen modellen van een router, die een Orchestrator niet heeft.",
       "router": "Router",
       "selectRouter": "Router selecteren",
       "weight": "Gewicht",

@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Denna router är inte en Orkestrator.",
       "candidateRouters": "Kandidatrotrar",
       "candidateRoutersHint": "Routrarna som denna Orkestrator vidarebefordrar förfrågningar till. Vikt påverkar hur ofta varje kandidat väljs; endast dess namn, id, vikt och valfria per-kandidat-begränsningar visas här.",
+      "routingPolicies": "Routningsprinciper",
+      "routingPoliciesHint": "En Orchestrator betygsätter varje kandidatrouter som helhet, så endast hälso-, hastighetsgräns- och rättviseprinciper gäller här. Andra principtyper väljer från en routers egna modeller, som en Orchestrator inte har.",
       "router": "Router",
       "selectRouter": "Välj router",
       "weight": "Vikt",

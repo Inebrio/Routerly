@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Ce routeur n'est pas un orchestrateur.",
       "candidateRouters": "Routeurs candidats",
       "candidateRoutersHint": "Les routeurs que cet orchestrateur transfère les requêtes. Le poids influence la fréquence à laquelle chaque candidat est sélectionné ; seul son nom, id, poids et limites optionnelles par candidat sont affichés ici.",
+      "routingPolicies": "Stratégies de routage",
+      "routingPoliciesHint": "Un Orchestrator note chaque Router candidat dans son ensemble, donc seules les stratégies de santé, de limite de taux et d'équité s'appliquent ici. Les autres types de stratégies choisissent parmi les propres modèles d'un routeur, qu'un Orchestrator ne possède pas.",
       "router": "Routeur",
       "selectRouter": "Sélectionner un routeur",
       "weight": "Poids",

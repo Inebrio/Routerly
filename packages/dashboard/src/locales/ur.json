@@ -1312,6 +1312,8 @@
       "notOrchestrator": "یہ روٹر Orchestrator نہیں ہے۔",
       "candidateRouters": "امیدوار روٹرز",
       "candidateRoutersHint": "روٹرز جو یہ Orchestrator درخواستوں کو بھیجتا ہے۔ وزن اثر کرتا ہے کتنی بار ہر امیدوار منتخب ہوتا ہے؛ صرف اس کا نام، id، وزن اور اختیاری فی امیدوار حدود دکھائے جاتے ہیں۔",
+      "routingPolicies": "راؤٹنگ پالیسیں",
+      "routingPoliciesHint": "ایک Orchestrator ہر امیدوار Router کو مکمل طور پر اسکور کرتا ہے، اس لیے یہاں صرف صحت، شرح کی حد اور منصفانہ پالیسیں لاگو ہوتی ہیں۔ دوسری پالیسی کی اقسام ایک Router کے اپنے ماڈل سے منتخب کرتی ہیں، جو Orchestrator کے پاس نہیں ہے۔",
       "router": "روٹر",
       "selectRouter": "روٹر منتخب کریں",
       "weight": "وزن",

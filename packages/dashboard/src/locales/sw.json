@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Njia hii sio Muongeza.",
       "candidateRouters": "Njia za Wagombea",
       "candidateRoutersHint": "Njia hii muongeza inambele maombi. Uzani inakufa mara kila wagombea anachaguliwa; tu jina, kitambulisho, uzani na vikomo vya hiari kwa wagombea vinaoonyeshwa hapa.",
+      "routingPolicies": "Sera za upelelezi",
+      "routingPoliciesHint": "Orkestreta hutathmini kila Ruta ya mgombea kama jumla, kwa hivyo tu sera za afya, kikomo cha kiwango na haki zinatumika hapa. Aina zingine za sera huchagua kutoka kwa mifumo yenyewe ya ruta, ambayo Orkestreta haina.",
       "router": "Njia",
       "selectRouter": "Chagua njia",
       "weight": "Uzani",

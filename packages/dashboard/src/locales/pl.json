@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Ten router nie jest orkiestratorem.",
       "candidateRouters": "Routery kandydatów",
       "candidateRoutersHint": "Routery, do których ten orkiestrator przekazuje żądania. Waga wpływa na to, jak często każdy kandydat jest wybierany; tutaj pokazywane są tylko nazwa, identyfikator, waga i opcjonalne limity dla kandydata.",
+      "routingPolicies": "Zasady routingu",
+      "routingPoliciesHint": "Orkiestra ocenia każdy router kandydata jako całość, więc tutaj mają zastosowanie tylko zasady zdrowia, limitu stawki i uczciwości. Inne typy zasad wybierają spośród własnych modeli routera, których orkiestra nie posiada.",
       "router": "Router",
       "selectRouter": "Wybierz router",
       "weight": "Waga",

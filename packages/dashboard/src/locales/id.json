@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Router ini bukan Orchestrator.",
       "candidateRouters": "Router Kandidat",
       "candidateRoutersHint": "Router yang diteruskan Orchestrator ini permintaan ke. Bobot mempengaruhi seberapa sering setiap kandidat dipilih; hanya nama, id, bobot dan batas per-kandidat opsional ditampilkan di sini.",
+      "routingPolicies": "Kebijakan Perutean",
+      "routingPoliciesHint": "Orchestrator menilai setiap Router kandidat secara keseluruhan, jadi hanya kebijakan kesehatan, batas laju, dan keadilan yang berlaku di sini. Tipe kebijakan lain memilih dari model router sendiri, yang tidak dimiliki Orchestrator.",
       "router": "Router",
       "selectRouter": "Pilih router",
       "weight": "Bobot",

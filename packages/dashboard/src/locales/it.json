@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Questo router non è un orchestrator.",
       "candidateRouters": "Router candidati",
       "candidateRoutersHint": "I router a cui questo orchestrator instrada le richieste. Il peso influenza quanto spesso viene scelto ogni candidato; qui vengono mostrati solo nome, ID, peso e limiti opzionali specifici del candidato.",
+      "routingPolicies": "Criteri di routing",
+      "routingPoliciesHint": "Un orchestrator valuta ogni router candidato nel suo insieme, quindi qui si applicano solo i criteri di integrità, limite di velocità ed equità. Gli altri tipi di criteri scelgono tra i modelli propri di un router, che un orchestrator non ha.",
       "router": "Router",
       "selectRouter": "Seleziona router",
       "weight": "Peso",

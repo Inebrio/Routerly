@@ -1312,6 +1312,8 @@
       "notOrchestrator": "Tento router není orchestrátor.",
       "candidateRouters": "Kandidátní routery",
       "candidateRoutersHint": "Routery, na které tento orchestrátor přeposílá požadavky. Váha ovlivňuje, jak často je jednotlivý kandidát vybrán; zde je zobrazen pouze jeho název, ID, váha a volitelné limity na jednotlivého kandidáta.",
+      "routingPolicies": "Zásady směrování",
+      "routingPoliciesHint": "Orchestrator hodnotí každý kandidátní Router jako celek, takže zde platí pouze zásady zdraví, limitu sazby a spravedlnosti. Ostatní typy zásad vybírají z vlastních modelů routeru, které orchestrator nemá.",
       "router": "Router",
       "selectRouter": "Vybrat router",
       "weight": "Váha",
