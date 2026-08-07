@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart3 } from 'lucide-react';
 import {
   getExperimentMetrics, getRouters,
@@ -32,6 +33,7 @@ function gap(value: number | undefined, best: number | undefined): string | null
 }
 
 export function ExperimentMetricsTab() {
+  const { t } = useTranslation();
   const { experiment } = useExperiment();
 
   // The same picker Overview and Usage carry, so a window means the same thing
@@ -52,7 +54,7 @@ export function ExperimentMetricsTab() {
       ...(range.to ? { to: range.to } : {}),
     })
       .then(setMetrics)
-      .catch(e => setErr(e instanceof Error ? e.message : 'Failed to load metrics'))
+      .catch(e => setErr(e instanceof Error ? e.message : t('experiments.metrics.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, [experimentId, range]);
 
@@ -82,7 +84,7 @@ export function ExperimentMetricsTab() {
 
       <div className="toolbar">
         <span className="toolbar-title">
-          {metrics ? `${metrics.totalCalls} call${metrics.totalCalls !== 1 ? 's' : ''} measured` : 'Loading...'}
+          {metrics ? t('experiments.metrics.callsMeasured', { count: metrics.totalCalls }) : t('experiments.metrics.loading')}
         </span>
         <DateRangePicker value={range} onChange={setRange} />
       </div>
@@ -92,34 +94,32 @@ export function ExperimentMetricsTab() {
       ) : rows.length === 0 ? (
         <div className="empty-state">
           <BarChart3 size={40} />
-          <p>No calls in this window yet. Point a client at the experiment token to start the comparison.</p>
+          <p>{t('experiments.metrics.empty')}</p>
         </div>
       ) : (
         <>
           <p className="section-desc" style={{ marginTop: 0 }}>
             {metrics && !metrics.ready
-              ? `Not conclusive yet: every variant needs at least ${metrics.minSamplesPerVariant} calls in this window. `
+              ? t('experiments.metrics.notConclusive', { minSamples: metrics.minSamplesPerVariant })
               : ''}
-            The better figure of each pair is highlighted: cheaper per call, faster, higher judge score. The
-            percentage under a value is its distance from the best arm. The judge score is a running average
-            over the whole life of the experiment, so it is the one figure the window does not narrow.
+            {t('experiments.metrics.explanation')}
           </p>
 
           <div className="table-wrap" style={{ overflowX: 'auto' }}>
             <table style={{ minWidth: 1020 }}>
               <thead>
                 <tr>
-                  <th>Variant</th>
-                  <th style={{ textAlign: 'right' }}>Calls</th>
-                  <th style={{ textAlign: 'right' }}>Share</th>
-                  <th style={{ textAlign: 'right' }}>Errors</th>
-                  <th style={{ textAlign: 'right' }}>Tokens in / out</th>
-                  <th style={{ textAlign: 'right' }}>Cost</th>
-                  <th style={{ textAlign: 'right' }}>Cost / call</th>
-                  <th style={{ textAlign: 'right' }}>Avg latency</th>
-                  <th style={{ textAlign: 'right' }}>p95</th>
-                  <th style={{ textAlign: 'right' }}>TTFT</th>
-                  <th style={{ textAlign: 'right' }}>Judge score</th>
+                  <th>{t('experiments.metrics.columns.variant')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.calls')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.share')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.errors')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.tokens')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.cost')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.costPerCall')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.avgLatency')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.p95')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.ttft')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('experiments.metrics.columns.judgeScore')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -133,8 +133,8 @@ export function ExperimentMetricsTab() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           {label(r)}
                           {!r.enoughSamples && (
-                            <span className="badge badge-warning" title={`Under ${metrics?.minSamplesPerVariant} calls in this window`}>
-                              Low sample
+                            <span className="badge badge-warning" title={t('experiments.metrics.lowSampleTitle', { minSamples: metrics?.minSamplesPerVariant })}>
+                              {t('experiments.metrics.lowSample')}
                             </span>
                           )}
                         </div>
@@ -166,7 +166,7 @@ export function ExperimentMetricsTab() {
                         {r.judgedCalls > 0 && (
                           <span
                             style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: 6 }}
-                            title={`${r.judgedCalls} answer${r.judgedCalls !== 1 ? 's' : ''} scored by the judge since the experiment started`}
+                            title={t('experiments.metrics.judgedCallsTitle', { count: r.judgedCalls })}
                           >
                             ({r.judgedCalls})
                           </span>

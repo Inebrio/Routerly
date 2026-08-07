@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
 import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } from '../../components/DateRangePicker';
@@ -17,6 +18,7 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function RouterLogsTab() {
+  const { t } = useTranslation();
   const { id: routerId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -33,7 +35,7 @@ export function RouterLogsTab() {
   const [pageSize]                          = useState(100);
 
   const POLL_OPTIONS: { label: string; value: number }[] = [
-    { label: 'Off',  value: 0 },
+    { label: t('routers.logs.poll.off'),  value: 0 },
     { label: '5s',   value: 5_000 },
     { label: '15s',  value: 15_000 },
     { label: '30s',  value: 30_000 },
@@ -114,12 +116,12 @@ export function RouterLogsTab() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
             {pollInterval === 0
-              ? 'Auto-refresh disabilitato'
-              : `Auto-refresh ogni ${POLL_OPTIONS.find(o => o.value === pollInterval)?.label}`}
-            {lastUpdated && <> &middot; ultimo aggiornamento: {lastUpdated.toLocaleTimeString()}</>}
+              ? t('routers.logs.autoRefreshOff')
+              : t('routers.logs.autoRefreshEvery', { interval: POLL_OPTIONS.find(o => o.value === pollInterval)?.label })}
+            {lastUpdated && <> &middot; {t('routers.logs.lastUpdated', { time: lastUpdated.toLocaleTimeString() })}</>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Refresh</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{t('routers.logs.refresh')}</span>
             {POLL_OPTIONS.map(o => (
               <button
                 key={o.value}
@@ -133,32 +135,32 @@ export function RouterLogsTab() {
               className="btn btn-sm btn-secondary"
               onClick={handleRefreshNow}
               disabled={refreshing}
-              title="Aggiorna subito"
+              title={t('routers.logs.refreshNowTitle')}
               style={{ marginLeft: 4 }}
             >
-              {refreshing ? '…' : '↻ Now'}
+              {refreshing ? '…' : t('routers.logs.refreshNowButton')}
             </button>
           </div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Period</FilterLabel>
+            <FilterLabel>{t('routers.logs.filters.period')}</FilterLabel>
             <DateRangePicker value={dateRange} onChange={setDateRange} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200 }}>
-            <FilterLabel>Model</FilterLabel>
+            <FilterLabel>{t('routers.logs.filters.model')}</FilterLabel>
             <MultiSelect
               options={modelOptions}
               value={modelIds}
               onChange={setModelIds}
-              placeholder="All Models"
+              placeholder={t('routers.logs.filters.allModels')}
             />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Type</FilterLabel>
+            <FilterLabel>{t('routers.logs.filters.type')}</FilterLabel>
             <div style={{ display: 'flex', gap: 4 }}>
               {(['all', 'completion', 'routing'] as const).map(f => (
                 <button
@@ -166,14 +168,14 @@ export function RouterLogsTab() {
                   className={`btn btn-sm ${callTypeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setCallTypeFilter(f)}
                 >
-                  {f === 'all' ? 'All' : f === 'completion' ? 'Completion' : 'Router'}
+                  {f === 'all' ? t('routers.logs.filters.all') : f === 'completion' ? t('routers.logs.filters.completion') : t('routers.logs.filters.router')}
                 </button>
               ))}
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Status</FilterLabel>
+            <FilterLabel>{t('routers.logs.filters.status')}</FilterLabel>
             <div style={{ display: 'flex', gap: 4 }}>
               {(['all', 'success', 'blocked', 'error'] as const).map(f => (
                 <button
@@ -181,7 +183,7 @@ export function RouterLogsTab() {
                   className={`btn btn-sm ${outcomeFilter === f ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setOutcomeFilter(f)}
                 >
-                  {f === 'all' ? 'All' : f === 'success' ? 'Success' : f === 'blocked' ? 'Blocked' : 'Error'}
+                  {f === 'all' ? t('routers.logs.filters.all') : f === 'success' ? t('routers.logs.filters.success') : f === 'blocked' ? t('routers.logs.filters.blocked') : t('routers.logs.filters.error')}
                 </button>
               ))}
             </div>
@@ -194,7 +196,7 @@ export function RouterLogsTab() {
                 className="btn btn-sm btn-secondary"
                 onClick={() => { setModelIds([]); setCallTypeFilter('all'); setOutcomeFilter('all'); }}
               >
-                Reset filters
+                {t('routers.logs.filters.resetButton')}
               </button>
             </div>
           )}
@@ -209,11 +211,11 @@ export function RouterLogsTab() {
           {/* Summary strip */}
           <div className="stats-grid" style={{ marginBottom: 24 }}>
             <div className="stat-card">
-              <div className="stat-label">Total Cost</div>
+              <div className="stat-label">{t('routers.logs.stats.totalCost')}</div>
               <div className="stat-value">${stats.summary.totalCost.toFixed(4)}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Total Calls</div>
+              <div className="stat-label">{t('routers.logs.stats.totalCalls')}</div>
               <div className="stat-value">{stats.summary.totalCalls}</div>
             </div>
             <div
@@ -223,7 +225,7 @@ export function RouterLogsTab() {
             >
               <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', display: 'inline-block' }} />
-                Completion Calls
+                {t('routers.logs.stats.completionCalls')}
               </div>
               <div className="stat-value">{stats.summary.completionCalls ?? stats.summary.totalCalls}</div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -237,7 +239,7 @@ export function RouterLogsTab() {
             >
               <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
-                Router Calls
+                {t('routers.logs.stats.routerCalls')}
               </div>
               <div className="stat-value">{stats.summary.routingCalls ?? 0}</div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -245,7 +247,7 @@ export function RouterLogsTab() {
               </div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Errors</div>
+              <div className="stat-label">{t('routers.logs.stats.errors')}</div>
               <div className="stat-value" style={{ color: stats.summary.errorCalls > 0 ? 'var(--danger)' : 'var(--success)' }}>
                 {stats.summary.errorCalls}
               </div>
@@ -257,7 +259,7 @@ export function RouterLogsTab() {
             fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)',
             textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px',
           }}>
-            Request Logs
+            {t('routers.logs.requestLogs')}
             <span style={{ fontWeight: 400, marginLeft: 8, color: 'var(--text-muted)' }}>
               ({stats.pagination ? `${filteredRecords.length} / ${stats.pagination.totalRecords}` : filteredRecords.length})
             </span>
@@ -266,8 +268,8 @@ export function RouterLogsTab() {
           {filteredRecords.length === 0 ? (
             <div className="empty-state">
               <p>{stats.records.length === 0
-                ? 'No requests for this router in the selected period.'
-                : 'No records match the active filters.'}
+                ? t('routers.logs.emptyNoRequests')
+                : t('routers.logs.emptyNoMatches')}
               </p>
             </div>
           ) : (
@@ -276,16 +278,16 @@ export function RouterLogsTab() {
               <table>
                 <thead>
                   <tr>
-                    <th>Time</th>
-                    <th>Model</th>
-                    <th>Type</th>
-                    <th>In</th>
-                    <th>Out</th>
-                    <th>Cost</th>
-                    <th>Latency</th>
-                    <th>TTFT</th>
-                    <th>Tok/s</th>
-                    <th>Status</th>
+                    <th>{t('routers.logs.columns.time')}</th>
+                    <th>{t('routers.logs.columns.model')}</th>
+                    <th>{t('routers.logs.columns.type')}</th>
+                    <th>{t('routers.logs.columns.in')}</th>
+                    <th>{t('routers.logs.columns.out')}</th>
+                    <th>{t('routers.logs.columns.cost')}</th>
+                    <th>{t('routers.logs.columns.latency')}</th>
+                    <th>{t('routers.logs.columns.ttft')}</th>
+                    <th>{t('routers.logs.columns.tokPerSec')}</th>
+                    <th>{t('routers.logs.columns.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -309,7 +311,7 @@ export function RouterLogsTab() {
                             background: isRouting ? 'rgba(99,102,241,0.12)' : 'rgba(59,130,246,0.12)',
                             color: isRouting ? 'var(--accent)' : 'var(--primary)',
                           }}>
-                            {isRouting ? 'router' : 'completion'}
+                            {isRouting ? t('routers.logs.typeRouter') : t('routers.logs.typeCompletion')}
                           </span>
                         </td>
                         <td>{r.inputTokens}</td>
@@ -341,12 +343,12 @@ export function RouterLogsTab() {
                   disabled={page <= 1}
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                 >
-                  ← Precedente
+                  {t('routers.logs.pagination.previous')}
                 </button>
                 <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                  Pagina {stats.pagination.page} di {stats.pagination.totalPages}
+                  {t('routers.logs.pagination.pageOf', { page: stats.pagination.page, totalPages: stats.pagination.totalPages })}
                   <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>
-                    ({stats.pagination.totalRecords} record totali)
+                    {t('routers.logs.pagination.totalRecords', { count: stats.pagination.totalRecords })}
                   </span>
                 </span>
                 <button
@@ -354,7 +356,7 @@ export function RouterLogsTab() {
                   disabled={page >= stats.pagination.totalPages}
                   onClick={() => setPage(p => p + 1)}
                 >
-                  Successiva →
+                  {t('routers.logs.pagination.next')}
                 </button>
               </div>
             )}

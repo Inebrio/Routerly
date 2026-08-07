@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface SelectOption {
   value: string;
@@ -22,11 +23,12 @@ export function SearchableSelect({
   options,
   value,
   onChange,
-  placeholder = 'Select...',
+  placeholder,
   disabled,
   style,
   ariaLabel,
 }: SearchableSelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +90,7 @@ export function SearchableSelect({
         }}
       >
         <span style={{ color: selected ? 'var(--text-primary)' : 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selected ? selected.label : placeholder}
+          {selected ? selected.label : (placeholder ?? t('common.select'))}
         </span>
         <ChevronDown size={14} style={{ flexShrink: 0, marginLeft: 6, color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
       </div>
@@ -108,7 +110,7 @@ export function SearchableSelect({
               ref={inputRef}
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="Search..."
+              placeholder={t('common.search')}
               style={{
                 width: '100%',
                 background: 'var(--bg-surface)',
@@ -124,7 +126,7 @@ export function SearchableSelect({
           </div>
           <div style={{ maxHeight: 220, overflowY: 'auto' }}>
             {filtered.length === 0 ? (
-              <div style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No results</div>
+              <div style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('common.noResults')}</div>
             ) : (
               filtered.map(opt => (
                 <div

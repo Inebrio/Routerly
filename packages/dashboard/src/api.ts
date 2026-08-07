@@ -843,11 +843,14 @@ export interface Me {
   id: string;
   email: string;
   roleId: string;
+  language?: string;
 }
 
 export const getMe = () => request<Me>('/me');
 export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
+export const updateMyLanguage = (language: string) =>
+  request<{ language: string }>('/me/language', { method: 'PATCH', body: JSON.stringify({ language }) });
 
 // ── Notification inbox (#91) ───────────────────────────────────────────────
 import type { NotificationCategory, NotificationIncidentEvent } from '@routerly/shared';

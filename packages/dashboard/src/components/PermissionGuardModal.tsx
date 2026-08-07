@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fixPermissions } from '../api';
 
 export interface PermissionBlockedDetail {
@@ -20,6 +21,7 @@ interface Props {
  * place — the action that triggered it is not retried automatically.
  */
 export function PermissionGuardModal({ detail, onFixed, onCancel }: Props) {
+  const { t } = useTranslation();
   const [fixing, setFixing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +32,7 @@ export function PermissionGuardModal({ detail, onFixed, onCancel }: Props) {
       await fixPermissions();
       onFixed();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fix permissions');
+      setError(err instanceof Error ? err.message : t('common.permissionGuard.fixFailed'));
     } finally {
       setFixing(false);
     }
@@ -43,9 +45,9 @@ export function PermissionGuardModal({ detail, onFixed, onCancel }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div className="card" style={{ maxWidth: 480, width: '90%', padding: 24 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 12 }}>Unsafe file permissions</h3>
+        <h3 style={{ marginTop: 0, marginBottom: 12 }}>{t('common.permissionGuard.title')}</h3>
         <p style={{ marginBottom: 12 }}>
-          {detail.message || 'One or more configuration files that hold secrets are readable by other local users. Routerly refuses to proceed until this is fixed.'}
+          {detail.message || t('common.permissionGuard.defaultMessage')}
         </p>
         {detail.files?.length > 0 && (
           <ul style={{ marginBottom: 16, paddingLeft: 20 }}>
@@ -58,9 +60,9 @@ export function PermissionGuardModal({ detail, onFixed, onCancel }: Props) {
           <p style={{ color: 'var(--error, #e53e3e)', marginBottom: 12 }}>{error}</p>
         )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" onClick={onCancel} disabled={fixing}>Cancel</button>
+          <button className="btn btn-secondary" onClick={onCancel} disabled={fixing}>{t('common.cancel')}</button>
           <button className="btn btn-danger" onClick={handleFix} disabled={fixing}>
-            {fixing ? 'Fixing…' : 'Fix now'}
+            {fixing ? t('common.permissionGuard.fixing') : t('common.permissionGuard.fixNow')}
           </button>
         </div>
       </div>

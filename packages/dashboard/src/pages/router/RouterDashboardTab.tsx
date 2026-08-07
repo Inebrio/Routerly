@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Activity, Clock, Coins, PiggyBank } from 'lucide-react';
 import { optimizerLabel } from '@routerly/shared';
@@ -16,6 +17,7 @@ const usd = (n: number) => `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4
  * tab reads, so the two tabs can never disagree.
  */
 export function RouterDashboardTab() {
+  const { t } = useTranslation();
   const { id: routerId } = useParams<{ id: string }>();
 
   const [stats, setStats]   = useState<UsageStats | null>(null);
@@ -77,7 +79,7 @@ export function RouterDashboardTab() {
           fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase',
           letterSpacing: '0.05em', color: 'var(--text-muted)',
         }}>
-          Period
+          {t('routers.dashboard.period')}
         </span>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
@@ -88,92 +90,92 @@ export function RouterDashboardTab() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : !summary ? null : summary.totalCalls === 0 ? (
         <div className="empty-state">
-          <p>No traffic for this router in the selected period.</p>
+          <p>{t('routers.dashboard.noTraffic')}</p>
         </div>
       ) : (
         <>
           <div className="stats-grid" style={{ marginBottom: 24 }}>
             <div className="stat-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10B981' }}>
-                <PiggyBank size={18} /><span className="stat-label">Savings</span>
+                <PiggyBank size={18} /><span className="stat-label">{t('routers.dashboard.stats.savings')}</span>
               </div>
               <div className="stat-value" style={{ color: worst && worst.costDelta >= 0 ? '#10B981' : 'var(--danger)' }}>
                 {worst ? usd(worst.costDelta) : '—'}
               </div>
               <div className="stat-sub">
                 {worst
-                  ? <>vs <span className="mono">{worst.modelId}</span> for everything</>
-                  : 'no target model to compare against'}
+                  ? <>{t('routers.dashboard.stats.vsPrefix')} <span className="mono">{worst.modelId}</span> {t('routers.dashboard.stats.forEverything')}</>
+                  : t('routers.dashboard.stats.noTargetToCompare')}
               </div>
             </div>
             <div className="stat-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#3D75F5' }}>
-                <Coins size={18} /><span className="stat-label">Cost</span>
+                <Coins size={18} /><span className="stat-label">{t('routers.dashboard.stats.cost')}</span>
               </div>
               <div className="stat-value">{usd(summary.totalCost)}</div>
-              <div className="stat-sub">{summary.totalCalls.toLocaleString()} calls</div>
+              <div className="stat-sub">{summary.totalCalls === 1 ? t('routers.dashboard.stats.callCount') : t('routers.dashboard.stats.callCount_other', { count: summary.totalCalls })}</div>
             </div>
             <div className="stat-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#8B5CF6' }}>
-                <Clock size={18} /><span className="stat-label">Latency</span>
+                <Clock size={18} /><span className="stat-label">{t('routers.dashboard.stats.latency')}</span>
               </div>
               <div className="stat-value">{ms(summary.latencyMedianMs)}</div>
-              <div className="stat-sub">median &middot; p95 {ms(summary.latencyP95Ms)}</div>
+              <div className="stat-sub">{t('routers.dashboard.stats.medianP95', { value: ms(summary.latencyP95Ms) })}</div>
             </div>
             <div className="stat-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#A78BFA' }}>
-                <Clock size={18} /><span className="stat-label">Time to first token</span>
+                <Clock size={18} /><span className="stat-label">{t('routers.dashboard.stats.ttft')}</span>
               </div>
               <div className="stat-value">{summary.ttftSamples ? ms(summary.ttftMedianMs) : '—'}</div>
               <div className="stat-sub">
                 {summary.ttftSamples
-                  ? <>median &middot; p95 {ms(summary.ttftP95Ms)}</>
-                  : 'not measured on these calls'}
+                  ? t('routers.dashboard.stats.medianP95', { value: ms(summary.ttftP95Ms) })
+                  : t('routers.dashboard.stats.notMeasured')}
               </div>
             </div>
             <div className="stat-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#10B981' }}>
-                <Activity size={18} /><span className="stat-label">Reliability</span>
+                <Activity size={18} /><span className="stat-label">{t('routers.dashboard.stats.reliability')}</span>
               </div>
               <div className="stat-value">
                 {((summary.successCalls / summary.totalCalls) * 100).toFixed(1)}%
               </div>
               <div className="stat-sub">
-                {summary.errorCalls} errors &middot; {summary.blockedCalls ?? 0} blocked
+                {t('routers.dashboard.stats.errorsAndBlocked', { errors: summary.errorCalls, blocked: summary.blockedCalls ?? 0 })}
               </div>
             </div>
           </div>
 
           {/* Tokens */}
           <div style={{ marginBottom: 24, fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <span>Input tokens: <strong style={{ color: 'var(--text-secondary)' }}>{tokensIn.toLocaleString()}</strong></span>
+            <span>{t('routers.dashboard.tokens.input')} <strong style={{ color: 'var(--text-secondary)' }}>{tokensIn.toLocaleString()}</strong></span>
             <span>&middot;</span>
-            <span>Output tokens: <strong style={{ color: 'var(--text-secondary)' }}>{tokensOut.toLocaleString()}</strong></span>
+            <span>{t('routers.dashboard.tokens.output')} <strong style={{ color: 'var(--text-secondary)' }}>{tokensOut.toLocaleString()}</strong></span>
             {savings && savings.cache.inputTokens > 0 && (
               <>
                 <span>&middot;</span>
                 <span>
-                  From cache: <strong style={{ color: 'var(--text-secondary)' }}>{savings.cache.inputTokens.toLocaleString()}</strong>
-                  {' '}({usd(savings.cache.cost)} saved)
+                  {t('routers.dashboard.tokens.fromCache')} <strong style={{ color: 'var(--text-secondary)' }}>{savings.cache.inputTokens.toLocaleString()}</strong>
+                  {' '}{t('routers.dashboard.tokens.cacheSaved', { amount: usd(savings.cache.cost) })}
                 </span>
               </>
             )}
           </div>
 
           {/* Counterfactual against the router targets */}
-          <h3 className="section-title">If everything had gone to one model</h3>
+          <h3 className="section-title">{t('routers.dashboard.oneModel.heading')}</h3>
           {!savings?.baselines.length ? (
             <div className="empty-state">
-              <p>Add target models to this router to see the comparison.</p>
+              <p>{t('routers.dashboard.oneModel.empty')}</p>
             </div>
           ) : (
             <div className="table-wrap" style={{ marginBottom: 24 }}>
               <table>
                 <thead>
                   <tr>
-                    <th>Target model</th>
-                    <th style={{ textAlign: 'right' }}>Would have cost</th>
-                    <th style={{ textAlign: 'right' }}>Saved</th>
+                    <th>{t('routers.dashboard.oneModel.columns.targetModel')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('routers.dashboard.oneModel.columns.wouldHaveCost')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('routers.dashboard.oneModel.columns.saved')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -191,22 +193,22 @@ export function RouterDashboardTab() {
             </div>
           )}
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '-12px 0 24px' }}>
-            Costs are the observed tokens repriced at each target's rates.
+            {t('routers.dashboard.oneModel.costsHint')}
           </p>
 
           {/* What the optimizers actually removed (T63) */}
           {savings && savings.optimizers.length > 0 && (
             <>
-              <h3 className="section-title">What the optimizers removed</h3>
+              <h3 className="section-title">{t('routers.dashboard.optimizers.heading')}</h3>
               <div className="table-wrap" style={{ marginBottom: 8 }}>
                 <table>
                   <thead>
                     <tr>
-                      <th>Optimizer</th>
-                      <th style={{ textAlign: 'right' }}>Calls changed</th>
-                      <th style={{ textAlign: 'right' }}>Tokens saved</th>
-                      <th style={{ textAlign: 'right' }}>Cost saved</th>
-                      <th style={{ textAlign: 'right' }}>Rolled back</th>
+                      <th>{t('routers.dashboard.optimizers.columns.optimizer')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('routers.dashboard.optimizers.columns.callsChanged')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('routers.dashboard.optimizers.columns.tokensSaved')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('routers.dashboard.optimizers.columns.costSaved')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('routers.dashboard.optimizers.columns.rolledBack')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -227,25 +229,23 @@ export function RouterDashboardTab() {
                 </table>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 24px' }}>
-                Measured on the calls themselves, priced at the model that served each one. A rolled-back
-                run means the step's output was rejected as unsafe and the prompt was restored: it saved
-                nothing, and a high count means the threshold is too aggressive.
+                {t('routers.dashboard.optimizers.hint')}
               </p>
             </>
           )}
 
           {/* Where the traffic went */}
-          <h3 className="section-title">Where the traffic went</h3>
+          <h3 className="section-title">{t('routers.dashboard.traffic.heading')}</h3>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Model</th>
-                  <th style={{ textAlign: 'right' }}>Calls</th>
-                  <th style={{ width: '30%' }}>Share</th>
-                  <th style={{ textAlign: 'right' }}>Cost</th>
-                  <th style={{ textAlign: 'right' }}>p95 latency</th>
-                  <th style={{ textAlign: 'right' }}>Errors</th>
+                  <th>{t('routers.dashboard.traffic.columns.model')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('routers.dashboard.traffic.columns.calls')}</th>
+                  <th style={{ width: '30%' }}>{t('routers.dashboard.traffic.columns.share')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('routers.dashboard.traffic.columns.cost')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('routers.dashboard.traffic.columns.p95Latency')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('routers.dashboard.traffic.columns.errors')}</th>
                 </tr>
               </thead>
               <tbody>

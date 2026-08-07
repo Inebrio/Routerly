@@ -202,8 +202,8 @@ describe('RouterRoutingTab — loads existing policies', () => {
   it('renders pre-existing policies', async () => {
     renderTab(mockRouterWithPolicies);
     await waitFor(() => {
-      expect(screen.queryByText('health Policy')).not.toBeNull();
-      expect(screen.queryByText('cheapest Policy')).not.toBeNull();
+      expect(screen.queryByText('Health Policy')).not.toBeNull();
+      expect(screen.queryByText('Cheapest Policy')).not.toBeNull();
     });
   });
 
@@ -276,28 +276,28 @@ describe('RouterRoutingTab — add / remove policies', () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
     await userEvent.selectOptions(sel, 'health');
-    await waitFor(() => screen.getByText('health Policy'));
+    await waitFor(() => screen.getByText('Health Policy'));
   });
 
   it('adds a performance policy', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
     await userEvent.selectOptions(sel, 'performance');
-    await waitFor(() => screen.getByText('performance Policy'));
+    await waitFor(() => screen.getByText('Performance Policy'));
   });
 
   it('adds a context policy', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
     await userEvent.selectOptions(sel, 'context');
-    await waitFor(() => screen.getByText('context Policy'));
+    await waitFor(() => screen.getByText('Context Policy'));
   });
 
   it('adds a capability policy', async () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
     await userEvent.selectOptions(sel, 'capability');
-    await waitFor(() => screen.getByText('capability Policy'));
+    await waitFor(() => screen.getByText('Capability Policy'));
   });
 
   it('adds a fairness policy and shows window input', async () => {
@@ -332,7 +332,7 @@ describe('RouterRoutingTab — add / remove policies', () => {
     renderTab();
     const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
     await userEvent.selectOptions(sel, 'cheapest');
-    await waitFor(() => screen.getByText('cheapest Policy'));
+    await waitFor(() => screen.getByText('Cheapest Policy'));
   });
 
   it('removes a policy via the remove button', async () => {
@@ -341,7 +341,9 @@ describe('RouterRoutingTab — add / remove policies', () => {
     await userEvent.selectOptions(sel, 'health');
     await waitFor(() => screen.getByTitle('Remove policy'));
     await userEvent.click(screen.getByTitle('Remove policy'));
-    await waitFor(() => expect(screen.queryByText('health Policy')).toBeNull());
+    // Card removed → its "Remove policy" button is gone (the label itself now also
+    // appears as an "Add a policy" option again, so it can't be used to assert removal).
+    await waitFor(() => expect(screen.queryByTitle('Remove policy')).toBeNull());
   });
 
   it('once all policies added, add-policy select is disabled', async () => {
@@ -1454,7 +1456,7 @@ describe('RouterRoutingTab — drag-and-drop event handlers', () => {
         { type: 'cheapest', enabled: true },
       ],
     });
-    await waitFor(() => screen.getByText('health Policy'));
+    await waitFor(() => screen.getByText('Health Policy'));
     const policyRows = document.querySelectorAll('[id^="policy-row-"]');
     const { fireEvent } = await import('@testing-library/react');
     // dragStart on row 0
@@ -1464,7 +1466,7 @@ describe('RouterRoutingTab — drag-and-drop event handlers', () => {
     // dragEnd on row 0
     fireEvent.dragEnd(policyRows[0]!);
     // No crash
-    expect(screen.queryByText('health Policy')).not.toBeNull();
+    expect(screen.queryByText('Health Policy')).not.toBeNull();
   });
 
   it('target model drag handlers do not crash', async () => {
@@ -1538,14 +1540,14 @@ describe('RouterRoutingTab — drag-and-drop event handlers', () => {
         { type: 'cheapest', enabled: true },
       ],
     });
-    await waitFor(() => screen.getByText('health Policy'));
+    await waitFor(() => screen.getByText('Health Policy'));
     const { fireEvent } = await import('@testing-library/react');
     const policyRows = document.querySelectorAll('[id^="policy-row-"]');
     fireEvent.dragStart(policyRows[0]!, { dataTransfer: { effectAllowed: '' } });
     // dragEnter on the same row (idx 0) — should be no-op
     fireEvent.dragEnter(policyRows[0]!);
     fireEvent.dragEnd(policyRows[0]!);
-    expect(screen.queryByText('health Policy')).not.toBeNull();
+    expect(screen.queryByText('Health Policy')).not.toBeNull();
   });
 });
 
@@ -2183,14 +2185,14 @@ describe('RouterRoutingTab — onDragEnterPolicy with no active drag', () => {
         { type: 'cheapest', enabled: true },
       ],
     });
-    await waitFor(() => screen.getByText('health Policy'));
+    await waitFor(() => screen.getByText('Health Policy'));
     const { fireEvent } = await import('@testing-library/react');
     const policyRows = document.querySelectorAll('[id^="policy-row-"]');
     // dragEnter without setting draggedPolicyIdx first → null check fires early return
     fireEvent.dragEnter(policyRows[0]!);
     // No crash, policies unchanged
-    expect(screen.queryByText('health Policy')).not.toBeNull();
-    expect(screen.queryByText('cheapest Policy')).not.toBeNull();
+    expect(screen.queryByText('Health Policy')).not.toBeNull();
+    expect(screen.queryByText('Cheapest Policy')).not.toBeNull();
   });
 });
 

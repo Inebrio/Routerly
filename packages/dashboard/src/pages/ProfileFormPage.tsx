@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save, ShieldOff } from 'lucide-react';
 import {
@@ -16,11 +18,13 @@ import {
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
 
-const LABEL_PLACEHOLDERS: Record<ProfileKind, string> = {
-  routing: 'e.g. My Balanced Routing',
-  optimizer: 'e.g. My Prompt Trimmer',
-  security: 'e.g. My Strict Guardrails',
-};
+function labelPlaceholders(t: TFunction): Record<ProfileKind, string> {
+  return {
+    routing: t('profiles.form.labelPlaceholders.routing'),
+    optimizer: t('profiles.form.labelPlaceholders.optimizer'),
+    security: t('profiles.form.labelPlaceholders.security'),
+  };
+}
 
 /**
  * One form per profile kind: the kind is fixed by where you came from, either
@@ -30,6 +34,8 @@ const LABEL_PLACEHOLDERS: Record<ProfileKind, string> = {
  * editors are the same ones the router tabs use.
  */
 export function ProfileFormPage() {
+  const { t } = useTranslation();
+  const LABEL_PLACEHOLDERS = labelPlaceholders(t);
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -90,18 +96,18 @@ export function ProfileFormPage() {
         setModels(ms);
         const source = list.find(p => p.id === (isCreate ? baseId : id));
         if (!isCreate && !source) {
-          setError('Profile not found.');
+          setError(t('profiles.form.errors.notFound'));
           return;
         }
         if (source) {
           fill(source, opts);
-          setLabel(isCreate ? `${source.label} copy` : source.label);
+          setLabel(isCreate ? t('profiles.form.copySuffix', { label: source.label }) : source.label);
           setBuiltin(!isCreate && source.builtin);
         } else {
           setRows(mergeOptimizerRows([], opts));
         }
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load profile'))
+      .catch(e => setError(e instanceof Error ? e.message : t('profiles.form.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, [canRead, id, baseId, isCreate]);
 
@@ -136,14 +142,14 @@ export function ProfileFormPage() {
       }
       navigate('/dashboard/profiles');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      setError(err instanceof Error ? err.message : t('profiles.form.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
   }
 
   if (!canRead) {
-    return <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view profiles.</p></div>;
+    return <div className="empty-state"><ShieldOff size={40} /><p>{t('profiles.form.noPermission')}</p></div>;
   }
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
@@ -158,13 +164,13 @@ export function ProfileFormPage() {
           onClick={() => navigate('/dashboard/profiles')}
         >
           <ArrowLeft size={16} />
-          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back to Profiles</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{t('profiles.form.backToProfiles')}</span>
         </button>
-        <h1>{isCreate ? `New ${KIND_LABELS[kind]} Profile` : readOnly ? label : `Edit ${label}`}</h1>
+        <h1>{isCreate ? t('profiles.form.newProfileTitle', { kind: KIND_LABELS[kind] }) : readOnly ? label : t('profiles.form.editProfileTitle', { label })}</h1>
         <p>
           {readOnly
-            ? 'Built-in profiles cannot be edited. Clone one to customize it.'
-            : `A${kind === 'optimizer' ? 'n' : ''} ${KIND_LABELS[kind].toLowerCase()} profile can be assigned to any number of routers.`}
+            ? t('profiles.form.builtinHint')
+            : t('profiles.form.assignHint', { kind: KIND_LABELS[kind].toLowerCase(), article: kind === 'optimizer' ? 'An' : 'A' })}
         </p>
       </div>
 
@@ -173,7 +179,7 @@ export function ProfileFormPage() {
           {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
 
           <div className="form-group" style={{ maxWidth: 400, marginBottom: 24 }}>
-            <label className="form-label" htmlFor="profile-label">Label</label>
+            <label className="form-label" htmlFor="profile-label">{t('profiles.form.label')}</label>
             <input
               id="profile-label"
               className="form-input"
@@ -192,9 +198,9 @@ export function ProfileFormPage() {
 
             {kind === 'optimizer' && (
               <>
-                <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>Optimizers</label>
+                <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>{t('profiles.form.optimizers')}</label>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                  Drag to reorder, toggle to enable. They run in order from top to bottom.
+                  {t('profiles.form.optimizersHint')}
                 </p>
                 <OptimizerStepsEditor rows={rows} setRows={setRows} disabled={readOnly} />
               </>
@@ -213,10 +219,10 @@ export function ProfileFormPage() {
           {!readOnly && (
             <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
               <button type="submit" className="btn btn-primary" disabled={saveDisabled}>
-                {saving ? <span className="spinner" /> : <><Save size={14} /> {isCreate ? 'Create Profile' : 'Save Profile'}</>}
+                {saving ? <span className="spinner" /> : <><Save size={14} /> {isCreate ? t('profiles.form.createProfile') : t('profiles.form.saveProfile')}</>}
               </button>
               <button type="button" className="btn btn-secondary" onClick={() => navigate('/dashboard/profiles')}>
-                Cancel
+                {t('profiles.form.cancel')}
               </button>
             </div>
           )}

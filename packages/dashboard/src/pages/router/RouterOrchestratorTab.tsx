@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { getRouters, updateRouter, type Router } from '../../api';
 import { useRouter } from './RouterLayout';
@@ -23,6 +24,7 @@ function mkId() {
  * is ever fetched or rendered here).
  */
 export function RouterOrchestratorTab() {
+  const { t } = useTranslation();
   const { router, setRouter } = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,7 +36,7 @@ export function RouterOrchestratorTab() {
   useEffect(() => {
     getRouters()
       .then(all => setCandidateRouters(all.filter(r => (r.kind ?? 'router') === 'router' && r.id !== router?.id)))
-      .catch(e => setErr(e instanceof Error ? e.message : 'Failed to load routers'))
+      .catch(e => setErr(e instanceof Error ? e.message : t('routers.orchestrator.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, [router?.id]);
 
@@ -110,7 +112,7 @@ export function RouterOrchestratorTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error saving orchestrator candidates');
+      setErr(e instanceof Error ? e.message : t('routers.orchestrator.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -129,7 +131,7 @@ export function RouterOrchestratorTab() {
 
   /* v8 ignore next 3 */
   if (router && (router.kind ?? 'router') !== 'orchestrator') {
-    return <div className="form-error">This router is not an Orchestrator.</div>;
+    return <div className="form-error">{t('routers.orchestrator.notOrchestrator')}</div>;
   }
 
   return (
@@ -138,11 +140,9 @@ export function RouterOrchestratorTab() {
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
         <div className="form-group">
-          <label className="form-label">Candidate Routers</label>
+          <label className="form-label">{t('routers.orchestrator.candidateRouters')}</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-            The routers this Orchestrator forwards requests to. Weight influences how often each
-            candidate is picked; only its name, id, weight and optional per-candidate limits are
-            shown here.
+            {t('routers.orchestrator.candidateRoutersHint')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -162,11 +162,11 @@ export function RouterOrchestratorTab() {
                 >
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Router</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.orchestrator.router')}</label>
                       <SearchableSelect
                         value={row.routerId}
                         onChange={v => updateRow(idx, { routerId: v })}
-                        placeholder="Select router"
+                        placeholder={t('routers.orchestrator.selectRouter')}
                         options={candidateRouters
                           .filter(r => r.id === row.routerId || !usedRouterIds(idx).has(r.id))
                           .map(r => ({ value: r.id, label: r.name, description: r.id }))}
@@ -179,7 +179,7 @@ export function RouterOrchestratorTab() {
                     </div>
 
                     <div style={{ width: 120 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Weight</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.orchestrator.weight')}</label>
                       <input
                         className="form-input"
                         type="number"
@@ -195,7 +195,7 @@ export function RouterOrchestratorTab() {
                         type="button"
                         onClick={() => removeRow(idx)}
                         className="btn-icon danger"
-                        title="Remove candidate"
+                        title={t('routers.orchestrator.removeCandidate')}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -212,17 +212,17 @@ export function RouterOrchestratorTab() {
                       }}
                     >
                       {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      Usage limits for this candidate
+                      {t('routers.orchestrator.usageLimits')}
                       {limitCount > 0 && (
                         <span style={{ fontSize: '0.72rem', background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 7px' }}>
-                          {limitCount} {limitCount === 1 ? 'limit' : 'limits'}
+                          {t('routers.orchestrator.limitCount', { count: limitCount })}
                         </span>
                       )}
                     </button>
                     {isExpanded && (
                       <div style={{ marginTop: 10 }}>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8 }}>
-                          Optional usage limits applied only to requests this Orchestrator forwards to this candidate.
+                          {t('routers.orchestrator.usageLimitsHint')}
                         </p>
                         <LimitRowsEditor
                           rows={row.limitRows}
@@ -237,7 +237,7 @@ export function RouterOrchestratorTab() {
 
             {rows.length === 0 && (
               <div className="empty-state" style={{ padding: 24, fontSize: '0.9rem' }}>
-                No candidate routers yet. An Orchestrator needs at least one before it can forward requests.
+                {t('routers.orchestrator.empty')}
               </div>
             )}
           </div>
@@ -255,7 +255,7 @@ export function RouterOrchestratorTab() {
               opacity: candidateRouters.filter(r => !rows.some(row => row.routerId === r.id)).length === 0 ? 0.4 : 1,
             }}
           >
-            <Plus size={16} /> Add Candidate
+            <Plus size={16} /> {t('routers.orchestrator.addCandidate')}
           </button>
         </div>
 
@@ -270,9 +270,9 @@ export function RouterOrchestratorTab() {
             {saving ? (
               <span className="spinner" />
             ) : saved ? (
-              <><Check size={15} style={{ marginRight: 6 }} />Saved!</>
+              <><Check size={15} style={{ marginRight: 6 }} />{t('routers.orchestrator.saved')}</>
             ) : (
-              'Save Candidates'
+              t('routers.orchestrator.saveCandidates')
             )}
           </button>
         </div>

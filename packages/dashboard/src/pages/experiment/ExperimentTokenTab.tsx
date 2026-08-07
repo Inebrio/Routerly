@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Key, Copy, Check } from 'lucide-react';
 import { createExperimentToken, deleteExperimentToken } from '../../api';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -8,6 +9,7 @@ import { useAuth } from '../../AuthContext';
 import { useExperiment } from './ExperimentLayout';
 
 export function ExperimentTokenTab() {
+  const { t } = useTranslation();
   const { experiment, setExperiment } = useExperiment();
   const { can } = useAuth();
   const canManage = can('experiments:manage');
@@ -28,7 +30,7 @@ export function ExperimentTokenTab() {
       setExperiment(e => (e ? { ...e, tokens: [...e.tokens, result.tokenInfo] } : e));
       setRevealed(result.token);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to create the token');
+      setErr(e instanceof Error ? e.message : t('experiments.token.errors.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -36,15 +38,15 @@ export function ExperimentTokenTab() {
 
   function handleDelete(tokenId: string, snippet: string) {
     setConfirmState({
-      message: `Revoke token "${snippet}..."? Clients using it stop working immediately.`,
+      message: t('experiments.token.revokeConfirm', { snippet }),
       onConfirm: async () => {
         setConfirmState(null);
         setErr(''); setLoading(true);
         try {
           await deleteExperimentToken(experiment!.id, tokenId);
-          setExperiment(e => (e ? { ...e, tokens: e.tokens.filter(t => t.id !== tokenId) } : e));
+          setExperiment(e => (e ? { ...e, tokens: e.tokens.filter(tk => tk.id !== tokenId) } : e));
         } catch (e) {
-          setErr(e instanceof Error ? e.message : 'Failed to revoke the token');
+          setErr(e instanceof Error ? e.message : t('experiments.token.errors.revokeFailed'));
         } finally {
           setLoading(false);
         }
@@ -58,7 +60,7 @@ export function ExperimentTokenTab() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setErr('Copy failed: select and copy the token manually.');
+      setErr(t('experiments.token.errors.copyFailed'));
     }
   }
 
@@ -67,13 +69,12 @@ export function ExperimentTokenTab() {
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
       <p className="section-desc" style={{ marginTop: 0 }}>
-        A client calls the experiment exactly like a router: same base URL, this token instead of a router token.
-        Each request lands on one variant and is billed to that variant's router.
+        {t('experiments.token.desc')}
       </p>
 
       <div style={{ maxWidth: 620, marginBottom: 24 }}>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-          Base URL for the OpenAI or Anthropic SDK, with an experiment token as the API key:
+          {t('experiments.token.baseUrlLabel')}
         </div>
         <CopyBlock text={`${window.location.origin}/v1`} />
       </div>
@@ -81,12 +82,12 @@ export function ExperimentTokenTab() {
       {revealed && (
         <div style={{ padding: 16, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, marginBottom: 24 }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-            Token created. Copy it now, it won't be shown again.
+            {t('experiments.token.created')}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>{revealed}</div>
             <button className="btn btn-secondary" onClick={() => copyToken(revealed)} style={{ flexShrink: 0 }}>
-              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Copied!' : 'Copy'}
+              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? t('experiments.token.copied') : t('experiments.token.copy')}
             </button>
           </div>
         </div>
@@ -95,7 +96,7 @@ export function ExperimentTokenTab() {
       {canManage && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
           <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>
-            <Plus size={16} /> New Token
+            <Plus size={16} /> {t('experiments.token.newToken')}
           </button>
         </div>
       )}
@@ -103,7 +104,7 @@ export function ExperimentTokenTab() {
       {tokens.length === 0 ? (
         <div className="empty-state">
           <Key size={36} />
-          <p>No tokens on this experiment. Create one so clients can call it.</p>
+          <p>{t('experiments.token.empty')}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -120,19 +121,19 @@ export function ExperimentTokenTab() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Created</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('experiments.token.columns.created')}</span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     {new Date(token.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                   </span>
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last used</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('experiments.token.columns.lastUsed')}</span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
                   </span>
                 </div>
                 {canManage && (
-                  <button className="btn-icon danger" disabled={loading} title="Revoke Token"
+                  <button className="btn-icon danger" disabled={loading} title={t('experiments.token.revokeTitle')}
                     onClick={() => handleDelete(token.id, token.tokenSnippet || '')}>
                     <Trash2 size={16} />
                   </button>

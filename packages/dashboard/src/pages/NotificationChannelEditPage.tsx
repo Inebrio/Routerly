@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, FlaskConical } from 'lucide-react';
 import { getNotificationChannel, updateNotificationChannel, testNotificationChannel, getRoles, getUsers } from '../api';
@@ -24,6 +25,7 @@ function buildInitialForm(channel: RedactedChannel): Record<string, unknown> {
 }
 
 export function NotificationChannelEditPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [channel, setChannel] = useState<RedactedChannel | null>(null);
@@ -51,7 +53,7 @@ export function NotificationChannelEditPage() {
         setRoles(r);
         setUsers(u);
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.notifications.edit.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -82,11 +84,11 @@ export function NotificationChannelEditPage() {
         delete patch['events'];
       }
       if (patch['targets']) {
-        const t = patch['targets'] as Record<string, unknown>;
+        const targets = patch['targets'] as Record<string, unknown>;
         const clean: Record<string, unknown> = {};
-        if (Array.isArray(t['roles']) && (t['roles'] as string[]).length)             clean['roles']       = t['roles'];
-        if (Array.isArray(t['permissions']) && (t['permissions'] as string[]).length) clean['permissions'] = t['permissions'];
-        if (Array.isArray(t['users']) && (t['users'] as string[]).length)             clean['users']       = t['users'];
+        if (Array.isArray(targets['roles']) && (targets['roles'] as string[]).length)             clean['roles']       = targets['roles'];
+        if (Array.isArray(targets['permissions']) && (targets['permissions'] as string[]).length) clean['permissions'] = targets['permissions'];
+        if (Array.isArray(targets['users']) && (targets['users'] as string[]).length)             clean['users']       = targets['users'];
         if (Object.keys(clean).length) patch['targets'] = clean;
         else delete patch['targets'];
       }
@@ -94,7 +96,7 @@ export function NotificationChannelEditPage() {
       await updateNotificationChannel(id, patch);
       navigate('/dashboard/settings/notifications');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(e instanceof Error ? e.message : t('settings.notifications.edit.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -126,7 +128,7 @@ export function NotificationChannelEditPage() {
           onClick={() => navigate('/dashboard/settings/notifications')}
         >
           <ArrowLeft size={16} />
-          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{t('settings.notifications.edit.back')}</span>
         </button>
         <div className="form-error">{error}</div>
       </>
@@ -149,13 +151,13 @@ export function NotificationChannelEditPage() {
           onClick={() => navigate('/dashboard/settings/notifications')}
         >
           <ArrowLeft size={16} />
-          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Back to Notifications</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>{t('settings.notifications.edit.backToList')}</span>
         </button>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Edit {providerLabel(provider)} channel
+          {t('settings.notifications.edit.heading', { provider: providerLabel(provider, t) })}
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: 4 }}>
-          Update configuration for this notification channel.
+          {t('settings.notifications.edit.subtitle')}
         </p>
       </div>
 
@@ -180,46 +182,46 @@ export function NotificationChannelEditPage() {
                 textTransform: 'capitalize',
               }}
             >
-              {tab}
+              {t(`settings.notifications.form.tabs.${tab}`)}
             </button>
           ))}
         </div>
 
         {activeTab === 'connection' && (
           <div className="form-section">
-            <h3 className="section-title">Channel settings</h3>
+            <h3 className="section-title">{t('settings.notifications.form.sections.channelSettings')}</h3>
             <div className="form-group">
               <label className="form-label">
-                Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                {t('settings.notifications.form.nameLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span>
               </label>
               <input
                 className="form-input"
                 value={typeof form['name'] === 'string' ? form['name'] : ''}
                 onChange={e => onChange('name', e.target.value || undefined)}
-                placeholder="Label for this channel"
+                placeholder={t('settings.notifications.form.namePlaceholder')}
               />
             </div>
-            <ChannelEditFields form={form} onChange={onChange} isEdit={true} />
+            <ChannelEditFields form={form} onChange={onChange} isEdit={true} t={t} />
           </div>
         )}
 
         {activeTab === 'routing' && (
           <div className="form-section">
-            <h3 className="section-title">Events and routing</h3>
-            <RoutingEditFields form={form} onChange={onChange} />
+            <h3 className="section-title">{t('settings.notifications.form.sections.eventsRouting')}</h3>
+            <RoutingEditFields form={form} onChange={onChange} t={t} />
           </div>
         )}
 
         {activeTab === 'recipients' && (
           <div className="form-section">
-            <h3 className="section-title">Recipients</h3>
-            <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+            <h3 className="section-title">{t('settings.notifications.form.sections.recipients')}</h3>
+            <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} t={t} />
           </div>
         )}
 
           {/* Test section */}
           <div className="form-section">
-            <h3 className="section-title">Send test</h3>
+            <h3 className="section-title">{t('settings.notifications.edit.testSection.title')}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {showRecipient && (
@@ -227,7 +229,7 @@ export function NotificationChannelEditPage() {
                     type="email"
                     className="form-input"
                     style={{ flex: 1, maxWidth: 320 }}
-                    placeholder="recipient@example.com"
+                    placeholder={t('settings.notifications.edit.testSection.recipientPlaceholder')}
                     value={testTo}
                     onChange={e => setTestTo(e.target.value)}
                   />
@@ -240,14 +242,14 @@ export function NotificationChannelEditPage() {
                   style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   {testStatus?.loading
-                    ? <><div className="spinner" style={{ width: 12, height: 12 }} /> Sending…</>
-                    : <><FlaskConical size={13} /> Send Test</>}
+                    ? <><div className="spinner" style={{ width: 12, height: 12 }} /> {t('settings.notifications.edit.testSection.sendingButton')}</>
+                    : <><FlaskConical size={13} /> {t('settings.notifications.edit.testSection.sendButton')}</>}
                 </button>
               </div>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
                 {showRecipient
-                  ? 'Leave empty to send to your account email. Test uses the saved channel configuration.'
-                  : 'Test uses the saved channel configuration. Save changes first to test updated settings.'}
+                  ? t('settings.notifications.edit.testSection.hintEmail')
+                  : t('settings.notifications.edit.testSection.hintOther')}
               </p>
               {testStatus && !testStatus.loading && (
                 <div style={{
@@ -269,12 +271,12 @@ export function NotificationChannelEditPage() {
               onClick={() => navigate('/dashboard/settings/notifications')}
               disabled={saving}
             >
-              Cancel
+              {t('settings.notifications.form.cancelButton')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving
-                ? <><span className="spinner" style={{ width: 14, height: 14 }} /> Saving…</>
-                : 'Save Changes'}
+                ? <><span className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.notifications.edit.savingButton')}</>
+                : t('settings.notifications.edit.saveButton')}
             </button>
           </div>
         </form>

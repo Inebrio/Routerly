@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { login as apiLogin } from './api';
 
-interface AuthUser { id: string; email: string; role: string; permissions?: string[]; totpEnabled?: boolean; }
+interface AuthUser { id: string; email: string; role: string; permissions?: string[]; totpEnabled?: boolean; language?: string; }
 interface AuthCtx {
   user: AuthUser | null;
   isLoading: boolean;

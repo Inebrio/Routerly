@@ -402,7 +402,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       refreshTokenHash: hashToken(refreshToken),
     };
     await writeConfig('users', users);
-    return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions, totpEnabled: !!user.totpEnabled } });
+    return reply.send({ token, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions, totpEnabled: !!user.totpEnabled, ...(user.language ? { language: user.language } : {}) } });
   });
 
   // ─── POST /api/auth/2fa/verify ───────────────────────────────────────────────
@@ -444,7 +444,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const refreshToken = generateRawToken(40);
     users[userIndex] = { ...(users[userIndex]!), refreshTokenHash: hashToken(refreshToken) };
     await writeConfig('users', users);
-    return reply.send({ token: sessionToken, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions, totpEnabled: true } });
+    return reply.send({ token: sessionToken, refreshToken, user: { id: user.id, email: user.email, role: user.roleId, permissions, totpEnabled: true, ...(user.language ? { language: user.language } : {}) } });
   });
 
   // ─── POST /api/auth/refresh ─────────────────────────────────────────────────
@@ -1681,7 +1681,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const user = users.find(u => u.id === userId);
     if (!user) return reply.status(404).send({ error: 'User not found' });
-    return reply.send({ id: user.id, email: user.email, roleId: user.roleId });
+    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, ...(user.language ? { language: user.language } : {}) });
+  });
+
+  // Dashboard-owned language list — server only checks length, never the ~40-language catalog.
+  const languageBodySchema = z.object({ language: z.string().min(1).max(10) });
+
+  fastify.patch<{ Body: { language: string } }>('/api/me/language', async (req, reply) => {
+    const parsed = languageBodySchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'language must be a non-empty string of at most 10 characters' });
+    const userId = req.dashUser!.id;
+    const users = await readConfig('users');
+    const idx = users.findIndex(u => u.id === userId);
+    if (idx === -1) return reply.status(404).send({ error: 'User not found' });
+    users[idx] = { ...(users[idx]!), language: parsed.data.language };
+    await writeConfig('users', users);
+    return reply.send({ language: parsed.data.language });
   });
 
   fastify.put<{
