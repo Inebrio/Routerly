@@ -783,12 +783,6 @@
       "newRouter": "Nuevo enrutador",
       "empty": "Aún no hay enrutadores.",
       "emptyFiltered": "No hay routers de este tipo.",
-      "tabs": {
-        "all": "Todos",
-        "router": "Router",
-        "orchestrator": "Orquestador",
-        "passthrough": "Paso directo"
-      },
       "columns": {
         "name": "Nombre",
         "tokens": "Tokens",
@@ -804,10 +798,7 @@
         "deleteFailed": "Error al eliminar el enrutador"
       },
       "newOrchestrator": "Nuevo orquestador",
-      "newPassthrough": "Nuevo passthrough",
-      "tabs": {
-        "all": "Todos"
-      }
+      "newPassthrough": "Nuevo passthrough"
     },
     "layout": {
       "notFound": "Enrutador no encontrado",

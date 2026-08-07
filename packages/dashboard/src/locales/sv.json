@@ -1158,9 +1158,6 @@
       "newRouter": "Ny router",
       "empty": "Inga routrar ännu.",
       "emptyFiltered": "Inga routrar av denna typ.",
-      "tabs": {
-        "all": "Alla"
-      },
       "columns": {
         "name": "Namn",
         "tokens": "Tokens",

@@ -1158,9 +1158,6 @@
       "newRouter": "新建路由器",
       "empty": "还没有路由器。",
       "emptyFiltered": "没有此类型的路由器。",
-      "tabs": {
-        "all": "全部"
-      },
       "columns": {
         "name": "名称",
         "tokens": "令牌",

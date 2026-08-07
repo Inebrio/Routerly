@@ -1158,9 +1158,6 @@
       "newRouter": "Nový router",
       "empty": "Zatím žádné routery.",
       "emptyFiltered": "Žádné routery tohoto typu.",
-      "tabs": {
-        "all": "Všechny"
-      },
       "columns": {
         "name": "Název",
         "tokens": "Tokeny",

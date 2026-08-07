@@ -1158,9 +1158,6 @@
       "newRouter": "Új Útválasztó",
       "empty": "Nincsenek útválasztók.",
       "emptyFiltered": "Nincs ilyen típusú útválasztó.",
-      "tabs": {
-        "all": "Összes"
-      },
       "columns": {
         "name": "Név",
         "tokens": "Tokenek",

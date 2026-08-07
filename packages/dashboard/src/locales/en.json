@@ -1158,9 +1158,6 @@
       "newRouter": "New Router",
       "newOrchestrator": "New Orchestrator",
       "newPassthrough": "New Passthrough",
-      "tabs": {
-        "all": "All"
-      },
       "empty": "No routers yet.",
       "emptyFiltered": "No routers of this kind.",
       "columns": {

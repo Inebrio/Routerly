@@ -1158,9 +1158,6 @@
       "newRouter": "Yeni Yönlendirici",
       "empty": "Henüz yönlendirici yok.",
       "emptyFiltered": "Bu türde yönlendirici yok.",
-      "tabs": {
-        "all": "Tümü"
-      },
       "columns": {
         "name": "Ad",
         "tokens": "Jetonlar",

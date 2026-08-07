@@ -153,14 +153,8 @@ describe('RoutersPage — loaded state', () => {
 // ── Navigation ────────────────────────────────────────────────────────────────
 
 describe('RoutersPage — navigation', () => {
-  it('shows no creation button on the "All" tab', async () => {
+  it('"New Router" button on the default (Router) tab navigates to the dedicated router form', async () => {
     renderPage();
-    await waitFor(() => screen.getByText('0 routers'));
-    expect(screen.queryByRole('button', { name: /^New/ })).toBeNull();
-  });
-
-  it('"New Router" button on the Router tab navigates to the dedicated router form', async () => {
-    renderPage('/dashboard/routers?tab=router');
     await waitFor(() => screen.getByRole('button', { name: /New Router/ }));
     await userEvent.click(screen.getByRole('button', { name: /New Router/ }));
     expect(navigateFn).toHaveBeenCalledWith('/dashboard/routers/new/router');

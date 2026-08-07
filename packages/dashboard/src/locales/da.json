@@ -1158,9 +1158,6 @@
       "newRouter": "Ny router",
       "empty": "Ingen routere endnu.",
       "emptyFiltered": "Ingen routere af denne type.",
-      "tabs": {
-        "all": "Alle"
-      },
       "columns": {
         "name": "Navn",
         "tokens": "Tokens",

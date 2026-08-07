@@ -1158,9 +1158,6 @@
       "newRouter": "Njia Jipya",
       "empty": "Hakuna njia bado.",
       "emptyFiltered": "Hakuna routers ya aina hii.",
-      "tabs": {
-        "all": "Zote"
-      },
       "columns": {
         "name": "Jina",
         "tokens": "Ishara",

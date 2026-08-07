@@ -6,8 +6,7 @@ import { getRouters, deleteRouter, type Router, type RouterKind } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../AuthContext';
 
-type KindTab = 'all' | RouterKind;
-const KIND_TABS: KindTab[] = ['all', 'router', 'orchestrator', 'passthrough'];
+const KIND_TABS: RouterKind[] = ['router', 'orchestrator', 'passthrough'];
 
 export function RoutersPage() {
   const { t } = useTranslation();
@@ -19,11 +18,11 @@ export function RoutersPage() {
   const [err, setErr] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = (KIND_TABS.includes(searchParams.get('tab') as KindTab) ? searchParams.get('tab') : 'all') as KindTab;
-  const setTab = (next: KindTab) => setSearchParams(next === 'all' ? {} : { tab: next }, { replace: true });
-  const visibleRouters = tab === 'all' ? routers : routers.filter(r => (r.kind ?? 'router') === tab);
+  const tab = (KIND_TABS.includes(searchParams.get('tab') as RouterKind) ? searchParams.get('tab') : 'router') as RouterKind;
+  const setTab = (next: RouterKind) => setSearchParams(next === 'router' ? {} : { tab: next }, { replace: true });
+  const visibleRouters = routers.filter(r => (r.kind ?? 'router') === tab);
 
-  const tabStyle = (target: KindTab): CSSProperties => ({
+  const tabStyle = (target: RouterKind): CSSProperties => ({
     padding: '0 4px 12px',
     fontSize: '0.9rem', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer',
     color: tab === target ? 'var(--primary)' : 'var(--text-secondary)',
@@ -61,7 +60,7 @@ export function RoutersPage() {
     orchestrator: { label: t('routers.list.newOrchestrator'), path: '/dashboard/routers/new/orchestrator' },
     passthrough: { label: t('routers.list.newPassthrough'), path: '/dashboard/routers/new/passthrough' },
   };
-  const newButton = tab === 'all' ? null : NEW_BUTTON[tab];
+  const newButton = NEW_BUTTON[tab];
 
   return (
     <>
@@ -71,7 +70,7 @@ export function RoutersPage() {
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 12 }}>
           {KIND_TABS.map(k => (
             <button key={k} style={tabStyle(k)} onClick={() => setTab(k)}>
-              {k === 'all' ? t('routers.list.tabs.all') : t(`routers.general.kind.${k}.label`)}
+              {t(`routers.general.kind.${k}.label`)}
             </button>
           ))}
         </div>
@@ -89,7 +88,7 @@ export function RoutersPage() {
 
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
-        ) : visibleRouters.length === 0 ? (
+        ) : routers.length === 0 ? (
           <div className="empty-state"><FolderOpen size={40} /><p>{t('routers.list.empty')}</p></div>
         ) : visibleRouters.length === 0 ? (
           <div className="empty-state"><FolderOpen size={40} /><p>{t('routers.list.emptyFiltered')}</p></div>

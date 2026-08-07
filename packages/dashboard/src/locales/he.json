@@ -1158,9 +1158,6 @@
       "newRouter": "נתב חדש",
       "empty": "עדיין אין נתבים.",
       "emptyFiltered": "אין נתבים מסוג זה.",
-      "tabs": {
-        "all": "הכל"
-      },
       "columns": {
         "name": "שם",
         "tokens": "טוקנים",

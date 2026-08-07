@@ -1158,9 +1158,6 @@
       "newRouter": "新しいルーター",
       "empty": "ルーターがまだありません。",
       "emptyFiltered": "このタイプのルーターはありません。",
-      "tabs": {
-        "all": "すべて"
-      },
       "columns": {
         "name": "名前",
         "tokens": "トークン",

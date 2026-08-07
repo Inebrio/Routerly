@@ -1158,9 +1158,6 @@
       "newRouter": "새 라우터",
       "empty": "아직 라우터가 없습니다.",
       "emptyFiltered": "이 유형의 라우터가 없습니다.",
-      "tabs": {
-        "all": "모두"
-      },
       "columns": {
         "name": "이름",
         "tokens": "토큰",

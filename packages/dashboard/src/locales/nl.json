@@ -1158,9 +1158,6 @@
       "newRouter": "Nieuwe router",
       "empty": "Nog geen routers.",
       "emptyFiltered": "Geen routers van dit type.",
-      "tabs": {
-        "all": "Alle"
-      },
       "columns": {
         "name": "Naam",
         "tokens": "Tokens",
