@@ -138,7 +138,7 @@ function PiiPolicyCard({
           type="button"
           onClick={onRemove}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 4, display: 'flex' }}
-          title="Remove policy"
+          title={t('common.securityRules.removePolicyTooltip')}
         >
           <Trash2 size={15} />
         </button>
@@ -555,6 +555,7 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
   embeddingModelOptions: { value: string; label: string }[];
   instructionsError: boolean;
 }) {
+  const { t } = useTranslation();
   const supportsJudge = rule.type === 'topic' || rule.type === 'moderation';
   const scopeParts = supportsJudge
     ? [
@@ -599,7 +600,7 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
           type="button"
           onClick={onDelete}
           style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
-          aria-label="Delete rule"
+          aria-label={t('common.securityRules.deleteRuleAriaLabel')}
         >
           <Trash2 size={14} />
         </button>

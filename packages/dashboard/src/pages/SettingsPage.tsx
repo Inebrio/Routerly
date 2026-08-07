@@ -607,7 +607,7 @@ export function SettingsNotificationsTab() {
       );
     }
     return (
-      <button type="button" onClick={() => setPendingDelete(id)} title="Remove channel"
+      <button type="button" onClick={() => setPendingDelete(id)} title={t('settings.notifications.removeChannelTooltip')}
         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
         <Trash2 size={14} />
       </button>
@@ -869,7 +869,7 @@ export function SettingsNotificationsTab() {
             </div>
             <div className="form-group">
               <label className="form-label">Secret <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-              <input className="form-input" type="password" value={ch.secret ?? ''} onChange={e => uf(ch.id, 'secret', e.target.value || undefined)} placeholder="HMAC signing key" />
+              <input className="form-input" type="password" value={ch.secret ?? ''} onChange={e => uf(ch.id, 'secret', e.target.value || undefined)} placeholder={t('settings.notifications.hmacSigningKeyPlaceholder')} />
             </div>
           </div>
           {eventsAndTargetsFields(ch)}
