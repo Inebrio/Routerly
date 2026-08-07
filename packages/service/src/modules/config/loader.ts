@@ -5,6 +5,7 @@ import lockfile from 'proper-lockfile';
 import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { readUsageNdjson, writeUsageNdjson, appendUsageRecordsNdjson } from './usageNdjson.js';
+import { SECRET_KEYS } from './permission-guard.js';
 
 /** Mirrors audit/logger.ts AuditEntry — defined here to avoid circular import */
 export interface AuditEntry {
@@ -169,7 +170,9 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   } catch {
     // Seed with the correct empty default, not '{}', so a crash between here
     // and the rename never leaves a type-wrong placeholder on disk.
-    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), 'utf-8');
+    const seedOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
+    if ((SECRET_KEYS as readonly string[]).includes(key)) seedOptions.mode = 0o600;
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), seedOptions);
   }
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
@@ -186,7 +189,13 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
       retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
     });
     // Atomic publish: full content to temp, then rename over the target.
-    await writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+    // Secret-tier files (SECRET_KEYS) are written 0600 from the start —
+    // rename() preserves the temp file's mode, so without this every write
+    // re-created the target at the umask default (typically 0644) and
+    // re-tripped permission-guard's startup check on the very next boot.
+    const writeOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
+    if ((SECRET_KEYS as readonly string[]).includes(key)) writeOptions.mode = 0o600;
+    await writeFile(tmpPath, JSON.stringify(data, null, 2), writeOptions);
     await rename(tmpPath, filePath);
   } catch (err) {
     // Best-effort cleanup of the temp file on failure (rename never ran).
