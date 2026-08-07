@@ -60,6 +60,7 @@ export function RouterCreateForm({ kind, buildExtraPayload, afterCreatePath, sub
         ...(kind !== 'router' ? { kind } : {}),
         models: [],
         timeoutMs: parseInt(common.timeoutMs),
+        traceContent: common.traceContent,
         ...buildExtraPayload(),
       };
       const proj = await createRouter(payload);
