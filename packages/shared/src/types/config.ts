@@ -646,6 +646,8 @@ export interface UserConfig {
   totpEnabled?: boolean;
   /** SHA-256 hashed one-time backup codes */
   backupCodes?: string[];
+  /** Dashboard display-language preference. Absent means "never chosen". Dashboard-owned list. */
+  language?: string;
 }
 
 export interface RoleConfig {

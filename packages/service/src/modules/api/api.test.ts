@@ -178,6 +178,26 @@ describe('POST /api/auth/login', () => {
     const body = JSON.parse(res.body)
     expect(body.token).toBeDefined()
     expect(body.refreshToken).toBeDefined()
+    expect(body.user.language).toBeUndefined()
+  })
+
+  it('includes language in the user object when the account has one set', async () => {
+    vi.mocked(bcrypt.compare).mockResolvedValue(true as any)
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'users' ? [{ ...adminUser, language: 'it' }] : []
+    )
+    mockCreateSessionToken.mockReturnValue('session-token')
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/auth/login',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ email: 'admin@example.com', password: 'secret' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).user.language).toBe('it')
   })
 
   it('returns 401 for unknown email', async () => {
@@ -3296,6 +3316,93 @@ describe('GET /api/me', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).email).toBe('admin@example.com')
+    expect(JSON.parse(res.body).language).toBeUndefined()
+  })
+})
+
+// ─── PATCH /api/me/language ───────────────────────────────────────────────────
+
+describe('PATCH /api/me/language', () => {
+  it('sets the language and round-trips via a following GET /api/me', async () => {
+    setupAdminAuth()
+    let users: any[] = [adminUser]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return users
+      if (t === 'roles') return []
+      return []
+    })
+    mockWriteConfig.mockImplementation(async (t: string, value: any) => {
+      if (t === 'users') users = value
+    })
+
+    const app = await buildApp()
+    const patchRes = await app.inject({
+      method: 'PATCH', url: '/api/me/language',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ language: 'it' }),
+    })
+    expect(patchRes.statusCode).toBe(200)
+    expect(JSON.parse(patchRes.body).language).toBe('it')
+
+    const getRes = await app.inject({ method: 'GET', url: '/api/me', headers: adminAuthHeaders() })
+    await app.close()
+    expect(getRes.statusCode).toBe(200)
+    expect(JSON.parse(getRes.body).language).toBe('it')
+  })
+
+  it('returns 400 for an empty language', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/me/language',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ language: '' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toBeDefined()
+  })
+
+  it('returns 400 for a language longer than 10 characters', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/me/language',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ language: 'a'.repeat(11) }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
+  it('returns 400 when language is missing from the body', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/me/language',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
   })
 })
 
