@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
-import { LanguageProvider } from './LanguageContext';
+import { LanguageProvider, useLanguage } from './LanguageContext';
+import { SUPPORTED_LANGUAGES } from './locales/languages';
+import { SearchableSelect } from './components/SearchableSelect';
 import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getPermissionStatus } from './api';
 import type { UpdateInfo } from './api';
 import { PermissionGuardModal, type PermissionBlockedDetail } from './components/PermissionGuardModal';
@@ -87,6 +89,21 @@ function ThemeSelector() {
   );
 }
 
+function LanguageSelector() {
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
+  return (
+    <SearchableSelect
+      options={SUPPORTED_LANGUAGES.map(l => ({ value: l.code, label: `${l.flag}  ${l.name}` }))}
+      value={language}
+      placeholder={t('app.language.label')}
+      ariaLabel={t('app.language.label')}
+      onChange={setLanguage}
+      style={{ fontSize: '0.78rem' }}
+    />
+  );
+}
+
 function ThemeCycleButton() {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -165,6 +182,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       </nav>
       <div className="sidebar-footer">
         {!collapsed && <ThemeSelector />}
+        {!collapsed && <LanguageSelector />}
         {collapsed && (
           <div className="sidebar-footer-icons">
             <ThemeCycleButton />

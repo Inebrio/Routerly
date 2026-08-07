@@ -742,6 +742,8 @@ export interface Settings {
   listeningAddresses?: string[];
   /** Usage/billing history retention policy. Absent means no policy configured. */
   usageRetention?: UsageRetentionConfig;
+  /** Instance-wide default dashboard language for users who haven't picked their own yet. Absent means English. */
+  defaultLanguage?: string;
 }
 
 export const getSettings = () => request<Settings>('/settings');

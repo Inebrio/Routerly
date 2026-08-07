@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "אוטומטי",
+      "dark": "כהה",
+      "light": "בהיר"
+    },
+    "themeCycle": {
+      "title": "עיצוב: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "הרחב סרגל צד",
+      "collapse": "כווץ סרגל צד"
+    },
+    "tagline": "שער אחד. כל מודל AI. שליטה מלאה.",
+    "nav": {
+      "overview": "סקירה כללית",
+      "providers": "ספקים",
+      "models": "מודלים",
+      "profiles": "פרופילים",
+      "routers": "נתבים",
+      "experiments": "ניסויים",
+      "usage": "שימוש",
+      "playground": "מגרש משחקים",
+      "settings": "הגדרות",
+      "connectApp": "חבר אפליקציה",
+      "help": "עזרה",
+      "signOut": "התנתקות"
+    },
+    "banner": {
+      "permissionWarning": "לחלק מקבצי התצורה יש הרשאות גישה מרחיבות ({{files}}). ההפעלה והבקשות עדיין עובדות, אך מומלץ לתקן זאת ממערכת הקבצים המארחת בהזדמנות הראשונה.",
+      "dismiss": "התעלם",
+      "updateAvailable": "גרסה v{{latest}} של Routerly זמינה. אתם נמצאים בגרסה v{{current}}.",
+      "updateLink": "עדכון בהגדרות",
+      "mfaRequired": "אימות דו-שלבי נדרש עבור מופע זה.",
+      "mfaLink": "הגדרת 2FA בפרופיל שלך",
+      "mfaSuffix": "לאבטחת החשבון שלך.",
+      "telemetryTitle": "Routerly לעולם לא שולח מידע באופן אוטומטי.",
+      "telemetryBody": "רוצים לעזור על ידי שליחת מדדי התקנה אנונימיים? רק סוג האירוע, גרסה, פלטפורמה ומזהה אקראי — ללא מידע אישי, ללא כתובת IP.",
+      "telemetryLink": "מה נשלח?",
+      "telemetryYes": "כן, אעזור",
+      "telemetryNo": "לא תודה"
+    },
+    "language": {
+      "label": "שפה"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "לפני {{count}} שנייה",
+      "secondsAgo_other": "לפני {{count}} שניות",
+      "minutesAgo": "לפני {{count}} דקה",
+      "minutesAgo_other": "לפני {{count}} דקות",
+      "hoursAgo": "לפני {{count}} שעה",
+      "hoursAgo_other": "לפני {{count}} שעות",
+      "daysAgo": "לפני {{count}} יום",
+      "daysAgo_other": "לפני {{count}} ימים"
+    },
+    "confirm": "אישור",
+    "cancel": "ביטול",
+    "remove": "הסרה",
+    "select": "בחר...",
+    "search": "חיפוש...",
+    "noResults": "אין תוצאות",
+    "noRemainingOptions": "אין אפשרויות נותרות",
+    "apply": "החל",
+    "saved": "נשמר",
+    "showLess": "הצג פחות",
+    "roles": "תפקידים",
+    "permissions": "הרשאות",
+    "notifications": {
+      "title": "התראות",
+      "markAllRead": "סמן הכל כנקרא",
+      "empty": "אין התראות",
+      "viewAll": "הצג את כל ההתראות"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "בחר תקופה",
+      "recent": "אחרונות",
+      "ranges": "טווחים",
+      "from": "מתאריך",
+      "to": "עד תאריך"
+    },
+    "permissionGuard": {
+      "fixFailed": "תיקון ההרשאות נכשל",
+      "title": "הרשאות קובץ לא בטוחות",
+      "defaultMessage": "לחלק מהקבצים יש הרשאות לא בטוחות.",
+      "fixing": "מתקן…",
+      "fixNow": "תקן כעת"
+    },
+    "limitRows": {
+      "noLimits": "לא הוגדרו מגבלות.",
+      "metricLabel": "מדד",
+      "typeLabel": "סוג",
+      "periodLabel": "תקופה",
+      "everyLabel": "כל",
+      "maxCost": "עלות מקסימלית",
+      "maxCount": "כמות מקסימלית",
+      "maxTokens": "טוקנים מקסימליים",
+      "allCombosSet": "כל שילובי המדד/תקופה כבר הוגדרו",
+      "addLimit": "הוסף מגבלה",
+      "metric": {
+        "cost": "עלות",
+        "calls": "קריאות",
+        "input_tokens": "טוקני קלט",
+        "output_tokens": "טוקני פלט",
+        "total_tokens": "סך הטוקנים"
+      },
+      "period": {
+        "hourly": "שעתי",
+        "daily": "יומי",
+        "weekly": "שבועי",
+        "monthly": "חודשי",
+        "yearly": "שנתי"
+      },
+      "rollingUnit": {
+        "second": "שנייה",
+        "minute": "דקה",
+        "hour": "שעה",
+        "day": "יום",
+        "week": "שבוע",
+        "month": "חודש"
+      },
+      "windowType": {
+        "period": "תקופה",
+        "rolling": "נגלל"
+      },
+      "fmt": {
+        "requests": "{{value}} בקשות",
+        "inputTokens": "{{value}} טוקני קלט",
+        "outputTokens": "{{value}} טוקני פלט",
+        "totalTokens": "{{value}} סך טוקנים",
+        "everyRolling": "{{metric}} כל {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} לכל {{period}}"
+      }
+    },
+    "savings": {
+      "title": "מה הניתוב חסך",
+      "input": "קלט",
+      "output": "פלט",
+      "actual": "בפועל",
+      "clientCalls": "{{count}} קריאת לקוח",
+      "clientCalls_other": "{{count}} קריאות לקוח",
+      "comparedAgainst": ", בהשוואה לשליחתה לכל אחד מ",
+      "comparedAgainst_other": ", בהשוואה לשליחתן כולן לכל אחד מ",
+      "paidModelsInPlay": "{{count}} מודל בתשלום במשחק",
+      "paidModelsInPlay_other": "{{count}} מודלים בתשלום במשחק",
+      "metricCost": "עלות",
+      "metricTokens": "טוקנים",
+      "totalCost": "עלות כוללת",
+      "routed": "נותב: {{value}}",
+      "saved": "נחסך: {{value}}",
+      "usdThisPeriod": "דולר בתקופה זו",
+      "savedVsAlways": "נחסכו {{value}} ({{percent}}%) בהשוואה לשליחה תמידית ל{{model}}",
+      "tokens": "טוקנים",
+      "in": "קלט: {{value}}",
+      "out": "פלט: {{value}}",
+      "tokenSubWithCache": "{{in}} קלט · {{out}} פלט · {{cached}} ממטמון",
+      "tokenSub": "{{in}} קלט · {{out}} פלט",
+      "cutByOptimizers": "{{value}} נחסכו על ידי המאופטמים",
+      "fewerThanAlways": "{{value}} פחות מאשר שליחה תמידית ל{{model}}, לפי הערכה"
+    },
+    "optimizerSteps": {
+      "downloaded": "הורד",
+      "thisStepRunsOn": "שלב זה רץ על",
+      "defaultCheckpoint": "נקודת בדיקה מוגדרת כברירת מחדל"
+    },
+    "routingPolicies": {
+      "title": "מדיניות ניתוב",
+      "subtitle": "מדיניות קובעת כיצד בקשות מנותבות. הן מבוצעות בסדר מלמעלה למטה.",
+      "removePolicy": "הסר מדיניות",
+      "removeIntent": "הסר כוונה",
+      "removeExample": "הסר דוגמה",
+      "routingModels": "מודלי ניתוב",
+      "embeddingModels": "מודלי הטמעה",
+      "maxCompletionTokens": "טוקני השלמה מקסימליים",
+      "maxPromptChars": "תווי פרומפט מקסימליים",
+      "similarityThreshold": "סף דמיון",
+      "previousMessages": "הודעות קודמות",
+      "intents": "כוונות",
+      "confidenceThreshold": "סף ביטחון",
+      "ambiguityMargin": "מרווח דו-משמעות",
+      "maxCallsPerWindow": "קריאות מקסימליות לחלון",
+      "addFallbackModel": "הוסף מודל גיבוי",
+      "autoRoutingLabel": "ניתוב אוטומטי",
+      "autoRoutingHint": "כשמופעל, התעבורה מופצת ללא פרומפטים מותאמים אישית. כשמכובה, ניתן לכתוב פרומפטים ספציפיים המנחים את ה-AI מתי לבחור בכל מודל יעד.",
+      "additionalPromptInfoLabel": "מידע נוסף לפרומפט",
+      "additionalPromptInfoPlaceholder": "הוראות נוספות לכלול בפרומפט הניתוב...",
+      "addExamplePlaceholder": "הוסף דוגמה והקש Enter…",
+      "addIntentPlaceholder": "הוסף כוונה והקש Enter…",
+      "addPolicyPlaceholder": "הוסף מדיניות...",
+      "labels": {
+        "llm": "מדיניות ניתוב AI",
+        "rate-limit": "מדיניות הגבלת קצב",
+        "budget-remaining": "מדיניות תקציב נותר",
+        "semantic-intent": "מדיניות כוונה סמנטית",
+        "health": "מדיניות תקינות",
+        "context": "מדיניות הקשר",
+        "capability": "מדיניות יכולות",
+        "performance": "מדיניות ביצועים",
+        "fairness": "מדיניות הוגנות",
+        "cheapest": "מדיניות הזול ביותר",
+        "model-preference": "מדיניות עדיפות מודל"
+      },
+      "descriptions": {
+        "context": "מדרגת מודלים לפי חלון ההקשר הזמין. מקצה 0 למודלים שחלון ההקשר שלהם קטן מהאורך המשוער של הבקשה, ומונעת שגיאות קיטוע.",
+        "cheapest": "מדרגת מודלים ביחס הופכי לעלות הטוקן שלהם. המודל הזול ביותר מקבל 1.0, היקר ביותר מקבל 0.0, ועוזרת להפחית הוצאה על ה-API בכל הבקשות.",
+        "health": "מדרגת מודלים לפי שיעור השגיאות האחרון שלהם באמצעות דעיכה אקספוננציאלית (שגיאות אחרונות משקלן גדול יותר). מפעילה מפסק מעגל שמאפס את הניקוד כשאחוז השגיאות המשוקלל עובר סף קריטי.",
+        "performance": "מדרגת מודלים לפי זמן התגובה הממוצע האחרון שלהם באמצעות דעיכה אקספוננציאלית. המודל המהיר ביותר מקבל 1.0, האיטי ביותר מקבל 0.0. מודלים בלי נתונים אחרונים מקבלים כברירת מחדל 1.0.",
+        "llm": "משתמשת במודל AI לדרג מועמדים לפי התוכן הסמנטי של הבקשה. תומכת בפרומפטי הנחיית ניתוב לכל מודל ומתחשבת במרווח התקציב כשמוגדרות מגבלות.",
+        "capability": "סינון קשה: מקצה 0 למודלים שבמפורש חסרים יכולת הנדרשת לבקשה (ראייה, קריאה לפונקציות, מצב JSON). מודלים בלי הצהרת יכולות מפורשת לא נענשים.",
+        "rate-limit": "מענישה מודלים עם תדירות קריאות אחרונה גבוהה כדי להפחית את הסיכון להגיע למגבלות קצב של הספק (HTTP 429). תומכת בסף קשיח מוגדר שמאפס את הניקוד ל-0.",
+        "fairness": "מפיצה תעבורה באופן שווה על ידי הענשת מודלים שקיבלו יותר קריאות מוצלחות לאחרונה. פועלת כרובין-רובין רך למניעת ריכוז עומס במודל בודד.",
+        "budget-remaining": "מדרגת מודלים לפי מרווח התקציב הנותר בכל המגבלות המוגדרות. מעדיפה מודלים עם יותר מרווח לפני שהסף שלהם מגיע, ומפזרת את הצריכה באופן פרואקטיבי.",
+        "semantic-intent": "מסווגת את הבקשה לפי כוונה סמנטית באמצעות הטמעות, ואז מגבילה את מאגר המועמדים למודלים שממופים לכוונה זו. התאמות בטוחות מסננות קשות את המאגר; התאמות לא ברורות ממזגות את שני המאגרים העליונים; בקשות לא ידועות מעבירות את כל המועמדים.",
+        "model-preference": "כשהלקוח מבקש מודל ספציפי (לא routerly/ada), מעניקה ניקוד בונוס מוגדר לאותו מודל. כשלא מובעת העדפה, המדיניות נמנעת. המקום ברשימה קובע כמה ההעדפה שוקלת מול מדיניות אחרות."
+      },
+      "selectModel": "בחר מודל"
+    },
+    "securityRules": {
+      "applyTo": "החל על",
+      "streamingBufferSize": "גודל מאגר הזרימה (תווים)",
+      "entityTypes": "סוגי ישויות",
+      "target": "מטרה",
+      "embeddingModel": "מודל הטמעה",
+      "judgeModel": "מודל שופט",
+      "contentGuardrails": "מעקות תוכן",
+      "piiPolicies": "מדיניות מידע מזהה",
+      "addSecurityPolicyPlaceholder": "הוסף מדיניות אבטחה...",
+      "removePolicyTooltip": "הסר מדיניות",
+      "deleteRuleAriaLabel": "מחק כלל",
+      "embeddingModelPlaceholder": "בחר מודל הטמעה...",
+      "fallbackModelsLabel": "מודלי גיבוי (אופציונלי, מנוסים בסדר)",
+      "fallbackModelsPlaceholder": "אין מודלי גיבוי...",
+      "exampleTextsLabel": "טקסטים לדוגמה לחסימה (אחד בכל שורה)",
+      "exampleTextsPlaceholder": "איך אני פורץ...\n...",
+      "similarityThresholdLabel": "סף דמיון:",
+      "judgeModelPlaceholder": "בחר מודל שופט...",
+      "allowedTopicsLabel": "נושאים מותרים (בשפה טבעית)",
+      "allowedTopicsPlaceholder": "תמיכת לקוחות למוצרי תוכנה. פתרון תקלות טכני. שאלות חיוב.",
+      "onTopicThresholdLabel": "חסום אם ניקוד הרלוונטיות מתחת ל:",
+      "harmThresholdLabel": "חסום אם ניקוד הנזק מעל:",
+      "customInstructionsLabel": "הוראות מותאמות אישית",
+      "customInstructionsPlaceholder": "אתה מסווג בטיחות תוכן. הערך את הטקסט הבא לתוכן מזיק.\nקטגוריות: שיח שנאה, אלימות, תוכן מיני, פגיעה עצמית.\nהשב רק עם אובייקט JSON: {\"score\": <מספר בין 0 ל-1>}",
+      "customInstructionsRequired": "יש צורך בהוראות מותאמות אישית.",
+      "enabledLabel": "מופעל",
+      "contentGuardrailsHint": "בודק בקשות ותגובות מול כללים מוגדרים. פעיל כשלפחות כלל אחד מוגדר.",
+      "securityPoliciesHeading": "מדיניות אבטחה",
+      "noSecurityPolicies": "לא הוגדרה מדיניות אבטחה.",
+      "piiPoliciesHint": "מזהה ומצנזר מידע אישי. כל מדיניות מתמקדת בקלט הבקשה, בתגובת המודל, או בשניהם, ושולטת בסט הישויות שלה.",
+      "noPiiPolicies": "לא הוגדרה מדיניות מידע מזהה.",
+      "addPolicyButton": "+ הוסף מדיניות",
+      "injectionWarningTitle": "מטען הבקשה שונה על ידי הזרקה",
+      "injectionWarningBody": "כלל אחד או יותר מזריק את ההוראה שלו לפרומפט המערכת של הבקשה היוצאת, כך שהמטען הנשלח לספק משתנה. לא מתבצעת קריאת מודל נוספת ולא נחסם דבר; המודל המשרת מיישם את ההוראה בעצמו.",
+      "streamingDisabledWarningTitle": "הזרמה מכובה עבור נתב זה",
+      "streamingDisabledWarningBody": "כלל אחד או יותר מוגדרים לחסום תגובות (מטרה: תגובה או שניהם). מכיוון שיש לבדוק את התגובה המלאה לפני שניתן להחליט על חסימה, Routerly שומר את התגובה במלואה לפני החזרתה ללקוח. הזרמה אינה זמינה כשכלל חוסם תגובות פעיל; הלקוחות יקבלו את התגובה המלאה בבת אחת במקום בחלקים הדרגתיים."
+    },
+    "connectionFields": {
+      "azureResourceName": "שם משאב Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "שם משאב ה-Azure OpenAI (מפורטל Azure).",
+      "deploymentId": "מזהה פריסה",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "שם הפריסה שיצרת ב-Azure OpenAI Studio.",
+      "azureApiVersionLabel": "גרסת API",
+      "azureApiVersionDefaultHint": "(ברירת מחדל: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "אזור AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "מזהה מפתח גישה AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "מפתח גישה סודי AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "השאר ריק כדי לשמור על הערך הקיים",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "טוקן סשן",
+      "awsSessionTokenOptionalHint": "(אופציונלי, לאישורים זמניים)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "מזהה נתב GCP",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "מיקום",
+      "gcpLocationDefaultHint": "(ברירת מחדל: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "מפתח חשבון שירות",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "כתובת URL של הנקודה",
+      "optional": "(אופציונלי)",
+      "webProvider": {
+        "unofficialWarningTitle": "ספק לא רשמי — שימוש באחריותך.",
+        "unofficialWarningBody": "אינטגרציה זו מתבססת על API פנימי לא מתועד שעשוי להשתנות או להישבר בלי הודעה מוקדמת. היא עשויה להפר את תנאי השירות של הספק ולגרום להשעיית חשבון.",
+        "accessTokenLabel": "טוקן גישה",
+        "sessionTokenLabel": "טוקן סשן",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "הדבק את ערך העוגייה sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "בעת כניסה ל-ChatGPT, פתח <code>https://chatgpt.com/api/auth/session</code> בכרטיסייה חדשה. העתק את הערך של שדה <code>accessToken</code> (מתחיל ב-<code>eyJ</code>). הטוקן פג תוקף בכל ~24 שעות. לגישה יציבה יותר, מלא גם את השדה <strong>cf_clearance</strong> להלן.",
+        "anthropicInstructions": "<strong>איך להשיג את מפתח הסשן שלך:</strong> בעת כניסה ל-Claude, פתח DevTools (F12) → Application → Cookies → <code>claude.ai</code> → העתק את הערך של העוגייה <code>sessionKey</code> (מתחיל ב-<code>sk-ant-sid01-</code>). המפתח נשאר בתוקף עד שתתנתק."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "טוקן OAuth למנוי",
+        "authFilePathLabel": "נתיב קובץ האימות",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (ברירת מחדל)",
+        "anthropicTitle": "השתמש במנוי Claude Pro/Max שלך.",
+        "anthropicRunCommandStep": "הפעל פקודה זו והעתק את הטוקן שהיא מדפיסה:",
+        "anthropicPasteTokenStep": "הדבק את הטוקן בשדה <em>טוקן OAuth למנוי</em> להלן.",
+        "termsNote": "צור טוקן חדש כשהוא יפוג. שימוש במנוי בעד שער עשוי להפר את תנאי השירות של הספק.",
+        "openaiTitle": "השתמש במנוי ChatGPT Plus/Pro שלך באמצעות אפליקציית Codex.",
+        "openaiLoginStep": "התחבר לאפליקציית שולחן העבודה Codex עם חשבון ChatGPT Plus/Pro שלך.",
+        "openaiAutoRefreshStep": "Routerly קורא את טוקן הגישה שלך מ-<code>~/.codex/auth.json</code> ומרענן אותו אוטומטית. אין צורך בהעתקה ידנית.",
+        "openaiAuthFilePathStep": "השאר את שדה <em>נתיב קובץ האימות</em> ריק לשימוש בברירת המחדל, או הזן נתיב מותאם אם אפליקציית Codex שלך שומרת אימות במקום אחר.",
+        "openaiTermsNote": "שימוש במנוי בעד שער עשוי להפר את תנאי השירות של הספק."
+      },
+      "copyCode": {
+        "copiedTooltip": "הועתק!",
+        "copyTooltip": "העתק ללוח",
+        "copiedLabel": "הועתק",
+        "copyLabel": "העתק"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "העתק",
+      "copiedLabel": "הועתק!",
+      "copyErrorHint": "ההעתקה נכשלה, בחר והעתק באופן ידני."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "לקוח MCP",
+      "hints": {
+        "claudeCode": "הפעל זאת פעם אחת, בכל מקום. Claude Code שומר את השרת ב-<code>~/.claude.json</code>.",
+        "claudeDesktop": "הצב זאת ב-<code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (ב-Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), ואז הפעל מחדש את האפליקציה. היא מפעילה את ה-CLI, כך ש-<code>routerly</code> חייב להיות ב-PATH שלך.",
+        "codex": "הצב זאת ב-<code>~/.codex/config.toml</code>. Codex קורא את הטוקן מהסביבה, כך שיש לייצא אותו בשל שממנו אתה מפעיל את Codex.",
+        "opencode": "הצב זאת ב-<code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "הפעל זאת פעם אחת. OpenClaw מוגדר כברירת מחדל להעברת sse, ש-Routerly לא מגיש, כך שההעברה נקבעת במפורש.",
+        "cursor": "הצב זאת ב-<code>~/.cursor/mcp.json</code>, או ב-<code>.cursor/mcp.json</code> להגבלה לפרויקט בודד.",
+        "cline": "הצב זאת ב-<code>~/.cline/mcp.json</code>, או הדבק בתוך Configure MCP Servers בפאנל של Cline.",
+        "zed": "הצב זאת ב-<code>settings.json</code> של Zed שלך, לצד כל שרת הקשר אחר."
+      }
+    },
+    "unsavedChanges": {
+      "title": "שינויים לא שמורים",
+      "message": "יש לך שינויים לא שמורים. אם תעזוב כעת, השינויים יאבדו.",
+      "stay": "המשך כאן",
+      "leaveAnyway": "עזוב בכל זאת"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "מעקות",
+        "pii": "מידע מזהה",
+        "optimizers": "מאופטמים",
+        "routerOverhead": "תקורת נתב"
+      },
+      "policyType": {
+        "llm": "ניתוב AI",
+        "rateLimit": "הגבלת קצב",
+        "budgetRemaining": "תקציב נותר",
+        "semanticIntent": "כוונה סמנטית",
+        "modelPreference": "עדיפות מודל"
+      },
+      "rawDetails": "פרטים גולמיים",
+      "technicalDetails": "פרטים טכניים",
+      "systemPrompt": "פרומפט מערכת",
+      "responseText": "טקסט התגובה",
+      "responseJson": "JSON של התגובה",
+      "cacheEmbeddingCall": "קריאת הטמעה מהמטמון",
+      "fallbackAttempt": "ניסיון גיבוי #{{attempt}}",
+      "embeddingModel": "מודל הטמעה",
+      "upstreamModel": "מודל עלייה",
+      "provider": "ספק",
+      "source": "מקור",
+      "endpoint": "נקודת קצה",
+      "cacheHit": "פגיעה במטמון",
+      "ttlExtended": "TTL הוארך",
+      "model": "מודל",
+      "similarity": "דמיון",
+      "embedding": "הטמעה",
+      "cacheMiss": "פספוס במטמון",
+      "details": "פרטים",
+      "excludedByLimits": "נשלל על ידי מגבלות",
+      "finalRanking": "דירוג סופי",
+      "noRankingData": "אין נתוני דירוג (הרשומה עשויה להיות פגומה או מגרסה ישנה יותר)",
+      "policyScores": "ניקודי מדיניות",
+      "weight": "משקל {{value}}",
+      "allScores": "כל הניקודים",
+      "noPolicyData": "אין נתוני מדיניות (הרשומה עשויה להיות פגומה או מגרסה ישנה יותר)",
+      "requestGuardrailBlocked": "מעקה בקשה חסם",
+      "requestGuardrailTriggered": "מעקה בקשה הופעל",
+      "responseGuardrailBlocked": "מעקה תגובה חסם",
+      "responseGuardrailTriggered": "מעקה תגובה הופעל",
+      "rule": "כלל",
+      "action": "פעולה",
+      "guardrailsEvaluated": "מעקות שהוערכו ({{target}})",
+      "ruleCount": "{{count}} כלל",
+      "ruleCount_other": "{{count}} כללים",
+      "promptInjection": "הזרקת פרומפט",
+      "injects": "מזריק",
+      "judgeResponse": "תגובת השופט",
+      "piiScrubbed": "מידע מזהה נוקה",
+      "piiScanned": "מידע מזהה נסקר ({{target}})",
+      "policies": "מדיניות",
+      "entityTypes": "סוגי ישויות",
+      "customPatterns": "תבניות מותאמות אישית",
+      "scanned": "נסקר",
+      "redacted": "צונזר",
+      "took": "משך",
+      "ms": "{{value}} מ״ש",
+      "entityTypesScanned": "סוגי ישויות שנסקרו",
+      "guardrailInjection": "הזרקת מעקה",
+      "rules": "כללים",
+      "chars": "תווים",
+      "injectedText": "טקסט שהוזרק",
+      "optimizer": "מאופטם {{id}}",
+      "tokens": "טוקנים",
+      "saved": "נחסך",
+      "tok": "{{value}} טוק",
+      "reason": "סיבה",
+      "budgetBlocked": "התקציב חסם",
+      "budgetOk": "התקציב תקין",
+      "egressSent": "יציאה נשלחה",
+      "status": "סטטוס",
+      "encoding": "קידוד",
+      "frames": "מסגרות",
+      "bytes": "בייטים"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "הפרופיל שלי",
+      "subtitle": "ניהול הגדרות החשבון שלך"
+    },
+    "tabs": {
+      "profile": "פרופיל",
+      "notifications": "התראות",
+      "mcp": "MCP",
+      "preferences": "העדפות"
+    },
+    "notifications": {
+      "close": "סגור",
+      "refresh": "רענן",
+      "clear": "נקה",
+      "empty": "לא נמצאו התראות.",
+      "markAllRead": "סמן הכל כנקרא",
+      "allCaughtUp": "אין חדש",
+      "unreadCount": "{{count}} לא נקראו",
+      "selectedCount": "{{count}} נבחרו",
+      "severity": {
+        "all": "הכל",
+        "info": "מידע",
+        "warning": "אזהרה",
+        "critical": "קריטי"
+      },
+      "status": {
+        "read": "נקרא",
+        "unread": "לא נקרא"
+      },
+      "filters": {
+        "severity": "רמת חשיבות",
+        "category": "קטגוריה",
+        "event": "אירוע",
+        "date": "תאריך",
+        "period": "תקופה",
+        "status": "סטטוס",
+        "all": "הכל",
+        "allCategories": "כל הקטגוריות",
+        "allEvents": "כל האירועים",
+        "unreadOnly": "לא נקראו בלבד"
+      },
+      "actions": {
+        "markRead": "סמן כנקרא",
+        "markUnread": "סמן כלא נקרא",
+        "archive": "העבר לארכיון"
+      },
+      "table": {
+        "severity": "רמת חשיבות",
+        "event": "אירוע",
+        "date": "תאריך",
+        "status": "סטטוס",
+        "selectAll": "בחר הכל",
+        "selectRow": "בחר {{event}}",
+        "eventCount": "{{count}} אירועים"
+      },
+      "pagination": {
+        "previous": "← הקודם",
+        "next": "הבא →",
+        "page": "עמוד {{page}} מתוך {{totalPages}}",
+        "total": "(סה״כ {{count}})"
+      },
+      "detail": {
+        "ariaLabel": "פרטי התראה",
+        "details": "פרטים",
+        "noDetails": "אין פרטים נוספים.",
+        "eventsInIncident": "אירועים בתקרית זו"
+      }
+    },
+    "security": {
+      "roleLabel": "תפקיד:",
+      "password": {
+        "heading": "שינוי סיסמה",
+        "currentLabel": "סיסמה נוכחית",
+        "newLabel": "סיסמה חדשה",
+        "newPlaceholder": "מינימום 8 תווים",
+        "confirmLabel": "אישור סיסמה חדשה",
+        "success": "הסיסמה שונתה בהצלחה.",
+        "saving": "שומר...",
+        "submit": "שנה סיסמה",
+        "errors": {
+          "mismatch": "הסיסמאות אינן תואמות.",
+          "tooShort": "הסיסמה החדשה חייבת להיות באורך של לפחות 8 תווים.",
+          "updateFailed": "העדכון נכשל"
+        }
+      },
+      "tfa": {
+        "heading": "אימות דו-שלבי",
+        "notEnabled": "2FA לא מופעל. הגן על החשבון שלך עם סיסמה חד-פעמית מבוססת זמן.",
+        "enableButton": "הפעל אימות דו-שלבי",
+        "scanInstructions": "סרוק קוד QR זה עם אפליקציית האימות שלך (Google Authenticator, Authy וכו׳), ואז הזן את הקוד בעל 6 הספרות לאישור.",
+        "qrAlt": "קוד QR להגדרת 2FA",
+        "addAccountInstructions": "פתח את אפליקציית האימות שלך (Google Authenticator, Authy, 1Password וכו׳) והוסף חשבון חדש:",
+        "setup": {
+          "step1": "הקש <strong>הוסף חשבון</strong> או על כפתור <strong>+</strong>",
+          "step2": "בחר <strong>הזן מפתח הגדרה</strong> (או סרוק קוד QR מהנייד)",
+          "step3": "הזן את הסוד המוצג להלן"
+        },
+        "mobileLink": "הקש כאן מהנייד לפתיחת אפליקציית האימות",
+        "manualEntryLabel": "סוד להזנה ידנית:",
+        "saveBackupCodes": "שמור קודי גיבוי אלה. כל אחד יכול לשמש פעם אחת אם תאבד גישה למאמת שלך.",
+        "copyBackupCodes": "העתק קודי גיבוי",
+        "confirmCodeLabel": "הזן קוד מהאפליקציה שלך להפעלה",
+        "activate": "הפעל 2FA",
+        "cancel": "ביטול",
+        "enabledBadge": "2FA מופעל",
+        "newBackupCodesLabel": "קודי גיבוי חדשים (שמור אותם כעת):",
+        "copy": "העתק",
+        "regenLabel": "הזן קוד מאמת ליצירת קודי גיבוי חדשים",
+        "regenerate": "צור חדשים",
+        "regenerateBackupCodes": "צור קודי גיבוי חדשים",
+        "disableLabel": "כבה 2FA (הזן קוד מאמת)",
+        "disable": "כבה 2FA",
+        "errors": {
+          "setupFailed": "ההגדרה נכשלה",
+          "confirmFailed": "האישור נכשל",
+          "disableFailed": "הכיבוי נכשל",
+          "regenFailed": "היצירה מחדש נכשלה"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "טעינת שכבת ה-MCP נכשלה",
+        "revokeFailed": "ביטול הטוקן נכשל"
+      },
+      "revokeConfirm": "לבטל את טוקן ה-MCP \"{{name}}\"? לקוחות המשתמשים בו יפסיקו לעבוד באופן מיידי.",
+      "tokens": {
+        "heading": "טוקני MCP",
+        "newToken": "טוקן חדש",
+        "description": "כל טוקן פועל בשמך: הוא חושף בדיוק את הכלים שהתפקיד שלך מתיר. הערך המלא מוצג פעם אחת, בעמוד שיוצר אותו.",
+        "empty": "אין עדיין טוקני MCP. צור אחד לחיבור לקוח MCP.",
+        "created": "נוצר",
+        "lastUsed": "שימוש אחרון",
+        "expires": "תפוגה",
+        "never": "לעולם לא",
+        "revokeTitle": "בטל טוקן"
+      },
+      "tools": {
+        "heading": "כלים שהטוקנים שלך חושפים",
+        "empty": "התפקיד שלך לא מעניק שום כלי MCP. פנה למנהל מערכת לגבי ההרשאות שאתה צריך.",
+        "table": {
+          "name": "שם",
+          "scope": "היקף",
+          "description": "תיאור",
+          "sourceModule": "מודול מקור",
+          "permission": "הרשאה"
+        }
+      },
+      "connect": {
+        "heading": "חבר לקוח MCP",
+        "descriptionPre": "בחר את הלקוח שאתה מחבר, ואז החלף",
+        "descriptionPost": "עם אחד הטוקנים שלך. יצירת טוקן מציגה את אותו הקוד עם הערך כבר מוזן.",
+        "otherClient": "כל לקוח אחר",
+        "httpInstructionsPre": "מעל HTTP, הפנה אותו לנקודת קצה זו והתאמת עם",
+        "httpInstructionsPost": ". זהו JSON-RPC 2.0 מעל Streamable HTTP.",
+        "stdioInstructionsPre": "מעל stdio, ה-CLI מגשר ומעביר את הטוקן שלך. מפעיל את השירות באופן ישיר במקום? הגדר",
+        "stdioInstructionsAnd": "וגם",
+        "stdioInstructionsPost": "בעצמך."
+      },
+      "newToken": {
+        "backToMcp": "חזרה ל-MCP",
+        "title": "טוקן MCP חדש",
+        "subtitle": "הטוקן פועל בשמך: הוא חושף בדיוק את הכלים שהתפקיד שלך מתיר.",
+        "nameLabel": "שם",
+        "namePlaceholder": "מחשב נייד",
+        "nameHint": "היכן טוקן זה משמש, לדוגמה \"מחשב נייד\" או \"claude-desktop\".",
+        "expiryLabel": "תוקף עד",
+        "expiryHint": "אופציונלי. השאר ריק והטוקן לא יפוג, עד שתבטל אותו.",
+        "createButton": "צור טוקן",
+        "creatingButton": "יוצר…",
+        "cancelButton": "ביטול",
+        "tokenSection": {
+          "title": "הטוקן שלך",
+          "hint": "העתק אותו כעת. הוא לא יוצג שוב, וטוקן שאבד ניתן להחליף בלבד.",
+          "copyButton": "העתק",
+          "copiedButton": "הועתק!",
+          "copyTitle": "העתק טוקן",
+          "copiedTitle": "הועתק!"
+        },
+        "connectSection": {
+          "title": "חבר לקוח",
+          "hint": "בחר את הלקוח שאתה מחבר. הקוד כבר נושא את הטוקן הזה."
+        },
+        "bridgeSection": {
+          "title": "או השתמש בגשר המקומי",
+          "hint": "בלקוח שדובר stdio בלבד, ה-CLI מגשר ומעביר את הטוקן שלך."
+        },
+        "doneButton": "סיום",
+        "errors": {
+          "createFailed": "יצירת הטוקן נכשלה",
+          "copyFailed": "ההעתקה נכשלה, בחר והעתק את הטוקן באופן ידני."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "שפה",
+      "description": "בחר את השפה שבה מוצג הדשבורד.",
+      "languageLabel": "שפה",
+      "saved": "העדפת השפה נשמרה."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "טעינת ההגדרות נכשלה",
+        "loadFailedPeriod": "טעינת ההגדרות נכשלה.",
+        "saveFailed": "השמירה נכשלה",
+        "saveSettingsFailed": "שמירת ההגדרות נכשלה"
+      },
+      "savedSuccess": "ההגדרות נשמרו בהצלחה.",
+      "saving": "שומר…",
+      "saveSettings": "שמור הגדרות",
+      "serverInfo": {
+        "heading": "פרטי שרת",
+        "readOnly": "לקריאה בלבד. המארח והפורט מגיעים מהסביבה או מקובץ ההגדרות, ולא מכאן.",
+        "reachableAt": "נגיש בכתובת",
+        "reachableAtAny": "נגיש בכל אחת מהכתובות הבאות",
+        "thisMachine": "מחשב זה",
+        "network": "רשת",
+        "copyAddress": "העתק {{address}}",
+        "copied": "הועתק!",
+        "copy": "העתק",
+        "hostAndPort": "מארח ופורט",
+        "version": "גרסה",
+        "uptime": "זמן פעולה"
+      },
+      "runtime": {
+        "heading": "הגדרות זמן ריצה",
+        "logLevel": "רמת יומן",
+        "logLevelHint": "שולט ברמת הפירוט של יומני השירות.",
+        "publicUrl": "כתובת URL ציבורית",
+        "publicUrlHint": "כתובת בסיס שבה השירות נגיש מלקוחות חיצוניים (לדוגמה <code>http://192.168.1.10:3000</code>). משמשת בסעיף <strong>כיצד להתחבר</strong> של כל נתב. שימושית כאשר הדשבורד רץ על מכונה או פורט שונים מהשירות.",
+        "usageRetention": "שמירת שימוש",
+        "noLimit": "אין מגבלה",
+        "maxAgeDays": "גיל מקסימלי (ימים)",
+        "maxSizeMb": "גודל מקסימלי (MB)",
+        "retentionHint": "היסטוריית שימוש/חיוב ישנה יותר ממספר הימים הזה, או שחורגת מגודל זה, נמחקת מהיומן הפעיל. השאר את שניהם ריקים ללא מגבלת שמירה."
+      },
+      "internationalization": {
+        "heading": "בינלאומיות",
+        "defaultLanguage": "שפה ברירת מחדל",
+        "defaultLanguageHint": "שפת הלוח המחוונים עבור משתמשים שעדיין לא בחרו בשלהם. אינה משנה את הבחירה האישית של המשתמש."
+      },
+      "telemetry": {
+        "heading": "מדדים אנונימיים",
+        "neverAutomatic": "Routerly לעולם לא שולח מידע באופן אוטומטי.",
+        "noChoice": "עדיין לא בחרת.",
+        "enabledStatus": "מדדי התקנה אנונימיים מופעלים.",
+        "disabledStatus": "מדדי התקנה אנונימיים מכובים.",
+        "explanation": "כשמופעל, Routerly שולח רק: סוג האירוע (התקנה / שדרוג / הסרה), גרסה, פלטפורמה, ומזהה אקראי. ללא מידע אישי, ללא מידע שימוש, ללא שמירת IP.",
+        "whatIsSent": "מה נשלח?",
+        "installId": "מזהה התקנה: {{id}}",
+        "saving": "שומר…",
+        "enable": "הפעל",
+        "disable": "כבה"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "דשבורד (תא דואר בתוך האפליקציה)",
+          "description": "מנתב אירועים לתא הדואר הנכנס בתוך האפליקציה"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "שרת דואר מותאם אישית"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail באמצעות OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "קריאה חוזרת מסוג HTTP webhook"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "ספק – שגיאה",
+        "providerDegraded": "ספק – מוחמר",
+        "providerRecovered": "ספק – התאושש",
+        "providerRateLimited": "ספק – הגבלת קצב",
+        "routingNoCandidates": "ניתוב – אין מועמדים",
+        "routingFallbackUsed": "ניתוב – שימוש בגיבוי",
+        "authLoginFailed": "אימות – כניסה נכשלה",
+        "authTokenInvalid": "אימות – טוקן לא תקין",
+        "configModelAdded": "תצורה – מודל נוסף",
+        "configModelDeleted": "תצורה – מודל נמחק",
+        "configRouterCreated": "תצורה – נתב נוצר",
+        "configRouterDeleted": "תצורה – נתב נמחק",
+        "budgetThresholdReached": "תקציב – סף הושג",
+        "budgetExceeded": "תקציב – נחרג",
+        "budgetReset": "תקציב – אופס",
+        "systemStartup": "מערכת – הפעלה",
+        "systemShutdown": "מערכת – כיבוי",
+        "systemUpdateAvailable": "מערכת – עדכון זמין"
+      },
+      "removeChannelTooltip": "הסר ערוץ",
+      "removeChannelConfirm": "להסיר את הערוץ?",
+      "formUpdatedHint": "הטופס עודכן — שמור להחלה.",
+      "hmacSigningKeyPlaceholder": "מפתח חתימת HMAC",
+      "perms": {
+        "routerRead": "נתבים – קריאה",
+        "routerWrite": "נתבים – כתיבה",
+        "modelRead": "מודלים – קריאה",
+        "modelWrite": "מודלים – כתיבה",
+        "userRead": "משתמשים – קריאה",
+        "userWrite": "משתמשים – כתיבה",
+        "reportRead": "דוחות – קריאה",
+        "settingsRead": "הגדרות – קריאה",
+        "settingsWrite": "הגדרות – כתיבה",
+        "notificationWrite": "התראות – כתיבה",
+        "tokenRead": "טוקנים – קריאה",
+        "tokenWrite": "טוקנים – כתיבה",
+        "roleWrite": "תפקידים – כתיבה",
+        "auditRead": "יומן ביקורת – קריאה",
+        "modulesRead": "מודולים – קריאה",
+        "modulesManage": "מודולים – ניהול",
+        "connectionsRead": "חיבורים – קריאה",
+        "connectionsManage": "חיבורים – ניהול",
+        "resilienceRead": "עמידות – קריאה",
+        "resilienceManage": "עמידות – ניהול",
+        "profilesRead": "פרופילי ניתוב – קריאה",
+        "profilesManage": "פרופילי ניתוב – ניהול",
+        "optimizersRead": "מאופטמים – קריאה",
+        "optimizersManage": "מאופטמים – ניהול",
+        "experimentsRead": "ניסויים – קריאה",
+        "experimentsManage": "ניסויים – ניהול"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "עבור סוג ערוץ זה, מטרות לא משנות את המסירה (נקודת הקצה קבועה). הן מסננות אילו אירועים נרשמים ביומן הביקורת לכל נמען.",
+        "dashboard": "מטרות שולטות בנראות תא הדואר — רק המשתמשים המתאימים יראו התראות אלה בתא הדואר שלהם בתוך האפליקציה.",
+        "email": "מטרות קובעות אילו משתמשים מקבלים דוא״ל זה. השאר את הכל ריק לשליחה לכל המשתמשים."
+      },
+      "summary": {
+        "allEvents": "כל האירועים",
+        "eventCount": "{{count}} אירוע",
+        "eventCount_other": "{{count}} אירועים",
+        "roleCount": "{{count}} תפקיד",
+        "roleCount_other": "{{count}} תפקידים",
+        "permCount": "{{count}} הרשאה",
+        "permCount_other": "{{count}} הרשאות",
+        "userCount": "{{count}} משתמש",
+        "userCount_other": "{{count}} משתמשים",
+        "everyone": "כולם"
+      },
+      "errors": {
+        "loadFailed": "הטעינה נכשלה"
+      },
+      "fields": {
+        "dashboardHint": "מנתב אירועים מתאימים לתא הדואר הפנימי בתוך האפליקציה. לא נדרשים אישורים.",
+        "labels": {
+          "fromAddress": "כתובת שולח",
+          "fromName": "שם שולח",
+          "host": "מארח",
+          "port": "פורט",
+          "tls": "TLS/SSL",
+          "username": "שם משתמש",
+          "password": "סיסמה",
+          "awsRegion": "אזור AWS",
+          "accessKeyId": "מזהה מפתח גישה",
+          "secretAccessKey": "מפתח גישה סודי",
+          "apiKey": "מפתח API",
+          "connectionString": "מחרוזת חיבור",
+          "clientId": "מזהה לקוח",
+          "clientSecret": "סוד לקוח",
+          "refreshToken": "טוקן רענון",
+          "url": "כתובת URL",
+          "method": "שיטה",
+          "signingSecret": "סוד חתימה",
+          "botToken": "טוקן בוט",
+          "channelId": "מזהה ערוץ",
+          "webhookUrl": "כתובת URL של Webhook",
+          "integrationKey": "מפתח אינטגרציה"
+        },
+        "values": {
+          "enabled": "מופעל",
+          "disabled": "מכובה",
+          "configured": "מוגדר",
+          "notSet": "לא מוגדר"
+        },
+        "optional": "(אופציונלי)",
+        "keepCurrentPlaceholder": "השאר ריק לשמירה על הערך הנוכחי",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "השתמש ב-TLS / SSL",
+        "smtpTlsOnHint": "(פורט 465 — SSL ישיר)",
+        "smtpTlsOffHint": "(פורט 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "השאר אישורים ריקים כדי להשתמש בתפקיד ה-IAM של המכונה.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "מפתח חתימת HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "מפתח ניתוב באורך 32 תווים",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "אירועים",
+          "eventsPlaceholder": "כל האירועים (השאר ריק לכולם)",
+          "eventsHint": "השאר ריק לקבלת כל האירועים. בחר אירועים ספציפיים לסינון.",
+          "routersHeading": "נתבים",
+          "routersPlaceholder": "כל הנתבים (השאר ריק לכולם)",
+          "routersHint": "השאר ריק לקבלת אירועים מכל הנתבים.",
+          "cooldownHeading": "תקופת צינון",
+          "cooldownSuffix": "שניות (0 = ללא צינון)",
+          "cooldownHint": "המרווח המינימלי לפני שערוץ זה יכול להתריע שוב על אותו אירוע."
+        },
+        "recipients": {
+          "heading": "נמענים / מטרות",
+          "rolesLabel": "תפקידים",
+          "rolesPlaceholder": "כל התפקידים (כולם)",
+          "permissionsLabel": "הרשאות",
+          "permissionsPlaceholder": "כל ההרשאות (כולם)",
+          "usersLabel": "משתמשים בודדים",
+          "usersPlaceholder": "כל המשתמשים (כולם)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "חיבור",
+          "routing": "ניתוב",
+          "recipients": "נמענים"
+        },
+        "sections": {
+          "channelSettings": "הגדרות ערוץ",
+          "eventsRouting": "אירועים וניתוב",
+          "recipients": "נמענים"
+        },
+        "nameLabel": "שם",
+        "namePlaceholder": "תווית לערוץ זה",
+        "cancelButton": "ביטול"
+      },
+      "list": {
+        "countLabel": "{{count}} ערוץ",
+        "countLabel_other": "{{count}} ערוצים",
+        "filteredLabel": "{{shown}} מתוך {{count}} ערוץ",
+        "filteredLabel_other": "{{shown}} מתוך {{count}} ערוצים",
+        "allTypes": "כל הסוגים",
+        "searchPlaceholder": "סנן ערוצים…",
+        "searchChannelsPlaceholder": "חפש ערוצים…",
+        "addButton": "הוסף ערוץ",
+        "addSearchPlaceholder": "חפש ערוצים…",
+        "noResults": "אין תוצאות",
+        "emptyTitle": "עדיין לא הוגדרו ערוצי התראות.",
+        "noMatch": "אין ערוצים המתאימים למסננים הפעילים.",
+        "nameInlinePlaceholder": "תווית (אופציונלי)",
+        "columns": {
+          "name": "שם",
+          "type": "סוג",
+          "summary": "אירועים / מטרות"
+        },
+        "testTitle": "שלח בדיקה",
+        "editTitle": "ערוך ערוץ",
+        "deleteTitle": "מחק ערוץ",
+        "deleteConfirm": "להסיר את הערוץ \"{{name}}\"? לא ניתן לבטל פעולה זו.",
+        "deleteConfirmButton": "מחק",
+        "errors": {
+          "deleteFailed": "המחיקה נכשלה"
+        }
+      },
+      "edit": {
+        "backToList": "חזרה להתראות",
+        "back": "חזרה",
+        "heading": "ערוך ערוץ {{provider}}",
+        "subtitle": "עדכן את התצורה של ערוץ ההתראות הזה.",
+        "testSection": {
+          "title": "שלח בדיקה",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "שלח בדיקה",
+          "sendingButton": "שולח…",
+          "hintEmail": "השאר ריק לשליחה לדוא״ל החשבון שלך. הבדיקה משתמשת בתצורת הערוץ השמורה.",
+          "hintOther": "הבדיקה משתמשת בתצורת הערוץ השמורה. שמור שינויים ראשית כדי לבדוק הגדרות מעודכנות."
+        },
+        "saveButton": "שמור שינויים",
+        "savingButton": "שומר…",
+        "errors": {
+          "loadFailed": "הטעינה נכשלה",
+          "saveFailed": "השמירה נכשלה"
+        }
+      },
+      "create": {
+        "backToList": "חזרה להתראות",
+        "changeType": "שנה סוג",
+        "pickerHeading": "בחר סוג ערוץ",
+        "pickerSubtitle": "בחר את ספק ההתראות להגדרה.",
+        "heading": "ערוץ {{provider}} חדש",
+        "subtitle": "הגדר ערוץ התראות חדש.",
+        "createButton": "צור ערוץ",
+        "creatingButton": "יוצר…",
+        "errors": {
+          "createFailed": "היצירה נכשלה"
+        }
+      },
+      "sendTest": "שלח בדיקה",
+      "fromAddress": "כתובת שולח",
+      "individualUsers": "משתמשים בודדים",
+      "host": "מארח",
+      "port": "פורט",
+      "apiKey": "מפתח API",
+      "connectionString": "מחרוזת חיבור",
+      "clientId": "מזהה לקוח",
+      "clientSecret": "סוד לקוח",
+      "refreshToken": "טוקן רענון",
+      "method": "שיטה",
+      "botToken": "טוקן בוט",
+      "channelId": "מזהה ערוץ",
+      "webhookUrl": "כתובת URL של Webhook",
+      "integrationKey": "מפתח אינטגרציה"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "משיכה — חושף /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "דחיפה — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "דחיפה — API של מדדים"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "דחיפה — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "דחיפה — פרוטוקול שורה"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "דחיפה — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "ייצוא עקבות בקשה",
+        "description": "משגר את העקבה המלאה של כל בקשה מנותבת: כל שלב, כל מודול שדיבר, ופרומפטים ותשובות עבור הפרויקטים שבחרו להצטרף.",
+        "sampleRateLabel": "שיעור מדגם",
+        "sampleRateHint": "1 מייצא כל בקשה, 0.1 אחת מכל עשר."
+      },
+      "optional": "(אופציונלי)",
+      "headersHint": "(אופציונלי, אחד בכל שורה: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "טוקן Bearer",
+          "placeholder": "השאר ריק לגישה חופשית",
+          "description": "חושף <code>/metrics</code> בפורמט טקסט של Prometheus. הגדר טוקן לדרוש אימות Bearer."
+        },
+        "otel": {
+          "endpoint": "נקודת קצה של אספן",
+          "description": "כתובת בסיס של מקלט OTLP שלך. Routerly מוסיף <code>/v1/metrics</code>, ו-<code>/v1/traces</code> כשייצוא עקבות מופעל. פורט HTTP ברירת מחדל הוא 4318, gRPC הוא 4317.",
+          "protocol": "פרוטוקול",
+          "headers": "כותרות"
+        },
+        "datadog": {
+          "apiKey": "מפתח API",
+          "placeholder": "מפתח ה-API של Datadog שלך",
+          "description": "נמצא בתחת <strong>Organization Settings → API Keys</strong> בחשבון Datadog שלך.",
+          "site": "אתר"
+        },
+        "grafana": {
+          "remoteWriteUrl": "כתובת URL של Remote Write",
+          "description": "נמצאת בתחת <strong>Grafana Cloud → Connections → Prometheus → Details</strong> בשם \"Remote Write Endpoint\".",
+          "username": "שם משתמש / מזהה Stack",
+          "usernameHint": "מזהה מספרי המוצג בפרטי חיבור ה-Prometheus.",
+          "apiKey": "מפתח API / טוקן",
+          "apiKeyHint": "טוקן Grafana Cloud עם תפקיד <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "כתובת URL",
+          "urlHint": "כתובת URL של מופע InfluxDB v2. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "טוקן",
+          "tokenPlaceholder": "טוקן ה-API של InfluxDB שלך",
+          "tokenHint": "חייב להיות בעל גישת <strong>כתיבה</strong> לדלי.",
+          "org": "ארגון",
+          "bucket": "דלי"
+        },
+        "webhook": {
+          "url": "כתובת URL",
+          "secret": "סוד",
+          "secretHint": "(אופציונלי — מפתח חתימת HMAC-SHA256)",
+          "headers": "כותרות"
+        }
+      },
+      "errors": {
+        "loadFailed": "טעינת האינטגרציות נכשלה",
+        "updateFailed": "עדכון האינטגרציה נכשל",
+        "saveFailed": "שמירת האינטגרציה נכשלה",
+        "deleteFailed": "מחיקת האינטגרציה נכשלה"
+      },
+      "empty": "עדיין לא הוגדרו אינטגרציות.",
+      "enabled": "מופעל",
+      "testing": "בודק…",
+      "test": "בדיקה",
+      "removeConfirm": "להסיר?",
+      "remove": "הסר",
+      "cancel": "ביטול",
+      "removeTooltip": "הסר אינטגרציה",
+      "saving": "שומר…",
+      "save": "שמור",
+      "addButton": "הוסף אינטגרציה"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "טעינת ההגדרות נכשלה",
+        "duplicateUrl": "כתובת URL זו כבר נמצאת ברשימה.",
+        "unreachable": "לא ניתן להגיע לקטלוג ספקים תקין בכתובת זו."
+      },
+      "saved": "נשמר.",
+      "refreshed": "רוענן.",
+      "heading": "מאגרי קטלוג ספקים",
+      "refreshing": "מרענן…",
+      "refresh": "רענן",
+      "nextRefresh": "הבא: {{date}}",
+      "priorityHint": "סדר השורות קובע עדיפות מיזוג — שורה 1 מנצחת בהתנגשות. השתמש בחצים לסידור מחדש.",
+      "columns": {
+        "priority": "#",
+        "url": "כתובת URL",
+        "updated": "עודכן",
+        "lastCheck": "בדיקה אחרונה",
+        "status": "סטטוס"
+      },
+      "empty": "לא הוגדרו מאגרים. ישמש קטלוג Routerly הציבורי כברירת מחדל.",
+      "status": {
+        "error": "שגיאה",
+        "active": "פעיל",
+        "disabled": "מכובה"
+      },
+      "edit": "ערוך",
+      "removeTooltip": "הסר",
+      "addRepository": "הוסף מאגר",
+      "checking": "בודק…",
+      "add": "הוסף",
+      "removeConfirm": "להסיר את המאגר \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "אפליקציה",
+        "runtime": "זמן ריצה",
+        "storage": "אחסון",
+        "softwareUpdate": "עדכון תוכנה"
+      },
+      "labels": {
+        "version": "גרסה",
+        "uptime": "זמן פעולה",
+        "nodeVersion": "Node.js",
+        "platform": "פלטפורמה",
+        "configDir": "תיקיית תצורה",
+        "dataDir": "תיקיית מידע",
+        "currentVersion": "גרסה נוכחית",
+        "availableVersion": "גרסה זמינה",
+        "upToDate": "עדכני",
+        "lastChecked": "נבדק לאחרונה"
+      },
+      "noCheckPerformed": "לא בוצעה עדיין בדיקת עדכונים.",
+      "checkForUpdates": "בדוק עדכונים",
+      "checking": "בודק…",
+      "updateTo": "עדכן לגרסה v{{version}}",
+      "updating": "מעדכן…",
+      "dockerHint": "רץ ב-Docker — משוך את התמונה העדכנית ביותר לעדכון.",
+      "confirmUpdate": "פעולה זו תוריד ותתקין את הגרסה העדכנית ביותר. השירות יופעל מחדש. להמשיך?",
+      "updateComplete": "העדכון הושלם! טוען מחדש…",
+      "serviceRestarting": "השירות מופעל מחדש. אנא רענן את העמוד בעוד רגע.",
+      "errors": {
+        "loadFailed": "הטעינה נכשלה",
+        "checkFailed": "הבדיקה נכשלה",
+        "updateFailed": "העדכון נכשל"
+      },
+      "channel": "ערוץ"
+    },
+    "security": {
+      "authentication": "אימות",
+      "requireMfa": "דרוש אימות דו-שלבי לכל המשתמשים",
+      "requireMfaHint": "כשמופעל, משתמשים שלא הגדירו 2FA יראו הודעה לעשות זאת מיד לאחר הכניסה. משתמשים יכולים להגדיר 2FA בעמוד הפרופיל שלהם.",
+      "savedSuccess": "ההגדרות נשמרו בהצלחה.",
+      "saving": "שומר…",
+      "saveSettings": "שמור הגדרות",
+      "errors": {
+        "loadFailed": "טעינת ההגדרות נכשלה",
+        "saveFailed": "שמירת ההגדרות נכשלה"
+      }
+    },
+    "title": "הגדרות",
+    "subtitle": "תצורה עבור Routerly",
+    "tabs": {
+      "general": "כללי",
+      "security": "אבטחה",
+      "notifications": "התראות",
+      "integrations": "אינטגרציות",
+      "catalog": "קטלוג ספקים",
+      "users": "משתמשים",
+      "roles": "תפקידים",
+      "audit": "יומן ביקורת",
+      "about": "אודות"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "נתבים",
+      "subtitle": "אפליקציות לקוח שגישות ל-Routerly",
+      "count": "נתב אחד",
+      "count_other": "{{count}} נתבים",
+      "newRouter": "נתב חדש",
+      "empty": "עדיין אין נתבים.",
+      "emptyFiltered": "אין נתבים מסוג זה.",
+      "tabs": {
+        "all": "הכל",
+        "router": "נתב",
+        "orchestrator": "מתאם",
+        "passthrough": "מעבר ישיר"
+      },
+      "columns": {
+        "name": "שם",
+        "tokens": "טוקנים",
+        "policies": "מדיניות",
+        "models": "מודלים"
+      },
+      "tokenCount": "טוקן אחד",
+      "tokenCount_other": "{{count}} טוקנים",
+      "editRouter": "ערוך נתב",
+      "deleteRouter": "מחק נתב",
+      "deleteConfirm": "למחוק נתב זה?",
+      "errors": {
+        "deleteFailed": "שגיאה במחיקת הנתב"
+      }
+    },
+    "layout": {
+      "notFound": "הנתב לא נמצא",
+      "tabs": {
+        "dashboard": "דשבורד",
+        "general": "כללי",
+        "orchestrator": "תיאום",
+        "routing": "ניתוב",
+        "optimizer": "מאופטם",
+        "security": "אבטחה",
+        "token": "טוקן",
+        "users": "משתמשים",
+        "logs": "יומנים"
+      },
+      "backToRouters": "חזרה לנתבים",
+      "backToRoutersTitle": "חזרה לנתבים",
+      "newRouter": "נתב חדש",
+      "loading": "טוען...",
+      "routerId": "מזהה נתב:",
+      "saveFirstHint": "שמור את הנתב ראשית כדי לפתוח כרטיסייה זו"
+    },
+    "dashboard": {
+      "period": "תקופה",
+      "noTraffic": "אין תעבורה עבור נתב זה בתקופה הנבחרת.",
+      "stats": {
+        "savings": "חיסכון",
+        "vsPrefix": "לעומת",
+        "forEverything": "לכל התעבורה",
+        "noTargetToCompare": "אין מודל יעד להשוואה",
+        "cost": "עלות",
+        "callCount": "קריאה אחת",
+        "callCount_other": "{{count}} קריאות",
+        "latency": "זמן תגובה",
+        "medianP95": "חציון · p95 {{value}}",
+        "ttft": "זמן עד לטוקן הראשון",
+        "notMeasured": "לא נמדד בקריאות אלו",
+        "reliability": "מהימנות",
+        "errorsAndBlocked": "{{errors}} שגיאות · {{blocked}} חסומות"
+      },
+      "tokens": {
+        "input": "טוקני קלט:",
+        "output": "טוקני פלט:",
+        "fromCache": "מהמטמון:",
+        "cacheSaved": "(נחסכו {{amount}})"
+      },
+      "oneModel": {
+        "heading": "אם הכל היה הולך למודל אחד",
+        "empty": "הוסף מודלי יעד לנתב זה כדי לראות את ההשוואה.",
+        "columns": {
+          "targetModel": "מודל יעד",
+          "wouldHaveCost": "הייתה עולה",
+          "saved": "נחסך"
+        },
+        "costsHint": "העלויות הן הטוקנים שנצפו כשנקבע מחדש תמחורם לפי התעריפים של כל יעד."
+      },
+      "optimizers": {
+        "heading": "מה המאופטמים הסירו",
+        "columns": {
+          "optimizer": "מאופטם",
+          "callsChanged": "קריאות שהשתנו",
+          "tokensSaved": "טוקנים שנחסכו",
+          "costSaved": "עלות שנחסכה",
+          "rolledBack": "שוחזר"
+        },
+        "hint": "נמדד על הקריאות עצמן, במחירי המודל ששרת כל אחת. הרצה ששוחזרה משמעה שהפלט של השלב נדחה כלא בטוח והפרומפט שוחזר: היא לא חסכה כלום, וכמות גבוהה מציינת שהסף אגרסיבי מדי."
+      },
+      "traffic": {
+        "heading": "לאן התעבורה הגיעה",
+        "columns": {
+          "model": "מודל",
+          "calls": "קריאות",
+          "share": "חלק",
+          "cost": "עלות",
+          "p95Latency": "זמן תגובה p95",
+          "errors": "שגיאות"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "שגיאה בשמירת הנתב",
+        "copyFailed": "ההעתקה נכשלה — אנא בחר והעתק את הטוקן באופן ידני."
+      },
+      "kind": {
+        "router": {
+          "label": "נתב",
+          "description": "מנתב בקשות בין מודלים מועמדים."
+        },
+        "orchestrator": {
+          "label": "מתאם",
+          "description": "מנתב בקשות בין נתבים אחרים במקום מודלים."
+        },
+        "passthrough": {
+          "label": "מעבר",
+          "description": "מעביר בקשות ללא שינוי."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "שמור טוקן זה כעת.",
+        "saveNowHint": "הוא לא יוצג שוב — לאחר שתעזוב מסך זה לא ניתן לשחזר אותו.",
+        "copied": "הועתק!",
+        "copy": "העתק",
+        "goToRouter": "עבור לנתב"
+      },
+      "connect": {
+        "heading": "כיצד להתחבר",
+        "intro": "הפנה כל SDK של OpenAI או Anthropic ל-Routerly והשתמש ב<tokenLink>טוקן נתב</tokenLink> כמפתח API. החלף את <code>{{token}}</code> להלן בשלך. מודל <code>{{model}}</code> מעביר את הבחירה ל-Routerly; כל מזהה מודל מ<modelsLink>מודלים</modelsLink> עובד גם כן.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "כתובת בסיס <code>{{baseUrl}}</code>, אותה כתובת שכל שדה \"תואם OpenAI\" מקבל.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "כתובת בסיס <code>{{baseUrl}}</code>, ללא ה-<code>/v1</code>: ה-SDK מוסיף אותו.",
+        "curl": "curl",
+        "curlHint": "בדוק את החיווט מבלי להתקין דבר, ואז חפש את הקריאה ב<usageLink>שימוש</usageLink>."
+      },
+      "form": {
+        "kind": "סוג",
+        "kindAriaLabel": "סוג הנתב",
+        "kindFixedHint": "קבוע מרגע יצירת הנתב.",
+        "routerName": "שם הנתב",
+        "routerNamePlaceholder": "האפליקציה שלי",
+        "advancedSettings": "הגדרות מתקדמות",
+        "ttftTimeout": "זמן פסק (TTFT) (מ״ש)",
+        "ttftTimeoutHint": "אם מודל לא שולח את בייט התגובה הראשון בפרק זמן זה, Routerly מבטל אותו ומנסה את המועמד הבא. לא מגביל את משך התגובה הכולל. הגדר ל-0 להמתין כל זמן שהספק דורש.",
+        "traceContent": "תוכן עקבה",
+        "traceContentHint": "עקבות תמיד רושמות מטא-דאטה (מודלים, ניקודים, טוקנים, עלות, זמן תגובה). הפעל זאת כדי לרשום גם את הפרומפטים שנשלחו והתשובות שהתקבלו. הם נשמרים עם רשומת השימוש וגלויים לכל מי שיכול לקרוא דוחות.",
+        "capturePromptsAndAnswers": "לכוד פרומפטים ותשובות",
+        "saveChanges": "שמור שינויים",
+        "createRouter": "צור נתב"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "נתב זה אינו מתאם.",
+      "candidateRouters": "נתבים מועמדים",
+      "candidateRoutersHint": "הנתבים שהמתאם הזה מעביר להם בקשות. המשקל משפיע על התדירות שבה כל מועמד נבחר; רק שמו, מזההו, המשקל שלו ומגבלות אופציונליות לפי מועמד מוצגים כאן.",
+      "router": "נתב",
+      "selectRouter": "בחר נתב",
+      "weight": "משקל",
+      "removeCandidate": "הסר מועמד",
+      "usageLimits": "מגבלות שימוש למועמד זה",
+      "limitCount": "{{count}} מגבלה",
+      "limitCount_other": "{{count}} מגבלות",
+      "usageLimitsHint": "מגבלות שימוש אופציונליות המוחלות רק על בקשות שהמתאם הזה מעביר למועמד זה.",
+      "empty": "עדיין אין נתבים מועמדים. מתאם צריך לפחות אחד לפני שיוכל להעביר בקשות.",
+      "addCandidate": "הוסף מועמד",
+      "saved": "נשמר!",
+      "saveCandidates": "שמור מועמדים",
+      "errors": {
+        "loadFailed": "טעינת הנתבים נכשלה",
+        "saveFailed": "שגיאה בשמירת מועמדי המתאם"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "הקצאת פרופיל הניתוב נכשלה",
+        "duplicateTargets": "מודלי יעד לא יכולים להכיל כפילויות.",
+        "saveFailed": "שגיאה בשמירת ניתוב הנתב",
+        "noProfileAvailable": "אין פרופיל ניתוב זמין. צור אחד בעמוד הפרופילים."
+      },
+      "form": {
+        "routing": "ניתוב",
+        "routingHint": "השתמש בפרופיל ניתוב משותף, או הגדר מדיניות משלו לנתב זה. מודלי היעד ניתנים להגדרה בכל מקרה.",
+        "profileMode": "פרופיל",
+        "customMode": "מותאם אישית",
+        "routingProfile": "פרופיל ניתוב",
+        "builtinSuffix": "(מובנה)",
+        "profileHint": "המדיניות מגיעה מהפרופיל ועוקבת אחר שינוייו. ערוך אותה בעמוד הפרופילים, או עבור למותאם אישית להתחיל מעותק שלה.",
+        "saved": "נשמר!",
+        "saveRoutingConfiguration": "שמור תצורת ניתוב"
+      },
+      "targetModels": {
+        "heading": "מודלי יעד",
+        "hint": "הגדר את מאגר המודלים שהמדיניות תסנן ותבחר מתוכו. פרומפטים אופציונליים מנחים את נתב ה-AI מתי לבחור בכל מודל.",
+        "endpointModel": "מודל נקודת קצה",
+        "selectModel": "בחר מודל",
+        "promptDefinition": "הגדרת פרומפט",
+        "promptPlaceholder": "תאר בדיוק מתי ומדוע הנתב צריך לבחור במודל זה...",
+        "intents": "כוונות",
+        "removeTarget": "הסר מודל יעד",
+        "empty": "לא הוגדרו מודלי יעד.",
+        "addTarget": "הוסף מודל יעד"
+      }
+    },
+    "optimizer": {
+      "title": "מאופטמים",
+      "description": "מאופטמים מפחיתים טוקני פרומפט לפני שהבקשות מגיעות לספק. הם רצים בסדר מלמעלה למטה. השתמש בפרופיל מאופטם משותף, או הגדר צנרת משלו לנתב זה.",
+      "noPermission": "אין לך הרשאה לצפות במאופטמים.",
+      "mode": {
+        "profile": "פרופיל",
+        "custom": "מותאם אישית"
+      },
+      "profileSelect": {
+        "ariaLabel": "פרופיל מאופטם",
+        "builtinLabel": "{{label}} (מובנה)",
+        "hint": "השלבים מגיעים מהפרופיל ועוקבים אחר שינוייו. ערוך אותם בעמוד הפרופילים, או עבור למותאם אישית להתחיל מעותק שלהם.",
+        "disabledSuffix": "(מכובה)",
+        "thresholdSuffix": ", סף {{threshold}}"
+      },
+      "customHint": "גרור לסידור מחדש, החלף להפעלה. חלק מהמאופטמים משתמשים בסף לשליטה על עוצמת הקיצוץ.",
+      "saveButton": "שמור מאופטמים",
+      "saving": "שומר...",
+      "saved": "נשמר",
+      "preview": {
+        "title": "תצוגה מקדימה של חיסכון טוקנים",
+        "description": "הפעל את הצנרת הנוכחית (הלא שמורה) על פרומפט לראות מה כל שלב מסיר ומה הוא עולה. בחר אחת מהשיחות לדוגמה, או הקלד פרומפט משלך.",
+        "promptLabel": "פרומפט",
+        "promptAriaLabel": "פרומפט לתצוגה מקדימה",
+        "typePromptOption": "הקלד פרומפט להלן",
+        "fixturesHint": "שיחות לדוגמה המגיעות עם Routerly. Routerly לא רושם פרומפטים אמיתיים.",
+        "modelLabel": "מודל",
+        "modelAriaLabel": "מודל לתצוגה מקדימה",
+        "modelWithContext": "{{id}} (הקשר של {{k}}k)",
+        "noModelOption": "אין מודל",
+        "modelHint": "שלבים שמקצצים להתאמה לחלון הקשר צריכים לדעת איזה חלון. בלי מודל הם מדולגים, בדיוק כמו בבקשה שמציינת מודל ש-Routerly לא מכיר את חלונו.",
+        "sampleAriaLabel": "פרומפט לדוגמה",
+        "samplePlaceholder": "הדבק הודעת משתמש לדוגמה...",
+        "runButton": "הפעל תצוגה מקדימה",
+        "running": "מפעיל...",
+        "before": "לפני",
+        "after": "אחרי",
+        "saved": "נחסך",
+        "columns": {
+          "optimizer": "מאופטם",
+          "before": "לפני",
+          "after": "אחרי",
+          "saved": "נחסך"
+        },
+        "rolledBackNote": "שוחזר: השינוי נדחה כלא בטוח",
+        "skippedNote": "דולג: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "השינוי שהשלב הזה יצר שוחזר, כך שהפרומפט הגיע לשלב הבא ללא שינוי.",
+          "skipped": "שלב זה לא רץ: {{reason}}",
+          "unchanged": "שלב זה השאיר את הפרומפט ללא שינוי."
+        }
+      },
+      "errors": {
+        "assignFailed": "הקצאת פרופיל המאופטם נכשלה",
+        "saveFailed": "שגיאה בשמירת המאופטמים",
+        "previewFailed": "שגיאה בהפעלת התצוגה המקדימה",
+        "noProfileAvailable": "אין פרופיל מאופטם זמין. צור אחד בעמוד הפרופילים."
+      }
+    },
+    "token": {
+      "newButton": "טוקן חדש",
+      "empty": "עדיין אין טוקני API. צור אחד להתחיל לאמת בקשות.",
+      "budgetOverrides": "עקיפות תקציב",
+      "created": "נוצר",
+      "lastUsed": "שימוש אחרון",
+      "expires": "תפוגה",
+      "never": "לעולם לא",
+      "editTitle": "ערוך תצורה",
+      "revokeTitle": "בטל טוקן",
+      "revokeConfirm": "לבטל את הטוקן \"{{snippet}}...\"? אפליקציות המשתמשות בו יפסיקו לעבוד באופן מיידי.",
+      "labelInput": {
+        "placeholder": "חפש או צור תווית…",
+        "createPrefix": "צור",
+        "noMatches": "לא נמצאו תוויות תואמות."
+      },
+      "errors": {
+        "deleteFailed": "שגיאה במחיקת הטוקן"
+      },
+      "create": {
+        "backToTokens": "חזרה לטוקנים",
+        "title": "טוקן API חדש",
+        "subtitle": "הטוקן המלא מוצג פעם אחת בלבד לאחר היצירה — שמור אותו במקום מאובטח.",
+        "tokenCreated": "הטוקן נוצר בהצלחה. העתק אותו כעת — הוא לא יוצג שוב.",
+        "copied": "הועתק!",
+        "copy": "העתק",
+        "done": "סיום",
+        "optional": "אופציונלי",
+        "labels": "תוויות",
+        "labelsHint": "תג לטוקן זה לזיהוי מקום השימוש בו (לדוגמה \"ייצור\", \"ci\").",
+        "scopes": "היקפים",
+        "scopesHint": "היקפים חופשיים המצורפים לטוקן זה (לדוגמה \"batch\", \"internal\"), נשמרים עם הטוקן לצורך רישום אישי שלך.",
+        "tags": "תגים",
+        "tagsHint": "מטא-דאטה מסוג מפתח-ערך המועברת לרשומות שימוש (לדוגמה env=production).",
+        "keyPlaceholder": "מפתח",
+        "valuePlaceholder": "ערך",
+        "createButton": "צור טוקן",
+        "cancel": "ביטול",
+        "copyFailed": "ההעתקה נכשלה — אנא בחר והעתק את הטוקן באופן ידני.",
+        "errors": {
+          "createFailed": "שגיאה ביצירת הטוקן"
+        }
+      },
+      "edit": {
+        "title": "ערוך טוקן",
+        "subtitle": "עדכן תוויות ועקיפות מגבלה לפי מודל עבור טוקן זה.",
+        "token": "טוקן",
+        "labels": "תוויות",
+        "perModelLimits": "מגבלות לפי מודל",
+        "perModelLimitsHint": "עקוף מגבלות גלובליות ומגבלות ברמת הנתב עבור בקשות המשתמשות בטוקן זה.",
+        "noTargetModels": "הוסף מודלי יעד בכרטיסייה הניתוב ראשית.",
+        "noOverride": "אין עקיפה",
+        "noLimits": "אין מגבלות",
+        "noLimitsSet": "לא הוגדרו מגבלות — יורש מהאב. הוסף מגבלה להלן לעקיפה.",
+        "metric": "מדד",
+        "type": "סוג",
+        "periodLabel": "תקופה",
+        "every": "כל",
+        "maxCost": "מקסימום ($)",
+        "maxCalls": "מקסימום (מס׳)",
+        "maxTokens": "מקסימום (טוקנים)",
+        "allCombosSet": "כל שילובי המדד/תקופה כבר הוגדרו",
+        "addLimit": "הוסף מגבלה",
+        "windowType": {
+          "period": "תקופה",
+          "rolling": "נגלל"
+        },
+        "limitMetric": {
+          "cost": "עלות (USD)",
+          "calls": "בקשות",
+          "input_tokens": "טוקני קלט",
+          "output_tokens": "טוקני פלט",
+          "total_tokens": "סך הטוקנים"
+        },
+        "period": {
+          "hourly": "שעתי",
+          "daily": "יומי",
+          "weekly": "שבועי",
+          "monthly": "חודשי",
+          "yearly": "שנתי"
+        },
+        "rollingUnit": {
+          "second": "שניות",
+          "minute": "דקות",
+          "hour": "שעות",
+          "day": "ימים",
+          "week": "שבועות",
+          "month": "חודשים"
+        },
+        "fmt": {
+          "requests": "{{value}} בק׳",
+          "inputTokens": "{{value}} טוק-קלט",
+          "outputTokens": "{{value}} טוק-פלט",
+          "totalTokens": "{{value}} טוק",
+          "everyRolling": "{{metric}} / כל {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "שגיאה בשמירת הטוקן"
+        }
+      }
+    },
+    "users": {
+      "title": "חברי נתב",
+      "description": "ניהול משתמשים עם גישה לנתב זה.",
+      "addButton": "הוסף חבר",
+      "addNewTitle": "הוסף חבר חדש",
+      "selectUserPlaceholder": "בחר משתמש...",
+      "addConfirmButton": "הוסף",
+      "cancelButton": "ביטול",
+      "empty": "לא נמצאו חברים.",
+      "removeConfirm": "האם אתה בטוח שברצונך להסיר חבר זה?",
+      "saveTitle": "שמור שינויים",
+      "changeRoleTitle": "שנה תפקיד",
+      "removeTitle": "הסר חבר",
+      "roles": {
+        "viewer": "צופה",
+        "editor": "עורך",
+        "admin": "מנהל"
+      },
+      "columns": {
+        "user": "משתמש",
+        "role": "תפקיד",
+        "actions": "פעולות"
+      },
+      "errors": {
+        "loadFailed": "טעינת המשתמשים נכשלה",
+        "addFailed": "שגיאה בהוספת חבר",
+        "updateFailed": "שגיאה בעדכון חבר",
+        "removeFailed": "שגיאה בהסרת חבר"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "כבוי"
+      },
+      "autoRefreshOff": "רענון אוטומטי מכובה",
+      "autoRefreshEvery": "רענון אוטומטי כל {{interval}}",
+      "lastUpdated": "עדכון אחרון: {{time}}",
+      "refresh": "רענן",
+      "refreshNowTitle": "רענן כעת",
+      "refreshNowButton": "↻ כעת",
+      "filters": {
+        "period": "תקופה",
+        "model": "מודל",
+        "allModels": "כל המודלים",
+        "type": "סוג",
+        "all": "הכל",
+        "completion": "השלמה",
+        "router": "נתב",
+        "status": "סטטוס",
+        "success": "הצלחה",
+        "blocked": "חסום",
+        "error": "שגיאה",
+        "resetButton": "אפס מסננים"
+      },
+      "stats": {
+        "totalCost": "עלות כוללת",
+        "totalCalls": "סך הקריאות",
+        "completionCalls": "קריאות השלמה",
+        "routerCalls": "קריאות נתב",
+        "errors": "שגיאות"
+      },
+      "requestLogs": "יומני בקשות",
+      "emptyNoRequests": "אין בקשות עבור נתב זה בתקופה הנבחרת.",
+      "emptyNoMatches": "אין רשומות המתאימות למסננים הפעילים.",
+      "columns": {
+        "time": "זמן",
+        "model": "מודל",
+        "type": "סוג",
+        "in": "קלט",
+        "out": "פלט",
+        "cost": "עלות",
+        "latency": "זמן תגובה",
+        "ttft": "TTFT",
+        "tokPerSec": "טוק/ש",
+        "status": "סטטוס"
+      },
+      "typeRouter": "נתב",
+      "typeCompletion": "השלמה",
+      "pagination": {
+        "previous": "← הקודם",
+        "next": "הבא →",
+        "pageOf": "עמוד {{page}} מתוך {{totalPages}}",
+        "totalRecords": "(סה״כ {{count}} רשומות)"
+      }
+    },
+    "security": {
+      "title": "אבטחה",
+      "description": "השתמש בפרופיל אבטחה משותף, או הגדר מעקות ומדיניות מידע מזהה משלו לנתב זה.",
+      "mode": {
+        "profile": "פרופיל",
+        "custom": "מותאם אישית"
+      },
+      "profileSelect": {
+        "ariaLabel": "פרופיל אבטחה",
+        "builtinLabel": "{{label}} (מובנה)",
+        "hint": "המעקות ומדיניות המידע המזהה מגיעים מהפרופיל ועוקבים אחר שינוייו. ערוך אותם בעמוד הפרופילים, או עבור למותאם אישית להתחיל מעותק שלהם.",
+        "blockingSuffix": ", חוסם",
+        "disabledSuffix": ", מכובה",
+        "piiRedaction": "צנזור מידע מזהה ({{target}})"
+      },
+      "saveButton": "שמור הגדרות אבטחה",
+      "saved": "נשמר!",
+      "errors": {
+        "assignFailed": "הקצאת פרופיל האבטחה נכשלה",
+        "saveFailed": "שגיאה בשמירת הגדרות האבטחה",
+        "noProfileAvailable": "אין פרופיל אבטחה זמין. צור אחד בעמוד הפרופילים."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "אתה עוזר AI מועיל.",
+      "errors": {
+        "unknown": "אירעה שגיאה לא ידועה",
+        "onlyImages": "רק קבצי תמונה מצורפים נתמכים כרגע במודלי ראייה."
+      },
+      "title": "צ׳אט בדיקה",
+      "subtitle": "שלח שאילתות בדיקה בעד שער הניתוב.",
+      "routerToken": "טוקן נתב:",
+      "hideToken": "הסתר טוקן",
+      "showToken": "הצג טוקן",
+      "recognizedToken": "טוקן מוכר",
+      "unrecognizedToken": "טוקן לא מוכר",
+      "noMessages": "עדיין אין הודעות.",
+      "enterTokenHint": "אנא הזן טוקן נתב מעל לשליחת הודעה.",
+      "typeMessageHint": "הקלד הודעה להלן להתחלת הבדיקה.",
+      "reasoning": "חשיבה",
+      "attachedAlt": "מצורף",
+      "attachmentAlt": "קובץ מצורף",
+      "attachImage": "צרף תמונה",
+      "typeMessagePlaceholder": "הקלד הודעה...",
+      "stopGeneration": "עצור יצירה",
+      "sendEnter": "שלח (Enter)",
+      "debugLog": "יומן ניפוי באגים",
+      "clear": "נקה",
+      "noRequestSent": "עדיין לא נשלחה בקשה.",
+      "turnTraceLog": "יומן עקבה תור #{{turn}} · {{count}} אירוע",
+      "turnTraceLog_other": "יומן עקבה תור #{{turn}} · {{count}} אירועים"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "חיבורים",
+      "subtitle": "חשבונות ספק המשמשים להפעלת מופעי מודלים",
+      "noPermission": "אין לך הרשאה לצפות בחיבורים.",
+      "count": "{{count}} חיבור",
+      "count_other": "{{count}} חיבורים",
+      "addConnection": "הוסף חיבור",
+      "empty": "עדיין אין חיבורים. הוסף אחד להתחלה.",
+      "deleteConfirm": "להסיר את החיבור \"{{label}}\"? מופעים המשויכים לו יפסיקו לעבוד.",
+      "errors": {
+        "loadFailed": "טעינת החיבורים נכשלה",
+        "deleteFailed": "מחיקת החיבור נכשלה"
+      },
+      "columns": {
+        "label": "תווית",
+        "provider": "ספק",
+        "endpoint": "נקודת קצה",
+        "status": "סטטוס"
+      },
+      "status": {
+        "enabled": "מופעל",
+        "disabled": "מכובה"
+      },
+      "actions": {
+        "models": "מודלים",
+        "edit": "ערוך",
+        "remove": "הסר"
+      }
+    },
+    "form": {
+      "backToConnections": "חזרה לחיבורים",
+      "editTitle": "ערוך חיבור",
+      "addTitle": "הוסף חיבור",
+      "enabled": "מופעל",
+      "editSubtitle": "עדכן את הגדרות חשבון הספק",
+      "addSubtitle": "רשום חשבון ספק חדש",
+      "sectionTitle": "פרטי חיבור",
+      "sectionDesc": "חשבון ספק, אישורים ונקודת קצה המשמשים לביצוע בקשות.",
+      "provider": "ספק",
+      "groups": {
+        "directApi": "API ישיר",
+        "cloudPlatform": "פלטפורמת עננה",
+        "subscription": "מנוי",
+        "browserSession": "סשן דפדפן",
+        "selfHosted": "מארח עצמי"
+      },
+      "upstreamProvider": {
+        "label": "ספק",
+        "hintLabel": "(שם הספק במעלה הזרם)",
+        "placeholder": "לדוגמה deepseek, mistral, groq",
+        "description": "מציין את השירות שנקודת קצה זו משתייכת אליו. מודלים בחיבור זה משתמשים בו כקידומת מזהה שלהם (לדוגמה <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "שם",
+        "hint": "מזהה את החיבור הזה בכל מקום שבו מפנים אליו, כך שהוא צריך להיות ייחודי. השאר ריק לשימוש ב-<code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "השאר שדות אישורים ריקים לשמירה על ערכים קיימים.",
+      "save": "שמור",
+      "create": "צור",
+      "cancel": "ביטול",
+      "oauth": {
+        "unknown": "לא ידוע",
+        "accountExpires": "חשבון: {{account}} — פג ב{{expires}}",
+        "unknownError": "שגיאה לא ידועה"
+      },
+      "errors": {
+        "notFound": "החיבור לא נמצא",
+        "loadFailed": "טעינת החיבור נכשלה",
+        "updateFailed": "עדכון החיבור נכשל",
+        "createFailed": "יצירת החיבור נכשלה"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "חזרה למודלים",
+      "title": "גילוי מודלים",
+      "subtitle": "עיין במודלים הזמינים והוסף אותם לתצורת הניתוב שלך",
+      "count": "{{count}} מודלים",
+      "filteredCount": "{{filtered}} מתוך {{count}}",
+      "free": "חינם",
+      "add": "הוסף",
+      "addAgain": "הוסף שוב",
+      "loadFailed": "טעינת הקטלוג נכשלה: {{error}}",
+      "filters": {
+        "search": "חיפוש",
+        "searchPlaceholder": "מזהה או שם המודל…",
+        "provider": "ספק",
+        "allProviders": "כל הספקים",
+        "context": "הקשר",
+        "ctxOptions": {
+          "all": "הכל",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "מחיר / 1M",
+        "priceOptions": {
+          "all": "הכל",
+          "free": "חינם",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "הצג",
+        "configured": "מוגדר",
+        "embedding": "הטמעה",
+        "resetFilters": "אפס מסננים"
+      },
+      "empty": {
+        "noMatches": "אין מודלים המתאימים למסננים שלך."
+      },
+      "columns": {
+        "model": "מודל",
+        "provider": "ספק",
+        "context": "הקשר",
+        "input": "קלט / 1M",
+        "output": "פלט / 1M"
+      },
+      "badges": {
+        "configured": "מוגדר",
+        "embedding": "הטמעה",
+        "runsLocally": "רץ באופן מקומי"
+      },
+      "pagination": {
+        "prev": "הקודם",
+        "next": "הבא",
+        "range": "{{start}}–{{end}} מתוך {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "חזרה למודלים",
+      "title": {
+        "add": "הוסף מודל",
+        "edit": "ערוך מודל",
+        "clone": "שכפל מודל"
+      },
+      "subtitle": {
+        "add": "רשום מודל ספק LLM חדש",
+        "edit": "שינוי תצורה עבור {{id}}",
+        "clone": "משכפל מ-{{id}} — הקצה מזהה חדש לשמירה"
+      },
+      "errors": {
+        "modelNotFound": "המודל לא נמצא",
+        "sourceModelNotFound": "מודל המקור לא נמצא",
+        "loadFailed": "שגיאה בטעינת המודלים",
+        "idRequired": "נדרש מזהה מודל",
+        "duplicateId": "המודל \"{{id}}\" קיים כבר — הגדר מזהה מותאם אישית שונה",
+        "selectConnection": "בחר חיבור",
+        "saveFailed": "שגיאה"
+      },
+      "badge": {
+        "yes": "כן",
+        "no": "לא",
+        "override": "עקיפה",
+        "auto": "אוטומטי",
+        "default": "ברירת מחדל: {{value}}",
+        "reset": "אפס"
+      },
+      "oauth": {
+        "unknownExpiry": "לא ידוע",
+        "accountOk": "חשבון: {{account}} — פג ב{{expires}}",
+        "unknownError": "שגיאה לא ידועה"
+      },
+      "identification": {
+        "title": "זיהוי מודל",
+        "description": "מזהה ייחודי והגדרות ספק עבור תצורת מודל זו.",
+        "routerlyId": "מזהה Routerly",
+        "routerlyIdHintPre": "(אופציונלי — ברירת מחדל:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "המזהה שישמש בהפניה למודל זה בקריאות API של Routerly.",
+        "provider": "ספק",
+        "upstreamProviderHint": "(שם הספק במעלה הזרם)",
+        "upstreamProviderPlaceholder": "לדוגמה deepseek, mistral, groq",
+        "upstreamProviderDescPre": "משמש כקידומת למזהה Routerly (לדוגמה",
+        "upstreamProviderDescPost": ").",
+        "model": "מודל",
+        "upstreamModelHint": "(מזהה מודל במעלה הזרם)",
+        "upstreamModelPlaceholder": "לדוגמה deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "מזהה המודל הנשלח לנקודת הקצה של ה-API במעלה הזרם.",
+        "modelPreset": "תבנית מודל",
+        "customModelOption": "— שם מודל מותאם אישית —",
+        "customModelPlaceholder": "לדוגמה my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "פרטי חיבור",
+        "description": "נקודת קצה API ואישורי אימות הנדרשים לביצוע בקשות.",
+        "preconfigured": "מוגדר מראש",
+        "custom": "מותאם אישית",
+        "connection": "חיבור",
+        "selectPlaceholder": "— בחר חיבור —",
+        "noneAvailable": "אין חיבורים מוגדרים מראש עבור ספק זה. עבור למותאם אישית, או צור אחד בעמוד החיבורים.",
+        "editHint": "עריכת חיבור זה בהמשך תעדכן כל מודל המשויך לו."
+      },
+      "capabilities": {
+        "title": "יכולות",
+        "description": "ציין את הסוג והיכולות של מודל זה.",
+        "embeddingModel": "מודל הטמעה",
+        "embeddingModelHint": "מודל זה מייצר הטמעות וקטוריות (לא השלמות צ׳אט)"
+      },
+      "pricing": {
+        "title": "תמחור והקשר",
+        "description": "פרמטרי עלות ומגבלות עיבוד המשמשים לחיוב וניתוב.",
+        "inputPerMillion": "קלט $/1M",
+        "outputPerMillion": "פלט $/1M",
+        "cachePerMillion": "קריאת מטמון $/1M",
+        "cacheWritePerMillion": "כתיבת מטמון $/1M",
+        "optional": "(אופצ.)",
+        "contextWindow": "חלון הקשר",
+        "contextWindowHint": "(טוקנים, אופציונלי)"
+      },
+      "tiers": {
+        "title": "מתקדם — שכבות תמחור",
+        "description": "עקוף תמחור כשמדד חורג מסף. לדוגמה: \"מעל 200,000 טוקני הקשר, המחירים משתנים.\"",
+        "removeTier": "הסר שכבה",
+        "above": "מעל",
+        "metric": "מדד",
+        "metricContextTokens": "טוקני הקשר",
+        "overridePricing": "עקוף תמחור",
+        "addTier": "הוסף שכבת תמחור"
+      },
+      "limits": {
+        "title": "מגבלות",
+        "description": "מגבלות שימוש עבור מודל זה. ניתן לשלב מספר כללים.",
+        "metric": "מדד",
+        "type": "סוג",
+        "addLimit": "הוסף מגבלה"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (מנוי Pro/Max)",
+        "openaiOauth": "OpenAI (מנוי ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "שמור שינויים",
+      "createClone": "צור שכפול",
+      "createModel": "צור מודל"
+    },
+    "page": {
+      "title": "מודלים",
+      "subtitle": "ספקי LLM הרשומים ב-Routerly",
+      "tabs": {
+        "models": "מודלים",
+        "health": "תקינות"
+      },
+      "toolbar": {
+        "count": "{{count}} מודל",
+        "count_other": "{{count}} מודלים",
+        "filteredCount": "{{filtered}} מתוך {{count}} מודל",
+        "filteredCount_other": "{{filtered}} מתוך {{count}} מודלים"
+      },
+      "filters": {
+        "allProviders": "כל הספקים",
+        "allConnections": "כל החיבורים",
+        "searchPlaceholder": "סנן מודלים…"
+      },
+      "discover": "גילוי",
+      "addModel": "הוסף מודל",
+      "deleteConfirm": "להסיר את המודל \"{{id}}\"?",
+      "empty": {
+        "noModels": "עדיין אין מודלים. הוסף אחד להתחלה.",
+        "noMatches": "אין מודלים המתאימים למסננים הפעילים."
+      },
+      "columns": {
+        "id": "מזהה",
+        "provider": "ספק",
+        "endpoint": "נקודת קצה",
+        "input": "קלט $/1M",
+        "output": "פלט $/1M",
+        "cache": "מטמון $/1M",
+        "context": "גודל הקשר"
+      },
+      "actions": {
+        "test": "בדיקה",
+        "clone": "שכפל",
+        "edit": "ערוך",
+        "remove": "הסר"
+      },
+      "pagination": {
+        "previous": "← הקודם",
+        "next": "הבא →",
+        "pageOf": "עמוד {{page}} מתוך {{totalPages}}",
+        "total": "(מודל {{count}})",
+        "total_other": "({{count}} מודלים)"
+      },
+      "health": {
+        "emptyNoModels": "לא הוגדרו מודלים.",
+        "emptyNoMatches": "אין מודלים המתאימים למסנן.",
+        "resetAll": "אפס הכל",
+        "resetAllTitle": "אפס כל מפסק מעגל, תקופת צינון ונעילה",
+        "resetTitle": "אפס מפסק מעגל",
+        "confirmResetModel": "לאפס את מפסק המעגל עבור המודל \"{{id}}\"?",
+        "confirmResetAll": "לאפס את כל מצב העמידות? פעולה זו תנקה כל מפסק מעגל, תקופת צינון ונעילה.",
+        "errors": {
+          "resetModelFailed": "איפוס מפסק המעגל נכשל",
+          "resetAllFailed": "איפוס מצב העמידות נכשל"
+        },
+        "columns": {
+          "model": "מודל",
+          "provider": "ספק",
+          "status": "סטטוס",
+          "circuit": "מעגל",
+          "errorRate": "שיעור שגיאות (5 דק׳)",
+          "p95Latency": "זמן תגובה P95 (שעה)",
+          "requests": "בקשות (שעה)",
+          "lastSuccess": "הצלחה אחרונה",
+          "cooldownLockout": "צינון / נעילה"
+        },
+        "status": {
+          "healthy": "תקין",
+          "degraded": "מוחמר",
+          "unavailable": "לא זמין",
+          "cooldown": "צינון",
+          "nodata": "אין מידע"
+        },
+        "circuit": {
+          "ok": "תקין",
+          "recovering": "מתאושש",
+          "tripped": "נופל"
+        },
+        "time": {
+          "never": "לעולם לא",
+          "now": "כעת",
+          "secondsAgo": "לפני {{count}} שנ׳",
+          "minutesAgo": "לפני {{count}} דק׳",
+          "hoursAgo": "לפני {{count}} שע׳",
+          "daysAgo": "לפני {{count}} ימ׳",
+          "minSec": "{{min}} דק׳ {{sec}} שנ׳",
+          "sec": "{{sec}} שנ׳",
+          "cooldown": "צינון {{time}}",
+          "lockout": "נעילה {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "ניסויים",
+      "subtitle": "מבחני A/B בין נתבים",
+      "noPermission": "אין לך הרשאה לצפות בניסויים.",
+      "count": "{{count}} ניסוי",
+      "count_other": "{{count}} ניסויים",
+      "newExperiment": "ניסוי חדש",
+      "empty": "עדיין אין ניסויים. צור אחד להשוואת נתבים ראש בראש.",
+      "deleteConfirm": "למחוק את הניסוי \"{{name}}\"? לא ניתן לבטל פעולה זו.",
+      "noToken": "אין טוקן",
+      "noTokenTitle": "בלי טוקן שום לקוח לא יכול להגיע לניסוי זה",
+      "errors": {
+        "loadFailed": "טעינת הניסויים נכשלה",
+        "deleteFailed": "מחיקת הניסוי נכשלה"
+      },
+      "columns": {
+        "name": "שם",
+        "variants": "וריאנטים",
+        "rotation": "רוטציה",
+        "created": "נוצר"
+      },
+      "actions": {
+        "edit": "ערוך ניסוי",
+        "remove": "מחק"
+      }
+    },
+    "layout": {
+      "backToExperiments": "חזרה לניסויים",
+      "newExperiment": "ניסוי חדש",
+      "loading": "טוען...",
+      "experimentId": "מזהה ניסוי:",
+      "disabledTabTitle": "שמור את הניסוי ראשית כדי לפתוח כרטיסייה זו",
+      "errors": {
+        "notFound": "הניסוי לא נמצא"
+      },
+      "tabs": {
+        "config": "תצורה",
+        "metrics": "מדדים",
+        "token": "טוקן"
+      }
+    },
+    "config": {
+      "saved": "נשמר.",
+      "created": "הניסוי נוצר. הפנה את הלקוח שלך לטוקן זה במקום לטוקן נתב. הוא לא יוצג שוב.",
+      "copy": "העתק",
+      "copied": "הועתק!",
+      "done": "סיום",
+      "saving": "שומר...",
+      "create": "צור ניסוי",
+      "save": "שמור שינויים",
+      "cancel": "ביטול",
+      "trafficSplit": "חלוקת תעבורה",
+      "errors": {
+        "loadRoutersFailed": "טעינת הנתבים נכשלה",
+        "saveFailed": "שמירת הניסוי נכשלה",
+        "copyFailed": "ההעתקה נכשלה: בחר והעתק את הטוקן באופן ידני."
+      },
+      "fields": {
+        "name": "שם",
+        "namePlaceholder": "ניתוב זול לעומת פרימיום",
+        "description": "תיאור",
+        "optional": "(אופציונלי)",
+        "descriptionPlaceholder": "מה המבחן הזה מנסה להכריע",
+        "minSamples": "קריאות מינימליות לוריאנט",
+        "minSamplesHint": "מתחת לכך, כרטיסיית המדדים תסמן את ההשוואה כלא מוכרעת עדיין.",
+        "rotation": "רוטציה",
+        "stickyOn": "דביק לפי",
+        "stickyKey": "מפתח דביקות"
+      },
+      "variants": {
+        "title": "וריאנטים",
+        "desc": "כל וריאנט הוא נתב קיים, שלם: המודלים, הניתוב והמעקות שלו כולם חלים. מבחן דורש לפחות שניים.",
+        "routerAriaLabel": "נתב וריאנט {{index}}",
+        "routerPlaceholder": "בחר נתב",
+        "labelAriaLabel": "תווית וריאנט {{index}}",
+        "labelPlaceholder": "תווית (אופציונלי)",
+        "weightAriaLabel": "משקל וריאנט {{index}}",
+        "weightPlaceholder": "משקל",
+        "removeTitle": "הסר וריאנט {{index}}",
+        "add": "הוסף וריאנט"
+      },
+      "judge": {
+        "title": "שופט",
+        "desc": "אופציונלי: מודל קורא כל תשובה שנדגמה ומדרג אותה 0-10 לפי הקריטריונים שלך. כל קריאה שנשפטת היא קריאת מודל נוספת, שמחויבת כמו כל אחרת.",
+        "enable": "דרג תשובות עם מודל שופט",
+        "model": "מודל שופט",
+        "modelPlaceholder": "בחר מודל",
+        "criteria": "קריטריונים",
+        "criteriaPlaceholder": "אחד בכל שורה, לדוגמה\nעונה על השאלה שנשאלה\nנשאר עובדתי\nעומד בפורמט המבוקש",
+        "sampleRate": "חלק מהקריאות שנשפטות (%)"
+      }
+    },
+    "metrics": {
+      "loading": "טוען...",
+      "callsMeasured": "{{count}} קריאה נמדדה",
+      "callsMeasured_other": "{{count}} קריאות נמדדו",
+      "empty": "עדיין אין קריאות בחלון זה. הפנה לקוח לטוקן הניסוי להתחלת ההשוואה.",
+      "notConclusive": "עדיין לא מוכרע: כל וריאנט צריך לפחות {{minSamples}} קריאות בחלון זה. ",
+      "explanation": "הנתון הטוב יותר בכל זוג מודגש: זול יותר לקריאה, מהיר יותר, ניקוד שופט גבוה יותר. האחוז מתחת לערך הוא מרחקו מהזרוע הטובה ביותר. ניקוד השופט הוא ממוצע רץ על פני כל חיי הניסוי, אז זהו הנתון היחיד שהחלון לא מצמצם.",
+      "lowSample": "מדגם נמוך",
+      "lowSampleTitle": "מתחת ל-{{minSamples}} קריאות בחלון זה",
+      "judgedCallsTitle": "{{count}} תשובה נשפטה על ידי השופט מתחילת הניסוי",
+      "judgedCallsTitle_other": "{{count}} תשובות נשפטו על ידי השופט מתחילת הניסוי",
+      "errors": {
+        "loadFailed": "טעינת המדדים נכשלה"
+      },
+      "columns": {
+        "variant": "וריאנט",
+        "calls": "קריאות",
+        "share": "חלק",
+        "errors": "שגיאות",
+        "tokens": "טוקנים קלט / פלט",
+        "cost": "עלות",
+        "costPerCall": "עלות / קריאה",
+        "avgLatency": "זמן תגובה ממוצע",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "ניקוד שופט"
+      }
+    },
+    "token": {
+      "desc": "לקוח קורא לניסוי בדיוק כמו לנתב: אותה כתובת בסיס, טוקן זה במקום טוקן נתב. כל בקשה נוחתת על וריאנט אחד ומחויבת לנתב של אותו וריאנט.",
+      "baseUrlLabel": "כתובת בסיס עבור SDK של OpenAI או Anthropic, עם טוקן ניסוי כמפתח API:",
+      "created": "הטוקן נוצר. העתק אותו כעת, הוא לא יוצג שוב.",
+      "copy": "העתק",
+      "copied": "הועתק!",
+      "newToken": "טוקן חדש",
+      "empty": "אין טוקנים בניסוי זה. צור אחד כדי שלקוחות יוכלו לקרוא לו.",
+      "revokeConfirm": "לבטל את הטוקן \"{{snippet}}...\"? לקוחות המשתמשים בו יפסיקו לעבוד באופן מיידי.",
+      "revokeTitle": "בטל טוקן",
+      "errors": {
+        "createFailed": "יצירת הטוקן נכשלה",
+        "revokeFailed": "ביטול הטוקן נכשל",
+        "copyFailed": "ההעתקה נכשלה: בחר והעתק את הטוקן באופן ידני."
+      },
+      "columns": {
+        "created": "נוצר",
+        "lastUsed": "שימוש אחרון"
+      }
+    }
+  },
+  "overview": {
+    "title": "סקירה כללית",
+    "subtitle": "סיכום שימוש ופירוט עלויות",
+    "noPermission": "אין הרשאה לצפות בנתוני שימוש.",
+    "costByModel": "עלות לפי מודל",
+    "noCostRecorded": "לא נרשמה עלות בתקופה זו.",
+    "callsByModel": "קריאות לפי מודל",
+    "columns": {
+      "model": "מודל",
+      "calls": "קריאות",
+      "errors": "שגיאות",
+      "cost": "עלות"
+    },
+    "stats": {
+      "totalCalls": "סך הקריאות",
+      "callsBreakdown": "{{routing}} ניתוב · {{completion}} השלמה",
+      "successRate": "שיעור הצלחה",
+      "ofAllRequests": "מכל הבקשות",
+      "errors": "שגיאות",
+      "failedRequests": "בקשות שנכשלו",
+      "models": "מודלים",
+      "registered": "רשומים",
+      "routers": "נתבים",
+      "active": "פעילים"
+    },
+    "connectCard": {
+      "title": "חבר לקוח",
+      "desc": "הפנה את Claude Code, Codex, Cursor ועוד {{count}} לשער הזה."
+    }
+  },
+  "login": {
+    "emailLabel": "דוא״ל",
+    "passwordLabel": "סיסמה",
+    "signIn": "כניסה",
+    "errors": {
+      "loginFailed": "הכניסה נכשלה",
+      "totpFailed": "אימות 2FA נכשל"
+    },
+    "totp": {
+      "title": "אימות דו-שלבי",
+      "backupPrompt": "הזן קוד גיבוי.",
+      "appPrompt": "הזן את הקוד בעל 6 הספרות מאפליקציית האימות שלך.",
+      "backupCodeLabel": "קוד גיבוי",
+      "authenticatorCodeLabel": "קוד אימות",
+      "verify": "אמת",
+      "useAuthenticatorInstead": "השתמש באפליקציית האימות במקום",
+      "useBackupInstead": "השתמש בקוד גיבוי במקום"
+    }
+  },
+  "setup": {
+    "welcome": "ברוכים הבאים! בואו נגדיר אתכם.",
+    "welcomeSubtitle": "צור את חשבון המנהל הראשון להתחלת ניהול Routerly.",
+    "betaBadge": "🚧 בטא",
+    "betaNotice": "Routerly מתפתח באופן פעיל. עלולות להתרחש תקלות.",
+    "betaFeedback": "המשוב שלך מסייע לעצב את מה שהוא הופך להיות —",
+    "betaLink": "דווח על תקלות או שתף רעיונות",
+    "emailLabel": "דוא״ל מנהל",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "סיסמה",
+    "passwordPlaceholder": "מינימום 8 תווים",
+    "confirmLabel": "אישור סיסמה",
+    "confirmPlaceholder": "הזן שוב את הסיסמה",
+    "submit": "צור חשבון מנהל",
+    "errors": {
+      "mismatch": "הסיסמאות אינן תואמות",
+      "tooShort": "הסיסמה חייבת להיות באורך של לפחות 8 תווים",
+      "setupFailed": "ההגדרה נכשלה"
+    }
+  },
+  "audit": {
+    "empty": "לא נמצאו רשומות ביקורת.",
+    "errors": {
+      "loadFailed": "טעינת יומן הביקורת נכשלה"
+    },
+    "filters": {
+      "period": "תקופה",
+      "user": "משתמש",
+      "userPlaceholder": "דוא״ל או מזהה משתמש",
+      "action": "פעולה",
+      "actionPlaceholder": "לדוגמה model:create",
+      "result": "תוצאה",
+      "results": {
+        "all": "הכל",
+        "success": "הצלחה",
+        "forbidden": "אסור",
+        "error": "שגיאה"
+      },
+      "refresh": "רענן"
+    },
+    "columns": {
+      "timestamp": "חותמת זמן",
+      "user": "משתמש",
+      "action": "פעולה",
+      "endpoint": "נקודת קצה",
+      "result": "תוצאה",
+      "details": "פרטים"
+    },
+    "pagination": {
+      "previous": "הקודם",
+      "next": "הבא",
+      "page": "עמוד {{page}} מתוך {{totalPages}}",
+      "total": "(סה״כ {{count}})"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "שימוש",
+      "live": "חי",
+      "subtitle": "יומני קריאה מפורטים ופירוט לפי מודל",
+      "updatedAt": "· עודכן ב-{{time}}",
+      "poll": {
+        "off": "כבוי",
+        "5s": "5 שנ׳",
+        "15s": "15 שנ׳",
+        "30s": "30 שנ׳",
+        "1m": "1 דק׳",
+        "5m": "5 דק׳"
+      },
+      "liveButton": "● חי",
+      "liveButtonTitle": {
+        "disable": "כבה מצב חי",
+        "enable": "הפעל מצב חי (רענון כל 2 שנ׳)"
+      },
+      "refreshNow": "↻ כעת",
+      "refreshNowTitle": "רענן כעת",
+      "filters": {
+        "period": "תקופה",
+        "router": "נתב",
+        "model": "מודל",
+        "token": "טוקן",
+        "caller": "קורא",
+        "type": "סוג",
+        "status": "סטטוס",
+        "allRouters": "כל הנתבים",
+        "allModels": "כל המודלים",
+        "allTokens": "כל הטוקנים",
+        "resetFilters": "אפס מסננים",
+        "all": "הכל",
+        "success": "הצלחה",
+        "blocked": "חסום",
+        "error": "שגיאה"
+      },
+      "caller": {
+        "all": "הכל",
+        "completion": "השלמה",
+        "routing": "נתב",
+        "guardrail": "מעקה",
+        "judge": "שופט"
+      },
+      "callerBadge": {
+        "completion": "השלמה",
+        "routing": "נתב",
+        "guardrail": "מעקה",
+        "judge": "שופט"
+      },
+      "errors": {
+        "loadFailedPrefix": "טעינת נתוני השימוש נכשלה:",
+        "retry": "נסה שוב"
+      },
+      "stats": {
+        "totalCalls": "סך הקריאות",
+        "completionCalls": "קריאות השלמה",
+        "routerCalls": "קריאות נתב",
+        "guardrailCalls": "קריאות מעקה",
+        "blockedCalls": "קריאות חסומות",
+        "errors": "שגיאות"
+      },
+      "table": {
+        "rank": "מיקום",
+        "model": "מודל",
+        "provider": "ספק",
+        "calls": "קריאות",
+        "errors": "שגיאות",
+        "successRate": "שיעור הצלחה",
+        "avgLatency": "זמן תגובה ממוצע",
+        "p95Latency": "זמן תגובה P95",
+        "inputTokens": "טוקני קלט",
+        "outputTokens": "טוקני פלט",
+        "costPer1k": "עלות / 1K",
+        "cost": "עלות (USD)",
+        "bestCostPerformance": "יחס עלות-ביצועים הטוב ביותר"
+      },
+      "showMoreModels": "הצג {{count}} מודל נוסף",
+      "showMoreModels_other": "הצג {{count}} מודלים נוספים",
+      "showFewerModels": "הצג פחות מודלים",
+      "recentCalls": {
+        "title": "קריאות אחרונות",
+        "empty": "אין רשומות שימוש לתקופה זו.",
+        "columns": {
+          "time": "זמן",
+          "router": "נתב",
+          "model": "מודל",
+          "type": "סוג",
+          "caller": "קורא",
+          "in": "קלט",
+          "out": "פלט",
+          "cost": "עלות",
+          "latency": "זמן תגובה",
+          "ttft": "TTFT",
+          "tokensPerSec": "טוק/ש",
+          "status": "סטטוס"
+        }
+      },
+      "pagination": {
+        "previous": "הקודם",
+        "next": "הבא",
+        "pageOf": "עמוד {{page}} מתוך {{totalPages}}",
+        "totalRecords": "(סה״כ {{count}} רשומות)"
+      }
+    },
+    "record": {
+      "back": "חזרה",
+      "title": "פרטי קריאה",
+      "notFoundTitle": "הרשומה לא נמצאה",
+      "notFoundBody": "לא ניתן היה לטעון את רשומת השימוש {{id}}.",
+      "errors": {
+        "loadFailed": "טעינת הרשומה נכשלה"
+      },
+      "sections": {
+        "identity": "זהות",
+        "tokensAndCost": "טוקנים ועלות",
+        "performanceAndOutcome": "ביצועים ותוצאה",
+        "traceLog": "יומן עקבה"
+      },
+      "fields": {
+        "recordId": "מזהה רשומה",
+        "router": "נתב",
+        "token": "טוקן",
+        "model": "מודל",
+        "callType": "סוג קריאה",
+        "requestType": "סוג בקשה",
+        "inputTokens": "טוקני קלט",
+        "outputTokens": "טוקני פלט",
+        "totalTokens": "סך הטוקנים",
+        "costUsd": "עלות (USD)",
+        "costUnknown": "לא ידוע",
+        "latency": "זמן תגובה",
+        "ttft": "TTFT",
+        "tokensPerSec": "טוק/ש",
+        "outcome": "תוצאה",
+        "timestamp": "חותמת זמן",
+        "guardrailTriggered": "מעקה הופעל",
+        "blockedBy": "נחסם על ידי",
+        "piiRedacted": "מידע מזהה צונזר"
+      },
+      "errorMessage": "הודעת שגיאה",
+      "eventCount": "{{count}} אירוע",
+      "eventCount_other": "{{count}} אירועים",
+      "noTrace": "אין עקבה זמינה. נתוני עקבה נלכדים עבור קריאות חדשות בלבד."
+    }
+  },
+  "playground": {
+    "title": "מגרש משחקים",
+    "subtitle": "בדוק מודלים, השווה תגובות, ושמור תבניות פרומפט.",
+    "mode": {
+      "single": "בודד",
+      "compare": "השוואה"
+    },
+    "token": {
+      "label": "טוקן:",
+      "labelA": "טוקן A",
+      "labelB": "טוקן B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "כמו A",
+      "unknownToken": "טוקן לא ידוע"
+    },
+    "presets": {
+      "button": "תבניות",
+      "panelTitle": "תבניות",
+      "saveCurrent": "שמור נוכחי",
+      "namePlaceholder": "שם תבנית...",
+      "save": "שמור",
+      "empty": "עדיין אין תבניות.",
+      "delete": "מחק תבנית"
+    },
+    "streamingDisabled": {
+      "banner": "הזרמה לא זמינה",
+      "bannerBody": "לנתב זה יש מעקה חוסם תגובות פעיל. Routerly חייב לבדוק את התגובה המלאה לפני המסירה, כך שהתגובות מגיעות בבת אחת.",
+      "tooltip": "הזרמה לא זמינה: מעקה חוסם תגובות מחייב בדיקת התגובה המלאה לפני המסירה.",
+      "ariaLabel": "הזרמה לא זמינה"
+    },
+    "systemPrompt": "פרומפט מערכת",
+    "model": "מודל",
+    "modelPlaceholder": "אוטומטי (ברירת מחדל של הנתב)",
+    "params": {
+      "temp": "טמפ׳",
+      "maxTokens": "טוקנים מקסימליים",
+      "topP": "Top-p"
+    },
+    "stream": "הזרמה",
+    "clear": "נקה",
+    "empty": {
+      "noMessages": "עדיין אין הודעות.",
+      "enterToken": "הזן טוקן נתב מעל להתחלה."
+    },
+    "reasoning": "חשיבה",
+    "blockedDefault": "הודעה זו נחסמה על ידי מעקה.",
+    "truncated": "קוצץ — התגובה נקטעה על ידי טוקנים מקסימליים",
+    "bufferedNote": "מוחזק לבדיקת אבטחה",
+    "errors": {
+      "onlyImages": "רק קבצי תמונה מצורפים נתמכים."
+    },
+    "rawToggle": {
+      "rendered": "מעובד",
+      "raw": "גולמי"
+    },
+    "inputPlaceholder": "הקלד הודעה...",
+    "attachImage": "צרף תמונה",
+    "attachedImageAlt": "מצורף",
+    "attachmentAlt": "קובץ מצורף",
+    "debug": {
+      "title": "ניפוי באגים",
+      "clear": "נקה",
+      "hide": "הסתר ניפוי באגים",
+      "show": "הצג ניפוי באגים",
+      "empty": "עדיין אין נתוני ניפוי באגים.",
+      "emptyHint": "שלח הודעה לראות פרטי ניתוב.",
+      "turnTraceLog": "יומן עקבה תור #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "מודל {{label}}:",
+      "modelSelectPlaceholder": "בחר מודל...",
+      "noMessages": "עדיין אין הודעות.",
+      "debugTurns": "ניפוי באגים ({{count}} תור)",
+      "debugTurns_other": "ניפוי באגים ({{count}} תורים)",
+      "guardrailTokensTitle": "טוקני שופט מעקה",
+      "stop": "עצור",
+      "inputPlaceholder": "שלח את אותה הודעה לשני המודלים..."
+    }
+  },
+  "help": {
+    "title": "עזרה ותמיכה",
+    "subtitle": "אנחנו כאן לעזור — מצא תשובות או פנה אלינו בכל עת.",
+    "docs": {
+      "title": "תיעוד",
+      "subtitle": "מדריכים, מסמכי API ותיעוד תצורה",
+      "body": "התיעוד הרשמי מכיל את כל מה שנחוץ, מתחילת העבודה ועד מדיניות ניתוב מתקדמת, הגדרת ספקים, תקציבים, וכלל מסמך ה-API.",
+      "openLink": "פתח תיעוד"
+    },
+    "issues": {
+      "title": "דווח על תקלה או הצע פיצ׳ר",
+      "subtitle": "פתח issue ב-GitHub — זה לוקח 2 דקות",
+      "body": "issues ב-GitHub הם הדרך הטובה ביותר לדווח על תקלות או להציע שיפורים. כדי לעזור לנו לתקן דברים מהר יותר, כלול: מה עשית, מה ציפית שיקרה, ומה קרה בפועל.",
+      "showTemplate": "הצג תבנית issue",
+      "reportBug": "דווח על תקלה",
+      "requestFeature": "בקש פיצ׳ר"
+    },
+    "issueTemplate": {
+      "whatHappened": "מה קרה?",
+      "whatHappenedHint": "תאר את הבעיה במילים פשוטות",
+      "stepsToReproduce": "שלבים לשחזור",
+      "expectedBehaviour": "התנהגות צפויה",
+      "expectedBehaviourHint": "מה ציפית לראות",
+      "version": "גרסת Routerly",
+      "versionHint": "הפעל `routerly --version` או בדוק בהגדרות → אודות"
+    },
+    "email": {
+      "title": "צור קשר עם התמיכה",
+      "subtitle": "אנחנו קוראים כל הודעה ומשיבים בהקדם האפשרי",
+      "body": "לכל דבר שלא מתאים ל-issue ב-GitHub — שאלות חיוב, נושאים פרטיים, או סתם אם אתם רוצים לומר שלום — כתבו לנו."
+    },
+    "faq": {
+      "title": "שאלות נפוצות",
+      "subtitle": "תשובות מהירות לשאלות הנפוצות ביותר",
+      "items": {
+        "connect": {
+          "q": "כיצד אני מחבר את האפליקציה שלי ל-Routerly?",
+          "a": "הפנה את ה-SDK של OpenAI או Anthropic שלך למופע ה-Routerly שלך. החלף את כתובת הבסיס ב-http://your-host:3000/v1 (תואם OpenAI) או http://your-host:3000/anthropic (תואם Anthropic), ואז השתמש בטוקן נתב כמפתח API. זהו — לא נדרשים שינויים נוספים."
+        },
+        "openaiCompat": {
+          "q": "האם Routerly תואם לכלים המשתמשים ב-SDK של OpenAI?",
+          "a": "כן. Routerly הוא תחליף ישיר: כל כלי שתומך בכתובת בסיס ומפתח API מותאמים אישית (LangChain, LlamaIndex, Cursor, Continue וכו׳) עובד ללא הגדרה נוספת. עבור לקוחות בפורמט Anthropic, השתמש בנקודת הקצה /anthropic במקום."
+        },
+        "routing": {
+          "q": "כיצד עובד ניתוב המודלים?",
+          "a": "לכל נתב יש מדיניות ניתוב שקובעת אילו מודל מקבל בקשה. המדיניות כוללת רובין-רובין, עלות מינימלית, תגובה מהירה ביותר, שרשראות גיבוי ועוד. אתה מגדיר אותן לפי נתב תחת נתבים → ניתוב."
+        },
+        "addModel": {
+          "q": "כיצד אני מוסיף מודל AI חדש?",
+          "a": "עבור למודלים → הוסף מודל. אתה יכול להוסיף כל ספק תואם OpenAI (Ollama, LM Studio, נקודות קצה מותאמות אישית) או נקודת קצה Anthropic מקורית. מלא את כתובת הבסיס, מפתח ה-API ומזהה המודל — Routerly יטפל בשאר."
+        },
+        "dataStored": {
+          "q": "האם המידע שלי נשמר? האם הפרומפטים שלי נרשמים?",
+          "a": "Routerly הוא מארח עצמי ושומר מידע רק על המחשב שלך (ב-~/.routerly/ כברירת מחדל). פרומפטים ותגובות לעולם לא נשלחים לשום מקום על ידי Routerly. יומני בקשות נשמרים באופן מקומי ורק אם אתה מפעיל אותם לפי נתב."
+        },
+        "routerToken": {
+          "q": "מה זה טוקן נתב וכיצד הוא נבדל ממפתח API של ספק?",
+          "a": "טוקן נתב הוא אישור שאתה נותן לאפליקציה שלך או לחברי הצוות שלך לאימות עם Routerly. הוא נפרד ממפתחות ה-API של הספק שלך, ש-Routerly שומר בצורה מאובטחת בצד השרת. האפליקציות שלך לעולם לא רואות את מפתחות הספק האמיתיים."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} משתמש",
+    "countLabel_other": "{{count}} משתמשים",
+    "addButton": "הוסף משתמש",
+    "columns": {
+      "email": "דוא״ל",
+      "role": "תפקיד",
+      "routers": "נתבים"
+    },
+    "allRouters": "הכל",
+    "resetTwoFaTitle": "אפס 2FA",
+    "resetTwoFaConfirm": "לאפס 2FA עבור {{email}}? הם יצטרכו להירשם מחדש.",
+    "deleteConfirm": "למחוק משתמש זה?",
+    "emptyTitle": "עדיין אין משתמשים.",
+    "noPermission": "אין לך הרשאה לצפות במשתמשים.",
+    "modal": {
+      "title": "הוסף משתמש",
+      "emailLabel": "דוא״ל",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "סיסמה",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "תפקיד",
+      "roleAdmin": "מנהל",
+      "roleViewer": "צופה",
+      "cancelButton": "ביטול",
+      "submitButton": "הוסף משתמש"
+    },
+    "errors": {
+      "loadFailed": "טעינת המשתמשים נכשלה",
+      "addFailed": "שגיאה"
+    }
+  },
+  "userEdit": {
+    "title": "ערוך משתמש",
+    "account": "חשבון",
+    "email": "דוא״ל",
+    "role": "תפקיד",
+    "changePassword": "שנה סיסמה",
+    "newPassword": "סיסמה חדשה",
+    "newPasswordHint": "(השאר ריק לשמירה על הנוכחית)",
+    "save": "שמור",
+    "saved": "נשמר!",
+    "errors": {
+      "loadFailed": "טעינת המשתמש נכשלה",
+      "saveFailed": "השמירה נכשלה"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "ניהול תפקידים והרשאות. תפקידים מובנים לא ניתנים לשינוי.",
+    "newRole": "תפקיד חדש",
+    "builtin": "מובנה",
+    "edit": "ערוך",
+    "deleteConfirm": "למחוק תפקיד זה? משתמשים עם תפקיד זה יושפעו.",
+    "form": {
+      "id": "מזהה",
+      "idPlaceholder": "לדוגמה operator",
+      "name": "שם",
+      "namePlaceholder": "שם התפקיד",
+      "permissions": "הרשאות",
+      "create": "צור",
+      "save": "שמור",
+      "cancel": "ביטול"
+    },
+    "permissions": {
+      "routerRead": "נתבים – קריאה",
+      "routerWrite": "נתבים – כתיבה",
+      "modelRead": "מודלים – קריאה",
+      "modelWrite": "מודלים – כתיבה",
+      "userRead": "משתמשים – קריאה",
+      "userWrite": "משתמשים – כתיבה",
+      "reportRead": "דוחות – קריאה",
+      "settingsRead": "הגדרות – קריאה",
+      "settingsWrite": "הגדרות – כתיבה",
+      "notificationWrite": "התראות – כתיבה",
+      "tokenRead": "טוקנים – קריאה",
+      "tokenWrite": "טוקנים – כתיבה",
+      "roleWrite": "תפקידים – כתיבה",
+      "auditRead": "יומן ביקורת – קריאה",
+      "modulesRead": "מודולים – קריאה",
+      "modulesManage": "מודולים – ניהול",
+      "connectionsRead": "חיבורים – קריאה",
+      "connectionsManage": "חיבורים – ניהול",
+      "resilienceRead": "עמידות – קריאה",
+      "resilienceManage": "עמידות – ניהול",
+      "profilesRead": "פרופילי ניתוב – קריאה",
+      "profilesManage": "פרופילי ניתוב – ניהול",
+      "optimizersRead": "מאופטמים – קריאה",
+      "optimizersManage": "מאופטמים – ניהול",
+      "experimentsRead": "ניסויים – קריאה",
+      "experimentsManage": "ניסויים – ניהול"
+    },
+    "errors": {
+      "loadFailed": "טעינת התפקידים נכשלה",
+      "updateFailed": "עדכון התפקיד נכשל",
+      "createFailed": "יצירת התפקיד נכשלה",
+      "deleteFailed": "מחיקת התפקיד נכשלה"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "פרופילים",
+      "subtitle": "תצורות ניתוב, מאופטם ואבטחה לשימוש חוזר",
+      "noPermission": "אין לך הרשאה לצפות בפרופילים.",
+      "newProfile": "פרופיל {{kind}} חדש",
+      "empty": "עדיין אין פרופילי {{kind}}.",
+      "builtin": "מובנה",
+      "custom": "מותאם אישית",
+      "view": "הצג",
+      "edit": "ערוך",
+      "clone": "שכפל",
+      "delete": "מחק",
+      "deleteConfirm": "למחוק את הפרופיל \"{{label}}\"? לא ניתן לבטל פעולה זו.",
+      "kindDescriptions": {
+        "routing": "איזה מודל עונה על בקשה, ומה קורה כשהוא לא יכול",
+        "optimizer": "מה מוסר מפרומפט לפני שנשלח",
+        "security": "מעקות ומדיניות מידע מזהה המוחלים על תעבורה"
+      },
+      "columns": {
+        "label": "תווית",
+        "type": "סוג",
+        "configuration": "תצורה",
+        "version": "גרסה"
+      },
+      "errors": {
+        "loadFailed": "טעינת הפרופילים נכשלה",
+        "deleteFailed": "מחיקת הפרופיל נכשלה"
+      }
+    },
+    "form": {
+      "backToProfiles": "חזרה לפרופילים",
+      "newProfileTitle": "פרופיל {{kind}} חדש",
+      "editProfileTitle": "ערוך {{label}}",
+      "builtinHint": "פרופילים מובנים לא ניתנים לעריכה. שכפל אחד להתאמה אישית.",
+      "assignHint": "ניתן להקצות {{article}} פרופיל {{kind}} לכל מספר של נתבים.",
+      "noPermission": "אין לך הרשאה לצפות בפרופילים.",
+      "label": "תווית",
+      "optimizers": "מאופטמים",
+      "optimizersHint": "גרור לסידור מחדש, החלף להפעלה. הם רצים בסדר מלמעלה למטה.",
+      "createProfile": "צור פרופיל",
+      "saveProfile": "שמור פרופיל",
+      "cancel": "ביטול",
+      "copySuffix": "עותק של {{label}}",
+      "labelPlaceholders": {
+        "routing": "לדוגמה הניתוב המאוזן שלי",
+        "optimizer": "לדוגמה מקצץ הפרומפטים שלי",
+        "security": "לדוגמה המעקות המחמירים שלי"
+      },
+      "errors": {
+        "notFound": "הפרופיל לא נמצא.",
+        "loadFailed": "טעינת הפרופיל נכשלה",
+        "saveFailed": "שמירת הפרופיל נכשלה"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "חזרה לחיבור",
+    "title": "חיבור",
+    "docs": "תיעוד",
+    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
+    "noClientPrefix": "אין לקוח בשם",
+    "errors": {
+      "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
+    },
+    "oneCommand": {
+      "title": "המהיר ביותר: פקודה אחת",
+      "description": "הפעל אותה על המחשב שבו {{client}} מותקן. היא כותבת ל-{{configPath}}, עם שמירת גיבוי שניתן לבטל."
+    },
+    "byHand": {
+      "titleAlt": "או הגדר באופן ידני",
+      "titleUi": "הגדר באופן ידני",
+      "titleConfigFile": "הגדר את קובץ התצורה",
+      "setValuesIn": "הגדר ערכים אלה ב-{{configPath}}.",
+      "putThisIn": "הצב זאת ב",
+      "replaceToken": "החלף",
+      "withRouterToken": "בטוקן נתב:",
+      "createOne": "צור אחד",
+      "onRoutersPage": "בעמוד הנתבים.",
+      "modelLabel": "מודל:",
+      "modelHint": "מעביר את הבחירה ל-Routerly, כל מזהה מודל מ",
+      "modelsLink": "מודלים",
+      "worksToo": "עובד גם כן.",
+      "openaiCompatHint": "אותה כתובת בסיס, מפתח ומודל מתאימים לכל לקוח המציע ספק \"תואם OpenAI\"."
+    },
+    "mcp": {
+      "title": "שרת MCP",
+      "description": "בנפרד מהשלבים לעיל: זה מאפשר ל-{{client}} לקרוא לכלי Routerly. הוא צריך טוקן MCP אישי, שנוצר עם",
+      "orFromYour": "או מה",
+      "profileLink": "פרופיל"
+    },
+    "checkItWorked": {
+      "title": "בדוק שזה עבד",
+      "restart": "הפעל מחדש את {{client}}, שלח לו פרומפט, ואז חפש את הקריאה ב",
+      "usageLink": "שימוש",
+      "cliReports": "מאותו המחשב, ה-CLI מדווח על מה שהוא מוצא:"
+    }
+  },
+  "connect": {
+    "title": "חיבור",
+    "subtitle": "הפנה לקוח קידוד AI לשער זה. בחר לקוח לשלבי ההגדרה שלו.",
+    "llmLabel": "LLM",
+    "llmDescription": "מנתב את תעבורת המודל של הלקוח הזה בעד Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "טוען את Routerly כשרת כלים בתוכו.",
+    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
+    "errors": {
+      "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
+    },
+    "oneCommand": {
+      "title": "פקודה אחת",
+      "hint": "ה-CLI כותב את קובץ התצורה בשבילך, עם גיבוי שניתן לבטל."
+    },
+    "byHand": {
+      "title": "באופן ידני",
+      "hint": "העתק את הקוד מעמוד הלקוח להגדרות שלו, ואז הפעל אותו מחדש."
+    },
+    "endpoint": {
+      "title": "הפנה כל לקוח לכאן",
+      "description": "כל דבר שבנוי על ה-SDK של OpenAI או Anthropic עובד על ידי שינוי כתובת הבסיס והמפתח. שום דבר אחר לא משתנה: בקשות ותגובות עוברות בעד Routerly כמו שהן.",
+      "openaiBaseUrl": "כתובת בסיס OpenAI",
+      "anthropicBaseUrl": "כתובת בסיס Anthropic",
+      "apiKey": "מפתח API",
+      "model": "מודל",
+      "apiKeyDescription": "טוקן נתב, נשלח כ",
+      "or": "או",
+      "createOne": "צור אחד",
+      "onRoutersPage": "בעמוד הנתבים.",
+      "modelDescription": "מאפשר ל-Routerly לבחור. כל מזהה מודל מעמוד",
+      "modelsLink": "מודלים",
+      "worksToo": "עובד גם כן."
+    }
+  }
+}

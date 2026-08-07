@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Auto",
+      "dark": "Mørk",
+      "light": "Lys"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Udvid sidepanel",
+      "collapse": "Sammenfold sidepanel"
+    },
+    "tagline": "Én gateway. Enhver AI-model. Fuld kontrol.",
+    "nav": {
+      "overview": "Overblik",
+      "providers": "Udbydere",
+      "models": "Modeller",
+      "profiles": "Profiler",
+      "routers": "Routere",
+      "experiments": "Eksperimenter",
+      "usage": "Forbrug",
+      "playground": "Playground",
+      "settings": "Indstillinger",
+      "connectApp": "Tilslut app",
+      "help": "Hjælp",
+      "signOut": "Log ud"
+    },
+    "banner": {
+      "permissionWarning": "Nogle konfigurationsfiler har for åbne rettigheder ({{files}}). Opstart og forespørgsler fungerer stadig, men ret dette fra værtens filsystem, når det er praktisk.",
+      "dismiss": "Afvis",
+      "updateAvailable": "Routerly v{{latest}} er tilgængelig. Du kører v{{current}}.",
+      "updateLink": "Opdater i Indstillinger",
+      "mfaRequired": "Tofaktorgodkendelse er påkrævet for denne instans.",
+      "mfaLink": "Opsæt 2FA i din Profil",
+      "mfaSuffix": "for at sikre din konto.",
+      "telemetryTitle": "Routerly sender aldrig data automatisk.",
+      "telemetryBody": "Vil du hjælpe ved at sende anonyme installationsmålinger? Kun hændelsestype, version, platform og et tilfældigt ID — ingen personoplysninger, ingen IP.",
+      "telemetryLink": "Hvad sendes?",
+      "telemetryYes": "Ja, jeg hjælper",
+      "telemetryNo": "Nej tak"
+    },
+    "language": {
+      "label": "Sprog"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} sekund siden",
+      "secondsAgo_other": "{{count}} sekunder siden",
+      "minutesAgo": "{{count}} minut siden",
+      "minutesAgo_other": "{{count}} minutter siden",
+      "hoursAgo": "{{count}} time siden",
+      "hoursAgo_other": "{{count}} timer siden",
+      "daysAgo": "{{count}} dag siden",
+      "daysAgo_other": "{{count}} dage siden"
+    },
+    "confirm": "Bekræft",
+    "cancel": "Annuller",
+    "remove": "Fjern",
+    "select": "Vælg...",
+    "search": "Søg...",
+    "noResults": "Ingen resultater",
+    "noRemainingOptions": "Ingen resterende valgmuligheder",
+    "apply": "Anvend",
+    "saved": "Gemt",
+    "showLess": "Vis mindre",
+    "roles": "Roller",
+    "permissions": "Tilladelser",
+    "notifications": {
+      "title": "Notifikationer",
+      "markAllRead": "Marker alle som læst",
+      "empty": "Ingen notifikationer",
+      "viewAll": "Se alle notifikationer"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Vælg periode",
+      "recent": "Seneste",
+      "ranges": "Intervaller",
+      "from": "Fra",
+      "to": "Til"
+    },
+    "permissionGuard": {
+      "fixFailed": "Kunne ikke rette rettigheder",
+      "title": "Usikre filrettigheder",
+      "defaultMessage": "Nogle filer har usikre rettigheder.",
+      "fixing": "Retter…",
+      "fixNow": "Ret nu"
+    },
+    "limitRows": {
+      "noLimits": "Ingen grænser angivet.",
+      "metricLabel": "Måleenhed",
+      "typeLabel": "Type",
+      "periodLabel": "Periode",
+      "everyLabel": "Hver",
+      "maxCost": "Maks. omkostning",
+      "maxCount": "Maks. antal",
+      "maxTokens": "Maks. tokens",
+      "allCombosSet": "Alle kombinationer af måleenhed/periode er allerede angivet",
+      "addLimit": "Tilføj grænse",
+      "metric": {
+        "cost": "Omkostning",
+        "calls": "Opkald",
+        "input_tokens": "Input-tokens",
+        "output_tokens": "Output-tokens",
+        "total_tokens": "Tokens i alt"
+      },
+      "period": {
+        "hourly": "Hver time",
+        "daily": "Dagligt",
+        "weekly": "Ugentligt",
+        "monthly": "Månedligt",
+        "yearly": "Årligt"
+      },
+      "rollingUnit": {
+        "second": "sekund",
+        "minute": "minut",
+        "hour": "time",
+        "day": "dag",
+        "week": "uge",
+        "month": "måned"
+      },
+      "windowType": {
+        "period": "Periode",
+        "rolling": "Rullende"
+      },
+      "fmt": {
+        "requests": "{{value}} forespørgsler",
+        "inputTokens": "{{value}} input-tokens",
+        "outputTokens": "{{value}} output-tokens",
+        "totalTokens": "{{value}} tokens i alt",
+        "everyRolling": "{{metric}} hver {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} pr. {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Hvad routing sparede",
+      "input": "Input",
+      "output": "Output",
+      "actual": "Faktisk",
+      "clientCalls": "{{count}} klientopkald",
+      "clientCalls_other": "{{count}} klientopkald",
+      "comparedAgainst": ", sammenlignet med at sende den til hver af de",
+      "comparedAgainst_other": ", sammenlignet med at sende dem alle til hver af de",
+      "paidModelsInPlay": "{{count}} betalt model i spil",
+      "paidModelsInPlay_other": "{{count}} betalte modeller i spil",
+      "metricCost": "Omkostning",
+      "metricTokens": "Tokens",
+      "totalCost": "Samlet omkostning",
+      "routed": "Routet: {{value}}",
+      "saved": "Sparet: {{value}}",
+      "usdThisPeriod": "USD denne periode",
+      "savedVsAlways": "{{value}} sparet ({{percent}}%) mod altid {{model}}",
+      "tokens": "Tokens",
+      "in": "Ind: {{value}}",
+      "out": "Ud: {{value}}",
+      "tokenSubWithCache": "{{in}} ind · {{out}} ud · {{cached}} cachet",
+      "tokenSub": "{{in}} ind · {{out}} ud",
+      "cutByOptimizers": "{{value}} skåret af optimeringer",
+      "fewerThanAlways": "{{value}} færre end altid {{model}}, estimeret"
+    },
+    "optimizerSteps": {
+      "downloaded": "Downloadet",
+      "thisStepRunsOn": "Dette trin køres på",
+      "defaultCheckpoint": "Standard-checkpoint"
+    },
+    "routingPolicies": {
+      "title": "Routingpolitikker",
+      "subtitle": "Politikker bestemmer, hvordan forespørgsler routes. De udføres i rækkefølge fra top til bund.",
+      "removePolicy": "Fjern politik",
+      "removeIntent": "Fjern hensigt",
+      "removeExample": "Fjern eksempel",
+      "routingModels": "Routingmodeller",
+      "embeddingModels": "Embedding-modeller",
+      "maxCompletionTokens": "Maks. completion-tokens",
+      "maxPromptChars": "Maks. prompt-tegn",
+      "similarityThreshold": "Lighedstærskel",
+      "previousMessages": "Tidligere beskeder",
+      "intents": "Hensigter",
+      "confidenceThreshold": "Sikkerhedstærskel",
+      "ambiguityMargin": "Tvetydighedsmargin",
+      "maxCallsPerWindow": "Maks. opkald pr. vindue",
+      "addFallbackModel": "Tilføj fallback-model",
+      "autoRoutingLabel": "Automatisk routing",
+      "autoRoutingHint": "Hvis aktiveret, fordeles trafik uden brugerdefinerede prompts. Hvis deaktiveret, kan du skrive specifikke prompts, der instruerer AI'en om, hvornår hver målmodel skal vælges.",
+      "additionalPromptInfoLabel": "Yderligere promptinformation",
+      "additionalPromptInfoPlaceholder": "Ekstra instruktioner til routingprompten...",
+      "addExamplePlaceholder": "Tilføj eksempel og tryk Enter…",
+      "addIntentPlaceholder": "Tilføj hensigt og tryk Enter…",
+      "addPolicyPlaceholder": "Tilføj en politik...",
+      "labels": {
+        "llm": "AI-routingpolitik",
+        "rate-limit": "Ratebegrænsningspolitik",
+        "budget-remaining": "Resterende budget-politik",
+        "semantic-intent": "Semantisk hensigtspolitik",
+        "health": "Sundhedspolitik",
+        "context": "Kontekstpolitik",
+        "capability": "Kapabilitetspolitik",
+        "performance": "Præstationspolitik",
+        "fairness": "Fairness-politik",
+        "cheapest": "Billigst-politik",
+        "model-preference": "Modelpræferencepolitik"
+      },
+      "descriptions": {
+        "context": "Bedømmer modeller baseret på tilgængeligt kontekstvindue. Giver 0 til modeller, hvis kontekstvindue er mindre end den estimerede forespørgselslængde, hvilket forhindrer afkortningsfejl.",
+        "cheapest": "Bedømmer modeller omvendt proportionalt med deres token-omkostning. Den billigste model får 1,0, den dyreste får 0,0, hvilket hjælper med at reducere API-udgifter over forespørgsler.",
+        "health": "Bedømmer modeller baseret på deres seneste fejlrate ved brug af eksponentiel henfald (nye fejl vægter mere). Anvender en circuit breaker, der sætter score til 0, når den vægtede fejlrate overstiger en kritisk tærskel.",
+        "performance": "Bedømmer modeller baseret på deres seneste gennemsnitlige svartid ved brug af eksponentiel henfald. Den hurtigste model får 1,0, den langsomste får 0,0. Modeller uden nylige data får standardværdien 1,0.",
+        "llm": "Bruger en AI-model til at bedømme kandidater baseret på forespørgslens semantiske indhold. Understøtter routingvejledningsprompts pr. model og tager højde for budgetmargin, når grænser er konfigureret.",
+        "capability": "Hårdt filter: giver 0 til modeller, der udtrykkeligt mangler en funktion, som forespørgslen kræver (vision, funktionskald, JSON-tilstand). Modeller uden udtrykkelige kapabilitetserklæringer straffes ikke.",
+        "rate-limit": "Straffer modeller med en høj nylig opkaldsfrekvens for at reducere risikoen for at nå udbyderens ratebegrænsninger (HTTP 429). Understøtter en konfigurerbar hård tærskel, der tvinger score til 0.",
+        "fairness": "Fordeler trafik jævnt ved at straffe modeller, der har fået flere succesfulde opkald på det seneste. Fungerer som en blød round-robin for at forhindre, at belastning koncentreres på en enkelt model.",
+        "budget-remaining": "Bedømmer modeller baseret på resterende budgetmargin over alle konfigurerede grænser. Foretrækker modeller med mere plads, før deres tærskler nås, hvilket spreder forbruget proaktivt.",
+        "semantic-intent": "Klassificerer forespørgslen efter semantisk hensigt ved brug af embeddings og begrænser derefter kandidatpuljen til de modeller, der er tilknyttet den hensigt. Sikre match filtrerer puljen hårdt; tvetydige match sammenlægger de to bedste puljer; ukendte forespørgsler lader alle kandidater passere igennem.",
+        "model-preference": "Når klienten anmoder om en specifik model (ikke routerly/ada), tildeles den model en konfigurerbar bonusscore. Når ingen præference udtrykkes, afstår politikken. Placeringen i listen styrer, hvor meget præferencen vægter mod andre politikker."
+      },
+      "selectModel": "Vælg model"
+    },
+    "securityRules": {
+      "applyTo": "Anvend på",
+      "streamingBufferSize": "Streaming-bufferstørrelse (tegn)",
+      "entityTypes": "Entitetstyper",
+      "target": "Mål",
+      "embeddingModel": "Embedding-model",
+      "judgeModel": "Bedømmermodel",
+      "contentGuardrails": "Indholdsbarrierer",
+      "piiPolicies": "PII-politikker",
+      "addSecurityPolicyPlaceholder": "Tilføj en sikkerhedspolitik...",
+      "removePolicyTooltip": "Fjern politik",
+      "deleteRuleAriaLabel": "Slet regel",
+      "embeddingModelPlaceholder": "Vælg embedding-model...",
+      "fallbackModelsLabel": "Fallback-modeller (valgfrit, forsøges i rækkefølge)",
+      "fallbackModelsPlaceholder": "Ingen fallback-modeller...",
+      "exampleTextsLabel": "Eksempeltekster der skal blokeres (én pr. linje)",
+      "exampleTextsPlaceholder": "Hvordan hacker jeg...\n...",
+      "similarityThresholdLabel": "Lighedstærskel:",
+      "judgeModelPlaceholder": "Vælg bedømmermodel...",
+      "allowedTopicsLabel": "Tilladte emner (naturligt sprog)",
+      "allowedTopicsPlaceholder": "Kundesupport for softwareprodukter. Teknisk fejlfinding. Faktureringsspørgsmål.",
+      "onTopicThresholdLabel": "Blokér hvis on-topic-score under:",
+      "harmThresholdLabel": "Blokér hvis skadesscore over:",
+      "customInstructionsLabel": "Brugerdefinerede instruktioner",
+      "customInstructionsPlaceholder": "Du er en klassifikator for indholdssikkerhed. Vurder følgende tekst for skadeligt indhold.\nKategorier: hadefuld tale, vold, seksuelt indhold, selvskade.\nSvar KUN med et JSON-objekt: {\"score\": <tal mellem 0 og 1>}",
+      "customInstructionsRequired": "Brugerdefinerede instruktioner er påkrævet.",
+      "enabledLabel": "Aktiveret",
+      "contentGuardrailsHint": "Inspicer forespørgsler og svar mod konfigurerede regler. Aktiv når mindst én regel er konfigureret.",
+      "securityPoliciesHeading": "Sikkerhedspolitikker",
+      "noSecurityPolicies": "Ingen sikkerhedspolitikker konfigureret.",
+      "piiPoliciesHint": "Registrer og skjul personoplysninger. Hver politik retter sig mod forespørgselsinput, modelsvar eller begge dele, og styrer sit eget sæt af entiteter.",
+      "noPiiPolicies": "Ingen PII-politikker konfigureret.",
+      "addPolicyButton": "+ Tilføj politik",
+      "injectionWarningTitle": "Forespørgselsdata ændret af injektion",
+      "injectionWarningBody": "En eller flere regler injicerer deres instruktion i den udgående forespørgsels systemprompt, så de data, der sendes til udbyderen, ændres. Der foretages intet yderligere modelkald, og intet blokeres; den betjenende model efterlever selv instruktionen.",
+      "streamingDisabledWarningTitle": "Streaming deaktiveret for denne router",
+      "streamingDisabledWarningBody": "En eller flere regler er konfigureret til at blokere svar (mål: svar eller begge). Da hele svaret skal inspiceres, før en blokeringsbeslutning kan træffes, holder Routerly svaret tilbage i sin helhed, før det returneres til klienten. Streaming er ikke tilgængelig, mens en svarblokerende regel er aktiv; klienter modtager hele svaret på én gang i stedet for i inkrementelle bidder."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure ressourcenavn",
+      "azureResourceNamePlaceholder": "minressource",
+      "azureResourceNameHint": "Azure OpenAI-ressourcenavnet (fra Azure-portalen).",
+      "deploymentId": "Deployment-ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Det deployment-navn, du oprettede i Azure OpenAI Studio.",
+      "azureApiVersionLabel": "API-version",
+      "azureApiVersionDefaultHint": "(standard: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS-region",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Lad stå tomt for at bevare eksisterende",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Session Token",
+      "awsSessionTokenOptionalHint": "(valgfrit, til midlertidige legitimationsoplysninger)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP router-ID",
+      "gcpRouterIdPlaceholder": "min-gcp-router",
+      "gcpLocationLabel": "Placering",
+      "gcpLocationDefaultHint": "(standard: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Service Account Key",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Endpoint-URL",
+      "optional": "(valgfrit)",
+      "webProvider": {
+        "unofficialWarningTitle": "Uofficiel udbyder — bruges på eget ansvar.",
+        "unofficialWarningBody": "Denne integration er afhængig af et udokumenteret internt API, der kan ændre sig eller ophøre uden varsel. Det kan være i strid med udbyderens brugsbetingelser og kan medføre suspendering af kontoen.",
+        "accessTokenLabel": "Access Token",
+        "sessionTokenLabel": "Session Token",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Indsæt værdien af cookien sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Mens du er logget ind på ChatGPT, åbn <code>https://chatgpt.com/api/auth/session</code> i en ny fane. Kopier værdien af feltet <code>accessToken</code> (starter med <code>eyJ</code>). Tokenet udløber ca. hver 24. time. For pålidelig adgang, udfyld også feltet <strong>cf_clearance</strong> nedenfor.",
+        "anthropicInstructions": "<strong>Sådan får du din sessionsnøgle:</strong> Mens du er logget ind på Claude, åbn DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopier værdien af cookien <code>sessionKey</code> (starter med <code>sk-ant-sid01-</code>). Nøglen er gyldig, indtil du logger ud."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Abonnements-OAuth-token",
+        "authFilePathLabel": "Sti til auth-fil",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (standard)",
+        "anthropicTitle": "Brug dit Claude Pro/Max-abonnement.",
+        "anthropicRunCommandStep": "Kør denne kommando og kopier det token, den udskriver:",
+        "anthropicPasteTokenStep": "Indsæt tokenet i feltet <em>Abonnements-OAuth-token</em> nedenfor.",
+        "termsNote": "Gendan det, når det udløber. Brug af abonnement via en gateway kan være i strid med udbyderens betingelser.",
+        "openaiTitle": "Brug dit ChatGPT Plus/Pro-abonnement via Codex-appen.",
+        "openaiLoginStep": "Log ind i Codex-desktopappen med din ChatGPT Plus/Pro-konto.",
+        "openaiAutoRefreshStep": "Routerly læser dit adgangstoken fra <code>~/.codex/auth.json</code> og opdaterer det automatisk. Ingen manuel kopiering nødvendig.",
+        "openaiAuthFilePathStep": "Lad feltet <em>Sti til auth-fil</em> stå tomt for at bruge standarden, eller angiv en brugerdefineret sti, hvis din Codex-app gemmer auth andetsteds.",
+        "openaiTermsNote": "Brug af abonnement via en gateway kan være i strid med udbyderens betingelser."
+      },
+      "copyCode": {
+        "copiedTooltip": "Kopieret!",
+        "copyTooltip": "Kopiér til udklipsholder",
+        "copiedLabel": "Kopieret",
+        "copyLabel": "Kopiér"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopiér",
+      "copiedLabel": "Kopieret!",
+      "copyErrorHint": "Kopiering mislykkedes, marker og kopiér manuelt."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP-klient",
+      "hints": {
+        "claudeCode": "Kør dette én gang, hvor som helst. Claude Code gemmer serveren i <code>~/.claude.json</code>.",
+        "claudeDesktop": "Sæt dette ind i <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (på Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), og genstart derefter appen. Den starter CLI'en, så <code>routerly</code> skal være i din PATH.",
+        "codex": "Sæt dette ind i <code>~/.codex/config.toml</code>. Codex læser tokenet fra miljøet, så eksporter det i den shell, du starter Codex fra.",
+        "opencode": "Sæt dette ind i <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Kør dette én gang. OpenClaw bruger som standard sse-transport, som Routerly ikke understøtter, så transporten angives eksplicit.",
+        "cursor": "Sæt dette ind i <code>~/.cursor/mcp.json</code>, eller i <code>.cursor/mcp.json</code> for at begrænse det til ét projekt.",
+        "cline": "Sæt dette ind i <code>~/.cline/mcp.json</code>, eller indsæt det i Configure MCP Servers i Cline-panelet.",
+        "zed": "Sæt dette ind i din Zed <code>settings.json</code>, sammen med andre context-servere."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Ikke-gemte ændringer",
+      "message": "Du har ikke-gemte ændringer. Hvis du forlader nu, går dine ændringer tabt.",
+      "stay": "Bliv",
+      "leaveAnyway": "Forlad alligevel"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Barrierer",
+        "pii": "PII",
+        "optimizers": "Optimeringer",
+        "routerOverhead": "Router-overhead"
+      },
+      "policyType": {
+        "llm": "AI-routing",
+        "rateLimit": "Ratebegrænsning",
+        "budgetRemaining": "Resterende budget",
+        "semanticIntent": "Semantisk hensigt",
+        "modelPreference": "Modelpræference"
+      },
+      "rawDetails": "rå detaljer",
+      "technicalDetails": "tekniske detaljer",
+      "systemPrompt": "systemprompt",
+      "responseText": "svartekst",
+      "responseJson": "svar-JSON",
+      "cacheEmbeddingCall": "CACHE EMBEDDING-KALD",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Embedding-model",
+      "upstreamModel": "Upstream-model",
+      "provider": "Udbyder",
+      "source": "Kilde",
+      "endpoint": "Endpoint",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL forlænget",
+      "model": "Model",
+      "similarity": "Lighed",
+      "embedding": "Embedding",
+      "cacheMiss": "CACHE MISS",
+      "details": "detaljer",
+      "excludedByLimits": "UDELUKKET AF GRÆNSER",
+      "finalRanking": "ENDELIG RANGERING",
+      "noRankingData": "Ingen rangeringsdata (posten kan være korrupt eller fra en ældre version)",
+      "policyScores": "POLITIK-SCORER",
+      "weight": "vægt {{value}}",
+      "allScores": "alle scorer",
+      "noPolicyData": "Ingen politikdata (posten kan være korrupt eller fra en ældre version)",
+      "requestGuardrailBlocked": "FORESPØRGSELSBARRIERE BLOKERET",
+      "requestGuardrailTriggered": "FORESPØRGSELSBARRIERE UDLØST",
+      "responseGuardrailBlocked": "SVARBARRIERE BLOKERET",
+      "responseGuardrailTriggered": "SVARBARRIERE UDLØST",
+      "rule": "Regel",
+      "action": "Handling",
+      "guardrailsEvaluated": "BARRIERER EVALUERET ({{target}})",
+      "ruleCount": "{{count}} regel",
+      "ruleCount_other": "{{count}} regler",
+      "promptInjection": "Prompt-injektion",
+      "injects": "injicerer",
+      "judgeResponse": "Bedømmersvar",
+      "piiScrubbed": "PII SKJULT",
+      "piiScanned": "PII SKANNET ({{target}})",
+      "policies": "politikker",
+      "entityTypes": "entitetstyper",
+      "customPatterns": "brugerdefinerede mønstre",
+      "scanned": "skannet",
+      "redacted": "skjult",
+      "took": "tog",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "entitetstyper skannet",
+      "guardrailInjection": "BARRIERE-INJEKTION",
+      "rules": "regler",
+      "chars": "tegn",
+      "injectedText": "injiceret tekst",
+      "optimizer": "OPTIMERING {{id}}",
+      "tokens": "tokens",
+      "saved": "sparet",
+      "tok": "{{value}} tok",
+      "reason": "grund",
+      "budgetBlocked": "BUDGET BLOKERET",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "UDGÅENDE SENDT",
+      "status": "status",
+      "encoding": "kodning",
+      "frames": "frames",
+      "bytes": "bytes"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Min profil",
+      "subtitle": "Administrer dine kontoindstillinger"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Notifikationer",
+      "mcp": "MCP",
+      "preferences": "Præferencer"
+    },
+    "notifications": {
+      "close": "Luk",
+      "refresh": "Opdater",
+      "clear": "Ryd",
+      "empty": "Ingen notifikationer fundet.",
+      "markAllRead": "Marker alle som læst",
+      "allCaughtUp": "Alt er læst",
+      "unreadCount": "{{count}} ulæst",
+      "selectedCount": "{{count}} valgt",
+      "severity": {
+        "all": "Alle",
+        "info": "Info",
+        "warning": "Advarsel",
+        "critical": "Kritisk"
+      },
+      "status": {
+        "read": "Læst",
+        "unread": "Ulæst"
+      },
+      "filters": {
+        "severity": "Alvorlighed",
+        "category": "Kategori",
+        "event": "Hændelse",
+        "date": "Dato",
+        "period": "Periode",
+        "status": "Status",
+        "all": "Alle",
+        "allCategories": "Alle kategorier",
+        "allEvents": "Alle hændelser",
+        "unreadOnly": "Kun ulæste"
+      },
+      "actions": {
+        "markRead": "Marker som læst",
+        "markUnread": "Marker som ulæst",
+        "archive": "Arkiver"
+      },
+      "table": {
+        "severity": "Alvorlighed",
+        "event": "Hændelse",
+        "date": "Dato",
+        "status": "Status",
+        "selectAll": "Vælg alle",
+        "selectRow": "Vælg {{event}}",
+        "eventCount": "{{count}} hændelser"
+      },
+      "pagination": {
+        "previous": "← Forrige",
+        "next": "Næste →",
+        "page": "Side {{page}} af {{totalPages}}",
+        "total": "({{count}} i alt)"
+      },
+      "detail": {
+        "ariaLabel": "Notifikationsdetalje",
+        "details": "Detaljer",
+        "noDetails": "Ingen yderligere detaljer.",
+        "eventsInIncident": "Hændelser i denne incident"
+      }
+    },
+    "security": {
+      "roleLabel": "Rolle:",
+      "password": {
+        "heading": "Skift adgangskode",
+        "currentLabel": "Nuværende adgangskode",
+        "newLabel": "Ny adgangskode",
+        "newPlaceholder": "Minimum 8 tegn",
+        "confirmLabel": "Bekræft ny adgangskode",
+        "success": "Adgangskode ændret.",
+        "saving": "Gemmer...",
+        "submit": "Skift adgangskode",
+        "errors": {
+          "mismatch": "Adgangskoderne stemmer ikke overens.",
+          "tooShort": "Den nye adgangskode skal være mindst 8 tegn.",
+          "updateFailed": "Opdatering mislykkedes"
+        }
+      },
+      "tfa": {
+        "heading": "Tofaktorgodkendelse",
+        "notEnabled": "2FA er ikke aktiveret. Beskyt din konto med en tidsbaseret engangskode.",
+        "enableButton": "Aktiver tofaktorgodkendelse",
+        "scanInstructions": "Scan denne QR-kode med din autentificeringsapp (Google Authenticator, Authy osv.), og indtast derefter den 6-cifrede kode for at bekræfte.",
+        "qrAlt": "QR-kode til opsætning af 2FA",
+        "addAccountInstructions": "Åbn din autentificeringsapp (Google Authenticator, Authy, 1Password osv.) og tilføj en ny konto:",
+        "setup": {
+          "step1": "Tryk på <strong>Tilføj konto</strong> eller <strong>+</strong>-knappen",
+          "step2": "Vælg <strong>Indtast opsætningsnøgle</strong> (eller scan QR-koden på mobil)",
+          "step3": "Indtast den hemmelighed, der vises nedenfor"
+        },
+        "mobileLink": "Tryk her på mobil for at åbne autentificeringsappen",
+        "manualEntryLabel": "Hemmelighed til manuel indtastning:",
+        "saveBackupCodes": "Gem disse backupkoder. Hver kan bruges én gang, hvis du mister adgang til din autentificeringsapp.",
+        "copyBackupCodes": "Kopiér backupkoder",
+        "confirmCodeLabel": "Indtast kode fra din app for at aktivere",
+        "activate": "Aktiver 2FA",
+        "cancel": "Annuller",
+        "enabledBadge": "2FA er aktiveret",
+        "newBackupCodesLabel": "Nye backupkoder (gem disse nu):",
+        "copy": "Kopiér",
+        "regenLabel": "Indtast autentificeringskode for at generere nye backupkoder",
+        "regenerate": "Generer nye",
+        "regenerateBackupCodes": "Generer nye backupkoder",
+        "disableLabel": "Deaktiver 2FA (indtast autentificeringskode)",
+        "disable": "Deaktiver 2FA",
+        "errors": {
+          "setupFailed": "Opsætning mislykkedes",
+          "confirmFailed": "Bekræftelse mislykkedes",
+          "disableFailed": "Deaktivering mislykkedes",
+          "regenFailed": "Generering mislykkedes"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse MCP-overfladen",
+        "revokeFailed": "Kunne ikke tilbagekalde tokenet"
+      },
+      "revokeConfirm": "Tilbagekald MCP-token \"{{name}}\"? Klienter, der bruger det, stopper med at fungere med det samme.",
+      "tokens": {
+        "heading": "MCP-tokens",
+        "newToken": "Nyt token",
+        "description": "Hvert token fungerer som dig: det eksponerer præcis de værktøjer, din rolle tillader. Den fulde værdi vises kun én gang, på den side, der opretter det.",
+        "empty": "Ingen MCP-tokens endnu. Opret et for at tilslutte en MCP-klient.",
+        "created": "Oprettet",
+        "lastUsed": "Sidst brugt",
+        "expires": "Udløber",
+        "never": "Aldrig",
+        "revokeTitle": "Tilbagekald token"
+      },
+      "tools": {
+        "heading": "Værktøjer dine tokens eksponerer",
+        "empty": "Din rolle giver ikke adgang til noget MCP-værktøj. Bed en administrator om de tilladelser, du har brug for.",
+        "table": {
+          "name": "Navn",
+          "scope": "Omfang",
+          "description": "Beskrivelse",
+          "sourceModule": "Kildemodul",
+          "permission": "Tilladelse"
+        }
+      },
+      "connect": {
+        "heading": "Tilslut en MCP-klient",
+        "descriptionPre": "Vælg den klient, du sætter op, og erstat",
+        "descriptionPost": "med et af dine tokens. Oprettelse af et token viser det samme udsnit med værdien allerede indsat.",
+        "otherClient": "Enhver anden klient",
+        "httpInstructionsPre": "Over HTTP, peg mod dette endpoint og godkend med",
+        "httpInstructionsPost": ". Det er JSON-RPC 2.0 over Streamable HTTP.",
+        "stdioInstructionsPre": "Over stdio bygger CLI'en bro og videresender dit token. Kører du selv servicen direkte? Angiv",
+        "stdioInstructionsAnd": "og",
+        "stdioInstructionsPost": "selv."
+      },
+      "newToken": {
+        "backToMcp": "Tilbage til MCP",
+        "title": "Nyt MCP-token",
+        "subtitle": "Tokenet fungerer som dig: det eksponerer præcis de værktøjer, din rolle tillader.",
+        "nameLabel": "Navn",
+        "namePlaceholder": "bærbar",
+        "nameHint": "Hvor dette token bruges, for eksempel \"bærbar\" eller \"claude-desktop\".",
+        "expiryLabel": "Udløber den",
+        "expiryHint": "Valgfrit. Lad det stå tomt, og tokenet udløber aldrig, før du tilbagekalder det.",
+        "createButton": "Opret token",
+        "creatingButton": "Opretter…",
+        "cancelButton": "Annuller",
+        "tokenSection": {
+          "title": "Dit token",
+          "hint": "Kopiér det nu. Det vises ikke igen, og et tabt token kan kun erstattes.",
+          "copyButton": "Kopiér",
+          "copiedButton": "Kopieret!",
+          "copyTitle": "Kopiér token",
+          "copiedTitle": "Kopieret!"
+        },
+        "connectSection": {
+          "title": "Tilslut en klient",
+          "hint": "Vælg den klient, du sætter op. Udsnittet indeholder allerede dette token."
+        },
+        "bridgeSection": {
+          "title": "Eller brug den lokale bro",
+          "hint": "For en klient, der kun taler stdio, bygger CLI'en bro og videresender dit token."
+        },
+        "doneButton": "Færdig",
+        "errors": {
+          "createFailed": "Kunne ikke oprette tokenet",
+          "copyFailed": "Kopiering mislykkedes, marker og kopiér tokenet manuelt."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Sprog",
+      "description": "Vælg det sprog, dashboardet vises på.",
+      "languageLabel": "Sprog",
+      "saved": "Sprogpræference gemt."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse indstillinger",
+        "loadFailedPeriod": "Kunne ikke indlæse indstillinger.",
+        "saveFailed": "Kunne ikke gemme",
+        "saveSettingsFailed": "Kunne ikke gemme indstillinger"
+      },
+      "savedSuccess": "Indstillinger gemt.",
+      "saving": "Gemmer…",
+      "saveSettings": "Gem indstillinger",
+      "serverInfo": {
+        "heading": "Serverinfo",
+        "readOnly": "Skrivebeskyttet. Vært og port kommer fra miljøet eller indstillingsfilen, ikke herfra.",
+        "reachableAt": "Tilgængelig på",
+        "reachableAtAny": "Tilgængelig på en af disse adresser",
+        "thisMachine": "Denne maskine",
+        "network": "Netværk",
+        "copyAddress": "Kopiér {{address}}",
+        "copied": "Kopieret!",
+        "copy": "Kopiér",
+        "hostAndPort": "Vært og port",
+        "version": "Version",
+        "uptime": "Oppetid"
+      },
+      "runtime": {
+        "heading": "Runtime-indstillinger",
+        "logLevel": "Logniveau",
+        "logLevelHint": "Styrer detaljeringsgraden af servicens logs.",
+        "publicUrl": "Offentlig URL",
+        "publicUrlHint": "Base-URL, hvorpå servicen kan tilgås fra eksterne klienter (f.eks. <code>http://192.168.1.10:3000</code>). Bruges i afsnittet <strong>Sådan tilsluttes</strong> for hver router. Nyttigt, når dashboardet køres på en anden maskine eller port end servicen.",
+        "usageRetention": "Opbevaring af forbrugsdata",
+        "noLimit": "Ingen grænse",
+        "maxAgeDays": "Maks. alder (dage)",
+        "maxSizeMb": "Maks. størrelse (MB)",
+        "retentionHint": "Forbrugs-/faktureringshistorik ældre end dette antal dage, eller der overstiger denne størrelse, fjernes fra den aktive log. Lad begge stå tomme for ingen opbevaringsgrænse."
+      },
+      "internationalization": {
+        "heading": "Internationalisering",
+        "defaultLanguage": "Standardsprog",
+        "defaultLanguageHint": "Dashboardets sprog for brugere, som ikke har valgt deres eget endnu. Tilsidesætter ikke brugerens personlige valg."
+      },
+      "telemetry": {
+        "heading": "Anonyme målinger",
+        "neverAutomatic": "Routerly sender aldrig data automatisk.",
+        "noChoice": "Du har endnu ikke truffet et valg.",
+        "enabledStatus": "Anonyme installationsmålinger er aktiveret.",
+        "disabledStatus": "Anonyme installationsmålinger er deaktiveret.",
+        "explanation": "Når aktiveret, sender Routerly kun: hændelsestype (installation/opgradering/afinstallation), version, platform og et tilfældigt ID. Ingen personoplysninger, ingen forbrugsdata, ingen IP lagres.",
+        "whatIsSent": "Hvad sendes?",
+        "installId": "Installations-ID: {{id}}",
+        "saving": "Gemmer…",
+        "enable": "Aktiver",
+        "disable": "Deaktiver"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Dashboard (indbakke i appen)",
+          "description": "Sender hændelser til indbakken i appen"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Brugerdefineret mailserver"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP-webhook-callback"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Udbyder – Fejl",
+        "providerDegraded": "Udbyder – Forringet",
+        "providerRecovered": "Udbyder – Genoprettet",
+        "providerRateLimited": "Udbyder – Ratebegrænset",
+        "routingNoCandidates": "Routing – Ingen kandidater",
+        "routingFallbackUsed": "Routing – Fallback brugt",
+        "authLoginFailed": "Auth – Login mislykkedes",
+        "authTokenInvalid": "Auth – Ugyldigt token",
+        "configModelAdded": "Konfig – Model tilføjet",
+        "configModelDeleted": "Konfig – Model slettet",
+        "configRouterCreated": "Konfig – Router oprettet",
+        "configRouterDeleted": "Konfig – Router slettet",
+        "budgetThresholdReached": "Budget – Tærskel nået",
+        "budgetExceeded": "Budget – Overskredet",
+        "budgetReset": "Budget – Nulstillet",
+        "systemStartup": "System – Opstart",
+        "systemShutdown": "System – Nedlukning",
+        "systemUpdateAvailable": "System – Opdatering tilgængelig"
+      },
+      "removeChannelTooltip": "Fjern kanal",
+      "removeChannelConfirm": "Fjern kanal?",
+      "formUpdatedHint": "Formular opdateret — gem for at anvende.",
+      "hmacSigningKeyPlaceholder": "HMAC-signeringsnøgle",
+      "perms": {
+        "routerRead": "Routere – Læs",
+        "routerWrite": "Routere – Skriv",
+        "modelRead": "Modeller – Læs",
+        "modelWrite": "Modeller – Skriv",
+        "userRead": "Brugere – Læs",
+        "userWrite": "Brugere – Skriv",
+        "reportRead": "Rapporter – Læs",
+        "settingsRead": "Indstillinger – Læs",
+        "settingsWrite": "Indstillinger – Skriv",
+        "notificationWrite": "Notifikationer – Skriv",
+        "tokenRead": "Tokens – Læs",
+        "tokenWrite": "Tokens – Skriv",
+        "roleWrite": "Roller – Skriv",
+        "auditRead": "Revisionslog – Læs",
+        "modulesRead": "Moduler – Læs",
+        "modulesManage": "Moduler – Administrer",
+        "connectionsRead": "Forbindelser – Læs",
+        "connectionsManage": "Forbindelser – Administrer",
+        "resilienceRead": "Robusthed – Læs",
+        "resilienceManage": "Robusthed – Administrer",
+        "profilesRead": "Routingprofiler – Læs",
+        "profilesManage": "Routingprofiler – Administrer",
+        "optimizersRead": "Optimeringer – Læs",
+        "optimizersManage": "Optimeringer – Administrer",
+        "experimentsRead": "Eksperimenter – Læs",
+        "experimentsManage": "Eksperimenter – Administrer"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "For denne kanaltype ændrer mål ikke levering (endpointet er fast). De filtrerer, hvilke hændelser der logges i revisionssporet pr. modtager.",
+        "dashboard": "Mål styrer synlighed i indbakken — kun de matchede brugere ser disse notifikationer i deres indbakke i appen.",
+        "email": "Mål bestemmer, hvilke brugere der modtager denne e-mail. Lad alle stå tomme for at sende til alle brugere."
+      },
+      "summary": {
+        "allEvents": "Alle hændelser",
+        "eventCount": "{{count}} hændelse",
+        "eventCount_other": "{{count}} hændelser",
+        "roleCount": "{{count}} rolle",
+        "roleCount_other": "{{count}} roller",
+        "permCount": "{{count}} tilladelse",
+        "permCount_other": "{{count}} tilladelser",
+        "userCount": "{{count}} bruger",
+        "userCount_other": "{{count}} brugere",
+        "everyone": "Alle"
+      },
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse"
+      },
+      "fields": {
+        "dashboardHint": "Sender matchende hændelser til indbakken i appen. Ingen legitimationsoplysninger påkrævet.",
+        "labels": {
+          "fromAddress": "Fra-adresse",
+          "fromName": "Fra-navn",
+          "host": "Vært",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Brugernavn",
+          "password": "Adgangskode",
+          "awsRegion": "AWS-region",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API-nøgle",
+          "connectionString": "Forbindelsesstreng",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "Metode",
+          "signingSecret": "Signeringshemmelighed",
+          "botToken": "Bot Token",
+          "channelId": "Kanal-ID",
+          "webhookUrl": "Webhook-URL",
+          "integrationKey": "Integrationsnøgle"
+        },
+        "values": {
+          "enabled": "Aktiveret",
+          "disabled": "Deaktiveret",
+          "configured": "Konfigureret",
+          "notSet": "Ikke angivet"
+        },
+        "optional": "(valgfrit)",
+        "keepCurrentPlaceholder": "Lad stå tomt for at bevare nuværende",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Brug TLS/SSL",
+        "smtpTlsOnHint": "(port 465 — direkte SSL)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Lad legitimationsoplysninger stå tomme for at bruge IAM-instansrollen.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC-signeringsnøgle",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-tegns routingnøgle",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Hændelser",
+          "eventsPlaceholder": "Alle hændelser (lad stå tomt for alle)",
+          "eventsHint": "Lad stå tomt for at modtage alle hændelser. Vælg specifikke hændelser for at filtrere.",
+          "routersHeading": "Routere",
+          "routersPlaceholder": "Alle routere (lad stå tomt for alle)",
+          "routersHint": "Lad stå tomt for at modtage hændelser fra alle routere.",
+          "cooldownHeading": "Afkølingstid",
+          "cooldownSuffix": "sekunder (0 = ingen afkølingstid)",
+          "cooldownHint": "Minimumsinterval, før denne kanal kan udløses igen for den samme hændelse."
+        },
+        "recipients": {
+          "heading": "Modtagere/mål",
+          "rolesLabel": "Roller",
+          "rolesPlaceholder": "Alle roller (alle)",
+          "permissionsLabel": "Tilladelser",
+          "permissionsPlaceholder": "Alle tilladelser (alle)",
+          "usersLabel": "Individuelle brugere",
+          "usersPlaceholder": "Alle brugere (alle)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "forbindelse",
+          "routing": "routing",
+          "recipients": "modtagere"
+        },
+        "sections": {
+          "channelSettings": "Kanalindstillinger",
+          "eventsRouting": "Hændelser og routing",
+          "recipients": "Modtagere"
+        },
+        "nameLabel": "Navn",
+        "namePlaceholder": "Label for denne kanal",
+        "cancelButton": "Annuller"
+      },
+      "list": {
+        "countLabel": "{{count}} kanal",
+        "countLabel_other": "{{count}} kanaler",
+        "filteredLabel": "{{shown}} af {{count}} kanal",
+        "filteredLabel_other": "{{shown}} af {{count}} kanaler",
+        "allTypes": "Alle typer",
+        "searchPlaceholder": "Filtrer kanaler…",
+        "searchChannelsPlaceholder": "Søg kanaler…",
+        "addButton": "Tilføj kanal",
+        "addSearchPlaceholder": "Søg kanaler…",
+        "noResults": "Ingen resultater",
+        "emptyTitle": "Ingen notifikationskanaler konfigureret endnu.",
+        "noMatch": "Ingen kanaler matcher de aktive filtre.",
+        "nameInlinePlaceholder": "Label (valgfrit)",
+        "columns": {
+          "name": "Navn",
+          "type": "Type",
+          "summary": "Hændelser/mål"
+        },
+        "testTitle": "Send test",
+        "editTitle": "Rediger kanal",
+        "deleteTitle": "Slet kanal",
+        "deleteConfirm": "Fjern kanal \"{{name}}\"? Dette kan ikke fortrydes.",
+        "deleteConfirmButton": "Slet",
+        "errors": {
+          "deleteFailed": "Kunne ikke slette"
+        }
+      },
+      "edit": {
+        "backToList": "Tilbage til notifikationer",
+        "back": "Tilbage",
+        "heading": "Rediger {{provider}}-kanal",
+        "subtitle": "Opdater konfigurationen for denne notifikationskanal.",
+        "testSection": {
+          "title": "Send test",
+          "recipientPlaceholder": "modtager@example.com",
+          "sendButton": "Send test",
+          "sendingButton": "Sender…",
+          "hintEmail": "Lad stå tomt for at sende til din kontos e-mail. Testen bruger den gemte kanalkonfiguration.",
+          "hintOther": "Testen bruger den gemte kanalkonfiguration. Gem ændringer først for at teste opdaterede indstillinger."
+        },
+        "saveButton": "Gem ændringer",
+        "savingButton": "Gemmer…",
+        "errors": {
+          "loadFailed": "Kunne ikke indlæse",
+          "saveFailed": "Kunne ikke gemme"
+        }
+      },
+      "create": {
+        "backToList": "Tilbage til notifikationer",
+        "changeType": "Skift type",
+        "pickerHeading": "Vælg en kanaltype",
+        "pickerSubtitle": "Vælg den notifikationsudbyder, der skal konfigureres.",
+        "heading": "Ny {{provider}}-kanal",
+        "subtitle": "Konfigurer en ny notifikationskanal.",
+        "createButton": "Opret kanal",
+        "creatingButton": "Opretter…",
+        "errors": {
+          "createFailed": "Kunne ikke oprette"
+        }
+      },
+      "sendTest": "Send test",
+      "fromAddress": "Fra-adresse",
+      "individualUsers": "Individuelle brugere",
+      "host": "Vært",
+      "port": "Port",
+      "apiKey": "API-nøgle",
+      "connectionString": "Forbindelsesstreng",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Metode",
+      "botToken": "Bot Token",
+      "channelId": "Kanal-ID",
+      "webhookUrl": "Webhook-URL",
+      "integrationKey": "Integrationsnøgle"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — eksponerer /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — metrics API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Eksporter forespørgselstraces",
+        "description": "Sender det fulde trace for hver proxyet forespørgsel: hver fase, hvert modul der deltog, og prompts og svar for de projekter, der har tilvalgt det.",
+        "sampleRateLabel": "Sample rate",
+        "sampleRateHint": "1 eksporterer hver forespørgsel, 0,1 én ud af ti."
+      },
+      "optional": "(valgfrit)",
+      "headersHint": "(valgfrit, én pr. linje: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Lad stå tomt for åben adgang",
+          "description": "Eksponerer <code>/metrics</code> i Prometheus tekstformat. Angiv et token for at kræve Bearer-godkendelse."
+        },
+        "otel": {
+          "endpoint": "Collector-endpoint",
+          "description": "Base-URL for din OTLP-modtager. Routerly tilføjer <code>/v1/metrics</code>, og <code>/v1/traces</code> når trace-eksport er slået til. Standard HTTP-port er 4318, gRPC er 4317.",
+          "protocol": "Protokol",
+          "headers": "Headers"
+        },
+        "datadog": {
+          "apiKey": "API-nøgle",
+          "placeholder": "Din Datadog API-nøgle",
+          "description": "Findes under <strong>Organization Settings → API Keys</strong> i din Datadog-konto.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write-URL",
+          "description": "Findes i <strong>Grafana Cloud → Connections → Prometheus → Details</strong> som \"Remote Write Endpoint\".",
+          "username": "Brugernavn/Stack-ID",
+          "usernameHint": "Numerisk ID vist i Prometheus-forbindelsesdetaljerne.",
+          "apiKey": "API-nøgle/Token",
+          "apiKeyHint": "Grafana Cloud-token med rollen <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2-instans-URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Dit InfluxDB API-token",
+          "tokenHint": "Skal have <strong>skrive</strong>-adgang til bucket'en.",
+          "org": "Organisation",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Hemmelighed",
+          "secretHint": "(valgfrit — HMAC-SHA256-signeringsnøgle)",
+          "headers": "Headers"
+        }
+      },
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse integrationer",
+        "updateFailed": "Kunne ikke opdatere integration",
+        "saveFailed": "Kunne ikke gemme integration",
+        "deleteFailed": "Kunne ikke slette integration"
+      },
+      "empty": "Ingen integrationer konfigureret endnu.",
+      "enabled": "Aktiveret",
+      "testing": "Tester…",
+      "test": "Test",
+      "removeConfirm": "Fjern?",
+      "remove": "Fjern",
+      "cancel": "Annuller",
+      "removeTooltip": "Fjern integration",
+      "saving": "Gemmer…",
+      "save": "Gem",
+      "addButton": "Tilføj integration"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse indstillinger",
+        "duplicateUrl": "Denne URL findes allerede på listen.",
+        "unreachable": "Kunne ikke nå et gyldigt udbyderkatalog på denne URL."
+      },
+      "saved": "Gemt.",
+      "refreshed": "Opdateret.",
+      "heading": "Repositories for udbyderkataloger",
+      "refreshing": "Opdaterer…",
+      "refresh": "Opdater",
+      "nextRefresh": "Næste: {{date}}",
+      "priorityHint": "Rækkefølgen bestemmer sammenlægningsprioritet — række 1 vinder ved konflikt. Brug pilene til at omarrangere.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Opdateret",
+        "lastCheck": "Sidste kontrol",
+        "status": "Status"
+      },
+      "empty": "Ingen repositories konfigureret. Routerlys offentlige standardkatalog vil blive brugt.",
+      "status": {
+        "error": "Fejl",
+        "active": "Aktiv",
+        "disabled": "Deaktiveret"
+      },
+      "edit": "Rediger",
+      "removeTooltip": "Fjern",
+      "addRepository": "Tilføj repository",
+      "checking": "Kontrollerer…",
+      "add": "Tilføj",
+      "removeConfirm": "Fjern repository \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Applikation",
+        "runtime": "Runtime",
+        "storage": "Lagring",
+        "softwareUpdate": "Softwareopdatering"
+      },
+      "labels": {
+        "version": "Version",
+        "uptime": "Oppetid",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Konfigurationsmappe",
+        "dataDir": "Datamappe",
+        "currentVersion": "Nuværende version",
+        "availableVersion": "Tilgængelig version",
+        "upToDate": "Ajourført",
+        "lastChecked": "Sidst kontrolleret"
+      },
+      "noCheckPerformed": "Ingen opdateringskontrol udført endnu.",
+      "checkForUpdates": "Kontroller for opdateringer",
+      "checking": "Kontrollerer…",
+      "updateTo": "Opdater til v{{version}}",
+      "updating": "Opdaterer…",
+      "dockerHint": "Kører i Docker — hent det seneste image for at opdatere.",
+      "confirmUpdate": "Dette vil downloade og installere den seneste version. Servicen genstartes. Fortsæt?",
+      "updateComplete": "Opdatering gennemført! Genindlæser…",
+      "serviceRestarting": "Servicen genstarter. Genindlæs siden om et øjeblik.",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse",
+        "checkFailed": "Kontrol mislykkedes",
+        "updateFailed": "Opdatering mislykkedes"
+      },
+      "channel": "Kanal"
+    },
+    "security": {
+      "authentication": "Godkendelse",
+      "requireMfa": "Kræv tofaktorgodkendelse for alle brugere",
+      "requireMfaHint": "Når aktiveret, vil brugere, der ikke har opsat 2FA, se en anmodning om at gøre det efter login. Brugere kan konfigurere 2FA på deres profilside.",
+      "savedSuccess": "Indstillinger gemt.",
+      "saving": "Gemmer…",
+      "saveSettings": "Gem indstillinger",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse indstillinger",
+        "saveFailed": "Kunne ikke gemme indstillinger"
+      }
+    },
+    "title": "Indstillinger",
+    "subtitle": "Konfiguration for Routerly",
+    "tabs": {
+      "general": "Generelt",
+      "security": "Sikkerhed",
+      "notifications": "Notifikationer",
+      "integrations": "Integrationer",
+      "catalog": "Udbyderkatalog",
+      "users": "Brugere",
+      "roles": "Roller",
+      "audit": "Revisionslog",
+      "about": "Om"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Routere",
+      "subtitle": "Klientapplikationer, der tilgår Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} routere",
+      "newRouter": "Ny router",
+      "empty": "Ingen routere endnu.",
+      "emptyFiltered": "Ingen routere af denne type.",
+      "tabs": {
+        "all": "Alle",
+        "router": "Router",
+        "orchestrator": "Orkestrator",
+        "passthrough": "Gennemgang"
+      },
+      "columns": {
+        "name": "Navn",
+        "tokens": "Tokens",
+        "policies": "Politikker",
+        "models": "Modeller"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokens",
+      "editRouter": "Rediger router",
+      "deleteRouter": "Slet router",
+      "deleteConfirm": "Slet denne router?",
+      "errors": {
+        "deleteFailed": "Fejl ved sletning af router"
+      }
+    },
+    "layout": {
+      "notFound": "Router ikke fundet",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "general": "Generelt",
+        "orchestrator": "Orkestrator",
+        "routing": "Routing",
+        "optimizer": "Optimering",
+        "security": "Sikkerhed",
+        "token": "Token",
+        "users": "Brugere",
+        "logs": "Logs"
+      },
+      "backToRouters": "Tilbage til routere",
+      "backToRoutersTitle": "Tilbage til routere",
+      "newRouter": "Ny router",
+      "loading": "Indlæser...",
+      "routerId": "Router-ID:",
+      "saveFirstHint": "Gem routeren først for at låse denne fane op"
+    },
+    "dashboard": {
+      "period": "Periode",
+      "noTraffic": "Ingen trafik for denne router i den valgte periode.",
+      "stats": {
+        "savings": "Besparelser",
+        "vsPrefix": "vs.",
+        "forEverything": "for alt",
+        "noTargetToCompare": "ingen målmodel at sammenligne med",
+        "cost": "Omkostning",
+        "callCount": "1 opkald",
+        "callCount_other": "{{count}} opkald",
+        "latency": "Svartid",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Tid til første token",
+        "notMeasured": "ikke målt på disse opkald",
+        "reliability": "Pålidelighed",
+        "errorsAndBlocked": "{{errors}} fejl · {{blocked}} blokeret"
+      },
+      "tokens": {
+        "input": "Input-tokens:",
+        "output": "Output-tokens:",
+        "fromCache": "Fra cache:",
+        "cacheSaved": "({{amount}} sparet)"
+      },
+      "oneModel": {
+        "heading": "Hvis alt var gået til én model",
+        "empty": "Tilføj målmodeller til denne router for at se sammenligningen.",
+        "columns": {
+          "targetModel": "Målmodel",
+          "wouldHaveCost": "Ville have kostet",
+          "saved": "Sparet"
+        },
+        "costsHint": "Omkostninger er de observerede tokens genberegnet med hver måls priser."
+      },
+      "optimizers": {
+        "heading": "Hvad optimeringerne fjernede",
+        "columns": {
+          "optimizer": "Optimering",
+          "callsChanged": "Ændrede opkald",
+          "tokensSaved": "Tokens sparet",
+          "costSaved": "Omkostning sparet",
+          "rolledBack": "Rullet tilbage"
+        },
+        "hint": "Målt på selve opkaldene, prissat efter den model, der betjente hvert af dem. En tilbagerullet kørsel betyder, at trinnets output blev afvist som usikkert, og prompten blev genskabt: den sparede ingenting, og et højt antal betyder, at tærsklen er for aggressiv."
+      },
+      "traffic": {
+        "heading": "Hvor trafikken gik hen",
+        "columns": {
+          "model": "Model",
+          "calls": "Opkald",
+          "share": "Andel",
+          "cost": "Omkostning",
+          "p95Latency": "p95-svartid",
+          "errors": "Fejl"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Fejl ved lagring af router",
+        "copyFailed": "Kopiering mislykkedes — marker og kopiér tokenet manuelt."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Routerer forespørgsler over modelkandidater."
+        },
+        "orchestrator": {
+          "label": "Orkestrator",
+          "description": "Routerer forespørgsler over andre routere i stedet for modeller."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Videresender forespørgsler uændret."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Gem dette token nu.",
+        "saveNowHint": "Det vises ikke igen — når du forlader denne skærm, kan det ikke genoprettes.",
+        "copied": "Kopieret!",
+        "copy": "Kopiér",
+        "goToRouter": "Gå til router"
+      },
+      "connect": {
+        "heading": "Sådan tilsluttes",
+        "intro": "Peg en OpenAI- eller Anthropic-SDK mod Routerly, og brug et <tokenLink>router-token</tokenLink> som API-nøgle. Erstat <code>{{token}}</code> nedenfor med dit eget. Model <code>{{model}}</code> lader Routerly vælge; ethvert model-id fra <modelsLink>Modeller</modelsLink> fungerer også.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Base-URL <code>{{baseUrl}}</code>, den samme, som ethvert \"OpenAI-kompatibelt\" udbyderfelt tager.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Base-URL <code>{{baseUrl}}</code>, uden <code>/v1</code>: SDK'en tilføjer det selv.",
+        "curl": "curl",
+        "curlHint": "Tjek forbindelsen uden at installere noget, og se derefter efter opkaldet i <usageLink>Forbrug</usageLink>."
+      },
+      "form": {
+        "kind": "Type",
+        "kindAriaLabel": "Routertype",
+        "kindFixedHint": "Fast, når routeren er oprettet.",
+        "routerName": "Routernavn",
+        "routerNamePlaceholder": "Min app",
+        "advancedSettings": "Avancerede indstillinger",
+        "ttftTimeout": "TTFT-timeout (ms)",
+        "ttftTimeoutHint": "Hvis en model ikke sender den første svarbyte inden for denne tid, afbryder Routerly den og prøver den næste kandidat. Begrænser ikke den samlede svartid. Sæt den til 0 for at vente så længe, udbyderen tager.",
+        "traceContent": "Trace-indhold",
+        "traceContentHint": "Traces registrerer altid metadata (modeller, scorer, tokens, omkostning, svartid). Slå dette til for også at registrere de sendte prompts og de modtagne svar. De gemmes med forbrugsposten og er synlige for alle, der kan læse rapporter.",
+        "capturePromptsAndAnswers": "Registrer prompts og svar",
+        "saveChanges": "Gem ændringer",
+        "createRouter": "Opret router"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Denne router er ikke en orkestrator.",
+      "candidateRouters": "Kandidatroutere",
+      "candidateRoutersHint": "De routere, denne orkestrator videresender forespørgsler til. Vægt påvirker, hvor ofte hver kandidat vælges; kun navn, id, vægt og valgfrie grænser pr. kandidat vises her.",
+      "router": "Router",
+      "selectRouter": "Vælg router",
+      "weight": "Vægt",
+      "removeCandidate": "Fjern kandidat",
+      "usageLimits": "Forbrugsgrænser for denne kandidat",
+      "limitCount": "{{count}} grænse",
+      "limitCount_other": "{{count}} grænser",
+      "usageLimitsHint": "Valgfrie forbrugsgrænser, der kun anvendes på forespørgsler, denne orkestrator videresender til denne kandidat.",
+      "empty": "Ingen kandidatroutere endnu. En orkestrator kræver mindst én, før den kan videresende forespørgsler.",
+      "addCandidate": "Tilføj kandidat",
+      "saved": "Gemt!",
+      "saveCandidates": "Gem kandidater",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse routere",
+        "saveFailed": "Fejl ved lagring af orkestrator-kandidater"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Kunne ikke tildele routingprofil",
+        "duplicateTargets": "Målmodeller kan ikke indeholde dubletter.",
+        "saveFailed": "Fejl ved lagring af router-routing",
+        "noProfileAvailable": "Ingen routingprofil tilgængelig. Opret en fra siden Profiler."
+      },
+      "form": {
+        "routing": "Routing",
+        "routingHint": "Brug en delt routingprofil, eller definer routerens egne politikker. Målmodeller kan konfigureres uanset valg.",
+        "profileMode": "Profil",
+        "customMode": "Brugerdefineret",
+        "routingProfile": "Routingprofil",
+        "builtinSuffix": "(indbygget)",
+        "profileHint": "Politikker kommer fra profilen og følger dens ændringer. Rediger dem på siden Profiler, eller skift til Brugerdefineret for at starte fra en kopi af dem.",
+        "saved": "Gemt!",
+        "saveRoutingConfiguration": "Gem routingkonfiguration"
+      },
+      "targetModels": {
+        "heading": "Målmodeller",
+        "hint": "Definer puljen af modeller, som politikkerne filtrerer og vælger fra. Valgfrie prompts instruerer AI-routeren om, hvornår hver model skal vælges.",
+        "endpointModel": "Endpoint-model",
+        "selectModel": "Vælg model",
+        "promptDefinition": "Promptdefinition",
+        "promptPlaceholder": "Beskriv præcis, hvornår og hvorfor routeren skal vælge denne model...",
+        "intents": "Hensigter",
+        "removeTarget": "Fjern målmodel",
+        "empty": "Ingen målmodeller konfigureret.",
+        "addTarget": "Tilføj målmodel"
+      }
+    },
+    "optimizer": {
+      "title": "Optimeringer",
+      "description": "Optimeringer reducerer prompt-tokens, før forespørgsler når udbyderen. De køres i rækkefølge fra top til bund. Brug en delt optimeringsprofil, eller definer routerens egen pipeline.",
+      "noPermission": "Du har ikke tilladelse til at se optimeringer.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Brugerdefineret"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimeringsprofil",
+        "builtinLabel": "{{label}} (indbygget)",
+        "hint": "Trin kommer fra profilen og følger dens ændringer. Rediger dem på siden Profiler, eller skift til Brugerdefineret for at starte fra en kopi af dem.",
+        "disabledSuffix": "(deaktiveret)",
+        "thresholdSuffix": ", tærskel {{threshold}}"
+      },
+      "customHint": "Træk for at omarrangere, slå til/fra for at aktivere. Nogle optimeringer bruger en tærskel til at styre, hvor aggressivt de beskærer.",
+      "saveButton": "Gem optimeringer",
+      "saving": "Gemmer...",
+      "saved": "Gemt",
+      "preview": {
+        "title": "Forhåndsvis token-besparelser",
+        "description": "Kør den nuværende (ikke-gemte) pipeline over en prompt for at se, hvad hvert trin fjerner, og hvad det koster. Vælg en af eksempelsamtalerne, eller skriv din egen prompt.",
+        "promptLabel": "Prompt",
+        "promptAriaLabel": "Prompt til forhåndsvisning",
+        "typePromptOption": "Skriv en prompt nedenfor",
+        "fixturesHint": "Eksempelsamtaler leveret med Routerly. Routerly registrerer ikke rigtige prompts.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model til forhåndsvisning",
+        "modelWithContext": "{{id}} ({{k}}k kontekst)",
+        "noModelOption": "Ingen model",
+        "modelHint": "Trin, der beskærer for at passe til et kontekstvindue, skal vide, hvilket vindue. Uden en model springes de over, ligesom de ville blive det på en forespørgsel, der navngiver en model, Routerly ikke har et vindue for.",
+        "sampleAriaLabel": "Eksempelprompt",
+        "samplePlaceholder": "Indsæt en eksempelbrugerbesked...",
+        "runButton": "Kør forhåndsvisning",
+        "running": "Kører...",
+        "before": "Før",
+        "after": "Efter",
+        "saved": "Sparet",
+        "columns": {
+          "optimizer": "Optimering",
+          "before": "Før",
+          "after": "Efter",
+          "saved": "Sparet"
+        },
+        "rolledBackNote": "rullet tilbage: ændringen blev afvist som usikker",
+        "skippedNote": "sprunget over: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Ændringen, dette trin producerede, blev rullet tilbage, så prompten nåede det næste trin uændret.",
+          "skipped": "Dette trin kørte ikke: {{reason}}",
+          "unchanged": "Dette trin lod prompten uændret."
+        }
+      },
+      "errors": {
+        "assignFailed": "Kunne ikke tildele optimeringsprofil",
+        "saveFailed": "Fejl ved lagring af optimeringer",
+        "previewFailed": "Fejl ved kørsel af forhåndsvisning",
+        "noProfileAvailable": "Ingen optimeringsprofil tilgængelig. Opret en fra siden Profiler."
+      }
+    },
+    "token": {
+      "newButton": "Nyt token",
+      "empty": "Ingen API-tokens endnu. Opret et for at begynde at godkende forespørgsler.",
+      "budgetOverrides": "Budgetoverstyringer",
+      "created": "Oprettet",
+      "lastUsed": "Sidst brugt",
+      "expires": "Udløber",
+      "never": "Aldrig",
+      "editTitle": "Rediger konfiguration",
+      "revokeTitle": "Tilbagekald token",
+      "revokeConfirm": "Tilbagekald token \"{{snippet}}...\"? Apps, der bruger det, stopper med at fungere med det samme.",
+      "labelInput": {
+        "placeholder": "Søg eller opret en label…",
+        "createPrefix": "Opret",
+        "noMatches": "Ingen matchende labels fundet."
+      },
+      "errors": {
+        "deleteFailed": "Fejl ved sletning af token"
+      },
+      "create": {
+        "backToTokens": "Tilbage til tokens",
+        "title": "Nyt API-token",
+        "subtitle": "Det fulde token vises kun én gang efter oprettelse — opbevar det sikkert.",
+        "tokenCreated": "Token oprettet. Kopiér det nu — det vises ikke igen.",
+        "copied": "Kopieret!",
+        "copy": "Kopiér",
+        "done": "Færdig",
+        "optional": "valgfrit",
+        "labels": "Labels",
+        "labelsHint": "Mærk dette token for at identificere, hvor det bruges (f.eks. \"produktion\", \"ci\").",
+        "scopes": "Scopes",
+        "scopesHint": "Frie scopes knyttet til dette token (f.eks. \"batch\", \"internal\"), gemt sammen med tokenet til din egen bogføring.",
+        "tags": "Tags",
+        "tagsHint": "Nøgle-værdi-metadata videresendt til forbrugsposter (f.eks. env=production).",
+        "keyPlaceholder": "nøgle",
+        "valuePlaceholder": "værdi",
+        "createButton": "Opret token",
+        "cancel": "Annuller",
+        "copyFailed": "Kopiering mislykkedes — marker og kopiér tokenet manuelt.",
+        "errors": {
+          "createFailed": "Fejl ved oprettelse af token"
+        }
+      },
+      "edit": {
+        "title": "Rediger token",
+        "subtitle": "Opdater labels og grænseoverstyringer pr. model for dette token.",
+        "token": "Token",
+        "labels": "Labels",
+        "perModelLimits": "Grænser pr. model",
+        "perModelLimitsHint": "Overstyr globale og router-niveau-grænser for forespørgsler, der bruger dette token.",
+        "noTargetModels": "Tilføj målmodeller på fanen Routing først.",
+        "noOverride": "ingen overstyring",
+        "noLimits": "Ingen grænser",
+        "noLimitsSet": "Ingen grænser angivet — nedarver fra parent. Tilføj en grænse nedenfor for at overstyre.",
+        "metric": "Måleenhed",
+        "type": "Type",
+        "periodLabel": "Periode",
+        "every": "Hver",
+        "maxCost": "Maks. ($)",
+        "maxCalls": "Maks. (n.)",
+        "maxTokens": "Maks. (tokens)",
+        "allCombosSet": "Alle kombinationer af måleenhed/periode er allerede angivet",
+        "addLimit": "Tilføj grænse",
+        "windowType": {
+          "period": "Periode",
+          "rolling": "Rullende"
+        },
+        "limitMetric": {
+          "cost": "Omkostning (USD)",
+          "calls": "Forespørgsler",
+          "input_tokens": "Input-tokens",
+          "output_tokens": "Output-tokens",
+          "total_tokens": "Tokens i alt"
+        },
+        "period": {
+          "hourly": "Hver time",
+          "daily": "Dagligt",
+          "weekly": "Ugentligt",
+          "monthly": "Månedligt",
+          "yearly": "Årligt"
+        },
+        "rollingUnit": {
+          "second": "sekunder",
+          "minute": "minutter",
+          "hour": "timer",
+          "day": "dage",
+          "week": "uger",
+          "month": "måneder"
+        },
+        "fmt": {
+          "requests": "{{value}} forespg.",
+          "inputTokens": "{{value}} ind-tok",
+          "outputTokens": "{{value}} ud-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / hver {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Fejl ved lagring af token"
+        }
+      }
+    },
+    "users": {
+      "title": "Router-medlemmer",
+      "description": "Administrer brugere, der har adgang til denne router.",
+      "addButton": "Tilføj medlem",
+      "addNewTitle": "Tilføj nyt medlem",
+      "selectUserPlaceholder": "Vælg en bruger...",
+      "addConfirmButton": "Tilføj",
+      "cancelButton": "Annuller",
+      "empty": "Ingen medlemmer fundet.",
+      "removeConfirm": "Er du sikker på, at du vil fjerne dette medlem?",
+      "saveTitle": "Gem ændringer",
+      "changeRoleTitle": "Skift rolle",
+      "removeTitle": "Fjern medlem",
+      "roles": {
+        "viewer": "Læser",
+        "editor": "Redaktør",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "Bruger",
+        "role": "Rolle",
+        "actions": "Handlinger"
+      },
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse brugere",
+        "addFailed": "Fejl ved tilføjelse af medlem",
+        "updateFailed": "Fejl ved opdatering af medlem",
+        "removeFailed": "Fejl ved fjernelse af medlem"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Fra"
+      },
+      "autoRefreshOff": "Automatisk opdatering deaktiveret",
+      "autoRefreshEvery": "Automatisk opdatering hver {{interval}}",
+      "lastUpdated": "sidst opdateret: {{time}}",
+      "refresh": "Opdater",
+      "refreshNowTitle": "Opdater nu",
+      "refreshNowButton": "↻ Nu",
+      "filters": {
+        "period": "Periode",
+        "model": "Model",
+        "allModels": "Alle modeller",
+        "type": "Type",
+        "all": "Alle",
+        "completion": "Completion",
+        "router": "Router",
+        "status": "Status",
+        "success": "Succes",
+        "blocked": "Blokeret",
+        "error": "Fejl",
+        "resetButton": "Nulstil filtre"
+      },
+      "stats": {
+        "totalCost": "Samlet omkostning",
+        "totalCalls": "Opkald i alt",
+        "completionCalls": "Completion-opkald",
+        "routerCalls": "Router-opkald",
+        "errors": "Fejl"
+      },
+      "requestLogs": "Forespørgselslogs",
+      "emptyNoRequests": "Ingen forespørgsler for denne router i den valgte periode.",
+      "emptyNoMatches": "Ingen poster matcher de aktive filtre.",
+      "columns": {
+        "time": "Tidspunkt",
+        "model": "Model",
+        "type": "Type",
+        "in": "Ind",
+        "out": "Ud",
+        "cost": "Omkostning",
+        "latency": "Svartid",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Status"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "completion",
+      "pagination": {
+        "previous": "← Forrige",
+        "next": "Næste →",
+        "pageOf": "Side {{page}} af {{totalPages}}",
+        "totalRecords": "({{count}} poster i alt)"
+      }
+    },
+    "security": {
+      "title": "Sikkerhed",
+      "description": "Brug en delt sikkerhedsprofil, eller definer routerens egne barrierer og PII-politikker.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Brugerdefineret"
+      },
+      "profileSelect": {
+        "ariaLabel": "Sikkerhedsprofil",
+        "builtinLabel": "{{label}} (indbygget)",
+        "hint": "Barrierer og PII-politikker kommer fra profilen og følger dens ændringer. Rediger dem på siden Profiler, eller skift til Brugerdefineret for at starte fra en kopi af dem.",
+        "blockingSuffix": ", blokerer",
+        "disabledSuffix": ", deaktiveret",
+        "piiRedaction": "PII-skjulning ({{target}})"
+      },
+      "saveButton": "Gem sikkerhedsindstillinger",
+      "saved": "Gemt!",
+      "errors": {
+        "assignFailed": "Kunne ikke tildele sikkerhedsprofil",
+        "saveFailed": "Fejl ved lagring af sikkerhedsindstillinger",
+        "noProfileAvailable": "Ingen sikkerhedsprofil tilgængelig. Opret en fra siden Profiler."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Du er en hjælpsom AI-assistent.",
+      "errors": {
+        "unknown": "Der opstod en ukendt fejl",
+        "onlyImages": "Kun billedvedhæftninger understøttes for vision-modeller i øjeblikket."
+      },
+      "title": "Testchat",
+      "subtitle": "Send testforespørgsler gennem routing-gatewayen.",
+      "routerToken": "Router-token:",
+      "hideToken": "Skjul token",
+      "showToken": "Vis token",
+      "recognizedToken": "Genkendt token",
+      "unrecognizedToken": "Ukendt token",
+      "noMessages": "Ingen beskeder endnu.",
+      "enterTokenHint": "Indtast et router-token ovenfor for at sende en besked.",
+      "typeMessageHint": "Skriv en besked nedenfor for at begynde at teste.",
+      "reasoning": "Ræsonnement",
+      "attachedAlt": "Vedhæftet",
+      "attachmentAlt": "Vedhæftning",
+      "attachImage": "Vedhæft billede",
+      "typeMessagePlaceholder": "Skriv en besked...",
+      "stopGeneration": "Stop generering",
+      "sendEnter": "Send (Enter)",
+      "debugLog": "Fejlfindingslog",
+      "clear": "Ryd",
+      "noRequestSent": "Ingen forespørgsel sendt endnu.",
+      "turnTraceLog": "Tur #{{turn}} trace-log · {{count}} hændelse",
+      "turnTraceLog_other": "Tur #{{turn}} trace-log · {{count}} hændelser"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Forbindelser",
+      "subtitle": "Udbyderkonti brugt til at køre modelinstanser",
+      "noPermission": "Du har ikke tilladelse til at se forbindelser.",
+      "count": "{{count}} forbindelse",
+      "count_other": "{{count}} forbindelser",
+      "addConnection": "Tilføj forbindelse",
+      "empty": "Ingen forbindelser endnu. Tilføj en for at komme i gang.",
+      "deleteConfirm": "Fjern forbindelse \"{{label}}\"? Instanser bundet til den stopper med at fungere.",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse forbindelser",
+        "deleteFailed": "Kunne ikke slette forbindelse"
+      },
+      "columns": {
+        "label": "Label",
+        "provider": "Udbyder",
+        "endpoint": "Endpoint",
+        "status": "Status"
+      },
+      "status": {
+        "enabled": "Aktiveret",
+        "disabled": "Deaktiveret"
+      },
+      "actions": {
+        "models": "Modeller",
+        "edit": "Rediger",
+        "remove": "Fjern"
+      }
+    },
+    "form": {
+      "backToConnections": "Tilbage til forbindelser",
+      "editTitle": "Rediger forbindelse",
+      "addTitle": "Tilføj forbindelse",
+      "enabled": "Aktiveret",
+      "editSubtitle": "Opdater udbyderkontoens indstillinger",
+      "addSubtitle": "Registrer en ny udbyderkonto",
+      "sectionTitle": "Forbindelsesdetaljer",
+      "sectionDesc": "Udbyderkonto, legitimationsoplysninger og endpoint brugt til at udføre forespørgsler.",
+      "provider": "Udbyder",
+      "groups": {
+        "directApi": "Direkte API",
+        "cloudPlatform": "Cloud-platform",
+        "subscription": "Abonnement",
+        "browserSession": "Browsersession",
+        "selfHosted": "Selv-hostet"
+      },
+      "upstreamProvider": {
+        "label": "Udbyder",
+        "hintLabel": "(upstream udbydernavn)",
+        "placeholder": "f.eks. deepseek, mistral, groq",
+        "description": "Navngiver den service, dette endpoint hører til. Modeller på denne forbindelse bruger det som deres ID-præfiks (f.eks. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Navn",
+        "hint": "Identificerer denne forbindelse alle steder, den refereres, så den skal være unik. Lad den stå tom for at bruge <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Lad legitimationsfelter stå tomme for at bevare eksisterende værdier.",
+      "save": "Gem",
+      "create": "Opret",
+      "cancel": "Annuller",
+      "oauth": {
+        "unknown": "ukendt",
+        "accountExpires": "Konto: {{account}} — udløber {{expires}}",
+        "unknownError": "Ukendt fejl"
+      },
+      "errors": {
+        "notFound": "Forbindelse ikke fundet",
+        "loadFailed": "Kunne ikke indlæse forbindelse",
+        "updateFailed": "Kunne ikke opdatere forbindelse",
+        "createFailed": "Kunne ikke oprette forbindelse"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Tilbage til modeller",
+      "title": "Modeloversigt",
+      "subtitle": "Gennemse tilgængelige modeller, og tilføj dem til din routingkonfiguration",
+      "count": "{{count}} modeller",
+      "filteredCount": "{{filtered}} af {{count}}",
+      "free": "gratis",
+      "add": "Tilføj",
+      "addAgain": "Tilføj igen",
+      "loadFailed": "Kunne ikke indlæse katalog: {{error}}",
+      "filters": {
+        "search": "Søg",
+        "searchPlaceholder": "Model-ID eller navn…",
+        "provider": "Udbyder",
+        "allProviders": "Alle udbydere",
+        "context": "Kontekst",
+        "ctxOptions": {
+          "all": "Alle",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Pris / 1M",
+        "priceOptions": {
+          "all": "Alle",
+          "free": "Gratis",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Vis",
+        "configured": "Konfigureret",
+        "embedding": "Embedding",
+        "resetFilters": "Nulstil filtre"
+      },
+      "empty": {
+        "noMatches": "Ingen modeller matcher dine filtre."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Udbyder",
+        "context": "Kontekst",
+        "input": "Input / 1M",
+        "output": "Output / 1M"
+      },
+      "badges": {
+        "configured": "Konfigureret",
+        "embedding": "embedding",
+        "runsLocally": "Kører lokalt"
+      },
+      "pagination": {
+        "prev": "Forrige",
+        "next": "Næste",
+        "range": "{{start}}–{{end}} af {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Tilbage til modeller",
+      "title": {
+        "add": "Tilføj model",
+        "edit": "Rediger model",
+        "clone": "Klon model"
+      },
+      "subtitle": {
+        "add": "Registrer en ny LLM-udbydermodel",
+        "edit": "Ændrer konfiguration for {{id}}",
+        "clone": "Kloner fra {{id}} — tildel et nyt ID for at gemme"
+      },
+      "errors": {
+        "modelNotFound": "Model ikke fundet",
+        "sourceModelNotFound": "Kildemodel ikke fundet",
+        "loadFailed": "Fejl ved indlæsning af modeller",
+        "idRequired": "Model-ID krævet",
+        "duplicateId": "Model \"{{id}}\" findes allerede — angiv et andet brugerdefineret ID",
+        "selectConnection": "Vælg en forbindelse",
+        "saveFailed": "Fejl"
+      },
+      "badge": {
+        "yes": "ja",
+        "no": "nej",
+        "override": "Overstyring",
+        "auto": "Auto",
+        "default": "Standard: {{value}}",
+        "reset": "Nulstil"
+      },
+      "oauth": {
+        "unknownExpiry": "ukendt",
+        "accountOk": "Konto: {{account}} — udløber {{expires}}",
+        "unknownError": "Ukendt fejl"
+      },
+      "identification": {
+        "title": "Modelidentifikation",
+        "description": "Unik identifikator og udbyderindstillinger for denne modelkonfiguration.",
+        "routerlyId": "Routerly-ID",
+        "routerlyIdHintPre": "(valgfrit — standard:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Identifikatoren, der bruges, når denne model refereres i Routerly API-kald.",
+        "provider": "Udbyder",
+        "upstreamProviderHint": "(upstream udbydernavn)",
+        "upstreamProviderPlaceholder": "f.eks. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Bruges som præfiks for Routerly-ID'et (f.eks.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(upstream model-ID)",
+        "upstreamModelPlaceholder": "f.eks. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Modelidentifikatoren, der sendes til upstream API-endpointet.",
+        "modelPreset": "Modelforudindstilling",
+        "customModelOption": "— brugerdefineret modelnavn —",
+        "customModelPlaceholder": "f.eks. min-finjusterede-model"
+      },
+      "connection": {
+        "title": "Forbindelsesdetaljer",
+        "description": "API-endpoint og godkendelsesoplysninger, der kræves for at udføre forespørgsler.",
+        "preconfigured": "Forudkonfigureret",
+        "custom": "Brugerdefineret",
+        "connection": "Forbindelse",
+        "selectPlaceholder": "— vælg en forbindelse —",
+        "noneAvailable": "Ingen forudkonfigurerede forbindelser for denne udbyder. Skift til Brugerdefineret, eller opret en på siden Forbindelser.",
+        "editHint": "Redigering af denne forbindelse senere opdaterer hver model, der er bundet til den."
+      },
+      "capabilities": {
+        "title": "Kapabiliteter",
+        "description": "Angiv typen og kapabiliteterne for denne model.",
+        "embeddingModel": "Embedding-model",
+        "embeddingModelHint": "Denne model genererer vektor-embeddings (ikke chat-completions)"
+      },
+      "pricing": {
+        "title": "Prissætning og kontekst",
+        "description": "Omkostningsparametre og behandlingsgrænser brugt til fakturering og routing.",
+        "inputPerMillion": "Input $/1M",
+        "outputPerMillion": "Output $/1M",
+        "cachePerMillion": "Cache-læsning $/1M",
+        "cacheWritePerMillion": "Cache-skrivning $/1M",
+        "optional": "(valgfrit)",
+        "contextWindow": "Kontekstvindue",
+        "contextWindowHint": "(tokens, valgfrit)"
+      },
+      "tiers": {
+        "title": "Avanceret — Prissætningstrin",
+        "description": "Overstyr prissætning, når en måleenhed overstiger en tærskel. For eksempel: \"Over 200.000 kontekst-tokens ændres priserne.\"",
+        "removeTier": "Fjern trin",
+        "above": "Over",
+        "metric": "Måleenhed",
+        "metricContextTokens": "Kontekst-tokens",
+        "overridePricing": "Overstyr prissætning",
+        "addTier": "Tilføj prissætningstrin"
+      },
+      "limits": {
+        "title": "Grænser",
+        "description": "Forbrugsgrænser for denne model. Flere regler kan kombineres.",
+        "metric": "Måleenhed",
+        "type": "Type",
+        "addLimit": "Tilføj grænse"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max-abonnement)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro-abonnement)"
+      },
+      "saveChanges": "Gem ændringer",
+      "createClone": "Opret klon",
+      "createModel": "Opret model"
+    },
+    "page": {
+      "title": "Modeller",
+      "subtitle": "LLM-udbydere registreret hos Routerly",
+      "tabs": {
+        "models": "Modeller",
+        "health": "Tilstand"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} modeller",
+        "filteredCount": "{{filtered}} af {{count}} model",
+        "filteredCount_other": "{{filtered}} af {{count}} modeller"
+      },
+      "filters": {
+        "allProviders": "Alle udbydere",
+        "allConnections": "Alle forbindelser",
+        "searchPlaceholder": "Filtrer modeller…"
+      },
+      "discover": "Udforsk",
+      "addModel": "Tilføj model",
+      "deleteConfirm": "Fjern model \"{{id}}\"?",
+      "empty": {
+        "noModels": "Ingen modeller endnu. Tilføj en for at komme i gang.",
+        "noMatches": "Ingen modeller matcher de aktive filtre."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Udbyder",
+        "endpoint": "Endpoint",
+        "input": "Input $/1M",
+        "output": "Output $/1M",
+        "cache": "Cache $/1M",
+        "context": "Kontekststørrelse"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Klon",
+        "edit": "Rediger",
+        "remove": "Fjern"
+      },
+      "pagination": {
+        "previous": "← Forrige",
+        "next": "Næste →",
+        "pageOf": "Side {{page}} af {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} modeller)"
+      },
+      "health": {
+        "emptyNoModels": "Ingen modeller konfigureret.",
+        "emptyNoMatches": "Ingen modeller matcher filteret.",
+        "resetAll": "Nulstil alle",
+        "resetAllTitle": "Nulstil hver circuit breaker, afkølingstid og lockout",
+        "resetTitle": "Nulstil circuit breaker",
+        "confirmResetModel": "Nulstil circuit breakeren for model \"{{id}}\"?",
+        "confirmResetAll": "Nulstil al robusthedstilstand? Dette rydder hver circuit breaker, afkølingstid og lockout.",
+        "errors": {
+          "resetModelFailed": "Kunne ikke nulstille circuit breaker",
+          "resetAllFailed": "Kunne ikke nulstille robusthedstilstand"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Udbyder",
+          "status": "Status",
+          "circuit": "Circuit",
+          "errorRate": "Fejlrate (5 min)",
+          "p95Latency": "P95-svartid (1 time)",
+          "requests": "Forespørgsler (1 time)",
+          "lastSuccess": "Sidste succes",
+          "cooldownLockout": "Afkølingstid/lockout"
+        },
+        "status": {
+          "healthy": "Sund",
+          "degraded": "Forringet",
+          "unavailable": "Ikke tilgængelig",
+          "cooldown": "Afkølingstid",
+          "nodata": "Ingen data"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Genopretter",
+          "tripped": "Udløst"
+        },
+        "time": {
+          "never": "aldrig",
+          "now": "nu",
+          "secondsAgo": "{{count}}s siden",
+          "minutesAgo": "{{count}}m siden",
+          "hoursAgo": "{{count}}t siden",
+          "daysAgo": "{{count}}d siden",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "afkøling {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Eksperimenter",
+      "subtitle": "A/B-test routere mod hinanden",
+      "noPermission": "Du har ikke tilladelse til at se eksperimenter.",
+      "count": "{{count}} eksperiment",
+      "count_other": "{{count}} eksperimenter",
+      "newExperiment": "Nyt eksperiment",
+      "empty": "Ingen eksperimenter endnu. Opret et for at sammenligne routere direkte.",
+      "deleteConfirm": "Slet eksperiment \"{{name}}\"? Dette kan ikke fortrydes.",
+      "noToken": "Intet token",
+      "noTokenTitle": "Uden et token kan ingen klient nå dette eksperiment",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse eksperimenter",
+        "deleteFailed": "Kunne ikke slette eksperiment"
+      },
+      "columns": {
+        "name": "Navn",
+        "variants": "Varianter",
+        "rotation": "Rotation",
+        "created": "Oprettet"
+      },
+      "actions": {
+        "edit": "Rediger eksperiment",
+        "remove": "Slet"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Tilbage til eksperimenter",
+      "newExperiment": "Nyt eksperiment",
+      "loading": "Indlæser...",
+      "experimentId": "Eksperiment-ID:",
+      "disabledTabTitle": "Gem eksperimentet først for at låse denne fane op",
+      "errors": {
+        "notFound": "Eksperiment ikke fundet"
+      },
+      "tabs": {
+        "config": "Konfiguration",
+        "metrics": "Målinger",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Gemt.",
+      "created": "Eksperiment oprettet. Peg din klient mod dette token i stedet for et router-token. Det vises ikke igen.",
+      "copy": "Kopiér",
+      "copied": "Kopieret!",
+      "done": "Færdig",
+      "saving": "Gemmer...",
+      "create": "Opret eksperiment",
+      "save": "Gem ændringer",
+      "cancel": "Annuller",
+      "trafficSplit": "Trafikfordeling",
+      "errors": {
+        "loadRoutersFailed": "Kunne ikke indlæse routere",
+        "saveFailed": "Kunne ikke gemme eksperimentet",
+        "copyFailed": "Kopiering mislykkedes: marker og kopiér tokenet manuelt."
+      },
+      "fields": {
+        "name": "Navn",
+        "namePlaceholder": "Billig vs. premium routing",
+        "description": "Beskrivelse",
+        "optional": "(valgfrit)",
+        "descriptionPlaceholder": "Hvad denne test skal afklare",
+        "minSamples": "Minimum opkald pr. variant",
+        "minSamplesHint": "Under dette markerer fanen Målinger sammenligningen som endnu ikke afgørende.",
+        "rotation": "Rotation",
+        "stickyOn": "Sticky på",
+        "stickyKey": "Sticky-nøgle"
+      },
+      "variants": {
+        "title": "Varianter",
+        "desc": "Hver variant er en eksisterende router, taget som helhed: dens modeller, routing og barrierer gælder alle. En test kræver mindst to.",
+        "routerAriaLabel": "Variant {{index}} router",
+        "routerPlaceholder": "Vælg en router",
+        "labelAriaLabel": "Variant {{index}} label",
+        "labelPlaceholder": "Label (valgfrit)",
+        "weightAriaLabel": "Variant {{index}} vægt",
+        "weightPlaceholder": "Vægt",
+        "removeTitle": "Fjern variant {{index}}",
+        "add": "Tilføj variant"
+      },
+      "judge": {
+        "title": "Bedømmer",
+        "desc": "Valgfrit: en model læser hvert prøvetaget svar og bedømmer det 0-10 mod dine kriterier. Hvert bedømt opkald er et ekstra modelopkald, faktureret som ethvert andet.",
+        "enable": "Bedøm svar med en bedømmermodel",
+        "model": "Bedømmermodel",
+        "modelPlaceholder": "Vælg en model",
+        "criteria": "Kriterier",
+        "criteriaPlaceholder": "Én pr. linje, f.eks.\nBesvarer det stillede spørgsmål\nForbliver faktuel\nHolder sig til det ønskede format",
+        "sampleRate": "Andel af opkald bedømt (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Indlæser...",
+      "callsMeasured": "{{count}} opkald målt",
+      "callsMeasured_other": "{{count}} opkald målt",
+      "empty": "Ingen opkald i dette vindue endnu. Peg en klient mod eksperimenttokenet for at starte sammenligningen.",
+      "notConclusive": "Ikke afgørende endnu: hver variant kræver mindst {{minSamples}} opkald i dette vindue. ",
+      "explanation": "Den bedste værdi i hvert par fremhæves: billigere pr. opkald, hurtigere, højere bedømmerscore. Procentdelen under en værdi er dens afstand fra det bedste alternativ. Bedømmerscoren er et løbende gennemsnit over eksperimentets hele livstid, så det er den eneste værdi, vinduet ikke begrænser.",
+      "lowSample": "Lavt antal prøver",
+      "lowSampleTitle": "Under {{minSamples}} opkald i dette vindue",
+      "judgedCallsTitle": "{{count}} svar bedømt af bedømmeren siden eksperimentet startede",
+      "judgedCallsTitle_other": "{{count}} svar bedømt af bedømmeren siden eksperimentet startede",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse målinger"
+      },
+      "columns": {
+        "variant": "Variant",
+        "calls": "Opkald",
+        "share": "Andel",
+        "errors": "Fejl",
+        "tokens": "Tokens ind/ud",
+        "cost": "Omkostning",
+        "costPerCall": "Omkostning/opkald",
+        "avgLatency": "Gns. svartid",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Bedømmerscore"
+      }
+    },
+    "token": {
+      "desc": "En klient kalder eksperimentet nøjagtig som en router: samme base-URL, dette token i stedet for et router-token. Hver forespørgsel lander på én variant og faktureres til den variants router.",
+      "baseUrlLabel": "Base-URL til OpenAI- eller Anthropic-SDK'en, med et eksperimenttoken som API-nøgle:",
+      "created": "Token oprettet. Kopiér det nu, det vises ikke igen.",
+      "copy": "Kopiér",
+      "copied": "Kopieret!",
+      "newToken": "Nyt token",
+      "empty": "Ingen tokens på dette eksperiment. Opret et, så klienter kan kalde det.",
+      "revokeConfirm": "Tilbagekald token \"{{snippet}}...\"? Klienter, der bruger det, stopper med at fungere med det samme.",
+      "revokeTitle": "Tilbagekald token",
+      "errors": {
+        "createFailed": "Kunne ikke oprette tokenet",
+        "revokeFailed": "Kunne ikke tilbagekalde tokenet",
+        "copyFailed": "Kopiering mislykkedes: marker og kopiér tokenet manuelt."
+      },
+      "columns": {
+        "created": "Oprettet",
+        "lastUsed": "Sidst brugt"
+      }
+    }
+  },
+  "overview": {
+    "title": "Overblik",
+    "subtitle": "Forbrugsresumé og omkostningsfordeling",
+    "noPermission": "Ingen tilladelse til at se forbrugsdata.",
+    "costByModel": "Omkostning pr. model",
+    "noCostRecorded": "Ingen omkostning registreret i denne periode.",
+    "callsByModel": "Opkald pr. model",
+    "columns": {
+      "model": "Model",
+      "calls": "Opkald",
+      "errors": "Fejl",
+      "cost": "Omkostning"
+    },
+    "stats": {
+      "totalCalls": "Opkald i alt",
+      "callsBreakdown": "{{routing}} routing · {{completion}} completion",
+      "successRate": "Succesrate",
+      "ofAllRequests": "af alle forespørgsler",
+      "errors": "Fejl",
+      "failedRequests": "mislykkede forespørgsler",
+      "models": "Modeller",
+      "registered": "registreret",
+      "routers": "Routere",
+      "active": "aktive"
+    },
+    "connectCard": {
+      "title": "Tilslut en klient",
+      "desc": "Peg Claude Code, Codex, Cursor og {{count}} flere mod denne gateway."
+    }
+  },
+  "login": {
+    "emailLabel": "E-mail",
+    "passwordLabel": "Adgangskode",
+    "signIn": "Log ind",
+    "errors": {
+      "loginFailed": "Login mislykkedes",
+      "totpFailed": "2FA-verificering mislykkedes"
+    },
+    "totp": {
+      "title": "Tofaktorgodkendelse",
+      "backupPrompt": "Indtast en backupkode.",
+      "appPrompt": "Indtast den 6-cifrede kode fra din autentificeringsapp.",
+      "backupCodeLabel": "Backupkode",
+      "authenticatorCodeLabel": "Autentificeringskode",
+      "verify": "Bekræft",
+      "useAuthenticatorInstead": "Brug autentificeringsapp i stedet",
+      "useBackupInstead": "Brug en backupkode i stedet"
+    }
+  },
+  "setup": {
+    "welcome": "Velkommen! Lad os sætte dig op.",
+    "welcomeSubtitle": "Opret den første administratorkonto for at begynde at administrere Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly udvikler sig aktivt. Fejl kan forekomme.",
+    "betaFeedback": "Din feedback hjælper med at forme, hvad det bliver til —",
+    "betaLink": "rapporter problemer eller del idéer",
+    "emailLabel": "Administrator-e-mail",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Adgangskode",
+    "passwordPlaceholder": "Minimum 8 tegn",
+    "confirmLabel": "Bekræft adgangskode",
+    "confirmPlaceholder": "Genindtast adgangskode",
+    "submit": "Opret administratorkonto",
+    "errors": {
+      "mismatch": "Adgangskoderne stemmer ikke overens",
+      "tooShort": "Adgangskoden skal være mindst 8 tegn",
+      "setupFailed": "Opsætning mislykkedes"
+    }
+  },
+  "audit": {
+    "empty": "Ingen revisionsposter fundet.",
+    "errors": {
+      "loadFailed": "Kunne ikke indlæse revisionslog"
+    },
+    "filters": {
+      "period": "Periode",
+      "user": "Bruger",
+      "userPlaceholder": "E-mail eller bruger-ID",
+      "action": "Handling",
+      "actionPlaceholder": "f.eks. model:create",
+      "result": "Resultat",
+      "results": {
+        "all": "Alle",
+        "success": "Succes",
+        "forbidden": "Forbudt",
+        "error": "Fejl"
+      },
+      "refresh": "Opdater"
+    },
+    "columns": {
+      "timestamp": "Tidsstempel",
+      "user": "Bruger",
+      "action": "Handling",
+      "endpoint": "Endpoint",
+      "result": "Resultat",
+      "details": "Detaljer"
+    },
+    "pagination": {
+      "previous": "Forrige",
+      "next": "Næste",
+      "page": "Side {{page}} af {{totalPages}}",
+      "total": "({{count}} i alt)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Forbrug",
+      "live": "LIVE",
+      "subtitle": "Detaljerede opkaldslogs og fordeling pr. model",
+      "updatedAt": "· opdateret {{time}}",
+      "poll": {
+        "off": "Fra",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Deaktiver livetilstand",
+        "enable": "Aktiver livetilstand (opdater hvert 2. sekund)"
+      },
+      "refreshNow": "↻ Nu",
+      "refreshNowTitle": "Opdater nu",
+      "filters": {
+        "period": "Periode",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Kalder",
+        "type": "Type",
+        "status": "Status",
+        "allRouters": "Alle routere",
+        "allModels": "Alle modeller",
+        "allTokens": "Alle tokens",
+        "resetFilters": "Nulstil filtre",
+        "all": "Alle",
+        "success": "Succes",
+        "blocked": "Blokeret",
+        "error": "Fejl"
+      },
+      "caller": {
+        "all": "Alle",
+        "completion": "Completion",
+        "routing": "Router",
+        "guardrail": "Barriere",
+        "judge": "Bedømmer"
+      },
+      "callerBadge": {
+        "completion": "completion",
+        "routing": "router",
+        "guardrail": "barriere",
+        "judge": "bedømmer"
+      },
+      "errors": {
+        "loadFailedPrefix": "Kunne ikke indlæse forbrugsdata:",
+        "retry": "Prøv igen"
+      },
+      "stats": {
+        "totalCalls": "Opkald i alt",
+        "completionCalls": "Completion-opkald",
+        "routerCalls": "Router-opkald",
+        "guardrailCalls": "Barriere-opkald",
+        "blockedCalls": "Blokerede opkald",
+        "errors": "Fejl"
+      },
+      "table": {
+        "rank": "Rang",
+        "model": "Model",
+        "provider": "Udbyder",
+        "calls": "Opkald",
+        "errors": "Fejl",
+        "successRate": "Succesrate",
+        "avgLatency": "Gns. svartid",
+        "p95Latency": "P95-svartid",
+        "inputTokens": "Input-tokens",
+        "outputTokens": "Output-tokens",
+        "costPer1k": "Omkostning/1K",
+        "cost": "Omkostning (USD)",
+        "bestCostPerformance": "Bedste omkostning-ydelse"
+      },
+      "showMoreModels": "Vis {{count}} flere model",
+      "showMoreModels_other": "Vis {{count}} flere modeller",
+      "showFewerModels": "Vis færre modeller",
+      "recentCalls": {
+        "title": "Seneste opkald",
+        "empty": "Ingen forbrugsposter for denne periode.",
+        "columns": {
+          "time": "Tidspunkt",
+          "router": "Router",
+          "model": "Model",
+          "type": "Type",
+          "caller": "Kalder",
+          "in": "Ind",
+          "out": "Ud",
+          "cost": "Omkostning",
+          "latency": "Svartid",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Status"
+        }
+      },
+      "pagination": {
+        "previous": "Forrige",
+        "next": "Næste",
+        "pageOf": "Side {{page}} af {{totalPages}}",
+        "totalRecords": "({{count}} poster i alt)"
+      }
+    },
+    "record": {
+      "back": "Tilbage",
+      "title": "Opkaldsdetalje",
+      "notFoundTitle": "Post ikke fundet",
+      "notFoundBody": "Forbrugspost {{id}} kunne ikke indlæses.",
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse post"
+      },
+      "sections": {
+        "identity": "Identitet",
+        "tokensAndCost": "Tokens og omkostning",
+        "performanceAndOutcome": "Ydelse og udfald",
+        "traceLog": "Trace-log"
+      },
+      "fields": {
+        "recordId": "Post-ID",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Opkaldstype",
+        "requestType": "Forespørgselstype",
+        "inputTokens": "Input-tokens",
+        "outputTokens": "Output-tokens",
+        "totalTokens": "Tokens i alt",
+        "costUsd": "Omkostning (USD)",
+        "costUnknown": "Ukendt",
+        "latency": "Svartid",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Udfald",
+        "timestamp": "Tidsstempel",
+        "guardrailTriggered": "Barriere udløst",
+        "blockedBy": "Blokeret af",
+        "piiRedacted": "PII skjult"
+      },
+      "errorMessage": "Fejlmeddelelse",
+      "eventCount": "{{count}} hændelse",
+      "eventCount_other": "{{count}} hændelser",
+      "noTrace": "Ingen trace tilgængelig. Trace-data registreres kun for nye opkald."
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "subtitle": "Test modeller, sammenlign svar, og gem promptforudindstillinger.",
+    "mode": {
+      "single": "Enkelt",
+      "compare": "Sammenlign"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "samme som A",
+      "unknownToken": "Ukendt token"
+    },
+    "presets": {
+      "button": "Forudindstillinger",
+      "panelTitle": "Forudindstillinger",
+      "saveCurrent": "Gem nuværende",
+      "namePlaceholder": "Forudindstillingens navn...",
+      "save": "Gem",
+      "empty": "Ingen forudindstillinger endnu.",
+      "delete": "Slet forudindstilling"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming ikke tilgængelig",
+      "bannerBody": "denne router har en svarblokerende barriere aktiv. Routerly skal inspicere hele svaret før levering, så svar ankommer alle på én gang.",
+      "tooltip": "Streaming er ikke tilgængelig: en svarblokerende barriere kræver, at hele svaret inspiceres før levering.",
+      "ariaLabel": "Streaming ikke tilgængelig"
+    },
+    "systemPrompt": "Systemprompt",
+    "model": "Model",
+    "modelPlaceholder": "Auto (router-standard)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Maks. tokens",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Ryd",
+    "empty": {
+      "noMessages": "Ingen beskeder endnu.",
+      "enterToken": "Indtast et router-token ovenfor for at starte."
+    },
+    "reasoning": "Ræsonnement",
+    "blockedDefault": "Denne besked blev blokeret af en barriere.",
+    "truncated": "Afkortet — svar afskåret af maks. tokens",
+    "bufferedNote": "Tilbageholdt til sikkerhedsgennemgang",
+    "errors": {
+      "onlyImages": "Kun billedvedhæftninger understøttes."
+    },
+    "rawToggle": {
+      "rendered": "gengivet",
+      "raw": "rå"
+    },
+    "inputPlaceholder": "Skriv en besked...",
+    "attachImage": "Vedhæft billede",
+    "attachedImageAlt": "Vedhæftet",
+    "attachmentAlt": "Vedhæftning",
+    "debug": {
+      "title": "Fejlfinding",
+      "clear": "Ryd",
+      "hide": "Skjul fejlfinding",
+      "show": "Vis fejlfinding",
+      "empty": "Ingen fejlfindingsdata endnu.",
+      "emptyHint": "Send en besked for at se routingdetaljer.",
+      "turnTraceLog": "Tur #{{turn}} trace-log"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Vælg model...",
+      "noMessages": "Ingen beskeder endnu.",
+      "debugTurns": "Fejlfinding ({{count}} tur)",
+      "debugTurns_other": "Fejlfinding ({{count}} ture)",
+      "guardrailTokensTitle": "Barriere-bedømmer-tokens",
+      "stop": "Stop",
+      "inputPlaceholder": "Send den samme besked til begge modeller..."
+    }
+  },
+  "help": {
+    "title": "Hjælp og support",
+    "subtitle": "Vi er her for at hjælpe — find svar eller kontakt os når som helst.",
+    "docs": {
+      "title": "Dokumentation",
+      "subtitle": "Guides, API-reference og konfigurationsdokumenter",
+      "body": "Den officielle dokumentation dækker alt fra at komme i gang til avancerede routingpolitikker, udbyderopsætning, budgetter og den fulde API-reference.",
+      "openLink": "Åbn dokumentation"
+    },
+    "issues": {
+      "title": "Rapporter en fejl eller foreslå en funktion",
+      "subtitle": "Opret en GitHub-issue — det tager 2 minutter",
+      "body": "GitHub-issues er den bedste måde at rapportere fejl eller foreslå forbedringer. For at hjælpe os med at rette tingene hurtigere, inkluder: hvad du gjorde, hvad du forventede skulle ske, og hvad der faktisk skete.",
+      "showTemplate": "Vis issue-skabelon",
+      "reportBug": "Rapporter en fejl",
+      "requestFeature": "Anmod om en funktion"
+    },
+    "issueTemplate": {
+      "whatHappened": "Hvad skete der?",
+      "whatHappenedHint": "Beskriv problemet med almindelige ord",
+      "stepsToReproduce": "Trin til at genskabe",
+      "expectedBehaviour": "Forventet adfærd",
+      "expectedBehaviourHint": "Hvad du forventede at se",
+      "version": "Routerly-version",
+      "versionHint": "Kør `routerly --version` eller se Indstillinger → Om"
+    },
+    "email": {
+      "title": "Kontakt support",
+      "subtitle": "Vi læser hver besked og svarer, så hurtigt vi kan",
+      "body": "For alt, der ikke passer til en GitHub-issue — faktureringsspørgsmål, private bekymringer, eller hvis du bare vil sige hej — skriv til os."
+    },
+    "faq": {
+      "title": "Ofte stillede spørgsmål",
+      "subtitle": "Hurtige svar på de mest almindelige spørgsmål",
+      "items": {
+        "connect": {
+          "q": "Hvordan tilslutter jeg min app til Routerly?",
+          "a": "Peg din OpenAI- eller Anthropic-SDK mod din Routerly-instans. Erstat base-URL'en med http://din-vært:3000/v1 (OpenAI-kompatibel) eller http://din-vært:3000/anthropic (Anthropic-kompatibel), og brug derefter et router-token som API-nøgle. Det er alt — ingen andre ændringer nødvendige."
+        },
+        "openaiCompat": {
+          "q": "Er Routerly kompatibel med værktøjer, der bruger OpenAI SDK?",
+          "a": "Ja. Routerly er en drop-in-erstatning: ethvert værktøj, der understøtter en brugerdefineret base-URL og API-nøgle (LangChain, LlamaIndex, Cursor, Continue osv.), fungerer direkte. For Anthropic-format-klienter, brug endpointet /anthropic i stedet."
+        },
+        "routing": {
+          "q": "Hvordan fungerer modelrouting?",
+          "a": "Hver router har en routingpolitik, der bestemmer, hvilken model der modtager en forespørgsel. Politikker inkluderer round-robin, lavest omkostning, hurtigste svar, fallback-kæder med mere. Du konfigurerer dem pr. router under Routere → Routing."
+        },
+        "addModel": {
+          "q": "Hvordan tilføjer jeg en ny AI-model?",
+          "a": "Gå til Modeller → Tilføj model. Du kan tilføje enhver OpenAI-kompatibel udbyder (Ollama, LM Studio, brugerdefinerede endpoints) eller et nativt Anthropic-endpoint. Udfyld base-URL, API-nøgle og model-ID — Routerly klarer resten."
+        },
+        "dataStored": {
+          "q": "Lagres mine data? Logges mine prompts?",
+          "a": "Routerly er selv-hostet og lagrer kun data på din egen maskine (i ~/.routerly/ som standard). Prompts og svar sendes aldrig nogen steder af Routerly. Forespørgselslogs lagres lokalt og kun, hvis du aktiverer dem pr. router."
+        },
+        "routerToken": {
+          "q": "Hvad er et router-token, og hvordan er det forskelligt fra en udbyder-API-nøgle?",
+          "a": "Et router-token er en legitimationsoplysning, du giver til din app eller teammedlemmer for at godkende med Routerly. Det er separat fra dine udbyder-API-nøgler, som Routerly gemmer sikkert på serversiden. Dine apps ser aldrig de rigtige udbydernøgler."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} bruger",
+    "countLabel_other": "{{count}} brugere",
+    "addButton": "Tilføj bruger",
+    "columns": {
+      "email": "E-mail",
+      "role": "Rolle",
+      "routers": "Routere"
+    },
+    "allRouters": "Alle",
+    "resetTwoFaTitle": "Nulstil 2FA",
+    "resetTwoFaConfirm": "Nulstil 2FA for {{email}}? De skal tilmelde sig igen.",
+    "deleteConfirm": "Slet denne bruger?",
+    "emptyTitle": "Ingen brugere endnu.",
+    "noPermission": "Du har ikke tilladelse til at se brugere.",
+    "modal": {
+      "title": "Tilføj bruger",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "bruger@example.com",
+      "passwordLabel": "Adgangskode",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rolle",
+      "roleAdmin": "Admin",
+      "roleViewer": "Læser",
+      "cancelButton": "Annuller",
+      "submitButton": "Tilføj bruger"
+    },
+    "errors": {
+      "loadFailed": "Kunne ikke indlæse brugere",
+      "addFailed": "Fejl"
+    }
+  },
+  "userEdit": {
+    "title": "Rediger bruger",
+    "account": "Konto",
+    "email": "E-mail",
+    "role": "Rolle",
+    "changePassword": "Skift adgangskode",
+    "newPassword": "Ny adgangskode",
+    "newPasswordHint": "(lad stå tomt for at bevare nuværende)",
+    "save": "Gem",
+    "saved": "Gemt!",
+    "errors": {
+      "loadFailed": "Kunne ikke indlæse bruger",
+      "saveFailed": "Kunne ikke gemme"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Administrer roller og tilladelser. Indbyggede roller kan ikke ændres.",
+    "newRole": "Ny rolle",
+    "builtin": "indbygget",
+    "edit": "Rediger",
+    "deleteConfirm": "Slet denne rolle? Brugere med denne rolle påvirkes.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "f.eks. operator",
+      "name": "Navn",
+      "namePlaceholder": "Rollenavn",
+      "permissions": "Tilladelser",
+      "create": "Opret",
+      "save": "Gem",
+      "cancel": "Annuller"
+    },
+    "permissions": {
+      "routerRead": "Routere – Læs",
+      "routerWrite": "Routere – Skriv",
+      "modelRead": "Modeller – Læs",
+      "modelWrite": "Modeller – Skriv",
+      "userRead": "Brugere – Læs",
+      "userWrite": "Brugere – Skriv",
+      "reportRead": "Rapporter – Læs",
+      "settingsRead": "Indstillinger – Læs",
+      "settingsWrite": "Indstillinger – Skriv",
+      "notificationWrite": "Notifikationer – Skriv",
+      "tokenRead": "Tokens – Læs",
+      "tokenWrite": "Tokens – Skriv",
+      "roleWrite": "Roller – Skriv",
+      "auditRead": "Revisionslog – Læs",
+      "modulesRead": "Moduler – Læs",
+      "modulesManage": "Moduler – Administrer",
+      "connectionsRead": "Forbindelser – Læs",
+      "connectionsManage": "Forbindelser – Administrer",
+      "resilienceRead": "Robusthed – Læs",
+      "resilienceManage": "Robusthed – Administrer",
+      "profilesRead": "Routingprofiler – Læs",
+      "profilesManage": "Routingprofiler – Administrer",
+      "optimizersRead": "Optimeringer – Læs",
+      "optimizersManage": "Optimeringer – Administrer",
+      "experimentsRead": "Eksperimenter – Læs",
+      "experimentsManage": "Eksperimenter – Administrer"
+    },
+    "errors": {
+      "loadFailed": "Kunne ikke indlæse roller",
+      "updateFailed": "Kunne ikke opdatere rolle",
+      "createFailed": "Kunne ikke oprette rolle",
+      "deleteFailed": "Kunne ikke slette rolle"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profiler",
+      "subtitle": "Genbrugelige routing-, optimerings- og sikkerhedskonfigurationer",
+      "noPermission": "Du har ikke tilladelse til at se profiler.",
+      "newProfile": "Ny {{kind}}-profil",
+      "empty": "Ingen {{kind}}-profiler endnu.",
+      "builtin": "Indbygget",
+      "custom": "Brugerdefineret",
+      "view": "Vis",
+      "edit": "Rediger",
+      "clone": "Klon",
+      "delete": "Slet",
+      "deleteConfirm": "Slet profil \"{{label}}\"? Dette kan ikke fortrydes.",
+      "kindDescriptions": {
+        "routing": "Hvilken model besvarer en forespørgsel, og hvad sker der, når den ikke kan",
+        "optimizer": "Hvad der fjernes fra en prompt, før den sendes",
+        "security": "Barrierer og PII-politikker anvendt på trafik"
+      },
+      "columns": {
+        "label": "Label",
+        "type": "Type",
+        "configuration": "Konfiguration",
+        "version": "Version"
+      },
+      "errors": {
+        "loadFailed": "Kunne ikke indlæse profiler",
+        "deleteFailed": "Kunne ikke slette profil"
+      }
+    },
+    "form": {
+      "backToProfiles": "Tilbage til profiler",
+      "newProfileTitle": "Ny {{kind}}-profil",
+      "editProfileTitle": "Rediger {{label}}",
+      "builtinHint": "Indbyggede profiler kan ikke redigeres. Klon en for at tilpasse den.",
+      "assignHint": "{{article}} {{kind}}-profil kan tildeles til et vilkårligt antal routere.",
+      "noPermission": "Du har ikke tilladelse til at se profiler.",
+      "label": "Label",
+      "optimizers": "Optimeringer",
+      "optimizersHint": "Træk for at omarrangere, slå til/fra for at aktivere. De køres i rækkefølge fra top til bund.",
+      "createProfile": "Opret profil",
+      "saveProfile": "Gem profil",
+      "cancel": "Annuller",
+      "copySuffix": "{{label}} kopi",
+      "labelPlaceholders": {
+        "routing": "f.eks. Min balancerede routing",
+        "optimizer": "f.eks. Min prompt-beskærer",
+        "security": "f.eks. Mine strikse barrierer"
+      },
+      "errors": {
+        "notFound": "Profil ikke fundet.",
+        "loadFailed": "Kunne ikke indlæse profil",
+        "saveFailed": "Kunne ikke gemme profil"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Tilbage til Tilslut",
+    "title": "Tilslut",
+    "docs": "Dokumentation",
+    "notEnabledPrefix": "Klientkonfigurator er ikke aktiveret. Bed en administrator om at aktivere den med",
+    "noClientPrefix": "Ingen klient ved navn",
+    "errors": {
+      "loadFailed": "Kunne ikke indlæse klienter: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Hurtigst: én kommando",
+      "description": "Kør den på maskinen, hvor {{client}} er installeret. Den skriver {{configPath}} og bevarer en backup, du kan fortryde."
+    },
+    "byHand": {
+      "titleAlt": "Eller sæt det op manuelt",
+      "titleUi": "Sæt det op manuelt",
+      "titleConfigFile": "Opsæt konfigurationsfilen",
+      "setValuesIn": "Angiv disse værdier i {{configPath}}.",
+      "putThisIn": "Sæt dette ind i",
+      "replaceToken": "Erstat",
+      "withRouterToken": "med et router-token:",
+      "createOne": "opret et",
+      "onRoutersPage": "på siden Routere.",
+      "modelLabel": "Model:",
+      "modelHint": "lader Routerly vælge, ethvert model-id fra",
+      "modelsLink": "Modeller",
+      "worksToo": "fungerer også.",
+      "openaiCompatHint": "Den samme base-URL, nøgle og model passer til enhver klient, der tilbyder en \"OpenAI-kompatibel\" udbyder."
+    },
+    "mcp": {
+      "title": "MCP-server",
+      "description": "Separat fra trinnene ovenfor: dette lader {{client}} kalde Routerlys værktøjer. Det kræver et personligt MCP-token, oprettet med",
+      "orFromYour": "eller fra din",
+      "profileLink": "profil"
+    },
+    "checkItWorked": {
+      "title": "Kontroller, at det virkede",
+      "restart": "Genstart {{client}}, send en prompt, og se derefter efter opkaldet i",
+      "usageLink": "Forbrug",
+      "cliReports": "Fra den samme maskine rapporterer CLI'en, hvad den finder:"
+    }
+  },
+  "connect": {
+    "title": "Tilslut",
+    "subtitle": "Peg en AI-kodningsklient mod denne gateway. Vælg en klient for dens opsætningstrin.",
+    "llmLabel": "LLM",
+    "llmDescription": "routerer den klients modeltrafik gennem Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "indlæser Routerly som en værktøjsserver inde i den.",
+    "notEnabledPrefix": "Klientkonfigurator er ikke aktiveret. Bed en administrator om at aktivere den med",
+    "errors": {
+      "loadFailed": "Kunne ikke indlæse klienter: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Én kommando",
+      "hint": "CLI'en skriver konfigurationsfilen for dig, med en backup du kan fortryde."
+    },
+    "byHand": {
+      "title": "Manuelt",
+      "hint": "Kopiér udsnittet fra klientsiden ind i dens indstillinger, og genstart den derefter."
+    },
+    "endpoint": {
+      "title": "Peg enhver klient herhen",
+      "description": "Alt bygget på OpenAI- eller Anthropic-SDK'en fungerer ved at ændre base-URL'en og nøglen. Intet andet ændres: forespørgsler og svar går gennem Routerly som de er.",
+      "openaiBaseUrl": "OpenAI base-URL",
+      "anthropicBaseUrl": "Anthropic base-URL",
+      "apiKey": "API-nøgle",
+      "model": "Model",
+      "apiKeyDescription": "Et router-token, sendt som",
+      "or": "eller",
+      "createOne": "Opret et",
+      "onRoutersPage": "på siden Routere.",
+      "modelDescription": "lader Routerly vælge. Ethvert model-id fra",
+      "modelsLink": "Modeller",
+      "worksToo": "siden fungerer også."
+    }
+  }
+}

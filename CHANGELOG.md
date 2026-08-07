@@ -16,8 +16,11 @@ the change itself — never reconstructed after the fact. See
 **Router, Orchestrator, and Passthrough kinds**
 Projects are now Routers throughout the management API, CLI, dashboard, configuration, and usage records. A Router can be a standard model router, an Orchestrator that selects among candidate Routers with weights and optional per-candidate limits, or a Passthrough Router that forwards requests unchanged with the client's upstream credential.
 
-**Dashboard localization (English, Spanish, Arabic)**
-The dashboard now ships with English, Spanish, and Arabic catalogs, selectable per-account from Profile → Preferences and persisted server-side. RTL layout is supported for Arabic. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
+**Dashboard localization (41 languages)**
+The dashboard now ships with 41 language catalogs (English plus 40 more, including Arabic, Hebrew, and Urdu with RTL layout), selectable per-account from a quick-access selector in the sidebar or from Profile → Preferences, and persisted server-side. Administrators can set an instance-wide default language (Settings → General → Internationalization, `defaultLanguage` in the management API, `routerly service configure --default-language`) used for any user who hasn't picked their own yet — the resolution order is personal choice, then browser locale, then the instance default, then English. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
+
+**Routers list grouped by kind**
+The Routers list now has tabs (All / Router / Orchestrator / Passthrough) filtering by `RouterKind`, with a count badge per tab.
 
 ### Bug fixes
 

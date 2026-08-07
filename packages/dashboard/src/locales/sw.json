@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Otomatiki",
+      "dark": "Giza",
+      "light": "Mwanga"
+    },
+    "themeCycle": {
+      "title": "Mandhari: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Panua upau wa pembeni",
+      "collapse": "Kunja upau wa pembeni"
+    },
+    "tagline": "Njia moja. Modeli yoyote ya AI. Udhibiti kamili.",
+    "nav": {
+      "overview": "Muhtasari",
+      "providers": "Watoa huduma",
+      "models": "Modeli",
+      "profiles": "Wasifu",
+      "routers": "Njia",
+      "experiments": "Majaribio",
+      "usage": "Matumizi",
+      "playground": "Uwanja wa michezo",
+      "settings": "Mipangilio",
+      "connectApp": "Unganisha programu",
+      "help": "Msaada",
+      "signOut": "Ondoka"
+    },
+    "banner": {
+      "permissionWarning": "Faili kadhaa za usanidi zina upatikanaji wasiokidhi haraka ({{files}}). Kuanzishwa na maombi bado vinafanya kazi, lakini kurekebisha hili kutoka kwa mfumo wa huduma wakati uwezeshaji unafaa.",
+      "dismiss": "Ondoa",
+      "updateAvailable": "Routerly v{{latest}} inapatikana. Uko kwenye v{{current}}.",
+      "updateLink": "Sasisha katika Mipangilio",
+      "mfaRequired": "Uthibitishaji wa sababu mbili unakusudiwa kwa hali hii.",
+      "mfaLink": "Weka 2FA katika Wasifu wako",
+      "mfaSuffix": "kulinganisha akaunti yako.",
+      "telemetryTitle": "Routerly kamwe haitumii data kiotomatiki.",
+      "telemetryBody": "Je, ungependa kusaidia kwa kutuma vipimo vya kusakinisha bila jina? Tu aina ya tukio, toleo, jukumu, na kitambulisho bila jina — hakuna data ya kibinafsi, hakuna IP.",
+      "telemetryLink": "Nini kinachochukuliwa?",
+      "telemetryYes": "Ndiyo, nisaidie",
+      "telemetryNo": "Hapana shukrani"
+    },
+    "language": {
+      "label": "Lugha"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "Sekunde {{count}} iliyopita",
+      "secondsAgo_other": "Sekunde {{count}} zilizopita",
+      "minutesAgo": "Dakika {{count}} iliyopita",
+      "minutesAgo_other": "Dakika {{count}} zilizopita",
+      "hoursAgo": "Saa {{count}} iliyopita",
+      "hoursAgo_other": "Saa {{count}} zilizopita",
+      "daysAgo": "Siku {{count}} iliyopita",
+      "daysAgo_other": "Siku {{count}} zilizopita"
+    },
+    "confirm": "Thibitisha",
+    "cancel": "Ghairi",
+    "remove": "Ondoa",
+    "select": "Chagua...",
+    "search": "Tafuta...",
+    "noResults": "Hakuna matokeo",
+    "noRemainingOptions": "Hakuna chaguo linaloenbaki",
+    "apply": "Tekeleza",
+    "saved": "Kutunzwa",
+    "showLess": "Onyesha chache",
+    "roles": "Majukumu",
+    "permissions": "Ruhusa",
+    "notifications": {
+      "title": "Arifa",
+      "markAllRead": "Alika zote kuwa zimesomwa",
+      "empty": "Hakuna arifa",
+      "viewAll": "Angalia arifa zote"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Chagua kipindi",
+      "recent": "Hivi karibuni",
+      "ranges": "Masafa",
+      "from": "Kutoka",
+      "to": "Kwenda"
+    },
+    "permissionGuard": {
+      "fixFailed": "Kushindwa kurekebisha ruhusa",
+      "title": "Ruhusa z'faili zisizo salama",
+      "defaultMessage": "Faili kadhaa zina ruhusa zisizo salama.",
+      "fixing": "Inakokurekebisha…",
+      "fixNow": "Rekebisha sasa"
+    },
+    "limitRows": {
+      "noLimits": "Hakuna vikomo viliyowekwa.",
+      "metricLabel": "Kiashiria",
+      "typeLabel": "Aina",
+      "periodLabel": "Kipindi",
+      "everyLabel": "Kila",
+      "maxCost": "Kiasi cha juu cha gharama",
+      "maxCount": "Idadi ya juu",
+      "maxTokens": "Tokens ya juu",
+      "allCombosSet": "Mchanganuo wote wa kipimo/kipindi wamewekwa tayari",
+      "addLimit": "Ongeza kiwango",
+      "metric": {
+        "cost": "Gharama",
+        "calls": "Simu",
+        "input_tokens": "Tokens za ingizo",
+        "output_tokens": "Tokens za pato",
+        "total_tokens": "Tokens kwa jumla"
+      },
+      "period": {
+        "hourly": "Kila saa",
+        "daily": "Kila siku",
+        "weekly": "Kila wiki",
+        "monthly": "Kila mwezi",
+        "yearly": "Kila mwaka"
+      },
+      "rollingUnit": {
+        "second": "sekunde",
+        "minute": "dakika",
+        "hour": "saa",
+        "day": "siku",
+        "week": "wiki",
+        "month": "mwezi"
+      },
+      "windowType": {
+        "period": "Kipindi",
+        "rolling": "Inayozunguka"
+      },
+      "fmt": {
+        "requests": "Maombi {{value}}",
+        "inputTokens": "Tokens za ingizo {{value}}",
+        "outputTokens": "Tokens za pato {{value}}",
+        "totalTokens": "Tokens kwa jumla {{value}}",
+        "everyRolling": "{{metric}} kila {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} kwa {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Kile ambacho njia iliyookoa",
+      "input": "Ingizo",
+      "output": "Pato",
+      "actual": "Halisi",
+      "clientCalls": "Simu ya mteja {{count}}",
+      "clientCalls_other": "Simu za mteja {{count}}",
+      "comparedAgainst": ", ikilinganishwa na kuutuma kwa kila moja ya",
+      "comparedAgainst_other": ", ikilinganishwa na kuziutuma kwa kila moja ya",
+      "paidModelsInPlay": "Modeli iliyolipwa {{count}} katika mchezo",
+      "paidModelsInPlay_other": "Modeli {{count}} zilizolipwa katika mchezo",
+      "metricCost": "Gharama",
+      "metricTokens": "Tokens",
+      "totalCost": "Gharama ya jumla",
+      "routed": "Njia: {{value}}",
+      "saved": "Kutunzwa: {{value}}",
+      "usdThisPeriod": "USD katika kipindi hiki",
+      "savedVsAlways": "{{value}} kutunzwa ({{percent}}%) dhidi ya kuwa na {{model}} daima",
+      "tokens": "Tokens",
+      "in": "Ndani: {{value}}",
+      "out": "Nje: {{value}}",
+      "tokenSubWithCache": "{{in}} ndani · {{out}} nje · {{cached}} katika kache",
+      "tokenSub": "{{in}} ndani · {{out}} nje",
+      "cutByOptimizers": "{{value}} lilikatwa na waboreshaji",
+      "fewerThanAlways": "{{value}} chache kuliko kuwa na {{model}} daima, iliyokadiriwa"
+    },
+    "optimizerSteps": {
+      "downloaded": "Ilijifunzwa",
+      "thisStepRunsOn": "Hatua hii inaendesha kwenye",
+      "defaultCheckpoint": "Sehemu ya kawaida ya kuhusu"
+    },
+    "routingPolicies": {
+      "title": "Sera za Njia",
+      "subtitle": "Sera huamua jinsi maombi yanarutiwa. Zinatekelezwa kwa mpangilio kutoka juu hadi chini.",
+      "removePolicy": "Ondoa sera",
+      "removeIntent": "Ondoa mujibu",
+      "removeExample": "Ondoa mfano",
+      "routingModels": "Modeli za Njia",
+      "embeddingModels": "Modeli za Kuingiza",
+      "maxCompletionTokens": "Tokens ya kamatafu ya juu",
+      "maxPromptChars": "Herufi za onyo za juu",
+      "similarityThreshold": "Kizingiti cha kufanana",
+      "previousMessages": "Ujumbe uliotangulia",
+      "intents": "Mujibu",
+      "confidenceThreshold": "Kizingiti cha imani",
+      "ambiguityMargin": "Chini ya utata",
+      "maxCallsPerWindow": "Simu za juu kwa dirisha",
+      "addFallbackModel": "Ongeza Modeli ya Kubadilisha",
+      "autoRoutingLabel": "Njia Otomatiki",
+      "autoRoutingHint": "Ikiwa inawezekana, trafiki inasambazwa bila onyo za kawaida. Ikiwa haipatikani, unaweza kuandika onyo mahususi akiambia AI wakati wa kuchagua kila modeli ya lengwa.",
+      "additionalPromptInfoLabel": "Taarifa ya Onyo Jamii",
+      "additionalPromptInfoPlaceholder": "Maelezo ya ziada kufunga katika onyo la njia...",
+      "addExamplePlaceholder": "Ongeza mfano na bofya Enter…",
+      "addIntentPlaceholder": "Ongeza mujibu na bofya Enter…",
+      "addPolicyPlaceholder": "Ongeza sera...",
+      "labels": {
+        "llm": "Sera ya Njia ya AI",
+        "rate-limit": "Sera ya Kikomo cha Kiwango",
+        "budget-remaining": "Sera ya Bajeti Iliyoenbaki",
+        "semantic-intent": "Sera ya Mujibu wa Maana",
+        "health": "Sera ya Afya",
+        "context": "Sera ya Muktadha",
+        "capability": "Sera ya Uwezo",
+        "performance": "Sera ya Utendaji",
+        "fairness": "Sera ya Haki",
+        "cheapest": "Sera ya Ngumu Kabisa",
+        "model-preference": "Sera ya Upendeleo wa Modeli"
+      },
+      "descriptions": {
+        "context": "Weka alama ya modeli kulingana na dirisha la muktadha linalodumu. Gawia 0 kwa modeli ambayo dirisha la muktadha ni ndogo kuliko urefu wa onyo uliotarajiwa, kuzuia hitilafu za kughairi.",
+        "cheapest": "Weka alama ya modeli kinyume cha kiasi na gharama yao ya token. Modeli ngumu kabisa inapata 1.0, ya gharama kuu inapata 0.0, kusaidia kupunguza matumizi ya API katika maombi.",
+        "health": "Weka alama ya modeli kulingana na kiwango cha hitilafu hivi karibuni kwa kutumia kupoa kwa kufanana (hitilafu za karibuni zina uzani zaidi). Inakubali kizingiti cha uzani ambacho weka alama kuwa 0 wakati kiwango cha hitilafu kizani kinaozidi kizingiti cha muhimu.",
+        "performance": "Weka alama ya modeli kulingana na kama wastani wa karibuni kwa kutumia kupoa kwa kufanana. Modeli ya kasi zaidi inapata 1.0, ya karibuni inapata 0.0. Modeli bila data ya karibuni chagua kwenye 1.0 kwa kawaida.",
+        "llm": "Tumia modeli ya AI kuwa cheo ya wagombea kulingana na muktadha wa maana wa ombi. Anagumza onyo la kuongoza njia kwa kila modeli na inazingatiwa hadhi ya bajeti wakati vikomo vimesanidiwa.",
+        "capability": "Chuja kwa ngumu: gawia 0 kwa modeli ambayo kwa wazi haina sifa inayohitajika na onbi (macho, kuitana kazi, modi ya JSON). Modeli bila saini wazi ya uwezo hazina jali.",
+        "rate-limit": "Vimiza modeli na kiwango cha juu cha simu za karibuni kupunguza hatari ya kufikia vikomo vya mtoa huduma kiwango (HTTP 429). Anagumza kizingiti cha ngumu ambacho kulazimisha alama kuwa 0.",
+        "fairness": "Sambaza trafiki kwa kulingana kwa kuzuia modeli ambayo zilikubaliana na simu nyingi za kunyimwa hivi karibuni. Inafanya kama kitanzi kidogo cha mzunguko kupinga mzigo wa kukazana kwenye modeli moja.",
+        "budget-remaining": "Weka alama ya modeli kulingana na hadhi ya bajeti iliyoenbaki katika vikomo vyote vimesanidiwa. Upendelee modeli na chumba zaidi kabla ya kizingiti chao kufa, kusambaza matumizi kwa matangazo.",
+        "semantic-intent": "Kigawa ombi kwa mujibu wa maana kwa kutumia kuingiza, kisha kuzuia anwani ya wagombea kwa modeli waliosema mujibu huo. Mamilano ya imani kuwa mgeuza ng'ombe-patu orodha; mamilano makali ya mkutano wa juu 2 omiato; maombi yasiyojulikana kupita wagombea wote kupitia.",
+        "model-preference": "Wakati mteja anaomba modeli mahususi (sio routerly/ada), gawia alama ya ziada kwa modeli hiyo. Wakati hakuna upendeleo unayotaka, sera hayana. Msimamo katika orodha udhibiti kiasi cha upendeleo inayazani dhidi ya sera nyingine."
+      },
+      "selectModel": "Chagua modeli"
+    },
+    "securityRules": {
+      "applyTo": "Tekeleza kwa",
+      "streamingBufferSize": "Ukubwa wa kache ya uenezaji (herufi)",
+      "entityTypes": "Aina za ujumbe",
+      "target": "Lengwa",
+      "embeddingModel": "Modeli ya kuingiza",
+      "judgeModel": "Modeli ya wadhamini",
+      "contentGuardrails": "Ngati za Maudhui",
+      "piiPolicies": "Sera za PII",
+      "addSecurityPolicyPlaceholder": "Ongeza sera ya usalama...",
+      "removePolicyTooltip": "Ondoa sera",
+      "deleteRuleAriaLabel": "Futa kanuni",
+      "embeddingModelPlaceholder": "Chagua modeli ya kuingiza...",
+      "fallbackModelsLabel": "Modeli za kubadilisha (wa utakata, jaribio kwa mpangilio)",
+      "fallbackModelsPlaceholder": "Hakuna modeli za kubadilisha...",
+      "exampleTextsLabel": "Maandishi ya mfano ya kuzuia (moja kwa kila mstari)",
+      "exampleTextsPlaceholder": "Jinsi gani ya kuingia...\\n...",
+      "similarityThresholdLabel": "Kizingiti cha kufanana:",
+      "judgeModelPlaceholder": "Chagua modeli ya wadhamini...",
+      "allowedTopicsLabel": "Mada inayoruhusiwa (lugha ya asili)",
+      "allowedTopicsPlaceholder": "Msaada wa mteja kwa bidhaa za programu. Kubaini tatizo la kiufundi. Maswali kuhusu malipo.",
+      "onTopicThresholdLabel": "Zui kama alama ya au-mada chini ya:",
+      "harmThresholdLabel": "Zui kama alama ya madhara juu ya:",
+      "customInstructionsLabel": "Maelezo ya kawaida",
+      "customInstructionsPlaceholder": "Wewe ni mganiziaji wa usalama wa maudhui. Tathmini maandishi yafuatayo kwa sababu ya maudhui yasiyosalama.\\nKategoria: maneno ya chuki, jeuri, maudhui ya kingono, udhulumifu wa binafsi.\\nJibu KAMA KUWA na kitu tu cha JSON: {\\\"score\\\": <namba kati ya 0 na 1>}",
+      "customInstructionsRequired": "Maelezo ya kawaida yanakusudiwa.",
+      "enabledLabel": "Inatumiwa",
+      "contentGuardrailsHint": "Kaguza maombi na majibu dhidi ya sera iliyosanidiwa. Viasishwa wakati sera angalau moja imesanidiwa.",
+      "securityPoliciesHeading": "Sera za Usalama",
+      "noSecurityPolicies": "Hakuna sera za usalama zilizosanidiwa.",
+      "piiPoliciesHint": "Hisi na kuanisha data ya binafsi. Kila sera inatushia ingizo la maombi, jibu la modeli, au zote mbili, na udhibiti seti yake mwenyewe ya ujumbe.",
+      "noPiiPolicies": "Hakuna sera za PII zilizosanidiwa.",
+      "addPolicyButton": "+ Ongeza Sera",
+      "injectionWarningTitle": "Mzigo wa ombi ulibadilishwa na kuingiza",
+      "injectionWarningBody": "Sera moja au zaidi kuingiza onyo yao kwa onyo ya mfumo wa ombi linalotoka, kwa sababu mzigo unaotumwa kwa mtoa huduma ulibadilishwa. Hakuna simu ya modeli ya ziada nayo hakuna kitu kinachozuiliwa; modeli inayohudhimia inajihimiza onyo.",
+      "streamingDisabledWarningTitle": "Uenezaji umezuiliwa kwa njia hii",
+      "streamingDisabledWarningBody": "Sera moja au zaidi husanidiwa kuzuia majibu (lengwa: jibu au zote mbili). Kwa sababu jibu lote lazima likaguziwe kabla ya uamuzi wa kuzuia inaweza kutengenezwa, Routerly inahifadhi jibu kwa ujumla kabla ya kurudi kwa mteja. Uenezaji hauwezekani habari rauni nzuri-ya-kuharakati-niaba-kuzuia; wateja watapata jibu kwa ujumla badala ya katika sehemu chache."
+    },
+    "connectionFields": {
+      "azureResourceName": "Jina la Rasilimali ya Azure",
+      "azureResourceNamePlaceholder": "rasilimali yangu",
+      "azureResourceNameHint": "Jina la rasilimali ya Azure OpenAI (kutoka kwa huduma ya Azure).",
+      "deploymentId": "Kitambulisho cha Utekelezaji",
+      "deploymentIdPlaceholder": "utekelezaji wa gpt-4o",
+      "deploymentIdHint": "Jina la utekelezaji ulilosanidiwa katika Studio ya Azure OpenAI.",
+      "azureApiVersionLabel": "Toleo la API",
+      "azureApiVersionDefaultHint": "(kawaida: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Mkoa wa AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "Kitambulisho cha Funguo ya Kufikia AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Funguo ya Siri ya Kufikia AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Acha tupu kutengeneza sasa ya awali",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Ishara ya Kikao",
+      "awsSessionTokenOptionalHint": "(wa utakata, kwa shambulizi za muda)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "Kitambulisho cha Njia ya GCP",
+      "gcpRouterIdPlaceholder": "njia-yangu-ya-gcp",
+      "gcpLocationLabel": "Mahali",
+      "gcpLocationDefaultHint": "(kawaida: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Funguo ya Akaunti ya Huduma",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL ya Ncha",
+      "optional": "(wa utakata)",
+      "webProvider": {
+        "unofficialWarningTitle": "Mtoa huduma asiye rasmi — tumia kwa hatari yako.",
+        "unofficialWarningBody": "Ujumbe huu unategemea API ya ndani isiyosadikiwa ambayo inaweza kubadilika au kuvunjika bila onyo. Inaweza kuvunja Hati za Huduma ya mtoa huduma na inaweza kusababisha kusimamishwa kwa akaunti.",
+        "accessTokenLabel": "Funguo ya Kufikia",
+        "sessionTokenLabel": "Ishara ya Kikao",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Ingiza thamani ya cookie ya sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Tunapoandika kwenye ChatGPT, fungua <code>https://chatgpt.com/api/auth/session</code> katika kichupo kipya. Nakili thamani ya shambulizi <code>accessToken</code> (inaanza na <code>eyJ</code>). Ishara inaendesha kila ~24 saa. Kwa kufikia kuamini, jaza pia shambulizi <code>cf_clearance</code> hapa chini.",
+        "anthropicInstructions": "<strong>Jinsi ya kupata funguo la kikao:</strong> Tunapoandika kwenye Claude, fungua DevTools (F12) → Programu → Cookies → <code>claude.ai</code> → nakili thamani ya cookie ya <code>sessionKey</code> (inaanza na <code>sk-ant-sid01-</code>). Funguo inabaki halali hadi kuondoka."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Funguo la OAuth ya Usambaji",
+        "authFilePathLabel": "Njia ya faili ya uthibitishaji",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (kawaida)",
+        "anthropicTitle": "Tumia usambaji wako wa Claude Pro/Max.",
+        "anthropicRunCommandStep": "Endesha amri hii na nakili ishara inayochapisha:",
+        "anthropicPasteTokenStep": "Ingiza ishara katika shambulizi <em>Funguo la OAuth ya Usambaji</em> hapa chini.",
+        "termsNote": "Tengeneza upya wakati inaendesha. Matumizi ya usambaji kupitia njia inaweza kuwa dhidi ya Hati za Mtoa Huduma.",
+        "openaiTitle": "Tumia usambaji wako wa ChatGPT Plus/Pro kupitia programu ya Codex.",
+        "openaiLoginStep": "Andika katika programu ya buruu ya Codex na akaunti yako ya ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly inasoma funguo la kufikia kutoka <code>~/.codex/auth.json</code> na kutengeneza upya kiotomatiki. Hakuna nakili/ingiza ya mikono inakusudiwa.",
+        "openaiAuthFilePathStep": "Acha shambulizi <em>Njia ya faili ya uthibitishaji</em> tupu kutengeneza kawaida, au ingiza njia ya kawaida kama programu yako ya Codex kutengeneza uthibitishaji mahali pengine.",
+        "openaiTermsNote": "Matumizi ya usambaji kupitia njia inaweza kuwa dhidi ya Hati za Mtoa Huduma."
+      },
+      "copyCode": {
+        "copiedTooltip": "Kunakiliwa!",
+        "copyTooltip": "Nakili kwenye ubao wa kunakili",
+        "copiedLabel": "Kunakiliwa",
+        "copyLabel": "Nakili"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Nakili",
+      "copiedLabel": "Kunakiliwa!",
+      "copyErrorHint": "Kunakili kushindwa, chagua na kunakili kwa mikono."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Mteja wa MCP",
+      "hints": {
+        "claudeCode": "Endesha hii mara moja, mahali popote. Claude Code kutengeneza mteja katika <code>~/.claude.json</code>.",
+        "claudeDesktop": "Ingiza hii katika <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (kwenye Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), kisha anzisha programu upya. Inafukuza CLI, kwa sababu <code>routerly</code> lazima iwe kwenye njia yako.",
+        "codex": "Ingiza hii katika <code>~/.codex/config.toml</code>. Codex inasoma ishara kutoka kwa muktadha, kwa sababu kueneza katika shell unapoanzisha Codex.",
+        "opencode": "Ingiza hii katika <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Endesha hii mara moja. OpenClaw chagua sse transport, ambayo Routerly haitoi huduma, kwa sababu transport inabadiliwa wazi.",
+        "cursor": "Ingiza hii katika <code>~/.cursor/mcp.json</code>, au katika <code>.cursor/mcp.json</code> kuzuia kwa mradi mmoja.",
+        "cline": "Ingiza hii katika <code>~/.cline/mcp.json</code>, au ingiza katika Seetings MCP kwa paneli ya Cline.",
+        "zed": "Ingiza hii katika <code>settings.json</code> yako ya Zed, karibu na mteja mwingine yeyote wa muktadha."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Mabadiliko Yasiyohifadhiwa",
+      "message": "Una mabadiliko yasiyohifadhiwa. Ikiwa utaondoka sasa, mabadiliko yako yatapotea.",
+      "stay": "Baki",
+      "leaveAnyway": "Ondoka hata hivyo"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Ngati",
+        "pii": "PII",
+        "optimizers": "Waboreshaji",
+        "routerOverhead": "Kuzidisha njia"
+      },
+      "policyType": {
+        "llm": "Njia ya AI",
+        "rateLimit": "Kikomo cha Kiwango",
+        "budgetRemaining": "Bajeti Iliyoenbaki",
+        "semanticIntent": "Mujibu wa Maana",
+        "modelPreference": "Upendeleo wa Modeli"
+      },
+      "rawDetails": "maelezo ya raw",
+      "technicalDetails": "maelezo ya kiufundi",
+      "systemPrompt": "onyo la mfumo",
+      "responseText": "maandishi ya jibu",
+      "responseJson": "JSON ya jibu",
+      "cacheEmbeddingCall": "SIMU YA KUINGIZA KACHE",
+      "fallbackAttempt": "jaribu la kubadilisha #{{attempt}}",
+      "embeddingModel": "Modeli ya Kuingiza",
+      "upstreamModel": "Modeli ya Mtoto",
+      "provider": "Mtoa Huduma",
+      "source": "Chanzo",
+      "endpoint": "Ncha",
+      "cacheHit": "KACHE KAMATIA",
+      "ttlExtended": "TTL kupanua",
+      "model": "Modeli",
+      "similarity": "Kufanana",
+      "embedding": "Kuingiza",
+      "cacheMiss": "KACHE IMEPOTEA",
+      "details": "maelezo",
+      "excludedByLimits": "KUKATALIWA NA VIKOMO",
+      "finalRanking": "CHEO CHA MWISHO",
+      "noRankingData": "Hakuna data ya cheo (kukamatia inaweza kuwa iliyoharibiwa au kutoka toleo la zamani)",
+      "policyScores": "ALAMA ZA SERA",
+      "weight": "uzani {{value}}",
+      "allScores": "alama zote",
+      "noPolicyData": "Hakuna data ya sera (kukamatia inaweza kuwa iliyoharibiwa au kutoka toleo la zamani)",
+      "requestGuardrailBlocked": "OMBI LA NGITI LILIZUILIWA",
+      "requestGuardrailTriggered": "NGITI YA OMBI ILIBORESHWA",
+      "responseGuardrailBlocked": "NGITI YA JIBU ILIZUILIWA",
+      "responseGuardrailTriggered": "NGITI YA JIBU ILIBORESHWA",
+      "rule": "Kanuni",
+      "action": "Kitendo",
+      "guardrailsEvaluated": "NGITI ZILIZOCHAMBULIWA ({{target}})",
+      "ruleCount": "kanuni {{count}}",
+      "ruleCount_other": "kanuni {{count}}",
+      "promptInjection": "Kuingiza onyo",
+      "injects": "kuingiza",
+      "judgeResponse": "Jibu la wadhamini",
+      "piiScrubbed": "PII ILIYOTAKASWA",
+      "piiScanned": "PII ILIYOCHAMBULIWA ({{target}})",
+      "policies": "sera",
+      "entityTypes": "aina za ujumbe",
+      "customPatterns": "mifumo ya kawaida",
+      "scanned": "iliyochambuliwa",
+      "redacted": "iliyochambuliwa",
+      "took": "ilichukua",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "aina za ujumbe zilizochambuliwa",
+      "guardrailInjection": "KUINGIZA NGITI",
+      "rules": "kanuni",
+      "chars": "herufi",
+      "injectedText": "maandishi yaliyoingizwa",
+      "optimizer": "MBORESHAJI {{id}}",
+      "tokens": "tokens",
+      "saved": "kutunzwa",
+      "tok": "{{value}} tok",
+      "reason": "sababu",
+      "budgetBlocked": "BAJETI ILIYOZUILIWA",
+      "budgetOk": "BAJETI SALAMA",
+      "egressSent": "MATUMIZI YALIYOTUMWA",
+      "status": "hali",
+      "encoding": "ukodishaji",
+      "frames": "fremu",
+      "bytes": "bytes"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Wasifu Wangu",
+      "subtitle": "Simamia mipangilio ya akaunti yako"
+    },
+    "tabs": {
+      "profile": "Wasifu",
+      "notifications": "Arifa",
+      "mcp": "MCP",
+      "preferences": "Upendeleo"
+    },
+    "notifications": {
+      "close": "Funga",
+      "refresh": "Kutengeneza upya",
+      "clear": "Safisha",
+      "empty": "Hakuna arifa iliyopatikana.",
+      "markAllRead": "Alika zote kuwa zimesomwa",
+      "allCaughtUp": "Zote zimekamata",
+      "unreadCount": "{{count}} yasiyosomwa",
+      "selectedCount": "{{count}} iliyochaguliwa",
+      "severity": {
+        "all": "Zote",
+        "info": "Taarifa",
+        "warning": "Onyo",
+        "critical": "Muhimu"
+      },
+      "status": {
+        "read": "Kusomwa",
+        "unread": "Yasiyosomwa"
+      },
+      "filters": {
+        "severity": "Kuzidisha",
+        "category": "Jamii",
+        "event": "Tukio",
+        "date": "Tarehe",
+        "period": "Kipindi",
+        "status": "Hali",
+        "all": "Zote",
+        "allCategories": "Jamii zote",
+        "allEvents": "Matukio yote",
+        "unreadOnly": "Yasiyosomwa tu"
+      },
+      "actions": {
+        "markRead": "Alika kuwa kusomwa",
+        "markUnread": "Alika kuwa yasiyosomwa",
+        "archive": "Sanduku"
+      },
+      "table": {
+        "severity": "Kuzidisha",
+        "event": "Tukio",
+        "date": "Tarehe",
+        "status": "Hali",
+        "selectAll": "Chagua zote",
+        "selectRow": "Chagua {{event}}",
+        "eventCount": "{{count}} matukio"
+      },
+      "pagination": {
+        "previous": "← Ililopita",
+        "next": "Ijayo →",
+        "page": "Ukurasa {{page}} wa {{totalPages}}",
+        "total": "({{count}} jumla)"
+      },
+      "detail": {
+        "ariaLabel": "Maelezo ya arifa",
+        "details": "Maelezo",
+        "noDetails": "Hakuna maelezo ya ziada.",
+        "eventsInIncident": "Matukio katika tukio hili"
+      }
+    },
+    "security": {
+      "roleLabel": "Jukumu:",
+      "password": {
+        "heading": "Badilisha Neno la Siri",
+        "currentLabel": "Neno la Siri la Sasa",
+        "newLabel": "Neno la Siri Jipya",
+        "newPlaceholder": "Angalau herufi 8",
+        "confirmLabel": "Thibitisha Neno la Siri Jipya",
+        "success": "Neno la siri lilibadilishwa kwa mafanikio.",
+        "saving": "Inakuhifadhi...",
+        "submit": "Badilisha Neno la Siri",
+        "errors": {
+          "mismatch": "Maneno ya siri hayafanani.",
+          "tooShort": "Neno jipya la siri lazima liwe angalau herufi 8.",
+          "updateFailed": "Kufahamiana kushindwa"
+        }
+      },
+      "tfa": {
+        "heading": "Uthibitishaji wa Sababu mbili",
+        "notEnabled": "2FA haipatikani. Linganisha akaunti yako na neno la muda mmoja linalokamata kwa wakati.",
+        "enableButton": "Weza Uthibitishaji wa Sababu mbili",
+        "scanInstructions": "Kama msaada huu QR na programu yako ya uthibitishaji (Google Authenticator, Authy, n.k.), kisha ingiza nambari ya tarakamu 6 kubaini.",
+        "qrAlt": "Kodi ya QR ya kuanzisha 2FA",
+        "addAccountInstructions": "Fungua programu yako ya uthibitishaji (Google Authenticator, Authy, 1Password, n.k.) na ongeza akaunti jipya:",
+        "setup": {
+          "step1": "Toa <strong>Ongeza akaunti</strong> au kitufe <strong>+</strong>",
+          "step2": "Chagua <strong>Ingiza funguo la kuanzisha</strong> (au kama QR ikiwa kwenye simu)",
+          "step3": "Ingiza siri iliyoonyeshwa hapa chini"
+        },
+        "mobileLink": "Toa hapa kwenye simu kufungua uthibitishaji",
+        "manualEntryLabel": "Siri ya ingizo la mikono:",
+        "saveBackupCodes": "Kutengeneza msaada wa koodi. Kila moja inaweza kutumika mara moja ikiwa utapoteza kufikia uthibitishaji wako.",
+        "copyBackupCodes": "Nakili koodi za msaada",
+        "confirmCodeLabel": "Ingiza koodi kutoka kwa programu yako kuamkua",
+        "activate": "Amkua 2FA",
+        "cancel": "Ghairi",
+        "enabledBadge": "2FA inatumiwa",
+        "newBackupCodesLabel": "Koodi za msaada mpya (kutengeneza hii sasa):",
+        "copy": "Nakili",
+        "regenLabel": "Ingiza koodi ya uthibitishaji kucheza koodi za msaada",
+        "regenerate": "Tengeneza upya",
+        "regenerateBackupCodes": "Tengeneza upya koodi za msaada",
+        "disableLabel": "Zui 2FA (ingiza koodi ya uthibitishaji)",
+        "disable": "Zui 2FA",
+        "errors": {
+          "setupFailed": "Kuanzisha kushindwa",
+          "confirmFailed": "Kuthibitisha kushindwa",
+          "disableFailed": "Kukataza kushindwa",
+          "regenFailed": "Kucheza kushindwa"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Kushindwa kupakia uso wa MCP",
+        "revokeFailed": "Kushindwa kutengeneza upya ishara"
+      },
+      "revokeConfirm": "Tengeneza upya ishara ya MCP \"{{name}}\"? Wateja wanaotumia ifanya kazi kiotomatiki.",
+      "tokens": {
+        "heading": "Ishara za MCP",
+        "newToken": "Ishara Jipya",
+        "description": "Kila ishara inafanya kazi yako: inaonyesha vikala vyote ambavyo jukumu lako linakubali. Thamani nzima inaonyeshwa mara moja, kwenye ukurasa unaoutengeneza.",
+        "empty": "Hakuna ishara za MCP bado. Tengeneza moja kuunganisha mteja wa MCP.",
+        "created": "Kutengenezwa",
+        "lastUsed": "Iliyotumika mwisho",
+        "expires": "Inaendesha",
+        "never": "Kamwe",
+        "revokeTitle": "Tengeneza upya ishara"
+      },
+      "tools": {
+        "heading": "Zana Ambazo Ishara Zako Ziko",
+        "empty": "Jukumu lako halina zana ya MCP. Mwaliko msimamizi kwa ruhusa unayohitaji.",
+        "table": {
+          "name": "Jina",
+          "scope": "Muktadha",
+          "description": "Maelezo",
+          "sourceModule": "Moduli ya Chanzo",
+          "permission": "Ruhusa"
+        }
+      },
+      "connect": {
+        "heading": "Unganisha Mteja wa MCP",
+        "descriptionPre": "Chagua mteja unayeweka juu, kisha badilisha",
+        "descriptionPost": "na moja ya ishara zako. Kutengeneza ishara inaonyesha sehemu sawa na thamani tayari ndani yake.",
+        "otherClient": "Mteja mwingine yeyote",
+        "httpInstructionsPre": "Kupitia HTTP, ikueleka ncha hii na uthibitishe na",
+        "httpInstructionsPost": ". Ni JSON-RPC 2.0 kupitia HTTP inayovumba.",
+        "stdioInstructionsPre": "Kupitia stdio, CLI inaingiza na kuota ishara yako kupitia. Endesha huduma moja kwa moja? Weka",
+        "stdioInstructionsAnd": "na",
+        "stdioInstructionsPost": "wewe."
+      },
+      "newToken": {
+        "backToMcp": "Kurudi kwenye MCP",
+        "title": "Ishara Jipya ya MCP",
+        "subtitle": "Ishara inafanya kazi yako: inaonyesha vikala vyote ambavyo jukumu lako linakubali.",
+        "nameLabel": "Jina",
+        "namePlaceholder": "laptop",
+        "nameHint": "Ambapo ishara hii inatumika, kwa mfano \"laptop\" au \"claude-desktop\".",
+        "expiryLabel": "Inaendesha",
+        "expiryHint": "Wa utakata. Acha tupu na ishara kamwe haitengenezi, hadi kutengeneza upya.",
+        "createButton": "Tengeneza ishara",
+        "creatingButton": "Inatengeneza…",
+        "cancelButton": "Ghairi",
+        "tokenSection": {
+          "title": "Ishara yako",
+          "hint": "Nakili sasa. Haionyeshwa tena, na ishara iliyopotea inaweza kubadilishwa tu.",
+          "copyButton": "Nakili",
+          "copiedButton": "Kunakiliwa!",
+          "copyTitle": "Nakili ishara",
+          "copiedTitle": "Kunakiliwa!"
+        },
+        "connectSection": {
+          "title": "Unganisha mteja",
+          "hint": "Chagua mteja unayeweka juu. Sehemu tayari ina ishara hii."
+        },
+        "bridgeSection": {
+          "title": "Au tumia mtaji wa ndani",
+          "hint": "Kwa mteja anayezungumza stdio tu, CLI inaingiza na kuota ishara yako kupitia."
+        },
+        "doneButton": "Kumaalizia",
+        "errors": {
+          "createFailed": "Kushindwa kutengeneza ishara",
+          "copyFailed": "Kunakili kushindwa, chagua na kunakili ishara kwa mikono."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Lugha",
+      "description": "Chagua lugha ambayo ubao la kuzuia unaonyeshwa ndani yake.",
+      "languageLabel": "Lugha",
+      "saved": "Upendeleo wa lugha kutunzwa."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Kushindwa kupakia mipangilio",
+        "loadFailedPeriod": "Kushindwa kupakia mipangilio.",
+        "saveFailed": "Kushindwa kuhifadhi",
+        "saveSettingsFailed": "Kushindwa kuhifadhi mipangilio"
+      },
+      "savedSuccess": "Mipangilio kutunzwa kwa mafanikio.",
+      "saving": "Inakuhifadhi…",
+      "saveSettings": "Kutengeneza Mipangilio",
+      "serverInfo": {
+        "heading": "Taarifa za Huduma",
+        "readOnly": "Kusomwa tu. Muktadha na badiliko hutoka kwa muktadha au faili ya mipangilio, sio hapa.",
+        "reachableAt": "Kufikia katika",
+        "reachableAtAny": "Kufikia katika nyumba yoyote ya hii",
+        "thisMachine": "Kifo hiki",
+        "network": "Mtandao",
+        "copyAddress": "Nakili {{address}}",
+        "copied": "Kunakiliwa!",
+        "copy": "Nakili",
+        "hostAndPort": "Muktadha na badiliko",
+        "version": "Toleo",
+        "uptime": "Saa ya kuendesha"
+      },
+      "runtime": {
+        "heading": "Mipangilio ya Muda wa Endesha",
+        "logLevel": "Kiwango cha Goria",
+        "logLevelHint": "Udhibiti hadhari ya kazi ya huduma.",
+        "publicUrl": "URL ya Hadharani",
+        "publicUrlHint": "URL ya msingi ambapo huduma inafanyika kutoka kwa wateja wa nje (mf. <code>http://192.168.1.10:3000</code>). Kutumika katika sehemu <strong>Jinsi ya Unganisha</strong> ya kila njia. Kusaidia wakati ubao la kuzuia linatumika kwenye kifo tofauti au badiliko kuliko huduma.",
+        "usageRetention": "Kutengeneza Matumizi",
+        "noLimit": "Hakuna kiwango",
+        "maxAgeDays": "Umri wa juu (siku)",
+        "maxSizeMb": "Ukubwa wa juu (MB)",
+        "retentionHint": "Matumizi/historia ya malipo ya zamani kuliko siku hii nyingi, au inayozidi ukubwa huu, iva kuanguka kutoka kwa goria lililotumiwa. Acha zote mbili tupu kwa hakuna kiwango cha kutengeneza."
+      },
+      "internationalization": {
+        "heading": "Ubinafsi wa Dunia",
+        "defaultLanguage": "Lugha ya Chaguo-msingi",
+        "defaultLanguageHint": "Lugha ya ajili kwa watumiaji ambao bado haijachagua lugha yao. Haileti chaguo la kibinafsi la mtumiaji."
+      },
+      "telemetry": {
+        "heading": "Mipimo ya Bila Jina",
+        "neverAutomatic": "Routerly kamwe haitumii data kiotomatiki.",
+        "noChoice": "Haujachagua bado.",
+        "enabledStatus": "Mipimo ya kusakinisha bila jina inatumiwa.",
+        "disabledStatus": "Mipimo ya kusakinisha bila jina imezuiliwa.",
+        "explanation": "Wakati inatumiwa, Routerly ina tu: aina ya tukio (kusakinisha / kuboreshwa / kuondoleza), toleo, jukumu, na kitambulisho bila jina. Hakuna data ya kibinafsi, hakuna data ya matumizi, hakuna IP kutunzwa.",
+        "whatIsSent": "Nini kinachochukuliwa?",
+        "installId": "Sakini Kitambulisho: {{id}}",
+        "saving": "Inakuhifadhi…",
+        "enable": "Weza",
+        "disable": "Zui"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Ubao la kuzuia (sanduku la ndani la programu)",
+          "description": "Njia matukio ya kuzuia kwa sanduku la arifa la ndani la programu"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Huduma ya baruaa ya kawaida"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "Huduma ya Barua ya Haraka ya AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Muunganisho wa Azure",
+          "description": "Huduma za Muunganisho ya Azure"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail kupitia OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Ubadilisho la callback la HTTP"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Webhook Inayoingia"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Mtoa Huduma – Hitilafu",
+        "providerDegraded": "Mtoa Huduma – Iliyooza",
+        "providerRecovered": "Mtoa Huduma – Kukusanyika",
+        "providerRateLimited": "Mtoa Huduma – Kikomo cha Kiwango",
+        "routingNoCandidates": "Njia – Hakuna Wagombea",
+        "routingFallbackUsed": "Njia – Kubadilisha Kutumika",
+        "authLoginFailed": "Uthibitishaji – Kuandika Kushindwa",
+        "authTokenInvalid": "Uthibitishaji – Ishara Isiyosalama",
+        "configModelAdded": "Msanidi – Modeli Ongezwa",
+        "configModelDeleted": "Msanidi – Modeli Iliyofutwa",
+        "configRouterCreated": "Msanidi – Njia Iliyotengenezwa",
+        "configRouterDeleted": "Msanidi – Njia Iliyofutwa",
+        "budgetThresholdReached": "Bajeti – Kizingiti Kilifikiwa",
+        "budgetExceeded": "Bajeti – Iliyozidi",
+        "budgetReset": "Bajeti – Kusezesha Upya",
+        "systemStartup": "Mfumo – Kuanzisha",
+        "systemShutdown": "Mfumo – Kufunga",
+        "systemUpdateAvailable": "Mfumo – Kuboreshwa Kinapatikana"
+      },
+      "removeChannelTooltip": "Ondoa njia",
+      "removeChannelConfirm": "Ondoa njia?",
+      "formUpdatedHint": "Fomu kuboreshwa — kutengeneza kuhifadhi.",
+      "hmacSigningKeyPlaceholder": "HMAC funguo la kuingiza",
+      "perms": {
+        "routerRead": "Njia – Kusomwa",
+        "routerWrite": "Njia – Kuandika",
+        "modelRead": "Modeli – Kusomwa",
+        "modelWrite": "Modeli – Kuandika",
+        "userRead": "Watumiaji – Kusomwa",
+        "userWrite": "Watumiaji – Kuandika",
+        "reportRead": "Ripoti – Kusomwa",
+        "settingsRead": "Mipangilio – Kusomwa",
+        "settingsWrite": "Mipangilio – Kuandika",
+        "notificationWrite": "Arifa – Kuandika",
+        "tokenRead": "Ishara – Kusomwa",
+        "tokenWrite": "Ishara – Kuandika",
+        "roleWrite": "Majukumu – Kuandika",
+        "auditRead": "Goria la Kuchukuza – Kusomwa",
+        "modulesRead": "Moduli – Kusomwa",
+        "modulesManage": "Moduli – Simamia",
+        "connectionsRead": "Muunganisho – Kusomwa",
+        "connectionsManage": "Muunganisho – Simamia",
+        "resilienceRead": "Upinzani – Kusomwa",
+        "resilienceManage": "Upinzani – Simamia",
+        "profilesRead": "Wasifu wa Njia – Kusomwa",
+        "profilesManage": "Wasifu wa Njia – Simamia",
+        "optimizersRead": "Waboreshaji – Kusomwa",
+        "optimizersManage": "Waboreshaji – Simamia",
+        "experimentsRead": "Majaribio – Kusomwa",
+        "experimentsManage": "Majaribio – Simamia"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Kwa aina hii ya njia, juhudi hazibadilishi utoaji (ncha imebadhi). Zinasala matukio anayoandikwa katika kuchukuza kwa mupokeaji.",
+        "dashboard": "Juhudi udhibiti sanduku la macho — tu watumiaji waliosomwa watakuwa na arifa hii katika sanduku lao la ndani la programu.",
+        "email": "Juhudi huamua watumiaji anayepokea barua hii. Acha zote tupu kwa kutuma kwa watumiaji wote."
+      },
+      "summary": {
+        "allEvents": "Matukio yote",
+        "eventCount": "{{count}} tukio",
+        "eventCount_other": "{{count}} matukio",
+        "roleCount": "{{count}} jukumu",
+        "roleCount_other": "{{count}} majukumu",
+        "permCount": "{{count}} ruhusa",
+        "permCount_other": "{{count}} ruhusa",
+        "userCount": "{{count}} mtumiaji",
+        "userCount_other": "{{count}} watumiaji",
+        "everyone": "Kila mtu"
+      },
+      "errors": {
+        "loadFailed": "Kushindwa kupakia"
+      },
+      "fields": {
+        "dashboardHint": "Njia matukio ya kuzuia kwa sanduku la arifa la ndani la programu. Hakuna sharti inakusudiwa.",
+        "labels": {
+          "fromAddress": "Kutoka Anwani",
+          "fromName": "Kutoka Jina",
+          "host": "Muktadha",
+          "port": "Badiliko",
+          "tls": "TLS/SSL",
+          "username": "Jina la Mtumiaji",
+          "password": "Neno la Siri",
+          "awsRegion": "Mkoa wa AWS",
+          "accessKeyId": "Kitambulisho cha Funguo la Kufikia",
+          "secretAccessKey": "Funguo la Siri la Kufikia",
+          "apiKey": "Funguo la API",
+          "connectionString": "Njia ya Muunganisho",
+          "clientId": "Kitambulisho cha Mteja",
+          "clientSecret": "Siri ya Mteja",
+          "refreshToken": "Ishara ya Kutengeneza Upya",
+          "url": "URL",
+          "method": "Njia",
+          "signingSecret": "Siri la Kuingiza",
+          "botToken": "Ishara ya Bot",
+          "channelId": "Kitambulisho cha Njia",
+          "webhookUrl": "URL ya Webhook",
+          "integrationKey": "Funguo la Muunganisho"
+        },
+        "values": {
+          "enabled": "Inatumiwa",
+          "disabled": "Imezuiliwa",
+          "configured": "Imesanidiwa",
+          "notSet": "Hajawekwa"
+        },
+        "optional": "(wa utakata)",
+        "keepCurrentPlaceholder": "Acha tupu kutengeneza sasa ya awali",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Tumia TLS / SSL",
+        "smtpTlsOnHint": "(badiliko 465 — SSL ya moja kwa moja)",
+        "smtpTlsOffHint": "(badiliko 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Acha sharti tupu kutengeneza jukumu la hali ya IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC funguo la kuingiza",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "Funguo la njia wa herufi 32",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Matukio",
+          "eventsPlaceholder": "Matukio yote (acha tupu kwa zote)",
+          "eventsHint": "Acha tupu kwa kupokea matukio yote. Chagua matukio mahususi kusala.",
+          "routersHeading": "Njia",
+          "routersPlaceholder": "Njia zote (acha tupu kwa zote)",
+          "routersHint": "Acha tupu kwa kupokea matukio kutoka njia zote.",
+          "cooldownHeading": "Wakati wa burudani",
+          "cooldownSuffix": "sekunde (0 = hakuna wakati wa burudani)",
+          "cooldownHint": "Muda wa chini kabla njia hii inaweza kufa tena kwa tukio sawa."
+        },
+        "recipients": {
+          "heading": "Wapokeaji / Juhudi",
+          "rolesLabel": "Majukumu",
+          "rolesPlaceholder": "Majukumu yote (kila mtu)",
+          "permissionsLabel": "Ruhusa",
+          "permissionsPlaceholder": "Ruhusa zote (kila mtu)",
+          "usersLabel": "Watumiaji wa kibinafsi",
+          "usersPlaceholder": "Watumiaji wote (kila mtu)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "muunganisho",
+          "routing": "njia",
+          "recipients": "wapokeaji"
+        },
+        "sections": {
+          "channelSettings": "Mipangilio ya njia",
+          "eventsRouting": "Matukio na njia",
+          "recipients": "Wapokeaji"
+        },
+        "nameLabel": "Jina",
+        "namePlaceholder": "Lebo kwa njia hii",
+        "cancelButton": "Ghairi"
+      },
+      "list": {
+        "countLabel": "{{count}} njia",
+        "countLabel_other": "{{count}} njia",
+        "filteredLabel": "{{shown}} ya {{count}} njia",
+        "filteredLabel_other": "{{shown}} ya {{count}} njia",
+        "allTypes": "Aina zote",
+        "searchPlaceholder": "Njia za tafsiri…",
+        "searchChannelsPlaceholder": "Tafuta njia…",
+        "addButton": "Ongeza Njia",
+        "addSearchPlaceholder": "Tafuta njia…",
+        "noResults": "Hakuna matokeo",
+        "emptyTitle": "Hakuna njia za arifa zilizosanidiwa bado.",
+        "noMatch": "Hakuna njia inayokabili vyombo vya viasishwa.",
+        "nameInlinePlaceholder": "Lebo (wa utakata)",
+        "columns": {
+          "name": "Jina",
+          "type": "Aina",
+          "summary": "Matukio / Juhudi"
+        },
+        "testTitle": "Tuma mtihani",
+        "editTitle": "Hariri njia",
+        "deleteTitle": "Futa njia",
+        "deleteConfirm": "Ondoa njia \"{{name}}\"? Hii haiwezi kutengenezwa.",
+        "deleteConfirmButton": "Futa",
+        "errors": {
+          "deleteFailed": "Kushindwa kufuta"
+        }
+      },
+      "edit": {
+        "backToList": "Kurudi kwenye Arifa",
+        "back": "Kurudi",
+        "heading": "Hariri {{provider}} njia",
+        "subtitle": "Kuboreshwa msanidi kwa njia hii ya arifa.",
+        "testSection": {
+          "title": "Tuma mtihani",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Tuma Mtihani",
+          "sendingButton": "Inatuma…",
+          "hintEmail": "Acha tupu kutumazo akaunti yako barua. Mtihani unatumia msanidi wa njia kutunzwa.",
+          "hintOther": "Mtihani unatumia msanidi wa njia kutunzwa. Kutengeneza mabadiliko kwanza kujaribio mipangilio iliyoboreshwa."
+        },
+        "saveButton": "Kutengeneza Mabadiliko",
+        "savingButton": "Inakuhifadhi…",
+        "errors": {
+          "loadFailed": "Kushindwa kupakia",
+          "saveFailed": "Kushindwa kuhifadhi"
+        }
+      },
+      "create": {
+        "backToList": "Kurudi kwenye Arifa",
+        "changeType": "Badilisha aina",
+        "pickerHeading": "Chagua aina ya njia",
+        "pickerSubtitle": "Chagua mtoa huduma wa arifa kusanidi.",
+        "heading": "Njia Jipya {{provider}}",
+        "subtitle": "Sanidi njia jipya ya arifa.",
+        "createButton": "Tengeneza Njia",
+        "creatingButton": "Inatengeneza…",
+        "errors": {
+          "createFailed": "Kushindwa kutengeneza"
+        }
+      },
+      "sendTest": "Tuma mtihani",
+      "fromAddress": "Kutoka Anwani",
+      "individualUsers": "Watumiaji wa kibinafsi",
+      "host": "Muktadha",
+      "port": "Badiliko",
+      "apiKey": "Funguo la API",
+      "connectionString": "Njia ya Muunganisho",
+      "clientId": "Kitambulisho cha Mteja",
+      "clientSecret": "Siri ya Mteja",
+      "refreshToken": "Ishara ya Kutengeneza Upya",
+      "method": "Njia",
+      "botToken": "Ishara ya Bot",
+      "channelId": "Kitambulisho cha Njia",
+      "webhookUrl": "URL ya Webhook",
+      "integrationKey": "Funguo la Muunganisho"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "kuondoka — inaonyesha /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "kusambaza — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "kusambaza — API ya vipimo"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "kusambaza — umbizo la mbali"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "kusambaza — mstari ya protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "kusambaza — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Kueneza kwa kuchukuza ombi",
+        "description": "Inashirikiana kuchukuza kamili ya kila ombi linalotambuliwa: kila hatua, kila moduli iliyozungumza, na onyo na majibu ya mradi anayechagua.",
+        "sampleRateLabel": "Kiwango cha sampuli",
+        "sampleRateHint": "1 inaeneza kila ombi, 0.1 moja kwa kumi."
+      },
+      "optional": "(wa utakata)",
+      "headersHint": "(wa utakata, moja kwa kila mstari: Funguo: Thamani)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Ishara ya Mtengezaji",
+          "placeholder": "Acha tupu kwa kufikia wazi",
+          "description": "Inaonyesha <code>/metrics</code> katika muundo wa maandishi wa Prometheus. Weka ishara kuomba uthibitishaji wa Mtengezaji."
+        },
+        "otel": {
+          "endpoint": "Ncha ya Mkusanyiko",
+          "description": "URL ya msingi ya pokezi la OTLP yako. Routerly kuongeza <code>/v1/metrics</code>, na <code>/v1/traces</code> wakati kueneza kwa kuchukuza ni juu. Badiliko la kawaida la HTTP ni 4318, gRPC ni 4317.",
+          "protocol": "Protocol",
+          "headers": "Vichwa"
+        },
+        "datadog": {
+          "apiKey": "Funguo la API",
+          "placeholder": "Funguo la API yako ya Datadog",
+          "description": "Kupatikana chini ya <strong>Mipangilio ya Kumasanidi → Funguo za API</strong> katika akaunti yako ya Datadog.",
+          "site": "Mahali"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Umbizo la Mbali la URL",
+          "description": "Kupatikana katika <strong>Grafana Cloud → Muunganisho → Prometheus → Maelezo</strong> kama \"Ncha ya Umbizo la Mbali\".",
+          "username": "Jina la Mtumiaji / Kitambulisho cha Mkumbi",
+          "usernameHint": "Kitambulisho cha nambari kuonyeshwa katika maelezo ya muunganisho wa Prometheus.",
+          "apiKey": "Funguo la API / Ishara",
+          "apiKeyHint": "Ishara ya Grafana Cloud na jukumu la <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 URL ya hali. Bulangiti: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Ishara",
+          "tokenPlaceholder": "Ishara ya API yako ya InfluxDB",
+          "tokenHint": "Lazima iwe na <strong>andika</strong> kufikia ndani ya gweduke.",
+          "org": "Kumasanidi",
+          "bucket": "Ndoto"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Siri",
+          "secretHint": "(wa utakata — HMAC-SHA256 funguo la kuingiza)",
+          "headers": "Vichwa"
+        }
+      },
+      "errors": {
+        "loadFailed": "Kushindwa kupakia maunganisho",
+        "updateFailed": "Kushindwa kuboreshwa muunganisho",
+        "saveFailed": "Kushindwa kuhifadhi muunganisho",
+        "deleteFailed": "Kushindwa kufuta muunganisho"
+      },
+      "empty": "Hakuna maunganisho yenye msanidi bado.",
+      "enabled": "Inatumiwa",
+      "testing": "Inajaribu…",
+      "test": "Jaribio",
+      "removeConfirm": "Ondoa?",
+      "remove": "Ondoa",
+      "cancel": "Ghairi",
+      "removeTooltip": "Ondoa muunganisho",
+      "saving": "Inakuhifadhi…",
+      "save": "Kutengeneza",
+      "addButton": "Ongeza Muunganisho"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Kushindwa kupakia mipangilio",
+        "duplicateUrl": "URL hii tayari iko kwenye orodha.",
+        "unreachable": "Haiwezi kufikia katalogi kwa mtoa huduma halisi katika URL hii."
+      },
+      "saved": "Kutunzwa.",
+      "refreshed": "Kutengeneza upya.",
+      "heading": "Ambae la Kuweka za Katalogi ya Mtoa Huduma",
+      "refreshing": "Inatengeneza upya…",
+      "refresh": "Kutengeneza Upya",
+      "nextRefresh": "Ijayo: {{date}}",
+      "priorityHint": "Mpangilio wa mstari huamua utaratibu wa kuunganisha -- mstari 1 anashinda mgongano. Tumia Balita kukamatia.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Kuboreshwa",
+        "lastCheck": "Kuchukuza Mwisho",
+        "status": "Hali"
+      },
+      "empty": "Hakuna ambae lozewa yenye msanidi. Katalogi ya hadharani ya Routerly chaguo ya kawaida itakuwa inakufa.",
+      "status": {
+        "error": "Hitilafu",
+        "active": "Inatumiwa",
+        "disabled": "Imezuiliwa"
+      },
+      "edit": "Hariri",
+      "removeTooltip": "Ondoa",
+      "addRepository": "Ongeza Ambae",
+      "checking": "Inakuchukuza…",
+      "add": "Ongeza",
+      "removeConfirm": "Ondoa ambae \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Programu",
+        "runtime": "Muda wa Endesha",
+        "storage": "Kutengeneza",
+        "softwareUpdate": "Kuboreshwa kwa Programu"
+      },
+      "labels": {
+        "version": "Toleo",
+        "uptime": "Saa ya kuendesha",
+        "nodeVersion": "Node.js",
+        "platform": "Jukumu",
+        "configDir": "Mahali ya msanidi",
+        "dataDir": "Mahali ya data",
+        "currentVersion": "Toleo la sasa",
+        "availableVersion": "Toleo linalodumisha",
+        "upToDate": "Kuweka kwa tarehe",
+        "lastChecked": "Ilichukuliwa mwisho"
+      },
+      "noCheckPerformed": "Kuchukuza kuboreshwa hakutengenezwa bado.",
+      "checkForUpdates": "Kuchukuza kwa kuboreshwa",
+      "checking": "Inakuchukuza…",
+      "updateTo": "Kuboreshwa kuwa v{{version}}",
+      "updating": "Inakuboreshwa…",
+      "dockerHint": "Inatendesha ndani ya Docker — ingiza picha ya hivi karibuni kuboreshwa.",
+      "confirmUpdate": "Hii itakamatia na kusakinisha toleo la hivi karibuni. Huduma itaanzisha upya. Endelea?",
+      "updateComplete": "Kuboreshwa kumalizia! Kupakia upya…",
+      "serviceRestarting": "Huduma inaanzisha upya. Tafadhali pakua ukurasa kwa dakika.",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia",
+        "checkFailed": "Kuchukuza kushindwa",
+        "updateFailed": "Kuboreshwa kushindwa"
+      },
+      "channel": "Njia"
+    },
+    "security": {
+      "authentication": "Uthibitishaji",
+      "requireMfa": "Omba Uthibitishaji wa Sababu mbili kwa watumiaji wote",
+      "requireMfaHint": "Wakati inatumiwa, watumiaji ambao hawajaweka 2FA wataona uki kuomba kuingizaji badala ya kuandika. Watumiaji wanaweza kusanidi 2FA katika ukurasa wa Wasifu.",
+      "savedSuccess": "Mipangilio kutunzwa kwa mafanikio.",
+      "saving": "Inakuhifadhi…",
+      "saveSettings": "Kutengeneza Mipangilio",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia mipangilio",
+        "saveFailed": "Kushindwa kuhifadhi mipangilio"
+      }
+    },
+    "title": "Mipangilio",
+    "subtitle": "Sanidi kwa Routerly",
+    "tabs": {
+      "general": "Jumla",
+      "security": "Usalama",
+      "notifications": "Arifa",
+      "integrations": "Maunganisho",
+      "catalog": "Katalogi ya Mtoa Huduma",
+      "users": "Watumiaji",
+      "roles": "Majukumu",
+      "audit": "Goria la Kuchukuza",
+      "about": "Kuhusu"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Njia",
+      "subtitle": "Programu za mteja zinazofikia Routerly",
+      "count": "njia 1",
+      "count_other": "{{count}} njia",
+      "newRouter": "Njia Jipya",
+      "empty": "Hakuna njia bado.",
+      "emptyFiltered": "Hakuna routers ya aina hii.",
+      "tabs": {
+        "all": "Zote",
+        "router": "Router",
+        "orchestrator": "Orkestrator",
+        "passthrough": "Kupitia"
+      },
+      "columns": {
+        "name": "Jina",
+        "tokens": "Ishara",
+        "policies": "Sera",
+        "models": "Modeli"
+      },
+      "tokenCount": "ishara 1",
+      "tokenCount_other": "{{count}} ishara",
+      "editRouter": "Hariri njia",
+      "deleteRouter": "Futa njia",
+      "deleteConfirm": "Futa njia hii?",
+      "errors": {
+        "deleteFailed": "Hitilafu funika njia"
+      }
+    },
+    "layout": {
+      "notFound": "Njia haijulikani",
+      "tabs": {
+        "dashboard": "Ubao la kuzuia",
+        "general": "Jumla",
+        "orchestrator": "Muongeza",
+        "routing": "Njia",
+        "optimizer": "Mboreshaji",
+        "security": "Usalama",
+        "token": "Ishara",
+        "users": "Watumiaji",
+        "logs": "Kasia"
+      },
+      "backToRouters": "Kurudi kwenye Njia",
+      "backToRoutersTitle": "Kurudi njia",
+      "newRouter": "Njia Jipya",
+      "loading": "Inakupakia...",
+      "routerId": "Kitambulisho cha Njia:",
+      "saveFirstHint": "Kutengeneza njia kwanza kuanguka kichupo hiki"
+    },
+    "dashboard": {
+      "period": "Kipindi",
+      "noTraffic": "Hakuna trafiki kwa njia hii katika kipindi kinachochaguliwa.",
+      "stats": {
+        "savings": "Akiba",
+        "vsPrefix": "dhidi",
+        "forEverything": "kwa kila kitu",
+        "noTargetToCompare": "hakuna modeli ya lengwa kulinganisha",
+        "cost": "Gharama",
+        "callCount": "simu 1",
+        "callCount_other": "{{count}} simu",
+        "latency": "Kabila",
+        "medianP95": "wastani · p95 {{value}}",
+        "ttft": "Saa kwa ishara ya kwanza",
+        "notMeasured": "haijapimwa simu hizi",
+        "reliability": "Maadhimisho",
+        "errorsAndBlocked": "{{errors}} hitilafu · {{blocked}} imedhibitiwa"
+      },
+      "tokens": {
+        "input": "Tokens za ingizo:",
+        "output": "Tokens za pato:",
+        "fromCache": "Kutoka kwa kache:",
+        "cacheSaved": "({{amount}} kutunzwa)"
+      },
+      "oneModel": {
+        "heading": "Kama kila kitu kingekwenda kwa modeli moja",
+        "empty": "Ongeza modeli za lengwa njia hii kuona kulinganisha.",
+        "columns": {
+          "targetModel": "Modeli ya lengwa",
+          "wouldHaveCost": "Ingekuwa gharama",
+          "saved": "Kutunzwa"
+        },
+        "costsHint": "Gharama zinaongozwa tokens iliyochambuliwa repriced katika kiwango cha kila lengwa."
+      },
+      "optimizers": {
+        "heading": "Nini waboreshaji walivunja",
+        "columns": {
+          "optimizer": "Mboreshaji",
+          "callsChanged": "Simu kubadilishwa",
+          "tokensSaved": "Tokens kutunzwa",
+          "costSaved": "Gharama kutunzwa",
+          "rolledBack": "Kuendesha kurudi"
+        },
+        "hint": "Inayopimwa kwenye simu zenyewe, bei katika modeli inayohudhimia kila moja. Endesha-nyuma maana hatua ya pato iliyokataliwa kama isiyosalama na onyo iliyorejeshwa: haikuokoa kitu, na kiwango cha juu kumaanisha kizingiti ni kigumu sana."
+      },
+      "traffic": {
+        "heading": "Mahali trafiki ilienda",
+        "columns": {
+          "model": "Modeli",
+          "calls": "Simu",
+          "share": "Chache",
+          "cost": "Gharama",
+          "p95Latency": "p95 kabila",
+          "errors": "Hitilafu"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Hitilafu kutengeneza njia",
+        "copyFailed": "Kunakili kushindwa — tafadhali chagua na kunakili ishara kwa mikono."
+      },
+      "kind": {
+        "router": {
+          "label": "Njia",
+          "description": "Njia maombi katika wagombea wa modeli."
+        },
+        "orchestrator": {
+          "label": "Muongeza",
+          "description": "Njia maombi katika njia nyingine badala ya modeli."
+        },
+        "passthrough": {
+          "label": "Kupita kupitia",
+          "description": "Mbele maombi yasiyobadilishwa."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Kutengeneza ishara hii sasa.",
+        "saveNowHint": "Haionyeshwa tena — wakati utaondoka skrini hii haiwezi kurekebishwa.",
+        "copied": "Kunakiliwa!",
+        "copy": "Nakili",
+        "goToRouter": "Endelea njia"
+      },
+      "connect": {
+        "heading": "Jinsi ya kuunganisha",
+        "intro": "Mahali yeyote OpenAI au Anthropic SDK katika Routerly na tumia <tokenLink>ishara ya njia</tokenLink> kama funguo la API. Badilisha <code>{{token}}</code> hapa chini na yako. Modeli <code>{{model}}</code> acha chaguo kwa Routerly; kitambulisho yeyote cha modeli kutoka <modelsLink>Modeli</modelsLink> inafanya kazi pia.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, moja sawa yeyote ya \"OpenAI thabiti\" shambulizi la mtoa huduma.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, bila <code>/v1</code>: SDK ongeza.",
+        "curl": "curl",
+        "curlHint": "Kuchukuza wiring bila kusakinisha kitu, kisha tafuta simu katika <usageLink>Matumizi</usageLink>."
+      },
+      "form": {
+        "kind": "Aina",
+        "kindAriaLabel": "Aina ya Njia",
+        "kindFixedHint": "Imebadhi wakati njia itengenezwa.",
+        "routerName": "Jina la Njia",
+        "routerNamePlaceholder": "Programu Yangu",
+        "advancedSettings": "Mipangilio ya zamani",
+        "ttftTimeout": "TTFT Wakati wa Mwisho (ms)",
+        "ttftTimeoutHint": "Kama modeli haitumi byte ya kwanza ya jibu katika wakati huu, Routerly inaacha na kujaribu wagombea wajao. Hauzui muda wa jibu wa jumla. Weka kwenye 0 kusubiri kama mtoa huduma anachukua.",
+        "traceContent": "Kuchukuza maudhui",
+        "traceContentHint": "Kuchukuza daima kuandika metadata (modeli, alama, tokens, gharama, kabila). Weza hii pia kuandika onyo zilizotumwa na majibu yalipata. Husambaza na kukamatia matumizi na kuonekana kwa kila mtu anaweza kusoma ripoti.",
+        "capturePromptsAndAnswers": "Kamatia onyo na majibu",
+        "saveChanges": "Kutengeneza Mabadiliko",
+        "createRouter": "Tengeneza Njia"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Njia hii sio Muongeza.",
+      "candidateRouters": "Njia za Wagombea",
+      "candidateRoutersHint": "Njia hii muongeza inambele maombi. Uzani inakufa mara kila wagombea anachaguliwa; tu jina, kitambulisho, uzani na vikomo vya hiari kwa wagombea vinaoonyeshwa hapa.",
+      "router": "Njia",
+      "selectRouter": "Chagua njia",
+      "weight": "Uzani",
+      "removeCandidate": "Ondoa wagombea",
+      "usageLimits": "Vikomo vya matumizi kwa wagombea hii",
+      "limitCount": "{{count}} kiwango",
+      "limitCount_other": "{{count}} vikomo",
+      "usageLimitsHint": "Vikomo vya matumizi vya hiari kutumika tu kwa maombi muongeza hii inambele kwa wagombea hii.",
+      "empty": "Hakuna njia za wagombea bado. Muongeza inahitaji angalau moja kabla ya ambele maombi.",
+      "addCandidate": "Ongeza Wagombea",
+      "saved": "Kutunzwa!",
+      "saveCandidates": "Kutengeneza Wagombea",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia njia",
+        "saveFailed": "Hitilafu kutengeneza muongeza wagombea"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Kushindwa kugawia wasifu wa njia",
+        "duplicateTargets": "Modeli za lengwa haziwezi kuwa na nakala.",
+        "saveFailed": "Hitilafu kutengeneza njia ya njia",
+        "noProfileAvailable": "Hakuna wasifu wa njia linalodumisha. Tengeneza moja kutoka ukurasa wa Wasifu."
+      },
+      "form": {
+        "routing": "Njia",
+        "routingHint": "Tumia wasifu wa njia iliyogawania, au shirikiana sera za njia hii. Modeli za lengwa bado husanidiwa.",
+        "profileMode": "Wasifu",
+        "customMode": "Kawaida",
+        "routingProfile": "Wasifu wa Njia",
+        "builtinSuffix": "(inajengwa ndani)",
+        "profileHint": "Sera nyuma wasifu na fuata mabadiliko yake. Hariri kwenye ukurasa wa Wasifu, au badilisha kuwa Kawaida kuanzisha kutoka nakala ya sera.",
+        "saved": "Kutunzwa!",
+        "saveRoutingConfiguration": "Kutengeneza Msanidi wa Njia"
+      },
+      "targetModels": {
+        "heading": "Modeli za Lengwa",
+        "hint": "Shirikiana anwani ya modeli ambayo sera zitasala na kuchagua kutoka. Onyo za hiari zilizohusiana AI kukaramu wakati kuchagua kila modeli ya lengwa.",
+        "endpointModel": "Modeli ya Ncha",
+        "selectModel": "Chagua modeli",
+        "promptDefinition": "Shirikiana onyo",
+        "promptPlaceholder": "Eleza kabisa wakati na kwanini njia inapaswa kuchagua modeli hii...",
+        "intents": "Mujibu",
+        "removeTarget": "Ondoa modeli ya lengwa",
+        "empty": "Hakuna modeli za lengwa zilizosanidiwa.",
+        "addTarget": "Ongeza Modeli ya Lengwa"
+      }
+    },
+    "optimizer": {
+      "title": "Waboreshaji",
+      "description": "Waboreshaji kupunguza prompt tokens kabla maombi kufika mtoa huduma. Wanatendesha mpangilio kutoka juu hadi chini. Tumia wasifu wa mboreshaji iliyogawania, au shirikiana njia ya njia hii.",
+      "noPermission": "Huna ruhusa kuona waboreshaji.",
+      "mode": {
+        "profile": "Wasifu",
+        "custom": "Kawaida"
+      },
+      "profileSelect": {
+        "ariaLabel": "Wasifu wa Mboreshaji",
+        "builtinLabel": "{{label}} (inajengwa ndani)",
+        "hint": "Hatua zenyuma wasifu na fuata mabadiliko yake. Hariri kwenye ukurasa wa Wasifu, au badilisha kuwa Kawaida kuanzisha kutoka nakala ya sera.",
+        "disabledSuffix": "(imezuiliwa)",
+        "thresholdSuffix": ", kizingiti {{threshold}}"
+      },
+      "customHint": "Jikita kukamatia, uzani kuamkua. Waboreshaji wengine hutumia kizingiti kudhibiti jinsi wanavyokata kwa bidii.",
+      "saveButton": "Kutengeneza Waboreshaji",
+      "saving": "Inakuhifadhi...",
+      "saved": "Kutunzwa",
+      "preview": {
+        "title": "Muhtasari wa akiba ya token",
+        "description": "Endesha njia ya sasa (yasiyohifadhiwa) kupitia onyo kuona nini kila hatua huondoa na gharama yake. Chagua wagombea wa mazungumzo ya sampuli, au andika onyo lako.",
+        "promptLabel": "Onyo",
+        "promptAriaLabel": "Onyo kumuhtasari",
+        "typePromptOption": "Andika onyo hapa chini",
+        "fixturesHint": "Mazungumzo ya sampuli yaliyosambazwa na Routerly. Routerly haierekezi onyo halisi.",
+        "modelLabel": "Modeli",
+        "modelAriaLabel": "Modeli kumuhtasari dhidi",
+        "modelWithContext": "{{id}} ({{k}}k muktadha)",
+        "noModelOption": "Hakuna modeli",
+        "modelHint": "Hatua ambazo zina upungufu kufika dirisha la muktadha inahitaji kujua ambayo dirisha. Bila modeli zinaskipwa, exact jinsi walivyo kwa ombi linalojua modeli Routerly haina dirisha.",
+        "sampleAriaLabel": "Sampuli onyo",
+        "samplePlaceholder": "Ingiza ujumbe wa sampuli wa mtumiaji...",
+        "runButton": "Endesha Muhtasari",
+        "running": "Inaendesha...",
+        "before": "Kabla",
+        "after": "Baada",
+        "saved": "Kutunzwa",
+        "columns": {
+          "optimizer": "Mboreshaji",
+          "before": "Kabla",
+          "after": "Baada",
+          "saved": "Kutunzwa"
+        },
+        "rolledBackNote": "kuendesha kurudi: mabadiliko hatua hii iliyozalisha iliyokataliwa kama isiyosalama",
+        "skippedNote": "skipped: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Mabadiliko hatua hii iliyozalisha iliyotengeneza upya, kwa sababu onyo ilifika hatua ijayo isiyobadilishwa.",
+          "skipped": "Hatua hii haitendesha: {{reason}}",
+          "unchanged": "Hatua hii alicha onyo yasiyobadilishwa."
+        }
+      },
+      "errors": {
+        "assignFailed": "Kushindwa kugawia wasifu wa mboreshaji",
+        "saveFailed": "Hitilafu kutengeneza waboreshaji",
+        "previewFailed": "Hitilafu kuendesha muhtasari",
+        "noProfileAvailable": "Hakuna wasifu wa mboreshaji linalodumisha. Tengeneza moja kutoka ukurasa wa Wasifu."
+      }
+    },
+    "token": {
+      "newButton": "Ishara Jipya",
+      "empty": "Hakuna ishara za API bado. Tengeneza moja kuanzisha uthibitishaji wa maombi.",
+      "budgetOverrides": "Kuboreshwa kwa Bajeti",
+      "created": "Kutengenezwa",
+      "lastUsed": "Iliyotumika mwisho",
+      "expires": "Inaendesha",
+      "never": "Kamwe",
+      "editTitle": "Hariri Msanidi",
+      "revokeTitle": "Tengeneza upya Ishara",
+      "revokeConfirm": "Tengeneza upya ishara \"{{snippet}}...\"? Programu inayoitumia itaacha kufanya kazi kiotomatiki.",
+      "labelInput": {
+        "placeholder": "Tafuta au tengeneza lebo…",
+        "createPrefix": "Tengeneza",
+        "noMatches": "Hakuna lebo inayolingana kupatikana."
+      },
+      "errors": {
+        "deleteFailed": "Hitilafu kufuta ishara"
+      },
+      "create": {
+        "backToTokens": "Kurudi kwenye ishara",
+        "title": "Ishara Jipya ya API",
+        "subtitle": "Ishara kamili inaonyeshwa mara moja baada ya kutengeneza — kutengeneza kwa usalama.",
+        "tokenCreated": "Ishara iliyotengeneza kwa mafanikio. Nakili sasa — haionyeshwa tena.",
+        "copied": "Kunakiliwa!",
+        "copy": "Nakili",
+        "done": "Kumaalizia",
+        "optional": "wa utakata",
+        "labels": "Lebo",
+        "labelsHint": "Tia tagi ishara hii kubaini mahali inakufa (mf. \"uzalishaji\", \"ci\").",
+        "scopes": "Muktadha",
+        "scopesHint": "Muktadha wa bure wenye ishara hii (mf. \"batch\", \"ndani\"), kutunzwa na ishara kwa muhtasari wako.",
+        "tags": "Tagi",
+        "tagsHint": "Metadata ya funguo-thamani kuambilishwa kwa kukamatia matumizi (mf. env=uzalishaji).",
+        "keyPlaceholder": "funguo",
+        "valuePlaceholder": "thamani",
+        "createButton": "Tengeneza Ishara",
+        "cancel": "Ghairi",
+        "copyFailed": "Kunakili kushindwa — tafadhali chagua na kunakili ishara kwa mikono.",
+        "errors": {
+          "createFailed": "Hitilafu kutengeneza ishara"
+        }
+      },
+      "edit": {
+        "title": "Hariri Ishara",
+        "subtitle": "Kuboreshwa lebo na kuboreshwa kwa kiwango cha kila modeli kwa ishara hii.",
+        "token": "Ishara",
+        "labels": "Lebo",
+        "perModelLimits": "Vikomo vya kila modeli",
+        "perModelLimitsHint": "Kuboreshwa vikomo vya jumla na kiwango cha njia kwa maombi yaliyotumia ishara hii.",
+        "noTargetModels": "Ongeza modeli za lengwa katika kichupo cha Njia kwanza.",
+        "noOverride": "hakuna kuboreshwa",
+        "noLimits": "Hakuna vikomo",
+        "noLimitsSet": "Hakuna vikomo iliyowekwa — kurithi kutoka wazazi. Ongeza kiwango hapa chini kuboreshwa.",
+        "metric": "Kiashiria",
+        "type": "Aina",
+        "periodLabel": "Kipindi",
+        "every": "Kila",
+        "maxCost": "Juu ($)",
+        "maxCalls": "Juu (n.)",
+        "maxTokens": "Juu (tokens)",
+        "allCombosSet": "Mchanganuo wote wa kipimo/kipindi wamewekwa tayari",
+        "addLimit": "Ongeza kiwango",
+        "windowType": {
+          "period": "Kipindi",
+          "rolling": "Inayozunguka"
+        },
+        "limitMetric": {
+          "cost": "Gharama (USD)",
+          "calls": "Maombi",
+          "input_tokens": "Tokens za ingizo",
+          "output_tokens": "Tokens za pato",
+          "total_tokens": "Tokens kwa jumla"
+        },
+        "period": {
+          "hourly": "Kila saa",
+          "daily": "Kila siku",
+          "weekly": "Kila wiki",
+          "monthly": "Kila mwezi",
+          "yearly": "Kila mwaka"
+        },
+        "rollingUnit": {
+          "second": "sekunde",
+          "minute": "dakika",
+          "hour": "saa",
+          "day": "siku",
+          "week": "wiki",
+          "month": "miezi"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / kila {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Hitilafu kutengeneza ishara"
+        }
+      }
+    },
+    "users": {
+      "title": "Wanajumbe wa Njia",
+      "description": "Simamia watumiaji ambao wana kufikia njia hii.",
+      "addButton": "Ongeza Mjumbe",
+      "addNewTitle": "Ongeza Mjumbe Jipya",
+      "selectUserPlaceholder": "Chagua mtumiaji...",
+      "addConfirmButton": "Ongeza",
+      "cancelButton": "Ghairi",
+      "empty": "Hakuna wanajumbe kupatikana.",
+      "removeConfirm": "Je, una uhakika ungependa kuondoa mjumbe huu?",
+      "saveTitle": "Kutengeneza mabadiliko",
+      "changeRoleTitle": "Badilisha Jukumu",
+      "removeTitle": "Ondoa Mjumbe",
+      "roles": {
+        "viewer": "Mwonaji",
+        "editor": "Hariri",
+        "admin": "Msimamizi"
+      },
+      "columns": {
+        "user": "Mtumiaji",
+        "role": "Jukumu",
+        "actions": "Matendo"
+      },
+      "errors": {
+        "loadFailed": "Kushindwa kupakia watumiaji",
+        "addFailed": "Hitilafu kuongeza mjumbe",
+        "updateFailed": "Hitilafu kuboreshwa mjumbe",
+        "removeFailed": "Hitilafu kuondoa mjumbe"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Juu"
+      },
+      "autoRefreshOff": "Autorefresh imezuiliwa",
+      "autoRefreshEvery": "Autorefresh kila {{interval}}",
+      "lastUpdated": "kuboreshwa mwisho: {{time}}",
+      "refresh": "Kutengeneza Upya",
+      "refreshNowTitle": "Kutengeneza upya sasa",
+      "refreshNowButton": "↻ Sasa",
+      "filters": {
+        "period": "Kipindi",
+        "model": "Modeli",
+        "allModels": "Modeli Zote",
+        "type": "Aina",
+        "all": "Zote",
+        "completion": "Kamatafu",
+        "router": "Njia",
+        "status": "Hali",
+        "success": "Mafanikio",
+        "blocked": "Imedhibitiwa",
+        "error": "Hitilafu",
+        "resetButton": "Sezesha Vyombo"
+      },
+      "stats": {
+        "totalCost": "Gharama ya Jumla",
+        "totalCalls": "Simu za Jumla",
+        "completionCalls": "Simu za Kamatafu",
+        "routerCalls": "Simu za Njia",
+        "errors": "Hitilafu"
+      },
+      "requestLogs": "Kasia la Ombi",
+      "emptyNoRequests": "Hakuna maombi kwa njia hii katika kipindi kinachochaguliwa.",
+      "emptyNoMatches": "Hakuna kukamatia inayolingana na vyombo vya viasishwa.",
+      "columns": {
+        "time": "Saa",
+        "model": "Modeli",
+        "type": "Aina",
+        "in": "Ndani",
+        "out": "Nje",
+        "cost": "Gharama",
+        "latency": "Kabila",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Hali"
+      },
+      "typeRouter": "njia",
+      "typeCompletion": "kamatafu",
+      "pagination": {
+        "previous": "← Ililopita",
+        "next": "Ijayo →",
+        "pageOf": "Ukurasa {{page}} wa {{totalPages}}",
+        "totalRecords": "({{count}} kukamatia kwa jumla)"
+      }
+    },
+    "security": {
+      "title": "Usalama",
+      "description": "Tumia wasifu wa usalama iliyogawania, au shirikiana ngati za kuzuia na sera za PII.",
+      "mode": {
+        "profile": "Wasifu",
+        "custom": "Kawaida"
+      },
+      "profileSelect": {
+        "ariaLabel": "Wasifu wa Usalama",
+        "builtinLabel": "{{label}} (inajengwa ndani)",
+        "hint": "Ngati za kuzuia na sera za PII kutoka wasifu na fuata mabadiliko yake. Hariri kwenye ukurasa wa Wasifu, au badilisha kuwa Kawaida kuanzisha kutoka nakala ya sera.",
+        "blockingSuffix": ", zuia",
+        "disabledSuffix": ", imezuiliwa",
+        "piiRedaction": "PII kuanisha ({{target}})"
+      },
+      "saveButton": "Kutengeneza Mipangilio ya Usalama",
+      "saved": "Kutunzwa!",
+      "errors": {
+        "assignFailed": "Kushindwa kugawia wasifu wa usalama",
+        "saveFailed": "Hitilafu kutengeneza mipangilio ya usalama",
+        "noProfileAvailable": "Hakuna wasifu wa usalama linalodumisha. Tengeneza moja kutoka ukurasa wa Wasifu."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Wewe ni kusaidia msaada wa AI.",
+      "errors": {
+        "unknown": "Hitilafu yasiyojulikana iliyotokea",
+        "onlyImages": "Kuambilishwa kwa picha tu kunagumzewa kwa modeli ya macho wakati huu."
+      },
+      "title": "Jaribio la Kezigombea",
+      "subtitle": "Tuma maombi ya jaribio kupitia njia ya njia.",
+      "routerToken": "Ishara ya Njia:",
+      "hideToken": "Pangana Ishara",
+      "showToken": "Onyesha Ishara",
+      "recognizedToken": "Ishara Inayojulikana",
+      "unrecognizedToken": "Ishara Isiyojulikana",
+      "noMessages": "Hakuna ujumbe bado.",
+      "enterTokenHint": "Tafadhali ingiza Ishara ya Njia hapo juu kutuma ujumbe.",
+      "typeMessageHint": "Andika ujumbe hapa chini kuanzisha jaribio.",
+      "reasoning": "Ujinga",
+      "attachedAlt": "Kuambilishwa",
+      "attachmentAlt": "Kuambilishwa",
+      "attachImage": "Kuambilisha picha",
+      "typeMessagePlaceholder": "Andika ujumbe...",
+      "stopGeneration": "Acha uzalishaji",
+      "sendEnter": "Tuma (Enter)",
+      "debugLog": "Goria la Kubaini",
+      "clear": "Safisha",
+      "noRequestSent": "Hakuna ombi lilitumwa bado.",
+      "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}} · {{count}} tukio",
+      "turnTraceLog_other": "Goria la kuchukuza la Zamu #{{turn}} · {{count}} matukio"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Muunganisho",
+      "subtitle": "Akaunti za mtoa huduma zinazotumiwa kuendesha mifumo ya modeli",
+      "noPermission": "Huna ruhusa kuona muunganisho.",
+      "count": "{{count}} muunganisho",
+      "count_other": "{{count}} muunganisho",
+      "addConnection": "Ongeza Muunganisho",
+      "empty": "Hakuna muunganisho bado. Ongeza moja kuanzisha.",
+      "deleteConfirm": "Ondoa muunganisho \"{{label}}\"? Mifumo iliyochanjiva itaacha kufanya kazi.",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia muunganisho",
+        "deleteFailed": "Kushindwa kufuta muunganisho"
+      },
+      "columns": {
+        "label": "Lebo",
+        "provider": "Mtoa Huduma",
+        "endpoint": "Ncha",
+        "status": "Hali"
+      },
+      "status": {
+        "enabled": "Inatumiwa",
+        "disabled": "Imezuiliwa"
+      },
+      "actions": {
+        "models": "Modeli",
+        "edit": "Hariri",
+        "remove": "Ondoa"
+      }
+    },
+    "form": {
+      "backToConnections": "Kurudi kwenye Muunganisho",
+      "editTitle": "Hariri Muunganisho",
+      "addTitle": "Ongeza Muunganisho",
+      "enabled": "Inatumiwa",
+      "editSubtitle": "Kuboreshwa mipangilio ya akaunti ya mtoa huduma",
+      "addSubtitle": "Jikita akaunti jipya ya mtoa huduma",
+      "sectionTitle": "Maelezo ya muunganisho",
+      "sectionDesc": "Akaunti ya mtoa huduma, sharti, na ncha inayotumika kufanya maombi.",
+      "provider": "Mtoa Huduma",
+      "groups": {
+        "directApi": "API ya Moja kwa Moja",
+        "cloudPlatform": "Jukumu la Wingu",
+        "subscription": "Usambaji",
+        "browserSession": "Kikao cha Tafsiri",
+        "selfHosted": "Ndani ya Mwenyewe"
+      },
+      "upstreamProvider": {
+        "label": "Mtoa Huduma",
+        "hintLabel": "(jina la mtoa huduma wa mtoto)",
+        "placeholder": "mf. deepseek, mistral, groq",
+        "description": "Jina huduma hii ncha inayomiliki. Modeli kwenye muunganisho huu tumia kama utambulisho wao wa kambamba (mf. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Jina",
+        "hint": "Utambulisho huu muunganisho mahali popote inarejelewa, kwa sababu lazima iwe ya kipekee. Acha tupu kutengeneza <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Acha shambulizi la sharti tupu kutengeneza thamani sasa.",
+      "save": "Kutengeneza",
+      "create": "Tengeneza",
+      "cancel": "Ghairi",
+      "oauth": {
+        "unknown": "yasiyojulikana",
+        "accountExpires": "Akaunti: {{account}} — inaendesha {{expires}}",
+        "unknownError": "Hitilafu yasiyojulikana"
+      },
+      "errors": {
+        "notFound": "Muunganisho haijulikani",
+        "loadFailed": "Kushindwa kupakia muunganisho",
+        "updateFailed": "Kushindwa kuboreshwa muunganisho",
+        "createFailed": "Kushindwa kutengeneza muunganisho"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Kurudi kwenye Modeli",
+      "title": "Kugundua Modeli",
+      "subtitle": "Fungua modeli zilizodumisha na ziongeza kwa msanidi wako wa njia",
+      "count": "{{count}} modeli",
+      "filteredCount": "{{filtered}} ya {{count}}",
+      "free": "bure",
+      "add": "Ongeza",
+      "addAgain": "Ongeza tena",
+      "loadFailed": "Kushindwa kupakia katalogi: {{error}}",
+      "filters": {
+        "search": "Tafuta",
+        "searchPlaceholder": "Kitambulisho cha modeli au jina…",
+        "provider": "Mtoa Huduma",
+        "allProviders": "Mtoa huduma wote",
+        "context": "Muktadha",
+        "ctxOptions": {
+          "all": "Zote",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Bei / 1M",
+        "priceOptions": {
+          "all": "Zote",
+          "free": "Bure",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Onyesha",
+        "configured": "Imesanidiwa",
+        "embedding": "Kuingiza",
+        "resetFilters": "Sezesha Vyombo"
+      },
+      "empty": {
+        "noMatches": "Hakuna modeli inayolingana na vyombo vyako."
+      },
+      "columns": {
+        "model": "Modeli",
+        "provider": "Mtoa Huduma",
+        "context": "Muktadha",
+        "input": "Ingizo / 1M",
+        "output": "Pato / 1M"
+      },
+      "badges": {
+        "configured": "Imesanidiwa",
+        "embedding": "kuingiza",
+        "runsLocally": "Inaendesha ndani"
+      },
+      "pagination": {
+        "prev": "Iliyotangulia",
+        "next": "Ijayo",
+        "range": "{{start}}–{{end}} ya {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Kurudi kwenye Modeli",
+      "title": {
+        "add": "Ongeza Modeli",
+        "edit": "Hariri Modeli",
+        "clone": "Nakala Modeli"
+      },
+      "subtitle": {
+        "add": "Jikita modeli jipya ya mtoa huduma wa LLM",
+        "edit": "Kuboreshwa msanidi kwa {{id}}",
+        "clone": "Kumkamatia kutoka {{id}} — gawia kitambulisho kipya kutengeneza"
+      },
+      "errors": {
+        "modelNotFound": "Modeli haijulikani",
+        "sourceModelNotFound": "Modeli ya chanzo haijulikani",
+        "loadFailed": "Hitilafu kupakia modeli",
+        "idRequired": "Kitambulisho cha modeli kunakusudiwa",
+        "duplicateId": "Modeli \"{{id}}\" tayari ipo — weka Kitambulisho cha kawaida tofauti",
+        "selectConnection": "Chagua muunganisho",
+        "saveFailed": "Hitilafu"
+      },
+      "badge": {
+        "yes": "ndiyo",
+        "no": "hapana",
+        "override": "Kuboreshwa",
+        "auto": "Otomatiki",
+        "default": "Chaguo la kawaida: {{value}}",
+        "reset": "Sezesha"
+      },
+      "oauth": {
+        "unknownExpiry": "yasiyojulikana",
+        "accountOk": "Akaunti: {{account}} — inaendesha {{expires}}",
+        "unknownError": "Hitilafu yasiyojulikana"
+      },
+      "identification": {
+        "title": "Utambulisho wa Modeli",
+        "description": "Kitambulisho cha kipekee na mipangilio ya mtoa huduma kwa msanidi wa modeli huu.",
+        "routerlyId": "Kitambulisho cha Routerly",
+        "routerlyIdHintPre": "(wa utakata — chaguo la kawaida:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Kitambulisho kinachotumika wakati kurejea modeli hii katika simu za API ya Routerly.",
+        "provider": "Mtoa Huduma",
+        "upstreamProviderHint": "(jina la mtoa huduma wa mtoto)",
+        "upstreamProviderPlaceholder": "mf. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Kutumika kama kambamba kwa Kitambulisho cha Routerly (mf.",
+        "upstreamProviderDescPost": ").",
+        "model": "Modeli",
+        "upstreamModelHint": "(kitambulisho cha modeli ya mtoto)",
+        "upstreamModelPlaceholder": "mf. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Kitambulisho cha modeli kutumwa kwa ncha ya API ya mtoto.",
+        "modelPreset": "Kuanzisha Modeli",
+        "customModelOption": "— jina la modeli la kawaida —",
+        "customModelPlaceholder": "mf. modeli-yangu-iliyoboreshwa"
+      },
+      "connection": {
+        "title": "Maelezo ya muunganisho",
+        "description": "Ncha ya API na sharti la uthibitishaji kunakusudiwa kufanya maombi.",
+        "preconfigured": "Iliyochukuliwa tayari",
+        "custom": "Kawaida",
+        "connection": "Muunganisho",
+        "selectPlaceholder": "— chagua muunganisho —",
+        "noneAvailable": "Hakuna muunganisho uliyochukuliwa tayari kwa mtoa huduma huu. Badilisha kuwa Kawaida, au tengeneza moja kwenye ukurasa wa Muunganisho.",
+        "editHint": "Hariri muunganisho huu baadaye kuboreshwa kila modeli iliyochanjiva kwake."
+      },
+      "capabilities": {
+        "title": "Uwezo",
+        "description": "Weka aina na uwezo wa modeli hii.",
+        "embeddingModel": "Modeli ya kuingiza",
+        "embeddingModelHint": "Modeli hii inazoeza rakupishi za vekta (sio kamatafu za kezigombea)"
+      },
+      "pricing": {
+        "title": "Bei & muktadha",
+        "description": "Vigezo vya gharama na vikomo vya uzalishaji vinavyotumika kwa malipo na njia.",
+        "inputPerMillion": "Ingizo $/1M",
+        "outputPerMillion": "Pato $/1M",
+        "cachePerMillion": "Kache kusoma $/1M",
+        "cacheWritePerMillion": "Kache kuandika $/1M",
+        "optional": "(wa utakata)",
+        "contextWindow": "Dirisha la Muktadha",
+        "contextWindowHint": "(tokens, wa utakata)"
+      },
+      "tiers": {
+        "title": "Zamani — Tabaka la bei",
+        "description": "Kuboreshwa bei wakati kiashiria kinataa kizingiti. Kwa mfano: \"Juu ya tokens 200 000 za muktadha, bei zibadilika.\"",
+        "removeTier": "Ondoa tabaka",
+        "above": "Juu ya",
+        "metric": "Kiashiria",
+        "metricContextTokens": "Tokens za muktadha",
+        "overridePricing": "Kuboreshwa bei",
+        "addTier": "Ongeza tabaka la bei"
+      },
+      "limits": {
+        "title": "Vikomo",
+        "description": "Vikomo vya matumizi kwa modeli hii. Kanuni kadhaa zinaweza kuunganishwa.",
+        "metric": "Kiashiria",
+        "type": "Aina",
+        "addLimit": "Ongeza kiwango"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (usambaji wa Pro/Max)",
+        "openaiOauth": "OpenAI (usambaji wa ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "Kutengeneza Mabadiliko",
+      "createClone": "Tengeneza Nakala",
+      "createModel": "Tengeneza Modeli"
+    },
+    "page": {
+      "title": "Modeli",
+      "subtitle": "Mtoa huduma wa LLM ajiifu kwenye Routerly",
+      "tabs": {
+        "models": "Modeli",
+        "health": "Afya"
+      },
+      "toolbar": {
+        "count": "{{count}} modeli",
+        "count_other": "{{count}} modeli",
+        "filteredCount": "{{filtered}} ya {{count}} modeli",
+        "filteredCount_other": "{{filtered}} ya {{count}} modeli"
+      },
+      "filters": {
+        "allProviders": "Mtoa huduma wote",
+        "allConnections": "Muunganisho wote",
+        "searchPlaceholder": "Vyombo vya modeli…"
+      },
+      "discover": "Gundua",
+      "addModel": "Ongeza Modeli",
+      "deleteConfirm": "Ondoa modeli \"{{id}}\"?",
+      "empty": {
+        "noModels": "Hakuna modeli bado. Ongeza moja kuanzisha.",
+        "noMatches": "Hakuna modeli inayolingana na vyombo vya viasishwa."
+      },
+      "columns": {
+        "id": "Kitambulisho",
+        "provider": "Mtoa Huduma",
+        "endpoint": "Ncha",
+        "input": "Ingizo $/1M",
+        "output": "Pato $/1M",
+        "cache": "Kache $/1M",
+        "context": "Ukubwa wa Muktadha"
+      },
+      "actions": {
+        "test": "Jaribio",
+        "clone": "Nakala",
+        "edit": "Hariri",
+        "remove": "Ondoa"
+      },
+      "pagination": {
+        "previous": "← Ililopita",
+        "next": "Ijayo →",
+        "pageOf": "Ukurasa {{page}} wa {{totalPages}}",
+        "total": "({{count}} modeli)",
+        "total_other": "({{count}} modeli)"
+      },
+      "health": {
+        "emptyNoModels": "Hakuna modeli iliyosanidiwa.",
+        "emptyNoMatches": "Hakuna modeli inayolingana na chuja.",
+        "resetAll": "Sezesha zote",
+        "resetAllTitle": "Sezesha kila kibundi cha mizani, wakati wa burudani, na kuzuia",
+        "resetTitle": "Sezesha kibundi la mizani",
+        "confirmResetModel": "Sezesha kibundi cha mizani kwa modeli \"{{id}}\"?",
+        "confirmResetAll": "Sezesha hali yote ya upinzani? Hii inafuta kila kibundi cha mizani, wakati wa burudani, na kuzuia.",
+        "errors": {
+          "resetModelFailed": "Kushindwa kusezesha kibundi la mizani",
+          "resetAllFailed": "Kushindwa kusezesha hali ya upinzani"
+        },
+        "columns": {
+          "model": "Modeli",
+          "provider": "Mtoa Huduma",
+          "status": "Hali",
+          "circuit": "Mzunguko",
+          "errorRate": "Kiwango cha hitilafu (5m)",
+          "p95Latency": "P95 kabila (1h)",
+          "requests": "Maombi (1h)",
+          "lastSuccess": "Mafanikio ya mwisho",
+          "cooldownLockout": "Wakati wa burudani / kuzuia"
+        },
+        "status": {
+          "healthy": "Nzuri",
+          "degraded": "Iliyooza",
+          "unavailable": "Haipatikani",
+          "cooldown": "Wakati wa burudani",
+          "nodata": "Hakuna data"
+        },
+        "circuit": {
+          "ok": "SAWA",
+          "recovering": "Kukusanyika",
+          "tripped": "Iliyotokea"
+        },
+        "time": {
+          "never": "kamwe",
+          "now": "sasa",
+          "secondsAgo": "{{count}}s iliyopita",
+          "minutesAgo": "{{count}}m iliyopita",
+          "hoursAgo": "{{count}}h iliyopita",
+          "daysAgo": "{{count}}d iliyopita",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "wakati wa burudani {{time}}",
+          "lockout": "kuzuia {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Majaribio",
+      "subtitle": "Njia ya A/B jaribu njia dhidi ya kila mmoja",
+      "noPermission": "Huna ruhusa kuona majaribio.",
+      "count": "{{count}} jaribio",
+      "count_other": "{{count}} majaribio",
+      "newExperiment": "Jaribio Jipya",
+      "empty": "Hakuna majaribio bado. Tengeneza moja kulinganisha njia moja kwa moja.",
+      "deleteConfirm": "Futa jaribio \"{{name}}\"? Hii haiwezi kutengenezwa.",
+      "noToken": "Hakuna ishara",
+      "noTokenTitle": "Bila ishara hakuna mteja anaweza kufikia jaribio hili",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia majaribio",
+        "deleteFailed": "Kushindwa kufuta jaribio"
+      },
+      "columns": {
+        "name": "Jina",
+        "variants": "Aina",
+        "rotation": "Zamu",
+        "created": "Kutengenezwa"
+      },
+      "actions": {
+        "edit": "Hariri jaribio",
+        "remove": "Futa"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Kurudi kwenye majaribio",
+      "newExperiment": "Jaribio Jipya",
+      "loading": "Inakupakia...",
+      "experimentId": "Jaribio Kitambulisho:",
+      "disabledTabTitle": "Kutengeneza jaribio kwanza kuanguka kichupo hiki",
+      "errors": {
+        "notFound": "Jaribio haijulikani"
+      },
+      "tabs": {
+        "config": "Msanidi",
+        "metrics": "Vipimo",
+        "token": "Ishara"
+      }
+    },
+    "config": {
+      "saved": "Kutunzwa.",
+      "created": "Jaribio iliyotengeneza. Mahali mteja kwenye ishara hii badala ya ishara ya njia. Haionyeshwa tena.",
+      "copy": "Nakili",
+      "copied": "Kunakiliwa!",
+      "done": "Kumaalizia",
+      "saving": "Inakuhifadhi...",
+      "create": "Tengeneza Jaribio",
+      "save": "Kutengeneza Mabadiliko",
+      "cancel": "Ghairi",
+      "trafficSplit": "Trafiki zamu",
+      "errors": {
+        "loadRoutersFailed": "Kushindwa kupakia njia",
+        "saveFailed": "Kushindwa kutengeneza jaribio",
+        "copyFailed": "Kunakili kushindwa: chagua na kunakili ishara kwa mikono."
+      },
+      "fields": {
+        "name": "Jina",
+        "namePlaceholder": "Njia yenye bei za karibu dhidi ya kuu",
+        "description": "Maelezo",
+        "optional": "(wa utakata)",
+        "descriptionPlaceholder": "Nini jaribio hili linajaribu kusuluhisha",
+        "minSamples": "Simu za chini kwa aina",
+        "minSamplesHint": "Chini ya hii, kichupo cha Vipimo jibu kulinganisha kwa kuwa hakujakamatia.",
+        "rotation": "Zamu",
+        "stickyOn": "Sticky kwenye",
+        "stickyKey": "Funguo la sticky"
+      },
+      "variants": {
+        "title": "Aina",
+        "desc": "Kila aina ni njia iliyopo, ilichukuliwa kwa jumla: modeli zake, njia na ngati zote zinatumika. Jaribio inahitaji angalau mbili.",
+        "routerAriaLabel": "Aina {{index}} njia",
+        "routerPlaceholder": "Chagua njia",
+        "labelAriaLabel": "Aina {{index}} lebo",
+        "labelPlaceholder": "Lebo (wa utakata)",
+        "weightAriaLabel": "Aina {{index}} uzani",
+        "weightPlaceholder": "Uzani",
+        "removeTitle": "Ondoa aina {{index}}",
+        "add": "Ongeza aina"
+      },
+      "judge": {
+        "title": "Wadhamini",
+        "desc": "Wa utakata: modeli inasoma kila jibu linajipima na inajipima 0-10 dhidi ya vigezo vyako. Kila simu inayopimwa ni simu ya ziada ya modeli, iliyobei kama nyingine yoyote.",
+        "enable": "Inajipima majibu na modeli ya wadhamini",
+        "model": "Modeli ya wadhamini",
+        "modelPlaceholder": "Chagua modeli",
+        "criteria": "Vigezo",
+        "criteriaPlaceholder": "Moja kwa kila mstari, mf.\\nJibu swali lililosomwa\\nBaki halisi\\nBaki kwa muundo ulioombiwa",
+        "sampleRate": "Chache cha simu inayopimwa (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Inakupakia...",
+      "callsMeasured": "{{count}} simu iliyopimwa",
+      "callsMeasured_other": "{{count}} simu ziliyopimwa",
+      "empty": "Hakuna simu katika dirisha hili bado. Mahali mteja kwenye ishara ya jaribio kuanzisha kulinganisha.",
+      "notConclusive": "Hakujakamatia bado: kila aina inahitaji simu angalau {{minSamples}} katika dirisha hili. ",
+      "explanation": "Takwimu nzuri ya kila jozi inakamatia: ngumu kwa simu, haraka, alama ya wadhamini juu. Asilimia hapa chini thamani ni matangazo yake kutoka mkono wa nzuri. Alama ya wadhamini ni uenezaji inayoendelea juu ya maisha yote ya jaribio, kwa sababu ni takwimu moja ambayo dirisha hauzui.",
+      "lowSample": "Sampuli ya chini",
+      "lowSampleTitle": "Chini ya simu {{minSamples}} katika dirisha hili",
+      "judgedCallsTitle": "{{count}} jibu linajipimwa na wadhamini tangu jaribio lilianzisha",
+      "judgedCallsTitle_other": "{{count}} majibu yaliyopimwa na wadhamini tangu jaribio lilianzisha",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia vipimo"
+      },
+      "columns": {
+        "variant": "Aina",
+        "calls": "Simu",
+        "share": "Chache",
+        "errors": "Hitilafu",
+        "tokens": "Tokens ndani / nje",
+        "cost": "Gharama",
+        "costPerCall": "Gharama / simu",
+        "avgLatency": "Kabila ya wastani",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Alama ya wadhamini"
+      }
+    },
+    "token": {
+      "desc": "Mteja anakuita jaribio kama njia: Base URL sawa, ishara hii badala ya ishara ya njia. Kila ombi landing kwenye aina moja na bili kwa njia ya aina hii.",
+      "baseUrlLabel": "Base URL kwa OpenAI au Anthropic SDK, na ishara ya jaribio kama funguo la API:",
+      "created": "Ishara iliyotengeneza. Nakili sasa, haionyeshwa tena.",
+      "copy": "Nakili",
+      "copied": "Kunakiliwa!",
+      "newToken": "Ishara Jipya",
+      "empty": "Hakuna ishara kwenye jaribio hili. Tengeneza moja kwa wateja wanapoweza kuita.",
+      "revokeConfirm": "Tengeneza upya ishara \"{{snippet}}...\"? Wateja wanaotumia itaacha kufanya kazi kiotomatiki.",
+      "revokeTitle": "Tengeneza upya Ishara",
+      "errors": {
+        "createFailed": "Kushindwa kutengeneza ishara",
+        "revokeFailed": "Kushindwa kutengeneza upya ishara",
+        "copyFailed": "Kunakili kushindwa: chagua na kunakili ishara kwa mikono."
+      },
+      "columns": {
+        "created": "Kutengenezwa",
+        "lastUsed": "Iliyotumika mwisho"
+      }
+    }
+  },
+  "overview": {
+    "title": "Muhtasari",
+    "subtitle": "Muhtasari wa matumizi na kuvunja kwa gharama",
+    "noPermission": "Hakuna ruhusa kuona data ya matumizi.",
+    "costByModel": "Gharama kwa Modeli",
+    "noCostRecorded": "Hakuna gharama inayoandikwa kipindi hiki.",
+    "callsByModel": "Simu kwa Modeli",
+    "columns": {
+      "model": "Modeli",
+      "calls": "Simu",
+      "errors": "Hitilafu",
+      "cost": "Gharama"
+    },
+    "stats": {
+      "totalCalls": "Simu za Jumla",
+      "callsBreakdown": "{{routing}} njia · {{completion}} kamatafu",
+      "successRate": "Kiwango cha Mafanikio",
+      "ofAllRequests": "ya maombi yote",
+      "errors": "Hitilafu",
+      "failedRequests": "maombi yasiyofanikia",
+      "models": "Modeli",
+      "registered": "jikita",
+      "routers": "Njia",
+      "active": "inatumiwa"
+    },
+    "connectCard": {
+      "title": "Unganisha mteja",
+      "desc": "Mahali Claude Code, Codex, Cursor na {{count}} zaidi katika njia hii."
+    }
+  },
+  "login": {
+    "emailLabel": "Barua",
+    "passwordLabel": "Neno la Siri",
+    "signIn": "Ingiza",
+    "errors": {
+      "loginFailed": "Kuandika kushindwa",
+      "totpFailed": "Uthibitishaji wa 2FA kushindwa"
+    },
+    "totp": {
+      "title": "Uthibitishaji wa Sababu mbili",
+      "backupPrompt": "Ingiza koodi ya msaada.",
+      "appPrompt": "Ingiza koodi ya tarakamu 6 kutoka programu ya uthibitishaji.",
+      "backupCodeLabel": "Koodi ya Msaada",
+      "authenticatorCodeLabel": "Koodi ya Uthibitishaji",
+      "verify": "Thibitisha",
+      "useAuthenticatorInstead": "Tumia programu ya uthibitishaji badala",
+      "useBackupInstead": "Tumia koodi ya msaada badala"
+    }
+  },
+  "setup": {
+    "welcome": "Karibu! Tunataka jifunza.",
+    "welcomeSubtitle": "Tengeneza akaunti ya kwanza ya msimamizi kuanzisha Routerly ya kudhibiti.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly inaendesha kiotomatiki. Hitilafu inaweza kutokea.",
+    "betaFeedback": "Kutoa kwako kusaidia kujenga nini itakuwa —",
+    "betaLink": "ripoti matatizo au chache mawazo",
+    "emailLabel": "Barua ya Msimamizi",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Neno la Siri",
+    "passwordPlaceholder": "Angalau herufi 8",
+    "confirmLabel": "Thibitisha Neno la Siri",
+    "confirmPlaceholder": "Ingiza tena neno la siri",
+    "submit": "Tengeneza Akaunti ya Msimamizi",
+    "errors": {
+      "mismatch": "Maneno ya siri hayafanani",
+      "tooShort": "Neno la siri lazima liwe angalau herufi 8",
+      "setupFailed": "Kuanzisha kushindwa"
+    }
+  },
+  "audit": {
+    "empty": "Hakuna ingizo la kuchukuza kupatikana.",
+    "errors": {
+      "loadFailed": "Kushindwa kupakia kasia la kuchukuza"
+    },
+    "filters": {
+      "period": "Kipindi",
+      "user": "Mtumiaji",
+      "userPlaceholder": "Barua au kitambulisho cha mtumiaji",
+      "action": "Kitendo",
+      "actionPlaceholder": "mf. modeli:tengeneza",
+      "result": "Matokeo",
+      "results": {
+        "all": "Zote",
+        "success": "Mafanikio",
+        "forbidden": "Harufu",
+        "error": "Hitilafu"
+      },
+      "refresh": "Kutengeneza Upya"
+    },
+    "columns": {
+      "timestamp": "Wakati",
+      "user": "Mtumiaji",
+      "action": "Kitendo",
+      "endpoint": "Ncha",
+      "result": "Matokeo",
+      "details": "Maelezo"
+    },
+    "pagination": {
+      "previous": "Ililopita",
+      "next": "Ijayo",
+      "page": "Ukurasa {{page}} wa {{totalPages}}",
+      "total": "({{count}} jumla)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Matumizi",
+      "live": "MOJA",
+      "subtitle": "Kasia ya simu mahususi na kuvunja kwa modeli",
+      "updatedAt": "· kuboreshwa katika {{time}}",
+      "poll": {
+        "off": "Juu",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Moja",
+      "liveButtonTitle": {
+        "disable": "Zui modi ya moja",
+        "enable": "Weza modi ya moja (kutengeneza upya kila 2s)"
+      },
+      "refreshNow": "↻ Sasa",
+      "refreshNowTitle": "Kutengeneza upya sasa",
+      "filters": {
+        "period": "Kipindi",
+        "router": "Njia",
+        "model": "Modeli",
+        "token": "Ishara",
+        "caller": "Korea",
+        "type": "Aina",
+        "status": "Hali",
+        "allRouters": "Njia Zote",
+        "allModels": "Modeli Zote",
+        "allTokens": "Ishara Zote",
+        "resetFilters": "Sezesha Vyombo",
+        "all": "Zote",
+        "success": "Mafanikio",
+        "blocked": "Imedhibitiwa",
+        "error": "Hitilafu"
+      },
+      "caller": {
+        "all": "Zote",
+        "completion": "Kamatafu",
+        "routing": "Njia",
+        "guardrail": "Ngiti",
+        "judge": "Wadhamini"
+      },
+      "callerBadge": {
+        "completion": "kamatafu",
+        "routing": "njia",
+        "guardrail": "ngiti",
+        "judge": "wadhamini"
+      },
+      "errors": {
+        "loadFailedPrefix": "Kushindwa kupakia data ya matumizi:",
+        "retry": "Jaribio Tena"
+      },
+      "stats": {
+        "totalCalls": "Simu za Jumla",
+        "completionCalls": "Simu za Kamatafu",
+        "routerCalls": "Simu za Njia",
+        "guardrailCalls": "Simu za Ngiti",
+        "blockedCalls": "Simu za Imedhibitiwa",
+        "errors": "Hitilafu"
+      },
+      "table": {
+        "rank": "Cheo",
+        "model": "Modeli",
+        "provider": "Mtoa Huduma",
+        "calls": "Simu",
+        "errors": "Hitilafu",
+        "successRate": "Kiwango cha mafanikio",
+        "avgLatency": "Kabila ya wastani",
+        "p95Latency": "P95 kabila",
+        "inputTokens": "Tokens za ingizo",
+        "outputTokens": "Tokens za pato",
+        "costPer1k": "Gharama / 1K",
+        "cost": "Gharama (USD)",
+        "bestCostPerformance": "Utendaji wa bei ya nzuri"
+      },
+      "showMoreModels": "Onyesha {{count}} zaidi modeli",
+      "showMoreModels_other": "Onyesha {{count}} zaidi modeli",
+      "showFewerModels": "Onyesha modeli chache",
+      "recentCalls": {
+        "title": "Simu za Karibuni",
+        "empty": "Hakuna kukamatia matumizi kwa kipindi hiki.",
+        "columns": {
+          "time": "Saa",
+          "router": "Njia",
+          "model": "Modeli",
+          "type": "Aina",
+          "caller": "Korea",
+          "in": "Ndani",
+          "out": "Nje",
+          "cost": "Gharama",
+          "latency": "Kabila",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Hali"
+        }
+      },
+      "pagination": {
+        "previous": "Ililopita",
+        "next": "Ijayo",
+        "pageOf": "Ukurasa {{page}} wa {{totalPages}}",
+        "totalRecords": "({{count}} kukamatia kwa jumla)"
+      }
+    },
+    "record": {
+      "back": "Kurudi",
+      "title": "Simu Maelezo",
+      "notFoundTitle": "Kukamatia Haijulikani",
+      "notFoundBody": "Kukamatia matumizi {{id}} haiwezi kupakia.",
+      "errors": {
+        "loadFailed": "Kushindwa kupakia kukamatia"
+      },
+      "sections": {
+        "identity": "Utambulisho",
+        "tokensAndCost": "Tokens & Gharama",
+        "performanceAndOutcome": "Utendaji & Matokeo",
+        "traceLog": "Goria la Kuchukuza"
+      },
+      "fields": {
+        "recordId": "Kukamatia Kitambulisho",
+        "router": "Njia",
+        "token": "Ishara",
+        "model": "Modeli",
+        "callType": "Aina ya Simu",
+        "requestType": "Aina ya Ombi",
+        "inputTokens": "Tokens za Ingizo",
+        "outputTokens": "Tokens za Pato",
+        "totalTokens": "Tokens za Jumla",
+        "costUsd": "Gharama (USD)",
+        "costUnknown": "Yasiyojulikana",
+        "latency": "Kabila",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Matokeo",
+        "timestamp": "Wakati",
+        "guardrailTriggered": "Ngiti Iliboreshwa",
+        "blockedBy": "Imedhibitiwa Na",
+        "piiRedacted": "PII Iliyochanjwa"
+      },
+      "errorMessage": "Ujumbe wa Hitilafu",
+      "eventCount": "{{count}} tukio",
+      "eventCount_other": "{{count}} matukio",
+      "noTrace": "Hakuna kuchukuza kinapatikana. Data ya kuchukuza inakamatia kwa simu jipya tu."
+    }
+  },
+  "playground": {
+    "title": "Uwanja wa Michezo",
+    "subtitle": "Jaribio modeli, linganisha majibu, na kutengeneza onyo iliyohifadhiwa.",
+    "mode": {
+      "single": "Moja",
+      "compare": "Linganisha"
+    },
+    "token": {
+      "label": "Ishara:",
+      "labelA": "Ishara A",
+      "labelB": "Ishara B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "sawa na A",
+      "unknownToken": "Ishara yasiyojulikana"
+    },
+    "presets": {
+      "button": "Kuanzisha",
+      "panelTitle": "Kuanzisha",
+      "saveCurrent": "Kutengeneza sasa",
+      "namePlaceholder": "Jina la kuanzisha...",
+      "save": "Kutengeneza",
+      "empty": "Hakuna kuanzisha bado.",
+      "delete": "Futa kuanzisha"
+    },
+    "streamingDisabled": {
+      "banner": "Uenezaji hauwezekani",
+      "bannerBody": "njia hii ina ngiti ya kuficha jibu inayotumiwa. Routerly lazima kuchukuza jibu kwa ujumla kabla ya utoaji, kwa sababu majibu yanakuja kwa jumla.",
+      "tooltip": "Uenezaji hauwezekani: ngiti ya kuficha jibu inahitaji jibu kwa ujumla kuchukuzwa kabla ya utoaji.",
+      "ariaLabel": "Uenezaji haupatikani"
+    },
+    "systemPrompt": "Onyo la mfumo",
+    "model": "Modeli",
+    "modelPlaceholder": "Otomatiki (njia chaguo la kawaida)",
+    "params": {
+      "temp": "Joto",
+      "maxTokens": "Tokens ya juu",
+      "topP": "Top-p"
+    },
+    "stream": "Eneza",
+    "clear": "Safisha",
+    "empty": {
+      "noMessages": "Hakuna ujumbe bado.",
+      "enterToken": "Ingiza Ishara ya Njia hapo juu kuanzisha."
+    },
+    "reasoning": "Ujinga",
+    "blockedDefault": "Ujumbe huu ulidhibitiwa na ngiti.",
+    "truncated": "Ilipunguzwa — jibu lilikatwa na tokens ya juu",
+    "bufferedNote": "Inashikiliwa kwa muhtasari wa usalama",
+    "errors": {
+      "onlyImages": "Kuambilishwa kwa picha tu kunagumzewa."
+    },
+    "rawToggle": {
+      "rendered": "kuonyeshwa",
+      "raw": "raw"
+    },
+    "inputPlaceholder": "Andika ujumbe...",
+    "attachImage": "Kuambilisha picha",
+    "attachedImageAlt": "Kuambilishwa",
+    "attachmentAlt": "Kuambilishwa",
+    "debug": {
+      "title": "Kubaini",
+      "clear": "Safisha",
+      "hide": "Pangana kubaini",
+      "show": "Onyesha kubaini",
+      "empty": "Hakuna data ya kubaini bado.",
+      "emptyHint": "Tuma ujumbe kuona maelezo ya njia.",
+      "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "Modeli {{label}}:",
+      "modelSelectPlaceholder": "Chagua modeli...",
+      "noMessages": "Hakuna ujumbe bado.",
+      "debugTurns": "Kubaini ({{count}} zamu)",
+      "debugTurns_other": "Kubaini ({{count}} zamu)",
+      "guardrailTokensTitle": "Tokens ya wadhamini wa ngiti",
+      "stop": "Acha",
+      "inputPlaceholder": "Tuma ujumbe sawa kwa modeli zote..."
+    }
+  },
+  "help": {
+    "title": "Msaada & Msaada",
+    "subtitle": "Uko hapa kusaidia — tafuta majibu au kufikia anywari.",
+    "docs": {
+      "title": "Nyaraka",
+      "subtitle": "Kuongeza, Rejelea API, na nyaraka za msanidi",
+      "body": "Nyaraka rasmi inafanyia kila kitu kutoka kuanzisha hadi sera za njia za zamani, muanzisho wa mtoa huduma, bajeti, na rejelea ya API kamili.",
+      "openLink": "Fungua nyaraka"
+    },
+    "issues": {
+      "title": "Ripoti tatizo au chache sifa",
+      "subtitle": "Fungua tatizo la GitHub — inachukua dakika 2",
+      "body": "Matatizo ya GitHub ni njia nzuri kusambaza hitilafu au kupendelek maboresho. Kusaidia tubaini mabadiliko kwa haraka, jumuishi: kile ulichofanya, kile ulichotaka kutokea, na kile kilichotokea.",
+      "showTemplate": "Onyesha muundo wa tatizo",
+      "reportBug": "Ripoti tatizo",
+      "requestFeature": "Omba sifa"
+    },
+    "issueTemplate": {
+      "whatHappened": "Nini kilichotokea?",
+      "whatHappenedHint": "Eleza tatizo kwa maneno ya kawaida",
+      "stepsToReproduce": "Hatua kutengeneza upya",
+      "expectedBehaviour": "Tabia inayotarajiwa",
+      "expectedBehaviourHint": "Kile ulichotaka kuona",
+      "version": "Toleo la Routerly",
+      "versionHint": "Endesha `routerly --version` au kuchukuza Mipangilio → Kuhusu"
+    },
+    "email": {
+      "title": "Wasiliana na msaada",
+      "subtitle": "Tunasoma kila ujumbe na kujibu haraka kaida iwezekanavyo",
+      "body": "Kwa kitu chochote kinacholingana na tatizo la GitHub — maswali ya malipo, wasiwasi wa kibinafsi, au kama ungependa kusema habari — tupa line."
+    },
+    "faq": {
+      "title": "Maswali yanayofongeza mara kwa mara",
+      "subtitle": "Majibu ya haraka kwa maswali ya kawaida",
+      "items": {
+        "connect": {
+          "q": "Jinsi gani ya kuunganisha programu yangu kwa Routerly?",
+          "a": "Mahali OpenAI au Anthropic SDK kwa hali yako ya Routerly. Badilisha URL ya msingi na http://your-host:3000/v1 (thabiti OpenAI) au http://your-host:3000/anthropic (thabiti Anthropic), kisha tumia ishara ya njia kama funguo la API. Hiyo ni yote — hakuna mabadiliko ya ziada kunakusudiwa."
+        },
+        "openaiCompat": {
+          "q": "Je Routerly thabiti na zana zinazo SDK ya OpenAI?",
+          "a": "Ndiyo. Routerly ni kubadilisha kwa amri: zana yeyote inayogumza URL ya kawaida ya msingi na funguo la API (LangChain, LlamaIndex, Cursor, Endelea, n.k.) inafanya kazi nje ya sanduku. Kwa mteja wa muundo wa Anthropic, tumia ncha ya /anthropic badala."
+        },
+        "routing": {
+          "q": "Njia ya modeli inaendeska jinsi?",
+          "a": "Kila njia ina sera ya njia ambayo huamua modeli inapokeleza ombi. Sera zinajumuisha mzunguko wa pande, gharama ya chini, jibu la haraka, miingiliano ya kurudi, na zaidi. Husanidi kwa kila njia chini ya Njia → Njia."
+        },
+        "addModel": {
+          "q": "Jinsi gani ya kuongeza modeli jipya ya AI?",
+          "a": "Endelea Modeli → Ongeza modeli. Unaweza kuongeza mtoa huduma yeyote thabiti OpenAI (Ollama, LM Studio, ncha za kawaida) au ncha ya Anthropic asili. Jaza URL ya msingi, funguo la API, na kitambulisho cha modeli — Routerly itakabiliana na kupumzika."
+        },
+        "dataStored": {
+          "q": "Je data yangu kutunzwa? Je onyo zangu kutunzwa katika goria?",
+          "a": "Routerly ndani ya mwenyewe na kutengeneza data tu kwa kifo chako (katika ~/.routerly/ kwa kawaida). Onyo na majibu kamwe kutumiwa mahali popote na Routerly. Kasia la ombi kutunzwa ndani tu na tu kama kuamkua kwa kila njia."
+        },
+        "routerToken": {
+          "q": "Ni nini ishara ya njia na jinsi inatofautiana na funguo la API ya mtoa huduma?",
+          "a": "Ishara ya njia ni sharti unayopeana programu yako au wanajumbe kuautenticate na Routerly. Ni tofauti kutoka funguo la API ya mtoa huduma, ambazo Routerly kutengeneza kwa usalama kwa upande wa mteja. Programu zako kamwe kuona funguo za mtoa huduma halisi."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} mtumiaji",
+    "countLabel_other": "{{count}} watumiaji",
+    "addButton": "Ongeza Mtumiaji",
+    "columns": {
+      "email": "Barua",
+      "role": "Jukumu",
+      "routers": "Njia"
+    },
+    "allRouters": "Zote",
+    "resetTwoFaTitle": "Sezesha 2FA",
+    "resetTwoFaConfirm": "Sezesha 2FA kwa {{email}}? Watakuwa inahitaji kuendesha.",
+    "deleteConfirm": "Futa mtumiaji huu?",
+    "emptyTitle": "Hakuna watumiaji bado.",
+    "noPermission": "Huna ruhusa kuona watumiaji.",
+    "modal": {
+      "title": "Ongeza Mtumiaji",
+      "emailLabel": "Barua",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Neno la Siri",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Jukumu",
+      "roleAdmin": "Msimamizi",
+      "roleViewer": "Mwonaji",
+      "cancelButton": "Ghairi",
+      "submitButton": "Ongeza Mtumiaji"
+    },
+    "errors": {
+      "loadFailed": "Kushindwa kupakia watumiaji",
+      "addFailed": "Hitilafu"
+    }
+  },
+  "userEdit": {
+    "title": "Hariri Mtumiaji",
+    "account": "Akaunti",
+    "email": "Barua",
+    "role": "Jukumu",
+    "changePassword": "Badilisha Neno la Siri",
+    "newPassword": "Neno la Siri Jipya",
+    "newPasswordHint": "(acha tupu kutengeneza sasa ya awali)",
+    "save": "Kutengeneza",
+    "saved": "Kutunzwa!",
+    "errors": {
+      "loadFailed": "Kushindwa kupakia mtumiaji",
+      "saveFailed": "Kushindwa kuhifadhi"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Simamia majukumu na ruhusa. Majukumu iliyojengwa ndani haiwezi kuboreshwa.",
+    "newRole": "Jukumu Jipya",
+    "builtin": "iliyojengwa ndani",
+    "edit": "Hariri",
+    "deleteConfirm": "Futa jukumu hili? Watumiaji wenye jukumu hili wataathiriwa.",
+    "form": {
+      "id": "Kitambulisho",
+      "idPlaceholder": "mf. opereta",
+      "name": "Jina",
+      "namePlaceholder": "Jina la jukumu",
+      "permissions": "Ruhusa",
+      "create": "Tengeneza",
+      "save": "Kutengeneza",
+      "cancel": "Ghairi"
+    },
+    "permissions": {
+      "routerRead": "Njia – Kusomwa",
+      "routerWrite": "Njia – Kuandika",
+      "modelRead": "Modeli – Kusomwa",
+      "modelWrite": "Modeli – Kuandika",
+      "userRead": "Watumiaji – Kusomwa",
+      "userWrite": "Watumiaji – Kuandika",
+      "reportRead": "Ripoti – Kusomwa",
+      "settingsRead": "Mipangilio – Kusomwa",
+      "settingsWrite": "Mipangilio – Kuandika",
+      "notificationWrite": "Arifa – Kuandika",
+      "tokenRead": "Ishara – Kusomwa",
+      "tokenWrite": "Ishara – Kuandika",
+      "roleWrite": "Majukumu – Kuandika",
+      "auditRead": "Goria la Kuchukuza – Kusomwa",
+      "modulesRead": "Moduli – Kusomwa",
+      "modulesManage": "Moduli – Simamia",
+      "connectionsRead": "Muunganisho – Kusomwa",
+      "connectionsManage": "Muunganisho – Simamia",
+      "resilienceRead": "Upinzani – Kusomwa",
+      "resilienceManage": "Upinzani – Simamia",
+      "profilesRead": "Wasifu wa Njia – Kusomwa",
+      "profilesManage": "Wasifu wa Njia – Simamia",
+      "optimizersRead": "Waboreshaji – Kusomwa",
+      "optimizersManage": "Waboreshaji – Simamia",
+      "experimentsRead": "Majaribio – Kusomwa",
+      "experimentsManage": "Majaribio – Simamia"
+    },
+    "errors": {
+      "loadFailed": "Kushindwa kupakia majukumu",
+      "updateFailed": "Kushindwa kuboreshwa jukumu",
+      "createFailed": "Kushindwa kutengeneza jukumu",
+      "deleteFailed": "Kushindwa kufuta jukumu"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Wasifu",
+      "subtitle": "Kutengeneza njia, mboreshaji na msanidi wa usalama",
+      "noPermission": "Huna ruhusa kuona wasifu.",
+      "newProfile": "Wasifu {{kind}} Jipya",
+      "empty": "Hakuna wasifu wa {{kind}} bado.",
+      "builtin": "Iliyojengwa ndani",
+      "custom": "Kawaida",
+      "view": "Angalia",
+      "edit": "Hariri",
+      "clone": "Nakala",
+      "delete": "Futa",
+      "deleteConfirm": "Futa wasifu \"{{label}}\"? Hii haiwezi kutengenezwa.",
+      "kindDescriptions": {
+        "routing": "Modeli anda ombi, na nini hutokea wakati haiwezi",
+        "optimizer": "Nini inaaondoa kutoka onyo kabla ya kutumiwa",
+        "security": "Ngiti na sera za PII zinatumika kwa trafiki"
+      },
+      "columns": {
+        "label": "Lebo",
+        "type": "Aina",
+        "configuration": "Msanidi",
+        "version": "Toleo"
+      },
+      "errors": {
+        "loadFailed": "Kushindwa kupakia wasifu",
+        "deleteFailed": "Kushindwa kufuta wasifu"
+      }
+    },
+    "form": {
+      "backToProfiles": "Kurudi kwenye Wasifu",
+      "newProfileTitle": "Wasifu {{kind}} Jipya",
+      "editProfileTitle": "Hariri {{label}}",
+      "builtinHint": "Wasifu iliyojengwa ndani haiwezi kuboreshwa. Nakala moja kukamatia.",
+      "assignHint": "{{article}} {{kind}} wasifu inaweza kugawia njia yeyote ya mahitaji.",
+      "noPermission": "Huna ruhusa kuona wasifu.",
+      "label": "Lebo",
+      "optimizers": "Waboreshaji",
+      "optimizersHint": "Jikita kukamatia, uzani kuamkua. Wanatambaa mpangilio kutoka juu hadi chini.",
+      "createProfile": "Tengeneza Wasifu",
+      "saveProfile": "Kutengeneza Wasifu",
+      "cancel": "Ghairi",
+      "copySuffix": "{{label}} nakala",
+      "labelPlaceholders": {
+        "routing": "mf. Njia Yangu ya Usawa",
+        "optimizer": "mf. Mboreshaji Yangu wa Onyo",
+        "security": "mf. Ngiti Zangu za Kali"
+      },
+      "errors": {
+        "notFound": "Wasifu haijulikani.",
+        "loadFailed": "Kushindwa kupakia wasifu",
+        "saveFailed": "Kushindwa kutengeneza wasifu"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Kurudi kwenye Unganisha",
+    "title": "Unganisha",
+    "docs": "Nyaraka",
+    "notEnabledPrefix": "Mteja wa kusanidi hauwezekani. Mwaliko msimamizi kuamkua na",
+    "noClientPrefix": "Hakuna mteja anayeitwa",
+    "errors": {
+      "loadFailed": "Kushindwa kupakia wateja: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Haraka kabisa: amri moja",
+      "description": "Endesha kwenye kifo ambapo {{client}} inasakinishwa. Ina {{configPath}}, kutengeneza bosi nasi unaweza kutengeneza."
+    },
+    "byHand": {
+      "titleAlt": "Au kuanzisha na mkono",
+      "titleUi": "Kuanzisha na mkono",
+      "titleConfigFile": "Kuanzisha faili la msanidi",
+      "setValuesIn": "Weka thamani hii katika {{configPath}}.",
+      "putThisIn": "Ingiza hii katika",
+      "replaceToken": "Badilisha",
+      "withRouterToken": "na ishara ya njia:",
+      "createOne": "tengeneza moja",
+      "onRoutersPage": "kwenye ukurasa wa Njia.",
+      "modelLabel": "Modeli:",
+      "modelHint": "acha chaguo kwa Routerly, kitambulisho yeyote cha modeli kutoka",
+      "modelsLink": "Modeli",
+      "worksToo": "kazi pia.",
+      "openaiCompatHint": "URL ya msingi sawa, funguo na modeli inafika mteja yeyote anayetoa mtoa huduma \"thabiti OpenAI\"."
+    },
+    "mcp": {
+      "title": "MCP mteja",
+      "description": "Tofauti kutoka hatua zilizo juu: hii moja hayaruhusu {{client}} kuita zana za Routerly. Inahitaji ishara ya kibinafsi ya MCP, iliyotengeneza na",
+      "orFromYour": "au kutoka",
+      "profileLink": "wasifu"
+    },
+    "checkItWorked": {
+      "title": "Kuchukuza ilifanya kazi",
+      "restart": "Anzisha {{client}}, tumaombi, kisha tafuta simu katika",
+      "usageLink": "Matumizi",
+      "cliReports": "Kutoka kifo sawa, CLI inaripoti kile inakipata:"
+    }
+  },
+  "connect": {
+    "title": "Unganisha",
+    "subtitle": "Mahali mteja wa kusanidi wa AI katika njia hii. Chagua mteja kwa hatua zake za kuanzisha.",
+    "llmLabel": "LLM",
+    "llmDescription": "njia trafiki ya modeli ya mteja kupitia Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "inapakia Routerly kama mteja wa zana ndani yake.",
+    "notEnabledPrefix": "Mteja wa kusanidi hauwezekani. Mwaliko msimamizi kuamkua na",
+    "errors": {
+      "loadFailed": "Kushindwa kupakia wateja: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Amri moja",
+      "hint": "CLI inaandika faili la msanidi kwa wewe, na bosi nasi unaweza kutengeneza."
+    },
+    "byHand": {
+      "title": "Na mkono",
+      "hint": "Nakili sehemu kutoka ukurasa wa mteja katika mipangilio yake, kisha anzisha upya."
+    },
+    "endpoint": {
+      "title": "Mahali mteja yeyote hapa",
+      "description": "Kitu kinachojengwa kwenye SDK ya OpenAI au Anthropic kinafanya kazi kwa kubadilisha URL ya msingi na funguo. Hakuna kitu kingine kinabadilika: maombi na majibu kupitia Routerly kama wanavyo.",
+      "openaiBaseUrl": "OpenAI base URL",
+      "anthropicBaseUrl": "Anthropic base URL",
+      "apiKey": "Funguo la API",
+      "model": "Modeli",
+      "apiKeyDescription": "Ishara ya njia, kutumwa kama",
+      "or": "au",
+      "createOne": "Tengeneza moja",
+      "onRoutersPage": "kwenye ukurasa wa Njia.",
+      "modelDescription": "hayaruhusu Routerly kuchagua. Kitambulisho yeyote cha modeli kutoka",
+      "modelsLink": "Modeli",
+      "worksToo": "ukurasa kinafanya kazi pia."
+    }
+  }
+}

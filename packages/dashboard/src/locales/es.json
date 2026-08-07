@@ -40,6 +40,9 @@
       "telemetryLink": "¿Qué se envía?",
       "telemetryYes": "Sí, quiero ayudar",
       "telemetryNo": "No, gracias"
+    },
+    "language": {
+      "label": "Idioma"
     }
   },
   "profile": {
@@ -280,6 +283,11 @@
         "maxAgeDays": "Antigüedad máxima (días)",
         "maxSizeMb": "Tamaño máximo (MB)",
         "retentionHint": "El historial de uso/facturación con más antigüedad que estos días, o que supere este tamaño, se elimina del registro activo. Deja ambos vacíos para no aplicar límite de retención."
+      },
+      "internationalization": {
+        "heading": "Internacionalización",
+        "defaultLanguage": "Idioma Predeterminado",
+        "defaultLanguageHint": "Idioma del panel para usuarios que aún no han elegido el suyo. No anula la elección personal del usuario."
       },
       "telemetry": {
         "heading": "Métricas anónimas",
@@ -774,6 +782,13 @@
       "count_other": "{{count}} enrutadores",
       "newRouter": "Nuevo enrutador",
       "empty": "Aún no hay enrutadores.",
+      "emptyFiltered": "No hay routers de este tipo.",
+      "tabs": {
+        "all": "Todos",
+        "router": "Router",
+        "orchestrator": "Orquestador",
+        "passthrough": "Paso directo"
+      },
       "columns": {
         "name": "Nombre",
         "tokens": "Tokens",
