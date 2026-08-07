@@ -362,6 +362,8 @@
         "systemShutdown": "النظام – إيقاف التشغيل",
         "systemUpdateAvailable": "النظام – تحديث متاح"
       },
+      "removeChannelTooltip": "إزالة القناة",
+      "hmacSigningKeyPlaceholder": "مفتاح توقيع HMAC",
       "perms": {
         "routerRead": "الموجّهات – قراءة",
         "routerWrite": "الموجّهات – كتابة",
@@ -2538,7 +2540,9 @@
       "judgeModel": "نموذج الحَكَم",
       "contentGuardrails": "حواجز المحتوى الأمنية",
       "piiPolicies": "سياسات PII",
-      "addSecurityPolicyPlaceholder": "إضافة سياسة أمنية..."
+      "addSecurityPolicyPlaceholder": "إضافة سياسة أمنية...",
+      "removePolicyTooltip": "إزالة السياسة",
+      "deleteRuleAriaLabel": "حذف القاعدة"
     },
     "connectionFields": {
       "azureResourceName": "اسم مورد Azure",
@@ -2546,7 +2550,38 @@
       "awsRegion": "منطقة AWS",
       "awsAccessKeyId": "معرّف مفتاح وصول AWS",
       "awsSecretAccessKey": "مفتاح الوصول السري لـ AWS",
-      "gcpRouterId": "معرّف موجّه GCP"
+      "gcpRouterId": "معرّف موجّه GCP",
+      "webProvider": {
+        "unofficialWarningTitle": "مزوّد غير رسمي — استخدمه على مسؤوليتك الخاصة.",
+        "unofficialWarningBody": "يعتمد هذا التكامل على واجهة برمجة تطبيقات داخلية غير موثقة قد تتغير أو تتوقف عن العمل دون إشعار. قد يخالف شروط خدمة المزوّد وقد يؤدي إلى تعليق الحساب.",
+        "accessTokenLabel": "رمز الوصول",
+        "sessionTokenLabel": "رمز الجلسة",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "الصق قيمة كوكي sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "أثناء تسجيل الدخول إلى ChatGPT، افتح <code>https://chatgpt.com/api/auth/session</code> في علامة تبويب جديدة. انسخ قيمة الحقل <code>accessToken</code> (يبدأ بـ <code>eyJ</code>). تنتهي صلاحية الرمز كل ~24 ساعة. للوصول الموثوق، املأ أيضًا حقل <strong>cf_clearance</strong> أدناه.",
+        "anthropicInstructions": "<strong>كيفية الحصول على رمز الجلسة:</strong> أثناء تسجيل الدخول إلى Claude، افتح أدوات المطور (F12) ← Application ← Cookies ← <code>claude.ai</code> ← انسخ قيمة كوكي <code>sessionKey</code> (يبدأ بـ <code>sk-ant-sid01-</code>). يظل المفتاح صالحًا حتى تسجل الخروج."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "رمز OAuth للاشتراك",
+        "authFilePathLabel": "مسار ملف المصادقة",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (الافتراضي)",
+        "anthropicTitle": "استخدم اشتراكك في Claude Pro/Max.",
+        "anthropicRunCommandStep": "شغّل هذا الأمر وانسخ الرمز الذي يطبعه:",
+        "anthropicPasteTokenStep": "الصق الرمز في حقل <em>رمز OAuth للاشتراك</em> أدناه.",
+        "termsNote": "أعد إنشاءه عند انتهاء صلاحيته. قد يخالف استخدام الاشتراك عبر بوابة شروط المزوّد.",
+        "openaiTitle": "استخدم اشتراكك في ChatGPT Plus/Pro عبر تطبيق Codex.",
+        "openaiLoginStep": "سجّل الدخول إلى تطبيق Codex لسطح المكتب بحساب ChatGPT Plus/Pro الخاص بك.",
+        "openaiAutoRefreshStep": "تقرأ Routerly رمز الوصول الخاص بك من <code>~/.codex/auth.json</code> وتجدده تلقائيًا. لا حاجة للنسخ واللصق يدويًا.",
+        "openaiAuthFilePathStep": "اترك حقل <em>مسار ملف المصادقة</em> فارغًا لاستخدام الإعداد الافتراضي، أو أدخل مسارًا مخصصًا إذا كان تطبيق Codex يخزّن المصادقة في مكان آخر.",
+        "openaiTermsNote": "قد يخالف استخدام الاشتراك عبر بوابة شروط المزوّد."
+      },
+      "copyCode": {
+        "copiedTooltip": "تم النسخ!",
+        "copyTooltip": "نسخ إلى الحافظة",
+        "copiedLabel": "تم النسخ",
+        "copyLabel": "نسخ"
+      }
     },
     "unsavedChanges": {
       "title": "تغييرات غير محفوظة",

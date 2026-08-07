@@ -362,6 +362,8 @@
         "systemShutdown": "Sistema – Apagado",
         "systemUpdateAvailable": "Sistema – Actualización disponible"
       },
+      "removeChannelTooltip": "Eliminar canal",
+      "hmacSigningKeyPlaceholder": "Clave de firma HMAC",
       "perms": {
         "routerRead": "Enrutadores – Lectura",
         "routerWrite": "Enrutadores – Escritura",
@@ -2538,7 +2540,9 @@
       "judgeModel": "Modelo evaluador",
       "contentGuardrails": "Barreras de contenido",
       "piiPolicies": "Políticas de PII",
-      "addSecurityPolicyPlaceholder": "Añadir una política de seguridad..."
+      "addSecurityPolicyPlaceholder": "Añadir una política de seguridad...",
+      "removePolicyTooltip": "Eliminar política",
+      "deleteRuleAriaLabel": "Eliminar regla"
     },
     "connectionFields": {
       "azureResourceName": "Nombre de recurso de Azure",
@@ -2546,7 +2550,38 @@
       "awsRegion": "Región de AWS",
       "awsAccessKeyId": "ID de clave de acceso de AWS",
       "awsSecretAccessKey": "Clave de acceso secreta de AWS",
-      "gcpRouterId": "ID de enrutador de GCP"
+      "gcpRouterId": "ID de enrutador de GCP",
+      "webProvider": {
+        "unofficialWarningTitle": "Proveedor no oficial: úsalo bajo tu propio riesgo.",
+        "unofficialWarningBody": "Esta integración depende de una API interna no documentada que puede cambiar o dejar de funcionar sin previo aviso. Puede infringir las Condiciones del Servicio del proveedor y provocar la suspensión de la cuenta.",
+        "accessTokenLabel": "Token de acceso",
+        "sessionTokenLabel": "Token de sesión",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Pega el valor de la cookie sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Con la sesión iniciada en ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> en una pestaña nueva. Copia el valor del campo <code>accessToken</code> (empieza por <code>eyJ</code>). El token caduca cada ~24 horas. Para un acceso fiable, rellena también el campo <strong>cf_clearance</strong> a continuación.",
+        "anthropicInstructions": "<strong>Cómo obtener tu token de sesión:</strong> con la sesión iniciada en Claude, abre las herramientas de desarrollo (F12) → Aplicación → Cookies → <code>claude.ai</code> → copia el valor de la cookie <code>sessionKey</code> (empieza por <code>sk-ant-sid01-</code>). El token sigue siendo válido hasta que cierres sesión."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth de suscripción",
+        "authFilePathLabel": "Ruta del archivo de autenticación",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (predeterminado)",
+        "anthropicTitle": "Usa tu suscripción de Claude Pro/Max.",
+        "anthropicRunCommandStep": "Ejecuta este comando y copia el token que muestra:",
+        "anthropicPasteTokenStep": "Pega el token en el campo <em>Token OAuth de suscripción</em> a continuación.",
+        "termsNote": "Vuelve a generarlo cuando caduque. El uso de la suscripción a través de una pasarela puede infringir las Condiciones del proveedor.",
+        "openaiTitle": "Usa tu suscripción a ChatGPT Plus/Pro a través de la app Codex.",
+        "openaiLoginStep": "Inicia sesión en la app de escritorio Codex con tu cuenta de ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly lee tu token de acceso desde <code>~/.codex/auth.json</code> y lo actualiza automáticamente. No es necesario copiar y pegar manualmente.",
+        "openaiAuthFilePathStep": "Deja el campo <em>Ruta del archivo de autenticación</em> en blanco para usar el valor predeterminado, o introduce una ruta personalizada si tu app Codex guarda la autenticación en otro lugar.",
+        "openaiTermsNote": "El uso de la suscripción a través de una pasarela puede infringir las Condiciones del proveedor."
+      },
+      "copyCode": {
+        "copiedTooltip": "¡Copiado!",
+        "copyTooltip": "Copiar al portapapeles",
+        "copiedLabel": "Copiado",
+        "copyLabel": "Copiar"
+      }
     },
     "unsavedChanges": {
       "title": "Cambios sin guardar",
