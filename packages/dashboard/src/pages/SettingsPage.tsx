@@ -2202,6 +2202,15 @@ function FilePermissionsSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canRead]);
 
+  // A fix from PermissionGuardModal (or this section itself) must refresh
+  // this section's own status — it has its own independent load() cycle.
+  useEffect(() => {
+    if (!canRead) return;
+    window.addEventListener('lr-permission-fixed', load);
+    return () => window.removeEventListener('lr-permission-fixed', load);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canRead]);
+
   async function load() {
     setLoading(true);
     setError('');
