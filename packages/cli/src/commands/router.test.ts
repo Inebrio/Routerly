@@ -1048,11 +1048,11 @@ describe('router edit', () => {
 
   it('exits 1 on 409 conflict, printing the real server message', async () => {
     const { ApiError } = await import('../api.js');
-    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(409, 'A passthrough router already uses path "test-pt"'));
+    mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(409, 'A router named "new-name" already exists'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--slug', 'test-pt'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--name', 'new-name'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('A passthrough router already uses path "test-pt"'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('A router named "new-name" already exists'));
   });
 
   it('exits 1 on non-ApiError', async () => {
