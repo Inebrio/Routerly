@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { EyeOff, Eye, Copy, Check, FlaskConical } from 'lucide-react';
 
 // ── Provider metadata (shared by the model form and the connection form) ─────────
@@ -7,36 +8,26 @@ export const WEB_PROVIDERS = ['openai-web', 'anthropic-web'] as const;
 export type WebProvider = typeof WEB_PROVIDERS[number];
 export const isWebProvider = (p: string): p is WebProvider => (WEB_PROVIDERS as readonly string[]).includes(p);
 
-export const WEB_PROVIDER_TOKEN_LABEL: Record<WebProvider, string> = {
-  'openai-web': 'Access Token',
-  'anthropic-web': 'Session Token',
-};
+export function webProviderTokenLabel(t: TFunction, p: WebProvider): string {
+  return p === 'openai-web'
+    ? t('common.connectionFields.webProvider.accessTokenLabel')
+    : t('common.connectionFields.webProvider.sessionTokenLabel');
+}
 
-export const WEB_PROVIDER_TOKEN_PLACEHOLDER: Record<WebProvider, string> = {
-  'openai-web': 'eyJ…',
-  'anthropic-web': 'Paste sessionKey cookie value (sk-ant-sid01-…)',
-};
+export function webProviderTokenPlaceholder(t: TFunction, p: WebProvider): string {
+  return p === 'openai-web'
+    ? t('common.connectionFields.webProvider.accessTokenPlaceholder')
+    : t('common.connectionFields.webProvider.sessionTokenPlaceholder');
+}
+
+const codeComponents = { code: <code style={{ fontSize: '0.78rem' }} />, strong: <strong /> };
 
 export const WEB_PROVIDER_INSTRUCTIONS: Record<WebProvider, React.ReactNode> = {
   'openai-web': (
-    <>
-      While logged in to ChatGPT, open{' '}
-      <code style={{ fontSize: '0.78rem' }}>https://chatgpt.com/api/auth/session</code> in a new
-      tab. Copy the value of the <code style={{ fontSize: '0.78rem' }}>accessToken</code> field
-      (starts with <code style={{ fontSize: '0.78rem' }}>eyJ</code>).
-      The token expires every ~24 hours.
-      For reliable access, also fill in the <strong>cf_clearance</strong> field below.
-    </>
+    <Trans i18nKey="common.connectionFields.webProvider.openaiInstructions" components={codeComponents} />
   ),
   'anthropic-web': (
-    <>
-      <strong>How to get your session key:</strong> While logged in to Claude, open DevTools
-      (F12) → Application → Cookies → <code style={{ fontSize: '0.78rem' }}>claude.ai</code>{' '}
-      → copy the value of the{' '}
-      <code style={{ fontSize: '0.78rem' }}>sessionKey</code> cookie
-      (starts with <code style={{ fontSize: '0.78rem' }}>sk-ant-sid01-</code>).
-      The key stays valid until you log out.
-    </>
+    <Trans i18nKey="common.connectionFields.webProvider.anthropicInstructions" components={codeComponents} />
   ),
 };
 
@@ -48,17 +39,20 @@ export type SubscriptionProvider = typeof SUBSCRIPTION_PROVIDERS[number];
 export const isSubscriptionProvider = (p: string): p is SubscriptionProvider =>
   (SUBSCRIPTION_PROVIDERS as readonly string[]).includes(p);
 
-export const SUBSCRIPTION_TOKEN_LABEL: Record<SubscriptionProvider, string> = {
-  'anthropic-oauth': 'Subscription OAuth Token',
-  'openai-oauth': 'Auth file path',
-};
+export function subscriptionTokenLabel(t: TFunction, p: SubscriptionProvider): string {
+  return p === 'anthropic-oauth'
+    ? t('common.connectionFields.subscriptionProvider.oauthTokenLabel')
+    : t('common.connectionFields.subscriptionProvider.authFilePathLabel');
+}
 
-export const SUBSCRIPTION_TOKEN_PLACEHOLDER: Record<SubscriptionProvider, string> = {
-  'anthropic-oauth': 'sk-ant-oat01-…',
-  'openai-oauth': '~/.codex/auth.json (default)',
-};
+export function subscriptionTokenPlaceholder(t: TFunction, p: SubscriptionProvider): string {
+  return p === 'anthropic-oauth'
+    ? t('common.connectionFields.subscriptionProvider.oauthTokenPlaceholder')
+    : t('common.connectionFields.subscriptionProvider.authFilePathPlaceholder');
+}
 
 export function CopyCode({ text }: { text: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   function handleCopy() {
     navigator.clipboard.writeText(text).then(() => {
@@ -82,7 +76,7 @@ export function CopyCode({ text }: { text: string }) {
       <button
         type="button"
         onClick={handleCopy}
-        title={copied ? 'Copied!' : 'Copy to clipboard'}
+        title={copied ? t('common.connectionFields.copyCode.copiedTooltip') : t('common.connectionFields.copyCode.copyTooltip')}
         style={{
           background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)',
           border: '1px solid ' + (copied ? 'rgba(34,197,94,0.4)' : 'rgba(255,255,255,0.18)'),
@@ -99,48 +93,48 @@ export function CopyCode({ text }: { text: string }) {
         }}
       >
         {copied
-          ? <><Check size={12} /> Copied</>
-          : <><Copy size={12} /> Copy</>
+          ? <><Check size={12} /> {t('common.connectionFields.copyCode.copiedLabel')}</>
+          : <><Copy size={12} /> {t('common.connectionFields.copyCode.copyLabel')}</>
         }
       </button>
     </span>
   );
 }
 
+const emComponents = { em: <em /> };
+
 export const SUBSCRIPTION_INSTRUCTIONS: Record<SubscriptionProvider, React.ReactNode> = {
   'anthropic-oauth': (
     <>
-      <strong>Use your Claude Pro/Max subscription.</strong>
+      <strong><Trans i18nKey="common.connectionFields.subscriptionProvider.anthropicTitle" /></strong>
       <ol style={{ margin: '0.5rem 0 0.25rem 1.2rem', padding: 0, lineHeight: 1.8 }}>
         <li>
-          Run this command and copy the token it prints:
+          <Trans i18nKey="common.connectionFields.subscriptionProvider.anthropicRunCommandStep" />
           <div style={{ margin: '0.3rem 0 0.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <CopyCode text="claude setup-token" />
           </div>
         </li>
-        <li>Paste the token into the <em>Subscription OAuth Token</em> field below.</li>
+        <li><Trans i18nKey="common.connectionFields.subscriptionProvider.anthropicPasteTokenStep" components={emComponents} /></li>
       </ol>
       <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
-        Regenerate when it expires. Subscription use via a gateway may be against the provider&apos;s Terms.
+        <Trans i18nKey="common.connectionFields.subscriptionProvider.termsNote" />
       </span>
     </>
   ),
   'openai-oauth': (
     <>
-      <strong>Use your ChatGPT Plus/Pro subscription via the Codex app.</strong>
+      <strong><Trans i18nKey="common.connectionFields.subscriptionProvider.openaiTitle" /></strong>
       <ol style={{ margin: '0.5rem 0 0.25rem 1.2rem', padding: 0, lineHeight: 1.8 }}>
-        <li>Log in to the Codex desktop app with your ChatGPT Plus/Pro account.</li>
+        <li><Trans i18nKey="common.connectionFields.subscriptionProvider.openaiLoginStep" /></li>
         <li>
-          Routerly reads your access token from <code style={{ fontSize: '0.8rem' }}>~/.codex/auth.json</code>{' '}
-          and refreshes it automatically. No manual copy/paste needed.
+          <Trans i18nKey="common.connectionFields.subscriptionProvider.openaiAutoRefreshStep" components={{ code: <code style={{ fontSize: '0.8rem' }} /> }} />
         </li>
         <li>
-          Leave the <em>Auth file path</em> field blank to use the default, or enter a custom path
-          if your Codex app stores auth elsewhere.
+          <Trans i18nKey="common.connectionFields.subscriptionProvider.openaiAuthFilePathStep" components={emComponents} />
         </li>
       </ol>
       <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>
-        Subscription use via a gateway may be against the provider&apos;s Terms.
+        <Trans i18nKey="common.connectionFields.subscriptionProvider.openaiTermsNote" />
       </span>
     </>
   ),
@@ -234,9 +228,9 @@ export function ConnectionCredentialsFields(props: Props) {
       <div className="form-group">
         <label className="form-label">
           {isWebProvider(provider)
-            ? WEB_PROVIDER_TOKEN_LABEL[provider as WebProvider]
+            ? webProviderTokenLabel(t, provider)
             : isSubscriptionProvider(provider)
-            ? SUBSCRIPTION_TOKEN_LABEL[provider as SubscriptionProvider]
+            ? subscriptionTokenLabel(t, provider)
             : 'API Key / Token'}
         </label>
         {provider === 'openai-oauth' && oauthTest ? (
@@ -276,8 +270,8 @@ export function ConnectionCredentialsFields(props: Props) {
               value={values.apiKey} onChange={e => onChange({ apiKey: e.target.value })}
               placeholder={
                 editing ? 'Leave blank to keep existing key'
-                : isWebProvider(provider) ? WEB_PROVIDER_TOKEN_PLACEHOLDER[provider as WebProvider]
-                : isSubscriptionProvider(provider) ? SUBSCRIPTION_TOKEN_PLACEHOLDER[provider as SubscriptionProvider]
+                : isWebProvider(provider) ? webProviderTokenPlaceholder(t, provider)
+                : isSubscriptionProvider(provider) ? subscriptionTokenPlaceholder(t, provider)
                 : provider === 'ollama' ? 'not required for local models'
                 : 'sk-…'
               }
