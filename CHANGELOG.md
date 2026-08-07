@@ -33,6 +33,7 @@ Creating a Router, Orchestrator, or Passthrough no longer goes through one share
 - Orchestrators now honor their own `health`/`rate-limit`/`fairness` routing policies (including `enabled: false` and custom windows) when scoring candidate routers, instead of always applying hardcoded defaults regardless of what was saved.
 - Creating or updating an Orchestrator now rejects (HTTP 400) any policy type other than `health`, `rate-limit`, or `fairness` — the ones that score a candidate Router as a whole. The other types (`cheapest`, `capability`, `context`, `performance`, `llm`, `semantic-intent`, `model-preference`, `budget-remaining`) pick among a pool of models, which an Orchestrator has none of; previously they were silently accepted and had no effect.
 - Dashboard: the Orchestrator's Routing tab now has a Routing Policies section (same layout as a plain Router's Routing tab, with the candidate-router list in place of target models), offering only `health`/`rate-limit`/`fairness` — the ones an Orchestrator could never configure before.
+- Passthrough routers no longer take a manual slug/path field. The `/passthrough/<slug>/...` path segment is now derived automatically from the router's name (disambiguated with a numeric suffix on collision), removing a step that duplicated the name and could conflict silently. `router create`/`router edit` drop `--slug`; the management API drops `slug` from the request body (still present, read-only, in the response).
 
 ### Breaking changes
 
