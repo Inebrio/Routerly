@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface Option {
   value: string;
@@ -14,7 +15,8 @@ interface MultiSelectProps {
   disabled?: boolean;
 }
 
-export function MultiSelect({ options, value, onChange, placeholder = 'Select...', disabled }: MultiSelectProps) {
+export function MultiSelect({ options, value, onChange, placeholder, disabled }: MultiSelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,7 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
         }}
         onClick={() => !disabled && setOpen(!open)}
       >
-        {selectedOptions.length === 0 && <span style={{ color: 'var(--text-muted)' }}>{placeholder}</span>}
+        {selectedOptions.length === 0 && <span style={{ color: 'var(--text-muted)' }}>{placeholder ?? t('common.select')}</span>}
         {selectedOptions.map(opt => (
           <div
             key={opt.value}
@@ -90,7 +92,7 @@ export function MultiSelect({ options, value, onChange, placeholder = 'Select...
           boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
         }}>
           {unselectedOptions.length === 0 ? (
-            <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No remaining options</div>
+            <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('common.noRemainingOptions')}</div>
           ) : (
             unselectedOptions.map(opt => (
               <div

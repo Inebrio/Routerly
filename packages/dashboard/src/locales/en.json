@@ -42,6 +42,278 @@
       "telemetryNo": "No thanks"
     }
   },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} second ago",
+      "secondsAgo_other": "{{count}} seconds ago",
+      "minutesAgo": "{{count}} minute ago",
+      "minutesAgo_other": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hour ago",
+      "hoursAgo_other": "{{count}} hours ago",
+      "daysAgo": "{{count}} day ago",
+      "daysAgo_other": "{{count}} days ago"
+    },
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "select": "Select...",
+    "search": "Search...",
+    "noResults": "No results",
+    "noRemainingOptions": "No remaining options",
+    "apply": "Apply",
+    "saved": "Saved",
+    "showLess": "Show less",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Mark all read",
+      "empty": "No notifications",
+      "viewAll": "View all notifications"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Select period",
+      "recent": "Recent",
+      "ranges": "Ranges",
+      "from": "From",
+      "to": "To"
+    },
+    "permissionGuard": {
+      "fixFailed": "Failed to fix permissions",
+      "title": "Unsafe file permissions",
+      "defaultMessage": "Some files have unsafe permissions.",
+      "fixing": "Fixing…",
+      "fixNow": "Fix now"
+    },
+    "limitRows": {
+      "noLimits": "No limits set.",
+      "metricLabel": "Metric",
+      "typeLabel": "Type",
+      "periodLabel": "Period",
+      "everyLabel": "Every",
+      "maxCost": "Max cost",
+      "maxCount": "Max count",
+      "maxTokens": "Max tokens",
+      "allCombosSet": "All metric/period combinations are already set",
+      "addLimit": "Add limit",
+      "metric": {
+        "cost": "Cost",
+        "calls": "Calls",
+        "input_tokens": "Input tokens",
+        "output_tokens": "Output tokens",
+        "total_tokens": "Total tokens"
+      },
+      "period": {
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "rollingUnit": {
+        "second": "second",
+        "minute": "minute",
+        "hour": "hour",
+        "day": "day",
+        "week": "week",
+        "month": "month"
+      },
+      "windowType": {
+        "period": "Period",
+        "rolling": "Rolling"
+      },
+      "fmt": {
+        "requests": "{{value}} requests",
+        "inputTokens": "{{value}} input tokens",
+        "outputTokens": "{{value}} output tokens",
+        "totalTokens": "{{value}} total tokens",
+        "everyRolling": "{{metric}} every {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "What routing saved",
+      "input": "Input",
+      "output": "Output",
+      "actual": "Actual",
+      "clientCalls": "{{count}} client call",
+      "clientCalls_other": "{{count}} client calls",
+      "comparedAgainst": ", compared against sending it to each of the",
+      "comparedAgainst_other": ", compared against sending them all to each of the",
+      "paidModelsInPlay": "{{count}} paid model in play",
+      "paidModelsInPlay_other": "{{count}} paid models in play",
+      "metricCost": "Cost",
+      "metricTokens": "Tokens",
+      "totalCost": "Total Cost",
+      "routed": "Routed: {{value}}",
+      "saved": "Saved: {{value}}",
+      "usdThisPeriod": "USD this period",
+      "savedVsAlways": "{{value}} saved ({{percent}}%) vs always {{model}}",
+      "tokens": "Tokens",
+      "in": "In: {{value}}",
+      "out": "Out: {{value}}",
+      "tokenSubWithCache": "{{in}} in · {{out}} out · {{cached}} cached",
+      "tokenSub": "{{in}} in · {{out}} out",
+      "cutByOptimizers": "{{value}} cut by optimizers",
+      "fewerThanAlways": "{{value}} fewer than always {{model}}, estimated"
+    },
+    "optimizerSteps": {
+      "downloaded": "Downloaded",
+      "thisStepRunsOn": "This step runs on",
+      "defaultCheckpoint": "Default checkpoint"
+    },
+    "routingPolicies": {
+      "title": "Routing Policies",
+      "subtitle": "Policies determine how requests are routed. They are executed in order from top to bottom.",
+      "removePolicy": "Remove policy",
+      "removeIntent": "Remove intent",
+      "removeExample": "Remove example",
+      "routingModels": "Routing Models",
+      "embeddingModels": "Embedding Models",
+      "maxCompletionTokens": "Max completion tokens",
+      "maxPromptChars": "Max prompt chars",
+      "similarityThreshold": "Similarity threshold",
+      "previousMessages": "Previous messages",
+      "intents": "Intents",
+      "confidenceThreshold": "Confidence threshold",
+      "ambiguityMargin": "Ambiguity margin",
+      "maxCallsPerWindow": "Max calls per window",
+      "addFallbackModel": "Add Fallback Model",
+      "addExamplePlaceholder": "Add example and press Enter…",
+      "addIntentPlaceholder": "Add intent and press Enter…",
+      "addPolicyPlaceholder": "Add a policy...",
+      "labels": {
+        "llm": "AI Routing Policy",
+        "rate-limit": "Rate Limit Policy",
+        "budget-remaining": "Budget Remaining Policy",
+        "semantic-intent": "Semantic Intent Policy",
+        "health": "Health Policy",
+        "context": "Context Policy",
+        "capability": "Capability Policy",
+        "performance": "Performance Policy",
+        "fairness": "Fairness Policy",
+        "cheapest": "Cheapest Policy",
+        "model-preference": "Model Preference Policy"
+      },
+      "descriptions": {
+        "context": "Scores models based on available context window. Assigns 0 to models whose context window is smaller than the estimated request length, preventing truncation errors.",
+        "cheapest": "Scores models inversely proportional to their token cost. The cheapest model gets 1.0, the most expensive gets 0.0, helping reduce API spend across requests.",
+        "health": "Scores models based on their recent error rate using exponential decay (recent errors weigh more). Applies a circuit breaker that sets the score to 0 when the weighted error rate exceeds a critical threshold.",
+        "performance": "Scores models based on their recent average latency using exponential decay. The fastest model gets 1.0, the slowest gets 0.0. Models without recent data default to 1.0.",
+        "llm": "Uses an AI model to score candidates based on the semantic content of the request. Supports routing guidance prompts per model and considers budget headroom when limits are configured.",
+        "capability": "Hard filter: assigns 0 to models that explicitly lack a feature required by the request (vision, function calling, JSON mode). Models without explicit capability declarations are not penalized.",
+        "rate-limit": "Penalizes models with a high recent call frequency to reduce the risk of hitting provider rate limits (HTTP 429). Supports a configurable hard threshold that forces the score to 0.",
+        "fairness": "Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.",
+        "budget-remaining": "Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.",
+        "semantic-intent": "Classifies the request by semantic intent using embeddings, then restricts the candidate pool to the models mapped to that intent. Confident matches hard-filter the pool; ambiguous matches merge top-2 pools; unknown requests pass all candidates through.",
+        "model-preference": "When the client requests a specific model (not routerly/ada), awards a configurable bonus score to that model. When no preference is expressed, the policy abstains. Position in the list controls how much the preference weighs against other policies."
+      },
+      "selectModel": "Select model"
+    },
+    "securityRules": {
+      "applyTo": "Apply to",
+      "streamingBufferSize": "Streaming buffer size (characters)",
+      "entityTypes": "Entity types",
+      "target": "Target",
+      "embeddingModel": "Embedding model",
+      "judgeModel": "Judge model",
+      "contentGuardrails": "Content Guardrails",
+      "piiPolicies": "PII Policies",
+      "addSecurityPolicyPlaceholder": "Add a security policy..."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure Resource Name",
+      "deploymentId": "Deployment ID",
+      "awsRegion": "AWS Region",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "gcpRouterId": "GCP Router ID"
+    },
+    "unsavedChanges": {
+      "title": "Unsaved Changes",
+      "message": "You have unsaved changes. If you leave now, your changes will be lost.",
+      "stay": "Stay",
+      "leaveAnyway": "Leave anyway"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Guardrails",
+        "pii": "PII",
+        "optimizers": "Optimizers",
+        "routerOverhead": "Router overhead"
+      },
+      "policyType": {
+        "llm": "AI Routing",
+        "rateLimit": "Rate Limit",
+        "budgetRemaining": "Budget Remaining",
+        "semanticIntent": "Semantic Intent",
+        "modelPreference": "Model Preference"
+      },
+      "rawDetails": "raw details",
+      "technicalDetails": "technical details",
+      "systemPrompt": "system prompt",
+      "responseText": "response text",
+      "responseJson": "response JSON",
+      "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Embedding Model",
+      "upstreamModel": "Upstream Model",
+      "provider": "Provider",
+      "source": "Source",
+      "endpoint": "Endpoint",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL extended",
+      "model": "Model",
+      "similarity": "Similarity",
+      "embedding": "Embedding",
+      "cacheMiss": "CACHE MISS",
+      "details": "details",
+      "excludedByLimits": "EXCLUDED BY LIMITS",
+      "finalRanking": "FINAL RANKING",
+      "noRankingData": "No ranking data (record may be corrupted or from older version)",
+      "policyScores": "POLICY SCORES",
+      "weight": "weight {{value}}",
+      "allScores": "all scores",
+      "noPolicyData": "No policy data (record may be corrupted or from older version)",
+      "requestGuardrailBlocked": "REQUEST GUARDRAIL BLOCKED",
+      "requestGuardrailTriggered": "REQUEST GUARDRAIL TRIGGERED",
+      "responseGuardrailBlocked": "RESPONSE GUARDRAIL BLOCKED",
+      "responseGuardrailTriggered": "RESPONSE GUARDRAIL TRIGGERED",
+      "rule": "Rule",
+      "action": "Action",
+      "guardrailsEvaluated": "GUARDRAILS EVALUATED ({{target}})",
+      "ruleCount": "{{count}} rule",
+      "ruleCount_other": "{{count}} rules",
+      "promptInjection": "Prompt injection",
+      "injects": "injects",
+      "judgeResponse": "Judge response",
+      "piiScrubbed": "PII SCRUBBED",
+      "piiScanned": "PII SCANNED ({{target}})",
+      "policies": "policies",
+      "entityTypes": "entity types",
+      "customPatterns": "custom patterns",
+      "scanned": "scanned",
+      "redacted": "redacted",
+      "took": "took",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "entity types scanned",
+      "guardrailInjection": "GUARDRAIL INJECTION",
+      "rules": "rules",
+      "chars": "chars",
+      "injectedText": "injected text",
+      "optimizer": "OPTIMIZER {{id}}",
+      "tokens": "tokens",
+      "saved": "saved",
+      "tok": "{{value}} tok",
+      "reason": "reason",
+      "budgetBlocked": "BUDGET BLOCKED",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "EGRESS SENT",
+      "status": "status",
+      "encoding": "encoding",
+      "frames": "frames",
+      "bytes": "bytes"
+    }
+  },
   "profile": {
     "header": {
       "title": "My Profile",
@@ -554,7 +826,22 @@
         "errors": {
           "createFailed": "Failed to create"
         }
-      }
+      },
+      "sendTest": "Send test",
+      "fromAddress": "From Address",
+      "individualUsers": "Individual users",
+      "host": "Host",
+      "port": "Port",
+      "apiKey": "API Key",
+      "connectionString": "Connection String",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Method",
+      "botToken": "Bot Token",
+      "channelId": "Channel ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "Integration Key"
     },
     "integrations": {
       "types": {
@@ -716,7 +1003,8 @@
         "loadFailed": "Failed to load",
         "checkFailed": "Check failed",
         "updateFailed": "Update failed"
-      }
+      },
+      "channel": "Channel"
     },
     "security": {
       "authentication": "Authentication",
@@ -729,6 +1017,19 @@
         "loadFailed": "Failed to load settings",
         "saveFailed": "Failed to save settings"
       }
+    },
+    "title": "Settings",
+    "subtitle": "Configuration for Routerly",
+    "tabs": {
+      "general": "General",
+      "security": "Security",
+      "notifications": "Notifications",
+      "integrations": "Integrations",
+      "catalog": "Provider Catalog",
+      "users": "Users",
+      "roles": "Roles",
+      "audit": "Audit Log",
+      "about": "About"
     }
   },
   "routers": {
@@ -1467,7 +1768,10 @@
       "providerLabels": {
         "anthropicOauth": "Anthropic (Pro/Max subscription)",
         "openaiOauth": "OpenAI (ChatGPT Plus/Pro subscription)"
-      }
+      },
+      "saveChanges": "Save Changes",
+      "createClone": "Create Clone",
+      "createModel": "Create Model"
     },
     "page": {
       "title": "Models",

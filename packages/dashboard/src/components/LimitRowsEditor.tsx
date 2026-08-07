@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { X, Plus } from 'lucide-react';
 import type { Limit, LimitMetric, LimitPeriod, RollingUnit } from '../api';
 import { SearchableSelect } from './SearchableSelect';
@@ -19,30 +21,30 @@ export type LimitRow = {
   value: string;
 };
 
-export const LIMIT_METRIC_OPTIONS: { value: LimitMetric; label: string }[] = [
-  { value: 'cost',          label: 'Cost (USD)'      },
-  { value: 'calls',         label: 'Requests'        },
-  { value: 'input_tokens',  label: 'Input tokens'    },
-  { value: 'output_tokens', label: 'Output tokens'   },
-  { value: 'total_tokens',  label: 'Total tokens'    },
-];
+const LIMIT_METRIC_VALUES: LimitMetric[] = ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'];
+const PERIOD_VALUES: LimitPeriod[] = ['hourly', 'daily', 'weekly', 'monthly', 'yearly'];
+const ROLLING_UNIT_VALUES: RollingUnit[] = ['second', 'minute', 'hour', 'day', 'week', 'month'];
 
-export const PERIOD_OPTIONS: { value: LimitPeriod; label: string }[] = [
-  { value: 'hourly',  label: 'Hourly'  },
-  { value: 'daily',   label: 'Daily'   },
-  { value: 'weekly',  label: 'Weekly'  },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly',  label: 'Yearly'  },
-];
+function limitMetricLabel(t: TFunction, v: LimitMetric): string {
+  return t(`common.limitRows.metric.${v}`);
+}
 
-export const ROLLING_UNIT_OPTIONS: { value: RollingUnit; label: string }[] = [
-  { value: 'second', label: 'seconds' },
-  { value: 'minute', label: 'minutes' },
-  { value: 'hour',   label: 'hours'   },
-  { value: 'day',    label: 'days'    },
-  { value: 'week',   label: 'weeks'   },
-  { value: 'month',  label: 'months'  },
-];
+function periodLabel(t: TFunction, v: LimitPeriod): string {
+  return t(`common.limitRows.period.${v}`);
+}
+
+function rollingUnitLabel(t: TFunction, v: RollingUnit): string {
+  return t(`common.limitRows.rollingUnit.${v}`);
+}
+
+export const LIMIT_METRIC_OPTIONS: { value: LimitMetric; label: string }[] =
+  LIMIT_METRIC_VALUES.map(value => ({ value, label: value }));
+
+export const PERIOD_OPTIONS: { value: LimitPeriod; label: string }[] =
+  PERIOD_VALUES.map(value => ({ value, label: value }));
+
+export const ROLLING_UNIT_OPTIONS: { value: RollingUnit; label: string }[] =
+  ROLLING_UNIT_VALUES.map(value => ({ value, label: value }));
 
 export const EMPTY_LIMIT_ROW: LimitRow = {
   metric: 'cost', windowType: 'period', period: 'monthly',
@@ -95,23 +97,24 @@ export function limitsToRows(limits: Limit[] | undefined): LimitRow[] {
   return limits.map(limitToRow);
 }
 
-export function fmtLimit(l: Limit): string {
+export function fmtLimit(t: TFunction, l: Limit): string {
   const metricLabel =
     l.metric === 'cost'         ? `$${l.value}` :
-    l.metric === 'calls'        ? `${l.value} req` :
-    l.metric === 'input_tokens' ? `${l.value} in-tok` :
-    l.metric === 'output_tokens'? `${l.value} out-tok` :
-    /* total_tokens */             `${l.value} tok`;
+    l.metric === 'calls'        ? t('common.limitRows.fmt.requests', { value: l.value }) :
+    l.metric === 'input_tokens' ? t('common.limitRows.fmt.inputTokens', { value: l.value }) :
+    l.metric === 'output_tokens'? t('common.limitRows.fmt.outputTokens', { value: l.value }) :
+    /* total_tokens */             t('common.limitRows.fmt.totalTokens', { value: l.value });
   if (l.windowType === 'rolling') {
-    const unit = ROLLING_UNIT_OPTIONS.find(o => o.value === l.rollingUnit)?.label ?? l.rollingUnit ?? 'day';
-    return `${metricLabel} / every ${l.rollingAmount ?? 1} ${unit}`;
+    const unit = rollingUnitLabel(t, l.rollingUnit ?? 'day');
+    return t('common.limitRows.fmt.everyRolling', { metric: metricLabel, amount: l.rollingAmount ?? 1, unit });
   }
-  const periodLabel = PERIOD_OPTIONS.find(o => o.value === l.period)?.label ?? l.period ?? 'monthly';
-  return `${metricLabel} / ${periodLabel.toLowerCase()}`;
+  const period = periodLabel(t, l.period ?? 'monthly').toLowerCase();
+  return t('common.limitRows.fmt.perPeriod', { metric: metricLabel, period });
 }
 
 /** Editable grid of `LimitRow`s plus an "Add limit" affordance. */
 export function LimitRowsEditor({ rows, onChange }: { rows: LimitRow[]; onChange: (rows: LimitRow[]) => void }) {
+  const { t } = useTranslation();
   const freeCombo = findFreeCombo(rows);
 
   function updateRow(idx: number, patch: Partial<LimitRow>) {
@@ -130,7 +133,7 @@ export function LimitRowsEditor({ rows, onChange }: { rows: LimitRow[]; onChange
     <div>
       {rows.length === 0 && (
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 8px', fontStyle: 'italic' }}>
-          No limits set.
+          {t('common.limitRows.noLimits')}
         </p>
       )}
       {rows.map((lim, idx) => {
@@ -139,37 +142,40 @@ export function LimitRowsEditor({ rows, onChange }: { rows: LimitRow[]; onChange
         return (
           <div key={idx} style={{ display: 'grid', gridTemplateColumns: '120px 100px 1fr 90px auto', gap: 6, alignItems: 'flex-end', marginBottom: 8 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ fontSize: '0.72rem' }}>Metric</label>
+              <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.limitRows.metricLabel')}</label>
               <SearchableSelect
                 value={lim.metric}
                 onChange={v => upd({ metric: v as LimitMetric })}
-                options={LIMIT_METRIC_OPTIONS
-                  .filter(o => !otherKeys.has(rowKey({ ...lim, metric: o.value as LimitMetric })))
-                  .map(o => ({ value: o.value, label: o.label }))}
+                options={LIMIT_METRIC_VALUES
+                  .filter(v => !otherKeys.has(rowKey({ ...lim, metric: v })))
+                  .map(v => ({ value: v, label: limitMetricLabel(t, v) }))}
               />
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ fontSize: '0.72rem' }}>Type</label>
+              <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.limitRows.typeLabel')}</label>
               <SearchableSelect
                 value={lim.windowType}
                 onChange={v => upd({ windowType: v as 'period' | 'rolling' })}
-                options={[{ value: 'period', label: 'Period' }, { value: 'rolling', label: 'Rolling' }]}
+                options={[
+                  { value: 'period', label: t('common.limitRows.windowType.period') },
+                  { value: 'rolling', label: t('common.limitRows.windowType.rolling') },
+                ]}
               />
             </div>
             {lim.windowType === 'period' ? (
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '0.72rem' }}>Period</label>
+                <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.limitRows.periodLabel')}</label>
                 <SearchableSelect
                   value={lim.period}
                   onChange={v => upd({ period: v as LimitPeriod })}
-                  options={PERIOD_OPTIONS
-                    .filter(o => !otherKeys.has(rowKey({ ...lim, period: o.value as LimitPeriod })))
-                    .map(o => ({ value: o.value, label: o.label }))}
+                  options={PERIOD_VALUES
+                    .filter(v => !otherKeys.has(rowKey({ ...lim, period: v })))
+                    .map(v => ({ value: v, label: periodLabel(t, v) }))}
                 />
               </div>
             ) : (
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '0.72rem' }}>Every</label>
+                <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.limitRows.everyLabel')}</label>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <input className="form-input" type="number" min="1" step="1" value={lim.rollingAmount}
                     onChange={e => upd({ rollingAmount: e.target.value })}
@@ -177,7 +183,7 @@ export function LimitRowsEditor({ rows, onChange }: { rows: LimitRow[]; onChange
                   <SearchableSelect
                     value={lim.rollingUnit}
                     onChange={v => upd({ rollingUnit: v as RollingUnit })}
-                    options={ROLLING_UNIT_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+                    options={ROLLING_UNIT_VALUES.map(v => ({ value: v, label: rollingUnitLabel(t, v) }))}
                     style={{ flex: 1 }}
                   />
                 </div>
@@ -185,7 +191,7 @@ export function LimitRowsEditor({ rows, onChange }: { rows: LimitRow[]; onChange
             )}
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label" style={{ fontSize: '0.72rem' }}>
-                {lim.metric === 'cost' ? 'Max ($)' : lim.metric === 'calls' ? 'Max (n.)' : 'Max (tokens)'}
+                {lim.metric === 'cost' ? t('common.limitRows.maxCost') : lim.metric === 'calls' ? t('common.limitRows.maxCount') : t('common.limitRows.maxTokens')}
               </label>
               <input className="form-input" type="number" step="any" min="0" value={lim.value}
                 onChange={e => upd({ value: e.target.value })}
@@ -200,9 +206,9 @@ export function LimitRowsEditor({ rows, onChange }: { rows: LimitRow[]; onChange
       })}
       <button type="button" onClick={addRow}
         disabled={!freeCombo}
-        title={!freeCombo ? 'All metric/period combinations are already set' : undefined}
+        title={!freeCombo ? t('common.limitRows.allCombosSet') : undefined}
         style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, background: 'none', border: '1px dashed var(--border)', borderRadius: 6, cursor: freeCombo ? 'pointer' : 'not-allowed', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '6px 12px', transition: 'all 0.15s', opacity: freeCombo ? 1 : 0.4 }}>
-        <Plus size={12} /> Add limit
+        <Plus size={12} /> {t('common.limitRows.addLimit')}
       </button>
     </div>
   );

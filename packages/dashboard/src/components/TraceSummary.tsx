@@ -9,6 +9,7 @@
  * entries, so this card can never disagree with them.
  */
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, ChevronRight, Route, ShieldAlert, ShieldCheck, Sparkles, XCircle } from 'lucide-react';
 import type { TraceEntry } from '../api';
 import { formatCost, formatDuration, formatTokens, formatTokensPerSec } from '../utils/traceUtils';
@@ -88,6 +89,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
   defaultOpen?: boolean;
   children?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const recap = trace?.find(e => e.message === 'trace:recap');
   // Standalone, with nothing to summarise, the card has nothing to say.
   if (!recap && !collapsible) return null;
@@ -173,7 +175,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
             {guardrails && (
               <Section
                 icon={guardrails.blockedBy ? ShieldAlert : ShieldCheck}
-                title="Guardrails"
+                title={t('common.trace.summary.guardrails')}
                 color={guardrails.blockedBy ? '#ef4444' : '#fb923c'}
                 items={[
                   ['rules', String(num(guardrails.rules) ?? 0)],
@@ -187,7 +189,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
             {pii && (
               <Section
                 icon={ShieldCheck}
-                title="PII"
+                title={t('common.trace.summary.pii')}
                 color="#34d399"
                 items={[
                   ['request', String(num(pii.request) ?? 0)],
@@ -198,7 +200,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
             {optimizers && (
               <Section
                 icon={Sparkles}
-                title="Optimizers"
+                title={t('common.trace.summary.optimizers')}
                 color="#a78bfa"
                 items={[
                   ['steps', String(num(optimizers.steps) ?? 0)],
@@ -211,7 +213,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
             {overhead && (
               <Section
                 icon={Route}
-                title="Router overhead"
+                title={t('common.trace.summary.routerOverhead')}
                 color="#8b5cf6"
                 items={[
                   ['calls', String(num(overhead.calls) ?? 0)],
