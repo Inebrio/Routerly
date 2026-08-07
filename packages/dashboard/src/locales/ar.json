@@ -1,0 +1,2637 @@
+{
+  "app": {
+    "theme": {
+      "auto": "تلقائي",
+      "dark": "داكن",
+      "light": "فاتح"
+    },
+    "themeCycle": {
+      "title": "المظهر: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "توسيع الشريط الجانبي",
+      "collapse": "طيّ الشريط الجانبي"
+    },
+    "tagline": "بوابة واحدة. أي نموذج ذكاء اصطناعي. تحكّم كامل.",
+    "nav": {
+      "overview": "نظرة عامة",
+      "providers": "المزوّدون",
+      "models": "النماذج",
+      "profiles": "الملفات التعريفية",
+      "routers": "الموجّهات",
+      "experiments": "التجارب",
+      "usage": "الاستخدام",
+      "playground": "ساحة التجربة",
+      "settings": "الإعدادات",
+      "connectApp": "ربط تطبيق",
+      "help": "المساعدة",
+      "signOut": "تسجيل الخروج"
+    },
+    "banner": {
+      "permissionWarning": "بعض ملفات الإعداد لديها صلاحيات وصول مفتوحة أكثر من اللازم ({{files}}). التشغيل والطلبات ما زالا يعملان، لكن أصلح ذلك من نظام الملفات على الخادم عندما يتسنى لك.",
+      "dismiss": "تجاهل",
+      "updateAvailable": "الإصدار Routerly v{{latest}} متاح. أنت تستخدم v{{current}}.",
+      "updateLink": "التحديث من الإعدادات",
+      "mfaRequired": "المصادقة الثنائية مطلوبة لهذه النسخة.",
+      "mfaLink": "فعّل المصادقة الثنائية من ملفك الشخصي",
+      "mfaSuffix": "لتأمين حسابك.",
+      "telemetryTitle": "لا يرسل Routerly أي بيانات تلقائيًا أبدًا.",
+      "telemetryBody": "هل ترغب في المساعدة عبر إرسال إحصاءات تثبيت مجهولة الهوية؟ فقط نوع الحدث والإصدار والمنصة ومعرّف عشوائي، بدون بيانات شخصية ولا عنوان IP.",
+      "telemetryLink": "ما الذي يتم إرساله؟",
+      "telemetryYes": "نعم، أوافق على المساعدة",
+      "telemetryNo": "لا، شكرًا"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "ملفي الشخصي",
+      "subtitle": "إدارة إعدادات حسابك"
+    },
+    "tabs": {
+      "profile": "الملف الشخصي",
+      "notifications": "الإشعارات",
+      "mcp": "MCP",
+      "preferences": "التفضيلات"
+    },
+    "notifications": {
+      "close": "إغلاق",
+      "refresh": "تحديث",
+      "clear": "مسح",
+      "empty": "لم يتم العثور على إشعارات.",
+      "markAllRead": "وضع علامة مقروء على الكل",
+      "allCaughtUp": "لا جديد",
+      "unreadCount": "{{count}} غير مقروء",
+      "selectedCount": "{{count}} محدد",
+      "severity": {
+        "all": "الكل",
+        "info": "معلومة",
+        "warning": "تحذير",
+        "critical": "حرِج"
+      },
+      "status": {
+        "read": "مقروء",
+        "unread": "غير مقروء"
+      },
+      "filters": {
+        "severity": "الخطورة",
+        "category": "الفئة",
+        "event": "الحدث",
+        "date": "التاريخ",
+        "period": "الفترة",
+        "status": "الحالة",
+        "all": "الكل",
+        "allCategories": "كل الفئات",
+        "allEvents": "كل الأحداث",
+        "unreadOnly": "غير المقروء فقط"
+      },
+      "actions": {
+        "markRead": "وضع علامة مقروء",
+        "markUnread": "وضع علامة غير مقروء",
+        "archive": "أرشفة"
+      },
+      "table": {
+        "severity": "الخطورة",
+        "event": "الحدث",
+        "date": "التاريخ",
+        "status": "الحالة",
+        "selectAll": "تحديد الكل",
+        "selectRow": "تحديد {{event}}",
+        "eventCount": "{{count}} حدث"
+      },
+      "pagination": {
+        "previous": "→ السابق",
+        "next": "التالي ←",
+        "page": "صفحة {{page}} من {{totalPages}}",
+        "total": "(الإجمالي {{count}})"
+      },
+      "detail": {
+        "ariaLabel": "تفاصيل الإشعار",
+        "details": "التفاصيل",
+        "noDetails": "لا توجد تفاصيل إضافية.",
+        "eventsInIncident": "الأحداث ضمن هذه الحادثة"
+      }
+    },
+    "security": {
+      "roleLabel": "الدور:",
+      "password": {
+        "heading": "تغيير كلمة المرور",
+        "currentLabel": "كلمة المرور الحالية",
+        "newLabel": "كلمة المرور الجديدة",
+        "newPlaceholder": "8 أحرف على الأقل",
+        "confirmLabel": "تأكيد كلمة المرور الجديدة",
+        "success": "تم تغيير كلمة المرور بنجاح.",
+        "saving": "جارٍ الحفظ...",
+        "submit": "تغيير كلمة المرور",
+        "errors": {
+          "mismatch": "كلمتا المرور غير متطابقتين.",
+          "tooShort": "يجب ألا تقل كلمة المرور الجديدة عن 8 أحرف.",
+          "updateFailed": "فشل التحديث"
+        }
+      },
+      "tfa": {
+        "heading": "المصادقة الثنائية",
+        "notEnabled": "المصادقة الثنائية غير مفعّلة. احمِ حسابك بكلمة مرور لمرة واحدة قائمة على الوقت.",
+        "enableButton": "تفعيل المصادقة الثنائية",
+        "scanInstructions": "امسح رمز QR هذا بتطبيق المصادقة لديك (Google Authenticator أو Authy أو غيره)، ثم أدخل الرمز المكوّن من 6 أرقام للتأكيد.",
+        "qrAlt": "رمز QR لإعداد المصادقة الثنائية",
+        "addAccountInstructions": "افتح تطبيق المصادقة لديك (Google Authenticator أو Authy أو 1Password أو غيره) وأضِف حسابًا جديدًا:",
+        "setup": {
+          "step1": "اضغط على <strong>إضافة حساب</strong> أو زر <strong>+</strong>",
+          "step2": "اختر <strong>إدخال مفتاح الإعداد</strong> (أو امسح رمز QR إن كنت على الهاتف)",
+          "step3": "أدخل المفتاح السري الموضّح أدناه"
+        },
+        "mobileLink": "اضغط هنا على الهاتف لفتح تطبيق المصادقة",
+        "manualEntryLabel": "المفتاح السري للإدخال اليدوي:",
+        "saveBackupCodes": "احفظ رموز الاسترداد هذه. يمكن استخدام كل رمز مرة واحدة إذا فقدت الوصول إلى تطبيق المصادقة.",
+        "copyBackupCodes": "نسخ رموز الاسترداد",
+        "confirmCodeLabel": "أدخل الرمز من تطبيقك للتفعيل",
+        "activate": "تفعيل المصادقة الثنائية",
+        "cancel": "إلغاء",
+        "enabledBadge": "المصادقة الثنائية مفعّلة",
+        "newBackupCodesLabel": "رموز استرداد جديدة (احفظها الآن):",
+        "copy": "نسخ",
+        "regenLabel": "أدخل رمز المصادقة لإعادة توليد رموز الاسترداد",
+        "regenerate": "إعادة توليد",
+        "regenerateBackupCodes": "إعادة توليد رموز الاسترداد",
+        "disableLabel": "تعطيل المصادقة الثنائية (أدخل رمز المصادقة)",
+        "disable": "تعطيل المصادقة الثنائية",
+        "errors": {
+          "setupFailed": "فشل الإعداد",
+          "confirmFailed": "فشل التأكيد",
+          "disableFailed": "فشل التعطيل",
+          "regenFailed": "فشل إعادة التوليد"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "تعذّر تحميل واجهة MCP",
+        "revokeFailed": "تعذّر إبطال الرمز"
+      },
+      "revokeConfirm": "هل تريد إبطال رمز MCP \"{{name}}\"؟ ستتوقف التطبيقات التي تستخدمه عن العمل فورًا.",
+      "tokens": {
+        "heading": "رموز MCP",
+        "newToken": "رمز جديد",
+        "description": "يتصرف كل رمز نيابةً عنك: يكشف بالضبط الأدوات التي يسمح بها دورك. تُعرض القيمة الكاملة مرة واحدة فقط، في الصفحة التي تنشئه.",
+        "empty": "لا توجد رموز MCP بعد. أنشئ واحدًا لربط عميل MCP.",
+        "created": "تاريخ الإنشاء",
+        "lastUsed": "آخر استخدام",
+        "expires": "تاريخ الانتهاء",
+        "never": "أبدًا",
+        "revokeTitle": "إبطال الرمز"
+      },
+      "tools": {
+        "heading": "الأدوات التي تكشفها رموزك",
+        "empty": "لا يمنح دورك أي أداة MCP. اطلب من مسؤول النظام الصلاحيات التي تحتاجها.",
+        "table": {
+          "name": "الاسم",
+          "scope": "النطاق",
+          "description": "الوصف",
+          "sourceModule": "الوحدة المصدر",
+          "permission": "الصلاحية"
+        }
+      },
+      "connect": {
+        "heading": "ربط عميل MCP",
+        "descriptionPre": "اختر العميل الذي تقوم بإعداده، ثم استبدل",
+        "descriptionPost": "بأحد رموزك. إنشاء رمز جديد يعرض المقتطف نفسه مع القيمة مضمّنة مسبقًا.",
+        "otherClient": "أي عميل آخر",
+        "httpInstructionsPre": "عبر HTTP، وجّه إلى هذه النقطة النهائية وصادِق باستخدام",
+        "httpInstructionsPost": ". إنه بروتوكول JSON-RPC 2.0 عبر Streamable HTTP.",
+        "stdioInstructionsPre": "عبر stdio، تتولى واجهة سطر الأوامر ربط الرمز تلقائيًا. تشغّل الخدمة مباشرةً بدلًا من ذلك؟ اضبط",
+        "stdioInstructionsAnd": "و",
+        "stdioInstructionsPost": "بنفسك."
+      },
+      "newToken": {
+        "backToMcp": "العودة إلى MCP",
+        "title": "رمز MCP جديد",
+        "subtitle": "يتصرف الرمز نيابةً عنك: يكشف بالضبط الأدوات التي يسمح بها دورك.",
+        "nameLabel": "الاسم",
+        "namePlaceholder": "الحاسوب المحمول",
+        "nameHint": "أين يُستخدم هذا الرمز، مثل \"الحاسوب المحمول\" أو \"claude-desktop\".",
+        "expiryLabel": "تاريخ الانتهاء",
+        "expiryHint": "اختياري. اتركه فارغًا وسيبقى الرمز صالحًا إلى الأبد، حتى تقوم بإبطاله.",
+        "createButton": "إنشاء رمز",
+        "creatingButton": "جارٍ الإنشاء…",
+        "cancelButton": "إلغاء",
+        "tokenSection": {
+          "title": "رمزك",
+          "hint": "انسخه الآن. لن يُعرض مرة أخرى، ولا يمكن استبدال رمز مفقود إلا بإنشاء رمز جديد.",
+          "copyButton": "نسخ",
+          "copiedButton": "تم النسخ!",
+          "copyTitle": "نسخ الرمز",
+          "copiedTitle": "تم النسخ!"
+        },
+        "connectSection": {
+          "title": "ربط عميل",
+          "hint": "اختر العميل الذي تقوم بإعداده. المقتطف يتضمن هذا الرمز مسبقًا."
+        },
+        "bridgeSection": {
+          "title": "أو استخدم الجسر المحلي",
+          "hint": "لعميل يتحدث stdio فقط، تتولى واجهة سطر الأوامر ربط الرمز تلقائيًا."
+        },
+        "doneButton": "تم",
+        "errors": {
+          "createFailed": "تعذّر إنشاء الرمز",
+          "copyFailed": "فشل النسخ، حدد الرمز وانسخه يدويًا."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "اللغة",
+      "description": "اختر اللغة التي تُعرض بها لوحة التحكم.",
+      "languageLabel": "اللغة",
+      "saved": "تم حفظ تفضيل اللغة."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "تعذّر تحميل الإعدادات",
+        "loadFailedPeriod": "تعذّر تحميل الإعدادات.",
+        "saveFailed": "فشل الحفظ",
+        "saveSettingsFailed": "تعذّر حفظ الإعدادات"
+      },
+      "savedSuccess": "تم حفظ الإعدادات بنجاح.",
+      "saving": "جارٍ الحفظ…",
+      "saveSettings": "حفظ الإعدادات",
+      "serverInfo": {
+        "heading": "معلومات الخادم",
+        "readOnly": "للقراءة فقط. المضيف والمنفذ يأتيان من البيئة أو ملف الإعدادات، وليس من هنا.",
+        "reachableAt": "يمكن الوصول إليه عبر",
+        "reachableAtAny": "يمكن الوصول إليه عبر أي من هذه العناوين",
+        "thisMachine": "هذا الجهاز",
+        "network": "الشبكة",
+        "copyAddress": "نسخ {{address}}",
+        "copied": "تم النسخ!",
+        "copy": "نسخ",
+        "hostAndPort": "المضيف والمنفذ",
+        "version": "الإصدار",
+        "uptime": "مدة التشغيل"
+      },
+      "runtime": {
+        "heading": "إعدادات وقت التشغيل",
+        "logLevel": "مستوى السجل",
+        "logLevelHint": "يتحكم في مستوى تفصيل سجلات الخدمة.",
+        "publicUrl": "عنوان URL العام",
+        "publicUrlHint": "عنوان URL الأساسي الذي يمكن للعملاء الخارجيين الوصول إلى الخدمة عبره (مثال <code>http://192.168.1.10:3000</code>). يُستخدم في قسم <strong>كيفية الاتصال</strong> لكل موجّه. مفيد عندما تعمل لوحة التحكم على جهاز أو منفذ مختلف عن الخدمة.",
+        "usageRetention": "الاحتفاظ بسجل الاستخدام",
+        "noLimit": "بلا حد",
+        "maxAgeDays": "أقصى عمر (أيام)",
+        "maxSizeMb": "أقصى حجم (ميغابايت)",
+        "retentionHint": "يُحذف سجل الاستخدام/الفوترة الأقدم من هذا العدد من الأيام، أو الذي يتجاوز هذا الحجم، من السجل النشط. اترك الحقلين فارغين لعدم تطبيق أي حد للاحتفاظ."
+      },
+      "telemetry": {
+        "heading": "الإحصاءات مجهولة الهوية",
+        "neverAutomatic": "لا يرسل Routerly أي بيانات تلقائيًا أبدًا.",
+        "noChoice": "لم تقم باختيار بعد.",
+        "enabledStatus": "إحصاءات التثبيت مجهولة الهوية مفعّلة.",
+        "disabledStatus": "إحصاءات التثبيت مجهولة الهوية معطّلة.",
+        "explanation": "عند التفعيل، يرسل Routerly فقط: نوع الحدث (تثبيت / ترقية / إلغاء تثبيت) والإصدار والمنصة ومعرّفًا عشوائيًا. بدون بيانات شخصية، وبدون بيانات استخدام، وبدون تخزين عنوان IP.",
+        "whatIsSent": "ما الذي يتم إرساله؟",
+        "installId": "معرّف التثبيت: {{id}}",
+        "saving": "جارٍ الحفظ…",
+        "enable": "تفعيل",
+        "disable": "تعطيل"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "لوحة التحكم (صندوق داخل التطبيق)",
+          "description": "يوجّه الأحداث إلى صندوق الوارد داخل التطبيق"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "خادم بريد مخصص"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "خدمة البريد الإلكتروني البسيطة من AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "خدمة Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "خدمات Azure Communication"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail عبر OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "استدعاء رد نداء عبر HTTP"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "واجهة برمجة بوت Slack"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Webhook وارد لـ Teams"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Webhook لـ Discord"
+        }
+      },
+      "events": {
+        "providerError": "المزوّد – خطأ",
+        "providerDegraded": "المزوّد – متدهور الأداء",
+        "providerRecovered": "المزوّد – استعاد الحالة",
+        "providerRateLimited": "المزوّد – تم تقييد المعدل",
+        "routingNoCandidates": "التوجيه – لا يوجد مرشحون",
+        "routingFallbackUsed": "التوجيه – تم استخدام الخيار الاحتياطي",
+        "authLoginFailed": "المصادقة – فشل تسجيل الدخول",
+        "authTokenInvalid": "المصادقة – رمز غير صالح",
+        "configModelAdded": "الإعداد – تمت إضافة نموذج",
+        "configModelDeleted": "الإعداد – تم حذف نموذج",
+        "configRouterCreated": "الإعداد – تم إنشاء موجّه",
+        "configRouterDeleted": "الإعداد – تم حذف موجّه",
+        "budgetThresholdReached": "الميزانية – تم بلوغ العتبة",
+        "budgetExceeded": "الميزانية – تم تجاوزها",
+        "budgetReset": "الميزانية – تمت إعادة التعيين",
+        "systemStartup": "النظام – بدء التشغيل",
+        "systemShutdown": "النظام – إيقاف التشغيل",
+        "systemUpdateAvailable": "النظام – تحديث متاح"
+      },
+      "perms": {
+        "routerRead": "الموجّهات – قراءة",
+        "routerWrite": "الموجّهات – كتابة",
+        "modelRead": "النماذج – قراءة",
+        "modelWrite": "النماذج – كتابة",
+        "userRead": "المستخدمون – قراءة",
+        "userWrite": "المستخدمون – كتابة",
+        "reportRead": "التقارير – قراءة",
+        "settingsRead": "الإعدادات – قراءة",
+        "settingsWrite": "الإعدادات – كتابة",
+        "notificationWrite": "الإشعارات – كتابة",
+        "tokenRead": "الرموز – قراءة",
+        "tokenWrite": "الرموز – كتابة",
+        "roleWrite": "الأدوار – كتابة",
+        "auditRead": "سجل التدقيق – قراءة",
+        "modulesRead": "الوحدات – قراءة",
+        "modulesManage": "الوحدات – إدارة",
+        "connectionsRead": "الاتصالات – قراءة",
+        "connectionsManage": "الاتصالات – إدارة",
+        "resilienceRead": "المرونة – قراءة",
+        "resilienceManage": "المرونة – إدارة",
+        "profilesRead": "ملفات التوجيه التعريفية – قراءة",
+        "profilesManage": "ملفات التوجيه التعريفية – إدارة",
+        "optimizersRead": "المحسّنات – قراءة",
+        "optimizersManage": "المحسّنات – إدارة",
+        "experimentsRead": "التجارب – قراءة",
+        "experimentsManage": "التجارب – إدارة"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "بالنسبة لهذا النوع من القنوات، لا تغيّر الوجهات آلية التسليم (النقطة النهائية ثابتة). إنها تُصفّي الأحداث التي تُسجَّل في سجل التدقيق لكل مستلم.",
+        "dashboard": "تتحكم الوجهات في ظهور الإشعارات في صندوق الوارد: فقط المستخدمون المطابقون سيرون هذه الإشعارات في صندوقهم الداخلي.",
+        "email": "تحدد الوجهات المستخدمين الذين يستلمون هذا البريد الإلكتروني. اتركها كلها فارغة للإرسال إلى الجميع."
+      },
+      "summary": {
+        "allEvents": "كل الأحداث",
+        "eventCount": "{{count}} حدث",
+        "eventCount_other": "{{count}} أحداث",
+        "roleCount": "{{count}} دور",
+        "roleCount_other": "{{count}} أدوار",
+        "permCount": "{{count}} صلاحية",
+        "permCount_other": "{{count}} صلاحيات",
+        "userCount": "{{count}} مستخدم",
+        "userCount_other": "{{count}} مستخدمين",
+        "everyone": "الجميع"
+      },
+      "errors": {
+        "loadFailed": "فشل التحميل"
+      },
+      "fields": {
+        "dashboardHint": "يوجّه الأحداث المطابقة إلى صندوق الإشعارات الداخلي. لا يتطلب بيانات اعتماد.",
+        "labels": {
+          "fromAddress": "عنوان المرسل",
+          "fromName": "اسم المرسل",
+          "host": "المضيف",
+          "port": "المنفذ",
+          "tls": "TLS/SSL",
+          "username": "اسم المستخدم",
+          "password": "كلمة المرور",
+          "awsRegion": "منطقة AWS",
+          "accessKeyId": "معرّف مفتاح الوصول",
+          "secretAccessKey": "مفتاح الوصول السري",
+          "apiKey": "مفتاح API",
+          "connectionString": "سلسلة الاتصال",
+          "clientId": "معرّف العميل",
+          "clientSecret": "السر الخاص بالعميل",
+          "refreshToken": "رمز التحديث",
+          "url": "الرابط",
+          "method": "الطريقة",
+          "signingSecret": "سر التوقيع",
+          "botToken": "رمز البوت",
+          "channelId": "معرّف القناة",
+          "webhookUrl": "رابط Webhook",
+          "integrationKey": "مفتاح التكامل"
+        },
+        "values": {
+          "enabled": "مفعّل",
+          "disabled": "معطّل",
+          "configured": "تم إعداده",
+          "notSet": "غير معيّن"
+        },
+        "optional": "(اختياري)",
+        "keepCurrentPlaceholder": "اتركه فارغًا للاحتفاظ بالقيمة الحالية",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "استخدام TLS / SSL",
+        "smtpTlsOnHint": "(المنفذ 465 — SSL مباشر)",
+        "smtpTlsOffHint": "(المنفذ 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "اترك بيانات الاعتماد فارغة لاستخدام دور مثيل IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "مفتاح توقيع HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "مفتاح توجيه من 32 حرفًا",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "الأحداث",
+          "eventsPlaceholder": "كل الأحداث (اتركه فارغًا للجميع)",
+          "eventsHint": "اتركه فارغًا لاستلام كل الأحداث. اختر أحداثًا محددة للتصفية.",
+          "routersHeading": "الموجّهات",
+          "routersPlaceholder": "كل الموجّهات (اتركه فارغًا للجميع)",
+          "routersHint": "اتركه فارغًا لاستلام أحداث من كل الموجّهات.",
+          "cooldownHeading": "فترة التهدئة",
+          "cooldownSuffix": "ثوانٍ (0 = بدون تهدئة)",
+          "cooldownHint": "أقل فاصل زمني قبل أن تتمكن هذه القناة من الإطلاق مجددًا لنفس الحدث."
+        },
+        "recipients": {
+          "heading": "المستلمون / الوجهات",
+          "rolesLabel": "الأدوار",
+          "rolesPlaceholder": "كل الأدوار (الجميع)",
+          "permissionsLabel": "الصلاحيات",
+          "permissionsPlaceholder": "كل الصلاحيات (الجميع)",
+          "usersLabel": "مستخدمون محددون",
+          "usersPlaceholder": "كل المستخدمين (الجميع)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "الاتصال",
+          "routing": "التوجيه",
+          "recipients": "المستلمون"
+        },
+        "sections": {
+          "channelSettings": "إعدادات القناة",
+          "eventsRouting": "الأحداث والتوجيه",
+          "recipients": "المستلمون"
+        },
+        "nameLabel": "الاسم",
+        "namePlaceholder": "تسمية لهذه القناة",
+        "cancelButton": "إلغاء"
+      },
+      "list": {
+        "countLabel": "{{count}} قناة",
+        "countLabel_other": "{{count}} قنوات",
+        "filteredLabel": "{{shown}} من {{count}} قناة",
+        "filteredLabel_other": "{{shown}} من {{count}} قنوات",
+        "allTypes": "كل الأنواع",
+        "searchPlaceholder": "تصفية القنوات…",
+        "addButton": "إضافة قناة",
+        "addSearchPlaceholder": "بحث في القنوات…",
+        "noResults": "لا توجد نتائج",
+        "emptyTitle": "لا توجد قنوات إشعار مُعدّة بعد.",
+        "noMatch": "لا توجد قناة مطابقة للمرشحات النشطة.",
+        "columns": {
+          "name": "الاسم",
+          "type": "النوع",
+          "summary": "الأحداث / الوجهات"
+        },
+        "testTitle": "إرسال اختبار",
+        "editTitle": "تعديل القناة",
+        "deleteTitle": "حذف القناة",
+        "deleteConfirm": "هل تريد إزالة القناة \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+        "deleteConfirmButton": "حذف",
+        "errors": {
+          "deleteFailed": "فشل الحذف"
+        }
+      },
+      "edit": {
+        "backToList": "العودة إلى الإشعارات",
+        "back": "رجوع",
+        "heading": "تعديل قناة {{provider}}",
+        "subtitle": "تحديث إعدادات قناة الإشعار هذه.",
+        "testSection": {
+          "title": "إرسال اختبار",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "إرسال اختبار",
+          "sendingButton": "جارٍ الإرسال…",
+          "hintEmail": "اتركه فارغًا للإرسال إلى بريد حسابك. يستخدم الاختبار إعدادات القناة المحفوظة.",
+          "hintOther": "يستخدم الاختبار إعدادات القناة المحفوظة. احفظ التغييرات أولًا لاختبار الإعدادات المحدّثة."
+        },
+        "saveButton": "حفظ التغييرات",
+        "savingButton": "جارٍ الحفظ…",
+        "errors": {
+          "loadFailed": "فشل التحميل",
+          "saveFailed": "فشل الحفظ"
+        }
+      },
+      "create": {
+        "backToList": "العودة إلى الإشعارات",
+        "changeType": "تغيير النوع",
+        "pickerHeading": "اختر نوع القناة",
+        "pickerSubtitle": "اختر مزوّد الإشعارات المراد إعداده.",
+        "heading": "قناة {{provider}} جديدة",
+        "subtitle": "إعداد قناة إشعار جديدة.",
+        "createButton": "إنشاء قناة",
+        "creatingButton": "جارٍ الإنشاء…",
+        "errors": {
+          "createFailed": "فشل الإنشاء"
+        }
+      },
+      "sendTest": "إرسال اختبار",
+      "fromAddress": "عنوان المرسل",
+      "individualUsers": "مستخدمون محددون",
+      "host": "المضيف",
+      "port": "المنفذ",
+      "apiKey": "مفتاح API",
+      "connectionString": "سلسلة الاتصال",
+      "clientId": "معرّف العميل",
+      "clientSecret": "السر الخاص بالعميل",
+      "refreshToken": "رمز التحديث",
+      "method": "الطريقة",
+      "botToken": "رمز البوت",
+      "channelId": "معرّف القناة",
+      "webhookUrl": "رابط Webhook",
+      "integrationKey": "مفتاح التكامل"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "سحب — يعرض /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "دفع — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "دفع — واجهة برمجة المقاييس"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "دفع — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "دفع — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "دفع — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "تصدير تتبّعات الطلبات",
+        "description": "يرسل التتبّع الكامل لكل طلب موجَّه: كل مرحلة، وكل وحدة تفاعلت، والمطالبات والإجابات للمشاريع التي اختارت ذلك.",
+        "sampleRateLabel": "معدّل أخذ العينات",
+        "sampleRateHint": "1 يصدّر كل طلب، 0.1 طلبًا واحدًا من كل عشرة."
+      },
+      "optional": "(اختياري)",
+      "headersHint": "(اختياري، واحد لكل سطر: المفتاح: القيمة)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "رمز Bearer",
+          "placeholder": "اتركه فارغًا للوصول المفتوح",
+          "description": "يعرض <code>/metrics</code> بصيغة نص Prometheus. عيّن رمزًا لفرض مصادقة Bearer."
+        },
+        "otel": {
+          "endpoint": "نقطة نهاية المجمّع",
+          "description": "عنوان URL الأساسي لمستقبل OTLP الخاص بك. يضيف Routerly <code>/v1/metrics</code>، و<code>/v1/traces</code> عند تفعيل تصدير التتبّعات. المنفذ الافتراضي لـ HTTP هو 4318، ولـ gRPC هو 4317.",
+          "protocol": "البروتوكول",
+          "headers": "الترويسات"
+        },
+        "datadog": {
+          "apiKey": "مفتاح API",
+          "placeholder": "مفتاح API الخاص بـ Datadog",
+          "description": "يوجد تحت <strong>Organization Settings → API Keys</strong> في حساب Datadog الخاص بك.",
+          "site": "الموقع"
+        },
+        "grafana": {
+          "remoteWriteUrl": "رابط Remote Write",
+          "description": "يوجد في <strong>Grafana Cloud → Connections → Prometheus → Details</strong> باسم \"Remote Write Endpoint\".",
+          "username": "اسم المستخدم / معرّف Stack",
+          "usernameHint": "المعرّف الرقمي الموضّح في تفاصيل اتصال Prometheus.",
+          "apiKey": "مفتاح API / الرمز",
+          "apiKeyHint": "رمز Grafana Cloud بدور <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "الرابط",
+          "urlHint": "عنوان URL لمثيل InfluxDB v2. السحابة: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "الرمز",
+          "tokenPlaceholder": "رمز API الخاص بـ InfluxDB",
+          "tokenHint": "يجب أن يملك صلاحية <strong>الكتابة</strong> على الحاوية (bucket).",
+          "org": "المؤسسة",
+          "bucket": "الحاوية (Bucket)"
+        },
+        "webhook": {
+          "url": "الرابط",
+          "secret": "السر",
+          "secretHint": "(اختياري — مفتاح توقيع HMAC-SHA256)",
+          "headers": "الترويسات"
+        }
+      },
+      "errors": {
+        "loadFailed": "تعذّر تحميل التكاملات",
+        "updateFailed": "تعذّر تحديث التكامل",
+        "saveFailed": "تعذّر حفظ التكامل",
+        "deleteFailed": "تعذّر حذف التكامل"
+      },
+      "empty": "لا توجد تكاملات مُعدّة بعد.",
+      "enabled": "مفعّل",
+      "testing": "جارٍ الاختبار…",
+      "test": "اختبار",
+      "removeConfirm": "هل تريد الإزالة؟",
+      "remove": "إزالة",
+      "cancel": "إلغاء",
+      "removeTooltip": "إزالة التكامل",
+      "saving": "جارٍ الحفظ…",
+      "save": "حفظ",
+      "addButton": "إضافة تكامل"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "تعذّر تحميل الإعدادات",
+        "duplicateUrl": "هذا الرابط موجود بالفعل في القائمة.",
+        "unreachable": "تعذّر الوصول إلى كتالوج مزوّد صالح عند هذا الرابط."
+      },
+      "saved": "تم الحفظ.",
+      "refreshed": "تم التحديث.",
+      "heading": "مستودعات كتالوج المزوّدين",
+      "refreshing": "جارٍ التحديث…",
+      "refresh": "تحديث",
+      "nextRefresh": "التالي: {{date}}",
+      "priorityHint": "ترتيب الصفوف يحدد أولوية الدمج — يفوز الصف 1 عند التعارض. استخدم الأسهم لإعادة الترتيب.",
+      "columns": {
+        "priority": "#",
+        "url": "الرابط",
+        "updated": "تاريخ التحديث",
+        "lastCheck": "آخر فحص",
+        "status": "الحالة"
+      },
+      "empty": "لا توجد مستودعات مُعدّة. سيُستخدم كتالوج Routerly العام الافتراضي.",
+      "status": {
+        "error": "خطأ",
+        "active": "نشط",
+        "disabled": "معطّل"
+      },
+      "edit": "تعديل",
+      "removeTooltip": "إزالة",
+      "addRepository": "إضافة مستودع",
+      "checking": "جارٍ الفحص…",
+      "add": "إضافة",
+      "removeConfirm": "هل تريد إزالة المستودع \"{{url}}\"؟"
+    },
+    "about": {
+      "headings": {
+        "application": "التطبيق",
+        "runtime": "بيئة التشغيل",
+        "storage": "التخزين",
+        "softwareUpdate": "تحديث البرنامج"
+      },
+      "labels": {
+        "version": "الإصدار",
+        "uptime": "مدة التشغيل",
+        "nodeVersion": "Node.js",
+        "platform": "المنصة",
+        "configDir": "مجلد الإعدادات",
+        "dataDir": "مجلد البيانات",
+        "currentVersion": "الإصدار الحالي",
+        "availableVersion": "الإصدار المتاح",
+        "upToDate": "محدَّث",
+        "lastChecked": "آخر فحص"
+      },
+      "noCheckPerformed": "لم يتم إجراء أي فحص للتحديثات بعد.",
+      "checkForUpdates": "التحقق من التحديثات",
+      "checking": "جارٍ التحقق…",
+      "updateTo": "التحديث إلى v{{version}}",
+      "updating": "جارٍ التحديث…",
+      "dockerHint": "قيد التشغيل عبر Docker — اسحب أحدث صورة للتحديث.",
+      "confirmUpdate": "سيؤدي هذا إلى تنزيل وتثبيت أحدث إصدار. سيُعاد تشغيل الخدمة. هل تريد المتابعة؟",
+      "updateComplete": "اكتمل التحديث! جارٍ إعادة التحميل…",
+      "serviceRestarting": "يُعاد تشغيل الخدمة الآن. يرجى إعادة تحميل الصفحة بعد لحظات.",
+      "errors": {
+        "loadFailed": "فشل التحميل",
+        "checkFailed": "فشل الفحص",
+        "updateFailed": "فشل التحديث"
+      },
+      "channel": "القناة"
+    },
+    "security": {
+      "authentication": "المصادقة",
+      "requireMfa": "طلب المصادقة الثنائية لجميع المستخدمين",
+      "requireMfaHint": "عند التفعيل، سيرى المستخدمون الذين لم يعدّوا المصادقة الثنائية طلبًا للقيام بذلك بعد تسجيل الدخول. يمكن للمستخدمين إعداد المصادقة الثنائية من صفحة ملفهم الشخصي.",
+      "savedSuccess": "تم حفظ الإعدادات بنجاح.",
+      "saving": "جارٍ الحفظ…",
+      "saveSettings": "حفظ الإعدادات",
+      "errors": {
+        "loadFailed": "تعذّر تحميل الإعدادات",
+        "saveFailed": "تعذّر حفظ الإعدادات"
+      }
+    },
+    "title": "الإعدادات",
+    "subtitle": "إعداد Routerly",
+    "tabs": {
+      "general": "عام",
+      "security": "الأمان",
+      "notifications": "الإشعارات",
+      "integrations": "التكاملات",
+      "catalog": "كتالوج المزوّدين",
+      "users": "المستخدمون",
+      "roles": "الأدوار",
+      "audit": "سجل التدقيق",
+      "about": "حول"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "الموجّهات",
+      "subtitle": "تطبيقات العملاء التي تصل إلى Routerly",
+      "count": "موجّه واحد",
+      "count_other": "{{count}} موجّهات",
+      "newRouter": "موجّه جديد",
+      "empty": "لا توجد موجّهات بعد.",
+      "columns": {
+        "name": "الاسم",
+        "tokens": "الرموز",
+        "policies": "السياسات",
+        "models": "النماذج"
+      },
+      "tokenCount": "رمز واحد",
+      "tokenCount_other": "{{count}} رموز",
+      "editRouter": "تعديل الموجّه",
+      "deleteRouter": "حذف الموجّه",
+      "deleteConfirm": "هل تريد حذف هذا الموجّه؟",
+      "errors": {
+        "deleteFailed": "خطأ في حذف الموجّه"
+      }
+    },
+    "layout": {
+      "notFound": "الموجّه غير موجود",
+      "tabs": {
+        "dashboard": "لوحة التحكم",
+        "general": "عام",
+        "orchestrator": "المنسّق",
+        "routing": "التوجيه",
+        "optimizer": "المحسّن",
+        "security": "الأمان",
+        "token": "الرمز",
+        "users": "المستخدمون",
+        "logs": "السجلات"
+      },
+      "backToRouters": "العودة إلى الموجّهات",
+      "backToRoutersTitle": "العودة إلى الموجّهات",
+      "newRouter": "موجّه جديد",
+      "loading": "جارٍ التحميل...",
+      "routerId": "معرّف الموجّه:",
+      "saveFirstHint": "احفظ الموجّه أولًا لإلغاء قفل هذا التبويب"
+    },
+    "dashboard": {
+      "period": "الفترة",
+      "noTraffic": "لا توجد حركة مرور لهذا الموجّه في الفترة المحددة.",
+      "stats": {
+        "savings": "الوفورات",
+        "vsPrefix": "مقابل",
+        "forEverything": "لكل شيء",
+        "noTargetToCompare": "لا يوجد نموذج مستهدف للمقارنة",
+        "cost": "التكلفة",
+        "callCount": "طلب واحد",
+        "callCount_other": "{{count}} طلبات",
+        "latency": "زمن الاستجابة",
+        "medianP95": "الوسيط · p95 {{value}}",
+        "ttft": "الزمن حتى أول رمز",
+        "notMeasured": "غير مقاس في هذه الطلبات",
+        "reliability": "الموثوقية",
+        "errorsAndBlocked": "{{errors}} أخطاء · {{blocked}} محظورة"
+      },
+      "tokens": {
+        "input": "رموز الإدخال:",
+        "output": "رموز الإخراج:",
+        "fromCache": "من الذاكرة المؤقتة:",
+        "cacheSaved": "(تم توفير {{amount}})"
+      },
+      "oneModel": {
+        "heading": "لو ذهب كل شيء إلى نموذج واحد",
+        "empty": "أضف نماذج مستهدفة إلى هذا الموجّه لرؤية المقارنة.",
+        "columns": {
+          "targetModel": "النموذج المستهدف",
+          "wouldHaveCost": "كانت ستكلف",
+          "saved": "الموفَّر"
+        },
+        "costsHint": "التكاليف هي الرموز المرصودة مُعاد تسعيرها بأسعار كل نموذج مستهدف."
+      },
+      "optimizers": {
+        "heading": "ما أزالته المحسّنات",
+        "columns": {
+          "optimizer": "المحسّن",
+          "callsChanged": "الطلبات المعدَّلة",
+          "tokensSaved": "الرموز الموفَّرة",
+          "costSaved": "التكلفة الموفَّرة",
+          "rolledBack": "تم التراجع عنها"
+        },
+        "hint": "تُقاس على الطلبات نفسها، بسعر النموذج الذي خدم كل طلب. التراجع يعني أن نتيجة الخطوة رُفضت باعتبارها غير آمنة وتمت استعادة المطالبة: لم توفَّر أي شيء، وارتفاع العدد يعني أن العتبة عدوانية أكثر من اللازم."
+      },
+      "traffic": {
+        "heading": "إلى أين ذهبت حركة المرور",
+        "columns": {
+          "model": "النموذج",
+          "calls": "الطلبات",
+          "share": "الحصة",
+          "cost": "التكلفة",
+          "p95Latency": "زمن استجابة p95",
+          "errors": "الأخطاء"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "خطأ في حفظ الموجّه",
+        "copyFailed": "فشل النسخ — يرجى تحديد الرمز ونسخه يدويًا."
+      },
+      "kind": {
+        "router": {
+          "label": "موجّه",
+          "description": "يوزّع الطلبات بين النماذج المرشحة."
+        },
+        "orchestrator": {
+          "label": "منسّق",
+          "description": "يوزّع الطلبات بين موجّهات أخرى بدلًا من النماذج."
+        },
+        "passthrough": {
+          "label": "تمرير مباشر",
+          "description": "يعيد توجيه الطلبات دون تعديل."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "احفظ هذا الرمز الآن.",
+        "saveNowHint": "لن يُعرض مرة أخرى — بمجرد مغادرة هذه الشاشة لا يمكن استرجاعه.",
+        "copied": "تم النسخ!",
+        "copy": "نسخ",
+        "goToRouter": "الانتقال إلى الموجّه"
+      },
+      "connect": {
+        "heading": "كيفية الاتصال",
+        "intro": "وجّه أي SDK من OpenAI أو Anthropic إلى Routerly واستخدم <tokenLink>رمز موجّه</tokenLink> كمفتاح API. استبدل <code>{{token}}</code> أدناه برمزك. النموذج <code>{{model}}</code> يترك الاختيار لـ Routerly؛ يعمل أيضًا أي معرّف نموذج من <modelsLink>النماذج</modelsLink>.",
+        "openaiSdk": "حزمة تطوير OpenAI",
+        "openaiBaseUrlHint": "عنوان URL الأساسي <code>{{baseUrl}}</code>، نفسه الذي يقبله أي حقل مزوّد \"متوافق مع OpenAI\".",
+        "anthropicSdk": "حزمة تطوير Anthropic",
+        "anthropicBaseUrlHint": "عنوان URL الأساسي <code>{{baseUrl}}</code>، بدون <code>/v1</code>: تضيفه الحزمة تلقائيًا.",
+        "curl": "curl",
+        "curlHint": "تحقق من الاتصال دون تثبيت أي شيء، ثم ابحث عن الطلب في <usageLink>الاستخدام</usageLink>."
+      },
+      "form": {
+        "kind": "النوع",
+        "kindAriaLabel": "نوع الموجّه",
+        "kindFixedHint": "ثابت بمجرد إنشاء الموجّه.",
+        "routerName": "اسم الموجّه",
+        "routerNamePlaceholder": "تطبيقي",
+        "advancedSettings": "إعدادات متقدمة",
+        "ttftTimeout": "مهلة TTFT (مللي ثانية)",
+        "ttftTimeoutHint": "إذا لم يرسل النموذج أول بايت من الاستجابة خلال هذا الوقت، يُلغي Routerly الطلب ويجرّب المرشح التالي. لا يحدّ من إجمالي مدة الاستجابة. اضبطه على 0 للانتظار طالما احتاج المزوّد.",
+        "traceContent": "محتوى التتبّع",
+        "traceContentHint": "تسجّل التتبّعات دائمًا البيانات الوصفية (النماذج، الدرجات، الرموز، التكلفة، زمن الاستجابة). فعّل هذا لتسجيل المطالبات المُرسلة والإجابات المُستلمة أيضًا. تُخزَّن مع سجل الاستخدام وتكون مرئية لأي شخص يمكنه قراءة التقارير.",
+        "capturePromptsAndAnswers": "التقاط المطالبات والإجابات",
+        "saveChanges": "حفظ التغييرات",
+        "createRouter": "إنشاء موجّه"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "هذا الموجّه ليس منسّقًا.",
+      "candidateRouters": "الموجّهات المرشحة",
+      "candidateRoutersHint": "الموجّهات التي يعيد هذا المنسّق توجيه الطلبات إليها. يؤثر الوزن على مدى تكرار اختيار كل مرشح؛ تُعرض هنا فقط اسمه ومعرّفه ووزنه والحدود الاختيارية الخاصة به.",
+      "router": "الموجّه",
+      "selectRouter": "اختر موجّهًا",
+      "weight": "الوزن",
+      "removeCandidate": "إزالة المرشح",
+      "usageLimits": "حدود الاستخدام لهذا المرشح",
+      "limitCount": "{{count}} حد",
+      "limitCount_other": "{{count}} حدود",
+      "usageLimitsHint": "حدود استخدام اختيارية تُطبَّق فقط على الطلبات التي يعيد هذا المنسّق توجيهها إلى هذا المرشح.",
+      "empty": "لا توجد موجّهات مرشحة بعد. يحتاج المنسّق إلى واحد على الأقل قبل أن يتمكن من إعادة توجيه الطلبات.",
+      "addCandidate": "إضافة مرشح",
+      "saved": "تم الحفظ!",
+      "saveCandidates": "حفظ المرشحين",
+      "errors": {
+        "loadFailed": "تعذّر تحميل الموجّهات",
+        "saveFailed": "خطأ في حفظ مرشحي المنسّق"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "تعذّر تعيين ملف التوجيه التعريفي",
+        "duplicateTargets": "لا يمكن أن تحتوي النماذج المستهدفة على تكرارات.",
+        "saveFailed": "خطأ في حفظ توجيه الموجّه",
+        "noProfileAvailable": "لا يوجد ملف توجيه تعريفي متاح. أنشئ واحدًا من صفحة الملفات التعريفية."
+      },
+      "form": {
+        "routing": "التوجيه",
+        "routingHint": "استخدم ملفًا تعريفيًا مشتركًا للتوجيه، أو حدّد سياسات هذا الموجّه الخاصة. تظل النماذج المستهدفة قابلة للتهيئة في الحالتين.",
+        "profileMode": "ملف تعريفي",
+        "customMode": "مخصص",
+        "routingProfile": "ملف التوجيه التعريفي",
+        "builtinSuffix": "(مدمج)",
+        "profileHint": "تأتي السياسات من الملف التعريفي وتتبع تغييراته. عدّلها من صفحة الملفات التعريفية، أو انتقل إلى مخصص للبدء من نسخة منها.",
+        "saved": "تم الحفظ!",
+        "saveRoutingConfiguration": "حفظ إعداد التوجيه"
+      },
+      "targetModels": {
+        "heading": "النماذج المستهدفة",
+        "hint": "حدّد مجموعة النماذج التي ستُصفّي منها السياسات وتختار. توجّه المطالبات الاختيارية الموجّه الذكي بشأن متى يختار كل نموذج.",
+        "endpointModel": "نموذج نقطة النهاية",
+        "selectModel": "اختر نموذجًا",
+        "promptDefinition": "تعريف المطالبة",
+        "promptPlaceholder": "صف بالضبط متى ولماذا يجب على الموجّه اختيار هذا النموذج...",
+        "intents": "النوايا",
+        "removeTarget": "إزالة النموذج المستهدف",
+        "empty": "لا توجد نماذج مستهدفة مُعدّة.",
+        "addTarget": "إضافة نموذج مستهدف"
+      }
+    },
+    "optimizer": {
+      "title": "المحسّنات",
+      "description": "تُقلّل المحسّنات رموز المطالبة قبل وصول الطلبات إلى المزوّد. تعمل بالترتيب من الأعلى إلى الأسفل. استخدم ملفًا تعريفيًا مشتركًا للمحسّن، أو حدّد خط أنابيب هذا الموجّه الخاص.",
+      "noPermission": "ليست لديك صلاحية لعرض المحسّنات.",
+      "mode": {
+        "profile": "ملف تعريفي",
+        "custom": "مخصص"
+      },
+      "profileSelect": {
+        "ariaLabel": "ملف المحسّن التعريفي",
+        "builtinLabel": "{{label}} (مدمج)",
+        "hint": "تأتي الخطوات من الملف التعريفي وتتبع تغييراته. عدّلها من صفحة الملفات التعريفية، أو انتقل إلى مخصص للبدء من نسخة منها.",
+        "disabledSuffix": "(معطّل)",
+        "thresholdSuffix": "، العتبة {{threshold}}"
+      },
+      "customHint": "اسحب لإعادة الترتيب، وبدّل للتفعيل أو التعطيل. تستخدم بعض المحسّنات عتبة للتحكم في مدى قوة التقليم.",
+      "saveButton": "حفظ المحسّنات",
+      "saving": "جارٍ الحفظ...",
+      "saved": "تم الحفظ",
+      "preview": {
+        "title": "معاينة توفير الرموز",
+        "description": "شغّل خط الأنابيب الحالي (غير المحفوظ) على مطالبة لرؤية ما تزيله كل خطوة وما تكلّفه. اختر إحدى المحادثات النموذجية، أو اكتب مطالبتك الخاصة.",
+        "promptLabel": "المطالبة",
+        "promptAriaLabel": "المطالبة المراد معاينتها",
+        "typePromptOption": "اكتب مطالبة أدناه",
+        "fixturesHint": "محادثات نموذجية مرفقة مع Routerly. لا يسجّل Routerly مطالبات حقيقية.",
+        "modelLabel": "النموذج",
+        "modelAriaLabel": "النموذج المراد المعاينة مقابله",
+        "modelWithContext": "{{id}} (سياق {{k}} ألف)",
+        "noModelOption": "بدون نموذج",
+        "modelHint": "الخطوات التي تُقلّم للملاءمة مع نافذة السياق تحتاج إلى معرفة أيها. بدون نموذج تُتخطى، تمامًا كما في طلب يذكر نموذجًا لا تملك له Routerly نافذة.",
+        "sampleAriaLabel": "مطالبة نموذجية",
+        "samplePlaceholder": "الصق رسالة مستخدم نموذجية...",
+        "runButton": "تشغيل المعاينة",
+        "running": "جارٍ التشغيل...",
+        "before": "قبل",
+        "after": "بعد",
+        "saved": "تم الحفظ",
+        "columns": {
+          "optimizer": "المحسّن",
+          "before": "قبل",
+          "after": "بعد",
+          "saved": "الموفَّر"
+        },
+        "rolledBackNote": "تم التراجع: رُفض التغيير باعتباره غير آمن",
+        "skippedNote": "تم التخطي: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "تم التراجع عن التغيير الذي أنتجته هذه الخطوة، لذا وصلت المطالبة إلى الخطوة التالية دون تعديل.",
+          "skipped": "لم تُنفَّذ هذه الخطوة: {{reason}}",
+          "unchanged": "لم تغيّر هذه الخطوة المطالبة."
+        }
+      },
+      "errors": {
+        "assignFailed": "تعذّر تعيين ملف المحسّن التعريفي",
+        "saveFailed": "خطأ في حفظ المحسّنات",
+        "previewFailed": "خطأ في تشغيل المعاينة",
+        "noProfileAvailable": "لا يوجد ملف محسّن تعريفي متاح. أنشئ واحدًا من صفحة الملفات التعريفية."
+      }
+    },
+    "token": {
+      "newButton": "رمز جديد",
+      "empty": "لا توجد رموز API بعد. أنشئ واحدًا لبدء مصادقة الطلبات.",
+      "budgetOverrides": "تجاوزات الميزانية",
+      "created": "تاريخ الإنشاء",
+      "lastUsed": "آخر استخدام",
+      "expires": "تاريخ الانتهاء",
+      "never": "أبدًا",
+      "editTitle": "تعديل الإعدادات",
+      "revokeTitle": "إبطال الرمز",
+      "revokeConfirm": "هل تريد إبطال الرمز \"{{snippet}}...\"؟ ستتوقف التطبيقات التي تستخدمه عن العمل فورًا.",
+      "labelInput": {
+        "placeholder": "بحث عن تسمية أو إنشاء واحدة…",
+        "createPrefix": "إنشاء",
+        "noMatches": "لم يتم العثور على تسميات مطابقة."
+      },
+      "errors": {
+        "deleteFailed": "خطأ في حذف الرمز"
+      },
+      "create": {
+        "backToTokens": "العودة إلى الرموز",
+        "title": "رمز API جديد",
+        "subtitle": "يُعرض الرمز الكامل مرة واحدة فقط بعد الإنشاء — احفظه بأمان.",
+        "tokenCreated": "تم إنشاء الرمز بنجاح. انسخه الآن — لن يُعرض مرة أخرى.",
+        "copied": "تم النسخ!",
+        "copy": "نسخ",
+        "done": "تم",
+        "optional": "اختياري",
+        "labels": "التسميات",
+        "labelsHint": "صنّف هذا الرمز لتحديد مكان استخدامه (مثل \"الإنتاج\" أو \"ci\").",
+        "scopes": "النطاقات",
+        "scopesHint": "نطاقات حرة مرفقة بهذا الرمز (مثل \"batch\" أو \"داخلي\")، تُخزَّن مع الرمز لتتبعك الخاص.",
+        "tags": "الوسوم",
+        "tagsHint": "بيانات وصفية على شكل مفتاح-قيمة تُرسل إلى سجلات الاستخدام (مثل env=production).",
+        "keyPlaceholder": "المفتاح",
+        "valuePlaceholder": "القيمة",
+        "createButton": "إنشاء رمز",
+        "cancel": "إلغاء",
+        "copyFailed": "فشل النسخ — يرجى تحديد الرمز ونسخه يدويًا.",
+        "errors": {
+          "createFailed": "خطأ في إنشاء الرمز"
+        }
+      },
+      "edit": {
+        "title": "تعديل الرمز",
+        "subtitle": "حدّث التسميات وتجاوزات الحدود لكل نموذج لهذا الرمز.",
+        "token": "الرمز",
+        "labels": "التسميات",
+        "perModelLimits": "حدود لكل نموذج",
+        "perModelLimitsHint": "تجاوز الحدود العامة وحدود مستوى الموجّه للطلبات التي تستخدم هذا الرمز.",
+        "noTargetModels": "أضف نماذج مستهدفة في تبويب التوجيه أولًا.",
+        "noOverride": "بدون تجاوز",
+        "noLimits": "بلا حدود",
+        "noLimitsSet": "لا توجد حدود معيّنة — يرث من الأصل. أضف حدًا أدناه لتجاوزه.",
+        "metric": "المقياس",
+        "type": "النوع",
+        "periodLabel": "الفترة",
+        "every": "كل",
+        "maxCost": "الحد الأقصى ($)",
+        "maxCalls": "الحد الأقصى (عدد)",
+        "maxTokens": "الحد الأقصى (رموز)",
+        "allCombosSet": "جميع تركيبات المقياس/الفترة معيّنة بالفعل",
+        "addLimit": "إضافة حد",
+        "windowType": {
+          "period": "فترة",
+          "rolling": "متحرّكة"
+        },
+        "limitMetric": {
+          "cost": "التكلفة (دولار)",
+          "calls": "الطلبات",
+          "input_tokens": "رموز الإدخال",
+          "output_tokens": "رموز الإخراج",
+          "total_tokens": "إجمالي الرموز"
+        },
+        "period": {
+          "hourly": "كل ساعة",
+          "daily": "يوميًا",
+          "weekly": "أسبوعيًا",
+          "monthly": "شهريًا",
+          "yearly": "سنويًا"
+        },
+        "rollingUnit": {
+          "second": "ثوانٍ",
+          "minute": "دقائق",
+          "hour": "ساعات",
+          "day": "أيام",
+          "week": "أسابيع",
+          "month": "أشهر"
+        },
+        "fmt": {
+          "requests": "{{value}} طلب",
+          "inputTokens": "{{value}} رمز-إدخال",
+          "outputTokens": "{{value}} رمز-إخراج",
+          "totalTokens": "{{value}} رمز",
+          "everyRolling": "{{metric}} / كل {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "خطأ في حفظ الرمز"
+        }
+      }
+    },
+    "users": {
+      "title": "أعضاء الموجّه",
+      "description": "إدارة المستخدمين الذين لديهم إمكانية الوصول إلى هذا الموجّه.",
+      "addButton": "إضافة عضو",
+      "addNewTitle": "إضافة عضو جديد",
+      "selectUserPlaceholder": "اختر مستخدمًا...",
+      "addConfirmButton": "إضافة",
+      "cancelButton": "إلغاء",
+      "empty": "لم يتم العثور على أعضاء.",
+      "removeConfirm": "هل أنت متأكد أنك تريد إزالة هذا العضو؟",
+      "saveTitle": "حفظ التغييرات",
+      "changeRoleTitle": "تغيير الدور",
+      "removeTitle": "إزالة العضو",
+      "roles": {
+        "viewer": "مشاهد",
+        "editor": "محرِّر",
+        "admin": "مسؤول"
+      },
+      "columns": {
+        "user": "المستخدم",
+        "role": "الدور",
+        "actions": "الإجراءات"
+      },
+      "errors": {
+        "loadFailed": "تعذّر تحميل المستخدمين",
+        "addFailed": "خطأ في إضافة العضو",
+        "updateFailed": "خطأ في تحديث العضو",
+        "removeFailed": "خطأ في إزالة العضو"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "إيقاف"
+      },
+      "autoRefreshOff": "التحديث التلقائي معطّل",
+      "autoRefreshEvery": "تحديث تلقائي كل {{interval}}",
+      "lastUpdated": "آخر تحديث: {{time}}",
+      "refresh": "تحديث",
+      "refreshNowTitle": "تحديث الآن",
+      "refreshNowButton": "↻ الآن",
+      "filters": {
+        "period": "الفترة",
+        "model": "النموذج",
+        "allModels": "كل النماذج",
+        "type": "النوع",
+        "all": "الكل",
+        "completion": "إكمال",
+        "router": "الموجّه",
+        "status": "الحالة",
+        "success": "نجاح",
+        "blocked": "محظور",
+        "error": "خطأ",
+        "resetButton": "إعادة تعيين المرشحات"
+      },
+      "stats": {
+        "totalCost": "إجمالي التكلفة",
+        "totalCalls": "إجمالي الطلبات",
+        "completionCalls": "طلبات الإكمال",
+        "routerCalls": "طلبات الموجّه",
+        "errors": "الأخطاء"
+      },
+      "requestLogs": "سجلات الطلبات",
+      "emptyNoRequests": "لا توجد طلبات لهذا الموجّه في الفترة المحددة.",
+      "emptyNoMatches": "لا توجد سجلات مطابقة للمرشحات النشطة.",
+      "columns": {
+        "time": "الوقت",
+        "model": "النموذج",
+        "type": "النوع",
+        "in": "الإدخال",
+        "out": "الإخراج",
+        "cost": "التكلفة",
+        "latency": "زمن الاستجابة",
+        "ttft": "TTFT",
+        "tokPerSec": "رمز/ثانية",
+        "status": "الحالة"
+      },
+      "typeRouter": "موجّه",
+      "typeCompletion": "إكمال",
+      "pagination": {
+        "previous": "→ السابق",
+        "next": "التالي ←",
+        "pageOf": "صفحة {{page}} من {{totalPages}}",
+        "totalRecords": "(الإجمالي {{count}} سجل)"
+      }
+    },
+    "security": {
+      "title": "الأمان",
+      "description": "استخدم ملفًا أمنيًا تعريفيًا مشتركًا، أو حدّد الحواجز الأمنية وسياسات PII الخاصة بهذا الموجّه.",
+      "mode": {
+        "profile": "ملف تعريفي",
+        "custom": "مخصص"
+      },
+      "profileSelect": {
+        "ariaLabel": "الملف الأمني التعريفي",
+        "builtinLabel": "{{label}} (مدمج)",
+        "hint": "تأتي الحواجز الأمنية وسياسات PII من الملف التعريفي وتتبع تغييراته. عدّلها من صفحة الملفات التعريفية، أو انتقل إلى مخصص للبدء من نسخة منها.",
+        "blockingSuffix": "، حاجب",
+        "disabledSuffix": "، معطّل",
+        "piiRedaction": "إخفاء PII ({{target}})"
+      },
+      "saveButton": "حفظ إعدادات الأمان",
+      "saved": "تم الحفظ!",
+      "errors": {
+        "assignFailed": "تعذّر تعيين الملف الأمني التعريفي",
+        "saveFailed": "خطأ في حفظ إعدادات الأمان",
+        "noProfileAvailable": "لا يوجد ملف أمني تعريفي متاح. أنشئ واحدًا من صفحة الملفات التعريفية."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "أنت مساعد ذكاء اصطناعي مفيد.",
+      "errors": {
+        "unknown": "حدث خطأ غير معروف",
+        "onlyImages": "حاليًا يُدعم فقط إرفاق الصور للنماذج التي تدعم الرؤية."
+      },
+      "title": "محادثة اختبار",
+      "subtitle": "أرسل استعلامات اختبارية عبر بوابة التوجيه.",
+      "routerToken": "رمز الموجّه:",
+      "hideToken": "إخفاء الرمز",
+      "showToken": "إظهار الرمز",
+      "recognizedToken": "رمز معروف",
+      "unrecognizedToken": "رمز غير معروف",
+      "noMessages": "لا توجد رسائل بعد.",
+      "enterTokenHint": "يرجى إدخال رمز موجّه أعلاه لإرسال رسالة.",
+      "typeMessageHint": "اكتب رسالة أدناه لبدء الاختبار.",
+      "reasoning": "الاستدلال",
+      "attachedAlt": "مرفَق",
+      "attachmentAlt": "مرفق",
+      "attachImage": "إرفاق صورة",
+      "typeMessagePlaceholder": "اكتب رسالة...",
+      "stopGeneration": "إيقاف التوليد",
+      "sendEnter": "إرسال (Enter)",
+      "debugLog": "سجل التصحيح",
+      "clear": "مسح",
+      "noRequestSent": "لم يتم إرسال أي طلب بعد.",
+      "turnTraceLog": "سجل تتبّع الدور رقم {{turn}} · {{count}} حدث",
+      "turnTraceLog_other": "سجل تتبّع الدور رقم {{turn}} · {{count}} أحداث"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "الاتصالات",
+      "subtitle": "حسابات المزوّدين المستخدمة لتشغيل مثيلات النماذج",
+      "noPermission": "ليست لديك صلاحية لعرض الاتصالات.",
+      "count": "{{count}} اتصال",
+      "count_other": "{{count}} اتصالات",
+      "addConnection": "إضافة اتصال",
+      "empty": "لا توجد اتصالات بعد. أضف واحدًا للبدء.",
+      "deleteConfirm": "هل تريد إزالة الاتصال \"{{label}}\"؟ ستتوقف المثيلات المرتبطة به عن العمل.",
+      "errors": {
+        "loadFailed": "تعذّر تحميل الاتصالات",
+        "deleteFailed": "تعذّر حذف الاتصال"
+      },
+      "columns": {
+        "label": "التسمية",
+        "provider": "المزوّد",
+        "endpoint": "نقطة النهاية",
+        "status": "الحالة"
+      },
+      "status": {
+        "enabled": "مفعّل",
+        "disabled": "معطّل"
+      },
+      "actions": {
+        "models": "النماذج",
+        "edit": "تعديل",
+        "remove": "إزالة"
+      }
+    },
+    "form": {
+      "backToConnections": "العودة إلى الاتصالات",
+      "editTitle": "تعديل الاتصال",
+      "addTitle": "إضافة اتصال",
+      "enabled": "مفعّل",
+      "editSubtitle": "تحديث إعدادات حساب المزوّد",
+      "addSubtitle": "تسجيل حساب مزوّد جديد",
+      "sectionTitle": "تفاصيل الاتصال",
+      "sectionDesc": "حساب المزوّد وبيانات الاعتماد ونقطة النهاية المستخدمة لتنفيذ الطلبات.",
+      "provider": "المزوّد",
+      "groups": {
+        "directApi": "واجهة برمجة مباشرة",
+        "cloudPlatform": "منصة سحابية",
+        "subscription": "اشتراك",
+        "browserSession": "جلسة متصفح",
+        "selfHosted": "استضافة ذاتية"
+      },
+      "upstreamProvider": {
+        "label": "المزوّد",
+        "hintLabel": "(اسم المزوّد المصدر)",
+        "placeholder": "مثل deepseek أو mistral أو groq",
+        "description": "يسمّي الخدمة التي تنتمي إليها نقطة النهاية هذه. تستخدمه النماذج على هذا الاتصال كبادئة لمعرّفها (مثل <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "الاسم",
+        "hint": "يعرّف هذا الاتصال في كل مكان يُشار إليه فيه، لذا يجب أن يكون فريدًا. اتركه فارغًا لاستخدام <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "اترك حقول بيانات الاعتماد فارغة للاحتفاظ بالقيم الحالية.",
+      "save": "حفظ",
+      "create": "إنشاء",
+      "cancel": "إلغاء",
+      "oauth": {
+        "unknown": "غير معروف",
+        "accountExpires": "الحساب: {{account}} — ينتهي في {{expires}}",
+        "unknownError": "خطأ غير معروف"
+      },
+      "errors": {
+        "notFound": "الاتصال غير موجود",
+        "loadFailed": "تعذّر تحميل الاتصال",
+        "updateFailed": "تعذّر تحديث الاتصال",
+        "createFailed": "تعذّر إنشاء الاتصال"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "العودة إلى النماذج",
+      "title": "استكشاف النماذج",
+      "subtitle": "تصفّح النماذج المتاحة وأضِفها إلى إعداد التوجيه الخاص بك",
+      "count": "{{count}} نموذج",
+      "filteredCount": "{{filtered}} من {{count}}",
+      "free": "مجاني",
+      "add": "إضافة",
+      "addAgain": "إضافة مرة أخرى",
+      "loadFailed": "تعذّر تحميل الكتالوج: {{error}}",
+      "filters": {
+        "search": "بحث",
+        "searchPlaceholder": "معرّف النموذج أو اسمه…",
+        "provider": "المزوّد",
+        "allProviders": "كل المزوّدين",
+        "context": "السياق",
+        "ctxOptions": {
+          "all": "الكل",
+          "small": "< 32 ألف",
+          "medium": "32-200 ألف",
+          "large": "200 ألف-1 مليون",
+          "xl": "> 1 مليون"
+        },
+        "pricePer1M": "السعر / مليون",
+        "priceOptions": {
+          "all": "الكل",
+          "free": "مجاني",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "عرض",
+        "configured": "مُعدّ",
+        "embedding": "تضمين",
+        "resetFilters": "إعادة تعيين المرشحات"
+      },
+      "empty": {
+        "noMatches": "لا توجد نماذج مطابقة لمرشحاتك."
+      },
+      "columns": {
+        "model": "النموذج",
+        "provider": "المزوّد",
+        "context": "السياق",
+        "input": "الإدخال / مليون",
+        "output": "الإخراج / مليون"
+      },
+      "badges": {
+        "configured": "مُعدّ",
+        "embedding": "تضمين",
+        "runsLocally": "يعمل محليًا"
+      },
+      "pagination": {
+        "prev": "السابق",
+        "next": "التالي",
+        "range": "{{start}}–{{end}} من {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "العودة إلى النماذج",
+      "title": {
+        "add": "إضافة نموذج",
+        "edit": "تعديل نموذج",
+        "clone": "استنساخ نموذج"
+      },
+      "subtitle": {
+        "add": "تسجيل نموذج مزوّد LLM جديد",
+        "edit": "تعديل إعداد {{id}}",
+        "clone": "استنساخ من {{id}} — عيّن معرّفًا جديدًا للحفظ"
+      },
+      "errors": {
+        "modelNotFound": "النموذج غير موجود",
+        "sourceModelNotFound": "النموذج المصدر غير موجود",
+        "loadFailed": "خطأ في تحميل النماذج",
+        "idRequired": "معرّف النموذج مطلوب",
+        "duplicateId": "النموذج \"{{id}}\" موجود بالفعل — عيّن معرّفًا مخصصًا مختلفًا",
+        "selectConnection": "اختر اتصالًا",
+        "saveFailed": "خطأ"
+      },
+      "badge": {
+        "yes": "نعم",
+        "no": "لا",
+        "override": "تجاوز",
+        "auto": "تلقائي",
+        "default": "الافتراضي: {{value}}",
+        "reset": "إعادة تعيين"
+      },
+      "oauth": {
+        "unknownExpiry": "غير معروف",
+        "accountOk": "الحساب: {{account}} — ينتهي في {{expires}}",
+        "unknownError": "خطأ غير معروف"
+      },
+      "identification": {
+        "title": "تعريف النموذج",
+        "description": "المعرّف الفريد وإعدادات المزوّد لهذا الإعداد النموذجي.",
+        "routerlyId": "معرّف Routerly",
+        "routerlyIdHintPre": "(اختياري — الافتراضي:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "المعرّف المستخدم عند الإشارة إلى هذا النموذج في طلبات واجهة برمجة Routerly.",
+        "provider": "المزوّد",
+        "upstreamProviderHint": "(اسم المزوّد المصدر)",
+        "upstreamProviderPlaceholder": "مثل deepseek أو mistral أو groq",
+        "upstreamProviderDescPre": "يُستخدم كبادئة لمعرّف Routerly (مثل",
+        "upstreamProviderDescPost": ").",
+        "model": "النموذج",
+        "upstreamModelHint": "(معرّف النموذج المصدر)",
+        "upstreamModelPlaceholder": "مثل deepseek-r1 أو mistral-large-latest",
+        "upstreamModelDesc": "معرّف النموذج المُرسل إلى نقطة نهاية واجهة برمجة المصدر.",
+        "modelPreset": "إعداد مسبق للنموذج",
+        "customModelOption": "— اسم نموذج مخصص —",
+        "customModelPlaceholder": "مثل my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "تفاصيل الاتصال",
+        "description": "نقطة نهاية واجهة برمجة التطبيقات وبيانات الاعتماد اللازمة لتنفيذ الطلبات.",
+        "preconfigured": "مُعدّ مسبقًا",
+        "custom": "مخصص",
+        "connection": "الاتصال",
+        "selectPlaceholder": "— اختر اتصالًا —",
+        "noneAvailable": "لا توجد اتصالات معدّة مسبقًا لهذا المزوّد. انتقل إلى مخصص، أو أنشئ واحدًا في صفحة الاتصالات.",
+        "editHint": "تعديل هذا الاتصال لاحقًا سيحدّث كل نموذج مرتبط به."
+      },
+      "capabilities": {
+        "title": "القدرات",
+        "description": "حدّد نوع هذا النموذج وقدراته.",
+        "embeddingModel": "نموذج تضمين",
+        "embeddingModelHint": "ينتج هذا النموذج تضمينات متجهية (وليس إكمالات محادثة)"
+      },
+      "pricing": {
+        "title": "التسعير والسياق",
+        "description": "معايير التكلفة وحدود المعالجة المستخدمة في الفوترة والتوجيه.",
+        "inputPerMillion": "الإدخال $/مليون",
+        "outputPerMillion": "الإخراج $/مليون",
+        "cachePerMillion": "قراءة الذاكرة المؤقتة $/مليون",
+        "cacheWritePerMillion": "كتابة الذاكرة المؤقتة $/مليون",
+        "optional": "(اختياري)",
+        "contextWindow": "نافذة السياق",
+        "contextWindowHint": "(رموز، اختياري)"
+      },
+      "tiers": {
+        "title": "متقدم — مستويات التسعير",
+        "description": "تجاوز التسعير عندما يتجاوز مقياس ما عتبة. مثال: \"فوق 200000 رمز سياق، تتغير الأسعار\".",
+        "removeTier": "إزالة المستوى",
+        "above": "فوق",
+        "metric": "المقياس",
+        "metricContextTokens": "رموز السياق",
+        "overridePricing": "تجاوز التسعير",
+        "addTier": "إضافة مستوى تسعير"
+      },
+      "limits": {
+        "title": "الحدود",
+        "description": "حدود الاستخدام لهذا النموذج. يمكن دمج عدة قواعد.",
+        "metric": "المقياس",
+        "type": "النوع",
+        "addLimit": "إضافة حد"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (اشتراك Pro/Max)",
+        "openaiOauth": "OpenAI (اشتراك ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "حفظ التغييرات",
+      "createClone": "إنشاء نسخة",
+      "createModel": "إنشاء نموذج"
+    },
+    "page": {
+      "title": "النماذج",
+      "subtitle": "مزوّدو LLM المسجّلون في Routerly",
+      "tabs": {
+        "models": "النماذج",
+        "health": "الحالة"
+      },
+      "toolbar": {
+        "count": "{{count}} نموذج",
+        "count_other": "{{count}} نماذج",
+        "filteredCount": "{{filtered}} من {{count}} نموذج",
+        "filteredCount_other": "{{filtered}} من {{count}} نماذج"
+      },
+      "filters": {
+        "allProviders": "كل المزوّدين",
+        "allConnections": "كل الاتصالات",
+        "searchPlaceholder": "تصفية النماذج…"
+      },
+      "discover": "اكتشاف",
+      "addModel": "إضافة نموذج",
+      "deleteConfirm": "هل تريد إزالة النموذج \"{{id}}\"؟",
+      "empty": {
+        "noModels": "لا توجد نماذج بعد. أضف واحدًا للبدء.",
+        "noMatches": "لا توجد نماذج مطابقة للمرشحات النشطة."
+      },
+      "columns": {
+        "id": "المعرّف",
+        "provider": "المزوّد",
+        "endpoint": "نقطة النهاية",
+        "input": "الإدخال $/مليون",
+        "output": "الإخراج $/مليون",
+        "cache": "الذاكرة المؤقتة $/مليون",
+        "context": "حجم السياق"
+      },
+      "actions": {
+        "test": "اختبار",
+        "clone": "استنساخ",
+        "edit": "تعديل",
+        "remove": "إزالة"
+      },
+      "pagination": {
+        "previous": "→ السابق",
+        "next": "التالي ←",
+        "pageOf": "صفحة {{page}} من {{totalPages}}",
+        "total": "({{count}} نموذج)",
+        "total_other": "({{count}} نماذج)"
+      },
+      "health": {
+        "emptyNoModels": "لا توجد نماذج مُعدّة.",
+        "emptyNoMatches": "لا توجد نماذج مطابقة للمرشح.",
+        "resetAll": "إعادة تعيين الكل",
+        "resetAllTitle": "إعادة تعيين كل قواطع الدائرة وفترات التهدئة والإغلاقات",
+        "resetTitle": "إعادة تعيين قاطع الدائرة",
+        "confirmResetModel": "هل تريد إعادة تعيين قاطع الدائرة للنموذج \"{{id}}\"؟",
+        "confirmResetAll": "هل تريد إعادة تعيين كل حالة المرونة؟ سيؤدي هذا إلى مسح كل قواطع الدائرة وفترات التهدئة والإغلاقات.",
+        "errors": {
+          "resetModelFailed": "تعذّر إعادة تعيين قاطع الدائرة",
+          "resetAllFailed": "تعذّر إعادة تعيين حالة المرونة"
+        },
+        "columns": {
+          "model": "النموذج",
+          "provider": "المزوّد",
+          "status": "الحالة",
+          "circuit": "القاطع",
+          "errorRate": "معدّل الخطأ (5 دقائق)",
+          "p95Latency": "زمن استجابة P95 (ساعة)",
+          "requests": "الطلبات (ساعة)",
+          "lastSuccess": "آخر نجاح",
+          "cooldownLockout": "التهدئة / الإغلاق"
+        },
+        "status": {
+          "healthy": "سليم",
+          "degraded": "متدهور",
+          "unavailable": "غير متاح",
+          "cooldown": "تهدئة",
+          "nodata": "لا توجد بيانات"
+        },
+        "circuit": {
+          "ok": "سليم",
+          "recovering": "يتعافى",
+          "tripped": "منقطع"
+        },
+        "time": {
+          "never": "أبدًا",
+          "now": "الآن",
+          "secondsAgo": "منذ {{count}} ثانية",
+          "minutesAgo": "منذ {{count}} دقيقة",
+          "hoursAgo": "منذ {{count}} ساعة",
+          "daysAgo": "منذ {{count}} يوم",
+          "minSec": "{{min}} دقيقة {{sec}} ثانية",
+          "sec": "{{sec}} ثانية",
+          "cooldown": "تهدئة {{time}}",
+          "lockout": "إغلاق {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "التجارب",
+      "subtitle": "اختبار الموجّهات ضد بعضها بمنهجية A/B",
+      "noPermission": "ليست لديك صلاحية لعرض التجارب.",
+      "count": "{{count}} تجربة",
+      "count_other": "{{count}} تجارب",
+      "newExperiment": "تجربة جديدة",
+      "empty": "لا توجد تجارب بعد. أنشئ واحدة لمقارنة الموجّهات وجهًا لوجه.",
+      "deleteConfirm": "هل تريد حذف التجربة \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "noToken": "لا يوجد رمز",
+      "noTokenTitle": "بدون رمز لا يمكن لأي عميل الوصول إلى هذه التجربة",
+      "errors": {
+        "loadFailed": "تعذّر تحميل التجارب",
+        "deleteFailed": "تعذّر حذف التجربة"
+      },
+      "columns": {
+        "name": "الاسم",
+        "variants": "المتغيّرات",
+        "rotation": "التناوب",
+        "created": "تاريخ الإنشاء"
+      },
+      "actions": {
+        "edit": "تعديل التجربة",
+        "remove": "حذف"
+      }
+    },
+    "layout": {
+      "backToExperiments": "العودة إلى التجارب",
+      "newExperiment": "تجربة جديدة",
+      "loading": "جارٍ التحميل...",
+      "experimentId": "معرّف التجربة:",
+      "disabledTabTitle": "احفظ التجربة أولًا لإلغاء قفل هذا التبويب",
+      "errors": {
+        "notFound": "التجربة غير موجودة"
+      },
+      "tabs": {
+        "config": "الإعداد",
+        "metrics": "المقاييس",
+        "token": "الرمز"
+      }
+    },
+    "config": {
+      "saved": "تم الحفظ.",
+      "created": "تم إنشاء التجربة. وجّه عميلك إلى هذا الرمز بدلًا من رمز الموجّه. لن يُعرض مرة أخرى.",
+      "copy": "نسخ",
+      "copied": "تم النسخ!",
+      "done": "تم",
+      "saving": "جارٍ الحفظ...",
+      "create": "إنشاء تجربة",
+      "save": "حفظ التغييرات",
+      "cancel": "إلغاء",
+      "trafficSplit": "توزيع حركة المرور",
+      "errors": {
+        "loadRoutersFailed": "تعذّر تحميل الموجّهات",
+        "saveFailed": "تعذّر حفظ التجربة",
+        "copyFailed": "فشل النسخ: حدد الرمز وانسخه يدويًا."
+      },
+      "fields": {
+        "name": "الاسم",
+        "namePlaceholder": "توجيه اقتصادي مقابل متميز",
+        "description": "الوصف",
+        "optional": "(اختياري)",
+        "descriptionPlaceholder": "ما الذي يحاول هذا الاختبار تحديده",
+        "minSamples": "الحد الأدنى للطلبات لكل متغيّر",
+        "minSamplesHint": "دون هذا الحد، يُشير تبويب المقاييس إلى أن المقارنة غير حاسمة بعد.",
+        "rotation": "التناوب",
+        "stickyOn": "الالتصاق مفعّل",
+        "stickyKey": "مفتاح الالتصاق"
+      },
+      "variants": {
+        "title": "المتغيّرات",
+        "desc": "كل متغيّر هو موجّه موجود، يُؤخذ كما هو: تنطبق كل نماذجه وتوجيهه وحواجزه الأمنية. يحتاج الاختبار إلى اثنين على الأقل.",
+        "routerAriaLabel": "موجّه المتغيّر {{index}}",
+        "routerPlaceholder": "اختر موجّهًا",
+        "labelAriaLabel": "تسمية المتغيّر {{index}}",
+        "labelPlaceholder": "التسمية (اختيارية)",
+        "weightAriaLabel": "وزن المتغيّر {{index}}",
+        "weightPlaceholder": "الوزن",
+        "removeTitle": "إزالة المتغيّر {{index}}",
+        "add": "إضافة متغيّر"
+      },
+      "judge": {
+        "title": "الحكَم",
+        "desc": "اختياري: يقرأ نموذج كل إجابة تم أخذ عينة منها ويمنحها درجة من 0 إلى 10 وفق معاييرك. كل طلب محكوم هو طلب نموذج إضافي، يُفوتَر مثل أي طلب آخر.",
+        "enable": "تقييم الإجابات بنموذج حَكَم",
+        "model": "نموذج الحَكَم",
+        "modelPlaceholder": "اختر نموذجًا",
+        "criteria": "المعايير",
+        "criteriaPlaceholder": "واحد لكل سطر، مثال:\nيجيب على السؤال المطروح\nيلتزم بالحقائق\nيحافظ على التنسيق المطلوب",
+        "sampleRate": "نسبة الطلبات المحكومة (%)"
+      }
+    },
+    "metrics": {
+      "loading": "جارٍ التحميل...",
+      "callsMeasured": "تم قياس {{count}} طلب",
+      "callsMeasured_other": "تم قياس {{count}} طلبات",
+      "empty": "لا توجد طلبات في هذه النافذة بعد. وجّه عميلًا إلى رمز التجربة لبدء المقارنة.",
+      "notConclusive": "غير حاسم بعد: يحتاج كل متغيّر إلى {{minSamples}} طلبات على الأقل في هذه النافذة. ",
+      "explanation": "يُبرَز الرقم الأفضل من كل زوج: الأرخص لكل طلب، والأسرع، وأعلى درجة حكم. النسبة المئوية تحت القيمة هي مسافتها عن أفضل متغيّر. درجة الحكم هي متوسط متحرك طوال عمر التجربة بأكمله، لذا فهي الرقم الوحيد الذي لا تضيّقه النافذة الزمنية.",
+      "lowSample": "عينة منخفضة",
+      "lowSampleTitle": "أقل من {{minSamples}} طلبات في هذه النافذة",
+      "judgedCallsTitle": "{{count}} إجابة تم تقييمها من قِبل الحَكَم منذ بدء التجربة",
+      "judgedCallsTitle_other": "{{count}} إجابات تم تقييمها من قِبل الحَكَم منذ بدء التجربة",
+      "errors": {
+        "loadFailed": "تعذّر تحميل المقاييس"
+      },
+      "columns": {
+        "variant": "المتغيّر",
+        "calls": "الطلبات",
+        "share": "الحصة",
+        "errors": "الأخطاء",
+        "tokens": "الرموز إدخال / إخراج",
+        "cost": "التكلفة",
+        "costPerCall": "التكلفة / الطلب",
+        "avgLatency": "متوسط زمن الاستجابة",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "درجة الحَكَم"
+      }
+    },
+    "token": {
+      "desc": "يستدعي العميل التجربة تمامًا كما يستدعي موجّهًا: نفس عنوان URL الأساسي، وهذا الرمز بدلًا من رمز الموجّه. يصل كل طلب إلى متغيّر واحد ويُفوتَر إلى موجّه ذلك المتغيّر.",
+      "baseUrlLabel": "عنوان URL الأساسي لحزمة تطوير OpenAI أو Anthropic، مع رمز تجربة كمفتاح API:",
+      "created": "تم إنشاء الرمز. انسخه الآن، لن يُعرض مرة أخرى.",
+      "copy": "نسخ",
+      "copied": "تم النسخ!",
+      "newToken": "رمز جديد",
+      "empty": "لا توجد رموز على هذه التجربة. أنشئ واحدًا حتى يتمكن العملاء من استدعائها.",
+      "revokeConfirm": "هل تريد إبطال الرمز \"{{snippet}}...\"؟ ستتوقف العملاء الذين يستخدمونه عن العمل فورًا.",
+      "revokeTitle": "إبطال الرمز",
+      "errors": {
+        "createFailed": "تعذّر إنشاء الرمز",
+        "revokeFailed": "تعذّر إبطال الرمز",
+        "copyFailed": "فشل النسخ: حدد الرمز وانسخه يدويًا."
+      },
+      "columns": {
+        "created": "تاريخ الإنشاء",
+        "lastUsed": "آخر استخدام"
+      }
+    }
+  },
+  "overview": {
+    "title": "نظرة عامة",
+    "subtitle": "ملخص الاستخدام وتفصيل التكاليف",
+    "noPermission": "لا توجد صلاحية لعرض بيانات الاستخدام.",
+    "costByModel": "التكلفة حسب النموذج",
+    "noCostRecorded": "لم يتم تسجيل أي تكلفة في هذه الفترة.",
+    "callsByModel": "الطلبات حسب النموذج",
+    "columns": {
+      "model": "النموذج",
+      "calls": "الطلبات",
+      "errors": "الأخطاء",
+      "cost": "التكلفة"
+    },
+    "stats": {
+      "totalCalls": "إجمالي الطلبات",
+      "callsBreakdown": "{{routing}} توجيه · {{completion}} إكمال",
+      "successRate": "معدّل النجاح",
+      "ofAllRequests": "من إجمالي الطلبات",
+      "errors": "الأخطاء",
+      "failedRequests": "طلبات فاشلة",
+      "models": "النماذج",
+      "registered": "مسجَّلة",
+      "routers": "الموجّهات",
+      "active": "نشطة"
+    },
+    "connectCard": {
+      "title": "ربط عميل",
+      "desc": "وجّه Claude Code وCodex وCursor و{{count}} أدوات أخرى إلى هذه البوابة."
+    }
+  },
+  "login": {
+    "emailLabel": "البريد الإلكتروني",
+    "passwordLabel": "كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "errors": {
+      "loginFailed": "فشل تسجيل الدخول",
+      "totpFailed": "فشل التحقق من المصادقة الثنائية"
+    },
+    "totp": {
+      "title": "المصادقة الثنائية",
+      "backupPrompt": "أدخل رمز استرداد.",
+      "appPrompt": "أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة الخاص بك.",
+      "backupCodeLabel": "رمز الاسترداد",
+      "authenticatorCodeLabel": "رمز المصادقة",
+      "verify": "تحقق",
+      "useAuthenticatorInstead": "استخدم تطبيق المصادقة بدلًا من ذلك",
+      "useBackupInstead": "استخدم رمز استرداد بدلًا من ذلك"
+    }
+  },
+  "setup": {
+    "welcome": "مرحبًا! فلنبدأ إعدادك.",
+    "welcomeSubtitle": "أنشئ حساب المسؤول الأول لبدء إدارة Routerly.",
+    "betaBadge": "🚧 تجريبي",
+    "betaNotice": "يتطور Routerly باستمرار. قد تحدث بعض الأخطاء.",
+    "betaFeedback": "ملاحظاتك تساعد في تشكيل ما سيصبح عليه —",
+    "betaLink": "أبلغ عن مشكلات أو شارك أفكارًا",
+    "emailLabel": "بريد المسؤول الإلكتروني",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "كلمة المرور",
+    "passwordPlaceholder": "8 أحرف على الأقل",
+    "confirmLabel": "تأكيد كلمة المرور",
+    "confirmPlaceholder": "أعد إدخال كلمة المرور",
+    "submit": "إنشاء حساب المسؤول",
+    "errors": {
+      "mismatch": "كلمتا المرور غير متطابقتين",
+      "tooShort": "يجب ألا تقل كلمة المرور عن 8 أحرف",
+      "setupFailed": "فشل الإعداد"
+    }
+  },
+  "audit": {
+    "empty": "لم يتم العثور على إدخالات تدقيق.",
+    "errors": {
+      "loadFailed": "تعذّر تحميل سجل التدقيق"
+    },
+    "filters": {
+      "period": "الفترة",
+      "user": "المستخدم",
+      "userPlaceholder": "البريد الإلكتروني أو معرّف المستخدم",
+      "action": "الإجراء",
+      "actionPlaceholder": "مثل model:create",
+      "result": "النتيجة",
+      "results": {
+        "all": "الكل",
+        "success": "نجاح",
+        "forbidden": "ممنوع",
+        "error": "خطأ"
+      },
+      "refresh": "تحديث"
+    },
+    "columns": {
+      "timestamp": "الطابع الزمني",
+      "user": "المستخدم",
+      "action": "الإجراء",
+      "endpoint": "نقطة النهاية",
+      "result": "النتيجة",
+      "details": "التفاصيل"
+    },
+    "pagination": {
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة {{page}} من {{totalPages}}",
+      "total": "(الإجمالي {{count}})"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "الاستخدام",
+      "live": "مباشر",
+      "subtitle": "سجلات طلبات تفصيلية وتحليل لكل نموذج",
+      "updatedAt": "· تم التحديث في {{time}}",
+      "poll": {
+        "off": "إيقاف",
+        "5s": "5 ثوانٍ",
+        "15s": "15 ثانية",
+        "30s": "30 ثانية",
+        "1m": "دقيقة",
+        "5m": "5 دقائق"
+      },
+      "liveButton": "● مباشر",
+      "liveButtonTitle": {
+        "disable": "تعطيل الوضع المباشر",
+        "enable": "تفعيل الوضع المباشر (تحديث كل ثانيتين)"
+      },
+      "refreshNow": "↻ الآن",
+      "refreshNowTitle": "تحديث الآن",
+      "filters": {
+        "period": "الفترة",
+        "router": "الموجّه",
+        "model": "النموذج",
+        "token": "الرمز",
+        "caller": "المستدعي",
+        "type": "النوع",
+        "status": "الحالة",
+        "allRouters": "كل الموجّهات",
+        "allModels": "كل النماذج",
+        "allTokens": "كل الرموز",
+        "resetFilters": "إعادة تعيين المرشحات",
+        "all": "الكل",
+        "success": "نجاح",
+        "blocked": "محظور",
+        "error": "خطأ"
+      },
+      "caller": {
+        "all": "الكل",
+        "completion": "إكمال",
+        "routing": "موجّه",
+        "guardrail": "حاجز أمني",
+        "judge": "حَكَم"
+      },
+      "callerBadge": {
+        "completion": "إكمال",
+        "routing": "موجّه",
+        "guardrail": "حاجز أمني",
+        "judge": "حَكَم"
+      },
+      "errors": {
+        "loadFailedPrefix": "تعذّر تحميل بيانات الاستخدام:",
+        "retry": "إعادة المحاولة"
+      },
+      "stats": {
+        "totalCalls": "إجمالي الطلبات",
+        "completionCalls": "طلبات الإكمال",
+        "routerCalls": "طلبات الموجّه",
+        "guardrailCalls": "طلبات الحاجز الأمني",
+        "blockedCalls": "الطلبات المحظورة",
+        "errors": "الأخطاء"
+      },
+      "table": {
+        "rank": "الترتيب",
+        "model": "النموذج",
+        "provider": "المزوّد",
+        "calls": "الطلبات",
+        "errors": "الأخطاء",
+        "successRate": "معدّل النجاح",
+        "avgLatency": "متوسط زمن الاستجابة",
+        "p95Latency": "زمن استجابة P95",
+        "inputTokens": "رموز الإدخال",
+        "outputTokens": "رموز الإخراج",
+        "costPer1k": "التكلفة / 1000",
+        "cost": "التكلفة (دولار)",
+        "bestCostPerformance": "أفضل نسبة تكلفة إلى أداء"
+      },
+      "showMoreModels": "عرض {{count}} نموذج إضافي",
+      "showMoreModels_other": "عرض {{count}} نماذج إضافية",
+      "showFewerModels": "عرض عدد أقل من النماذج",
+      "recentCalls": {
+        "title": "الطلبات الأخيرة",
+        "empty": "لا توجد سجلات استخدام لهذه الفترة.",
+        "columns": {
+          "time": "الوقت",
+          "router": "الموجّه",
+          "model": "النموذج",
+          "type": "النوع",
+          "caller": "المستدعي",
+          "in": "الإدخال",
+          "out": "الإخراج",
+          "cost": "التكلفة",
+          "latency": "زمن الاستجابة",
+          "ttft": "TTFT",
+          "tokensPerSec": "رمز/ثانية",
+          "status": "الحالة"
+        }
+      },
+      "pagination": {
+        "previous": "السابق",
+        "next": "التالي",
+        "pageOf": "صفحة {{page}} من {{totalPages}}",
+        "totalRecords": "(الإجمالي {{count}} سجل)"
+      }
+    },
+    "record": {
+      "back": "رجوع",
+      "title": "تفاصيل الطلب",
+      "notFoundTitle": "السجل غير موجود",
+      "notFoundBody": "تعذّر تحميل سجل الاستخدام {{id}}.",
+      "errors": {
+        "loadFailed": "تعذّر تحميل السجل"
+      },
+      "sections": {
+        "identity": "الهوية",
+        "tokensAndCost": "الرموز والتكلفة",
+        "performanceAndOutcome": "الأداء والنتيجة",
+        "traceLog": "سجل التتبّع"
+      },
+      "fields": {
+        "recordId": "معرّف السجل",
+        "router": "الموجّه",
+        "token": "الرمز",
+        "model": "النموذج",
+        "callType": "نوع الطلب",
+        "requestType": "نوع الطلب",
+        "inputTokens": "رموز الإدخال",
+        "outputTokens": "رموز الإخراج",
+        "totalTokens": "إجمالي الرموز",
+        "costUsd": "التكلفة (دولار)",
+        "latency": "زمن الاستجابة",
+        "ttft": "TTFT",
+        "tokensPerSec": "رمز/ثانية",
+        "outcome": "النتيجة",
+        "timestamp": "الطابع الزمني",
+        "guardrailTriggered": "تم تفعيل الحاجز الأمني",
+        "blockedBy": "تم الحظر بواسطة",
+        "piiRedacted": "تم إخفاء PII"
+      },
+      "errorMessage": "رسالة الخطأ",
+      "eventCount": "{{count}} حدث",
+      "eventCount_other": "{{count}} أحداث",
+      "noTrace": "لا يوجد تتبّع متاح. تُلتقط بيانات التتبّع للطلبات الجديدة فقط."
+    }
+  },
+  "playground": {
+    "title": "ساحة التجربة",
+    "subtitle": "اختبر النماذج، وقارن الإجابات، واحفظ قوالب المطالبات.",
+    "mode": {
+      "single": "فردي",
+      "compare": "مقارنة"
+    },
+    "token": {
+      "label": "الرمز:",
+      "labelA": "الرمز أ",
+      "labelB": "الرمز ب",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "مثل أ",
+      "unknownToken": "رمز غير معروف"
+    },
+    "presets": {
+      "button": "القوالب",
+      "panelTitle": "القوالب",
+      "saveCurrent": "حفظ الحالي",
+      "namePlaceholder": "اسم القالب...",
+      "save": "حفظ",
+      "empty": "لا توجد قوالب بعد.",
+      "delete": "حذف القالب"
+    },
+    "streamingDisabled": {
+      "banner": "البث غير متاح",
+      "bannerBody": "هذا الموجّه لديه حاجز أمني حاجب للاستجابات مفعّل. يجب على Routerly فحص الاستجابة الكاملة قبل التسليم، لذا تصل الاستجابات دفعة واحدة.",
+      "tooltip": "البث غير متاح: يتطلب حاجز أمني حاجب للاستجابات فحص الاستجابة الكاملة قبل التسليم.",
+      "ariaLabel": "البث غير متاح"
+    },
+    "systemPrompt": "مطالبة النظام",
+    "model": "النموذج",
+    "modelPlaceholder": "تلقائي (افتراضي الموجّه)",
+    "params": {
+      "temp": "الحرارة",
+      "maxTokens": "أقصى رموز",
+      "topP": "Top-p"
+    },
+    "stream": "بث",
+    "clear": "مسح",
+    "empty": {
+      "noMessages": "لا توجد رسائل بعد.",
+      "enterToken": "أدخل رمز موجّه أعلاه للبدء."
+    },
+    "reasoning": "الاستدلال",
+    "blockedDefault": "تم حظر هذه الرسالة بواسطة حاجز أمني.",
+    "truncated": "مُختصَر — تم قطع الاستجابة بسبب الحد الأقصى للرموز",
+    "bufferedNote": "محتجَز للمراجعة الأمنية",
+    "errors": {
+      "onlyImages": "تُدعم فقط مرفقات الصور."
+    },
+    "rawToggle": {
+      "rendered": "مُعرَّض",
+      "raw": "خام"
+    },
+    "inputPlaceholder": "اكتب رسالة...",
+    "attachImage": "إرفاق صورة",
+    "attachedImageAlt": "مرفَق",
+    "attachmentAlt": "مرفق",
+    "debug": {
+      "title": "التصحيح",
+      "clear": "مسح",
+      "hide": "إخفاء التصحيح",
+      "show": "إظهار التصحيح",
+      "empty": "لا توجد بيانات تصحيح بعد.",
+      "emptyHint": "أرسل رسالة لرؤية تفاصيل التوجيه.",
+      "turnTraceLog": "سجل تتبّع الدور رقم {{turn}}"
+    },
+    "compare": {
+      "modelLabel": "النموذج {{label}}:",
+      "modelSelectPlaceholder": "اختر نموذجًا...",
+      "noMessages": "لا توجد رسائل بعد.",
+      "debugTurns": "التصحيح ({{count}} دور)",
+      "debugTurns_other": "التصحيح ({{count}} أدوار)",
+      "guardrailTokensTitle": "رموز حَكَم الحاجز الأمني",
+      "stop": "إيقاف",
+      "inputPlaceholder": "أرسل نفس الرسالة إلى كلا النموذجين..."
+    }
+  },
+  "help": {
+    "title": "المساعدة والدعم",
+    "subtitle": "نحن هنا للمساعدة — ابحث عن إجابات أو تواصل معنا في أي وقت.",
+    "docs": {
+      "title": "التوثيق",
+      "subtitle": "أدلة ومرجع واجهة برمجة التطبيقات ووثائق الإعداد",
+      "body": "تغطي الوثائق الرسمية كل شيء من البدء إلى سياسات التوجيه المتقدمة وإعداد المزوّدين والميزانيات ومرجع واجهة برمجة التطبيقات الكامل.",
+      "openLink": "فتح التوثيق"
+    },
+    "issues": {
+      "title": "الإبلاغ عن خلل أو اقتراح ميزة",
+      "subtitle": "افتح تذكرة على GitHub — يستغرق ذلك دقيقتين",
+      "body": "تذاكر GitHub هي أفضل طريقة للإبلاغ عن الأخطاء أو اقتراح التحسينات. لمساعدتنا على الإصلاح بشكل أسرع، أدرِج: ما فعلته، وما توقعت حدوثه، وما حدث فعليًا.",
+      "showTemplate": "إظهار قالب التذكرة",
+      "reportBug": "الإبلاغ عن خلل",
+      "requestFeature": "طلب ميزة"
+    },
+    "issueTemplate": {
+      "whatHappened": "ماذا حدث؟",
+      "whatHappenedHint": "صف المشكلة بكلماتك الخاصة",
+      "stepsToReproduce": "خطوات إعادة الإنتاج",
+      "expectedBehaviour": "السلوك المتوقع",
+      "expectedBehaviourHint": "ما الذي توقعت رؤيته",
+      "version": "إصدار Routerly",
+      "versionHint": "شغّل `routerly --version` أو راجع الإعدادات → حول"
+    },
+    "email": {
+      "title": "التواصل مع الدعم",
+      "subtitle": "نقرأ كل رسالة ونرد بأسرع ما يمكن",
+      "body": "لأي شيء لا يناسب تذكرة GitHub — أسئلة الفوترة، أو استفسارات خاصة، أو حتى لو أردت فقط أن تلقي التحية — راسلنا."
+    },
+    "faq": {
+      "title": "الأسئلة الشائعة",
+      "subtitle": "إجابات سريعة على الأسئلة الأكثر شيوعًا",
+      "items": {
+        "connect": {
+          "q": "كيف أربط تطبيقي بـ Routerly؟",
+          "a": "وجّه حزمة تطوير OpenAI أو Anthropic إلى نسخة Routerly الخاصة بك. استبدل عنوان URL الأساسي بـ http://your-host:3000/v1 (متوافق مع OpenAI) أو http://your-host:3000/anthropic (متوافق مع Anthropic)، ثم استخدم رمز موجّه كمفتاح API. هذا كل شيء — لا حاجة لأي تغييرات أخرى."
+        },
+        "openaiCompat": {
+          "q": "هل Routerly متوافق مع الأدوات التي تستخدم حزمة تطوير OpenAI؟",
+          "a": "نعم. Routerly بديل مباشر: تعمل أي أداة تدعم عنوان URL أساسيًا ومفتاح API مخصصين (LangChain، LlamaIndex، Cursor، Continue، وغيرها) دون أي تعديل. لعملاء صيغة Anthropic، استخدم نقطة النهاية /anthropic بدلًا من ذلك."
+        },
+        "routing": {
+          "q": "كيف يعمل توجيه النماذج؟",
+          "a": "لكل موجّه سياسة توجيه تحدد أي نموذج يستلم الطلب. تشمل السياسات التناوب الدوري، وأقل تكلفة، وأسرع استجابة، وسلاسل احتياطية، والمزيد. تُعدّها لكل موجّه ضمن الموجّهات → التوجيه."
+        },
+        "addModel": {
+          "q": "كيف أضيف نموذج ذكاء اصطناعي جديدًا؟",
+          "a": "اذهب إلى النماذج → إضافة نموذج. يمكنك إضافة أي مزوّد متوافق مع OpenAI (Ollama وLM Studio ونقاط نهاية مخصصة) أو نقطة نهاية Anthropic أصلية. أدخل عنوان URL الأساسي ومفتاح API ومعرّف النموذج — سيتولى Routerly الباقي."
+        },
+        "dataStored": {
+          "q": "هل تُخزَّن بياناتي؟ هل تُسجَّل مطالباتي؟",
+          "a": "Routerly مستضاف ذاتيًا ويُخزّن البيانات فقط على جهازك (في ~/.routerly/ افتراضيًا). لا يرسل Routerly المطالبات أو الاستجابات إلى أي مكان أبدًا. تُخزَّن سجلات الطلبات محليًا وفقط إذا فعّلتها لكل موجّه."
+        },
+        "routerToken": {
+          "q": "ما هو رمز الموجّه وكيف يختلف عن مفتاح API الخاص بالمزوّد؟",
+          "a": "رمز الموجّه هو بيانات اعتماد تمنحها لتطبيقك أو لأعضاء فريقك للمصادقة مع Routerly. وهو منفصل عن مفاتيح API الخاصة بمزوّديك، والتي يخزّنها Routerly بأمان على جانب الخادم. لا ترى تطبيقاتك أبدًا مفاتيح المزوّدين الحقيقية."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} مستخدم",
+    "countLabel_other": "{{count}} مستخدمين",
+    "addButton": "إضافة مستخدم",
+    "columns": {
+      "email": "البريد الإلكتروني",
+      "role": "الدور",
+      "routers": "الموجّهات"
+    },
+    "allRouters": "الكل",
+    "resetTwoFaTitle": "إعادة تعيين المصادقة الثنائية",
+    "resetTwoFaConfirm": "هل تريد إعادة تعيين المصادقة الثنائية لـ {{email}}؟ سيحتاجون إلى إعادة التسجيل.",
+    "deleteConfirm": "هل تريد حذف هذا المستخدم؟",
+    "emptyTitle": "لا يوجد مستخدمون بعد.",
+    "noPermission": "ليست لديك صلاحية لعرض المستخدمين.",
+    "modal": {
+      "title": "إضافة مستخدم",
+      "emailLabel": "البريد الإلكتروني",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "كلمة المرور",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "الدور",
+      "roleAdmin": "مسؤول",
+      "roleViewer": "مشاهد",
+      "cancelButton": "إلغاء",
+      "submitButton": "إضافة مستخدم"
+    },
+    "errors": {
+      "loadFailed": "تعذّر تحميل المستخدمين",
+      "addFailed": "خطأ"
+    }
+  },
+  "userEdit": {
+    "title": "تعديل المستخدم",
+    "account": "الحساب",
+    "email": "البريد الإلكتروني",
+    "role": "الدور",
+    "changePassword": "تغيير كلمة المرور",
+    "newPassword": "كلمة المرور الجديدة",
+    "newPasswordHint": "(اتركه فارغًا للاحتفاظ بالحالية)",
+    "save": "حفظ",
+    "saved": "تم الحفظ!",
+    "errors": {
+      "loadFailed": "تعذّر تحميل المستخدم",
+      "saveFailed": "تعذّر الحفظ"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "إدارة الأدوار والصلاحيات. لا يمكن تعديل الأدوار المدمجة.",
+    "newRole": "دور جديد",
+    "builtin": "مدمج",
+    "edit": "تعديل",
+    "deleteConfirm": "هل تريد حذف هذا الدور؟ سيتأثر المستخدمون الذين لديهم هذا الدور.",
+    "form": {
+      "id": "المعرّف",
+      "idPlaceholder": "مثل operator",
+      "name": "الاسم",
+      "namePlaceholder": "اسم الدور",
+      "permissions": "الصلاحيات",
+      "create": "إنشاء",
+      "save": "حفظ",
+      "cancel": "إلغاء"
+    },
+    "permissions": {
+      "routerRead": "الموجّهات – قراءة",
+      "routerWrite": "الموجّهات – كتابة",
+      "modelRead": "النماذج – قراءة",
+      "modelWrite": "النماذج – كتابة",
+      "userRead": "المستخدمون – قراءة",
+      "userWrite": "المستخدمون – كتابة",
+      "reportRead": "التقارير – قراءة",
+      "settingsRead": "الإعدادات – قراءة",
+      "settingsWrite": "الإعدادات – كتابة",
+      "notificationWrite": "الإشعارات – كتابة",
+      "tokenRead": "الرموز – قراءة",
+      "tokenWrite": "الرموز – كتابة",
+      "roleWrite": "الأدوار – كتابة",
+      "auditRead": "سجل التدقيق – قراءة",
+      "modulesRead": "الوحدات – قراءة",
+      "modulesManage": "الوحدات – إدارة",
+      "connectionsRead": "الاتصالات – قراءة",
+      "connectionsManage": "الاتصالات – إدارة",
+      "resilienceRead": "المرونة – قراءة",
+      "resilienceManage": "المرونة – إدارة",
+      "profilesRead": "ملفات التوجيه التعريفية – قراءة",
+      "profilesManage": "ملفات التوجيه التعريفية – إدارة",
+      "optimizersRead": "المحسّنات – قراءة",
+      "optimizersManage": "المحسّنات – إدارة",
+      "experimentsRead": "التجارب – قراءة",
+      "experimentsManage": "التجارب – إدارة"
+    },
+    "errors": {
+      "loadFailed": "تعذّر تحميل الأدوار",
+      "updateFailed": "تعذّر تحديث الدور",
+      "createFailed": "تعذّر إنشاء الدور",
+      "deleteFailed": "تعذّر حذف الدور"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "الملفات التعريفية",
+      "subtitle": "إعدادات قابلة لإعادة الاستخدام للتوجيه والتحسين والأمان",
+      "noPermission": "ليست لديك صلاحية لعرض الملفات التعريفية.",
+      "newProfile": "ملف {{kind}} تعريفي جديد",
+      "empty": "لا توجد ملفات {{kind}} تعريفية بعد.",
+      "builtin": "مدمج",
+      "custom": "مخصص",
+      "view": "عرض",
+      "edit": "تعديل",
+      "clone": "استنساخ",
+      "delete": "حذف",
+      "deleteConfirm": "هل تريد حذف الملف التعريفي \"{{label}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "kindDescriptions": {
+        "routing": "أي نموذج يجيب على الطلب، وماذا يحدث عندما لا يستطيع",
+        "optimizer": "ما الذي يُزال من المطالبة قبل إرسالها",
+        "security": "الحواجز الأمنية وسياسات PII المطبَّقة على حركة المرور"
+      },
+      "columns": {
+        "label": "التسمية",
+        "type": "النوع",
+        "configuration": "الإعداد",
+        "version": "الإصدار"
+      },
+      "errors": {
+        "loadFailed": "تعذّر تحميل الملفات التعريفية",
+        "deleteFailed": "تعذّر حذف الملف التعريفي"
+      }
+    },
+    "form": {
+      "backToProfiles": "العودة إلى الملفات التعريفية",
+      "newProfileTitle": "ملف {{kind}} تعريفي جديد",
+      "editProfileTitle": "تعديل {{label}}",
+      "builtinHint": "لا يمكن تعديل الملفات التعريفية المدمجة. استنسخ واحدًا لتخصيصه.",
+      "assignHint": "يمكن تعيين {{article}} ملف {{kind}} تعريفي إلى أي عدد من الموجّهات.",
+      "noPermission": "ليست لديك صلاحية لعرض الملفات التعريفية.",
+      "label": "التسمية",
+      "optimizers": "المحسّنات",
+      "optimizersHint": "اسحب لإعادة الترتيب، وبدّل للتفعيل أو التعطيل. تعمل بالترتيب من الأعلى إلى الأسفل.",
+      "createProfile": "إنشاء ملف تعريفي",
+      "saveProfile": "حفظ الملف التعريفي",
+      "cancel": "إلغاء",
+      "copySuffix": "نسخة من {{label}}",
+      "labelPlaceholders": {
+        "routing": "مثل توجيهي المتوازن",
+        "optimizer": "مثل مُقلّم المطالبات الخاص بي",
+        "security": "مثل حواجزي الأمنية الصارمة"
+      },
+      "errors": {
+        "notFound": "الملف التعريفي غير موجود.",
+        "loadFailed": "تعذّر تحميل الملف التعريفي",
+        "saveFailed": "تعذّر حفظ الملف التعريفي"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "العودة إلى الاتصال",
+    "title": "الاتصال",
+    "docs": "التوثيق",
+    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
+    "noClientPrefix": "لا يوجد عميل باسم",
+    "errors": {
+      "loadFailed": "تعذّر تحميل العملاء: {{error}}"
+    },
+    "oneCommand": {
+      "title": "الأسرع: أمر واحد",
+      "description": "شغّله على الجهاز الذي يوجد عليه {{client}}. يكتب {{configPath}}، مع الاحتفاظ بنسخة احتياطية يمكنك التراجع عنها."
+    },
+    "byHand": {
+      "titleAlt": "أو أعِدّه يدويًا",
+      "titleUi": "أعِدّه يدويًا",
+      "titleConfigFile": "إعداد ملف الإعدادات",
+      "setValuesIn": "عيّن هذه القيم في {{configPath}}.",
+      "putThisIn": "ضع هذا في",
+      "replaceToken": "استبدل",
+      "withRouterToken": "برمز موجّه:",
+      "createOne": "أنشئ واحدًا",
+      "onRoutersPage": "من صفحة الموجّهات.",
+      "modelLabel": "النموذج:",
+      "modelHint": "يترك الاختيار لـ Routerly، ويعمل أيضًا أي معرّف نموذج من",
+      "modelsLink": "النماذج",
+      "worksToo": ".",
+      "openaiCompatHint": "يناسب نفس عنوان URL الأساسي والمفتاح والنموذج أي عميل يوفّر مزوّدًا \"متوافقًا مع OpenAI\"."
+    },
+    "mcp": {
+      "title": "خادم MCP",
+      "description": "منفصل عن الخطوات أعلاه: هذا يتيح لـ {{client}} استدعاء أدوات Routerly. يحتاج إلى رمز MCP شخصي، يُنشأ باستخدام",
+      "orFromYour": "أو من",
+      "profileLink": "ملفك الشخصي"
+    },
+    "checkItWorked": {
+      "title": "تحقق من أن الأمر نجح",
+      "restart": "أعِد تشغيل {{client}}، وأرسِل له مطالبة، ثم ابحث عن الطلب في",
+      "usageLink": "الاستخدام",
+      "cliReports": "من نفس الجهاز، تُبلّغ واجهة سطر الأوامر بما تجده:"
+    }
+  },
+  "connect": {
+    "title": "الاتصال",
+    "subtitle": "وجّه عميل برمجة بالذكاء الاصطناعي إلى هذه البوابة. اختر عميلًا لرؤية خطوات إعداده.",
+    "llmLabel": "LLM",
+    "llmDescription": "يوجّه حركة مرور نموذج ذلك العميل عبر Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "يحمّل Routerly كخادم أدوات داخله.",
+    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
+    "errors": {
+      "loadFailed": "تعذّر تحميل العملاء: {{error}}"
+    },
+    "oneCommand": {
+      "title": "أمر واحد",
+      "hint": "تكتب واجهة سطر الأوامر ملف الإعدادات نيابةً عنك، مع نسخة احتياطية يمكنك التراجع عنها."
+    },
+    "byHand": {
+      "title": "يدويًا",
+      "hint": "انسخ المقتطف من صفحة العميل إلى إعداداته، ثم أعِد تشغيله."
+    },
+    "endpoint": {
+      "title": "وجّه أي عميل هنا",
+      "description": "أي شيء مبني على حزمة تطوير OpenAI أو Anthropic يعمل بمجرد تغيير عنوان URL الأساسي والمفتاح. لا شيء آخر يتغيّر: تعبر الطلبات والاستجابات Routerly كما هي.",
+      "openaiBaseUrl": "عنوان URL الأساسي لـ OpenAI",
+      "anthropicBaseUrl": "عنوان URL الأساسي لـ Anthropic",
+      "apiKey": "مفتاح API",
+      "model": "النموذج",
+      "apiKeyDescription": "رمز موجّه، يُرسل كـ",
+      "or": "أو",
+      "createOne": "أنشئ واحدًا",
+      "onRoutersPage": "من صفحة الموجّهات.",
+      "modelDescription": "يترك الاختيار لـ Routerly. يعمل أيضًا أي معرّف نموذج من صفحة",
+      "modelsLink": "النماذج",
+      "worksToo": "."
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "منذ {{count}} ثانية",
+      "secondsAgo_other": "منذ {{count}} ثوانٍ",
+      "minutesAgo": "منذ {{count}} دقيقة",
+      "minutesAgo_other": "منذ {{count}} دقائق",
+      "hoursAgo": "منذ {{count}} ساعة",
+      "hoursAgo_other": "منذ {{count}} ساعات",
+      "daysAgo": "منذ {{count}} يوم",
+      "daysAgo_other": "منذ {{count}} أيام"
+    },
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "select": "اختر...",
+    "search": "بحث...",
+    "noResults": "لا توجد نتائج",
+    "noRemainingOptions": "لا توجد خيارات متبقية",
+    "apply": "تطبيق",
+    "saved": "تم الحفظ",
+    "showLess": "عرض أقل",
+    "roles": "الأدوار",
+    "permissions": "الصلاحيات",
+    "notifications": {
+      "title": "الإشعارات",
+      "markAllRead": "وضع علامة مقروء على الكل",
+      "empty": "لا توجد إشعارات",
+      "viewAll": "عرض كل الإشعارات"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "اختر الفترة",
+      "recent": "الأخيرة",
+      "ranges": "النطاقات",
+      "from": "من",
+      "to": "إلى"
+    },
+    "permissionGuard": {
+      "fixFailed": "تعذّر إصلاح الصلاحيات",
+      "title": "صلاحيات ملفات غير آمنة",
+      "defaultMessage": "بعض الملفات لديها صلاحيات غير آمنة.",
+      "fixing": "جارٍ الإصلاح…",
+      "fixNow": "إصلاح الآن"
+    },
+    "limitRows": {
+      "noLimits": "لا توجد حدود معيّنة.",
+      "metricLabel": "المقياس",
+      "typeLabel": "النوع",
+      "periodLabel": "الفترة",
+      "everyLabel": "كل",
+      "maxCost": "الحد الأقصى للتكلفة",
+      "maxCount": "الحد الأقصى للعدد",
+      "maxTokens": "الحد الأقصى للرموز",
+      "allCombosSet": "جميع تركيبات المقياس/الفترة معيّنة بالفعل",
+      "addLimit": "إضافة حد",
+      "metric": {
+        "cost": "التكلفة",
+        "calls": "الطلبات",
+        "input_tokens": "رموز الإدخال",
+        "output_tokens": "رموز الإخراج",
+        "total_tokens": "إجمالي الرموز"
+      },
+      "period": {
+        "hourly": "كل ساعة",
+        "daily": "يوميًا",
+        "weekly": "أسبوعيًا",
+        "monthly": "شهريًا",
+        "yearly": "سنويًا"
+      },
+      "rollingUnit": {
+        "second": "ثانية",
+        "minute": "دقيقة",
+        "hour": "ساعة",
+        "day": "يوم",
+        "week": "أسبوع",
+        "month": "شهر"
+      },
+      "windowType": {
+        "period": "فترة",
+        "rolling": "متحرّكة"
+      },
+      "fmt": {
+        "requests": "{{value}} طلب",
+        "inputTokens": "{{value}} رمز-إدخال",
+        "outputTokens": "{{value}} رمز-إخراج",
+        "totalTokens": "{{value}} رمز",
+        "everyRolling": "{{metric}} / كل {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} / {{period}}"
+      }
+    },
+    "savings": {
+      "title": "ما وفّره التوجيه",
+      "input": "الإدخال",
+      "output": "الإخراج",
+      "actual": "الفعلي",
+      "clientCalls": "{{count}} طلب من العميل",
+      "clientCalls_other": "{{count}} طلبات من العميل",
+      "comparedAgainst": "، مقارنة بإرساله إلى كل من",
+      "comparedAgainst_other": "، مقارنة بإرسالها جميعًا إلى كل من",
+      "paidModelsInPlay": "{{count}} نموذج مدفوع قيد الاستخدام",
+      "paidModelsInPlay_other": "{{count}} نماذج مدفوعة قيد الاستخدام",
+      "metricCost": "التكلفة",
+      "metricTokens": "الرموز",
+      "totalCost": "إجمالي التكلفة",
+      "routed": "تم توجيهه: {{value}}",
+      "saved": "تم توفيره: {{value}}",
+      "usdThisPeriod": "دولار في هذه الفترة",
+      "savedVsAlways": "تم توفير {{value}} ({{percent}}%) مقابل استخدام {{model}} دائمًا",
+      "tokens": "الرموز",
+      "in": "إدخال: {{value}}",
+      "out": "إخراج: {{value}}",
+      "tokenSubWithCache": "{{in}} إدخال · {{out}} إخراج · {{cached}} من الذاكرة المؤقتة",
+      "tokenSub": "{{in}} إدخال · {{out}} إخراج",
+      "cutByOptimizers": "تم تقليل {{value}} بواسطة المحسّنات",
+      "fewerThanAlways": "أقل بمقدار {{value}} من استخدام {{model}} دائمًا، بشكل تقديري"
+    },
+    "optimizerSteps": {
+      "downloaded": "تم التنزيل",
+      "thisStepRunsOn": "تعمل هذه الخطوة على",
+      "defaultCheckpoint": "نقطة التحقق الافتراضية"
+    },
+    "routingPolicies": {
+      "title": "سياسات التوجيه",
+      "subtitle": "تحدد السياسات كيفية توجيه الطلبات. تُنفَّذ بالترتيب من الأعلى إلى الأسفل.",
+      "removePolicy": "إزالة السياسة",
+      "removeIntent": "إزالة النية",
+      "removeExample": "إزالة المثال",
+      "routingModels": "نماذج التوجيه",
+      "embeddingModels": "نماذج التضمين",
+      "maxCompletionTokens": "الحد الأقصى لرموز الإكمال",
+      "maxPromptChars": "الحد الأقصى لأحرف المطالبة",
+      "similarityThreshold": "عتبة التشابه",
+      "previousMessages": "الرسائل السابقة",
+      "intents": "النوايا",
+      "confidenceThreshold": "عتبة الثقة",
+      "ambiguityMargin": "هامش الغموض",
+      "maxCallsPerWindow": "الحد الأقصى للطلبات لكل نافذة",
+      "addFallbackModel": "إضافة نموذج احتياطي",
+      "addExamplePlaceholder": "أضف مثالًا واضغط Enter…",
+      "addIntentPlaceholder": "أضف نية واضغط Enter…",
+      "addPolicyPlaceholder": "إضافة سياسة...",
+      "labels": {
+        "llm": "سياسة التوجيه بالذكاء الاصطناعي",
+        "rate-limit": "سياسة تقييد المعدل",
+        "budget-remaining": "سياسة الميزانية المتبقية",
+        "semantic-intent": "سياسة النية الدلالية",
+        "health": "سياسة الحالة",
+        "context": "سياسة السياق",
+        "capability": "سياسة القدرة",
+        "performance": "سياسة الأداء",
+        "fairness": "سياسة العدالة",
+        "cheapest": "سياسة الأقل تكلفة",
+        "model-preference": "سياسة تفضيل النموذج"
+      },
+      "descriptions": {
+        "context": "تُقيّم النماذج بناءً على نافذة السياق المتاحة. تمنح 0 للنماذج التي تكون نافذة سياقها أصغر من طول الطلب المقدَّر، مما يمنع أخطاء الاقتطاع.",
+        "cheapest": "تُقيّم النماذج بشكل عكسي مع تكلفة الرمز. يحصل الأرخص على 1.0 والأغلى على 0.0، مما يساعد في تقليل الإنفاق على واجهة برمجة التطبيقات.",
+        "health": "تُقيّم النماذج بناءً على معدل الخطأ الأخير باستخدام تلاشٍ أُسّي (الأخطاء الأحدث لها وزن أكبر). تطبّق قاطع دائرة يضبط الدرجة على 0 عندما يتجاوز معدل الخطأ المرجَّح عتبة حرجة.",
+        "performance": "تُقيّم النماذج بناءً على متوسط زمن الاستجابة الأخير باستخدام تلاشٍ أُسّي. يحصل الأسرع على 1.0 والأبطأ على 0.0. النماذج بلا بيانات حديثة تفترض 1.0.",
+        "llm": "تستخدم نموذج ذكاء اصطناعي لتقييم المرشحين بناءً على المحتوى الدلالي للطلب. تدعم مطالبات توجيه لكل نموذج وتأخذ في الاعتبار هامش الميزانية عند إعداد الحدود.",
+        "capability": "مرشِّح صارم: يمنح 0 للنماذج التي تفتقر صراحةً لميزة يتطلبها الطلب (الرؤية، استدعاء الدوال، وضع JSON). النماذج التي لا تصرّح بقدراتها لا تُعاقَب.",
+        "rate-limit": "تعاقب النماذج ذات التكرار العالي للطلبات مؤخرًا لتقليل خطر بلوغ حدود معدل المزوّد (HTTP 429). تدعم عتبة صارمة قابلة للتهيئة تفرض الدرجة 0.",
+        "fairness": "توزّع حركة المرور بالتساوي عبر معاقبة النماذج التي استلمت طلبات ناجحة أكثر مؤخرًا. تعمل كتناوب دوري ناعم لمنع تركّز الحمل على نموذج واحد.",
+        "budget-remaining": "تُقيّم النماذج بناءً على هامش الميزانية المتبقي عبر كل الحدود المُعدّة. تفضّل النماذج ذات الهامش الأكبر قبل بلوغ عتباتها، موزّعة الاستهلاك بشكل استباقي.",
+        "semantic-intent": "تصنّف الطلب حسب النية الدلالية باستخدام التضمينات، ثم تقيّد مجموعة المرشحين بالنماذج المرتبطة بتلك النية. المطابقات الواثقة تُصفّي المجموعة بشكل صارم؛ المطابقات الغامضة تدمج أفضل مجموعتين؛ الطلبات غير المعروفة تمرّر جميع المرشحين.",
+        "model-preference": "عندما يطلب العميل نموذجًا محددًا (وليس routerly/ada)، تمنح مكافأة قابلة للتهيئة لذلك النموذج. عندما لا يُعبَّر عن تفضيل، تمتنع السياسة. يتحكم الموضع في القائمة بمدى وزن التفضيل مقابل السياسات الأخرى."
+      },
+      "selectModel": "اختر نموذجًا"
+    },
+    "securityRules": {
+      "applyTo": "تطبيق على",
+      "streamingBufferSize": "حجم مخزن البث المؤقت (أحرف)",
+      "entityTypes": "أنواع الكيانات",
+      "target": "الهدف",
+      "embeddingModel": "نموذج التضمين",
+      "judgeModel": "نموذج الحَكَم",
+      "contentGuardrails": "حواجز المحتوى الأمنية",
+      "piiPolicies": "سياسات PII",
+      "addSecurityPolicyPlaceholder": "إضافة سياسة أمنية..."
+    },
+    "connectionFields": {
+      "azureResourceName": "اسم مورد Azure",
+      "deploymentId": "معرّف النشر",
+      "awsRegion": "منطقة AWS",
+      "awsAccessKeyId": "معرّف مفتاح وصول AWS",
+      "awsSecretAccessKey": "مفتاح الوصول السري لـ AWS",
+      "gcpRouterId": "معرّف موجّه GCP"
+    },
+    "unsavedChanges": {
+      "title": "تغييرات غير محفوظة",
+      "message": "لديك تغييرات غير محفوظة. إذا غادرت الآن، ستفقد تغييراتك.",
+      "stay": "البقاء",
+      "leaveAnyway": "المغادرة على أي حال"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "الحواجز الأمنية",
+        "pii": "PII",
+        "optimizers": "المحسّنات",
+        "routerOverhead": "النفقات العامة للموجّه"
+      },
+      "policyType": {
+        "llm": "التوجيه بالذكاء الاصطناعي",
+        "rateLimit": "تقييد المعدل",
+        "budgetRemaining": "الميزانية المتبقية",
+        "semanticIntent": "النية الدلالية",
+        "modelPreference": "تفضيل النموذج"
+      },
+      "rawDetails": "تفاصيل خام",
+      "technicalDetails": "تفاصيل تقنية",
+      "systemPrompt": "مطالبة النظام",
+      "responseText": "نص الاستجابة",
+      "responseJson": "JSON الاستجابة",
+      "cacheEmbeddingCall": "طلب تضمين من الذاكرة المؤقتة",
+      "fallbackAttempt": "احتياطي رقم {{attempt}}",
+      "embeddingModel": "نموذج التضمين",
+      "upstreamModel": "النموذج المصدر",
+      "provider": "المزوّد",
+      "source": "المصدر",
+      "endpoint": "نقطة النهاية",
+      "cacheHit": "إصابة الذاكرة المؤقتة",
+      "ttlExtended": "تم تمديد TTL",
+      "model": "النموذج",
+      "similarity": "التشابه",
+      "embedding": "التضمين",
+      "cacheMiss": "فوات الذاكرة المؤقتة",
+      "details": "التفاصيل",
+      "excludedByLimits": "مستبعد بسبب الحدود",
+      "finalRanking": "الترتيب النهائي",
+      "noRankingData": "لا توجد بيانات ترتيب (قد يكون السجل تالفًا أو من إصدار أقدم)",
+      "policyScores": "درجات السياسة",
+      "weight": "الوزن {{value}}",
+      "allScores": "كل الدرجات",
+      "noPolicyData": "لا توجد بيانات سياسة (قد يكون السجل تالفًا أو من إصدار أقدم)",
+      "requestGuardrailBlocked": "تم حظر الطلب بواسطة الحاجز الأمني",
+      "requestGuardrailTriggered": "تم تفعيل الحاجز الأمني للطلب",
+      "responseGuardrailBlocked": "تم حظر الاستجابة بواسطة الحاجز الأمني",
+      "responseGuardrailTriggered": "تم تفعيل الحاجز الأمني للاستجابة",
+      "rule": "القاعدة",
+      "action": "الإجراء",
+      "guardrailsEvaluated": "الحواجز الأمنية المُقيَّمة ({{target}})",
+      "ruleCount": "{{count}} قاعدة",
+      "ruleCount_other": "{{count}} قواعد",
+      "promptInjection": "حقن المطالبة",
+      "injects": "يحقن",
+      "judgeResponse": "استجابة الحَكَم",
+      "piiScrubbed": "تم إخفاء PII",
+      "piiScanned": "تم فحص PII ({{target}})",
+      "policies": "السياسات",
+      "entityTypes": "أنواع الكيانات",
+      "customPatterns": "الأنماط المخصصة",
+      "scanned": "تم الفحص",
+      "redacted": "تم الإخفاء",
+      "took": "استغرق",
+      "ms": "{{value}} مللي ثانية",
+      "entityTypesScanned": "أنواع الكيانات المفحوصة",
+      "guardrailInjection": "حقن الحاجز الأمني",
+      "rules": "القواعد",
+      "chars": "أحرف",
+      "injectedText": "النص المحقون",
+      "optimizer": "المحسّن {{id}}",
+      "tokens": "الرموز",
+      "saved": "تم التوفير",
+      "tok": "{{value}} رمز",
+      "reason": "السبب",
+      "budgetBlocked": "تم الحظر بسبب الميزانية",
+      "budgetOk": "الميزانية متاحة",
+      "egressSent": "تم إرسال الخروج",
+      "status": "الحالة",
+      "encoding": "الترميز",
+      "frames": "الإطارات",
+      "bytes": "بايت"
+    }
+  }
+}
