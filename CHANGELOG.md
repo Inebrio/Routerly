@@ -13,6 +13,9 @@ the change itself — never reconstructed after the fact. See
 
 ### New features
 
+**Dashboard localization (English, Spanish, Arabic)**
+The dashboard now ships with English, Spanish, and Arabic catalogs, selectable per-account from Profile → Preferences and persisted server-side. RTL layout is supported for Arabic. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
+
 ### Bug fixes
 
 - Secret config files (`models.json`, `connections.json`, `routers.json`, `users.json`) no longer revert to unsafe file permissions on every write — `writeConfig()` now preserves the `0600` mode instead of recreating the file at the umask default, which previously re-tripped the startup permission guard on the very next write after a fix.
