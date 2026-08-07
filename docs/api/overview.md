@@ -9,8 +9,8 @@ Routerly exposes two groups of HTTP endpoints:
 
 | Group | Path prefix | Auth method | Purpose |
 |-------|-------------|-------------|---------|
-| **LLM Proxy** | `/v1/*` | Bearer project token | Forward requests to LLM providers |
-| **Management API** | `/api/*` | Bearer JWT (dashboard session) | Configure models, projects, users, etc. |
+| **LLM Proxy** | `/v1/*` | Bearer router token | Forward requests to LLM providers |
+| **Management API** | `/api/*` | Bearer JWT (dashboard session) | Configure models, routers, users, etc. |
 
 ---
 
@@ -18,13 +18,13 @@ Routerly exposes two groups of HTTP endpoints:
 
 ### LLM Proxy (`/v1/*`)
 
-Pass your **project token** as a Bearer token:
+Pass your **router token** as a Bearer token:
 
 ```http
-Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN
+Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN
 ```
 
-Project tokens start with `sk-rt-` and are created in the project's **Tokens** tab.
+Router tokens start with `sk-rt-` and are created in the router's **Tokens** tab.
 
 ### Management API (`/api/*`)
 

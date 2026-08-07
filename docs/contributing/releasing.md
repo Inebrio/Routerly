@@ -226,7 +226,7 @@ needs no setup.
 | `GITHUB_TOKEN` | Provided automatically by GitHub Actions. Used by the `release` job to create the shared `vX.Y.Z` tag and publish or update the GitHub Release, by the `docs` job to push the docs-cut commit to `docs-versions`, and by the `next-pointer` job to force-move the `next` tag and recreate the `next` prerelease Release. Its actual scope is `release.yml`'s own `permissions:` block. | Nothing to configure; review the `permissions:` block in `.github/workflows/release.yml`. |
 | `DOCKERHUB_USERNAME` | The Docker Hub account the `docker` job logs in as, to push and re-tag images. | Repository Settings → Secrets and variables → Actions. |
 | `DOCKERHUB_TOKEN` | Docker Hub access token the `docker` job logs in with, to push and re-tag images. | Repository Settings → Secrets and variables → Actions. |
-| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON the `docs-deploy` job uses to deploy the documentation site to Firebase Hosting, project `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
+| `FIREBASE_SERVICE_ACCOUNT_ROUTERLY_DOCS` | Service-account JSON the `docs-deploy` job uses to deploy the documentation site to Firebase Hosting, router `routerly-docs`, channel `live`. | Repository Settings → Secrets and variables → Actions. |
 
 ## When a step fails
 

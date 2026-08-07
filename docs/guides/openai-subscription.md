@@ -65,19 +65,19 @@ routerly model add \
 
 ---
 
-## Step 3: Attach the model to a project
+## Step 3: Attach the model to a router
 
-In the dashboard, go to **Projects > your project > Models** and add the model you just created. Copy the project token: you will use it as the API key for your client.
+In the dashboard, go to **Routers > your router > Models** and add the model you just created. Copy the router token: you will use it as the API key for your client.
 
 ---
 
 ## Step 4: Use it from your client
 
-Point your client at Routerly and authenticate with the **Routerly project token** (not the OAuth token):
+Point your client at Routerly and authenticate with the **Routerly router token** (not the OAuth token):
 
 ```bash
 export OPENAI_BASE_URL="http://localhost:3000/v1"
-export OPENAI_API_KEY="<routerly-project-token>"
+export OPENAI_API_KEY="<routerly-router-token>"
 ```
 
 ```python
@@ -85,7 +85,7 @@ import openai
 
 client = openai.OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="<routerly-project-token>",
+    api_key="<routerly-router-token>",
 )
 ```
 
@@ -108,4 +108,4 @@ model behaves like any other model: `/v1/chat/completions` with or without
 [Claude Code](../integrations/clients/claude-code.md). Tool calls work on both
 endpoints.
 
-Both can coexist: you can have an `openai-oauth` model alongside your existing `openai` API-key models in the same project.
+Both can coexist: you can have an `openai-oauth` model alongside your existing `openai` API-key models in the same router.

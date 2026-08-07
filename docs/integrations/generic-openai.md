@@ -20,10 +20,10 @@ the provider's response unaltered.
 ## Print the steps
 
 ```bash
-routerly clients configure generic-openai --project my-api
+routerly clients configure generic-openai --router my-api
 ```
 
-Prints the two variables with a real project token, mints one if you do not
+Prints the two variables with a real router token, mints one if you do not
 pass `--token`, and writes nothing. The dashboard shows the same pair under
 **Connect → Any OpenAI SDK app**.
 
@@ -31,11 +31,11 @@ pass `--token`, and writes nothing. The dashboard shows the same pair under
 
 ```bash
 export OPENAI_BASE_URL=http://localhost:3000/v1
-export OPENAI_API_KEY=sk-rt-YOUR_PROJECT_TOKEN
+export OPENAI_API_KEY=sk-rt-YOUR_ROUTER_TOKEN
 ```
 
-The `/v1` suffix belongs to the base URL. Create a project token on the
-[Projects](../dashboard/projects.md) page.
+The `/v1` suffix belongs to the base URL. Create a router token on the
+[Routers](../dashboard/routers.md) page.
 
 ## In code
 
@@ -44,7 +44,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="sk-rt-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_ROUTER_TOKEN",
 )
 
 response = client.chat.completions.create(
@@ -58,7 +58,7 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   baseURL: 'http://localhost:3000/v1',
-  apiKey: 'sk-rt-YOUR_PROJECT_TOKEN',
+  apiKey: 'sk-rt-YOUR_ROUTER_TOKEN',
 });
 
 const response = await client.chat.completions.create({
@@ -68,7 +68,7 @@ const response = await client.chat.completions.create({
 ```
 
 `routerly/ada` asks Routerly to pick the model per request, following the
-project's routing profile. Pass a registered model id instead to address
+router's routing profile. Pass a registered model id instead to address
 one model directly.
 
 ## Check the connection

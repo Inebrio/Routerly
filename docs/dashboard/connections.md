@@ -57,7 +57,7 @@ There is no inline row expander.
 Secrets are never displayed once saved - the form only accepts new values, it
 never pre-fills or echoes existing ones. Non-secret cloud settings (AWS region
 and access key ID, the Azure resource/deployment/API version, the Vertex
-project and location) are returned by the API and do pre-fill on edit.
+router and location) are returned by the API and do pre-fill on edit.
 
 ### Credential Fields
 
@@ -74,7 +74,7 @@ ask for the same things in the same order.
 | `openai-web`, `anthropic-web` | the session token for that provider, an optional **cf_clearance**, and an unofficial-provider warning |
 | `azure-openai` | **Azure Resource Name**, **Deployment ID**, **API Version** |
 | `bedrock` | **AWS Region**, **AWS Access Key ID**, **AWS Secret Access Key**, optional **Session Token** |
-| `vertex` | **GCP Project ID**, **Location**, **Service Account Key** (JSON) |
+| `vertex` | **GCP Router ID**, **Location**, **Service Account Key** (JSON) |
 
 **Endpoint URL** sits above them and is optional on a connection: leaving it
 blank keeps the provider default. Routerly encrypts OAuth and web-session

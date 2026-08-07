@@ -36,7 +36,7 @@ models:
     provider: openai
     model: gpt-5-mini
     apiBase: http://localhost:3000/v1
-    apiKey: sk-rt-YOUR_PROJECT_TOKEN
+    apiKey: sk-rt-YOUR_ROUTER_TOKEN
 ```
 
 To use the Anthropic Messages API instead:
@@ -51,7 +51,7 @@ models:
     provider: anthropic
     model: claude-haiku-4-5
     apiBase: http://localhost:3000
-    apiKey: sk-rt-YOUR_PROJECT_TOKEN
+    apiKey: sk-rt-YOUR_ROUTER_TOKEN
 ```
 
 Save the file — Continue reloads configuration automatically.

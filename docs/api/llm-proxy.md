@@ -9,18 +9,18 @@ The LLM proxy exposes standard-compatible endpoints. Any client that speaks the 
 
 **Base URL:** `http://localhost:3000/v1`
 
-**Authentication:** `Authorization: Bearer sk-rt-YOUR_PROJECT_TOKEN`
+**Authentication:** `Authorization: Bearer sk-rt-YOUR_ROUTER_TOKEN`
 
-The proxy also accepts the Anthropic SDK's native `x-api-key: sk-rt-YOUR_PROJECT_TOKEN` header, so an Anthropic SDK client works drop-in by pointing its base URL at Routerly. `Authorization: Bearer` takes precedence when both are present.
+The proxy also accepts the Anthropic SDK's native `x-api-key: sk-rt-YOUR_ROUTER_TOKEN` header, so an Anthropic SDK client works drop-in by pointing its base URL at Routerly. `Authorization: Bearer` takes precedence when both are present.
 
 ---
 
 ## Content Guardrails and PII Scrubbing
 
-When the project enables them, security stages run on `/v1/chat/completions`,
+When the router enables them, security stages run on `/v1/chat/completions`,
 `/v1/responses` and `/v1/messages` before and after routing to the provider:
 
-- **Guardrails:** message content is checked against the project's configured
+- **Guardrails:** message content is checked against the router's configured
   security rules (regex, semantic similarity, topic judge, moderation judge, injection
   detection). Each rule can have block and/or log actions enabled independently.
   When a rule with `block: true` triggers, the request/response is rejected and
@@ -32,7 +32,7 @@ When the project enables them, security stages run on `/v1/chat/completions`,
   record. Each PII policy specifies whether to scrub requests, responses, or both.
 
 Array (multimodal) message content is not inspected by either stage. See the
-[management API](./management.md) for the `guardrails` and `pii` project configuration.
+[management API](./management.md) for the `guardrails` and `pii` router configuration.
 
 ### Guardrail block — wire format
 
@@ -292,17 +292,17 @@ Anthropic-compatible token counting endpoint. Returns the number of input tokens
 
 ---
 
-## Project Resolution
+## Router Resolution
 
-There is no project prefix in the proxy URL. The project is resolved from the Bearer token: a project token belongs to exactly one project, and that project's routing configuration, budgets and guardrails apply to the request.
+There is no router prefix in the proxy URL. The router is resolved from the Bearer token: a router token belongs to exactly one router, and that router's routing configuration, budgets and guardrails apply to the request.
 
-To send traffic to a different project, use that project's token.
+To send traffic to a different router, use that router's token.
 
 ---
 
 ## Pass-Through Proxy
 
-Any path not listed above is transparently proxied to the project's upstream provider. This covers embeddings, audio, file uploads, fine-tuning, and any endpoint the provider adds in the future.
+Any path not listed above is transparently proxied to the router's upstream provider. This covers embeddings, audio, file uploads, fine-tuning, and any endpoint the provider adds in the future.
 
 ```
 ANY /<provider-path>
@@ -312,7 +312,7 @@ ANY /<provider-path>
 
 **Response:** streamed back as-is, with hop-by-hop headers (`content-encoding`, `transfer-encoding`, etc.) stripped.
 
-**Model selection:** if the request body contains a `model` field, Routerly matches it against the project's configured models. If no match, the first project model is used.
+**Model selection:** if the request body contains a `model` field, Routerly matches it against the router's configured models. If no match, the first router model is used.
 
 **Reserved paths** (`/`, `/health`, `/api/*`, `/dashboard*`) are never proxied.
 

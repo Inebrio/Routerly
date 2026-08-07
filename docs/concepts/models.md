@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Models
 
-A **model** in Routerly is a registered entry that maps a model identifier to a provider, its API credentials, pricing, and capabilities. You register each model once, and it becomes available to all projects.
+A **model** in Routerly is a registered entry that maps a model identifier to a provider, its API credentials, pricing, and capabilities. You register each model once, and it becomes available to all routers.
 
 ---
 
@@ -93,16 +93,16 @@ Capabilities control which models the **capability** routing policy will select.
 
 ---
 
-## Assigning Models to Projects
+## Assigning Models to Routers
 
-A model is not usable in a project until it is assigned. From the CLI, add one model at a time:
+A model is not usable in a router until it is assigned. From the CLI, add one model at a time:
 
 ```bash
-routerly project model add "My App" gpt-5-mini
-routerly project model add "My App" claude-haiku-4-5 --prompt "Use for short, cheap answers"
+routerly router model add "My App" gpt-5-mini
+routerly router model add "My App" claude-haiku-4-5 --prompt "Use for short, cheap answers"
 ```
 
-From the dashboard, open the project → **Routing** tab, then drag and drop models into the routing configuration.
+From the dashboard, open the router → **Routing** tab, then drag and drop models into the routing configuration.
 
 ---
 
@@ -120,7 +120,7 @@ Cloning is useful when you have a fine-tuned variant of a base model and want to
 ## Removing a Model
 
 :::warning
-Removing a model that is assigned to active projects will cause routing failures for those projects. Remove the model from all project configurations first.
+Removing a model that is assigned to active routers will cause routing failures for those routers. Remove the model from all router configurations first.
 :::
 
 ```bash
