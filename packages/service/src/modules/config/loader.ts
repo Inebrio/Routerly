@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, rename, unlink, chmod } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, unlink, chmod, stat } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
@@ -189,12 +189,25 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
       retries: { retries: 10, minTimeout: 50, maxTimeout: 500 },
     });
     // Atomic publish: full content to temp, then rename over the target.
-    // Secret-tier files (SECRET_KEYS) are written 0600 from the start —
-    // rename() preserves the temp file's mode, so without this every write
-    // re-created the target at the umask default (typically 0644) and
-    // re-tripped permission-guard's startup check on the very next boot.
+    // Secret-tier files (SECRET_KEYS) are always written 0600. General-tier
+    // files preserve whatever mode the existing target currently has — once
+    // an operator has explicitly chmod'd a file (via permission-guard's
+    // fixPermissions()), a later writeConfig() call (e.g. the audit-log
+    // write triggered by the fix action itself) must not silently regress it
+    // back to the umask default. A file that doesn't exist yet has no mode
+    // to preserve and falls back to whatever writeFile() naturally produces.
+    let mode: number | undefined;
+    if ((SECRET_KEYS as readonly string[]).includes(key)) {
+      mode = 0o600;
+    } else {
+      try {
+        mode = (await stat(filePath)).mode & 0o777;
+      } catch {
+        // File doesn't exist yet — no mode to preserve, use the default.
+      }
+    }
     const writeOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
-    if ((SECRET_KEYS as readonly string[]).includes(key)) writeOptions.mode = 0o600;
+    if (mode !== undefined) writeOptions.mode = mode;
     await writeFile(tmpPath, JSON.stringify(data, null, 2), writeOptions);
     await rename(tmpPath, filePath);
   } catch (err) {
