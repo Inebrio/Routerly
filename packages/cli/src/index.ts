@@ -26,6 +26,7 @@ import { makeOptimizersCommand } from './commands/optimizers.js';
 import { makeExperimentsCommand } from './commands/experiments.js';
 import { makeClientsCommand } from './commands/clients.js';
 import { makeMcpCommand } from './commands/mcp.js';
+import { makePermissionsCommand } from './commands/permissions.js';
 
 const program = new Command();
 
@@ -59,5 +60,6 @@ program.addCommand(makeOptimizersCommand());
 program.addCommand(makeExperimentsCommand());
 program.addCommand(makeClientsCommand());
 program.addCommand(makeMcpCommand());
+program.addCommand(makePermissionsCommand());
 
 program.parse(process.argv);
