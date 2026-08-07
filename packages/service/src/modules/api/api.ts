@@ -14,6 +14,7 @@ import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.j
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
 import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
+import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validatePassthroughSlug } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
@@ -1206,6 +1207,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const candidateError = validateOrchestratorCandidates({ kind, candidates, routers });
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
+      const policiesError = validateOrchestratorPolicies(kind, req.body.policies);
+      if (policiesError) throw new ConfigUpdateAbort(400, { error: policiesError });
       const slugError = validatePassthroughSlug({ kind, slug, models: req.body.models, routers });
       if (slugError) throw new ConfigUpdateAbort(slugError.status, { error: slugError.message });
       return [...routers, router];
@@ -1284,6 +1287,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         kind, candidates: candidatesUpdate.candidates, routers, selfId: req.params.id,
       });
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
+      // Policies: omitted body = leave unchanged and unvalidated — a legacy record
+      // saved before this validator existed must not block an unrelated update.
+      if (req.body.policies !== undefined) {
+        const policiesError = validateOrchestratorPolicies(kind, req.body.policies);
+        if (policiesError) throw new ConfigUpdateAbort(400, { error: policiesError });
+      }
       // Slug: omitted = leave unchanged (same fallback as candidates above).
       const effectiveSlug = slug !== undefined ? slug : routers[index]!.slug;
       const slugError = validatePassthroughSlug({
