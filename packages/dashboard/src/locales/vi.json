@@ -1159,10 +1159,7 @@
       "empty": "Chưa có bộ định tuyến nào.",
       "emptyFiltered": "Không có router loại này.",
       "tabs": {
-        "all": "Tất cả",
-        "router": "Router",
-        "orchestrator": "Điều phối",
-        "passthrough": "Thông qua"
+        "all": "Tất cả"
       },
       "columns": {
         "name": "Tên",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Xóa bộ định tuyến này?",
       "errors": {
         "deleteFailed": "Lỗi khi xóa bộ định tuyến"
-      }
+      },
+      "newOrchestrator": "Orchestrator mới",
+      "newPassthrough": "Passthrough mới"
     },
     "layout": {
       "notFound": "Không tìm thấy bộ định tuyến",
@@ -1197,7 +1196,8 @@
       "newRouter": "Bộ định tuyến mới",
       "loading": "Đang tải...",
       "routerId": "ID bộ định tuyến:",
-      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này"
+      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này",
+      "newKind": "{{kind}} mới"
     },
     "dashboard": {
       "period": "Khoảng thời gian",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Loại",
-        "kindAriaLabel": "Loại bộ định tuyến",
         "kindFixedHint": "Đã sửa khi bộ định tuyến được tạo.",
         "routerName": "Tên bộ định tuyến",
         "routerNamePlaceholder": "Ứng dụng của tôi",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Vết luôn ghi lại siêu dữ liệu (mô hình, điểm, token, chi phí, độ trễ). Bật điều này để cũng ghi lại các nhắc được gửi và câu trả lời nhận được. Chúng được lưu trữ với bản ghi sử dụng và hiển thị cho bất kỳ ai có thể đọc báo cáo.",
         "capturePromptsAndAnswers": "Nắm bắt nhắc nhở và câu trả lời",
         "saveChanges": "Lưu các thay đổi",
-        "createRouter": "Tạo bộ định tuyến"
+        "createRouter": "Tạo bộ định tuyến",
+        "passthroughPath": "Đường dẫn",
+        "passthroughPathHint": "Trở thành một phần của URL mà các khách hàng gọi: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Tạo Orchestrator",
+        "createPassthrough": "Tạo Passthrough"
       }
     },
     "orchestrator": {

@@ -1159,10 +1159,7 @@
       "empty": "No routers yet.",
       "emptyFiltered": "या प्रकारचे कोणतेही राउटर नाही.",
       "tabs": {
-        "all": "सर्व",
-        "router": "राउटर",
-        "orchestrator": "ऑर्केस्ट्रेटर",
-        "passthrough": "पास-थ्रु"
+        "all": "सर्व"
       },
       "columns": {
         "name": "Name",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Delete this router?",
       "errors": {
         "deleteFailed": "Error deleting router"
-      }
+      },
+      "newOrchestrator": "नवीन ऑर्केस्ट्रेटर",
+      "newPassthrough": "नवीन पास-थ्रू"
     },
     "layout": {
       "notFound": "Router not found",
@@ -1197,7 +1196,8 @@
       "newRouter": "New Router",
       "loading": "Loading...",
       "routerId": "Router ID:",
-      "saveFirstHint": "Save the router first to unlock this tab"
+      "saveFirstHint": "Save the router first to unlock this tab",
+      "newKind": "नवीन {{kind}}"
     },
     "dashboard": {
       "period": "Period",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Kind",
-        "kindAriaLabel": "Router Kind",
         "kindFixedHint": "Fixed once the router is created.",
         "routerName": "Router Name",
         "routerNamePlaceholder": "My App",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also record the prompts sent and the answers received. They are stored with the usage record and visible to anyone who can read reports.",
         "capturePromptsAndAnswers": "Capture prompts and answers",
         "saveChanges": "Save Changes",
-        "createRouter": "Create Router"
+        "createRouter": "Create Router",
+        "passthroughPath": "मार्ग",
+        "passthroughPathHint": "क्लायंटद्वारे कॉल केलेल्या URL चा भाग बनते: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ऑर्केस्ट्रेटर तयार करा",
+        "createPassthrough": "पास-थ्रू तयार करा"
       }
     },
     "orchestrator": {

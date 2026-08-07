@@ -1159,10 +1159,7 @@
       "empty": "Nog geen routers.",
       "emptyFiltered": "Geen routers van dit type.",
       "tabs": {
-        "all": "Alle",
-        "router": "Router",
-        "orchestrator": "Orkestrator",
-        "passthrough": "Doorvoer"
+        "all": "Alle"
       },
       "columns": {
         "name": "Naam",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Deze router verwijderen?",
       "errors": {
         "deleteFailed": "Fout bij het verwijderen van router"
-      }
+      },
+      "newOrchestrator": "Nieuwe Orchestrator",
+      "newPassthrough": "Nieuwe Passthrough"
     },
     "layout": {
       "notFound": "Router niet gevonden",
@@ -1197,7 +1196,8 @@
       "newRouter": "Nieuwe router",
       "loading": "Laden...",
       "routerId": "Router-ID:",
-      "saveFirstHint": "Sla de router eerst op om dit tabblad ontgrendelen"
+      "saveFirstHint": "Sla de router eerst op om dit tabblad ontgrendelen",
+      "newKind": "Nieuwe {{kind}}"
     },
     "dashboard": {
       "period": "Periode",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Soort",
-        "kindAriaLabel": "Router-soort",
         "kindFixedHint": "Vast zodra de router is aangemaakt.",
         "routerName": "Routernaam",
         "routerNamePlaceholder": "Mijn app",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Traces registreren altijd metagegevens (modellen, scores, tokens, kosten, latentie). Schakel dit in om ook de verzonden prompts en ontvangen antwoorden op te slaan. Ze worden opgeslagen met de gebruiksrecord en zijn zichtbaar voor iedereen die rapporten kan lezen.",
         "capturePromptsAndAnswers": "Prompts en antwoorden vastleggen",
         "saveChanges": "Wijzigingen opslaan",
-        "createRouter": "Router aanmaken"
+        "createRouter": "Router aanmaken",
+        "passthroughPath": "Pad",
+        "passthroughPathHint": "Wordt onderdeel van de URL die clients aanroepen: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orchestrator maken",
+        "createPassthrough": "Passthrough maken"
       }
     },
     "orchestrator": {

@@ -1159,10 +1159,7 @@
       "empty": "Hələ router yoxdur.",
       "emptyFiltered": "Bu cinsden marşrutçu yoxdur.",
       "tabs": {
-        "all": "Hamısı",
-        "router": "Marşrutçu",
-        "orchestrator": "Orkestrator",
-        "passthrough": "Keçiş"
+        "all": "Hamısı"
       },
       "columns": {
         "name": "Ad",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Bu router silinsin?",
       "errors": {
         "deleteFailed": "Router-i silmə xətası"
-      }
+      },
+      "newOrchestrator": "Yeni Orkestrator",
+      "newPassthrough": "Yeni Passthrough"
     },
     "layout": {
       "notFound": "Router tapılmadı",
@@ -1197,7 +1196,8 @@
       "newRouter": "Yeni Router",
       "loading": "Yüklənir...",
       "routerId": "Router ID:",
-      "saveFirstHint": "Bu tabı açmaq üçün əvvəlcə router-i saxlayın"
+      "saveFirstHint": "Bu tabı açmaq üçün əvvəlcə router-i saxlayın",
+      "newKind": "Yeni {{kind}}"
     },
     "dashboard": {
       "period": "Dövr",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Növ",
-        "kindAriaLabel": "Router Növü",
         "kindFixedHint": "Router yaradıldıqdan sonra sabitdir.",
         "routerName": "Router Adı",
         "routerNamePlaceholder": "Mənim Tətbiqim",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "İzlər həmişə metadatanı qeyd edir (modellər, ballar, tokenlər, dəyər, gecikmə). Göndərilən sorğuları və alınan cavabları da qeyd etmək üçün bunu aktivləşdirin. Onlar istifadə qeydi ilə birgə saxlanılır və hesabatları oxuya bilən hər kəsə görünür.",
         "capturePromptsAndAnswers": "Sorğuları və cavabları qeyd et",
         "saveChanges": "Dəyişiklikləri Saxla",
-        "createRouter": "Router Yarat"
+        "createRouter": "Router Yarat",
+        "passthroughPath": "Yol",
+        "passthroughPathHint": "Müşterilerin çağırdığı URL'nin bir hissəsi olur: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orkestrator Yarat",
+        "createPassthrough": "Passthrough Yarat"
       }
     },
     "orchestrator": {

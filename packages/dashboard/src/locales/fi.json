@@ -1159,10 +1159,7 @@
       "empty": "Reitittimiä ei ole vielä.",
       "emptyFiltered": "Ei reitittimiä tästä tyypistä.",
       "tabs": {
-        "all": "Kaikki",
-        "router": "Reititin",
-        "orchestrator": "Orkesteri",
-        "passthrough": "Läpikulku"
+        "all": "Kaikki"
       },
       "columns": {
         "name": "Nimi",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Poistetaanko tämä reititin?",
       "errors": {
         "deleteFailed": "Virhe poistettaessa reititintä"
-      }
+      },
+      "newOrchestrator": "Uusi Orkestroija",
+      "newPassthrough": "Uusi Passthrough"
     },
     "layout": {
       "notFound": "Reititintä ei löytynyt",
@@ -1197,7 +1196,8 @@
       "newRouter": "Uusi reititin",
       "loading": "Latautuu...",
       "routerId": "Reitittimen ID:",
-      "saveFirstHint": "Tallenna reititin ensin avataksesi tämän välilehden"
+      "saveFirstHint": "Tallenna reititin ensin avataksesi tämän välilehden",
+      "newKind": "Uusi {{kind}}"
     },
     "dashboard": {
       "period": "Ajanjakso",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Tyyppi",
-        "kindAriaLabel": "Reitittimen tyyppi",
         "kindFixedHint": "Kiinteä, kun reititin on luotu.",
         "routerName": "Reitittimen nimi",
         "routerNamePlaceholder": "Sovellukseni",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Jäljitykset tallentavat aina metatiedot (mallit, pisteet, tokenit, kustannus, vasteaika). Ota tämä käyttöön tallentaaksesi myös lähetetyt kehotteet ja saadut vastaukset. Ne tallennetaan käyttötietueen mukana ja näkyvät kaikille, joilla on lukuoikeus raportteihin.",
         "capturePromptsAndAnswers": "Tallenna kehotteet ja vastaukset",
         "saveChanges": "Tallenna muutokset",
-        "createRouter": "Luo reititin"
+        "createRouter": "Luo reititin",
+        "passthroughPath": "Polku",
+        "passthroughPathHint": "Tulee osaksi URL-osoitetta, jota asiakkaat kutsuvat: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Luo Orkestroija",
+        "createPassthrough": "Luo Passthrough"
       }
     },
     "orchestrator": {

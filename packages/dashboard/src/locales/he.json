@@ -1159,10 +1159,7 @@
       "empty": "עדיין אין נתבים.",
       "emptyFiltered": "אין נתבים מסוג זה.",
       "tabs": {
-        "all": "הכל",
-        "router": "נתב",
-        "orchestrator": "מתאם",
-        "passthrough": "מעבר ישיר"
+        "all": "הכל"
       },
       "columns": {
         "name": "שם",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "למחוק נתב זה?",
       "errors": {
         "deleteFailed": "שגיאה במחיקת הנתב"
-      }
+      },
+      "newOrchestrator": "אורקסטרטור חדש",
+      "newPassthrough": "Passthrough חדש"
     },
     "layout": {
       "notFound": "הנתב לא נמצא",
@@ -1197,7 +1196,8 @@
       "newRouter": "נתב חדש",
       "loading": "טוען...",
       "routerId": "מזהה נתב:",
-      "saveFirstHint": "שמור את הנתב ראשית כדי לפתוח כרטיסייה זו"
+      "saveFirstHint": "שמור את הנתב ראשית כדי לפתוח כרטיסייה זו",
+      "newKind": "{{kind}} חדש"
     },
     "dashboard": {
       "period": "תקופה",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "סוג",
-        "kindAriaLabel": "סוג הנתב",
         "kindFixedHint": "קבוע מרגע יצירת הנתב.",
         "routerName": "שם הנתב",
         "routerNamePlaceholder": "האפליקציה שלי",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "עקבות תמיד רושמות מטא-דאטה (מודלים, ניקודים, טוקנים, עלות, זמן תגובה). הפעל זאת כדי לרשום גם את הפרומפטים שנשלחו והתשובות שהתקבלו. הם נשמרים עם רשומת השימוש וגלויים לכל מי שיכול לקרוא דוחות.",
         "capturePromptsAndAnswers": "לכוד פרומפטים ותשובות",
         "saveChanges": "שמור שינויים",
-        "createRouter": "צור נתב"
+        "createRouter": "צור נתב",
+        "passthroughPath": "נתיב",
+        "passthroughPathHint": "הופך לחלק מ-URL שלקוחות קוראים אליו: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "צור אורקסטרטור",
+        "createPassthrough": "צור Passthrough"
       }
     },
     "orchestrator": {

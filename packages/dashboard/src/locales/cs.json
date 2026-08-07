@@ -1159,10 +1159,7 @@
       "empty": "Zatím žádné routery.",
       "emptyFiltered": "Žádné routery tohoto typu.",
       "tabs": {
-        "all": "Všechny",
-        "router": "Router",
-        "orchestrator": "Orchestrátor",
-        "passthrough": "Průchod"
+        "all": "Všechny"
       },
       "columns": {
         "name": "Název",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Smazat tento router?",
       "errors": {
         "deleteFailed": "Chyba při mazání routeru"
-      }
+      },
+      "newOrchestrator": "Nový Orchestrator",
+      "newPassthrough": "Nový Passthrough"
     },
     "layout": {
       "notFound": "Router nenalezen",
@@ -1197,7 +1196,8 @@
       "newRouter": "Nový router",
       "loading": "Načítání...",
       "routerId": "ID routeru:",
-      "saveFirstHint": "Nejprve router uložte pro odemčení této karty"
+      "saveFirstHint": "Nejprve router uložte pro odemčení této karty",
+      "newKind": "Nový {{kind}}"
     },
     "dashboard": {
       "period": "Období",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Typ",
-        "kindAriaLabel": "Typ routeru",
         "kindFixedHint": "Pevně stanoveno po vytvoření routeru.",
         "routerName": "Název routeru",
         "routerNamePlaceholder": "Moje aplikace",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Trasování vždy zaznamenává metadata (modely, skóre, tokeny, náklady, latenci). Zapněte tuto volbu, chcete-li zaznamenávat i odeslané prompty a přijaté odpovědi. Uchovávají se se záznamem využití a jsou viditelné pro každého, kdo si může přečíst reporty.",
         "capturePromptsAndAnswers": "Zaznamenávat prompty a odpovědi",
         "saveChanges": "Uložit změny",
-        "createRouter": "Vytvořit router"
+        "createRouter": "Vytvořit router",
+        "passthroughPath": "Cesta",
+        "passthroughPathHint": "Stává se součástí URL adresy, kterou volají klienti: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Vytvořit Orchestrator",
+        "createPassthrough": "Vytvořit Passthrough"
       }
     },
     "orchestrator": {

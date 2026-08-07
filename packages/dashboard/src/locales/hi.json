@@ -1159,10 +1159,7 @@
       "empty": "अभी कोई राउटर नहीं।",
       "emptyFiltered": "इस प्रकार का कोई राउटर नहीं।",
       "tabs": {
-        "all": "सभी",
-        "router": "राउटर",
-        "orchestrator": "ऑर्केस्ट्रेटर",
-        "passthrough": "पासथ्रू"
+        "all": "सभी"
       },
       "columns": {
         "name": "नाम",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "इस राउटर को हटाएं?",
       "errors": {
         "deleteFailed": "राउटर हटाने में त्रुटि"
-      }
+      },
+      "newOrchestrator": "नया ऑर्केस्ट्रेटर",
+      "newPassthrough": "नया पास-थ्रू"
     },
     "layout": {
       "notFound": "राउटर नहीं मिला",
@@ -1197,7 +1196,8 @@
       "newRouter": "नया राउटर",
       "loading": "लोड हो रहा है...",
       "routerId": "राउटर आईडी:",
-      "saveFirstHint": "इस टैब को अनलॉक करने के लिए पहले राउटर सहेजें"
+      "saveFirstHint": "इस टैब को अनलॉक करने के लिए पहले राउटर सहेजें",
+      "newKind": "नया {{kind}}"
     },
     "dashboard": {
       "period": "अवधि",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "प्रकार",
-        "kindAriaLabel": "राउटर प्रकार",
         "kindFixedHint": "राउटर बनाने के बाद तय।",
         "routerName": "राउटर नाम",
         "routerNamePlaceholder": "मेरा ऐप",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "ट्रेस हमेशा मेटाडेटा (मॉडल, स्कोर, टोकन, लागत, विलंबता) रिकॉर्ड करते हैं। भेजे गए प्रॉम्प्ट और प्राप्त उत्तर भी रिकॉर्ड करने के लिए इसे चालू करें। उन्हें उपयोग रिकॉर्ड के साथ संग्रहीत किया जाता है और जो भी रिपोर्ट पढ़ सकते हैं उन्हें दृश्य।",
         "capturePromptsAndAnswers": "प्रॉम्प्ट और उत्तर कैप्चर करें",
         "saveChanges": "परिवर्तन सहेजें",
-        "createRouter": "राउटर बनाएं"
+        "createRouter": "राउटर बनाएं",
+        "passthroughPath": "पाथ",
+        "passthroughPathHint": "उन क्लाइंट्स द्वारा बुलाए जाने वाले URL का हिस्सा बन जाता है: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ऑर्केस्ट्रेटर बनाएं",
+        "createPassthrough": "पास-थ्रू बनाएं"
       }
     },
     "orchestrator": {
