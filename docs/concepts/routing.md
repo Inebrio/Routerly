@@ -161,8 +161,11 @@ A `passthrough`-kind Router does not select a model at all. It is reached at
 Router's name at creation (disambiguated with a numeric suffix if another
 Passthrough Router already slugs to the same value) — there is no `--slug`
 flag or manual path field; the slug never changes afterward, even if the
-Router is renamed. Two things it does not require, unlike every other Router
-kind:
+Router is renamed. Because a Passthrough is reached by slug and never by
+name, its name only needs to be unique among other Passthroughs — it can
+share a name with an existing Router or Orchestrator. Router and Orchestrator
+names remain unique among themselves. Two things a Passthrough does not
+require, unlike every other Router kind:
 
 - **No Routerly authentication.** The path carries no Router token; the
   client's own `Authorization`/`x-api-key` header is forwarded unchanged to

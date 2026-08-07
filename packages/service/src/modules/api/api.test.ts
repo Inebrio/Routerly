@@ -1847,6 +1847,47 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
     const persisted = written.find(r => r.name === 'My OpenAI')
     expect(persisted.tokens).toEqual([])
   })
+
+  it('allows a Passthrough name that already belongs to a plain Router — the two namespaces are separate', async () => {
+    setupAdminAuth()
+    const plainRouter = { id: 'r-1', name: 'Support', kind: 'router', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [plainRouter]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Support', kind: 'passthrough' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('still returns 409 for a plain Router name already used by another plain Router', async () => {
+    setupAdminAuth()
+    const plainRouter = { id: 'r-1', name: 'Support', kind: 'router', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [plainRouter]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Support', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+  })
 })
 
 describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
