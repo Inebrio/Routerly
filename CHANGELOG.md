@@ -30,6 +30,7 @@ Creating a Router, Orchestrator, or Passthrough no longer goes through one share
 - Secret config files (`models.json`, `connections.json`, `routers.json`, `users.json`) no longer revert to unsafe file permissions on every write — `writeConfig()` now preserves the `0600` mode instead of recreating the file at the umask default, which previously re-tripped the startup permission guard on the very next write after a fix.
 - Usage records no longer cause unbounded `usage.json` growth or an OOM kill under sustained traffic (#124) — usage is now appended to `usage.ndjson`, an append-only log with a retention sweep, instead of being rewritten in full on every request.
 - Dashboard: fixing unsafe config file permissions (from the blocking modal or from Settings → Security) now refreshes every permission-related UI on the page immediately — the top banner, the blocking modal, and the Settings section previously each polled independently and stayed stale until a manual reload.
+- Orchestrators now honor their own `health`/`rate-limit`/`fairness` routing policies (including `enabled: false` and custom windows) when scoring candidate routers, instead of always applying hardcoded defaults regardless of what was saved.
 
 ### Breaking changes
 
