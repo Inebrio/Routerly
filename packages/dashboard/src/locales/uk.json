@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Автоматично",
+      "dark": "Темна",
+      "light": "Світла"
+    },
+    "themeCycle": {
+      "title": "Тема: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Розгорнути панель",
+      "collapse": "Згорнути панель"
+    },
+    "tagline": "Один шлюз. Будь-яка модель ШІ. Повний контроль.",
+    "nav": {
+      "overview": "Огляд",
+      "providers": "Постачальники",
+      "models": "Моделі",
+      "profiles": "Профілі",
+      "routers": "Маршрутизатори",
+      "experiments": "Експерименти",
+      "usage": "Використання",
+      "playground": "Майданчик",
+      "settings": "Налаштування",
+      "connectApp": "Підключити програму",
+      "help": "Довідка",
+      "signOut": "Вийти"
+    },
+    "banner": {
+      "permissionWarning": "Деякі файли конфігурації мають відкритий доступ ({{files}}). Запуск та запити працюють, але виправте це з хост-файлової системи, коли буде вільний час.",
+      "dismiss": "Закрити",
+      "updateAvailable": "Routerly v{{latest}} доступна. Ви використовуєте v{{current}}.",
+      "updateLink": "Оновити в Налаштуваннях",
+      "mfaRequired": "Двофакторна автентифікація необхідна для цього екземпляра.",
+      "mfaLink": "Налаштуйте 2FA у своєму профілі",
+      "mfaSuffix": "щоб захистити свій обліковий запис.",
+      "telemetryTitle": "Routerly ніколи не надсилає дані автоматично.",
+      "telemetryBody": "Хотіли б ви допомогти, надіславши анонімні метрики встановлення? Тільки тип подій, версія, платформа та випадковий ID без особистих даних та IP-адреси.",
+      "telemetryLink": "Що надсилається?",
+      "telemetryYes": "Так, допомогти",
+      "telemetryNo": "Ні, дякую"
+    },
+    "language": {
+      "label": "Мова"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} секунду тому",
+      "secondsAgo_other": "{{count}} секунд тому",
+      "minutesAgo": "{{count}} хвилину тому",
+      "minutesAgo_other": "{{count}} хвилин тому",
+      "hoursAgo": "{{count}} годину тому",
+      "hoursAgo_other": "{{count}} годин тому",
+      "daysAgo": "{{count}} день тому",
+      "daysAgo_other": "{{count}} днів тому"
+    },
+    "confirm": "Підтвердити",
+    "cancel": "Скасувати",
+    "remove": "Видалити",
+    "select": "Вибрати...",
+    "search": "Пошук...",
+    "noResults": "Немає результатів",
+    "noRemainingOptions": "Немає решти опцій",
+    "apply": "Застосувати",
+    "saved": "Збережено",
+    "showLess": "Показати менше",
+    "roles": "Ролі",
+    "permissions": "Дозволи",
+    "notifications": {
+      "title": "Сповіщення",
+      "markAllRead": "Позначити все як прочитане",
+      "empty": "Немає сповіщень",
+      "viewAll": "Переглянути все сповіщення"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Вибрати період",
+      "recent": "Нещодавно",
+      "ranges": "Діапазони",
+      "from": "З",
+      "to": "До"
+    },
+    "permissionGuard": {
+      "fixFailed": "Не вдалося виправити дозволи",
+      "title": "Небезпечні дозволи на файли",
+      "defaultMessage": "Деякі файли мають небезпечні дозволи.",
+      "fixing": "Виправлення…",
+      "fixNow": "Виправити зараз"
+    },
+    "limitRows": {
+      "noLimits": "Обмеження не встановлені.",
+      "metricLabel": "Метрика",
+      "typeLabel": "Тип",
+      "periodLabel": "Період",
+      "everyLabel": "Кожні",
+      "maxCost": "Макс. вартість",
+      "maxCount": "Макс. кількість",
+      "maxTokens": "Макс. токенів",
+      "allCombosSet": "Всі комбінації метрики/періоду вже встановлені",
+      "addLimit": "Додати обмеження",
+      "metric": {
+        "cost": "Вартість",
+        "calls": "Виклики",
+        "input_tokens": "Вхідні токени",
+        "output_tokens": "Вихідні токени",
+        "total_tokens": "Загальні токени"
+      },
+      "period": {
+        "hourly": "Щогодини",
+        "daily": "Щодня",
+        "weekly": "Щотижня",
+        "monthly": "Щомісяця",
+        "yearly": "Щорічно"
+      },
+      "rollingUnit": {
+        "second": "секунда",
+        "minute": "хвилина",
+        "hour": "година",
+        "day": "день",
+        "week": "тиждень",
+        "month": "місяць"
+      },
+      "windowType": {
+        "period": "Період",
+        "rolling": "Розташунок"
+      },
+      "fmt": {
+        "requests": "{{value}} запитів",
+        "inputTokens": "{{value}} вхідних токенів",
+        "outputTokens": "{{value}} вихідних токенів",
+        "totalTokens": "{{value}} загальних токенів",
+        "everyRolling": "{{metric}} кожні {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} за {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Що маршрутизація заощадила",
+      "input": "Вхід",
+      "output": "Вихід",
+      "actual": "Фактично",
+      "clientCalls": "{{count}} виклик клієнта",
+      "clientCalls_other": "{{count}} викликів клієнта",
+      "comparedAgainst": ", порівняно з надісланням до кожної з",
+      "comparedAgainst_other": ", порівняно з надісланням їх усіх до кожної з",
+      "paidModelsInPlay": "{{count}} платна модель в грі",
+      "paidModelsInPlay_other": "{{count}} платних моделей в грі",
+      "metricCost": "Вартість",
+      "metricTokens": "Токени",
+      "totalCost": "Загальна вартість",
+      "routed": "Маршрутизовано: {{value}}",
+      "saved": "Заощаджено: {{value}}",
+      "usdThisPeriod": "USD за цей період",
+      "savedVsAlways": "{{value}} заощаджено ({{percent}}%) проти завжди {{model}}",
+      "tokens": "Токени",
+      "in": "Вхід: {{value}}",
+      "out": "Вихід: {{value}}",
+      "tokenSubWithCache": "{{in}} вхід · {{out}} вихід · {{cached}} в кеші",
+      "tokenSub": "{{in}} вхід · {{out}} вихід",
+      "cutByOptimizers": "{{value}} зменшено оптимізаторами",
+      "fewerThanAlways": "{{value}} менше, ніж завжди {{model}}, орієнтовно"
+    },
+    "optimizerSteps": {
+      "downloaded": "Завантажено",
+      "thisStepRunsOn": "Цей крок запускається на",
+      "defaultCheckpoint": "Контрольна точка за замовчуванням"
+    },
+    "routingPolicies": {
+      "title": "Політики маршрутизації",
+      "subtitle": "Політики визначають, як маршрутизуються запити. Вони виконуються послідовно зверху вниз.",
+      "removePolicy": "Видалити політику",
+      "removeIntent": "Видалити намір",
+      "removeExample": "Видалити приклад",
+      "routingModels": "Маршрутизація моделей",
+      "embeddingModels": "Моделі вбудовування",
+      "maxCompletionTokens": "Макс. токенів завершення",
+      "maxPromptChars": "Макс. символів підказки",
+      "similarityThreshold": "Поріг схожості",
+      "previousMessages": "Попередні повідомлення",
+      "intents": "Наміри",
+      "confidenceThreshold": "Поріг впевненості",
+      "ambiguityMargin": "Маржа неоднозначності",
+      "maxCallsPerWindow": "Макс. викликів за вікном",
+      "addFallbackModel": "Додати резервну модель",
+      "autoRoutingLabel": "Автоматична маршрутизація",
+      "autoRoutingHint": "Якщо увімкнено, трафік розподіляється без спеціальних підказок. Якщо відключено, ви можете написати конкретні підказки, які інструктують ШІ, коли вибирати кожну цільову модель.",
+      "additionalPromptInfoLabel": "Додаткова інформація підказки",
+      "additionalPromptInfoPlaceholder": "Додаткові інструкції для включення в підказку маршрутизації...",
+      "addExamplePlaceholder": "Додайте приклад та натисніть Enter…",
+      "addIntentPlaceholder": "Додайте намір та натисніть Enter…",
+      "addPolicyPlaceholder": "Додайте політику...",
+      "labels": {
+        "llm": "Політика маршрутизації ШІ",
+        "rate-limit": "Політика обмеження частоти",
+        "budget-remaining": "Політика залишку бюджету",
+        "semantic-intent": "Політика семантичного наміру",
+        "health": "Політика здоров'я",
+        "context": "Політика контексту",
+        "capability": "Політика можливостей",
+        "performance": "Політика продуктивності",
+        "fairness": "Політика справедливості",
+        "cheapest": "Політика найдешевшої ціни",
+        "model-preference": "Політика переваги моделі"
+      },
+      "descriptions": {
+        "context": "Оцінює моделі на основі доступного контексту. Присвоює 0 моделям, у яких контекстне вікно менше, ніж розраховувана довжина запиту, запобігаючи помилкам усічення.",
+        "cheapest": "Оцінює моделі обернено пропорційно до їхніх витрат на токени. Найдешевша модель отримує 1.0, найдорожча отримує 0.0, допомагаючи зменшити витрати API за запитами.",
+        "health": "Оцінює моделі на основі недавного рівня помилок, використовуючи експоненціальне затухання (недавні помилки мають більшу вагу). Застосовує автоматичний вимикач, який встановлює оцінку на 0, коли зважена частота помилок перевищує критичний поріг.",
+        "performance": "Оцінює моделі на основі їхньої недавної середньої затримки, використовуючи експоненціальне затухання. Найшвидша модель отримує 1.0, найповільніша отримує 0.0. Моделі без недавних даних за замовчуванням отримують 1.0.",
+        "llm": "Використовує модель ШІ для оцінки кандидатів на основі семантичного змісту запиту. Підтримує керівні підказки маршрутизації для кожної моделі та враховує залишок бюджету, коли встановлені обмеження.",
+        "capability": "Жорсткий фільтр: присвоює 0 моделям, яким явно не вистачає функції, необхідної запиту (зір, виклик функцій, режим JSON). Моделі без явних деклараційних можливостей не штрафуються.",
+        "rate-limit": "Штрафує моделі з високою недавною частотою викликів, щоб зменшити ризик досягнення меж частоти постачальника (HTTP 429). Підтримує настроюваний жорсткий поріг, який примусово встановлює оцінку на 0.",
+        "fairness": "Розподіляє трафік рівномірно, штрафуючи моделі, які нещодавно отримали більше успішних викликів. Діє як м'яка циклічна маршрутизація, щоб запобігти концентрації навантаження на одній моделі.",
+        "budget-remaining": "Оцінює моделі на основі залишку бюджету всіх настроєних обмежень. Переважає моделі з більшим місцем до досягнення їхніх порогів, активно розповсюджуючи споживання.",
+        "semantic-intent": "Класифікує запит за семантичним наміром, використовуючи вбудовування, потім обмежує кандидатський пул моделями, відображеними до того наміру. Впевнені матчі жорстко фільтрують пул; неоднозначні матчі об'єднують топ-2 пули; невідомі запити пропускають всіх кандидатів.",
+        "model-preference": "Коли клієнт запитує конкретну модель (не routerly/ada), надає настроювальну бонусну оцінку цій моделі. Коли переважу не виражено, політика утримується. Позиція в списку контролює, наскільки переважу важить проти інших політик."
+      },
+      "selectModel": "Вибрати модель"
+    },
+    "securityRules": {
+      "applyTo": "Застосувати до",
+      "streamingBufferSize": "Розмір буфера потокової передачі (символи)",
+      "entityTypes": "Типи сутностей",
+      "target": "Ціль",
+      "embeddingModel": "Модель вбудовування",
+      "judgeModel": "Модель судді",
+      "contentGuardrails": "Охоронні системи вмісту",
+      "piiPolicies": "Політики ПІД",
+      "addSecurityPolicyPlaceholder": "Додайте політику безпеки...",
+      "removePolicyTooltip": "Видалити політику",
+      "deleteRuleAriaLabel": "Видалити правило",
+      "embeddingModelPlaceholder": "Вибрати модель вбудовування...",
+      "fallbackModelsLabel": "Резервні моделі (опціонально, спробуються по порядку)",
+      "fallbackModelsPlaceholder": "Немає резервних моделей...",
+      "exampleTextsLabel": "Текстові приклади для блокування (один на рядок)",
+      "exampleTextsPlaceholder": "Як я можу зламати...\n...",
+      "similarityThresholdLabel": "Поріг схожості:",
+      "judgeModelPlaceholder": "Вибрати модель судді...",
+      "allowedTopicsLabel": "Дозволені теми (природна мова)",
+      "allowedTopicsPlaceholder": "Підтримка клієнтів для програмних продуктів. Технічне усунення проблем. Питання щодо виставлення рахунків.",
+      "onTopicThresholdLabel": "Блокувати, якщо оцінка актуальності нижче:",
+      "harmThresholdLabel": "Блокувати, якщо оцінка шкоди вище:",
+      "customInstructionsLabel": "Спеціальні інструкції",
+      "customInstructionsPlaceholder": "Ви класифікатор безпеки вмісту. Оцініть наступний текст на наявність шкідливого змісту.\nКатегорії: мова ненависті, насильство, сексуальний вміст, самошкода.\nВідповідайте ТІЛЬКИ об'єктом JSON: {\"score\": <number between 0 and 1>}",
+      "customInstructionsRequired": "Спеціальні інструкції необхідні.",
+      "enabledLabel": "Увімкнено",
+      "contentGuardrailsHint": "Перевіряє запити та відповіді за встановленими правилами. Активна, коли налаштовано хоча б одне правило.",
+      "securityPoliciesHeading": "Політики безпеки",
+      "noSecurityPolicies": "Немає налаштованих політик безпеки.",
+      "piiPoliciesHint": "Виявляє та редагує особисті дані. Кожна політика спрямована на введення запиту, відповідь моделі або обидва, та контролює власний набір сутностей.",
+      "noPiiPolicies": "Немає налаштованих політик ПІД.",
+      "addPolicyButton": "+ Додати політику",
+      "injectionWarningTitle": "Корисне навантаження запиту змінено впорскуванням",
+      "injectionWarningBody": "Одне або більше правил впорскують свою інструкцію в системну підказку вихідного запиту, тому корисне навантаження, надіслане постачальнику, змінено. Додатковий виклик моделі не здійснюється, і ніщо не блокується; модель, яка обслуговує, самостійно застосовує інструкцію.",
+      "streamingDisabledWarningTitle": "Потокова передача відключена для цього маршрутизатора",
+      "streamingDisabledWarningBody": "Одне або більше правил налаштовані на блокування відповідей (ціль: відповідь або обидві). Оскільки вся відповідь повинна бути проінспектована перед прийняттям рішення про блокування, Routerly утримує відповідь повністю перед поверненням її клієнту. Потокова передача недоступна, коли активно правило блокування відповідей; клієнти отримуватимуть повну відповідь за один раз замість поступових фрагментів."
+    },
+    "connectionFields": {
+      "azureResourceName": "Назва ресурсу Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Назва ресурсу Azure OpenAI (з портала Azure).",
+      "deploymentId": "ID розгортання",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Назва розгортання, яку ви створили в Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Версія API",
+      "azureApiVersionDefaultHint": "(за замовчуванням: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Регіон AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID ключа доступу AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Таємний ключ доступу AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Залиште порожнім, щоб зберегти наявне",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Токен сеансу",
+      "awsSessionTokenOptionalHint": "(опціонально, для тимчасових облікових даних)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID маршрутизатора GCP",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Місцезнаходження",
+      "gcpLocationDefaultHint": "(за замовчуванням: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Ключ сервісного облікового запису",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL кінцевої точки",
+      "optional": "(опціонально)",
+      "webProvider": {
+        "unofficialWarningTitle": "Неофіційний постачальник користуйтеся на свій ризик.",
+        "unofficialWarningBody": "Ця інтеграція спирається на недокументований внутрішній API, який може змінитися або зламатися без попередження. Це може порушити Умови обслуговування постачальника та призвести до призупинення облікового запису.",
+        "accessTokenLabel": "Маркер доступу",
+        "sessionTokenLabel": "Токен сеансу",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Вставте значення cookies sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Перебуваючи в системі ChatGPT, відкрийте <code>https://chatgpt.com/api/auth/session</code> у новій вкладці. Скопіюйте значення поля <code>accessToken</code> (починається з <code>eyJ</code>). Токен закінчується кожні 24 години. Для надійного доступу також заповніть поле <strong>cf_clearance</strong> нижче.",
+        "anthropicInstructions": "<strong>Як отримати ключ сеансу:</strong> Перебуваючи в системі Claude, відкрийте DevTools (F12) → Application → Cookies → <code>claude.ai</code> → скопіюйте значення cookies <code>sessionKey</code> (починається з <code>sk-ant-sid01-</code>). Ключ залишається дійсним, поки ви не вийдете."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Токен OAuth передплати",
+        "authFilePathLabel": "Шлях файлу автентифікації",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (за замовчуванням)",
+        "anthropicTitle": "Використовуйте свою передплату Claude Pro/Max.",
+        "anthropicRunCommandStep": "Запустіть цю команду та скопіюйте токен, який вона виводить:",
+        "anthropicPasteTokenStep": "Вставте токен у поле <em>Subscription OAuth Token</em> нижче.",
+        "termsNote": "Оновіть, коли закінчиться. Використання передплати через шлюз може порушити Умови обслуговування постачальника.",
+        "openaiTitle": "Використовуйте передплату ChatGPT Plus/Pro через програму Codex.",
+        "openaiLoginStep": "Увійдіть в програму Codex з вашим обліковим записом ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly читає ваш маркер доступу з <code>~/.codex/auth.json</code> та автоматично оновлює його. Немає необхідності копіювати/вставляти вручну.",
+        "openaiAuthFilePathStep": "Залиште поле <em>Auth file path</em> порожнім, щоб використовувати за замовчуванням, або введіть спеціальний шлях, якщо ваша програма Codex зберігає автентифікацію в іншому місці.",
+        "openaiTermsNote": "Використання передплати через шлюз може порушити Умови обслуговування постачальника."
+      },
+      "copyCode": {
+        "copiedTooltip": "Скопійовано!",
+        "copyTooltip": "Скопіювати в буфер обміну",
+        "copiedLabel": "Скопійовано",
+        "copyLabel": "Копіювати"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Копіювати",
+      "copiedLabel": "Скопійовано!",
+      "copyErrorHint": "Копіювання не вдалося, виберіть та скопіюйте вручну."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Клієнт MCP",
+      "hints": {
+        "claudeCode": "Запустіть один раз, у будь-якому місці. Claude Code зберігає сервер у <code>~/.claude.json</code>.",
+        "claudeDesktop": "Поставте це у <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (у Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), потім перезавантажте програму. Це запускає CLI, тому <code>routerly</code> має бути у вашому PATH.",
+        "codex": "Поставте це у <code>~/.codex/config.toml</code>. Codex читає токен із навколишнього середовища, тому експортуйте його у shell, з якої ви запускаєте Codex.",
+        "opencode": "Поставте це у <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Запустіть один раз. OpenClaw за замовчуванням використовує транспорт sse, який Routerly не обслуговує, тому транспорт встановлений явно.",
+        "cursor": "Поставте це у <code>~/.cursor/mcp.json</code>, або у <code>.cursor/mcp.json</code>, щоб обмежити його одним проектом.",
+        "cline": "Поставте це у <code>~/.cline/mcp.json</code>, або вставте його у Configure MCP Servers на панелі Cline.",
+        "zed": "Поставте це у ваш <code>settings.json</code> Zed, поряд з будь-якими іншими серверами контексту."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Незбережені зміни",
+      "message": "Ви маєте незбережені зміни. Якщо ви йдете зараз, ваші зміни будуть втрачені.",
+      "stay": "Залишитися",
+      "leaveAnyway": "Все одно йти"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Охоронні системи",
+        "pii": "ПІД",
+        "optimizers": "Оптимізатори",
+        "routerOverhead": "Накладні витрати маршрутизатора"
+      },
+      "policyType": {
+        "llm": "Маршрутизація ШІ",
+        "rateLimit": "Обмеження частоти",
+        "budgetRemaining": "Залишок бюджету",
+        "semanticIntent": "Семантичний намір",
+        "modelPreference": "Переважу моделі"
+      },
+      "rawDetails": "деталі сирої версії",
+      "technicalDetails": "технічні деталі",
+      "systemPrompt": "системна підказка",
+      "responseText": "текст відповіді",
+      "responseJson": "JSON відповіді",
+      "cacheEmbeddingCall": "ВИКЛИК ВБУДОВУВАННЯ КЕШУ",
+      "fallbackAttempt": "резервна спроба #{{attempt}}",
+      "embeddingModel": "Модель вбудовування",
+      "upstreamModel": "Модель вище за потоком",
+      "provider": "Постачальник",
+      "source": "Джерело",
+      "endpoint": "Кінцева точка",
+      "cacheHit": "ПОПАДАННЯ В КЕШ",
+      "ttlExtended": "TTL розширено",
+      "model": "Модель",
+      "similarity": "Схожість",
+      "embedding": "Вбудовування",
+      "cacheMiss": "ПРОМАХ КЕШУ",
+      "details": "деталі",
+      "excludedByLimits": "ВИКЛЮЧЕНО ЗА ОБМЕЖЕННЯМИ",
+      "finalRanking": "ОСТАТОЧНИЙ РЕЙТИНГ",
+      "noRankingData": "Немає даних рейтингу (запис може бути пошкоджений або з старої версії)",
+      "policyScores": "ОЦІНКИ ПОЛІТИКИ",
+      "weight": "вага {{value}}",
+      "allScores": "всі оцінки",
+      "noPolicyData": "Немає даних політики (запис може бути пошкоджений або з старої версії)",
+      "requestGuardrailBlocked": "ОХОРОННА СИСТЕМА ЗАПИТУ ЗАБЛОКОВАНА",
+      "requestGuardrailTriggered": "ОХОРОННА СИСТЕМА ЗАПИТУ АКТИВОВАНА",
+      "responseGuardrailBlocked": "ОХОРОННА СИСТЕМА ВІДПОВІДІ ЗАБЛОКОВАНА",
+      "responseGuardrailTriggered": "ОХОРОННА СИСТЕМА ВІДПОВІДІ АКТИВОВАНА",
+      "rule": "Правило",
+      "action": "Дія",
+      "guardrailsEvaluated": "ОХОРОННІ СИСТЕМИ ОЦІНЕНІ ({{target}})",
+      "ruleCount": "{{count}} правило",
+      "ruleCount_other": "{{count}} правил",
+      "promptInjection": "Впорскування підказки",
+      "injects": "впорскує",
+      "judgeResponse": "Відповідь судді",
+      "piiScrubbed": "ПІД ОЧИЩЕНО",
+      "piiScanned": "ПІД СКАНОВАНО ({{target}})",
+      "policies": "політики",
+      "entityTypes": "типи сутностей",
+      "customPatterns": "спеціальні шаблони",
+      "scanned": "скановано",
+      "redacted": "редаговано",
+      "took": "заняло",
+      "ms": "{{value}} мс",
+      "entityTypesScanned": "скановані типи сутностей",
+      "guardrailInjection": "ВПОРСКУВАННЯ ОХОРОННОЇ СИСТЕМИ",
+      "rules": "правила",
+      "chars": "символи",
+      "injectedText": "впорскений текст",
+      "optimizer": "ОПТИМІЗАТОР {{id}}",
+      "tokens": "токени",
+      "saved": "збережено",
+      "tok": "{{value}} символів",
+      "reason": "причина",
+      "budgetBlocked": "БЮДЖЕТ ЗАБЛОКОВАНИЙ",
+      "budgetOk": "БЮДЖЕТ В ПОРЯДКУ",
+      "egressSent": "ВИХІД НАДІСЛАНО",
+      "status": "статус",
+      "encoding": "кодування",
+      "frames": "кадри",
+      "bytes": "байти"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Мій профіль",
+      "subtitle": "Керуйте параметрами облікового запису"
+    },
+    "tabs": {
+      "profile": "Профіль",
+      "notifications": "Сповіщення",
+      "mcp": "MCP",
+      "preferences": "Переваги"
+    },
+    "notifications": {
+      "close": "Закрити",
+      "refresh": "Оновити",
+      "clear": "Очистити",
+      "empty": "Сповіщень не знайдено.",
+      "markAllRead": "Позначити все як прочитане",
+      "allCaughtUp": "Все в порядку",
+      "unreadCount": "{{count}} непрочитано",
+      "selectedCount": "{{count}} обрано",
+      "severity": {
+        "all": "Усе",
+        "info": "Інформація",
+        "warning": "Попередження",
+        "critical": "Критичне"
+      },
+      "status": {
+        "read": "Прочитано",
+        "unread": "Непрочитано"
+      },
+      "filters": {
+        "severity": "Серйозність",
+        "category": "Категорія",
+        "event": "Подія",
+        "date": "Дата",
+        "period": "Період",
+        "status": "Статус",
+        "all": "Усе",
+        "allCategories": "Усі категорії",
+        "allEvents": "Усі події",
+        "unreadOnly": "Тільки непрочитане"
+      },
+      "actions": {
+        "markRead": "Позначити як прочитане",
+        "markUnread": "Позначити як непрочитане",
+        "archive": "Архівувати"
+      },
+      "table": {
+        "severity": "Серйозність",
+        "event": "Подія",
+        "date": "Дата",
+        "status": "Статус",
+        "selectAll": "Вибрати все",
+        "selectRow": "Вибрати {{event}}",
+        "eventCount": "{{count}} подій"
+      },
+      "pagination": {
+        "previous": "← Попередня",
+        "next": "Наступна →",
+        "page": "Сторінка {{page}} з {{totalPages}}",
+        "total": "({{count}} всього)"
+      },
+      "detail": {
+        "ariaLabel": "Деталі сповіщення",
+        "details": "Деталі",
+        "noDetails": "Немає додаткових деталей.",
+        "eventsInIncident": "Події в цьому інциденті"
+      }
+    },
+    "security": {
+      "roleLabel": "Роль:",
+      "password": {
+        "heading": "Змінити пароль",
+        "currentLabel": "Поточний пароль",
+        "newLabel": "Новий пароль",
+        "newPlaceholder": "Мінімум 8 символів",
+        "confirmLabel": "Підтвердити новий пароль",
+        "success": "Пароль успішно змінено.",
+        "saving": "Збереження...",
+        "submit": "Змінити пароль",
+        "errors": {
+          "mismatch": "Паролі не збігаються.",
+          "tooShort": "Новий пароль має бути не менше 8 символів.",
+          "updateFailed": "Оновлення не вдалося"
+        }
+      },
+      "tfa": {
+        "heading": "Двофакторна автентифікація",
+        "notEnabled": "2FA не ввімкнено. Захистіть свій обліковий запис за допомогою одноразового пароля на основі часу.",
+        "enableButton": "Увімкнути двофакторну автентифікацію",
+        "scanInstructions": "Відсканіруйте цей QR-код за допомогою програми аутентифікатора (Google Authenticator, Authy тощо), потім введіть 6-значний код для підтвердження.",
+        "qrAlt": "QR-код налаштування 2FA",
+        "addAccountInstructions": "Відкрийте програму аутентифікатора (Google Authenticator, Authy, 1Password тощо) та додайте новий обліковий запис:",
+        "setup": {
+          "step1": "Натисніть <strong>Додати обліковий запис</strong> або кнопку <strong>+</strong>",
+          "step2": "Виберіть <strong>Введіть ключ налаштування</strong> (або відсканіруйте QR-код, якщо на мобільному)",
+          "step3": "Введіть таємницю, показану нижче"
+        },
+        "mobileLink": "Натисніть тут на мобільному, щоб відкрити аутентифікатор",
+        "manualEntryLabel": "Таємниця ручного введення:",
+        "saveBackupCodes": "Збережіть ці коди резервного копіювання. Кожен можна використати один раз, якщо ви втратите доступ до аутентифікатора.",
+        "copyBackupCodes": "Копіювати коди резервного копіювання",
+        "confirmCodeLabel": "Введіть код з програми для активації",
+        "activate": "Активувати 2FA",
+        "cancel": "Скасувати",
+        "enabledBadge": "2FA ввімкнено",
+        "newBackupCodesLabel": "Нові коди резервного копіювання (збережіть зараз):",
+        "copy": "Копіювати",
+        "regenLabel": "Введіть код аутентифікатора, щоб відновити коди резервного копіювання",
+        "regenerate": "Відновити",
+        "regenerateBackupCodes": "Відновити коди резервного копіювання",
+        "disableLabel": "Відключити 2FA (введіть код аутентифікатора)",
+        "disable": "Відключити 2FA",
+        "errors": {
+          "setupFailed": "Налаштування не вдалося",
+          "confirmFailed": "Підтвердження не вдалося",
+          "disableFailed": "Відключення не вдалося",
+          "regenFailed": "Відновлення не вдалося"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Не вдалося завантажити поверхню MCP",
+        "revokeFailed": "Не вдалося відкликати токен"
+      },
+      "revokeConfirm": "Відкликати токен MCP \"{{name}}\"? Клієнти, які його використовують, перестануть працювати негайно.",
+      "tokens": {
+        "heading": "Токени MCP",
+        "newToken": "Новий токен",
+        "description": "Кожен токен діє як ви: він викриває точно інструменти, які дозволяє ваша роль. Повне значення показується один раз, на сторінці, яка його створює.",
+        "empty": "Немає токенів MCP. Створіть один, щоб підключити клієнт MCP.",
+        "created": "Створено",
+        "lastUsed": "Останній раз використано",
+        "expires": "Закінчується",
+        "never": "Ніколи",
+        "revokeTitle": "Відкликати токен"
+      },
+      "tools": {
+        "heading": "Інструменти, які викривають ваші токени",
+        "empty": "Ваша роль не надає інструменти MCP. Запитайте адміністратора про необхідні вам дозволи.",
+        "table": {
+          "name": "Назва",
+          "scope": "Сфера дії",
+          "description": "Опис",
+          "sourceModule": "Модуль джерела",
+          "permission": "Дозвіл"
+        }
+      },
+      "connect": {
+        "heading": "Підключити клієнт MCP",
+        "descriptionPre": "Виберіть клієнт, який ви підключаєте, потім замініть",
+        "descriptionPost": "одним із своїх токенів. Створення токена показує той же фрагмент з уже вставленим значенням.",
+        "otherClient": "Будь-який інший клієнт",
+        "httpInstructionsPre": "По HTTP, вкажіть це на цю кінцеву точку та аутентифікуйтеся за допомогою",
+        "httpInstructionsPost": ". Це JSON-RPC 2.0 через потокову HTTP.",
+        "stdioInstructionsPre": "По stdio, CLI з'єднує це і передає ваш токен. Запускаєте сервіс безпосередньо? Встановіть",
+        "stdioInstructionsAnd": "та",
+        "stdioInstructionsPost": "самі."
+      },
+      "newToken": {
+        "backToMcp": "Назад до MCP",
+        "title": "Новий токен MCP",
+        "subtitle": "Токен діє як ви: він викриває точно інструменти, які дозволяє ваша роль.",
+        "nameLabel": "Назва",
+        "namePlaceholder": "ноутбук",
+        "nameHint": "Де цей токен використовується, наприклад \"ноутбук\" або \"claude-desktop\".",
+        "expiryLabel": "Закінчується",
+        "expiryHint": "Опціонально. Залиште порожнім, і токен ніколи не закінчиться, поки ви його не відкличете.",
+        "createButton": "Створити токен",
+        "creatingButton": "Створення…",
+        "cancelButton": "Скасувати",
+        "tokenSection": {
+          "title": "Ваш токен",
+          "hint": "Скопіюйте його зараз. Він більше не буде показаний, і втрачений токен можна лише замінити.",
+          "copyButton": "Копіювати",
+          "copiedButton": "Скопійовано!",
+          "copyTitle": "Копіювати токен",
+          "copiedTitle": "Скопійовано!"
+        },
+        "connectSection": {
+          "title": "Підключити клієнт",
+          "hint": "Виберіть клієнт, який ви підключаєте. Фрагмент вже несе цей токен."
+        },
+        "bridgeSection": {
+          "title": "Або використовуйте локальний міст",
+          "hint": "Для клієнта, який говорить тільки stdio, CLI з'єднує це і передає ваш токен."
+        },
+        "doneButton": "Готово",
+        "errors": {
+          "createFailed": "Не вдалося створити токен",
+          "copyFailed": "Копіювання не вдалося, виберіть та скопіюйте токен вручну."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Мова",
+      "description": "Виберіть мову, на якій буде відображатися інформаційна панель.",
+      "languageLabel": "Мова",
+      "saved": "Переважу мови збережено."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Не вдалося завантажити налаштування",
+        "loadFailedPeriod": "Не вдалося завантажити налаштування.",
+        "saveFailed": "Не вдалося зберегти",
+        "saveSettingsFailed": "Не вдалося зберегти налаштування"
+      },
+      "savedSuccess": "Налаштування успішно збережено.",
+      "saving": "Збереження…",
+      "saveSettings": "Зберегти налаштування",
+      "serverInfo": {
+        "heading": "Інформація про сервер",
+        "readOnly": "Тільки читання. Хост та порт походять з навколишнього середовища або файлу налаштувань, а не звідси.",
+        "reachableAt": "Доступна за адресою",
+        "reachableAtAny": "Доступна за будь-якою з цих адрес",
+        "thisMachine": "Цей комп'ютер",
+        "network": "Мережа",
+        "copyAddress": "Копіювати {{address}}",
+        "copied": "Скопійовано!",
+        "copy": "Копіювати",
+        "hostAndPort": "Хост та порт",
+        "version": "Версія",
+        "uptime": "Час роботи"
+      },
+      "runtime": {
+        "heading": "Параметри виконання",
+        "logLevel": "Рівень журналу",
+        "logLevelHint": "Контролює докладність журналів сервісу.",
+        "publicUrl": "Публічний URL",
+        "publicUrlHint": "Базовий URL, за якою сервіс доступний для зовнішніх клієнтів (наприклад, <code>http://192.168.1.10:3000</code>). Використовується у розділі <strong>Як підключитися</strong> кожного маршрутизатора. Корисна, коли інформаційна панель працює на іншому комп'ютері або порту, ніж сервіс.",
+        "usageRetention": "Збереження використання",
+        "noLimit": "Немає обмеження",
+        "maxAgeDays": "Макс. вік (дні)",
+        "maxSizeMb": "Макс. розмір (МБ)",
+        "retentionHint": "Історія використання/виставлення рахунків старше такої кількості днів або розміри, що перевищують цей розмір, видаляються з активного журналу. Залиште обидва порожніми для без обмежень на збереження."
+      },
+      "internationalization": {
+        "heading": "Інтернаціоналізація",
+        "defaultLanguage": "Мова за Замовчуванням",
+        "defaultLanguageHint": "Мова панелі для користувачів, які ще не вибрали свою. Не перевизначає особистий вибір користувача."
+      },
+      "telemetry": {
+        "heading": "Анонімні метрики",
+        "neverAutomatic": "Routerly ніколи не надсилає дані автоматично.",
+        "noChoice": "Ви ще не зробили вибір.",
+        "enabledStatus": "Анонімні метрики встановлення ввімкнені.",
+        "disabledStatus": "Анонімні метрики встановлення відключені.",
+        "explanation": "Якщо ввімкнено, Routerly надсилає тільки: тип подій (встановлення/оновлення/видалення), версія, платформа та випадковий ID. Немає особистих даних, немає даних про використання, немає IP-адреси.",
+        "whatIsSent": "Що надсилається?",
+        "installId": "ID встановлення: {{id}}",
+        "saving": "Збереження…",
+        "enable": "Увімкнути",
+        "disable": "Відключити"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Інформаційна панель (вхідна скринька програми)",
+          "description": "Маршрутизує подієнді в інформаційну панель вхідної скриньки"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Користувацький поштовий сервер"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail через OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Зворотний виклик вебхука HTTP"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Постачальник помилка",
+        "providerDegraded": "Постачальник зменшено",
+        "providerRecovered": "Постачальник відновлено",
+        "providerRateLimited": "Постачальник обмежено за частотою",
+        "routingNoCandidates": "Маршрутизація немає кандидатів",
+        "routingFallbackUsed": "Маршрутизація використано резервну",
+        "authLoginFailed": "Автентифікація не вдалася",
+        "authTokenInvalid": "Автентифікація токен недійсний",
+        "configModelAdded": "Конфігурація модель додана",
+        "configModelDeleted": "Конфігурація модель видалена",
+        "configRouterCreated": "Конфігурація маршрутизатор створено",
+        "configRouterDeleted": "Конфігурація маршрутизатор видалено",
+        "budgetThresholdReached": "Бюджет поріг досягнутий",
+        "budgetExceeded": "Бюджет перевищено",
+        "budgetReset": "Бюджет скидання",
+        "systemStartup": "Система запуск",
+        "systemShutdown": "Система вимикання",
+        "systemUpdateAvailable": "Система оновлення доступно"
+      },
+      "removeChannelTooltip": "Видалити канал",
+      "removeChannelConfirm": "Видалити канал?",
+      "formUpdatedHint": "Форма оновлена використання для застосування.",
+      "hmacSigningKeyPlaceholder": "Ключ підписування HMAC",
+      "perms": {
+        "routerRead": "Маршрутизатори читання",
+        "routerWrite": "Маршрутизатори запис",
+        "modelRead": "Моделі читання",
+        "modelWrite": "Моделі запис",
+        "userRead": "Користувачі читання",
+        "userWrite": "Користувачі запис",
+        "reportRead": "Звіти читання",
+        "settingsRead": "Налаштування читання",
+        "settingsWrite": "Налаштування запис",
+        "notificationWrite": "Сповіщення запис",
+        "tokenRead": "Токени читання",
+        "tokenWrite": "Токени запис",
+        "roleWrite": "Ролі запис",
+        "auditRead": "Журнал аудиту читання",
+        "modulesRead": "Модулі читання",
+        "modulesManage": "Модулі керування",
+        "connectionsRead": "Підключення читання",
+        "connectionsManage": "Підключення керування",
+        "resilienceRead": "Стійкість читання",
+        "resilienceManage": "Стійкість керування",
+        "profilesRead": "Профілі маршрутизації читання",
+        "profilesManage": "Профілі маршрутизації керування",
+        "optimizersRead": "Оптимізатори читання",
+        "optimizersManage": "Оптимізатори керування",
+        "experimentsRead": "Експерименти читання",
+        "experimentsManage": "Експерименти керування"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Для цього типу каналу цілі не змінюють доставку (кінцева точка закріплена). Вони фільтрують, які підії записуються у журнал аудиту на отримувача.",
+        "dashboard": "Цілі контролюють видимість вхідної скриньки це тільки відповідні користувачі будуть бачити ці сповіщення в своїй вхідній скриньці програми.",
+        "email": "Цілі визначають, які користувачі отримають цей лист. Залиште все порожнім, щоб надіслати всім користувачам."
+      },
+      "summary": {
+        "allEvents": "Усі подієїї",
+        "eventCount": "{{count}} подія",
+        "eventCount_other": "{{count}} подій",
+        "roleCount": "{{count}} роль",
+        "roleCount_other": "{{count}} ролей",
+        "permCount": "{{count}} дозвіл",
+        "permCount_other": "{{count}} дозволів",
+        "userCount": "{{count}} користувач",
+        "userCount_other": "{{count}} користувачів",
+        "everyone": "Кожен"
+      },
+      "errors": {
+        "loadFailed": "Не вдалося завантажити"
+      },
+      "fields": {
+        "dashboardHint": "Маршрутизує відповідні подієїї в вхідну скриньку сповіщень програми. Облікові дані не потрібні.",
+        "labels": {
+          "fromAddress": "З адреси",
+          "fromName": "Від імені",
+          "host": "Хост",
+          "port": "Порт",
+          "tls": "TLS/SSL",
+          "username": "Ім'я користувача",
+          "password": "Пароль",
+          "awsRegion": "Регіон AWS",
+          "accessKeyId": "ID ключа доступу",
+          "secretAccessKey": "Таємний ключ доступу",
+          "apiKey": "Ключ API",
+          "connectionString": "Рядок підключення",
+          "clientId": "ID клієнта",
+          "clientSecret": "Таємниця клієнта",
+          "refreshToken": "Маркер оновлення",
+          "url": "URL",
+          "method": "Метод",
+          "signingSecret": "Таємниця підписування",
+          "botToken": "Токен бота",
+          "channelId": "ID каналу",
+          "webhookUrl": "URL вебхука",
+          "integrationKey": "Ключ інтеграції"
+        },
+        "values": {
+          "enabled": "Ввімкнено",
+          "disabled": "Відключено",
+          "configured": "Налаштовано",
+          "notSet": "Не встановлено"
+        },
+        "optional": "(опціонально)",
+        "keepCurrentPlaceholder": "Залиште порожнім, щоб зберегти поточне",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Використовуйте TLS / SSL",
+        "smtpTlsOnHint": "(порт 465 пряме SSL)",
+        "smtpTlsOffHint": "(порт 587 STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Залиште облікові дані порожніми, щоб використовувати роль IAM інстансу.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Ключ підписування HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "Ключ маршрутизації 32 символи",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Подієї",
+          "eventsPlaceholder": "Усі подієї (залиште порожнім для всіх)",
+          "eventsHint": "Залиште порожнім, щоб отримувати всі подієї. Виберіть конкретні подієї для фільтрування.",
+          "routersHeading": "Маршрутизатори",
+          "routersPlaceholder": "Усі маршрутизатори (залиште порожнім для всіх)",
+          "routersHint": "Залиште порожнім, щоб отримувати подієї від всіх маршрутизаторів.",
+          "cooldownHeading": "Період охолодження",
+          "cooldownSuffix": "секунди (0 без період охолодження)",
+          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї."
+        },
+        "recipients": {
+          "heading": "Одержувачі / Цілі",
+          "rolesLabel": "Ролі",
+          "rolesPlaceholder": "Усі ролі (кожен)",
+          "permissionsLabel": "Дозволи",
+          "permissionsPlaceholder": "Усі дозволи (кожен)",
+          "usersLabel": "Окремі користувачі",
+          "usersPlaceholder": "Усі користувачи (кожен)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "підключення",
+          "routing": "маршрутизація",
+          "recipients": "одержувачи"
+        },
+        "sections": {
+          "channelSettings": "Параметри каналу",
+          "eventsRouting": "Подієї та маршрутизація",
+          "recipients": "Одержувачи"
+        },
+        "nameLabel": "Назва",
+        "namePlaceholder": "Ярлик для цього каналу",
+        "cancelButton": "Скасувати"
+      },
+      "list": {
+        "countLabel": "{{count}} канал",
+        "countLabel_other": "{{count}} каналів",
+        "filteredLabel": "{{shown}} з {{count}} канал",
+        "filteredLabel_other": "{{shown}} з {{count}} каналів",
+        "allTypes": "Усі типи",
+        "searchPlaceholder": "Фільтрувати канали…",
+        "searchChannelsPlaceholder": "Пошук каналів…",
+        "addButton": "Додати канал",
+        "addSearchPlaceholder": "Пошук каналів…",
+        "noResults": "Немає результатів",
+        "emptyTitle": "Жоден канал сповіщення не налаштований.",
+        "noMatch": "Жоден канал не відповідає активним фільтрам.",
+        "nameInlinePlaceholder": "Ярлик (опціонально)",
+        "columns": {
+          "name": "Назва",
+          "type": "Тип",
+          "summary": "Подієї / Цілі"
+        },
+        "testTitle": "Надіслати тестування",
+        "editTitle": "Редагувати канал",
+        "deleteTitle": "Видалити канал",
+        "deleteConfirm": "Видалити канал \"{{name}}\"? Це неможливо скасувати.",
+        "deleteConfirmButton": "Видалити",
+        "errors": {
+          "deleteFailed": "Не вдалося видалити"
+        }
+      },
+      "edit": {
+        "backToList": "Назад до сповіщень",
+        "back": "Назад",
+        "heading": "Редагувати {{provider}} канал",
+        "subtitle": "Оновіть конфігурацію для цього каналу сповіщення.",
+        "testSection": {
+          "title": "Надіслати тестування",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Надіслати тестування",
+          "sendingButton": "Надсилання…",
+          "hintEmail": "Залиште порожнім, щоб надіслати на адресу електронної пошти вашого облікового запису. Тестування використовує збережену конфігурацію каналу.",
+          "hintOther": "Тестування використовує збережену конфігурацію каналу. Спочатку збережіть зміни, щоб тестувати оновлені параметри."
+        },
+        "saveButton": "Зберегти зміни",
+        "savingButton": "Збереження…",
+        "errors": {
+          "loadFailed": "Не вдалося завантажити",
+          "saveFailed": "Не вдалося зберегти"
+        }
+      },
+      "create": {
+        "backToList": "Назад до сповіщень",
+        "changeType": "Змінити тип",
+        "pickerHeading": "Виберіть тип каналу",
+        "pickerSubtitle": "Виберіть постачальника сповіщення для налаштування.",
+        "heading": "Новий {{provider}} канал",
+        "subtitle": "Налаштуйте новий канал сповіщення.",
+        "createButton": "Створити канал",
+        "creatingButton": "Створення…",
+        "errors": {
+          "createFailed": "Не вдалося створити"
+        }
+      },
+      "sendTest": "Надіслати тестування",
+      "fromAddress": "З адреси",
+      "individualUsers": "Окремі користувачи",
+      "host": "Хост",
+      "port": "Порт",
+      "apiKey": "Ключ API",
+      "connectionString": "Рядок підключення",
+      "clientId": "ID клієнта",
+      "clientSecret": "Таємниця клієнта",
+      "refreshToken": "Маркер оновлення",
+      "method": "Метод",
+      "botToken": "Токен бота",
+      "channelId": "ID каналу",
+      "webhookUrl": "URL вебхука",
+      "integrationKey": "Ключ інтеграції"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "витягування викидає /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "штовх OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "штовх API метрики"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "штовх remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "штовх лінійний протокол"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "штовх HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Експортувати трасування запитів",
+        "description": "Надсилає повну трасу кожного проксованого запиту: кожну фазу, кожен модуль, який говорив, та підказки та відповіді для проектів, які ухвалили участь.",
+        "sampleRateLabel": "Частота вибірки",
+        "sampleRateHint": "1 експортує кожен запит, 0.1 один із десяти."
+      },
+      "optional": "(опціонально)",
+      "headersHint": "(опціонально, один на рядок: Ключ: Значення)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Маркер несення",
+          "placeholder": "Залиште порожнім для відкритого доступу",
+          "description": "Викидає <code>/metrics</code> у форматі тексту Prometheus. Встановіть токен, щоб вимагати аутентифікацію Bearer."
+        },
+        "otel": {
+          "endpoint": "Кінцева точка колектора",
+          "description": "Базовий URL вашого приймача OTLP. Routerly додає <code>/v1/metrics</code>, та <code>/v1/traces</code>, коли експорт трасування ввімкнений. Порт HTTP за замовчуванням 4318, gRPC 4317.",
+          "protocol": "Протокол",
+          "headers": "Заголовки"
+        },
+        "datadog": {
+          "apiKey": "Ключ API",
+          "placeholder": "Ваш ключ API Datadog",
+          "description": "Знайдено в <strong>Organization Settings → API Keys</strong> на вашому обліковому записі Datadog.",
+          "site": "Сайт"
+        },
+        "grafana": {
+          "remoteWriteUrl": "URL дистанційного запису",
+          "description": "Знайдено в <strong>Grafana Cloud → Connections → Prometheus → Details</strong> як \"Remote Write Endpoint\".",
+          "username": "Ім'я користувача / ID стека",
+          "usernameHint": "Числовий ID, показаний у деталях підключення Prometheus.",
+          "apiKey": "Ключ API / токен",
+          "apiKeyHint": "Токен Grafana Cloud з роллю <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL інстансу InfluxDB v2. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Токен",
+          "tokenPlaceholder": "Ваш токен API InfluxDB",
+          "tokenHint": "Повинна мати доступ <strong>запис</strong> до відра.",
+          "org": "Організація",
+          "bucket": "Вдро"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Таємниця",
+          "secretHint": "(опціонально ключ підписування HMAC-SHA256)",
+          "headers": "Заголовки"
+        }
+      },
+      "errors": {
+        "loadFailed": "Не вдалося завантажити інтеграції",
+        "updateFailed": "Не вдалося оновити інтеграцію",
+        "saveFailed": "Не вдалося зберегти інтеграцію",
+        "deleteFailed": "Не вдалося видалити інтеграцію"
+      },
+      "empty": "Немає налаштованих інтеграцій.",
+      "enabled": "Ввімкнено",
+      "testing": "Тестування…",
+      "test": "Тестування",
+      "removeConfirm": "Видалити?",
+      "remove": "Видалити",
+      "cancel": "Скасувати",
+      "removeTooltip": "Видалити інтеграцію",
+      "saving": "Збереження…",
+      "save": "Зберегти",
+      "addButton": "Додати інтеграцію"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Не вдалося завантажити налаштування",
+        "duplicateUrl": "Цей URL уже в списку.",
+        "unreachable": "Не вдалося досягнути дійсного каталогу постачальника за цю URL."
+      },
+      "saved": "Збережено.",
+      "refreshed": "Оновлено.",
+      "heading": "Сховища каталогу постачальника",
+      "refreshing": "Оновлення…",
+      "refresh": "Оновити",
+      "nextRefresh": "Далі: {{date}}",
+      "priorityHint": "Порядок рядків визначає пріоритет злиття рядок 1 виграє у конфліктові. Використовуйте стрілки для переупорядкування.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Оновлено",
+        "lastCheck": "Остання перевірка",
+        "status": "Статус"
+      },
+      "empty": "Немає налаштованих сховищ. Буде використаний каталог за замовчуванням Routerly.",
+      "status": {
+        "error": "Помилка",
+        "active": "Активна",
+        "disabled": "Відключено"
+      },
+      "edit": "Редагувати",
+      "removeTooltip": "Видалити",
+      "addRepository": "Додати сховище",
+      "checking": "Перевірка…",
+      "add": "Додати",
+      "removeConfirm": "Видалити сховище \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Програма",
+        "runtime": "Виконання",
+        "storage": "Зберігання",
+        "softwareUpdate": "Оновлення програмного забезпечення"
+      },
+      "labels": {
+        "version": "Версія",
+        "uptime": "Час роботи",
+        "nodeVersion": "Node.js",
+        "platform": "Платформа",
+        "configDir": "Каталог конфігурації",
+        "dataDir": "Каталог даних",
+        "currentVersion": "Поточна версія",
+        "availableVersion": "Доступна версія",
+        "upToDate": "Актуальна",
+        "lastChecked": "Остання перевірка"
+      },
+      "noCheckPerformed": "Жоден чек оновлення не проводився.",
+      "checkForUpdates": "Перевірити оновлення",
+      "checking": "Перевірка…",
+      "updateTo": "Оновити до v{{version}}",
+      "updating": "Оновлення…",
+      "dockerHint": "Запуск у Docker витягніть найновіший образ для оновлення.",
+      "confirmUpdate": "Це завантажить та встановить найновішу версію. Сервіс буде перезапущено. Продовжити?",
+      "updateComplete": "Оновлення завершено! Перезавантаження…",
+      "serviceRestarting": "Сервіс перезапускається. Будь ласка, перезавантажте сторінку через мить.",
+      "errors": {
+        "loadFailed": "Не вдалося завантажити",
+        "checkFailed": "Перевірка не вдалася",
+        "updateFailed": "Оновлення не вдалося"
+      },
+      "channel": "Канал"
+    },
+    "security": {
+      "authentication": "Автентифікація",
+      "requireMfa": "Вимагати двофакторної автентифікації для всіх користувачів",
+      "requireMfaHint": "Коли ввімкнено, користувачи, які не налаштували 2FA, побачать запит на це після входу. Користувачи можуть налаштувати 2FA на сторінці свого профілю.",
+      "savedSuccess": "Налаштування успішно збережено.",
+      "saving": "Збереження…",
+      "saveSettings": "Зберегти налаштування",
+      "errors": {
+        "loadFailed": "Не вдалося завантажити налаштування",
+        "saveFailed": "Не вдалося зберегти налаштування"
+      }
+    },
+    "title": "Налаштування",
+    "subtitle": "Конфігурація для Routerly",
+    "tabs": {
+      "general": "Загальне",
+      "security": "Безпека",
+      "notifications": "Сповіщення",
+      "integrations": "Інтеграції",
+      "catalog": "Каталог постачальника",
+      "users": "Користувачи",
+      "roles": "Ролі",
+      "audit": "Журнал аудиту",
+      "about": "Про програму"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Маршрутизатори",
+      "subtitle": "Програмні програми, які отримують доступ до Routerly",
+      "count": "1 маршрутизатор",
+      "count_other": "{{count}} маршрутизаторів",
+      "newRouter": "Новий маршрутизатор",
+      "empty": "Маршрутизаторів немає.",
+      "emptyFiltered": "Маршрутизаторів цього типу не знайдено.",
+      "tabs": {
+        "all": "Усі",
+        "router": "Маршрутизатор",
+        "orchestrator": "Оркестратор",
+        "passthrough": "Наскрізний прохід"
+      },
+      "columns": {
+        "name": "Назва",
+        "tokens": "Токени",
+        "policies": "Політики",
+        "models": "Моделі"
+      },
+      "tokenCount": "1 токен",
+      "tokenCount_other": "{{count}} токенів",
+      "editRouter": "Редагувати маршрутизатор",
+      "deleteRouter": "Видалити маршрутизатор",
+      "deleteConfirm": "Видалити цей маршрутизатор?",
+      "errors": {
+        "deleteFailed": "Помилка видалення маршрутизатора"
+      }
+    },
+    "layout": {
+      "notFound": "Маршрутизатор не знайдено",
+      "tabs": {
+        "dashboard": "Інформаційна панель",
+        "general": "Загальне",
+        "orchestrator": "Оркестратор",
+        "routing": "Маршрутизація",
+        "optimizer": "Оптимізатор",
+        "security": "Безпека",
+        "token": "Токен",
+        "users": "Користувачи",
+        "logs": "Журнали"
+      },
+      "backToRouters": "Назад до маршрутизаторів",
+      "backToRoutersTitle": "Назад до маршрутизаторів",
+      "newRouter": "Новий маршрутизатор",
+      "loading": "Завантаження...",
+      "routerId": "ID маршрутизатора:",
+      "saveFirstHint": "Спочатку збережіть маршрутизатор, щоб розблокувати цю вкладку"
+    },
+    "dashboard": {
+      "period": "Період",
+      "noTraffic": "Немає трафіку для цього маршрутизатора у вибраному періоді.",
+      "stats": {
+        "savings": "Заощадження",
+        "vsPrefix": "проти",
+        "forEverything": "за все",
+        "noTargetToCompare": "немає цільової моделі для порівняння",
+        "cost": "Вартість",
+        "callCount": "1 виклик",
+        "callCount_other": "{{count}} викликів",
+        "latency": "Затримка",
+        "medianP95": "медіана · p95 {{value}}",
+        "ttft": "Час до першого токена",
+        "notMeasured": "не вимірюється на цих викликах",
+        "reliability": "Надійність",
+        "errorsAndBlocked": "{{errors}} помилки · {{blocked}} заблоковано"
+      },
+      "tokens": {
+        "input": "Вхідні токени:",
+        "output": "Вихідні токени:",
+        "fromCache": "Із кешу:",
+        "cacheSaved": "({{amount}} збережено)"
+      },
+      "oneModel": {
+        "heading": "Якби все пішло до однієї моделі",
+        "empty": "Додайте цільові моделі до цього маршрутизатора, щоб побачити порівняння.",
+        "columns": {
+          "targetModel": "Цільова модель",
+          "wouldHaveCost": "Коштувала б",
+          "saved": "Збережено"
+        },
+        "costsHint": "Вартості це спостережувані токени, перераховані за ставками кожної мети."
+      },
+      "optimizers": {
+        "heading": "Що оптимізатори видалили",
+        "columns": {
+          "optimizer": "Оптимізатор",
+          "callsChanged": "Виклики змінилися",
+          "tokensSaved": "Токени збережено",
+          "costSaved": "Вартість збережено",
+          "rolledBack": "Накатано"
+        },
+        "hint": "Вимірюється на самих викликах, цінується за моделлю, яка обслуговує кожен. Накатана прогулянка означає, що вихід кроку був відхилений як небезпечний та підказка було відновлено: вона не заощадила нічого, та високий рахунок означає, що поріг занадто агресивний."
+      },
+      "traffic": {
+        "heading": "Куди пішов трафік",
+        "columns": {
+          "model": "Модель",
+          "calls": "Виклики",
+          "share": "Акція",
+          "cost": "Вартість",
+          "p95Latency": "p95 затримка",
+          "errors": "Помилки"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Помилка збереження маршрутизатора",
+        "copyFailed": "Копіювання не вдалося виберіть та скопіюйте токен вручну."
+      },
+      "kind": {
+        "router": {
+          "label": "Маршрутизатор",
+          "description": "Маршрутизує запити серед кандидатів моделей."
+        },
+        "orchestrator": {
+          "label": "Оркестратор",
+          "description": "Маршрутизує запити серед інших маршрутизаторів замість моделей."
+        },
+        "passthrough": {
+          "label": "Наскрізний",
+          "description": "Передає запити без змін."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Збережіть цей токен зараз.",
+        "saveNowHint": "Він більше не буде показаний один раз, коли ви залишите цей екран, його неможливо відновити.",
+        "copied": "Скопійовано!",
+        "copy": "Копіювати",
+        "goToRouter": "Перейти до маршрутизатора"
+      },
+      "connect": {
+        "heading": "Як підключитися",
+        "intro": "Вкажіть будь-яким OpenAI або Anthropic SDK на Routerly та використовуйте <tokenLink>токен маршрутизатора</tokenLink> як ключ API. Замініть <code>{{token}}</code> нижче своїм. Модель <code>{{model}}</code> передає вибір Routerly будь-якому ідентифікатору моделі з <modelsLink>Models</modelsLink> також працює.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Базова URL <code>{{baseUrl}}</code>, як той самий, який приймає будь-яке поле \"OpenAI сумісне\" постачальника.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Базова URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK додає це.",
+        "curl": "curl",
+        "curlHint": "Перевірте дроти без встановлення чого-небудь, потім шукайте виклик в <usageLink>Usage</usageLink>."
+      },
+      "form": {
+        "kind": "Тип",
+        "kindAriaLabel": "Тип маршрутизатора",
+        "kindFixedHint": "Закріплено, коли маршрутизатор створено.",
+        "routerName": "Назва маршрутизатора",
+        "routerNamePlaceholder": "Моя програма",
+        "advancedSettings": "Передові параметри",
+        "ttftTimeout": "Тайм-аут TTFT (мс)",
+        "ttftTimeoutHint": "Якщо модель не надсилає перший байт відповіді протягом цього часу, Routerly перериває це та пробує наступного кандидата. Не обмежує загальну тривалість відповіді. Встановіть це на 0, щоб чекати, скільки постачальник приймає.",
+        "traceContent": "Вміст трасування",
+        "traceContentHint": "Трасування завжди записує метадані (моделі, оцінки, токени, вартість, затримка). Вмикайте це, щоб також записати надіслані підказки та отримані відповіді. Вони зберігаються з записом використання та видимі для всіх, хто може читати звіти.",
+        "capturePromptsAndAnswers": "Захопіть підказки та відповіді",
+        "saveChanges": "Зберегти зміни",
+        "createRouter": "Створити маршрутизатор"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Цей маршрутизатор не є оркестратором.",
+      "candidateRouters": "Маршрутизатори-кандидати",
+      "candidateRoutersHint": "Маршрутизатори, до яких цей оркестратор передає запити. Вага впливає на те, як часто кожен кандидат обирається; тільки його назва, ідентифікатор, вага та опціональні обмеження для кожного кандидата показуються тут.",
+      "router": "Маршрутизатор",
+      "selectRouter": "Виберіть маршрутизатор",
+      "weight": "Вага",
+      "removeCandidate": "Видалити кандидата",
+      "usageLimits": "Обмеження використання для цього кандидата",
+      "limitCount": "{{count}} обмеження",
+      "limitCount_other": "{{count}} обмежень",
+      "usageLimitsHint": "Опціональні обмеження на використання, які застосовуються тільки до запитів, які цей оркестратор передає до цього кандидата.",
+      "empty": "Не має кандидатів маршрутизаторів. Оркестратору потрібно щонайменше один перед тим, як він зможе передати запити.",
+      "addCandidate": "Додати кандидата",
+      "saved": "Збережено!",
+      "saveCandidates": "Зберегти кандидатів",
+      "errors": {
+        "loadFailed": "Не вдалося завантажити маршрутизаторів",
+        "saveFailed": "Помилка збереження кандидатів оркестратора"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Не вдалося призначити профіль маршрутизації",
+        "duplicateTargets": "Цільові моделі не можуть містити дублікати.",
+        "saveFailed": "Помилка збереження маршрутизації маршрутизатора",
+        "noProfileAvailable": "Профіль маршрутизації недоступний. Створіть один на сторінці Profiles."
+      },
+      "form": {
+        "routing": "Маршрутизація",
+        "routingHint": "Використовуйте спільний профіль маршрутизації або визначте власні політики цього маршрутизатора. Цільові моделі залишаються настроюваними в будь-якому випадку.",
+        "profileMode": "Профіль",
+        "customMode": "Спеціальний",
+        "routingProfile": "Профіль маршрутизації",
+        "builtinSuffix": "(вбудований)",
+        "profileHint": "Політики походять від профілю та дотримуються його змін. Редагуйте їх на сторінці Profiles, або переходьте на Custom, щоб почати з їхньої копії.",
+        "saved": "Збережено!",
+        "saveRoutingConfiguration": "Зберегти конфігурацію маршрутизації"
+      },
+      "targetModels": {
+        "heading": "Цільові моделі",
+        "hint": "Визначте пул моделей, які політики фільтруватимуть та обиратимуть з них. Опціональні підказки інструктують маршрутизатор ШІ, коли обирати кожну цільову модель.",
+        "endpointModel": "Модель кінцевої точки",
+        "selectModel": "Виберіть модель",
+        "promptDefinition": "Визначення підказки",
+        "promptPlaceholder": "Опишіть точно, коли і чому маршрутизатор має обрати цю модель...",
+        "intents": "Наміри",
+        "removeTarget": "Видалити цільову модель",
+        "empty": "Немає налаштованих цільових моделей.",
+        "addTarget": "Додати цільову модель"
+      }
+    },
+    "optimizer": {
+      "title": "Оптимізатори",
+      "description": "Оптимізатори зменшують токени підказки перед тим, як запити досягнуть постачальника. Вони запускаються послідовно зверху вниз. Використовуйте спільний профіль оптимізатора або визначте власний конвеєр цього маршрутизатора.",
+      "noPermission": "Ви не маєте дозволу переглядати оптимізатори.",
+      "mode": {
+        "profile": "Профіль",
+        "custom": "Спеціальний"
+      },
+      "profileSelect": {
+        "ariaLabel": "Профіль оптимізатора",
+        "builtinLabel": "{{label}} (вбудований)",
+        "hint": "Кроки походять від профілю та дотримуються його змін. Редагуйте їх на сторінці Profiles, або переходьте на Custom, щоб почати з їхньої копії.",
+        "disabledSuffix": "(відключено)",
+        "thresholdSuffix": ", поріг {{threshold}}"
+      },
+      "customHint": "Перетягніть для переупорядкування, переведіть для увімкнення. Деякі оптимізатори використовують поріг для контролю того, наскільки агресивно вони скорочують.",
+      "saveButton": "Зберегти оптимізатори",
+      "saving": "Збереження...",
+      "saved": "Збережено",
+      "preview": {
+        "title": "Попередній перегляд заощадження токенів",
+        "description": "Запустіть поточний (незбережений) конвеєр над підказкою, щоб побачити, що кожен крок видаляє та що це коштує. Виберіть один з вибірних розмов або введіть власну підказку.",
+        "promptLabel": "Підказка",
+        "promptAriaLabel": "Підказка для попереднього перегляду",
+        "typePromptOption": "Введіть підказку нижче",
+        "fixturesHint": "Вибірні розмови поставляються з Routerly. Routerly не записує справжні підказки.",
+        "modelLabel": "Модель",
+        "modelAriaLabel": "Модель для попереднього перегляду",
+        "modelWithContext": "{{id}} ({{k}}k контексту)",
+        "noModelOption": "Немає моделі",
+        "modelHint": "Кроки, які скорочуються, щоб умістити вікно контексту, мають знати яке вікно. Без моделі вони пропускаються, точно як вони були б на запиту, який називає модель Routerly не має вікна.",
+        "sampleAriaLabel": "Приклад підказки",
+        "samplePlaceholder": "Вставте приклад повідомлення користувача...",
+        "runButton": "Запустити попередній перегляд",
+        "running": "Запуск...",
+        "before": "Перед",
+        "after": "Після",
+        "saved": "Збережено",
+        "columns": {
+          "optimizer": "Оптимізатор",
+          "before": "Перед",
+          "after": "Після",
+          "saved": "Збережено"
+        },
+        "rolledBackNote": "накатано: зміна была відхилена як небезпечна",
+        "skippedNote": "пропущено: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Зміна, яку цей крок створив, был накатана, тому підказка досягла наступного кроку недоторкнутою.",
+          "skipped": "Цей крок не запустився: {{reason}}",
+          "unchanged": "Цей крок залишив підказку незмінною."
+        }
+      },
+      "errors": {
+        "assignFailed": "Не вдалося призначити профіль оптимізатора",
+        "saveFailed": "Помилка збереження оптимізаторів",
+        "previewFailed": "Помилка запуску попереднього перегляду",
+        "noProfileAvailable": "Профіль оптимізатора недоступний. Створіть один на сторінці Profiles."
+      }
+    },
+    "token": {
+      "newButton": "Новий токен",
+      "empty": "Немає токенів API. Створіть один, щоб почати автентифікацію запитів.",
+      "budgetOverrides": "Переозиру бюджету",
+      "created": "Створено",
+      "lastUsed": "Останній раз використано",
+      "expires": "Закінчується",
+      "never": "Ніколи",
+      "editTitle": "Редагувати конфігурацію",
+      "revokeTitle": "Відкликати токен",
+      "revokeConfirm": "Відкликати токен \"{{snippet}}...\"? Програми, які його використовують, негайно перестануть працювати.",
+      "labelInput": {
+        "placeholder": "Пошук або створення ярлика…",
+        "createPrefix": "Створити",
+        "noMatches": "Жоден ярлик не знайдено."
+      },
+      "errors": {
+        "deleteFailed": "Помилка видалення токена"
+      },
+      "create": {
+        "backToTokens": "Назад до токенів",
+        "title": "Новий токен API",
+        "subtitle": "Повний токен показується тільки один раз після створення зберігайте його безпечно.",
+        "tokenCreated": "Токен успішно створено. Скопіюйте це зараз це не буде показано знову.",
+        "copied": "Скопійовано!",
+        "copy": "Копіювати",
+        "done": "Готово",
+        "optional": "опціонально",
+        "labels": "Ярлики",
+        "labelsHint": "Позначте цей токен, щоб визначити, де він використовується (наприклад, \"production\", \"ci\").",
+        "scopes": "Сфери дії",
+        "scopesHint": "Вільні сфери дії,附附щеплені до цього токена (наприклад, \"batch\", \"internal\"), збережені з токеном для вашого власного ведення книги.",
+        "tags": "Теги",
+        "tagsHint": "Метадані ключ-значення передавань до записів про використання (наприклад, env=production).",
+        "keyPlaceholder": "ключ",
+        "valuePlaceholder": "значення",
+        "createButton": "Створити токен",
+        "cancel": "Скасувати",
+        "copyFailed": "Копіювання не вдалося виберіть та скопіюйте токен вручну.",
+        "errors": {
+          "createFailed": "Помилка створення токена"
+        }
+      },
+      "edit": {
+        "title": "Редагувати токен",
+        "subtitle": "Оновіть ярлики та переоцінки обмежень для кожної моделі для цього токена.",
+        "token": "Токен",
+        "labels": "Ярлики",
+        "perModelLimits": "Обмеження для кожної моделі",
+        "perModelLimitsHint": "Переозиру глобальні та обмеження рівня маршрутизатора для запитів за допомогою цього токена.",
+        "noTargetModels": "Спочатку додайте цільові моделі на вкладці Routing.",
+        "noOverride": "немає переозиру",
+        "noLimits": "Без обмежень",
+        "noLimitsSet": "Обмеження не встановлені спадає від батька. Додайте обмеження нижче, щоб переозиру.",
+        "metric": "Метрика",
+        "type": "Тип",
+        "periodLabel": "Період",
+        "every": "Кожні",
+        "maxCost": "Макс. ($)",
+        "maxCalls": "Макс. (n.)",
+        "maxTokens": "Макс. (токени)",
+        "allCombosSet": "Всі комбінації метрики/періоду вже встановлені",
+        "addLimit": "Додати обмеження",
+        "windowType": {
+          "period": "Період",
+          "rolling": "Розташунок"
+        },
+        "limitMetric": {
+          "cost": "Вартість (USD)",
+          "calls": "Запити",
+          "input_tokens": "Вхідні токени",
+          "output_tokens": "Вихідні токени",
+          "total_tokens": "Загальні токени"
+        },
+        "period": {
+          "hourly": "Щогодини",
+          "daily": "Щодня",
+          "weekly": "Щотижня",
+          "monthly": "Щомісяця",
+          "yearly": "Щорічно"
+        },
+        "rollingUnit": {
+          "second": "секунди",
+          "minute": "хвилини",
+          "hour": "години",
+          "day": "дні",
+          "week": "тижні",
+          "month": "місяці"
+        },
+        "fmt": {
+          "requests": "{{value}} запитів",
+          "inputTokens": "{{value}} вхід-токен",
+          "outputTokens": "{{value}} вихід-токен",
+          "totalTokens": "{{value}} токен",
+          "everyRolling": "{{metric}} / кожні {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Помилка збереження токена"
+        }
+      }
+    },
+    "users": {
+      "title": "Члени маршрутизатора",
+      "description": "Керуйте користувачами, які мають доступ до цього маршрутизатора.",
+      "addButton": "Додати члена",
+      "addNewTitle": "Додати новий член",
+      "selectUserPlaceholder": "Виберіть користувача...",
+      "addConfirmButton": "Додати",
+      "cancelButton": "Скасувати",
+      "empty": "Члени не знайдені.",
+      "removeConfirm": "Ви впевнені, що хочете видалити цього члена?",
+      "saveTitle": "Зберегти зміни",
+      "changeRoleTitle": "Змінити роль",
+      "removeTitle": "Видалити члена",
+      "roles": {
+        "viewer": "Глядач",
+        "editor": "Редактор",
+        "admin": "Адміністратор"
+      },
+      "columns": {
+        "user": "Користувач",
+        "role": "Роль",
+        "actions": "Дії"
+      },
+      "errors": {
+        "loadFailed": "Не вдалося завантажити користувачів",
+        "addFailed": "Помилка додавання члена",
+        "updateFailed": "Помилка оновлення члена",
+        "removeFailed": "Помилка видалення члена"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Вимк."
+      },
+      "autoRefreshOff": "Автоматичне оновлення відключено",
+      "autoRefreshEvery": "Автоматичне оновлення кожні {{interval}}",
+      "lastUpdated": "останнє оновлення: {{time}}",
+      "refresh": "Оновити",
+      "refreshNowTitle": "Оновити зараз",
+      "refreshNowButton": "↻ Зараз",
+      "filters": {
+        "period": "Період",
+        "model": "Модель",
+        "allModels": "Усі моделі",
+        "type": "Тип",
+        "all": "Усе",
+        "completion": "Завершення",
+        "router": "Маршрутизатор",
+        "status": "Статус",
+        "success": "Успішна",
+        "blocked": "Заблоковано",
+        "error": "Помилка",
+        "resetButton": "Скидання фільтрів"
+      },
+      "stats": {
+        "totalCost": "Загальна вартість",
+        "totalCalls": "Загальні виклики",
+        "completionCalls": "Виклики завершення",
+        "routerCalls": "Виклики маршрутизатора",
+        "errors": "Помилки"
+      },
+      "requestLogs": "Журнали запитів",
+      "emptyNoRequests": "Немає запитів для цього маршрутизатора у вибраному періоді.",
+      "emptyNoMatches": "Жоден запис не відповідає активним фільтрам.",
+      "columns": {
+        "time": "Час",
+        "model": "Модель",
+        "type": "Тип",
+        "in": "Вхід",
+        "out": "Вихід",
+        "cost": "Вартість",
+        "latency": "Затримка",
+        "ttft": "TTFT",
+        "tokPerSec": "Токени/с",
+        "status": "Статус"
+      },
+      "typeRouter": "маршрутизатор",
+      "typeCompletion": "завершення",
+      "pagination": {
+        "previous": "← Попередня",
+        "next": "Наступна →",
+        "pageOf": "Сторінка {{page}} з {{totalPages}}",
+        "totalRecords": "({{count}} всього записів)"
+      }
+    },
+    "security": {
+      "title": "Безпека",
+      "description": "Використовуйте спільний профіль безпеки або визначте власні охоронні системи цього маршрутизатора та політики ПІД.",
+      "mode": {
+        "profile": "Профіль",
+        "custom": "Спеціальний"
+      },
+      "profileSelect": {
+        "ariaLabel": "Профіль безпеки",
+        "builtinLabel": "{{label}} (вбудований)",
+        "hint": "Охоронні системи та політики ПІД походять від профілю та дотримуються його змін. Редагуйте їх на сторінці Profiles, або переходьте на Custom, щоб почати з їхньої копії.",
+        "blockingSuffix": ", блокування",
+        "disabledSuffix": ", відключено",
+        "piiRedaction": "Редагування ПІД ({{target}})"
+      },
+      "saveButton": "Зберегти параметри безпеки",
+      "saved": "Збережено!",
+      "errors": {
+        "assignFailed": "Не вдалося призначити профіль безпеки",
+        "saveFailed": "Помилка збереження параметрів безпеки",
+        "noProfileAvailable": "Профіль безпеки недоступний. Створіть один на сторінці Profiles."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Ви розумна асистент ШІ.",
+      "errors": {
+        "unknown": "Сталася невідома помилка",
+        "onlyImages": "Наразі видяються лише вкладення зображень для моделей зору."
+      },
+      "title": "Тестова чат",
+      "subtitle": "Наділіть тестові запити через шлюз маршрутизації.",
+      "routerToken": "Токен маршрутизатора:",
+      "hideToken": "Сховати токен",
+      "showToken": "Показати токен",
+      "recognizedToken": "Визнаний токен",
+      "unrecognizedToken": "Невизнаний токен",
+      "noMessages": "Ще немає повідомлень.",
+      "enterTokenHint": "Будь ласка, введіть токен маршрутизатора вище, щоб надіслати повідомлення.",
+      "typeMessageHint": "Введіть повідомлення нижче, щоб почати тестування.",
+      "reasoning": "Міркування",
+      "attachedAlt": "Прикріплено",
+      "attachmentAlt": "Вкладення",
+      "attachImage": "Прикріпити зображення",
+      "typeMessagePlaceholder": "Введіть повідомлення...",
+      "stopGeneration": "Зупинити генерацію",
+      "sendEnter": "Надіслати (Enter)",
+      "debugLog": "Журнал налагодження",
+      "clear": "Очистити",
+      "noRequestSent": "Запит ще не надіслано.",
+      "turnTraceLog": "Обернути #{{turn}} журнал трасування · {{count}} подія",
+      "turnTraceLog_other": "Обернути #{{turn}} журнал трасування · {{count}} подій"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Підключення",
+      "subtitle": "Облікові записи постачальника, що використовуються для запуску екземплярів моделей",
+      "noPermission": "Ви не маєте дозволу переглядати підключення.",
+      "count": "{{count}} підключення",
+      "count_other": "{{count}} підключень",
+      "addConnection": "Додати підключення",
+      "empty": "Немає підключень. Додайте один, щоб почати.",
+      "deleteConfirm": "Видалити підключення \"{{label}}\"? Екземпляри, пов'язані з ним, перестануть працювати.",
+      "errors": {
+        "loadFailed": "Не вдалося завантажити підключення",
+        "deleteFailed": "Не вдалося видалити підключення"
+      },
+      "columns": {
+        "label": "Ярлик",
+        "provider": "Постачальник",
+        "endpoint": "Кінцева точка",
+        "status": "Статус"
+      },
+      "status": {
+        "enabled": "Ввімкнено",
+        "disabled": "Відключено"
+      },
+      "actions": {
+        "models": "Моделі",
+        "edit": "Редагувати",
+        "remove": "Видалити"
+      }
+    },
+    "form": {
+      "backToConnections": "Назад до підключень",
+      "editTitle": "Редагувати підключення",
+      "addTitle": "Додати підключення",
+      "enabled": "Ввімкнено",
+      "editSubtitle": "Оновіть параметри облікового запису постачальника",
+      "addSubtitle": "Зареєструйте новий обліковий запис постачальника",
+      "sectionTitle": "Деталі підключення",
+      "sectionDesc": "Обліковий запис постачальника, облікові дані та кінцева точка, використані для виконання запитів.",
+      "provider": "Постачальник",
+      "groups": {
+        "directApi": "Прямий API",
+        "cloudPlatform": "Хмарна платформа",
+        "subscription": "Передплата",
+        "browserSession": "Сеанс браузера",
+        "selfHosted": "Самостійна хостинг"
+      },
+      "upstreamProvider": {
+        "label": "Постачальник",
+        "hintLabel": "(назва постачальника вище за потоком)",
+        "placeholder": "наприклад глибокий пошук, помилка, groq",
+        "description": "Називає сервіс, якому належить ця кінцева точка. Моделі на цьому підключенні використовують їх як префікс ID (наприклад, <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Назва",
+        "hint": "Визначає це підключення скрізь, де на нього посилаються, тому воно має бути унікальним. Залиште порожнім, щоб використовувати <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Залиште поля облікових даних порожніми, щоб зберегти наявні значення.",
+      "save": "Зберегти",
+      "create": "Створити",
+      "cancel": "Скасувати",
+      "oauth": {
+        "unknown": "невідомо",
+        "accountExpires": "Обліковий запис: {{account}} закінчується {{expires}}",
+        "unknownError": "Невідома помилка"
+      },
+      "errors": {
+        "notFound": "Підключення не знайдено",
+        "loadFailed": "Не вдалося завантажити підключення",
+        "updateFailed": "Не вдалося оновити підключення",
+        "createFailed": "Не вдалося створити підключення"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Назад до моделей",
+      "title": "Відкриття моделей",
+      "subtitle": "Переглянути доступні моделі та додати їх до конфігурації маршрутизації",
+      "count": "{{count}} моделей",
+      "filteredCount": "{{filtered}} з {{count}}",
+      "free": "безплатно",
+      "add": "Додати",
+      "addAgain": "Додати знову",
+      "loadFailed": "Не вдалося завантажити каталог: {{error}}",
+      "filters": {
+        "search": "Пошук",
+        "searchPlaceholder": "ID моделі або назва…",
+        "provider": "Постачальник",
+        "allProviders": "Усі постачальники",
+        "context": "Контекст",
+        "ctxOptions": {
+          "all": "Усе",
+          "small": "< 32k",
+          "medium": "32k200k",
+          "large": "200k1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Ціна / 1M",
+        "priceOptions": {
+          "all": "Усе",
+          "free": "Безплатно",
+          "low": "< $1",
+          "mid": "$1$5",
+          "high": "> $5"
+        },
+        "show": "Показати",
+        "configured": "Налаштовано",
+        "embedding": "Вбудовування",
+        "resetFilters": "Скидання фільтрів"
+      },
+      "empty": {
+        "noMatches": "Жоден модель не відповідає вашим фільтрам."
+      },
+      "columns": {
+        "model": "Модель",
+        "provider": "Постачальник",
+        "context": "Контекст",
+        "input": "Вхід / 1M",
+        "output": "Вихід / 1M"
+      },
+      "badges": {
+        "configured": "Налаштовано",
+        "embedding": "вбудовування",
+        "runsLocally": "Запускається локально"
+      },
+      "pagination": {
+        "prev": "Перед",
+        "next": "Далі",
+        "range": "{{start}}{{end}} з {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Назад до моделей",
+      "title": {
+        "add": "Додати модель",
+        "edit": "Редагувати модель",
+        "clone": "Клонувати модель"
+      },
+      "subtitle": {
+        "add": "Зареєструйте нову модель постачальника LLM",
+        "edit": "Змінення конфігурації для {{id}}",
+        "clone": "Клонування з {{id}} призначення нового ID для збереження"
+      },
+      "errors": {
+        "modelNotFound": "Модель не знайдена",
+        "sourceModelNotFound": "Вихідну модель не знайдено",
+        "loadFailed": "Помилка завантаження моделей",
+        "idRequired": "Потрібен ID моделі",
+        "duplicateId": "Модель \"{{id}}\" вже існує встановіть інший спеціальний ID",
+        "selectConnection": "Виберіть підключення",
+        "saveFailed": "Помилка"
+      },
+      "badge": {
+        "yes": "так",
+        "no": "ні",
+        "override": "Переозиру",
+        "auto": "Авто",
+        "default": "За замовчуванням: {{value}}",
+        "reset": "Скидання"
+      },
+      "oauth": {
+        "unknownExpiry": "невідомо",
+        "accountOk": "Обліковий запис: {{account}} закінчується {{expires}}",
+        "unknownError": "Невідома помилка"
+      },
+      "identification": {
+        "title": "Ідентифікація моделі",
+        "description": "Унікальний ідентифікатор та параметри постачальника для цієї конфігурації моделі.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(опціонально за замовчуванням:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Ідентифікатор, що використовується при посиланні на цю модель у викликах API Routerly.",
+        "provider": "Постачальник",
+        "upstreamProviderHint": "(назва постачальника вище за потоком)",
+        "upstreamProviderPlaceholder": "наприклад глибокий пошук, помилка, groq",
+        "upstreamProviderDescPre": "Використовується як префікс для ID Routerly (наприклад,",
+        "upstreamProviderDescPost": ").",
+        "model": "Модель",
+        "upstreamModelHint": "(ID моделі вище за потоком)",
+        "upstreamModelPlaceholder": "наприклад deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Ідентифікатор моделі, надісланий до API кінцевої точки вище за потоком.",
+        "modelPreset": "Попередня настройка моделі",
+        "customModelOption": "Користувацька назва моделі",
+        "customModelPlaceholder": "наприклад моя тонко налаштована модель"
+      },
+      "connection": {
+        "title": "Деталі підключення",
+        "description": "API кінцева точка та облікові дані, необхідні для виконання запитів.",
+        "preconfigured": "Попередньо налаштовано",
+        "custom": "Спеціальний",
+        "connection": "Підключення",
+        "selectPlaceholder": "вибрати підключення",
+        "noneAvailable": "Жоден попередньо налаштований підключення для цього постачальника. Переходьте на Custom, або створіть один на сторінці Connections.",
+        "editHint": "Редагування цього підключення пізніше оновлює кожну модель, пов'язану з ним."
+      },
+      "capabilities": {
+        "title": "Можливості",
+        "description": "Вказати тип та можливості цієї моделі.",
+        "embeddingModel": "Модель вбудовування",
+        "embeddingModelHint": "Ця модель генерує вектор вбудовування (не завершення чату)"
+      },
+      "pricing": {
+        "title": "Ціна й контекст",
+        "description": "Параметри вартості та обмеження обробки, які використовуються для виставлення рахунків та маршрутизації.",
+        "inputPerMillion": "Вхід $/1M",
+        "outputPerMillion": "Вихід $/1M",
+        "cachePerMillion": "Читання кешу $/1M",
+        "cacheWritePerMillion": "Запис кешу $/1M",
+        "optional": "(опц.)",
+        "contextWindow": "Вікно контексту",
+        "contextWindowHint": "(токени, опціонально)"
+      },
+      "tiers": {
+        "title": "Просунуто цінові рівні",
+        "description": "Переозиру ціну, коли метрика перевищує поріг. Наприклад: \"Вище 200 000 токенів контексту, змінюються ціни.\"",
+        "removeTier": "Видалити рівень",
+        "above": "Вище",
+        "metric": "Метрика",
+        "metricContextTokens": "Токени контексту",
+        "overridePricing": "Переозиру ціни",
+        "addTier": "Додати цінович рівень"
+      },
+      "limits": {
+        "title": "Обмеження",
+        "description": "Обмеження використання для цієї моделі. Можна поєднувати кілька правил.",
+        "metric": "Метрика",
+        "type": "Тип",
+        "addLimit": "Додати обмеження"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (передплата Pro/Max)",
+        "openaiOauth": "OpenAI (передплата ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "Зберегти зміни",
+      "createClone": "Створити клон",
+      "createModel": "Створити модель"
+    },
+    "page": {
+      "title": "Моделі",
+      "subtitle": "Постачальники LLM, зареєстровані з Routerly",
+      "tabs": {
+        "models": "Моделі",
+        "health": "Здоров'я"
+      },
+      "toolbar": {
+        "count": "{{count}} модель",
+        "count_other": "{{count}} моделей",
+        "filteredCount": "{{filtered}} з {{count}} модель",
+        "filteredCount_other": "{{filtered}} з {{count}} моделей"
+      },
+      "filters": {
+        "allProviders": "Усі постачальники",
+        "allConnections": "Усі підключення",
+        "searchPlaceholder": "Фільтрувати моделі…"
+      },
+      "discover": "Відкрити",
+      "addModel": "Додати модель",
+      "deleteConfirm": "Видалити модель \"{{id}}\"?",
+      "empty": {
+        "noModels": "Немає моделей. Додайте один, щоб почати.",
+        "noMatches": "Жоден модель не відповідає активним фільтрам."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Постачальник",
+        "endpoint": "Кінцева точка",
+        "input": "Вхід $/1M",
+        "output": "Вихід $/1M",
+        "cache": "Кеш $/1M",
+        "context": "Розмір контексту"
+      },
+      "actions": {
+        "test": "Тестування",
+        "clone": "Клонувати",
+        "edit": "Редагувати",
+        "remove": "Видалити"
+      },
+      "pagination": {
+        "previous": "← Попередня",
+        "next": "Наступна →",
+        "pageOf": "Сторінка {{page}} з {{totalPages}}",
+        "total": "({{count}} модель)",
+        "total_other": "({{count}} моделей)"
+      },
+      "health": {
+        "emptyNoModels": "Жоден модель не налаштована.",
+        "emptyNoMatches": "Жоден модель не відповідає фільтру.",
+        "resetAll": "Скидання всіх",
+        "resetAllTitle": "Скидання кожного автоматичного вимикача, період охолодження та блокування",
+        "resetTitle": "Скидання автоматичного вимикача",
+        "confirmResetModel": "Скидання автоматичного вимикача для моделі \"{{id}}\"?",
+        "confirmResetAll": "Скидання всього стану стійкості? Це очищає кожен автоматичний вимикач, період охолодження та блокування.",
+        "errors": {
+          "resetModelFailed": "Не вдалося скидання автоматичного вимикача",
+          "resetAllFailed": "Не вдалося скидання стану стійкості"
+        },
+        "columns": {
+          "model": "Модель",
+          "provider": "Постачальник",
+          "status": "Статус",
+          "circuit": "Схема",
+          "errorRate": "Коефіцієнт помилок (5м)",
+          "p95Latency": "P95 затримка (1h)",
+          "requests": "Запити (1h)",
+          "lastSuccess": "Останній успіх",
+          "cooldownLockout": "Період охолодження / блокування"
+        },
+        "status": {
+          "healthy": "Здорова",
+          "degraded": "Деградована",
+          "unavailable": "Недоступна",
+          "cooldown": "Період охолодження",
+          "nodata": "Жоден дані"
+        },
+        "circuit": {
+          "ok": "ОК",
+          "recovering": "Відновлення",
+          "tripped": "Спрацьовано"
+        },
+        "time": {
+          "never": "ніколи",
+          "now": "зараз",
+          "secondsAgo": "{{count}}s назад",
+          "minutesAgo": "{{count}}м назад",
+          "hoursAgo": "{{count}}ч назад",
+          "daysAgo": "{{count}}д назад",
+          "minSec": "{{min}}м {{sec}}с",
+          "sec": "{{sec}}с",
+          "cooldown": "період охолодження {{time}}",
+          "lockout": "блокування {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Експерименти",
+      "subtitle": "Тест A/B маршрутизаторів один до одного",
+      "noPermission": "Ви не маєте дозволу переглядати експерименти.",
+      "count": "{{count}} експеримент",
+      "count_other": "{{count}} експериментів",
+      "newExperiment": "Новий експеримент",
+      "empty": "Експериментів немає. Створіть один, щоб порівняти маршрутизатори голова до голови.",
+      "deleteConfirm": "Видалити експеримент \"{{name}}\"? Це неможливо скасувати.",
+      "noToken": "Немає токена",
+      "noTokenTitle": "Без токена жоден клієнт не може досягти цього експерименту",
+      "errors": {
+        "loadFailed": "Не вдалося завантажити експерименти",
+        "deleteFailed": "Не вдалося видалити експеримент"
+      },
+      "columns": {
+        "name": "Назва",
+        "variants": "Варіанти",
+        "rotation": "Обертання",
+        "created": "Створено"
+      },
+      "actions": {
+        "edit": "Редагувати експеримент",
+        "remove": "Видалити"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Назад до експериментів",
+      "newExperiment": "Новий експеримент",
+      "loading": "Завантаження...",
+      "experimentId": "ID експерименту:",
+      "disabledTabTitle": "Спочатку збережіть експеримент, щоб розблокувати цю вкладку",
+      "errors": {
+        "notFound": "Експеримент не знайдено"
+      },
+      "tabs": {
+        "config": "Конфігурація",
+        "metrics": "Метрики",
+        "token": "Токен"
+      }
+    },
+    "config": {
+      "saved": "Збережено.",
+      "created": "Експеримент створено. Вкажіть свій клієнт на цей токен замість токена маршрутизатора. Він більше не буде показаний.",
+      "copy": "Копіювати",
+      "copied": "Скопійовано!",
+      "done": "Готово",
+      "saving": "Збереження...",
+      "create": "Створити експеримент",
+      "save": "Зберегти зміни",
+      "cancel": "Скасувати",
+      "trafficSplit": "Розділення трафіку",
+      "errors": {
+        "loadRoutersFailed": "Не вдалося завантажити маршрутизаторів",
+        "saveFailed": "Не вдалося зберегти експеримент",
+        "copyFailed": "Копіювання не вдалося: виберіть та скопіюйте токен вручну."
+      },
+      "fields": {
+        "name": "Назва",
+        "namePlaceholder": "Дешевих проти преміум-класу маршрутизація",
+        "description": "Опис",
+        "optional": "(опціонально)",
+        "descriptionPlaceholder": "Що цей тест намагається вирішити",
+        "minSamples": "Мінімальні виклики на варіант",
+        "minSamplesHint": "Нижче цього, вкладка Metrics позначає порівняння як ще не завершене.",
+        "rotation": "Обертання",
+        "stickyOn": "Липка на",
+        "stickyKey": "Липкий ключ"
+      },
+      "variants": {
+        "title": "Варіанти",
+        "desc": "Кожен варіант існуючий маршрутизатор, отриманий цілком: його моделі, маршрутизація та охоронні системи застосуються. Тест потребує щонайменше два.",
+        "routerAriaLabel": "Варіант {{index}} маршрутизатор",
+        "routerPlaceholder": "Виберіть маршрутизатор",
+        "labelAriaLabel": "Варіант {{index}} ярлик",
+        "labelPlaceholder": "Ярлик (опціонально)",
+        "weightAriaLabel": "Варіант {{index}} вага",
+        "weightPlaceholder": "Вага",
+        "removeTitle": "Видалити варіант {{index}}",
+        "add": "Додати варіант"
+      },
+      "judge": {
+        "title": "Суддя",
+        "desc": "Опціонально: модель читає кожну вибірку відповіді та оцінює 0-10 проти ваших критеріїв. Кожен судженої виклик є додатковим викликом моделі, який вир компіл як будь-який інший.",
+        "enable": "Оцініть відповіді з моделлю судді",
+        "model": "Судді модель",
+        "modelPlaceholder": "Виберіть модель",
+        "criteria": "Критерії",
+        "criteriaPlaceholder": "Один на рядок, наприклад\nОтримує на питання, яке задається\nНалишається фактичні\nДотримується запитаного формату",
+        "sampleRate": "Частка викликів судженого (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Завантаження...",
+      "callsMeasured": "{{count}} виклик виміряно",
+      "callsMeasured_other": "{{count}} викликів виміряно",
+      "empty": "Жоден виклик у цьому вікні ще. Вкажіть клієнт на токен експерименту, щоб почати порівняння.",
+      "notConclusive": "Ще не завершено: кожен варіант потребує щонайменше {{minSamples}} викликів у цьому вікні. ",
+      "explanation": "Кращий показник кожної пари висвітлюється: дешевшої на виклик, швидшої, вищої оцінки судді. Відсоток під значенням його відстань від найкращої руки. Оцінка судді це розвиток середня протягом всього життя експерименту, тому це єдине значення вікна не звужується.",
+      "lowSample": "Низька вибірка",
+      "lowSampleTitle": "Під {{minSamples}} викликів у цьому вікні",
+      "judgedCallsTitle": "{{count}} відповідь оцінювана суддею з часу експеримент почався",
+      "judgedCallsTitle_other": "{{count}} відповідей оцінювані суддею з часу експеримент почався",
+      "errors": {
+        "loadFailed": "Не вдалося завантажити метрики"
+      },
+      "columns": {
+        "variant": "Варіант",
+        "calls": "Виклики",
+        "share": "Акція",
+        "errors": "Помилки",
+        "tokens": "Токени вх / вихід",
+        "cost": "Вартість",
+        "costPerCall": "Вартість / виклик",
+        "avgLatency": "Середня затримка",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Оцінка судді"
+      }
+    },
+    "token": {
+      "desc": "Клієнт називає експеримент точно як маршрутизатор: той же базовий URL, цей токен замість токена маршрутизатора. Кожен запит приземлюється на один варіант та вир компіл до маршрутизатора цього варіанта.",
+      "baseUrlLabel": "Базова URL для OpenAI або Anthropic SDK, з токеном експерименту як ключ API:",
+      "created": "Токен створено. Скопіюйте це зараз, не буде показано знову.",
+      "copy": "Копіювати",
+      "copied": "Скопійовано!",
+      "newToken": "Новий токен",
+      "empty": "Жоден токен на цьому експерименті. Створіть один, щоб клієнти могли його називати.",
+      "revokeConfirm": "Відкликати токен \"{{snippet}}...\"? Клієнти, які його використовують, негайно перестануть працювати.",
+      "revokeTitle": "Відкликати токен",
+      "errors": {
+        "createFailed": "Не вдалося створити токен",
+        "revokeFailed": "Не вдалося відкликати токен",
+        "copyFailed": "Копіювання не вдалося: виберіть та скопіюйте токен вручну."
+      },
+      "columns": {
+        "created": "Створено",
+        "lastUsed": "Останній раз використано"
+      }
+    }
+  },
+  "overview": {
+    "title": "Огляд",
+    "subtitle": "Зведення про використання та розбиття вартості",
+    "noPermission": "Немає дозволу для перегляду даних про використання.",
+    "costByModel": "Вартість за моделлю",
+    "noCostRecorded": "Жоден вартість не записано за цей період.",
+    "callsByModel": "Виклики за моделлю",
+    "columns": {
+      "model": "Модель",
+      "calls": "Виклики",
+      "errors": "Помилки",
+      "cost": "Вартість"
+    },
+    "stats": {
+      "totalCalls": "Загальні виклики",
+      "callsBreakdown": "{{routing}} маршрутизація · {{completion}} завершення",
+      "successRate": "Частота успіху",
+      "ofAllRequests": "всіх запитів",
+      "errors": "Помилки",
+      "failedRequests": "невдалих запитів",
+      "models": "Моделі",
+      "registered": "зареєстровано",
+      "routers": "Маршрутизатори",
+      "active": "активна"
+    },
+    "connectCard": {
+      "title": "Підключити клієнт",
+      "desc": "Вкажіть Claude Code, Codex, Cursor і {{count}} більше на цей шлюз."
+    }
+  },
+  "login": {
+    "emailLabel": "Електронна пошта",
+    "passwordLabel": "Пароль",
+    "signIn": "Увійти",
+    "errors": {
+      "loginFailed": "Вхід не вдався",
+      "totpFailed": "Перевірка 2FA не вдалась"
+    },
+    "totp": {
+      "title": "Двофакторна автентифікація",
+      "backupPrompt": "Введіть код резервного копіювання.",
+      "appPrompt": "Введіть 6-значний код з програми аутентифікатора.",
+      "backupCodeLabel": "Код резервного копіювання",
+      "authenticatorCodeLabel": "Код аутентифікатора",
+      "verify": "Перевірити",
+      "useAuthenticatorInstead": "Замість цього використовуйте програму аутентифікатора",
+      "useBackupInstead": "Замість цього використовуйте код резервного копіювання"
+    }
+  },
+  "setup": {
+    "welcome": "Ласкаво просимо! Давайте вас налаштуємо.",
+    "welcomeSubtitle": "Створіть перший обліковий запис адміністратора, щоб розпочати керування Routerly.",
+    "betaBadge": "🚧 Бета",
+    "betaNotice": "Routerly активно розвивається. Можливі помилки.",
+    "betaFeedback": "Ваш зворотний зв'язок допомагає сформувати те, що він стає",
+    "betaLink": "повідомляти про проблеми або поділіться ідеями",
+    "emailLabel": "Електронна пошта адміністратора",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Пароль",
+    "passwordPlaceholder": "Мінімум 8 символів",
+    "confirmLabel": "Підтвердити пароль",
+    "confirmPlaceholder": "Повторіть пароль",
+    "submit": "Створити обліковий запис адміністратора",
+    "errors": {
+      "mismatch": "Паролі не збігаються",
+      "tooShort": "Пароль повинен містити мінімум 8 символів",
+      "setupFailed": "Налаштування не вдалось"
+    }
+  },
+  "audit": {
+    "empty": "Жоден записи аудиту не знайдено.",
+    "errors": {
+      "loadFailed": "Не вдалось завантажити журнал аудиту"
+    },
+    "filters": {
+      "period": "Період",
+      "user": "Користувач",
+      "userPlaceholder": "Електронна пошта або ID користувача",
+      "action": "Дія",
+      "actionPlaceholder": "наприклад model:create",
+      "result": "Результат",
+      "results": {
+        "all": "Усе",
+        "success": "Успішна",
+        "forbidden": "Заборонено",
+        "error": "Помилка"
+      },
+      "refresh": "Оновити"
+    },
+    "columns": {
+      "timestamp": "Часова мітка",
+      "user": "Користувач",
+      "action": "Дія",
+      "endpoint": "Кінцева точка",
+      "result": "Результат",
+      "details": "Деталі"
+    },
+    "pagination": {
+      "previous": "Попередня",
+      "next": "Наступна",
+      "page": "Сторінка {{page}} з {{totalPages}}",
+      "total": "({{count}} всього)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Використання",
+      "live": "ЖИВА",
+      "subtitle": "Детальні журнали викликів та розбиття для кожної моделі",
+      "updatedAt": "· оновлено в {{time}}",
+      "poll": {
+        "off": "Вимк.",
+        "5s": "5с",
+        "15s": "15с",
+        "30s": "30с",
+        "1m": "1м",
+        "5m": "5м"
+      },
+      "liveButton": "● Жива",
+      "liveButtonTitle": {
+        "disable": "Відключити режим жива",
+        "enable": "Увімкнути режим жива (оновлення кожні 2с)"
+      },
+      "refreshNow": "↻ Зараз",
+      "refreshNowTitle": "Оновити зараз",
+      "filters": {
+        "period": "Період",
+        "router": "Маршрутизатор",
+        "model": "Модель",
+        "token": "Токен",
+        "caller": "Викликаючий",
+        "type": "Тип",
+        "status": "Статус",
+        "allRouters": "Усі маршрутизатори",
+        "allModels": "Усі моделі",
+        "allTokens": "Усі токени",
+        "resetFilters": "Скидання фільтрів",
+        "all": "Усе",
+        "success": "Успішна",
+        "blocked": "Заблоковано",
+        "error": "Помилка"
+      },
+      "caller": {
+        "all": "Усе",
+        "completion": "Завершення",
+        "routing": "Маршрутизатор",
+        "guardrail": "Охоронна система",
+        "judge": "Суддя"
+      },
+      "callerBadge": {
+        "completion": "завершення",
+        "routing": "маршрутизатор",
+        "guardrail": "охоронна система",
+        "judge": "суддя"
+      },
+      "errors": {
+        "loadFailedPrefix": "Не вдалось завантажити дані про використання:",
+        "retry": "Спробуйте ще раз"
+      },
+      "stats": {
+        "totalCalls": "Загальні виклики",
+        "completionCalls": "Виклики завершення",
+        "routerCalls": "Виклики маршрутизатора",
+        "guardrailCalls": "Виклики охоронної системи",
+        "blockedCalls": "Заблоковані виклики",
+        "errors": "Помилки"
+      },
+      "table": {
+        "rank": "Рейтинг",
+        "model": "Модель",
+        "provider": "Постачальник",
+        "calls": "Виклики",
+        "errors": "Помилки",
+        "successRate": "Частота успіху",
+        "avgLatency": "Середня затримка",
+        "p95Latency": "P95 затримка",
+        "inputTokens": "Вхідні токени",
+        "outputTokens": "Вихідні токени",
+        "costPer1k": "Вартість / 1K",
+        "cost": "Вартість (USD)",
+        "bestCostPerformance": "Найкраще коефіцієнт вартості"
+      },
+      "showMoreModels": "Показати {{count}} більше моделей",
+      "showMoreModels_other": "Показати {{count}} більше моделей",
+      "showFewerModels": "Показати менше моделей",
+      "recentCalls": {
+        "title": "Недавні виклики",
+        "empty": "Немає записів про використання за цей період.",
+        "columns": {
+          "time": "Час",
+          "router": "Маршрутизатор",
+          "model": "Модель",
+          "type": "Тип",
+          "caller": "Викликаючий",
+          "in": "Вхід",
+          "out": "Вихід",
+          "cost": "Вартість",
+          "latency": "Затримка",
+          "ttft": "TTFT",
+          "tokensPerSec": "Токени/с",
+          "status": "Статус"
+        }
+      },
+      "pagination": {
+        "previous": "Попередня",
+        "next": "Наступна",
+        "pageOf": "Сторінка {{page}} з {{totalPages}}",
+        "totalRecords": "({{count}} всього записів)"
+      }
+    },
+    "record": {
+      "back": "Назад",
+      "title": "Деталь виклику",
+      "notFoundTitle": "Запис не знайдено",
+      "notFoundBody": "Запис про використання {{id}} не вдалось завантажити.",
+      "errors": {
+        "loadFailed": "Не вдалось завантажити запис"
+      },
+      "sections": {
+        "identity": "Тотожність",
+        "tokensAndCost": "Токени й вартість",
+        "performanceAndOutcome": "Продуктивність та результат",
+        "traceLog": "Журнал трасування"
+      },
+      "fields": {
+        "recordId": "ID запису",
+        "router": "Маршрутизатор",
+        "token": "Токен",
+        "model": "Модель",
+        "callType": "Тип виклику",
+        "requestType": "Тип запиту",
+        "inputTokens": "Вхідні токени",
+        "outputTokens": "Вихідні токени",
+        "totalTokens": "Загальні токени",
+        "costUsd": "Вартість (USD)",
+        "costUnknown": "Невідомо",
+        "latency": "Затримка",
+        "ttft": "TTFT",
+        "tokensPerSec": "Токени/с",
+        "outcome": "Результат",
+        "timestamp": "Часова мітка",
+        "guardrailTriggered": "Охоронна система активована",
+        "blockedBy": "Заблокована",
+        "piiRedacted": "ПІД редаговано"
+      },
+      "errorMessage": "Повідомлення про помилку",
+      "eventCount": "{{count}} подія",
+      "eventCount_other": "{{count}} подій",
+      "noTrace": "Жоден трасування недоступна. Дані трасування записуються тільки для нових викликів."
+    }
+  },
+  "playground": {
+    "title": "Майданчик",
+    "subtitle": "Тестуйте моделі, порівнюйте відповіді та збережіть попередні налаштування підказок.",
+    "mode": {
+      "single": "Одинак",
+      "compare": "Порівняти"
+    },
+    "token": {
+      "label": "Токен:",
+      "labelA": "Токен A",
+      "labelB": "Токен B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "те саме, що й A",
+      "unknownToken": "Невідомий токен"
+    },
+    "presets": {
+      "button": "Попередні налаштування",
+      "panelTitle": "Попередні налаштування",
+      "saveCurrent": "Зберегти поточне",
+      "namePlaceholder": "Назва попередньої настройки...",
+      "save": "Зберегти",
+      "empty": "Немає попередніх налаштувань.",
+      "delete": "Видалити попередню настройку"
+    },
+    "streamingDisabled": {
+      "banner": "Потокова передача не доступна",
+      "bannerBody": "цей маршрутизатор має активну охоронну систему блокування відповідей. Routerly повинен перевірити повну відповідь перед доставкою, тому відповіді надходять за один раз.",
+      "tooltip": "Потокова передача не доступна: охоронна система блокування відповідей вимагає перевірки повної відповіді перед доставкою.",
+      "ariaLabel": "Потокова передача недоступна"
+    },
+    "systemPrompt": "Системна підказка",
+    "model": "Модель",
+    "modelPlaceholder": "Авто (за замовчуванням маршрутизатора)",
+    "params": {
+      "temp": "Темпер.",
+      "maxTokens": "Макс. токенів",
+      "topP": "Top-p"
+    },
+    "stream": "Потік",
+    "clear": "Очистити",
+    "empty": {
+      "noMessages": "Ще немає повідомлень.",
+      "enterToken": "Введіть токен маршрутизатора вище, щоб розпочати."
+    },
+    "reasoning": "Міркування",
+    "blockedDefault": "Це повідомлення було заблоковано охоронною системою.",
+    "truncated": "Скорочено відповідь була урізана макс. токенами",
+    "bufferedNote": "Утримується для перевірки безпеки",
+    "errors": {
+      "onlyImages": "Підтримуються тільки вкладення зображень."
+    },
+    "rawToggle": {
+      "rendered": "представлено",
+      "raw": "сирої"
+    },
+    "inputPlaceholder": "Введіть повідомлення...",
+    "attachImage": "Прикріпити зображення",
+    "attachedImageAlt": "Прикріплено",
+    "attachmentAlt": "Вкладення",
+    "debug": {
+      "title": "Налагодження",
+      "clear": "Очистити",
+      "hide": "Сховати налагодження",
+      "show": "Показати налагодження",
+      "empty": "Жоден дані налагодження ще.",
+      "emptyHint": "Надішліть повідомлення, щоб побачити деталі маршрутизації.",
+      "turnTraceLog": "Обернути #{{turn}} журнал трасування"
+    },
+    "compare": {
+      "modelLabel": "Модель {{label}}:",
+      "modelSelectPlaceholder": "Виберіть модель...",
+      "noMessages": "Ще немає повідомлень.",
+      "debugTurns": "Налагодження ({{count}} обернути)",
+      "debugTurns_other": "Налагодження ({{count}} обертати)",
+      "guardrailTokensTitle": "Токени судді охоронної системи",
+      "stop": "Зупинити",
+      "inputPlaceholder": "Надішліть те саме повідомлення обом моделям..."
+    }
+  },
+  "help": {
+    "title": "Довідка та підтримка",
+    "subtitle": "Ми тут, щоб допомогти знайти відповіді або зв'язатися з нами будь-коли.",
+    "docs": {
+      "title": "Документація",
+      "subtitle": "Путівники, довідка API та документи конфігурації",
+      "body": "Офіційна документація охоплює все: від початку роботи до передових політик маршрутизації, налаштування постачальника, бюджетів та повного посилання API.",
+      "openLink": "Відкрити документацію"
+    },
+    "issues": {
+      "title": "Повідомити про помилку або запропонувати функцію",
+      "subtitle": "Відкрийте проблему GitHub це займе 2 хвилини",
+      "body": "Проблеми GitHub найкращий спосіб повідомити про помилки або запропонувати поліпшення. Щоб допомогти нам виправити речі швидше, включите: що ви робили, що ви очікували, що трапилось, і що насправді сталось.",
+      "showTemplate": "Показати шаблон проблеми",
+      "reportBug": "Повідомити про помилку",
+      "requestFeature": "Запросити функцію"
+    },
+    "issueTemplate": {
+      "whatHappened": "Що трапилось?",
+      "whatHappenedHint": "Опишіть проблему простими словами",
+      "stepsToReproduce": "Кроки для відтворення",
+      "expectedBehaviour": "Очікувана поведінка",
+      "expectedBehaviourHint": "Що ви очікували бачити",
+      "version": "Версія Routerly",
+      "versionHint": "Запустіть `routerly --version` або перевірте Settings → About"
+    },
+    "email": {
+      "title": "Зв'язатися з підтримкою",
+      "subtitle": "Ми читаємо кожне повідомлення та відповідаємо як можна скоріше",
+      "body": "Для всього, що не підходить на GitHub проблему питання щодо виставлення рахунків, приватні проблеми, або якщо ви просто хочете сказати привіт надішліть нам лист."
+    },
+    "faq": {
+      "title": "Часто задавані питання",
+      "subtitle": "Швидкі відповіді на найбільш часті запитання",
+      "items": {
+        "connect": {
+          "q": "Як я підключу мою програму до Routerly?",
+          "a": "Вкажіть свою OpenAI або Anthropic SDK на свій екземпляр Routerly. Замініть базовий URL на http://your-host:3000/v1 (OpenAI-сумісно) або http://your-host:3000/anthropic (Anthropic-сумісно), потім використовуйте токен маршрутизатора як ключ API. Це все немає інших змін, необхідних."
+        },
+        "openaiCompat": {
+          "q": "Чи сумісна Routerly з інструментами, які використовують OpenAI SDK?",
+          "a": "Так. Routerly є заміною drop-in: будь-який інструмент, який підтримує користувацький базовий URL та ключ API (LangChain, LlamaIndex, Cursor, Continue тощо) працює з коробки. Для клієнтів формату Anthropic замість цього використовуйте кінцеву точку /anthropic."
+        },
+        "routing": {
+          "q": "Як працює маршрутизація моделей?",
+          "a": "Кожен маршрутизатор має політику маршрутизації, яка вирішує, яка модель отримує запит. Політики включають циклічно-циклову, найменшу вартість, найшвидшу відповідь, ланцюжки fallback тощо. Ви налаштовуєте їх на маршрутизатор під маршрутизаторами → маршрутизацією."
+        },
+        "addModel": {
+          "q": "Як додати нову модель ШІ?",
+          "a": "Перейдіть на Models → Add model. Ви можете додати будь-якого постачальника OpenAI-сумісного (Ollama, LM Studio, користувацькі кінцеві точки) або нативну кінцеву точку Anthropic. Заповніть базовий URL, ключ API та ID моделі Routerly оброблювати решту."
+        },
+        "dataStored": {
+          "q": "Мої дані зберігаються? Мої підказки записуються?",
+          "a": "Routerly самостійно розміщується й зберігає дані тільки на вашому комп'ютері (в ~/.routerly/ за замовчуванням). Підказки та відповіді ніколи не надсилаються куди-небудь Routerly. Журнали запитів зберігаються локально та тільки якщо ви їх увімкнули на маршрутизатор."
+        },
+        "routerToken": {
+          "q": "Що таке токен маршрутизатора і як він відрізняється від ключа API постачальника?",
+          "a": "Токен маршрутизатора це облікові дані, які ви даєте своїй програмі або членам команди для автентифікації з Routerly. Це окремо від ваших ключів API постачальника, які Routerly безпечно зберігає на боці сервера. Ваші програми ніколи не бачать справжніх ключів постачальника."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} користувач",
+    "countLabel_other": "{{count}} користувачів",
+    "addButton": "Додати користувача",
+    "columns": {
+      "email": "Електронна пошта",
+      "role": "Роль",
+      "routers": "Маршрутизатори"
+    },
+    "allRouters": "Усе",
+    "resetTwoFaTitle": "Скидання 2FA",
+    "resetTwoFaConfirm": "Скидання 2FA для {{email}}? Їм потрібно буде повторно зареєструватися.",
+    "deleteConfirm": "Видалити цього користувача?",
+    "emptyTitle": "Немає користувачів.",
+    "noPermission": "Ви не маєте дозволу переглядати користувачів.",
+    "modal": {
+      "title": "Додати користувача",
+      "emailLabel": "Електронна пошта",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Пароль",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Роль",
+      "roleAdmin": "Адміністратор",
+      "roleViewer": "Глядач",
+      "cancelButton": "Скасувати",
+      "submitButton": "Додати користувача"
+    },
+    "errors": {
+      "loadFailed": "Не вдалось завантажити користувачів",
+      "addFailed": "Помилка"
+    }
+  },
+  "userEdit": {
+    "title": "Редагувати користувача",
+    "account": "Обліковий запис",
+    "email": "Електронна пошта",
+    "role": "Роль",
+    "changePassword": "Змінити пароль",
+    "newPassword": "Новий пароль",
+    "newPasswordHint": "(залиште порожнім, щоб зберегти поточне)",
+    "save": "Зберегти",
+    "saved": "Збережено!",
+    "errors": {
+      "loadFailed": "Не вдалось завантажити користувача",
+      "saveFailed": "Не вдалось зберегти"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Керуйте ролями та дозволами. Вбудовані ролі неможливо змінювати.",
+    "newRole": "Нова роль",
+    "builtin": "вбудований",
+    "edit": "Редагувати",
+    "deleteConfirm": "Видалити цю роль? Користувачи з цією роллю будуть пронесені.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "наприклад оператор",
+      "name": "Назва",
+      "namePlaceholder": "Назва ролі",
+      "permissions": "Дозволи",
+      "create": "Створити",
+      "save": "Зберегти",
+      "cancel": "Скасувати"
+    },
+    "permissions": {
+      "routerRead": "Маршрутизатори читання",
+      "routerWrite": "Маршрутизатори запис",
+      "modelRead": "Моделі читання",
+      "modelWrite": "Моделі запис",
+      "userRead": "Користувачи читання",
+      "userWrite": "Користувачи запис",
+      "reportRead": "Звіти читання",
+      "settingsRead": "Налаштування читання",
+      "settingsWrite": "Налаштування запис",
+      "notificationWrite": "Сповіщення запис",
+      "tokenRead": "Токени читання",
+      "tokenWrite": "Токени запис",
+      "roleWrite": "Ролі запис",
+      "auditRead": "Журнал аудиту читання",
+      "modulesRead": "Модулі читання",
+      "modulesManage": "Модулі керування",
+      "connectionsRead": "Підключення читання",
+      "connectionsManage": "Підключення керування",
+      "resilienceRead": "Стійкість читання",
+      "resilienceManage": "Стійкість керування",
+      "profilesRead": "Профілі маршрутизації читання",
+      "profilesManage": "Профілі маршрутизації керування",
+      "optimizersRead": "Оптимізатори читання",
+      "optimizersManage": "Оптимізатори керування",
+      "experimentsRead": "Експерименти читання",
+      "experimentsManage": "Експерименти керування"
+    },
+    "errors": {
+      "loadFailed": "Не вдалось завантажити ролі",
+      "updateFailed": "Не вдалось оновити роль",
+      "createFailed": "Не вдалось створити роль",
+      "deleteFailed": "Не вдалось видалити роль"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Профілі",
+      "subtitle": "Повторно використовувані конфігурації маршрутизації, оптимізатора та безпеки",
+      "noPermission": "Ви не маєте дозволу переглядати профілі.",
+      "newProfile": "Новий {{kind}} профіль",
+      "empty": "Немає {{kind}} профілів.",
+      "builtin": "Вбудований",
+      "custom": "Спеціальний",
+      "view": "Переглянути",
+      "edit": "Редагувати",
+      "clone": "Клонувати",
+      "delete": "Видалити",
+      "deleteConfirm": "Видалити профіль \"{{label}}\"? Це неможливо скасувати.",
+      "kindDescriptions": {
+        "routing": "Яка модель відповідає на запит, і що трапляється, коли вона не може",
+        "optimizer": "Що видаляється з підказки перед тим, як вона надсилається",
+        "security": "Охоронні системи та політики ПІД, які застосовуються до трафіку"
+      },
+      "columns": {
+        "label": "Ярлик",
+        "type": "Тип",
+        "configuration": "Конфігурація",
+        "version": "Версія"
+      },
+      "errors": {
+        "loadFailed": "Не вдалось завантажити профілі",
+        "deleteFailed": "Не вдалось видалити профіль"
+      }
+    },
+    "form": {
+      "backToProfiles": "Назад до профілів",
+      "newProfileTitle": "Новий {{kind}} профіль",
+      "editProfileTitle": "Редагувати {{label}}",
+      "builtinHint": "Вбудовані профілі неможливо редагувати. Клонуйте один, щоб налаштувати його.",
+      "assignHint": "{{article}} {{kind}} профіль можна призначити будь-якій кількості маршрутизаторів.",
+      "noPermission": "Ви не маєте дозволу переглядати профілі.",
+      "label": "Ярлик",
+      "optimizers": "Оптимізатори",
+      "optimizersHint": "Перетягніть для переупорядкування, переведіть для увімкнення. Вони запускаються послідовно зверху вниз.",
+      "createProfile": "Створити профіль",
+      "saveProfile": "Зберегти профіль",
+      "cancel": "Скасувати",
+      "copySuffix": "{{label}} копія",
+      "labelPlaceholders": {
+        "routing": "наприклад Моя збалансована маршрутизація",
+        "optimizer": "наприклад Мій триммер підказок",
+        "security": "наприклад Мої сувора охоронна система"
+      },
+      "errors": {
+        "notFound": "Профіль не знайдено.",
+        "loadFailed": "Не вдалось завантажити профіль",
+        "saveFailed": "Не вдалось зберегти профіль"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Назад до підключення",
+    "title": "Підключити",
+    "docs": "Документи",
+    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
+    "noClientPrefix": "Немає клієнта на ім'я",
+    "errors": {
+      "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Найшвидше: одна команда",
+      "description": "Запустіть його на комп'ютері, де {{client}} встановлено. Це пише {{configPath}}, зберігаючи резервну копію, яку ви можете скасувати."
+    },
+    "byHand": {
+      "titleAlt": "Або налаштуйте це вручну",
+      "titleUi": "Налаштуйте вручну",
+      "titleConfigFile": "Налаштуйте файл конфігурації",
+      "setValuesIn": "Встановіть ці значення в {{configPath}}.",
+      "putThisIn": "Поставте це в",
+      "replaceToken": "Замініть",
+      "withRouterToken": "з токеном маршрутизатора:",
+      "createOne": "створити один",
+      "onRoutersPage": "на сторінці маршрутизаторів.",
+      "modelLabel": "Модель:",
+      "modelHint": "передає вибір Routerly, будь-який ID моделі з",
+      "modelsLink": "Моделі",
+      "worksToo": "працює тоже.",
+      "openaiCompatHint": "Той же базовий URL, ключ і модель підходять для будь-якого клієнта, який пропонує \"OpenAI сумісного\" постачальника."
+    },
+    "mcp": {
+      "title": "Сервер MCP",
+      "description": "Окремо від кроків вище: це дозволяє {{client}} називати інструменти Routerly. Це потребує особистого токена MCP, отримав з",
+      "orFromYour": "або з вашого",
+      "profileLink": "профіль"
+    },
+    "checkItWorked": {
+      "title": "Перевірте, що це працювало",
+      "restart": "Перезавантажте {{client}}, надішліть їй підказку, потім шукайте виклик в",
+      "usageLink": "Використання",
+      "cliReports": "З тієї ж машини, CLI повідомляє, що він знаходить:"
+    }
+  },
+  "connect": {
+    "title": "Підключити",
+    "subtitle": "Вкажіть клієнту кодування ШІ на цей шлюз. Виберіть клієнта для його кроків установки.",
+    "llmLabel": "LLM",
+    "llmDescription": "маршрутизує цей трафік моделі клієнта через Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "завантажує Routerly як сервер інструменту всередину нього.",
+    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
+    "errors": {
+      "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Одна команда",
+      "hint": "CLI пише файл конфігурації для вас, з резервною копією, яку ви можете скасувати."
+    },
+    "byHand": {
+      "title": "Вручну",
+      "hint": "Скопіюйте фрагмент зі сторінки клієнта в його параметри, потім перезавантажте його."
+    },
+    "endpoint": {
+      "title": "Вкажіть будь-якому клієнту тут",
+      "description": "Будь-що побудовано на OpenAI або Anthropic SDK працює, змінивши базовий URL та ключ. Ніщо інше не змінюється: запити та відповіді перетинають Routerly, як вони є.",
+      "openaiBaseUrl": "OpenAI базова URL",
+      "anthropicBaseUrl": "Anthropic базова URL",
+      "apiKey": "Ключ API",
+      "model": "Модель",
+      "apiKeyDescription": "Токен маршрутизатора, надіслано як",
+      "or": "або",
+      "createOne": "Створити один",
+      "onRoutersPage": "на сторінці маршрутизаторів.",
+      "modelDescription": "дозволяє Routerly вибрати. Будь-який ID моделі з",
+      "modelsLink": "Моделі",
+      "worksToo": "сторінка працює тоже."
+    }
+  }
+}

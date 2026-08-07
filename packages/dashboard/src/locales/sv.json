@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automatisk",
+      "dark": "Mörk",
+      "light": "Ljus"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Expandera sidofält",
+      "collapse": "Dölj sidofält"
+    },
+    "tagline": "En gateway. Vilken AI-modell som helst. Total kontroll.",
+    "nav": {
+      "overview": "Översikt",
+      "providers": "Leverantörer",
+      "models": "Modeller",
+      "profiles": "Profiler",
+      "routers": "Routrar",
+      "experiments": "Experiment",
+      "usage": "Användning",
+      "playground": "Lekplats",
+      "settings": "Inställningar",
+      "connectApp": "Anslut app",
+      "help": "Hjälp",
+      "signOut": "Logga ut"
+    },
+    "banner": {
+      "permissionWarning": "Vissa konfigurationsfiler har öppen åtkomst ({{files}}). Start och förfrågningar fungerar, men åtgärda detta från värdfilsystemet när det passar.",
+      "dismiss": "Stäng",
+      "updateAvailable": "Routerly v{{latest}} är tillgänglig. Du är på v{{current}}.",
+      "updateLink": "Uppdatera i Inställningar",
+      "mfaRequired": "Tvåfaktorsautentisering krävs för denna instans.",
+      "mfaLink": "Konfigurera 2FA i din profil",
+      "mfaSuffix": "för att säkra ditt konto.",
+      "telemetryTitle": "Routerly skickar aldrig data automatiskt.",
+      "telemetryBody": "Vill du hjälpa till genom att skicka anonyma installationsmätvärden? Endast händelstyp, version, plattform och ett slumpmässigt ID — ingen personlig data, ingen IP.",
+      "telemetryLink": "Vad skickas?",
+      "telemetryYes": "Ja, hjälp gärna",
+      "telemetryNo": "Nej tack"
+    },
+    "language": {
+      "label": "Språk"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} sekund sedan",
+      "secondsAgo_other": "{{count}} sekunder sedan",
+      "minutesAgo": "{{count}} minut sedan",
+      "minutesAgo_other": "{{count}} minuter sedan",
+      "hoursAgo": "{{count}} timme sedan",
+      "hoursAgo_other": "{{count}} timmar sedan",
+      "daysAgo": "{{count}} dag sedan",
+      "daysAgo_other": "{{count}} dagar sedan"
+    },
+    "confirm": "Bekräfta",
+    "cancel": "Avbryt",
+    "remove": "Ta bort",
+    "select": "Välj...",
+    "search": "Sök...",
+    "noResults": "Inga resultat",
+    "noRemainingOptions": "Inga återstående alternativ",
+    "apply": "Tillämpa",
+    "saved": "Sparad",
+    "showLess": "Visa mindre",
+    "roles": "Roller",
+    "permissions": "Behörigheter",
+    "notifications": {
+      "title": "Aviseringar",
+      "markAllRead": "Markera alla som lästa",
+      "empty": "Inga aviseringar",
+      "viewAll": "Visa alla aviseringar"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Välj period",
+      "recent": "Senaste",
+      "ranges": "Intervall",
+      "from": "Från",
+      "to": "Till"
+    },
+    "permissionGuard": {
+      "fixFailed": "Misslyckades att åtgärda behörigheter",
+      "title": "Osäkra filbehörigheter",
+      "defaultMessage": "Vissa filer har osäkra behörigheter.",
+      "fixing": "Åtgärdar…",
+      "fixNow": "Åtgärda nu"
+    },
+    "limitRows": {
+      "noLimits": "Ingen begränsning angiven.",
+      "metricLabel": "Mätvärde",
+      "typeLabel": "Typ",
+      "periodLabel": "Period",
+      "everyLabel": "Varje",
+      "maxCost": "Max kostnad",
+      "maxCount": "Max antal",
+      "maxTokens": "Max tokens",
+      "allCombosSet": "Alla mätvärdes-/periodkombinationer är redan inställda",
+      "addLimit": "Lägg till begränsning",
+      "metric": {
+        "cost": "Kostnad",
+        "calls": "Samtal",
+        "input_tokens": "Inmatningstoken",
+        "output_tokens": "Utmatningstoken",
+        "total_tokens": "Totalt tokens"
+      },
+      "period": {
+        "hourly": "Varje timme",
+        "daily": "Dagligen",
+        "weekly": "Veckovis",
+        "monthly": "Månatligen",
+        "yearly": "Årligen"
+      },
+      "rollingUnit": {
+        "second": "sekund",
+        "minute": "minut",
+        "hour": "timme",
+        "day": "dag",
+        "week": "vecka",
+        "month": "månad"
+      },
+      "windowType": {
+        "period": "Period",
+        "rolling": "Rullande"
+      },
+      "fmt": {
+        "requests": "{{value}} förfrågningar",
+        "inputTokens": "{{value}} inmatningstoken",
+        "outputTokens": "{{value}} utmatningstoken",
+        "totalTokens": "{{value}} totalt tokens",
+        "everyRolling": "{{metric}} varje {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Vad routningen sparade",
+      "input": "Inmatning",
+      "output": "Utmatning",
+      "actual": "Faktisk",
+      "clientCalls": "{{count}} klientsamtal",
+      "clientCalls_other": "{{count}} klientsamtal",
+      "comparedAgainst": ", jämfört med att skicka den till var och en av",
+      "comparedAgainst_other": ", jämfört med att skicka dem alla till var och en av",
+      "paidModelsInPlay": "{{count}} betald modell i spel",
+      "paidModelsInPlay_other": "{{count}} betalda modeller i spel",
+      "metricCost": "Kostnad",
+      "metricTokens": "Tokens",
+      "totalCost": "Total kostnad",
+      "routed": "Routad: {{value}}",
+      "saved": "Sparad: {{value}}",
+      "usdThisPeriod": "USD denna period",
+      "savedVsAlways": "{{value}} sparad ({{percent}}%) mot alltid {{model}}",
+      "tokens": "Tokens",
+      "in": "In: {{value}}",
+      "out": "Ut: {{value}}",
+      "tokenSubWithCache": "{{in}} in · {{out}} ut · {{cached}} cachad",
+      "tokenSub": "{{in}} in · {{out}} ut",
+      "cutByOptimizers": "{{value}} skuren av optimerare",
+      "fewerThanAlways": "{{value}} färre än alltid {{model}}, uppskattat"
+    },
+    "optimizerSteps": {
+      "downloaded": "Nedladdad",
+      "thisStepRunsOn": "Denna steg körs på",
+      "defaultCheckpoint": "Standardkontrollpunkt"
+    },
+    "routingPolicies": {
+      "title": "Routningsprinciper",
+      "subtitle": "Principerna avgör hur förfrågningar routas. De körs i ordning från topp till botten.",
+      "removePolicy": "Ta bort princip",
+      "removeIntent": "Ta bort avsikt",
+      "removeExample": "Ta bort exempel",
+      "routingModels": "Routningsmodeller",
+      "embeddingModels": "Inbäddningsmodeller",
+      "maxCompletionTokens": "Max completiontoken",
+      "maxPromptChars": "Max prompttecken",
+      "similarityThreshold": "Likhetströskel",
+      "previousMessages": "Tidigare meddelanden",
+      "intents": "Avsikter",
+      "confidenceThreshold": "Förtroendegränsvärde",
+      "ambiguityMargin": "Osäkerhetsmarginal",
+      "maxCallsPerWindow": "Max samtal per fönster",
+      "addFallbackModel": "Lägg till reservmodell",
+      "autoRoutingLabel": "Automatisk routning",
+      "autoRoutingHint": "Om aktiverat distribueras trafiken utan anpassade instruktioner. Om den är inaktiverad kan du skriva specifika instruktioner som talar om för AI när varje målmodell ska väljas.",
+      "additionalPromptInfoLabel": "Ytterligare promptinformation",
+      "additionalPromptInfoPlaceholder": "Extra instruktioner att inkludera i routningsprompten...",
+      "addExamplePlaceholder": "Lägg till exempel och tryck Enter…",
+      "addIntentPlaceholder": "Lägg till avsikt och tryck Enter…",
+      "addPolicyPlaceholder": "Lägg till en princip...",
+      "labels": {
+        "llm": "AI-routningsprincip",
+        "rate-limit": "Hastighetsbegränsningsprincip",
+        "budget-remaining": "Återstående budgetprincip",
+        "semantic-intent": "Semantisk avsiktsprincip",
+        "health": "Hälsoprincip",
+        "context": "Kontextprincip",
+        "capability": "Möjlighetsprincip",
+        "performance": "Prestandaprincip",
+        "fairness": "Rättvissprincip",
+        "cheapest": "Billigaste prancip",
+        "model-preference": "Modellpreferensprincip"
+      },
+      "descriptions": {
+        "context": "Poängsätter modeller baserat på tillgänglig kontextfönster. Tilldelar 0 till modeller vars kontextfönster är mindre än den beräknade förfrågningslängden, vilket förhindrar trunkningsfel.",
+        "cheapest": "Poängsätter modeller omvänt proportionellt mot deras tokenkostnad. Den billigaste modellen får 1,0, den dyraste får 0,0, vilket hjälper till att minska API-kostnaderna över förfrågningar.",
+        "health": "Poängsätter modeller baserat på deras senaste felfrekvens med exponentiell förfall (senaste fel väger mer). Tillämpar en kretsvakt som sätter poängen till 0 när den vägda felfrekvensen överstiger en kritisk gräns.",
+        "performance": "Poängsätter modeller baserat på deras senaste genomsnittliga latens med exponentiell förfall. Den snabbaste modellen får 1,0, den långsammaste får 0,0. Modeller utan senaste data blir standardvärdet 1,0.",
+        "llm": "Använder en AI-modell för att poängsätta kandidater baserat på det semantiska innehållet i förfrågningen. Stöder routningvägledningsprompter per modell och tar hänsyn till budgetutrymme när begränsningar är konfigurerade.",
+        "capability": "Hårdfilter: tilldelar 0 till modeller som uttryckligen saknar en funktion som krävs av förfrågningen (vision, funktionsanrop, JSON-läge). Modeller utan uttryckliga möjlighetsdeklarationer straffas inte.",
+        "rate-limit": "Straffar modeller med höga senaste samtalfrekvensen för att minska risken för att providernivågränser träffas (HTTP 429). Stöder en konfigurerbar hård gränsvärde som tvingar poängen till 0.",
+        "fairness": "Distribuerar trafiken jämnt genom att straffa modeller som fick fler lyckade samtal nyligen. Fungerar som ett mjukt rundrobinn för att förhindra att belastningen koncentreras på en enda modell.",
+        "budget-remaining": "Poängsätter modeller baserat på återstående budgetutrymme över alla konfigurerade gränser. Föredrar modeller med mer plats innan deras tröskelvärden träffas, vilket sprider förbrukningen proaktivt.",
+        "semantic-intent": "Klassificerar förfrågningen efter semantisk avsikt med inbäddningar, begränsar sedan kandidatpoolen till de modeller som är mappade till den avsikten. Säkra matchningar hårdfiltrerar poolen; tvetydiga matchningar sammanfogar top-2-pooler; okända förfrågningar passerar alla kandidater genom.",
+        "model-preference": "När klienten begär en specifik modell (inte routerly/ada) ger en konfigurerbar bonuspoäng till den modellen. När ingen preferens uttrycks stå principen neutral. Positionen i listan kontrollerar hur mycket preferensen väger mot andra principer."
+      },
+      "selectModel": "Välj modell"
+    },
+    "securityRules": {
+      "applyTo": "Gäller för",
+      "streamingBufferSize": "Bufferstorlek för streaming (tecken)",
+      "entityTypes": "Entitetstyper",
+      "target": "Mål",
+      "embeddingModel": "Inbäddningsmodell",
+      "judgeModel": "Domaremodell",
+      "contentGuardrails": "Innehållskontroller",
+      "piiPolicies": "PII-policyer",
+      "addSecurityPolicyPlaceholder": "Lägg till en säkerhetsprincip...",
+      "removePolicyTooltip": "Ta bort princip",
+      "deleteRuleAriaLabel": "Radera regel",
+      "embeddingModelPlaceholder": "Välj inbäddningsmodell...",
+      "fallbackModelsLabel": "Reservmodeller (valfritt, försöks i ordning)",
+      "fallbackModelsPlaceholder": "Inga reservmodeller...",
+      "exampleTextsLabel": "Exempeltextar att blockera (en per rad)",
+      "exampleTextsPlaceholder": "Hur hackar jag...\n...",
+      "similarityThresholdLabel": "Likhetströskel:",
+      "judgeModelPlaceholder": "Välj domaremodell...",
+      "allowedTopicsLabel": "Tillåtna ämnen (naturligt språk)",
+      "allowedTopicsPlaceholder": "Kundsupport för mjukvaruprodukter. Teknisk felsökning. Faktureringsfrågor.",
+      "onTopicThresholdLabel": "Blockera om on-topic-poäng är under:",
+      "harmThresholdLabel": "Blockera om skadapoäng är över:",
+      "customInstructionsLabel": "Anpassade instruktioner",
+      "customInstructionsPlaceholder": "Du är en klassificerare för innehållssäkerhet. Utvärdera följande text för skadligt innehål.\nKategorier: hatretorik, våld, sexuellt innehål, självskada.\nSvara ENDAST med ett JSON-objekt: {\"score\": <nummer mellan 0 och 1>}",
+      "customInstructionsRequired": "Anpassade instruktioner krävs.",
+      "enabledLabel": "Aktiverad",
+      "contentGuardrailsHint": "Inspektera förfrågningar och svar mot konfigurerade regler. Aktiv när minst en regel är konfigurerad.",
+      "securityPoliciesHeading": "Säkerhetsprinciper",
+      "noSecurityPolicies": "Inga säkerhetsprinciper konfigurerade.",
+      "piiPoliciesHint": "Detektera och redigera personlig data. Varje princip riktar sig mot förfrågningsinmatning, modellsvar eller båda, och kontrollerar sin egen entitetuppsättning.",
+      "noPiiPolicies": "Inga PII-policyer konfigurerade.",
+      "addPolicyButton": "+ Lägg till princip",
+      "injectionWarningTitle": "Förfrågningslast modifierad av injektion",
+      "injectionWarningBody": "En eller flera regler injicerar sin instruktion i den utgående förfrågningens systemprompt, så lasten som skickas till providern modifieras. Inget ytterligare modellsamtal görs och ingenting blockeras; servingsmodellen tillämpar instruktionen själv.",
+      "streamingDisabledWarningTitle": "Streaming inaktiverad för denna router",
+      "streamingDisabledWarningBody": "En eller flera regler är konfigurerade för att blockera svar (mål: svar eller båda). Eftersom hela svaret måste inspekteras innan ett blockeringsbeslut kan fattas, håller Routerly svaret i sin helhet före det returneras till klienten. Streaming är inte tillgängligt medan en svarblockeringsregel är aktiv; klienter får det kompletta svaret på en gång istället för i inkrementella bitar."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure-resursnamn",
+      "azureResourceNamePlaceholder": "minresurs",
+      "azureResourceNameHint": "Azure OpenAI-resursnamnet (från Azure-portalen).",
+      "deploymentId": "Distributions-ID",
+      "deploymentIdPlaceholder": "gpt-4o-distribution",
+      "deploymentIdHint": "Distributionens namn som du skapade i Azure OpenAI Studio.",
+      "azureApiVersionLabel": "API-version",
+      "azureApiVersionDefaultHint": "(standard: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS-region",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Lämna tomt för att behålla befintligt",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Session Token",
+      "awsSessionTokenOptionalHint": "(valfritt, för tillfälliga autentiseringsuppgifter)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Router ID",
+      "gcpRouterIdPlaceholder": "min-gcp-router",
+      "gcpLocationLabel": "Plats",
+      "gcpLocationDefaultHint": "(standard: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Service Account Key",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Slutpunkts-URL",
+      "optional": "(valfritt)",
+      "webProvider": {
+        "unofficialWarningTitle": "Inofficiell leverantör — använd på egen risk.",
+        "unofficialWarningBody": "Denna integrering förlitar sig på ett odokumenterat internt API som kan ändras eller gå sönder utan varning. Det kan bryta mot leverantörens användarvillkor och kan resultera i kontouppsägning.",
+        "accessTokenLabel": "Åtkomsttoken",
+        "sessionTokenLabel": "Session Token",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Klistra in sessionKey-cookievärde (sk-ant-sid01-…)",
+        "openaiInstructions": "Medan du är inloggad på ChatGPT öppnar du <code>https://chatgpt.com/api/auth/session</code> i en ny flik. Kopiera värdet för fältet <code>accessToken</code> (börjar med <code>eyJ</code>). Denna token upphör att gälla varje ~24 timmar. För tillförlitlig åtkomst fyller du också i fältet <strong>cf_clearance</strong> nedan.",
+        "anthropicInstructions": "<strong>Hur du får din sessionsnyckel:</strong> Medan du är inloggad på Claude öppnar du DevTools (F12) → Tillämpning → Cookies → <code>claude.ai</code> → kopiera värdet för sessionKey-cookien (börjar med <code>sk-ant-sid01-</code>). Nyckeln förblir giltig tills du loggar ut."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Prenumerations-OAuth Token",
+        "authFilePathLabel": "Autentiseringssökväg",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (standard)",
+        "anthropicTitle": "Använd din Claude Pro/Max-prenumeration.",
+        "anthropicRunCommandStep": "Kör detta kommando och kopiera den token det skriver ut:",
+        "anthropicPasteTokenStep": "Klistra in denna token i fältet <em>Prenumerations-OAuth Token</em> nedan.",
+        "termsNote": "Regenerera när det upphör att gälla. Prenumerationsanvändning via en gateway kan bryta mot leverantörens villkor.",
+        "openaiTitle": "Använd din ChatGPT Plus/Pro-prenumeration via Codex-appen.",
+        "openaiLoginStep": "Logga in på Codex-skrivbordsappen med ditt ChatGPT Plus/Pro-konto.",
+        "openaiAutoRefreshStep": "Routerly läser din åtkomsttoken från <code>~/.codex/auth.json</code> och uppdaterar den automatiskt. Ingen manuell kopia/klistring behövs.",
+        "openaiAuthFilePathStep": "Lämna fältet <em>Autentiseringssökväg</em> tomt för att använda standardvärdet, eller ange en anpassad sökväg om din Codex-app lagrar autentisering någon annanstans.",
+        "openaiTermsNote": "Prenumerationsanvändning via en gateway kan bryta mot leverantörens villkor."
+      },
+      "copyCode": {
+        "copiedTooltip": "Kopierad!",
+        "copyTooltip": "Kopiera till urklipp",
+        "copiedLabel": "Kopierad",
+        "copyLabel": "Kopiera"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopiera",
+      "copiedLabel": "Kopierad!",
+      "copyErrorHint": "Kopieringen misslyckades, välj och kopiera manuellt."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP-klient",
+      "hints": {
+        "claudeCode": "Kör detta en gång, var som helst. Claude Code lagrar servern i <code>~/.claude.json</code>.",
+        "claudeDesktop": "Sätt detta i <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (på Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), starta sedan om appen. Den startar CLI, så <code>routerly</code> måste finnas på din PATH.",
+        "codex": "Sätt detta i <code>~/.codex/config.toml</code>. Codex läser denna token från miljön, så exportera den i skalet du startar Codex från.",
+        "opencode": "Sätt detta i <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Kör detta en gång. OpenClaw blir standard till sse-transporten, vilket Routerly inte serverar, så transporten är inställd explicit.",
+        "cursor": "Sätt detta i <code>~/.cursor/mcp.json</code>, eller i <code>.cursor/mcp.json</code> för att begränsa det till ett projekt.",
+        "cline": "Sätt detta i <code>~/.cline/mcp.json</code>, eller klistra in det i Konfigurera MCP-servrar i Cline-panelen.",
+        "zed": "Sätt detta i dina Zed <code>settings.json</code>, tillsammans med alla andra kontextservrar."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Osparade ändringar",
+      "message": "Du har osparade ändringar. Om du lämnar nu går dina ändringar förlorade.",
+      "stay": "Stanna",
+      "leaveAnyway": "Gå ändå"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Skyddkontroller",
+        "pii": "PII",
+        "optimizers": "Optimerare",
+        "routerOverhead": "Routerbelastning"
+      },
+      "policyType": {
+        "llm": "AI-routning",
+        "rateLimit": "Hastighetsbegränsning",
+        "budgetRemaining": "Återstående budget",
+        "semanticIntent": "Semantisk avsikt",
+        "modelPreference": "Modellpreferens"
+      },
+      "rawDetails": "rå detaljer",
+      "technicalDetails": "tekniska detaljer",
+      "systemPrompt": "systemprompt",
+      "responseText": "svarstext",
+      "responseJson": "svar JSON",
+      "cacheEmbeddingCall": "CACHE INBÄDDNINGSSAMTAL",
+      "fallbackAttempt": "reserv #{{attempt}}",
+      "embeddingModel": "Inbäddningsmodell",
+      "upstreamModel": "Uppströmmodell",
+      "provider": "Leverantör",
+      "source": "Källa",
+      "endpoint": "Slutpunkt",
+      "cacheHit": "CACHE TRÄFF",
+      "ttlExtended": "TTL utökad",
+      "model": "Modell",
+      "similarity": "Likhet",
+      "embedding": "Inbäddning",
+      "cacheMiss": "CACHE MISS",
+      "details": "detaljer",
+      "excludedByLimits": "UTESLUTET AV GRÄNSER",
+      "finalRanking": "SLUTLIG RANKING",
+      "noRankingData": "Ingen rankingdata (posten kan vara skadad eller från äldre version)",
+      "policyScores": "PRINCIPPOÄNG",
+      "weight": "vikt {{value}}",
+      "allScores": "alla poäng",
+      "noPolicyData": "Ingen principdata (posten kan vara skadad eller från äldre version)",
+      "requestGuardrailBlocked": "FÖRFRÅGAN SKYDDSKONTROLL BLOCKERAD",
+      "requestGuardrailTriggered": "FÖRFRÅGAN SKYDDSKONTROLL UTLÖST",
+      "responseGuardrailBlocked": "SVAR SKYDDSKONTROLL BLOCKERAD",
+      "responseGuardrailTriggered": "SVAR SKYDDSKONTROLL UTLÖST",
+      "rule": "Regel",
+      "action": "Åtgärd",
+      "guardrailsEvaluated": "SKYDDSKONTROLLER UTVÄRDERAD ({{target}})",
+      "ruleCount": "{{count}} regel",
+      "ruleCount_other": "{{count}} regler",
+      "promptInjection": "Promptinjektion",
+      "injects": "injicerar",
+      "judgeResponse": "DomareSvar",
+      "piiScrubbed": "PII RENSAD",
+      "piiScanned": "PII SKANNAD ({{target}})",
+      "policies": "principer",
+      "entityTypes": "entitetstyper",
+      "customPatterns": "anpassade mönster",
+      "scanned": "skannad",
+      "redacted": "redigerad",
+      "took": "tog",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "entitetstyper skannade",
+      "guardrailInjection": "SKYDDSKONTROLL INJEKTION",
+      "rules": "regler",
+      "chars": "tecken",
+      "injectedText": "injicerad text",
+      "optimizer": "OPTIMERARE {{id}}",
+      "tokens": "tokens",
+      "saved": "sparad",
+      "tok": "{{value}} tok",
+      "reason": "anledning",
+      "budgetBlocked": "BUDGET BLOCKERAD",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "UTGÅNG SKICKAD",
+      "status": "status",
+      "encoding": "kodning",
+      "frames": "bildrutor",
+      "bytes": "byte"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Min profil",
+      "subtitle": "Hantera dina kontoinställningar"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Aviseringar",
+      "mcp": "MCP",
+      "preferences": "Inställningar"
+    },
+    "notifications": {
+      "close": "Stäng",
+      "refresh": "Uppdatera",
+      "clear": "Rensa",
+      "empty": "Inga aviseringar funna.",
+      "markAllRead": "Markera alla som lästa",
+      "allCaughtUp": "Allt är tagit hand om",
+      "unreadCount": "{{count}} oläst",
+      "selectedCount": "{{count}} vald",
+      "severity": {
+        "all": "Alla",
+        "info": "Information",
+        "warning": "Varning",
+        "critical": "Kritisk"
+      },
+      "status": {
+        "read": "Läst",
+        "unread": "Oläst"
+      },
+      "filters": {
+        "severity": "Allvarlighetsgrad",
+        "category": "Kategori",
+        "event": "Händelse",
+        "date": "Datum",
+        "period": "Period",
+        "status": "Status",
+        "all": "Alla",
+        "allCategories": "Alla kategorier",
+        "allEvents": "Alla händelser",
+        "unreadOnly": "Endast olästa"
+      },
+      "actions": {
+        "markRead": "Markera som läst",
+        "markUnread": "Markera som oläst",
+        "archive": "Arkivera"
+      },
+      "table": {
+        "severity": "Allvarlighetsgrad",
+        "event": "Händelse",
+        "date": "Datum",
+        "status": "Status",
+        "selectAll": "Välj alla",
+        "selectRow": "Välj {{event}}",
+        "eventCount": "{{count}} händelser"
+      },
+      "pagination": {
+        "previous": "← Föregående",
+        "next": "Nästa →",
+        "page": "Sida {{page}} av {{totalPages}}",
+        "total": "({{count}} totalt)"
+      },
+      "detail": {
+        "ariaLabel": "Avisering detaljer",
+        "details": "Detaljer",
+        "noDetails": "Inga ytterligare detaljer.",
+        "eventsInIncident": "Händelser i denna incident"
+      }
+    },
+    "security": {
+      "roleLabel": "Roll:",
+      "password": {
+        "heading": "Ändra lösenord",
+        "currentLabel": "Aktuellt lösenord",
+        "newLabel": "Nytt lösenord",
+        "newPlaceholder": "Minst 8 tecken",
+        "confirmLabel": "Bekräfta nytt lösenord",
+        "success": "Lösenord ändrat framgångsrikt.",
+        "saving": "Sparar...",
+        "submit": "Ändra lösenord",
+        "errors": {
+          "mismatch": "Lösenorden matchar inte.",
+          "tooShort": "Nytt lösenord måste vara minst 8 tecken.",
+          "updateFailed": "Uppdateringen misslyckades"
+        }
+      },
+      "tfa": {
+        "heading": "Tvåfaktorsautentisering",
+        "notEnabled": "2FA är inte aktiverad. Skydda ditt konto med ett tidbaserat engångslösenord.",
+        "enableButton": "Aktivera tvåfaktorsautentisering",
+        "scanInstructions": "Skanna denna QR-kod med din autentiserarapp (Google Authenticator, Authy, etc.), ange sedan den 6-siffriga koden för att bekräfta.",
+        "qrAlt": "2FA-inställningar QR-kod",
+        "addAccountInstructions": "Öppna din autentiserarapp (Google Authenticator, Authy, 1Password, etc.) och lägg till ett nytt konto:",
+        "setup": {
+          "step1": "Tryck på <strong>Lägg till konto</strong> eller knappen <strong>+</strong>",
+          "step2": "Välj <strong>Ange inställningsnyckel</strong> (eller skanna QR-kod om du är på mobil)",
+          "step3": "Ange hemligheten som visas nedan"
+        },
+        "mobileLink": "Tryck här på mobil för att öppna autentiserare",
+        "manualEntryLabel": "Manuell inmatningshemlig:",
+        "saveBackupCodes": "Spara dessa säkerhetskoder. Var och en kan användas en gång om du förlorar åtkomsten till din autentiserare.",
+        "copyBackupCodes": "Kopiera säkerhetskoder",
+        "confirmCodeLabel": "Ange kod från din app för att aktivera",
+        "activate": "Aktivera 2FA",
+        "cancel": "Avbryt",
+        "enabledBadge": "2FA är aktiverad",
+        "newBackupCodesLabel": "Nya säkerhetskoder (spara dessa nu):",
+        "copy": "Kopiera",
+        "regenLabel": "Ange autentiseringskod för att återskapa säkerhetskoder",
+        "regenerate": "Återskapa",
+        "regenerateBackupCodes": "Återskapa säkerhetskoder",
+        "disableLabel": "Inaktivera 2FA (ange autentiseringskod)",
+        "disable": "Inaktivera 2FA",
+        "errors": {
+          "setupFailed": "Inställningen misslyckades",
+          "confirmFailed": "Bekräftelsen misslyckades",
+          "disableFailed": "Inaktiveringen misslyckades",
+          "regenFailed": "Återskapandet misslyckades"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Misslyckades att ladda MCP-ytan",
+        "revokeFailed": "Misslyckades att återkalla denna token"
+      },
+      "revokeConfirm": "Återkalla MCP-token \"{{name}}\"? Klienter som använder den upphör att fungera omedelbart.",
+      "tokens": {
+        "heading": "MCP-tokens",
+        "newToken": "Ny token",
+        "description": "Varje token fungerar som dig: den exponerar exakt de verktyg som din roll tillåter. Det fullständiga värdet visas en gång på sidan som skapar det.",
+        "empty": "Inga MCP-tokens ännu. Skapa en för att ansluta en MCP-klient.",
+        "created": "Skapad",
+        "lastUsed": "Senast använd",
+        "expires": "Upphör",
+        "never": "Aldrig",
+        "revokeTitle": "Återkalla token"
+      },
+      "tools": {
+        "heading": "Verktyg som dina tokens exponerar",
+        "empty": "Din roll ger ingen MCP-verktyg. Fråga en administratör om de behörigheter du behöver.",
+        "table": {
+          "name": "Namn",
+          "scope": "Omfattning",
+          "description": "Beskrivning",
+          "sourceModule": "Källmodul",
+          "permission": "Behörighet"
+        }
+      },
+      "connect": {
+        "heading": "Anslut en MCP-klient",
+        "descriptionPre": "Välj klienten du kopplar upp, byt sedan",
+        "descriptionPost": "med en av dina tokens. Att skapa en token visar samma snippet med värdet redan inmatat.",
+        "otherClient": "Vilken annan klient som helst",
+        "httpInstructionsPre": "Över HTTP pekar du denna slutpunkt och autentiserar med",
+        "httpInstructionsPost": ". Det är JSON-RPC 2.0 över strömbar HTTP.",
+        "stdioInstructionsPre": "Över stdio binder CLI den och överför din token. Kör tjänsten direkt istället? Ställ in",
+        "stdioInstructionsAnd": "och",
+        "stdioInstructionsPost": "själv."
+      },
+      "newToken": {
+        "backToMcp": "Tillbaka till MCP",
+        "title": "Ny MCP-token",
+        "subtitle": "Denna token fungerar som dig: den exponerar exakt de verktyg som din roll tillåter.",
+        "nameLabel": "Namn",
+        "namePlaceholder": "bärbar",
+        "nameHint": "Där denna token används, till exempel \"bärbar\" eller \"claude-desktop\".",
+        "expiryLabel": "Upphör den",
+        "expiryHint": "Valfritt. Lämna det tomt så upphör denna token aldrig, tills du återkallar den.",
+        "createButton": "Skapa token",
+        "creatingButton": "Skapar…",
+        "cancelButton": "Avbryt",
+        "tokenSection": {
+          "title": "Din token",
+          "hint": "Kopiera den nu. Den visas inte igen, och en förlorad token kan bara ersättas.",
+          "copyButton": "Kopiera",
+          "copiedButton": "Kopierad!",
+          "copyTitle": "Kopiera token",
+          "copiedTitle": "Kopierad!"
+        },
+        "connectSection": {
+          "title": "Anslut en klient",
+          "hint": "Välj klienten du kopplar upp. Snippeten bär redan denna token."
+        },
+        "bridgeSection": {
+          "title": "Eller använd den lokala bron",
+          "hint": "För en klient som bara talar stdio binder CLI den och överför din token."
+        },
+        "doneButton": "Färdig",
+        "errors": {
+          "createFailed": "Misslyckades att skapa denna token",
+          "copyFailed": "Kopieringen misslyckades, välj och kopiera denna token manuellt."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Språk",
+      "description": "Välj språket som instrumentpanelen visas på.",
+      "languageLabel": "Språk",
+      "saved": "Språkinställning sparad."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Misslyckades att ladda inställningar",
+        "loadFailedPeriod": "Misslyckades att ladda inställningar.",
+        "saveFailed": "Misslyckades att spara",
+        "saveSettingsFailed": "Misslyckades att spara inställningar"
+      },
+      "savedSuccess": "Inställningar sparades framgångsrikt.",
+      "saving": "Sparar…",
+      "saveSettings": "Spara inställningar",
+      "serverInfo": {
+        "heading": "Serverinformation",
+        "readOnly": "Skrivskyddad. Värd och port kommer från miljön eller inställningsfilen, inte härifrån.",
+        "reachableAt": "Nåbar på",
+        "reachableAtAny": "Nåbar på någon av dessa adresser",
+        "thisMachine": "Denna maskin",
+        "network": "Nätverk",
+        "copyAddress": "Kopiera {{address}}",
+        "copied": "Kopierad!",
+        "copy": "Kopiera",
+        "hostAndPort": "Värd och port",
+        "version": "Version",
+        "uptime": "Drifttid"
+      },
+      "runtime": {
+        "heading": "Runtime-inställningar",
+        "logLevel": "Loggnivå",
+        "logLevelHint": "Kontrollerar utförlighetsnivån för tjänstloggar.",
+        "publicUrl": "Offentlig URL",
+        "publicUrlHint": "Bas-URL som tjänsten kan nås från externa klienter (t.ex. <code>http://192.168.1.10:3000</code>). Används i <strong>Hur man ansluter</strong>-avsnittet för varje router. Användbar när instrumentpanelen körs på en annan maskin eller port än tjänsten.",
+        "usageRetention": "Användningsbevarandde",
+        "noLimit": "Ingen gräns",
+        "maxAgeDays": "Maximal ålder (dagar)",
+        "maxSizeMb": "Maximal storlek (MB)",
+        "retentionHint": "Användnings-/faktureringshistorik som är äldre än denna tid eller överskrider denna storlek, tas bort från den aktiva loggen. Lämna båda tomma för ingen bevarandebegränsning."
+      },
+      "internationalization": {
+        "heading": "Internationalisering",
+        "defaultLanguage": "Standardspråk",
+        "defaultLanguageHint": "Instrumentpanelens språk för användare som ännu inte har valt sitt eget. Åsidosätter inte användarens personliga val."
+      },
+      "telemetry": {
+        "heading": "Anonyma mätvärden",
+        "neverAutomatic": "Routerly skickar aldrig data automatiskt.",
+        "noChoice": "Du har ännu inte gjort ett val.",
+        "enabledStatus": "Anonyma installationsmätvärden är aktiverade.",
+        "disabledStatus": "Anonyma installationsmätvärden är inaktiverade.",
+        "explanation": "Vid aktivering skickar Routerly endast: händelstyp (installation/uppgradering/avinstallation), version, plattform och ett slumpmässigt ID. Ingen personlig data, ingen användningsdata, ingen IP-lagring.",
+        "whatIsSent": "Vad skickas?",
+        "installId": "Installations-ID: {{id}}",
+        "saving": "Sparar…",
+        "enable": "Aktivera",
+        "disable": "Inaktivera"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Instrumentpanel (in-app inbox)",
+          "description": "Dirigerar händelser till in-app aviseringslådan"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Anpassad e-postserver"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook-callback"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Leverantör – Fel",
+        "providerDegraded": "Leverantör – Försämrad",
+        "providerRecovered": "Leverantör – Återställd",
+        "providerRateLimited": "Leverantör – Hastighetsbegränsad",
+        "routingNoCandidates": "Routning – Inga kandidater",
+        "routingFallbackUsed": "Routning – Reserv använd",
+        "authLoginFailed": "Auth – Inloggning misslyckades",
+        "authTokenInvalid": "Auth – Token ogiltig",
+        "configModelAdded": "Config – Modell tillagd",
+        "configModelDeleted": "Config – Modell borttagen",
+        "configRouterCreated": "Config – Router skapad",
+        "configRouterDeleted": "Config – Router borttagen",
+        "budgetThresholdReached": "Budget – Gränsvärde nått",
+        "budgetExceeded": "Budget – Överskriden",
+        "budgetReset": "Budget – Återställd",
+        "systemStartup": "System – Start",
+        "systemShutdown": "System – Avstängning",
+        "systemUpdateAvailable": "System – Uppdatering tillgänglig"
+      },
+      "removeChannelTooltip": "Ta bort kanal",
+      "removeChannelConfirm": "Ta bort kanal?",
+      "formUpdatedHint": "Formulär uppdaterat — spara för att tillämpa.",
+      "hmacSigningKeyPlaceholder": "HMAC-signeringsnyckel",
+      "perms": {
+        "routerRead": "Routrar – Läsa",
+        "routerWrite": "Routrar – Skriva",
+        "modelRead": "Modeller – Läsa",
+        "modelWrite": "Modeller – Skriva",
+        "userRead": "Användare – Läsa",
+        "userWrite": "Användare – Skriva",
+        "reportRead": "Rapporter – Läsa",
+        "settingsRead": "Inställningar – Läsa",
+        "settingsWrite": "Inställningar – Skriva",
+        "notificationWrite": "Aviseringar – Skriva",
+        "tokenRead": "Tokens – Läsa",
+        "tokenWrite": "Tokens – Skriva",
+        "roleWrite": "Roller – Skriva",
+        "auditRead": "Granskningslogg – Läsa",
+        "modulesRead": "Moduler – Läsa",
+        "modulesManage": "Moduler – Hantera",
+        "connectionsRead": "Anslutningar – Läsa",
+        "connectionsManage": "Anslutningar – Hantera",
+        "resilienceRead": "Motståndskraft – Läsa",
+        "resilienceManage": "Motståndskraft – Hantera",
+        "profilesRead": "Routningsprofiler – Läsa",
+        "profilesManage": "Routningsprofiler – Hantera",
+        "optimizersRead": "Optimerare – Läsa",
+        "optimizersManage": "Optimerare – Hantera",
+        "experimentsRead": "Experiment – Läsa",
+        "experimentsManage": "Experiment – Hantera"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "För denna kanaltyp ändrar mål inte leveransen (slutpunkten är fast). De filtrerar vilka händelser som loggas i granskningsspåret per mottagare.",
+        "dashboard": "Mål kontrollerar inboxsynlighet — endast matchade användare ser dessa aviseringar i sin in-app inbox.",
+        "email": "Mål avgör vilka användare som får detta e-postmeddelande. Lämna alla tomma för att skicka till alla användare."
+      },
+      "summary": {
+        "allEvents": "Alla händelser",
+        "eventCount": "{{count}} händelse",
+        "eventCount_other": "{{count}} händelser",
+        "roleCount": "{{count}} roll",
+        "roleCount_other": "{{count}} roller",
+        "permCount": "{{count}} behörighet",
+        "permCount_other": "{{count}} behörigheter",
+        "userCount": "{{count}} användare",
+        "userCount_other": "{{count}} användare",
+        "everyone": "Alla"
+      },
+      "errors": {
+        "loadFailed": "Misslyckades att ladda"
+      },
+      "fields": {
+        "dashboardHint": "Dirigerar matchande händelser till in-app aviseringslådan. Inga autentiseringsuppgifter krävs.",
+        "labels": {
+          "fromAddress": "Från-adress",
+          "fromName": "Från-namn",
+          "host": "Värd",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Användarnamn",
+          "password": "Lösenord",
+          "awsRegion": "AWS-region",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API-nyckel",
+          "connectionString": "Anslutningssträng",
+          "clientId": "Klient-ID",
+          "clientSecret": "Klienthemlighet",
+          "refreshToken": "Uppdateringstoken",
+          "url": "URL",
+          "method": "Metod",
+          "signingSecret": "Signeringshemlig",
+          "botToken": "Bot-token",
+          "channelId": "Kanal-ID",
+          "webhookUrl": "Webhook-URL",
+          "integrationKey": "Integrationsnyckel"
+        },
+        "values": {
+          "enabled": "Aktiverad",
+          "disabled": "Inaktiverad",
+          "configured": "Konfigurerad",
+          "notSet": "Inte angiven"
+        },
+        "optional": "(valfritt)",
+        "keepCurrentPlaceholder": "Lämna tomt för att behålla aktuell",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Använd TLS / SSL",
+        "smtpTlsOnHint": "(port 465 — direkt SSL)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Lämna autentiseringsuppgifter tomma för att använda IAM-instansrollen.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC-signeringsnyckel",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-teckens routningsnyckel",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Händelser",
+          "eventsPlaceholder": "Alla händelser (lämna tomt för alla)",
+          "eventsHint": "Lämna tomt för att ta emot alla händelser. Välj specifika händelser för att filtrera.",
+          "routersHeading": "Routrar",
+          "routersPlaceholder": "Alla routrar (lämna tomt för alla)",
+          "routersHint": "Lämna tomt för att ta emot händelser från alla routrar.",
+          "cooldownHeading": "Nedkylning",
+          "cooldownSuffix": "sekunder (0 = ingen nedkylning)",
+          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse."
+        },
+        "recipients": {
+          "heading": "Mottagare / Mål",
+          "rolesLabel": "Roller",
+          "rolesPlaceholder": "Alla roller (alla)",
+          "permissionsLabel": "Behörigheter",
+          "permissionsPlaceholder": "Alla behörigheter (alla)",
+          "usersLabel": "Enskilda användare",
+          "usersPlaceholder": "Alla användare (alla)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "anslutning",
+          "routing": "routning",
+          "recipients": "mottagare"
+        },
+        "sections": {
+          "channelSettings": "Kanalinställningar",
+          "eventsRouting": "Händelser och routning",
+          "recipients": "Mottagare"
+        },
+        "nameLabel": "Namn",
+        "namePlaceholder": "Etikett för denna kanal",
+        "cancelButton": "Avbryt"
+      },
+      "list": {
+        "countLabel": "{{count}} kanal",
+        "countLabel_other": "{{count}} kanaler",
+        "filteredLabel": "{{shown}} av {{count}} kanal",
+        "filteredLabel_other": "{{shown}} av {{count}} kanaler",
+        "allTypes": "Alla typer",
+        "searchPlaceholder": "Filtrera kanaler…",
+        "searchChannelsPlaceholder": "Sök kanaler…",
+        "addButton": "Lägg till kanal",
+        "addSearchPlaceholder": "Sök kanaler…",
+        "noResults": "Inga resultat",
+        "emptyTitle": "Inga aviseringskanaler konfigurerade ännu.",
+        "noMatch": "Inga kanaler matchar de aktiva filtren.",
+        "nameInlinePlaceholder": "Etikett (valfritt)",
+        "columns": {
+          "name": "Namn",
+          "type": "Typ",
+          "summary": "Händelser / Mål"
+        },
+        "testTitle": "Skicka test",
+        "editTitle": "Redigera kanal",
+        "deleteTitle": "Ta bort kanal",
+        "deleteConfirm": "Ta bort kanal \"{{name}}\"? Detta kan inte ångras.",
+        "deleteConfirmButton": "Radera",
+        "errors": {
+          "deleteFailed": "Misslyckades att radera"
+        }
+      },
+      "edit": {
+        "backToList": "Tillbaka till aviseringar",
+        "back": "Tillbaka",
+        "heading": "Redigera {{provider}}-kanal",
+        "subtitle": "Uppdatera konfigurationen för denna aviseringskanal.",
+        "testSection": {
+          "title": "Skicka test",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Skicka test",
+          "sendingButton": "Skickar…",
+          "hintEmail": "Lämna tomt för att skicka till ditt kontoe-postmeddelande. Test använder den sparade kanalkonfigurationen.",
+          "hintOther": "Test använder den sparade kanalkonfigurationen. Spara ändringar först för att testa uppdaterade inställningar."
+        },
+        "saveButton": "Spara ändringar",
+        "savingButton": "Sparar…",
+        "errors": {
+          "loadFailed": "Misslyckades att ladda",
+          "saveFailed": "Misslyckades att spara"
+        }
+      },
+      "create": {
+        "backToList": "Tillbaka till aviseringar",
+        "changeType": "Ändra typ",
+        "pickerHeading": "Välj en kanaltyp",
+        "pickerSubtitle": "Välj aviseringsleverantören som ska konfigureras.",
+        "heading": "Ny {{provider}}-kanal",
+        "subtitle": "Konfigurera en ny aviseringskanal.",
+        "createButton": "Skapa kanal",
+        "creatingButton": "Skapar…",
+        "errors": {
+          "createFailed": "Misslyckades att skapa"
+        }
+      },
+      "sendTest": "Skicka test",
+      "fromAddress": "Från-adress",
+      "individualUsers": "Enskilda användare",
+      "host": "Värd",
+      "port": "Port",
+      "apiKey": "API-nyckel",
+      "connectionString": "Anslutningssträng",
+      "clientId": "Klient-ID",
+      "clientSecret": "Klienthemlighet",
+      "refreshToken": "Uppdateringstoken",
+      "method": "Metod",
+      "botToken": "Bot-token",
+      "channelId": "Kanal-ID",
+      "webhookUrl": "Webhook-URL",
+      "integrationKey": "Integrationsnyckel"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — exponerar /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — metrics API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Exportera förfrågningsspår",
+        "description": "Skickar det fullständiga spåret för varje proxierad förfrågan: varje fas, varje modul som talade, och instruktioner och svar för de projekt som valde in.",
+        "sampleRateLabel": "Samplingsfrekvens",
+        "sampleRateHint": "1 exporterar varje förfrågan, 0,1 en av tio."
+      },
+      "optional": "(valfritt)",
+      "headersHint": "(valfritt, en per rad: Nyckel: Värde)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Lämna tomt för öppen åtkomst",
+          "description": "Exponerar <code>/metrics</code> i Prometheus-textformat. Ställ in en token för att kräva Bearer-autentisering."
+        },
+        "otel": {
+          "endpoint": "Insamlarslutpunkt",
+          "description": "Bas-URL för din OTLP-mottagare. Routerly lägger till <code>/v1/metrics</code>, och <code>/v1/traces</code> när spårexport är på. Standard-HTTP-port är 4318, gRPC är 4317.",
+          "protocol": "Protokoll",
+          "headers": "Rubriker"
+        },
+        "datadog": {
+          "apiKey": "API-nyckel",
+          "placeholder": "Din Datadog API-nyckel",
+          "description": "Hittad under <strong>Organisationsinställningar → API-nycklar</strong> i ditt Datadog-konto.",
+          "site": "Plats"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "Hittad i <strong>Grafana Cloud → Anslutningar → Prometheus → Detaljer</strong> som \"Remote Write Endpoint\".",
+          "username": "Användarnamn / Stack-ID",
+          "usernameHint": "Numeriskt ID som visas i Prometheus-anslutningsdetaljerna.",
+          "apiKey": "API-nyckel / Token",
+          "apiKeyHint": "Grafana Cloud-token med <strong>MetricsPublisher</strong>-roll."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2-instans URL. Moln: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Din InfluxDB API-token",
+          "tokenHint": "Måste ha <strong>skriv</strong>-åtkomst till bucket:en.",
+          "org": "Organisation",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Hemlig",
+          "secretHint": "(valfritt — HMAC-SHA256-signeringsnyckel)",
+          "headers": "Rubriker"
+        }
+      },
+      "errors": {
+        "loadFailed": "Misslyckades att ladda integreringar",
+        "updateFailed": "Misslyckades att uppdatera integrering",
+        "saveFailed": "Misslyckades att spara integrering",
+        "deleteFailed": "Misslyckades att ta bort integrering"
+      },
+      "empty": "Inga integreringar konfigurerade ännu.",
+      "enabled": "Aktiverad",
+      "testing": "Testar…",
+      "test": "Test",
+      "removeConfirm": "Ta bort?",
+      "remove": "Ta bort",
+      "cancel": "Avbryt",
+      "removeTooltip": "Ta bort integrering",
+      "saving": "Sparar…",
+      "save": "Spara",
+      "addButton": "Lägg till integrering"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Misslyckades att ladda inställningar",
+        "duplicateUrl": "Denna URL finns redan i listan.",
+        "unreachable": "Kunde inte nå en giltig leverantörkatalog på denna URL."
+      },
+      "saved": "Sparad.",
+      "refreshed": "Uppdaterad.",
+      "heading": "Leverantörkatalogarkiv",
+      "refreshing": "Uppdaterar…",
+      "refresh": "Uppdatera",
+      "nextRefresh": "Nästa: {{date}}",
+      "priorityHint": "Radordning avgör sammanslagningsprioritet — rad 1 vinner vid konflikt. Använd pilarna för att sortera om.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Uppdaterad",
+        "lastCheck": "Senast kontrollerad",
+        "status": "Status"
+      },
+      "empty": "Inga arkiv konfigurerade. Standardkatalogen för offentlig Routerly kommer att användas.",
+      "status": {
+        "error": "Fel",
+        "active": "Aktiv",
+        "disabled": "Inaktiverad"
+      },
+      "edit": "Redigera",
+      "removeTooltip": "Ta bort",
+      "addRepository": "Lägg till arkiv",
+      "checking": "Kontrollerar…",
+      "add": "Lägg till",
+      "removeConfirm": "Ta bort arkiv \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Tillämpning",
+        "runtime": "Körningsmiljö",
+        "storage": "Lagring",
+        "softwareUpdate": "Programvaruuppdatering"
+      },
+      "labels": {
+        "version": "Version",
+        "uptime": "Drifttid",
+        "nodeVersion": "Node.js",
+        "platform": "Plattform",
+        "configDir": "Konfigurationskatalog",
+        "dataDir": "Datakatalog",
+        "currentVersion": "Aktuell version",
+        "availableVersion": "Tillgänglig version",
+        "upToDate": "Aktuell",
+        "lastChecked": "Senast kontrollerad"
+      },
+      "noCheckPerformed": "Ingen uppdateringskontroll utförd ännu.",
+      "checkForUpdates": "Sök efter uppdateringar",
+      "checking": "Kontrollerar…",
+      "updateTo": "Uppdatera till v{{version}}",
+      "updating": "Uppdaterar…",
+      "dockerHint": "Körs i Docker — dra den senaste bilden för att uppdatera.",
+      "confirmUpdate": "Detta kommer att ladda ner och installera den senaste versionen. Tjänsten kommer att startas om. Fortsätta?",
+      "updateComplete": "Uppdatering slutförd! Laddar om…",
+      "serviceRestarting": "Tjänsten startas om. Ladda om sidan om en stund.",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda",
+        "checkFailed": "Kontrollen misslyckades",
+        "updateFailed": "Uppdateringen misslyckades"
+      },
+      "channel": "Kanal"
+    },
+    "security": {
+      "authentication": "Autentisering",
+      "requireMfa": "Kräv tvåfaktorsautentisering för alla användare",
+      "requireMfaHint": "När aktiverat kommer användare som inte har ställt in 2FA att se en uppmaning att göra det efter inloggning. Användare kan konfigurera 2FA på sin profilsida.",
+      "savedSuccess": "Inställningar sparades framgångsrikt.",
+      "saving": "Sparar…",
+      "saveSettings": "Spara inställningar",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda inställningar",
+        "saveFailed": "Misslyckades att spara inställningar"
+      }
+    },
+    "title": "Inställningar",
+    "subtitle": "Konfiguration för Routerly",
+    "tabs": {
+      "general": "Allmänt",
+      "security": "Säkerhet",
+      "notifications": "Aviseringar",
+      "integrations": "Integreringar",
+      "catalog": "Leverantörkatalog",
+      "users": "Användare",
+      "roles": "Roller",
+      "audit": "Granskningslogg",
+      "about": "Om"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Routrar",
+      "subtitle": "Klientapplikationer som har åtkomst till Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} routrar",
+      "newRouter": "Ny router",
+      "empty": "Inga routrar ännu.",
+      "emptyFiltered": "Inga routrar av denna typ.",
+      "tabs": {
+        "all": "Alla",
+        "router": "Router",
+        "orchestrator": "Orkestrering",
+        "passthrough": "Genomförning"
+      },
+      "columns": {
+        "name": "Namn",
+        "tokens": "Tokens",
+        "policies": "Principer",
+        "models": "Modeller"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokens",
+      "editRouter": "Redigera router",
+      "deleteRouter": "Ta bort router",
+      "deleteConfirm": "Ta bort denna router?",
+      "errors": {
+        "deleteFailed": "Fel vid borttagning av router"
+      }
+    },
+    "layout": {
+      "notFound": "Router hittades inte",
+      "tabs": {
+        "dashboard": "Instrumentpanel",
+        "general": "Allmänt",
+        "orchestrator": "Orkestrator",
+        "routing": "Routning",
+        "optimizer": "Optimerare",
+        "security": "Säkerhet",
+        "token": "Token",
+        "users": "Användare",
+        "logs": "Loggar"
+      },
+      "backToRouters": "Tillbaka till routrar",
+      "backToRoutersTitle": "Tillbaka till routrar",
+      "newRouter": "Ny router",
+      "loading": "Laddar...",
+      "routerId": "Router-ID:",
+      "saveFirstHint": "Spara routern först för att låsa upp denna flik"
+    },
+    "dashboard": {
+      "period": "Period",
+      "noTraffic": "Ingen trafik för denna router i den valda perioden.",
+      "stats": {
+        "savings": "Sparingar",
+        "vsPrefix": "mot",
+        "forEverything": "för allt",
+        "noTargetToCompare": "ingen målmodell att jämföra med",
+        "cost": "Kostnad",
+        "callCount": "1 samtal",
+        "callCount_other": "{{count}} samtal",
+        "latency": "Latens",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Tid till första token",
+        "notMeasured": "inte mätt på dessa samtal",
+        "reliability": "Tillförlitlighet",
+        "errorsAndBlocked": "{{errors}} fel · {{blocked}} blockerad"
+      },
+      "tokens": {
+        "input": "Inmatningstoken:",
+        "output": "Utmatningstoken:",
+        "fromCache": "Från cache:",
+        "cacheSaved": "({{amount}} sparad)"
+      },
+      "oneModel": {
+        "heading": "Om allt hade gått till en modell",
+        "empty": "Lägg till målmodeller till denna router för att se jämförelsen.",
+        "columns": {
+          "targetModel": "Målmodell",
+          "wouldHaveCost": "Skulle ha kostat",
+          "saved": "Sparad"
+        },
+        "costsHint": "Kostnaderna är de observerade toknen omprissatta till varje målmodells priser."
+      },
+      "optimizers": {
+        "heading": "Vad optimerarna tog bort",
+        "columns": {
+          "optimizer": "Optimerare",
+          "callsChanged": "Samtal ändrade",
+          "tokensSaved": "Tokens sparad",
+          "costSaved": "Kostnad sparad",
+          "rolledBack": "Rullade tillbaka"
+        },
+        "hint": "Mätt på själva samtalen, prissatta till modellen som serverade var och en. En rullatillbaka körning betyder stegets utmatning avvisades som osäker och prompten återställdes: den sparade ingenting, och en högt antal betyder tröskeln är för aggressiv."
+      },
+      "traffic": {
+        "heading": "Vart trafiken gick",
+        "columns": {
+          "model": "Modell",
+          "calls": "Samtal",
+          "share": "Andel",
+          "cost": "Kostnad",
+          "p95Latency": "p95 latens",
+          "errors": "Fel"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Fel vid sparande av router",
+        "copyFailed": "Kopieringen misslyckades — välj och kopiera denna token manuellt."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Routar förfrågningar över modellkandidater."
+        },
+        "orchestrator": {
+          "label": "Orkestrator",
+          "description": "Routar förfrågningar över andra routrar istället för modeller."
+        },
+        "passthrough": {
+          "label": "Genomströmning",
+          "description": "Vidarebefordrar förfrågningar oförändrade."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Spara denna token nu.",
+        "saveNowHint": "Den visas inte igen — när du lämnar denna skärm kan den inte återskaffas.",
+        "copied": "Kopierad!",
+        "copy": "Kopiera",
+        "goToRouter": "Gå till router"
+      },
+      "connect": {
+        "heading": "Hur man ansluter",
+        "intro": "Peka vilken OpenAI- eller Anthropic SDK som helst på Routerly och använd en <tokenLink>routertoken</tokenLink> som API-nyckel. Ersätt <code>{{token}}</code> nedan med din. Modell <code>{{model}}</code> överför valet till Routerly; vilket modell-id som helst från <modelsLink>Modeller</modelsLink> fungerar också.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Bas-URL <code>{{baseUrl}}</code>, samma som vilken \"OpenAI-kompatibel\" providerf ältet som helst tar.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Bas-URL <code>{{baseUrl}}</code>, utan <code>/v1</code>: SDK lägger till den.",
+        "curl": "curl",
+        "curlHint": "Kontrollera ledningen utan att installera något, titta sedan efter samtalet i <usageLink>Användning</usageLink>."
+      },
+      "form": {
+        "kind": "Typ",
+        "kindAriaLabel": "Routertyp",
+        "kindFixedHint": "Fixerad när routern är skapad.",
+        "routerName": "Routernamn",
+        "routerNamePlaceholder": "Min app",
+        "advancedSettings": "Avancerade inställningar",
+        "ttftTimeout": "TTFT-timeout (ms)",
+        "ttftTimeoutHint": "Om en modell inte skickar den första svarsbyte inom denna tid avbryter Routerly den och försöker nästa kandidat. Begränsar inte total svarslängd. Ställ på 0 för att vänta så länge providern tar.",
+        "traceContent": "Spårinnehål",
+        "traceContentHint": "Spår registrerar alltid metadata (modeller, poäng, tokens, kostnad, latens). Slå på detta för att också registrera instruktionerna som skickats och svar som mottagits. De lagras med användningsposten och är synliga för alla som kan läsa rapporter.",
+        "capturePromptsAndAnswers": "Fånga instruktioner och svar",
+        "saveChanges": "Spara ändringar",
+        "createRouter": "Skapa router"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Denna router är inte en Orkestrator.",
+      "candidateRouters": "Kandidatrotrar",
+      "candidateRoutersHint": "Routrarna som denna Orkestrator vidarebefordrar förfrågningar till. Vikt påverkar hur ofta varje kandidat väljs; endast dess namn, id, vikt och valfria per-kandidat-begränsningar visas här.",
+      "router": "Router",
+      "selectRouter": "Välj router",
+      "weight": "Vikt",
+      "removeCandidate": "Ta bort kandidat",
+      "usageLimits": "Användningsbegränsningar för denna kandidat",
+      "limitCount": "{{count}} begränsning",
+      "limitCount_other": "{{count}} begränsningar",
+      "usageLimitsHint": "Valfria användningsbegränsningar som endast tillämpas på förfrågningar denna Orkestrator vidarebefordrar till denna kandidat.",
+      "empty": "Inga kandidatrouters ännu. En Orkestrator behöver minst en innan den kan vidarebefordra förfrågningar.",
+      "addCandidate": "Lägg till kandidat",
+      "saved": "Sparad!",
+      "saveCandidates": "Spara kandidater",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda routrar",
+        "saveFailed": "Fel vid sparande av orkestratorskandidater"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Misslyckades att tilldela routningsprofil",
+        "duplicateTargets": "Målmodeller kan inte innehålla dubbletter.",
+        "saveFailed": "Fel vid sparande av routerroutning",
+        "noProfileAvailable": "Ingen routningsprofil tillgänglig. Skapa en från profilsidan."
+      },
+      "form": {
+        "routing": "Routning",
+        "routingHint": "Använd en delad routningsprofil eller definiera denna routers egna principer. Målmodeller är konfiguerbara antingen hur.",
+        "profileMode": "Profil",
+        "customMode": "Anpassad",
+        "routingProfile": "Routningsprofil",
+        "builtinSuffix": "(inbyggd)",
+        "profileHint": "Principerna kommer från profilen och följer dess ändringar. Redigera dem på profilsidan eller byt till Anpassad för att börja från en kopia av dem.",
+        "saved": "Sparad!",
+        "saveRoutingConfiguration": "Spara routningskonfiguration"
+      },
+      "targetModels": {
+        "heading": "Målmodeller",
+        "hint": "Definiera poolen av modeller som principerna kommer att filtrera och välja från. Valfria instruktioner instruerar AI-routern om när varje modell ska väljas.",
+        "endpointModel": "Slutpunktsmodell",
+        "selectModel": "Välj modell",
+        "promptDefinition": "Instruktionsdefinition",
+        "promptPlaceholder": "Beskriv exakt när och varför routern bör välja denna modell...",
+        "intents": "Avsikter",
+        "removeTarget": "Ta bort målmodell",
+        "empty": "Inga målmodeller konfigurerade.",
+        "addTarget": "Lägg till målmodell"
+      }
+    },
+    "optimizer": {
+      "title": "Optimerare",
+      "description": "Optimerare minskar prompttoken innan förfrågningar nå providern. De körs i ordning från topp till botten. Använd en delad optimerarprofil eller definiera denna routers egen pipeline.",
+      "noPermission": "Du har inte behörighet att se optimerare.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Anpassad"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimerarprofil",
+        "builtinLabel": "{{label}} (inbyggd)",
+        "hint": "Stegen kommer från profilen och följer dess ändringar. Redigera dem på profilsidan eller byt till Anpassad för att börja från en kopia av dem.",
+        "disabledSuffix": "(inaktiverad)",
+        "thresholdSuffix": ", tröskel {{threshold}}"
+      },
+      "customHint": "Dra för att sortera om, växla för att aktivera. Vissa optimerare använder en tröskel för att kontrollera hur aggressivt de trimmar.",
+      "saveButton": "Spara optimerare",
+      "saving": "Sparar…",
+      "saved": "Sparad",
+      "preview": {
+        "title": "Förhandsvisning av tokensparingar",
+        "description": "Kör nuvarande (osparad) pipeline över en instruktion för att se vad varje steg tar bort och vad det kostar. Välj en av exempelsamtalen eller skriv din egen instruktion.",
+        "promptLabel": "Instruktion",
+        "promptAriaLabel": "Instruktion att förhandsgranska",
+        "typePromptOption": "Skriv en instruktion nedan",
+        "fixturesHint": "Examplesamtal levererat med Routerly. Routerly registrerar inte riktiga instruktioner.",
+        "modelLabel": "Modell",
+        "modelAriaLabel": "Modell att förhandsgranska mot",
+        "modelWithContext": "{{id}} ({{k}}k kontext)",
+        "noModelOption": "Ingen modell",
+        "modelHint": "Steg som trimmar för att passa in i ett kontextfönster behöver veta vilket fönster. Utan en modell hoppas de över, exakt som de skulle vara på en förfrågan som namnger en modell Routerly inte har något fönster för.",
+        "sampleAriaLabel": "Exempelprompt",
+        "samplePlaceholder": "Klistra in ett exempeljämförande meddelande...",
+        "runButton": "Kör förhandsvisning",
+        "running": "Kör...",
+        "before": "Före",
+        "after": "Efter",
+        "saved": "Sparad",
+        "columns": {
+          "optimizer": "Optimerare",
+          "before": "Före",
+          "after": "Efter",
+          "saved": "Sparad"
+        },
+        "rolledBackNote": "rullade tillbaka: förändringen avvisades som osäker",
+        "skippedNote": "hoppades över: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Den förändring som detta steg producerade rullade tillbaka, så instruktionen nådde nästa steg oförändrad.",
+          "skipped": "Detta steg kördes inte: {{reason}}",
+          "unchanged": "Detta steg lämnade instruktionen oförändrad."
+        }
+      },
+      "errors": {
+        "assignFailed": "Misslyckades att tilldela optimerarprofil",
+        "saveFailed": "Fel vid sparande av optimerare",
+        "previewFailed": "Fel vid körning av förhandsvisning",
+        "noProfileAvailable": "Ingen optimerarprofil tillgänglig. Skapa en från profilsidan."
+      }
+    },
+    "token": {
+      "newButton": "Ny token",
+      "empty": "Inga API-tokens ännu. Skapa en för att börja autentisera förfrågningar.",
+      "budgetOverrides": "Budgetåtgärder",
+      "created": "Skapad",
+      "lastUsed": "Senast använd",
+      "expires": "Upphör",
+      "never": "Aldrig",
+      "editTitle": "Redigera konfiguration",
+      "revokeTitle": "Återkalla token",
+      "revokeConfirm": "Återkalla token \"{{snippet}}...\"? Appar som använder den upphör att fungera omedelbar.",
+      "labelInput": {
+        "placeholder": "Sök eller skapa en etikett…",
+        "createPrefix": "Skapa",
+        "noMatches": "Inga matchande etiketter funna."
+      },
+      "errors": {
+        "deleteFailed": "Fel vid borttagning av token"
+      },
+      "create": {
+        "backToTokens": "Tillbaka till tokens",
+        "title": "Ny API-token",
+        "subtitle": "Det fullständiga tokenets visas endast en gång efter skapandet — lagra det säkert.",
+        "tokenCreated": "Token skapad framgångsrikt. Kopiera den nu — den visas inte igen.",
+        "copied": "Kopierad!",
+        "copy": "Kopiera",
+        "done": "Färdig",
+        "optional": "valfritt",
+        "labels": "Etiketter",
+        "labelsHint": "Märk denna token för att identifiera var den används (t.ex. \"produktion\", \"ci\").",
+        "scopes": "Omfattningar",
+        "scopesHint": "Fria omfattningar knutna till denna token (t.ex. \"batch\", \"internal\"), lagrad med denna token för din egen bokföring.",
+        "tags": "Taggar",
+        "tagsHint": "Nyckel-värde-metadata vidarebefordrad till användningsposten (t.ex. env=produktion).",
+        "keyPlaceholder": "nyckel",
+        "valuePlaceholder": "värde",
+        "createButton": "Skapa token",
+        "cancel": "Avbryt",
+        "copyFailed": "Kopieringen misslyckades — välj och kopiera denna token manuellt.",
+        "errors": {
+          "createFailed": "Fel vid skapande av token"
+        }
+      },
+      "edit": {
+        "title": "Redigera token",
+        "subtitle": "Uppdatera etiketter och per-modell-gränsbindningar för denna token.",
+        "token": "Token",
+        "labels": "Etiketter",
+        "perModelLimits": "Per-modellgränser",
+        "perModelLimitsHint": "Åsidosätt globala och routernivågränser för förfrågningar som använder denna token.",
+        "noTargetModels": "Lägg till målmodeller i routningsfliken först.",
+        "noOverride": "ingen åsidosättning",
+        "noLimits": "Inga begränsningar",
+        "noLimitsSet": "Inga begränsningar inställda — ärver från förälder. Lägg till en begränsning nedan för att åsidosätta.",
+        "metric": "Mätvärde",
+        "type": "Typ",
+        "periodLabel": "Period",
+        "every": "Varje",
+        "maxCost": "Max ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (tokens)",
+        "allCombosSet": "Alla mätvärdes-/periodkombinationer är redan inställda",
+        "addLimit": "Lägg till begränsning",
+        "windowType": {
+          "period": "Period",
+          "rolling": "Rullande"
+        },
+        "limitMetric": {
+          "cost": "Kostnad (USD)",
+          "calls": "Förfrågningar",
+          "input_tokens": "Inmatningstoken",
+          "output_tokens": "Utmatningstoken",
+          "total_tokens": "Total tokens"
+        },
+        "period": {
+          "hourly": "Varje timme",
+          "daily": "Dagligen",
+          "weekly": "Veckovis",
+          "monthly": "Månatligen",
+          "yearly": "Årligen"
+        },
+        "rollingUnit": {
+          "second": "sekunder",
+          "minute": "minuter",
+          "hour": "timmar",
+          "day": "dagar",
+          "week": "veckor",
+          "month": "månader"
+        },
+        "fmt": {
+          "requests": "{{value}} förfr",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} ut-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / varje {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Fel vid sparande av token"
+        }
+      }
+    },
+    "users": {
+      "title": "Routermedlemmar",
+      "description": "Hantera användare som har åtkomst till denna router.",
+      "addButton": "Lägg till medlem",
+      "addNewTitle": "Lägg till ny medlem",
+      "selectUserPlaceholder": "Välj en användare...",
+      "addConfirmButton": "Lägg till",
+      "cancelButton": "Avbryt",
+      "empty": "Inga medlemmar funna.",
+      "removeConfirm": "Är du säker på att du vill ta bort denna medlem?",
+      "saveTitle": "Spara ändringar",
+      "changeRoleTitle": "Ändra roll",
+      "removeTitle": "Ta bort medlem",
+      "roles": {
+        "viewer": "Visare",
+        "editor": "Redigerare",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "Användare",
+        "role": "Roll",
+        "actions": "Åtgärder"
+      },
+      "errors": {
+        "loadFailed": "Misslyckades att ladda användare",
+        "addFailed": "Fel vid tilläggning av medlem",
+        "updateFailed": "Fel vid uppdatering av medlem",
+        "removeFailed": "Fel vid borttagning av medlem"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Av"
+      },
+      "autoRefreshOff": "Automatisk uppdatering inaktiverad",
+      "autoRefreshEvery": "Automatisk uppdatering varje {{interval}}",
+      "lastUpdated": "senast uppdaterad: {{time}}",
+      "refresh": "Uppdatera",
+      "refreshNowTitle": "Uppdatera nu",
+      "refreshNowButton": "↻ Nu",
+      "filters": {
+        "period": "Period",
+        "model": "Modell",
+        "allModels": "Alla modeller",
+        "type": "Typ",
+        "all": "Alla",
+        "completion": "Completion",
+        "router": "Router",
+        "status": "Status",
+        "success": "Framgång",
+        "blocked": "Blockerad",
+        "error": "Fel",
+        "resetButton": "Återställ filter"
+      },
+      "stats": {
+        "totalCost": "Total kostnad",
+        "totalCalls": "Totalt samtal",
+        "completionCalls": "Completion-samtal",
+        "routerCalls": "Routersamtal",
+        "errors": "Fel"
+      },
+      "requestLogs": "Begärandeloggar",
+      "emptyNoRequests": "Inga förfrågningar för denna router i den valda perioden.",
+      "emptyNoMatches": "Inga poster matchar de aktiva filtren.",
+      "columns": {
+        "time": "Tid",
+        "model": "Modell",
+        "type": "Typ",
+        "in": "In",
+        "out": "Ut",
+        "cost": "Kostnad",
+        "latency": "Latens",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Status"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "completion",
+      "pagination": {
+        "previous": "← Föregående",
+        "next": "Nästa →",
+        "pageOf": "Sida {{page}} av {{totalPages}}",
+        "totalRecords": "({{count}} totalt records)"
+      }
+    },
+    "security": {
+      "title": "Säkerhet",
+      "description": "Använd en delad säkerhetsprofil eller definiera denna routers egna skyddskontroller och PII-policyer.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Anpassad"
+      },
+      "profileSelect": {
+        "ariaLabel": "Säkerhetsprofil",
+        "builtinLabel": "{{label}} (inbyggd)",
+        "hint": "Skyddskontroller och PII-policyer kommer från profilen och följer dess ändringar. Redigera dem på profilsidan eller byt till Anpassad för att börja från en kopia av dem.",
+        "blockingSuffix": ", blockering",
+        "disabledSuffix": ", inaktiverad",
+        "piiRedaction": "PII-redigering ({{target}})"
+      },
+      "saveButton": "Spara säkerhetsinställningar",
+      "saved": "Sparad!",
+      "errors": {
+        "assignFailed": "Misslyckades att tilldela säkerhetsprofil",
+        "saveFailed": "Fel vid sparande av säkerhetsinställningar",
+        "noProfileAvailable": "Ingen säkerhetsprofil tillgänglig. Skapa en från profilsidan."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Du är en hjälpsam AI-assistent.",
+      "errors": {
+        "unknown": "Okänt fel uppstod",
+        "onlyImages": "Endast bildbilagor stöds för visionmodeller för närvarande."
+      },
+      "title": "Testchatt",
+      "subtitle": "Skicka testfrågor genom routinggateway:n.",
+      "routerToken": "Routertoken:",
+      "hideToken": "Dölj token",
+      "showToken": "Visa token",
+      "recognizedToken": "Känd token",
+      "unrecognizedToken": "Okänd token",
+      "noMessages": "Inga meddelanden ännu.",
+      "enterTokenHint": "Vänligen ange en routertoken ovan för att skicka ett meddelande.",
+      "typeMessageHint": "Skriv ett meddelande nedan för att börja testa.",
+      "reasoning": "Resonemang",
+      "attachedAlt": "Bifogad",
+      "attachmentAlt": "Bilaga",
+      "attachImage": "Bifoga bild",
+      "typeMessagePlaceholder": "Skriv ett meddelande...",
+      "stopGeneration": "Stoppa generering",
+      "sendEnter": "Skicka (Enter)",
+      "debugLog": "Felsökningslogg",
+      "clear": "Rensa",
+      "noRequestSent": "Ingen förfrågan skickad ännu.",
+      "turnTraceLog": "Svars-#{{turn}} spårlogg · {{count}} händelse",
+      "turnTraceLog_other": "Svars-#{{turn}} spårlogg · {{count}} händelser"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Anslutningar",
+      "subtitle": "Leverantörkonton som används för att köra modellinstanser",
+      "noPermission": "Du har inte behörighet att se anslutningar.",
+      "count": "{{count}} anslutning",
+      "count_other": "{{count}} anslutningar",
+      "addConnection": "Lägg till anslutning",
+      "empty": "Inga anslutningar ännu. Lägg till en för att komma igång.",
+      "deleteConfirm": "Ta bort anslutning \"{{label}}\"? Instanser bundna till den upphör att fungera.",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda anslutningar",
+        "deleteFailed": "Misslyckades att ta bort anslutning"
+      },
+      "columns": {
+        "label": "Etikett",
+        "provider": "Leverantör",
+        "endpoint": "Slutpunkt",
+        "status": "Status"
+      },
+      "status": {
+        "enabled": "Aktiverad",
+        "disabled": "Inaktiverad"
+      },
+      "actions": {
+        "models": "Modeller",
+        "edit": "Redigera",
+        "remove": "Ta bort"
+      }
+    },
+    "form": {
+      "backToConnections": "Tillbaka till anslutningar",
+      "editTitle": "Redigera anslutning",
+      "addTitle": "Lägg till anslutning",
+      "enabled": "Aktiverad",
+      "editSubtitle": "Uppdatera leverantörskontoinställningarna",
+      "addSubtitle": "Registrera ett nytt leverantörkonto",
+      "sectionTitle": "Anslutningsdetaljer",
+      "sectionDesc": "Leverantörkonto, autentiseringsuppgifter och slutpunkt som används för att utföra förfrågningar.",
+      "provider": "Leverantör",
+      "groups": {
+        "directApi": "Direkt API",
+        "cloudPlatform": "Molnplattform",
+        "subscription": "Prenumeration",
+        "browserSession": "Webbläsarsession",
+        "selfHosted": "Självärlöst"
+      },
+      "upstreamProvider": {
+        "label": "Leverantör",
+        "hintLabel": "(uppströmsleverantörens namn)",
+        "placeholder": "t.ex. deepseek, mistral, groq",
+        "description": "Namnger tjänsten denna slutpunkt tillhör. Modeller på denna anslutning använder den som sitt ID-prefix (t.ex. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Namn",
+        "hint": "Identifierar denna anslutning överallt den refereras, så den måste vara unik. Lämna den tom för att använda <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Lämna autentiseringsfält tomma för att behålla befintliga värden.",
+      "save": "Spara",
+      "create": "Skapa",
+      "cancel": "Avbryt",
+      "oauth": {
+        "unknown": "okänd",
+        "accountExpires": "Konto: {{account}} — upphör {{expires}}",
+        "unknownError": "Okänt fel"
+      },
+      "errors": {
+        "notFound": "Anslutning hittades inte",
+        "loadFailed": "Misslyckades att ladda anslutning",
+        "updateFailed": "Misslyckades att uppdatera anslutning",
+        "createFailed": "Misslyckades att skapa anslutning"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Tillbaka till modeller",
+      "title": "Modellupptäckt",
+      "subtitle": "Bläddra bland tillgängliga modeller och lägg till dem i din routningskonfiguration",
+      "count": "{{count}} modeller",
+      "filteredCount": "{{filtered}} av {{count}}",
+      "free": "gratis",
+      "add": "Lägg till",
+      "addAgain": "Lägg till igen",
+      "loadFailed": "Misslyckades att ladda katalog: {{error}}",
+      "filters": {
+        "search": "Sök",
+        "searchPlaceholder": "Modell-ID eller namn…",
+        "provider": "Leverantör",
+        "allProviders": "Alla leverantörer",
+        "context": "Kontext",
+        "ctxOptions": {
+          "all": "Alla",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Pris / 1M",
+        "priceOptions": {
+          "all": "Alla",
+          "free": "Gratis",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Visa",
+        "configured": "Konfigurerad",
+        "embedding": "Inbäddning",
+        "resetFilters": "Återställ filter"
+      },
+      "empty": {
+        "noMatches": "Inga modeller matchar dina filter."
+      },
+      "columns": {
+        "model": "Modell",
+        "provider": "Leverantör",
+        "context": "Kontext",
+        "input": "Inmatning / 1M",
+        "output": "Utmatning / 1M"
+      },
+      "badges": {
+        "configured": "Konfigurerad",
+        "embedding": "inbäddning",
+        "runsLocally": "Körs lokalt"
+      },
+      "pagination": {
+        "prev": "Föreg",
+        "next": "Nästa",
+        "range": "{{start}}–{{end}} av {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Tillbaka till modeller",
+      "title": {
+        "add": "Lägg till modell",
+        "edit": "Redigera modell",
+        "clone": "Klona modell"
+      },
+      "subtitle": {
+        "add": "Registrera en ny LLM-providermodell",
+        "edit": "Ändring av konfiguration för {{id}}",
+        "clone": "Kloning från {{id}} — tilldela ett nytt ID för att spara"
+      },
+      "errors": {
+        "modelNotFound": "Modell hittades inte",
+        "sourceModelNotFound": "Källmodell hittades inte",
+        "loadFailed": "Fel vid inläsning av modeller",
+        "idRequired": "Modell-ID krävs",
+        "duplicateId": "Modell \"{{id}}\" finns redan — ställ in ett annat anpassat ID",
+        "selectConnection": "Välj en anslutning",
+        "saveFailed": "Fel"
+      },
+      "badge": {
+        "yes": "ja",
+        "no": "nej",
+        "override": "Åsidosätt",
+        "auto": "Auto",
+        "default": "Standard: {{value}}",
+        "reset": "Återställ"
+      },
+      "oauth": {
+        "unknownExpiry": "okänd",
+        "accountOk": "Konto: {{account}} — upphör {{expires}}",
+        "unknownError": "Okänt fel"
+      },
+      "identification": {
+        "title": "Modellidentifikation",
+        "description": "Unikt identifierare och providerinställningar för denna modellkonfiguration.",
+        "routerlyId": "Routerly-ID",
+        "routerlyIdHintPre": "(valfritt — standard:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Identifieraren som används när denna modell refereras i Routerly API-samtal.",
+        "provider": "Leverantör",
+        "upstreamProviderHint": "(uppströmsleverantörens namn)",
+        "upstreamProviderPlaceholder": "t.ex. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Används som prefix för Routerly-ID:t (t.ex.",
+        "upstreamProviderDescPost": ").",
+        "model": "Modell",
+        "upstreamModelHint": "(uppströmmodell-ID)",
+        "upstreamModelPlaceholder": "t.ex. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Modellidentifieraren som skickas till uppströmsAPI-slutpunkten.",
+        "modelPreset": "Modellpreset",
+        "customModelOption": "— anpassat modellnamn —",
+        "customModelPlaceholder": "t.ex. min-finjusterad-modell"
+      },
+      "connection": {
+        "title": "Anslutningsdetaljer",
+        "description": "API-slutpunkt och autentiseringsuppgifter som krävs för att utföra förfrågningar.",
+        "preconfigured": "Förkonfigurerad",
+        "custom": "Anpassad",
+        "connection": "Anslutning",
+        "selectPlaceholder": "— välj en anslutning —",
+        "noneAvailable": "Inga förkonfigurerade anslutningar för denna leverantör. Byt till Anpassad eller skapa en på anslutningssidan.",
+        "editHint": "Redigering av denna anslutning senare uppdaterar alla modeller bundna till den."
+      },
+      "capabilities": {
+        "title": "Möjligheter",
+        "description": "Specificera typ och möjligheter för denna modell.",
+        "embeddingModel": "Inbäddningsmodell",
+        "embeddingModelHint": "Denna modell genererar vektorinbäddningar (inte chatkomple teringar)"
+      },
+      "pricing": {
+        "title": "Prissättning & kontext",
+        "description": "Kostnadsparametrar och bearbetningsgränser som används för fakturering och routning.",
+        "inputPerMillion": "Inmatning $/1M",
+        "outputPerMillion": "Utmatning $/1M",
+        "cachePerMillion": "Cache-läsning $/1M",
+        "cacheWritePerMillion": "Cache-skrivning $/1M",
+        "optional": "(valfritt)",
+        "contextWindow": "Kontextfönster",
+        "contextWindowHint": "(tokens, valfritt)"
+      },
+      "tiers": {
+        "title": "Avancerat — Prissättningsnivåer",
+        "description": "Åsidosätt prissättning när ett mätvärde överskrider en tröskel. Till exempel: \"Över 200 000 kontexttoken ändras priserna.\"",
+        "removeTier": "Ta bort nivå",
+        "above": "Över",
+        "metric": "Mätvärde",
+        "metricContextTokens": "Kontexttoken",
+        "overridePricing": "Åsidosätt prissättning",
+        "addTier": "Lägg till prissättningsnivå"
+      },
+      "limits": {
+        "title": "Gränser",
+        "description": "Användningsbegränsningar för denna modell. Flera regler kan kombineras.",
+        "metric": "Mätvärde",
+        "type": "Typ",
+        "addLimit": "Lägg till begränsning"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max-prenumeration)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro-prenumeration)"
+      },
+      "saveChanges": "Spara ändringar",
+      "createClone": "Skapa klon",
+      "createModel": "Skapa modell"
+    },
+    "page": {
+      "title": "Modeller",
+      "subtitle": "LLM-leverantörer registrerade med Routerly",
+      "tabs": {
+        "models": "Modeller",
+        "health": "Hälsa"
+      },
+      "toolbar": {
+        "count": "{{count}} modell",
+        "count_other": "{{count}} modeller",
+        "filteredCount": "{{filtered}} av {{count}} modell",
+        "filteredCount_other": "{{filtered}} av {{count}} modeller"
+      },
+      "filters": {
+        "allProviders": "Alla leverantörer",
+        "allConnections": "Alla anslutningar",
+        "searchPlaceholder": "Filtrera modeller…"
+      },
+      "discover": "Upptäck",
+      "addModel": "Lägg till modell",
+      "deleteConfirm": "Ta bort modell \"{{id}}\"?",
+      "empty": {
+        "noModels": "Inga modeller ännu. Lägg till en för att komma igång.",
+        "noMatches": "Inga modeller matchar de aktiva filtren."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Leverantör",
+        "endpoint": "Slutpunkt",
+        "input": "Inmatning $/1M",
+        "output": "Utmatning $/1M",
+        "cache": "Cache $/1M",
+        "context": "Kontextstorlek"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Klona",
+        "edit": "Redigera",
+        "remove": "Ta bort"
+      },
+      "pagination": {
+        "previous": "← Föregående",
+        "next": "Nästa →",
+        "pageOf": "Sida {{page}} av {{totalPages}}",
+        "total": "({{count}} modell)",
+        "total_other": "({{count}} modeller)"
+      },
+      "health": {
+        "emptyNoModels": "Inga modeller konfigurerade.",
+        "emptyNoMatches": "Inga modeller matchar filtret.",
+        "resetAll": "Återställ alla",
+        "resetAllTitle": "Återställ alla kretsväktare, nedkylningar och lockouts",
+        "resetTitle": "Återställ kretsväktare",
+        "confirmResetModel": "Återställ kretsväktaren för modell \"{{id}}\"?",
+        "confirmResetAll": "Återställ allt motståndskraftstillstånd? Detta rensar varje kretsväktare, nedkylning och lockout.",
+        "errors": {
+          "resetModelFailed": "Misslyckades att återställa kretsväktare",
+          "resetAllFailed": "Misslyckades att återställa motståndskraftstillstånd"
+        },
+        "columns": {
+          "model": "Modell",
+          "provider": "Leverantör",
+          "status": "Status",
+          "circuit": "Kretsväktare",
+          "errorRate": "Felfrekvens (5m)",
+          "p95Latency": "P95-latens (1h)",
+          "requests": "Förfrågningar (1h)",
+          "lastSuccess": "Senaste framgång",
+          "cooldownLockout": "Nedkylning / lockout"
+        },
+        "status": {
+          "healthy": "Frisk",
+          "degraded": "Försämrad",
+          "unavailable": "Otillgänglig",
+          "cooldown": "Nedkylning",
+          "nodata": "Ingen data"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Återhämtning",
+          "tripped": "Aktiveerad"
+        },
+        "time": {
+          "never": "aldrig",
+          "now": "nu",
+          "secondsAgo": "{{count}}s sedan",
+          "minutesAgo": "{{count}}m sedan",
+          "hoursAgo": "{{count}}h sedan",
+          "daysAgo": "{{count}}d sedan",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "nedkylning {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Experiment",
+      "subtitle": "A/B-testa routrar mot varandra",
+      "noPermission": "Du har inte behörighet att se experiment.",
+      "count": "{{count}} experiment",
+      "count_other": "{{count}} experiment",
+      "newExperiment": "Nytt experiment",
+      "empty": "Inga experiment ännu. Skapa ett för att jämföra routrar head to head.",
+      "deleteConfirm": "Ta bort experiment \"{{name}}\"? Detta kan inte ångras.",
+      "noToken": "Ingen token",
+      "noTokenTitle": "Utan en token kan ingen klient nå detta experiment",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda experiment",
+        "deleteFailed": "Misslyckades att ta bort experiment"
+      },
+      "columns": {
+        "name": "Namn",
+        "variants": "Varianter",
+        "rotation": "Rotation",
+        "created": "Skapad"
+      },
+      "actions": {
+        "edit": "Redigera experiment",
+        "remove": "Radera"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Tillbaka till experiment",
+      "newExperiment": "Nytt experiment",
+      "loading": "Laddar...",
+      "experimentId": "Experiment-ID:",
+      "disabledTabTitle": "Spara experimentet först för att låsa upp denna flik",
+      "errors": {
+        "notFound": "Experiment hittades inte"
+      },
+      "tabs": {
+        "config": "Konfiguration",
+        "metrics": "Mätvärden",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Sparad.",
+      "created": "Experiment skapat. Peka din klient på denna token istället för en routertoken. Den visas inte igen.",
+      "copy": "Kopiera",
+      "copied": "Kopierad!",
+      "done": "Färdig",
+      "saving": "Sparar...",
+      "create": "Skapa experiment",
+      "save": "Spara ändringar",
+      "cancel": "Avbryt",
+      "trafficSplit": "Trafikdelning",
+      "errors": {
+        "loadRoutersFailed": "Misslyckades att ladda routrar",
+        "saveFailed": "Misslyckades att spara experimentet",
+        "copyFailed": "Kopieringen misslyckades: välj och kopiera denna token manuellt."
+      },
+      "fields": {
+        "name": "Namn",
+        "namePlaceholder": "Billig mot premiumroutning",
+        "description": "Beskrivning",
+        "optional": "(valfritt)",
+        "descriptionPlaceholder": "Vad detta test försöker lösa",
+        "minSamples": "Minimum samtal per variant",
+        "minSamplesHint": "Under detta markerar fliken Mätvärden jämförelsen som inte ännu slutgiltig.",
+        "rotation": "Rotation",
+        "stickyOn": "Klibbig på",
+        "stickyKey": "Klibbig nyckel"
+      },
+      "variants": {
+        "title": "Varianter",
+        "desc": "Varje variant är en befintlig router, tagen i sin helhet: dess modeller, routning och skyddskontroller tillämpas alla. Ett test behöver minst två.",
+        "routerAriaLabel": "Variant {{index}} router",
+        "routerPlaceholder": "Välj en router",
+        "labelAriaLabel": "Variant {{index}} etikett",
+        "labelPlaceholder": "Etikett (valfritt)",
+        "weightAriaLabel": "Variant {{index}} vikt",
+        "weightPlaceholder": "Vikt",
+        "removeTitle": "Ta bort variant {{index}}",
+        "add": "Lägg till variant"
+      },
+      "judge": {
+        "title": "Domare",
+        "desc": "Valfritt: en modell läser varje samplade svar och poängsätter det 0-10 enligt dina kriterier. Varje bedömt samtal är ett extra modellsamtal, fakturerat som vilket annat.",
+        "enable": "Poängsätt svar med en domaremodell",
+        "model": "Domaremodell",
+        "modelPlaceholder": "Välj en modell",
+        "criteria": "Kriterier",
+        "criteriaPlaceholder": "En per rad, t.ex.\nSvarar på frågan som ställdes\nFörblir faktisk\nHåller sig till det efterfrågade formatet",
+        "sampleRate": "Andel av samtal bedömt (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Laddar...",
+      "callsMeasured": "{{count}} samtal mätt",
+      "callsMeasured_other": "{{count}} samtal mätt",
+      "empty": "Inga samtal i detta fönster ännu. Peka en klient på experimenttokenen för att börja jämförelsen.",
+      "notConclusive": "Inte slutgiltig ännu: varje variant behöver minst {{minSamples}} samtal i detta fönster. ",
+      "explanation": "Den bättre figuren för varje par är markerad: billigare per samtal, snabbare, högre domarepoäng. Procentsatsen under ett värde är dess avstånd från den bästa armen. Domarepoänget är ett löpande medelvärde över hela experimentets liv, så det är den enda figur som fönstret inte begränsar.",
+      "lowSample": "Låg sampel",
+      "lowSampleTitle": "Under {{minSamples}} samtal i detta fönster",
+      "judgedCallsTitle": "{{count}} svar bedömt av domare sedan experimentet började",
+      "judgedCallsTitle_other": "{{count}} svar bedömda av domare sedan experimentet började",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda mätvärden"
+      },
+      "columns": {
+        "variant": "Variant",
+        "calls": "Samtal",
+        "share": "Andel",
+        "errors": "Fel",
+        "tokens": "Tokens in / ut",
+        "cost": "Kostnad",
+        "costPerCall": "Kostnad / samtal",
+        "avgLatency": "Genomsnittlig latens",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Domarepoäng"
+      }
+    },
+    "token": {
+      "desc": "En klient anropar experimentet exakt som en router: samma bas-URL, denna token istället för en routertoken. Varje förfrågan landar på en variant och faktureras till den variantens router.",
+      "baseUrlLabel": "Bas-URL för OpenAI- eller Anthropic SDK, med en experimenttoken som API-nyckel:",
+      "created": "Token skapad. Kopiera den nu, den visas inte igen.",
+      "copy": "Kopiera",
+      "copied": "Kopierad!",
+      "newToken": "Ny token",
+      "empty": "Inga tokens på detta experiment. Skapa en så att klienter kan anropa den.",
+      "revokeConfirm": "Återkalla token \"{{snippet}}...\"? Klienter som använder den upphör att fungera omedelbar.",
+      "revokeTitle": "Återkalla token",
+      "errors": {
+        "createFailed": "Misslyckades att skapa denna token",
+        "revokeFailed": "Misslyckades att återkalla denna token",
+        "copyFailed": "Kopieringen misslyckades: välj och kopiera denna token manuellt."
+      },
+      "columns": {
+        "created": "Skapad",
+        "lastUsed": "Senast använd"
+      }
+    }
+  },
+  "overview": {
+    "title": "Översikt",
+    "subtitle": "Användningssammanfattning och kostnadsfördelning",
+    "noPermission": "Ingen behörighet att visa användningsdata.",
+    "costByModel": "Kostnad efter modell",
+    "noCostRecorded": "Ingen kostnad registrerad denna period.",
+    "callsByModel": "Samtal efter modell",
+    "columns": {
+      "model": "Modell",
+      "calls": "Samtal",
+      "errors": "Fel",
+      "cost": "Kostnad"
+    },
+    "stats": {
+      "totalCalls": "Totalt samtal",
+      "callsBreakdown": "{{routing}} routning · {{completion}} completion",
+      "successRate": "Framgångsfrekvens",
+      "ofAllRequests": "av alla förfrågningar",
+      "errors": "Fel",
+      "failedRequests": "misslyckade förfrågningar",
+      "models": "Modeller",
+      "registered": "registrerad",
+      "routers": "Routrar",
+      "active": "aktiv"
+    },
+    "connectCard": {
+      "title": "Anslut en klient",
+      "desc": "Peka Claude Code, Codex, Cursor och {{count}} fler på denna gateway."
+    }
+  },
+  "login": {
+    "emailLabel": "E-post",
+    "passwordLabel": "Lösenord",
+    "signIn": "Logga in",
+    "errors": {
+      "loginFailed": "Inloggningen misslyckades",
+      "totpFailed": "2FA-verifiering misslyckades"
+    },
+    "totp": {
+      "title": "Tvåfaktorsautentisering",
+      "backupPrompt": "Ange en säkerhetskod.",
+      "appPrompt": "Ange den 6-siffriga koden från din autentiserarapp.",
+      "backupCodeLabel": "Säkerhetskod",
+      "authenticatorCodeLabel": "Autentiseringskod",
+      "verify": "Verifiera",
+      "useAuthenticatorInstead": "Använd autentiserarapp istället",
+      "useBackupInstead": "Använd en säkerhetskod istället"
+    }
+  },
+  "setup": {
+    "welcome": "Välkommen! Låt oss få dig igång.",
+    "welcomeSubtitle": "Skapa det första admin-kontot för att börja hantera Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly utvecklas aktivt. Buggar kan förekomma.",
+    "betaFeedback": "Din feedback hjälper forma vad det blir —",
+    "betaLink": "rapportera problem eller dela idéer",
+    "emailLabel": "Admin e-post",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Lösenord",
+    "passwordPlaceholder": "Minst 8 tecken",
+    "confirmLabel": "Bekräfta lösenord",
+    "confirmPlaceholder": "Ange lösenord igen",
+    "submit": "Skapa admin-konto",
+    "errors": {
+      "mismatch": "Lösenorden matchar inte",
+      "tooShort": "Lösenordet måste vara minst 8 tecken",
+      "setupFailed": "Inställningen misslyckades"
+    }
+  },
+  "audit": {
+    "empty": "Inga granskningsposter funna.",
+    "errors": {
+      "loadFailed": "Misslyckades att ladda granskningslogg"
+    },
+    "filters": {
+      "period": "Period",
+      "user": "Användare",
+      "userPlaceholder": "E-post eller användar-ID",
+      "action": "Åtgärd",
+      "actionPlaceholder": "t.ex. model:create",
+      "result": "Resultat",
+      "results": {
+        "all": "Alla",
+        "success": "Framgång",
+        "forbidden": "Förbjudet",
+        "error": "Fel"
+      },
+      "refresh": "Uppdatera"
+    },
+    "columns": {
+      "timestamp": "Tidsstämpel",
+      "user": "Användare",
+      "action": "Åtgärd",
+      "endpoint": "Slutpunkt",
+      "result": "Resultat",
+      "details": "Detaljer"
+    },
+    "pagination": {
+      "previous": "Föregående",
+      "next": "Nästa",
+      "page": "Sida {{page}} av {{totalPages}}",
+      "total": "({{count}} totalt)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Användning",
+      "live": "LIVE",
+      "subtitle": "Detaljerade samtalloggar och per-modellfördelning",
+      "updatedAt": "· uppdaterad {{time}}",
+      "poll": {
+        "off": "Av",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Inaktivera liveläge",
+        "enable": "Aktivera liveläge (uppdatera varje 2s)"
+      },
+      "refreshNow": "↻ Nu",
+      "refreshNowTitle": "Uppdatera nu",
+      "filters": {
+        "period": "Period",
+        "router": "Router",
+        "model": "Modell",
+        "token": "Token",
+        "caller": "Anropare",
+        "type": "Typ",
+        "status": "Status",
+        "allRouters": "Alla routrar",
+        "allModels": "Alla modeller",
+        "allTokens": "Alla tokens",
+        "resetFilters": "Återställ filter",
+        "all": "Alla",
+        "success": "Framgång",
+        "blocked": "Blockerad",
+        "error": "Fel"
+      },
+      "caller": {
+        "all": "Alla",
+        "completion": "Completion",
+        "routing": "Router",
+        "guardrail": "Skyddskontroll",
+        "judge": "Domare"
+      },
+      "callerBadge": {
+        "completion": "completion",
+        "routing": "router",
+        "guardrail": "skyddskontroll",
+        "judge": "domare"
+      },
+      "errors": {
+        "loadFailedPrefix": "Misslyckades att ladda användningsdata:",
+        "retry": "Försök igen"
+      },
+      "stats": {
+        "totalCalls": "Totalt samtal",
+        "completionCalls": "Completion-samtal",
+        "routerCalls": "Routersamtal",
+        "guardrailCalls": "Skyddskontrollsamtal",
+        "blockedCalls": "Blockerade samtal",
+        "errors": "Fel"
+      },
+      "table": {
+        "rank": "Rang",
+        "model": "Modell",
+        "provider": "Leverantör",
+        "calls": "Samtal",
+        "errors": "Fel",
+        "successRate": "Framgångsfrekvens",
+        "avgLatency": "Genomsnittlig latens",
+        "p95Latency": "P95-latens",
+        "inputTokens": "Inmatningstoken",
+        "outputTokens": "Utmatningstoken",
+        "costPer1k": "Kostnad / 1K",
+        "cost": "Kostnad (USD)",
+        "bestCostPerformance": "Bästa kostnadsprestanda"
+      },
+      "showMoreModels": "Visa {{count}} fler modell",
+      "showMoreModels_other": "Visa {{count}} fler modeller",
+      "showFewerModels": "Visa färre modeller",
+      "recentCalls": {
+        "title": "Senaste samtal",
+        "empty": "Inga användningsposter för denna period.",
+        "columns": {
+          "time": "Tid",
+          "router": "Router",
+          "model": "Modell",
+          "type": "Typ",
+          "caller": "Anropare",
+          "in": "In",
+          "out": "Ut",
+          "cost": "Kostnad",
+          "latency": "Latens",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Status"
+        }
+      },
+      "pagination": {
+        "previous": "Föregående",
+        "next": "Nästa",
+        "pageOf": "Sida {{page}} av {{totalPages}}",
+        "totalRecords": "({{count}} totalt records)"
+      }
+    },
+    "record": {
+      "back": "Tillbaka",
+      "title": "Samtaldetalj",
+      "notFoundTitle": "Post hittades inte",
+      "notFoundBody": "Användningspost {{id}} kunde inte laddas.",
+      "errors": {
+        "loadFailed": "Misslyckades att ladda post"
+      },
+      "sections": {
+        "identity": "Identitet",
+        "tokensAndCost": "Tokens & kostnad",
+        "performanceAndOutcome": "Prestanda & resultat",
+        "traceLog": "Spårlogg"
+      },
+      "fields": {
+        "recordId": "Post-ID",
+        "router": "Router",
+        "token": "Token",
+        "model": "Modell",
+        "callType": "Samtaltyp",
+        "requestType": "Förfrågningstyp",
+        "inputTokens": "Inmatningstoken",
+        "outputTokens": "Utmatningstoken",
+        "totalTokens": "Total tokens",
+        "costUsd": "Kostnad (USD)",
+        "costUnknown": "Okänd",
+        "latency": "Latens",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Resultat",
+        "timestamp": "Tidsstämpel",
+        "guardrailTriggered": "Skyddskontroll utlöst",
+        "blockedBy": "Blockerad av",
+        "piiRedacted": "PII redigerad"
+      },
+      "errorMessage": "Felmeddelande",
+      "eventCount": "{{count}} händelse",
+      "eventCount_other": "{{count}} händelser",
+      "noTrace": "Inget spår tillgängligt. Spårdata är endast kapterad för nya samtal."
+    }
+  },
+  "playground": {
+    "title": "Lekplats",
+    "subtitle": "Testa modeller, jämför svar och spara promptpreset.",
+    "mode": {
+      "single": "Enkel",
+      "compare": "Jämför"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "samma som A",
+      "unknownToken": "Okänd token"
+    },
+    "presets": {
+      "button": "Preset",
+      "panelTitle": "Preset",
+      "saveCurrent": "Spara aktuell",
+      "namePlaceholder": "Presetnamn...",
+      "save": "Spara",
+      "empty": "Inget preset ännu.",
+      "delete": "Radera preset"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming inte tillgänglig",
+      "bannerBody": "denna router har en svarblockerande skyddskontroll aktiv. Routerly måste inspektera det fullständiga svaret före leverans, så svar anländer allt på en gång.",
+      "tooltip": "Streaming är inte tillgänglig: en svarblockerande skyddskontroll kräver att det fullständiga svaret inspekteras före leverans.",
+      "ariaLabel": "Streaming otillgänglig"
+    },
+    "systemPrompt": "Systemprompt",
+    "model": "Modell",
+    "modelPlaceholder": "Auto (routerstandard)",
+    "params": {
+      "temp": "Temperatur",
+      "maxTokens": "Max tokens",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Rensa",
+    "empty": {
+      "noMessages": "Inga meddelanden ännu.",
+      "enterToken": "Ange en routertoken ovan för att börja."
+    },
+    "reasoning": "Resonemang",
+    "blockedDefault": "Detta meddelande blockerades av en skyddskontroll.",
+    "truncated": "Trunkerat — svar klippt av max tokens",
+    "bufferedNote": "Hålls för säkerhetsgranskning",
+    "errors": {
+      "onlyImages": "Endast bildbilagor stöds."
+    },
+    "rawToggle": {
+      "rendered": "renderad",
+      "raw": "rådata"
+    },
+    "inputPlaceholder": "Skriv ett meddelande...",
+    "attachImage": "Bifoga bild",
+    "attachedImageAlt": "Bifogad",
+    "attachmentAlt": "Bilaga",
+    "debug": {
+      "title": "Felsökning",
+      "clear": "Rensa",
+      "hide": "Dölj felsökning",
+      "show": "Visa felsökning",
+      "empty": "Ingen felsökningsdata ännu.",
+      "emptyHint": "Skicka ett meddelande för att se routningsdetaljer.",
+      "turnTraceLog": "Svars-#{{turn}} spårlogg"
+    },
+    "compare": {
+      "modelLabel": "Modell {{label}}:",
+      "modelSelectPlaceholder": "Välj modell...",
+      "noMessages": "Inga meddelanden ännu.",
+      "debugTurns": "Felsökning ({{count}} svar)",
+      "debugTurns_other": "Felsökning ({{count}} svar)",
+      "guardrailTokensTitle": "Skyddskontroll domaretoken",
+      "stop": "Stopp",
+      "inputPlaceholder": "Skicka samma meddelande till båda modellerna..."
+    }
+  },
+  "help": {
+    "title": "Hjälp & support",
+    "subtitle": "Vi är här för att hjälpa — hitta svar eller kontakta oss när som helst.",
+    "docs": {
+      "title": "Dokumentation",
+      "subtitle": "Guider, API-referens och konfigurationsdokumentation",
+      "body": "Den officiella dokumentationen täcker allt från att komma igång till avancerade routningsprinciper, providersetup, budgetar och fullständiga API-referenser.",
+      "openLink": "Öppna dokumentation"
+    },
+    "issues": {
+      "title": "Rapportera ett fel eller föreslå en funktion",
+      "subtitle": "Öppna ett GitHub-ärende — det tar 2 minuter",
+      "body": "GitHub-ärenden är det bästa sättet att rapportera buggar eller föreslå förbättringar. För att hjälpa oss åtgärda saker snabbare, inkludera: vad du gjorde, vad du förväntade dig skulle hända och vad som faktiskt hände.",
+      "showTemplate": "Visa ärendebeskrivning",
+      "reportBug": "Rapportera ett fel",
+      "requestFeature": "Begär en funktion"
+    },
+    "issueTemplate": {
+      "whatHappened": "Vad hände?",
+      "whatHappenedHint": "Beskriv problemet i enkla ord",
+      "stepsToReproduce": "Steg för att återskapa",
+      "expectedBehaviour": "Förväntad beteende",
+      "expectedBehaviourHint": "Vad du förväntade dig att se",
+      "version": "Routerly-version",
+      "versionHint": "Kör `routerly --version` eller kontrollera Inställningar → Om"
+    },
+    "email": {
+      "title": "Kontakta supporten",
+      "subtitle": "Vi läser varje meddelande och svarar så snart vi kan",
+      "body": "För allt som inte passar ett GitHub-ärende — faktureringsfrågor, privata problem eller om du bara vill säga hej — skicka oss ett meddelande."
+    },
+    "faq": {
+      "title": "Vanliga frågor",
+      "subtitle": "Snabba svar på de vanligaste frågorna",
+      "items": {
+        "connect": {
+          "q": "Hur ansluter jag min app till Routerly?",
+          "a": "Peka din OpenAI- eller Anthropic SDK på din Routerly-instans. Ersätt bas-URL:en med http://your-host:3000/v1 (OpenAI-kompatibel) eller http://your-host:3000/anthropic (Anthropic-kompatibel), använd sedan en routertoken som API-nyckel. Det är allt — inga andra ändringar behövs."
+        },
+        "openaiCompat": {
+          "q": "Är Routerly kompatibel med verktyg som använder OpenAI SDK?",
+          "a": "Ja. Routerly är en drop-in-ersättning: vilket verktyg som helst som stöder en anpassad bas-URL och API-nyckel (LangChain, LlamaIndex, Cursor, Continue, etc.) fungerar direkt. För Anthropic-format-klienter använder du /anthropic-slutpunkten istället."
+        },
+        "routing": {
+          "q": "Hur fungerar modellroutningen?",
+          "a": "Varje router har en routningsprincip som avgör vilken modell som mottar en förfrågan. Principerna inkluderar round-robin, lägsta kostnad, snabbaste svar, reservkedjor och mer. Du konfigurerar dem per router under Routrar → Routning."
+        },
+        "addModel": {
+          "q": "Hur lägger jag till en ny AI-modell?",
+          "a": "Gå till Modeller → Lägg till modell. Du kan lägga till vilken OpenAI-kompatibel leverantör som helst (Ollama, LM Studio, anpassade slutpunkter) eller en inbyggd Anthropic-slutpunkt. Fyll i bas-URL, API-nyckel och modell-ID — Routerly hanterar resten."
+        },
+        "dataStored": {
+          "q": "Lagras mina data? Loggas mina instruktioner?",
+          "a": "Routerly är självärlöst och lagrar data endast på din maskin (i ~/.routerly/ som standard). Instruktioner och svar skickas aldrig någonstans av Routerly. Begärandeloggar lagras lokalt och endast om du aktiverar dem per-router."
+        },
+        "routerToken": {
+          "q": "Vad är en routertoken och hur skiljer den sig från en leverantörs API-nyckel?",
+          "a": "En routertoken är en autentiseringsuppgift du ger din app eller gruppmedlemmar för att autentisera med Routerly. Den är skild från dina leverantörs API-nycklar, som Routerly lagrar säkert på serversidan. Dina appar ser aldrig de verkliga leverantörsnycklarna."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} användare",
+    "countLabel_other": "{{count}} användare",
+    "addButton": "Lägg till användare",
+    "columns": {
+      "email": "E-post",
+      "role": "Roll",
+      "routers": "Routrar"
+    },
+    "allRouters": "Alla",
+    "resetTwoFaTitle": "Återställ 2FA",
+    "resetTwoFaConfirm": "Återställ 2FA för {{email}}? De behöver registrera om.",
+    "deleteConfirm": "Ta bort denna användare?",
+    "emptyTitle": "Inga användare ännu.",
+    "noPermission": "Du har inte behörighet att se användare.",
+    "modal": {
+      "title": "Lägg till användare",
+      "emailLabel": "E-post",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Lösenord",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Roll",
+      "roleAdmin": "Admin",
+      "roleViewer": "Visare",
+      "cancelButton": "Avbryt",
+      "submitButton": "Lägg till användare"
+    },
+    "errors": {
+      "loadFailed": "Misslyckades att ladda användare",
+      "addFailed": "Fel"
+    }
+  },
+  "userEdit": {
+    "title": "Redigera användare",
+    "account": "Konto",
+    "email": "E-post",
+    "role": "Roll",
+    "changePassword": "Ändra lösenord",
+    "newPassword": "Nytt lösenord",
+    "newPasswordHint": "(lämna tomt för att behålla aktuell)",
+    "save": "Spara",
+    "saved": "Sparad!",
+    "errors": {
+      "loadFailed": "Misslyckades att ladda användare",
+      "saveFailed": "Misslyckades att spara"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Hantera roller och behörigheter. Inbyggda roller kan inte ändras.",
+    "newRole": "Ny roll",
+    "builtin": "inbyggd",
+    "edit": "Redigera",
+    "deleteConfirm": "Ta bort denna roll? Användare med denna roll kommer att påverkas.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "t.ex. operatör",
+      "name": "Namn",
+      "namePlaceholder": "Rollnamn",
+      "permissions": "Behörigheter",
+      "create": "Skapa",
+      "save": "Spara",
+      "cancel": "Avbryt"
+    },
+    "permissions": {
+      "routerRead": "Routrar – Läsa",
+      "routerWrite": "Routrar – Skriva",
+      "modelRead": "Modeller – Läsa",
+      "modelWrite": "Modeller – Skriva",
+      "userRead": "Användare – Läsa",
+      "userWrite": "Användare – Skriva",
+      "reportRead": "Rapporter – Läsa",
+      "settingsRead": "Inställningar – Läsa",
+      "settingsWrite": "Inställningar – Skriva",
+      "notificationWrite": "Aviseringar – Skriva",
+      "tokenRead": "Tokens – Läsa",
+      "tokenWrite": "Tokens – Skriva",
+      "roleWrite": "Roller – Skriva",
+      "auditRead": "Granskningslogg – Läsa",
+      "modulesRead": "Moduler – Läsa",
+      "modulesManage": "Moduler – Hantera",
+      "connectionsRead": "Anslutningar – Läsa",
+      "connectionsManage": "Anslutningar – Hantera",
+      "resilienceRead": "Motståndskraft – Läsa",
+      "resilienceManage": "Motståndskraft – Hantera",
+      "profilesRead": "Routningsprofiler – Läsa",
+      "profilesManage": "Routningsprofiler – Hantera",
+      "optimizersRead": "Optimerare – Läsa",
+      "optimizersManage": "Optimerare – Hantera",
+      "experimentsRead": "Experiment – Läsa",
+      "experimentsManage": "Experiment – Hantera"
+    },
+    "errors": {
+      "loadFailed": "Misslyckades att ladda roller",
+      "updateFailed": "Misslyckades att uppdatera roll",
+      "createFailed": "Misslyckades att skapa roll",
+      "deleteFailed": "Misslyckades att ta bort roll"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profiler",
+      "subtitle": "Återanvändbara routnings-, optimerar- och säkerhetskonfigurationer",
+      "noPermission": "Du har inte behörighet att se profiler.",
+      "newProfile": "Ny {{kind}} profil",
+      "empty": "Inga {{kind}} profiler ännu.",
+      "builtin": "Inbyggd",
+      "custom": "Anpassad",
+      "view": "Visa",
+      "edit": "Redigera",
+      "clone": "Klona",
+      "delete": "Radera",
+      "deleteConfirm": "Ta bort profil \"{{label}}\"? Detta kan inte ångras.",
+      "kindDescriptions": {
+        "routing": "Vilken modell som svarar på en förfrågan och vad som händer när den inte kan",
+        "optimizer": "Vad som tas bort från en instruktion innan den skickas",
+        "security": "Skyddskontroller och PII-policyer tillämpade på trafik"
+      },
+      "columns": {
+        "label": "Etikett",
+        "type": "Typ",
+        "configuration": "Konfiguration",
+        "version": "Version"
+      },
+      "errors": {
+        "loadFailed": "Misslyckades att ladda profiler",
+        "deleteFailed": "Misslyckades att ta bort profil"
+      }
+    },
+    "form": {
+      "backToProfiles": "Tillbaka till profiler",
+      "newProfileTitle": "Ny {{kind}} profil",
+      "editProfileTitle": "Redigera {{label}}",
+      "builtinHint": "Inbyggda profiler kan inte redigeras. Klona en för att anpassa den.",
+      "assignHint": "{{article}} {{kind}} profil kan tilldelas till ett valfritt antal routrar.",
+      "noPermission": "Du har inte behörighet att se profiler.",
+      "label": "Etikett",
+      "optimizers": "Optimerare",
+      "optimizersHint": "Dra för att sortera om, växla för att aktivera. De körs i ordning från topp till botten.",
+      "createProfile": "Skapa profil",
+      "saveProfile": "Spara profil",
+      "cancel": "Avbryt",
+      "copySuffix": "{{label}} kopiera",
+      "labelPlaceholders": {
+        "routing": "t.ex. Min balanserad routning",
+        "optimizer": "t.ex. Min prompttrimmer",
+        "security": "t.ex. Mina strikta skyddskontroller"
+      },
+      "errors": {
+        "notFound": "Profil hittades inte.",
+        "loadFailed": "Misslyckades att ladda profil",
+        "saveFailed": "Misslyckades att spara profil"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Tillbaka till anslutning",
+    "title": "Anslut",
+    "docs": "Dokumentation",
+    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
+    "noClientPrefix": "Ingen klient namngiven",
+    "errors": {
+      "loadFailed": "Misslyckades att ladda klienter: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Snabbast: ett kommando",
+      "description": "Kör det på maskinen där {{client}} är installerad. Det skriver {{configPath}}, håller en säkerhetskopia du kan ångra."
+    },
+    "byHand": {
+      "titleAlt": "Eller ställ in det för hand",
+      "titleUi": "Ställ in det för hand",
+      "titleConfigFile": "Ställ in konfigurationsfilen",
+      "setValuesIn": "Ställ in dessa värden i {{configPath}}.",
+      "putThisIn": "Sätt detta i",
+      "replaceToken": "Ersätt",
+      "withRouterToken": "med en routertoken:",
+      "createOne": "skapa en",
+      "onRoutersPage": "på routersidan.",
+      "modelLabel": "Modell:",
+      "modelHint": "överför valet till Routerly, vilket modell-id från",
+      "modelsLink": "Modeller",
+      "worksToo": "fungerar också.",
+      "openaiCompatHint": "Samma bas-URL, nyckel och modell passar vilken klient som helst som erbjuder en \"OpenAI-kompatibel\" leverantör."
+    },
+    "mcp": {
+      "title": "MCP-server",
+      "description": "Separat från stegen ovan: denna tillåter {{client}} att anropa Routerly-verktyg. Det behöver en personlig MCP-token, prägla med",
+      "orFromYour": "eller från din",
+      "profileLink": "profil"
+    },
+    "checkItWorked": {
+      "title": "Kontrollera att det fungerade",
+      "restart": "Starta om {{client}}, skicka det en instruktion, titta sedan efter samtalet i",
+      "usageLink": "Användning",
+      "cliReports": "Från samma maskin rapporterar CLI vad den hittar:"
+    }
+  },
+  "connect": {
+    "title": "Anslut",
+    "subtitle": "Peka en AI-kodningsklient på denna gateway. Välj en klient för dess inställningssteg.",
+    "llmLabel": "LLM",
+    "llmDescription": "routar denna klientmodelltrafik genom Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "laddar Routerly som en verktygsserver inuti den.",
+    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
+    "errors": {
+      "loadFailed": "Misslyckades att ladda klienter: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Ett kommando",
+      "hint": "CLI skriver konfigurationsfilen för dig, med en säkerhetskopia du kan ångra."
+    },
+    "byHand": {
+      "title": "För hand",
+      "hint": "Kopiera snippeten från klientsidan till dess inställningar, starta sedan om den."
+    },
+    "endpoint": {
+      "title": "Peka vilken klient som helst här",
+      "description": "Allt byggt på OpenAI- eller Anthropic SDK fungerar genom att ändra bas-URL och nyckel. Ingenting annat ändras: förfrågningar och svar korsar Routerly som de är.",
+      "openaiBaseUrl": "OpenAI bas-URL",
+      "anthropicBaseUrl": "Anthropic bas-URL",
+      "apiKey": "API-nyckel",
+      "model": "Modell",
+      "apiKeyDescription": "En routertoken, skickad som",
+      "or": "eller",
+      "createOne": "Skapa en",
+      "onRoutersPage": "på routersidan.",
+      "modelDescription": "låter Routerly välja. Vilket modell-id som helst från",
+      "modelsLink": "Modeller",
+      "worksToo": "sidan fungerar också."
+    }
+  }
+}

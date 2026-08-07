@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Tự động",
+      "dark": "Tối",
+      "light": "Sáng"
+    },
+    "themeCycle": {
+      "title": "Chủ đề: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Mở rộng thanh bên",
+      "collapse": "Thu gọn thanh bên"
+    },
+    "tagline": "Một cổng kết nối. Bất kỳ mô hình AI nào. Kiểm soát hoàn toàn.",
+    "nav": {
+      "overview": "Tổng quan",
+      "providers": "Nhà cung cấp",
+      "models": "Mô hình",
+      "profiles": "Hồ sơ",
+      "routers": "Bộ định tuyến",
+      "experiments": "Thí nghiệm",
+      "usage": "Mức sử dụng",
+      "playground": "Sân chơi",
+      "settings": "Cài đặt",
+      "connectApp": "Kết nối ứng dụng",
+      "help": "Trợ giúp",
+      "signOut": "Đăng xuất"
+    },
+    "banner": {
+      "permissionWarning": "Một số tệp cấu hình có quyền truy cập cho phép ({{files}}). Khởi động và yêu cầu vẫn hoạt động, nhưng hãy sửa chữa điều này từ hệ thống tệp máy chủ khi tiện.",
+      "dismiss": "Bỏ qua",
+      "updateAvailable": "Routerly v{{latest}} có sẵn. Bạn đang dùng v{{current}}.",
+      "updateLink": "Cập nhật trong Cài đặt",
+      "mfaRequired": "Xác thực hai yếu tố là bắt buộc cho phiên bản này.",
+      "mfaLink": "Thiết lập 2FA trong Hồ sơ của bạn",
+      "mfaSuffix": "để bảo mật tài khoản của bạn.",
+      "telemetryTitle": "Routerly không bao giờ gửi dữ liệu tự động.",
+      "telemetryBody": "Bạn có muốn giúp đỡ bằng cách gửi số liệu cài đặt ẩn danh không? Chỉ loại sự kiện, phiên bản, nền tảng và một ID ngẫu nhiên — không có dữ liệu cá nhân, không có IP.",
+      "telemetryLink": "Điều gì được gửi?",
+      "telemetryYes": "Có, giúp đỡ tôi",
+      "telemetryNo": "Không, cảm ơn"
+    },
+    "language": {
+      "label": "Ngôn ngữ"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} giây trước",
+      "secondsAgo_other": "{{count}} giây trước",
+      "minutesAgo": "{{count}} phút trước",
+      "minutesAgo_other": "{{count}} phút trước",
+      "hoursAgo": "{{count}} giờ trước",
+      "hoursAgo_other": "{{count}} giờ trước",
+      "daysAgo": "{{count}} ngày trước",
+      "daysAgo_other": "{{count}} ngày trước"
+    },
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "remove": "Xóa",
+    "select": "Chọn...",
+    "search": "Tìm kiếm...",
+    "noResults": "Không có kết quả",
+    "noRemainingOptions": "Không còn tùy chọn nào",
+    "apply": "Áp dụng",
+    "saved": "Đã lưu",
+    "showLess": "Hiển thị ít hơn",
+    "roles": "Vai trò",
+    "permissions": "Quyền",
+    "notifications": {
+      "title": "Thông báo",
+      "markAllRead": "Đánh dấu tất cả là đã đọc",
+      "empty": "Không có thông báo",
+      "viewAll": "Xem tất cả thông báo"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Chọn khoảng thời gian",
+      "recent": "Gần đây",
+      "ranges": "Khoảng",
+      "from": "Từ",
+      "to": "Tới"
+    },
+    "permissionGuard": {
+      "fixFailed": "Không thể sửa quyền",
+      "title": "Quyền tệp không an toàn",
+      "defaultMessage": "Một số tệp có quyền không an toàn.",
+      "fixing": "Đang sửa chữa…",
+      "fixNow": "Sửa ngay"
+    },
+    "limitRows": {
+      "noLimits": "Không có giới hạn nào được đặt.",
+      "metricLabel": "Số liệu",
+      "typeLabel": "Loại",
+      "periodLabel": "Khoảng thời gian",
+      "everyLabel": "Mỗi",
+      "maxCost": "Chi phí tối đa",
+      "maxCount": "Số lượng tối đa",
+      "maxTokens": "Token tối đa",
+      "allCombosSet": "Tất cả các kết hợp số liệu/khoảng thời gian đã được đặt",
+      "addLimit": "Thêm giới hạn",
+      "metric": {
+        "cost": "Chi phí",
+        "calls": "Cuộc gọi",
+        "input_tokens": "Token đầu vào",
+        "output_tokens": "Token đầu ra",
+        "total_tokens": "Tổng token"
+      },
+      "period": {
+        "hourly": "Hàng giờ",
+        "daily": "Hàng ngày",
+        "weekly": "Hàng tuần",
+        "monthly": "Hàng tháng",
+        "yearly": "Hàng năm"
+      },
+      "rollingUnit": {
+        "second": "giây",
+        "minute": "phút",
+        "hour": "giờ",
+        "day": "ngày",
+        "week": "tuần",
+        "month": "tháng"
+      },
+      "windowType": {
+        "period": "Khoảng thời gian",
+        "rolling": "Lăn"
+      },
+      "fmt": {
+        "requests": "{{value}} yêu cầu",
+        "inputTokens": "{{value}} token đầu vào",
+        "outputTokens": "{{value}} token đầu ra",
+        "totalTokens": "{{value}} tổng token",
+        "everyRolling": "{{metric}} mỗi {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} mỗi {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Những gì định tuyến đã tiết kiệm",
+      "input": "Đầu vào",
+      "output": "Đầu ra",
+      "actual": "Thực tế",
+      "clientCalls": "{{count}} cuộc gọi của khách hàng",
+      "clientCalls_other": "{{count}} cuộc gọi của khách hàng",
+      "comparedAgainst": ", so sánh với việc gửi nó đến mỗi",
+      "comparedAgainst_other": ", so sánh với việc gửi chúng đến mỗi",
+      "paidModelsInPlay": "{{count}} mô hình được trả tiền đang hoạt động",
+      "paidModelsInPlay_other": "{{count}} mô hình được trả tiền đang hoạt động",
+      "metricCost": "Chi phí",
+      "metricTokens": "Token",
+      "totalCost": "Tổng chi phí",
+      "routed": "Định tuyến: {{value}}",
+      "saved": "Đã tiết kiệm: {{value}}",
+      "usdThisPeriod": "USD khoảng thời gian này",
+      "savedVsAlways": "{{value}} tiết kiệm ({{percent}}%) so với luôn {{model}}",
+      "tokens": "Token",
+      "in": "Vào: {{value}}",
+      "out": "Ra: {{value}}",
+      "tokenSubWithCache": "{{in}} vào · {{out}} ra · {{cached}} đã lưu vào bộ nhớ cache",
+      "tokenSub": "{{in}} vào · {{out}} ra",
+      "cutByOptimizers": "{{value}} được giảm bởi trình tối ưu hóa",
+      "fewerThanAlways": "{{value}} ít hơn luôn {{model}}, ước tính"
+    },
+    "optimizerSteps": {
+      "downloaded": "Đã tải xuống",
+      "thisStepRunsOn": "Bước này chạy trên",
+      "defaultCheckpoint": "Điểm kiểm tra mặc định"
+    },
+    "routingPolicies": {
+      "title": "Chính sách định tuyến",
+      "subtitle": "Các chính sách xác định cách định tuyến yêu cầu. Chúng được thực hiện theo thứ tự từ trên xuống dưới.",
+      "removePolicy": "Xóa chính sách",
+      "removeIntent": "Xóa ý định",
+      "removeExample": "Xóa ví dụ",
+      "routingModels": "Mô hình định tuyến",
+      "embeddingModels": "Mô hình nhúng",
+      "maxCompletionTokens": "Token hoàn thành tối đa",
+      "maxPromptChars": "Ký tự nhắc tối đa",
+      "similarityThreshold": "Ngưỡng tương tự",
+      "previousMessages": "Tin nhắn trước",
+      "intents": "Ý định",
+      "confidenceThreshold": "Ngưỡng độ tin cậy",
+      "ambiguityMargin": "Biên độ mơ hồ",
+      "maxCallsPerWindow": "Cuộc gọi tối đa mỗi cửa sổ",
+      "addFallbackModel": "Thêm mô hình dự phòng",
+      "autoRoutingLabel": "Định tuyến tự động",
+      "autoRoutingHint": "Nếu được bật, lưu lượng được phân phối mà không cần nhắc tùy chỉnh. Nếu được tắt, bạn có thể viết các nhắc cụ thể hướng dẫn AI khi chọn từng mô hình đích.",
+      "additionalPromptInfoLabel": "Thông tin nhắc bổ sung",
+      "additionalPromptInfoPlaceholder": "Các hướng dẫn bổ sung để đưa vào nhắc định tuyến...",
+      "addExamplePlaceholder": "Thêm ví dụ và nhấn Enter…",
+      "addIntentPlaceholder": "Thêm ý định và nhấn Enter…",
+      "addPolicyPlaceholder": "Thêm một chính sách...",
+      "labels": {
+        "llm": "Chính sách định tuyến AI",
+        "rate-limit": "Chính sách giới hạn tỷ lệ",
+        "budget-remaining": "Chính sách ngân sách còn lại",
+        "semantic-intent": "Chính sách ý định ngữ nghĩa",
+        "health": "Chính sách sức khỏe",
+        "context": "Chính sách ngữ cảnh",
+        "capability": "Chính sách khả năng",
+        "performance": "Chính sách hiệu suất",
+        "fairness": "Chính sách công bằng",
+        "cheapest": "Chính sách rẻ nhất",
+        "model-preference": "Chính sách ưa thích mô hình"
+      },
+      "descriptions": {
+        "context": "Cho điểm mô hình dựa trên cửa sổ ngữ cảnh có sẵn. Gán 0 cho các mô hình có cửa sổ ngữ cảnh nhỏ hơn độ dài yêu cầu ước tính, ngăn chặn lỗi cắt ngắn.",
+        "cheapest": "Cho điểm mô hình tỷ lệ nghịch với chi phí token của chúng. Mô hình rẻ nhất được 1.0, mô hình đắt nhất được 0.0, giúp giảm chi phí API trên các yêu cầu.",
+        "health": "Cho điểm mô hình dựa trên tỷ lệ lỗi gần đây của chúng bằng cách sử dụng phân rã theo cấp số nhân (các lỗi gần đây có trọng số cao hơn). Áp dụng bộ ngắt mạch để đặt điểm bằng 0 khi tỷ lệ lỗi có trọng số vượt quá ngưỡng quan trọng.",
+        "performance": "Cho điểm mô hình dựa trên độ trễ trung bình gần đây của chúng bằng cách sử dụng phân rã theo cấp số nhân. Mô hình nhanh nhất được 1.0, mô hình chậm nhất được 0.0. Các mô hình không có dữ liệu gần đây mặc định là 1.0.",
+        "llm": "Sử dụng mô hình AI để cho điểm các ứng cử viên dựa trên nội dung ngữ nghĩa của yêu cầu. Hỗ trợ nhắc hướng dẫn định tuyến mỗi mô hình và xem xét độ sâu của ngân sách khi cấu hình giới hạn.",
+        "capability": "Bộ lọc cứng: gán 0 cho các mô hình rõ ràng không có tính năng được yêu cầu bởi yêu cầu (tầm nhìn, gọi hàm, chế độ JSON). Các mô hình không có khai báo khả năng rõ ràng không bị phạt.",
+        "rate-limit": "Phạt các mô hình có tần suất gọi gần đây cao để giảm rủi ro chạm đến giới hạn tỷ lệ của nhà cung cấp (HTTP 429). Hỗ trợ ngưỡng cứng có thể cấu hình để buộc điểm bằng 0.",
+        "fairness": "Phân phối lưu lượng đều đặn bằng cách phạt các mô hình nhận được nhiều cuộc gọi thành công hơn gần đây. Hoạt động như một vòng lặp mềm để ngăn chặn tải tập trung vào một mô hình duy nhất.",
+        "budget-remaining": "Cho điểm mô hình dựa trên độ sâu ngân sách còn lại trên tất cả các giới hạn được cấu hình. Ưa thích các mô hình có phòng trước khi đạt ngưỡng của chúng, trải rộng tiêu thụ một cách chủ động.",
+        "semantic-intent": "Phân loại yêu cầu theo ý định ngữ nghĩa bằng cách sử dụng nhúng, sau đó giới hạn nhóm ứng cử viên cho các mô hình được ánh xạ tới ý định đó. Các trận đấu tự tin lọc cứng nhóm; các trận đấu không rõ ràng hợp nhất nhóm top-2; yêu cầu chưa biết vượt qua tất cả các ứng cử viên.",
+        "model-preference": "Khi khách hàng yêu cầu một mô hình cụ thể (không routerly/ada), trao một điểm bonus có thể cấu hình cho mô hình đó. Khi không có sở thích nào được bày tỏ, chính sách sẽ tình nguyện. Vị trí trong danh sách kiểm soát bao nhiêu sở thích có trọng lượng so với các chính sách khác."
+      },
+      "selectModel": "Chọn mô hình"
+    },
+    "securityRules": {
+      "applyTo": "Áp dụng cho",
+      "streamingBufferSize": "Kích thước bộ đệm truyền (ký tự)",
+      "entityTypes": "Loại thực thể",
+      "target": "Mục tiêu",
+      "embeddingModel": "Mô hình nhúng",
+      "judgeModel": "Mô hình xét xử",
+      "contentGuardrails": "Tường lửa nội dung",
+      "piiPolicies": "Chính sách PII",
+      "addSecurityPolicyPlaceholder": "Thêm một chính sách bảo mật...",
+      "removePolicyTooltip": "Xóa chính sách",
+      "deleteRuleAriaLabel": "Xóa quy tắc",
+      "embeddingModelPlaceholder": "Chọn mô hình nhúng...",
+      "fallbackModelsLabel": "Mô hình dự phòng (tùy chọn, được thử theo thứ tự)",
+      "fallbackModelsPlaceholder": "Không có mô hình dự phòng...",
+      "exampleTextsLabel": "Văn bản ví dụ để chặn (một trên mỗi dòng)",
+      "exampleTextsPlaceholder": "Làm cách nào để hack...\n...",
+      "similarityThresholdLabel": "Ngưỡng tương tự:",
+      "judgeModelPlaceholder": "Chọn mô hình xét xử...",
+      "allowedTopicsLabel": "Chủ đề được phép (ngôn ngữ tự nhiên)",
+      "allowedTopicsPlaceholder": "Hỗ trợ khách hàng cho các sản phẩm phần mềm. Khắc phục sự cố kỹ thuật. Câu hỏi về thanh toán.",
+      "onTopicThresholdLabel": "Chặn nếu điểm chủ đề thấp hơn:",
+      "harmThresholdLabel": "Chặn nếu điểm tổn hại cao hơn:",
+      "customInstructionsLabel": "Hướng dẫn tùy chỉnh",
+      "customInstructionsPlaceholder": "Bạn là một bộ phân loại an toàn nội dung. Đánh giá văn bản sau đây để tìm nội dung có hại.\nCác danh mục: diễn ngôn thù ghét, bạo lực, nội dung tình dục, tự làm hại.\nChỉ trả lời với một đối tượng JSON: {\"score\": <số từ 0 đến 1>}",
+      "customInstructionsRequired": "Hướng dẫn tùy chỉnh là bắt buộc.",
+      "enabledLabel": "Được bật",
+      "contentGuardrailsHint": "Kiểm tra yêu cầu và phản hồi đối với các quy tắc được cấu hình. Hoạt động khi ít nhất một quy tắc được cấu hình.",
+      "securityPoliciesHeading": "Chính sách bảo mật",
+      "noSecurityPolicies": "Không có chính sách bảo mật được cấu hình.",
+      "piiPoliciesHint": "Phát hiện và làm mờ dữ liệu cá nhân. Mỗi chính sách nhắm mục tiêu đầu vào yêu cầu, phản hồi mô hình hoặc cả hai, và kiểm soát bộ thực thể riêng của nó.",
+      "noPiiPolicies": "Không có chính sách PII được cấu hình.",
+      "addPolicyButton": "+ Thêm chính sách",
+      "injectionWarningTitle": "Tải trọng yêu cầu được sửa đổi bằng cách tiêm",
+      "injectionWarningBody": "Một hoặc nhiều quy tắc tiêm hướng dẫn của họ vào nhắc hệ thống của yêu cầu đi, vì vậy tải trọng được gửi đến nhà cung cấp được sửa đổi. Không thực hiện cuộc gọi mô hình bổ sung và không có gì bị chặn; mô hình phục vụ tự thực thi hướng dẫn.",
+      "streamingDisabledWarningTitle": "Truyền phát bị vô hiệu hóa cho bộ định tuyến này",
+      "streamingDisabledWarningBody": "Một hoặc nhiều quy tắc được cấu hình để chặn phản hồi (mục tiêu: phản hồi hoặc cả hai). Vì toàn bộ phản hồi phải được kiểm tra trước khi có thể đưa ra quyết định chặn, Routerly giữ phản hồi đầy đủ trước khi trả về cho khách hàng. Truyền phát không khả dụng trong khi một quy tắc chặn phản hồi hoạt động; các khách hàng sẽ nhận được phản hồi hoàn chỉnh cùng một lúc thay vì ở các khúc liên tiếp."
+    },
+    "connectionFields": {
+      "azureResourceName": "Tên tài nguyên Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Tên tài nguyên Azure OpenAI (từ cổng thông tin Azure).",
+      "deploymentId": "ID triển khai",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Tên triển khai bạn đã tạo trong Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Phiên bản API",
+      "azureApiVersionDefaultHint": "(mặc định: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Khu vực AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID khóa truy cập AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Khóa truy cập bí mật AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Để trống để giữ hiện tại",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Token phiên",
+      "awsSessionTokenOptionalHint": "(tùy chọn, cho thông tin đăng nhập tạm thời)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID bộ định tuyến GCP",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Vị trí",
+      "gcpLocationDefaultHint": "(mặc định: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Khóa tài khoản dịch vụ",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL điểm cuối",
+      "optional": "(tùy chọn)",
+      "webProvider": {
+        "unofficialWarningTitle": "Nhà cung cấp không chính thức - sử dụng với rủi ro của riêng bạn.",
+        "unofficialWarningBody": "Tích hợp này dựa vào một API nội bộ không được tài liệu có thể thay đổi hoặc phá vỡ mà không có thông báo. Nó có thể vi phạm Điều khoản dịch vụ của nhà cung cấp và có thể dẫn đến đình chỉ tài khoản.",
+        "accessTokenLabel": "Token truy cập",
+        "sessionTokenLabel": "Token phiên",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Dán giá trị cookie sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Trong khi đăng nhập vào ChatGPT, mở <code>https://chatgpt.com/api/auth/session</code> trong tab mới. Sao chép giá trị của trường <code>accessToken</code> (bắt đầu bằng <code>eyJ</code>). Token hết hạn mỗi ~24 giờ. Để truy cập đáng tin cậy, hãy điền vào trường <strong>cf_clearance</strong> bên dưới.",
+        "anthropicInstructions": "<strong>Cách lấy khóa phiên của bạn:</strong> Trong khi đăng nhập vào Claude, mở DevTools (F12) → Application → Cookies → <code>claude.ai</code> → sao chép giá trị của cookie <code>sessionKey</code> (bắt đầu bằng <code>sk-ant-sid01-</code>). Khóa sẽ hợp lệ cho đến khi bạn đăng xuất."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth đăng ký",
+        "authFilePathLabel": "Đường dẫn tệp xác thực",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (mặc định)",
+        "anthropicTitle": "Sử dụng đăng ký Claude Pro/Max của bạn.",
+        "anthropicRunCommandStep": "Chạy lệnh này và sao chép token nó in:",
+        "anthropicPasteTokenStep": "Dán token vào trường <em>Token OAuth đăng ký</em> bên dưới.",
+        "termsNote": "Tạo lại khi hết hạn. Sử dụng đăng ký thông qua cổng có thể vi phạm Điều khoản dịch vụ của nhà cung cấp.",
+        "openaiTitle": "Sử dụng đăng ký ChatGPT Plus/Pro của bạn thông qua ứng dụng Codex.",
+        "openaiLoginStep": "Đăng nhập vào ứng dụng máy tính để bàn Codex bằng tài khoản ChatGPT Plus/Pro của bạn.",
+        "openaiAutoRefreshStep": "Routerly đọc token truy cập của bạn từ <code>~/.codex/auth.json</code> và làm mới nó tự động. Không cần sao chép/dán thủ công.",
+        "openaiAuthFilePathStep": "Để lại trường <em>Đường dẫn tệp xác thực</em> trống để sử dụng mặc định, hoặc nhập đường dẫn tùy chỉnh nếu ứng dụng Codex của bạn lưu trữ xác thực ở nơi khác.",
+        "openaiTermsNote": "Sử dụng đăng ký thông qua cổng có thể vi phạm Điều khoản dịch vụ của nhà cung cấp."
+      },
+      "copyCode": {
+        "copiedTooltip": "Đã sao chép!",
+        "copyTooltip": "Sao chép vào bộ nhớ tạm",
+        "copiedLabel": "Đã sao chép",
+        "copyLabel": "Sao chép"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Sao chép",
+      "copiedLabel": "Đã sao chép!",
+      "copyErrorHint": "Sao chép không thành công, chọn và sao chép thủ công."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Khách hàng MCP",
+      "hints": {
+        "claudeCode": "Chạy cái này một lần, ở bất kỳ đâu. Claude Code lưu trữ máy chủ trong <code>~/.claude.json</code>.",
+        "claudeDesktop": "Đặt điều này trong <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (trên Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), sau đó khởi động lại ứng dụng. Nó sinh ra CLI, vì vậy <code>routerly</code> phải nằm trên PATH của bạn.",
+        "codex": "Đặt điều này trong <code>~/.codex/config.toml</code>. Codex đọc token từ môi trường, vì vậy xuất nó trong shell bạn bắt đầu Codex.",
+        "opencode": "Đặt điều này trong <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Chạy cái này một lần. OpenClaw mặc định là giao vận sse, mà Routerly không phục vụ, vì vậy giao vận được đặt rõ ràng.",
+        "cursor": "Đặt điều này trong <code>~/.cursor/mcp.json</code>, hoặc trong <code>.cursor/mcp.json</code> để giới hạn nó cho một dự án.",
+        "cline": "Đặt điều này trong <code>~/.cline/mcp.json</code>, hoặc dán nó vào Cấu hình máy chủ MCP trong bảng điều khiển Cline.",
+        "zed": "Đặt điều này trong <code>settings.json</code> của Zed của bạn, cùng với bất kỳ máy chủ ngữ cảnh nào khác."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Thay đổi chưa được lưu",
+      "message": "Bạn có những thay đổi chưa được lưu. Nếu bạn rời đi bây giờ, những thay đổi của bạn sẽ bị mất.",
+      "stay": "Ở lại",
+      "leaveAnyway": "Rời đi dù sao"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Tường lửa",
+        "pii": "PII",
+        "optimizers": "Trình tối ưu hóa",
+        "routerOverhead": "Tính chế độ bộ định tuyến"
+      },
+      "policyType": {
+        "llm": "Định tuyến AI",
+        "rateLimit": "Giới hạn tỷ lệ",
+        "budgetRemaining": "Ngân sách còn lại",
+        "semanticIntent": "Ý định ngữ nghĩa",
+        "modelPreference": "Ưa thích mô hình"
+      },
+      "rawDetails": "chi tiết thô",
+      "technicalDetails": "chi tiết kỹ thuật",
+      "systemPrompt": "nhắc hệ thống",
+      "responseText": "văn bản phản hồi",
+      "responseJson": "phản hồi JSON",
+      "cacheEmbeddingCall": "CUỘC GỌI NHÚNG BỘ NHỚ CACHE",
+      "fallbackAttempt": "nỗ lực dự phòng #{{attempt}}",
+      "embeddingModel": "Mô hình nhúng",
+      "upstreamModel": "Mô hình thượng nguồn",
+      "provider": "Nhà cung cấp",
+      "source": "Nguồn",
+      "endpoint": "Điểm cuối",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL được mở rộng",
+      "model": "Mô hình",
+      "similarity": "Tương tự",
+      "embedding": "Nhúng",
+      "cacheMiss": "CACHE MISS",
+      "details": "chi tiết",
+      "excludedByLimits": "ĐƯỢC LOẠI TRỪ BẰNG GIỚI HẠN",
+      "finalRanking": "XẾP HẠNG CUỐI CÙNG",
+      "noRankingData": "Không có dữ liệu xếp hạng (bản ghi có thể bị hỏng hoặc từ phiên bản cũ hơn)",
+      "policyScores": "ĐIỂM CHÍNH SÁCH",
+      "weight": "trọng lượng {{value}}",
+      "allScores": "tất cả các điểm",
+      "noPolicyData": "Không có dữ liệu chính sách (bản ghi có thể bị hỏng hoặc từ phiên bản cũ hơn)",
+      "requestGuardrailBlocked": "TƯỜNG LỬA YÊU CẦU ĐƯỢC CHẶN",
+      "requestGuardrailTriggered": "TƯỜNG LỬA YÊU CẦU ĐƯỢC KÍCH HOẠT",
+      "responseGuardrailBlocked": "TƯỜNG LỬA PHẢN HỒI ĐƯỢC CHẶN",
+      "responseGuardrailTriggered": "TƯỜNG LỬA PHẢN HỒI ĐƯỢC KÍCH HOẠT",
+      "rule": "Quy tắc",
+      "action": "Hành động",
+      "guardrailsEvaluated": "TƯỜNG LỬA ĐƯỢC ĐÁNH GIÁ ({{target}})",
+      "ruleCount": "{{count}} quy tắc",
+      "ruleCount_other": "{{count}} quy tắc",
+      "promptInjection": "Tiêm nhắc",
+      "injects": "tiêm",
+      "judgeResponse": "Phản hồi của thẩm phán",
+      "piiScrubbed": "PII ĐÃ ĐƯỢC LÀM SẠCH",
+      "piiScanned": "PII ĐÃ QUÉT ({{target}})",
+      "policies": "chính sách",
+      "entityTypes": "loại thực thể",
+      "customPatterns": "mẫu tùy chỉnh",
+      "scanned": "đã quét",
+      "redacted": "được làm mờ",
+      "took": "mất",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "loại thực thể đã quét",
+      "guardrailInjection": "TIÊM TƯỜNG LỬA",
+      "rules": "quy tắc",
+      "chars": "ký tự",
+      "injectedText": "văn bản tiêm",
+      "optimizer": "TRÌNH TỐI ƯU HÓA {{id}}",
+      "tokens": "token",
+      "saved": "đã tiết kiệm",
+      "tok": "{{value}} tok",
+      "reason": "lý do",
+      "budgetBlocked": "NGÂN SÁCH ĐƯỢC CHẶN",
+      "budgetOk": "NGÂN SÁCH OK",
+      "egressSent": "EGRESS ĐÃ GỬI",
+      "status": "trạng thái",
+      "encoding": "mã hóa",
+      "frames": "khung",
+      "bytes": "byte"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Hồ sơ của tôi",
+      "subtitle": "Quản lý cài đặt tài khoản của bạn"
+    },
+    "tabs": {
+      "profile": "Hồ sơ",
+      "notifications": "Thông báo",
+      "mcp": "MCP",
+      "preferences": "Tùy chỉnh"
+    },
+    "notifications": {
+      "close": "Đóng",
+      "refresh": "Làm mới",
+      "clear": "Xóa",
+      "empty": "Không tìm thấy thông báo nào.",
+      "markAllRead": "Đánh dấu tất cả là đã đọc",
+      "allCaughtUp": "Tất cả đều bắt kịp",
+      "unreadCount": "{{count}} chưa đọc",
+      "selectedCount": "{{count}} được chọn",
+      "severity": {
+        "all": "Tất cả",
+        "info": "Thông tin",
+        "warning": "Cảnh báo",
+        "critical": "Quan trọng"
+      },
+      "status": {
+        "read": "Đã đọc",
+        "unread": "Chưa đọc"
+      },
+      "filters": {
+        "severity": "Mức độ nghiêm trọng",
+        "category": "Danh mục",
+        "event": "Sự kiện",
+        "date": "Ngày",
+        "period": "Khoảng thời gian",
+        "status": "Trạng thái",
+        "all": "Tất cả",
+        "allCategories": "Tất cả danh mục",
+        "allEvents": "Tất cả sự kiện",
+        "unreadOnly": "Chỉ chưa đọc"
+      },
+      "actions": {
+        "markRead": "Đánh dấu là đã đọc",
+        "markUnread": "Đánh dấu là chưa đọc",
+        "archive": "Lưu trữ"
+      },
+      "table": {
+        "severity": "Mức độ nghiêm trọng",
+        "event": "Sự kiện",
+        "date": "Ngày",
+        "status": "Trạng thái",
+        "selectAll": "Chọn tất cả",
+        "selectRow": "Chọn {{event}}",
+        "eventCount": "{{count}} sự kiện"
+      },
+      "pagination": {
+        "previous": "← Trước",
+        "next": "Tiếp theo →",
+        "page": "Trang {{page}} của {{totalPages}}",
+        "total": "({{count}} tổng cộng)"
+      },
+      "detail": {
+        "ariaLabel": "Chi tiết thông báo",
+        "details": "Chi tiết",
+        "noDetails": "Không có chi tiết bổ sung.",
+        "eventsInIncident": "Sự kiện trong vụ việc này"
+      }
+    },
+    "security": {
+      "roleLabel": "Vai trò:",
+      "password": {
+        "heading": "Thay đổi mật khẩu",
+        "currentLabel": "Mật khẩu hiện tại",
+        "newLabel": "Mật khẩu mới",
+        "newPlaceholder": "Tối thiểu 8 ký tự",
+        "confirmLabel": "Xác nhận mật khẩu mới",
+        "success": "Mật khẩu đã được thay đổi thành công.",
+        "saving": "Đang lưu...",
+        "submit": "Thay đổi mật khẩu",
+        "errors": {
+          "mismatch": "Mật khẩu không khớp.",
+          "tooShort": "Mật khẩu mới phải có ít nhất 8 ký tự.",
+          "updateFailed": "Cập nhật không thành công"
+        }
+      },
+      "tfa": {
+        "heading": "Xác thực hai yếu tố",
+        "notEnabled": "2FA không được bật. Bảo vệ tài khoản của bạn bằng mật khẩu một lần dựa trên thời gian.",
+        "enableButton": "Bật xác thực hai yếu tố",
+        "scanInstructions": "Quét mã QR này bằng ứng dụng xác thực của bạn (Google Authenticator, Authy, v.v.), sau đó nhập mã 6 chữ số để xác nhận.",
+        "qrAlt": "Mã QR thiết lập 2FA",
+        "addAccountInstructions": "Mở ứng dụng xác thực của bạn (Google Authenticator, Authy, 1Password, v.v.) và thêm tài khoản mới:",
+        "setup": {
+          "step1": "Nhấn <strong>Thêm tài khoản</strong> hoặc nút <strong>+</strong>",
+          "step2": "Chọn <strong>Nhập khóa thiết lập</strong> (hoặc quét mã QR nếu trên điện thoại)",
+          "step3": "Nhập bí mật hiển thị bên dưới"
+        },
+        "mobileLink": "Nhấn ở đây trên thiết bị di động để mở xác thực",
+        "manualEntryLabel": "Bí mật nhập thủ công:",
+        "saveBackupCodes": "Lưu các mã sao lưu này. Mỗi mã có thể được sử dụng một lần nếu bạn mất quyền truy cập vào xác thực của bạn.",
+        "copyBackupCodes": "Sao chép mã sao lưu",
+        "confirmCodeLabel": "Nhập mã từ ứng dụng của bạn để kích hoạt",
+        "activate": "Kích hoạt 2FA",
+        "cancel": "Hủy",
+        "enabledBadge": "2FA được bật",
+        "newBackupCodesLabel": "Mã sao lưu mới (lưu cái này ngay bây giờ):",
+        "copy": "Sao chép",
+        "regenLabel": "Nhập mã xác thực để tạo lại mã sao lưu",
+        "regenerate": "Tạo lại",
+        "regenerateBackupCodes": "Tạo lại mã sao lưu",
+        "disableLabel": "Tắt 2FA (nhập mã xác thực)",
+        "disable": "Tắt 2FA",
+        "errors": {
+          "setupFailed": "Thiết lập không thành công",
+          "confirmFailed": "Xác nhận không thành công",
+          "disableFailed": "Tắt không thành công",
+          "regenFailed": "Tạo lại không thành công"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Không thể tải bề mặt MCP",
+        "revokeFailed": "Không thể thu hồi token"
+      },
+      "revokeConfirm": "Thu hồi token MCP \"{{name}}\"? Các khách hàng sử dụng nó sẽ ngừng hoạt động ngay lập tức.",
+      "tokens": {
+        "heading": "Token MCP",
+        "newToken": "Token mới",
+        "description": "Mỗi token hoạt động như bạn: nó tiếp xúc chính xác với các công cụ mà vai trò của bạn cho phép. Giá trị đầy đủ được hiển thị một lần, trên trang tạo nó.",
+        "empty": "Chưa có token MCP nào. Tạo một token để kết nối khách hàng MCP.",
+        "created": "Được tạo",
+        "lastUsed": "Sử dụng lần cuối",
+        "expires": "Hết hạn",
+        "never": "Không bao giờ",
+        "revokeTitle": "Thu hồi token"
+      },
+      "tools": {
+        "heading": "Công cụ mà token của bạn tiếp xúc",
+        "empty": "Vai trò của bạn không cấp công cụ MCP nào. Hỏi quản trị viên về các quyền bạn cần.",
+        "table": {
+          "name": "Tên",
+          "scope": "Phạm vi",
+          "description": "Mô tả",
+          "sourceModule": "Mô-đun nguồn",
+          "permission": "Quyền"
+        }
+      },
+      "connect": {
+        "heading": "Kết nối khách hàng MCP",
+        "descriptionPre": "Chọn khách hàng bạn đang kết nối, sau đó thay thế",
+        "descriptionPost": "với một trong những token của bạn. Tạo token hiển thị đoạn mã tương tự với giá trị đã có.",
+        "otherClient": "Bất kỳ khách hàng nào khác",
+        "httpInstructionsPre": "Qua HTTP, hướng nó đến điểm cuối này và xác thực bằng",
+        "httpInstructionsPost": ". Nó là JSON-RPC 2.0 qua HTTP có thể truyền.",
+        "stdioInstructionsPre": "Qua stdio, CLI cầu nối nó và chuyển token của bạn. Chạy dịch vụ trực tiếp thay thế? Đặt",
+        "stdioInstructionsAnd": "và",
+        "stdioInstructionsPost": "tự mình."
+      },
+      "newToken": {
+        "backToMcp": "Quay lại MCP",
+        "title": "Token MCP mới",
+        "subtitle": "Token hoạt động như bạn: nó tiếp xúc chính xác với các công cụ mà vai trò của bạn cho phép.",
+        "nameLabel": "Tên",
+        "namePlaceholder": "laptop",
+        "nameHint": "Nơi token này được sử dụng, ví dụ như \"laptop\" hoặc \"claude-desktop\".",
+        "expiryLabel": "Hết hạn vào",
+        "expiryHint": "Tùy chọn. Để nó trống và token không bao giờ hết hạn, cho đến khi bạn thu hồi nó.",
+        "createButton": "Tạo token",
+        "creatingButton": "Đang tạo…",
+        "cancelButton": "Hủy",
+        "tokenSection": {
+          "title": "Token của bạn",
+          "hint": "Sao chép nó ngay bây giờ. Nó không được hiển thị lại, và token bị mất chỉ có thể bị thay thế.",
+          "copyButton": "Sao chép",
+          "copiedButton": "Đã sao chép!",
+          "copyTitle": "Sao chép token",
+          "copiedTitle": "Đã sao chép!"
+        },
+        "connectSection": {
+          "title": "Kết nối khách hàng",
+          "hint": "Chọn khách hàng bạn đang kết nối. Đoạn mã đã mang theo token này."
+        },
+        "bridgeSection": {
+          "title": "Hoặc sử dụng cầu nối cục bộ",
+          "hint": "Đối với khách hàng chỉ nói stdio, CLI cầu nối nó và chuyển token của bạn."
+        },
+        "doneButton": "Hoàn tất",
+        "errors": {
+          "createFailed": "Không thể tạo token",
+          "copyFailed": "Sao chép không thành công, chọn và sao chép token thủ công."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Ngôn ngữ",
+      "description": "Chọn ngôn ngữ mà bảng điều khiển được hiển thị.",
+      "languageLabel": "Ngôn ngữ",
+      "saved": "Tùy chỉnh ngôn ngữ đã được lưu."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Không thể tải cài đặt",
+        "loadFailedPeriod": "Không thể tải cài đặt.",
+        "saveFailed": "Không thể lưu",
+        "saveSettingsFailed": "Không thể lưu cài đặt"
+      },
+      "savedSuccess": "Cài đặt đã được lưu thành công.",
+      "saving": "Đang lưu…",
+      "saveSettings": "Lưu cài đặt",
+      "serverInfo": {
+        "heading": "Thông tin máy chủ",
+        "readOnly": "Chỉ đọc. Máy chủ lưu trữ và cổng đến từ môi trường hoặc tệp cài đặt, không phải từ đây.",
+        "reachableAt": "Có thể truy cập tại",
+        "reachableAtAny": "Có thể truy cập tại bất kỳ địa chỉ nào trong số này",
+        "thisMachine": "Máy này",
+        "network": "Mạng",
+        "copyAddress": "Sao chép {{address}}",
+        "copied": "Đã sao chép!",
+        "copy": "Sao chép",
+        "hostAndPort": "Máy chủ lưu trữ và cổng",
+        "version": "Phiên bản",
+        "uptime": "Thời gian hoạt động"
+      },
+      "runtime": {
+        "heading": "Cài đặt thời gian chạy",
+        "logLevel": "Mức nhật ký",
+        "logLevelHint": "Kiểm soát mức độ chi tiết của nhật ký dịch vụ.",
+        "publicUrl": "URL công khai",
+        "publicUrlHint": "URL cơ sở mà dịch vụ có thể truy cập được từ các khách hàng bên ngoài (ví dụ: <code>http://192.168.1.10:3000</code>). Được sử dụng trong phần <strong>Cách kết nối</strong> của từng bộ định tuyến. Hữu ích khi bảng điều khiển chạy trên máy hoặc cổng khác với dịch vụ.",
+        "usageRetention": "Giữ lại mức sử dụng",
+        "noLimit": "Không có giới hạn",
+        "maxAgeDays": "Tuổi tối đa (ngày)",
+        "maxSizeMb": "Kích thước tối đa (MB)",
+        "retentionHint": "Lịch sử sử dụng/thanh toán cũ hơn số ngày này, hoặc vượt quá kích thước này, bị loại khỏi nhật ký hoạt động. Để trống cả hai để không có giới hạn giữ lại."
+      },
+      "internationalization": {
+        "heading": "Quốc tế hóa",
+        "defaultLanguage": "Ngôn ngữ Mặc định",
+        "defaultLanguageHint": "Ngôn ngữ bảng điều khiển cho những người dùng chưa chọn ngôn ngữ của riêng họ. Không ghi đè lựa chọn cá nhân của người dùng."
+      },
+      "telemetry": {
+        "heading": "Số liệu ẩn danh",
+        "neverAutomatic": "Routerly không bao giờ gửi dữ liệu tự động.",
+        "noChoice": "Bạn chưa chọn.",
+        "enabledStatus": "Số liệu cài đặt ẩn danh được bật.",
+        "disabledStatus": "Số liệu cài đặt ẩn danh bị tắt.",
+        "explanation": "Khi được bật, Routerly chỉ gửi: loại sự kiện (cài đặt / nâng cấp / gỡ cài đặt), phiên bản, nền tảng và ID ngẫu nhiên. Không có dữ liệu cá nhân, không có dữ liệu sử dụng, không có IP được lưu trữ.",
+        "whatIsSent": "Điều gì được gửi?",
+        "installId": "ID cài đặt: {{id}}",
+        "saving": "Đang lưu…",
+        "enable": "Bật",
+        "disable": "Tắt"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Bảng điều khiển (hộp thư đến trong ứng dụng)",
+          "description": "Các sự kiện định tuyến đến hộp thư đến thông báo trong ứng dụng"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Máy chủ thư tùy chỉnh"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "Dịch vụ email đơn giản AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Giao tiếp Azure",
+          "description": "Dịch vụ giao tiếp Azure"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail qua OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Gọi lại webhook HTTP"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "API Bot Slack"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Webhook đến của Teams"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "API sự kiện PagerDuty v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Webhook Discord"
+        }
+      },
+      "events": {
+        "providerError": "Nhà cung cấp - Lỗi",
+        "providerDegraded": "Nhà cung cấp - Đã giảm",
+        "providerRecovered": "Nhà cung cấp - Đã phục hồi",
+        "providerRateLimited": "Nhà cung cấp - Giới hạn tỷ lệ",
+        "routingNoCandidates": "Định tuyến - Không có ứng cử viên",
+        "routingFallbackUsed": "Định tuyến - Dự phòng được sử dụng",
+        "authLoginFailed": "Xác thực - Đăng nhập không thành công",
+        "authTokenInvalid": "Xác thực - Token không hợp lệ",
+        "configModelAdded": "Cấu hình - Mô hình được thêm",
+        "configModelDeleted": "Cấu hình - Mô hình bị xóa",
+        "configRouterCreated": "Cấu hình - Bộ định tuyến được tạo",
+        "configRouterDeleted": "Cấu hình - Bộ định tuyến bị xóa",
+        "budgetThresholdReached": "Ngân sách - Ngưỡng đạt được",
+        "budgetExceeded": "Ngân sách - Vượt quá",
+        "budgetReset": "Ngân sách - Đặt lại",
+        "systemStartup": "Hệ thống - Khởi động",
+        "systemShutdown": "Hệ thống - Tắt",
+        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn"
+      },
+      "removeChannelTooltip": "Xóa kênh",
+      "removeChannelConfirm": "Xóa kênh?",
+      "formUpdatedHint": "Biểu mẫu được cập nhật - lưu để áp dụng.",
+      "hmacSigningKeyPlaceholder": "Khóa ký HMAC",
+      "perms": {
+        "routerRead": "Bộ định tuyến - Đọc",
+        "routerWrite": "Bộ định tuyến - Ghi",
+        "modelRead": "Mô hình - Đọc",
+        "modelWrite": "Mô hình - Ghi",
+        "userRead": "Người dùng - Đọc",
+        "userWrite": "Người dùng - Ghi",
+        "reportRead": "Báo cáo - Đọc",
+        "settingsRead": "Cài đặt - Đọc",
+        "settingsWrite": "Cài đặt - Ghi",
+        "notificationWrite": "Thông báo - Ghi",
+        "tokenRead": "Token - Đọc",
+        "tokenWrite": "Token - Ghi",
+        "roleWrite": "Vai trò - Ghi",
+        "auditRead": "Nhật ký kiểm toán - Đọc",
+        "modulesRead": "Mô-đun - Đọc",
+        "modulesManage": "Mô-đun - Quản lý",
+        "connectionsRead": "Kết nối - Đọc",
+        "connectionsManage": "Kết nối - Quản lý",
+        "resilienceRead": "Khả năng phục hồi - Đọc",
+        "resilienceManage": "Khả năng phục hồi - Quản lý",
+        "profilesRead": "Hồ sơ định tuyến - Đọc",
+        "profilesManage": "Hồ sơ định tuyến - Quản lý",
+        "optimizersRead": "Trình tối ưu hóa - Đọc",
+        "optimizersManage": "Trình tối ưu hóa - Quản lý",
+        "experimentsRead": "Thí nghiệm - Đọc",
+        "experimentsManage": "Thí nghiệm - Quản lý"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Đối với loại kênh này, các mục tiêu không thay đổi phân phối (điểm cuối được sửa). Chúng lọc các sự kiện nào được ghi trong dấu vết kiểm toán cho mỗi người nhận.",
+        "dashboard": "Các mục tiêu kiểm soát khả năng hiển thị của hộp thư đến - chỉ các người dùng được kết hợp mới sẽ thấy các thông báo này trong hộp thư đến trong ứng dụng của họ.",
+        "email": "Các mục tiêu xác định người dùng nào sẽ nhận email này. Để trống để gửi cho tất cả người dùng."
+      },
+      "summary": {
+        "allEvents": "Tất cả sự kiện",
+        "eventCount": "{{count}} sự kiện",
+        "eventCount_other": "{{count}} sự kiện",
+        "roleCount": "{{count}} vai trò",
+        "roleCount_other": "{{count}} vai trò",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perm",
+        "userCount": "{{count}} người dùng",
+        "userCount_other": "{{count}} người dùng",
+        "everyone": "Mọi người"
+      },
+      "errors": {
+        "loadFailed": "Không thể tải"
+      },
+      "fields": {
+        "dashboardHint": "Định tuyến các sự kiện phù hợp đến hộp thư đến thông báo trong ứng dụng. Không cần thông tin đăng nhập.",
+        "labels": {
+          "fromAddress": "Từ địa chỉ",
+          "fromName": "Từ tên",
+          "host": "Máy chủ lưu trữ",
+          "port": "Cổng",
+          "tls": "TLS/SSL",
+          "username": "Tên người dùng",
+          "password": "Mật khẩu",
+          "awsRegion": "Khu vực AWS",
+          "accessKeyId": "ID khóa truy cập",
+          "secretAccessKey": "Khóa truy cập bí mật",
+          "apiKey": "Khóa API",
+          "connectionString": "Chuỗi kết nối",
+          "clientId": "ID khách hàng",
+          "clientSecret": "Bí mật khách hàng",
+          "refreshToken": "Token làm mới",
+          "url": "URL",
+          "method": "Phương pháp",
+          "signingSecret": "Bí mật ký",
+          "botToken": "Token bot",
+          "channelId": "ID kênh",
+          "webhookUrl": "URL webhook",
+          "integrationKey": "Khóa tích hợp"
+        },
+        "values": {
+          "enabled": "Được bật",
+          "disabled": "Bị tắt",
+          "configured": "Được cấu hình",
+          "notSet": "Không được đặt"
+        },
+        "optional": "(tùy chọn)",
+        "keepCurrentPlaceholder": "Để trống để giữ hiện tại",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Sử dụng TLS / SSL",
+        "smtpTlsOnHint": "(cổng 465 - SSL trực tiếp)",
+        "smtpTlsOffHint": "(cổng 587 - STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Để thông tin đăng nhập trống để sử dụng vai trò phiên bản IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Khóa ký HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "Khóa định tuyến 32 ký tự",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Sự kiện",
+          "eventsPlaceholder": "Tất cả sự kiện (để trống cho tất cả)",
+          "eventsHint": "Để trống để nhận tất cả sự kiện. Chọn các sự kiện cụ thể để lọc.",
+          "routersHeading": "Bộ định tuyến",
+          "routersPlaceholder": "Tất cả bộ định tuyến (để trống cho tất cả)",
+          "routersHint": "Để trống để nhận sự kiện từ tất cả bộ định tuyến.",
+          "cooldownHeading": "Thời gian hạ nhiệt",
+          "cooldownSuffix": "giây (0 = không hạ nhiệt)",
+          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện."
+        },
+        "recipients": {
+          "heading": "Người nhận / Mục tiêu",
+          "rolesLabel": "Vai trò",
+          "rolesPlaceholder": "Tất cả vai trò (mọi người)",
+          "permissionsLabel": "Quyền",
+          "permissionsPlaceholder": "Tất cả quyền (mọi người)",
+          "usersLabel": "Người dùng riêng lẻ",
+          "usersPlaceholder": "Tất cả người dùng (mọi người)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "kết nối",
+          "routing": "định tuyến",
+          "recipients": "người nhận"
+        },
+        "sections": {
+          "channelSettings": "Cài đặt kênh",
+          "eventsRouting": "Sự kiện và định tuyến",
+          "recipients": "Người nhận"
+        },
+        "nameLabel": "Tên",
+        "namePlaceholder": "Nhãn cho kênh này",
+        "cancelButton": "Hủy"
+      },
+      "list": {
+        "countLabel": "{{count}} kênh",
+        "countLabel_other": "{{count}} kênh",
+        "filteredLabel": "{{shown}} của {{count}} kênh",
+        "filteredLabel_other": "{{shown}} của {{count}} kênh",
+        "allTypes": "Tất cả loại",
+        "searchPlaceholder": "Lọc kênh…",
+        "searchChannelsPlaceholder": "Tìm kiếm kênh…",
+        "addButton": "Thêm kênh",
+        "addSearchPlaceholder": "Tìm kiếm kênh…",
+        "noResults": "Không có kết quả",
+        "emptyTitle": "Chưa cấu hình kênh thông báo nào.",
+        "noMatch": "Không có kênh nào phù hợp với các bộ lọc hoạt động.",
+        "nameInlinePlaceholder": "Nhãn (tùy chọn)",
+        "columns": {
+          "name": "Tên",
+          "type": "Loại",
+          "summary": "Sự kiện / Mục tiêu"
+        },
+        "testTitle": "Gửi thử",
+        "editTitle": "Chỉnh sửa kênh",
+        "deleteTitle": "Xóa kênh",
+        "deleteConfirm": "Xóa kênh \"{{name}}\"? Không thể hoàn tác điều này.",
+        "deleteConfirmButton": "Xóa",
+        "errors": {
+          "deleteFailed": "Không thể xóa"
+        }
+      },
+      "edit": {
+        "backToList": "Quay lại Thông báo",
+        "back": "Quay lại",
+        "heading": "Chỉnh sửa kênh {{provider}}",
+        "subtitle": "Cập nhật cấu hình cho kênh thông báo này.",
+        "testSection": {
+          "title": "Gửi thử",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Gửi thử",
+          "sendingButton": "Đang gửi…",
+          "hintEmail": "Để trống để gửi đến email tài khoản của bạn. Thử sử dụng cấu hình kênh đã lưu.",
+          "hintOther": "Thử sử dụng cấu hình kênh đã lưu. Lưu các thay đổi trước tiên để thử cài đặt cập nhật."
+        },
+        "saveButton": "Lưu các thay đổi",
+        "savingButton": "Đang lưu…",
+        "errors": {
+          "loadFailed": "Không thể tải",
+          "saveFailed": "Không thể lưu"
+        }
+      },
+      "create": {
+        "backToList": "Quay lại Thông báo",
+        "changeType": "Thay đổi loại",
+        "pickerHeading": "Chọn loại kênh",
+        "pickerSubtitle": "Chọn nhà cung cấp thông báo để cấu hình.",
+        "heading": "Kênh {{provider}} mới",
+        "subtitle": "Cấu hình kênh thông báo mới.",
+        "createButton": "Tạo kênh",
+        "creatingButton": "Đang tạo…",
+        "errors": {
+          "createFailed": "Không thể tạo"
+        }
+      },
+      "sendTest": "Gửi thử",
+      "fromAddress": "Từ địa chỉ",
+      "individualUsers": "Người dùng riêng lẻ",
+      "host": "Máy chủ lưu trữ",
+      "port": "Cổng",
+      "apiKey": "Khóa API",
+      "connectionString": "Chuỗi kết nối",
+      "clientId": "ID khách hàng",
+      "clientSecret": "Bí mật khách hàng",
+      "refreshToken": "Token làm mới",
+      "method": "Phương pháp",
+      "botToken": "Token bot",
+      "channelId": "ID kênh",
+      "webhookUrl": "URL webhook",
+      "integrationKey": "Khóa tích hợp"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "kéo - tiếp xúc /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "đẩy - OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "đẩy - API số liệu"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "đẩy - remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "đẩy - giao thức dòng"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "đẩy - HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Xuất vết yêu cầu",
+        "description": "Vận chuyển vết đầy đủ của mỗi yêu cầu được ủy quyền: mỗi giai đoạn, mỗi mô-đun nói, và nhắc nhở và trả lời cho các dự án đã chọn tham gia.",
+        "sampleRateLabel": "Tỷ lệ mẫu",
+        "sampleRateHint": "1 xuất mỗi yêu cầu, 0,1 một trong mười."
+      },
+      "optional": "(tùy chọn)",
+      "headersHint": "(tùy chọn, một trên mỗi dòng: Khóa: Giá trị)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Token nhà cung cấp",
+          "placeholder": "Để trống để truy cập mở",
+          "description": "Tiếp xúc <code>/metrics</code> theo định dạng văn bản Prometheus. Đặt token để yêu cầu xác thực Bearer."
+        },
+        "otel": {
+          "endpoint": "Điểm cuối bộ sưu tập",
+          "description": "URL cơ sở của máy nhận OTLP của bạn. Routerly thêm <code>/v1/metrics</code>, và <code>/v1/traces</code> khi xuất vết được bật. Cổng HTTP mặc định là 4318, gRPC là 4317.",
+          "protocol": "Giao thức",
+          "headers": "Tiêu đề"
+        },
+        "datadog": {
+          "apiKey": "Khóa API",
+          "placeholder": "Khóa API Datadog của bạn",
+          "description": "Tìm thấy dưới <strong>Cài đặt tổ chức → Khóa API</strong> trong tài khoản Datadog của bạn.",
+          "site": "Trang web"
+        },
+        "grafana": {
+          "remoteWriteUrl": "URL ghi từ xa",
+          "description": "Tìm thấy trong <strong>Grafana Cloud → Kết nối → Prometheus → Chi tiết</strong> như \"Điểm cuối ghi từ xa\".",
+          "username": "Tên người dùng / ID ngăn xếp",
+          "usernameHint": "ID số được hiển thị trong chi tiết kết nối Prometheus.",
+          "apiKey": "Khóa API / Token",
+          "apiKeyHint": "Token Grafana Cloud với vai trò <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL phiên bản InfluxDB v2. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Token API InfluxDB của bạn",
+          "tokenHint": "Phải có quyền <strong>ghi</strong> vào xô.",
+          "org": "Tổ chức",
+          "bucket": "Xô"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Bí mật",
+          "secretHint": "(tùy chọn - khóa ký HMAC-SHA256)",
+          "headers": "Tiêu đề"
+        }
+      },
+      "errors": {
+        "loadFailed": "Không thể tải tích hợp",
+        "updateFailed": "Không thể cập nhật tích hợp",
+        "saveFailed": "Không thể lưu tích hợp",
+        "deleteFailed": "Không thể xóa tích hợp"
+      },
+      "empty": "Chưa cấu hình tích hợp nào.",
+      "enabled": "Được bật",
+      "testing": "Đang thử…",
+      "test": "Thử",
+      "removeConfirm": "Xóa?",
+      "remove": "Xóa",
+      "cancel": "Hủy",
+      "removeTooltip": "Xóa tích hợp",
+      "saving": "Đang lưu…",
+      "save": "Lưu",
+      "addButton": "Thêm tích hợp"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Không thể tải cài đặt",
+        "duplicateUrl": "URL này đã có trong danh sách.",
+        "unreachable": "Không thể truy cập được một danh mục nhà cung cấp hợp lệ tại URL này."
+      },
+      "saved": "Đã lưu.",
+      "refreshed": "Đã làm mới.",
+      "heading": "Kho lưu trữ danh mục nhà cung cấp",
+      "refreshing": "Đang làm mới…",
+      "refresh": "Làm mới",
+      "nextRefresh": "Tiếp theo: {{date}}",
+      "priorityHint": "Thứ tự hàng xác định ưu tiên hợp nhất - hàng 1 chiến thắng xung đột. Sử dụng các mũi tên để sắp xếp lại.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Được cập nhật",
+        "lastCheck": "Lần kiểm tra cuối",
+        "status": "Trạng thái"
+      },
+      "empty": "Không có kho lưu trữ nào được cấu hình. Danh mục công khai Routerly mặc định sẽ được sử dụng.",
+      "status": {
+        "error": "Lỗi",
+        "active": "Hoạt động",
+        "disabled": "Bị tắt"
+      },
+      "edit": "Chỉnh sửa",
+      "removeTooltip": "Xóa",
+      "addRepository": "Thêm kho lưu trữ",
+      "checking": "Đang kiểm tra…",
+      "add": "Thêm",
+      "removeConfirm": "Xóa kho lưu trữ \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Ứng dụng",
+        "runtime": "Thời gian chạy",
+        "storage": "Lưu trữ",
+        "softwareUpdate": "Cập nhật phần mềm"
+      },
+      "labels": {
+        "version": "Phiên bản",
+        "uptime": "Thời gian hoạt động",
+        "nodeVersion": "Node.js",
+        "platform": "Nền tảng",
+        "configDir": "Thư mục cấu hình",
+        "dataDir": "Thư mục dữ liệu",
+        "currentVersion": "Phiên bản hiện tại",
+        "availableVersion": "Phiên bản có sẵn",
+        "upToDate": "Cập nhật",
+        "lastChecked": "Lần kiểm tra cuối"
+      },
+      "noCheckPerformed": "Chưa thực hiện kiểm tra cập nhật.",
+      "checkForUpdates": "Kiểm tra cập nhật",
+      "checking": "Đang kiểm tra…",
+      "updateTo": "Cập nhật thành v{{version}}",
+      "updating": "Đang cập nhật…",
+      "dockerHint": "Chạy trong Docker - kéo hình ảnh mới nhất để cập nhật.",
+      "confirmUpdate": "Điều này sẽ tải xuống và cài đặt phiên bản mới nhất. Dịch vụ sẽ khởi động lại. Tiếp tục?",
+      "updateComplete": "Cập nhật hoàn tất! Đang tải lại…",
+      "serviceRestarting": "Dịch vụ đang khởi động lại. Vui lòng tải lại trang trong giây lát.",
+      "errors": {
+        "loadFailed": "Không thể tải",
+        "checkFailed": "Kiểm tra không thành công",
+        "updateFailed": "Cập nhật không thành công"
+      },
+      "channel": "Kênh"
+    },
+    "security": {
+      "authentication": "Xác thực",
+      "requireMfa": "Yêu cầu xác thực hai yếu tố cho tất cả người dùng",
+      "requireMfaHint": "Khi được bật, người dùng chưa thiết lập 2FA sẽ thấy lời nhắc để làm như vậy sau khi đăng nhập. Người dùng có thể cấu hình 2FA trên trang Hồ sơ của họ.",
+      "savedSuccess": "Cài đặt đã được lưu thành công.",
+      "saving": "Đang lưu…",
+      "saveSettings": "Lưu cài đặt",
+      "errors": {
+        "loadFailed": "Không thể tải cài đặt",
+        "saveFailed": "Không thể lưu cài đặt"
+      }
+    },
+    "title": "Cài đặt",
+    "subtitle": "Cấu hình cho Routerly",
+    "tabs": {
+      "general": "Chung",
+      "security": "Bảo mật",
+      "notifications": "Thông báo",
+      "integrations": "Tích hợp",
+      "catalog": "Danh mục nhà cung cấp",
+      "users": "Người dùng",
+      "roles": "Vai trò",
+      "audit": "Nhật ký kiểm toán",
+      "about": "Giới thiệu"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Bộ định tuyến",
+      "subtitle": "Các ứng dụng khách truy cập Routerly",
+      "count": "1 bộ định tuyến",
+      "count_other": "{{count}} bộ định tuyến",
+      "newRouter": "Bộ định tuyến mới",
+      "empty": "Chưa có bộ định tuyến nào.",
+      "emptyFiltered": "Không có router loại này.",
+      "tabs": {
+        "all": "Tất cả",
+        "router": "Router",
+        "orchestrator": "Điều phối",
+        "passthrough": "Thông qua"
+      },
+      "columns": {
+        "name": "Tên",
+        "tokens": "Token",
+        "policies": "Chính sách",
+        "models": "Mô hình"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} token",
+      "editRouter": "Chỉnh sửa bộ định tuyến",
+      "deleteRouter": "Xóa bộ định tuyến",
+      "deleteConfirm": "Xóa bộ định tuyến này?",
+      "errors": {
+        "deleteFailed": "Lỗi khi xóa bộ định tuyến"
+      }
+    },
+    "layout": {
+      "notFound": "Không tìm thấy bộ định tuyến",
+      "tabs": {
+        "dashboard": "Bảng điều khiển",
+        "general": "Chung",
+        "orchestrator": "Nhạc trưởng",
+        "routing": "Định tuyến",
+        "optimizer": "Trình tối ưu hóa",
+        "security": "Bảo mật",
+        "token": "Token",
+        "users": "Người dùng",
+        "logs": "Nhật ký"
+      },
+      "backToRouters": "Quay lại bộ định tuyến",
+      "backToRoutersTitle": "Quay lại bộ định tuyến",
+      "newRouter": "Bộ định tuyến mới",
+      "loading": "Đang tải...",
+      "routerId": "ID bộ định tuyến:",
+      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này"
+    },
+    "dashboard": {
+      "period": "Khoảng thời gian",
+      "noTraffic": "Không có lưu lượng cho bộ định tuyến này trong khoảng thời gian được chọn.",
+      "stats": {
+        "savings": "Tiết kiệm",
+        "vsPrefix": "so với",
+        "forEverything": "cho mọi thứ",
+        "noTargetToCompare": "không có mô hình đích để so sánh",
+        "cost": "Chi phí",
+        "callCount": "1 cuộc gọi",
+        "callCount_other": "{{count}} cuộc gọi",
+        "latency": "Độ trễ",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Thời gian tới token đầu tiên",
+        "notMeasured": "không được đo trên những cuộc gọi này",
+        "reliability": "Độ tin cậy",
+        "errorsAndBlocked": "{{errors}} lỗi · {{blocked}} bị chặn"
+      },
+      "tokens": {
+        "input": "Token đầu vào:",
+        "output": "Token đầu ra:",
+        "fromCache": "Từ bộ nhớ cache:",
+        "cacheSaved": "({{amount}} đã tiết kiệm)"
+      },
+      "oneModel": {
+        "heading": "Nếu mọi thứ đã đi đến một mô hình",
+        "empty": "Thêm mô hình mục tiêu cho bộ định tuyến này để xem so sánh.",
+        "columns": {
+          "targetModel": "Mô hình mục tiêu",
+          "wouldHaveCost": "Sẽ tốn chi phí",
+          "saved": "Đã tiết kiệm"
+        },
+        "costsHint": "Chi phí là token quan sát được định giá lại theo tỷ giá của mỗi mục tiêu."
+      },
+      "optimizers": {
+        "heading": "Những gì các trình tối ưu hóa đã loại bỏ",
+        "columns": {
+          "optimizer": "Trình tối ưu hóa",
+          "callsChanged": "Cuộc gọi đã thay đổi",
+          "tokensSaved": "Token đã tiết kiệm",
+          "costSaved": "Chi phí đã tiết kiệm",
+          "rolledBack": "Được khôi phục"
+        },
+        "hint": "Được đo trên chính các cuộc gọi, được định giá theo mô hình phục vụ mỗi cuộc gọi. Một lần chạy được khôi phục có nghĩa là đầu ra của bước bị từ chối vì không an toàn và lời nhắc đã bị khôi phục: nó tiết kiệm được gì, và số lượng cao có nghĩa là ngưỡng quá tích cực."
+      },
+      "traffic": {
+        "heading": "Nơi lưu lượng truy cập",
+        "columns": {
+          "model": "Mô hình",
+          "calls": "Cuộc gọi",
+          "share": "Chia sẻ",
+          "cost": "Chi phí",
+          "p95Latency": "độ trễ p95",
+          "errors": "Lỗi"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Lỗi khi lưu bộ định tuyến",
+        "copyFailed": "Sao chép không thành công - vui lòng chọn và sao chép token thủ công."
+      },
+      "kind": {
+        "router": {
+          "label": "Bộ định tuyến",
+          "description": "Định tuyến yêu cầu trên các ứng cử viên mô hình."
+        },
+        "orchestrator": {
+          "label": "Nhạc trưởng",
+          "description": "Định tuyến yêu cầu trên các bộ định tuyến khác thay vì mô hình."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Chuyển tiếp yêu cầu không sửa đổi."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Lưu token này ngay bây giờ.",
+        "saveNowHint": "Nó sẽ không được hiển thị lại - sau khi bạn rời khỏi màn hình này, nó không thể được khôi phục.",
+        "copied": "Đã sao chép!",
+        "copy": "Sao chép",
+        "goToRouter": "Đi đến bộ định tuyến"
+      },
+      "connect": {
+        "heading": "Cách kết nối",
+        "intro": "Hướng bất kỳ SDK OpenAI hay Anthropic nào tới Routerly và sử dụng <tokenLink>token bộ định tuyến</tokenLink> làm khóa API. Thay thế <code>{{token}}</code> bên dưới bằng của bạn. Mô hình <code>{{model}}</code> trao quyền chọn cho Routerly; bất kỳ ID mô hình nào từ <modelsLink>Mô hình</modelsLink> cũng hoạt động.",
+        "openaiSdk": "SDK OpenAI",
+        "openaiBaseUrlHint": "URL cơ sở <code>{{baseUrl}}</code>, cùng với bất kỳ trường nhà cung cấp \"tương thích OpenAI\" nào.",
+        "anthropicSdk": "SDK Anthropic",
+        "anthropicBaseUrlHint": "URL cơ sở <code>{{baseUrl}}</code>, không có <code>/v1</code>: SDK thêm nó.",
+        "curl": "curl",
+        "curlHint": "Kiểm tra dây kết nối mà không cần cài đặt bất cứ thứ gì, sau đó tìm cuộc gọi trong <usageLink>Mức sử dụng</usageLink>."
+      },
+      "form": {
+        "kind": "Loại",
+        "kindAriaLabel": "Loại bộ định tuyến",
+        "kindFixedHint": "Đã sửa khi bộ định tuyến được tạo.",
+        "routerName": "Tên bộ định tuyến",
+        "routerNamePlaceholder": "Ứng dụng của tôi",
+        "advancedSettings": "Cài đặt nâng cao",
+        "ttftTimeout": "Hết giờ TTFT (ms)",
+        "ttftTimeoutHint": "Nếu mô hình không gửi byte phản hồi đầu tiên trong khoảng thời gian này, Routerly sẽ hủy bỏ nó và thử ứng cử viên tiếp theo. Không giới hạn tổng thời lượng phản hồi. Đặt thành 0 để chờ đợi bao lâu nhà cung cấp cần.",
+        "traceContent": "Vết nội dung",
+        "traceContentHint": "Vết luôn ghi lại siêu dữ liệu (mô hình, điểm, token, chi phí, độ trễ). Bật điều này để cũng ghi lại các nhắc được gửi và câu trả lời nhận được. Chúng được lưu trữ với bản ghi sử dụng và hiển thị cho bất kỳ ai có thể đọc báo cáo.",
+        "capturePromptsAndAnswers": "Nắm bắt nhắc nhở và câu trả lời",
+        "saveChanges": "Lưu các thay đổi",
+        "createRouter": "Tạo bộ định tuyến"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Bộ định tuyến này không phải là Nhạc trưởng.",
+      "candidateRouters": "Bộ định tuyến ứng cử viên",
+      "candidateRoutersHint": "Các bộ định tuyến mà Nhạc trưởng này chuyển tiếp yêu cầu đến. Trọng lượng ảnh hưởng đến tần suất chọn mỗi ứng cử viên; chỉ tên, id, trọng lượng và giới hạn tùy chọn theo ứng cử viên của nó được hiển thị ở đây.",
+      "router": "Bộ định tuyến",
+      "selectRouter": "Chọn bộ định tuyến",
+      "weight": "Trọng lượng",
+      "removeCandidate": "Xóa ứng cử viên",
+      "usageLimits": "Giới hạn sử dụng cho ứng cử viên này",
+      "limitCount": "{{count}} giới hạn",
+      "limitCount_other": "{{count}} giới hạn",
+      "usageLimitsHint": "Giới hạn sử dụng tùy chọn chỉ áp dụng cho yêu cầu mà Nhạc trưởng này chuyển tiếp cho ứng cử viên này.",
+      "empty": "Chưa có bộ định tuyến ứng cử viên nào. Một Nhạc trưởng cần ít nhất một trước khi nó có thể chuyển tiếp yêu cầu.",
+      "addCandidate": "Thêm ứng cử viên",
+      "saved": "Đã lưu!",
+      "saveCandidates": "Lưu ứng cử viên",
+      "errors": {
+        "loadFailed": "Không thể tải bộ định tuyến",
+        "saveFailed": "Lỗi khi lưu các ứng cử viên nhạc trưởng"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Không thể gán hồ sơ định tuyến",
+        "duplicateTargets": "Các mô hình mục tiêu không thể chứa các bản sao.",
+        "saveFailed": "Lỗi khi lưu định tuyến bộ định tuyến",
+        "noProfileAvailable": "Không có hồ sơ định tuyến nào có sẵn. Tạo một từ trang Hồ sơ."
+      },
+      "form": {
+        "routing": "Định tuyến",
+        "routingHint": "Sử dụng một hồ sơ định tuyến được chia sẻ, hoặc xác định các chính sách riêng của bộ định tuyến này. Các mô hình mục tiêu vẫn có thể được cấu hình.",
+        "profileMode": "Hồ sơ",
+        "customMode": "Tùy chỉnh",
+        "routingProfile": "Hồ sơ định tuyến",
+        "builtinSuffix": "(được xây dựng trong)",
+        "profileHint": "Các chính sách đến từ hồ sơ và theo dõi những thay đổi của nó. Chỉnh sửa chúng trên trang Hồ sơ, hoặc chuyển sang Tùy chỉnh để bắt đầu từ một bản sao của chúng.",
+        "saved": "Đã lưu!",
+        "saveRoutingConfiguration": "Lưu cấu hình định tuyến"
+      },
+      "targetModels": {
+        "heading": "Mô hình mục tiêu",
+        "hint": "Xác định nhóm mô hình mà các Chính sách sẽ lọc và chọn từ đó. Các nhắc tùy chọn hướng dẫn AI Router khi chọn mỗi mô hình.",
+        "endpointModel": "Mô hình điểm cuối",
+        "selectModel": "Chọn mô hình",
+        "promptDefinition": "Định nghĩa nhắc",
+        "promptPlaceholder": "Mô tả chính xác khi nào và tại sao bộ định tuyến nên chọn mô hình này...",
+        "intents": "Ý định",
+        "removeTarget": "Xóa mô hình mục tiêu",
+        "empty": "Chưa cấu hình mô hình mục tiêu nào.",
+        "addTarget": "Thêm mô hình mục tiêu"
+      }
+    },
+    "optimizer": {
+      "title": "Trình tối ưu hóa",
+      "description": "Trình tối ưu hóa giảm token nhắc trước khi yêu cầu tiếp cận nhà cung cấp. Chúng chạy theo thứ tự từ trên xuống dưới. Sử dụng một hồ sơ trình tối ưu hóa được chia sẻ, hoặc xác định đường ống của bộ định tuyến này.",
+      "noPermission": "Bạn không có quyền xem trình tối ưu hóa.",
+      "mode": {
+        "profile": "Hồ sơ",
+        "custom": "Tùy chỉnh"
+      },
+      "profileSelect": {
+        "ariaLabel": "Hồ sơ trình tối ưu hóa",
+        "builtinLabel": "{{label}} (được xây dựng trong)",
+        "hint": "Các bước đến từ hồ sơ và theo dõi những thay đổi của nó. Chỉnh sửa chúng trên trang Hồ sơ, hoặc chuyển sang Tùy chỉnh để bắt đầu từ một bản sao của chúng.",
+        "disabledSuffix": "(vô hiệu hóa)",
+        "thresholdSuffix": ", ngưỡng {{threshold}}"
+      },
+      "customHint": "Kéo để sắp xếp lại, bật để bật. Một số trình tối ưu hóa sử dụng ngưỡng để kiểm soát mức độ tích cực cắt của họ.",
+      "saveButton": "Lưu trình tối ưu hóa",
+      "saving": "Đang lưu...",
+      "saved": "Đã lưu",
+      "preview": {
+        "title": "Xem trước tiết kiệm token",
+        "description": "Chạy đường ống hiện tại (chưa lưu) qua một nhắc để xem những gì mỗi bước loại bỏ và chi phí là gì. Chọn một trong các cuộc trò chuyện mẫu, hoặc nhập nhắc của riêng bạn.",
+        "promptLabel": "Nhắc",
+        "promptAriaLabel": "Nhắc để xem trước",
+        "typePromptOption": "Nhập nhắc bên dưới",
+        "fixturesHint": "Các cuộc trò chuyện mẫu được gửi với Routerly. Routerly không ghi lại các nhắc thực.",
+        "modelLabel": "Mô hình",
+        "modelAriaLabel": "Mô hình để xem trước",
+        "modelWithContext": "{{id}} ({{k}}k ngữ cảnh)",
+        "noModelOption": "Không có mô hình",
+        "modelHint": "Các bước cắt để vừa vào cửa sổ ngữ cảnh cần biết cửa sổ nào. Nếu không có mô hình, chúng bị bỏ qua, chính xác như chúng sẽ trên yêu cầu đặt tên mô hình Routerly không có cửa sổ cho.",
+        "sampleAriaLabel": "Nhắc mẫu",
+        "samplePlaceholder": "Dán một tin nhắn người dùng mẫu...",
+        "runButton": "Chạy xem trước",
+        "running": "Đang chạy...",
+        "before": "Trước",
+        "after": "Sau",
+        "saved": "Đã lưu",
+        "columns": {
+          "optimizer": "Trình tối ưu hóa",
+          "before": "Trước",
+          "after": "Sau",
+          "saved": "Đã lưu"
+        },
+        "rolledBackNote": "khôi phục: thay đổi bị từ chối vì không an toàn",
+        "skippedNote": "bỏ qua: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Thay đổi mà bước này tạo ra đã được khôi phục, vì vậy lời nhắc đã tiếp cận bước tiếp theo không thay đổi.",
+          "skipped": "Bước này không chạy: {{reason}}",
+          "unchanged": "Bước này để nhắc không thay đổi."
+        }
+      },
+      "errors": {
+        "assignFailed": "Không thể gán hồ sơ trình tối ưu hóa",
+        "saveFailed": "Lỗi khi lưu trình tối ưu hóa",
+        "previewFailed": "Lỗi khi chạy xem trước",
+        "noProfileAvailable": "Không có hồ sơ trình tối ưu hóa nào có sẵn. Tạo một từ trang Hồ sơ."
+      }
+    },
+    "token": {
+      "newButton": "Token mới",
+      "empty": "Chưa có token API nào. Tạo một để bắt đầu xác thực yêu cầu.",
+      "budgetOverrides": "Ghi đè ngân sách",
+      "created": "Được tạo",
+      "lastUsed": "Sử dụng lần cuối",
+      "expires": "Hết hạn",
+      "never": "Không bao giờ",
+      "editTitle": "Chỉnh sửa cấu hình",
+      "revokeTitle": "Thu hồi token",
+      "revokeConfirm": "Thu hồi token \"{{snippet}}...\"? Các ứng dụng sử dụng nó sẽ ngừng hoạt động ngay lập tức.",
+      "labelInput": {
+        "placeholder": "Tìm kiếm hoặc tạo nhãn…",
+        "createPrefix": "Tạo",
+        "noMatches": "Không tìm thấy nhãn phù hợp."
+      },
+      "errors": {
+        "deleteFailed": "Lỗi khi xóa token"
+      },
+      "create": {
+        "backToTokens": "Quay lại token",
+        "title": "Token API mới",
+        "subtitle": "Token đầy đủ được hiển thị chỉ một lần sau khi tạo - lưu trữ nó một cách an toàn.",
+        "tokenCreated": "Token được tạo thành công. Sao chép nó ngay bây giờ - nó sẽ không được hiển thị lại.",
+        "copied": "Đã sao chép!",
+        "copy": "Sao chép",
+        "done": "Hoàn tất",
+        "optional": "tùy chọn",
+        "labels": "Nhãn",
+        "labelsHint": "Gắn thẻ token này để xác định nơi nó được sử dụng (ví dụ: \"sản xuất\", \"ci\").",
+        "scopes": "Phạm vi",
+        "scopesHint": "Phạm vi tự do được gắn vào token này (ví dụ: \"hàng loạt\", \"nội bộ\"), được lưu trữ với token cho sự cân nhắc của riêng bạn.",
+        "tags": "Nhãn",
+        "tagsHint": "Siêu dữ liệu cặp khóa-giá trị được chuyển tiếp đến bản ghi sử dụng (ví dụ: env=production).",
+        "keyPlaceholder": "khóa",
+        "valuePlaceholder": "giá trị",
+        "createButton": "Tạo token",
+        "cancel": "Hủy",
+        "copyFailed": "Sao chép không thành công - vui lòng chọn và sao chép token thủ công.",
+        "errors": {
+          "createFailed": "Lỗi khi tạo token"
+        }
+      },
+      "edit": {
+        "title": "Chỉnh sửa token",
+        "subtitle": "Cập nhật nhãn và ghi đè giới hạn mỗi mô hình cho token này.",
+        "token": "Token",
+        "labels": "Nhãn",
+        "perModelLimits": "Giới hạn mỗi mô hình",
+        "perModelLimitsHint": "Ghi đè các giới hạn toàn cộng và bộ định tuyến cho yêu cầu sử dụng token này.",
+        "noTargetModels": "Thêm mô hình mục tiêu trong tab Định tuyến trước tiên.",
+        "noOverride": "không ghi đè",
+        "noLimits": "Không có giới hạn",
+        "noLimitsSet": "Không có giới hạn được đặt - kế thừa từ cha mẹ. Thêm giới hạn bên dưới để ghi đè.",
+        "metric": "Số liệu",
+        "type": "Loại",
+        "periodLabel": "Khoảng thời gian",
+        "every": "Mỗi",
+        "maxCost": "Chi phí tối đa ($)",
+        "maxCalls": "Tối đa (n.)",
+        "maxTokens": "Tối đa (token)",
+        "allCombosSet": "Tất cả các kết hợp số liệu/khoảng thời gian đã được đặt",
+        "addLimit": "Thêm giới hạn",
+        "windowType": {
+          "period": "Khoảng thời gian",
+          "rolling": "Lăn"
+        },
+        "limitMetric": {
+          "cost": "Chi phí (USD)",
+          "calls": "Yêu cầu",
+          "input_tokens": "Token đầu vào",
+          "output_tokens": "Token đầu ra",
+          "total_tokens": "Tổng token"
+        },
+        "period": {
+          "hourly": "Hàng giờ",
+          "daily": "Hàng ngày",
+          "weekly": "Hàng tuần",
+          "monthly": "Hàng tháng",
+          "yearly": "Hàng năm"
+        },
+        "rollingUnit": {
+          "second": "giây",
+          "minute": "phút",
+          "hour": "giờ",
+          "day": "ngày",
+          "week": "tuần",
+          "month": "tháng"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / mỗi {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Lỗi khi lưu token"
+        }
+      }
+    },
+    "users": {
+      "title": "Thành viên bộ định tuyến",
+      "description": "Quản lý người dùng có quyền truy cập vào bộ định tuyến này.",
+      "addButton": "Thêm thành viên",
+      "addNewTitle": "Thêm thành viên mới",
+      "selectUserPlaceholder": "Chọn người dùng...",
+      "addConfirmButton": "Thêm",
+      "cancelButton": "Hủy",
+      "empty": "Không tìm thấy thành viên nào.",
+      "removeConfirm": "Bạn chắc chắn muốn loại bỏ thành viên này?",
+      "saveTitle": "Lưu các thay đổi",
+      "changeRoleTitle": "Thay đổi vai trò",
+      "removeTitle": "Xóa thành viên",
+      "roles": {
+        "viewer": "Người xem",
+        "editor": "Trình chỉnh sửa",
+        "admin": "Quản trị viên"
+      },
+      "columns": {
+        "user": "Người dùng",
+        "role": "Vai trò",
+        "actions": "Hành động"
+      },
+      "errors": {
+        "loadFailed": "Không thể tải người dùng",
+        "addFailed": "Lỗi khi thêm thành viên",
+        "updateFailed": "Lỗi khi cập nhật thành viên",
+        "removeFailed": "Lỗi khi xóa thành viên"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Tắt"
+      },
+      "autoRefreshOff": "Tự động làm mới bị tắt",
+      "autoRefreshEvery": "Tự động làm mới mỗi {{interval}}",
+      "lastUpdated": "cập nhật cuối cùng: {{time}}",
+      "refresh": "Làm mới",
+      "refreshNowTitle": "Làm mới ngay bây giờ",
+      "refreshNowButton": "↻ Bây giờ",
+      "filters": {
+        "period": "Khoảng thời gian",
+        "model": "Mô hình",
+        "allModels": "Tất cả mô hình",
+        "type": "Loại",
+        "all": "Tất cả",
+        "completion": "Hoàn thành",
+        "router": "Bộ định tuyến",
+        "status": "Trạng thái",
+        "success": "Thành công",
+        "blocked": "Bị chặn",
+        "error": "Lỗi",
+        "resetButton": "Đặt lại bộ lọc"
+      },
+      "stats": {
+        "totalCost": "Tổng chi phí",
+        "totalCalls": "Tổng cuộc gọi",
+        "completionCalls": "Cuộc gọi hoàn thành",
+        "routerCalls": "Cuộc gọi bộ định tuyến",
+        "errors": "Lỗi"
+      },
+      "requestLogs": "Nhật ký yêu cầu",
+      "emptyNoRequests": "Không có yêu cầu cho bộ định tuyến này trong khoảng thời gian được chọn.",
+      "emptyNoMatches": "Không có bản ghi nào phù hợp với các bộ lọc hoạt động.",
+      "columns": {
+        "time": "Thời gian",
+        "model": "Mô hình",
+        "type": "Loại",
+        "in": "Vào",
+        "out": "Ra",
+        "cost": "Chi phí",
+        "latency": "Độ trễ",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Trạng thái"
+      },
+      "typeRouter": "bộ định tuyến",
+      "typeCompletion": "hoàn thành",
+      "pagination": {
+        "previous": "← Trước",
+        "next": "Tiếp theo →",
+        "pageOf": "Trang {{page}} của {{totalPages}}",
+        "totalRecords": "({{count}} bản ghi tổng cộng)"
+      }
+    },
+    "security": {
+      "title": "Bảo mật",
+      "description": "Sử dụng một hồ sơ bảo mật được chia sẻ, hoặc xác định tường lửa và chính sách PII của bộ định tuyến này.",
+      "mode": {
+        "profile": "Hồ sơ",
+        "custom": "Tùy chỉnh"
+      },
+      "profileSelect": {
+        "ariaLabel": "Hồ sơ bảo mật",
+        "builtinLabel": "{{label}} (được xây dựng trong)",
+        "hint": "Tường lửa và chính sách PII đến từ hồ sơ và theo dõi những thay đổi của nó. Chỉnh sửa chúng trên trang Hồ sơ, hoặc chuyển sang Tùy chỉnh để bắt đầu từ một bản sao của chúng.",
+        "blockingSuffix": ", chặn",
+        "disabledSuffix": ", vô hiệu hóa",
+        "piiRedaction": "Làm mờ PII ({{target}})"
+      },
+      "saveButton": "Lưu cài đặt bảo mật",
+      "saved": "Đã lưu!",
+      "errors": {
+        "assignFailed": "Không thể gán hồ sơ bảo mật",
+        "saveFailed": "Lỗi khi lưu cài đặt bảo mật",
+        "noProfileAvailable": "Không có hồ sơ bảo mật nào có sẵn. Tạo một từ trang Hồ sơ."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Bạn là một trợ lý AI hữu ích.",
+      "errors": {
+        "unknown": "Đã xảy ra lỗi không xác định",
+        "onlyImages": "Hiện tại chỉ hỗ trợ tệp đính kèm hình ảnh cho các mô hình tầm nhìn."
+      },
+      "title": "Trò chuyện thử nghiệm",
+      "subtitle": "Gửi các truy vấn thử nghiệm thông qua cổng định tuyến.",
+      "routerToken": "Token bộ định tuyến:",
+      "hideToken": "Ẩn token",
+      "showToken": "Hiển thị token",
+      "recognizedToken": "Token được công nhận",
+      "unrecognizedToken": "Token không được công nhận",
+      "noMessages": "Chưa có tin nhắn nào.",
+      "enterTokenHint": "Vui lòng nhập token bộ định tuyến ở trên để gửi tin nhắn.",
+      "typeMessageHint": "Nhập tin nhắn bên dưới để bắt đầu thử nghiệm.",
+      "reasoning": "Suy luận",
+      "attachedAlt": "Đính kèm",
+      "attachmentAlt": "Tệp đính kèm",
+      "attachImage": "Đính kèm hình ảnh",
+      "typeMessagePlaceholder": "Nhập tin nhắn...",
+      "stopGeneration": "Dừng tạo",
+      "sendEnter": "Gửi (Enter)",
+      "debugLog": "Nhật ký gỡ lỗi",
+      "clear": "Xóa",
+      "noRequestSent": "Chưa gửi yêu cầu nào.",
+      "turnTraceLog": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện",
+      "turnTraceLog_other": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Kết nối",
+      "subtitle": "Tài khoản nhà cung cấp được sử dụng để chạy phiên bản mô hình",
+      "noPermission": "Bạn không có quyền xem kết nối.",
+      "count": "{{count}} kết nối",
+      "count_other": "{{count}} kết nối",
+      "addConnection": "Thêm kết nối",
+      "empty": "Chưa có kết nối nào. Thêm một để bắt đầu.",
+      "deleteConfirm": "Xóa kết nối \"{{label}}\"? Các phiên bản ràng buộc với nó sẽ ngừng hoạt động.",
+      "errors": {
+        "loadFailed": "Không thể tải kết nối",
+        "deleteFailed": "Không thể xóa kết nối"
+      },
+      "columns": {
+        "label": "Nhãn",
+        "provider": "Nhà cung cấp",
+        "endpoint": "Điểm cuối",
+        "status": "Trạng thái"
+      },
+      "status": {
+        "enabled": "Được bật",
+        "disabled": "Bị tắt"
+      },
+      "actions": {
+        "models": "Mô hình",
+        "edit": "Chỉnh sửa",
+        "remove": "Xóa"
+      }
+    },
+    "form": {
+      "backToConnections": "Quay lại kết nối",
+      "editTitle": "Chỉnh sửa kết nối",
+      "addTitle": "Thêm kết nối",
+      "enabled": "Được bật",
+      "editSubtitle": "Cập nhật cài đặt tài khoản nhà cung cấp",
+      "addSubtitle": "Đăng ký tài khoản nhà cung cấp mới",
+      "sectionTitle": "Chi tiết kết nối",
+      "sectionDesc": "Tài khoản nhà cung cấp, thông tin đăng nhập và điểm cuối được sử dụng để thực hiện yêu cầu.",
+      "provider": "Nhà cung cấp",
+      "groups": {
+        "directApi": "API trực tiếp",
+        "cloudPlatform": "Nền tảng đám mây",
+        "subscription": "Đăng ký",
+        "browserSession": "Phiên trình duyệt",
+        "selfHosted": "Tự lưu trữ"
+      },
+      "upstreamProvider": {
+        "label": "Nhà cung cấp",
+        "hintLabel": "(tên nhà cung cấp thượng nguồn)",
+        "placeholder": "ví dụ: deepseek, mistral, groq",
+        "description": "Tên dịch vụ mà điểm cuối này thuộc về. Các mô hình trên kết nối này sử dụng nó làm tiền tố ID của chúng (ví dụ: <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Tên",
+        "hint": "Xác định kết nối này ở mọi nơi nó được tham chiếu, vì vậy nó phải là duy nhất. Để nó trống để sử dụng <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Để trường thông tin đăng nhập trống để giữ các giá trị hiện tại.",
+      "save": "Lưu",
+      "create": "Tạo",
+      "cancel": "Hủy",
+      "oauth": {
+        "unknown": "chưa biết",
+        "accountExpires": "Tài khoản: {{account}} — hết hạn {{expires}}",
+        "unknownError": "Lỗi không xác định"
+      },
+      "errors": {
+        "notFound": "Không tìm thấy kết nối",
+        "loadFailed": "Không thể tải kết nối",
+        "updateFailed": "Không thể cập nhật kết nối",
+        "createFailed": "Không thể tạo kết nối"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Quay lại mô hình",
+      "title": "Khám phá mô hình",
+      "subtitle": "Duyệt các mô hình có sẵn và thêm chúng vào cấu hình định tuyến của bạn",
+      "count": "{{count}} mô hình",
+      "filteredCount": "{{filtered}} của {{count}}",
+      "free": "miễn phí",
+      "add": "Thêm",
+      "addAgain": "Thêm lại",
+      "loadFailed": "Không thể tải danh mục: {{error}}",
+      "filters": {
+        "search": "Tìm kiếm",
+        "searchPlaceholder": "ID mô hình hoặc tên…",
+        "provider": "Nhà cung cấp",
+        "allProviders": "Tất cả nhà cung cấp",
+        "context": "Ngữ cảnh",
+        "ctxOptions": {
+          "all": "Tất cả",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Giá / 1M",
+        "priceOptions": {
+          "all": "Tất cả",
+          "free": "Miễn phí",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Hiển thị",
+        "configured": "Được cấu hình",
+        "embedding": "Nhúng",
+        "resetFilters": "Đặt lại bộ lọc"
+      },
+      "empty": {
+        "noMatches": "Không có mô hình nào phù hợp với bộ lọc của bạn."
+      },
+      "columns": {
+        "model": "Mô hình",
+        "provider": "Nhà cung cấp",
+        "context": "Ngữ cảnh",
+        "input": "Đầu vào / 1M",
+        "output": "Đầu ra / 1M"
+      },
+      "badges": {
+        "configured": "Được cấu hình",
+        "embedding": "nhúng",
+        "runsLocally": "Chạy cục bộ"
+      },
+      "pagination": {
+        "prev": "Trước",
+        "next": "Tiếp theo",
+        "range": "{{start}}–{{end}} của {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Quay lại mô hình",
+      "title": {
+        "add": "Thêm mô hình",
+        "edit": "Chỉnh sửa mô hình",
+        "clone": "Sao chép mô hình"
+      },
+      "subtitle": {
+        "add": "Đăng ký mô hình nhà cung cấp LLM mới",
+        "edit": "Sửa đổi cấu hình cho {{id}}",
+        "clone": "Sao chép từ {{id}} - gán ID mới để lưu"
+      },
+      "errors": {
+        "modelNotFound": "Không tìm thấy mô hình",
+        "sourceModelNotFound": "Không tìm thấy mô hình nguồn",
+        "loadFailed": "Lỗi khi tải mô hình",
+        "idRequired": "ID mô hình là bắt buộc",
+        "duplicateId": "Mô hình \"{{id}}\" đã tồn tại - đặt ID tùy chỉnh khác",
+        "selectConnection": "Chọn một kết nối",
+        "saveFailed": "Lỗi"
+      },
+      "badge": {
+        "yes": "có",
+        "no": "không",
+        "override": "Ghi đè",
+        "auto": "Tự động",
+        "default": "Mặc định: {{value}}",
+        "reset": "Đặt lại"
+      },
+      "oauth": {
+        "unknownExpiry": "chưa biết",
+        "accountOk": "Tài khoản: {{account}} — hết hạn {{expires}}",
+        "unknownError": "Lỗi không xác định"
+      },
+      "identification": {
+        "title": "Xác định mô hình",
+        "description": "Định danh duy nhất và cài đặt nhà cung cấp cho cấu hình mô hình này.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(tùy chọn - mặc định:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Định danh được sử dụng khi tham chiếu đến mô hình này trong các cuộc gọi Routerly API.",
+        "provider": "Nhà cung cấp",
+        "upstreamProviderHint": "(tên nhà cung cấp thượng nguồn)",
+        "upstreamProviderPlaceholder": "ví dụ: deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Được sử dụng làm tiền tố cho ID Routerly (ví dụ:",
+        "upstreamProviderDescPost": ").",
+        "model": "Mô hình",
+        "upstreamModelHint": "(ID mô hình thượng nguồn)",
+        "upstreamModelPlaceholder": "ví dụ: deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Định danh mô hình được gửi đến điểm cuối API thượng nguồn.",
+        "modelPreset": "Cài sẵn mô hình",
+        "customModelOption": "— tên mô hình tùy chỉnh —",
+        "customModelPlaceholder": "ví dụ: my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Chi tiết kết nối",
+        "description": "Điểm cuối API và thông tin đăng nhập xác thực cần thiết để thực hiện yêu cầu.",
+        "preconfigured": "Cấu hình trước",
+        "custom": "Tùy chỉnh",
+        "connection": "Kết nối",
+        "selectPlaceholder": "— chọn kết nối —",
+        "noneAvailable": "Không có kết nối được cấu hình trước cho nhà cung cấp này. Chuyển sang Tùy chỉnh, hoặc tạo một trên trang Kết nối.",
+        "editHint": "Chỉnh sửa kết nối này sau sẽ cập nhật mọi mô hình ràng buộc với nó."
+      },
+      "capabilities": {
+        "title": "Khả năng",
+        "description": "Chỉ định loại và khả năng của mô hình này.",
+        "embeddingModel": "Mô hình nhúng",
+        "embeddingModelHint": "Mô hình này tạo ra nhúng vectơ (không phải hoàn thành trò chuyện)"
+      },
+      "pricing": {
+        "title": "Định giá & ngữ cảnh",
+        "description": "Tham số chi phí và giới hạn xử lý được sử dụng cho hóa đơn và định tuyến.",
+        "inputPerMillion": "Đầu vào $/1M",
+        "outputPerMillion": "Đầu ra $/1M",
+        "cachePerMillion": "Bộ nhớ cache đọc $/1M",
+        "cacheWritePerMillion": "Bộ nhớ cache ghi $/1M",
+        "optional": "(tùy chọn)",
+        "contextWindow": "Cửa sổ ngữ cảnh",
+        "contextWindowHint": "(token, tùy chọn)"
+      },
+      "tiers": {
+        "title": "Nâng cao - Tầng định giá",
+        "description": "Ghi đè định giá khi số liệu vượt quá ngưỡng. Ví dụ: \"Trên 200 000 token ngữ cảnh, giá thay đổi.\"",
+        "removeTier": "Xóa tầng",
+        "above": "Trên",
+        "metric": "Số liệu",
+        "metricContextTokens": "Token ngữ cảnh",
+        "overridePricing": "Ghi đè định giá",
+        "addTier": "Thêm tầng định giá"
+      },
+      "limits": {
+        "title": "Giới hạn",
+        "description": "Giới hạn sử dụng cho mô hình này. Có thể kết hợp nhiều quy tắc.",
+        "metric": "Số liệu",
+        "type": "Loại",
+        "addLimit": "Thêm giới hạn"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Đăng ký Pro/Max)",
+        "openaiOauth": "OpenAI (Đăng ký ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "Lưu các thay đổi",
+      "createClone": "Tạo bản sao",
+      "createModel": "Tạo mô hình"
+    },
+    "page": {
+      "title": "Mô hình",
+      "subtitle": "Mô hình nhà cung cấp LLM được đăng ký với Routerly",
+      "tabs": {
+        "models": "Mô hình",
+        "health": "Sức khỏe"
+      },
+      "toolbar": {
+        "count": "{{count}} mô hình",
+        "count_other": "{{count}} mô hình",
+        "filteredCount": "{{filtered}} của {{count}} mô hình",
+        "filteredCount_other": "{{filtered}} của {{count}} mô hình"
+      },
+      "filters": {
+        "allProviders": "Tất cả nhà cung cấp",
+        "allConnections": "Tất cả kết nối",
+        "searchPlaceholder": "Lọc mô hình…"
+      },
+      "discover": "Khám phá",
+      "addModel": "Thêm mô hình",
+      "deleteConfirm": "Xóa mô hình \"{{id}}\"?",
+      "empty": {
+        "noModels": "Chưa có mô hình nào. Thêm một để bắt đầu.",
+        "noMatches": "Không có mô hình nào phù hợp với các bộ lọc hoạt động."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Nhà cung cấp",
+        "endpoint": "Điểm cuối",
+        "input": "Đầu vào $/1M",
+        "output": "Đầu ra $/1M",
+        "cache": "Bộ nhớ cache $/1M",
+        "context": "Kích thước ngữ cảnh"
+      },
+      "actions": {
+        "test": "Thử",
+        "clone": "Sao chép",
+        "edit": "Chỉnh sửa",
+        "remove": "Xóa"
+      },
+      "pagination": {
+        "previous": "← Trước",
+        "next": "Tiếp theo →",
+        "pageOf": "Trang {{page}} của {{totalPages}}",
+        "total": "({{count}} mô hình)",
+        "total_other": "({{count}} mô hình)"
+      },
+      "health": {
+        "emptyNoModels": "Không có mô hình được cấu hình.",
+        "emptyNoMatches": "Không có mô hình nào phù hợp với bộ lọc.",
+        "resetAll": "Đặt lại tất cả",
+        "resetAllTitle": "Đặt lại mọi bộ ngắt mạch, thời gian hạ nhiệt và khóa",
+        "resetTitle": "Đặt lại bộ ngắt mạch",
+        "confirmResetModel": "Đặt lại bộ ngắt mạch cho mô hình \"{{id}}\"?",
+        "confirmResetAll": "Đặt lại tất cả trạng thái phục hồi? Điều này xóa mọi bộ ngắt mạch, thời gian hạ nhiệt và khóa.",
+        "errors": {
+          "resetModelFailed": "Không thể đặt lại bộ ngắt mạch",
+          "resetAllFailed": "Không thể đặt lại trạng thái phục hồi"
+        },
+        "columns": {
+          "model": "Mô hình",
+          "provider": "Nhà cung cấp",
+          "status": "Trạng thái",
+          "circuit": "Mạch",
+          "errorRate": "Tỷ lệ lỗi (5m)",
+          "p95Latency": "Độ trễ P95 (1h)",
+          "requests": "Yêu cầu (1h)",
+          "lastSuccess": "Thành công lần cuối",
+          "cooldownLockout": "Thời gian hạ nhiệt / khóa"
+        },
+        "status": {
+          "healthy": "Khỏe mạnh",
+          "degraded": "Suy giảm",
+          "unavailable": "Không có sẵn",
+          "cooldown": "Thời gian hạ nhiệt",
+          "nodata": "Không có dữ liệu"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Đang phục hồi",
+          "tripped": "Đã kích hoạt"
+        },
+        "time": {
+          "never": "chưa bao giờ",
+          "now": "bây giờ",
+          "secondsAgo": "{{count}}s trước",
+          "minutesAgo": "{{count}}m trước",
+          "hoursAgo": "{{count}}h trước",
+          "daysAgo": "{{count}}d trước",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "thời gian hạ nhiệt {{time}}",
+          "lockout": "khóa {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Thí nghiệm",
+      "subtitle": "Kiểm tra A/B bộ định tuyến với nhau",
+      "noPermission": "Bạn không có quyền xem các thí nghiệm.",
+      "count": "{{count}} thí nghiệm",
+      "count_other": "{{count}} thí nghiệm",
+      "newExperiment": "Thí nghiệm mới",
+      "empty": "Chưa có thí nghiệm nào. Tạo một để so sánh bộ định tuyến đầu đuôi.",
+      "deleteConfirm": "Xóa thí nghiệm \"{{name}}\"? Không thể hoàn tác điều này.",
+      "noToken": "Không có token",
+      "noTokenTitle": "Không có token nào, không có khách hàng có thể tiếp cận thí nghiệm này",
+      "errors": {
+        "loadFailed": "Không thể tải thí nghiệm",
+        "deleteFailed": "Không thể xóa thí nghiệm"
+      },
+      "columns": {
+        "name": "Tên",
+        "variants": "Các biến thể",
+        "rotation": "Xoay vòng",
+        "created": "Được tạo"
+      },
+      "actions": {
+        "edit": "Chỉnh sửa thí nghiệm",
+        "remove": "Xóa"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Quay lại thí nghiệm",
+      "newExperiment": "Thí nghiệm mới",
+      "loading": "Đang tải...",
+      "experimentId": "ID thí nghiệm:",
+      "disabledTabTitle": "Lưu thí nghiệm trước tiên để mở khóa tab này",
+      "errors": {
+        "notFound": "Không tìm thấy thí nghiệm"
+      },
+      "tabs": {
+        "config": "Cấu hình",
+        "metrics": "Số liệu",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Đã lưu.",
+      "created": "Thí nghiệm được tạo. Hướng khách hàng của bạn đến token này thay vì token bộ định tuyến. Nó sẽ không được hiển thị lại.",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép!",
+      "done": "Hoàn tất",
+      "saving": "Đang lưu...",
+      "create": "Tạo thí nghiệm",
+      "save": "Lưu các thay đổi",
+      "cancel": "Hủy",
+      "trafficSplit": "Chia tách lưu lượng truy cập",
+      "errors": {
+        "loadRoutersFailed": "Không thể tải bộ định tuyến",
+        "saveFailed": "Không thể lưu thí nghiệm",
+        "copyFailed": "Sao chép không thành công: chọn và sao chép token thủ công."
+      },
+      "fields": {
+        "name": "Tên",
+        "namePlaceholder": "Định tuyến rẻ vs cao cấp",
+        "description": "Mô tả",
+        "optional": "(tùy chọn)",
+        "descriptionPlaceholder": "Cái gì kiểm tra này đang cố gắng giải quyết",
+        "minSamples": "Cuộc gọi tối thiểu trên mỗi biến thể",
+        "minSamplesHint": "Dưới cái này, tab Số liệu đánh dấu so sánh chưa đủ thuyết phục.",
+        "rotation": "Xoay vòng",
+        "stickyOn": "Dính trên",
+        "stickyKey": "Khóa dính"
+      },
+      "variants": {
+        "title": "Các biến thể",
+        "desc": "Mỗi biến thể là một bộ định tuyến hiện tại, được lấy toàn bộ: các mô hình, định tuyến và tường lửa của nó đều áp dụng. Một bài kiểm tra cần ít nhất hai.",
+        "routerAriaLabel": "Bộ định tuyến biến thể {{index}}",
+        "routerPlaceholder": "Chọn bộ định tuyến",
+        "labelAriaLabel": "Nhãn biến thể {{index}}",
+        "labelPlaceholder": "Nhãn (tùy chọn)",
+        "weightAriaLabel": "Trọng lượng biến thể {{index}}",
+        "weightPlaceholder": "Trọng lượng",
+        "removeTitle": "Xóa biến thể {{index}}",
+        "add": "Thêm biến thể"
+      },
+      "judge": {
+        "title": "Thẩm phán",
+        "desc": "Tùy chọn: một mô hình đọc mỗi câu trả lời được lấy mẫu và cho điểm 0-10 so với tiêu chí của bạn. Mỗi cuộc gọi được xét xử là một cuộc gọi mô hình bổ sung, được tính như bất kỳ cuộc gọi nào khác.",
+        "enable": "Điểm câu trả lời với mô hình xét xử",
+        "model": "Mô hình thẩm phán",
+        "modelPlaceholder": "Chọn mô hình",
+        "criteria": "Tiêu chí",
+        "criteriaPlaceholder": "Một trên mỗi dòng, ví dụ\nTrả lời câu hỏi được đặt ra\nVẫn thực tế\nGiữ theo định dạng được yêu cầu",
+        "sampleRate": "Chia sẻ cuộc gọi được xét xử (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Đang tải...",
+      "callsMeasured": "{{count}} cuộc gọi được đo",
+      "callsMeasured_other": "{{count}} cuộc gọi được đo",
+      "empty": "Chưa có cuộc gọi nào trong cửa sổ này. Hướng khách hàng đến token thí nghiệm để bắt đầu so sánh.",
+      "notConclusive": "Chưa đủ thuyết phục: mỗi biến thể cần ít nhất {{minSamples}} cuộc gọi trong cửa sổ này. ",
+      "explanation": "Số liệu tốt hơn của mỗi cặp được tôi: rẻ hơn trên mỗi cuộc gọi, nhanh hơn, điểm thẩm phán cao hơn. Phần trăm dưới một giá trị là khoảng cách của nó từ tay cánh tốt nhất. Điểm xét xử là trung bình chạy trên toàn bộ cuộc sống của thí nghiệm, vì vậy nó là con số duy nhất mà cửa sổ không thu hẹp.",
+      "lowSample": "Mẫu thấp",
+      "lowSampleTitle": "Dưới {{minSamples}} cuộc gọi trong cửa sổ này",
+      "judgedCallsTitle": "{{count}} câu trả lời được xét xử bởi thẩm phán kể từ khi thí nghiệm bắt đầu",
+      "judgedCallsTitle_other": "{{count}} câu trả lời được xét xử bởi thẩm phán kể từ khi thí nghiệm bắt đầu",
+      "errors": {
+        "loadFailed": "Không thể tải số liệu"
+      },
+      "columns": {
+        "variant": "Biến thể",
+        "calls": "Cuộc gọi",
+        "share": "Chia sẻ",
+        "errors": "Lỗi",
+        "tokens": "Token vào / ra",
+        "cost": "Chi phí",
+        "costPerCall": "Chi phí / cuộc gọi",
+        "avgLatency": "Độ trễ avg",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Điểm thẩm phán"
+      }
+    },
+    "token": {
+      "desc": "Khách hàng gọi thí nghiệm chính xác như bộ định tuyến: cùng URL cơ sở, token này thay vì token bộ định tuyến. Mỗi yêu cầu hạ cánh trên một biến thể và được tính đến bộ định tuyến của biến thể đó.",
+      "baseUrlLabel": "URL cơ sở cho SDK OpenAI hoặc Anthropic, có token thí nghiệm làm khóa API:",
+      "created": "Token được tạo. Sao chép nó ngay bây giờ, nó sẽ không được hiển thị lại.",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép!",
+      "newToken": "Token mới",
+      "empty": "Không có token nào trên thí nghiệm này. Tạo một để các khách hàng có thể gọi nó.",
+      "revokeConfirm": "Thu hồi token \"{{snippet}}...\"? Khách hàng sử dụng nó sẽ ngừng hoạt động ngay lập tức.",
+      "revokeTitle": "Thu hồi token",
+      "errors": {
+        "createFailed": "Không thể tạo token",
+        "revokeFailed": "Không thể thu hồi token",
+        "copyFailed": "Sao chép không thành công: chọn và sao chép token thủ công."
+      },
+      "columns": {
+        "created": "Được tạo",
+        "lastUsed": "Sử dụng lần cuối"
+      }
+    }
+  },
+  "overview": {
+    "title": "Tổng quan",
+    "subtitle": "Tóm tắt mức sử dụng và phân tích chi phí",
+    "noPermission": "Không có quyền xem dữ liệu sử dụng.",
+    "costByModel": "Chi phí theo mô hình",
+    "noCostRecorded": "Không có chi phí được ghi lại khoảng thời gian này.",
+    "callsByModel": "Cuộc gọi theo mô hình",
+    "columns": {
+      "model": "Mô hình",
+      "calls": "Cuộc gọi",
+      "errors": "Lỗi",
+      "cost": "Chi phí"
+    },
+    "stats": {
+      "totalCalls": "Tổng cuộc gọi",
+      "callsBreakdown": "{{routing}} định tuyến · {{completion}} hoàn thành",
+      "successRate": "Tỷ lệ thành công",
+      "ofAllRequests": "của tất cả yêu cầu",
+      "errors": "Lỗi",
+      "failedRequests": "yêu cầu không thành công",
+      "models": "Mô hình",
+      "registered": "đã được đăng ký",
+      "routers": "Bộ định tuyến",
+      "active": "hoạt động"
+    },
+    "connectCard": {
+      "title": "Kết nối khách hàng",
+      "desc": "Hướng Claude Code, Codex, Cursor và {{count}} cái khác tới cổng này."
+    }
+  },
+  "login": {
+    "emailLabel": "Email",
+    "passwordLabel": "Mật khẩu",
+    "signIn": "Đăng nhập",
+    "errors": {
+      "loginFailed": "Đăng nhập không thành công",
+      "totpFailed": "Xác minh 2FA không thành công"
+    },
+    "totp": {
+      "title": "Xác thực hai yếu tố",
+      "backupPrompt": "Nhập mã sao lưu.",
+      "appPrompt": "Nhập mã 6 chữ số từ ứng dụng xác thực của bạn.",
+      "backupCodeLabel": "Mã sao lưu",
+      "authenticatorCodeLabel": "Mã xác thực",
+      "verify": "Xác minh",
+      "useAuthenticatorInstead": "Sử dụng ứng dụng xác thực thay thế",
+      "useBackupInstead": "Sử dụng mã sao lưu thay thế"
+    }
+  },
+  "setup": {
+    "welcome": "Chào mừng! Hãy thiết lập bạn.",
+    "welcomeSubtitle": "Tạo tài khoản quản trị viên đầu tiên để bắt đầu quản lý Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly đang phát triển tích cực. Lỗi có thể xảy ra.",
+    "betaFeedback": "Phản hồi của bạn giúp hình thành nó trở thành -",
+    "betaLink": "báo cáo vấn đề hoặc chia sẻ ý tưởng",
+    "emailLabel": "Email quản trị viên",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Mật khẩu",
+    "passwordPlaceholder": "Tối thiểu 8 ký tự",
+    "confirmLabel": "Xác nhận mật khẩu",
+    "confirmPlaceholder": "Nhập lại mật khẩu",
+    "submit": "Tạo tài khoản quản trị viên",
+    "errors": {
+      "mismatch": "Mật khẩu không khớp",
+      "tooShort": "Mật khẩu phải có ít nhất 8 ký tự",
+      "setupFailed": "Thiết lập không thành công"
+    }
+  },
+  "audit": {
+    "empty": "Không tìm thấy mục nhập kiểm toán nào.",
+    "errors": {
+      "loadFailed": "Không thể tải nhật ký kiểm toán"
+    },
+    "filters": {
+      "period": "Khoảng thời gian",
+      "user": "Người dùng",
+      "userPlaceholder": "Email hoặc ID người dùng",
+      "action": "Hành động",
+      "actionPlaceholder": "ví dụ: model:create",
+      "result": "Kết quả",
+      "results": {
+        "all": "Tất cả",
+        "success": "Thành công",
+        "forbidden": "Bị cấm",
+        "error": "Lỗi"
+      },
+      "refresh": "Làm mới"
+    },
+    "columns": {
+      "timestamp": "Dấu thời gian",
+      "user": "Người dùng",
+      "action": "Hành động",
+      "endpoint": "Điểm cuối",
+      "result": "Kết quả",
+      "details": "Chi tiết"
+    },
+    "pagination": {
+      "previous": "Trước",
+      "next": "Tiếp theo",
+      "page": "Trang {{page}} của {{totalPages}}",
+      "total": "({{count}} tổng cộng)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Mức sử dụng",
+      "live": "TRỰC TIẾP",
+      "subtitle": "Nhật ký cuộc gọi chi tiết và phân tích cho mỗi mô hình",
+      "updatedAt": "· được cập nhật lúc {{time}}",
+      "poll": {
+        "off": "Tắt",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Trực tiếp",
+      "liveButtonTitle": {
+        "disable": "Tắt chế độ trực tiếp",
+        "enable": "Bật chế độ trực tiếp (làm mới mỗi 2s)"
+      },
+      "refreshNow": "↻ Bây giờ",
+      "refreshNowTitle": "Làm mới ngay bây giờ",
+      "filters": {
+        "period": "Khoảng thời gian",
+        "router": "Bộ định tuyến",
+        "model": "Mô hình",
+        "token": "Token",
+        "caller": "Người gọi",
+        "type": "Loại",
+        "status": "Trạng thái",
+        "allRouters": "Tất cả bộ định tuyến",
+        "allModels": "Tất cả mô hình",
+        "allTokens": "Tất cả token",
+        "resetFilters": "Đặt lại bộ lọc",
+        "all": "Tất cả",
+        "success": "Thành công",
+        "blocked": "Bị chặn",
+        "error": "Lỗi"
+      },
+      "caller": {
+        "all": "Tất cả",
+        "completion": "Hoàn thành",
+        "routing": "Bộ định tuyến",
+        "guardrail": "Tường lửa",
+        "judge": "Thẩm phán"
+      },
+      "callerBadge": {
+        "completion": "hoàn thành",
+        "routing": "bộ định tuyến",
+        "guardrail": "tường lửa",
+        "judge": "thẩm phán"
+      },
+      "errors": {
+        "loadFailedPrefix": "Không thể tải dữ liệu sử dụng:",
+        "retry": "Thử lại"
+      },
+      "stats": {
+        "totalCalls": "Tổng cuộc gọi",
+        "completionCalls": "Cuộc gọi hoàn thành",
+        "routerCalls": "Cuộc gọi bộ định tuyến",
+        "guardrailCalls": "Cuộc gọi tường lửa",
+        "blockedCalls": "Cuộc gọi bị chặn",
+        "errors": "Lỗi"
+      },
+      "table": {
+        "rank": "Xếp hạng",
+        "model": "Mô hình",
+        "provider": "Nhà cung cấp",
+        "calls": "Cuộc gọi",
+        "errors": "Lỗi",
+        "successRate": "Tỷ lệ thành công",
+        "avgLatency": "Độ trễ avg",
+        "p95Latency": "Độ trễ P95",
+        "inputTokens": "Token đầu vào",
+        "outputTokens": "Token đầu ra",
+        "costPer1k": "Chi phí / 1K",
+        "cost": "Chi phí (USD)",
+        "bestCostPerformance": "Hiệu suất chi phí tốt nhất"
+      },
+      "showMoreModels": "Hiển thị {{count}} mô hình khác",
+      "showMoreModels_other": "Hiển thị {{count}} mô hình khác",
+      "showFewerModels": "Hiển thị ít mô hình hơn",
+      "recentCalls": {
+        "title": "Cuộc gọi gần đây",
+        "empty": "Không có bản ghi sử dụng cho khoảng thời gian này.",
+        "columns": {
+          "time": "Thời gian",
+          "router": "Bộ định tuyến",
+          "model": "Mô hình",
+          "type": "Loại",
+          "caller": "Người gọi",
+          "in": "Vào",
+          "out": "Ra",
+          "cost": "Chi phí",
+          "latency": "Độ trễ",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Trạng thái"
+        }
+      },
+      "pagination": {
+        "previous": "Trước",
+        "next": "Tiếp theo",
+        "pageOf": "Trang {{page}} của {{totalPages}}",
+        "totalRecords": "({{count}} bản ghi tổng cộng)"
+      }
+    },
+    "record": {
+      "back": "Quay lại",
+      "title": "Chi tiết cuộc gọi",
+      "notFoundTitle": "Không tìm thấy bản ghi",
+      "notFoundBody": "Bản ghi sử dụng {{id}} không thể được tải.",
+      "errors": {
+        "loadFailed": "Không thể tải bản ghi"
+      },
+      "sections": {
+        "identity": "Danh tính",
+        "tokensAndCost": "Token & Chi phí",
+        "performanceAndOutcome": "Hiệu suất & Kết quả",
+        "traceLog": "Nhật ký vết"
+      },
+      "fields": {
+        "recordId": "ID bản ghi",
+        "router": "Bộ định tuyến",
+        "token": "Token",
+        "model": "Mô hình",
+        "callType": "Loại cuộc gọi",
+        "requestType": "Loại yêu cầu",
+        "inputTokens": "Token đầu vào",
+        "outputTokens": "Token đầu ra",
+        "totalTokens": "Tổng token",
+        "costUsd": "Chi phí (USD)",
+        "costUnknown": "Chưa biết",
+        "latency": "Độ trễ",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Kết quả",
+        "timestamp": "Dấu thời gian",
+        "guardrailTriggered": "Tường lửa được kích hoạt",
+        "blockedBy": "Bị chặn bởi",
+        "piiRedacted": "PII bị làm mờ"
+      },
+      "errorMessage": "Thông báo lỗi",
+      "eventCount": "{{count}} sự kiện",
+      "eventCount_other": "{{count}} sự kiện",
+      "noTrace": "Không có vết sẵn. Dữ liệu vết được chụp cho các cuộc gọi mới chỉ."
+    }
+  },
+  "playground": {
+    "title": "Sân chơi",
+    "subtitle": "Kiểm tra mô hình, so sánh phản hồi và lưu cài sẵn nhắc.",
+    "mode": {
+      "single": "Đơn",
+      "compare": "So sánh"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "giống như A",
+      "unknownToken": "Token chưa biết"
+    },
+    "presets": {
+      "button": "Cài sẵn",
+      "panelTitle": "Cài sẵn",
+      "saveCurrent": "Lưu hiện tại",
+      "namePlaceholder": "Tên cài sẵn...",
+      "save": "Lưu",
+      "empty": "Chưa có cài sẵn nào.",
+      "delete": "Xóa cài sẵn"
+    },
+    "streamingDisabled": {
+      "banner": "Truyền phát không có sẵn",
+      "bannerBody": "bộ định tuyến này có tường lửa chặn phản hồi hoạt động. Routerly phải kiểm tra phản hồi đầy đủ trước khi giao, vì vậy phản hồi đến cùng một lúc.",
+      "tooltip": "Truyền phát không có sẵn: tường lửa chặn phản hồi yêu cầu phản hồi đầy đủ được kiểm tra trước khi giao.",
+      "ariaLabel": "Truyền phát không có sẵn"
+    },
+    "systemPrompt": "Nhắc hệ thống",
+    "model": "Mô hình",
+    "modelPlaceholder": "Tự động (mặc định bộ định tuyến)",
+    "params": {
+      "temp": "Nhiệt độ",
+      "maxTokens": "Token tối đa",
+      "topP": "Top-p"
+    },
+    "stream": "Truyền phát",
+    "clear": "Xóa",
+    "empty": {
+      "noMessages": "Chưa có tin nhắn nào.",
+      "enterToken": "Nhập token bộ định tuyến ở trên để bắt đầu."
+    },
+    "reasoning": "Suy luận",
+    "blockedDefault": "Tin nhắn này đã bị chặn bởi tường lửa.",
+    "truncated": "Cắt ngắn - phản hồi bị cắt bởi token tối đa",
+    "bufferedNote": "Được giữ để xem xét bảo mật",
+    "errors": {
+      "onlyImages": "Chỉ hỗ trợ tệp đính kèm hình ảnh."
+    },
+    "rawToggle": {
+      "rendered": "được hiển thị",
+      "raw": "thô"
+    },
+    "inputPlaceholder": "Nhập tin nhắn...",
+    "attachImage": "Đính kèm hình ảnh",
+    "attachedImageAlt": "Đính kèm",
+    "attachmentAlt": "Tệp đính kèm",
+    "debug": {
+      "title": "Gỡ lỗi",
+      "clear": "Xóa",
+      "hide": "Ẩn gỡ lỗi",
+      "show": "Hiển thị gỡ lỗi",
+      "empty": "Chưa có dữ liệu gỡ lỗi nào.",
+      "emptyHint": "Gửi tin nhắn để xem chi tiết định tuyến.",
+      "turnTraceLog": "Lượt #{{turn}} nhật ký vết"
+    },
+    "compare": {
+      "modelLabel": "Mô hình {{label}}:",
+      "modelSelectPlaceholder": "Chọn mô hình...",
+      "noMessages": "Chưa có tin nhắn nào.",
+      "debugTurns": "Gỡ lỗi ({{count}} lượt)",
+      "debugTurns_other": "Gỡ lỗi ({{count}} lượt)",
+      "guardrailTokensTitle": "Token thẩm phán tường lửa",
+      "stop": "Dừng",
+      "inputPlaceholder": "Gửi tin nhắn tương tự đến cả hai mô hình..."
+    }
+  },
+  "help": {
+    "title": "Trợ giúp & Hỗ trợ",
+    "subtitle": "Chúng tôi ở đây để giúp đỡ - tìm câu trả lời hoặc liên hệ bất kỳ lúc nào.",
+    "docs": {
+      "title": "Tài liệu",
+      "subtitle": "Hướng dẫn, tham chiếu API và tài liệu cấu hình",
+      "body": "Các tài liệu chính thức bao gồm mọi thứ từ bắt đầu đến các chính sách định tuyến nâng cao, thiết lập nhà cung cấp, ngân sách và tham chiếu API đầy đủ.",
+      "openLink": "Tài liệu mở"
+    },
+    "issues": {
+      "title": "Báo cáo lỗi hoặc gợi ý tính năng",
+      "subtitle": "Mở vấn đề GitHub - mất 2 phút",
+      "body": "Các vấn đề GitHub là cách tốt nhất để báo cáo lỗi hoặc đề xuất cải tiến. Để giúp chúng tôi sửa chữa nhanh hơn, hãy bao gồm: bạn đã làm gì, bạn mong đợi chuyện gì sẽ xảy ra và điều gì thực sự xảy ra.",
+      "showTemplate": "Hiển thị mẫu vấn đề",
+      "reportBug": "Báo cáo lỗi",
+      "requestFeature": "Yêu cầu tính năng"
+    },
+    "issueTemplate": {
+      "whatHappened": "Chuyện gì đã xảy ra?",
+      "whatHappenedHint": "Mô tả vấn đề bằng lời nói thường",
+      "stepsToReproduce": "Các bước để sao chép",
+      "expectedBehaviour": "Hành vi dự kiến",
+      "expectedBehaviourHint": "Những gì bạn mong đợi thấy",
+      "version": "Phiên bản Routerly",
+      "versionHint": "Chạy `routerly --version` hoặc kiểm tra Cài đặt → Giới thiệu"
+    },
+    "email": {
+      "title": "Liên hệ hỗ trợ",
+      "subtitle": "Chúng tôi đọc mỗi tin nhắn và trả lời nhanh nhất có thể",
+      "body": "Đối với bất kỳ điều gì không phù hợp với vấn đề GitHub - câu hỏi về thanh toán, mối quan tâm riêng tư hoặc nếu bạn chỉ muốn nói xin chào - hãy gửi cho chúng tôi một dòng."
+    },
+    "faq": {
+      "title": "Câu hỏi thường gặp",
+      "subtitle": "Câu trả lời nhanh chóng về các câu hỏi phổ biến nhất",
+      "items": {
+        "connect": {
+          "q": "Làm cách nào tôi kết nối ứng dụng của mình với Routerly?",
+          "a": "Hướng OpenAI hoặc Anthropic SDK của bạn đến Routerly của bạn. Thay thế URL cơ sở bằng http://your-host:3000/v1 (tương thích OpenAI) hoặc http://your-host:3000/anthropic (tương thích Anthropic), sau đó sử dụng token bộ định tuyến làm khóa API. Đó là nó - không cần thay đổi nào khác."
+        },
+        "openaiCompat": {
+          "q": "Routerly có tương thích với các công cụ sử dụng SDK OpenAI không?",
+          "a": "Vâng. Routerly là một sự thay thế dễ dàng: bất kỳ công cụ nào hỗ trợ URL cơ sở tùy chỉnh và khóa API (LangChain, LlamaIndex, Cursor, Tiếp tục, v.v.) hoạt động ngay out of the box. Đối với khách hàng định dạng Anthropic, hãy sử dụng điểm cuối /anthropic thay thế."
+        },
+        "routing": {
+          "q": "Định tuyến mô hình hoạt động như thế nào?",
+          "a": "Mỗi bộ định tuyến có chính sách định tuyến quyết định mô hình nào nhận yêu cầu. Các chính sách bao gồm round-robin, chi phí thấp nhất, phản hồi nhanh nhất, chuỗi dự phòng, v.v. Bạn cấu hình chúng cho mỗi bộ định tuyến dưới Bộ định tuyến → Định tuyến."
+        },
+        "addModel": {
+          "q": "Làm cách nào tôi thêm mô hình AI mới?",
+          "a": "Đi đến Mô hình → Thêm mô hình. Bạn có thể thêm bất kỳ nhà cung cấp tương thích OpenAI (Ollama, LM Studio, điểm cuối tùy chỉnh) hoặc điểm cuối Anthropic gốc. Điền URL cơ sở, khóa API và ID mô hình - Routerly sẽ xử lý phần còn lại."
+        },
+        "dataStored": {
+          "q": "Dữ liệu của tôi có được lưu trữ không? Các nhắc của tôi có được ghi lại không?",
+          "a": "Routerly tự lưu trữ và chỉ lưu trữ dữ liệu trên máy của bạn (trong ~/.routerly/ theo mặc định). Routerly không bao giờ gửi nhắc và phản hồi đến bất kỳ nơi nào. Nhật ký yêu cầu được lưu trữ cục bộ và chỉ khi bạn bật chúng cho mỗi bộ định tuyến."
+        },
+        "routerToken": {
+          "q": "Token bộ định tuyến là gì và nó khác với khóa API nhà cung cấp như thế nào?",
+          "a": "Token bộ định tuyến là thông tin đăng nhập bạn cung cấp cho ứng dụng hoặc các thành viên nhóm của mình để xác thực với Routerly. Nó tách biệt với khóa API nhà cung cấp của bạn, mà Routerly lưu trữ an toàn trên phía máy chủ. Ứng dụng của bạn không bao giờ nhìn thấy khóa nhà cung cấp thực."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} người dùng",
+    "countLabel_other": "{{count}} người dùng",
+    "addButton": "Thêm người dùng",
+    "columns": {
+      "email": "Email",
+      "role": "Vai trò",
+      "routers": "Bộ định tuyến"
+    },
+    "allRouters": "Tất cả",
+    "resetTwoFaTitle": "Đặt lại 2FA",
+    "resetTwoFaConfirm": "Đặt lại 2FA cho {{email}}? Họ sẽ cần phải tái ghi danh.",
+    "deleteConfirm": "Xóa người dùng này?",
+    "emptyTitle": "Chưa có người dùng nào.",
+    "noPermission": "Bạn không có quyền xem người dùng.",
+    "modal": {
+      "title": "Thêm người dùng",
+      "emailLabel": "Email",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Mật khẩu",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Vai trò",
+      "roleAdmin": "Quản trị viên",
+      "roleViewer": "Người xem",
+      "cancelButton": "Hủy",
+      "submitButton": "Thêm người dùng"
+    },
+    "errors": {
+      "loadFailed": "Không thể tải người dùng",
+      "addFailed": "Lỗi"
+    }
+  },
+  "userEdit": {
+    "title": "Chỉnh sửa người dùng",
+    "account": "Tài khoản",
+    "email": "Email",
+    "role": "Vai trò",
+    "changePassword": "Thay đổi mật khẩu",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordHint": "(để trống để giữ hiện tại)",
+    "save": "Lưu",
+    "saved": "Đã lưu!",
+    "errors": {
+      "loadFailed": "Không thể tải người dùng",
+      "saveFailed": "Không thể lưu"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Quản lý vai trò và quyền. Các vai trò được xây dựng không thể được sửa đổi.",
+    "newRole": "Vai trò mới",
+    "builtin": "xây dựng sẵn",
+    "edit": "Chỉnh sửa",
+    "deleteConfirm": "Xóa vai trò này? Người dùng có vai trò này sẽ bị ảnh hưởng.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "ví dụ: nhà điều hành",
+      "name": "Tên",
+      "namePlaceholder": "Tên vai trò",
+      "permissions": "Quyền",
+      "create": "Tạo",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "permissions": {
+      "routerRead": "Bộ định tuyến - Đọc",
+      "routerWrite": "Bộ định tuyến - Ghi",
+      "modelRead": "Mô hình - Đọc",
+      "modelWrite": "Mô hình - Ghi",
+      "userRead": "Người dùng - Đọc",
+      "userWrite": "Người dùng - Ghi",
+      "reportRead": "Báo cáo - Đọc",
+      "settingsRead": "Cài đặt - Đọc",
+      "settingsWrite": "Cài đặt - Ghi",
+      "notificationWrite": "Thông báo - Ghi",
+      "tokenRead": "Token - Đọc",
+      "tokenWrite": "Token - Ghi",
+      "roleWrite": "Vai trò - Ghi",
+      "auditRead": "Nhật ký kiểm toán - Đọc",
+      "modulesRead": "Mô-đun - Đọc",
+      "modulesManage": "Mô-đun - Quản lý",
+      "connectionsRead": "Kết nối - Đọc",
+      "connectionsManage": "Kết nối - Quản lý",
+      "resilienceRead": "Khả năng phục hồi - Đọc",
+      "resilienceManage": "Khả năng phục hồi - Quản lý",
+      "profilesRead": "Hồ sơ định tuyến - Đọc",
+      "profilesManage": "Hồ sơ định tuyến - Quản lý",
+      "optimizersRead": "Trình tối ưu hóa - Đọc",
+      "optimizersManage": "Trình tối ưu hóa - Quản lý",
+      "experimentsRead": "Thí nghiệm - Đọc",
+      "experimentsManage": "Thí nghiệm - Quản lý"
+    },
+    "errors": {
+      "loadFailed": "Không thể tải vai trò",
+      "updateFailed": "Không thể cập nhật vai trò",
+      "createFailed": "Không thể tạo vai trò",
+      "deleteFailed": "Không thể xóa vai trò"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Hồ sơ",
+      "subtitle": "Định tuyến có thể sử dụng lại, trình tối ưu hóa và cấu hình bảo mật",
+      "noPermission": "Bạn không có quyền xem hồ sơ.",
+      "newProfile": "Hồ sơ {{kind}} mới",
+      "empty": "Chưa có hồ sơ {{kind}} nào.",
+      "builtin": "Xây dựng sẵn",
+      "custom": "Tùy chỉnh",
+      "view": "Xem",
+      "edit": "Chỉnh sửa",
+      "clone": "Sao chép",
+      "delete": "Xóa",
+      "deleteConfirm": "Xóa hồ sơ \"{{label}}\"? Không thể hoàn tác điều này.",
+      "kindDescriptions": {
+        "routing": "Mô hình nào trả lời yêu cầu và chuyện gì sẽ xảy ra khi nó không thể",
+        "optimizer": "Những gì bị loại khỏi một nhắc trước khi nó được gửi",
+        "security": "Tường lửa và chính sách PII được áp dụng cho lưu lượng truy cập"
+      },
+      "columns": {
+        "label": "Nhãn",
+        "type": "Loại",
+        "configuration": "Cấu hình",
+        "version": "Phiên bản"
+      },
+      "errors": {
+        "loadFailed": "Không thể tải hồ sơ",
+        "deleteFailed": "Không thể xóa hồ sơ"
+      }
+    },
+    "form": {
+      "backToProfiles": "Quay lại hồ sơ",
+      "newProfileTitle": "Hồ sơ {{kind}} mới",
+      "editProfileTitle": "Chỉnh sửa {{label}}",
+      "builtinHint": "Các hồ sơ được xây dựng không thể được chỉnh sửa. Sao chép một để tùy chỉnh nó.",
+      "assignHint": "{{article}} hồ sơ {{kind}} có thể được gán cho bất kỳ số lượng bộ định tuyến nào.",
+      "noPermission": "Bạn không có quyền xem hồ sơ.",
+      "label": "Nhãn",
+      "optimizers": "Trình tối ưu hóa",
+      "optimizersHint": "Kéo để sắp xếp lại, bật để bật. Chúng chạy theo thứ tự từ trên xuống dưới.",
+      "createProfile": "Tạo hồ sơ",
+      "saveProfile": "Lưu hồ sơ",
+      "cancel": "Hủy",
+      "copySuffix": "{{label}} sao chép",
+      "labelPlaceholders": {
+        "routing": "ví dụ: Định tuyến cân bằng của tôi",
+        "optimizer": "ví dụ: Máy cắt nhắc của tôi",
+        "security": "ví dụ: Tường lửa nghiêm ngặt của tôi"
+      },
+      "errors": {
+        "notFound": "Không tìm thấy hồ sơ.",
+        "loadFailed": "Không thể tải hồ sơ",
+        "saveFailed": "Không thể lưu hồ sơ"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Quay lại kết nối",
+    "title": "Kết nối",
+    "docs": "Tài liệu",
+    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
+    "noClientPrefix": "Không có khách hàng tên",
+    "errors": {
+      "loadFailed": "Không thể tải khách hàng: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Nhanh nhất: một lệnh",
+      "description": "Chạy nó trên máy mà {{client}} được cài đặt. Nó viết {{configPath}}, giữ lại bản sao lưu bạn có thể hoàn tác."
+    },
+    "byHand": {
+      "titleAlt": "Hoặc thiết lập nó thủ công",
+      "titleUi": "Thiết lập nó thủ công",
+      "titleConfigFile": "Thiết lập tệp cấu hình",
+      "setValuesIn": "Đặt các giá trị này trong {{configPath}}.",
+      "putThisIn": "Đặt cái này trong",
+      "replaceToken": "Thay thế",
+      "withRouterToken": "với token bộ định tuyến:",
+      "createOne": "tạo một",
+      "onRoutersPage": "trên trang Bộ định tuyến.",
+      "modelLabel": "Mô hình:",
+      "modelHint": "trao quyền chọn cho Routerly, bất kỳ ID mô hình nào từ",
+      "modelsLink": "Mô hình",
+      "worksToo": "cũng hoạt động.",
+      "openaiCompatHint": "Cùng URL cơ sở, khóa và mô hình phù hợp với bất kỳ khách hàng nào cung cấp nhà cung cấp \"tương thích OpenAI\"."
+    },
+    "mcp": {
+      "title": "Máy chủ MCP",
+      "description": "Riêng biệt khỏi các bước trên: cái này cho phép {{client}} gọi các công cụ Routerly. Nó cần một token MCP cá nhân, được đúc bằng",
+      "orFromYour": "hoặc từ",
+      "profileLink": "hồ sơ"
+    },
+    "checkItWorked": {
+      "title": "Kiểm tra nó đã hoạt động",
+      "restart": "Khởi động lại {{client}}, gửi cho nó một nhắc, sau đó tìm cuộc gọi trong",
+      "usageLink": "Mức sử dụng",
+      "cliReports": "Từ cùng một máy, CLI báo cáo những gì nó tìm thấy:"
+    }
+  },
+  "connect": {
+    "title": "Kết nối",
+    "subtitle": "Hướng khách hàng AI mã hóa tới cổng này. Chọn khách hàng cho các bước thiết lập của nó.",
+    "llmLabel": "LLM",
+    "llmDescription": "định tuyến lưu lượng mô hình khách hàng đó thông qua Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "tải Routerly dưới dạng máy chủ công cụ bên trong nó.",
+    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
+    "errors": {
+      "loadFailed": "Không thể tải khách hàng: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Một lệnh",
+      "hint": "CLI viết tệp cấu hình cho bạn, với bản sao lưu bạn có thể hoàn tác."
+    },
+    "byHand": {
+      "title": "Bằng tay",
+      "hint": "Sao chép đoạn từ trang khách hàng vào cài đặt của nó, sau đó khởi động lại nó."
+    },
+    "endpoint": {
+      "title": "Chỉ bất kỳ khách hàng ở đây",
+      "description": "Bất kỳ thứ nào được xây dựng trên SDK OpenAI hoặc Anthropic hoạt động bằng cách thay đổi URL cơ sở và khóa. Không có gì thay đổi khác: yêu cầu và phản hồi vượt qua Routerly khi chúng là.",
+      "openaiBaseUrl": "URL cơ sở OpenAI",
+      "anthropicBaseUrl": "URL cơ sở Anthropic",
+      "apiKey": "Khóa API",
+      "model": "Mô hình",
+      "apiKeyDescription": "Token bộ định tuyến, được gửi dưới dạng",
+      "or": "hoặc",
+      "createOne": "Tạo một",
+      "onRoutersPage": "trên trang Bộ định tuyến.",
+      "modelDescription": "cho phép Routerly chọn. Bất kỳ ID mô hình nào từ",
+      "modelsLink": "Mô hình",
+      "worksToo": "trang cũng hoạt động."
+    }
+  }
+}

@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automatikus",
+      "dark": "Sötét",
+      "light": "Világos"
+    },
+    "themeCycle": {
+      "title": "Téma: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Oldalsáv bővítése",
+      "collapse": "Oldalsáv összezárása"
+    },
+    "tagline": "Egy átjáró. Bármilyen AI modell. Teljes kontroll.",
+    "nav": {
+      "overview": "Áttekintés",
+      "providers": "Szolgáltatók",
+      "models": "Modellek",
+      "profiles": "Profilok",
+      "routers": "Útválasztók",
+      "experiments": "Kísérletek",
+      "usage": "Használat",
+      "playground": "Tesztkörnyezet",
+      "settings": "Beállítások",
+      "connectApp": "Alkalmazás csatlakoztatása",
+      "help": "Segítség",
+      "signOut": "Kijelentkezés"
+    },
+    "banner": {
+      "permissionWarning": "Néhány konfigurációs fájl engedményes hozzáféréssel rendelkezik ({{files}}). Az indítás és a kérések továbbra is működnek, de javítsa ezt a gazdaszámítógépről, amikor lehetséges.",
+      "dismiss": "Elutasítás",
+      "updateAvailable": "Routerly v{{latest}} elérhető. Az Ön verziója: v{{current}}.",
+      "updateLink": "Frissítés a beállításokból",
+      "mfaRequired": "Kétfaktoros hitelesítés szükséges ehhez a példányhoz.",
+      "mfaLink": "2FA beállítása a profilban",
+      "mfaSuffix": "a fiók biztosításához.",
+      "telemetryTitle": "A Routerly soha nem küld adatokat automatikusan.",
+      "telemetryBody": "Szeretne segíteni az anonimizált telepítési metrikák küldésével? Csak eseménytípus, verzió, platform és egy véletlenszerű azonosító — személyes adatok nélkül, IP nélkül.",
+      "telemetryLink": "Mit küldenek?",
+      "telemetryYes": "Igen, segítek",
+      "telemetryNo": "Nem, köszönöm"
+    },
+    "language": {
+      "label": "Nyelv"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} másodperccel ezelőtt",
+      "secondsAgo_other": "{{count}} másodperccel ezelőtt",
+      "minutesAgo": "{{count}} perccel ezelőtt",
+      "minutesAgo_other": "{{count}} perccel ezelőtt",
+      "hoursAgo": "{{count}} órával ezelőtt",
+      "hoursAgo_other": "{{count}} órával ezelőtt",
+      "daysAgo": "{{count}} nappal ezelőtt",
+      "daysAgo_other": "{{count}} nappal ezelőtt"
+    },
+    "confirm": "Megerősítés",
+    "cancel": "Mégse",
+    "remove": "Eltávolítás",
+    "select": "Válasszon...",
+    "search": "Keresés...",
+    "noResults": "Nincs találat",
+    "noRemainingOptions": "Nincs további lehetőség",
+    "apply": "Alkalmazás",
+    "saved": "Mentve",
+    "showLess": "Kevesebbet mutat",
+    "roles": "Szerepkörök",
+    "permissions": "Engedélyek",
+    "notifications": {
+      "title": "Értesítések",
+      "markAllRead": "Az összes megjelölése olvasottnak",
+      "empty": "Nincs értesítés",
+      "viewAll": "Az összes értesítés megtekintése"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Időszak kiválasztása",
+      "recent": "Közelmúlt",
+      "ranges": "Tartományok",
+      "from": "Kezdete",
+      "to": "Vége"
+    },
+    "permissionGuard": {
+      "fixFailed": "Nem sikerült az engedélyek javítása",
+      "title": "Nem biztonságos fájlengedélyek",
+      "defaultMessage": "Néhány fájl nem biztonságos engedélyekkel rendelkezik.",
+      "fixing": "Javítás folyamatban…",
+      "fixNow": "Javítás most"
+    },
+    "limitRows": {
+      "noLimits": "Nincsenek beállított korlátok.",
+      "metricLabel": "Metrika",
+      "typeLabel": "Típus",
+      "periodLabel": "Időszak",
+      "everyLabel": "Minden",
+      "maxCost": "Maximális költség",
+      "maxCount": "Maximális szám",
+      "maxTokens": "Maximális tokenek",
+      "allCombosSet": "Az összes metrika/időszak kombináció már be van állítva",
+      "addLimit": "Korlát hozzáadása",
+      "metric": {
+        "cost": "Költség",
+        "calls": "Hívások",
+        "input_tokens": "Bemeneti tokenek",
+        "output_tokens": "Kimeneti tokenek",
+        "total_tokens": "Összes token"
+      },
+      "period": {
+        "hourly": "Óránként",
+        "daily": "Naponta",
+        "weekly": "Hetente",
+        "monthly": "Havonta",
+        "yearly": "Évente"
+      },
+      "rollingUnit": {
+        "second": "másodperc",
+        "minute": "perc",
+        "hour": "óra",
+        "day": "nap",
+        "week": "hét",
+        "month": "hónap"
+      },
+      "windowType": {
+        "period": "Időszak",
+        "rolling": "Gördülő"
+      },
+      "fmt": {
+        "requests": "{{value}} kérés",
+        "inputTokens": "{{value}} bemeneti token",
+        "outputTokens": "{{value}} kimeneti token",
+        "totalTokens": "{{value}} összes token",
+        "everyRolling": "{{metric}} minden {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Amit az útválasztás megtakarított",
+      "input": "Bemenet",
+      "output": "Kimenet",
+      "actual": "Tényleges",
+      "clientCalls": "{{count}} ügyfélhívás",
+      "clientCalls_other": "{{count}} ügyfélhívás",
+      "comparedAgainst": ", összehasonlítva azzal, ha az összes",
+      "comparedAgainst_other": ", összehasonlítva azzal, ha az összes",
+      "paidModelsInPlay": "{{count}} fizetett modell használatban",
+      "paidModelsInPlay_other": "{{count}} fizetett modell használatban",
+      "metricCost": "Költség",
+      "metricTokens": "Tokenek",
+      "totalCost": "Összköltség",
+      "routed": "Útválasztott: {{value}}",
+      "saved": "Megtakarított: {{value}}",
+      "usdThisPeriod": "USD ebben az időszakban",
+      "savedVsAlways": "{{value}} megtakarított ({{percent}}%) szemben mindig {{model}}",
+      "tokens": "Tokenek",
+      "in": "Be: {{value}}",
+      "out": "Ki: {{value}}",
+      "tokenSubWithCache": "{{in}} be · {{out}} ki · {{cached}} gyorsítótárból",
+      "tokenSub": "{{in}} be · {{out}} ki",
+      "cutByOptimizers": "{{value}} levágva az optimalizálók által",
+      "fewerThanAlways": "{{value}} kevesebb, mint mindig {{model}}, becsült"
+    },
+    "optimizerSteps": {
+      "downloaded": "Letöltve",
+      "thisStepRunsOn": "Ez a lépés fut",
+      "defaultCheckpoint": "Alapértelmezett ellenőrzési pont"
+    },
+    "routingPolicies": {
+      "title": "Útválasztási Szabályzatok",
+      "subtitle": "A szabályzatok meghatározzák, hogyan történik az útválasztás. Ezek felülről lefelé sorban kerülnek végrehajtásra.",
+      "removePolicy": "Szabályzat eltávolítása",
+      "removeIntent": "Szándék eltávolítása",
+      "removeExample": "Példa eltávolítása",
+      "routingModels": "Útválasztási Modellek",
+      "embeddingModels": "Beágyazási Modellek",
+      "maxCompletionTokens": "Maximális befejezési tokenek",
+      "maxPromptChars": "Maximális üzenetkarakterek",
+      "similarityThreshold": "Hasonlósági küszöb",
+      "previousMessages": "Előző üzenetek",
+      "intents": "Szándékok",
+      "confidenceThreshold": "Konfidencia küszöb",
+      "ambiguityMargin": "Kétértelműségi margó",
+      "maxCallsPerWindow": "Maximális hívások ablakként",
+      "addFallbackModel": "Tartalék modell hozzáadása",
+      "autoRoutingLabel": "Automatikus Útválasztás",
+      "autoRoutingHint": "Ha engedélyezve van, a forgalom egyenletes eloszlása egyéni utasítások nélkül történik. Ha letiltva van, konkrét utasításokat írhat, amelyek azt mutatják az AI-nak, hogy mikor válassza az egyes modelleket.",
+      "additionalPromptInfoLabel": "További Üzenet Információ",
+      "additionalPromptInfoPlaceholder": "A routing üzenetbe beépítendő további utasítások...",
+      "addExamplePlaceholder": "Adjon hozzá egy példát és nyomja meg az Enter billentyűt…",
+      "addIntentPlaceholder": "Adjon hozzá egy szándékot és nyomja meg az Enter billentyűt…",
+      "addPolicyPlaceholder": "Szabályzat hozzáadása...",
+      "labels": {
+        "llm": "AI Útválasztási Szabályzat",
+        "rate-limit": "Sebességkorlát Szabályzat",
+        "budget-remaining": "Maradék Költségvetés Szabályzat",
+        "semantic-intent": "Szemantikai Szándék Szabályzat",
+        "health": "Egészség Szabályzat",
+        "context": "Kontextus Szabályzat",
+        "capability": "Képesség Szabályzat",
+        "performance": "Teljesítmény Szabályzat",
+        "fairness": "Méltányosság Szabályzat",
+        "cheapest": "Legolcsóbb Szabályzat",
+        "model-preference": "Modell Preferencia Szabályzat"
+      },
+      "descriptions": {
+        "context": "Modellek pontozása az elérhető kontextusablak alapján. 0-t rendel azokhoz a modellekhez, amelyek kontextusablaka kisebb az becsült kéréshossznál, megelőzve a csonkítási hibákat.",
+        "cheapest": "Modellek inverz pontozása tokenköltségükhöz képest. A legolcsóbb modell 1,0-t kap, a legdrágább 0,0-t, segítve az API-költségek csökkentését a kéréseken keresztül.",
+        "health": "Modellek pontozása legutóbbi hibaarányuk alapján exponenciális csökkenés használatával (a közelmúltbeli hibák nagyobb súllyal számítanak). Egy áramkör-kéző alkalmazt, amely 0-ra állítja a pontszámot, amikor a súlyozott hibaarány túllépett egy kritikus küszöbértéket.",
+        "performance": "Modellek pontozása legutóbbi átlagos latenturijuk alapján exponenciális csökkenés használatával. A leggyorsabb modell 1,0-t kap, a leglassúbb 0,0-t. A közelmúltbeli adat nélküli modellek alapértelmezés szerint 1,0-ra vannak beállítva.",
+        "llm": "AI-modellt használ a jelöltek pontszámozásához a kérés szemantikai tartalma alapján. Támogatja az útválasztási útmutatást modellenként, és figyelembe veszi a költségvetési tartalékot, ha korlátok vannak konfigurálva.",
+        "capability": "Kemény szűrő: 0-t rendel azokhoz a modellekhez, amelyekből nyilvánvalóan hiányzik a kérés által szükséges funkció (látás, függvényhívás, JSON mód). Az explicit képesség-nyilatkozat nélküli modellek nem kerülnek büntetésre.",
+        "rate-limit": "Büntet azokat a modelleket, amelyeknek közelmúltbeli magas hívási gyakorisága van, hogy csökkentse az szolgáltató sebességkorlátjának elérésének kockázatát (HTTP 429). Támogatja a konfigurálható kemény küszöbértéket, amely 0-ra állítja a pontszámot.",
+        "fairness": "Egyenletesen osztja el a forgalmat azáltal, hogy büntet azokat a modelleket, amelyek közelmúltban több sikeres hívást kaptak. Puha körforgásként működik a terhelés egyetlen modellre való összpontosulásának megelőzésére.",
+        "budget-remaining": "Modellek pontozása a maradék költségvetési tartalék alapján az összes konfigurált korlát között. Azokat a modelleket részesíti előnyben, amelyeknek több hely van az küszöbértékei előtt, proaktívan terítve a fogyasztást.",
+        "semantic-intent": "A kérést szemantikai szándék szerint osztályozza beágyazásokkal, majd az adott szándékra leképezett modellekre korlátozza a jelöltkészletet. A magabiztos egyezések kemény szűrőzésűek; a kétértelmű egyezések az első 2 készletet egyesítik; az ismeretlen kérések az összes jelöltet átmennek.",
+        "model-preference": "Amikor az ügyfél egy adott modellt kér (nem routerly/ada), egy konfigurálható bónusz-pontszámot ad az adott modellnek. Ha semmilyen preferencia nincs kifejezve, a szabályzat tartózkodik. A lista pozíciója azt szabályozza, hogy a preferencia mennyire súlyozódik más szabályzatokkal szemben."
+      },
+      "selectModel": "Modell kiválasztása"
+    },
+    "securityRules": {
+      "applyTo": "Alkalmazása erre",
+      "streamingBufferSize": "Streaming puffer mérete (karakterek)",
+      "entityTypes": "Entitástípusok",
+      "target": "Cél",
+      "embeddingModel": "Beágyazási modell",
+      "judgeModel": "Bíró modell",
+      "contentGuardrails": "Tartalom Őrtornyok",
+      "piiPolicies": "PII Szabályzatok",
+      "addSecurityPolicyPlaceholder": "Adjon hozzá egy biztonsági szabályzatot...",
+      "removePolicyTooltip": "Szabályzat eltávolítása",
+      "deleteRuleAriaLabel": "Szabály törlése",
+      "embeddingModelPlaceholder": "Beágyazási modell kiválasztása...",
+      "fallbackModelsLabel": "Tartalék modellek (nem kötelező, sorrendben próbálva)",
+      "fallbackModelsPlaceholder": "Nincsenek tartalék modellek...",
+      "exampleTextsLabel": "Blokkolandó szövegek (egy soronként)",
+      "exampleTextsPlaceholder": "Hogyan hacker...\n...",
+      "similarityThresholdLabel": "Hasonlósági küszöb:",
+      "judgeModelPlaceholder": "Bíró modell kiválasztása...",
+      "allowedTopicsLabel": "Engedélyezett témák (természetes nyelvezet)",
+      "allowedTopicsPlaceholder": "Szoftveres ügyfélszolgálat. Technikai hibaelhárítás. Számlázási kérdések.",
+      "onTopicThresholdLabel": "Blokk, ha az témához való relevancia pontszáma alacsonyabb:",
+      "harmThresholdLabel": "Blokk, ha a káros pontszám magasabb:",
+      "customInstructionsLabel": "Egyéni utasítások",
+      "customInstructionsPlaceholder": "Ön egy tartalombiztonság-osztályozó. Értékelje az alábbi szöveget a káros tartalomra vonatkozóan.\nKategóriák: gyűlöletbeszéd, erőszak, szexuális tartalom, önkárosítás.\nVálaszolja CSAK egy JSON objektummal: {\"score\": <0 és 1 közötti szám>}",
+      "customInstructionsRequired": "Egyéni utasítások szükségesek.",
+      "enabledLabel": "Engedélyezve",
+      "contentGuardrailsHint": "A konfigurált szabályok alapján ellenőrizze a kéréseket és válaszokat. Aktív, ha legalább egy szabály van konfigurálva.",
+      "securityPoliciesHeading": "Biztonsági Szabályzatok",
+      "noSecurityPolicies": "Nincsenek biztonsági szabályzatok konfigurálva.",
+      "piiPoliciesHint": "Személyes adatok felismerése és kihagyása. Minden szabályzat az bemeneti kérésre, a modell válaszára, vagy mindkettőre irányul, és az saját entitásszettét szabályozza.",
+      "noPiiPolicies": "Nincsenek PII szabályzatok konfigurálva.",
+      "addPolicyButton": "+ Szabályzat hozzáadása",
+      "injectionWarningTitle": "Kérés teteje módosítva injektálás útján",
+      "injectionWarningBody": "Egy vagy több szabály injektálja az utasítást a kimenő kérés rendszerüzenetébe, így az szervezethez küldött teteje módosul. Nincs további modellhívás, és semmi sem kerül letiltásra; a kiszolgáló modell az utasítást önkényes végzi.",
+      "streamingDisabledWarningTitle": "Streaming letiltva ehhez az útválasztóhoz",
+      "streamingDisabledWarningBody": "Egy vagy több szabály úgy van konfigurálva, hogy blokkolja a válaszokat (cél: válasz vagy mindkettő). Mivel a teljes választ meg kell vizsgálni a blokkolási döntés előtt, Routerly teljes körűen megtartja a választ az ügyfélnek való visszaküldés előtt. Streaming nem érhető el, amíg egy válaszblokkoló szabály aktív; az ügyfelek a teljes választ egyetlen lépésben kapják meg, nem növekményes darabokban."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure Erőforrás Neve",
+      "azureResourceNamePlaceholder": "sajatersz",
+      "azureResourceNameHint": "Az Azure OpenAI erőforrás neve (az Azure portálból).",
+      "deploymentId": "Telepítési Azonosító",
+      "deploymentIdPlaceholder": "gpt-4o-telepítés",
+      "deploymentIdHint": "Az Azure OpenAI Studióban létrehozott telepítés neve.",
+      "azureApiVersionLabel": "API Verzió",
+      "azureApiVersionDefaultHint": "(alapértelmezett: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS Régió",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Hozzáférési Kulcs Azonosítója",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Titkos Hozzáférési Kulcs",
+      "awsSecretAccessKeyPlaceholderExisting": "Hagyja üresen a meglévő megtartásához",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Munkamenet Token",
+      "awsSessionTokenOptionalHint": "(nem kötelező, ideiglenes hitelesítő adatokhoz)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Útválasztó Azonosítója",
+      "gcpRouterIdPlaceholder": "saját-gcp-útválasztó",
+      "gcpLocationLabel": "Hely",
+      "gcpLocationDefaultHint": "(alapértelmezett: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Szolgáltatásfiók Kulcsa",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Végpont URL",
+      "optional": "(nem kötelező)",
+      "webProvider": {
+        "unofficialWarningTitle": "Nem hivatalos szolgáltató — saját felelősségre használja.",
+        "unofficialWarningBody": "Ez az integráció egy nem dokumentált belső API-ra támaszkodik, amely előzetes értesítés nélkül megváltozhat vagy elromlhat. Megsértheti a szolgáltató Felhasználási Feltételeit, és a fiókok felfüggesztésére vezethet.",
+        "accessTokenLabel": "Hozzáférési Token",
+        "sessionTokenLabel": "Munkamenet Token",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Illessze be a sessionKey cookie értékét (sk-ant-sid01-…)",
+        "openaiInstructions": "Miközben bejelentkezve van a ChatGPT-be, nyissa meg a <code>https://chatgpt.com/api/auth/session</code> weboldalt egy új lapon. Másolja az <code>accessToken</code> mező értékét (az <code>eyJ</code>-vel kezdődik). A token ~24 órán belül lejár. Megbízható hozzáféréshez kitöltse az alábbi <strong>cf_clearance</strong> mezőt is.",
+        "anthropicInstructions": "<strong>A munkamenet-kulcs beszerzése:</strong> Miközben bejelentkezve van a Claudeba, nyissa meg a DevTools-ot (F12) → Alkalmazás → Sütik → <code>claude.ai</code> → másolja a <code>sessionKey</code> sütit (az <code>sk-ant-sid01-</code>-vel kezdődik). A kulcs mindaddig érvényes, amíg nem jelentkezik ki."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Előfizetés OAuth Token",
+        "authFilePathLabel": "Auth fájl elérési útvonala",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (alapértelmezett)",
+        "anthropicTitle": "Használja Claude Pro/Max előfizetését.",
+        "anthropicRunCommandStep": "Futtassa ezt a parancsot és másolja az általa nyomtatott tokent:",
+        "anthropicPasteTokenStep": "Illessze be a tokent az alábbi <em>Előfizetés OAuth Token</em> mezőbe.",
+        "termsNote": "Újragenerálja, amikor lejár. Az előfizetés átjárón keresztüli használata megsértheti a szolgáltató Feltételeit.",
+        "openaiTitle": "Használja ChatGPT Plus/Pro előfizetését a Codex alkalmazáson keresztül.",
+        "openaiLoginStep": "Jelentkezzen be a Codex asztali alkalmazásba ChatGPT Plus/Pro fiókjával.",
+        "openaiAutoRefreshStep": "Routerly automatikusan olvassa az hozzáférési tokent a <code>~/.codex/auth.json</code> fájlból és frissíti azt. Nincs szükség kézi másolásra/beillesztésre.",
+        "openaiAuthFilePathStep": "Hagyja üresen az <em>Auth fájl elérési útvonala</em> mezőt az alapértelmezett használatásához, vagy adjon meg egy egyéni elérési útvonalat, ha a Codex alkalmazás máshol tárolja az auth-ot.",
+        "openaiTermsNote": "Az előfizetés átjárón keresztüli használata megsértheti a szolgáltató Feltételeit."
+      },
+      "copyCode": {
+        "copiedTooltip": "Másolva!",
+        "copyTooltip": "Másolás a vágólapra",
+        "copiedLabel": "Másolva",
+        "copyLabel": "Másolás"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Másolás",
+      "copiedLabel": "Másolva!",
+      "copyErrorHint": "A másolás sikertelen, válassza ki és másolja manuálisan."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP kliens",
+      "hints": {
+        "claudeCode": "Futtassa ezt egyszer, bárhol. A Claude Code a szervert a <code>~/.claude.json</code> fájlban tárolja.",
+        "claudeDesktop": "Helyezze ezt a <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> fájlba (Windows-on: <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), majd indítsa újra az alkalmazást. A CLI-t indítja, így a <code>routerly</code> debe an PATH-n van.",
+        "codex": "Helyezze ezt a <code>~/.codex/config.toml</code> fájlba. A Codex beolvassa a tokent a környezetből, így exportálja azt a shell-ben, ahonnan elindítja a Codex-et.",
+        "opencode": "Helyezze ezt a <code>~/.config/opencode/opencode.json</code> fájlba.",
+        "openclaw": "Futtassa ezt egyszer. Az OpenClaw az sse szállítást akciózza alapértelmezésként, amely a Routerly nem szolgálja, így a szállító explicit módon van beállítva.",
+        "cursor": "Helyezze ezt a <code>~/.cursor/mcp.json</code> fájlba, vagy a <code>.cursor/mcp.json</code> fájlba, hogy egy projekthez korlátozza.",
+        "cline": "Helyezze ezt a <code>~/.cline/mcp.json</code> fájlba, vagy illessze be a Configure MCP Servers-t a Cline panelbe.",
+        "zed": "Helyezze ezt a Zed <code>settings.json</code> fájljába, más kontextusszerverek mellett."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Mentetlen Változások",
+      "message": "Vannak mentetlen módosításai. Ha most távozik, a módosítások elvesznek.",
+      "stay": "Maradjon",
+      "leaveAnyway": "Mégis menjen"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Őrtornyok",
+        "pii": "PII",
+        "optimizers": "Optimalizálók",
+        "routerOverhead": "Útválasztó terhelés"
+      },
+      "policyType": {
+        "llm": "AI Útválasztás",
+        "rateLimit": "Sebességkorlát",
+        "budgetRemaining": "Maradék Költségvetés",
+        "semanticIntent": "Szemantikai Szándék",
+        "modelPreference": "Modell Preferencia"
+      },
+      "rawDetails": "nyers részletek",
+      "technicalDetails": "technikai részletek",
+      "systemPrompt": "rendszer üzenete",
+      "responseText": "válasz szövege",
+      "responseJson": "válasz JSON",
+      "cacheEmbeddingCall": "GYORSÍTÓTÁR BEÁGYAZÁSI HÍVÁS",
+      "fallbackAttempt": "tartalék #{{attempt}}",
+      "embeddingModel": "Beágyazási Modell",
+      "upstreamModel": "Felsőbb Szintű Modell",
+      "provider": "Szolgáltató",
+      "source": "Forrás",
+      "endpoint": "Végpont",
+      "cacheHit": "GYORSÍTÓTÁR TALÁLAT",
+      "ttlExtended": "TTL kiterjesztve",
+      "model": "Modell",
+      "similarity": "Hasonlóság",
+      "embedding": "Beágyazás",
+      "cacheMiss": "GYORSÍTÓTÁR HIÁNYZÁS",
+      "details": "részletek",
+      "excludedByLimits": "KIZÁRT KORLÁTOK MIATT",
+      "finalRanking": "VÉGSŐ RANGSOR",
+      "noRankingData": "Nincs rangsorerdeti adat (a rekord megsérült vagy régebbi verzióból származhat)",
+      "policyScores": "SZABÁLYZAT PONTSZÁMOK",
+      "weight": "súly {{value}}",
+      "allScores": "összes pontszám",
+      "noPolicyData": "Nincs szabályzatadat (a rekord megsérült vagy régebbi verzióból származhat)",
+      "requestGuardrailBlocked": "KÉRÉS ÖRTORNY LETILTVA",
+      "requestGuardrailTriggered": "KÉRÉS ÖRTORNY AKTIVÁLÓDOTT",
+      "responseGuardrailBlocked": "VÁLASZ ÖRTORNY LETILTVA",
+      "responseGuardrailTriggered": "VÁLASZ ÖRTORNY AKTIVÁLÓDOTT",
+      "rule": "Szabály",
+      "action": "Művelet",
+      "guardrailsEvaluated": "ÖRTORNYOK ÉRTÉKELVE ({{target}})",
+      "ruleCount": "{{count}} szabály",
+      "ruleCount_other": "{{count}} szabály",
+      "promptInjection": "Üzenet injektálás",
+      "injects": "injektál",
+      "judgeResponse": "Bíró válasza",
+      "piiScrubbed": "PII KITAKARÍTVA",
+      "piiScanned": "PII BEOLVASVA ({{target}})",
+      "policies": "szabályzatok",
+      "entityTypes": "entitástípusok",
+      "customPatterns": "egyéni minták",
+      "scanned": "beolvasva",
+      "redacted": "kitakarítva",
+      "took": "vett",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "beolvasott entitástípusok",
+      "guardrailInjection": "ÖRTORNY INJEKTÁLÁS",
+      "rules": "szabályok",
+      "chars": "karakterek",
+      "injectedText": "injektált szöveg",
+      "optimizer": "OPTIMALIZÁLÓ {{id}}",
+      "tokens": "tokenek",
+      "saved": "mentve",
+      "tok": "{{value}} tok",
+      "reason": "ok",
+      "budgetBlocked": "KÖLTSÉGVETÉS LETILTVA",
+      "budgetOk": "KÖLTSÉGVETÉS OK",
+      "egressSent": "KIESÉS ELKÜLDVE",
+      "status": "állapot",
+      "encoding": "kódolás",
+      "frames": "keretek",
+      "bytes": "bájt"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Saját Profil",
+      "subtitle": "A fiók beállításainak kezelése"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Értesítések",
+      "mcp": "MCP",
+      "preferences": "Preferenciák"
+    },
+    "notifications": {
+      "close": "Bezárás",
+      "refresh": "Frissítés",
+      "clear": "Törlés",
+      "empty": "Nincs találat értesítés.",
+      "markAllRead": "Az összes megjelölése olvasottnak",
+      "allCaughtUp": "Minden naprakész",
+      "unreadCount": "{{count}} olvasatlan",
+      "selectedCount": "{{count}} kiválasztott",
+      "severity": {
+        "all": "Összes",
+        "info": "Információ",
+        "warning": "Figyelmeztetés",
+        "critical": "Kritikus"
+      },
+      "status": {
+        "read": "Olvasott",
+        "unread": "Olvasatlan"
+      },
+      "filters": {
+        "severity": "Súlyosság",
+        "category": "Kategória",
+        "event": "Esemény",
+        "date": "Dátum",
+        "period": "Időszak",
+        "status": "Állapot",
+        "all": "Összes",
+        "allCategories": "Az összes kategória",
+        "allEvents": "Összes esemény",
+        "unreadOnly": "Csak olvasatlan"
+      },
+      "actions": {
+        "markRead": "Megjelölés olvasottnak",
+        "markUnread": "Megjelölés olvasatlannak",
+        "archive": "Archiválás"
+      },
+      "table": {
+        "severity": "Súlyosság",
+        "event": "Esemény",
+        "date": "Dátum",
+        "status": "Állapot",
+        "selectAll": "Az összes kiválasztása",
+        "selectRow": "{{event}} kiválasztása",
+        "eventCount": "{{count}} esemény"
+      },
+      "pagination": {
+        "previous": "← Előző",
+        "next": "Következő →",
+        "page": "{{page}}. oldal / {{totalPages}}",
+        "total": "({{count}} összesen)"
+      },
+      "detail": {
+        "ariaLabel": "Értesítés részlete",
+        "details": "Részletek",
+        "noDetails": "Nincsenek további részletek.",
+        "eventsInIncident": "Események ebben az incidensben"
+      }
+    },
+    "security": {
+      "roleLabel": "Szerepkör:",
+      "password": {
+        "heading": "Jelszó Módosítása",
+        "currentLabel": "Jelenlegi Jelszó",
+        "newLabel": "Új Jelszó",
+        "newPlaceholder": "Minimum 8 karakter",
+        "confirmLabel": "Új Jelszó Megerősítése",
+        "success": "A jelszó sikeresen megváltozott.",
+        "saving": "Mentés...",
+        "submit": "Jelszó Módosítása",
+        "errors": {
+          "mismatch": "A jelszavak nem egyeznek.",
+          "tooShort": "Az új jelszónak legalább 8 karakter hosszúnak kell lennie.",
+          "updateFailed": "Frissítés sikertelen"
+        }
+      },
+      "tfa": {
+        "heading": "Kétfaktoros Hitelesítés",
+        "notEnabled": "A 2FA nincs engedélyezve. Biztosítsa fiókját idő alapú egyszeri jelszóval.",
+        "enableButton": "Kétfaktoros Hitelesítés Engedélyezése",
+        "scanInstructions": "Olvassa be ezt a QR-kódot a hitelesítő alkalmazásával (Google Authenticator, Authy, stb.), majd írja be a 6 jegyű kódot a megerősítéshez.",
+        "qrAlt": "2FA beállítás QR-kódja",
+        "addAccountInstructions": "Nyissa meg a hitelesítő alkalmazását (Google Authenticator, Authy, 1Password, stb.) és adjon hozzá egy új fiókot:",
+        "setup": {
+          "step1": "Koppintson az <strong>Fiók hozzáadása</strong> vagy a <strong>+</strong> gombra",
+          "step2": "Válassza az <strong>Beállítási kulcs megadása</strong> lehetőséget (vagy olvassa be a QR-kódot, ha mobilon van)",
+          "step3": "Adja meg az alábban látható titkot"
+        },
+        "mobileLink": "Koppintson ide a mobilon a hitelesítő megnyitásához",
+        "manualEntryLabel": "Kézi bevitel titka:",
+        "saveBackupCodes": "Mentse ezeket a biztonsági kódokat. Mindegyik egyszer használható, ha elveszíti a hozzáférést a hitelesítőhöz.",
+        "copyBackupCodes": "Biztonsági kódok másolása",
+        "confirmCodeLabel": "Adja meg az alkalmazás kódját az aktiváláshoz",
+        "activate": "2FA Aktiválása",
+        "cancel": "Mégse",
+        "enabledBadge": "A 2FA engedélyezve van",
+        "newBackupCodesLabel": "Új biztonsági kódok (mentse ezeket most):",
+        "copy": "Másolás",
+        "regenLabel": "Adja meg a hitelesítő kódot a biztonsági kódok újragenerálásonhoz",
+        "regenerate": "Újragenerálás",
+        "regenerateBackupCodes": "Biztonsági kódok újragenerálása",
+        "disableLabel": "2FA Letiltása (adja meg a hitelesítő kódot)",
+        "disable": "2FA Letiltása",
+        "errors": {
+          "setupFailed": "A beállítás sikertelen",
+          "confirmFailed": "A megerősítés sikertelen",
+          "disableFailed": "A letiltás sikertelen",
+          "regenFailed": "Az újragenerálás sikertelen"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Az MCP felület betöltése sikertelen",
+        "revokeFailed": "A token visszavonása sikertelen"
+      },
+      "revokeConfirm": "Visszavonni az \"{{name}}\" MCP tokent? Az azt használó kliensek azonnal leállnak.",
+      "tokens": {
+        "heading": "MCP Tokenek",
+        "newToken": "Új Token",
+        "description": "Minden token úgy működik, mint Ön: pontosan azokat az eszközöket teszi elérhetővé, amelyeket az Ön szerepköre lehetővé tesz. A teljes érték egyszer jelenik meg a létrehozó oldalon.",
+        "empty": "Nincs MCP token. Hozzon létre egyet, hogy MCP klienst csatlakoztasson.",
+        "created": "Létrehozva",
+        "lastUsed": "Utolsó használat",
+        "expires": "Lejár",
+        "never": "Soha",
+        "revokeTitle": "Token visszavonása"
+      },
+      "tools": {
+        "heading": "Eszközök, Amelyeket Tokenek Elérhetővé Tesznek",
+        "empty": "Az Ön szerepköre nem biztosít MCP eszközt. Kérje meg az adminisztrátort az szükséges engedélyekhez.",
+        "table": {
+          "name": "Név",
+          "scope": "Hatáskör",
+          "description": "Leírás",
+          "sourceModule": "Forrásmodul",
+          "permission": "Engedély"
+        }
+      },
+      "connect": {
+        "heading": "MCP Kliens Csatlakoztatása",
+        "descriptionPre": "Válassza ki a vezetékelt klienst, majd cserélje ki",
+        "descriptionPost": "az egyik tokenjére. A token létrehozása ugyanezt a részletet mutatja az értékkel már benne.",
+        "otherClient": "Bármely más kliens",
+        "httpInstructionsPre": "HTTP-n keresztül mutasson erre a végpontra és hitelesítsen",
+        "httpInstructionsPost": "-val. Ez JSON-RPC 2.0 Streamable HTTP-n keresztül.",
+        "stdioInstructionsPre": "Stdio-n keresztül a CLI-híd összeköti és átadja az tokent. Közvetlenül futtatja a szolgáltatást? Állítsa be",
+        "stdioInstructionsAnd": "és",
+        "stdioInstructionsPost": "magát."
+      },
+      "newToken": {
+        "backToMcp": "Vissza az MCP-hez",
+        "title": "Új MCP Token",
+        "subtitle": "A token úgy működik, mint Ön: pontosan azokat az eszközöket teszi elérhetővé, amelyeket az Ön szerepköre lehetővé tesz.",
+        "nameLabel": "Név",
+        "namePlaceholder": "laptop",
+        "nameHint": "Ahol ezt a tokent használják, például \"laptop\" vagy \"claude-desktop\".",
+        "expiryLabel": "Lejár",
+        "expiryHint": "Nem kötelező. Hagyja üresen, és a token soha nem jár le, amíg vissza nem vonja.",
+        "createButton": "Token Létrehozása",
+        "creatingButton": "Létrehozás…",
+        "cancelButton": "Mégse",
+        "tokenSection": {
+          "title": "Az Ön tokenje",
+          "hint": "Másolja most. Nem lesz újra megjelenítve, és egy elveszett token csak helyettesítéssel helyreállítható.",
+          "copyButton": "Másolás",
+          "copiedButton": "Másolva!",
+          "copyTitle": "Token másolása",
+          "copiedTitle": "Másolva!"
+        },
+        "connectSection": {
+          "title": "Kliens csatlakoztatása",
+          "hint": "Válassza ki a vezetékelt klienst. A részlet már tartalmazza ezt a tokent."
+        },
+        "bridgeSection": {
+          "title": "Vagy használja a helyi hidat",
+          "hint": "A csak stdio-val beszélő kliensnél a CLI összeköti és átadja az tokent."
+        },
+        "doneButton": "Kész",
+        "errors": {
+          "createFailed": "A token létrehozása sikertelen",
+          "copyFailed": "A másolás sikertelen, válassza ki és másolja a tokent manuálisan."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Nyelv",
+      "description": "Válassza meg, milyen nyelven jelenjen meg az irányítópult.",
+      "languageLabel": "Nyelv",
+      "saved": "Nyelvpreferencia mentve."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "A beállítások betöltése sikertelen",
+        "loadFailedPeriod": "A beállítások betöltése sikertelen.",
+        "saveFailed": "Mentés sikertelen",
+        "saveSettingsFailed": "A beállítások mentése sikertelen"
+      },
+      "savedSuccess": "A beállítások sikeresen mentve.",
+      "saving": "Mentés…",
+      "saveSettings": "Beállítások Mentése",
+      "serverInfo": {
+        "heading": "Szerver Információ",
+        "readOnly": "Csak olvasás. A gazdagép és a port a környezetből vagy a beállítások fájlból jön, nem innen.",
+        "reachableAt": "Elérhető a",
+        "reachableAtAny": "Elérhető ezek közül az egyik",
+        "thisMachine": "Ez a gép",
+        "network": "Hálózat",
+        "copyAddress": "{{address}} másolása",
+        "copied": "Másolva!",
+        "copy": "Másolás",
+        "hostAndPort": "Gazdagép és port",
+        "version": "Verzió",
+        "uptime": "Futási idő"
+      },
+      "runtime": {
+        "heading": "Futási Beállítások",
+        "logLevel": "Naplózási Szint",
+        "logLevelHint": "A szolgáltatásnaplók részletezettségét vezérli.",
+        "publicUrl": "Nyilvános URL",
+        "publicUrlHint": "Az alapvető URL, ahol a szolgáltatás elérhető a külső kliensektől (pl. <code>http://192.168.1.10:3000</code>). Az egyes útválasztók \"Csatlakozás\" szakaszában használják. Hasznos, ha az irányítópult a szolgáltatástól eltérő gépen vagy porton fut.",
+        "usageRetention": "Használat Megőrzés",
+        "noLimit": "Nincs korlátozás",
+        "maxAgeDays": "Maximális életkor (nap)",
+        "maxSizeMb": "Maximális méret (MB)",
+        "retentionHint": "Az ennyi napnál régebbi vagy ezt a méretet meghaladó használat/számlázási előzmények az aktív naplóból kikerülnek. Hagyja üresen a megőrzési korlát nélkül."
+      },
+      "internationalization": {
+        "heading": "Nemzetköziesítés",
+        "defaultLanguage": "Alapértelmezett Nyelv",
+        "defaultLanguageHint": "Az irányítópult nyelve azoknak a felhasználóknak, akik még nem választottak saját nyelvet. Nem felülírja a felhasználó személyes választását."
+      },
+      "telemetry": {
+        "heading": "Anonimizált Metrikák",
+        "neverAutomatic": "A Routerly soha nem küld adatokat automatikusan.",
+        "noChoice": "Még nem döntött.",
+        "enabledStatus": "Az anonimizált telepítési metrikák engedélyezve vannak.",
+        "disabledStatus": "Az anonimizált telepítési metrikák letiltva vannak.",
+        "explanation": "Ha engedélyezve van, a Routerly csak a következőket küldi: eseménytípus (telepítés / frissítés / eltávolítás), verzió, platform és egy véletlenszerű azonosító. Nincsenek személyes adatok, nincsenek használati adatok, nincsenek IP-k.",
+        "whatIsSent": "Mit küldenek?",
+        "installId": "Telepítési azonosító: {{id}}",
+        "saving": "Mentés…",
+        "enable": "Engedélyezés",
+        "disable": "Letiltás"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Irányítópult (alkalmazáson belüli beérkezett üzenetek)",
+          "description": "Az eseményeket az alkalmazáson belüli értesítési beérkezett üzenetek felé irányítja"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Egyéni levelezőszerver"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Kommunikáció",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail OAuth2-n keresztül"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook visszahívás"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Bejövő Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Szolgáltató – Hiba",
+        "providerDegraded": "Szolgáltató – Csökkent",
+        "providerRecovered": "Szolgáltató – Helyreállítva",
+        "providerRateLimited": "Szolgáltató – Sebességkorlátozott",
+        "routingNoCandidates": "Útválasztás – Nincs Jelölt",
+        "routingFallbackUsed": "Útválasztás – Tartalék Használva",
+        "authLoginFailed": "Hitelesítés – Bejelentkezés Sikertelen",
+        "authTokenInvalid": "Hitelesítés – Token Érvénytelen",
+        "configModelAdded": "Config – Modell Hozzáadva",
+        "configModelDeleted": "Config – Modell Törölve",
+        "configRouterCreated": "Config – Útválasztó Létrehozva",
+        "configRouterDeleted": "Config – Útválasztó Törölve",
+        "budgetThresholdReached": "Költségvetés – Küszöb Elérve",
+        "budgetExceeded": "Költségvetés – Túllépve",
+        "budgetReset": "Költségvetés – Visszaállítva",
+        "systemStartup": "Rendszer – Indítás",
+        "systemShutdown": "Rendszer – Leállítás",
+        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető"
+      },
+      "removeChannelTooltip": "Csatorna eltávolítása",
+      "removeChannelConfirm": "Csatorna eltávolítása?",
+      "formUpdatedHint": "Űrlap frissítve — mentés a alkalmazáshoz.",
+      "hmacSigningKeyPlaceholder": "HMAC aláírási kulcs",
+      "perms": {
+        "routerRead": "Útválasztók – Olvasás",
+        "routerWrite": "Útválasztók – Írás",
+        "modelRead": "Modellek – Olvasás",
+        "modelWrite": "Modellek – Írás",
+        "userRead": "Felhasználók – Olvasás",
+        "userWrite": "Felhasználók – Írás",
+        "reportRead": "Jelentések – Olvasás",
+        "settingsRead": "Beállítások – Olvasás",
+        "settingsWrite": "Beállítások – Írás",
+        "notificationWrite": "Értesítések – Írás",
+        "tokenRead": "Tokenek – Olvasás",
+        "tokenWrite": "Tokenek – Írás",
+        "roleWrite": "Szerepkörök – Írás",
+        "auditRead": "Auditnaplózás – Olvasás",
+        "modulesRead": "Modulok – Olvasás",
+        "modulesManage": "Modulok – Kezelés",
+        "connectionsRead": "Kapcsolatok – Olvasás",
+        "connectionsManage": "Kapcsolatok – Kezelés",
+        "resilienceRead": "Rugalmasság – Olvasás",
+        "resilienceManage": "Rugalmasság – Kezelés",
+        "profilesRead": "Útválasztási Profilok – Olvasás",
+        "profilesManage": "Útválasztási Profilok – Kezelés",
+        "optimizersRead": "Optimalizálók – Olvasás",
+        "optimizersManage": "Optimalizálók – Kezelés",
+        "experimentsRead": "Kísérletek – Olvasás",
+        "experimentsManage": "Kísérletek – Kezelés"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Ennél a csatornatípusnál a célok nem befolyásolják az szállítást (a végpont rögzített). Az auditnaplóban szűrik az eseményeket címzenként.",
+        "dashboard": "A célok szabályozzák az beérkezett üzenetek láthatóságát – csak a egyeztetett felhasználók látják ezeket az értesítéseket az alkalmazáson belüli beérkezett üzenetekben.",
+        "email": "A célok meghatározzák, mely felhasználók kapnak ezt az e-mailt. Hagyja üresen az összes felhasználónak való küldéshez."
+      },
+      "summary": {
+        "allEvents": "Összes esemény",
+        "eventCount": "{{count}} esemény",
+        "eventCount_other": "{{count}} esemény",
+        "roleCount": "{{count}} szerepkör",
+        "roleCount_other": "{{count}} szerepkör",
+        "permCount": "{{count}} engedély",
+        "permCount_other": "{{count}} engedély",
+        "userCount": "{{count}} felhasználó",
+        "userCount_other": "{{count}} felhasználó",
+        "everyone": "Mindenki"
+      },
+      "errors": {
+        "loadFailed": "Betöltés sikertelen"
+      },
+      "fields": {
+        "dashboardHint": "Az egyeztetett eseményeket az alkalmazáson belüli értesítési beérkezett üzenetek felé irányítja. Nincsenek szükséges hitelesítő adatok.",
+        "labels": {
+          "fromAddress": "Feladó Cím",
+          "fromName": "Feladó Név",
+          "host": "Gazdagép",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Felhasználónév",
+          "password": "Jelszó",
+          "awsRegion": "AWS Régió",
+          "accessKeyId": "Hozzáférési Kulcs Azonosítója",
+          "secretAccessKey": "Titkos Hozzáférési Kulcs",
+          "apiKey": "API Kulcs",
+          "connectionString": "Kapcsolati Karakterlánc",
+          "clientId": "Kliens Azonosítója",
+          "clientSecret": "Kliens Titka",
+          "refreshToken": "Frissítési Token",
+          "url": "URL",
+          "method": "Metódus",
+          "signingSecret": "Aláírási Titok",
+          "botToken": "Bot Token",
+          "channelId": "Csatorna Azonosítója",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "Integráció Kulcsa"
+        },
+        "values": {
+          "enabled": "Engedélyezve",
+          "disabled": "Letiltva",
+          "configured": "Konfigurálva",
+          "notSet": "Nincs beállítva"
+        },
+        "optional": "(nem kötelező)",
+        "keepCurrentPlaceholder": "Hagyja üresen a meglévő megtartásához",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSL Használata",
+        "smtpTlsOnHint": "(465-ös port – közvetlen SSL)",
+        "smtpTlsOffHint": "(587-es port – STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Hagyja üresen a hitelesítő adatokat az IAM-intézmény szerephez.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC aláírási kulcs",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32 karakteres útválasztási kulcs",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Események",
+          "eventsPlaceholder": "Összes esemény (hagyja üresen az összes)",
+          "eventsHint": "Hagyja üresen az összes esemény fogadásásához. Válassza az adott eseményeket a szűrésáshez.",
+          "routersHeading": "Útválasztók",
+          "routersPlaceholder": "Az összes útválasztó (hagyja üresen az összes)",
+          "routersHint": "Hagyja üresen az összes útválasztóból érkező események fogadásásához.",
+          "cooldownHeading": "Lehűlési Idő",
+          "cooldownSuffix": "másodperc (0 = nincs lehűlési idő)",
+          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel."
+        },
+        "recipients": {
+          "heading": "Címzettek / Célok",
+          "rolesLabel": "Szerepkörök",
+          "rolesPlaceholder": "Az összes szerepkör (mindenki)",
+          "permissionsLabel": "Engedélyek",
+          "permissionsPlaceholder": "Az összes engedély (mindenki)",
+          "usersLabel": "Egyedi felhasználók",
+          "usersPlaceholder": "Az összes felhasználó (mindenki)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "kapcsolat",
+          "routing": "útválasztás",
+          "recipients": "címzettek"
+        },
+        "sections": {
+          "channelSettings": "Csatorna beállításai",
+          "eventsRouting": "Események és útválasztás",
+          "recipients": "Címzettek"
+        },
+        "nameLabel": "Név",
+        "namePlaceholder": "Címke ehhez a csatornához",
+        "cancelButton": "Mégse"
+      },
+      "list": {
+        "countLabel": "{{count}} csatorna",
+        "countLabel_other": "{{count}} csatorna",
+        "filteredLabel": "{{shown}} / {{count}} csatorna",
+        "filteredLabel_other": "{{shown}} / {{count}} csatorna",
+        "allTypes": "Az összes típus",
+        "searchPlaceholder": "Csatornák szűrése…",
+        "searchChannelsPlaceholder": "Csatornák keresése…",
+        "addButton": "Csatorna Hozzáadása",
+        "addSearchPlaceholder": "Csatornák keresése…",
+        "noResults": "Nincs találat",
+        "emptyTitle": "Nincsenek konfigurált értesítési csatornák.",
+        "noMatch": "Nincsenek csatornák az aktív szűrőkhöz.",
+        "nameInlinePlaceholder": "Címke (nem kötelező)",
+        "columns": {
+          "name": "Név",
+          "type": "Típus",
+          "summary": "Események / Célok"
+        },
+        "testTitle": "Teszt küldése",
+        "editTitle": "Csatorna szerkesztése",
+        "deleteTitle": "Csatorna törlése",
+        "deleteConfirm": "\"{{name}}\" csatorna eltávolítása? Ez nem vonható vissza.",
+        "deleteConfirmButton": "Törlés",
+        "errors": {
+          "deleteFailed": "A törlés sikertelen"
+        }
+      },
+      "edit": {
+        "backToList": "Vissza az Értesítésekhez",
+        "back": "Vissza",
+        "heading": "{{provider}} csatorna szerkesztése",
+        "subtitle": "Frissítse a konfigurációt erre az értesítési csatornára.",
+        "testSection": {
+          "title": "Teszt küldése",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Teszt Küldése",
+          "sendingButton": "Küldés…",
+          "hintEmail": "Hagyja üresen a fiók e-mailhez való küldéshez. A teszt az mentett csatorna konfigurációját használja.",
+          "hintOther": "A teszt az mentett csatorna konfigurációját használja. Mentse az módosításokat először a frissített beállítások teszteléséhez."
+        },
+        "saveButton": "Módosítások Mentése",
+        "savingButton": "Mentés…",
+        "errors": {
+          "loadFailed": "Betöltés sikertelen",
+          "saveFailed": "Mentés sikertelen"
+        }
+      },
+      "create": {
+        "backToList": "Vissza az Értesítésekhez",
+        "changeType": "Típus módosítása",
+        "pickerHeading": "Válassza meg a csatorna típusát",
+        "pickerSubtitle": "Válassza ki a konfigurálni kívánt értesítési szolgáltatót.",
+        "heading": "Új {{provider}} csatorna",
+        "subtitle": "Új értesítési csatorna konfigurálása.",
+        "createButton": "Csatorna Létrehozása",
+        "creatingButton": "Létrehozás…",
+        "errors": {
+          "createFailed": "A létrehozás sikertelen"
+        }
+      },
+      "sendTest": "Teszt küldése",
+      "fromAddress": "Feladó Cím",
+      "individualUsers": "Egyedi felhasználók",
+      "host": "Gazdagép",
+      "port": "Port",
+      "apiKey": "API Kulcs",
+      "connectionString": "Kapcsolati Karakterlánc",
+      "clientId": "Kliens Azonosítója",
+      "clientSecret": "Kliens Titka",
+      "refreshToken": "Frissítési Token",
+      "method": "Metódus",
+      "botToken": "Bot Token",
+      "channelId": "Csatorna Azonosítója",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "Integráció Kulcsa"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "lekérés – kitesz /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "leküldés – OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "leküldés – metrikák API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "leküldés – remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "leküldés – sorszöveg protokoll"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "leküldés – HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Kérés nyomok exportálása",
+        "description": "Az egyes proxy kérések teljes nyomát szállítja: minden fázis, minden modul, amely beszélt, és az azon projektek kérdéseit és válaszait, amelyek ezt választották.",
+        "sampleRateLabel": "Mintavételi arány",
+        "sampleRateHint": "1 minden kérést exportál, 0,1 minden tizedik."
+      },
+      "optional": "(nem kötelező)",
+      "headersHint": "(nem kötelező, egy soronként: Kulcs: Érték)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Hagyja üresen a nyitott hozzáféréshez",
+          "description": "A Prometheus szöveg formátumban <code>/metrics</code> -et tesz ki. Állítson be egy tokent a Bearer auth megköveteléséhez."
+        },
+        "otel": {
+          "endpoint": "Gyűjtő végpont",
+          "description": "Az OTLP vevőjének alapvető URL-je. A Routerly hozzáfűzi a <code>/v1/metrics</code> és <code>/v1/traces</code> a nyom exportáláshoz. Az alapértelmezett HTTP port 4318, gRPC 4317.",
+          "protocol": "Protokoll",
+          "headers": "Fejlécek"
+        },
+        "datadog": {
+          "apiKey": "API Kulcs",
+          "placeholder": "Az Datadog API-kulcs",
+          "description": "A Datadog fiókjában az <strong>Szervezet Beállításai → API Kulcsok</strong> alatt található.",
+          "site": "Webhely"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Távoli Írás URL",
+          "description": "Az <strong>Grafana Cloud → Kapcsolatok → Prometheus → Részletek</strong> alatt található \"Távoli Írás Végpontként\".",
+          "username": "Felhasználónév / Stack Azonosítója",
+          "usernameHint": "A Prometheus-kapcsolat részletei között látható numerikus azonosító.",
+          "apiKey": "API Kulcs / Token",
+          "apiKeyHint": "Grafana Cloud token az <strong>MetricsPublisher</strong> szereppel."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 intézményi URL. Felhő: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Az InfluxDB API-token",
+          "tokenHint": "<strong>Írás</strong> hozzáférésre kell szükséges az vödörhoz.",
+          "org": "Szervezet",
+          "bucket": "Vödör"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Titok",
+          "secretHint": "(nem kötelező – HMAC-SHA256 aláírási kulcs)",
+          "headers": "Fejlécek"
+        }
+      },
+      "errors": {
+        "loadFailed": "Az integráció betöltése sikertelen",
+        "updateFailed": "Az integráció frissítése sikertelen",
+        "saveFailed": "Az integráció mentése sikertelen",
+        "deleteFailed": "Az integráció törlése sikertelen"
+      },
+      "empty": "Nincsenek konfigurált integrációk.",
+      "enabled": "Engedélyezve",
+      "testing": "Tesztelés…",
+      "test": "Teszt",
+      "removeConfirm": "Eltávolítás?",
+      "remove": "Eltávolítás",
+      "cancel": "Mégse",
+      "removeTooltip": "Integráció eltávolítása",
+      "saving": "Mentés…",
+      "save": "Mentés",
+      "addButton": "Integráció Hozzáadása"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "A beállítások betöltése sikertelen",
+        "duplicateUrl": "Ez az URL már a listán van.",
+        "unreachable": "Nem tudtunk elérni egy érvényes szolgáltatató katalógust erre az URL-re."
+      },
+      "saved": "Mentve.",
+      "refreshed": "Frissítve.",
+      "heading": "Szolgáltatató Katalógus Adattárak",
+      "refreshing": "Frissítés…",
+      "refresh": "Frissítés",
+      "nextRefresh": "Következő: {{date}}",
+      "priorityHint": "A sor sorrendje határozza meg az egyesítési prioritást – az 1. sor nyer az konfliktusban. Az nyilakkal rendezze át.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Frissítve",
+        "lastCheck": "Utolsó Ellenőrzés",
+        "status": "Állapot"
+      },
+      "empty": "Nincsenek konfigurált adattárak. Az alapértelmezett Routerly nyilvános katalógus lesz használva.",
+      "status": {
+        "error": "Hiba",
+        "active": "Aktív",
+        "disabled": "Letiltva"
+      },
+      "edit": "Szerkesztés",
+      "removeTooltip": "Eltávolítás",
+      "addRepository": "Adattár Hozzáadása",
+      "checking": "Ellenőrzés…",
+      "add": "Hozzáadás",
+      "removeConfirm": "\"{{url}}\" adattár eltávolítása?"
+    },
+    "about": {
+      "headings": {
+        "application": "Alkalmazás",
+        "runtime": "Futási Idő",
+        "storage": "Tárolás",
+        "softwareUpdate": "Szoftver Frissítés"
+      },
+      "labels": {
+        "version": "Verzió",
+        "uptime": "Futási Idő",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Beállítások könyvtára",
+        "dataDir": "Adatok könyvtára",
+        "currentVersion": "Jelenlegi verzió",
+        "availableVersion": "Elérhető verzió",
+        "upToDate": "Naprakész",
+        "lastChecked": "Utolsó Ellenőrzés"
+      },
+      "noCheckPerformed": "Még nem végeztek frissítés ellenőrzést.",
+      "checkForUpdates": "Frissítések keresése",
+      "checking": "Ellenőrzés…",
+      "updateTo": "Frissítés v{{version}}-ra",
+      "updating": "Frissítés…",
+      "dockerHint": "Docker-ben fut – töltse le a legújabb képet a frissítéshez.",
+      "confirmUpdate": "Ez letölti és telepíti a legújabb verziót. A szolgáltatás újraindul. Folytatódjon?",
+      "updateComplete": "Frissítés kész! Újratöltés…",
+      "serviceRestarting": "A szolgáltatás újraindul. Egy pillanat múlva töltse be újra az oldalt.",
+      "errors": {
+        "loadFailed": "Betöltés sikertelen",
+        "checkFailed": "Az ellenőrzés sikertelen",
+        "updateFailed": "A frissítés sikertelen"
+      },
+      "channel": "Csatorna"
+    },
+    "security": {
+      "authentication": "Hitelesítés",
+      "requireMfa": "Kétfaktoros Hitelesítés Megkövetelése Az Összes Felhasználó Számára",
+      "requireMfaHint": "Ha engedélyezve van, azok a felhasználók, akik nem állították be a 2FA-t, a bejelentkezés után egy üzenet fog megjelenni, hogy megtegyék. A felhasználók a Profil oldalon állíthatják be a 2FA-t.",
+      "savedSuccess": "A beállítások sikeresen mentve.",
+      "saving": "Mentés…",
+      "saveSettings": "Beállítások Mentése",
+      "errors": {
+        "loadFailed": "A beállítások betöltése sikertelen",
+        "saveFailed": "A beállítások mentése sikertelen"
+      }
+    },
+    "title": "Beállítások",
+    "subtitle": "Routerly-konfigurációja",
+    "tabs": {
+      "general": "Általános",
+      "security": "Biztonság",
+      "notifications": "Értesítések",
+      "integrations": "Integrációk",
+      "catalog": "Szolgáltatató Katalógus",
+      "users": "Felhasználók",
+      "roles": "Szerepkörök",
+      "audit": "Auditnaplózás",
+      "about": "Névjegy"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Útválasztók",
+      "subtitle": "Az olyan ügyfélalkalmazások, amelyek hozzáférnek a Routerly-hez",
+      "count": "1 útválasztó",
+      "count_other": "{{count}} útválasztó",
+      "newRouter": "Új Útválasztó",
+      "empty": "Nincsenek útválasztók.",
+      "emptyFiltered": "Nincs ilyen típusú útválasztó.",
+      "tabs": {
+        "all": "Összes",
+        "router": "Útválasztó",
+        "orchestrator": "Dirigens",
+        "passthrough": "Áteresztés"
+      },
+      "columns": {
+        "name": "Név",
+        "tokens": "Tokenek",
+        "policies": "Szabályzatok",
+        "models": "Modellek"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} token",
+      "editRouter": "Útválasztó szerkesztése",
+      "deleteRouter": "Útválasztó törlése",
+      "deleteConfirm": "Törli ezt az útválasztót?",
+      "errors": {
+        "deleteFailed": "Hiba az útválasztó törlésénél"
+      }
+    },
+    "layout": {
+      "notFound": "Az útválasztó nem található",
+      "tabs": {
+        "dashboard": "Irányítópult",
+        "general": "Általános",
+        "orchestrator": "Orcesztrálás",
+        "routing": "Útválasztás",
+        "optimizer": "Optimalizáló",
+        "security": "Biztonság",
+        "token": "Token",
+        "users": "Felhasználók",
+        "logs": "Naplók"
+      },
+      "backToRouters": "Vissza az Útválasztókhoz",
+      "backToRoutersTitle": "Vissza az útválasztókhoz",
+      "newRouter": "Új Útválasztó",
+      "loading": "Betöltés...",
+      "routerId": "Útválasztó azonosítója:",
+      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához"
+    },
+    "dashboard": {
+      "period": "Időszak",
+      "noTraffic": "Nincs forgalom ehhez az útválasztóhoz a kijelölt időszakban.",
+      "stats": {
+        "savings": "Megtakarítások",
+        "vsPrefix": "szemben",
+        "forEverything": "mindene",
+        "noTargetToCompare": "nincs célmodell az összehasonlításáshoz",
+        "cost": "Költség",
+        "callCount": "1 hívás",
+        "callCount_other": "{{count}} hívás",
+        "latency": "Latentu",
+        "medianP95": "medián · p95 {{value}}",
+        "ttft": "Idő az első tokenig",
+        "notMeasured": "nem mért ezeken a hívásokon",
+        "reliability": "Megbízhatóság",
+        "errorsAndBlocked": "{{errors}} hibák · {{blocked}} letiltott"
+      },
+      "tokens": {
+        "input": "Bemeneti tokenek:",
+        "output": "Kimeneti tokenek:",
+        "fromCache": "Gyorsítótárból:",
+        "cacheSaved": "({{amount}} megtakarított)"
+      },
+      "oneModel": {
+        "heading": "Ha minden egy modellhez ment volna",
+        "empty": "Adjon hozzá célmodelleket az útválasztóhoz az összehasonlítás megtekintéséhez.",
+        "columns": {
+          "targetModel": "Célmodell",
+          "wouldHaveCost": "Kerülne volna",
+          "saved": "Megtakarított"
+        },
+        "costsHint": "A költségek a megfigyelt tokenek minden cél ár tarifáinál vannak árazva."
+      },
+      "optimizers": {
+        "heading": "Az optimalizálók eltávolított",
+        "columns": {
+          "optimizer": "Optimalizáló",
+          "callsChanged": "Hívások módosultak",
+          "tokensSaved": "Tokenek megtakarítva",
+          "costSaved": "Költség megtakarítva",
+          "rolledBack": "Visszagörgetett"
+        },
+        "hint": "A hívások magukon mérve, az azokat kiszolgáló modell tarifáinál árazva. A visszagörgetett futás azt jelenti, hogy a lépés kimenete nem biztonságosnak lett elutasítva, és a kérés helyreállva: semmit sem takarított meg, és egy magas szám azt jelenti, hogy az küszöbértéke túl agresszív."
+      },
+      "traffic": {
+        "heading": "Hol ment a forgalom",
+        "columns": {
+          "model": "Modell",
+          "calls": "Hívások",
+          "share": "Részesedés",
+          "cost": "Költség",
+          "p95Latency": "p95 latentu",
+          "errors": "Hibák"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Hiba az útválasztó mentésénél",
+        "copyFailed": "A másolás sikertelen – válassza ki és másolja a tokent manuálisan."
+      },
+      "kind": {
+        "router": {
+          "label": "Útválasztó",
+          "description": "Útválasztja a kéréseket a modelljelöltek között."
+        },
+        "orchestrator": {
+          "label": "Orcesztrálás",
+          "description": "Útválasztja a kéréseket más útválasztók között a modellek helyett."
+        },
+        "passthrough": {
+          "label": "Áteresztés",
+          "description": "A kéréseket módosítás nélkül továbbítja."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Mentse ezt a tokent most.",
+        "saveNowHint": "Nem lesz újra megjelenítve – amikor elhagyja ezt a képernyőt, nem lehet helyreállítani.",
+        "copied": "Másolva!",
+        "copy": "Másolás",
+        "goToRouter": "Ugrás az útválasztóhoz"
+      },
+      "connect": {
+        "heading": "Csatlakozás módja",
+        "intro": "Mutasson az OpenAI vagy Anthropic SDK-t a Routerly-re, és használjon egy <tokenLink>útválasztó tokent</tokenLink> az API kulcsként. Cserélje ki az <code>{{token}}</code> alábbi az Ön-vel. Model <code>{{model}}</code> átadja az választást Routerly-nek; bármely modell azonosítója a <modelsLink>Modellek</modelsLink> között működik is.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Alapvető URL <code>{{baseUrl}}</code>, ugyanaz, amit bármely \"OpenAI-kompatibilis\" szolgáltató mező vesz fel.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Alapvető URL <code>{{baseUrl}}</code>, az <code>/v1</code> nélkül: az SDK hozzáadja azt.",
+        "curl": "curl",
+        "curlHint": "Ellenőrizze a vezetékeket telepítés nélkül, majd keresse meg a hívásat az <usageLink>Használat</usageLink> oldalon."
+      },
+      "form": {
+        "kind": "Típus",
+        "kindAriaLabel": "Útválasztó Típusa",
+        "kindFixedHint": "Az útválasztó létrehozása után rögzítve.",
+        "routerName": "Útválasztó Neve",
+        "routerNamePlaceholder": "Saját Alkalmazás",
+        "advancedSettings": "Speciális beállítások",
+        "ttftTimeout": "TTFT Időkorlát (ms)",
+        "ttftTimeoutHint": "Ha egy modell nem küldi az első válaszhelyét ezen időn belül, a Routerly leállítja és próbálja meg a következő jelöltet. Nem korlátozza az összes válasz időtartamát. Állítsa 0-ra, hogy egy olyan hosszú ideig várakozzon, ahogy a szolgáltató végez.",
+        "traceContent": "Nyom tartalma",
+        "traceContentHint": "A nyomok mindig rögzítik a metaadatokat (modellek, pontszámok, tokenek, költség, latentu). Kapcsolja be ezt is a küldött kérések és az kapott válaszok rögzítéséhez. Az használat rekordjaival tárolódnak, és bárki láthatja, aki jelentéseket olvashat.",
+        "capturePromptsAndAnswers": "Rögzítse az kéréseket és válaszokat",
+        "saveChanges": "Módosítások Mentése",
+        "createRouter": "Útválasztó Létrehozása"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Ez az útválasztó nem egy Orcesztrálás.",
+      "candidateRouters": "Jelölt Útválasztók",
+      "candidateRoutersHint": "Az útválasztók, amelyeket ez az Orcesztrálás a kéréseket. A súly befolyásolja, milyen gyakran választódik ki minden jelölt; csak az neve, azonosítója, súlya és opcionális jelölt-specifikus korlátjai jelennek meg itt.",
+      "router": "Útválasztó",
+      "selectRouter": "Útválasztó kiválasztása",
+      "weight": "Súly",
+      "removeCandidate": "Jelölt eltávolítása",
+      "usageLimits": "Használat korlátozások ehhez a jelölthez",
+      "limitCount": "{{count}} korlát",
+      "limitCount_other": "{{count}} korlát",
+      "usageLimitsHint": "Opcionális használati korlátok alkalmazva csak az kérések, amelyeket az Orcesztrálás erre a jelöltre továbbít.",
+      "empty": "Nincsenek jelölt útválasztók. Az Orcesztrálás szükséges legalább egy előtt az kérések továbbítása.",
+      "addCandidate": "Jelölt Hozzáadása",
+      "saved": "Mentve!",
+      "saveCandidates": "Jelöltek Mentése",
+      "errors": {
+        "loadFailed": "Az útválasztók betöltése sikertelen",
+        "saveFailed": "Hiba az orcesztrlás jelöltjeinak mentésénél"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Nem sikerült az útválasztási profil hozzárendelése",
+        "duplicateTargets": "Célmodellek nem tartalmazhatnak duplikátumokat.",
+        "saveFailed": "Hiba az útválasztó útválasztásának mentésénél",
+        "noProfileAvailable": "Nincsenek elérhető útválasztási profilok. Hozzon létre egyet a Profilok oldalon."
+      },
+      "form": {
+        "routing": "Útválasztás",
+        "routingHint": "Használjon egy megosztott útválasztási profilt, vagy határozza meg az útválasztó saját szabályzatait. Célmodellek mindkét módban konfigurálhatók maradnak.",
+        "profileMode": "Profil",
+        "customMode": "Egyéni",
+        "routingProfile": "Útválasztási Profil",
+        "builtinSuffix": "(beépített)",
+        "profileHint": "A szabályzatok a profilból jönnek, és követik az módosításait. Szerkeszd őket a Profilok oldalon, vagy váltson Egyéni-re, hogy elkezdj egy másolattal.",
+        "saved": "Mentve!",
+        "saveRoutingConfiguration": "Útválasztási Konfiguráció Mentése"
+      },
+      "targetModels": {
+        "heading": "Célmodellek",
+        "hint": "Definiálja azon modellek készletét, amelyeket az Szabályzatok szűrnek és választanak ki. Opcionális kérések útmutatást adnak az AI Router-nek, hogy mikor válassza az egyes modelleket.",
+        "endpointModel": "Végpont Modell",
+        "selectModel": "Modell kiválasztása",
+        "promptDefinition": "Kérés Meghatározása",
+        "promptPlaceholder": "Írja le pontosan, mikor és miért válassza az útválasztó ezt a modellt...",
+        "intents": "Szándékok",
+        "removeTarget": "Célmodell eltávolítása",
+        "empty": "Nincsenek konfigurált célmodellek.",
+        "addTarget": "Célmodell Hozzáadása"
+      }
+    },
+    "optimizer": {
+      "title": "Optimalizálók",
+      "description": "Az Optimalizálók csökkentik az bemeneti tokeneket, mielőtt a kérések az szolgáltatóhoz érkeznek. Ezek felülről lefelé sorban futnak. Használjon egy megosztott optimalizáló profilt, vagy határozza meg az útválasztó saját csővezetékét.",
+      "noPermission": "Nincsenek engedélyei az optimalizálók megtekintéséhez.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Egyéni"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimalizáló Profil",
+        "builtinLabel": "{{label}} (beépített)",
+        "hint": "A lépések a profilból jönnek, és követik az módosításait. Szerkeszd őket a Profilok oldalon, vagy váltson Egyéni-re, hogy elkezdj egy másolattal.",
+        "disabledSuffix": "(letiltva)",
+        "thresholdSuffix": ", küszöb {{threshold}}"
+      },
+      "customHint": "Húzza az átrendezésáshez, kapcsolja be az engedélyezésásához. Egyes optimalizálók küszöbértéket használnak az irányít csökkentésének irányításásához.",
+      "saveButton": "Optimalizálók Mentése",
+      "saving": "Mentés...",
+      "saved": "Mentve",
+      "preview": {
+        "title": "Kérés megtakarítások előnézete",
+        "description": "Futtassa az aktuális (mentetlen) csővezetéket az kérésen keresztül, hogy megtudja, mit távolít el minden lépés, és mennyibe kerül. Válasszon az egyik mintakonverzáció közül, vagy írjon be az saját kérést.",
+        "promptLabel": "Kérés",
+        "promptAriaLabel": "Az előnézet kérése",
+        "typePromptOption": "Írjon be egy kérést alább",
+        "fixturesHint": "A Routerly-vel szállított mintakonverzációk. Routerly nem rögzít valós kéréseket.",
+        "modelLabel": "Modell",
+        "modelAriaLabel": "Az előnézet modellje",
+        "modelWithContext": "{{id}} ({{k}}k kontextus)",
+        "noModelOption": "Nincs modell",
+        "modelHint": "Az olyan lépések, amelyek az kontextusablakhoz illeszkednek, ismerniük kell, melyik ablak. Nélküle azok kihagyódnak, pontosan olyan, mint egy olyan kérésnél, amely egy modellt nevez, amelyre a Routerly-nek nincs ablaka.",
+        "sampleAriaLabel": "Minta kérés",
+        "samplePlaceholder": "Illesszen be egy minta felhasználói üzenetet...",
+        "runButton": "Futtatás Előnézete",
+        "running": "Futtatás...",
+        "before": "Előtt",
+        "after": "Után",
+        "saved": "Mentve",
+        "columns": {
+          "optimizer": "Optimalizáló",
+          "before": "Előtt",
+          "after": "Után",
+          "saved": "Mentve"
+        },
+        "rolledBackNote": "visszagörgetett: a módosítás nem biztonságosnak lett elutasítva",
+        "skippedNote": "kihagyva: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Az módosítás ez a lépés nem volt visszagörgetett, így az kérés az következő lépéshez érintetlen.",
+          "skipped": "Ez a lépés nem futott: {{reason}}",
+          "unchanged": "Ez a lépés az kérést változatlannak hagyta."
+        }
+      },
+      "errors": {
+        "assignFailed": "Nem sikerült az optimalizáló profil hozzárendelése",
+        "saveFailed": "Hiba az optimalizálók mentésénél",
+        "previewFailed": "Hiba az előnézet futtatásánál",
+        "noProfileAvailable": "Nincsenek elérhető optimalizáló profilok. Hozzon létre egyet a Profilok oldalon."
+      }
+    },
+    "token": {
+      "newButton": "Új Token",
+      "empty": "Nincsenek API tokenek. Hozzon létre egyet az kérések hitelesítésének elkezdéséhez.",
+      "budgetOverrides": "Költségvetés Felülírások",
+      "created": "Létrehozva",
+      "lastUsed": "Utolsó használat",
+      "expires": "Lejár",
+      "never": "Soha",
+      "editTitle": "Konfiguráció Szerkesztése",
+      "revokeTitle": "Token Visszavonása",
+      "revokeConfirm": "Vissza az kell vonnia a \"{{snippet}}...\" tokent? Az alkalmazások, amelyek használják, azonnal leállnak.",
+      "labelInput": {
+        "placeholder": "Keressen vagy hozzon létre egy címkét…",
+        "createPrefix": "Létrehozás",
+        "noMatches": "Nincsenek egyeztetett címkék."
+      },
+      "errors": {
+        "deleteFailed": "Hiba az token törlésénél"
+      },
+      "create": {
+        "backToTokens": "Vissza a tokenekhez",
+        "title": "Új API Token",
+        "subtitle": "Az teljes token csak a létrehozás után egy alkalommal jelenik meg – tárold biztonságosan.",
+        "tokenCreated": "A token sikeresen létrejött. Másolja most – nem lesz újra megjelenítve.",
+        "copied": "Másolva!",
+        "copy": "Másolás",
+        "done": "Kész",
+        "optional": "nem kötelező",
+        "labels": "Címkék",
+        "labelsHint": "Címkézze ezt a tokent, hogy azonosítsa, hol használódik (pl. \"termelés\", \"ci\").",
+        "scopes": "Hatáskörök",
+        "scopesHint": "Szabad formátumú hatáskörök csatolt az token (pl. \"köteg\", \"belső\"), a token-nál tárolt az saját nyilvántartásáshoz.",
+        "tags": "Címkék",
+        "tagsHint": "Kulcs-érték metaadatok az használat rekordokra továbbított (pl. env=termelés).",
+        "keyPlaceholder": "kulcs",
+        "valuePlaceholder": "érték",
+        "createButton": "Token Létrehozása",
+        "cancel": "Mégse",
+        "copyFailed": "A másolás sikertelen – válassza ki és másolja a tokent manuálisan.",
+        "errors": {
+          "createFailed": "Hiba az token létrehozásánál"
+        }
+      },
+      "edit": {
+        "title": "Token Szerkesztése",
+        "subtitle": "Frissítse a címkéket és a modellenkénti korlát felülírásokat ehhez az tokenhez.",
+        "token": "Token",
+        "labels": "Címkék",
+        "perModelLimits": "Modellenkénti korlátok",
+        "perModelLimitsHint": "Felülírja az globális és útválasztó-szintű korlátokat az token használó kérések számára.",
+        "noTargetModels": "Adjon hozzá célmodelleket az Útválasztás lapon először.",
+        "noOverride": "nincs felülírás",
+        "noLimits": "Nincsenek korlátok",
+        "noLimitsSet": "Nincsenek beállított korlátok – szülőjétől öröklődik. Adjon hozzá egy korlátot az alábbiakban a felülírásásához.",
+        "metric": "Metrika",
+        "type": "Típus",
+        "periodLabel": "Időszak",
+        "every": "Minden",
+        "maxCost": "Maximális ($)",
+        "maxCalls": "Maximális (n.)",
+        "maxTokens": "Maximális (tokenek)",
+        "allCombosSet": "Az összes metrika/időszak kombináció már be van állítva",
+        "addLimit": "Korlát hozzáadása",
+        "windowType": {
+          "period": "Időszak",
+          "rolling": "Gördülő"
+        },
+        "limitMetric": {
+          "cost": "Költség (USD)",
+          "calls": "Kérések",
+          "input_tokens": "Bemeneti tokenek",
+          "output_tokens": "Kimeneti tokenek",
+          "total_tokens": "Összes token"
+        },
+        "period": {
+          "hourly": "Óránként",
+          "daily": "Naponta",
+          "weekly": "Hetente",
+          "monthly": "Havonta",
+          "yearly": "Évente"
+        },
+        "rollingUnit": {
+          "second": "másodperc",
+          "minute": "perc",
+          "hour": "óra",
+          "day": "nap",
+          "week": "hét",
+          "month": "hónap"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} be-tok",
+          "outputTokens": "{{value}} ki-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / minden {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Hiba az token mentésénél"
+        }
+      }
+    },
+    "users": {
+      "title": "Útválasztó Tagok",
+      "description": "Kezelje az azokat a felhasználókat, akik hozzáférnek az routerhez.",
+      "addButton": "Tag Hozzáadása",
+      "addNewTitle": "Új Tag Hozzáadása",
+      "selectUserPlaceholder": "Válasszon egy felhasználót...",
+      "addConfirmButton": "Hozzáadás",
+      "cancelButton": "Mégse",
+      "empty": "Nincsenek tagok.",
+      "removeConfirm": "Biztos, hogy eltávolítja ezt a tagot?",
+      "saveTitle": "Módosítások Mentése",
+      "changeRoleTitle": "Szerepkör Módosítása",
+      "removeTitle": "Tag Eltávolítása",
+      "roles": {
+        "viewer": "Nézegető",
+        "editor": "Szerkesztő",
+        "admin": "Adminisztrátor"
+      },
+      "columns": {
+        "user": "Felhasználó",
+        "role": "Szerepkör",
+        "actions": "Műveletek"
+      },
+      "errors": {
+        "loadFailed": "Az felhasználók betöltése sikertelen",
+        "addFailed": "Hiba a tag hozzáadásánál",
+        "updateFailed": "Hiba a tag frissítésénél",
+        "removeFailed": "Hiba a tag eltávolításánál"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Ki"
+      },
+      "autoRefreshOff": "Automatikus frissítés letiltva",
+      "autoRefreshEvery": "Automatikus frissítés minden {{interval}}",
+      "lastUpdated": "utolsó frissítés: {{time}}",
+      "refresh": "Frissítés",
+      "refreshNowTitle": "Frissítés most",
+      "refreshNowButton": "↻ Most",
+      "filters": {
+        "period": "Időszak",
+        "model": "Modell",
+        "allModels": "Az összes modell",
+        "type": "Típus",
+        "all": "Összes",
+        "completion": "Befejezés",
+        "router": "Útválasztó",
+        "status": "Állapot",
+        "success": "Siker",
+        "blocked": "Letiltva",
+        "error": "Hiba",
+        "resetButton": "Szűrők Visszaállítása"
+      },
+      "stats": {
+        "totalCost": "Összköltség",
+        "totalCalls": "Összes Hívás",
+        "completionCalls": "Befejezési Hívások",
+        "routerCalls": "Útválasztó Hívások",
+        "errors": "Hibák"
+      },
+      "requestLogs": "Kérés Naplók",
+      "emptyNoRequests": "Nincsenek kérések az útválasztóhoz a kijelölt időszakban.",
+      "emptyNoMatches": "Nincsenek rekordok az aktív szűrőkhöz.",
+      "columns": {
+        "time": "Idő",
+        "model": "Modell",
+        "type": "Típus",
+        "in": "Be",
+        "out": "Ki",
+        "cost": "Költség",
+        "latency": "Latentu",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/mp",
+        "status": "Állapot"
+      },
+      "typeRouter": "útválasztó",
+      "typeCompletion": "befejezés",
+      "pagination": {
+        "previous": "← Előző",
+        "next": "Következő →",
+        "pageOf": "{{page}}. oldal / {{totalPages}}",
+        "totalRecords": "({{count}} összes rekord)"
+      }
+    },
+    "security": {
+      "title": "Biztonság",
+      "description": "Használjon egy megosztott biztonsági profilt, vagy határozza meg az útválasztó saját őrtornyait és PII szabályzatait.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Egyéni"
+      },
+      "profileSelect": {
+        "ariaLabel": "Biztonsági Profil",
+        "builtinLabel": "{{label}} (beépített)",
+        "hint": "Az Őrtornyok és PII szabályzatok a profilból jönnek, és követik az módosításait. Szerkeszd őket a Profilok oldalon, vagy váltson Egyéni-re, hogy elkezdj egy másolattal.",
+        "blockingSuffix": ", letiltás",
+        "disabledSuffix": ", letiltva",
+        "piiRedaction": "PII kitakarítás ({{target}})"
+      },
+      "saveButton": "Biztonsági Beállítások Mentése",
+      "saved": "Mentve!",
+      "errors": {
+        "assignFailed": "Nem sikerült a biztonsági profil hozzárendelése",
+        "saveFailed": "Hiba a biztonsági beállítások mentésénél",
+        "noProfileAvailable": "Nincsenek elérhető biztonsági profilok. Hozzon létre egyet a Profilok oldalon."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Ön egy hasznos AI asszisztens.",
+      "errors": {
+        "unknown": "Ismeretlen hiba történt",
+        "onlyImages": "Csak képcsatolmányok támogatottak jelenleg a látás modelleknél."
+      },
+      "title": "Teszt Chat",
+      "subtitle": "Teszt lekérdezéseket küldjön az útválasztási átjárón keresztül.",
+      "routerToken": "Útválasztó Token:",
+      "hideToken": "Token Elrejtése",
+      "showToken": "Token Megjelenítése",
+      "recognizedToken": "Felismert Token",
+      "unrecognizedToken": "Felismeretlenagyobb Token",
+      "noMessages": "Nincs üzenet.",
+      "enterTokenHint": "Adjon meg egy Útválasztó Token alábbi egy üzenet elküldéséhez.",
+      "typeMessageHint": "Írjon be egy üzenetet alább az tesztelés kezdéséhez.",
+      "reasoning": "Érvelés",
+      "attachedAlt": "Melléklet",
+      "attachmentAlt": "Melléklet",
+      "attachImage": "Kép mellékletése",
+      "typeMessagePlaceholder": "Írjon be egy üzenetet...",
+      "stopGeneration": "Generálás Leállítása",
+      "sendEnter": "Küldés (Enter)",
+      "debugLog": "Hibakereső Napló",
+      "clear": "Törlés",
+      "noRequestSent": "Még nem küldött kérés.",
+      "turnTraceLog": "#{{turn}} fordulat nyom naplójában · {{count}} esemény",
+      "turnTraceLog_other": "#{{turn}} fordulat nyom naplójában · {{count}} esemény"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Kapcsolatok",
+      "subtitle": "Szolgáltató fiókok az modell forgatások futtatásához",
+      "noPermission": "Nincsenek engedélyei az kapcsolatok megtekintéséhez.",
+      "count": "{{count}} kapcsolat",
+      "count_other": "{{count}} kapcsolat",
+      "addConnection": "Kapcsolat Hozzáadása",
+      "empty": "Nincsenek kapcsolatok. Adjon hozzá egyet az kezdéshez.",
+      "deleteConfirm": "\"{{label}}\" kapcsolat eltávolítása? Az hozzá kötött esetek leállnak.",
+      "errors": {
+        "loadFailed": "A kapcsolatok betöltése sikertelen",
+        "deleteFailed": "A kapcsolat törlése sikertelen"
+      },
+      "columns": {
+        "label": "Címke",
+        "provider": "Szolgáltató",
+        "endpoint": "Végpont",
+        "status": "Állapot"
+      },
+      "status": {
+        "enabled": "Engedélyezve",
+        "disabled": "Letiltva"
+      },
+      "actions": {
+        "models": "Modellek",
+        "edit": "Szerkesztés",
+        "remove": "Eltávolítás"
+      }
+    },
+    "form": {
+      "backToConnections": "Vissza a Kapcsolatokhoz",
+      "editTitle": "Kapcsolat Szerkesztése",
+      "addTitle": "Kapcsolat Hozzáadása",
+      "enabled": "Engedélyezve",
+      "editSubtitle": "Frissítse a szolgáltató fiók beállításait",
+      "addSubtitle": "Regisztráljon egy új szolgáltató fiókot",
+      "sectionTitle": "Kapcsolat részletes",
+      "sectionDesc": "Szolgáltató fiók, hitelesítő adatok és végpont a kérések végrehajtásához.",
+      "provider": "Szolgáltató",
+      "groups": {
+        "directApi": "Közvetlen API",
+        "cloudPlatform": "Felhő Platform",
+        "subscription": "Előfizetés",
+        "browserSession": "Böngésző munkamenet",
+        "selfHosted": "Saját üzemeltetés"
+      },
+      "upstreamProvider": {
+        "label": "Szolgáltató",
+        "hintLabel": "(felsőbb szintű szolgáltató név)",
+        "placeholder": "pl. deepseek, mistral, groq",
+        "description": "Az szolgáltatás neve, amelyhez az végpont tartozik. Az ezen a kapcsolaton modellek az az azonosítójaként az ID előtagjukat használják (pl. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Név",
+        "hint": "Az ezen a kapcsolaton érinthető mindenütt, így egyedinek kell lennie. Hagyja üresen az <code>{{suggested}}</code> használatásához."
+      },
+      "credentialsBlankHint": "Hagyja üresen az hitelesítő adatok mezőit az meglévő megtartásához.",
+      "save": "Mentés",
+      "create": "Létrehozás",
+      "cancel": "Mégse",
+      "oauth": {
+        "unknown": "ismeretlen",
+        "accountExpires": "Fiók: {{account}} – lejár {{expires}}",
+        "unknownError": "Ismeretlen hiba"
+      },
+      "errors": {
+        "notFound": "Kapcsolat nem található",
+        "loadFailed": "A kapcsolat betöltése sikertelen",
+        "updateFailed": "A kapcsolat frissítése sikertelen",
+        "createFailed": "A kapcsolat létrehozása sikertelen"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Vissza a Modellekhez",
+      "title": "Modell Felfedezés",
+      "subtitle": "Böngésszen az elérhető modelleket és adja hozzá az útválasztási konfigurációhoz",
+      "count": "{{count}} modellek",
+      "filteredCount": "{{filtered}} / {{count}}",
+      "free": "ingyenes",
+      "add": "Hozzáadás",
+      "addAgain": "Újra Hozzáadás",
+      "loadFailed": "A katalógus betöltése sikertelen: {{error}}",
+      "filters": {
+        "search": "Keresés",
+        "searchPlaceholder": "Modell azonosítója vagy neve…",
+        "provider": "Szolgáltató",
+        "allProviders": "Az összes szolgáltató",
+        "context": "Kontextus",
+        "ctxOptions": {
+          "all": "Összes",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Ár / 1M",
+        "priceOptions": {
+          "all": "Összes",
+          "free": "Ingyenes",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Mutatás",
+        "configured": "Konfigurálva",
+        "embedding": "Beágyazás",
+        "resetFilters": "Szűrők Visszaállítása"
+      },
+      "empty": {
+        "noMatches": "Nincsenek modellek az szűrőkhöz."
+      },
+      "columns": {
+        "model": "Modell",
+        "provider": "Szolgáltató",
+        "context": "Kontextus",
+        "input": "Bemenet / 1M",
+        "output": "Kimenet / 1M"
+      },
+      "badges": {
+        "configured": "Konfigurálva",
+        "embedding": "beágyazás",
+        "runsLocally": "Helyileg fut"
+      },
+      "pagination": {
+        "prev": "Előz",
+        "next": "Követ",
+        "range": "{{start}}–{{end}} / {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Vissza a Modellekhez",
+      "title": {
+        "add": "Modell Hozzáadása",
+        "edit": "Modell Szerkesztése",
+        "clone": "Modell Klónozása"
+      },
+      "subtitle": {
+        "add": "Regisztráljon egy új LLM szolgáltató modellt",
+        "edit": "Az {{id}} konfigurációjának módosítása",
+        "clone": "Az {{id}}-ből klónozás – egy új azonosító hozzárendeléséhez"
+      },
+      "errors": {
+        "modelNotFound": "Modell nem található",
+        "sourceModelNotFound": "Forrásmodell nem található",
+        "loadFailed": "Hiba a modellek betöltésénél",
+        "idRequired": "Modell azonosítója szükséges",
+        "duplicateId": "A \"{{id}}\" modell már létezik – állítson be egy másik Egyéni Azonosítót",
+        "selectConnection": "Válasszon egy kapcsolatot",
+        "saveFailed": "Hiba"
+      },
+      "badge": {
+        "yes": "igen",
+        "no": "nem",
+        "override": "Felülírás",
+        "auto": "Automatikus",
+        "default": "Alapértelmezett: {{value}}",
+        "reset": "Visszaállítás"
+      },
+      "oauth": {
+        "unknownExpiry": "ismeretlen",
+        "accountOk": "Fiók: {{account}} – lejár {{expires}}",
+        "unknownError": "Ismeretlen hiba"
+      },
+      "identification": {
+        "title": "Modell Azonosítás",
+        "description": "Egyedi azonosító és szolgáltató beállításai az modell konfigurációnak.",
+        "routerlyId": "Routerly Azonosítója",
+        "routerlyIdHintPre": "(opcionális – alapértelmezett:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Az azonosító az Routerly API hívásoknál az adott modell referenciájánál.",
+        "provider": "Szolgáltató",
+        "upstreamProviderHint": "(felsőbb szintű szolgáltató név)",
+        "upstreamProviderPlaceholder": "pl. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Az Routerly azonosítójában az prefix alkalmazott (pl.",
+        "upstreamProviderDescPost": ").",
+        "model": "Modell",
+        "upstreamModelHint": "(felsőbb szintű modell azonosítója)",
+        "upstreamModelPlaceholder": "pl. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Az felsőbb szintű API-végpontra küldendő modell azonosítója.",
+        "modelPreset": "Modell Előbeállítás",
+        "customModelOption": "– egyéni modell nevet –",
+        "customModelPlaceholder": "pl. a-fine-tuned-modell"
+      },
+      "connection": {
+        "title": "Kapcsolat részleti",
+        "description": "API végpont és a kérések végrehajtásához szükséges hitelesítő adatok.",
+        "preconfigured": "Előkonfigurálva",
+        "custom": "Egyéni",
+        "connection": "Kapcsolat",
+        "selectPlaceholder": "– egy kapcsolat kiválasztása –",
+        "noneAvailable": "Nincsenek előkonfigurálva kapcsolatok az szolgáltatóhoz. Váltson Egyéni-re, vagy hozzon létre egyet a Kapcsolatok oldalon.",
+        "editHint": "Az kapcsolat szerkesztésénél később az hozzá kötött minden modell frissül."
+      },
+      "capabilities": {
+        "title": "Képességek",
+        "description": "Adja meg az típus és képességeket az modell.",
+        "embeddingModel": "Beágyazási modell",
+        "embeddingModelHint": "Az modell vektorbeágyazásokat hoz létre (nem csevegésemé befejezéseket)"
+      },
+      "pricing": {
+        "title": "Ár és kontextus",
+        "description": "A költségparaméterek és feldolgozási korlátok az számlázásásához és útválasztásásához.",
+        "inputPerMillion": "Bemenet $/1M",
+        "outputPerMillion": "Kimenet $/1M",
+        "cachePerMillion": "Gyorsítótár olvasás $/1M",
+        "cacheWritePerMillion": "Gyorsítótár írás $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "Kontextus Ablak",
+        "contextWindowHint": "(tokenek, nem kötelező)"
+      },
+      "tiers": {
+        "title": "Fejlett – Ár szintek",
+        "description": "Felülírja az ár amikor az metrika túllépett egy küszöbértéket. Például: \"A 200 000 kontextus tokenek felett az árak megváltoznak.\"",
+        "removeTier": "Szint eltávolítása",
+        "above": "Fölött",
+        "metric": "Metrika",
+        "metricContextTokens": "Kontextus tokenek",
+        "overridePricing": "Ár felülírása",
+        "addTier": "Ár szint hozzáadása"
+      },
+      "limits": {
+        "title": "Korlátok",
+        "description": "Használat korlátozások az modellben. Az több szabályok összeírható.",
+        "metric": "Metrika",
+        "type": "Típus",
+        "addLimit": "Korlát hozzáadása"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max előfizetés)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro előfizetés)"
+      },
+      "saveChanges": "Módosítások Mentése",
+      "createClone": "Klón Létrehozása",
+      "createModel": "Modell Létrehozása"
+    },
+    "page": {
+      "title": "Modellek",
+      "subtitle": "Az Routerly-vel regisztrált LLM szolgáltatók",
+      "tabs": {
+        "models": "Modellek",
+        "health": "Egészség"
+      },
+      "toolbar": {
+        "count": "{{count}} modell",
+        "count_other": "{{count}} modell",
+        "filteredCount": "{{filtered}} / {{count}} modell",
+        "filteredCount_other": "{{filtered}} / {{count}} modell"
+      },
+      "filters": {
+        "allProviders": "Az összes szolgáltató",
+        "allConnections": "Az összes kapcsolat",
+        "searchPlaceholder": "Modellek szűrése…"
+      },
+      "discover": "Felfedezés",
+      "addModel": "Modell Hozzáadása",
+      "deleteConfirm": "\"{{id}}\" modell eltávolítása?",
+      "empty": {
+        "noModels": "Nincsenek modellek. Adjon hozzá egyet az kezdéshez.",
+        "noMatches": "Nincsenek modellek az aktív szűrőkhöz."
+      },
+      "columns": {
+        "id": "Azonosítója",
+        "provider": "Szolgáltató",
+        "endpoint": "Végpont",
+        "input": "Bemenet $/1M",
+        "output": "Kimenet $/1M",
+        "cache": "Gyorsítótár $/1M",
+        "context": "Kontextus Méret"
+      },
+      "actions": {
+        "test": "Teszt",
+        "clone": "Klón",
+        "edit": "Szerkesztés",
+        "remove": "Eltávolítás"
+      },
+      "pagination": {
+        "previous": "← Előző",
+        "next": "Következő →",
+        "pageOf": "{{page}}. oldal / {{totalPages}}",
+        "total": "({{count}} modell)",
+        "total_other": "({{count}} modell)"
+      },
+      "health": {
+        "emptyNoModels": "Nincsenek konfigurált modellek.",
+        "emptyNoMatches": "Nincsenek modellek az szűrőhöz.",
+        "resetAll": "Az összes Visszaállítása",
+        "resetAllTitle": "Az összes áramkör szakadás, lehűlési idő és zárolás visszaállítása",
+        "resetTitle": "Áramkör szakadás Visszaállítása",
+        "confirmResetModel": "Az \"{{id}}\" modell áramkör szakadásánek visszaállítása?",
+        "confirmResetAll": "Az összes rugalmasság állapotának visszaállítása? Ez törli az összes áramkör szakadást, lehűlési időt és zárolást.",
+        "errors": {
+          "resetModelFailed": "Az áramkör szakadás visszaállítása sikertelen",
+          "resetAllFailed": "Az rugalmasság állapotának visszaállítása sikertelen"
+        },
+        "columns": {
+          "model": "Modell",
+          "provider": "Szolgáltató",
+          "status": "Állapot",
+          "circuit": "Áramkör",
+          "errorRate": "Hibaarány (5m)",
+          "p95Latency": "P95 latentu (1h)",
+          "requests": "Kérések (1h)",
+          "lastSuccess": "Utolsó siker",
+          "cooldownLockout": "Lehűlési idő / zárolás"
+        },
+        "status": {
+          "healthy": "Egészséges",
+          "degraded": "Csökkent",
+          "unavailable": "Nem érhető el",
+          "cooldown": "Lehűlési idő",
+          "nodata": "Nincsenek adatok"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Helyreállítás",
+          "tripped": "Aktiválva"
+        },
+        "time": {
+          "never": "soha",
+          "now": "most",
+          "secondsAgo": "{{count}}mp ezelőtt",
+          "minutesAgo": "{{count}}p ezelőtt",
+          "hoursAgo": "{{count}}ó ezelőtt",
+          "daysAgo": "{{count}}n ezelőtt",
+          "minSec": "{{min}}p {{sec}}mp",
+          "sec": "{{sec}}mp",
+          "cooldown": "lehűlési idő {{time}}",
+          "lockout": "zárolás {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Kísérletek",
+      "subtitle": "A/B teszt útválasztókat egymás ellen",
+      "noPermission": "Nincsenek engedélyei a kísérletek megtekintéséhez.",
+      "count": "{{count}} kísérlet",
+      "count_other": "{{count}} kísérlet",
+      "newExperiment": "Új Kísérlet",
+      "empty": "Nincsenek kísérletek. Hozzon létre egyet az útválasztókat közvetlenül összehasonlításásához.",
+      "deleteConfirm": "\"{{name}}\" kísérlet törlése? Ez nem vonható vissza.",
+      "noToken": "Nincs token",
+      "noTokenTitle": "Token nélkül nincs kliensz képes elérni az kísérlet",
+      "errors": {
+        "loadFailed": "A kísérletek betöltése sikertelen",
+        "deleteFailed": "A kísérlet törlése sikertelen"
+      },
+      "columns": {
+        "name": "Név",
+        "variants": "Változatok",
+        "rotation": "Forgás",
+        "created": "Létrehozva"
+      },
+      "actions": {
+        "edit": "Kísérlet Szerkesztése",
+        "remove": "Törlés"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Vissza a Kísérletekhez",
+      "newExperiment": "Új Kísérlet",
+      "loading": "Betöltés...",
+      "experimentId": "Kísérlet Azonosítója:",
+      "disabledTabTitle": "Mentse az kísérlet először az ezen fül feloldásásához",
+      "errors": {
+        "notFound": "A kísérlet nem található"
+      },
+      "tabs": {
+        "config": "Konfiguráció",
+        "metrics": "Metrikák",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Mentve.",
+      "created": "Kísérlet létrehozva. Mutasson az kliensét az token helyett az útválasztó token helyett. Nem lesz újra megjelenítve.",
+      "copy": "Másolás",
+      "copied": "Másolva!",
+      "done": "Kész",
+      "saving": "Mentés...",
+      "create": "Kísérlet Létrehozása",
+      "save": "Módosítások Mentése",
+      "cancel": "Mégse",
+      "trafficSplit": "Forgalom felosztása",
+      "errors": {
+        "loadRoutersFailed": "Az útválasztók betöltése sikertelen",
+        "saveFailed": "A kísérlet mentése sikertelen",
+        "copyFailed": "Másolás sikertelen: válassza ki és másolja a tokent manuálisan."
+      },
+      "fields": {
+        "name": "Név",
+        "namePlaceholder": "Olcsó vs prémium útválasztás",
+        "description": "Leírás",
+        "optional": "(nem kötelező)",
+        "descriptionPlaceholder": "Mit szándékozik az teszt lezárni",
+        "minSamples": "Minimális hívások egy változatra",
+        "minSamplesHint": "Az alatt a Metrikák fül az összehasonlítást nem még meggyőző gyanúként jelöli meg.",
+        "rotation": "Forgás",
+        "stickyOn": "Ragadós az",
+        "stickyKey": "Ragadós kulcs"
+      },
+      "variants": {
+        "title": "Változatok",
+        "desc": "Minden változat egy meglévő útválasztó, teljes: az modellek, útválasztás és őrtornyok egyaránt alkalmazzanak. Az teszt legalább kettőt szükséges.",
+        "routerAriaLabel": "{{index}}. változat útválasztó",
+        "routerPlaceholder": "Útválasztó kiválasztása",
+        "labelAriaLabel": "{{index}}. változat címke",
+        "labelPlaceholder": "Címke (nem kötelező)",
+        "weightAriaLabel": "{{index}}. változat súly",
+        "weightPlaceholder": "Súly",
+        "removeTitle": "{{index}}. változat eltávolítása",
+        "add": "Változat Hozzáadása"
+      },
+      "judge": {
+        "title": "Bíró",
+        "desc": "Opcionális: egy modell az minden mintavételezett választ 0-10-re értékeli az kritériumaihoz. Az minden értékelt hívás egy további modellhívás, a más számlázva.",
+        "enable": "Pontszám az válaszokat egy bíró modellel",
+        "model": "Bíró modell",
+        "modelPlaceholder": "Modell kiválasztása",
+        "criteria": "Kritériumok",
+        "criteriaPlaceholder": "Az soronként, pl.\nMegválaszolja az kérdést\nMegmarad az ténylegesnek\nMegmarad az a kért formátumot",
+        "sampleRate": "Az hívások értékelt részesedése (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Betöltés...",
+      "callsMeasured": "{{count}} hívás mérve",
+      "callsMeasured_other": "{{count}} hívás mérve",
+      "empty": "Ebben az ablakban még nincsenek hívások. Mutasson az kliensét az kísérlet tokenját az összehasonlítás megkezdéséhez.",
+      "notConclusive": "Még nem meggyőző: minden változatnak szükséges legalább {{minSamples}} hívások az ablakban. ",
+      "explanation": "Az minden pár jobb száma kiemelve: olcsóbb soronként, gyorsabban, magasabb bíró pontszám. Az szám alatt lévő százalék az távolsága az legjobb kar. Az bíró pontszám az kísérlet egész életéből futó átlag, így az az egy adat az ablak nem szűk.",
+      "lowSample": "Alacsony minta",
+      "lowSampleTitle": "Alatt {{minSamples}} hívások az ablakban",
+      "judgedCallsTitle": "{{count}} válasz értékelt az bíró az kísérlet megkezdése óta",
+      "judgedCallsTitle_other": "{{count}} válasz értékelt az bíró az kísérlet megkezdése óta",
+      "errors": {
+        "loadFailed": "A metrikák betöltése sikertelen"
+      },
+      "columns": {
+        "variant": "Változat",
+        "calls": "Hívások",
+        "share": "Részesedés",
+        "errors": "Hibák",
+        "tokens": "Tokenek be / ki",
+        "cost": "Költség",
+        "costPerCall": "Költség / hívás",
+        "avgLatency": "Átl. latentu",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Bíró pontszám"
+      }
+    },
+    "token": {
+      "desc": "Az kliensz az kísérlet pontosan mint az útválasztó: ugyanaz az alapvető URL, az token helyett az útválasztó token. Az minden kérés az egy változatra és az hozzá van számlázva az változat útválasztó.",
+      "baseUrlLabel": "Alapvető URL az OpenAI vagy Anthropic SDK, az kísérlet token mint az API kulcs:",
+      "created": "Token létrehozva. Másolja most, nem lesz újra megjelenítve.",
+      "copy": "Másolás",
+      "copied": "Másolva!",
+      "newToken": "Új Token",
+      "empty": "Nincsenek tokenek az kísérlet. Hozzon létre egyet az kliensz képes lehessen azt hívni.",
+      "revokeConfirm": "Vissza az kell vonnia a \"{{snippet}}...\" tokent? Az azt használó kliensz azonnal leállnak.",
+      "revokeTitle": "Token Visszavonása",
+      "errors": {
+        "createFailed": "A token létrehozása sikertelen",
+        "revokeFailed": "A token visszavonása sikertelen",
+        "copyFailed": "Másolás sikertelen: válassza ki és másolja a tokent manuálisan."
+      },
+      "columns": {
+        "created": "Létrehozva",
+        "lastUsed": "Utolsó használat"
+      }
+    }
+  },
+  "overview": {
+    "title": "Áttekintés",
+    "subtitle": "Használat összefoglalóa és költség bontás",
+    "noPermission": "Nincsenek engedélyei az használat adatok megtekintéséhez.",
+    "costByModel": "Költség Model Szerint",
+    "noCostRecorded": "Nincsenek rögzített költségek az ebben az időszakban.",
+    "callsByModel": "Hívások Model Szerint",
+    "columns": {
+      "model": "Modell",
+      "calls": "Hívások",
+      "errors": "Hibák",
+      "cost": "Költség"
+    },
+    "stats": {
+      "totalCalls": "Összes Hívás",
+      "callsBreakdown": "{{routing}} útválasztás · {{completion}} befejezés",
+      "successRate": "Sikeres Arány",
+      "ofAllRequests": "az összes kérésből",
+      "errors": "Hibák",
+      "failedRequests": "sikertelen kérés",
+      "models": "Modellek",
+      "registered": "regisztrált",
+      "routers": "Útválasztók",
+      "active": "aktív"
+    },
+    "connectCard": {
+      "title": "Kliens Csatlakoztatása",
+      "desc": "Mutasson Claude Code, Codex, Cursor és {{count}} több az ez az átjáró."
+    }
+  },
+  "login": {
+    "emailLabel": "E-mail",
+    "passwordLabel": "Jelszó",
+    "signIn": "Bejelentkezés",
+    "errors": {
+      "loginFailed": "A bejelentkezés sikertelen",
+      "totpFailed": "A 2FA ellenőrzés sikertelen"
+    },
+    "totp": {
+      "title": "Kétfaktoros Hitelesítés",
+      "backupPrompt": "Adjon meg egy biztonsági kódot.",
+      "appPrompt": "Adja meg a 6 jegyű kódot az hitelesítő alkalmazásból.",
+      "backupCodeLabel": "Biztonsági Kód",
+      "authenticatorCodeLabel": "Hitelesítő Kód",
+      "verify": "Ellenőrzés",
+      "useAuthenticatorInstead": "Használjon helyette hitelesítő alkalmazást",
+      "useBackupInstead": "Helyette biztonsági kódot használ"
+    }
+  },
+  "setup": {
+    "welcome": "Üdvözöljük! Kezdjük az beállítással.",
+    "welcomeSubtitle": "Hozzon létre az első admin fiókot az Routerly kezelésének megkezdéséhez.",
+    "betaBadge": "🚧 Béta",
+    "betaNotice": "Az Routerly aktívan fejlődik. Hibák előfordulhatnak.",
+    "betaFeedback": "Az visszajelzés segít alakítani az lesz –",
+    "betaLink": "jelentsük az hibákat vagy ossza meg az ötleteket",
+    "emailLabel": "Admin E-mail",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Jelszó",
+    "passwordPlaceholder": "Minimum 8 karakter",
+    "confirmLabel": "Jelszó Megerősítése",
+    "confirmPlaceholder": "Adja meg újra az jelszót",
+    "submit": "Admin Fiók Létrehozása",
+    "errors": {
+      "mismatch": "Az jelszavak nem egyeznek",
+      "tooShort": "Az jelszó legalább 8 karakter hosszúnak kell lennie",
+      "setupFailed": "Az beállítás sikertelen"
+    }
+  },
+  "audit": {
+    "empty": "Nincsenek auditnaplózás bejegyzések.",
+    "errors": {
+      "loadFailed": "Az auditnaplózás betöltése sikertelen"
+    },
+    "filters": {
+      "period": "Időszak",
+      "user": "Felhasználó",
+      "userPlaceholder": "E-mail vagy felhasználó azonosítója",
+      "action": "Művelet",
+      "actionPlaceholder": "pl. model:create",
+      "result": "Eredmény",
+      "results": {
+        "all": "Összes",
+        "success": "Siker",
+        "forbidden": "Tiltott",
+        "error": "Hiba"
+      },
+      "refresh": "Frissítés"
+    },
+    "columns": {
+      "timestamp": "Időbélyeg",
+      "user": "Felhasználó",
+      "action": "Művelet",
+      "endpoint": "Végpont",
+      "result": "Eredmény",
+      "details": "Részletek"
+    },
+    "pagination": {
+      "previous": "Előző",
+      "next": "Következő",
+      "page": "{{page}}. oldal / {{totalPages}}",
+      "total": "({{count}} összes)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Használat",
+      "live": "ÉLŐ",
+      "subtitle": "Részletes hívás naplók és modellenkénti bontás",
+      "updatedAt": "· frissítve: {{time}}",
+      "poll": {
+        "off": "Ki",
+        "5s": "5mp",
+        "15s": "15mp",
+        "30s": "30mp",
+        "1m": "1p",
+        "5m": "5p"
+      },
+      "liveButton": "● Élő",
+      "liveButtonTitle": {
+        "disable": "Élő mód letiltása",
+        "enable": "Élő mód engedélyezése (frissítés minden 2mp-ben)"
+      },
+      "refreshNow": "↻ Most",
+      "refreshNowTitle": "Frissítés most",
+      "filters": {
+        "period": "Időszak",
+        "router": "Útválasztó",
+        "model": "Modell",
+        "token": "Token",
+        "caller": "Hívó",
+        "type": "Típus",
+        "status": "Állapot",
+        "allRouters": "Az Összes Útválasztó",
+        "allModels": "Az Összes Modell",
+        "allTokens": "Az Összes Token",
+        "resetFilters": "Szűrők Visszaállítása",
+        "all": "Összes",
+        "success": "Siker",
+        "blocked": "Letiltva",
+        "error": "Hiba"
+      },
+      "caller": {
+        "all": "Összes",
+        "completion": "Befejezés",
+        "routing": "Útválasztó",
+        "guardrail": "Örtorny",
+        "judge": "Bíró"
+      },
+      "callerBadge": {
+        "completion": "befejezés",
+        "routing": "útválasztó",
+        "guardrail": "örtorny",
+        "judge": "bíró"
+      },
+      "errors": {
+        "loadFailedPrefix": "A használat adatok betöltése sikertelen:",
+        "retry": "Újrapróbálkozás"
+      },
+      "stats": {
+        "totalCalls": "Összes Hívás",
+        "completionCalls": "Befejezési Hívások",
+        "routerCalls": "Útválasztó Hívások",
+        "guardrailCalls": "Örtorny Hívások",
+        "blockedCalls": "Letiltott Hívások",
+        "errors": "Hibák"
+      },
+      "table": {
+        "rank": "Rang",
+        "model": "Modell",
+        "provider": "Szolgáltató",
+        "calls": "Hívások",
+        "errors": "Hibák",
+        "successRate": "Sikeres arány",
+        "avgLatency": "Átl. latentu",
+        "p95Latency": "P95 latentu",
+        "inputTokens": "Bemeneti tokenek",
+        "outputTokens": "Kimeneti tokenek",
+        "costPer1k": "Költség / 1K",
+        "cost": "Költség (USD)",
+        "bestCostPerformance": "Legjobb költség-teljesítmény"
+      },
+      "showMoreModels": "Az {{count}} további modell megjelenítése",
+      "showMoreModels_other": "Az {{count}} további modell megjelenítése",
+      "showFewerModels": "Kevesebbet mutat modellek",
+      "recentCalls": {
+        "title": "Közelmúlt Hívások",
+        "empty": "Nincsenek használat rekordok az időszakban.",
+        "columns": {
+          "time": "Idő",
+          "router": "Útválasztó",
+          "model": "Modell",
+          "type": "Típus",
+          "caller": "Hívó",
+          "in": "Be",
+          "out": "Ki",
+          "cost": "Költség",
+          "latency": "Latentu",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/mp",
+          "status": "Állapot"
+        }
+      },
+      "pagination": {
+        "previous": "Előző",
+        "next": "Következő",
+        "pageOf": "{{page}}. oldal / {{totalPages}}",
+        "totalRecords": "({{count}} összes rekord)"
+      }
+    },
+    "record": {
+      "back": "Vissza",
+      "title": "Hívás Részlete",
+      "notFoundTitle": "Rekord Nem Található",
+      "notFoundBody": "A {{id}} használat rekord nem lehetett betölteni.",
+      "errors": {
+        "loadFailed": "A rekord betöltése sikertelen"
+      },
+      "sections": {
+        "identity": "Identitás",
+        "tokensAndCost": "Tokenek és Költség",
+        "performanceAndOutcome": "Teljesítmény és Eredmény",
+        "traceLog": "Nyom Napló"
+      },
+      "fields": {
+        "recordId": "Rekord Azonosítója",
+        "router": "Útválasztó",
+        "token": "Token",
+        "model": "Modell",
+        "callType": "Hívás Típusa",
+        "requestType": "Kérés Típusa",
+        "inputTokens": "Bemeneti Tokenek",
+        "outputTokens": "Kimeneti Tokenek",
+        "totalTokens": "Összes Token",
+        "costUsd": "Költség (USD)",
+        "costUnknown": "Ismeretlen",
+        "latency": "Latentu",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/mp",
+        "outcome": "Eredmény",
+        "timestamp": "Időbélyeg",
+        "guardrailTriggered": "Örtorny Aktiválódott",
+        "blockedBy": "Letiltva",
+        "piiRedacted": "PII Kitakarítva"
+      },
+      "errorMessage": "Hibaüzenet",
+      "eventCount": "{{count}} esemény",
+      "eventCount_other": "{{count}} esemény",
+      "noTrace": "Nincs elérhető nyom. A nyom adatok az új hívások rögzítésre kerülnek."
+    }
+  },
+  "playground": {
+    "title": "Tesztkörnyezet",
+    "subtitle": "Tesztelje az modellek, hasonlítson össze válaszokat, és mentse az kérés előbeállításait.",
+    "mode": {
+      "single": "Egyetlen",
+      "compare": "Összehasonlítás"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "ugyanaz mint A",
+      "unknownToken": "Ismeretlen token"
+    },
+    "presets": {
+      "button": "Előbeállítások",
+      "panelTitle": "Előbeállítások",
+      "saveCurrent": "Aktuális Mentése",
+      "namePlaceholder": "Előbeállítás név...",
+      "save": "Mentés",
+      "empty": "Nincsenek előbeállítások.",
+      "delete": "Előbeállítás törlése"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming nem érhető el",
+      "bannerBody": "az útválasztónak van egy válaszletiltó örtorny aktív. Az Routerly az teljes válaszát meg kell vizsgálnia az szállítás előtt, ezért a válaszok egyszerre érkezzenek.",
+      "tooltip": "Streaming nem érhető el: egy válaszletiltó örtorny az teljes válaszát meg kell vizsgálnia az szállítás előtt.",
+      "ariaLabel": "Streaming nem érhető el"
+    },
+    "systemPrompt": "Rendszer üzenete",
+    "model": "Modell",
+    "modelPlaceholder": "Automatikus (útválasztó alapértelmezett)",
+    "params": {
+      "temp": "Hőmérséklet",
+      "maxTokens": "Maximális tokenek",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Törlés",
+    "empty": {
+      "noMessages": "Nincsenek üzenetek.",
+      "enterToken": "Adjon meg egy Útválasztó Token alábbi az kezdéshez."
+    },
+    "reasoning": "Érvelés",
+    "blockedDefault": "Az üzenetet az örtorny letiltotta.",
+    "truncated": "Csonkított – válasz az maximális tokenek által levágva",
+    "bufferedNote": "Biztonsági felülvizsgálatra tartva",
+    "errors": {
+      "onlyImages": "Csak képcsatolmányok támogatottak."
+    },
+    "rawToggle": {
+      "rendered": "megjelenített",
+      "raw": "nyers"
+    },
+    "inputPlaceholder": "Írjon be egy üzenetet...",
+    "attachImage": "Kép mellékletése",
+    "attachedImageAlt": "Mellékelt",
+    "attachmentAlt": "Melléklet",
+    "debug": {
+      "title": "Hibakereső",
+      "clear": "Törlés",
+      "hide": "Hibakereső Elrejtése",
+      "show": "Hibakereső Megjelenítése",
+      "empty": "Még nincs hibakereső adat.",
+      "emptyHint": "Küldjön egy üzenetet az útválasztási részletek megtekintéséhez.",
+      "turnTraceLog": "#{{turn}} fordulat nyom naplójában"
+    },
+    "compare": {
+      "modelLabel": "Modell {{label}}:",
+      "modelSelectPlaceholder": "Modell kiválasztása...",
+      "noMessages": "Nincsenek üzenetek.",
+      "debugTurns": "Hibakereső ({{count}} fordulat)",
+      "debugTurns_other": "Hibakereső ({{count}} fordulat)",
+      "guardrailTokensTitle": "Örtorny bíró tokenek",
+      "stop": "Leállítás",
+      "inputPlaceholder": "Küldje az ugyanezt az üzenetet mindkét modellnek..."
+    }
+  },
+  "help": {
+    "title": "Segítség és Támogatás",
+    "subtitle": "Mi itt segítünk – keressen választ vagy lépjen kapcsolatba bármikor.",
+    "docs": {
+      "title": "Dokumentáció",
+      "subtitle": "Útmutatók, API referencia és beállítási dokumentációk",
+      "body": "Az hivatalos dokumentáció lefedi az mindent az kezdéstől az fejlett útválasztási szabályzatig, a szolgáltató beállítástól, költségvetéstől, és a teljes API referenciáig.",
+      "openLink": "Dokumentáció Megnyitása"
+    },
+    "issues": {
+      "title": "Jelentsünk egy hibát vagy javasoljunk egy funkciót",
+      "subtitle": "Nyissa meg a GitHub problémát – 2 perc vesz igénybe",
+      "body": "Az GitHub problémák az legjobb módja a hibák jelentésésének vagy az fejlesztések javaslatásának. Az hibaelhárítás felgyorsítása érdekében adja meg: mit csinált, mit várt, hogy történik, és mi történt.",
+      "showTemplate": "Probléma Sablon Megjelenítése",
+      "reportBug": "Hiba Jelentése",
+      "requestFeature": "Funkció Kérése"
+    },
+    "issueTemplate": {
+      "whatHappened": "Mi történt?",
+      "whatHappenedHint": "Írja le az problémát egyszerű szavakkal",
+      "stepsToReproduce": "A Lépések Az Reprodukálásásához",
+      "expectedBehaviour": "Várt Viselkedés",
+      "expectedBehaviourHint": "Mit várt, hogy látni",
+      "version": "Routerly Verzió",
+      "versionHint": "Futtassa az `routerly --version` vagy ellenőrizze az Beállítások → Névjegy"
+    },
+    "email": {
+      "title": "Kapcsolatfelvétel az támogatás",
+      "subtitle": "Minden üzenetet olvasunk és a lehető leghamarabb válaszolunk",
+      "body": "Bármit az nem fér meg az GitHub problémát – számlázási kérdések, privát aggodalmak, vagy ha csak szeretne mondani halló – küldjön nekünk üzenetet."
+    },
+    "faq": {
+      "title": "Gyakori kérdések",
+      "subtitle": "Gyors válaszok az leggyakoribb kérdésekre",
+      "items": {
+        "connect": {
+          "q": "Hogyan csatlakoztatom az alkalmazásom az Routerly-hez?",
+          "a": "Mutasson az OpenAI vagy Anthropic SDK-t az Routerly-re. Cserélje ki az alapvető URL-t az http://your-host:3000/v1 (OpenAI-kompatibilis) vagy http://your-host:3000/anthropic (Anthropic-kompatibilis), majd használjon egy útválasztó tokent az API kulcsként. Ez az összes – nincs más módosítás szükséges."
+        },
+        "openaiCompat": {
+          "q": "Kompatibilis-e az Routerly az OpenAI SDK-t használó eszközökkel?",
+          "a": "Igen. Az Routerly egy drop-in helyettesítő: bármely eszköz az támogatja az egyéni alapvető URL és API kulcsot (LangChain, LlamaIndex, Cursor, Continue, stb.) működik az dobozból. Az Anthropic-formátum kliensekhez helyette az /anthropic végpontot használja."
+        },
+        "routing": {
+          "q": "Hogyan működik az modell útválasztás?",
+          "a": "Minden útválasztó rendelkezik az útválasztási szabályzattal az meghatározza, mely modell kapjon egy kérést. Az szabályzatok közé tartozik az körforgás, legalacsonyabb költség, leggyorsabb válasz, tartalék láncok, és további. Konfigurálhatja ezek az útválasztó alatt az Útválasztók → Útválasztás."
+        },
+        "addModel": {
+          "q": "Hogyan adok hozzá egy új AI modellt?",
+          "a": "Menjen az Modellek → Modell hozzáadása. Hozzáadhat bármely OpenAI-kompatibilis szolgáltatót (Ollama, LM Studio, egyéni végpontok) vagy az natív Anthropic végpontot. Töltse ki az alapvető URL, az API kulcs és az modell azonosítóját – az Routerly az többit kezeli."
+        },
+        "dataStored": {
+          "q": "Van az adatok tárolódik? Az kérések naplózódnak?",
+          "a": "Az Routerly önálló üzemeltetésű, és az adatok csak az az számítógépen tárolódnak (alapértelmezés szerint ~/.routerly/ az). Az kérések és válaszok soha nem kerülnek az Routerly által. Az kérés naplók helyileg tárolódnak és csak az megadja az útválasztó per."
+        },
+        "routerToken": {
+          "q": "Mi az útválasztó token, és miben különbözik az szolgáltató API kulcstól?",
+          "a": "Az útválasztó token az hitelesítő adat az adjon az alkalmazásnak vagy az csapattagoknak az Routerly-vel való hitelesítésáshez. Ez külön van az az szolgáltató API kulcsai, az Routerly biztonságosan tárol az szerveroldali. Az alkalmazások soha nem látnak az igazi szolgáltató kulcsokat."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} felhasználó",
+    "countLabel_other": "{{count}} felhasználó",
+    "addButton": "Felhasználó Hozzáadása",
+    "columns": {
+      "email": "E-mail",
+      "role": "Szerepkör",
+      "routers": "Útválasztók"
+    },
+    "allRouters": "Összes",
+    "resetTwoFaTitle": "2FA Visszaállítása",
+    "resetTwoFaConfirm": "{{email}} 2FA-nak visszaállítása? Az szükséges az újra-regisztrálásához.",
+    "deleteConfirm": "Törölje az felhasználót?",
+    "emptyTitle": "Nincsenek felhasználók.",
+    "noPermission": "Nincsenek engedélyei az felhasználók megtekintéséhez.",
+    "modal": {
+      "title": "Felhasználó Hozzáadása",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Jelszó",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Szerepkör",
+      "roleAdmin": "Adminisztrátor",
+      "roleViewer": "Nézegető",
+      "cancelButton": "Mégse",
+      "submitButton": "Felhasználó Hozzáadása"
+    },
+    "errors": {
+      "loadFailed": "Az felhasználók betöltése sikertelen",
+      "addFailed": "Hiba"
+    }
+  },
+  "userEdit": {
+    "title": "Felhasználó Szerkesztése",
+    "account": "Fiók",
+    "email": "E-mail",
+    "role": "Szerepkör",
+    "changePassword": "Jelszó Módosítása",
+    "newPassword": "Új Jelszó",
+    "newPasswordHint": "(hagyja üresen az meglévő megtartásához)",
+    "save": "Mentés",
+    "saved": "Mentve!",
+    "errors": {
+      "loadFailed": "Az felhasználó betöltése sikertelen",
+      "saveFailed": "A mentés sikertelen"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Kezelje az szerepköröket és az engedélyeket. A beépített szerepkörök nem módosíthatók.",
+    "newRole": "Új Szerepkör",
+    "builtin": "beépített",
+    "edit": "Szerkesztés",
+    "deleteConfirm": "Törölje az szerepkört? Az ezzel az szerepkörrel rendelkező felhasználók hatásnak vannak.",
+    "form": {
+      "id": "Azonosítója",
+      "idPlaceholder": "pl. operátor",
+      "name": "Név",
+      "namePlaceholder": "Szerepkör név",
+      "permissions": "Engedélyek",
+      "create": "Létrehozás",
+      "save": "Mentés",
+      "cancel": "Mégse"
+    },
+    "permissions": {
+      "routerRead": "Útválasztók – Olvasás",
+      "routerWrite": "Útválasztók – Írás",
+      "modelRead": "Modellek – Olvasás",
+      "modelWrite": "Modellek – Írás",
+      "userRead": "Felhasználók – Olvasás",
+      "userWrite": "Felhasználók – Írás",
+      "reportRead": "Jelentések – Olvasás",
+      "settingsRead": "Beállítások – Olvasás",
+      "settingsWrite": "Beállítások – Írás",
+      "notificationWrite": "Értesítések – Írás",
+      "tokenRead": "Tokenek – Olvasás",
+      "tokenWrite": "Tokenek – Írás",
+      "roleWrite": "Szerepkörök – Írás",
+      "auditRead": "Auditnaplózás – Olvasás",
+      "modulesRead": "Modulok – Olvasás",
+      "modulesManage": "Modulok – Kezelés",
+      "connectionsRead": "Kapcsolatok – Olvasás",
+      "connectionsManage": "Kapcsolatok – Kezelés",
+      "resilienceRead": "Rugalmasság – Olvasás",
+      "resilienceManage": "Rugalmasság – Kezelés",
+      "profilesRead": "Útválasztási Profilok – Olvasás",
+      "profilesManage": "Útválasztási Profilok – Kezelés",
+      "optimizersRead": "Optimalizálók – Olvasás",
+      "optimizersManage": "Optimalizálók – Kezelés",
+      "experimentsRead": "Kísérletek – Olvasás",
+      "experimentsManage": "Kísérletek – Kezelés"
+    },
+    "errors": {
+      "loadFailed": "Az szerepkörök betöltése sikertelen",
+      "updateFailed": "Az szerepkör frissítése sikertelen",
+      "createFailed": "Az szerepkör létrehozása sikertelen",
+      "deleteFailed": "Az szerepkör törlése sikertelen"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profilok",
+      "subtitle": "Az újrafelhasználható útválasztás, optimalizáló és biztonsági konfigurációk",
+      "noPermission": "Nincsenek engedélyei az profilok megtekintéséhez.",
+      "newProfile": "Új {{kind}} Profil",
+      "empty": "Nincsenek {{kind}} profilok.",
+      "builtin": "Beépített",
+      "custom": "Egyéni",
+      "view": "Nézet",
+      "edit": "Szerkesztés",
+      "clone": "Klón",
+      "delete": "Törlés",
+      "deleteConfirm": "\"{{label}}\" profil törlése? Ez nem vonható vissza.",
+      "kindDescriptions": {
+        "routing": "Mely modell válaszol az kérésre, és mi történik az nem tudom",
+        "optimizer": "Mit távolít el a kérésből mielőtt elküldi",
+        "security": "Az őrtornyok és PII szabályzatok alkalmazva az forgalomra"
+      },
+      "columns": {
+        "label": "Címke",
+        "type": "Típus",
+        "configuration": "Konfiguráció",
+        "version": "Verzió"
+      },
+      "errors": {
+        "loadFailed": "Az profilok betöltése sikertelen",
+        "deleteFailed": "Az profil törlése sikertelen"
+      }
+    },
+    "form": {
+      "backToProfiles": "Vissza az Profilokhoz",
+      "newProfileTitle": "Új {{kind}} Profil",
+      "editProfileTitle": "Az {{label}} Szerkesztése",
+      "builtinHint": "Az beépített profilok nem szerkeszthetők. Klónozzon egyet az testreszabásásához.",
+      "assignHint": "Az {{article}} {{kind}} profil tetszőleges számú útválasztóhoz hozzárendelhető.",
+      "noPermission": "Nincsenek engedélyei az profilok megtekintéséhez.",
+      "label": "Címke",
+      "optimizers": "Optimalizálók",
+      "optimizersHint": "Húzza az átrendezésásához, kapcsolja be az engedélyezésásához. Ezek felülről lefelé sorban futnak.",
+      "createProfile": "Profil Létrehozása",
+      "saveProfile": "Profil Mentése",
+      "cancel": "Mégse",
+      "copySuffix": "{{label}} másolat",
+      "labelPlaceholders": {
+        "routing": "pl. Saját Kiegyensúlyozott Útválasztás",
+        "optimizer": "pl. Saját Kérés Trimmer",
+        "security": "pl. Saját Szigorú Őrtornyok"
+      },
+      "errors": {
+        "notFound": "Profil nem található.",
+        "loadFailed": "Az profil betöltése sikertelen",
+        "saveFailed": "Az profil mentése sikertelen"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Vissza az Csatlakozáshoz",
+    "title": "Csatlakozás",
+    "docs": "Dokumentáció",
+    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
+    "noClientPrefix": "Nincs kliens nevű",
+    "errors": {
+      "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Leggyorsabb: egy parancs",
+      "description": "Futtassa azt az gépen, ahol az {{client}} telepítve van. Az {{configPath}} írja, az egy biztonsági másolatot tartva, az visszavonható."
+    },
+    "byHand": {
+      "titleAlt": "Vagy állítsa be az kézzel",
+      "titleUi": "Állítsa be az kézzel",
+      "titleConfigFile": "A konfigurációs fájl beállítása",
+      "setValuesIn": "Állítsa ezeket az értékeket az {{configPath}} fájlban.",
+      "putThisIn": "Helyezze ezt az",
+      "replaceToken": "Csere",
+      "withRouterToken": "az az útválasztó token:",
+      "createOne": "hozzon létre egyet",
+      "onRoutersPage": "az Útválasztók oldalon.",
+      "modelLabel": "Modell:",
+      "modelHint": "átadja az választást az Routerly-nek, bármely modell azonosítója az",
+      "modelsLink": "Modellek",
+      "worksToo": "működik is.",
+      "openaiCompatHint": "Az ugyanaz az alapvető URL, kulcs és modell illeszkedik az bármely kliens, amely kínál az \"OpenAI-kompatibilis\" szolgáltató."
+    },
+    "mcp": {
+      "title": "MCP szerver",
+      "description": "Külön az lépésektől fent: az az egy az {{client}} hívni az Routerly eszközöket. Az szükséges az személyes MCP token, az ütött",
+      "orFromYour": "vagy az az",
+      "profileLink": "profil"
+    },
+    "checkItWorked": {
+      "title": "Ellenőrizze, hogy működik",
+      "restart": "Indítsa újra az {{client}}, küldjön neki egy kérést, majd keresse meg az hívást az",
+      "usageLink": "Használat",
+      "cliReports": "Az ugyanaz az gépen, az CLI jelenti az mit talál:"
+    }
+  },
+  "connect": {
+    "title": "Csatlakozás",
+    "subtitle": "Mutasson egy AI kódolási kliens az az átjáróra. Válasszon egy klienst az beállítási lépések számára.",
+    "llmLabel": "LLM",
+    "llmDescription": "az kliens modell forgalmat irányít az Routerly-n keresztül.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "az Routerly betölt egy eszköz szerver az belsejében.",
+    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
+    "errors": {
+      "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Egy parancs",
+      "hint": "Az CLI írja az konfigurációs fájlt, az egy biztonsági másolattal, az visszavonható."
+    },
+    "byHand": {
+      "title": "Kézzel",
+      "hint": "Másolja az részletet az kliens oldalán az beállításaiba, majd indítsa újra."
+    },
+    "endpoint": {
+      "title": "Mutasson bármely kliens ide",
+      "description": "Bármit az az OpenAI vagy Anthropic SDK-n alapuló működik az alapvető URL és az kulcs módosításával. Semmi más az módosul: az kérések és az válaszok az Routerly-n keresztül az ők.",
+      "openaiBaseUrl": "OpenAI alapvető URL",
+      "anthropicBaseUrl": "Anthropic alapvető URL",
+      "apiKey": "API Kulcs",
+      "model": "Modell",
+      "apiKeyDescription": "Az útválasztó token, az elküldve",
+      "or": "vagy",
+      "createOne": "Hozzon létre egyet",
+      "onRoutersPage": "az Útválasztók oldalon.",
+      "modelDescription": "az lehetővé teszi az Routerly válasszon. Bármely modell azonosítója az",
+      "modelsLink": "Modellek",
+      "worksToo": "oldal működik is."
+    }
+  }
+}

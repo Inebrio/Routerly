@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Автоматично",
+      "dark": "Тъмна",
+      "light": "Светла"
+    },
+    "themeCycle": {
+      "title": "Тема: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Разгъване на страничната лента",
+      "collapse": "Свиване на страничната лента"
+    },
+    "tagline": "Един портал. Всеки AI модел. Пълен контрол.",
+    "nav": {
+      "overview": "Общ преглед",
+      "providers": "Доставчици",
+      "models": "Модели",
+      "profiles": "Профили",
+      "routers": "Рутери",
+      "experiments": "Експерименти",
+      "usage": "Използване",
+      "playground": "Тестова среда",
+      "settings": "Настройки",
+      "connectApp": "Свързване на приложение",
+      "help": "Помощ",
+      "signOut": "Изход"
+    },
+    "banner": {
+      "permissionWarning": "Някои конфигурационни файлове имат разрешителен достъп ({{files}}). Стартирането и заявките все още работят, но поправете това от файловата система на хоста, когато е удобно.",
+      "dismiss": "Отхвърляне",
+      "updateAvailable": "Наличен е Routerly v{{latest}}. Използвате v{{current}}.",
+      "updateLink": "Актуализация в Настройки",
+      "mfaRequired": "За тази инстанция е задължителна двуфакторна автентикация.",
+      "mfaLink": "Настройте 2FA във вашия профил",
+      "mfaSuffix": "за защита на профила ви.",
+      "telemetryTitle": "Routerly никога не изпраща данни автоматично.",
+      "telemetryBody": "Искате ли да помогнете, изпращайки анонимни метрики за инсталацията? Само тип на събитието, версия, платформа и произволен идентификатор — без лични данни, без IP.",
+      "telemetryLink": "Какво се изпраща?",
+      "telemetryYes": "Да, помагам",
+      "telemetryNo": "Не, благодаря"
+    },
+    "language": {
+      "label": "Език"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "преди {{count}} секунда",
+      "secondsAgo_other": "преди {{count}} секунди",
+      "minutesAgo": "преди {{count}} минута",
+      "minutesAgo_other": "преди {{count}} минути",
+      "hoursAgo": "преди {{count}} час",
+      "hoursAgo_other": "преди {{count}} часа",
+      "daysAgo": "преди {{count}} ден",
+      "daysAgo_other": "преди {{count}} дни"
+    },
+    "confirm": "Потвърждение",
+    "cancel": "Отказ",
+    "remove": "Премахване",
+    "select": "Избор...",
+    "search": "Търсене...",
+    "noResults": "Няма резултати",
+    "noRemainingOptions": "Няма останали опции",
+    "apply": "Прилагане",
+    "saved": "Запазено",
+    "showLess": "Показване на по-малко",
+    "roles": "Роли",
+    "permissions": "Права",
+    "notifications": {
+      "title": "Известия",
+      "markAllRead": "Маркиране на всички като прочетени",
+      "empty": "Няма известия",
+      "viewAll": "Преглед на всички известия"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Избор на период",
+      "recent": "Скорошни",
+      "ranges": "Диапазони",
+      "from": "От",
+      "to": "До"
+    },
+    "permissionGuard": {
+      "fixFailed": "Поправянето на правата не бе успешно",
+      "title": "Небезопасни права за достъп на файлове",
+      "defaultMessage": "Някои файлове имат небезопасни права за достъп.",
+      "fixing": "Поправяне…",
+      "fixNow": "Поправи сега"
+    },
+    "limitRows": {
+      "noLimits": "Няма зададени лимити.",
+      "metricLabel": "Метрика",
+      "typeLabel": "Тип",
+      "periodLabel": "Период",
+      "everyLabel": "На всеки",
+      "maxCost": "Макс. разход",
+      "maxCount": "Макс. брой",
+      "maxTokens": "Макс. токени",
+      "allCombosSet": "Всички комбинации метрика/период вече са зададени",
+      "addLimit": "Добавяне на лимит",
+      "metric": {
+        "cost": "Разход",
+        "calls": "Заявки",
+        "input_tokens": "Входни токени",
+        "output_tokens": "Изходни токени",
+        "total_tokens": "Общо токени"
+      },
+      "period": {
+        "hourly": "Часово",
+        "daily": "Дневно",
+        "weekly": "Седмично",
+        "monthly": "Месечно",
+        "yearly": "Годишно"
+      },
+      "rollingUnit": {
+        "second": "секунда",
+        "minute": "минута",
+        "hour": "час",
+        "day": "ден",
+        "week": "седмица",
+        "month": "месец"
+      },
+      "windowType": {
+        "period": "Период",
+        "rolling": "Плаващо"
+      },
+      "fmt": {
+        "requests": "{{value}} заявки",
+        "inputTokens": "{{value}} входни токени",
+        "outputTokens": "{{value}} изходни токени",
+        "totalTokens": "{{value}} общо токени",
+        "everyRolling": "{{metric}} на всеки {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} за {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Какво спести маршрутизирането",
+      "input": "Вход",
+      "output": "Изход",
+      "actual": "Реално",
+      "clientCalls": "{{count}} клиентска заявка",
+      "clientCalls_other": "{{count}} клиентски заявки",
+      "comparedAgainst": ", в сравнение с изпращането й към всеки от",
+      "comparedAgainst_other": ", в сравнение с изпращането им всички към всеки от",
+      "paidModelsInPlay": "{{count}} платен модел в игра",
+      "paidModelsInPlay_other": "{{count}} платени модела в игра",
+      "metricCost": "Разход",
+      "metricTokens": "Токени",
+      "totalCost": "Общ разход",
+      "routed": "Маршрутизирано: {{value}}",
+      "saved": "Спестено: {{value}}",
+      "usdThisPeriod": "USD за този период",
+      "savedVsAlways": "{{value}} спестени ({{percent}}%) спрямо винаги {{model}}",
+      "tokens": "Токени",
+      "in": "Вход: {{value}}",
+      "out": "Изход: {{value}}",
+      "tokenSubWithCache": "{{in}} вход · {{out}} изход · {{cached}} кеширани",
+      "tokenSub": "{{in}} вход · {{out}} изход",
+      "cutByOptimizers": "{{value}} намалени от оптимизаторите",
+      "fewerThanAlways": "{{value}} по-малко спрямо винаги {{model}}, приблизително"
+    },
+    "optimizerSteps": {
+      "downloaded": "Изтеглено",
+      "thisStepRunsOn": "Тази стъпка се изпълнява на",
+      "defaultCheckpoint": "Стандартна контролна точка"
+    },
+    "routingPolicies": {
+      "title": "Политики за маршрутизиране",
+      "subtitle": "Политиките определят как се маршрутизират заявките. Изпълняват се по ред отгоре надолу.",
+      "removePolicy": "Премахване на политика",
+      "removeIntent": "Премахване на намерение",
+      "removeExample": "Премахване на пример",
+      "routingModels": "Модели за маршрутизиране",
+      "embeddingModels": "Модели за вграждания",
+      "maxCompletionTokens": "Макс. токени на завършването",
+      "maxPromptChars": "Макс. символи на промпта",
+      "similarityThreshold": "Праг на сходство",
+      "previousMessages": "Предишни съобщения",
+      "intents": "Намерения",
+      "confidenceThreshold": "Праг на увереност",
+      "ambiguityMargin": "Марж на неяснота",
+      "maxCallsPerWindow": "Макс. заявки за прозорец",
+      "addFallbackModel": "Добавяне на резервен модел",
+      "autoRoutingLabel": "Автоматично маршрутизиране",
+      "autoRoutingHint": "Ако е активирано, трафикът се разпределя без персонализирани промптове. Ако е деактивирано, можете да пишете конкретни промптове, указващи на AI кога да избере всеки целеви модел.",
+      "additionalPromptInfoLabel": "Допълнителна информация за промпта",
+      "additionalPromptInfoPlaceholder": "Допълнителни инструкции, които да се включат в промпта за маршрутизиране...",
+      "addExamplePlaceholder": "Добавете пример и натиснете Enter…",
+      "addIntentPlaceholder": "Добавете намерение и натиснете Enter…",
+      "addPolicyPlaceholder": "Добавяне на политика...",
+      "labels": {
+        "llm": "Политика за AI маршрутизиране",
+        "rate-limit": "Политика за ограничение на честотата",
+        "budget-remaining": "Политика за остатъчен бюджет",
+        "semantic-intent": "Политика за семантично намерение",
+        "health": "Политика за здраве",
+        "context": "Политика за контекст",
+        "capability": "Политика за възможности",
+        "performance": "Политика за производителност",
+        "fairness": "Политика за справедливост",
+        "cheapest": "Политика за най-евтин",
+        "model-preference": "Политика за предпочитан модел"
+      },
+      "descriptions": {
+        "context": "Оценява моделите въз основа на наличния прозорец на контекста. Присвоява 0 на модели, чийто прозорец на контекста е по-малък от очакваната дължина на заявката, предотвратявайки грешки от отрязване.",
+        "cheapest": "Оценява моделите обратно пропорционално на цената им за токен. Най-евтиният модел получава 1.0, най-скъпият — 0.0, помагайки за намаляване на разходите за API във заявките.",
+        "health": "Оценява моделите въз основа на скорошния им процент грешки, използвайки експоненциално затихване (скорошните грешки тежат повече). Прилага прекъсвач, който задава оценка 0, когато претегленият процент грешки надвиши критичен праг.",
+        "performance": "Оценява моделите въз основа на скорошната им средна латентност, използвайки експоненциално затихване. Най-бързият модел получава 1.0, най-бавният — 0.0. Моделите без скорошни данни получават по подразбиране 1.0.",
+        "llm": "Използва AI модел за оценка на кандидатите въз основа на семантичното съдържание на заявката. Поддържа промптове с насоки за маршрутизиране за отделен модел и отчита останалия бюджет, когато са конфигурирани лимити.",
+        "capability": "Твърд филтър: присвоява 0 на модели, на които изрично липсва функция, изисквана от заявката (визия, извикване на функции, JSON режим). Моделите без изрично декларирани възможности не се санкционират.",
+        "rate-limit": "Санкционира модели с висока скорошна честота на заявките, за да намали риска от достигане на лимитите на доставчика (HTTP 429). Поддържа конфигурируем твърд праг, който задава оценката на 0.",
+        "fairness": "Разпределя равномерно трафика, санкционирайки модели, които са получили повече успешни заявки скоро. Действа като мек кръгов ротатор, за да предотврати концентрация на натоварването върху един модел.",
+        "budget-remaining": "Оценява моделите въз основа на останалия бюджетен резерв във всички конфигурирани лимити. Предпочита модели с повече запас, преди да достигнат праговете си, разпределяйки проактивно потреблението.",
+        "semantic-intent": "Класифицира заявката по семантично намерение чрез вграждания, след което ограничава пула от кандидати до моделите, картографирани към това намерение. Уверените съвпадения филтрират строго пула; неясните обединяват топ-2 пула; неизвестните заявки пропускат всички кандидати.",
+        "model-preference": "Когато клиентът поиска конкретен модел (не routerly/ada), присвоява конфигурируем бонус на този модел. Когато не е изразено предпочитание, политиката се въздържа. Позицията в списъка контролира колко тежи предпочитанието спрямо другите политики."
+      },
+      "selectModel": "Избор на модел"
+    },
+    "securityRules": {
+      "applyTo": "Прилагане към",
+      "streamingBufferSize": "Размер на буфера за поточно предаване (символи)",
+      "entityTypes": "Типове обекти",
+      "target": "Цел",
+      "embeddingModel": "Модел за вграждания",
+      "judgeModel": "Модел-съдия",
+      "contentGuardrails": "Ограничители на съдържание",
+      "piiPolicies": "Политики за лични данни",
+      "addSecurityPolicyPlaceholder": "Добавяне на политика за сигурност...",
+      "removePolicyTooltip": "Премахване на политика",
+      "deleteRuleAriaLabel": "Изтриване на правило",
+      "embeddingModelPlaceholder": "Избор на модел за вграждания...",
+      "fallbackModelsLabel": "Резервни модели (по избор, изпробват се по ред)",
+      "fallbackModelsPlaceholder": "Няма резервни модели...",
+      "exampleTextsLabel": "Примерни текстове за блокиране (по един на ред)",
+      "exampleTextsPlaceholder": "Как да хакна...\n...",
+      "similarityThresholdLabel": "Праг на сходство:",
+      "judgeModelPlaceholder": "Избор на модел-съдия...",
+      "allowedTopicsLabel": "Разрешени теми (на естествен език)",
+      "allowedTopicsPlaceholder": "Поддръжка на клиенти за софтуерни продукти. Техническо отстраняване на проблеми. Въпроси относно фактуриране.",
+      "onTopicThresholdLabel": "Блокиране, ако оценката за релевантност е под:",
+      "harmThresholdLabel": "Блокиране, ако оценката за вредност е над:",
+      "customInstructionsLabel": "Персонализирани инструкции",
+      "customInstructionsPlaceholder": "Вие сте класификатор за безопасност на съдържание. Оценете следния текст за вредно съдържание.\nКатегории: подбудителна реч, насилие, сексуално съдържание, самонараняване.\nОтговорете САМО с JSON обект: {\"score\": <число между 0 и 1>}",
+      "customInstructionsRequired": "Персонализираните инструкции са задължителни.",
+      "enabledLabel": "Активирано",
+      "contentGuardrailsHint": "Проверява заявки и отговори спрямо конфигурирани правила. Активно, когато е конфигурирано поне едно правило.",
+      "securityPoliciesHeading": "Политики за сигурност",
+      "noSecurityPolicies": "Няма конфигурирани политики за сигурност.",
+      "piiPoliciesHint": "Открива и редактира лични данни. Всяка политика е насочена към входа на заявката, отговора на модела или и двете, и контролира собствен набор от обекти.",
+      "noPiiPolicies": "Няма конфигурирани политики за лични данни.",
+      "addPolicyButton": "+ Добавяне на политика",
+      "injectionWarningTitle": "Заявката е модифицирана чрез инжекция",
+      "injectionWarningBody": "Едно или повече правила инжектират инструкцията си в системния промпт на изходящата заявка, така че съдържанието, изпратено до доставчика, е модифицирано. Не се прави допълнителен модел на извикване и нищо не се блокира; обслужващият модел сам изпълнява инструкцията.",
+      "streamingDisabledWarningTitle": "Поточното предаване е деактивирано за този рутер",
+      "streamingDisabledWarningBody": "Едно или повече правила са конфигурирани да блокират отговори (цел: отговор или и двете). Тъй като целият отговор трябва да бъде проверен, преди да се вземе решение за блокиране, Routerly задържа целия отговор, преди да го върне на клиента. Поточно предаване не е налично, докато е активно правило за блокиране на отговори; клиентите ще получат пълния отговор наведнъж, вместо на постепенни части."
+    },
+    "connectionFields": {
+      "azureResourceName": "Име на Azure ресурс",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Името на Azure OpenAI ресурса (от Azure portal).",
+      "deploymentId": "ID на разгръщането",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Името на разгръщането, което сте създали в Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Версия на API",
+      "azureApiVersionDefaultHint": "(по подразбиране: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS регион",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Оставете празно, за да запазите текущия",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Токен на сесията",
+      "awsSessionTokenOptionalHint": "(по избор, за временни идентификационни данни)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Router ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Местоположение",
+      "gcpLocationDefaultHint": "(по подразбиране: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Ключ на сервизен акаунт",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL на крайна точка",
+      "optional": "(по избор)",
+      "webProvider": {
+        "unofficialWarningTitle": "Неофициален доставчик — използвайте на свой риск.",
+        "unofficialWarningBody": "Тази интеграция разчита на недокументирано вътрешно API, което може да се промени или прекъсне без предупреждение. Може да нарушава Условията за ползване на доставчика и да доведе до спиране на акаунта.",
+        "accessTokenLabel": "Токен за достъп",
+        "sessionTokenLabel": "Токен на сесията",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Поставете стойността на бисквитката sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Докато сте влезли в ChatGPT, отворете <code>https://chatgpt.com/api/auth/session</code> в нов раздел. Копирайте стойността на полето <code>accessToken</code> (започва с <code>eyJ</code>). Токенът изтича на всеки ~24 часа. За надежден достъп попълнете и полето <strong>cf_clearance</strong> по-долу.",
+        "anthropicInstructions": "<strong>Как да получите ключа на сесията си:</strong> Докато сте влезли в Claude, отворете DevTools (F12) → Application → Cookies → <code>claude.ai</code> → копирайте стойността на бисквитката <code>sessionKey</code> (започва с <code>sk-ant-sid01-</code>). Ключът остава валиден, докато не излезете."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "OAuth токен за абонамент",
+        "authFilePathLabel": "Път до файла за удостоверяване",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (по подразбиране)",
+        "anthropicTitle": "Използвайте своя Claude Pro/Max абонамент.",
+        "anthropicRunCommandStep": "Изпълнете тази команда и копирайте изведения токен:",
+        "anthropicPasteTokenStep": "Поставете токена в полето <em>OAuth токен за абонамент</em> по-долу.",
+        "termsNote": "Регенерирайте, когато изтече. Използването на абонамент чрез шлюз може да противоречи на условията на доставчика.",
+        "openaiTitle": "Използвайте своя ChatGPT Plus/Pro абонамент през приложението Codex.",
+        "openaiLoginStep": "Влезте в настолното приложение Codex с вашия ChatGPT Plus/Pro акаунт.",
+        "openaiAutoRefreshStep": "Routerly чете токена ви за достъп от <code>~/.codex/auth.json</code> и го обновява автоматично. Не е нужно ръчно копиране/поставяне.",
+        "openaiAuthFilePathStep": "Оставете полето <em>Път до файла за удостоверяване</em> празно, за да използвате стандартния, или въведете персонализиран път, ако приложението Codex съхранява удостоверяването на друго място.",
+        "openaiTermsNote": "Използването на абонамент чрез шлюз може да противоречи на условията на доставчика."
+      },
+      "copyCode": {
+        "copiedTooltip": "Копирано!",
+        "copyTooltip": "Копиране в клипборда",
+        "copiedLabel": "Копирано",
+        "copyLabel": "Копиране"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Копиране",
+      "copiedLabel": "Копирано!",
+      "copyErrorHint": "Копирането е неуспешно, изберете и копирайте ръчно."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP клиент",
+      "hints": {
+        "claudeCode": "Изпълнете това веднъж, навсякъде. Claude Code съхранява сървъра в <code>~/.claude.json</code>.",
+        "claudeDesktop": "Поставете това в <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (на Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), след което рестартирайте приложението. То стартира CLI, така че <code>routerly</code> трябва да е в PATH.",
+        "codex": "Поставете това в <code>~/.codex/config.toml</code>. Codex чете токена от средата, така че го експортирайте в шела, от който стартирате Codex.",
+        "opencode": "Поставете това в <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Изпълнете това веднъж. OpenClaw по подразбиране използва sse транспорта, който Routerly не обслужва, така че транспортът е зададен изрично.",
+        "cursor": "Поставете това в <code>~/.cursor/mcp.json</code>, или в <code>.cursor/mcp.json</code>, за да го ограничите до един проект.",
+        "cline": "Поставете това в <code>~/.cline/mcp.json</code>, или го поставете в Configure MCP Servers в панела на Cline.",
+        "zed": "Поставете това в своя Zed <code>settings.json</code>, редом с всеки друг контекстен сървър."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Незапазени промени",
+      "message": "Имате незапазени промени. Ако излезете сега, промените ви ще бъдат загубени.",
+      "stay": "Остани",
+      "leaveAnyway": "Изход въпреки това"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Ограничители",
+        "pii": "Лични данни",
+        "optimizers": "Оптимизатори",
+        "routerOverhead": "Режийни разходи на рутера"
+      },
+      "policyType": {
+        "llm": "AI маршрутизиране",
+        "rateLimit": "Ограничение на честотата",
+        "budgetRemaining": "Остатъчен бюджет",
+        "semanticIntent": "Семантично намерение",
+        "modelPreference": "Предпочитан модел"
+      },
+      "rawDetails": "необработени данни",
+      "technicalDetails": "технически данни",
+      "systemPrompt": "системен промпт",
+      "responseText": "текст на отговора",
+      "responseJson": "JSON на отговора",
+      "cacheEmbeddingCall": "ЗАЯВКА ЗА КЕШИРАНО ВГРАЖДАНЕ",
+      "fallbackAttempt": "резервен опит №{{attempt}}",
+      "embeddingModel": "Модел за вграждания",
+      "upstreamModel": "Модел от доставчика",
+      "provider": "Доставчик",
+      "source": "Източник",
+      "endpoint": "Крайна точка",
+      "cacheHit": "ПОГОДЕНИЕ В КЕША",
+      "ttlExtended": "TTL удължен",
+      "model": "Модел",
+      "similarity": "Сходство",
+      "embedding": "Вграждане",
+      "cacheMiss": "НЕПОПАДЕНИЕ В КЕША",
+      "details": "детайли",
+      "excludedByLimits": "ИЗКЛЮЧЕН ОТ ЛИМИТИ",
+      "finalRanking": "КРАЙНО КЛАСИРАНЕ",
+      "noRankingData": "Няма данни за класирането (записът може да е повреден или от по-стара версия)",
+      "policyScores": "ОЦЕНКИ НА ПОЛИТИКИТЕ",
+      "weight": "тежест {{value}}",
+      "allScores": "всички оценки",
+      "noPolicyData": "Няма данни за политики (записът може да е повреден или от по-стара версия)",
+      "requestGuardrailBlocked": "ОГРАНИЧИТЕЛ НА ЗАЯВКАТА БЛОКИРА",
+      "requestGuardrailTriggered": "ОГРАНИЧИТЕЛ НА ЗАЯВКАТА СЕ АКТИВИРА",
+      "responseGuardrailBlocked": "ОГРАНИЧИТЕЛ НА ОТГОВОРА БЛОКИРА",
+      "responseGuardrailTriggered": "ОГРАНИЧИТЕЛ НА ОТГОВОРА СЕ АКТИВИРА",
+      "rule": "Правило",
+      "action": "Действие",
+      "guardrailsEvaluated": "ОЦЕНЕНИ ОГРАНИЧИТЕЛИ ({{target}})",
+      "ruleCount": "{{count}} правило",
+      "ruleCount_other": "{{count}} правила",
+      "promptInjection": "Инжекция в промпта",
+      "injects": "инжектира",
+      "judgeResponse": "Отговор на съдията",
+      "piiScrubbed": "ЛИЧНИТЕ ДАННИ ПОЧИСТЕНИ",
+      "piiScanned": "СКАНИРАНЕ ЗА ЛИЧНИ ДАННИ ({{target}})",
+      "policies": "политики",
+      "entityTypes": "типове обекти",
+      "customPatterns": "персонализирани шаблони",
+      "scanned": "сканирано",
+      "redacted": "редактирано",
+      "took": "отне",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "сканирани типове обекти",
+      "guardrailInjection": "ИНЖЕКЦИЯ НА ОГРАНИЧИТЕЛ",
+      "rules": "правила",
+      "chars": "символи",
+      "injectedText": "инжектиран текст",
+      "optimizer": "ОПТИМИЗАТОР {{id}}",
+      "tokens": "токени",
+      "saved": "спестено",
+      "tok": "{{value}} токена",
+      "reason": "причина",
+      "budgetBlocked": "БЮДЖЕТ БЛОКИРАН",
+      "budgetOk": "БЮДЖЕТ В РЕД",
+      "egressSent": "ИЗХОДЯЩО ИЗПРАТЕНО",
+      "status": "статус",
+      "encoding": "кодиране",
+      "frames": "кадри",
+      "bytes": "байтове"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Моят профил",
+      "subtitle": "Управление на настройките на профила ви"
+    },
+    "tabs": {
+      "profile": "Профил",
+      "notifications": "Известия",
+      "mcp": "MCP",
+      "preferences": "Предпочитания"
+    },
+    "notifications": {
+      "close": "Затваряне",
+      "refresh": "Обновяване",
+      "clear": "Изчистване",
+      "empty": "Няма намерени известия.",
+      "markAllRead": "Маркиране на всички като прочетени",
+      "allCaughtUp": "Всичко е прочетено",
+      "unreadCount": "{{count}} непрочетени",
+      "selectedCount": "{{count}} избрани",
+      "severity": {
+        "all": "Всички",
+        "info": "Информация",
+        "warning": "Предупреждение",
+        "critical": "Критично"
+      },
+      "status": {
+        "read": "Прочетено",
+        "unread": "Непрочетено"
+      },
+      "filters": {
+        "severity": "Сериозност",
+        "category": "Категория",
+        "event": "Събитие",
+        "date": "Дата",
+        "period": "Период",
+        "status": "Статус",
+        "all": "Всички",
+        "allCategories": "Всички категории",
+        "allEvents": "Всички събития",
+        "unreadOnly": "Само непрочетени"
+      },
+      "actions": {
+        "markRead": "Маркиране като прочетено",
+        "markUnread": "Маркиране като непрочетено",
+        "archive": "Архивиране"
+      },
+      "table": {
+        "severity": "Сериозност",
+        "event": "Събитие",
+        "date": "Дата",
+        "status": "Статус",
+        "selectAll": "Избор на всички",
+        "selectRow": "Избор на {{event}}",
+        "eventCount": "{{count}} събития"
+      },
+      "pagination": {
+        "previous": "← Предишна",
+        "next": "Следваща →",
+        "page": "Страница {{page}} от {{totalPages}}",
+        "total": "({{count}} общо)"
+      },
+      "detail": {
+        "ariaLabel": "Детайли за известието",
+        "details": "Детайли",
+        "noDetails": "Няма допълнителни детайли.",
+        "eventsInIncident": "Събития в този инцидент"
+      }
+    },
+    "security": {
+      "roleLabel": "Роля:",
+      "password": {
+        "heading": "Промяна на паролата",
+        "currentLabel": "Текуща парола",
+        "newLabel": "Нова парола",
+        "newPlaceholder": "Минимум 8 символа",
+        "confirmLabel": "Потвърдете новата парола",
+        "success": "Паролата е променена успешно.",
+        "saving": "Запазване...",
+        "submit": "Промяна на паролата",
+        "errors": {
+          "mismatch": "Паролите не съвпадат.",
+          "tooShort": "Новата парола трябва да е минимум 8 символа.",
+          "updateFailed": "Актуализирането е неуспешно"
+        }
+      },
+      "tfa": {
+        "heading": "Двуфакторна автентикация",
+        "notEnabled": "2FA не е активирана. Защитете акаунта си с еднократна парола, базирана на времето.",
+        "enableButton": "Активиране на двуфакторна автентикация",
+        "scanInstructions": "Сканирайте този QR код с приложението си за автентикация (Google Authenticator, Authy и др.), след което въведете 6-цифреният код за потвърждение.",
+        "qrAlt": "QR код за настройка на 2FA",
+        "addAccountInstructions": "Отворете приложението си за автентикация (Google Authenticator, Authy, 1Password и др.) и добавете нов акаунт:",
+        "setup": {
+          "step1": "Докоснете <strong>Add account</strong> или бутона <strong>+</strong>",
+          "step2": "Изберете <strong>Enter setup key</strong> (или сканирайте QR код на мобилно устройство)",
+          "step3": "Въведете тайния код, показан по-долу"
+        },
+        "mobileLink": "Докоснете тук на мобилно устройство, за да отворите приложението за автентикация",
+        "manualEntryLabel": "Таен код за ръчно въвеждане:",
+        "saveBackupCodes": "Запазете тези резервни кодове. Всеки може да се използва еднократно, ако загубите достъп до приложението за автентикация.",
+        "copyBackupCodes": "Копиране на резервните кодове",
+        "confirmCodeLabel": "Въведете код от приложението си за активиране",
+        "activate": "Активиране на 2FA",
+        "cancel": "Отказ",
+        "enabledBadge": "2FA е активирана",
+        "newBackupCodesLabel": "Нови резервни кодове (запазете ги сега):",
+        "copy": "Копиране",
+        "regenLabel": "Въведете код от приложението за автентикация, за да регенерирате резервните кодове",
+        "regenerate": "Регенериране",
+        "regenerateBackupCodes": "Регенериране на резервните кодове",
+        "disableLabel": "Деактивиране на 2FA (въведете код от приложението за автентикация)",
+        "disable": "Деактивиране на 2FA",
+        "errors": {
+          "setupFailed": "Настройката е неуспешна",
+          "confirmFailed": "Потвърждението е неуспешно",
+          "disableFailed": "Деактивирането е неуспешно",
+          "regenFailed": "Регенерирането е неуспешно"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Зареждането на MCP интерфейса е неуспешно",
+        "revokeFailed": "Отнемането на токена е неуспешно"
+      },
+      "revokeConfirm": "Отнемане на MCP токен „{{name}}“? Клиентите, които го използват, спират да работят веднага.",
+      "tokens": {
+        "heading": "MCP токени",
+        "newToken": "Нов токен",
+        "description": "Всеки токен действа като вас: излага точно инструментите, разрешени от вашата роля. Пълната стойност се показва еднократно, на страницата, която го създава.",
+        "empty": "Все още няма MCP токени. Създайте един, за да свържете MCP клиент.",
+        "created": "Създаден",
+        "lastUsed": "Последно използван",
+        "expires": "Изтича",
+        "never": "Никога",
+        "revokeTitle": "Отнемане на токен"
+      },
+      "tools": {
+        "heading": "Инструменти, изложени от вашите токени",
+        "empty": "Вашата роля не предоставя достъп до MCP инструменти. Поискайте от администратор нужните права.",
+        "table": {
+          "name": "Име",
+          "scope": "Обхват",
+          "description": "Описание",
+          "sourceModule": "Изходен модул",
+          "permission": "Право"
+        }
+      },
+      "connect": {
+        "heading": "Свързване на MCP клиент",
+        "descriptionPre": "Изберете клиента, който настройвате, след което заменете",
+        "descriptionPost": "с един от токените си. Създаването на токен показва същия фрагмент с вече вписаната стойност.",
+        "otherClient": "Всеки друг клиент",
+        "httpInstructionsPre": "През HTTP го насочете към тази крайна точка и се удостоверете с",
+        "httpInstructionsPost": ". Това е JSON-RPC 2.0 през Streamable HTTP.",
+        "stdioInstructionsPre": "През stdio, CLI-то го свързва и предава токена ви. Стартирате услугата директно вместо това? Задайте",
+        "stdioInstructionsAnd": "и",
+        "stdioInstructionsPost": "сами."
+      },
+      "newToken": {
+        "backToMcp": "Назад към MCP",
+        "title": "Нов MCP токен",
+        "subtitle": "Токенът действа като вас: излага точно инструментите, разрешени от вашата роля.",
+        "nameLabel": "Име",
+        "namePlaceholder": "лаптоп",
+        "nameHint": "Къде се използва този токен, например „лаптоп“ или „claude-desktop“.",
+        "expiryLabel": "Изтича на",
+        "expiryHint": "По избор. Оставете празно и токенът никога не изтича, докато не го отнемете.",
+        "createButton": "Създаване на токен",
+        "creatingButton": "Създаване…",
+        "cancelButton": "Отказ",
+        "tokenSection": {
+          "title": "Вашият токен",
+          "hint": "Копирайте го сега. Не се показва отново, а загубен токен може само да бъде заменен.",
+          "copyButton": "Копиране",
+          "copiedButton": "Копирано!",
+          "copyTitle": "Копиране на токена",
+          "copiedTitle": "Копирано!"
+        },
+        "connectSection": {
+          "title": "Свързване на клиент",
+          "hint": "Изберете клиента, който настройвате. Фрагментът вече съдържа този токен."
+        },
+        "bridgeSection": {
+          "title": "Или използвайте локалния мост",
+          "hint": "За клиент, който говори само stdio, CLI-то го свързва и предава токена ви."
+        },
+        "doneButton": "Готово",
+        "errors": {
+          "createFailed": "Създаването на токена е неуспешно",
+          "copyFailed": "Копирането е неуспешно, изберете и копирайте токена ръчно."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Език",
+      "description": "Изберете езика, на който се показва таблото.",
+      "languageLabel": "Език",
+      "saved": "Езиковото предпочитание е запазено."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Зареждането на настройките е неуспешно",
+        "loadFailedPeriod": "Зареждането на настройките е неуспешно.",
+        "saveFailed": "Запазването е неуспешно",
+        "saveSettingsFailed": "Запазването на настройките е неуспешно"
+      },
+      "savedSuccess": "Настройките са запазени успешно.",
+      "saving": "Запазване…",
+      "saveSettings": "Запазване на настройките",
+      "serverInfo": {
+        "heading": "Информация за сървъра",
+        "readOnly": "Само за преглед. Хостът и портът идват от средата или файла с настройки, не оттук.",
+        "reachableAt": "Достъпен на",
+        "reachableAtAny": "Достъпен на всеки от тези адреси",
+        "thisMachine": "Тази машина",
+        "network": "Мрежа",
+        "copyAddress": "Копиране на {{address}}",
+        "copied": "Копирано!",
+        "copy": "Копиране",
+        "hostAndPort": "Хост и порт",
+        "version": "Версия",
+        "uptime": "Време на работа"
+      },
+      "runtime": {
+        "heading": "Настройки на средата за изпълнение",
+        "logLevel": "Ниво на логовете",
+        "logLevelHint": "Управлява подробността на логовете на услугата.",
+        "publicUrl": "Публичен URL",
+        "publicUrlHint": "Базов URL, на който услугата е достъпна от външни клиенти (напр. <code>http://192.168.1.10:3000</code>). Използва се в секцията <strong>Как да се свържете</strong> на всеки рутер. Полезно, когато таблото работи на друга машина или порт различни от услугата.",
+        "usageRetention": "Съхранение на данните за използване",
+        "noLimit": "Без ограничение",
+        "maxAgeDays": "Макс. възраст (дни)",
+        "maxSizeMb": "Макс. размер (МБ)",
+        "retentionHint": "Историята на използване/фактуриране, по-стара от този брой дни, или надвишаваща този размер, се премахва от активния лог. Оставете двете полета празни за без ограничение на съхранението."
+      },
+      "internationalization": {
+        "heading": "Интернационализация",
+        "defaultLanguage": "Език по подразбиране",
+        "defaultLanguageHint": "Езикът на таблото за потребители, които не са избрали свой собствен. Не отменя личния избор на потребителя."
+      },
+      "telemetry": {
+        "heading": "Анонимни метрики",
+        "neverAutomatic": "Routerly никога не изпраща данни автоматично.",
+        "noChoice": "Все още не сте направили избор.",
+        "enabledStatus": "Анонимните метрики за инсталацията са активирани.",
+        "disabledStatus": "Анонимните метрики за инсталацията са деактивирани.",
+        "explanation": "Когато е активирано, Routerly изпраща само: тип на събитието (инсталация / обновление / премахване), версия, платформа и произволен идентификатор. Без лични данни, без данни за използване, без съхранен IP.",
+        "whatIsSent": "Какво се изпраща?",
+        "installId": "ID на инсталацията: {{id}}",
+        "saving": "Запазване…",
+        "enable": "Активиране",
+        "disable": "Деактивиране"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Табло (входяща кутия в приложението)",
+          "description": "Насочва събитията към входящата кутия в приложението"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Персонализиран пощенски сървър"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail чрез OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook обратна връзка"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams входящ webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Доставчик – Грешка",
+        "providerDegraded": "Доставчик – Влошено",
+        "providerRecovered": "Доставчик – Възстановен",
+        "providerRateLimited": "Доставчик – Ограничена честота",
+        "routingNoCandidates": "Маршрутизиране – Няма кандидати",
+        "routingFallbackUsed": "Маршрутизиране – Използван резервен вариант",
+        "authLoginFailed": "Автентикация – Неуспешно вписване",
+        "authTokenInvalid": "Автентикация – Невалиден токен",
+        "configModelAdded": "Конфигурация – Добавен модел",
+        "configModelDeleted": "Конфигурация – Изтрит модел",
+        "configRouterCreated": "Конфигурация – Създаден рутер",
+        "configRouterDeleted": "Конфигурация – Изтрит рутер",
+        "budgetThresholdReached": "Бюджет – Достигнат праг",
+        "budgetExceeded": "Бюджет – Надвишен",
+        "budgetReset": "Бюджет – Нулиран",
+        "systemStartup": "Система – Стартиране",
+        "systemShutdown": "Система – Спиране",
+        "systemUpdateAvailable": "Система – Налична актуализация"
+      },
+      "removeChannelTooltip": "Премахване на канал",
+      "removeChannelConfirm": "Премахване на канала?",
+      "formUpdatedHint": "Формата е актуализирана — запазете, за да приложите.",
+      "hmacSigningKeyPlaceholder": "HMAC ключ за подписване",
+      "perms": {
+        "routerRead": "Рутери – Преглед",
+        "routerWrite": "Рутери – Промяна",
+        "modelRead": "Модели – Преглед",
+        "modelWrite": "Модели – Промяна",
+        "userRead": "Потребители – Преглед",
+        "userWrite": "Потребители – Промяна",
+        "reportRead": "Отчети – Преглед",
+        "settingsRead": "Настройки – Преглед",
+        "settingsWrite": "Настройки – Промяна",
+        "notificationWrite": "Известия – Промяна",
+        "tokenRead": "Токени – Преглед",
+        "tokenWrite": "Токени – Промяна",
+        "roleWrite": "Роли – Промяна",
+        "auditRead": "Одитен лог – Преглед",
+        "modulesRead": "Модули – Преглед",
+        "modulesManage": "Модули – Управление",
+        "connectionsRead": "Връзки – Преглед",
+        "connectionsManage": "Връзки – Управление",
+        "resilienceRead": "Устойчивост – Преглед",
+        "resilienceManage": "Устойчивост – Управление",
+        "profilesRead": "Профили за маршрутизиране – Преглед",
+        "profilesManage": "Профили за маршрутизиране – Управление",
+        "optimizersRead": "Оптимизатори – Преглед",
+        "optimizersManage": "Оптимизатори – Управление",
+        "experimentsRead": "Експерименти – Преглед",
+        "experimentsManage": "Експерименти – Управление"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "За този тип канал целите не влияят на доставката (крайната точка е фиксирана). Те филтрират кои събития се записват в одитния дневник за получателя.",
+        "dashboard": "Целите контролират видимостта в входящата кутия — само съответстващите потребители ще виждат тези известия в приложението си.",
+        "email": "Целите определят кои потребители получават този имейл. Оставете всички празни, за да изпратите до всички потребители."
+      },
+      "summary": {
+        "allEvents": "Всички събития",
+        "eventCount": "{{count}} събитие",
+        "eventCount_other": "{{count}} събития",
+        "roleCount": "{{count}} роля",
+        "roleCount_other": "{{count}} роли",
+        "permCount": "{{count}} право",
+        "permCount_other": "{{count}} права",
+        "userCount": "{{count}} потребител",
+        "userCount_other": "{{count}} потребители",
+        "everyone": "Всички"
+      },
+      "errors": {
+        "loadFailed": "Зареждането е неуспешно"
+      },
+      "fields": {
+        "dashboardHint": "Насочва съответните събития към входящата кутия за известия в приложението. Не изисква идентификационни данни.",
+        "labels": {
+          "fromAddress": "Адрес на подателя",
+          "fromName": "Име на подателя",
+          "host": "Хост",
+          "port": "Порт",
+          "tls": "TLS/SSL",
+          "username": "Потребителско име",
+          "password": "Парола",
+          "awsRegion": "AWS регион",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API ключ",
+          "connectionString": "Низ за връзка",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "Метод",
+          "signingSecret": "Тайна за подписване",
+          "botToken": "Bot Token",
+          "channelId": "ID на канала",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "Ключ за интеграция"
+        },
+        "values": {
+          "enabled": "Активирано",
+          "disabled": "Деактивирано",
+          "configured": "Конфигурирано",
+          "notSet": "Не е зададено"
+        },
+        "optional": "(по избор)",
+        "keepCurrentPlaceholder": "Оставете празно, за да запазите текущата стойност",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Използване на TLS / SSL",
+        "smtpTlsOnHint": "(порт 465 — директен SSL)",
+        "smtpTlsOffHint": "(порт 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Оставете идентификационните данни празни, за да използвате IAM ролята на инстанцията.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC ключ за подписване",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-символен маршрутизиращ ключ",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Събития",
+          "eventsPlaceholder": "Всички събития (оставете празно за всички)",
+          "eventsHint": "Оставете празно за получаване на всички събития. Изберете конкретни събития за филтриране.",
+          "routersHeading": "Рутери",
+          "routersPlaceholder": "Всички рутери (оставете празно за всички)",
+          "routersHint": "Оставете празно за получаване на събития от всички рутери.",
+          "cooldownHeading": "Изчакване",
+          "cooldownSuffix": "секунди (0 = без изчакване)",
+          "cooldownHint": "Минимален интервал, преди този канал да може отново да се задейства за същото събитие."
+        },
+        "recipients": {
+          "heading": "Получатели / Цели",
+          "rolesLabel": "Роли",
+          "rolesPlaceholder": "Всички роли (всички)",
+          "permissionsLabel": "Права",
+          "permissionsPlaceholder": "Всички права (всички)",
+          "usersLabel": "Отделни потребители",
+          "usersPlaceholder": "Всички потребители (всички)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "връзка",
+          "routing": "маршрутизиране",
+          "recipients": "получатели"
+        },
+        "sections": {
+          "channelSettings": "Настройки на канала",
+          "eventsRouting": "Събития и маршрутизиране",
+          "recipients": "Получатели"
+        },
+        "nameLabel": "Име",
+        "namePlaceholder": "Етикет за този канал",
+        "cancelButton": "Отказ"
+      },
+      "list": {
+        "countLabel": "{{count}} канал",
+        "countLabel_other": "{{count}} канала",
+        "filteredLabel": "{{shown}} от {{count}} канал",
+        "filteredLabel_other": "{{shown}} от {{count}} канала",
+        "allTypes": "Всички типове",
+        "searchPlaceholder": "Филтриране на канали…",
+        "searchChannelsPlaceholder": "Търсене на канали…",
+        "addButton": "Добавяне на канал",
+        "addSearchPlaceholder": "Търсене на канали…",
+        "noResults": "Няма резултати",
+        "emptyTitle": "Все още няма конфигурирани канали за известия.",
+        "noMatch": "Няма канали, отговарящи на активните филтри.",
+        "nameInlinePlaceholder": "Етикет (по избор)",
+        "columns": {
+          "name": "Име",
+          "type": "Тип",
+          "summary": "Събития / Цели"
+        },
+        "testTitle": "Изпращане на тест",
+        "editTitle": "Редактиране на канал",
+        "deleteTitle": "Изтриване на канал",
+        "deleteConfirm": "Премахване на канала „{{name}}“? Това не може да бъде отменено.",
+        "deleteConfirmButton": "Изтриване",
+        "errors": {
+          "deleteFailed": "Изтриването е неуспешно"
+        }
+      },
+      "edit": {
+        "backToList": "Назад към Известия",
+        "back": "Назад",
+        "heading": "Редактиране на канал {{provider}}",
+        "subtitle": "Актуализиране на конфигурацията за този канал за известия.",
+        "testSection": {
+          "title": "Изпращане на тест",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Изпращане на тест",
+          "sendingButton": "Изпращане…",
+          "hintEmail": "Оставете празно за изпращане до имейла на вашия акаунт. Тестът използва запазената конфигурация на канала.",
+          "hintOther": "Тестът използва запазената конфигурация на канала. Запазете промените първо, за да тествате актуализираните настройки."
+        },
+        "saveButton": "Запазване на промените",
+        "savingButton": "Запазване…",
+        "errors": {
+          "loadFailed": "Зареждането е неуспешно",
+          "saveFailed": "Запазването е неуспешно"
+        }
+      },
+      "create": {
+        "backToList": "Назад към Известия",
+        "changeType": "Промяна на типа",
+        "pickerHeading": "Изберете тип канал",
+        "pickerSubtitle": "Изберете доставчика на известия за конфигуриране.",
+        "heading": "Нов канал {{provider}}",
+        "subtitle": "Конфигуриране на нов канал за известия.",
+        "createButton": "Създаване на канал",
+        "creatingButton": "Създаване…",
+        "errors": {
+          "createFailed": "Създаването е неуспешно"
+        }
+      },
+      "sendTest": "Изпращане на тест",
+      "fromAddress": "Адрес на подателя",
+      "individualUsers": "Отделни потребители",
+      "host": "Хост",
+      "port": "Порт",
+      "apiKey": "API ключ",
+      "connectionString": "Низ за връзка",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Метод",
+      "botToken": "Bot Token",
+      "channelId": "ID на канала",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "Ключ за интеграция"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "изтегляне — излага /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "изпращане — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "изпращане — API за метрики"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "изпращане — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "изпращане — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "изпращане — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Експортиране на трасета на заявките",
+        "description": "Изпраща пълното трасе на всяка препратена заявка: всяка фаза, всеки модул, който е участвал, и промптове и отговори за проектите, които са се съгласили.",
+        "sampleRateLabel": "Честота на извадката",
+        "sampleRateHint": "1 експортира всяка заявка, 0.1 — една от десет."
+      },
+      "optional": "(по избор)",
+      "headersHint": "(по избор, по един на ред: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Оставете празно за отворен достъп",
+          "description": "Излага <code>/metrics</code> в текстов формат на Prometheus. Задайте токен, за да изисквате Bearer удостоверяване."
+        },
+        "otel": {
+          "endpoint": "Крайна точка на колектора",
+          "description": "Базов URL на вашия OTLP приемник. Routerly добавя <code>/v1/metrics</code> и <code>/v1/traces</code>, когато е активиран експорт на трасета. Стандартният HTTP порт е 4318, gRPC е 4317.",
+          "protocol": "Протокол",
+          "headers": "Заглавки"
+        },
+        "datadog": {
+          "apiKey": "API ключ",
+          "placeholder": "Вашият Datadog API ключ",
+          "description": "Намира се в <strong>Organization Settings → API Keys</strong> във вашия Datadog акаунт.",
+          "site": "Сайт"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "Намира се в <strong>Grafana Cloud → Connections → Prometheus → Details</strong> като „Remote Write Endpoint“.",
+          "username": "Потребителско име / Stack ID",
+          "usernameHint": "Числов идентификатор, показан в детайлите на връзката с Prometheus.",
+          "apiKey": "API ключ / Токен",
+          "apiKeyHint": "Токен на Grafana Cloud с роля <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL на инстанцията на InfluxDB v2. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Токен",
+          "tokenPlaceholder": "Вашият InfluxDB API токен",
+          "tokenHint": "Трябва да има <strong>достъп за запис</strong> до кофата (bucket).",
+          "org": "Организация",
+          "bucket": "Кофа (bucket)"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Тайна",
+          "secretHint": "(по избор — HMAC-SHA256 ключ за подписване)",
+          "headers": "Заглавки"
+        }
+      },
+      "errors": {
+        "loadFailed": "Зареждането на интеграциите е неуспешно",
+        "updateFailed": "Актуализирането на интеграцията е неуспешно",
+        "saveFailed": "Запазването на интеграцията е неуспешно",
+        "deleteFailed": "Изтриването на интеграцията е неуспешно"
+      },
+      "empty": "Все още няма конфигурирани интеграции.",
+      "enabled": "Активирано",
+      "testing": "Тестване…",
+      "test": "Тест",
+      "removeConfirm": "Премахване?",
+      "remove": "Премахване",
+      "cancel": "Отказ",
+      "removeTooltip": "Премахване на интеграция",
+      "saving": "Запазване…",
+      "save": "Запазване",
+      "addButton": "Добавяне на интеграция"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Зареждането на настройките е неуспешно",
+        "duplicateUrl": "Този URL вече е в списъка.",
+        "unreachable": "Не успяхме да достигнем валиден каталог на доставчици на този URL."
+      },
+      "saved": "Запазено.",
+      "refreshed": "Обновено.",
+      "heading": "Хранилища на каталога на доставчици",
+      "refreshing": "Обновяване…",
+      "refresh": "Обновяване",
+      "nextRefresh": "Следващо: {{date}}",
+      "priorityHint": "Редът на редовете определя приоритетa при обединяване — ред 1 печели при конфликт. Използвайте стрелките за пренареждане.",
+      "columns": {
+        "priority": "№",
+        "url": "URL",
+        "updated": "Актуализирано",
+        "lastCheck": "Последна проверка",
+        "status": "Статус"
+      },
+      "empty": "Няма конфигурирани хранилища. Ще се използва стандартният публичен каталог на Routerly.",
+      "status": {
+        "error": "Грешка",
+        "active": "Активен",
+        "disabled": "Деактивиран"
+      },
+      "edit": "Редактиране",
+      "removeTooltip": "Премахване",
+      "addRepository": "Добавяне на хранилище",
+      "checking": "Проверка…",
+      "add": "Добавяне",
+      "removeConfirm": "Премахване на хранилището „{{url}}“?"
+    },
+    "about": {
+      "headings": {
+        "application": "Приложение",
+        "runtime": "Среда на изпълнение",
+        "storage": "Хранилище",
+        "softwareUpdate": "Актуализация на софтуера"
+      },
+      "labels": {
+        "version": "Версия",
+        "uptime": "Време на работа",
+        "nodeVersion": "Node.js",
+        "platform": "Платформа",
+        "configDir": "Директория за конфигурация",
+        "dataDir": "Директория за данни",
+        "currentVersion": "Текуща версия",
+        "availableVersion": "Налична версия",
+        "upToDate": "Актуализирано",
+        "lastChecked": "Последна проверка"
+      },
+      "noCheckPerformed": "Все още не е извършена проверка за актуализации.",
+      "checkForUpdates": "Проверка за актуализации",
+      "checking": "Проверка…",
+      "updateTo": "Актуализиране до v{{version}}",
+      "updating": "Актуализиране…",
+      "dockerHint": "Работи в Docker — изтеглете последния образ, за да актуализирате.",
+      "confirmUpdate": "Това ще изтегли и инсталира последната версия. Услугата ще се рестартира. Продължавате ли?",
+      "updateComplete": "Актуализацията завърши! Презареждане…",
+      "serviceRestarting": "Услугата се рестартира. Моля, презаредете страницата след малко.",
+      "errors": {
+        "loadFailed": "Зареждането е неуспешно",
+        "checkFailed": "Проверката е неуспешна",
+        "updateFailed": "Актуализацията е неуспешна"
+      },
+      "channel": "Канал"
+    },
+    "security": {
+      "authentication": "Автентикация",
+      "requireMfa": "Изискване на двуфакторна автентикация за всички потребители",
+      "requireMfaHint": "Когато е активирано, потребителите, които не са настроили 2FA, ще виждат подкана да го направят след вписване. Потребителите могат да конфигурират 2FA в страницата с профила си.",
+      "savedSuccess": "Настройките са запазени успешно.",
+      "saving": "Запазване…",
+      "saveSettings": "Запазване на настройките",
+      "errors": {
+        "loadFailed": "Зареждането на настройките е неуспешно",
+        "saveFailed": "Запазването на настройките е неуспешно"
+      }
+    },
+    "title": "Настройки",
+    "subtitle": "Конфигурация на Routerly",
+    "tabs": {
+      "general": "Общи",
+      "security": "Сигурност",
+      "notifications": "Известия",
+      "integrations": "Интеграции",
+      "catalog": "Каталог на доставчици",
+      "users": "Потребители",
+      "roles": "Роли",
+      "audit": "Одитен лог",
+      "about": "За приложението"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Рутери",
+      "subtitle": "Клиентски приложения, които имат достъп до Routerly",
+      "count": "1 рутер",
+      "count_other": "{{count}} рутера",
+      "newRouter": "Нов рутер",
+      "empty": "Все още няма рутери.",
+      "emptyFiltered": "Няма маршрутизатори от този тип.",
+      "tabs": {
+        "all": "Всички",
+        "router": "Маршрутизатор",
+        "orchestrator": "Оркестратор",
+        "passthrough": "Пряк преход"
+      },
+      "columns": {
+        "name": "Име",
+        "tokens": "Токени",
+        "policies": "Политики",
+        "models": "Модели"
+      },
+      "tokenCount": "1 токен",
+      "tokenCount_other": "{{count}} токена",
+      "editRouter": "Редактиране на рутер",
+      "deleteRouter": "Изтриване на рутер",
+      "deleteConfirm": "Изтриване на този рутер?",
+      "errors": {
+        "deleteFailed": "Грешка при изтриване на рутера"
+      }
+    },
+    "layout": {
+      "notFound": "Рутерът не е намерен",
+      "tabs": {
+        "dashboard": "Табло",
+        "general": "Общи",
+        "orchestrator": "Оркестратор",
+        "routing": "Маршрутизиране",
+        "optimizer": "Оптимизатор",
+        "security": "Сигурност",
+        "token": "Токен",
+        "users": "Потребители",
+        "logs": "Логове"
+      },
+      "backToRouters": "Назад към Рутери",
+      "backToRoutersTitle": "Назад към рутерите",
+      "newRouter": "Нов рутер",
+      "loading": "Зареждане...",
+      "routerId": "ID на рутера:",
+      "saveFirstHint": "Запазете рутера първо, за да отключите този раздел"
+    },
+    "dashboard": {
+      "period": "Период",
+      "noTraffic": "Няма трафик за този рутер в избрания период.",
+      "stats": {
+        "savings": "Спестявания",
+        "vsPrefix": "спрямо",
+        "forEverything": "за всичко",
+        "noTargetToCompare": "няма целеви модел за сравнение",
+        "cost": "Разход",
+        "callCount": "1 заявка",
+        "callCount_other": "{{count}} заявки",
+        "latency": "Латентност",
+        "medianP95": "медиана · p95 {{value}}",
+        "ttft": "Време до първи токен",
+        "notMeasured": "не е измерено при тези заявки",
+        "reliability": "Надеждност",
+        "errorsAndBlocked": "{{errors}} грешки · {{blocked}} блокирани"
+      },
+      "tokens": {
+        "input": "Входни токени:",
+        "output": "Изходни токени:",
+        "fromCache": "От кеша:",
+        "cacheSaved": "({{amount}} спестени)"
+      },
+      "oneModel": {
+        "heading": "Ако всичко беше отишло към един модел",
+        "empty": "Добавете целеви модели към този рутер, за да видите сравнението.",
+        "columns": {
+          "targetModel": "Целеви модел",
+          "wouldHaveCost": "Би струвало",
+          "saved": "Спестено"
+        },
+        "costsHint": "Разходите са наблюдаваните токени, преизчислени по цените на всяка цел."
+      },
+      "optimizers": {
+        "heading": "Какво премахнаха оптимизаторите",
+        "columns": {
+          "optimizer": "Оптимизатор",
+          "callsChanged": "Променени заявки",
+          "tokensSaved": "Спестени токени",
+          "costSaved": "Спестен разход",
+          "rolledBack": "Върнати назад"
+        },
+        "hint": "Измерено на самите заявки, оценено по модела, който е обслужил всяка от тях. Върнато назад изпълнение означава, че резултатът от стъпката е отхвърлен като небезопасен и промптът е възстановен: не е спестено нищо, а висок брой означава, че прагът е твърде агресивен."
+      },
+      "traffic": {
+        "heading": "Къде отиде трафикът",
+        "columns": {
+          "model": "Модел",
+          "calls": "Заявки",
+          "share": "Дял",
+          "cost": "Разход",
+          "p95Latency": "p95 латентност",
+          "errors": "Грешки"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Грешка при запазване на рутера",
+        "copyFailed": "Копирането е неуспешно — моля, изберете и копирайте токена ръчно."
+      },
+      "kind": {
+        "router": {
+          "label": "Рутер",
+          "description": "Маршрутизира заявки между кандидатни модели."
+        },
+        "orchestrator": {
+          "label": "Оркестратор",
+          "description": "Маршрутизира заявки между други рутери, вместо модели."
+        },
+        "passthrough": {
+          "label": "Пропускане",
+          "description": "Препраща заявки непроменени."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Запазете този токен сега.",
+        "saveNowHint": "Не ще бъде показан отново — веднъж напуснете ли този екран, не може да бъде възстановен.",
+        "copied": "Копирано!",
+        "copy": "Копиране",
+        "goToRouter": "Отиване към рутера"
+      },
+      "connect": {
+        "heading": "Как да се свържете",
+        "intro": "Насочете всеки OpenAI или Anthropic SDK към Routerly и използвайте <tokenLink>токен на рутера</tokenLink> като API ключ. Заменете <code>{{token}}</code> по-долу с вашия. Модел <code>{{model}}</code> предоставя избора на Routerly; работи и всеки идентификатор на модел от <modelsLink>Модели</modelsLink>.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Базов URL <code>{{baseUrl}}</code>, същия, който приема всяко поле за доставчик, „съвместим с OpenAI“.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Базов URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK-то го добавя.",
+        "curl": "curl",
+        "curlHint": "Проверете свързването без да инсталирате нищо, след което потърсете заявката в <usageLink>Използване</usageLink>."
+      },
+      "form": {
+        "kind": "Вид",
+        "kindAriaLabel": "Вид на рутера",
+        "kindFixedHint": "Фиксиран след създаването на рутера.",
+        "routerName": "Име на рутера",
+        "routerNamePlaceholder": "Моето приложение",
+        "advancedSettings": "Разширени настройки",
+        "ttftTimeout": "TTFT изчакване (ms)",
+        "ttftTimeoutHint": "Ако модел не изпрати първия байт от отговора в рамките на това време, Routerly прекъсва и опитва следващия кандидат. Не ограничава общата продължителност на отговора. Задайте 0, за да изчакате, колкото е нужно доставчику.",
+        "traceContent": "Съдържание на трасето",
+        "traceContentHint": "Трасетата винаги записват метаданни (модели, оценки, токени, разходи, латентност). Активирайте това, за да записвате и изпратените промптове и получените отговори. Съхраняват се със записа за използване и са видими за всеки, който може да прочете отчетите.",
+        "capturePromptsAndAnswers": "Записване на промптове и отговори",
+        "saveChanges": "Запазване на промените",
+        "createRouter": "Създаване на рутер"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Този рутер не е оркестратор.",
+      "candidateRouters": "Кандидатни рутери",
+      "candidateRoutersHint": "Рутерите, към които този оркестратор препраща заявки. Тежестта влияе колко често се избира всеки кандидат; тук се показват само неговите име, идентификатор, тежест и допълнителни лимити за конкретния кандидат.",
+      "router": "Рутер",
+      "selectRouter": "Избор на рутер",
+      "weight": "Тежест",
+      "removeCandidate": "Премахване на кандидата",
+      "usageLimits": "Лимити на използване за този кандидат",
+      "limitCount": "{{count}} лимит",
+      "limitCount_other": "{{count}} лимита",
+      "usageLimitsHint": "Допълнителни лимити на използване, приложени само за заявки, които този оркестратор препраща към този кандидат.",
+      "empty": "Все още няма кандидатни рутери. Оркестраторът се нуждае от поне един, преди да може да препраща заявки.",
+      "addCandidate": "Добавяне на кандидат",
+      "saved": "Запазено!",
+      "saveCandidates": "Запазване на кандидатите",
+      "errors": {
+        "loadFailed": "Зареждането на рутерите е неуспешно",
+        "saveFailed": "Грешка при запазване на кандидатите на оркестратора"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Присвояването на профила за маршрутизиране е неуспешно",
+        "duplicateTargets": "Целевите модели не могат да съдържат дублирания.",
+        "saveFailed": "Грешка при запазване на маршрутизирането на рутера",
+        "noProfileAvailable": "Няма наличен профил за маршрутизиране. Създайте един от страницата Профили."
+      },
+      "form": {
+        "routing": "Маршрутизиране",
+        "routingHint": "Използвайте общ профил за маршрутизиране или дефинирайте собствени политики за този рутер. Целевите модели остават конфигурируеми и в двата случая.",
+        "profileMode": "Профил",
+        "customMode": "Персонализирано",
+        "routingProfile": "Профил за маршрутизиране",
+        "builtinSuffix": "(вграден)",
+        "profileHint": "Политиките идват от профила и следват промените му. Редактирайте ги в страницата Профили, или превключете на Персонализирано, за да започнете от копие на тях.",
+        "saved": "Запазено!",
+        "saveRoutingConfiguration": "Запазване на конфигурацията за маршрутизиране"
+      },
+      "targetModels": {
+        "heading": "Целеви модели",
+        "hint": "Дефинирайте пула от модели, който Политиките ще филтрират и от който ще избират. Допълнителни промптове инструктират AI Рутера кога да избере всеки модел.",
+        "endpointModel": "Модел на крайната точка",
+        "selectModel": "Избор на модел",
+        "promptDefinition": "Дефиниция на промпта",
+        "promptPlaceholder": "Опишете точно кога и защо рутерът трябва да избере този модел...",
+        "intents": "Намерения",
+        "removeTarget": "Премахване на целевия модел",
+        "empty": "Няма конфигурирани целеви модели.",
+        "addTarget": "Добавяне на целеви модел"
+      }
+    },
+    "optimizer": {
+      "title": "Оптимизатори",
+      "description": "Оптимизаторите намаляват токените на промпта, преди заявките да достигнат доставчика. Изпълняват се по ред отгоре надолу. Използвайте общ профил на оптимизатор или дефинирайте собствен процес за този рутер.",
+      "noPermission": "Нямате право да преглеждате оптимизаторите.",
+      "mode": {
+        "profile": "Профил",
+        "custom": "Персонализирано"
+      },
+      "profileSelect": {
+        "ariaLabel": "Профил на оптимизатора",
+        "builtinLabel": "{{label}} (вграден)",
+        "hint": "Стъпките идват от профила и следват промените му. Редактирайте ги в страницата Профили, или превключете на Персонализирано, за да започнете от копие на тях.",
+        "disabledSuffix": "(деактивиран)",
+        "thresholdSuffix": ", праг {{threshold}}"
+      },
+      "customHint": "Плъзнете за пренареждане, превключете за активиране. Някои оптимизатори използват праг, който контролира колко агресивно съкращават.",
+      "saveButton": "Запазване на оптимизаторите",
+      "saving": "Запазване...",
+      "saved": "Запазено",
+      "preview": {
+        "title": "Преглед на спестените токени",
+        "description": "Изпълнете текущия (незапазен) процес върху промпт, за да видите какво премахва всяка стъпка и колко струва. Изберете един от примерните разговори или напишете свой промпт.",
+        "promptLabel": "Промпт",
+        "promptAriaLabel": "Промпт за преглед",
+        "typePromptOption": "Напишете промпт по-долу",
+        "fixturesHint": "Примерни разговори, доставени с Routerly. Routerly не записва реални промптове.",
+        "modelLabel": "Модел",
+        "modelAriaLabel": "Модел за преглед спрямо",
+        "modelWithContext": "{{id}} ({{k}}k контекст)",
+        "noModelOption": "Без модел",
+        "modelHint": "Стъпките, които съкращават до размера на прозорец на контекста, трябва да знаят кой прозорец. Без модел се пропускат, точно както биха се пропуснали при заявка, назоваваща модел, за който Routerly няма прозорец.",
+        "sampleAriaLabel": "Примерен промпт",
+        "samplePlaceholder": "Поставете примерно съобщение на потребител...",
+        "runButton": "Изпълнение на прегледа",
+        "running": "Изпълнение...",
+        "before": "Преди",
+        "after": "След",
+        "saved": "Запазено",
+        "columns": {
+          "optimizer": "Оптимизатор",
+          "before": "Преди",
+          "after": "След",
+          "saved": "Спестено"
+        },
+        "rolledBackNote": "върнато назад: промяната е отхвърлена като небезопасна",
+        "skippedNote": "пропуснато: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Промяната, произведена от тази стъпка, е върната назад, така че промптът е достигнал следващата стъпка непроменен.",
+          "skipped": "Тази стъпка не се изпълни: {{reason}}",
+          "unchanged": "Тази стъпка е оставила промпта непроменен."
+        }
+      },
+      "errors": {
+        "assignFailed": "Присвояването на профила на оптимизатора е неуспешно",
+        "saveFailed": "Грешка при запазване на оптимизаторите",
+        "previewFailed": "Грешка при изпълнение на прегледа",
+        "noProfileAvailable": "Няма наличен профил на оптимизатор. Създайте един от страницата Профили."
+      }
+    },
+    "token": {
+      "newButton": "Нов токен",
+      "empty": "Все още няма API токени. Създайте един, за да започнете да удостоверявате заявки.",
+      "budgetOverrides": "Замествания на бюджета",
+      "created": "Създаден",
+      "lastUsed": "Последно използван",
+      "expires": "Изтича",
+      "never": "Никога",
+      "editTitle": "Редактиране на конфигурация",
+      "revokeTitle": "Отнемане на токена",
+      "revokeConfirm": "Отнемане на токен „{{snippet}}...“? Приложенията, които го използват, ще спрат да работят веднага.",
+      "labelInput": {
+        "placeholder": "Търсене или създаване на етикет…",
+        "createPrefix": "Създаване",
+        "noMatches": "Не са намерени съответстващи етикети."
+      },
+      "errors": {
+        "deleteFailed": "Грешка при изтриване на токена"
+      },
+      "create": {
+        "backToTokens": "Назад към токените",
+        "title": "Нов API токен",
+        "subtitle": "Пълният токен се показва само еднократно след създаването — съхранявайте го сигурно.",
+        "tokenCreated": "Токенът е създаден успешно. Копирайте го сега — не ще бъде показан отново.",
+        "copied": "Копирано!",
+        "copy": "Копиране",
+        "done": "Готово",
+        "optional": "по избор",
+        "labels": "Етикети",
+        "labelsHint": "Отбележете този токен, за да идентифицирате къде се използва (напр. „production“, „ci“).",
+        "scopes": "Обхвати",
+        "scopesHint": "Свободни обхвати, приложени към този токен (напр. „batch“, „internal“), съхранени с токена за ваше собствено проследяване.",
+        "tags": "Тагове",
+        "tagsHint": "Метаданни двойка ключ-стойност, препратени към записите за използване (напр. env=production).",
+        "keyPlaceholder": "ключ",
+        "valuePlaceholder": "стойност",
+        "createButton": "Създаване на токен",
+        "cancel": "Отказ",
+        "copyFailed": "Копирането е неуспешно — моля, изберете и копирайте токена ръчно.",
+        "errors": {
+          "createFailed": "Грешка при създаване на токен"
+        }
+      },
+      "edit": {
+        "title": "Редактиране на токен",
+        "subtitle": "Актуализиране на етикетите и заменянията на лимитите по модел за този токен.",
+        "token": "Токен",
+        "labels": "Етикети",
+        "perModelLimits": "Лимити по модел",
+        "perModelLimitsHint": "Заместване на глобалните лимити и на нивото на рутера за заявки, използващи този токен.",
+        "noTargetModels": "Добавете целеви модели в раздела Маршрутизиране първо.",
+        "noOverride": "без заместване",
+        "noLimits": "Без лимити",
+        "noLimitsSet": "Няма зададени лимити — наследява от родителя. Добавете лимит по-долу, за да заместите.",
+        "metric": "Метрика",
+        "type": "Тип",
+        "periodLabel": "Период",
+        "every": "На всеки",
+        "maxCost": "Макс. ($)",
+        "maxCalls": "Макс. (бр.)",
+        "maxTokens": "Макс. (токени)",
+        "allCombosSet": "Всички комбинации метрика/период вече са зададени",
+        "addLimit": "Добавяне на лимит",
+        "windowType": {
+          "period": "Период",
+          "rolling": "Плаващо"
+        },
+        "limitMetric": {
+          "cost": "Разход (USD)",
+          "calls": "Заявки",
+          "input_tokens": "Входни токени",
+          "output_tokens": "Изходни токени",
+          "total_tokens": "Общо токени"
+        },
+        "period": {
+          "hourly": "Часово",
+          "daily": "Дневно",
+          "weekly": "Седмично",
+          "monthly": "Месечно",
+          "yearly": "Годишно"
+        },
+        "rollingUnit": {
+          "second": "секунди",
+          "minute": "минути",
+          "hour": "часове",
+          "day": "дни",
+          "week": "седмици",
+          "month": "месеци"
+        },
+        "fmt": {
+          "requests": "{{value}} заявки",
+          "inputTokens": "{{value}} вх. токени",
+          "outputTokens": "{{value}} изх. токени",
+          "totalTokens": "{{value}} токени",
+          "everyRolling": "{{metric}} / на всеки {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Грешка при запазване на токена"
+        }
+      }
+    },
+    "users": {
+      "title": "Членове на рутера",
+      "description": "Управление на потребители с достъп до този рутер.",
+      "addButton": "Добавяне на член",
+      "addNewTitle": "Добавяне на нов член",
+      "selectUserPlaceholder": "Избор на потребител...",
+      "addConfirmButton": "Добавяне",
+      "cancelButton": "Отказ",
+      "empty": "Няма намерени членове.",
+      "removeConfirm": "Сигурни ли сте, че искате да премахнете този член?",
+      "saveTitle": "Запазване на промените",
+      "changeRoleTitle": "Промяна на ролята",
+      "removeTitle": "Премахване на член",
+      "roles": {
+        "viewer": "Наблюдател",
+        "editor": "Редактор",
+        "admin": "Администратор"
+      },
+      "columns": {
+        "user": "Потребител",
+        "role": "Роля",
+        "actions": "Действия"
+      },
+      "errors": {
+        "loadFailed": "Зареждането на потребители е неуспешно",
+        "addFailed": "Грешка при добавяне на член",
+        "updateFailed": "Грешка при актуализиране на член",
+        "removeFailed": "Грешка при премахване на член"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Изкл."
+      },
+      "autoRefreshOff": "Автоматичното обновяване е деактивирано",
+      "autoRefreshEvery": "Автоматично обновяване на всеки {{interval}}",
+      "lastUpdated": "последно обновено: {{time}}",
+      "refresh": "Обновяване",
+      "refreshNowTitle": "Обновяване сега",
+      "refreshNowButton": "↻ Сега",
+      "filters": {
+        "period": "Период",
+        "model": "Модел",
+        "allModels": "Всички модели",
+        "type": "Тип",
+        "all": "Всички",
+        "completion": "Завършване",
+        "router": "Рутер",
+        "status": "Статус",
+        "success": "Успех",
+        "blocked": "Блокирано",
+        "error": "Грешка",
+        "resetButton": "Нулиране на филтрите"
+      },
+      "stats": {
+        "totalCost": "Общ разход",
+        "totalCalls": "Общо заявки",
+        "completionCalls": "Заявки за завършване",
+        "routerCalls": "Заявки на рутера",
+        "errors": "Грешки"
+      },
+      "requestLogs": "Логове на заявките",
+      "emptyNoRequests": "Няма заявки за този рутер в избрания период.",
+      "emptyNoMatches": "Няма записи, отговарящи на активните филтри.",
+      "columns": {
+        "time": "Час",
+        "model": "Модел",
+        "type": "Тип",
+        "in": "Вход",
+        "out": "Изход",
+        "cost": "Разход",
+        "latency": "Латентност",
+        "ttft": "TTFT",
+        "tokPerSec": "Токени/сек",
+        "status": "Статус"
+      },
+      "typeRouter": "рутер",
+      "typeCompletion": "завършване",
+      "pagination": {
+        "previous": "← Предишна",
+        "next": "Следваща →",
+        "pageOf": "Страница {{page}} от {{totalPages}}",
+        "totalRecords": "({{count}} общо записа)"
+      }
+    },
+    "security": {
+      "title": "Сигурност",
+      "description": "Използвайте общ профил за сигурност или дефинирайте собствени ограничители и политики за лични данни за този рутер.",
+      "mode": {
+        "profile": "Профил",
+        "custom": "Персонализирано"
+      },
+      "profileSelect": {
+        "ariaLabel": "Профил за сигурност",
+        "builtinLabel": "{{label}} (вграден)",
+        "hint": "Ограничителите и политиките за лични данни идват от профила и следват промените му. Редактирайте ги в страницата Профили, или превключете на Персонализирано, за да започнете от копие на тях.",
+        "blockingSuffix": ", блокиране",
+        "disabledSuffix": ", деактивирано",
+        "piiRedaction": "Редактиране на лични данни ({{target}})"
+      },
+      "saveButton": "Запазване на настройките за сигурност",
+      "saved": "Запазено!",
+      "errors": {
+        "assignFailed": "Присвояването на профила за сигурност е неуспешно",
+        "saveFailed": "Грешка при запазване на настройките за сигурност",
+        "noProfileAvailable": "Няма наличен профил за сигурност. Създайте един от страницата Профили."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Вие сте полезен AI асистент.",
+      "errors": {
+        "unknown": "Възникна неизвестна грешка",
+        "onlyImages": "В момента се поддържат само прикачени изображения за визуални модели."
+      },
+      "title": "Тестов чат",
+      "subtitle": "Изпращане на тестови заявки през маршрутизиращия портал.",
+      "routerToken": "Токен на рутера:",
+      "hideToken": "Скриване на токена",
+      "showToken": "Показване на токена",
+      "recognizedToken": "Разпознат токен",
+      "unrecognizedToken": "Неразпознат токен",
+      "noMessages": "Все още няма съобщения.",
+      "enterTokenHint": "Моля, въведете токен на рутера по-горе, за да изпратите съобщение.",
+      "typeMessageHint": "Напишете съобщение по-долу, за да започнете тестването.",
+      "reasoning": "Разсъждение",
+      "attachedAlt": "Прикачено",
+      "attachmentAlt": "Прикачен файл",
+      "attachImage": "Прикачване на изображение",
+      "typeMessagePlaceholder": "Напишете съобщение...",
+      "stopGeneration": "Спиране на генерирането",
+      "sendEnter": "Изпращане (Enter)",
+      "debugLog": "Дневник за отстраняване на грешки",
+      "clear": "Изчистване",
+      "noRequestSent": "Все още не е изпратена заявка.",
+      "turnTraceLog": "Дневник на трасето на реда №{{turn}} · {{count}} събитие",
+      "turnTraceLog_other": "Дневник на трасето на реда №{{turn}} · {{count}} събития"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Връзки",
+      "subtitle": "Акаунти на доставчици, използвани за стартиране на инстанции на модели",
+      "noPermission": "Нямате право да преглеждате връзките.",
+      "count": "{{count}} връзка",
+      "count_other": "{{count}} връзки",
+      "addConnection": "Добавяне на връзка",
+      "empty": "Все още няма връзки. Добавете една, за да започнете.",
+      "deleteConfirm": "Премахване на връзка „{{label}}“? Инстанциите, свързани с нея, ще спрат да работят.",
+      "errors": {
+        "loadFailed": "Зареждането на връзките е неуспешно",
+        "deleteFailed": "Изтриването на връзката е неуспешно"
+      },
+      "columns": {
+        "label": "Етикет",
+        "provider": "Доставчик",
+        "endpoint": "Крайна точка",
+        "status": "Статус"
+      },
+      "status": {
+        "enabled": "Активирана",
+        "disabled": "Деактивирана"
+      },
+      "actions": {
+        "models": "Модели",
+        "edit": "Редактиране",
+        "remove": "Премахване"
+      }
+    },
+    "form": {
+      "backToConnections": "Назад към Връзки",
+      "editTitle": "Редактиране на връзка",
+      "addTitle": "Добавяне на връзка",
+      "enabled": "Активирана",
+      "editSubtitle": "Актуализиране на настройките на акаунта на доставчика",
+      "addSubtitle": "Регистриране на нов акаунт на доставчик",
+      "sectionTitle": "Детайли за връзката",
+      "sectionDesc": "Акаунт на доставчика, идентификационни данни и крайна точка, използвани за изпълнение на заявки.",
+      "provider": "Доставчик",
+      "groups": {
+        "directApi": "Директно API",
+        "cloudPlatform": "Облачна платформа",
+        "subscription": "Абонамент",
+        "browserSession": "Браузър сесия",
+        "selfHosted": "Собствен хостинг"
+      },
+      "upstreamProvider": {
+        "label": "Доставчик",
+        "hintLabel": "(име на доставчика на изхода)",
+        "placeholder": "напр. deepseek, mistral, groq",
+        "description": "Назовава услугата, към която принадлежи тази крайна точка. Моделите на тази връзка го използват като префикс на своя идентификатор (напр. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Име",
+        "hint": "Идентифицира тази връзка навсякъде, където се използва, така че трябва да е уникално. Оставете празно, за да използвате <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Оставете полетата с идентификационни данни празни, за да запазите текущите стойности.",
+      "save": "Запазване",
+      "create": "Създаване",
+      "cancel": "Отказ",
+      "oauth": {
+        "unknown": "неизвестен",
+        "accountExpires": "Акаунт: {{account}} — изтича {{expires}}",
+        "unknownError": "Неизвестна грешка"
+      },
+      "errors": {
+        "notFound": "Връзката не е намерена",
+        "loadFailed": "Зареждането на връзката е неуспешно",
+        "updateFailed": "Актуализирането на връзката е неуспешно",
+        "createFailed": "Създаването на връзката е неуспешно"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Назад към Модели",
+      "title": "Откриване на модели",
+      "subtitle": "Разгледайте наличните модели и ги добавете към конфигурацията за маршрутизиране",
+      "count": "{{count}} модела",
+      "filteredCount": "{{filtered}} от {{count}}",
+      "free": "безплатен",
+      "add": "Добавяне",
+      "addAgain": "Добавяне отново",
+      "loadFailed": "Зареждането на каталога е неуспешно: {{error}}",
+      "filters": {
+        "search": "Търсене",
+        "searchPlaceholder": "ID или име на модел…",
+        "provider": "Доставчик",
+        "allProviders": "Всички доставчици",
+        "context": "Контекст",
+        "ctxOptions": {
+          "all": "Всички",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Цена / 1M",
+        "priceOptions": {
+          "all": "Всички",
+          "free": "Безплатно",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Показване",
+        "configured": "Конфигуриран",
+        "embedding": "Вграждане",
+        "resetFilters": "Нулиране на филтрите"
+      },
+      "empty": {
+        "noMatches": "Няма модели, отговарящи на филтрите ви."
+      },
+      "columns": {
+        "model": "Модел",
+        "provider": "Доставчик",
+        "context": "Контекст",
+        "input": "Вход / 1M",
+        "output": "Изход / 1M"
+      },
+      "badges": {
+        "configured": "Конфигуриран",
+        "embedding": "вграждане",
+        "runsLocally": "Изпълнява се локално"
+      },
+      "pagination": {
+        "prev": "Предишна",
+        "next": "Следваща",
+        "range": "{{start}}–{{end}} от {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Назад към Модели",
+      "title": {
+        "add": "Добавяне на модел",
+        "edit": "Редактиране на модел",
+        "clone": "Клониране на модел"
+      },
+      "subtitle": {
+        "add": "Регистриране на нов LLM доставчик на модел",
+        "edit": "Промяна на конфигурацията за {{id}}",
+        "clone": "Клониране от {{id}} — присвоете нов идентификатор за запазване"
+      },
+      "errors": {
+        "modelNotFound": "Моделът не е намерен",
+        "sourceModelNotFound": "Изходният модел не е намерен",
+        "loadFailed": "Грешка при зареждане на моделите",
+        "idRequired": "Изисква се ID на модел",
+        "duplicateId": "Модел „{{id}}“ вече съществува — задайте различен персонализиран ID",
+        "selectConnection": "Изберете връзка",
+        "saveFailed": "Грешка"
+      },
+      "badge": {
+        "yes": "да",
+        "no": "не",
+        "override": "Заместване",
+        "auto": "Автоматично",
+        "default": "По подразбиране: {{value}}",
+        "reset": "Нулиране"
+      },
+      "oauth": {
+        "unknownExpiry": "неизвестен",
+        "accountOk": "Акаунт: {{account}} — изтича {{expires}}",
+        "unknownError": "Неизвестна грешка"
+      },
+      "identification": {
+        "title": "Идентификация на модела",
+        "description": "Уникален идентификатор и настройки на доставчика за тази конфигурация на модела.",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(по избор — по подразбиране:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Идентификаторът, използван при препращане към този модел в извиквания на Routerly API.",
+        "provider": "Доставчик",
+        "upstreamProviderHint": "(име на доставчика на изхода)",
+        "upstreamProviderPlaceholder": "напр. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Използва се като префикс на Routerly ID (напр.",
+        "upstreamProviderDescPost": ").",
+        "model": "Модел",
+        "upstreamModelHint": "(ID на модела при изхода)",
+        "upstreamModelPlaceholder": "напр. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Идентификаторът на модела, изпратен до крайната точка на API на доставчика.",
+        "modelPreset": "Предварителна настройка на модела",
+        "customModelOption": "— персонализирано име на модел —",
+        "customModelPlaceholder": "напр. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Детайли за връзката",
+        "description": "Крайна точка на API и идентификационни данни за удостоверяване, необходими за изпълнение на заявки.",
+        "preconfigured": "Предварително конфигурирана",
+        "custom": "Персонализирана",
+        "connection": "Връзка",
+        "selectPlaceholder": "— изберете връзка —",
+        "noneAvailable": "Няма предварително конфигурирани връзки за този доставчик. Превключете на Персонализирано, или създайте една в страницата Връзки.",
+        "editHint": "Редактирането на тази връзка по-късно ще актуализира всеки модел, свързан с нея."
+      },
+      "capabilities": {
+        "title": "Възможности",
+        "description": "Задаване на типа и възможностите на този модел.",
+        "embeddingModel": "Модел за вграждания",
+        "embeddingModelHint": "Този модел генерира векторни вграждания (не завършвания на чат)"
+      },
+      "pricing": {
+        "title": "Цени и контекст",
+        "description": "Параметри на разходите и лимити за обработка, използвани за фактуриране и маршрутизиране.",
+        "inputPerMillion": "Вход $/1M",
+        "outputPerMillion": "Изход $/1M",
+        "cachePerMillion": "Кеш чтение $/1M",
+        "cacheWritePerMillion": "Кеш запис $/1M",
+        "optional": "(по избор)",
+        "contextWindow": "Прозорец на контекста",
+        "contextWindowHint": "(токени, по избор)"
+      },
+      "tiers": {
+        "title": "Разширено — Ценови нива",
+        "description": "Заместване на цените, когато метрика надвиши праг. Например: „Над 200 000 токена контекст, цените се променят.“",
+        "removeTier": "Премахване на нивото",
+        "above": "Над",
+        "metric": "Метрика",
+        "metricContextTokens": "Токени на контекста",
+        "overridePricing": "Заместване на цените",
+        "addTier": "Добавяне на ценово ниво"
+      },
+      "limits": {
+        "title": "Лимити",
+        "description": "Лимити на използване за този модел. Могат да се комбинират множество правила.",
+        "metric": "Метрика",
+        "type": "Тип",
+        "addLimit": "Добавяне на лимит"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max абонамент)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro абонамент)"
+      },
+      "saveChanges": "Запазване на промените",
+      "createClone": "Създаване на клон",
+      "createModel": "Създаване на модел"
+    },
+    "page": {
+      "title": "Модели",
+      "subtitle": "LLM доставчици, регистрирани в Routerly",
+      "tabs": {
+        "models": "Модели",
+        "health": "Здраве"
+      },
+      "toolbar": {
+        "count": "{{count}} модел",
+        "count_other": "{{count}} модела",
+        "filteredCount": "{{filtered}} от {{count}} модел",
+        "filteredCount_other": "{{filtered}} от {{count}} модела"
+      },
+      "filters": {
+        "allProviders": "Всички доставчици",
+        "allConnections": "Всички връзки",
+        "searchPlaceholder": "Филтриране на модели…"
+      },
+      "discover": "Откриване",
+      "addModel": "Добавяне на модел",
+      "deleteConfirm": "Премахване на модел „{{id}}“?",
+      "empty": {
+        "noModels": "Все още няма модели. Добавете един, за да започнете.",
+        "noMatches": "Няма модели, отговарящи на активните филтри."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Доставчик",
+        "endpoint": "Крайна точка",
+        "input": "Вход $/1M",
+        "output": "Изход $/1M",
+        "cache": "Кеш $/1M",
+        "context": "Размер на контекста"
+      },
+      "actions": {
+        "test": "Тест",
+        "clone": "Клониране",
+        "edit": "Редактиране",
+        "remove": "Премахване"
+      },
+      "pagination": {
+        "previous": "← Предишна",
+        "next": "Следваща →",
+        "pageOf": "Страница {{page}} от {{totalPages}}",
+        "total": "({{count}} модел)",
+        "total_other": "({{count}} модела)"
+      },
+      "health": {
+        "emptyNoModels": "Няма конфигурирани модели.",
+        "emptyNoMatches": "Няма модели, отговарящи на филтъра.",
+        "resetAll": "Нулиране на всички",
+        "resetAllTitle": "Нулиране на всеки прекъсвач, изчакване и блокиране",
+        "resetTitle": "Нулиране на прекъсвача",
+        "confirmResetModel": "Нулиране на прекъсвача за модел „{{id}}“?",
+        "confirmResetAll": "Нулиране на цялото състояние на устойчивост? Това изчиства всеки прекъсвач, изчакване и блокиране.",
+        "errors": {
+          "resetModelFailed": "Нулирането на прекъсвача е неуспешно",
+          "resetAllFailed": "Нулирането на състоянието на устойчивост е неуспешно"
+        },
+        "columns": {
+          "model": "Модел",
+          "provider": "Доставчик",
+          "status": "Статус",
+          "circuit": "Прекъсвач",
+          "errorRate": "Процент грешки (5м)",
+          "p95Latency": "P95 латентност (1ч)",
+          "requests": "Заявки (1ч)",
+          "lastSuccess": "Последен успех",
+          "cooldownLockout": "Изчакване / блокиране"
+        },
+        "status": {
+          "healthy": "Здрав",
+          "degraded": "Влошен",
+          "unavailable": "Недостъпен",
+          "cooldown": "Изчакване",
+          "nodata": "Без данни"
+        },
+        "circuit": {
+          "ok": "ОК",
+          "recovering": "Възстановяване",
+          "tripped": "Задействан"
+        },
+        "time": {
+          "never": "никога",
+          "now": "сега",
+          "secondsAgo": "преди {{count}}с",
+          "minutesAgo": "преди {{count}}м",
+          "hoursAgo": "преди {{count}}ч",
+          "daysAgo": "преди {{count}}д",
+          "minSec": "{{min}}м {{sec}}с",
+          "sec": "{{sec}}с",
+          "cooldown": "изчакване {{time}}",
+          "lockout": "блокиране {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Експерименти",
+      "subtitle": "A/B тестване на рутери един срещу друг",
+      "noPermission": "Нямате право да преглеждате експериментите.",
+      "count": "{{count}} експеримент",
+      "count_other": "{{count}} експеримента",
+      "newExperiment": "Нов експеримент",
+      "empty": "Все още няма експерименти. Създайте един, за да сравните рутери директно.",
+      "deleteConfirm": "Изтриване на експеримент „{{name}}“? Това не може да бъде отменено.",
+      "noToken": "Няма токен",
+      "noTokenTitle": "Без токен никой клиент не може да достигне този експеримент",
+      "errors": {
+        "loadFailed": "Зареждането на експериментите е неуспешно",
+        "deleteFailed": "Изтриването на експеримента е неуспешно"
+      },
+      "columns": {
+        "name": "Име",
+        "variants": "Варианти",
+        "rotation": "Ротация",
+        "created": "Създаден"
+      },
+      "actions": {
+        "edit": "Редактиране на експеримента",
+        "remove": "Изтриване"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Назад към експериментите",
+      "newExperiment": "Нов експеримент",
+      "loading": "Зареждане...",
+      "experimentId": "ID на експеримента:",
+      "disabledTabTitle": "Запазете експериментa първо, за да отключите този раздел",
+      "errors": {
+        "notFound": "Експериментът не е намерен"
+      },
+      "tabs": {
+        "config": "Конфигурация",
+        "metrics": "Метрики",
+        "token": "Токен"
+      }
+    },
+    "config": {
+      "saved": "Запазено.",
+      "created": "Експериментът е създаден. Насочете клиента си към този токен, вместо токен на рутер. Не ще бъде показан отново.",
+      "copy": "Копиране",
+      "copied": "Копирано!",
+      "done": "Готово",
+      "saving": "Запазване...",
+      "create": "Създаване на експеримент",
+      "save": "Запазване на промените",
+      "cancel": "Отказ",
+      "trafficSplit": "Разделяне на трафика",
+      "errors": {
+        "loadRoutersFailed": "Зареждането на рутерите е неуспешно",
+        "saveFailed": "Запазването на експериментa е неуспешно",
+        "copyFailed": "Копирането е неуспешно: изберете и копирайте токена ръчно."
+      },
+      "fields": {
+        "name": "Име",
+        "namePlaceholder": "Евтино срещу премиум маршрутизиране",
+        "description": "Описание",
+        "optional": "(по избор)",
+        "descriptionPlaceholder": "Какво този тест се опитва да установи",
+        "minSamples": "Минимален брой заявки на вариант",
+        "minSamplesHint": "Под този брой разделът Метрики отбелязва сравнението като все още неубедително.",
+        "rotation": "Ротация",
+        "stickyOn": "Постоянство по",
+        "stickyKey": "Ключ за постоянство"
+      },
+      "variants": {
+        "title": "Варианти",
+        "desc": "Всеки вариант е съществуващ рутер, взет изцяло: неговите модели, маршрутизиране и ограничители се прилагат всички. Тест изисква поне два.",
+        "routerAriaLabel": "Рутер на варианта {{index}}",
+        "routerPlaceholder": "Избор на рутер",
+        "labelAriaLabel": "Етикет на варианта {{index}}",
+        "labelPlaceholder": "Етикет (по избор)",
+        "weightAriaLabel": "Тежест на варианта {{index}}",
+        "weightPlaceholder": "Тежест",
+        "removeTitle": "Премахване на варианта {{index}}",
+        "add": "Добавяне на вариант"
+      },
+      "judge": {
+        "title": "Съдия",
+        "desc": "По избор: модел прочита всеки взет за проба отговор и го оценява от 0 до 10 спрямо вашите критерии. Всяка оценена заявка е допълнителна заявка на модела, таксувана като всяка друга.",
+        "enable": "Оценяване на отговорите с модел-съдия",
+        "model": "Модел-съдия",
+        "modelPlaceholder": "Избор на модел",
+        "criteria": "Критерии",
+        "criteriaPlaceholder": "По един на ред, напр.\nОтговаря на зададения въпрос\nОстава фактологичен\nСпазва изисканния формат",
+        "sampleRate": "Дял оценени заявки (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Зареждане...",
+      "callsMeasured": "{{count}} измерена заявка",
+      "callsMeasured_other": "{{count}} измерени заявки",
+      "empty": "Все още няма заявки в този прозорец. Насочете клиент към токена на експеримента, за да започнете сравнението.",
+      "notConclusive": "Все още неубедително: всеки вариант се нуждае от поне {{minSamples}} заявки в този прозорец. ",
+      "explanation": "По-добрата стойност от всяка двойка е подчертана: по-евтина на заявка, по-бърза, по-висока оценка на съдията. Процентът под стойността показва разстоянието й от най-доброто рамо. Оценката на съдията е текуща средна стойност за целия живот на експеримента, така че е единствената величина, която прозорецът не свива.",
+      "lowSample": "Малка проба",
+      "lowSampleTitle": "По-малко от {{minSamples}} заявки в този прозорец",
+      "judgedCallsTitle": "{{count}} отговор, оценен от съдията от началото на експеримента",
+      "judgedCallsTitle_other": "{{count}} отговора, оценени от съдията от началото на експеримента",
+      "errors": {
+        "loadFailed": "Зареждането на метриките е неуспешно"
+      },
+      "columns": {
+        "variant": "Вариант",
+        "calls": "Заявки",
+        "share": "Дял",
+        "errors": "Грешки",
+        "tokens": "Токени вход / изход",
+        "cost": "Разход",
+        "costPerCall": "Разход / заявка",
+        "avgLatency": "Средна латентност",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Оценка на съдията"
+      }
+    },
+    "token": {
+      "desc": "Клиент извиква експериментa точно както рутер: същия базов URL, този токен вместо токен на рутер. Всяка заявка попада на един вариант и се таксува към рутера на този вариант.",
+      "baseUrlLabel": "Базов URL за OpenAI или Anthropic SDK, с токен на експеримента като API ключ:",
+      "created": "Токенът е създаден. Копирайте го сега, не ще бъде показан отново.",
+      "copy": "Копиране",
+      "copied": "Копирано!",
+      "newToken": "Нов токен",
+      "empty": "Няма токени за този експеримент. Създайте един, за да могат клиентите да го извикват.",
+      "revokeConfirm": "Отнемане на токен „{{snippet}}...“? Клиентите, които го използват, спират да работят веднага.",
+      "revokeTitle": "Отнемане на токена",
+      "errors": {
+        "createFailed": "Създаването на токена е неуспешно",
+        "revokeFailed": "Отнемането на токена е неуспешно",
+        "copyFailed": "Копирането е неуспешно: изберете и копирайте токена ръчно."
+      },
+      "columns": {
+        "created": "Създаден",
+        "lastUsed": "Последно използван"
+      }
+    }
+  },
+  "overview": {
+    "title": "Общ преглед",
+    "subtitle": "Обобщение на използването и разбивка на разходите",
+    "noPermission": "Нямате право да преглеждате данните за използване.",
+    "costByModel": "Разход по модел",
+    "noCostRecorded": "Не са записани разходи за този период.",
+    "callsByModel": "Заявки по модел",
+    "columns": {
+      "model": "Модел",
+      "calls": "Заявки",
+      "errors": "Грешки",
+      "cost": "Разход"
+    },
+    "stats": {
+      "totalCalls": "Общо заявки",
+      "callsBreakdown": "{{routing}} маршрутизиране · {{completion}} завършване",
+      "successRate": "Процент успех",
+      "ofAllRequests": "от всички заявки",
+      "errors": "Грешки",
+      "failedRequests": "неуспешни заявки",
+      "models": "Модели",
+      "registered": "регистрирани",
+      "routers": "Рутери",
+      "active": "активни"
+    },
+    "connectCard": {
+      "title": "Свързване на клиент",
+      "desc": "Насочете Claude Code, Codex, Cursor и още {{count}} към този портал."
+    }
+  },
+  "login": {
+    "emailLabel": "Имейл",
+    "passwordLabel": "Парола",
+    "signIn": "Вход",
+    "errors": {
+      "loginFailed": "Вписването е неуспешно",
+      "totpFailed": "Проверката на 2FA е неуспешна"
+    },
+    "totp": {
+      "title": "Двуфакторна автентикация",
+      "backupPrompt": "Въведете резервен код.",
+      "appPrompt": "Въведете 6-цифреният код от приложението си за автентикация.",
+      "backupCodeLabel": "Резервен код",
+      "authenticatorCodeLabel": "Код от приложението за автентикация",
+      "verify": "Проверка",
+      "useAuthenticatorInstead": "Използване на приложението за автентикация вместо това",
+      "useBackupInstead": "Използване на резервен код вместо това"
+    }
+  },
+  "setup": {
+    "welcome": "Здравейте! Нека ви настроим.",
+    "welcomeSubtitle": "Създайте първия администраторски акаунт, за да започнете управлението на Routerly.",
+    "betaBadge": "🚧 Бета",
+    "betaNotice": "Routerly активно се развива. Възможни са грешки.",
+    "betaFeedback": "Вашите отзиви помагат да се оформи какво ще стане —",
+    "betaLink": "докладвайте проблеми или споделете идеи",
+    "emailLabel": "Имейл на администратора",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Парола",
+    "passwordPlaceholder": "Минимум 8 символа",
+    "confirmLabel": "Потвърдете паролата",
+    "confirmPlaceholder": "Въведете паролата отново",
+    "submit": "Създаване на администраторски акаунт",
+    "errors": {
+      "mismatch": "Паролите не съвпадат",
+      "tooShort": "Паролата трябва да е минимум 8 символа",
+      "setupFailed": "Настройката е неуспешна"
+    }
+  },
+  "audit": {
+    "empty": "Не са намерени одитни записи.",
+    "errors": {
+      "loadFailed": "Зареждането на одитния лог е неуспешно"
+    },
+    "filters": {
+      "period": "Период",
+      "user": "Потребител",
+      "userPlaceholder": "Имейл или ID на потребител",
+      "action": "Действие",
+      "actionPlaceholder": "напр. model:create",
+      "result": "Резултат",
+      "results": {
+        "all": "Всички",
+        "success": "Успех",
+        "forbidden": "Забранено",
+        "error": "Грешка"
+      },
+      "refresh": "Обновяване"
+    },
+    "columns": {
+      "timestamp": "Времева отметка",
+      "user": "Потребител",
+      "action": "Действие",
+      "endpoint": "Крайна точка",
+      "result": "Резултат",
+      "details": "Детайли"
+    },
+    "pagination": {
+      "previous": "Предишна",
+      "next": "Следваща",
+      "page": "Страница {{page}} от {{totalPages}}",
+      "total": "({{count}} общо)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Използване",
+      "live": "НА ЖИВО",
+      "subtitle": "Подробни логове на заявки и разбивка по модел",
+      "updatedAt": "· обновено на {{time}}",
+      "poll": {
+        "off": "Изкл.",
+        "5s": "5с",
+        "15s": "15с",
+        "30s": "30с",
+        "1m": "1м",
+        "5m": "5м"
+      },
+      "liveButton": "● На живо",
+      "liveButtonTitle": {
+        "disable": "Деактивиране на режима на живо",
+        "enable": "Активиране на режима на живо (обновяване на всеки 2с)"
+      },
+      "refreshNow": "↻ Сега",
+      "refreshNowTitle": "Обновяване сега",
+      "filters": {
+        "period": "Период",
+        "router": "Рутер",
+        "model": "Модел",
+        "token": "Токен",
+        "caller": "Извикващ",
+        "type": "Тип",
+        "status": "Статус",
+        "allRouters": "Всички рутери",
+        "allModels": "Всички модели",
+        "allTokens": "Всички токени",
+        "resetFilters": "Нулиране на филтрите",
+        "all": "Всички",
+        "success": "Успех",
+        "blocked": "Блокирано",
+        "error": "Грешка"
+      },
+      "caller": {
+        "all": "Всички",
+        "completion": "Завършване",
+        "routing": "Рутер",
+        "guardrail": "Ограничител",
+        "judge": "Съдия"
+      },
+      "callerBadge": {
+        "completion": "завършване",
+        "routing": "рутер",
+        "guardrail": "ограничител",
+        "judge": "съдия"
+      },
+      "errors": {
+        "loadFailedPrefix": "Зареждането на данните за използване е неуспешно:",
+        "retry": "Повторен опит"
+      },
+      "stats": {
+        "totalCalls": "Общо заявки",
+        "completionCalls": "Заявки за завършване",
+        "routerCalls": "Заявки на рутера",
+        "guardrailCalls": "Заявки на ограничителя",
+        "blockedCalls": "Блокирани заявки",
+        "errors": "Грешки"
+      },
+      "table": {
+        "rank": "Ранг",
+        "model": "Модел",
+        "provider": "Доставчик",
+        "calls": "Заявки",
+        "errors": "Грешки",
+        "successRate": "Процент успех",
+        "avgLatency": "Средна латентност",
+        "p95Latency": "P95 латентност",
+        "inputTokens": "Входни токени",
+        "outputTokens": "Изходни токени",
+        "costPer1k": "Разход / 1K",
+        "cost": "Разход (USD)",
+        "bestCostPerformance": "Най-добро съотношение цена/производителност"
+      },
+      "showMoreModels": "Показване на още {{count}} модел",
+      "showMoreModels_other": "Показване на още {{count}} модела",
+      "showFewerModels": "Показване на по-малко модели",
+      "recentCalls": {
+        "title": "Скорошни заявки",
+        "empty": "Няма записи за използване за този период.",
+        "columns": {
+          "time": "Час",
+          "router": "Рутер",
+          "model": "Модел",
+          "type": "Тип",
+          "caller": "Извикващ",
+          "in": "Вход",
+          "out": "Изход",
+          "cost": "Разход",
+          "latency": "Латентност",
+          "ttft": "TTFT",
+          "tokensPerSec": "Токени/сек",
+          "status": "Статус"
+        }
+      },
+      "pagination": {
+        "previous": "Предишна",
+        "next": "Следваща",
+        "pageOf": "Страница {{page}} от {{totalPages}}",
+        "totalRecords": "({{count}} общо записа)"
+      }
+    },
+    "record": {
+      "back": "Назад",
+      "title": "Детайли на заявката",
+      "notFoundTitle": "Записът не е намерен",
+      "notFoundBody": "Записа за използване {{id}} не може да бъде зареден.",
+      "errors": {
+        "loadFailed": "Зареждането на записа е неуспешно"
+      },
+      "sections": {
+        "identity": "Идентичност",
+        "tokensAndCost": "Токени и разход",
+        "performanceAndOutcome": "Производителност и резултат",
+        "traceLog": "Дневник на трасето"
+      },
+      "fields": {
+        "recordId": "ID на записа",
+        "router": "Рутер",
+        "token": "Токен",
+        "model": "Модел",
+        "callType": "Тип заявка",
+        "requestType": "Тип на заявката",
+        "inputTokens": "Входни токени",
+        "outputTokens": "Изходни токени",
+        "totalTokens": "Общо токени",
+        "costUsd": "Разход (USD)",
+        "costUnknown": "Неизвестен",
+        "latency": "Латентност",
+        "ttft": "TTFT",
+        "tokensPerSec": "Токени/сек",
+        "outcome": "Резултат",
+        "timestamp": "Времева отметка",
+        "guardrailTriggered": "Ограничител активиран",
+        "blockedBy": "Блокирано от",
+        "piiRedacted": "Лични данни редактирани"
+      },
+      "errorMessage": "Съобщение за грешка",
+      "eventCount": "{{count}} събитие",
+      "eventCount_other": "{{count}} събития",
+      "noTrace": "Няма наличено трасе. Данните за трасето се записват само за нови заявки."
+    }
+  },
+  "playground": {
+    "title": "Тестова среда",
+    "subtitle": "Тествайте модели, сравнявайте отговори и запазвайте предварителни настройки на промптове.",
+    "mode": {
+      "single": "Единичен",
+      "compare": "Сравнение"
+    },
+    "token": {
+      "label": "Токен:",
+      "labelA": "Токен A",
+      "labelB": "Токен B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "същия като A",
+      "unknownToken": "Неизвестен токен"
+    },
+    "presets": {
+      "button": "Предварителни настройки",
+      "panelTitle": "Предварителни настройки",
+      "saveCurrent": "Запазване на текущата",
+      "namePlaceholder": "Име на предварителната настройка...",
+      "save": "Запазване",
+      "empty": "Все още няма предварителни настройки.",
+      "delete": "Изтриване на предварителната настройка"
+    },
+    "streamingDisabled": {
+      "banner": "Поточното предаване не е налично",
+      "bannerBody": "този рутер има активен ограничител, който блокира отговори. Routerly трябва да провери целия отговор, преди да го достави, така че отговорите пристигат наведнъж.",
+      "tooltip": "Поточно предаване не е налично: ограничител, който блокира отговори, изисква пълния отговор да бъде проверен, преди да бъде доставен.",
+      "ariaLabel": "Поточното предаване не е налично"
+    },
+    "systemPrompt": "Системен промпт",
+    "model": "Модел",
+    "modelPlaceholder": "Автоматично (по подразбиране на рутера)",
+    "params": {
+      "temp": "Температура",
+      "maxTokens": "Макс. токени",
+      "topP": "Top-p"
+    },
+    "stream": "Поточно предаване",
+    "clear": "Изчистване",
+    "empty": {
+      "noMessages": "Все още няма съобщения.",
+      "enterToken": "Въведете токен на рутер по-горе, за да започнете."
+    },
+    "reasoning": "Разсъждение",
+    "blockedDefault": "Това съобщение бе блокирано от ограничител.",
+    "truncated": "Отрязано — отговорът е прекъснат от максималния брой токени",
+    "bufferedNote": "Задържано за преглед на сигурността",
+    "errors": {
+      "onlyImages": "Поддържат се само прикачени изображения."
+    },
+    "rawToggle": {
+      "rendered": "визуализиран",
+      "raw": "необработен"
+    },
+    "inputPlaceholder": "Напишете съобщение...",
+    "attachImage": "Прикачване на изображение",
+    "attachedImageAlt": "Прикачено",
+    "attachmentAlt": "Прикачен файл",
+    "debug": {
+      "title": "Отстраняване на грешки",
+      "clear": "Изчистване",
+      "hide": "Скриване на отстраняването на грешки",
+      "show": "Показване на отстраняването на грешки",
+      "empty": "Все още няма данни за отстраняване на грешки.",
+      "emptyHint": "Изпратете съобщение, за да видите детайли за маршрутизирането.",
+      "turnTraceLog": "Дневник на трасето на реда №{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "Модел {{label}}:",
+      "modelSelectPlaceholder": "Избор на модел...",
+      "noMessages": "Все още няма съобщения.",
+      "debugTurns": "Отстраняване на грешки ({{count}} ред)",
+      "debugTurns_other": "Отстраняване на грешки ({{count}} реда)",
+      "guardrailTokensTitle": "Токени на съдията на ограничителя",
+      "stop": "Стоп",
+      "inputPlaceholder": "Изпратете същото съобщение до двата модела..."
+    }
+  },
+  "help": {
+    "title": "Помощ и поддръжка",
+    "subtitle": "Тук сме, за да помогнем — намерете отговори или се свържете с нас по всяко време.",
+    "docs": {
+      "title": "Документация",
+      "subtitle": "Ръководства, референция на API и документация за конфигурация",
+      "body": "Официалната документация обхваща всичко от първи стъпки до разширени политики за маршрутизиране, настройка на доставчици, бюджети и пълната референция на API.",
+      "openLink": "Отваряне на документацията"
+    },
+    "issues": {
+      "title": "Докладвайте грешка или предложете функция",
+      "subtitle": "Отворете GitHub issue — отнема 2 минути",
+      "body": "GitHub issues са най-добрият начин за докладване на грешки или предлагане на подобрения. За да ни помогнете да поправим нещата по-бързо, включете: какво направихте, какво очаквахте да се случи и какво всъщност се случи.",
+      "showTemplate": "Показване на шаблона на issue",
+      "reportBug": "Докладване на грешка",
+      "requestFeature": "Заявка за функция"
+    },
+    "issueTemplate": {
+      "whatHappened": "Какво се случи?",
+      "whatHappenedHint": "Описание на проблема с обикновени думи",
+      "stepsToReproduce": "Стъпки за възпроизвеждане",
+      "expectedBehaviour": "Очаквано поведение",
+      "expectedBehaviourHint": "Какво очаквахте да видите",
+      "version": "Версия на Routerly",
+      "versionHint": "Изпълнете `routerly --version` или проверете Настройки → За приложението"
+    },
+    "email": {
+      "title": "Свързване с поддръжка",
+      "subtitle": "Прочитаме всяко съобщение и отговаряме възможно най-скоро",
+      "body": "За всичко, което не се вписва в GitHub issue — въпроси относно фактуриране, лични въпроси, или просто искате да поздравите — пишете ни."
+    },
+    "faq": {
+      "title": "Често задавани въпроси",
+      "subtitle": "Бързи отговори на най-често задаваните въпроси",
+      "items": {
+        "connect": {
+          "q": "Как да свържа приложението си с Routerly?",
+          "a": "Насочете своя OpenAI или Anthropic SDK към инстанцията на Routerly. Заменете базовия URL с http://your-host:3000/v1 (съвместим с OpenAI) или http://your-host:3000/anthropic (съвместим с Anthropic), след което използвайте токен на рутер като API ключ. Това е всичко — не са нужни други промени."
+        },
+        "openaiCompat": {
+          "q": "Съвместим ли е Routerly с инструменти, използващи OpenAI SDK?",
+          "a": "Да. Routerly е заместител директно вграждащ се: всеки инструмент, поддържащ персонализиран базов URL и API ключ (LangChain, LlamaIndex, Cursor, Continue и др.), работи веднага. За клиенти във формат Anthropic, използвайте крайната точка /anthropic вместо това."
+        },
+        "routing": {
+          "q": "Как работи маршрутизирането на модели?",
+          "a": "Всеки рутер има политика за маршрутизиране, която решава кой модел получава заявка. Политиките включват кръгова ротация, най-ниска цена, най-бърз отговор, резервни вериги и още. Конфигурирате ги за всеки рутер под Рутери → Маршрутизиране."
+        },
+        "addModel": {
+          "q": "Как да добавя нов AI модел?",
+          "a": "Отидете на Модели → Добавяне на модел. Можете да добавите всеки доставчик, съвместим с OpenAI (Ollama, LM Studio, персонализирани крайни точки), или нативна Anthropic крайна точка. Попълнете базовия URL, API ключа и идентификатора на модела — Routerly ще се погрижи за останалото."
+        },
+        "dataStored": {
+          "q": "Съхраняват ли се данните ми? Записват ли се промптовете ми?",
+          "a": "Routerly е самостоятелно хостван и съхранява данни само на вашата машина (по подразбиране в ~/.routerly/). Промптове и отговори никога не се изпращат никъде от Routerly. Логовете на заявките се съхраняват локално и само ако ги активирате за отделен рутер."
+        },
+        "routerToken": {
+          "q": "Какво е токен на рутер и как се различава от API ключ на доставчик?",
+          "a": "Токенът на рутер е идентификационни данни, които давате на приложението си или на членове на екипа, за да се удостоверят пред Routerly. Той е отделен от API ключовете на вашите доставчици, които Routerly съхранява сигурно от страна на сървъра. Вашите приложения никога не виждат реалните ключове на доставчика."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} потребител",
+    "countLabel_other": "{{count}} потребители",
+    "addButton": "Добавяне на потребител",
+    "columns": {
+      "email": "Имейл",
+      "role": "Роля",
+      "routers": "Рутери"
+    },
+    "allRouters": "Всички",
+    "resetTwoFaTitle": "Нулиране на 2FA",
+    "resetTwoFaConfirm": "Нулиране на 2FA за {{email}}? Ще трябва да се регистрират отново.",
+    "deleteConfirm": "Изтриване на този потребител?",
+    "emptyTitle": "Все още няма потребители.",
+    "noPermission": "Нямате право да преглеждате потребителите.",
+    "modal": {
+      "title": "Добавяне на потребител",
+      "emailLabel": "Имейл",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Парола",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Роля",
+      "roleAdmin": "Администратор",
+      "roleViewer": "Наблюдател",
+      "cancelButton": "Отказ",
+      "submitButton": "Добавяне на потребител"
+    },
+    "errors": {
+      "loadFailed": "Зареждането на потребители е неуспешно",
+      "addFailed": "Грешка"
+    }
+  },
+  "userEdit": {
+    "title": "Редактиране на потребител",
+    "account": "Акаунт",
+    "email": "Имейл",
+    "role": "Роля",
+    "changePassword": "Промяна на паролата",
+    "newPassword": "Нова парола",
+    "newPasswordHint": "(оставете празно, за да запазите текущата)",
+    "save": "Запазване",
+    "saved": "Запазено!",
+    "errors": {
+      "loadFailed": "Зареждането на потребителя е неуспешно",
+      "saveFailed": "Запазването е неуспешно"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Управление на роли и права. Вградените роли не могат да бъдат променяни.",
+    "newRole": "Нова роля",
+    "builtin": "вградена",
+    "edit": "Редактиране",
+    "deleteConfirm": "Изтриване на тази роля? Потребителите с тази роля ще бъдат засегнати.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "напр. operator",
+      "name": "Име",
+      "namePlaceholder": "Име на ролята",
+      "permissions": "Права",
+      "create": "Създаване",
+      "save": "Запазване",
+      "cancel": "Отказ"
+    },
+    "permissions": {
+      "routerRead": "Рутери – Преглед",
+      "routerWrite": "Рутери – Промяна",
+      "modelRead": "Модели – Преглед",
+      "modelWrite": "Модели – Промяна",
+      "userRead": "Потребители – Преглед",
+      "userWrite": "Потребители – Промяна",
+      "reportRead": "Отчети – Преглед",
+      "settingsRead": "Настройки – Преглед",
+      "settingsWrite": "Настройки – Промяна",
+      "notificationWrite": "Известия – Промяна",
+      "tokenRead": "Токени – Преглед",
+      "tokenWrite": "Токени – Промяна",
+      "roleWrite": "Роли – Промяна",
+      "auditRead": "Одитен лог – Преглед",
+      "modulesRead": "Модули – Преглед",
+      "modulesManage": "Модули – Управление",
+      "connectionsRead": "Връзки – Преглед",
+      "connectionsManage": "Връзки – Управление",
+      "resilienceRead": "Устойчивост – Преглед",
+      "resilienceManage": "Устойчивост – Управление",
+      "profilesRead": "Профили за маршрутизиране – Преглед",
+      "profilesManage": "Профили за маршрутизиране – Управление",
+      "optimizersRead": "Оптимизатори – Преглед",
+      "optimizersManage": "Оптимизатори – Управление",
+      "experimentsRead": "Експерименти – Преглед",
+      "experimentsManage": "Експерименти – Управление"
+    },
+    "errors": {
+      "loadFailed": "Зареждането на ролите е неуспешно",
+      "updateFailed": "Актуализирането на ролята е неуспешно",
+      "createFailed": "Създаването на ролята е неуспешно",
+      "deleteFailed": "Изтриването на ролята е неуспешно"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Профили",
+      "subtitle": "Преизползваеми конфигурации за маршрутизиране, оптимизация и сигурност",
+      "noPermission": "Нямате право да преглеждате профилите.",
+      "newProfile": "Нов {{kind}} профил",
+      "empty": "Все още няма {{kind}} профили.",
+      "builtin": "Вграден",
+      "custom": "Персонализиран",
+      "view": "Преглед",
+      "edit": "Редактиране",
+      "clone": "Клониране",
+      "delete": "Изтриване",
+      "deleteConfirm": "Изтриване на профил „{{label}}“? Това не може да бъде отменено.",
+      "kindDescriptions": {
+        "routing": "Кой модел отговаря на заявка и какво се случва, когато не може",
+        "optimizer": "Какво се премахва от промпт, преди да бъде изпратен",
+        "security": "Ограничители и политики за лични данни, приложени към трафика"
+      },
+      "columns": {
+        "label": "Етикет",
+        "type": "Тип",
+        "configuration": "Конфигурация",
+        "version": "Версия"
+      },
+      "errors": {
+        "loadFailed": "Зареждането на профилите е неуспешно",
+        "deleteFailed": "Изтриването на профила е неуспешно"
+      }
+    },
+    "form": {
+      "backToProfiles": "Назад към Профили",
+      "newProfileTitle": "Нов {{kind}} профил",
+      "editProfileTitle": "Редактиране на {{label}}",
+      "builtinHint": "Вградените профили не могат да бъдат редактирани. Клонирайте един, за да го персонализирате.",
+      "assignHint": "{{article}} {{kind}} профил може да бъде присвоен на всеки брой рутери.",
+      "noPermission": "Нямате право да преглеждате профилите.",
+      "label": "Етикет",
+      "optimizers": "Оптимизатори",
+      "optimizersHint": "Плъзнете за пренареждане, превключете за активиране. Изпълняват се по ред отгоре надолу.",
+      "createProfile": "Създаване на профил",
+      "saveProfile": "Запазване на профила",
+      "cancel": "Отказ",
+      "copySuffix": "{{label}} копие",
+      "labelPlaceholders": {
+        "routing": "напр. Моето балансирано маршрутизиране",
+        "optimizer": "напр. Моят съкращаващ промптове",
+        "security": "напр. Моите строги ограничители"
+      },
+      "errors": {
+        "notFound": "Профилът не е намерен.",
+        "loadFailed": "Зареждането на профила е неуспешно",
+        "saveFailed": "Запазването на профила е неуспешно"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Назад към Свързване",
+    "title": "Свързване",
+    "docs": "Документация",
+    "notEnabledPrefix": "Конфигураторът на клиенти не е активиран. Попитайте администратор да го активира с",
+    "noClientPrefix": "Няма клиент с име",
+    "errors": {
+      "loadFailed": "Зареждането на клиентите е неуспешно: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Най-бързо: една команда",
+      "description": "Изпълнете я на машината, на която е инсталиран {{client}}. Записва {{configPath}}, като запазва резервно копие, което можете да отмените."
+    },
+    "byHand": {
+      "titleAlt": "Или настройте ръчно",
+      "titleUi": "Настройте ръчно",
+      "titleConfigFile": "Настройте конфигурационния файл",
+      "setValuesIn": "Задайте тези стойности в {{configPath}}.",
+      "putThisIn": "Поставете това в",
+      "replaceToken": "Заменете",
+      "withRouterToken": "с токен на рутер:",
+      "createOne": "създайте един",
+      "onRoutersPage": "в страницата Рутери.",
+      "modelLabel": "Модел:",
+      "modelHint": "предоставя избора на Routerly, работи и всеки идентификатор на модел от",
+      "modelsLink": "Модели",
+      "worksToo": "също.",
+      "openaiCompatHint": "Същия базов URL, ключ и модел работят с всеки клиент, който предлага поле за доставчик „съвместим с OpenAI“."
+    },
+    "mcp": {
+      "title": "MCP сървър",
+      "description": "Отделно от стъпките по-горе: това позволява на {{client}} да извиква инструментите на Routerly. Изисква личен MCP токен, създаден с",
+      "orFromYour": "или от вашия",
+      "profileLink": "профил"
+    },
+    "checkItWorked": {
+      "title": "Проверка дали проработи",
+      "restart": "Рестартирайте {{client}}, изпратете промпт, след което потърсете заявката в",
+      "usageLink": "Използване",
+      "cliReports": "От същата машина, CLI-то докладва какво намира:"
+    }
+  },
+  "connect": {
+    "title": "Свързване",
+    "subtitle": "Насочете AI клиент за програмиране към този портал. Изберете клиент за неговите стъпки на настройка.",
+    "llmLabel": "LLM",
+    "llmDescription": "насочва трафика на модела на този клиент през Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "зарежда Routerly като сървър на инструменти в него.",
+    "notEnabledPrefix": "Конфигураторът на клиенти не е активиран. Попитайте администратор да го активира с",
+    "errors": {
+      "loadFailed": "Зареждането на клиентите е неуспешно: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Една команда",
+      "hint": "CLI-то записва конфигурационния файл за вас, с резервно копие, което можете да отмените."
+    },
+    "byHand": {
+      "title": "Ръчно",
+      "hint": "Копирайте фрагмента от страницата на клиента в неговите настройки, след което го рестартирайте."
+    },
+    "endpoint": {
+      "title": "Насочете всеки клиент тук",
+      "description": "Всичко, изградено върху OpenAI или Anthropic SDK, работи, като промените базовия URL и ключа. Нищо друго не се променя: заявките и отговорите преминават през Routerly, както са.",
+      "openaiBaseUrl": "Базов URL на OpenAI",
+      "anthropicBaseUrl": "Базов URL на Anthropic",
+      "apiKey": "API ключ",
+      "model": "Модел",
+      "apiKeyDescription": "Токен на рутер, изпратен като",
+      "or": "или",
+      "createOne": "Създайте един",
+      "onRoutersPage": "в страницата Рутери.",
+      "modelDescription": "оставя Routerly да избере. Работи и всеки идентификатор на модел от",
+      "modelsLink": "Модели",
+      "worksToo": "страницата."
+    }
+  }
+}

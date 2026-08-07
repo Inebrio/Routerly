@@ -2262,6 +2262,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       'requireMfa',
       'providerRepos',
       'usageRetention',
+      'defaultLanguage',
     ];
     const updated = { ...current };
     for (const key of allowed) {

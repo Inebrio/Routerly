@@ -3004,6 +3004,28 @@ describe('PUT /api/settings', () => {
     expect(written['requireMfa']).toBe(true)
   })
 
+  it('persists defaultLanguage', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info' }
+      return []
+    })
+    let written: Record<string, unknown> = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v as Record<string, unknown> })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ defaultLanguage: 'it' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(written['defaultLanguage']).toBe('it')
+  })
+
   it('enables telemetry when setting telemetry.enabled=true', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {

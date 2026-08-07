@@ -8,9 +8,6 @@
     "themeCycle": {
       "title": "Theme: {{theme}}"
     },
-    "language": {
-      "label": "Language"
-    },
     "sidebar": {
       "expand": "Expand sidebar",
       "collapse": "Collapse sidebar"
@@ -43,6 +40,9 @@
       "telemetryLink": "What is sent?",
       "telemetryYes": "Yes, help out",
       "telemetryNo": "No thanks"
+    },
+    "language": {
+      "label": "भाषा"
     }
   },
   "common": {
@@ -660,9 +660,9 @@
         "retentionHint": "Usage/billing history older than this many days, or exceeding this size, is dropped from the active log. Leave both empty for no retention limit."
       },
       "internationalization": {
-        "heading": "Internationalization",
-        "defaultLanguage": "Default Language",
-        "defaultLanguageHint": "Dashboard language for users who haven't picked their own yet. Does not override a user's personal choice."
+        "heading": "आंतरराष्ट्रीयकरण",
+        "defaultLanguage": "डिफॉल्ट भाषा",
+        "defaultLanguageHint": "ज्या वापरकर्त्यांनी अजून त्यांची स्वतःची भाषा निवडली नाही त्यांच्यासाठी डॅशबोर्डची भाषा. वापरकर्त्याची वैयक्तिक पसंद ओव्हरराइड करत नाही."
       },
       "telemetry": {
         "heading": "Anonymous Metrics",
@@ -1157,12 +1157,12 @@
       "count_other": "{{count}} routers",
       "newRouter": "New Router",
       "empty": "No routers yet.",
-      "emptyFiltered": "No routers of this kind.",
+      "emptyFiltered": "या प्रकारचे कोणतेही राउटर नाही.",
       "tabs": {
-        "all": "All",
-        "router": "Router",
-        "orchestrator": "Orchestrator",
-        "passthrough": "Passthrough"
+        "all": "सर्व",
+        "router": "राउटर",
+        "orchestrator": "ऑर्केस्ट्रेटर",
+        "passthrough": "पास-थ्रु"
       },
       "columns": {
         "name": "Name",

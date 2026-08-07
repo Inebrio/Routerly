@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automático",
+      "dark": "Escuro",
+      "light": "Claro"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Expandir barra lateral",
+      "collapse": "Recolher barra lateral"
+    },
+    "tagline": "Um gateway. Qualquer modelo de IA. Total controlo.",
+    "nav": {
+      "overview": "Resumo",
+      "providers": "Fornecedores",
+      "models": "Modelos",
+      "profiles": "Perfis",
+      "routers": "Routers",
+      "experiments": "Experimentos",
+      "usage": "Utilização",
+      "playground": "Playground",
+      "settings": "Definições",
+      "connectApp": "Conectar aplicação",
+      "help": "Ajuda",
+      "signOut": "Terminar sessão"
+    },
+    "banner": {
+      "permissionWarning": "Alguns ficheiros de configuração têm acesso permissivo ({{files}}). Inicio e pedidos funcionam, mas corrija isto no sistema de ficheiros do anfitrião quando possível.",
+      "dismiss": "Descartar",
+      "updateAvailable": "Routerly v{{latest}} está disponível. Tem v{{current}}.",
+      "updateLink": "Atualizar em Definições",
+      "mfaRequired": "Autenticação de dois fatores é necessária para esta instância.",
+      "mfaLink": "Configure 2FA no seu Perfil",
+      "mfaSuffix": "para proteger a sua conta.",
+      "telemetryTitle": "Routerly nunca envia dados automaticamente.",
+      "telemetryBody": "Gostaria de ajudar enviando métricas anónimas de instalação? Apenas tipo de evento, versão, plataforma e uma ID aleatória — sem dados pessoais, sem IP.",
+      "telemetryLink": "O que é enviado?",
+      "telemetryYes": "Sim, ajudar",
+      "telemetryNo": "Não, obrigado"
+    },
+    "language": {
+      "label": "Idioma"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "há {{count}} segundo",
+      "secondsAgo_other": "há {{count}} segundos",
+      "minutesAgo": "há {{count}} minuto",
+      "minutesAgo_other": "há {{count}} minutos",
+      "hoursAgo": "há {{count}} hora",
+      "hoursAgo_other": "há {{count}} horas",
+      "daysAgo": "há {{count}} dia",
+      "daysAgo_other": "há {{count}} dias"
+    },
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "remove": "Remover",
+    "select": "Selecionar...",
+    "search": "Pesquisar...",
+    "noResults": "Sem resultados",
+    "noRemainingOptions": "Sem opções restantes",
+    "apply": "Aplicar",
+    "saved": "Guardado",
+    "showLess": "Mostrar menos",
+    "roles": "Funções",
+    "permissions": "Permissões",
+    "notifications": {
+      "title": "Notificações",
+      "markAllRead": "Marcar todas como lidas",
+      "empty": "Sem notificações",
+      "viewAll": "Ver todas as notificações"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Selecionar período",
+      "recent": "Recente",
+      "ranges": "Intervalos",
+      "from": "De",
+      "to": "Para"
+    },
+    "permissionGuard": {
+      "fixFailed": "Falha ao corrigir permissões",
+      "title": "Permissões de ficheiro inseguras",
+      "defaultMessage": "Alguns ficheiros têm permissões inseguras.",
+      "fixing": "A corrigir…",
+      "fixNow": "Corrigir agora"
+    },
+    "limitRows": {
+      "noLimits": "Sem limites definidos.",
+      "metricLabel": "Métrica",
+      "typeLabel": "Tipo",
+      "periodLabel": "Período",
+      "everyLabel": "Cada",
+      "maxCost": "Custo máximo",
+      "maxCount": "Contagem máxima",
+      "maxTokens": "Tokens máximos",
+      "allCombosSet": "Todas as combinações métrica/período já estão definidas",
+      "addLimit": "Adicionar limite",
+      "metric": {
+        "cost": "Custo",
+        "calls": "Chamadas",
+        "input_tokens": "Tokens de entrada",
+        "output_tokens": "Tokens de saída",
+        "total_tokens": "Total de tokens"
+      },
+      "period": {
+        "hourly": "Horário",
+        "daily": "Diário",
+        "weekly": "Semanal",
+        "monthly": "Mensal",
+        "yearly": "Anual"
+      },
+      "rollingUnit": {
+        "second": "segundo",
+        "minute": "minuto",
+        "hour": "hora",
+        "day": "dia",
+        "week": "semana",
+        "month": "mês"
+      },
+      "windowType": {
+        "period": "Período",
+        "rolling": "Deslizante"
+      },
+      "fmt": {
+        "requests": "{{value}} pedidos",
+        "inputTokens": "{{value}} tokens de entrada",
+        "outputTokens": "{{value}} tokens de saída",
+        "totalTokens": "{{value}} tokens totais",
+        "everyRolling": "{{metric}} cada {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} por {{period}}"
+      }
+    },
+    "savings": {
+      "title": "O que o encaminhamento economizou",
+      "input": "Entrada",
+      "output": "Saída",
+      "actual": "Atual",
+      "clientCalls": "{{count}} chamada de cliente",
+      "clientCalls_other": "{{count}} chamadas de cliente",
+      "comparedAgainst": ", comparado com enviar para cada um dos",
+      "comparedAgainst_other": ", comparado com enviar para cada um dos",
+      "paidModelsInPlay": "{{count}} modelo pago em jogo",
+      "paidModelsInPlay_other": "{{count}} modelos pagos em jogo",
+      "metricCost": "Custo",
+      "metricTokens": "Tokens",
+      "totalCost": "Custo Total",
+      "routed": "Encaminhado: {{value}}",
+      "saved": "Economizado: {{value}}",
+      "usdThisPeriod": "USD neste período",
+      "savedVsAlways": "{{value}} economizado ({{percent}}%) vs sempre {{model}}",
+      "tokens": "Tokens",
+      "in": "Entrada: {{value}}",
+      "out": "Saída: {{value}}",
+      "tokenSubWithCache": "{{in}} entrada · {{out}} saída · {{cached}} em cache",
+      "tokenSub": "{{in}} entrada · {{out}} saída",
+      "cutByOptimizers": "{{value}} cortado pelos otimizadores",
+      "fewerThanAlways": "{{value}} menos que sempre {{model}}, estimado"
+    },
+    "optimizerSteps": {
+      "downloaded": "Descarregado",
+      "thisStepRunsOn": "Este passo executa em",
+      "defaultCheckpoint": "Ponto de verificação predefinido"
+    },
+    "routingPolicies": {
+      "title": "Políticas de Encaminhamento",
+      "subtitle": "As políticas determinam como os pedidos são encaminhados. Executam-se por ordem de cima para baixo.",
+      "removePolicy": "Remover política",
+      "removeIntent": "Remover intenção",
+      "removeExample": "Remover exemplo",
+      "routingModels": "Modelos de Encaminhamento",
+      "embeddingModels": "Modelos de Incorporação",
+      "maxCompletionTokens": "Tokens de conclusão máximos",
+      "maxPromptChars": "Caracteres de prompt máximos",
+      "similarityThreshold": "Limite de semelhança",
+      "previousMessages": "Mensagens anteriores",
+      "intents": "Intenções",
+      "confidenceThreshold": "Limite de confiança",
+      "ambiguityMargin": "Margem de ambiguidade",
+      "maxCallsPerWindow": "Chamadas máximas por janela",
+      "addFallbackModel": "Adicionar Modelo de Fallback",
+      "autoRoutingLabel": "Encaminhamento Automático",
+      "autoRoutingHint": "Se ativado, o tráfego é distribuído sem prompts personalizados. Se desativado, pode escrever prompts específicos instruindo a IA quando selecionar cada modelo de destino.",
+      "additionalPromptInfoLabel": "Informação de Prompt Adicional",
+      "additionalPromptInfoPlaceholder": "Instruções extras para incluir no prompt de encaminhamento...",
+      "addExamplePlaceholder": "Adicionar exemplo e pressionar Enter…",
+      "addIntentPlaceholder": "Adicionar intenção e pressionar Enter…",
+      "addPolicyPlaceholder": "Adicionar uma política...",
+      "labels": {
+        "llm": "Política de Encaminhamento de IA",
+        "rate-limit": "Política de Limite de Taxa",
+        "budget-remaining": "Política de Orçamento Restante",
+        "semantic-intent": "Política de Intenção Semântica",
+        "health": "Política de Saúde",
+        "context": "Política de Contexto",
+        "capability": "Política de Capacidade",
+        "performance": "Política de Desempenho",
+        "fairness": "Política de Justiça",
+        "cheapest": "Política de Mais Barato",
+        "model-preference": "Política de Preferência de Modelo"
+      },
+      "descriptions": {
+        "context": "Avalia modelos com base na janela de contexto disponível. Atribui 0 a modelos cuja janela de contexto é menor que o comprimento estimado do pedido, prevenindo erros de truncamento.",
+        "cheapest": "Avalia modelos inversamente proporcional ao seu custo de token. O modelo mais barato obtém 1,0, o mais caro obtém 0,0, ajudando a reduzir a despesa de API entre pedidos.",
+        "health": "Avalia modelos com base na taxa de erro recente usando decaimento exponencial (erros recentes pesam mais). Aplica um disjuntor que define a pontuação para 0 quando a taxa de erro ponderada excede um limite crítico.",
+        "performance": "Avalia modelos com base na latência média recente usando decaimento exponencial. O modelo mais rápido obtém 1,0, o mais lento obtém 0,0. Modelos sem dados recentes predefinam para 1,0.",
+        "llm": "Usa um modelo de IA para avaliar candidatos com base no conteúdo semântico do pedido. Suporta prompts de orientação de encaminhamento por modelo e considera margem de orçamento quando limites são configurados.",
+        "capability": "Filtro rígido: atribui 0 a modelos que explicitamente carecem de uma funcionalidade exigida pelo pedido (visão, chamada de função, modo JSON). Modelos sem declarações explícitas de capacidade não são penalizados.",
+        "rate-limit": "Penaliza modelos com alta frequência de chamadas recente para reduzir o risco de atingir limites de taxa do fornecedor (HTTP 429). Suporta um limite rígido configurável que força a pontuação para 0.",
+        "fairness": "Distribui o tráfego uniformemente penalizando modelos que receberam mais chamadas bem-sucedidas recentemente. Atua como um round-robin suave para evitar que a carga se concentre num único modelo.",
+        "budget-remaining": "Avalia modelos com base na margem de orçamento restante em todos os limites configurados. Prefere modelos com mais espaço antes dos seus limiares serem atingidos, espalhando o consumo proativamente.",
+        "semantic-intent": "Classifica o pedido por intenção semântica usando incorporações, depois restringe o conjunto de candidatos aos modelos mapeados para essa intenção. Correspondências confiantes filtram rigidamente o conjunto; correspondências ambíguas mesclam os 2 melhores conjuntos; pedidos desconhecidos passam todos os candidatos.",
+        "model-preference": "Quando o cliente solicita um modelo específico (não routerly/ada), atribui uma pontuação de bónus configurável a esse modelo. Quando nenhuma preferência é expressa, a política abstém-se. A posição na lista controla o peso da preferência contra outras políticas."
+      },
+      "selectModel": "Selecionar modelo"
+    },
+    "securityRules": {
+      "applyTo": "Aplicar a",
+      "streamingBufferSize": "Tamanho do buffer de streaming (caracteres)",
+      "entityTypes": "Tipos de entidade",
+      "target": "Destino",
+      "embeddingModel": "Modelo de incorporação",
+      "judgeModel": "Modelo juiz",
+      "contentGuardrails": "Proteções de Conteúdo",
+      "piiPolicies": "Políticas de PII",
+      "addSecurityPolicyPlaceholder": "Adicionar uma política de segurança...",
+      "removePolicyTooltip": "Remover política",
+      "deleteRuleAriaLabel": "Eliminar regra",
+      "embeddingModelPlaceholder": "Selecionar modelo de incorporação...",
+      "fallbackModelsLabel": "Modelos de fallback (opcional, tentados por ordem)",
+      "fallbackModelsPlaceholder": "Sem modelos de fallback...",
+      "exampleTextsLabel": "Textos de exemplo a bloquear (um por linha)",
+      "exampleTextsPlaceholder": "Como faço para hackear...\n...",
+      "similarityThresholdLabel": "Limite de semelhança:",
+      "judgeModelPlaceholder": "Selecionar modelo juiz...",
+      "allowedTopicsLabel": "Tópicos permitidos (linguagem natural)",
+      "allowedTopicsPlaceholder": "Suporte ao cliente para produtos de software. Resolução técnica de problemas. Questões de cobrança.",
+      "onTopicThresholdLabel": "Bloquear se a pontuação no tópico estiver abaixo de:",
+      "harmThresholdLabel": "Bloquear se a pontuação de dano estiver acima de:",
+      "customInstructionsLabel": "Instruções personalizadas",
+      "customInstructionsPlaceholder": "Você é um classificador de segurança de conteúdo. Avalie o seguinte texto para conteúdo prejudicial.\nCategorias: discurso de ódio, violência, conteúdo sexual, automutilação.\nResponda APENAS com um objeto JSON: {\"score\": <número entre 0 e 1>}",
+      "customInstructionsRequired": "Instruções personalizadas são necessárias.",
+      "enabledLabel": "Ativado",
+      "contentGuardrailsHint": "Inspecione pedidos e respostas contra regras configuradas. Ativo quando pelo menos uma regra é configurada.",
+      "securityPoliciesHeading": "Políticas de Segurança",
+      "noSecurityPolicies": "Nenhuma política de segurança configurada.",
+      "piiPoliciesHint": "Detete e edite dados pessoais. Cada política destina-se à entrada do pedido, resposta do modelo ou ambos, e controla o seu próprio conjunto de entidades.",
+      "noPiiPolicies": "Nenhuma política de PII configurada.",
+      "addPolicyButton": "+ Adicionar Política",
+      "injectionWarningTitle": "Carga de pedido modificada por injeção",
+      "injectionWarningBody": "Uma ou mais regras injetam a sua instrução no prompt do sistema do pedido de saída, portanto a carga enviada ao fornecedor é modificada. Nenhuma chamada adicional do modelo é feita e nada é bloqueado; o modelo de servição auto-impõe a instrução.",
+      "streamingDisabledWarningTitle": "Streaming desativado para este router",
+      "streamingDisabledWarningBody": "Uma ou mais regras estão configuradas para bloquear respostas (destino: resposta ou ambos). Como a resposta inteira deve ser inspecionada antes de uma decisão de bloqueio, Routerly segura a resposta na íntegra antes de devolvê-la ao cliente. O streaming não está disponível enquanto uma regra de bloqueio de resposta está ativa; os clientes receberão a resposta completa de uma vez em vez de em pedaços incrementais."
+    },
+    "connectionFields": {
+      "azureResourceName": "Nome do Recurso Azure",
+      "azureResourceNamePlaceholder": "meusistema",
+      "azureResourceNameHint": "O nome do recurso Azure OpenAI (do portal do Azure).",
+      "deploymentId": "ID de Implementação",
+      "deploymentIdPlaceholder": "implementacao-gpt-4o",
+      "deploymentIdHint": "O nome de implementação que criou no Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Versão de API",
+      "azureApiVersionDefaultHint": "(padrão: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Região AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID da Chave de Acesso AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXEMPLO",
+      "awsSecretAccessKey": "Chave de Acesso Secreto AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Deixar em branco para manter existente",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Token de Sessão",
+      "awsSessionTokenOptionalHint": "(opcional, para credenciais temporárias)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID do Router GCP",
+      "gcpRouterIdPlaceholder": "meu-router-gcp",
+      "gcpLocationLabel": "Localização",
+      "gcpLocationDefaultHint": "(padrão: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Chave da Conta de Serviço",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL do Ponto Final",
+      "optional": "(opcional)",
+      "webProvider": {
+        "unofficialWarningTitle": "Fornecedor não oficial — use por sua conta e risco.",
+        "unofficialWarningBody": "Esta integração depende de uma API interna não documentada que pode mudar ou quebrar sem aviso. Pode violar os Termos de Serviço do fornecedor e resultar em suspensão da conta.",
+        "accessTokenLabel": "Token de Acesso",
+        "sessionTokenLabel": "Token de Sessão",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Cole o valor do cookie sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Enquanto autenticado em ChatGPT, abra <code>https://chatgpt.com/api/auth/session</code> num novo separador. Copie o valor do campo <code>accessToken</code> (começa com <code>eyJ</code>). O token expira cada ~24 horas. Para acesso confiável, também preencha o campo <strong>cf_clearance</strong> abaixo.",
+        "anthropicInstructions": "<strong>Como obter sua chave de sessão:</strong> Enquanto autenticado em Claude, abra DevTools (F12) → Aplicação → Cookies → <code>claude.ai</code> → copie o valor do cookie <code>sessionKey</code> (começa com <code>sk-ant-sid01-</code>). A chave permanece válida até fazer logout."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth de Subscrição",
+        "authFilePathLabel": "Caminho do ficheiro de autenticação",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (padrão)",
+        "anthropicTitle": "Use a sua subscrição Claude Pro/Max.",
+        "anthropicRunCommandStep": "Execute este comando e copie o token que imprime:",
+        "anthropicPasteTokenStep": "Cole o token no campo <em>Token OAuth de Subscrição</em> abaixo.",
+        "termsNote": "Regenere quando expirar. O uso de subscrição via um gateway pode violar os Termos do fornecedor.",
+        "openaiTitle": "Use a sua subscrição ChatGPT Plus/Pro via a aplicação Codex.",
+        "openaiLoginStep": "Faça login na aplicação desktop Codex com a sua conta ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly lê o seu token de acesso de <code>~/.codex/auth.json</code> e atualiza-o automaticamente. Nenhuma cópia/cola manual necessária.",
+        "openaiAuthFilePathStep": "Deixe o campo <em>Caminho do ficheiro de autenticação</em> em branco para usar o padrão, ou introduza um caminho personalizado se a sua aplicação Codex armazenar autenticação em outro local.",
+        "openaiTermsNote": "O uso de subscrição via um gateway pode violar os Termos do fornecedor."
+      },
+      "copyCode": {
+        "copiedTooltip": "Copiado!",
+        "copyTooltip": "Copiar para área de transferência",
+        "copiedLabel": "Copiado",
+        "copyLabel": "Copiar"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Copiar",
+      "copiedLabel": "Copiado!",
+      "copyErrorHint": "Falha na cópia, selecione e copie manualmente."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Cliente MCP",
+      "hints": {
+        "claudeCode": "Execute isto uma vez, em qualquer lugar. Claude Code armazena o servidor em <code>~/.claude.json</code>.",
+        "claudeDesktop": "Coloque isto em <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (no Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), depois reinicie a aplicação. Ele gera o CLI, por isso <code>routerly</code> deve estar no seu PATH.",
+        "codex": "Coloque isto em <code>~/.codex/config.toml</code>. Codex lê o token do ambiente, portanto exporte-o na shell onde inicia Codex.",
+        "opencode": "Coloque isto em <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Execute isto uma vez. OpenClaw predefiniu para o transporte sse, que Routerly não serve, portanto o transporte é definido explicitamente.",
+        "cursor": "Coloque isto em <code>~/.cursor/mcp.json</code>, ou em <code>.cursor/mcp.json</code> para limitar ao projeto.",
+        "cline": "Coloque isto em <code>~/.cline/mcp.json</code>, ou copie-o em Configure MCP Servers no painel Cline.",
+        "zed": "Coloque isto no seu <code>settings.json</code> do Zed, juntamente com qualquer outro servidor de contexto."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Alterações Não Guardadas",
+      "message": "Tem alterações não guardadas. Se sair agora, as suas alterações serão perdidas.",
+      "stay": "Ficar",
+      "leaveAnyway": "Sair mesmo assim"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Proteções",
+        "pii": "PII",
+        "optimizers": "Otimizadores",
+        "routerOverhead": "Sobrecarga do router"
+      },
+      "policyType": {
+        "llm": "Encaminhamento de IA",
+        "rateLimit": "Limite de Taxa",
+        "budgetRemaining": "Orçamento Restante",
+        "semanticIntent": "Intenção Semântica",
+        "modelPreference": "Preferência de Modelo"
+      },
+      "rawDetails": "detalhes brutos",
+      "technicalDetails": "detalhes técnicos",
+      "systemPrompt": "prompt do sistema",
+      "responseText": "texto da resposta",
+      "responseJson": "JSON da resposta",
+      "cacheEmbeddingCall": "CHAMADA DE INCORPORAÇÃO EM CACHE",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Modelo de Incorporação",
+      "upstreamModel": "Modelo Ascendente",
+      "provider": "Fornecedor",
+      "source": "Fonte",
+      "endpoint": "Ponto Final",
+      "cacheHit": "ACERTO DE CACHE",
+      "ttlExtended": "TTL estendido",
+      "model": "Modelo",
+      "similarity": "Semelhança",
+      "embedding": "Incorporação",
+      "cacheMiss": "FALHA DE CACHE",
+      "details": "detalhes",
+      "excludedByLimits": "EXCLUÍDO POR LIMITES",
+      "finalRanking": "CLASSIFICAÇÃO FINAL",
+      "noRankingData": "Sem dados de classificação (registo pode estar corrompido ou de versão anterior)",
+      "policyScores": "PONTUAÇÕES DE POLÍTICA",
+      "weight": "peso {{value}}",
+      "allScores": "todas as pontuações",
+      "noPolicyData": "Sem dados de política (registo pode estar corrompido ou de versão anterior)",
+      "requestGuardrailBlocked": "PROTEÇÃO DE PEDIDO BLOQUEADA",
+      "requestGuardrailTriggered": "PROTEÇÃO DE PEDIDO ACIONADA",
+      "responseGuardrailBlocked": "PROTEÇÃO DE RESPOSTA BLOQUEADA",
+      "responseGuardrailTriggered": "PROTEÇÃO DE RESPOSTA ACIONADA",
+      "rule": "Regra",
+      "action": "Ação",
+      "guardrailsEvaluated": "PROTEÇÕES AVALIADAS ({{target}})",
+      "ruleCount": "{{count}} regra",
+      "ruleCount_other": "{{count}} regras",
+      "promptInjection": "Injeção de prompt",
+      "injects": "injeta",
+      "judgeResponse": "Resposta do juiz",
+      "piiScrubbed": "PII EDITADA",
+      "piiScanned": "PII ANALISADA ({{target}})",
+      "policies": "políticas",
+      "entityTypes": "tipos de entidade",
+      "customPatterns": "padrões personalizados",
+      "scanned": "analisados",
+      "redacted": "editados",
+      "took": "demorou",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "tipos de entidade analisados",
+      "guardrailInjection": "INJEÇÃO DE PROTEÇÃO",
+      "rules": "regras",
+      "chars": "caracteres",
+      "injectedText": "texto injetado",
+      "optimizer": "OTIMIZADOR {{id}}",
+      "tokens": "tokens",
+      "saved": "economizados",
+      "tok": "{{value}} tok",
+      "reason": "razão",
+      "budgetBlocked": "ORÇAMENTO BLOQUEADO",
+      "budgetOk": "ORÇAMENTO OK",
+      "egressSent": "SAÍDA ENVIADA",
+      "status": "estado",
+      "encoding": "codificação",
+      "frames": "quadros",
+      "bytes": "bytes"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Meu Perfil",
+      "subtitle": "Gerencie as definições da sua conta"
+    },
+    "tabs": {
+      "profile": "Perfil",
+      "notifications": "Notificações",
+      "mcp": "MCP",
+      "preferences": "Preferências"
+    },
+    "notifications": {
+      "close": "Fechar",
+      "refresh": "Atualizar",
+      "clear": "Limpar",
+      "empty": "Nenhuma notificação encontrada.",
+      "markAllRead": "Marcar todas como lidas",
+      "allCaughtUp": "Tudo em dia",
+      "unreadCount": "{{count}} não lida",
+      "selectedCount": "{{count}} selecionadas",
+      "severity": {
+        "all": "Todas",
+        "info": "Informação",
+        "warning": "Aviso",
+        "critical": "Crítica"
+      },
+      "status": {
+        "read": "Lida",
+        "unread": "Não lida"
+      },
+      "filters": {
+        "severity": "Gravidade",
+        "category": "Categoria",
+        "event": "Evento",
+        "date": "Data",
+        "period": "Período",
+        "status": "Estado",
+        "all": "Todas",
+        "allCategories": "Todas as categorias",
+        "allEvents": "Todos os eventos",
+        "unreadOnly": "Apenas não lidas"
+      },
+      "actions": {
+        "markRead": "Marcar como lida",
+        "markUnread": "Marcar como não lida",
+        "archive": "Arquivar"
+      },
+      "table": {
+        "severity": "Gravidade",
+        "event": "Evento",
+        "date": "Data",
+        "status": "Estado",
+        "selectAll": "Selecionar todas",
+        "selectRow": "Selecionar {{event}}",
+        "eventCount": "{{count}} eventos"
+      },
+      "pagination": {
+        "previous": "← Anterior",
+        "next": "Seguinte →",
+        "page": "Página {{page}} de {{totalPages}}",
+        "total": "({{count}} total)"
+      },
+      "detail": {
+        "ariaLabel": "Detalhe da notificação",
+        "details": "Detalhes",
+        "noDetails": "Sem detalhes adicionais.",
+        "eventsInIncident": "Eventos neste incidente"
+      }
+    },
+    "security": {
+      "roleLabel": "Função:",
+      "password": {
+        "heading": "Alterar Palavra-passe",
+        "currentLabel": "Palavra-passe Atual",
+        "newLabel": "Nova Palavra-passe",
+        "newPlaceholder": "Mínimo 8 caracteres",
+        "confirmLabel": "Confirmar Nova Palavra-passe",
+        "success": "Palavra-passe alterada com sucesso.",
+        "saving": "A guardar...",
+        "submit": "Alterar Palavra-passe",
+        "errors": {
+          "mismatch": "As palavras-passe não correspondem.",
+          "tooShort": "A nova palavra-passe deve ter pelo menos 8 caracteres.",
+          "updateFailed": "Falha na atualização"
+        }
+      },
+      "tfa": {
+        "heading": "Autenticação de Dois Fatores",
+        "notEnabled": "2FA não está ativada. Proteja a sua conta com uma palavra-passe de uma única vez baseada no tempo.",
+        "enableButton": "Ativar Autenticação de Dois Fatores",
+        "scanInstructions": "Escaneie este código QR com a sua aplicação autenticadora (Google Authenticator, Authy, etc.), depois introduza o código de 6 dígitos para confirmar.",
+        "qrAlt": "Código QR de configuração de 2FA",
+        "addAccountInstructions": "Abra a sua aplicação autenticadora (Google Authenticator, Authy, 1Password, etc.) e adicione uma nova conta:",
+        "setup": {
+          "step1": "Toque em <strong>Adicionar conta</strong> ou no botão <strong>+</strong>",
+          "step2": "Escolha <strong>Introduzir chave de configuração</strong> (ou escaneie código QR se estiver no telemóvel)",
+          "step3": "Introduza o segredo mostrado abaixo"
+        },
+        "mobileLink": "Toque aqui no telemóvel para abrir autenticador",
+        "manualEntryLabel": "Segredo de entrada manual:",
+        "saveBackupCodes": "Guarde estes códigos de backup. Cada um pode ser usado uma vez se perder acesso ao seu autenticador.",
+        "copyBackupCodes": "Copiar códigos de backup",
+        "confirmCodeLabel": "Introduza o código da sua aplicação para ativar",
+        "activate": "Ativar 2FA",
+        "cancel": "Cancelar",
+        "enabledBadge": "2FA está ativada",
+        "newBackupCodesLabel": "Novos códigos de backup (guarde agora):",
+        "copy": "Copiar",
+        "regenLabel": "Introduza o código autenticador para regenerar códigos de backup",
+        "regenerate": "Regenerar",
+        "regenerateBackupCodes": "Regenerar códigos de backup",
+        "disableLabel": "Desativar 2FA (introduza código autenticador)",
+        "disable": "Desativar 2FA",
+        "errors": {
+          "setupFailed": "Falha na configuração",
+          "confirmFailed": "Falha na confirmação",
+          "disableFailed": "Falha na desativação",
+          "regenFailed": "Falha na regeneração"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Falha ao carregar a superfície MCP",
+        "revokeFailed": "Falha ao revogar o token"
+      },
+      "revokeConfirm": "Revogar o token MCP \"{{name}}\"? Os clientes que o utilizam deixam de funcionar imediatamente.",
+      "tokens": {
+        "heading": "Tokens MCP",
+        "newToken": "Novo Token",
+        "description": "Cada token atua como você: expõe exatamente as ferramentas que a sua função permite. O valor completo é mostrado uma única vez, na página que o cria.",
+        "empty": "Nenhum token MCP ainda. Crie um para conectar um cliente MCP.",
+        "created": "Criado",
+        "lastUsed": "Última utilização",
+        "expires": "Expira",
+        "never": "Nunca",
+        "revokeTitle": "Revogar token"
+      },
+      "tools": {
+        "heading": "Ferramentas Que Os Seus Tokens Expõem",
+        "empty": "A sua função não concede nenhuma ferramenta MCP. Peça a um administrador as permissões de que precisa.",
+        "table": {
+          "name": "Nome",
+          "scope": "Âmbito",
+          "description": "Descrição",
+          "sourceModule": "Módulo de origem",
+          "permission": "Permissão"
+        }
+      },
+      "connect": {
+        "heading": "Conectar um Cliente MCP",
+        "descriptionPre": "Escolha o cliente que está a ligar, depois substitua",
+        "descriptionPost": "por um dos seus tokens. Criar um token mostra o mesmo trecho com o valor já nele.",
+        "otherClient": "Qualquer outro cliente",
+        "httpInstructionsPre": "Por HTTP, aponte para este ponto final e autentique com",
+        "httpInstructionsPost": ". É JSON-RPC 2.0 por HTTP Streamable.",
+        "stdioInstructionsPre": "Por stdio, o CLI faz ponte e passa o seu token. Executar o serviço diretamente? Configure",
+        "stdioInstructionsAnd": "e",
+        "stdioInstructionsPost": "você mesmo."
+      },
+      "newToken": {
+        "backToMcp": "Voltar ao MCP",
+        "title": "Novo Token MCP",
+        "subtitle": "O token atua como você: expõe exatamente as ferramentas que a sua função permite.",
+        "nameLabel": "Nome",
+        "namePlaceholder": "portátil",
+        "nameHint": "Onde este token é utilizado, por exemplo \"portátil\" ou \"claude-desktop\".",
+        "expiryLabel": "Expira em",
+        "expiryHint": "Opcional. Deixe vazio e o token nunca expira, até revogar.",
+        "createButton": "Criar token",
+        "creatingButton": "A criar…",
+        "cancelButton": "Cancelar",
+        "tokenSection": {
+          "title": "Seu token",
+          "hint": "Copie agora. Não é mostrado novamente, e um token perdido apenas pode ser substituído.",
+          "copyButton": "Copiar",
+          "copiedButton": "Copiado!",
+          "copyTitle": "Copiar token",
+          "copiedTitle": "Copiado!"
+        },
+        "connectSection": {
+          "title": "Conectar um cliente",
+          "hint": "Escolha o cliente que está a ligar. O trecho já transporta este token."
+        },
+        "bridgeSection": {
+          "title": "Ou use a ponte local",
+          "hint": "Para um cliente que apenas fala stdio, o CLI faz ponte e passa o seu token."
+        },
+        "doneButton": "Concluído",
+        "errors": {
+          "createFailed": "Falha ao criar o token",
+          "copyFailed": "Falha na cópia, selecione e copie o token manualmente."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Idioma",
+      "description": "Escolha o idioma em que o painel está apresentado.",
+      "languageLabel": "Idioma",
+      "saved": "Preferência de idioma guardada."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Falha ao carregar as definições",
+        "loadFailedPeriod": "Falha ao carregar as definições.",
+        "saveFailed": "Falha ao guardar",
+        "saveSettingsFailed": "Falha ao guardar as definições"
+      },
+      "savedSuccess": "Definições guardadas com sucesso.",
+      "saving": "A guardar…",
+      "saveSettings": "Guardar Definições",
+      "serverInfo": {
+        "heading": "Informações do Servidor",
+        "readOnly": "Apenas leitura. Anfitrião e porta vêm do ambiente ou do ficheiro de definições, não daqui.",
+        "reachableAt": "Acessível em",
+        "reachableAtAny": "Acessível em qualquer um destes endereços",
+        "thisMachine": "Esta máquina",
+        "network": "Rede",
+        "copyAddress": "Copiar {{address}}",
+        "copied": "Copiado!",
+        "copy": "Copiar",
+        "hostAndPort": "Anfitrião e porta",
+        "version": "Versão",
+        "uptime": "Tempo de atividade"
+      },
+      "runtime": {
+        "heading": "Definições de Tempo de Execução",
+        "logLevel": "Nível de Registo",
+        "logLevelHint": "Controla a verbosidade dos registos de serviço.",
+        "publicUrl": "URL Pública",
+        "publicUrlHint": "URL base em que o serviço é acessível a partir de clientes externos (ex. <code>http://192.168.1.10:3000</code>). Utilizado na secção <strong>Como conectar</strong> de cada router. Útil quando o painel executa numa máquina ou porta diferente do serviço.",
+        "usageRetention": "Retenção de Utilização",
+        "noLimit": "Sem limite",
+        "maxAgeDays": "Idade máxima (dias)",
+        "maxSizeMb": "Tamanho máximo (MB)",
+        "retentionHint": "Histórico de utilização/cobrança mais antigo do que muitos dias, ou excedendo este tamanho, é descartado do registo ativo. Deixe ambos vazios para sem limite de retenção."
+      },
+      "internationalization": {
+        "heading": "Internacionalização",
+        "defaultLanguage": "Idioma Padrão",
+        "defaultLanguageHint": "Idioma do painel para usuários que ainda não escolheram o seu próprio. Não sobrescreve a escolha pessoal do usuário."
+      },
+      "telemetry": {
+        "heading": "Métricas Anónimas",
+        "neverAutomatic": "Routerly nunca envia dados automaticamente.",
+        "noChoice": "Ainda não fez uma escolha.",
+        "enabledStatus": "As métricas anónimas de instalação estão ativadas.",
+        "disabledStatus": "As métricas anónimas de instalação estão desativadas.",
+        "explanation": "Quando ativada, Routerly envia apenas: tipo de evento (instalar / atualizar / desinstalar), versão, plataforma e uma ID aleatória. Sem dados pessoais, sem dados de utilização, sem IP armazenado.",
+        "whatIsSent": "O que é enviado?",
+        "installId": "ID de Instalação: {{id}}",
+        "saving": "A guardar…",
+        "enable": "Ativar",
+        "disable": "Desativar"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Painel (caixa de entrada na aplicação)",
+          "description": "Encaminha eventos para a caixa de entrada de notificações na aplicação"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Servidor de correio personalizado"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "Serviço de Email Simples AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "SendGrid da Twilio"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Serviços de Comunicação Azure"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Retorno HTTP webhook"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "API de Bot Slack"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "API de Eventos PagerDuty v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Fornecedor – Erro",
+        "providerDegraded": "Fornecedor – Degradado",
+        "providerRecovered": "Fornecedor – Recuperado",
+        "providerRateLimited": "Fornecedor – Limitado em Taxa",
+        "routingNoCandidates": "Encaminhamento – Sem Candidatos",
+        "routingFallbackUsed": "Encaminhamento – Fallback Utilizado",
+        "authLoginFailed": "Autenticação – Login Falhou",
+        "authTokenInvalid": "Autenticação – Token Inválido",
+        "configModelAdded": "Configuração – Modelo Adicionado",
+        "configModelDeleted": "Configuração – Modelo Eliminado",
+        "configRouterCreated": "Configuração – Router Criado",
+        "configRouterDeleted": "Configuração – Router Eliminado",
+        "budgetThresholdReached": "Orçamento – Limite Atingido",
+        "budgetExceeded": "Orçamento – Excedido",
+        "budgetReset": "Orçamento – Reiniciar",
+        "systemStartup": "Sistema – Início",
+        "systemShutdown": "Sistema – Encerramento",
+        "systemUpdateAvailable": "Sistema – Atualização Disponível"
+      },
+      "removeChannelTooltip": "Remover canal",
+      "removeChannelConfirm": "Remover canal?",
+      "formUpdatedHint": "Formulário atualizado — guarde para aplicar.",
+      "hmacSigningKeyPlaceholder": "Chave de assinatura HMAC",
+      "perms": {
+        "routerRead": "Routers – Ler",
+        "routerWrite": "Routers – Escrever",
+        "modelRead": "Modelos – Ler",
+        "modelWrite": "Modelos – Escrever",
+        "userRead": "Utilizadores – Ler",
+        "userWrite": "Utilizadores – Escrever",
+        "reportRead": "Relatórios – Ler",
+        "settingsRead": "Definições – Ler",
+        "settingsWrite": "Definições – Escrever",
+        "notificationWrite": "Notificações – Escrever",
+        "tokenRead": "Tokens – Ler",
+        "tokenWrite": "Tokens – Escrever",
+        "roleWrite": "Funções – Escrever",
+        "auditRead": "Registo de Auditoria – Ler",
+        "modulesRead": "Módulos – Ler",
+        "modulesManage": "Módulos – Gerir",
+        "connectionsRead": "Ligações – Ler",
+        "connectionsManage": "Ligações – Gerir",
+        "resilienceRead": "Resiliência – Ler",
+        "resilienceManage": "Resiliência – Gerir",
+        "profilesRead": "Perfis de Encaminhamento – Ler",
+        "profilesManage": "Perfis de Encaminhamento – Gerir",
+        "optimizersRead": "Otimizadores – Ler",
+        "optimizersManage": "Otimizadores – Gerir",
+        "experimentsRead": "Experimentos – Ler",
+        "experimentsManage": "Experimentos – Gerir"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Para este tipo de canal, os destinos não alteram a entrega (o ponto final é fixo). Filtram quais eventos são registados na trilha de auditoria por destinatário.",
+        "dashboard": "Os destinos controlam a visibilidade da caixa de entrada — apenas os utilizadores correspondidos verão estas notificações na sua caixa de entrada na aplicação.",
+        "email": "Os destinos determinam quais utilizadores recebem este email. Deixe todos vazios para enviar a todos os utilizadores."
+      },
+      "summary": {
+        "allEvents": "Todos os eventos",
+        "eventCount": "{{count}} evento",
+        "eventCount_other": "{{count}} eventos",
+        "roleCount": "{{count}} função",
+        "roleCount_other": "{{count}} funções",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} utilizador",
+        "userCount_other": "{{count}} utilizadores",
+        "everyone": "Todos"
+      },
+      "errors": {
+        "loadFailed": "Falha ao carregar"
+      },
+      "fields": {
+        "dashboardHint": "Encaminha eventos correspondentes para a caixa de entrada de notificação na aplicação. Sem credenciais necessárias.",
+        "labels": {
+          "fromAddress": "Endereço De",
+          "fromName": "Nome De",
+          "host": "Anfitrião",
+          "port": "Porta",
+          "tls": "TLS/SSL",
+          "username": "Nome de utilizador",
+          "password": "Palavra-passe",
+          "awsRegion": "Região AWS",
+          "accessKeyId": "ID da Chave de Acesso",
+          "secretAccessKey": "Chave de Acesso Secreto",
+          "apiKey": "Chave de API",
+          "connectionString": "Cadeia de Conexão",
+          "clientId": "ID do Cliente",
+          "clientSecret": "Segredo do Cliente",
+          "refreshToken": "Token de Atualização",
+          "url": "URL",
+          "method": "Método",
+          "signingSecret": "Segredo de Assinatura",
+          "botToken": "Token de Bot",
+          "channelId": "ID do Canal",
+          "webhookUrl": "URL do Webhook",
+          "integrationKey": "Chave de Integração"
+        },
+        "values": {
+          "enabled": "Ativado",
+          "disabled": "Desativado",
+          "configured": "Configurado",
+          "notSet": "Não definido"
+        },
+        "optional": "(opcional)",
+        "keepCurrentPlaceholder": "Deixar em branco para manter atual",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Usar TLS / SSL",
+        "smtpTlsOnHint": "(porta 465 — SSL direto)",
+        "smtpTlsOffHint": "(porta 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Deixe credenciais vazias para usar a função de instância IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Chave de assinatura HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "Chave de encaminhamento de 32 caracteres",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Eventos",
+          "eventsPlaceholder": "Todos os eventos (deixar vazio para todos)",
+          "eventsHint": "Deixe vazio para receber todos os eventos. Selecione eventos específicos para filtrar.",
+          "routersHeading": "Routers",
+          "routersPlaceholder": "Todos os routers (deixar vazio para todos)",
+          "routersHint": "Deixe vazio para receber eventos de todos os routers.",
+          "cooldownHeading": "Arrefecimento",
+          "cooldownSuffix": "segundos (0 = sem arrefecimento)",
+          "cooldownHint": "Intervalo mínimo antes deste canal poder disparar novamente para o mesmo evento."
+        },
+        "recipients": {
+          "heading": "Destinatários / Destinos",
+          "rolesLabel": "Funções",
+          "rolesPlaceholder": "Todas as funções (todos)",
+          "permissionsLabel": "Permissões",
+          "permissionsPlaceholder": "Todas as permissões (todos)",
+          "usersLabel": "Utilizadores individuais",
+          "usersPlaceholder": "Todos os utilizadores (todos)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "ligação",
+          "routing": "encaminhamento",
+          "recipients": "destinatários"
+        },
+        "sections": {
+          "channelSettings": "Definições de canal",
+          "eventsRouting": "Eventos e encaminhamento",
+          "recipients": "Destinatários"
+        },
+        "nameLabel": "Nome",
+        "namePlaceholder": "Rótulo para este canal",
+        "cancelButton": "Cancelar"
+      },
+      "list": {
+        "countLabel": "{{count}} canal",
+        "countLabel_other": "{{count}} canais",
+        "filteredLabel": "{{shown}} de {{count}} canal",
+        "filteredLabel_other": "{{shown}} de {{count}} canais",
+        "allTypes": "Todos os tipos",
+        "searchPlaceholder": "Filtrar canais…",
+        "searchChannelsPlaceholder": "Pesquisar canais…",
+        "addButton": "Adicionar Canal",
+        "addSearchPlaceholder": "Pesquisar canais…",
+        "noResults": "Sem resultados",
+        "emptyTitle": "Nenhum canal de notificação configurado ainda.",
+        "noMatch": "Nenhum canal corresponde aos filtros ativos.",
+        "nameInlinePlaceholder": "Rótulo (opcional)",
+        "columns": {
+          "name": "Nome",
+          "type": "Tipo",
+          "summary": "Eventos / Destinos"
+        },
+        "testTitle": "Enviar teste",
+        "editTitle": "Editar canal",
+        "deleteTitle": "Eliminar canal",
+        "deleteConfirm": "Remover canal \"{{name}}\"? Isto não pode ser desfeito.",
+        "deleteConfirmButton": "Eliminar",
+        "errors": {
+          "deleteFailed": "Falha ao eliminar"
+        }
+      },
+      "edit": {
+        "backToList": "Voltar às Notificações",
+        "back": "Voltar",
+        "heading": "Editar canal {{provider}}",
+        "subtitle": "Atualizar configuração para este canal de notificação.",
+        "testSection": {
+          "title": "Enviar teste",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Enviar Teste",
+          "sendingButton": "A enviar…",
+          "hintEmail": "Deixe vazio para enviar para o seu email de conta. O teste utiliza a configuração de canal guardada.",
+          "hintOther": "O teste utiliza a configuração de canal guardada. Guarde alterações primeiro para testar definições atualizadas."
+        },
+        "saveButton": "Guardar Alterações",
+        "savingButton": "A guardar…",
+        "errors": {
+          "loadFailed": "Falha ao carregar",
+          "saveFailed": "Falha ao guardar"
+        }
+      },
+      "create": {
+        "backToList": "Voltar às Notificações",
+        "changeType": "Alterar tipo",
+        "pickerHeading": "Escolher um tipo de canal",
+        "pickerSubtitle": "Selecione o fornecedor de notificações a configurar.",
+        "heading": "Novo canal {{provider}}",
+        "subtitle": "Configurar um novo canal de notificação.",
+        "createButton": "Criar Canal",
+        "creatingButton": "A criar…",
+        "errors": {
+          "createFailed": "Falha ao criar"
+        }
+      },
+      "sendTest": "Enviar teste",
+      "fromAddress": "Endereço De",
+      "individualUsers": "Utilizadores individuais",
+      "host": "Anfitrião",
+      "port": "Porta",
+      "apiKey": "Chave de API",
+      "connectionString": "Cadeia de Conexão",
+      "clientId": "ID do Cliente",
+      "clientSecret": "Segredo do Cliente",
+      "refreshToken": "Token de Atualização",
+      "method": "Método",
+      "botToken": "Token de Bot",
+      "channelId": "ID do Canal",
+      "webhookUrl": "URL do Webhook",
+      "integrationKey": "Chave de Integração"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — expõe /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — API de métricas"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — protocolo de linha"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Exportar rastreamentos de pedidos",
+        "description": "Envia o rastreamento completo de cada pedido proxy: cada fase, cada módulo que falou, e prompts e respostas para os projetos que optaram.",
+        "sampleRateLabel": "Taxa de amostra",
+        "sampleRateHint": "1 exporta cada pedido, 0,1 um em dez."
+      },
+      "optional": "(opcional)",
+      "headersHint": "(opcional, um por linha: Chave: Valor)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Token de Portador",
+          "placeholder": "Deixar vazio para acesso aberto",
+          "description": "Expõe <code>/metrics</code> em formato de texto Prometheus. Defina um token para exigir autenticação de Portador."
+        },
+        "otel": {
+          "endpoint": "Ponto final do coletor",
+          "description": "URL base do seu recetor OTLP. Routerly anexa <code>/v1/metrics</code>, e <code>/v1/traces</code> quando a exportação de rastreamento está ativa. A porta HTTP padrão é 4318, gRPC é 4317.",
+          "protocol": "Protocolo",
+          "headers": "Cabeçalhos"
+        },
+        "datadog": {
+          "apiKey": "Chave de API",
+          "placeholder": "A sua chave de API Datadog",
+          "description": "Encontrada em <strong>Definições da Organização → Chaves de API</strong> na sua conta Datadog.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "URL de Escrita Remota",
+          "description": "Encontrada em <strong>Grafana Cloud → Ligações → Prometheus → Detalhes</strong> como \"Ponto Final de Escrita Remota\".",
+          "username": "Nome de utilizador / ID da Stack",
+          "usernameHint": "ID numérica mostrada nos detalhes de conexão do Prometheus.",
+          "apiKey": "Chave de API / Token",
+          "apiKeyHint": "Token Grafana Cloud com função <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL de instância InfluxDB v2. Nuvem: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "O seu token de API InfluxDB",
+          "tokenHint": "Deve ter acesso <strong>write</strong> ao balde.",
+          "org": "Organização",
+          "bucket": "Balde"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Segredo",
+          "secretHint": "(opcional — chave de assinatura HMAC-SHA256)",
+          "headers": "Cabeçalhos"
+        }
+      },
+      "errors": {
+        "loadFailed": "Falha ao carregar integrações",
+        "updateFailed": "Falha ao atualizar integração",
+        "saveFailed": "Falha ao guardar integração",
+        "deleteFailed": "Falha ao eliminar integração"
+      },
+      "empty": "Nenhuma integração configurada ainda.",
+      "enabled": "Ativado",
+      "testing": "A testar…",
+      "test": "Teste",
+      "removeConfirm": "Remover?",
+      "remove": "Remover",
+      "cancel": "Cancelar",
+      "removeTooltip": "Remover integração",
+      "saving": "A guardar…",
+      "save": "Guardar",
+      "addButton": "Adicionar Integração"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Falha ao carregar as definições",
+        "duplicateUrl": "Este URL já está na lista.",
+        "unreachable": "Não foi possível alcançar um catálogo de fornecedor válido neste URL."
+      },
+      "saved": "Guardado.",
+      "refreshed": "Atualizado.",
+      "heading": "Repositórios de Catálogo de Fornecedores",
+      "refreshing": "A atualizar…",
+      "refresh": "Atualizar",
+      "nextRefresh": "Próximo: {{date}}",
+      "priorityHint": "A ordem das linhas determina a prioridade de fusão — linha 1 vence em conflito. Use as setas para reordenar.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Atualizado",
+        "lastCheck": "Última Verificação",
+        "status": "Estado"
+      },
+      "empty": "Nenhum repositório configurado. O catálogo público Routerly padrão será utilizado.",
+      "status": {
+        "error": "Erro",
+        "active": "Ativo",
+        "disabled": "Desativado"
+      },
+      "edit": "Editar",
+      "removeTooltip": "Remover",
+      "addRepository": "Adicionar Repositório",
+      "checking": "A verificar…",
+      "add": "Adicionar",
+      "removeConfirm": "Remover repositório \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Aplicação",
+        "runtime": "Tempo de Execução",
+        "storage": "Armazenamento",
+        "softwareUpdate": "Atualização de Software"
+      },
+      "labels": {
+        "version": "Versão",
+        "uptime": "Tempo de atividade",
+        "nodeVersion": "Node.js",
+        "platform": "Plataforma",
+        "configDir": "Diretório de configuração",
+        "dataDir": "Diretório de dados",
+        "currentVersion": "Versão atual",
+        "availableVersion": "Versão disponível",
+        "upToDate": "Atualizado",
+        "lastChecked": "Última verificação"
+      },
+      "noCheckPerformed": "Nenhuma verificação de atualização realizada ainda.",
+      "checkForUpdates": "Verificar atualizações",
+      "checking": "A verificar…",
+      "updateTo": "Atualizar para v{{version}}",
+      "updating": "A atualizar…",
+      "dockerHint": "Execução em Docker — puxe a imagem mais recente para atualizar.",
+      "confirmUpdate": "Isto irá descarregar e instalar a versão mais recente. O serviço reiniciará. Continuar?",
+      "updateComplete": "Atualização concluída! A recarregar…",
+      "serviceRestarting": "O serviço está a reiniciar. Por favor, recarregue a página em breve.",
+      "errors": {
+        "loadFailed": "Falha ao carregar",
+        "checkFailed": "Verificação falhou",
+        "updateFailed": "Atualização falhou"
+      },
+      "channel": "Canal"
+    },
+    "security": {
+      "authentication": "Autenticação",
+      "requireMfa": "Exigir Autenticação de Dois Fatores para todos os utilizadores",
+      "requireMfaHint": "Quando ativado, utilizadores que não configuraram 2FA verão um aviso para fazer isso após login. Os utilizadores podem configurar 2FA na página do seu Perfil.",
+      "savedSuccess": "Definições guardadas com sucesso.",
+      "saving": "A guardar…",
+      "saveSettings": "Guardar Definições",
+      "errors": {
+        "loadFailed": "Falha ao carregar as definições",
+        "saveFailed": "Falha ao guardar as definições"
+      }
+    },
+    "title": "Definições",
+    "subtitle": "Configuração para Routerly",
+    "tabs": {
+      "general": "Geral",
+      "security": "Segurança",
+      "notifications": "Notificações",
+      "integrations": "Integrações",
+      "catalog": "Catálogo de Fornecedores",
+      "users": "Utilizadores",
+      "roles": "Funções",
+      "audit": "Registo de Auditoria",
+      "about": "Sobre"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Routers",
+      "subtitle": "Aplicações cliente que acedem ao Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} routers",
+      "newRouter": "Novo Router",
+      "empty": "Nenhum router ainda.",
+      "emptyFiltered": "Nenhum roteador deste tipo.",
+      "tabs": {
+        "all": "Todos",
+        "router": "Roteador",
+        "orchestrator": "Orquestrador",
+        "passthrough": "Passagem direta"
+      },
+      "columns": {
+        "name": "Nome",
+        "tokens": "Tokens",
+        "policies": "Políticas",
+        "models": "Modelos"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokens",
+      "editRouter": "Editar router",
+      "deleteRouter": "Eliminar router",
+      "deleteConfirm": "Eliminar este router?",
+      "errors": {
+        "deleteFailed": "Erro ao eliminar router"
+      }
+    },
+    "layout": {
+      "notFound": "Router não encontrado",
+      "tabs": {
+        "dashboard": "Painel",
+        "general": "Geral",
+        "orchestrator": "Orquestrador",
+        "routing": "Encaminhamento",
+        "optimizer": "Otimizador",
+        "security": "Segurança",
+        "token": "Token",
+        "users": "Utilizadores",
+        "logs": "Registos"
+      },
+      "backToRouters": "Voltar aos Routers",
+      "backToRoutersTitle": "Voltar aos routers",
+      "newRouter": "Novo Router",
+      "loading": "A carregar...",
+      "routerId": "ID do Router:",
+      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador"
+    },
+    "dashboard": {
+      "period": "Período",
+      "noTraffic": "Nenhum tráfego para este router no período selecionado.",
+      "stats": {
+        "savings": "Economias",
+        "vsPrefix": "vs",
+        "forEverything": "para tudo",
+        "noTargetToCompare": "sem modelo de destino para comparar",
+        "cost": "Custo",
+        "callCount": "1 chamada",
+        "callCount_other": "{{count}} chamadas",
+        "latency": "Latência",
+        "medianP95": "mediana · p95 {{value}}",
+        "ttft": "Tempo até primeiro token",
+        "notMeasured": "não medido nessas chamadas",
+        "reliability": "Confiabilidade",
+        "errorsAndBlocked": "{{errors}} erros · {{blocked}} bloqueados"
+      },
+      "tokens": {
+        "input": "Tokens de entrada:",
+        "output": "Tokens de saída:",
+        "fromCache": "Do cache:",
+        "cacheSaved": "({{amount}} economizado)"
+      },
+      "oneModel": {
+        "heading": "Se tudo tivesse ido para um modelo",
+        "empty": "Adicione modelos de destino a este router para ver a comparação.",
+        "columns": {
+          "targetModel": "Modelo de destino",
+          "wouldHaveCost": "Teria custado",
+          "saved": "Economizado"
+        },
+        "costsHint": "Os custos são os tokens observados repreparados às taxas de cada destino."
+      },
+      "optimizers": {
+        "heading": "O que os otimizadores removeram",
+        "columns": {
+          "optimizer": "Otimizador",
+          "callsChanged": "Chamadas alteradas",
+          "tokensSaved": "Tokens economizados",
+          "costSaved": "Custo economizado",
+          "rolledBack": "Revertido"
+        },
+        "hint": "Medido nas chamadas em si, preparado pelo modelo que serviu cada uma. Uma execução revertida significa a saída do passo foi rejeitada como insegura e o prompt foi restaurado: economizou nada, e uma contagem alta significa o limite é muito agressivo."
+      },
+      "traffic": {
+        "heading": "Para onde o tráfego foi",
+        "columns": {
+          "model": "Modelo",
+          "calls": "Chamadas",
+          "share": "Partilha",
+          "cost": "Custo",
+          "p95Latency": "latência p95",
+          "errors": "Erros"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Erro ao guardar router",
+        "copyFailed": "Falha na cópia — selecione e copie o token manualmente."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Encaminha pedidos entre candidatos do modelo."
+        },
+        "orchestrator": {
+          "label": "Orquestrador",
+          "description": "Encaminha pedidos entre outros routers em vez de modelos."
+        },
+        "passthrough": {
+          "label": "Passagem",
+          "description": "Encaminha pedidos sem modificação."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Guarde este token agora.",
+        "saveNowHint": "Não será mostrado novamente — uma vez que sair desta tela não pode ser recuperado.",
+        "copied": "Copiado!",
+        "copy": "Copiar",
+        "goToRouter": "Ir para router"
+      },
+      "connect": {
+        "heading": "Como conectar",
+        "intro": "Aponte qualquer SDK OpenAI ou Anthropic para Routerly e use um <tokenLink>token de router</tokenLink> como chave de API. Substitua <code>{{token}}</code> abaixo pelo seu. O modelo <code>{{model}}</code> entrega a escolha ao Routerly; qualquer id do modelo de <modelsLink>Modelos</modelsLink> funciona também.",
+        "openaiSdk": "SDK OpenAI",
+        "openaiBaseUrlHint": "URL base <code>{{baseUrl}}</code>, o mesmo que qualquer campo de fornecedor \"compatível com OpenAI\" toma.",
+        "anthropicSdk": "SDK Anthropic",
+        "anthropicBaseUrlHint": "URL base <code>{{baseUrl}}</code>, sem o <code>/v1</code>: o SDK adiciona-o.",
+        "curl": "curl",
+        "curlHint": "Verifique a fiação sem instalar nada, depois procure a chamada em <usageLink>Utilização</usageLink>."
+      },
+      "form": {
+        "kind": "Tipo",
+        "kindAriaLabel": "Tipo de Router",
+        "kindFixedHint": "Fixo uma vez o router é criado.",
+        "routerName": "Nome do Router",
+        "routerNamePlaceholder": "Minha Aplicação",
+        "advancedSettings": "Definições avançadas",
+        "ttftTimeout": "Tempo limite TTFT (ms)",
+        "ttftTimeoutHint": "Se um modelo não enviar o primeiro byte de resposta dentro deste tempo, Routerly aborta-o e tenta o próximo candidato. Não limita a duração total da resposta. Defina para 0 para esperar o tempo que o fornecedor levar.",
+        "traceContent": "Conteúdo do rastreamento",
+        "traceContentHint": "Os rastreamentos sempre registam metadados (modelos, pontuações, tokens, custo, latência). Ative isto também para registar os prompts enviados e as respostas recebidas. Armazenam-se com o registo de utilização e são visíveis para qualquer um que possa ler relatórios.",
+        "capturePromptsAndAnswers": "Capturar prompts e respostas",
+        "saveChanges": "Guardar Alterações",
+        "createRouter": "Criar Router"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Este router não é um Orquestrador.",
+      "candidateRouters": "Routers Candidatos",
+      "candidateRoutersHint": "Os routers para os quais este Orquestrador encaminha pedidos. O peso influencia com que frequência cada candidato é escolhido; apenas o seu nome, id, peso e limites opcionais por candidato são mostrados aqui.",
+      "router": "Router",
+      "selectRouter": "Selecionar router",
+      "weight": "Peso",
+      "removeCandidate": "Remover candidato",
+      "usageLimits": "Limites de utilização para este candidato",
+      "limitCount": "{{count}} limite",
+      "limitCount_other": "{{count}} limites",
+      "usageLimitsHint": "Limites de utilização opcionais aplicados apenas a pedidos que este Orquestrador encaminha para este candidato.",
+      "empty": "Nenhum router candidato ainda. Um Orquestrador precisa de pelo menos um antes de poder encaminhar pedidos.",
+      "addCandidate": "Adicionar Candidato",
+      "saved": "Guardado!",
+      "saveCandidates": "Guardar Candidatos",
+      "errors": {
+        "loadFailed": "Falha ao carregar routers",
+        "saveFailed": "Erro ao guardar candidatos do orquestrador"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Falha ao atribuir perfil de encaminhamento",
+        "duplicateTargets": "Os modelos de destino não podem conter duplicados.",
+        "saveFailed": "Erro ao guardar encaminhamento do router",
+        "noProfileAvailable": "Nenhum perfil de encaminhamento disponível. Crie um na página Perfis."
+      },
+      "form": {
+        "routing": "Encaminhamento",
+        "routingHint": "Use um perfil de encaminhamento partilhado, ou defina as políticas próprias deste router. Os modelos de destino permanecem configuráveis de qualquer forma.",
+        "profileMode": "Perfil",
+        "customMode": "Personalizado",
+        "routingProfile": "Perfil de Encaminhamento",
+        "builtinSuffix": "(pré-integrado)",
+        "profileHint": "As políticas vêm do perfil e seguem as suas alterações. Edite-as na página Perfis, ou mude para Personalizado para começar a partir de uma cópia delas.",
+        "saved": "Guardado!",
+        "saveRoutingConfiguration": "Guardar Configuração de Encaminhamento"
+      },
+      "targetModels": {
+        "heading": "Modelos de Destino",
+        "hint": "Defina o conjunto de modelos que as Políticas filtrarão e selecionarão. Prompts opcionais instruem o Router de IA sobre quando escolher cada modelo.",
+        "endpointModel": "Modelo de Ponto Final",
+        "selectModel": "Selecionar modelo",
+        "promptDefinition": "Definição de Prompt",
+        "promptPlaceholder": "Descreva exatamente quando e por que o router deve escolher este modelo...",
+        "intents": "Intenções",
+        "removeTarget": "Remover modelo de destino",
+        "empty": "Nenhum modelo de destino configurado.",
+        "addTarget": "Adicionar Modelo de Destino"
+      }
+    },
+    "optimizer": {
+      "title": "Otimizadores",
+      "description": "Os otimizadores reduzem tokens de prompt antes dos pedidos chegarem ao fornecedor. Executam por ordem de cima para baixo. Use um perfil de otimizador partilhado, ou defina o seu próprio oleoduto.",
+      "noPermission": "Não tem permissão para ver otimizadores.",
+      "mode": {
+        "profile": "Perfil",
+        "custom": "Personalizado"
+      },
+      "profileSelect": {
+        "ariaLabel": "Perfil de Otimizador",
+        "builtinLabel": "{{label}} (pré-integrado)",
+        "hint": "Os passos vêm do perfil e seguem as suas alterações. Edite-os na página Perfis, ou mude para Personalizado para começar a partir de uma cópia deles.",
+        "disabledSuffix": "(desativado)",
+        "thresholdSuffix": ", limite {{threshold}}"
+      },
+      "customHint": "Arraste para reordenar, alterne para ativar. Alguns otimizadores usam um limite para controlar quão agressivamente aparas.",
+      "saveButton": "Guardar Otimizadores",
+      "saving": "A guardar...",
+      "saved": "Guardado",
+      "preview": {
+        "title": "Pré-visualizar economias de token",
+        "description": "Execute o oleoduto atual (não guardado) sobre um prompt para ver o que cada passo remove e o que custa. Escolha uma das conversas de amostra, ou escreva o seu próprio prompt.",
+        "promptLabel": "Prompt",
+        "promptAriaLabel": "Prompt para pré-visualizar",
+        "typePromptOption": "Escrever um prompt abaixo",
+        "fixturesHint": "Conversas de amostra enviadas com Routerly. Routerly não regista prompts reais.",
+        "modelLabel": "Modelo",
+        "modelAriaLabel": "Modelo para pré-visualizar contra",
+        "modelWithContext": "{{id}} (contexto {{k}}k)",
+        "noModelOption": "Nenhum modelo",
+        "modelHint": "Passos que aparas para encaixar numa janela de contexto precisam saber qual janela. Sem um modelo são ignorados, exatamente como seriam num pedido que nomeia um modelo Routerly não tem janela para.",
+        "sampleAriaLabel": "Prompt de amostra",
+        "samplePlaceholder": "Cole uma mensagem de utilizador de amostra...",
+        "runButton": "Executar Pré-visualização",
+        "running": "A executar...",
+        "before": "Antes",
+        "after": "Depois",
+        "saved": "Guardado",
+        "columns": {
+          "optimizer": "Otimizador",
+          "before": "Antes",
+          "after": "Depois",
+          "saved": "Economizado"
+        },
+        "rolledBackNote": "revertido: a alteração foi rejeitada como insegura",
+        "skippedNote": "ignorado: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "A alteração que este passo produziu foi revertida, por isso o prompt chegou ao passo seguinte intocado.",
+          "skipped": "Este passo não foi executado: {{reason}}",
+          "unchanged": "Este passo deixou o prompt inalterado."
+        }
+      },
+      "errors": {
+        "assignFailed": "Falha ao atribuir perfil de otimizador",
+        "saveFailed": "Erro ao guardar otimizadores",
+        "previewFailed": "Erro ao executar pré-visualização",
+        "noProfileAvailable": "Nenhum perfil de otimizador disponível. Crie um na página Perfis."
+      }
+    },
+    "token": {
+      "newButton": "Novo Token",
+      "empty": "Nenhum token de API ainda. Crie um para começar a autenticar pedidos.",
+      "budgetOverrides": "Substituições de Orçamento",
+      "created": "Criado",
+      "lastUsed": "Última utilização",
+      "expires": "Expira",
+      "never": "Nunca",
+      "editTitle": "Editar Configuração",
+      "revokeTitle": "Revogar Token",
+      "revokeConfirm": "Revogar token \"{{snippet}}...\"? As aplicações que o usam deixam de funcionar imediatamente.",
+      "labelInput": {
+        "placeholder": "Pesquisar ou criar um rótulo…",
+        "createPrefix": "Criar",
+        "noMatches": "Nenhum rótulo correspondido encontrado."
+      },
+      "errors": {
+        "deleteFailed": "Erro ao eliminar token"
+      },
+      "create": {
+        "backToTokens": "Voltar aos tokens",
+        "title": "Novo Token de API",
+        "subtitle": "O token completo é mostrado apenas uma vez após criação — guarde-o com segurança.",
+        "tokenCreated": "Token criado com sucesso. Copie-o agora — não será mostrado novamente.",
+        "copied": "Copiado!",
+        "copy": "Copiar",
+        "done": "Concluído",
+        "optional": "opcional",
+        "labels": "Rótulos",
+        "labelsHint": "Identifique este token para identificar onde é usado (ex. \"produção\", \"ci\").",
+        "scopes": "Âmbitos",
+        "scopesHint": "Âmbitos de forma livre anexados a este token (ex. \"batch\", \"internal\"), armazenados com o token para sua própria bookkeeping.",
+        "tags": "Etiquetas",
+        "tagsHint": "Metadados de valor-chave encaminhados para registos de utilização (ex. env=produção).",
+        "keyPlaceholder": "chave",
+        "valuePlaceholder": "valor",
+        "createButton": "Criar Token",
+        "cancel": "Cancelar",
+        "copyFailed": "Falha na cópia — selecione e copie o token manualmente.",
+        "errors": {
+          "createFailed": "Erro ao criar token"
+        }
+      },
+      "edit": {
+        "title": "Editar Token",
+        "subtitle": "Atualizar rótulos e substituições de limite por modelo para este token.",
+        "token": "Token",
+        "labels": "Rótulos",
+        "perModelLimits": "Limites por modelo",
+        "perModelLimitsHint": "Substitua limites globais e ao nível do router para pedidos usando este token.",
+        "noTargetModels": "Adicione modelos de destino no separador Encaminhamento primeiro.",
+        "noOverride": "sem substituição",
+        "noLimits": "Sem limites",
+        "noLimitsSet": "Sem limites definidos — herdando do elemento-pai. Adicione um limite abaixo para substituir.",
+        "metric": "Métrica",
+        "type": "Tipo",
+        "periodLabel": "Período",
+        "every": "Cada",
+        "maxCost": "Máx ($)",
+        "maxCalls": "Máx (n.)",
+        "maxTokens": "Máx (tokens)",
+        "allCombosSet": "Todas as combinações métrica/período já estão definidas",
+        "addLimit": "Adicionar limite",
+        "windowType": {
+          "period": "Período",
+          "rolling": "Deslizante"
+        },
+        "limitMetric": {
+          "cost": "Custo (USD)",
+          "calls": "Pedidos",
+          "input_tokens": "Tokens de entrada",
+          "output_tokens": "Tokens de saída",
+          "total_tokens": "Tokens totais"
+        },
+        "period": {
+          "hourly": "Horário",
+          "daily": "Diário",
+          "weekly": "Semanal",
+          "monthly": "Mensal",
+          "yearly": "Anual"
+        },
+        "rollingUnit": {
+          "second": "segundos",
+          "minute": "minutos",
+          "hour": "horas",
+          "day": "dias",
+          "week": "semanas",
+          "month": "meses"
+        },
+        "fmt": {
+          "requests": "{{value}} ped",
+          "inputTokens": "{{value}} tok-ent",
+          "outputTokens": "{{value}} tok-saí",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / cada {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Erro ao guardar token"
+        }
+      }
+    },
+    "users": {
+      "title": "Membros do Router",
+      "description": "Gerencie utilizadores que têm acesso a este router.",
+      "addButton": "Adicionar Membro",
+      "addNewTitle": "Adicionar Novo Membro",
+      "selectUserPlaceholder": "Selecionar um utilizador...",
+      "addConfirmButton": "Adicionar",
+      "cancelButton": "Cancelar",
+      "empty": "Nenhum membro encontrado.",
+      "removeConfirm": "Tem a certeza de que deseja remover este membro?",
+      "saveTitle": "Guardar alterações",
+      "changeRoleTitle": "Alterar Função",
+      "removeTitle": "Remover Membro",
+      "roles": {
+        "viewer": "Visualizador",
+        "editor": "Editor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "Utilizador",
+        "role": "Função",
+        "actions": "Ações"
+      },
+      "errors": {
+        "loadFailed": "Falha ao carregar utilizadores",
+        "addFailed": "Erro ao adicionar membro",
+        "updateFailed": "Erro ao atualizar membro",
+        "removeFailed": "Erro ao remover membro"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Desligado"
+      },
+      "autoRefreshOff": "Atualização automática desativada",
+      "autoRefreshEvery": "Atualização automática a cada {{interval}}",
+      "lastUpdated": "última atualização: {{time}}",
+      "refresh": "Atualizar",
+      "refreshNowTitle": "Atualizar agora",
+      "refreshNowButton": "↻ Agora",
+      "filters": {
+        "period": "Período",
+        "model": "Modelo",
+        "allModels": "Todos os Modelos",
+        "type": "Tipo",
+        "all": "Todos",
+        "completion": "Conclusão",
+        "router": "Router",
+        "status": "Estado",
+        "success": "Sucesso",
+        "blocked": "Bloqueado",
+        "error": "Erro",
+        "resetButton": "Reiniciar filtros"
+      },
+      "stats": {
+        "totalCost": "Custo Total",
+        "totalCalls": "Total de Chamadas",
+        "completionCalls": "Chamadas de Conclusão",
+        "routerCalls": "Chamadas de Router",
+        "errors": "Erros"
+      },
+      "requestLogs": "Registos de Pedidos",
+      "emptyNoRequests": "Nenhum pedido para este router no período selecionado.",
+      "emptyNoMatches": "Nenhum registo corresponde aos filtros ativos.",
+      "columns": {
+        "time": "Hora",
+        "model": "Modelo",
+        "type": "Tipo",
+        "in": "Entrada",
+        "out": "Saída",
+        "cost": "Custo",
+        "latency": "Latência",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Estado"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "conclusão",
+      "pagination": {
+        "previous": "← Anterior",
+        "next": "Seguinte →",
+        "pageOf": "Página {{page}} de {{totalPages}}",
+        "totalRecords": "({{count}} registos totais)"
+      }
+    },
+    "security": {
+      "title": "Segurança",
+      "description": "Use um perfil de segurança partilhado, ou defina os seus próprios proteções e políticas de PII.",
+      "mode": {
+        "profile": "Perfil",
+        "custom": "Personalizado"
+      },
+      "profileSelect": {
+        "ariaLabel": "Perfil de Segurança",
+        "builtinLabel": "{{label}} (pré-integrado)",
+        "hint": "As proteções e políticas de PII vêm do perfil e seguem as suas alterações. Edite-as na página Perfis, ou mude para Personalizado para começar a partir de uma cópia delas.",
+        "blockingSuffix": ", bloqueando",
+        "disabledSuffix": ", desativado",
+        "piiRedaction": "Edição de PII ({{target}})"
+      },
+      "saveButton": "Guardar Definições de Segurança",
+      "saved": "Guardado!",
+      "errors": {
+        "assignFailed": "Falha ao atribuir perfil de segurança",
+        "saveFailed": "Erro ao guardar definições de segurança",
+        "noProfileAvailable": "Nenhum perfil de segurança disponível. Crie um na página Perfis."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Você é um assistente de IA útil.",
+      "errors": {
+        "unknown": "Erro desconhecido ocorreu",
+        "onlyImages": "Apenas anexos de imagem são suportados para modelos de visão atualmente."
+      },
+      "title": "Chat de Teste",
+      "subtitle": "Envie consultas de teste através do gateway de encaminhamento.",
+      "routerToken": "Token de Router:",
+      "hideToken": "Ocultar Token",
+      "showToken": "Mostrar Token",
+      "recognizedToken": "Token Reconhecido",
+      "unrecognizedToken": "Token Não Reconhecido",
+      "noMessages": "Nenhuma mensagem ainda.",
+      "enterTokenHint": "Por favor, introduza um Token de Router acima para enviar uma mensagem.",
+      "typeMessageHint": "Escreva uma mensagem abaixo para começar a testar.",
+      "reasoning": "Raciocínio",
+      "attachedAlt": "Anexado",
+      "attachmentAlt": "Anexo",
+      "attachImage": "Anexar imagem",
+      "typeMessagePlaceholder": "Escrever uma mensagem...",
+      "stopGeneration": "Parar geração",
+      "sendEnter": "Enviar (Enter)",
+      "debugLog": "Registo de Depuração",
+      "clear": "Limpar",
+      "noRequestSent": "Nenhum pedido enviado ainda.",
+      "turnTraceLog": "Registo de rastreamento turno #{{turn}} · {{count}} evento",
+      "turnTraceLog_other": "Registo de rastreamento turno #{{turn}} · {{count}} eventos"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Ligações",
+      "subtitle": "Contas de fornecedor utilizadas para executar instâncias de modelo",
+      "noPermission": "Não tem permissão para ver ligações.",
+      "count": "{{count}} ligação",
+      "count_other": "{{count}} ligações",
+      "addConnection": "Adicionar Ligação",
+      "empty": "Nenhuma ligação ainda. Adicione uma para começar.",
+      "deleteConfirm": "Remover ligação \"{{label}}\"? As instâncias ligadas a ela deixarão de funcionar.",
+      "errors": {
+        "loadFailed": "Falha ao carregar ligações",
+        "deleteFailed": "Falha ao eliminar ligação"
+      },
+      "columns": {
+        "label": "Rótulo",
+        "provider": "Fornecedor",
+        "endpoint": "Ponto Final",
+        "status": "Estado"
+      },
+      "status": {
+        "enabled": "Ativado",
+        "disabled": "Desativado"
+      },
+      "actions": {
+        "models": "Modelos",
+        "edit": "Editar",
+        "remove": "Remover"
+      }
+    },
+    "form": {
+      "backToConnections": "Voltar às Ligações",
+      "editTitle": "Editar Ligação",
+      "addTitle": "Adicionar Ligação",
+      "enabled": "Ativado",
+      "editSubtitle": "Atualizar as definições da conta do fornecedor",
+      "addSubtitle": "Registar uma nova conta de fornecedor",
+      "sectionTitle": "Detalhes da ligação",
+      "sectionDesc": "Conta de fornecedor, credenciais e ponto final utilizado para executar pedidos.",
+      "provider": "Fornecedor",
+      "groups": {
+        "directApi": "API Direto",
+        "cloudPlatform": "Plataforma em nuvem",
+        "subscription": "Subscrição",
+        "browserSession": "Sessão de navegador",
+        "selfHosted": "Auto-alojado"
+      },
+      "upstreamProvider": {
+        "label": "Fornecedor",
+        "hintLabel": "(nome do fornecedor ascendente)",
+        "placeholder": "ex. deepseek, mistral, groq",
+        "description": "Nomeia o serviço a que este ponto final pertence. Os modelos nesta ligação usam-no como prefixo de ID (ex. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Nome",
+        "hint": "Identifica esta ligação em qualquer lugar onde é referenciada, portanto tem de ser única. Deixe vazio para usar <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Deixe os campos de credenciais vazios para manter valores existentes.",
+      "save": "Guardar",
+      "create": "Criar",
+      "cancel": "Cancelar",
+      "oauth": {
+        "unknown": "desconhecido",
+        "accountExpires": "Conta: {{account}} — expira {{expires}}",
+        "unknownError": "Erro desconhecido"
+      },
+      "errors": {
+        "notFound": "Ligação não encontrada",
+        "loadFailed": "Falha ao carregar ligação",
+        "updateFailed": "Falha ao atualizar ligação",
+        "createFailed": "Falha ao criar ligação"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Voltar aos Modelos",
+      "title": "Descoberta de Modelo",
+      "subtitle": "Navegue modelos disponíveis e adicione-os à sua configuração de encaminhamento",
+      "count": "{{count}} modelos",
+      "filteredCount": "{{filtered}} de {{count}}",
+      "free": "livre",
+      "add": "Adicionar",
+      "addAgain": "Adicionar novamente",
+      "loadFailed": "Falha ao carregar catálogo: {{error}}",
+      "filters": {
+        "search": "Pesquisar",
+        "searchPlaceholder": "ID ou nome do modelo…",
+        "provider": "Fornecedor",
+        "allProviders": "Todos os fornecedores",
+        "context": "Contexto",
+        "ctxOptions": {
+          "all": "Todos",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Preço / 1M",
+        "priceOptions": {
+          "all": "Todos",
+          "free": "Livre",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Mostrar",
+        "configured": "Configurado",
+        "embedding": "Incorporação",
+        "resetFilters": "Reiniciar filtros"
+      },
+      "empty": {
+        "noMatches": "Nenhum modelo corresponde aos seus filtros."
+      },
+      "columns": {
+        "model": "Modelo",
+        "provider": "Fornecedor",
+        "context": "Contexto",
+        "input": "Entrada / 1M",
+        "output": "Saída / 1M"
+      },
+      "badges": {
+        "configured": "Configurado",
+        "embedding": "incorporação",
+        "runsLocally": "Executa localmente"
+      },
+      "pagination": {
+        "prev": "Ant",
+        "next": "Seg",
+        "range": "{{start}}–{{end}} de {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Voltar aos Modelos",
+      "title": {
+        "add": "Adicionar Modelo",
+        "edit": "Editar Modelo",
+        "clone": "Clonar Modelo"
+      },
+      "subtitle": {
+        "add": "Registar um novo modelo de fornecedor LLM",
+        "edit": "Modificando configuração para {{id}}",
+        "clone": "Clonando de {{id}} — atribua um novo ID para guardar"
+      },
+      "errors": {
+        "modelNotFound": "Modelo não encontrado",
+        "sourceModelNotFound": "Modelo de origem não encontrado",
+        "loadFailed": "Erro ao carregar modelos",
+        "idRequired": "ID do modelo necessário",
+        "duplicateId": "O modelo \"{{id}}\" já existe — defina um ID Personalizado diferente",
+        "selectConnection": "Selecionar uma ligação",
+        "saveFailed": "Erro"
+      },
+      "badge": {
+        "yes": "sim",
+        "no": "não",
+        "override": "Substituir",
+        "auto": "Auto",
+        "default": "Padrão: {{value}}",
+        "reset": "Reiniciar"
+      },
+      "oauth": {
+        "unknownExpiry": "desconhecido",
+        "accountOk": "Conta: {{account}} — expira {{expires}}",
+        "unknownError": "Erro desconhecido"
+      },
+      "identification": {
+        "title": "Identificação do Modelo",
+        "description": "Identificador único e definições de fornecedor para esta configuração de modelo.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(opcional — padrão:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "O identificador utilizado ao referenciar este modelo em chamadas de API Routerly.",
+        "provider": "Fornecedor",
+        "upstreamProviderHint": "(nome do fornecedor ascendente)",
+        "upstreamProviderPlaceholder": "ex. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Utilizado como prefixo para o ID Routerly (ex.",
+        "upstreamProviderDescPost": ").",
+        "model": "Modelo",
+        "upstreamModelHint": "(ID do modelo ascendente)",
+        "upstreamModelPlaceholder": "ex. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "O identificador do modelo enviado para o ponto final da API ascendente.",
+        "modelPreset": "Predefinição de Modelo",
+        "customModelOption": "— nome de modelo personalizado —",
+        "customModelPlaceholder": "ex. meu-modelo-afinado"
+      },
+      "connection": {
+        "title": "Detalhes da ligação",
+        "description": "Ponto final de API e credenciais de autenticação necessários para executar pedidos.",
+        "preconfigured": "Pré-configurado",
+        "custom": "Personalizado",
+        "connection": "Ligação",
+        "selectPlaceholder": "— selecionar uma ligação —",
+        "noneAvailable": "Nenhuma ligação pré-configurada para este fornecedor. Mude para Personalizado, ou crie uma na página Ligações.",
+        "editHint": "Editar esta ligação mais tarde atualiza cada modelo ligado a ela."
+      },
+      "capabilities": {
+        "title": "Capacidades",
+        "description": "Especifique o tipo e capacidades deste modelo.",
+        "embeddingModel": "Modelo de incorporação",
+        "embeddingModelHint": "Este modelo gera incorporações de vector (não conclusões de chat)"
+      },
+      "pricing": {
+        "title": "Preços & contexto",
+        "description": "Parâmetros de custo e limites de processamento utilizados para cobrança e encaminhamento.",
+        "inputPerMillion": "Entrada $/1M",
+        "outputPerMillion": "Saída $/1M",
+        "cachePerMillion": "Leitura de cache $/1M",
+        "cacheWritePerMillion": "Escrita em cache $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "Janela de Contexto",
+        "contextWindowHint": "(tokens, opcional)"
+      },
+      "tiers": {
+        "title": "Avançado — Escalões de preços",
+        "description": "Substitua preços quando uma métrica excede um limite. Por exemplo: \"Acima de 200 000 tokens de contexto, os preços mudam.\"",
+        "removeTier": "Remover escalão",
+        "above": "Acima de",
+        "metric": "Métrica",
+        "metricContextTokens": "Tokens de contexto",
+        "overridePricing": "Substituir preços",
+        "addTier": "Adicionar escalão de preço"
+      },
+      "limits": {
+        "title": "Limites",
+        "description": "Limites de utilização para este modelo. Várias regras podem ser combinadas.",
+        "metric": "Métrica",
+        "type": "Tipo",
+        "addLimit": "Adicionar limite"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (subscrição Pro/Max)",
+        "openaiOauth": "OpenAI (subscrição ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "Guardar Alterações",
+      "createClone": "Criar Clone",
+      "createModel": "Criar Modelo"
+    },
+    "page": {
+      "title": "Modelos",
+      "subtitle": "Fornecedores de LLM registados em Routerly",
+      "tabs": {
+        "models": "Modelos",
+        "health": "Saúde"
+      },
+      "toolbar": {
+        "count": "{{count}} modelo",
+        "count_other": "{{count}} modelos",
+        "filteredCount": "{{filtered}} de {{count}} modelo",
+        "filteredCount_other": "{{filtered}} de {{count}} modelos"
+      },
+      "filters": {
+        "allProviders": "Todos os fornecedores",
+        "allConnections": "Todas as ligações",
+        "searchPlaceholder": "Filtrar modelos…"
+      },
+      "discover": "Descobrir",
+      "addModel": "Adicionar Modelo",
+      "deleteConfirm": "Remover modelo \"{{id}}\"?",
+      "empty": {
+        "noModels": "Nenhum modelo ainda. Adicione um para começar.",
+        "noMatches": "Nenhum modelo corresponde aos filtros ativos."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Fornecedor",
+        "endpoint": "Ponto Final",
+        "input": "Entrada $/1M",
+        "output": "Saída $/1M",
+        "cache": "Cache $/1M",
+        "context": "Tamanho do Contexto"
+      },
+      "actions": {
+        "test": "Teste",
+        "clone": "Clonar",
+        "edit": "Editar",
+        "remove": "Remover"
+      },
+      "pagination": {
+        "previous": "← Anterior",
+        "next": "Seguinte →",
+        "pageOf": "Página {{page}} de {{totalPages}}",
+        "total": "({{count}} modelo)",
+        "total_other": "({{count}} modelos)"
+      },
+      "health": {
+        "emptyNoModels": "Nenhum modelo configurado.",
+        "emptyNoMatches": "Nenhum modelo corresponde ao filtro.",
+        "resetAll": "Reiniciar todos",
+        "resetAllTitle": "Reiniciar cada disjuntor, arrefecimento e bloqueio",
+        "resetTitle": "Reiniciar disjuntor",
+        "confirmResetModel": "Reiniciar o disjuntor para o modelo \"{{id}}\"?",
+        "confirmResetAll": "Reiniciar todo o estado de resiliência? Isto limpa cada disjuntor, arrefecimento e bloqueio.",
+        "errors": {
+          "resetModelFailed": "Falha ao reiniciar disjuntor",
+          "resetAllFailed": "Falha ao reiniciar estado de resiliência"
+        },
+        "columns": {
+          "model": "Modelo",
+          "provider": "Fornecedor",
+          "status": "Estado",
+          "circuit": "Disjuntor",
+          "errorRate": "Taxa de erro (5m)",
+          "p95Latency": "Latência P95 (1h)",
+          "requests": "Pedidos (1h)",
+          "lastSuccess": "Último sucesso",
+          "cooldownLockout": "Arrefecimento / bloqueio"
+        },
+        "status": {
+          "healthy": "Saudável",
+          "degraded": "Degradado",
+          "unavailable": "Indisponível",
+          "cooldown": "Arrefecimento",
+          "nodata": "Sem dados"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Recuperando",
+          "tripped": "Acionado"
+        },
+        "time": {
+          "never": "nunca",
+          "now": "agora",
+          "secondsAgo": "há {{count}}s",
+          "minutesAgo": "há {{count}}m",
+          "hoursAgo": "há {{count}}h",
+          "daysAgo": "há {{count}}d",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "arrefecimento {{time}}",
+          "lockout": "bloqueio {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Experimentos",
+      "subtitle": "Teste A/B routers um contra o outro",
+      "noPermission": "Não tem permissão para ver experimentos.",
+      "count": "{{count}} experimento",
+      "count_other": "{{count}} experimentos",
+      "newExperiment": "Novo Experimento",
+      "empty": "Nenhum experimento ainda. Crie um para comparar routers frente a frente.",
+      "deleteConfirm": "Eliminar experimento \"{{name}}\"? Isto não pode ser desfeito.",
+      "noToken": "Sem token",
+      "noTokenTitle": "Sem um token nenhum cliente pode alcançar este experimento",
+      "errors": {
+        "loadFailed": "Falha ao carregar experimentos",
+        "deleteFailed": "Falha ao eliminar experimento"
+      },
+      "columns": {
+        "name": "Nome",
+        "variants": "Variantes",
+        "rotation": "Rotação",
+        "created": "Criado"
+      },
+      "actions": {
+        "edit": "Editar experimento",
+        "remove": "Eliminar"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Voltar aos experimentos",
+      "newExperiment": "Novo Experimento",
+      "loading": "A carregar...",
+      "experimentId": "ID do Experimento:",
+      "disabledTabTitle": "Guarde o experimento primeiro para desbloquear este separador",
+      "errors": {
+        "notFound": "Experimento não encontrado"
+      },
+      "tabs": {
+        "config": "Configuração",
+        "metrics": "Métricas",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Guardado.",
+      "created": "Experimento criado. Aponte o seu cliente para este token em vez de um token de router. Não será mostrado novamente.",
+      "copy": "Copiar",
+      "copied": "Copiado!",
+      "done": "Concluído",
+      "saving": "A guardar...",
+      "create": "Criar Experimento",
+      "save": "Guardar Alterações",
+      "cancel": "Cancelar",
+      "trafficSplit": "Divisão de tráfego",
+      "errors": {
+        "loadRoutersFailed": "Falha ao carregar routers",
+        "saveFailed": "Falha ao guardar o experimento",
+        "copyFailed": "Falha na cópia: selecione e copie o token manualmente."
+      },
+      "fields": {
+        "name": "Nome",
+        "namePlaceholder": "Encaminhamento barato vs premium",
+        "description": "Descrição",
+        "optional": "(opcional)",
+        "descriptionPlaceholder": "O que este teste está tentando resolver",
+        "minSamples": "Chamadas mínimas por variante",
+        "minSamplesHint": "Abaixo disso, o separador Métricas marca a comparação como ainda não conclusiva.",
+        "rotation": "Rotação",
+        "stickyOn": "Pegajoso em",
+        "stickyKey": "Chave pegajosa"
+      },
+      "variants": {
+        "title": "Variantes",
+        "desc": "Cada variante é um router existente, levado todo: seus modelos, encaminhamento e proteções tudo aplicam. Um teste precisa de pelo menos dois.",
+        "routerAriaLabel": "Router da variante {{index}}",
+        "routerPlaceholder": "Selecionar um router",
+        "labelAriaLabel": "Rótulo da variante {{index}}",
+        "labelPlaceholder": "Rótulo (opcional)",
+        "weightAriaLabel": "Peso da variante {{index}}",
+        "weightPlaceholder": "Peso",
+        "removeTitle": "Remover variante {{index}}",
+        "add": "Adicionar variante"
+      },
+      "judge": {
+        "title": "Juiz",
+        "desc": "Opcional: um modelo lê cada resposta amostrada e avalia-a 0-10 contra seus critérios. Cada chamada julgada é uma chamada adicional do modelo, faturada como qualquer outra.",
+        "enable": "Marcar respostas com um modelo juiz",
+        "model": "Modelo juiz",
+        "modelPlaceholder": "Selecionar um modelo",
+        "criteria": "Critérios",
+        "criteriaPlaceholder": "Um por linha, ex.\nResponde à pergunta feita\nMantém-se factual\nRespeita o formato solicitado",
+        "sampleRate": "Partilha de chamadas julgadas (%)"
+      }
+    },
+    "metrics": {
+      "loading": "A carregar...",
+      "callsMeasured": "{{count}} chamada medida",
+      "callsMeasured_other": "{{count}} chamadas medidas",
+      "empty": "Nenhuma chamada nesta janela ainda. Aponte um cliente para o token do experimento para começar a comparação.",
+      "notConclusive": "Ainda não conclusivo: cada variante precisa de pelo menos {{minSamples}} chamadas nesta janela.",
+      "explanation": "A figura melhor de cada par é destacada: mais barato por chamada, mais rápido, maior pontuação de juiz. A percentagem sob um valor é a sua distância do melhor braço. A pontuação do juiz é uma média contínua sobre toda a vida do experimento, por isso é a figura que a janela não reduz.",
+      "lowSample": "Amostra baixa",
+      "lowSampleTitle": "Abaixo de {{minSamples}} chamadas nesta janela",
+      "judgedCallsTitle": "{{count}} resposta avaliada pelo juiz desde o experimento começou",
+      "judgedCallsTitle_other": "{{count}} respostas avaliadas pelo juiz desde o experimento começou",
+      "errors": {
+        "loadFailed": "Falha ao carregar métricas"
+      },
+      "columns": {
+        "variant": "Variante",
+        "calls": "Chamadas",
+        "share": "Partilha",
+        "errors": "Erros",
+        "tokens": "Tokens entrada / saída",
+        "cost": "Custo",
+        "costPerCall": "Custo / chamada",
+        "avgLatency": "Latência média",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Pontuação do juiz"
+      }
+    },
+    "token": {
+      "desc": "Um cliente chama o experimento exatamente como um router: mesma URL base, este token em vez de um token de router. Cada pedido cai numa variante e é faturado ao router da variante.",
+      "baseUrlLabel": "URL base para o SDK OpenAI ou Anthropic, com um token de experimento como chave de API:",
+      "created": "Token criado. Copie-o agora, não será mostrado novamente.",
+      "copy": "Copiar",
+      "copied": "Copiado!",
+      "newToken": "Novo Token",
+      "empty": "Nenhum token neste experimento. Crie um para que os clientes possam chamá-lo.",
+      "revokeConfirm": "Revogar token \"{{snippet}}...\"? Os clientes que o usam deixam de funcionar imediatamente.",
+      "revokeTitle": "Revogar Token",
+      "errors": {
+        "createFailed": "Falha ao criar o token",
+        "revokeFailed": "Falha ao revogar o token",
+        "copyFailed": "Falha na cópia: selecione e copie o token manualmente."
+      },
+      "columns": {
+        "created": "Criado",
+        "lastUsed": "Última utilização"
+      }
+    }
+  },
+  "overview": {
+    "title": "Resumo",
+    "subtitle": "Resumo de utilização e análise de custo",
+    "noPermission": "Sem permissão para ver dados de utilização.",
+    "costByModel": "Custo por Modelo",
+    "noCostRecorded": "Nenhum custo registado neste período.",
+    "callsByModel": "Chamadas por Modelo",
+    "columns": {
+      "model": "Modelo",
+      "calls": "Chamadas",
+      "errors": "Erros",
+      "cost": "Custo"
+    },
+    "stats": {
+      "totalCalls": "Total de Chamadas",
+      "callsBreakdown": "{{routing}} encaminhamento · {{completion}} conclusão",
+      "successRate": "Taxa de Sucesso",
+      "ofAllRequests": "de todos os pedidos",
+      "errors": "Erros",
+      "failedRequests": "pedidos falhados",
+      "models": "Modelos",
+      "registered": "registados",
+      "routers": "Routers",
+      "active": "ativos"
+    },
+    "connectCard": {
+      "title": "Conectar um cliente",
+      "desc": "Aponte Claude Code, Codex, Cursor e {{count}} mais para este gateway."
+    }
+  },
+  "login": {
+    "emailLabel": "Email",
+    "passwordLabel": "Palavra-passe",
+    "signIn": "Iniciar Sessão",
+    "errors": {
+      "loginFailed": "Login falhou",
+      "totpFailed": "Verificação de 2FA falhou"
+    },
+    "totp": {
+      "title": "Autenticação de Dois Fatores",
+      "backupPrompt": "Introduza um código de backup.",
+      "appPrompt": "Introduza o código de 6 dígitos da sua aplicação autenticadora.",
+      "backupCodeLabel": "Código de Backup",
+      "authenticatorCodeLabel": "Código do Autenticador",
+      "verify": "Verificar",
+      "useAuthenticatorInstead": "Usar aplicação autenticadora em vez disso",
+      "useBackupInstead": "Usar um código de backup em vez disso"
+    }
+  },
+  "setup": {
+    "welcome": "Bem-vindo! Vamos configurá-lo.",
+    "welcomeSubtitle": "Crie a primeira conta de admin para começar a gerir Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly está em evolução ativa. Bugs podem ocorrer.",
+    "betaFeedback": "O seu feedback ajuda a moldar o que se torna —",
+    "betaLink": "reporte problemas ou partilhe ideias",
+    "emailLabel": "Email de Admin",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Palavra-passe",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "confirmLabel": "Confirmar Palavra-passe",
+    "confirmPlaceholder": "Reintroduzir palavra-passe",
+    "submit": "Criar Conta de Admin",
+    "errors": {
+      "mismatch": "As palavras-passe não correspondem",
+      "tooShort": "A palavra-passe deve ter pelo menos 8 caracteres",
+      "setupFailed": "Configuração falhou"
+    }
+  },
+  "audit": {
+    "empty": "Nenhuma entrada de auditoria encontrada.",
+    "errors": {
+      "loadFailed": "Falha ao carregar registo de auditoria"
+    },
+    "filters": {
+      "period": "Período",
+      "user": "Utilizador",
+      "userPlaceholder": "Email ou ID do utilizador",
+      "action": "Ação",
+      "actionPlaceholder": "ex. modelo:criar",
+      "result": "Resultado",
+      "results": {
+        "all": "Todas",
+        "success": "Sucesso",
+        "forbidden": "Proibido",
+        "error": "Erro"
+      },
+      "refresh": "Atualizar"
+    },
+    "columns": {
+      "timestamp": "Carimbo de Data/Hora",
+      "user": "Utilizador",
+      "action": "Ação",
+      "endpoint": "Ponto Final",
+      "result": "Resultado",
+      "details": "Detalhes"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Seguinte",
+      "page": "Página {{page}} de {{totalPages}}",
+      "total": "({{count}} total)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Utilização",
+      "live": "AO VIVO",
+      "subtitle": "Registos de chamadas detalhados e análise por modelo",
+      "updatedAt": "· atualizado em {{time}}",
+      "poll": {
+        "off": "Desligado",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Ao Vivo",
+      "liveButtonTitle": {
+        "disable": "Desativar modo ao vivo",
+        "enable": "Ativar modo ao vivo (atualizar a cada 2s)"
+      },
+      "refreshNow": "↻ Agora",
+      "refreshNowTitle": "Atualizar agora",
+      "filters": {
+        "period": "Período",
+        "router": "Router",
+        "model": "Modelo",
+        "token": "Token",
+        "caller": "Chamador",
+        "type": "Tipo",
+        "status": "Estado",
+        "allRouters": "Todos os Routers",
+        "allModels": "Todos os Modelos",
+        "allTokens": "Todos os Tokens",
+        "resetFilters": "Reiniciar filtros",
+        "all": "Todos",
+        "success": "Sucesso",
+        "blocked": "Bloqueado",
+        "error": "Erro"
+      },
+      "caller": {
+        "all": "Todos",
+        "completion": "Conclusão",
+        "routing": "Router",
+        "guardrail": "Proteção",
+        "judge": "Juiz"
+      },
+      "callerBadge": {
+        "completion": "conclusão",
+        "routing": "router",
+        "guardrail": "proteção",
+        "judge": "juiz"
+      },
+      "errors": {
+        "loadFailedPrefix": "Falha ao carregar dados de utilização:",
+        "retry": "Tentar Novamente"
+      },
+      "stats": {
+        "totalCalls": "Total de Chamadas",
+        "completionCalls": "Chamadas de Conclusão",
+        "routerCalls": "Chamadas de Router",
+        "guardrailCalls": "Chamadas de Proteção",
+        "blockedCalls": "Chamadas Bloqueadas",
+        "errors": "Erros"
+      },
+      "table": {
+        "rank": "Classificação",
+        "model": "Modelo",
+        "provider": "Fornecedor",
+        "calls": "Chamadas",
+        "errors": "Erros",
+        "successRate": "Taxa de sucesso",
+        "avgLatency": "Latência média",
+        "p95Latency": "Latência P95",
+        "inputTokens": "Tokens de entrada",
+        "outputTokens": "Tokens de saída",
+        "costPer1k": "Custo / 1K",
+        "cost": "Custo (USD)",
+        "bestCostPerformance": "Melhor relação custo-desempenho"
+      },
+      "showMoreModels": "Mostrar {{count}} modelo mais",
+      "showMoreModels_other": "Mostrar {{count}} modelos mais",
+      "showFewerModels": "Mostrar menos modelos",
+      "recentCalls": {
+        "title": "Chamadas Recentes",
+        "empty": "Nenhum registo de utilização neste período.",
+        "columns": {
+          "time": "Hora",
+          "router": "Router",
+          "model": "Modelo",
+          "type": "Tipo",
+          "caller": "Chamador",
+          "in": "Entrada",
+          "out": "Saída",
+          "cost": "Custo",
+          "latency": "Latência",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Estado"
+        }
+      },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Seguinte",
+        "pageOf": "Página {{page}} de {{totalPages}}",
+        "totalRecords": "({{count}} registos totais)"
+      }
+    },
+    "record": {
+      "back": "Voltar",
+      "title": "Detalhe da Chamada",
+      "notFoundTitle": "Registo Não Encontrado",
+      "notFoundBody": "O registo de utilização {{id}} não pôde ser carregado.",
+      "errors": {
+        "loadFailed": "Falha ao carregar registo"
+      },
+      "sections": {
+        "identity": "Identidade",
+        "tokensAndCost": "Tokens & Custo",
+        "performanceAndOutcome": "Desempenho & Resultado",
+        "traceLog": "Registo de Rastreamento"
+      },
+      "fields": {
+        "recordId": "ID do Registo",
+        "router": "Router",
+        "token": "Token",
+        "model": "Modelo",
+        "callType": "Tipo de Chamada",
+        "requestType": "Tipo de Pedido",
+        "inputTokens": "Tokens de Entrada",
+        "outputTokens": "Tokens de Saída",
+        "totalTokens": "Tokens Totais",
+        "costUsd": "Custo (USD)",
+        "costUnknown": "Desconhecido",
+        "latency": "Latência",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Resultado",
+        "timestamp": "Carimbo de Data/Hora",
+        "guardrailTriggered": "Proteção Acionada",
+        "blockedBy": "Bloqueado Por",
+        "piiRedacted": "PII Editada"
+      },
+      "errorMessage": "Mensagem de Erro",
+      "eventCount": "{{count}} evento",
+      "eventCount_other": "{{count}} eventos",
+      "noTrace": "Sem rastreamento disponível. Dados de rastreamento são capturados apenas para novas chamadas."
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "subtitle": "Teste modelos, compare respostas e guarde predefinições de prompt.",
+    "mode": {
+      "single": "Único",
+      "compare": "Comparar"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "igual a A",
+      "unknownToken": "Token desconhecido"
+    },
+    "presets": {
+      "button": "Predefinições",
+      "panelTitle": "Predefinições",
+      "saveCurrent": "Guardar atual",
+      "namePlaceholder": "Nome da predefinição...",
+      "save": "Guardar",
+      "empty": "Nenhuma predefinição ainda.",
+      "delete": "Eliminar predefinição"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming não disponível",
+      "bannerBody": "este router tem uma proteção de bloqueio de resposta ativa. Routerly deve inspecionar a resposta completa antes da entrega, por isso as respostas chegam tudo de uma vez.",
+      "tooltip": "Streaming não disponível: uma proteção de bloqueio de resposta exige que a resposta completa seja inspecionada antes da entrega.",
+      "ariaLabel": "Streaming indisponível"
+    },
+    "systemPrompt": "Prompt do sistema",
+    "model": "Modelo",
+    "modelPlaceholder": "Auto (padrão do router)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Tokens máximos",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Limpar",
+    "empty": {
+      "noMessages": "Nenhuma mensagem ainda.",
+      "enterToken": "Introduza um Token de Router acima para começar."
+    },
+    "reasoning": "Raciocínio",
+    "blockedDefault": "Esta mensagem foi bloqueada por uma proteção.",
+    "truncated": "Truncado — resposta cortada por tokens máximos",
+    "bufferedNote": "Retida para revisão de segurança",
+    "errors": {
+      "onlyImages": "Apenas anexos de imagem são suportados."
+    },
+    "rawToggle": {
+      "rendered": "renderizado",
+      "raw": "bruto"
+    },
+    "inputPlaceholder": "Escrever uma mensagem...",
+    "attachImage": "Anexar imagem",
+    "attachedImageAlt": "Anexado",
+    "attachmentAlt": "Anexo",
+    "debug": {
+      "title": "Depuração",
+      "clear": "Limpar",
+      "hide": "Ocultar depuração",
+      "show": "Mostrar depuração",
+      "empty": "Nenhum dado de depuração ainda.",
+      "emptyHint": "Envie uma mensagem para ver detalhes de encaminhamento.",
+      "turnTraceLog": "Registo de rastreamento turno #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "Modelo {{label}}:",
+      "modelSelectPlaceholder": "Selecionar modelo...",
+      "noMessages": "Nenhuma mensagem ainda.",
+      "debugTurns": "Depuração ({{count}} turno)",
+      "debugTurns_other": "Depuração ({{count}} turnos)",
+      "guardrailTokensTitle": "Tokens de juiz de proteção",
+      "stop": "Parar",
+      "inputPlaceholder": "Envie a mesma mensagem para ambos os modelos..."
+    }
+  },
+  "help": {
+    "title": "Ajuda & Suporte",
+    "subtitle": "Estamos aqui para ajudar — encontre respostas ou entre em contacto a qualquer momento.",
+    "docs": {
+      "title": "Documentação",
+      "subtitle": "Guias, referência de API e docs de configuração",
+      "body": "Os docs oficiais cobrem tudo, desde começar até políticas de encaminhamento avançadas, configuração de fornecedor, orçamentos e a referência completa de API.",
+      "openLink": "Abrir documentação"
+    },
+    "issues": {
+      "title": "Reportar um bug ou sugerir uma funcionalidade",
+      "subtitle": "Abra um problema no GitHub — leva 2 minutos",
+      "body": "Os problemas do GitHub são a melhor maneira de relatar bugs ou propor melhorias. Para nos ajudar a corrigir coisas mais rápido, inclua: o que fez, o que esperava que acontecesse e o que realmente aconteceu.",
+      "showTemplate": "Mostrar modelo de problema",
+      "reportBug": "Reportar um bug",
+      "requestFeature": "Solicitar uma funcionalidade"
+    },
+    "issueTemplate": {
+      "whatHappened": "O que aconteceu?",
+      "whatHappenedHint": "Descreva o problema em palavras simples",
+      "stepsToReproduce": "Passos para reproduzir",
+      "expectedBehaviour": "Comportamento esperado",
+      "expectedBehaviourHint": "O que esperava ver",
+      "version": "Versão Routerly",
+      "versionHint": "Execute `routerly --version` ou verifique Definições → Sobre"
+    },
+    "email": {
+      "title": "Contactar suporte",
+      "subtitle": "Lemos cada mensagem e respondemos o mais rápido possível",
+      "body": "Para qualquer coisa que não se encaixe num problema do GitHub — questões de cobrança, preocupações privadas ou se apenas quer dizer olá — envie-nos uma mensagem."
+    },
+    "faq": {
+      "title": "Perguntas frequentes",
+      "subtitle": "Respostas rápidas às perguntas mais comuns",
+      "items": {
+        "connect": {
+          "q": "Como conecto a minha aplicação ao Routerly?",
+          "a": "Aponte o seu SDK OpenAI ou Anthropic para a sua instância Routerly. Substitua o URL base por http://seu-anfitrião:3000/v1 (compatível com OpenAI) ou http://seu-anfitrião:3000/anthropic (compatível com Anthropic), depois use um token de router como chave de API. É tudo — sem outras alterações necessárias."
+        },
+        "openaiCompat": {
+          "q": "O Routerly é compatível com ferramentas que usam o SDK OpenAI?",
+          "a": "Sim. Routerly é uma substituição direta: qualquer ferramenta que suporte um URL base personalizado e chave de API (LangChain, LlamaIndex, Cursor, Continue, etc.) funciona imediatamente. Para clientes no formato Anthropic, use o ponto final /anthropic em vez disso."
+        },
+        "routing": {
+          "q": "Como funciona o encaminhamento de modelo?",
+          "a": "Cada router tem uma política de encaminhamento que decide qual modelo recebe um pedido. As políticas incluem round-robin, custo mais baixo, resposta mais rápida, cadeias de fallback e muito mais. Configure-as por router em Routers → Encaminhamento."
+        },
+        "addModel": {
+          "q": "Como adiciono um novo modelo de IA?",
+          "a": "Vá a Modelos → Adicionar modelo. Pode adicionar qualquer fornecedor compatível com OpenAI (Ollama, LM Studio, pontos finais personalizados) ou um ponto final Anthropic nativo. Preencha o URL base, chave de API e ID do modelo — Routerly lidar-se-á com o resto."
+        },
+        "dataStored": {
+          "q": "Os meus dados estão armazenados? Os meus prompts estão registados?",
+          "a": "Routerly é auto-alojado e armazena dados apenas na sua máquina (em ~/.routerly/ por padrão). Prompts e respostas nunca são enviados para qualquer lugar por Routerly. Registos de pedidos são armazenados localmente apenas se ativar por router."
+        },
+        "routerToken": {
+          "q": "O que é um token de router e como difere de uma chave de API de fornecedor?",
+          "a": "Um token de router é uma credencial que dá à sua aplicação ou membros da equipa para autenticar com Routerly. É separado das suas chaves de API de fornecedor, que Routerly armazena com segurança no servidor. As suas aplicações nunca veem as chaves de fornecedor reais."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} utilizador",
+    "countLabel_other": "{{count}} utilizadores",
+    "addButton": "Adicionar Utilizador",
+    "columns": {
+      "email": "Email",
+      "role": "Função",
+      "routers": "Routers"
+    },
+    "allRouters": "Todos",
+    "resetTwoFaTitle": "Reiniciar 2FA",
+    "resetTwoFaConfirm": "Reiniciar 2FA para {{email}}? Precisarão de se re-inscrever.",
+    "deleteConfirm": "Eliminar este utilizador?",
+    "emptyTitle": "Nenhum utilizador ainda.",
+    "noPermission": "Não tem permissão para ver utilizadores.",
+    "modal": {
+      "title": "Adicionar Utilizador",
+      "emailLabel": "Email",
+      "emailPlaceholder": "utilizador@example.com",
+      "passwordLabel": "Palavra-passe",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Função",
+      "roleAdmin": "Admin",
+      "roleViewer": "Visualizador",
+      "cancelButton": "Cancelar",
+      "submitButton": "Adicionar Utilizador"
+    },
+    "errors": {
+      "loadFailed": "Falha ao carregar utilizadores",
+      "addFailed": "Erro"
+    }
+  },
+  "userEdit": {
+    "title": "Editar Utilizador",
+    "account": "Conta",
+    "email": "Email",
+    "role": "Função",
+    "changePassword": "Alterar Palavra-passe",
+    "newPassword": "Nova Palavra-passe",
+    "newPasswordHint": "(deixar em branco para manter atual)",
+    "save": "Guardar",
+    "saved": "Guardado!",
+    "errors": {
+      "loadFailed": "Falha ao carregar utilizador",
+      "saveFailed": "Falha ao guardar"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Gerencie funções e permissões. As funções pré-integradas não podem ser modificadas.",
+    "newRole": "Nova Função",
+    "builtin": "pré-integrada",
+    "edit": "Editar",
+    "deleteConfirm": "Eliminar esta função? Utilizadores com esta função serão afetados.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "ex. operador",
+      "name": "Nome",
+      "namePlaceholder": "Nome da função",
+      "permissions": "Permissões",
+      "create": "Criar",
+      "save": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "permissions": {
+      "routerRead": "Routers – Ler",
+      "routerWrite": "Routers – Escrever",
+      "modelRead": "Modelos – Ler",
+      "modelWrite": "Modelos – Escrever",
+      "userRead": "Utilizadores – Ler",
+      "userWrite": "Utilizadores – Escrever",
+      "reportRead": "Relatórios – Ler",
+      "settingsRead": "Definições – Ler",
+      "settingsWrite": "Definições – Escrever",
+      "notificationWrite": "Notificações – Escrever",
+      "tokenRead": "Tokens – Ler",
+      "tokenWrite": "Tokens – Escrever",
+      "roleWrite": "Funções – Escrever",
+      "auditRead": "Registo de Auditoria – Ler",
+      "modulesRead": "Módulos – Ler",
+      "modulesManage": "Módulos – Gerir",
+      "connectionsRead": "Ligações – Ler",
+      "connectionsManage": "Ligações – Gerir",
+      "resilienceRead": "Resiliência – Ler",
+      "resilienceManage": "Resiliência – Gerir",
+      "profilesRead": "Perfis de Encaminhamento – Ler",
+      "profilesManage": "Perfis de Encaminhamento – Gerir",
+      "optimizersRead": "Otimizadores – Ler",
+      "optimizersManage": "Otimizadores – Gerir",
+      "experimentsRead": "Experimentos – Ler",
+      "experimentsManage": "Experimentos – Gerir"
+    },
+    "errors": {
+      "loadFailed": "Falha ao carregar funções",
+      "updateFailed": "Falha ao atualizar função",
+      "createFailed": "Falha ao criar função",
+      "deleteFailed": "Falha ao eliminar função"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Perfis",
+      "subtitle": "Configurações de encaminhamento, otimizador e segurança reutilizáveis",
+      "noPermission": "Não tem permissão para ver perfis.",
+      "newProfile": "Novo Perfil {{kind}}",
+      "empty": "Nenhum perfil {{kind}} ainda.",
+      "builtin": "Pré-integrado",
+      "custom": "Personalizado",
+      "view": "Ver",
+      "edit": "Editar",
+      "clone": "Clonar",
+      "delete": "Eliminar",
+      "deleteConfirm": "Eliminar perfil \"{{label}}\"? Isto não pode ser desfeito.",
+      "kindDescriptions": {
+        "routing": "Qual modelo responde a um pedido e o que acontece quando não pode",
+        "optimizer": "O que é tirado de um prompt antes de ser enviado",
+        "security": "Proteções e políticas de PII aplicadas ao tráfego"
+      },
+      "columns": {
+        "label": "Rótulo",
+        "type": "Tipo",
+        "configuration": "Configuração",
+        "version": "Versão"
+      },
+      "errors": {
+        "loadFailed": "Falha ao carregar perfis",
+        "deleteFailed": "Falha ao eliminar perfil"
+      }
+    },
+    "form": {
+      "backToProfiles": "Voltar aos Perfis",
+      "newProfileTitle": "Novo Perfil {{kind}}",
+      "editProfileTitle": "Editar {{label}}",
+      "builtinHint": "Os perfis pré-integrados não podem ser editados. Clone um para personalizá-lo.",
+      "assignHint": "Um perfil {{kind}} pode ser atribuído a qualquer número de routers.",
+      "noPermission": "Não tem permissão para ver perfis.",
+      "label": "Rótulo",
+      "optimizers": "Otimizadores",
+      "optimizersHint": "Arraste para reordenar, alterne para ativar. Executam por ordem de cima para baixo.",
+      "createProfile": "Criar Perfil",
+      "saveProfile": "Guardar Perfil",
+      "cancel": "Cancelar",
+      "copySuffix": "{{label}} cópia",
+      "labelPlaceholders": {
+        "routing": "ex. Meu Encaminhamento Equilibrado",
+        "optimizer": "ex. Meu Aparador de Prompt",
+        "security": "ex. Minhas Proteções Rigorosas"
+      },
+      "errors": {
+        "notFound": "Perfil não encontrado.",
+        "loadFailed": "Falha ao carregar perfil",
+        "saveFailed": "Falha ao guardar perfil"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Voltar a Conectar",
+    "title": "Conectar",
+    "docs": "Docs",
+    "notEnabledPrefix": "O configurador de cliente não está ativado. Peça a um admin para ativá-lo com",
+    "noClientPrefix": "Nenhum cliente nomeado",
+    "errors": {
+      "loadFailed": "Falha ao carregar clientes: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Mais rápido: um comando",
+      "description": "Execute em máquina onde {{client}} está instalado. Escreve {{configPath}}, mantendo um backup que pode desfazer."
+    },
+    "byHand": {
+      "titleAlt": "Ou configure por mão",
+      "titleUi": "Configurar por mão",
+      "titleConfigFile": "Configurar o ficheiro de configuração",
+      "setValuesIn": "Defina estes valores em {{configPath}}.",
+      "putThisIn": "Coloque isto em",
+      "replaceToken": "Substituir",
+      "withRouterToken": "com um token de router:",
+      "createOne": "criar um",
+      "onRoutersPage": "na página Routers.",
+      "modelLabel": "Modelo:",
+      "modelHint": "entrega a escolha ao Routerly, qualquer id do modelo de",
+      "modelsLink": "Modelos",
+      "worksToo": "funciona também.",
+      "openaiCompatHint": "O mesmo URL base, chave e modelo encaixam em qualquer cliente que ofereça um fornecedor \"compatível com OpenAI\"."
+    },
+    "mcp": {
+      "title": "Servidor MCP",
+      "description": "Separado dos passos acima: este permite que {{client}} chame as ferramentas Routerly. Precisa de um token MCP pessoal, cunhado com",
+      "orFromYour": "ou a partir do seu",
+      "profileLink": "perfil"
+    },
+    "checkItWorked": {
+      "title": "Verifique se funcionou",
+      "restart": "Reinicie {{client}}, envie-lhe um prompt, depois procure a chamada em",
+      "usageLink": "Utilização",
+      "cliReports": "A partir da mesma máquina, o CLI relata o que encontra:"
+    }
+  },
+  "connect": {
+    "title": "Conectar",
+    "subtitle": "Aponte um cliente de codificação de IA para este gateway. Escolha um cliente para seus passos de configuração.",
+    "llmLabel": "LLM",
+    "llmDescription": "encaminha o tráfego do modelo desse cliente através de Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "carrega Routerly como servidor de ferramenta dentro dele.",
+    "notEnabledPrefix": "O configurador de cliente não está ativado. Peça a um admin para ativá-lo com",
+    "errors": {
+      "loadFailed": "Falha ao carregar clientes: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Um comando",
+      "hint": "O CLI escreve o ficheiro de configuração para si, com um backup que pode desfazer."
+    },
+    "byHand": {
+      "title": "Por mão",
+      "hint": "Copie o trecho da página do cliente nas suas definições, depois reinicie-o."
+    },
+    "endpoint": {
+      "title": "Aponte qualquer cliente aqui",
+      "description": "Qualquer coisa construída no SDK OpenAI ou Anthropic funciona mudando o URL base e a chave. Nada mais muda: pedidos e respostas atravessam Routerly como estão.",
+      "openaiBaseUrl": "URL base OpenAI",
+      "anthropicBaseUrl": "URL base Anthropic",
+      "apiKey": "Chave de API",
+      "model": "Modelo",
+      "apiKeyDescription": "Um token de router, enviado como",
+      "or": "ou",
+      "createOne": "Criar um",
+      "onRoutersPage": "na página Routers.",
+      "modelDescription": "deixa Routerly escolher. Qualquer id do modelo da",
+      "modelsLink": "Modelos",
+      "worksToo": "página funciona também."
+    }
+  }
+}

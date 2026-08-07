@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "อัตโนมัติ",
+      "dark": "มืด",
+      "light": "สว่าง"
+    },
+    "themeCycle": {
+      "title": "ธีม: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "ขยายแถบด้านข้าง",
+      "collapse": "ย่อแถบด้านข้าง"
+    },
+    "tagline": "เกตเวย์เดียว AI รุ่นใดๆ ควบคุมเต็มที่",
+    "nav": {
+      "overview": "ภาพรวม",
+      "providers": "ผู้ให้บริการ",
+      "models": "รุ่น",
+      "profiles": "โปรไฟล์",
+      "routers": "เราเตอร์",
+      "experiments": "การทดลอง",
+      "usage": "การใช้งาน",
+      "playground": "สนามเด็กเล่น",
+      "settings": "การตั้งค่า",
+      "connectApp": "เชื่อมต่ออ่านเป็น",
+      "help": "ช่วยเหลือ",
+      "signOut": "ออกจากระบบ"
+    },
+    "banner": {
+      "permissionWarning": "ไฟล์การกำหนดค่าบางไฟล์มีการเข้าถึงที่อนุญาต ({{files}}) เรื่องเริ่มต้นและคำขอยังคงใช้ได้ แต่โปรดแก้ไขสิ่งนี้จากระบบไฟล์โฮสต์เมื่อมีเวลา",
+      "dismiss": "ปิด",
+      "updateAvailable": "Routerly v{{latest}} พร้อมใช้งาน คุณใช้ v{{current}} อยู่",
+      "updateLink": "อัปเดตในการตั้งค่า",
+      "mfaRequired": "จำเป็นต้องมีการยืนยันตัวตนสองปัจจัยสำหรับอินสแตนซ์นี้",
+      "mfaLink": "ตั้งค่า 2FA ในโปรไฟล์ของคุณ",
+      "mfaSuffix": "เพื่อรักษาความปลอดภัยของบัญชีของคุณ",
+      "telemetryTitle": "Routerly ไม่เคยส่งข้อมูลโดยอัตโนมัติ",
+      "telemetryBody": "คุณต้องการช่วยเหลือโดยการส่งเมตริกการติดตั้งแบบไม่ระบุตัวตนหรือไม่ เฉพาะประเภทเหตุการณ์ เวอร์ชัน แพลตฟอร์ม และรหัสสุ่ม ไม่มีข้อมูลส่วนบุคคล ไม่มี IP",
+      "telemetryLink": "มีการส่งอะไร",
+      "telemetryYes": "ใช่ ช่วยเหลือ",
+      "telemetryNo": "ไม่ ขอบคุณ"
+    },
+    "language": {
+      "label": "ภาษา"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} วินาทีที่แล้ว",
+      "secondsAgo_other": "{{count}} วินาทีที่แล้ว",
+      "minutesAgo": "{{count}} นาทีที่แล้ว",
+      "minutesAgo_other": "{{count}} นาทีที่แล้ว",
+      "hoursAgo": "{{count}} ชั่วโมงที่แล้ว",
+      "hoursAgo_other": "{{count}} ชั่วโมงที่แล้ว",
+      "daysAgo": "{{count}} วันที่แล้ว",
+      "daysAgo_other": "{{count}} วันที่แล้ว"
+    },
+    "confirm": "ยืนยัน",
+    "cancel": "ยกเลิก",
+    "remove": "ลบ",
+    "select": "เลือก...",
+    "search": "ค้นหา...",
+    "noResults": "ไม่มีผลลัพธ์",
+    "noRemainingOptions": "ไม่มีตัวเลือกเหลือ",
+    "apply": "ใช้",
+    "saved": "บันทึกแล้ว",
+    "showLess": "แสดงน้อยลง",
+    "roles": "บทบาท",
+    "permissions": "สิทธิอนุญาต",
+    "notifications": {
+      "title": "การแจ้งเตือน",
+      "markAllRead": "ทำเครื่องหมายว่าอ่านแล้วทั้งหมด",
+      "empty": "ไม่มีการแจ้งเตือน",
+      "viewAll": "ดูการแจ้งเตือนทั้งหมด"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "เลือกช่วงเวลา",
+      "recent": "ล่าสุด",
+      "ranges": "ช่วง",
+      "from": "จาก",
+      "to": "ถึง"
+    },
+    "permissionGuard": {
+      "fixFailed": "การแก้ไขสิทธิอนุญาตล้มเหลว",
+      "title": "สิทธิอนุญาตไฟล์ที่ไม่ปลอดภัย",
+      "defaultMessage": "ไฟล์บางไฟล์มีสิทธิอนุญาตที่ไม่ปลอดภัย",
+      "fixing": "กำลังแก้ไข…",
+      "fixNow": "แก้ไขตอนนี้"
+    },
+    "limitRows": {
+      "noLimits": "ไม่มีการตั้งค่าจำกัด",
+      "metricLabel": "เมตริก",
+      "typeLabel": "ประเภท",
+      "periodLabel": "ช่วงเวลา",
+      "everyLabel": "ทุก",
+      "maxCost": "ต้นทุนสูงสุด",
+      "maxCount": "จำนวนสูงสุด",
+      "maxTokens": "โทเค็นสูงสุด",
+      "allCombosSet": "การรวมเมตริก/ช่วงเวลาทั้งหมดได้รับการตั้งค่าแล้ว",
+      "addLimit": "เพิ่มขีดจำกัด",
+      "metric": {
+        "cost": "ต้นทุน",
+        "calls": "การโทร",
+        "input_tokens": "โทเค็นอินพุต",
+        "output_tokens": "โทเค็นเอาต์พุต",
+        "total_tokens": "โทเค็นทั้งหมด"
+      },
+      "period": {
+        "hourly": "รายชั่วโมง",
+        "daily": "รายวัน",
+        "weekly": "รายสัปดาห์",
+        "monthly": "รายเดือน",
+        "yearly": "รายปี"
+      },
+      "rollingUnit": {
+        "second": "วินาที",
+        "minute": "นาที",
+        "hour": "ชั่วโมง",
+        "day": "วัน",
+        "week": "สัปดาห์",
+        "month": "เดือน"
+      },
+      "windowType": {
+        "period": "ช่วงเวลา",
+        "rolling": "โรลลิ่ง"
+      },
+      "fmt": {
+        "requests": "{{value}} คำขอ",
+        "inputTokens": "{{value}} โทเค็นอินพุต",
+        "outputTokens": "{{value}} โทเค็นเอาต์พุต",
+        "totalTokens": "{{value}} โทเค็นทั้งหมด",
+        "everyRolling": "{{metric}} ทุก {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} ต่อ {{period}}"
+      }
+    },
+    "savings": {
+      "title": "สิ่งที่การกำหนดเส้นทางบันทึก",
+      "input": "อินพุต",
+      "output": "เอาต์พุต",
+      "actual": "เป็นจริง",
+      "clientCalls": "{{count}} การโทรของไคลเอนต์",
+      "clientCalls_other": "{{count}} การโทรของไคลเอนต์",
+      "comparedAgainst": " เมื่อเทียบกับการส่งไปยังแต่ละ",
+      "comparedAgainst_other": " เมื่อเทียบกับการส่งทั้งหมดไปยังแต่ละ",
+      "paidModelsInPlay": "{{count}} รุ่นที่ชำระเงิน",
+      "paidModelsInPlay_other": "{{count}} รุ่นที่ชำระเงิน",
+      "metricCost": "ต้นทุน",
+      "metricTokens": "โทเค็น",
+      "totalCost": "ต้นทุนรวม",
+      "routed": "เส้นทาง: {{value}}",
+      "saved": "บันทึก: {{value}}",
+      "usdThisPeriod": "USD ช่วงนี้",
+      "savedVsAlways": "{{value}} บันทึก ({{percent}}%) เมื่อเทียบกับการใช้ {{model}} เสมอ",
+      "tokens": "โทเค็น",
+      "in": "ใน: {{value}}",
+      "out": "ออก: {{value}}",
+      "tokenSubWithCache": "{{in}} ใน · {{out}} ออก · {{cached}} แคช",
+      "tokenSub": "{{in}} ใน · {{out}} ออก",
+      "cutByOptimizers": "{{value}} ตัดโดยตัวปรับปรุง",
+      "fewerThanAlways": "{{value}} น้อยกว่าการใช้ {{model}} เสมอ โดยประมาณ"
+    },
+    "optimizerSteps": {
+      "downloaded": "ดาวน์โหลดแล้ว",
+      "thisStepRunsOn": "ขั้นตอนนี้ทำงานบน",
+      "defaultCheckpoint": "จุดตรวจสอบเริ่มต้น"
+    },
+    "routingPolicies": {
+      "title": "นโยบายการกำหนดเส้นทาง",
+      "subtitle": "นโยบายกำหนดวิธีกำหนดเส้นทางคำขอ ดำเนินการตามลำดับจากบนลงล่าง",
+      "removePolicy": "ลบนโยบาย",
+      "removeIntent": "ลบความตั้งใจ",
+      "removeExample": "ลบตัวอย่าง",
+      "routingModels": "รุ่นการกำหนดเส้นทาง",
+      "embeddingModels": "รุ่นการฝังตัว",
+      "maxCompletionTokens": "โทเค็นการเติมเต็มสูงสุด",
+      "maxPromptChars": "อักขระพรอมต์สูงสุด",
+      "similarityThreshold": "เกณฑ์ความคล้ายคลึง",
+      "previousMessages": "ข้อความก่อนหน้า",
+      "intents": "ความตั้งใจ",
+      "confidenceThreshold": "เกณฑ์ความเชื่อมั่น",
+      "ambiguityMargin": "ระยะขอบความคลุมเครือ",
+      "maxCallsPerWindow": "การโทรสูงสุดต่อหน้าต่าง",
+      "addFallbackModel": "เพิ่มรุ่นสำรอง",
+      "autoRoutingLabel": "การกำหนดเส้นทางอัตโนมัติ",
+      "autoRoutingHint": "หากเปิดใช้งาน การรับส่งข้อมูลจะกระจายโดยไม่มีพรอมต์ที่กำหนดเอง หากปิดใช้งาน คุณสามารถเขียนพรอมต์เฉพาะเจาะจงเพื่อสั่งให้ AI เมื่อใดควรเลือกรุ่นเป้าหมายแต่ละรุ่น",
+      "additionalPromptInfoLabel": "ข้อมูลพรอมต์เพิ่มเติม",
+      "additionalPromptInfoPlaceholder": "คำแนะนำพิเศษที่จะรวมไว้ในพรอมต์การกำหนดเส้นทาง...",
+      "addExamplePlaceholder": "เพิ่มตัวอย่างแล้วกด Enter…",
+      "addIntentPlaceholder": "เพิ่มความตั้งใจและกด Enter…",
+      "addPolicyPlaceholder": "เพิ่มนโยบาย...",
+      "labels": {
+        "llm": "นโยบายการกำหนดเส้นทาง AI",
+        "rate-limit": "นโยบายขีดจำกัดอัตรา",
+        "budget-remaining": "นโยบายงบประมาณคงเหลือ",
+        "semantic-intent": "นโยบายความตั้งใจเชิงความหมาย",
+        "health": "นโยบายสุขภาพ",
+        "context": "นโยบายบริบท",
+        "capability": "นโยบายความสามารถ",
+        "performance": "นโยบายประสิทธิภาพ",
+        "fairness": "นโยบายความเป็นธรรม",
+        "cheapest": "นโยบายราคาถูกสุด",
+        "model-preference": "นโยบายการตั้งค่ารุ่น"
+      },
+      "descriptions": {
+        "context": "ให้คะแนนรุ่นตามหน้าต่างบริบทที่มี กำหนด 0 ให้กับรุ่นที่หน้าต่างบริบทมีขนาดเล็กกว่าความยาวคำขอโดยประมาณ เพื่อป้องกันข้อผิดพลาดการตัดแต่ง",
+        "cheapest": "ให้คะแนนรุ่นตามสัดส่วนผกผันกับต้นทุนโทเค็น รุ่นที่ถูกที่สุดจะได้ 1.0 รุ่นที่แพงที่สุดจะได้ 0.0 ช่วยลดค่าใช้ API ในคำขอต่างๆ",
+        "health": "ให้คะแนนรุ่นตามอัตราข้อผิดพลาดล่าสุดโดยใช้การสลายตัวแบบเลขชี้กำลัง (ข้อผิดพลาดล่าสุดถ่วงน้ำหนักมากขึ้น) ใช้ตัวทำลายวงจรที่กำหนดคะแนนเป็น 0 เมื่อถ่วงน้ำหนักอัตราข้อผิดพลาดเกินเกณฑ์วิกฤต",
+        "performance": "ให้คะแนนรุ่นตามการแฝงค่าเฉลี่ยล่าสุดโดยใช้การสลายตัวแบบเลขชี้กำลัง รุ่นที่เร็วที่สุดได้ 1.0 รุ่นที่ช้าที่สุดได้ 0.0 รุ่นที่ไม่มีข้อมูลล่าสุดจะเป็นค่าเริ่มต้น 1.0",
+        "llm": "ใช้โมเดล AI เพื่อให้คะแนนผู้สมัครตามเนื้อหาเชิงความหมายของคำขอ สนับสนุนพรอมต์คำแนะนำการกำหนดเส้นทางต่อรุ่นและพิจารณาเมื่อมีการกำหนดค่าลิมิต",
+        "capability": "ตัวกรองแบบฮาร์ด: กำหนด 0 ให้กับรุ่นที่ไม่มีคุณลักษณะที่ต้องการอย่างชัดเจนตามคำขอ (วิสัยทัศน์ การเรียกใช้ฟังก์ชัน โหมด JSON) รุ่นที่ไม่มีการประกาศความสามารถที่ชัดเจนจะไม่ถูกลงโทษ",
+        "rate-limit": "ลงโทษรุ่นที่มีความถี่การโทรล่าสุดสูงเพื่อลดความเสี่ยงในการกดค่า (HTTP 429) สนับสนุนเกณฑ์การบังคับที่กำหนดได้ซึ่งตั้งค่าคะแนนเป็น 0",
+        "fairness": "กระจายการรับส่งข้อมูลอย่างเท่าเทียมกันโดยลงโทษรุ่นที่ได้รับการโทรสำเร็จมากขึ้นเมื่อเร็ว ๆ นี้ ทำหน้าที่เป็นรอบโรบินแบบอ่อนเพื่อป้องกันการโหลดจากการรวมตัวบนรุ่นเดียว",
+        "budget-remaining": "ให้คะแนนรุ่นตามเสบียงงบประมาณคงเหลือในทุกลิมิตที่กำหนดค่า ชอบรุ่นที่มีห้องว่างมากขึ้นก่อนที่เกณฑ์จะถูกกระทบ การแพร่กระจายการบริโภคอย่างเชิงรุก",
+        "semantic-intent": "จำแนกคำขอตามความตั้งใจเชิงความหมายโดยใช้การฝังตัว จากนั้นจำกัดสระสมัครให้เฉพาะรุ่นที่แมปกับความตั้งใจนั้น การจับคู่ที่มั่นใจสูงตัวกรองแบบฮาร์ด การจับคู่ที่คลุมเครือจะรวมสระด้านบน คำขอที่ไม่รู้จักจะส่งผ่านผู้สมัครทั้งหมด",
+        "model-preference": "เมื่อไคลเอนต์ขอรุ่นเฉพาะ (ไม่ใช่ routerly/ada) ให้คะแนนโบนัสที่กำหนดค่าได้ให้กับรุ่นนั้น เมื่อไม่แสดงความชอบ นโยบายจะละเว้น ตำแหน่งในรายการควบคุมว่าความชอบถ่วงน้ำหนักเทียบกับนโยบายอื่นๆ มากแค่ไหน"
+      },
+      "selectModel": "เลือกรุ่น"
+    },
+    "securityRules": {
+      "applyTo": "นำไปใช้กับ",
+      "streamingBufferSize": "ขนาดบัฟเฟอร์สตรีมมิ่ง (ตัวอักษร)",
+      "entityTypes": "ประเภทเอนทิตี",
+      "target": "เป้าหมาย",
+      "embeddingModel": "รุ่นการฝังตัว",
+      "judgeModel": "รุ่นผู้พิพากษา",
+      "contentGuardrails": "การป้องกันเนื้อหา",
+      "piiPolicies": "นโยบาย PII",
+      "addSecurityPolicyPlaceholder": "เพิ่มนโยบายความปลอดภัย...",
+      "removePolicyTooltip": "ลบนโยบาย",
+      "deleteRuleAriaLabel": "ลบกฎ",
+      "embeddingModelPlaceholder": "เลือกรุ่นการฝังตัว...",
+      "fallbackModelsLabel": "รุ่นสำรอง (เลือกได้ ลองตามลำดับ)",
+      "fallbackModelsPlaceholder": "ไม่มีรุ่นสำรอง...",
+      "exampleTextsLabel": "ตัวอย่างข้อความที่ต้องบล็อก (หนึ่งต่อบรรทัด)",
+      "exampleTextsPlaceholder": "ฉันจะแฮกยังไง...\n...",
+      "similarityThresholdLabel": "เกณฑ์ความคล้ายคลึง:",
+      "judgeModelPlaceholder": "เลือกรุ่นผู้พิพากษา...",
+      "allowedTopicsLabel": "หัวข้อที่อนุญาต (ภาษาธรรมชาติ)",
+      "allowedTopicsPlaceholder": "บริการลูกค้าสำหรับผลิตภัณฑ์ซอฟต์แวร์ การแก้ไขปัญหาทางเทคนิค คำถามเกี่ยวกับการเรียกเก็บเงิน",
+      "onTopicThresholdLabel": "บล็อกหากคะแนนแนวทางต่ำกว่า:",
+      "harmThresholdLabel": "บล็อกหากคะแนนความเสียหายอยู่เหนือ:",
+      "customInstructionsLabel": "คำแนะนำที่กำหนดเอง",
+      "customInstructionsPlaceholder": "คุณเป็นตัวจำแนกความปลอดภัยของเนื้อหา ประเมินข้อความต่อไปนี้เพื่อค้นหาเนื้อหาที่เป็นอันตราย\nหมวดหมู่: คำพูดที่ขยายแข้ง ความรุนแรง เนื้อหาทางเพศ การทำร้ายตนเอง\nตอบเฉพาะกับออบเจกต์ JSON: {\"score\": <number between 0 and 1>}",
+      "customInstructionsRequired": "จำเป็นต้องมีคำแนะนำที่กำหนดเอง",
+      "enabledLabel": "เปิดใช้งาน",
+      "contentGuardrailsHint": "ตรวจสอบคำขอและการตอบกลับเทียบกับกฎที่กำหนดค่า ใช้งานได้เมื่อมีการกำหนดค่ากฎอย่างน้อยหนึ่งข้อ",
+      "securityPoliciesHeading": "นโยบายความปลอดภัย",
+      "noSecurityPolicies": "ไม่มีนโยบายความปลอดภัยที่กำหนดค่า",
+      "piiPoliciesHint": "ตรวจหาและแก้ไขข้อมูลส่วนบุคคล แต่ละนโยบายเป้าหมายอินพุตคำขอ การตอบสนองของรุ่น หรือทั้งสองอย่าง และควบคุมชุดเอนทิตีของตนเอง",
+      "noPiiPolicies": "ไม่มีนโยบาย PII ที่กำหนดค่า",
+      "addPolicyButton": "+ เพิ่มนโยบาย",
+      "injectionWarningTitle": "ส่วนโหลดคำขอที่ถูกแก้ไขโดยการฉีด",
+      "injectionWarningBody": "หนึ่งหรือมากกว่านั้นกฎฉีดคำแนะนำของตัวเองลงในพรอมต์ระบบของคำขอที่ออกไป ดังนั้นเพย์โหลดที่ส่งให้ผู้ให้บริการจึงถูกแก้ไข ไม่มีการโทรรุ่นเพิ่มเติมและไม่มีการบล็อก โมเดลการให้บริการจะบังคับใช้คำแนะนำ",
+      "streamingDisabledWarningTitle": "ปิดการใช้งานสตรีมมิ่งสำหรับเราเตอร์นี้",
+      "streamingDisabledWarningBody": "หนึ่งหรือมากกว่านั้นกฎได้รับการกำหนดค่าเพื่อบล็อกการตอบกลับ (เป้าหมาย: การตอบกลับหรือทั้งสองอย่าง) เนื่องจากต้องตรวจสอบการตอบกลับทั้งหมดก่อนที่จะสามารถตัดสินใจบล็อก Routerly จึงค้างการตอบกลับแบบเต็มก่อนส่งคืน การสตรีมไม่พร้อมใช้งานในขณะที่กฎบล็อกการตอบกลับใช้งานอยู่ ไคลเอนต์จะได้รับการตอบสนองที่สมบูรณ์ทั้งหมดในคราวเดียว"
+    },
+    "connectionFields": {
+      "azureResourceName": "ชื่อทรัพยากร Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "ชื่อทรัพยากร Azure OpenAI (จากพอร์ทัล Azure)",
+      "deploymentId": "ID การปรับใช้",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "ชื่อการปรับใช้ที่คุณสร้างใน Azure OpenAI Studio",
+      "azureApiVersionLabel": "เวอร์ชัน API",
+      "azureApiVersionDefaultHint": "(ค่าเริ่มต้น: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "ภูมิภาค AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "ปล่อยให้ว่างเพื่อเก็บไว้ที่มีอยู่",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "โทเค็นเซッ션นี้",
+      "awsSessionTokenOptionalHint": "(เลือกได้ สำหรับข้อมูลประจำตัวชั่วคราว)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Router ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "ตำแหน่ง",
+      "gcpLocationDefaultHint": "(ค่าเริ่มต้น: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "คีย์บัญชีบริการ",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL จุดสิ้นสุด",
+      "optional": "(เลือกได้)",
+      "webProvider": {
+        "unofficialWarningTitle": "ผู้ให้บริการที่ไม่เป็นทางการ ใช้ตามความเสี่ยงของคุณเอง",
+        "unofficialWarningBody": "การรวมนี้อาศัยเอพีไอภายในที่ไม่มีเอกสารประกอบอย่างเป็นทางการซึ่งอาจเปลี่ยนแปลงหรือขาดหายนะได้โดยไม่ได้รับบอกกล่าวล่วงหน้า อาจละเมิดข้อกำหนดของบริการของผู้ให้บริการและอาจส่งผลให้บัญชีถูกระงับ",
+        "accessTokenLabel": "โทเค็นเข้าถึง",
+        "sessionTokenLabel": "โทเค็นเซัสชั่น",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "วางค่า sessionKey คุกกี้ (sk-ant-sid01-…)",
+        "openaiInstructions": "ในขณะที่เข้าสู่ระบบ ChatGPT ให้เปิด <code>https://chatgpt.com/api/auth/session</code> ในแท็บใหม่ คัดลอกค่าของฟิลด์ <code>accessToken</code> (เริ่มต้นด้วย <code>eyJ</code>) โทเค็นหมดอายุทุก ~24 ชั่วโมง สำหรับการเข้าถึงที่เชื่อถือได้ ให้เติมฟิลด์ <strong>cf_clearance</strong> ด้านล่างด้วย",
+        "anthropicInstructions": "<strong>วิธีรับกุญแจนั่งร้าน:</strong> ขณะที่เข้าสู่ระบบ Claude ให้เปิด DevTools (F12) → Application → Cookies → <code>claude.ai</code> → คัดลอกค่าของคุกกี้ <code>sessionKey</code> (เริ่มต้นด้วย <code>sk-ant-sid01-</code>) คีย์จะยังคงใช้ได้จนกว่าคุณจะออกจากระบบ"
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "โทเค็น OAuth การสมัครสมาชิก",
+        "authFilePathLabel": "เส้นทางไฟล์ยืนยัน",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (ค่าเริ่มต้น)",
+        "anthropicTitle": "ใช้การสมัครสมาชิก Claude Pro/Max ของคุณ",
+        "anthropicRunCommandStep": "เรียกใช้คำสั่งนี้และคัดลอกโทเค็นที่พิมพ์:",
+        "anthropicPasteTokenStep": "วางโทเค็นลงในฟิลด์ <em>Subscription OAuth Token</em> ด้านล่าง",
+        "termsNote": "สร้างใหม่เมื่อหมดอายุ การใช้การสมัครสมาชิกผ่านเกตเวย์อาจขัดต่อข้อกำหนดของผู้ให้บริการ",
+        "openaiTitle": "ใช้การสมัครสมาชิก ChatGPT Plus/Pro ของคุณผ่านแอป Codex",
+        "openaiLoginStep": "เข้าสู่ระบบแอป Codex เดสก์ทอปด้วยบัญชี ChatGPT Plus/Pro ของคุณ",
+        "openaiAutoRefreshStep": "Routerly อ่านโทเค็นการเข้าถึงของคุณจาก <code>~/.codex/auth.json</code> และรีเฟรชโดยอัตโนมัติ ไม่จำเป็นต้องคัดลอก/วาง",
+        "openaiAuthFilePathStep": "ปล่อยให้ฟิลด์ <em>Auth file path</em> ว่างเพื่อใช้ค่าเริ่มต้น หรือป้อนเส้นทางที่กำหนดเองหากแอป Codex ของคุณจัดเก็บการยืนยันไว้ในที่อื่น",
+        "openaiTermsNote": "การใช้การสมัครสมาชิกผ่านเกตเวย์อาจขัดต่อข้อกำหนดของผู้ให้บริการ"
+      },
+      "copyCode": {
+        "copiedTooltip": "คัดลอก!",
+        "copyTooltip": "คัดลอกไปยังคลิปบอร์ด",
+        "copiedLabel": "คัดลอก",
+        "copyLabel": "คัดลอก"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "คัดลอก",
+      "copiedLabel": "คัดลอก!",
+      "copyErrorHint": "การคัดลอกล้มเหลว เลือกและคัดลอกด้วยตนเอง"
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "ไคลเอนต์ MCP",
+      "hints": {
+        "claudeCode": "เรียกใช้สิ่งนี้ครั้งเดียว ที่ใดก็ได้ Claude Code เก็บเซิร์ฟเวอร์ใน <code>~/.claude.json</code>",
+        "claudeDesktop": "ใส่สิ่งนี้ใน <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (บน Windows ให้ใช้ <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>) แล้วรีสตาร์ทแอป มันเรียกใช้ CLI ดังนั้น <code>routerly</code> จะต้องอยู่บน PATH ของคุณ",
+        "codex": "ใส่สิ่งนี้ใน <code>~/.codex/config.toml</code> Codex อ่านโทเค็นจากสิ่งแวดล้อม ดังนั้นให้ส่งออกไปในเชลล์ที่คุณเริ่มต้น Codex",
+        "opencode": "ใส่สิ่งนี้ใน <code>~/.config/opencode/opencode.json</code>",
+        "openclaw": "เรียกใช้สิ่งนี้ครั้งเดียว OpenClaw มาตรฐานเป็นการขนส่ง sse ซึ่ง Routerly ไม่เสิร์ฟ ดังนั้นการขนส่งจะถูกตั้งค่าอย่างชัดเจน",
+        "cursor": "ใส่สิ่งนี้ใน <code>~/.cursor/mcp.json</code> หรือใน <code>.cursor/mcp.json</code> เพื่อ scoping ให้กับโครงการเดียว",
+        "cline": "ใส่สิ่งนี้ใน <code>~/.cline/mcp.json</code> หรือวางลงใน Configure MCP Servers ในแผงคลีนจนกว่า",
+        "zed": "ใส่สิ่งนี้ใน Zed <code>settings.json</code> ของคุณ พร้อมกับเซิร์ฟเวอร์บริบทอื่น ๆ"
+      }
+    },
+    "unsavedChanges": {
+      "title": "การเปลี่ยนแปลงที่ไม่บันทึก",
+      "message": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก หากคุณจากไป การเปลี่ยนแปลงของคุณจะหายไป",
+      "stay": "ยังอยู่",
+      "leaveAnyway": "จากไปและการออก"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "ป้องกันเนื้อหา",
+        "pii": "PII",
+        "optimizers": "ตัวปรับปรุง",
+        "routerOverhead": "โครงส่วนค่าใช้จ่าย"
+      },
+      "policyType": {
+        "llm": "การกำหนดเส้นทาง AI",
+        "rateLimit": "ขีดจำกัดอัตรา",
+        "budgetRemaining": "งบประมาณคงเหลือ",
+        "semanticIntent": "ความตั้งใจเชิงความหมาย",
+        "modelPreference": "การตั้งค่ารุ่น"
+      },
+      "rawDetails": "รายละเอียดดิบ",
+      "technicalDetails": "รายละเอียดทางเทคนิค",
+      "systemPrompt": "พรอมต์ระบบ",
+      "responseText": "ข้อความตอบกลับ",
+      "responseJson": "JSON การตอบกลับ",
+      "cacheEmbeddingCall": "เรียกการฝังแคช",
+      "fallbackAttempt": "ความพยายามสำรอง #{{attempt}}",
+      "embeddingModel": "รุ่นการฝังตัว",
+      "upstreamModel": "รุ่นต้นน้ำ",
+      "provider": "ผู้ให้บริการ",
+      "source": "ที่มา",
+      "endpoint": "จุดสิ้นสุด",
+      "cacheHit": "แคชกด",
+      "ttlExtended": "TTL ขยายออก",
+      "model": "รุ่น",
+      "similarity": "ความคล้ายคลึง",
+      "embedding": "การฝังตัว",
+      "cacheMiss": "แคชพลาด",
+      "details": "รายละเอียด",
+      "excludedByLimits": "ยกเว้นตามขีดจำกัด",
+      "finalRanking": "การจัดอันดับสุดท้าย",
+      "noRankingData": "ไม่มีข้อมูลการจัดอันดับ (เรกคอร์ดอาจเสียหายหรือมาจากเวอร์ชันเก่า)",
+      "policyScores": "คะแนนนโยบาย",
+      "weight": "น้ำหนัก {{value}}",
+      "allScores": "คะแนนทั้งหมด",
+      "noPolicyData": "ไม่มีข้อมูลนโยบาย (เรกคอร์ดอาจเสียหายหรือมาจากเวอร์ชันเก่า)",
+      "requestGuardrailBlocked": "การป้องกันคำขอถูกบล็อก",
+      "requestGuardrailTriggered": "เรียกใช้การป้องกันคำขอ",
+      "responseGuardrailBlocked": "การป้องกันการตอบกลับถูกบล็อก",
+      "responseGuardrailTriggered": "เรียกใช้การป้องกันการตอบกลับ",
+      "rule": "กฎ",
+      "action": "การกระทำ",
+      "guardrailsEvaluated": "มีการประเมินการป้องกัน ({{target}})",
+      "ruleCount": "{{count}} กฎ",
+      "ruleCount_other": "{{count}} กฎ",
+      "promptInjection": "การฉีดพรอมต์",
+      "injects": "ฉีด",
+      "judgeResponse": "การตอบสนองของผู้พิพากษา",
+      "piiScrubbed": "PII ถูกขัด",
+      "piiScanned": "PII ที่สแกน ({{target}})",
+      "policies": "นโยบาย",
+      "entityTypes": "ประเภทเอนทิตี",
+      "customPatterns": "แบบแผนที่กำหนดเอง",
+      "scanned": "สแกน",
+      "redacted": "แก้ไข",
+      "took": "เอา",
+      "ms": "{{value}} มิลลิวินาที",
+      "entityTypesScanned": "ประเภทเอนทิตีที่สแกน",
+      "guardrailInjection": "การฉีดการป้องกัน",
+      "rules": "กฎ",
+      "chars": "ตัวอักษร",
+      "injectedText": "ข้อความที่ฉีด",
+      "optimizer": "ตัวปรับปรุง {{id}}",
+      "tokens": "โทเค็น",
+      "saved": "บันทึก",
+      "tok": "{{value}} tok",
+      "reason": "เหตุผล",
+      "budgetBlocked": "งบประมาณถูกบล็อก",
+      "budgetOk": "งบประมาณเอกสาร",
+      "egressSent": "ส่งออกที่ส่ง",
+      "status": "สถานะ",
+      "encoding": "การเข้ารหัส",
+      "frames": "เฟรม",
+      "bytes": "ไบต์"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "โปรไฟล์ของฉัน",
+      "subtitle": "จัดการการตั้งค่าบัญชีของคุณ"
+    },
+    "tabs": {
+      "profile": "โปรไฟล์",
+      "notifications": "การแจ้งเตือน",
+      "mcp": "MCP",
+      "preferences": "ตั้งค่า"
+    },
+    "notifications": {
+      "close": "ปิด",
+      "refresh": "รีเฟรช",
+      "clear": "ล้าง",
+      "empty": "ไม่พบการแจ้งเตือน",
+      "markAllRead": "ทำเครื่องหมายว่าอ่านแล้วทั้งหมด",
+      "allCaughtUp": "ได้รับการเดิน",
+      "unreadCount": "{{count}} ที่ยังไม่ได้อ่าน",
+      "selectedCount": "{{count}} ที่เลือก",
+      "severity": {
+        "all": "ทั้งหมด",
+        "info": "ข้อมูล",
+        "warning": "คำเตือน",
+        "critical": "วิกฤต"
+      },
+      "status": {
+        "read": "อ่าน",
+        "unread": "ยังไม่ได้อ่าน"
+      },
+      "filters": {
+        "severity": "ความรุนแรง",
+        "category": "หมวดหมู่",
+        "event": "เหตุการณ์",
+        "date": "วันที่",
+        "period": "ช่วงเวลา",
+        "status": "สถานะ",
+        "all": "ทั้งหมด",
+        "allCategories": "หมวดหมู่ทั้งหมด",
+        "allEvents": "เหตุการณ์ทั้งหมด",
+        "unreadOnly": "ยังไม่ได้อ่านเท่านั้น"
+      },
+      "actions": {
+        "markRead": "ทำเครื่องหมายว่าอ่านแล้ว",
+        "markUnread": "ทำเครื่องหมายว่ายังไม่ได้อ่าน",
+        "archive": "จัดเก็บ"
+      },
+      "table": {
+        "severity": "ความรุนแรง",
+        "event": "เหตุการณ์",
+        "date": "วันที่",
+        "status": "สถานะ",
+        "selectAll": "เลือกทั้งหมด",
+        "selectRow": "เลือก {{event}}",
+        "eventCount": "{{count}} เหตุการณ์"
+      },
+      "pagination": {
+        "previous": "← ก่อนหน้า",
+        "next": "ถัดไป →",
+        "page": "หน้า {{page}} ของ {{totalPages}}",
+        "total": "({{count}} รวม)"
+      },
+      "detail": {
+        "ariaLabel": "รายละเอียดการแจ้งเตือน",
+        "details": "รายละเอียด",
+        "noDetails": "ไม่มีรายละเอียดเพิ่มเติม",
+        "eventsInIncident": "เหตุการณ์ในอุบัติการณ์นี้"
+      }
+    },
+    "security": {
+      "roleLabel": "บทบาท:",
+      "password": {
+        "heading": "เปลี่ยนรหัสผ่าน",
+        "currentLabel": "รหัสผ่านปัจจุบัน",
+        "newLabel": "รหัสผ่านใหม่",
+        "newPlaceholder": "อย่างน้อย 8 ตัวอักษร",
+        "confirmLabel": "ยืนยันรหัสผ่านใหม่",
+        "success": "รหัสผ่านถูกเปลี่ยนเรียบร้อยแล้ว",
+        "saving": "กำลังบันทึก...",
+        "submit": "เปลี่ยนรหัสผ่าน",
+        "errors": {
+          "mismatch": "รหัสผ่านไม่ตรงกัน",
+          "tooShort": "รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร",
+          "updateFailed": "อัปเดตล้มเหลว"
+        }
+      },
+      "tfa": {
+        "heading": "การยืนยันตัวตนสองปัจจัย",
+        "notEnabled": "ไม่ได้เปิดใช้งาน 2FA ปกป้องบัญชีของคุณด้วยรหัสผ่านแบบครั้งเดียวที่ใช้เวลา",
+        "enableButton": "เปิดใช้งานการยืนยันตัวตนสองปัจจัย",
+        "scanInstructions": "สแกน QR โค้ดนี้ด้วยแอปตัวยืนยันตัวตนของคุณ (Google Authenticator, Authy ฯลฯ) จากนั้นป้อนโค้ด 6 หลักเพื่อยืนยัน",
+        "qrAlt": "QR โค้ดการตั้งค่า 2FA",
+        "addAccountInstructions": "เปิดแอปตัวยืนยันตัวตนของคุณ (Google Authenticator, Authy, 1Password ฯลฯ) และเพิ่มบัญชีใหม่:",
+        "setup": {
+          "step1": "แตะ <strong>เพิ่มบัญชี</strong> หรือปุ่ม <strong>+</strong>",
+          "step2": "เลือก <strong>ป้อนคีย์การตั้งค่า</strong> (หรือสแกน QR โค้ดหากใช้งานบนอุปกรณ์เคลื่อนที่)",
+          "step3": "ป้อนข้อมูลลับที่แสดงด้านล่าง"
+        },
+        "mobileLink": "แตะที่นี่บนอุปกรณ์เคลื่อนที่เพื่อเปิดตัวยืนยันตัวตนแบบมี",
+        "manualEntryLabel": "ข้อมูลลับการป้อนข้อมูลแบบ:",
+        "saveBackupCodes": "บันทึกรหัสสำรองเหล่านี้ สามารถใช้ได้ครั้งเดียวหากคุณสูญเสียการเข้าถึงตัวยืนยันตัวตนของคุณ",
+        "copyBackupCodes": "คัดลอกรหัสสำรอง",
+        "confirmCodeLabel": "ป้อนรหัสจากแอปของคุณเพื่อเปิดใช้งาน",
+        "activate": "เปิดใช้งาน 2FA",
+        "cancel": "ยกเลิก",
+        "enabledBadge": "เปิดใช้งาน 2FA",
+        "newBackupCodesLabel": "รหัสสำรองใหม่ (บันทึกตอนนี้):",
+        "copy": "คัดลอก",
+        "regenLabel": "ป้อนรหัสตัวยืนยันตัวตนเพื่อสร้างรหัสสำรองใหม่",
+        "regenerate": "สร้างใหม่",
+        "regenerateBackupCodes": "สร้างรหัสสำรองใหม่",
+        "disableLabel": "ปิดใช้งาน 2FA (ป้อนรหัสตัวยืนยันตัวตน)",
+        "disable": "ปิดใช้งาน 2FA",
+        "errors": {
+          "setupFailed": "การตั้งค่าล้มเหลว",
+          "confirmFailed": "การยืนยันล้มเหลว",
+          "disableFailed": "ปิดใช้งานล้มเหลว",
+          "regenFailed": "การสร้างใหม่ล้มเหลว"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดพื้นผิว MCP",
+        "revokeFailed": "ไม่สามารถเพิกถอนโทเค็น"
+      },
+      "revokeConfirm": "เพิกถอนโทเค็น MCP \"{{name}}\"? ไคลเอนต์ที่ใช้มันจะหยุดทำงานทันที",
+      "tokens": {
+        "heading": "โทเค็น MCP",
+        "newToken": "โทเค็นใหม่",
+        "description": "แต่ละโทเค็นทำหน้าที่เป็นคุณ: มันเปิดเผยเครื่องมือที่บทบาทของคุณอนุญาต ค่าเต็มจะแสดงครั้งเดียว บนหน้าที่สร้างมัน",
+        "empty": "ไม่มีโทเค็น MCP เทพ สร้างหนึ่งเพื่อเชื่อมต่อไคลเอนต์ MCP",
+        "created": "สร้างขึ้น",
+        "lastUsed": "ใช้ครั้งล่าสุด",
+        "expires": "หมดอายุ",
+        "never": "ไม่เคย",
+        "revokeTitle": "เพิกถอนโทเค็น"
+      },
+      "tools": {
+        "heading": "เครื่องมือที่โทเค็นของคุณเปิดเผย",
+        "empty": "บทบาทของคุณไม่อนุญาตเครื่องมือ MCP ขอสิทธิอนุญาตที่คุณต้องการจากผู้ดูแลระบบ",
+        "table": {
+          "name": "ชื่อ",
+          "scope": "ขอบเขต",
+          "description": "คำอธิบาย",
+          "sourceModule": "โมดูลต้นทาง",
+          "permission": "สิทธิอนุญาต"
+        }
+      },
+      "connect": {
+        "heading": "เชื่อมต่อไคลเอนต์ MCP",
+        "descriptionPre": "เลือกไคลเอนต์ที่คุณกำลังเดินสาย จากนั้นแทนที่",
+        "descriptionPost": "ด้วยหนึ่งในโทเค็นของคุณ การสร้างโทเค็นแสดงข้อมูลเดียวกันโดยมีค่าอยู่แล้ว",
+        "otherClient": "ไคลเอนต์อื่น ๆ",
+        "httpInstructionsPre": "ผ่าน HTTP ให้ชี้ไปที่จุดสิ้นสุดนี้และยืนยันตัวตนด้วย",
+        "httpInstructionsPost": " มันคือ JSON-RPC 2.0 ผ่าน Streamable HTTP",
+        "stdioInstructionsPre": "ผ่าน stdio CLI ของคุณทำให้สะพานและส่งผ่านโทเค็นของคุณ เรียกใช้บริการโดยตรงแทน? ตั้งค่า",
+        "stdioInstructionsAnd": "และ",
+        "stdioInstructionsPost": "ตัวคุณเอง"
+      },
+      "newToken": {
+        "backToMcp": "กลับไป MCP",
+        "title": "โทเค็น MCP ใหม่",
+        "subtitle": "โทเค็นจะทำหน้าที่เป็นคุณ: มันเปิดเผยเครื่องมือที่บทบาทของคุณอนุญาต",
+        "nameLabel": "ชื่อ",
+        "namePlaceholder": "แล็ปท็อป",
+        "nameHint": "ใครใช้โทเค็นนี้ เช่น \"แล็ปท็อป\" หรือ \"claude-desktop\"",
+        "expiryLabel": "หมดอายุ",
+        "expiryHint": "เลือกได้ ปล่อยให้ว่างและโทเค็นจะไม่หมดอายุจนกว่าคุณจะเพิกถอนมัน",
+        "createButton": "สร้างโทเค็น",
+        "creatingButton": "การสร้าง…",
+        "cancelButton": "ยกเลิก",
+        "tokenSection": {
+          "title": "โทเค็นของคุณ",
+          "hint": "คัดลอกตอนนี้ จะไม่แสดงอีก และโทเค็นที่หายไปสามารถแทนที่ได้เท่านั้น",
+          "copyButton": "คัดลอก",
+          "copiedButton": "คัดลอก!",
+          "copyTitle": "คัดลอกโทเค็น",
+          "copiedTitle": "คัดลอก!"
+        },
+        "connectSection": {
+          "title": "เชื่อมต่อไคลเอนต์",
+          "hint": "เลือกไคลเอนต์ที่คุณกำลังเดินสาย ข้อมูลโค้ดนี้ถูกเรียกโทเค็นนี้อยู่แล้ว"
+        },
+        "bridgeSection": {
+          "title": "หรือใช้สะพานในพื้นที่",
+          "hint": "สำหรับไคลเอนต์ที่พูดเฉพาะ stdio CLI ของคุณทำให้สะพานและส่งผ่านโทเค็นของคุณ"
+        },
+        "doneButton": "เสร็จสิ้น",
+        "errors": {
+          "createFailed": "ไม่สามารถสร้างโทเค็น",
+          "copyFailed": "การคัดลอกล้มเหลว เลือกและคัดลอกโทเค็นด้วยตนเอง"
+        }
+      }
+    },
+    "preferences": {
+      "heading": "ภาษา",
+      "description": "เลือกภาษาที่แสดงแดชบอร์ด",
+      "languageLabel": "ภาษา",
+      "saved": "ตั้งค่าภาษาที่บันทึก"
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดการตั้งค่า",
+        "loadFailedPeriod": "ไม่สามารถโหลดการตั้งค่า",
+        "saveFailed": "ไม่สามารถบันทึก",
+        "saveSettingsFailed": "ไม่สามารถบันทึกการตั้งค่า"
+      },
+      "savedSuccess": "การตั้งค่าถูกบันทึกเรียบร้อยแล้ว",
+      "saving": "กำลังบันทึก…",
+      "saveSettings": "บันทึกการตั้งค่า",
+      "serverInfo": {
+        "heading": "ข้อมูลเซิร์ฟเวอร์",
+        "readOnly": "อ่านเท่านั้น โฮสต์และพอร์ตมาจากสิ่งแวดล้อมหรือไฟล์การตั้งค่า ไม่ใช่จากที่นี่",
+        "reachableAt": "สามารถติดต่อได้ที่",
+        "reachableAtAny": "สามารถติดต่อได้ที่ที่อยู่เหล่านี้ใดเหล่านี้",
+        "thisMachine": "เครื่องนี้",
+        "network": "เครือข่าย",
+        "copyAddress": "คัดลอก {{address}}",
+        "copied": "คัดลอก!",
+        "copy": "คัดลอก",
+        "hostAndPort": "โฮสต์และพอร์ต",
+        "version": "เวอร์ชัน",
+        "uptime": "เวลาทำงาน"
+      },
+      "runtime": {
+        "heading": "การตั้งค่ารันไทม์",
+        "logLevel": "ระดับบันทึก",
+        "logLevelHint": "ควบคุมความเป็นรายละเอียดของบันทึกบริการ",
+        "publicUrl": "URL สาธารณะ",
+        "publicUrlHint": "URL ฐานที่บริการสามารถติดต่อได้จากไคลเอนต์ภายนอก (เช่น <code>http://192.168.1.10:3000</code>) ใช้ในส่วน <strong>วิธีการเชื่อมต่อ</strong> ของเราเตอร์แต่ละอัน มีประโยชน์เมื่อแดชบอร์ดทำงานบนเครื่องหรือพอร์ตที่แตกต่างจากบริการ",
+        "usageRetention": "การเก็บรักษาการใช้",
+        "noLimit": "ไม่มีขีดจำกัด",
+        "maxAgeDays": "อายุสูงสุด (วัน)",
+        "maxSizeMb": "ขนาดสูงสุด (MB)",
+        "retentionHint": "ประวัติการใช้/การเรียกเก็บเงินที่เก่ากว่าจำนวนวันนี้หรือเกินขนาดนี้จะถูกลบออกจากบันทึกที่ใช้งาน ปล่อยให้ว่างเปล่าทั้งสองเพื่อไม่มีขีดจำกัดการเก็บรักษา"
+      },
+      "internationalization": {
+        "heading": "การสากลภาษา",
+        "defaultLanguage": "ภาษาเริ่มต้น",
+        "defaultLanguageHint": "ภาษาของแดชบอร์ดสำหรับผู้ใช้ที่ยังไม่ได้เลือกภาษาของตนเอง ไม่ได้ลบล้างตัวเลือกส่วนบุคคลของผู้ใช้"
+      },
+      "telemetry": {
+        "heading": "เมตริกแบบไม่ระบุตัวตน",
+        "neverAutomatic": "Routerly ไม่เคยส่งข้อมูลโดยอัตโนมัติ",
+        "noChoice": "คุณยังไม่ได้ตัดสินใจ",
+        "enabledStatus": "เปิดใช้งานเมตริกการติดตั้งแบบไม่ระบุตัวตน",
+        "disabledStatus": "ปิดใช้งานเมตริกการติดตั้งแบบไม่ระบุตัวตน",
+        "explanation": "เมื่อเปิดใช้งาน Routerly จะส่งเฉพาะ: ประเภทเหตุการณ์ (ติดตั้ง/อัปเกรด/ถอนการติดตั้ง) เวอร์ชัน แพลตฟอร์ม และรหัสสุ่ม ไม่มีข้อมูลส่วนบุคคล ไม่มีข้อมูลการใช้งาน ไม่มี IP ที่เก็บไว้",
+        "whatIsSent": "มีการส่งอะไร",
+        "installId": "ติดตั้ง ID: {{id}}",
+        "saving": "กำลังบันทึก…",
+        "enable": "เปิดใช้งาน",
+        "disable": "ปิดใช้งาน"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "แดชบอร์ด (กล่องจดหมายในแอป)",
+          "description": "เส้นทางเหตุการณ์ตรงกับเพื่อเข้ากระบบการแจ้งเตือน"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "เซิร์ฟเวอร์เมลที่กำหนดเอง"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail ผ่าน OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "การโทรกลับ HTTP webhook"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "ทีม Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "ผู้ให้บริการ - ข้อผิดพลาด",
+        "providerDegraded": "ผู้ให้บริการ - ลดคุณภาพ",
+        "providerRecovered": "ผู้ให้บริการ - กู้คืน",
+        "providerRateLimited": "ผู้ให้บริการ - ขีดจำกัดอัตรา",
+        "routingNoCandidates": "การกำหนดเส้นทาง - ไม่มีผู้สมัคร",
+        "routingFallbackUsed": "การกำหนดเส้นทาง - ใช้สำรอง",
+        "authLoginFailed": "การยืนยัน - การเข้าสู่ระบบล้มเหลว",
+        "authTokenInvalid": "การยืนยัน - โทเค็นไม่ถูกต้อง",
+        "configModelAdded": "การกำหนดค่า - โมเดลเพิ่ม",
+        "configModelDeleted": "การกำหนดค่า - โมเดลถูกลบ",
+        "configRouterCreated": "การกำหนดค่า - เราเตอร์สร้าง",
+        "configRouterDeleted": "การกำหนดค่า - เราเตอร์ถูกลบ",
+        "budgetThresholdReached": "งบประมาณ - ถึงเกณฑ์",
+        "budgetExceeded": "งบประมาณ - เกิน",
+        "budgetReset": "งบประมาณ - รีเซ็ต",
+        "systemStartup": "ระบบ - เริ่มต้น",
+        "systemShutdown": "ระบบ - ปิด",
+        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม"
+      },
+      "removeChannelTooltip": "ลบช่อง",
+      "removeChannelConfirm": "ลบช่อง?",
+      "formUpdatedHint": "แบบฟอร์มอัปเดต - บันทึกเพื่อใช้งาน",
+      "hmacSigningKeyPlaceholder": "ปุ่มลงชื่อ HMAC",
+      "perms": {
+        "routerRead": "เราเตอร์ - อ่าน",
+        "routerWrite": "เราเตอร์ - เขียน",
+        "modelRead": "รุ่น - อ่าน",
+        "modelWrite": "รุ่น - เขียน",
+        "userRead": "ผู้ใช้ - อ่าน",
+        "userWrite": "ผู้ใช้ - เขียน",
+        "reportRead": "รายงาน - อ่าน",
+        "settingsRead": "การตั้งค่า - อ่าน",
+        "settingsWrite": "การตั้งค่า - เขียน",
+        "notificationWrite": "การแจ้งเตือน - เขียน",
+        "tokenRead": "โทเค็น - อ่าน",
+        "tokenWrite": "โทเค็น - เขียน",
+        "roleWrite": "บทบาท - เขียน",
+        "auditRead": "บันทึกการตรวจสอบ - อ่าน",
+        "modulesRead": "โมดูล - อ่าน",
+        "modulesManage": "โมดูล - จัดการ",
+        "connectionsRead": "การเชื่อมต่อ - อ่าน",
+        "connectionsManage": "การเชื่อมต่อ - จัดการ",
+        "resilienceRead": "ความยืดหยุ่น - อ่าน",
+        "resilienceManage": "ความยืดหยุ่น - จัดการ",
+        "profilesRead": "โปรไฟล์การกำหนดเส้นทาง - อ่าน",
+        "profilesManage": "โปรไฟล์การกำหนดเส้นทาง - จัดการ",
+        "optimizersRead": "ตัวปรับปรุง - อ่าน",
+        "optimizersManage": "ตัวปรับปรุง - จัดการ",
+        "experimentsRead": "การทดลอง - อ่าน",
+        "experimentsManage": "การทดลอง - จัดการ"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "สำหรับประเภทช่องนี้ เป้าหมายจะไม่เปลี่ยนการส่งมอบ (จุดสิ้นสุดได้รับการแก้ไข) พวกเขากรองเหตุการณ์ที่ถูกบันทึกในการติดตามสอบสวนต่อผู้รับ",
+        "dashboard": "เป้าหมายควบคุมการมองเห็นของกล่องจดหมาย - เฉพาะผู้ใช้ที่ตรงกันจะเห็นการแจ้งเตือนเหล่านี้ในกล่องจดหมายในแอปของพวกเขา",
+        "email": "เป้าหมายกำหนดว่าผู้ใช้รายใดที่ได้รับอีเมลนี้ ปล่อยให้ทั้งหมดว่างเปล่าเพื่อส่งให้ผู้ใช้ทั้งหมด"
+      },
+      "summary": {
+        "allEvents": "เหตุการณ์ทั้งหมด",
+        "eventCount": "{{count}} เหตุการณ์",
+        "eventCount_other": "{{count}} เหตุการณ์",
+        "roleCount": "{{count}} บทบาท",
+        "roleCount_other": "{{count}} บทบาท",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} ผู้ใช้",
+        "userCount_other": "{{count}} ผู้ใช้",
+        "everyone": "ทุกคน"
+      },
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลด"
+      },
+      "fields": {
+        "dashboardHint": "เส้นทางเหตุการณ์ที่ตรงกับเพื่อให้กล่องจดหมายการแจ้งเตือนในแอป ไม่ต้องใช้ข้อมูลประจำตัว",
+        "labels": {
+          "fromAddress": "ที่อยู่จาก",
+          "fromName": "ชื่อจาก",
+          "host": "โฮสต์",
+          "port": "พอร์ต",
+          "tls": "TLS/SSL",
+          "username": "ชื่อผู้ใช้",
+          "password": "รหัสผ่าน",
+          "awsRegion": "ภูมิภาค AWS",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API Key",
+          "connectionString": "สตริงการเชื่อมต่อ",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "วิธี",
+          "signingSecret": "ความลับลงชื่อ",
+          "botToken": "Bot Token",
+          "channelId": "Channel ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "ปุ่มบูรณาการ"
+        },
+        "values": {
+          "enabled": "เปิดใช้งาน",
+          "disabled": "ปิดใช้งาน",
+          "configured": "ตั้งค่าแล้ว",
+          "notSet": "ไม่ได้ตั้งค่า"
+        },
+        "optional": "(เลือกได้)",
+        "keepCurrentPlaceholder": "ปล่อยให้ว่างเพื่อเก็บไว้ปัจจุบัน",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "ใช้ TLS / SSL",
+        "smtpTlsOnHint": "(พอร์ต 465 - SSL โดยตรง)",
+        "smtpTlsOffHint": "(พอร์ต 587 - STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "ปล่อยให้ข้อมูลประจำตัวว่างเพื่อใช้บทบาท IAM อินสแตนซ์",
+        "sendgridApiKeyPlaceholder": "สิ่งที่…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "ปุ่มลงชื่อ HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32 อักขระการกำหนดเส้นทางคีย์",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "เหตุการณ์",
+          "eventsPlaceholder": "เหตุการณ์ทั้งหมด (ปล่อยให้ว่างสำหรับทั้งหมด)",
+          "eventsHint": "ปล่อยให้ว่างเพื่อรับเหตุการณ์ทั้งหมด เลือกเหตุการณ์เฉพาะเพื่อตัวกรอง",
+          "routersHeading": "เราเตอร์",
+          "routersPlaceholder": "เราเตอร์ทั้งหมด (ปล่อยให้ว่างสำหรับทั้งหมด)",
+          "routersHint": "ปล่อยให้ว่างเพื่อรับเหตุการณ์จากเราเตอร์ทั้งหมด",
+          "cooldownHeading": "เวลาพักร้อน",
+          "cooldownSuffix": "วินาที (0 = ไม่มีเวลาพักร้อน)",
+          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน"
+        },
+        "recipients": {
+          "heading": "ผู้รับ / เป้าหมาย",
+          "rolesLabel": "บทบาท",
+          "rolesPlaceholder": "บทบาททั้งหมด (ทุกคน)",
+          "permissionsLabel": "สิทธิอนุญาต",
+          "permissionsPlaceholder": "สิทธิอนุญาตทั้งหมด (ทุกคน)",
+          "usersLabel": "ผู้ใช้บุคคล",
+          "usersPlaceholder": "ผู้ใช้ทั้งหมด (ทุกคน)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "การเชื่อมต่อ",
+          "routing": "การกำหนดเส้นทาง",
+          "recipients": "ผู้รับ"
+        },
+        "sections": {
+          "channelSettings": "การตั้งค่าช่อง",
+          "eventsRouting": "เหตุการณ์และการกำหนดเส้นทาง",
+          "recipients": "ผู้รับ"
+        },
+        "nameLabel": "ชื่อ",
+        "namePlaceholder": "ป้ายกำกับช่องนี้",
+        "cancelButton": "ยกเลิก"
+      },
+      "list": {
+        "countLabel": "{{count}} ช่อง",
+        "countLabel_other": "{{count}} ช่อง",
+        "filteredLabel": "{{shown}} ของ {{count}} ช่อง",
+        "filteredLabel_other": "{{shown}} ของ {{count}} ช่อง",
+        "allTypes": "ทั้งหมดประเภท",
+        "searchPlaceholder": "ตัวกรองช่อง…",
+        "searchChannelsPlaceholder": "ค้นหาช่อง…",
+        "addButton": "เพิ่มช่อง",
+        "addSearchPlaceholder": "ค้นหาช่อง…",
+        "noResults": "ไม่มีผลลัพธ์",
+        "emptyTitle": "ยังไม่มีช่องการแจ้งเตือนที่ตั้งค่าไว้",
+        "noMatch": "ไม่มีช่องที่ตรงกับตัวกรองที่ใช้งาน",
+        "nameInlinePlaceholder": "ป้ายกำกับ (เลือกได้)",
+        "columns": {
+          "name": "ชื่อ",
+          "type": "ประเภท",
+          "summary": "เหตุการณ์ / เป้าหมาย"
+        },
+        "testTitle": "ส่งการทดสอบ",
+        "editTitle": "แก้ไขช่อง",
+        "deleteTitle": "ลบช่อง",
+        "deleteConfirm": "ลบช่อง \"{{name}}\"? ไม่สามารถเลิกทำได้",
+        "deleteConfirmButton": "ลบ",
+        "errors": {
+          "deleteFailed": "ไม่สามารถลบ"
+        }
+      },
+      "edit": {
+        "backToList": "กลับไปการแจ้งเตือน",
+        "back": "กลับ",
+        "heading": "แก้ไขช่อง {{provider}}",
+        "subtitle": "อัปเดตการกำหนดค่าสำหรับช่องการแจ้งเตือนนี้",
+        "testSection": {
+          "title": "ส่งการทดสอบ",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "ส่งการทดสอบ",
+          "sendingButton": "การส่ง…",
+          "hintEmail": "ปล่อยให้ว่างเพื่อส่งไปที่อีเมลบัญชีของคุณ การทดสอบใช้การกำหนดค่าช่องที่บันทึกไว้",
+          "hintOther": "การทดสอบใช้การกำหนดค่าช่องที่บันทึกไว้ บันทึกการเปลี่ยนแปลงก่อนเพื่อทดสอบการตั้งค่าที่อัปเดต"
+        },
+        "saveButton": "บันทึกการเปลี่ยนแปลง",
+        "savingButton": "กำลังบันทึก…",
+        "errors": {
+          "loadFailed": "ไม่สามารถโหลด",
+          "saveFailed": "ไม่สามารถบันทึก"
+        }
+      },
+      "create": {
+        "backToList": "กลับไปการแจ้งเตือน",
+        "changeType": "เปลี่ยนประเภท",
+        "pickerHeading": "เลือกประเภทช่อง",
+        "pickerSubtitle": "เลือกผู้ให้บริการการแจ้งเตือนเพื่อกำหนดค่า",
+        "heading": "ช่อง {{provider}} ใหม่",
+        "subtitle": "กำหนดค่าช่องการแจ้งเตือนใหม่",
+        "createButton": "สร้างช่อง",
+        "creatingButton": "การสร้าง…",
+        "errors": {
+          "createFailed": "ไม่สามารถสร้าง"
+        }
+      },
+      "sendTest": "ส่งการทดสอบ",
+      "fromAddress": "ที่อยู่จาก",
+      "individualUsers": "ผู้ใช้บุคคล",
+      "host": "โฮสต์",
+      "port": "พอร์ต",
+      "apiKey": "API Key",
+      "connectionString": "สตริงการเชื่อมต่อ",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "วิธี",
+      "botToken": "Bot Token",
+      "channelId": "Channel ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "ปุ่มบูรณาการ"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "พรอมีธิอัส",
+          "description": "ดึง - เปิดเผย /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "ดัน - OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "ดัน - เมตริก API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "ดัน - remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "ดัน - โปรโตคอลบรรทัด"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "ดัน - HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "ส่งออกร่องรอยคำขอ",
+        "description": "จัดส่งการติดตามแบบเต็มของแต่ละคำขอที่เข้ารหัส: ทุกเฟส ทุกโมดูลที่พูด และพรอมต์และคำตอบสำหรับโครงการที่เลือกเข้าร่วม",
+        "sampleRateLabel": "อัตราตัวอย่าง",
+        "sampleRateHint": "1 ส่งออกทุกคำขอ 0.1 หนึ่งในสิบ"
+      },
+      "optional": "(เลือกได้)",
+      "headersHint": "(เลือกได้ หนึ่งต่อบรรทัด: คีย์: ค่า)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "โทเค็นผู้บอก",
+          "placeholder": "ปล่อยให้ว่างสำหรับการเข้าถึงแบบเปิด",
+          "description": "เปิดเผย <code>/metrics</code> ในรูปแบบข้อความ Prometheus ตั้งค่าโทเค็นเพื่อต้องการการยืนยัน Bearer"
+        },
+        "otel": {
+          "endpoint": "จุดสิ้นสุดของตัวรวบรวม",
+          "description": "URL ฐานของผู้รับ OTLP ของคุณ Routerly ผนวก <code>/v1/metrics</code> และ <code>/v1/traces</code> เมื่อการส่งออกร่องรอยอยู่บน พอร์ต HTTP ค่าเริ่มต้นคือ 4318 gRPC คือ 4317",
+          "protocol": "โปรโตคอล",
+          "headers": "ส่วนหัว"
+        },
+        "datadog": {
+          "apiKey": "API Key",
+          "placeholder": "ปุ่ม API Datadog ของคุณ",
+          "description": "พบในภายใต้ <strong>การตั้งค่าองค์กร → ปุ่ม API</strong> ในบัญชี Datadog ของคุณ",
+          "site": "ไซต์"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "พบใน <strong>Grafana Cloud → การเชื่อมต่อ → พรอมีธิอัส → รายละเอียด</strong> เป็น \"Remote Write Endpoint\"",
+          "username": "ชื่อผู้ใช้ / Stack ID",
+          "usernameHint": "ID ตัวเลขที่แสดงในรายละเอียดการเชื่อมต่อ Prometheus",
+          "apiKey": "ปุ่ม API / โทเค็น",
+          "apiKeyHint": "โทเค็น Grafana Cloud ที่มีบทบาท <strong>MetricsPublisher</strong>"
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 URL อินสแตนซ์ Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "โทเค็น",
+          "tokenPlaceholder": "โทเค็น API InfluxDB ของคุณ",
+          "tokenHint": "จะต้อง <strong>เขียน</strong> การเข้าถึงไปยังที่เก็บข้อมูล",
+          "org": "องค์กร",
+          "bucket": "ที่เก็บข้อมูล"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "ความลับ",
+          "secretHint": "(เลือกได้ - ปุ่มลงชื่อ HMAC-SHA256)",
+          "headers": "ส่วนหัว"
+        }
+      },
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดการรวม",
+        "updateFailed": "ไม่สามารถอัปเดตการรวม",
+        "saveFailed": "ไม่สามารถบันทึกการรวม",
+        "deleteFailed": "ไม่สามารถลบการรวม"
+      },
+      "empty": "ยังไม่มีการรวมที่กำหนดค่า",
+      "enabled": "เปิดใช้งาน",
+      "testing": "การทดสอบ…",
+      "test": "ทดสอบ",
+      "removeConfirm": "ลบ?",
+      "remove": "ลบ",
+      "cancel": "ยกเลิก",
+      "removeTooltip": "ลบการรวม",
+      "saving": "กำลังบันทึก…",
+      "save": "บันทึก",
+      "addButton": "เพิ่มการรวม"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดการตั้งค่า",
+        "duplicateUrl": "URL นี้มีอยู่แล้วในรายการ",
+        "unreachable": "ไม่สามารถไปถึงรายชื่อผู้ให้บริการที่ถูกต้องที่ URL นี้"
+      },
+      "saved": "บันทึกแล้ว",
+      "refreshed": "รีเฟรชแล้ว",
+      "heading": "ที่เก็บรายชื่อผู้ให้บริการ",
+      "refreshing": "กำลังรีเฟรช…",
+      "refresh": "รีเฟรช",
+      "nextRefresh": "ถัดไป: {{date}}",
+      "priorityHint": "ลำดับแถว กำหนดลำดับความสำคัญในการผสาน - แถว 1 ชนะในการขัดแย้ง ใช้ลูกศรเพื่อเรียงลำดับใหม่",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "อัปเดต",
+        "lastCheck": "ตรวจสอบล่าสุด",
+        "status": "สถานะ"
+      },
+      "empty": "ไม่มีที่เก็บรายชื่อที่ตั้งค่าไว้ รายชื่อสาธารณะ Routerly จะใช้ค่าเริ่มต้น",
+      "status": {
+        "error": "ข้อผิดพลาด",
+        "active": "ใช้งาน",
+        "disabled": "ปิดใช้งาน"
+      },
+      "edit": "แก้ไข",
+      "removeTooltip": "ลบ",
+      "addRepository": "เพิ่มที่เก็บ",
+      "checking": "กำลังตรวจสอบ…",
+      "add": "เพิ่ม",
+      "removeConfirm": "ลบที่เก็บ \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "แอปพลิเคชัน",
+        "runtime": "รันไทม์",
+        "storage": "ที่เก็บข้อมูล",
+        "softwareUpdate": "การอัปเดตซอฟต์แวร์"
+      },
+      "labels": {
+        "version": "เวอร์ชัน",
+        "uptime": "เวลาทำงาน",
+        "nodeVersion": "Node.js",
+        "platform": "แพลตฟอร์ม",
+        "configDir": "ไดเรกทอรีการกำหนดค่า",
+        "dataDir": "ไดเรกทอรีข้อมูล",
+        "currentVersion": "เวอร์ชันปัจจุบัน",
+        "availableVersion": "เวอร์ชันที่มี",
+        "upToDate": "ทันสมัย",
+        "lastChecked": "ตรวจสอบล่าสุด"
+      },
+      "noCheckPerformed": "ยังไม่มีการตรวจสอบการอัปเดต",
+      "checkForUpdates": "ตรวจสอบการอัปเดต",
+      "checking": "กำลังตรวจสอบ…",
+      "updateTo": "อัปเดตเป็น v{{version}}",
+      "updating": "อัปเดต…",
+      "dockerHint": "ทำงานใน Docker - ดึงรูปภาพล่าสุดเพื่ออัปเดต",
+      "confirmUpdate": "นี่จะดาวน์โหลดและติดตั้งเวอร์ชันล่าสุด บริการจะรีสตาร์ท ทำต่อ?",
+      "updateComplete": "อัปเดตเสร็จสิ้น! กำลังโหลดใหม่…",
+      "serviceRestarting": "บริการกำลังรีสตาร์ท โปรดรีโหลดหน้าในอีกครู่",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลด",
+        "checkFailed": "ตรวจสอบล้มเหลว",
+        "updateFailed": "อัปเดตล้มเหลว"
+      },
+      "channel": "ช่อง"
+    },
+    "security": {
+      "authentication": "การยืนยัน",
+      "requireMfa": "ต้องมีการยืนยันตัวตนสองปัจจัยสำหรับผู้ใช้ทั้งหมด",
+      "requireMfaHint": "เมื่อเปิดใช้งาน ผู้ใช้ที่ยังไม่ได้ตั้งค่า 2FA จะเห็นข้อแนวน้อมปรารถนาเพื่อทำเช่นนั้นหลังจากเข้าสู่ระบบ ผู้ใช้สามารถกำหนดค่า 2FA ในหน้าโปรไฟล์ของพวกเขา",
+      "savedSuccess": "การตั้งค่าถูกบันทึกเรียบร้อยแล้ว",
+      "saving": "กำลังบันทึก…",
+      "saveSettings": "บันทึกการตั้งค่า",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดการตั้งค่า",
+        "saveFailed": "ไม่สามารถบันทึกการตั้งค่า"
+      }
+    },
+    "title": "การตั้งค่า",
+    "subtitle": "การกำหนดค่าสำหรับ Routerly",
+    "tabs": {
+      "general": "ทั่วไป",
+      "security": "ความปลอดภัย",
+      "notifications": "การแจ้งเตือน",
+      "integrations": "การรวม",
+      "catalog": "รายชื่อผู้ให้บริการ",
+      "users": "ผู้ใช้",
+      "roles": "บทบาท",
+      "audit": "บันทึกการตรวจสอบ",
+      "about": "เกี่ยวกับ"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "เราเตอร์",
+      "subtitle": "แอปพลิเคชันไคลเอนต์ที่เข้าถึง Routerly",
+      "count": "1 เราเตอร์",
+      "count_other": "{{count}} เราเตอร์",
+      "newRouter": "เราเตอร์ใหม่",
+      "empty": "ยังไม่มีเราเตอร์",
+      "emptyFiltered": "ไม่มีรูเตอร์ประเภทนี้",
+      "tabs": {
+        "all": "ทั้งหมด",
+        "router": "รูเตอร์",
+        "orchestrator": "คอร์ดิเนเตอร์",
+        "passthrough": "ผ่านโดยตรง"
+      },
+      "columns": {
+        "name": "ชื่อ",
+        "tokens": "โทเค็น",
+        "policies": "นโยบาย",
+        "models": "รุ่น"
+      },
+      "tokenCount": "1 โทเค็น",
+      "tokenCount_other": "{{count}} โทเค็น",
+      "editRouter": "แก้ไขเราเตอร์",
+      "deleteRouter": "ลบเราเตอร์",
+      "deleteConfirm": "ลบเราเตอร์นี้?",
+      "errors": {
+        "deleteFailed": "ข้อผิดพลาดในการลบเราเตอร์"
+      }
+    },
+    "layout": {
+      "notFound": "ไม่พบเราเตอร์",
+      "tabs": {
+        "dashboard": "แดชบอร์ด",
+        "general": "ทั่วไป",
+        "orchestrator": "ผู้บัญชาการ",
+        "routing": "การกำหนดเส้นทาง",
+        "optimizer": "ตัวปรับปรุง",
+        "security": "ความปลอดภัย",
+        "token": "โทเค็น",
+        "users": "ผู้ใช้",
+        "logs": "บันทึก"
+      },
+      "backToRouters": "กลับไปเราเตอร์",
+      "backToRoutersTitle": "กลับไปเราเตอร์",
+      "newRouter": "เราเตอร์ใหม่",
+      "loading": "กำลังโหลด...",
+      "routerId": "Router ID:",
+      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้"
+    },
+    "dashboard": {
+      "period": "ช่วงเวลา",
+      "noTraffic": "ไม่มีการรับส่งข้อมูลสำหรับเราเตอร์นี้ในช่วงเวลาที่เลือก",
+      "stats": {
+        "savings": "เงินโสต",
+        "vsPrefix": "vs",
+        "forEverything": "สำหรับทุกสิ่ง",
+        "noTargetToCompare": "ไม่มีรุ่นเป้าหมายสำหรับเปรียบเทียบ",
+        "cost": "ต้นทุน",
+        "callCount": "1 การโทร",
+        "callCount_other": "{{count}} การโทร",
+        "latency": "ความล่าช้า",
+        "medianP95": "ค่ามัธยฐาน · p95 {{value}}",
+        "ttft": "เวลาถึงโทเค็นแรก",
+        "notMeasured": "ไม่ได้วัดในการโทรเหล่านี้",
+        "reliability": "ความน่าเชื่อถือ",
+        "errorsAndBlocked": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก"
+      },
+      "tokens": {
+        "input": "โทเค็นอินพุต:",
+        "output": "โทเค็นเอาต์พุต:",
+        "fromCache": "จากแคช:",
+        "cacheSaved": "({{amount}} บันทึก)"
+      },
+      "oneModel": {
+        "heading": "หากทุกอย่างไปที่รุ่นเดียว",
+        "empty": "เพิ่มรุ่นเป้าหมายลงในเราเตอร์นี้เพื่อดูการเปรียบเทียบ",
+        "columns": {
+          "targetModel": "รุ่นเป้าหมาย",
+          "wouldHaveCost": "จะมีต้นทุน",
+          "saved": "บันทึก"
+        },
+        "costsHint": "ต้นทุนคือโทเค็นที่สังเกตได้ที่ราคาใหม่ของแต่ละเป้าหมาย"
+      },
+      "optimizers": {
+        "heading": "สิ่งที่ตัวปรับปรุงลบออก",
+        "columns": {
+          "optimizer": "ตัวปรับปรุง",
+          "callsChanged": "การเปลี่ยนแปลงการโทร",
+          "tokensSaved": "โทเค็นบันทึก",
+          "costSaved": "ต้นทุนบันทึก",
+          "rolledBack": "ม้วนกลับ"
+        },
+        "hint": "วัดในการโทรเองราคาที่รุ่นที่ให้บริการแต่ละอัน run ที่ม้วนกลับหมายถึงผลลัพธ์ของขั้นตอนได้รับการปฏิเสธว่าไม่ปลอดภัยและพรอมต์ได้รับการยอด: มันบันทึกไม่มีและจำนวนสูงหมายถึงเกณฑ์ก้าวร้าว"
+      },
+      "traffic": {
+        "heading": "ที่ไปการรับส่งข้อมูล",
+        "columns": {
+          "model": "รุ่น",
+          "calls": "การโทร",
+          "share": "ส่วนแบ่ง",
+          "cost": "ต้นทุน",
+          "p95Latency": "p95 ความล่าช้า",
+          "errors": "ข้อผิดพลาด"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "ข้อผิดพลาดในการบันทึกเราเตอร์",
+        "copyFailed": "การคัดลอกล้มเหลว โปรดเลือกและคัดลอกโทเค็นด้วยตนเอง"
+      },
+      "kind": {
+        "router": {
+          "label": "เราเตอร์",
+          "description": "เส้นทางคำขอข้ามผู้สมัครรุ่น"
+        },
+        "orchestrator": {
+          "label": "ผู้บัญชาการ",
+          "description": "เส้นทางคำขอข้ามเราเตอร์อื่นแทนรุ่น"
+        },
+        "passthrough": {
+          "label": "ผ่าน",
+          "description": "คำขอไปข้างหน้าไม่เปลี่ยนแปลง"
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "บันทึกโทเค็นนี้ตอนนี้",
+        "saveNowHint": "จะไม่แสดงอีก - เมื่อคุณออกจากหน้านี้ไม่สามารถกู้คืนได้",
+        "copied": "คัดลอก!",
+        "copy": "คัดลอก",
+        "goToRouter": "ไปยังเราเตอร์"
+      },
+      "connect": {
+        "heading": "วิธีการเชื่อมต่อ",
+        "intro": "ชี้ SDK OpenAI หรือ Anthropic ใด ๆ ที่ Routerly และใช้ <tokenLink>โทเค็นเราเตอร์</tokenLink> เป็นปุ่ม API แทนที่ <code>{{token}}</code> ด้านล่างด้วยของคุณ รุ่น <code>{{model}}</code> มอบให้ Routerly ปรึกษา; รหัสรุ่นใด ๆ จาก <modelsLink>รุ่น</modelsLink> ทำงาน",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "URL ฐาน <code>{{baseUrl}}</code> เดียวกับฟิลด์ \"OpenAI เข้ากันได้\" ใด ๆ ใช้",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "URL ฐาน <code>{{baseUrl}}</code> โดยไม่มี <code>/v1</code>: SDK เพิ่มมัน",
+        "curl": "curl",
+        "curlHint": "ตรวจสอบการเดินสายโดยไม่ติดตั้งอะไรจากนั้นมองหาการโทรใน <usageLink>การใช้</usageLink>"
+      },
+      "form": {
+        "kind": "ชนิด",
+        "kindAriaLabel": "ประเภทเราเตอร์",
+        "kindFixedHint": "คงที่เมื่อสร้างเราเตอร์",
+        "routerName": "ชื่อเราเตอร์",
+        "routerNamePlaceholder": "แอปของฉัน",
+        "advancedSettings": "การตั้งค่าขั้นสูง",
+        "ttftTimeout": "TTFT Timeout (ms)",
+        "ttftTimeoutHint": "หากรุ่นไม่ส่งไบต์การตอบสนองแรกภายในเวลานี้ Routerly ยกเลิกและลองผู้สมัครรายถัดไป ไม่ จำกัด ระยะเวลารวม ตั้งค่าเป็น 0 เพื่อรอตราบใจผู้ให้บริการจนถึง",
+        "traceContent": "ติดตามเนื้อหา",
+        "traceContentHint": "ร่องรอยบันทึกข้อมูลมูลค่า (รุ่น คะแนน โทเค็น ต้นทุน ความล่าช้า) เปิดนี้ให้บันทึกพรอมต์ที่ส่งและคำตอบที่ได้รับเช่นกัน พวกเขาจัดเก็บกับเรกคอร์ดการใช้งานและมองเห็นให้ใครก็ได้ที่สามารถอ่านรายงาน",
+        "capturePromptsAndAnswers": "เก็บพรอมต์และคำตอบ",
+        "saveChanges": "บันทึกการเปลี่ยนแปลง",
+        "createRouter": "สร้างเราเตอร์"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "เราเตอร์นี้ไม่ใช่ผู้บัญชาการ",
+      "candidateRouters": "เราเตอร์ผู้สมัคร",
+      "candidateRoutersHint": "เราเตอร์ที่ผู้บัญชาการนี้ส่งต่อคำขอ น้ำหนักมีอิทธิพลต่อความถี่ของการเลือกแต่ละผู้สมัคร เฉพาะชื่อ ID น้ำหนักและลิมิตต่อผู้สมัครที่ไม่บังคับจะแสดง",
+      "router": "เราเตอร์",
+      "selectRouter": "เลือกเราเตอร์",
+      "weight": "น้ำหนัก",
+      "removeCandidate": "ลบผู้สมัคร",
+      "usageLimits": "ข้อ จำกัด การใช้งานสำหรับผู้สมัครนี้",
+      "limitCount": "{{count}} ขีดจำกัด",
+      "limitCount_other": "{{count}} ขีดจำกัด",
+      "usageLimitsHint": "ขีดจำกัดการใช้งานทางเลือกนำไปใช้เฉพาะคำขอผู้บัญชาการนี้ส่งต่อให้ผู้สมัครนี้",
+      "empty": "ยังไม่มีเราเตอร์ผู้สมัคร ผู้บัญชาการต้องการที่น้อยที่สุดหนึ่งก่อนที่จะสามารถส่งต่อคำขอ",
+      "addCandidate": "เพิ่มผู้สมัคร",
+      "saved": "บันทึกแล้ว!",
+      "saveCandidates": "บันทึกผู้สมัคร",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดเราเตอร์",
+        "saveFailed": "ข้อผิดพลาดในการบันทึกผู้บัญชาการผู้สมัคร"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "ไม่สามารถกำหนดโปรไฟล์การกำหนดเส้นทาง",
+        "duplicateTargets": "รุ่นเป้าหมายไม่สามารถมีรายการซ้ำ",
+        "saveFailed": "ข้อผิดพลาดในการบันทึกการกำหนดเส้นทางเราเตอร์",
+        "noProfileAvailable": "ไม่มีโปรไฟล์การกำหนดเส้นทาง สร้างหนึ่งจากหน้าโปรไฟล์"
+      },
+      "form": {
+        "routing": "การกำหนดเส้นทาง",
+        "routingHint": "ใช้โปรไฟล์การกำหนดเส้นทางร่วมกัน หรือกำหนดนโยบายของเราเตอร์นี้เอง รุ่นเป้าหมายยังคงสามารถตั้งค่าได้ทั้งทางใด",
+        "profileMode": "โปรไฟล์",
+        "customMode": "ที่กำหนดเอง",
+        "routingProfile": "โปรไฟล์การกำหนดเส้นทาง",
+        "builtinSuffix": "(ในตัว)",
+        "profileHint": "นโยบายมาจากโปรไฟล์และปฏิบัติตามการเปลี่ยนแปลง แก้ไขพวกเขาบนหน้าโปรไฟล์ หรือสลับไปที่ Custom เพื่อเริ่มต้นจากสำเนาของพวกเขา",
+        "saved": "บันทึกแล้ว!",
+        "saveRoutingConfiguration": "บันทึกการกำหนดค่าการกำหนดเส้นทาง"
+      },
+      "targetModels": {
+        "heading": "รุ่นเป้าหมาย",
+        "hint": "กำหนดสระของรุ่นที่นโยบายจะตัวกรองและเลือกจากนั้น พรอมต์ทางเลือกสั่งให้เราเตอร์ AI เมื่อใดควรเลือกแต่ละรุ่น",
+        "endpointModel": "รุ่นจุดสิ้นสุด",
+        "selectModel": "เลือกรุ่น",
+        "promptDefinition": "นิยามพรอมต์",
+        "promptPlaceholder": "อธิบายอย่างชัดเจนว่าเมื่อใดและเหตุใดเราเตอร์ควรเลือกรุ่นนี้...",
+        "intents": "ความตั้งใจ",
+        "removeTarget": "ลบรุ่นเป้าหมาย",
+        "empty": "ยังไม่มีรุ่นเป้าหมายที่ตั้งค่าไว้",
+        "addTarget": "เพิ่มรุ่นเป้าหมาย"
+      }
+    },
+    "optimizer": {
+      "title": "ตัวปรับปรุง",
+      "description": "ตัวปรับปรุงลดโทเค็นพรอมต์ก่อนคำขอถึงผู้ให้บริการ พวกเขาวิ่งตามลำดับจากบนลงล่าง ใช้โปรไฟล์ตัวปรับปรุงร่วมกันหรือกำหนดไพพไลน์ของเราเตอร์นี้เอง",
+      "noPermission": "คุณไม่มีสิทธิอนุญาตให้ดูตัวปรับปรุง",
+      "mode": {
+        "profile": "โปรไฟล์",
+        "custom": "ที่กำหนดเอง"
+      },
+      "profileSelect": {
+        "ariaLabel": "โปรไฟล์ตัวปรับปรุง",
+        "builtinLabel": "{{label}} (ในตัว)",
+        "hint": "ขั้นตอนมาจากโปรไฟล์และปฏิบัติตามการเปลี่ยนแปลง แก้ไขพวกเขาบนหน้าโปรไฟล์ หรือสลับไปที่ Custom เพื่อเริ่มต้นจากสำเนาของพวกเขา",
+        "disabledSuffix": "(ปิดใช้งาน)",
+        "thresholdSuffix": ", เกณฑ์ {{threshold}}"
+      },
+      "customHint": "ลากเพื่อเรียงลำดับใหม่ สลับเพื่อเปิดใช้งาน ตัวปรับปรุงบางตัวใช้เกณฑ์ในการควบคุมว่าพวกเขาตัดแต่งหรือไม่",
+      "saveButton": "บันทึกตัวปรับปรุง",
+      "saving": "กำลังบันทึก...",
+      "saved": "บันทึกแล้ว",
+      "preview": {
+        "title": "เก็บโทเค็นพรอมต์ดู",
+        "description": "เรียกใช้ไพพไลน์ปัจจุบัน (ไม่บันทึก) ในพรอมต์เพื่อดูว่าแต่ละขั้นตอนลบออกและราคาเท่าใด เลือกหนึ่งในสนทนาตัวอย่าง หรือพิมพ์พรอมต์ของคุณเอง",
+        "promptLabel": "พรอมต์",
+        "promptAriaLabel": "พรอมต์ไปยังตัวอย่าง",
+        "typePromptOption": "พิมพ์พรอมต์ด้านล่าง",
+        "fixturesHint": "สนทนาตัวอย่างที่จัดส่งพร้อม Routerly Routerly ไม่บันทึกพรอมต์จริง",
+        "modelLabel": "รุ่น",
+        "modelAriaLabel": "รุ่นเพื่อตัวอย่างกับ",
+        "modelWithContext": "{{id}} ({{k}}k บริบท)",
+        "noModelOption": "ไม่มีรุ่น",
+        "modelHint": "ขั้นตอนที่ตัดแต่งเพื่อให้พอดีกับหน้าต่างบริบทต้องรู้ว่าอันไหน ไม่มีรุ่น พวกเขาข้ามตรงทำเมื่อพวกเขาจะอยู่บนคำขอที่ตั้งชื่อ Routerly ไม่มีหน้าต่างสำหรับ",
+        "sampleAriaLabel": "พรอมต์ตัวอย่าง",
+        "samplePlaceholder": "วางข้อความผู้ใช้ตัวอย่าง...",
+        "runButton": "เรียกใช้ตัวอย่าง",
+        "running": "ทำงาน...",
+        "before": "ก่อน",
+        "after": "หลังจาก",
+        "saved": "บันทึกแล้ว",
+        "columns": {
+          "optimizer": "ตัวปรับปรุง",
+          "before": "ก่อน",
+          "after": "หลังจาก",
+          "saved": "บันทึก"
+        },
+        "rolledBackNote": "ม้วนกลับ: การเปลี่ยนแปลงที่ขั้นตอนนี้ทำให้ถูกปฏิเสธว่าไม่ปลอดภัย",
+        "skippedNote": "ข้ามไป: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "การเปลี่ยนแปลงขั้นตอนนี้ที่ผลิตม้วนกลับดังนั้นพรอมต์ถึงขั้นตอนถัดไปไม่เปลี่ยน",
+          "skipped": "ขั้นตอนนี้ไม่ได้ทำงาน: {{reason}}",
+          "unchanged": "ขั้นตอนนี้ปล่อยพรอมต์ไม่เปลี่ยน"
+        }
+      },
+      "errors": {
+        "assignFailed": "ไม่สามารถกำหนดโปรไฟล์ตัวปรับปรุง",
+        "saveFailed": "ข้อผิดพลาดในการบันทึกตัวปรับปรุง",
+        "previewFailed": "ข้อผิดพลาดในการเรียกใช้ตัวอย่าง",
+        "noProfileAvailable": "ไม่มีโปรไฟล์ตัวปรับปรุง สร้างหนึ่งจากหน้าโปรไฟล์"
+      }
+    },
+    "token": {
+      "newButton": "โทเค็นใหม่",
+      "empty": "ยังไม่มีโทเค็น API สร้างหนึ่งเพื่อเริ่มต้นการยืนยันคำขอ",
+      "budgetOverrides": "การขยายงบประมาณ",
+      "created": "สร้างขึ้น",
+      "lastUsed": "ใช้ครั้งล่าสุด",
+      "expires": "หมดอายุ",
+      "never": "ไม่เคย",
+      "editTitle": "แก้ไขการกำหนดค่า",
+      "revokeTitle": "เพิกถอนโทเค็น",
+      "revokeConfirm": "เพิกถอนโทเค็น \"{{snippet}}...\"? แอปที่ใช้จะหยุดทำงาน",
+      "labelInput": {
+        "placeholder": "ค้นหาหรือสร้างป้ายกำกับ…",
+        "createPrefix": "สร้าง",
+        "noMatches": "ไม่พบป้ายกำกับตรงกัน"
+      },
+      "errors": {
+        "deleteFailed": "ข้อผิดพลาดในการลบโทเค็น"
+      },
+      "create": {
+        "backToTokens": "กลับไปโทเค็น",
+        "title": "โทเค็น API ใหม่",
+        "subtitle": "โทเค็นเต็มจะแสดงเพียงครั้งเดียวหลังจากการสร้าง - เก็บไว้อย่างปลอดภัย",
+        "tokenCreated": "สร้างโทเค็นเรียบร้อยแล้ว คัดลอกตอนนี้ - จะไม่แสดงอีก",
+        "copied": "คัดลอก!",
+        "copy": "คัดลอก",
+        "done": "เสร็จสิ้น",
+        "optional": "เลือกได้",
+        "labels": "ป้ายกำกับ",
+        "labelsHint": "ป้ายกำกับโทเค็นนี้เพื่อระบุที่ใช้ (เช่น \"production\" \"ci\")",
+        "scopes": "ขอบเขต",
+        "scopesHint": "ขอบเขตอิสระที่แนบกับโทเค็นนี้ (เช่น \"ชุด\" \"ภายใน\") เก็บไว้กับโทเค็นเพื่อการจดหมายรายชื่อของคุณเอง",
+        "tags": "แท็ก",
+        "tagsHint": "ข้อมูลเมตาคีย์-ค่าที่ส่งต่อไปยังเรกคอร์ดการใช้งาน (เช่น env=production)",
+        "keyPlaceholder": "ปุ่ม",
+        "valuePlaceholder": "ค่า",
+        "createButton": "สร้างโทเค็น",
+        "cancel": "ยกเลิก",
+        "copyFailed": "การคัดลอกล้มเหลว - โปรดเลือกและคัดลอกโทเค็นด้วยตนเอง",
+        "errors": {
+          "createFailed": "ข้อผิดพลาดในการสร้างโทเค็น"
+        }
+      },
+      "edit": {
+        "title": "แก้ไขโทเค็น",
+        "subtitle": "อัปเดตป้ายกำกับและขีดจำกัดต่อรุ่นสำหรับโทเค็นนี้",
+        "token": "โทเค็น",
+        "labels": "ป้ายกำกับ",
+        "perModelLimits": "ขีดจำกัดต่อรุ่น",
+        "perModelLimitsHint": "ขีดจำกัดโลบอลและระดับเราเตอร์โอเวอร์ไรด์สำหรับคำขอโดยใช้โทเค็นนี้",
+        "noTargetModels": "เพิ่มรุ่นเป้าหมายในแท็บการกำหนดเส้นทางก่อน",
+        "noOverride": "ไม่มีการขยาย",
+        "noLimits": "ไม่มีขีดจำกัด",
+        "noLimitsSet": "ไม่มีการตั้งค่าขีดจำกัด - สืบทอดจากผู้ปกครอง เพิ่มขีดจำกัดด้านล่างเพื่อขยาย",
+        "metric": "เมตริก",
+        "type": "ประเภท",
+        "periodLabel": "ช่วงเวลา",
+        "every": "ทุก",
+        "maxCost": "แม็กซ์ ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (โทเค็น)",
+        "allCombosSet": "การรวมเมตริก/ช่วงเวลาทั้งหมดได้รับการตั้งค่าแล้ว",
+        "addLimit": "เพิ่มขีดจำกัด",
+        "windowType": {
+          "period": "ช่วงเวลา",
+          "rolling": "โรลลิ่ง"
+        },
+        "limitMetric": {
+          "cost": "ต้นทุน (USD)",
+          "calls": "คำขอ",
+          "input_tokens": "โทเค็นอินพุต",
+          "output_tokens": "โทเค็นเอาต์พุต",
+          "total_tokens": "โทเค็นทั้งหมด"
+        },
+        "period": {
+          "hourly": "รายชั่วโมง",
+          "daily": "รายวัน",
+          "weekly": "รายสัปดาห์",
+          "monthly": "รายเดือน",
+          "yearly": "รายปี"
+        },
+        "rollingUnit": {
+          "second": "วินาที",
+          "minute": "นาที",
+          "hour": "ชั่วโมง",
+          "day": "วัน",
+          "week": "สัปดาห์",
+          "month": "เดือน"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / ทุก {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "ข้อผิดพลาดในการบันทึกโทเค็น"
+        }
+      }
+    },
+    "users": {
+      "title": "สมาชิกเราเตอร์",
+      "description": "จัดการผู้ใช้ที่มีการเข้าถึงเราเตอร์นี้",
+      "addButton": "เพิ่มสมาชิก",
+      "addNewTitle": "เพิ่มสมาชิกใหม่",
+      "selectUserPlaceholder": "เลือกผู้ใช้...",
+      "addConfirmButton": "เพิ่ม",
+      "cancelButton": "ยกเลิก",
+      "empty": "ไม่พบสมาชิก",
+      "removeConfirm": "คุณแน่ใจว่าต้องการลบสมาชิกนี้?",
+      "saveTitle": "บันทึกการเปลี่ยนแปลง",
+      "changeRoleTitle": "เปลี่ยนบทบาท",
+      "removeTitle": "ลบสมาชิก",
+      "roles": {
+        "viewer": "ผู้ชม",
+        "editor": "บรรณาธิการ",
+        "admin": "ผู้ดูแล"
+      },
+      "columns": {
+        "user": "ผู้ใช้",
+        "role": "บทบาท",
+        "actions": "การกระทำ"
+      },
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดผู้ใช้",
+        "addFailed": "ข้อผิดพลาดในการเพิ่มสมาชิก",
+        "updateFailed": "ข้อผิดพลาดในการอัปเดตสมาชิก",
+        "removeFailed": "ข้อผิดพลาดในการลบสมาชิก"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "ปิด"
+      },
+      "autoRefreshOff": "ปิดใช้งานการรีเฟรชอัตโนมัติ",
+      "autoRefreshEvery": "รีเฟรชอัตโนมัติทุก {{interval}}",
+      "lastUpdated": "อัปเดตล่าสุด: {{time}}",
+      "refresh": "รีเฟรช",
+      "refreshNowTitle": "รีเฟรชตอนนี้",
+      "refreshNowButton": "↻ ตอนนี้",
+      "filters": {
+        "period": "ช่วงเวลา",
+        "model": "รุ่น",
+        "allModels": "รุ่นทั้งหมด",
+        "type": "ประเภท",
+        "all": "ทั้งหมด",
+        "completion": "การเติมเต็ม",
+        "router": "เราเตอร์",
+        "status": "สถานะ",
+        "success": "สำเร็จ",
+        "blocked": "ถูกบล็อก",
+        "error": "ข้อผิดพลาด",
+        "resetButton": "รีเซ็ตตัวกรอง"
+      },
+      "stats": {
+        "totalCost": "ต้นทุนรวม",
+        "totalCalls": "รวมการโทร",
+        "completionCalls": "การโทรเติมเต็ม",
+        "routerCalls": "การโทรเราเตอร์",
+        "errors": "ข้อผิดพลาด"
+      },
+      "requestLogs": "บันทึกคำขอ",
+      "emptyNoRequests": "ไม่มีคำขอสำหรับเราเตอร์นี้ในช่วงเวลาที่เลือก",
+      "emptyNoMatches": "ไม่มีเรกคอร์ดตรงกับตัวกรองที่ใช้งาน",
+      "columns": {
+        "time": "เวลา",
+        "model": "รุ่น",
+        "type": "ประเภท",
+        "in": "ใน",
+        "out": "ออก",
+        "cost": "ต้นทุน",
+        "latency": "ความล่าช้า",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "สถานะ"
+      },
+      "typeRouter": "เราเตอร์",
+      "typeCompletion": "การเติมเต็ม",
+      "pagination": {
+        "previous": "← ก่อนหน้า",
+        "next": "ถัดไป →",
+        "pageOf": "หน้า {{page}} ของ {{totalPages}}",
+        "totalRecords": "({{count}} เรกคอร์ดทั้งหมด)"
+      }
+    },
+    "security": {
+      "title": "ความปลอดภัย",
+      "description": "ใช้โปรไฟล์ความปลอดภัยร่วมกันหรือกำหนด guardrails และนโยบาย PII ของเราเตอร์นี้เอง",
+      "mode": {
+        "profile": "โปรไฟล์",
+        "custom": "ที่กำหนดเอง"
+      },
+      "profileSelect": {
+        "ariaLabel": "โปรไฟล์ความปลอดภัย",
+        "builtinLabel": "{{label}} (ในตัว)",
+        "hint": "ป้องกันและนโยบาย PII มาจากโปรไฟล์และปฏิบัติตามการเปลี่ยนแปลง แก้ไขพวกเขาบนหน้าโปรไฟล์ หรือสลับไปที่ Custom เพื่อเริ่มต้นจากสำเนาของพวกเขา",
+        "blockingSuffix": ", การปิดกั้น",
+        "disabledSuffix": ", ปิดใช้งาน",
+        "piiRedaction": "การแก้ไข PII ({{target}})"
+      },
+      "saveButton": "บันทึกการตั้งค่าความปลอดภัย",
+      "saved": "บันทึกแล้ว!",
+      "errors": {
+        "assignFailed": "ไม่สามารถกำหนดโปรไฟล์ความปลอดภัย",
+        "saveFailed": "ข้อผิดพลาดในการบันทึกการตั้งค่าความปลอดภัย",
+        "noProfileAvailable": "ไม่มีโปรไฟล์ความปลอดภัย สร้างหนึ่งจากหน้าโปรไฟล์"
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "คุณเป็นผู้ช่วย AI ที่มีประโยชน์",
+      "errors": {
+        "unknown": "เกิดข้อผิดพลาดที่ไม่รู้จัก",
+        "onlyImages": "เฉพาะไฟล์แนบรูปภาพที่รองรับในปัจจุบันสำหรับรุ่นวิสัยทัศน์"
+      },
+      "title": "สนทนาทดสอบ",
+      "subtitle": "ส่งแบบสอบถามทดสอบผ่านเกตเวย์การกำหนดเส้นทาง",
+      "routerToken": "โทเค็นเราเตอร์:",
+      "hideToken": "ซ่อนโทเค็น",
+      "showToken": "แสดงโทเค็น",
+      "recognizedToken": "โทเค็นที่รู้จัก",
+      "unrecognizedToken": "โทเค็นไม่รู้จัก",
+      "noMessages": "ยังไม่มีข้อความ",
+      "enterTokenHint": "โปรดป้อนโทเค็นเราเตอร์ด้านบนเพื่อส่งข้อความ",
+      "typeMessageHint": "พิมพ์ข้อความด้านล่างเพื่อเริ่มต้นการทดสอบ",
+      "reasoning": "เหตุผล",
+      "attachedAlt": "แนบ",
+      "attachmentAlt": "ไฟล์แนบ",
+      "attachImage": "แนบรูปภาพ",
+      "typeMessagePlaceholder": "พิมพ์ข้อความ...",
+      "stopGeneration": "หยุดการสร้าง",
+      "sendEnter": "ส่ง (Enter)",
+      "debugLog": "บันทึกการแก้จุดบกพร่อง",
+      "clear": "ล้าง",
+      "noRequestSent": "ยังไม่ได้ส่งคำขอ",
+      "turnTraceLog": "เปิดเผยบันทึก #{{turn}} · {{count}} เหตุการณ์",
+      "turnTraceLog_other": "เปิดเผยบันทึก #{{turn}} · {{count}} เหตุการณ์"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "การเชื่อมต่อ",
+      "subtitle": "บัญชีผู้ให้บริการที่ใช้เรียกใช้อินสแตนซ์รุ่น",
+      "noPermission": "คุณไม่มีสิทธิอนุญาตให้ดูการเชื่อมต่อ",
+      "count": "{{count}} การเชื่อมต่อ",
+      "count_other": "{{count}} การเชื่อมต่อ",
+      "addConnection": "เพิ่มการเชื่อมต่อ",
+      "empty": "ยังไม่มีการเชื่อมต่อ เพิ่มหนึ่งเพื่อเริ่มต้น",
+      "deleteConfirm": "ลบการเชื่อมต่อ \"{{label}}\"? อินสแตนซ์ที่ผูกไว้จะหยุดทำงาน",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดการเชื่อมต่อ",
+        "deleteFailed": "ไม่สามารถลบการเชื่อมต่อ"
+      },
+      "columns": {
+        "label": "ป้ายกำกับ",
+        "provider": "ผู้ให้บริการ",
+        "endpoint": "จุดสิ้นสุด",
+        "status": "สถานะ"
+      },
+      "status": {
+        "enabled": "เปิดใช้งาน",
+        "disabled": "ปิดใช้งาน"
+      },
+      "actions": {
+        "models": "รุ่น",
+        "edit": "แก้ไข",
+        "remove": "ลบ"
+      }
+    },
+    "form": {
+      "backToConnections": "กลับไปการเชื่อมต่อ",
+      "editTitle": "แก้ไขการเชื่อมต่อ",
+      "addTitle": "เพิ่มการเชื่อมต่อ",
+      "enabled": "เปิดใช้งาน",
+      "editSubtitle": "อัปเดตการตั้งค่าบัญชีผู้ให้บริการ",
+      "addSubtitle": "ลงทะเบียนบัญชีผู้ให้บริการใหม่",
+      "sectionTitle": "รายละเอียดการเชื่อมต่อ",
+      "sectionDesc": "บัญชีผู้ให้บริการ ข้อมูลประจำตัว และจุดสิ้นสุดที่ใช้ในการดำเนินการคำขอ",
+      "provider": "ผู้ให้บริการ",
+      "groups": {
+        "directApi": "API โดยตรง",
+        "cloudPlatform": "แพลตฟอร์มคลาวด์",
+        "subscription": "การสมัครสมาชิก",
+        "browserSession": "เซสชันเบราว์เซอร์",
+        "selfHosted": "โฮสต์เอง"
+      },
+      "upstreamProvider": {
+        "label": "ผู้ให้บริการ",
+        "hintLabel": "(ชื่อผู้ให้บริการต้นน้ำ)",
+        "placeholder": "เช่น deepseek mistral groq",
+        "description": "ชื่อบริการที่จุดสิ้นสุดนี้เป็นของ รุ่นบนการเชื่อมต่อนี้ใช้เป็นคำนำหน้า ID (เช่น <code>deepseek/deepseek-r1</code>)"
+      },
+      "name": {
+        "label": "ชื่อ",
+        "hint": "ระบุการเชื่อมต่อนี้ทุกที่ที่อ้างอิง ดังนั้นจึงต้องไม่ซ้ำกัน ปล่อยให้ว่างเปล่าเพื่อใช้ <code>{{suggested}}</code>"
+      },
+      "credentialsBlankHint": "ปล่อยให้ช่องข้อมูลประจำตัวว่างเพื่อเก็บค่าที่มีอยู่",
+      "save": "บันทึก",
+      "create": "สร้าง",
+      "cancel": "ยกเลิก",
+      "oauth": {
+        "unknown": "ไม่รู้จัก",
+        "accountExpires": "บัญชี: {{account}} - หมดอายุ {{expires}}",
+        "unknownError": "ข้อผิดพลาดที่ไม่รู้จัก"
+      },
+      "errors": {
+        "notFound": "ไม่พบการเชื่อมต่อ",
+        "loadFailed": "ไม่สามารถโหลดการเชื่อมต่อ",
+        "updateFailed": "ไม่สามารถอัปเดตการเชื่อมต่อ",
+        "createFailed": "ไม่สามารถสร้างการเชื่อมต่อ"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "กลับไปรุ่น",
+      "title": "การค้นพบรุ่น",
+      "subtitle": "เรียกดูรุ่นที่มีอยู่และเพิ่มเข้าไปในการกำหนดค่าการกำหนดเส้นทางของคุณ",
+      "count": "{{count}} รุ่น",
+      "filteredCount": "{{filtered}} ของ {{count}}",
+      "free": "ฟรี",
+      "add": "เพิ่ม",
+      "addAgain": "เพิ่มอีกครั้ง",
+      "loadFailed": "ไม่สามารถโหลดรายชื่อ: {{error}}",
+      "filters": {
+        "search": "ค้นหา",
+        "searchPlaceholder": "ID รุ่นหรือชื่อ…",
+        "provider": "ผู้ให้บริการ",
+        "allProviders": "ผู้ให้บริการทั้งหมด",
+        "context": "บริบท",
+        "ctxOptions": {
+          "all": "ทั้งหมด",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "ราคา / 1M",
+        "priceOptions": {
+          "all": "ทั้งหมด",
+          "free": "ฟรี",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "แสดง",
+        "configured": "ตั้งค่าแล้ว",
+        "embedding": "การฝังตัว",
+        "resetFilters": "รีเซ็ตตัวกรอง"
+      },
+      "empty": {
+        "noMatches": "ไม่มีรุ่นตรงกับตัวกรองของคุณ"
+      },
+      "columns": {
+        "model": "รุ่น",
+        "provider": "ผู้ให้บริการ",
+        "context": "บริบท",
+        "input": "อินพุต / 1M",
+        "output": "เอาต์พุต / 1M"
+      },
+      "badges": {
+        "configured": "ตั้งค่าแล้ว",
+        "embedding": "การฝังตัว",
+        "runsLocally": "ทำงานในพื้นที่"
+      },
+      "pagination": {
+        "prev": "ก่อนหน้า",
+        "next": "ถัดไป",
+        "range": "{{start}}–{{end}} ของ {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "กลับไปรุ่น",
+      "title": {
+        "add": "เพิ่มรุ่น",
+        "edit": "แก้ไขรุ่น",
+        "clone": "โคลนรุ่น"
+      },
+      "subtitle": {
+        "add": "ลงทะเบียนโมเดล LLM ผู้ให้บริการใหม่",
+        "edit": "แก้ไขการกำหนดค่าสำหรับ {{id}}",
+        "clone": "โคลนจาก {{id}} - กำหนด ID ใหม่เพื่อบันทึก"
+      },
+      "errors": {
+        "modelNotFound": "ไม่พบรุ่น",
+        "sourceModelNotFound": "ไม่พบรุ่นต้นทาง",
+        "loadFailed": "ข้อผิดพลาดในการโหลดรุ่น",
+        "idRequired": "ต้องการ ID รุ่น",
+        "duplicateId": "รุ่น \"{{id}}\" มีอยู่แล้ว - ตั้งค่า ID ที่กำหนดเองอื่น",
+        "selectConnection": "เลือกการเชื่อมต่อ",
+        "saveFailed": "ข้อผิดพลาด"
+      },
+      "badge": {
+        "yes": "ใช่",
+        "no": "ไม่",
+        "override": "การขยาย",
+        "auto": "อัตโนมัติ",
+        "default": "ค่าเริ่มต้น: {{value}}",
+        "reset": "รีเซ็ต"
+      },
+      "oauth": {
+        "unknownExpiry": "ไม่รู้จัก",
+        "accountOk": "บัญชี: {{account}} - หมดอายุ {{expires}}",
+        "unknownError": "ข้อผิดพลาดที่ไม่รู้จัก"
+      },
+      "identification": {
+        "title": "การระบุรุ่น",
+        "description": "ตัวระบุที่ไม่ซ้ำกันและการตั้งค่าผู้ให้บริการสำหรับการกำหนดค่ารุ่นนี้",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(เลือกได้ - ค่าเริ่มต้น:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "ตัวระบุที่ใช้เมื่ออ้างอิงถึงรุ่นนี้ในการโทร Routerly API",
+        "provider": "ผู้ให้บริการ",
+        "upstreamProviderHint": "(ชื่อผู้ให้บริการต้นน้ำ)",
+        "upstreamProviderPlaceholder": "เช่น deepseek mistral groq",
+        "upstreamProviderDescPre": "ใช้เป็นคำนำหน้าสำหรับ Routerly ID (เช่น",
+        "upstreamProviderDescPost": ")",
+        "model": "รุ่น",
+        "upstreamModelHint": "(ID รุ่นต้นน้ำ)",
+        "upstreamModelPlaceholder": "เช่น deepseek-r1 mistral-large-latest",
+        "upstreamModelDesc": "ตัวระบุรุ่นที่ส่งไปยังจุดสิ้นสุด API ต้นน้ำ",
+        "modelPreset": "โปรไฟล์รุ่น",
+        "customModelOption": "- ชื่อรุ่นที่กำหนดเอง -",
+        "customModelPlaceholder": "เช่น my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "รายละเอียดการเชื่อมต่อ",
+        "description": "จุดสิ้นสุด API และข้อมูลประจำตัวที่จำเป็นในการดำเนินการคำขอ",
+        "preconfigured": "ตั้งค่าล่วงหน้า",
+        "custom": "ที่กำหนดเอง",
+        "connection": "การเชื่อมต่อ",
+        "selectPlaceholder": "- เลือกการเชื่อมต่อ -",
+        "noneAvailable": "ไม่มีการเชื่อมต่อที่ตั้งค่าล่วงหน้าสำหรับผู้ให้บริการนี้ สลับไปที่ Custom หรือสร้างแบบบนหน้าการเชื่อมต่อ",
+        "editHint": "การแก้ไขการเชื่อมต่อนี้ในภายหลังอัปเดตรุ่นทั้งหมดที่ผูกไว้"
+      },
+      "capabilities": {
+        "title": "ความสามารถ",
+        "description": "ระบุประเภทและความสามารถของรุ่มนี้",
+        "embeddingModel": "รุ่นการฝังตัว",
+        "embeddingModelHint": "รุ่นนี้สร้างการฝังเวกเตอร์ (ไม่ใช่การเติมเต็มแชท)"
+      },
+      "pricing": {
+        "title": "ราคา & บริบท",
+        "description": "พารามิเตอร์ต้นทุนและขีดจำกัดการประมวลผลที่ใช้สำหรับการเรียกเก็บเงินและการกำหนดเส้นทาง",
+        "inputPerMillion": "อินพุต $/1M",
+        "outputPerMillion": "เอาต์พุต $/1M",
+        "cachePerMillion": "อ่านแคช $/1M",
+        "cacheWritePerMillion": "เขียนแคช $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "หน้าต่างบริบท",
+        "contextWindowHint": "(โทเค็น เลือกได้)"
+      },
+      "tiers": {
+        "title": "ขั้นสูง - ราคาชั้น",
+        "description": "แทนที่ราคาเมื่อเมตริกเกินเกณฑ์ ตัวอย่าง: \"เหนือ 200 000 โทเค็นบริบท ราคาเปลี่ยน\"",
+        "removeTier": "ลบชั้น",
+        "above": "ข้างบน",
+        "metric": "เมตริก",
+        "metricContextTokens": "โทเค็นบริบท",
+        "overridePricing": "แทนที่ราคา",
+        "addTier": "เพิ่มชั้นราคา"
+      },
+      "limits": {
+        "title": "ขีดจำกัด",
+        "description": "ขีดจำกัดการใช้งานสำหรับรุ่มนี้ สามารถรวมกฎหลายข้อได้",
+        "metric": "เมตริก",
+        "type": "ประเภท",
+        "addLimit": "เพิ่มขีดจำกัด"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max subscription)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro subscription)"
+      },
+      "saveChanges": "บันทึกการเปลี่ยนแปลง",
+      "createClone": "สร้างโคลน",
+      "createModel": "สร้างรุ่น"
+    },
+    "page": {
+      "title": "รุ่น",
+      "subtitle": "ผู้ให้บริการ LLM ลงทะเบียนกับ Routerly",
+      "tabs": {
+        "models": "รุ่น",
+        "health": "สุขภาพ"
+      },
+      "toolbar": {
+        "count": "{{count}} รุ่น",
+        "count_other": "{{count}} รุ่น",
+        "filteredCount": "{{filtered}} ของ {{count}} รุ่น",
+        "filteredCount_other": "{{filtered}} ของ {{count}} รุ่น"
+      },
+      "filters": {
+        "allProviders": "ผู้ให้บริการทั้งหมด",
+        "allConnections": "การเชื่อมต่อทั้งหมด",
+        "searchPlaceholder": "ตัวกรองรุ่น…"
+      },
+      "discover": "ค้นหา",
+      "addModel": "เพิ่มรุ่น",
+      "deleteConfirm": "ลบรุ่น \"{{id}}\"?",
+      "empty": {
+        "noModels": "ยังไม่มีรุ่น เพิ่มหนึ่งเพื่อเริ่มต้น",
+        "noMatches": "ไม่มีรุ่นตรงกับตัวกรองที่ใช้งาน"
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "ผู้ให้บริการ",
+        "endpoint": "จุดสิ้นสุด",
+        "input": "อินพุต $/1M",
+        "output": "เอาต์พุต $/1M",
+        "cache": "แคช $/1M",
+        "context": "ขนาดบริบท"
+      },
+      "actions": {
+        "test": "ทดสอบ",
+        "clone": "โคลน",
+        "edit": "แก้ไข",
+        "remove": "ลบ"
+      },
+      "pagination": {
+        "previous": "← ก่อนหน้า",
+        "next": "ถัดไป →",
+        "pageOf": "หน้า {{page}} ของ {{totalPages}}",
+        "total": "({{count}} รุ่น)",
+        "total_other": "({{count}} รุ่น)"
+      },
+      "health": {
+        "emptyNoModels": "ไม่มีรุ่นที่ตั้งค่าไว้",
+        "emptyNoMatches": "ไม่มีรุ่นตรงกับตัวกรอง",
+        "resetAll": "รีเซ็ตทั้งหมด",
+        "resetAllTitle": "รีเซ็ตทุกวงจร ระยะพักร้อน และการล็อก",
+        "resetTitle": "รีเซ็ตเบรกเกอร์วงจร",
+        "confirmResetModel": "รีเซ็ตเบรกเกอร์วงจรสำหรับรุ่น \"{{id}}\"?",
+        "confirmResetAll": "รีเซ็ตสถานะความยืดหยุ่นทั้งหมด? นี่จะล้างทุกวงจรเบรกเกอร์ ระยะพักร้อน และการล็อก",
+        "errors": {
+          "resetModelFailed": "ไม่สามารถรีเซ็ตเบรกเกอร์วงจร",
+          "resetAllFailed": "ไม่สามารถรีเซ็ตสถานะความยืดหยุ่น"
+        },
+        "columns": {
+          "model": "รุ่น",
+          "provider": "ผู้ให้บริการ",
+          "status": "สถานะ",
+          "circuit": "วงจร",
+          "errorRate": "อัตราข้อผิดพลาด (5m)",
+          "p95Latency": "P95 ความล่าช้า (1h)",
+          "requests": "คำขอ (1h)",
+          "lastSuccess": "สำเร็จล่าสุด",
+          "cooldownLockout": "ระยะพักร้อน / การล็อก"
+        },
+        "status": {
+          "healthy": "สุขภาพดี",
+          "degraded": "ลดคุณภาพ",
+          "unavailable": "ไม่มี",
+          "cooldown": "ระยะพักร้อน",
+          "nodata": "ไม่มีข้อมูล"
+        },
+        "circuit": {
+          "ok": "ตกลง",
+          "recovering": "กำลังกู้คืน",
+          "tripped": "ท้าเดินทาง"
+        },
+        "time": {
+          "never": "ไม่เคย",
+          "now": "ตอนนี้",
+          "secondsAgo": "{{count}}s ที่แล้ว",
+          "minutesAgo": "{{count}}m ที่แล้ว",
+          "hoursAgo": "{{count}}h ที่แล้ว",
+          "daysAgo": "{{count}}d ที่แล้ว",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "ระยะพักร้อน {{time}}",
+          "lockout": "การล็อก {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "การทดลอง",
+      "subtitle": "A/B ทดสอบเราเตอร์ต่อกัน",
+      "noPermission": "คุณไม่มีสิทธิอนุญาตให้ดูการทดลอง",
+      "count": "{{count}} การทดลอง",
+      "count_other": "{{count}} การทดลอง",
+      "newExperiment": "การทดลองใหม่",
+      "empty": "ยังไม่มีการทดลอง สร้างหนึ่งเพื่อเปรียบเทียบเราเตอร์ head to head",
+      "deleteConfirm": "ลบการทดลอง \"{{name}}\"? ไม่สามารถเลิกทำได้",
+      "noToken": "ไม่มีโทเค็น",
+      "noTokenTitle": "ไม่มีโทเค็นไคลเอนต์ไม่สามารถถึงการทดลองนี้",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดการทดลอง",
+        "deleteFailed": "ไม่สามารถลบการทดลอง"
+      },
+      "columns": {
+        "name": "ชื่อ",
+        "variants": "ตัวแปร",
+        "rotation": "การหมุน",
+        "created": "สร้างขึ้น"
+      },
+      "actions": {
+        "edit": "แก้ไขการทดลอง",
+        "remove": "ลบ"
+      }
+    },
+    "layout": {
+      "backToExperiments": "กลับไปการทดลอง",
+      "newExperiment": "การทดลองใหม่",
+      "loading": "กำลังโหลด...",
+      "experimentId": "Experiment ID:",
+      "disabledTabTitle": "บันทึกการทดลองก่อนเพื่อปลดล็อกแท็บนี้",
+      "errors": {
+        "notFound": "ไม่พบการทดลอง"
+      },
+      "tabs": {
+        "config": "การกำหนดค่า",
+        "metrics": "เมตริก",
+        "token": "โทเค็น"
+      }
+    },
+    "config": {
+      "saved": "บันทึกแล้ว",
+      "created": "สร้างการทดลอง ชี้ไคลเอนต์ของคุณไปยังโทเค็นนี้แทนโทเค็นเราเตอร์ จะไม่แสดงอีก",
+      "copy": "คัดลอก",
+      "copied": "คัดลอก!",
+      "done": "เสร็จสิ้น",
+      "saving": "กำลังบันทึก...",
+      "create": "สร้างการทดลอง",
+      "save": "บันทึกการเปลี่ยนแปลง",
+      "cancel": "ยกเลิก",
+      "trafficSplit": "แบ่งการรับส่งข้อมูล",
+      "errors": {
+        "loadRoutersFailed": "ไม่สามารถโหลดเราเตอร์",
+        "saveFailed": "ไม่สามารถบันทึกการทดลอง",
+        "copyFailed": "การคัดลอกล้มเหลว: เลือกและคัดลอกโทเค็นด้วยตนเอง"
+      },
+      "fields": {
+        "name": "ชื่อ",
+        "namePlaceholder": "ราคาถูก vs ส่วนเบี่ยงเบนของพรีเมียม",
+        "description": "คำอธิบาย",
+        "optional": "(เลือกได้)",
+        "descriptionPlaceholder": "สิ่งที่การทดสอบนี้พยายามชำระแล้ว",
+        "minSamples": "การโทรขั้นต่ำต่อตัวแปร",
+        "minSamplesHint": "ด้านล่างนี้ แท็บเมตริกมีเครื่องหมายการเปรียบเทียบว่าไม่ยังสรุปได้",
+        "rotation": "การหมุน",
+        "stickyOn": "บอง",
+        "stickyKey": "ปุ่มบอง"
+      },
+      "variants": {
+        "title": "ตัวแปร",
+        "desc": "แต่ละตัวแปรเป็นเราเตอร์ที่มีอยู่ทั้งหมด: รุ่น การกำหนดเส้นทาง และ guardrails ทั้งหมด การทดสอบต้องการอย่างน้อยสอง",
+        "routerAriaLabel": "เราเตอร์ตัวแปร {{index}}",
+        "routerPlaceholder": "เลือกเราเตอร์",
+        "labelAriaLabel": "ป้ายกำกับตัวแปร {{index}}",
+        "labelPlaceholder": "ป้ายกำกับ (เลือกได้)",
+        "weightAriaLabel": "น้ำหนักตัวแปร {{index}}",
+        "weightPlaceholder": "น้ำหนัก",
+        "removeTitle": "ลบตัวแปร {{index}}",
+        "add": "เพิ่มตัวแปร"
+      },
+      "judge": {
+        "title": "ผู้พิพากษา",
+        "desc": "เลือกได้: รุ่นอ่านแต่ละคำตอบตัวอย่างและให้คะแนน 0-10 เทียบกับเกณฑ์ของคุณ ทุกการโทรของผู้พิพากษาเป็นการโทรรุ่นพิเศษ เรียกเก็บเงินเหมือนอื่น",
+        "enable": "คำตอบคะแนนด้วยรุ่นผู้พิพากษา",
+        "model": "รุ่นผู้พิพากษา",
+        "modelPlaceholder": "เลือกรุ่น",
+        "criteria": "เกณฑ์",
+        "criteriaPlaceholder": "หนึ่งต่อบรรทัด เช่น\nตอบคำถามที่ถาม\nยังคงเป็นจริง\nถูกรูปแบบที่ร้องขอ",
+        "sampleRate": "ส่วนแบ่งการเรียกเลิก (%)"
+      }
+    },
+    "metrics": {
+      "loading": "กำลังโหลด...",
+      "callsMeasured": "{{count}} การโทรวัดแล้ว",
+      "callsMeasured_other": "{{count}} การโทรวัดแล้ว",
+      "empty": "ยังไม่มีการโทรในหน้าต่างนี้ ชี้ไคลเอนต์ไปยังโทเค็นการทดลองเพื่อเริ่มต้นการเปรียบเทียบ",
+      "notConclusive": "ไม่ชัดเจนเท่าที่ยัง: ทุกตัวแปรต้องการอย่างน้อย {{minSamples}} การโทรในหน้าต่างนี้",
+      "explanation": "รูปที่ดีกว่าของแต่ละคู่จะไฮไลต์: ถูกกว่าต่อการโทร เร็วกว่า คะแนนผู้พิพากษาสูงกว่า เปอร์เซ็นต์ด้านล่างค่าคือระยะห่างจากแขนที่ดีที่สุด คะแนนผู้พิพากษาเป็นค่าเฉลี่ยไหลเหลวตลอดชีวิตการทดลอง ดังนั้นจึงเป็นรูปที่หน้าต่างไม่แคบ",
+      "lowSample": "ตัวอย่างต่ำ",
+      "lowSampleTitle": "ภายใต้ {{minSamples}} เรียกในหน้าต่างนี้",
+      "judgedCallsTitle": "{{count}} คำตอบคะแนนโดยผู้พิพากษาตั้งแต่การทดลองเริ่มต้น",
+      "judgedCallsTitle_other": "{{count}} คำตอบคะแนนโดยผู้พิพากษาตั้งแต่การทดลองเริ่มต้น",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดเมตริก"
+      },
+      "columns": {
+        "variant": "ตัวแปร",
+        "calls": "การโทร",
+        "share": "ส่วนแบ่ง",
+        "errors": "ข้อผิดพลาด",
+        "tokens": "โทเค็นใน / ออก",
+        "cost": "ต้นทุน",
+        "costPerCall": "ต้นทุน / การโทร",
+        "avgLatency": "ความล่าช้าเฉลี่ย",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "คะแนนผู้พิพากษา"
+      }
+    },
+    "token": {
+      "desc": "ไคลเอนต์เรียกการทดลองเหมือนเราเตอร์: URL ฐานเดียวกัน โทเค็นนี้แทนโทเค็นเราเตอร์ การร้องขอแต่ละรายที่ลงจอดบนตัวแปรหนึ่งและถูกเรียกเก็บเงินสำหรับตัวแปรของเราเตอร์",
+      "baseUrlLabel": "URL ฐานสำหรับ OpenAI หรือ Anthropic SDK ด้วยโทเค็นการทดลองเป็นปุ่ม API:",
+      "created": "สร้างโทเค็น คัดลอกตอนนี้ จะไม่แสดงอีก",
+      "copy": "คัดลอก",
+      "copied": "คัดลอก!",
+      "newToken": "โทเค็นใหม่",
+      "empty": "ไม่มีโทเค็นในการทดลองนี้ สร้างหนึ่งเพื่อให้ไคลเอนต์สามารถโทรได้",
+      "revokeConfirm": "เพิกถอนโทเค็น \"{{snippet}}...\"? ไคลเอนต์ที่ใช้จะหยุดทำงาน",
+      "revokeTitle": "เพิกถอนโทเค็น",
+      "errors": {
+        "createFailed": "ไม่สามารถสร้างโทเค็น",
+        "revokeFailed": "ไม่สามารถเพิกถอนโทเค็น",
+        "copyFailed": "การคัดลอกล้มเหลว: เลือกและคัดลอกโทเค็นด้วยตนเอง"
+      },
+      "columns": {
+        "created": "สร้างขึ้น",
+        "lastUsed": "ใช้ครั้งล่าสุด"
+      }
+    }
+  },
+  "overview": {
+    "title": "ภาพรวม",
+    "subtitle": "สรุปการใช้งานและการแบ่งตามต้นทุน",
+    "noPermission": "ไม่มีสิทธิอนุญาตให้ดูข้อมูลการใช้งาน",
+    "costByModel": "ต้นทุนตามรุ่น",
+    "noCostRecorded": "ไม่มีต้นทุนที่บันทึกไว้ในช่วงนี้",
+    "callsByModel": "การโทรตามรุ่น",
+    "columns": {
+      "model": "รุ่น",
+      "calls": "การโทร",
+      "errors": "ข้อผิดพลาด",
+      "cost": "ต้นทุน"
+    },
+    "stats": {
+      "totalCalls": "รวมการโทร",
+      "callsBreakdown": "{{routing}} การกำหนดเส้นทาง · {{completion}} การเติมเต็ม",
+      "successRate": "อัตราความสำเร็จ",
+      "ofAllRequests": "ของคำขอทั้งหมด",
+      "errors": "ข้อผิดพลาด",
+      "failedRequests": "คำขอที่ล้มเหลว",
+      "models": "รุ่น",
+      "registered": "ลงทะเบียน",
+      "routers": "เราเตอร์",
+      "active": "ใช้งาน"
+    },
+    "connectCard": {
+      "title": "เชื่อมต่อไคลเอนต์",
+      "desc": "ชี้ Claude Code Codex Cursor และ {{count}} มากขึ้นที่เกตเวย์นี้"
+    }
+  },
+  "login": {
+    "emailLabel": "อีเมล",
+    "passwordLabel": "รหัสผ่าน",
+    "signIn": "เข้าสู่ระบบ",
+    "errors": {
+      "loginFailed": "การเข้าสู่ระบบล้มเหลว",
+      "totpFailed": "การยืนยัน 2FA ล้มเหลว"
+    },
+    "totp": {
+      "title": "การยืนยันตัวตนสองปัจจัย",
+      "backupPrompt": "ป้อนรหัสสำรอง",
+      "appPrompt": "ป้อนโค้ด 6 หลักจากแอปตัวยืนยันตัวตนของคุณ",
+      "backupCodeLabel": "รหัสสำรอง",
+      "authenticatorCodeLabel": "รหัสตัวยืนยันตัวตน",
+      "verify": "ยืนยัน",
+      "useAuthenticatorInstead": "ใช้แอปตัวยืนยันตัวตนแทน",
+      "useBackupInstead": "ใช้รหัสสำรองแทน"
+    }
+  },
+  "setup": {
+    "welcome": "ยินดีต้อนรับ ให้เราตั้งค่าคุณ",
+    "welcomeSubtitle": "สร้างบัญชีผู้ดูแลระบบแรกเพื่อเริ่มจัดการ Routerly",
+    "betaBadge": "🚧 เบตา",
+    "betaNotice": "Routerly พัฒนาอยู่อย่างแข็งขัน อาจเกิดข้อบกพร่อง",
+    "betaFeedback": "ข้อเสนอแนะของคุณช่วยรูปร่างสิ่งที่มันกลายเป็น -",
+    "betaLink": "รายงานปัญหาหรือแบ่งปันความคิด",
+    "emailLabel": "อีเมลผู้ดูแล",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "รหัสผ่าน",
+    "passwordPlaceholder": "อย่างน้อย 8 ตัวอักษร",
+    "confirmLabel": "ยืนยันรหัสผ่าน",
+    "confirmPlaceholder": "ป้อนรหัสผ่านใหม่",
+    "submit": "สร้างบัญชีผู้ดูแล",
+    "errors": {
+      "mismatch": "รหัสผ่านไม่ตรงกัน",
+      "tooShort": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+      "setupFailed": "การตั้งค่าล้มเหลว"
+    }
+  },
+  "audit": {
+    "empty": "ไม่พบรายการการตรวจสอบ",
+    "errors": {
+      "loadFailed": "ไม่สามารถโหลดบันทึกการตรวจสอบ"
+    },
+    "filters": {
+      "period": "ช่วงเวลา",
+      "user": "ผู้ใช้",
+      "userPlaceholder": "อีเมลหรือรหัสผู้ใช้",
+      "action": "การกระทำ",
+      "actionPlaceholder": "เช่น model:create",
+      "result": "ผล",
+      "results": {
+        "all": "ทั้งหมด",
+        "success": "สำเร็จ",
+        "forbidden": "ห้ามไม่ให้",
+        "error": "ข้อผิดพลาด"
+      },
+      "refresh": "รีเฟรช"
+    },
+    "columns": {
+      "timestamp": "ประทับเวลา",
+      "user": "ผู้ใช้",
+      "action": "การกระทำ",
+      "endpoint": "จุดสิ้นสุด",
+      "result": "ผล",
+      "details": "รายละเอียด"
+    },
+    "pagination": {
+      "previous": "ก่อนหน้า",
+      "next": "ถัดไป",
+      "page": "หน้า {{page}} ของ {{totalPages}}",
+      "total": "({{count}} รวม)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "การใช้งาน",
+      "live": "เลฟ",
+      "subtitle": "บันทึกการโทรโดยละเอียดและการแบ่งตามรุ่น",
+      "updatedAt": "· อัปเดตที่ {{time}}",
+      "poll": {
+        "off": "ปิด",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● เลฟ",
+      "liveButtonTitle": {
+        "disable": "ปิดใช้งานโหมดสด",
+        "enable": "เปิดใช้งานโหมดสด (รีเฟรชทุก 2 วินาที)"
+      },
+      "refreshNow": "↻ ตอนนี้",
+      "refreshNowTitle": "รีเฟรชตอนนี้",
+      "filters": {
+        "period": "ช่วงเวลา",
+        "router": "เราเตอร์",
+        "model": "รุ่น",
+        "token": "โทเค็น",
+        "caller": "ผู้เรียกใช้",
+        "type": "ประเภท",
+        "status": "สถานะ",
+        "allRouters": "เราเตอร์ทั้งหมด",
+        "allModels": "รุ่นทั้งหมด",
+        "allTokens": "โทเค็นทั้งหมด",
+        "resetFilters": "รีเซ็ตตัวกรอง",
+        "all": "ทั้งหมด",
+        "success": "สำเร็จ",
+        "blocked": "ถูกบล็อก",
+        "error": "ข้อผิดพลาด"
+      },
+      "caller": {
+        "all": "ทั้งหมด",
+        "completion": "การเติมเต็ม",
+        "routing": "เราเตอร์",
+        "guardrail": "ป้องกัน",
+        "judge": "ผู้พิพากษา"
+      },
+      "callerBadge": {
+        "completion": "การเติมเต็ม",
+        "routing": "เราเตอร์",
+        "guardrail": "ป้องกัน",
+        "judge": "ผู้พิพากษา"
+      },
+      "errors": {
+        "loadFailedPrefix": "ไม่สามารถโหลดข้อมูลการใช้งาน:",
+        "retry": "ลองใหม่"
+      },
+      "stats": {
+        "totalCalls": "รวมการโทร",
+        "completionCalls": "การโทรเติมเต็ม",
+        "routerCalls": "การโทรเราเตอร์",
+        "guardrailCalls": "การโทรป้องกัน",
+        "blockedCalls": "การโทรถูกบล็อก",
+        "errors": "ข้อผิดพลาด"
+      },
+      "table": {
+        "rank": "อันดับ",
+        "model": "รุ่น",
+        "provider": "ผู้ให้บริการ",
+        "calls": "การโทร",
+        "errors": "ข้อผิดพลาด",
+        "successRate": "อัตราความสำเร็จ",
+        "avgLatency": "ความล่าช้าเฉลี่ย",
+        "p95Latency": "P95 ความล่าช้า",
+        "inputTokens": "โทเค็นอินพุต",
+        "outputTokens": "โทเค็นเอาต์พุต",
+        "costPer1k": "ต้นทุน / 1K",
+        "cost": "ต้นทุน (USD)",
+        "bestCostPerformance": "ต้นทุน-ประสิทธิภาพที่ดีที่สุด"
+      },
+      "showMoreModels": "แสดง {{count}} รุ่นเพิ่มเติม",
+      "showMoreModels_other": "แสดง {{count}} รุ่นเพิ่มเติม",
+      "showFewerModels": "แสดงรุ่นน้อยลง",
+      "recentCalls": {
+        "title": "การโทรล่าสุด",
+        "empty": "ไม่มีเรกคอร์ดการใช้งานสำหรับช่วงนี้",
+        "columns": {
+          "time": "เวลา",
+          "router": "เราเตอร์",
+          "model": "รุ่น",
+          "type": "ประเภท",
+          "caller": "ผู้เรียกใช้",
+          "in": "ใน",
+          "out": "ออก",
+          "cost": "ต้นทุน",
+          "latency": "ความล่าช้า",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "สถานะ"
+        }
+      },
+      "pagination": {
+        "previous": "ก่อนหน้า",
+        "next": "ถัดไป",
+        "pageOf": "หน้า {{page}} ของ {{totalPages}}",
+        "totalRecords": "({{count}} เรกคอร์ดทั้งหมด)"
+      }
+    },
+    "record": {
+      "back": "กลับ",
+      "title": "รายละเอียดการโทร",
+      "notFoundTitle": "ไม่พบเรกคอร์ด",
+      "notFoundBody": "เรกคอร์ดการใช้งาน {{id}} ไม่สามารถโหลดได้",
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดเรกคอร์ด"
+      },
+      "sections": {
+        "identity": "ข้อมูลประจำตัว",
+        "tokensAndCost": "โทเค็น & ต้นทุน",
+        "performanceAndOutcome": "ประสิทธิภาพและผลลัพธ์",
+        "traceLog": "บันทึกการติดตาม"
+      },
+      "fields": {
+        "recordId": "เรกคอร์ด ID",
+        "router": "เราเตอร์",
+        "token": "โทเค็น",
+        "model": "รุ่น",
+        "callType": "ประเภทการโทร",
+        "requestType": "ประเภทคำขอ",
+        "inputTokens": "โทเค็นอินพุต",
+        "outputTokens": "โทเค็นเอาต์พุต",
+        "totalTokens": "โทเค็นทั้งหมด",
+        "costUsd": "ต้นทุน (USD)",
+        "costUnknown": "ไม่รู้จัก",
+        "latency": "ความล่าช้า",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "ผลลัพธ์",
+        "timestamp": "ประทับเวลา",
+        "guardrailTriggered": "ป้องกันท่าที",
+        "blockedBy": "ถูกบล็อกโดย",
+        "piiRedacted": "PII แก้ไข"
+      },
+      "errorMessage": "ข้อความข้อผิดพลาด",
+      "eventCount": "{{count}} เหตุการณ์",
+      "eventCount_other": "{{count}} เหตุการณ์",
+      "noTrace": "ไม่มีการติดตามที่มี ข้อมูลการติดตามจะถูกจับสำหรับการโทรใหม่เท่านั้น"
+    }
+  },
+  "playground": {
+    "title": "สนามเด็กเล่น",
+    "subtitle": "ทดสอบรุ่น เปรียบเทียบการตอบ และบันทึกพรีเซ็ตพรอมต์",
+    "mode": {
+      "single": "ผู้ชม",
+      "compare": "เปรียบเทียบ"
+    },
+    "token": {
+      "label": "โทเค็น:",
+      "labelA": "โทเค็น A",
+      "labelB": "โทเค็น B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "เดียวกับ A",
+      "unknownToken": "โทเค็นที่ไม่รู้จัก"
+    },
+    "presets": {
+      "button": "พรีเซ็ต",
+      "panelTitle": "พรีเซ็ต",
+      "saveCurrent": "บันทึกปัจจุบัน",
+      "namePlaceholder": "ชื่อพรีเซ็ต...",
+      "save": "บันทึก",
+      "empty": "ยังไม่มีพรีเซ็ต",
+      "delete": "ลบพรีเซ็ต"
+    },
+    "streamingDisabled": {
+      "banner": "ไม่มีการสตรีมมิ่ง",
+      "bannerBody": "เราเตอร์นี้มีป้องกันการตอบกลับใช้งานอยู่ Routerly ต้องตรวจสอบการตอบสนองแบบเต็มก่อนการส่งมอบ ดังนั้นการตอบสนองมาถึงทั้งหมดในคราวเดียว",
+      "tooltip": "ไม่มีการสตรีมมิ่ง: ป้องกันการตอบกลับต้องการตรวจสอบการตอบสนองแบบเต็มก่อนการส่งมอบ",
+      "ariaLabel": "สตรีมมิ่งไม่มี"
+    },
+    "systemPrompt": "พรอมต์ระบบ",
+    "model": "รุ่น",
+    "modelPlaceholder": "อัตโนมัติ (ค่าเริ่มต้นเราเตอร์)",
+    "params": {
+      "temp": "แนวรอม",
+      "maxTokens": "โทเค็นสูงสุด",
+      "topP": "สูงสุด-p"
+    },
+    "stream": "สตรีม",
+    "clear": "ล้าง",
+    "empty": {
+      "noMessages": "ยังไม่มีข้อความ",
+      "enterToken": "ป้อนโทเค็นเราเตอร์ด้านบนเพื่อเริ่มต้น"
+    },
+    "reasoning": "เหตุผล",
+    "blockedDefault": "ข้อความนี้ถูกบล็อกโดยป้องกัน",
+    "truncated": "ตัดแต่ง - การตอบกลับตัดออกตามโทเค็นสูงสุด",
+    "bufferedNote": "จัดขึ้นสำหรับการตรวจสอบความปลอดภัย",
+    "errors": {
+      "onlyImages": "รองรับเฉพาะไฟล์แนบรูปภาพเท่านั้น"
+    },
+    "rawToggle": {
+      "rendered": "การแสดงผล",
+      "raw": "ดิบ"
+    },
+    "inputPlaceholder": "พิมพ์ข้อความ...",
+    "attachImage": "แนบรูปภาพ",
+    "attachedImageAlt": "แนบ",
+    "attachmentAlt": "ไฟล์แนบ",
+    "debug": {
+      "title": "แก้จุดบกพร่อง",
+      "clear": "ล้าง",
+      "hide": "ซ่อนการแก้จุดบกพร่อง",
+      "show": "แสดงการแก้จุดบกพร่อง",
+      "empty": "ยังไม่มีข้อมูลการแก้จุดบกพร่อง",
+      "emptyHint": "ส่งข้อความเพื่อดูรายละเอียดการกำหนดเส้นทาง",
+      "turnTraceLog": "เปิดเผยบันทึก #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "รุ่น {{label}}:",
+      "modelSelectPlaceholder": "เลือกรุ่น...",
+      "noMessages": "ยังไม่มีข้อความ",
+      "debugTurns": "แก้จุดบกพร่อง ({{count}} เปิด)",
+      "debugTurns_other": "แก้จุดบกพร่อง ({{count}} เปิด)",
+      "guardrailTokensTitle": "โทเค็นผู้พิพากษาป้องกัน",
+      "stop": "หยุด",
+      "inputPlaceholder": "ส่งข้อความเดียวกันไปยังรุ่นทั้งสอง..."
+    }
+  },
+  "help": {
+    "title": "ช่วยเหลือและการสนับสนุน",
+    "subtitle": "เราอยู่ที่นี่เพื่อช่วย - ค้นหาคำตอบหรือติดต่อเราบ้าน",
+    "docs": {
+      "title": "เอกสาร",
+      "subtitle": "คำแนะนำ การอ้างอิง API และเอกสารการกำหนดค่า",
+      "body": "เอกสารอย่างเป็นทางการครอบคลุมทุกอย่างตั้งแต่การเริ่มต้นไปจนถึงนโยบายการกำหนดเส้นทางขั้นสูง การตั้งค่าผู้ให้บริการ งบประมาณ และการอ้างอิง API แบบเต็ม",
+      "openLink": "เปิดเอกสาร"
+    },
+    "issues": {
+      "title": "รายงานข้อบกพร่องหรือแนะนำคุณลักษณะ",
+      "subtitle": "เปิดปัญหา GitHub - ใช้เวลา 2 นาที",
+      "body": "ปัญหา GitHub เป็นวิธีที่ดีที่สุดในการรายงานข้อบกพร่องหรือเสนอการปรับปรุง เพื่อช่วยเราแก้ไขเร็วขึ้น รวม: สิ่งที่คุณทำ สิ่งที่คุณคาดว่าจะเกิดขึ้น และสิ่งที่เกิดขึ้นจริง",
+      "showTemplate": "แสดงแม่แบบปัญหา",
+      "reportBug": "รายงานข้อบกพร่อง",
+      "requestFeature": "ร้องขอคุณลักษณะ"
+    },
+    "issueTemplate": {
+      "whatHappened": "เกิดอะไรขึ้น",
+      "whatHappenedHint": "อธิบายปัญหาในคำง่าย ๆ",
+      "stepsToReproduce": "ขั้นตอนในการสร้างซ้ำ",
+      "expectedBehaviour": "พฤติกรรมที่คาดหวัง",
+      "expectedBehaviourHint": "สิ่งที่คุณคาดว่าจะเห็น",
+      "version": "เวอร์ชัน Routerly",
+      "versionHint": "เรียกใช้ `routerly --version` หรือตรวจสอบการตั้งค่า → เกี่ยวกับ"
+    },
+    "email": {
+      "title": "ติดต่อการสนับสนุน",
+      "subtitle": "เราอ่านทุกข้อความและตอบกลับโดยเร็วที่สุดเท่าที่เราสามารถ",
+      "body": "สำหรับสิ่งใดก็ตามที่ไม่พอดีกับปัญหา GitHub - คำถามการเรียกเก็บเงิน ข้อกังวลส่วนตัว หรือถ้าคุณต้องการบอกไว้ - ส่งข้อความมาให้เรา"
+    },
+    "faq": {
+      "title": "คำถามที่พบบ่อย",
+      "subtitle": "คำตอบที่รวดเร็วสำหรับคำถามทั่วไปที่สุด",
+      "items": {
+        "connect": {
+          "q": "ฉันจะเชื่อมต่อแอปของฉันกับ Routerly ได้อย่างไร",
+          "a": "ชี้ SDK OpenAI หรือ Anthropic ไปที่อินสแตนซ์ Routerly ของคุณ แทนที่ URL ฐาน http://your-host:3000/v1 (OpenAI-compatible) หรือ http://your-host:3000/anthropic (Anthropic-compatible) จากนั้นใช้โทเค็นเราเตอร์เป็นปุ่ม API นั่นคือทั้งหมด ไม่ต้องเปลี่ยนแปลงอื่น ๆ"
+        },
+        "openaiCompat": {
+          "q": "Routerly เข้ากันได้กับเครื่องมือที่ใช้ SDK OpenAI หรือไม่",
+          "a": "ใช่. Routerly เป็นการแทนที่แบบ drop-in: เครื่องมือใดที่สนับสนุน URL ฐานและปุ่ม API ที่กำหนดเอง (LangChain LlamaIndex Cursor Continue เป็นต้น) ทำงานออกกล่อง สำหรับไคลเอนต์รูปแบบ Anthropic ใช้จุดสิ้นสุด /anthropic แทน"
+        },
+        "routing": {
+          "q": "การกำหนดเส้นทางรุ่นทำงานอย่างไร",
+          "a": "เรื่อเตอร์ท่าที่แต่ละรายมีนโยบายการกำหนดเส้นทางที่กำหนดรุ่มใดได้รับคำขอ นโยบายรวม round-robin ต้นทุนต่ำสุด การตอบสนองเร็วที่สุด โซ่สำรอง และอื่น ๆ คุณกำหนดค่าพวกเขาต่อเรื่อเตอร์ภายใต้เรื่อเตอร์ → การกำหนดเส้นทาง"
+        },
+        "addModel": {
+          "q": "ฉันจะเพิ่มรุ่น AI ใหม่ได้อย่างไร",
+          "a": "ไปยังรุ่น → เพิ่มรุ่น คุณสามารถเพิ่มผู้ให้บริการที่เข้ากันได้กับ OpenAI ใด (Ollama LM Studio จุดสิ้นสุดที่กำหนดเอง) หรือจุดสิ้นสุด Anthropic ดั้งเดิม กรอก URL ฐาน ปุ่ม API และรหัสรุ่น - Routerly จะจัดการส่วนที่เหลือ"
+        },
+        "dataStored": {
+          "q": "ข้อมูลของฉันจัดเก็บไว้หรือไม่ พรอมต์ของฉันถูกบันทึกไว้หรือไม่",
+          "a": "Routerly เป็นโฮสต์เอง และจัดเก็บข้อมูลเฉพาะบนเครื่องของคุณ (ใน ~/.routerly/ โดยค่าเริ่มต้น) พรอมต์และการตอบกลับไม่เคยส่งไปไหนโดย Routerly บันทึกคำขอจัดเก็บไว้ในพื้นที่และเฉพาะในกรณีที่คุณเปิดใช้งานต่อเรื่อเตอร์"
+        },
+        "routerToken": {
+          "q": "โทเค็นเราเตอร์คืออะไรและแตกต่างจากปุ่ม API ผู้ให้บริการอย่างไร",
+          "a": "โทเค็นเราเตอร์เป็นข้อมูลประจำตัวที่คุณให้ให้กับแอปหรือเพื่อนร่วมทีม เพื่อยืนยันกับ Routerly มันแยกจากปุ่ม API ผู้ให้บริการของคุณ ซึ่ง Routerly จัดเก็บอย่างปลอดภัยฝั่งเซิร์ฟเวอร์ แอปของคุณไม่เคยเห็นปุ่มผู้ให้บริการจริง"
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} ผู้ใช้",
+    "countLabel_other": "{{count}} ผู้ใช้",
+    "addButton": "เพิ่มผู้ใช้",
+    "columns": {
+      "email": "อีเมล",
+      "role": "บทบาท",
+      "routers": "เราเตอร์"
+    },
+    "allRouters": "ทั้งหมด",
+    "resetTwoFaTitle": "รีเซ็ต 2FA",
+    "resetTwoFaConfirm": "รีเซ็ต 2FA สำหรับ {{email}}? พวกเขาจะต้องลงทะเบียนใหม่",
+    "deleteConfirm": "ลบผู้ใช้นี้?",
+    "emptyTitle": "ยังไม่มีผู้ใช้",
+    "noPermission": "คุณไม่มีสิทธิอนุญาตให้ดูผู้ใช้",
+    "modal": {
+      "title": "เพิ่มผู้ใช้",
+      "emailLabel": "อีเมล",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "รหัสผ่าน",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "บทบาท",
+      "roleAdmin": "ผู้ดูแล",
+      "roleViewer": "ผู้ชม",
+      "cancelButton": "ยกเลิก",
+      "submitButton": "เพิ่มผู้ใช้"
+    },
+    "errors": {
+      "loadFailed": "ไม่สามารถโหลดผู้ใช้",
+      "addFailed": "ข้อผิดพลาด"
+    }
+  },
+  "userEdit": {
+    "title": "แก้ไขผู้ใช้",
+    "account": "บัญชี",
+    "email": "อีเมล",
+    "role": "บทบาท",
+    "changePassword": "เปลี่ยนรหัสผ่าน",
+    "newPassword": "รหัสผ่านใหม่",
+    "newPasswordHint": "(ปล่อยให้ว่างเปล่าเพื่อเก็บปัจจุบัน)",
+    "save": "บันทึก",
+    "saved": "บันทึก!",
+    "errors": {
+      "loadFailed": "ไม่สามารถโหลดผู้ใช้",
+      "saveFailed": "ไม่สามารถบันทึก"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "จัดการบทบาทและสิทธิอนุญาต บทบาทในตัวไม่สามารถแก้ไขได้",
+    "newRole": "บทบาทใหม่",
+    "builtin": "ในตัว",
+    "edit": "แก้ไข",
+    "deleteConfirm": "ลบบทบาทนี้? ผู้ใช้ที่มีบทบาทนี้จะได้รับผลกระทบ",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "เช่น ผู้ปฏิบัติการ",
+      "name": "ชื่อ",
+      "namePlaceholder": "ชื่อบทบาท",
+      "permissions": "สิทธิอนุญาต",
+      "create": "สร้าง",
+      "save": "บันทึก",
+      "cancel": "ยกเลิก"
+    },
+    "permissions": {
+      "routerRead": "เราเตอร์ - อ่าน",
+      "routerWrite": "เราเตอร์ - เขียน",
+      "modelRead": "รุ่น - อ่าน",
+      "modelWrite": "รุ่น - เขียน",
+      "userRead": "ผู้ใช้ - อ่าน",
+      "userWrite": "ผู้ใช้ - เขียน",
+      "reportRead": "รายงาน - อ่าน",
+      "settingsRead": "การตั้งค่า - อ่าน",
+      "settingsWrite": "การตั้งค่า - เขียน",
+      "notificationWrite": "การแจ้งเตือน - เขียน",
+      "tokenRead": "โทเค็น - อ่าน",
+      "tokenWrite": "โทเค็น - เขียน",
+      "roleWrite": "บทบาท - เขียน",
+      "auditRead": "บันทึกการตรวจสอบ - อ่าน",
+      "modulesRead": "โมดูล - อ่าน",
+      "modulesManage": "โมดูล - จัดการ",
+      "connectionsRead": "การเชื่อมต่อ - อ่าน",
+      "connectionsManage": "การเชื่อมต่อ - จัดการ",
+      "resilienceRead": "ความยืดหยุ่น - อ่าน",
+      "resilienceManage": "ความยืดหยุ่น - จัดการ",
+      "profilesRead": "โปรไฟล์การกำหนดเส้นทาง - อ่าน",
+      "profilesManage": "โปรไฟล์การกำหนดเส้นทาง - จัดการ",
+      "optimizersRead": "ตัวปรับปรุง - อ่าน",
+      "optimizersManage": "ตัวปรับปรุง - จัดการ",
+      "experimentsRead": "การทดลอง - อ่าน",
+      "experimentsManage": "การทดลอง - จัดการ"
+    },
+    "errors": {
+      "loadFailed": "ไม่สามารถโหลดบทบาท",
+      "updateFailed": "ไม่สามารถอัปเดตบทบาท",
+      "createFailed": "ไม่สามารถสร้างบทบาท",
+      "deleteFailed": "ไม่สามารถลบบทบาท"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "โปรไฟล์",
+      "subtitle": "การกำหนดค่าการกำหนดเส้นทาง ตัวปรับปรุง และความปลอดภัยที่นำกลับมา",
+      "noPermission": "คุณไม่มีสิทธิอนุญาตให้ดูโปรไฟล์",
+      "newProfile": "โปรไฟล์ {{kind}} ใหม่",
+      "empty": "ยังไม่มีโปรไฟล์ {{kind}}",
+      "builtin": "ในตัว",
+      "custom": "ที่กำหนดเอง",
+      "view": "ดู",
+      "edit": "แก้ไข",
+      "clone": "โคลน",
+      "delete": "ลบ",
+      "deleteConfirm": "ลบโปรไฟล์ \"{{label}}\"? ไม่สามารถเลิกทำได้",
+      "kindDescriptions": {
+        "routing": "รุ่มใดตอบคำขอ และเกิดอะไรขึ้นเมื่อมันไม่สามารถ",
+        "optimizer": "สิ่งที่ถูกปลายจากพรอมต์ก่อนส่ง",
+        "security": "Guardrails และนโยบาย PII ที่นำไปใช้กับการรับส่งข้อมูล"
+      },
+      "columns": {
+        "label": "ป้ายกำกับ",
+        "type": "ประเภท",
+        "configuration": "การกำหนดค่า",
+        "version": "เวอร์ชัน"
+      },
+      "errors": {
+        "loadFailed": "ไม่สามารถโหลดโปรไฟล์",
+        "deleteFailed": "ไม่สามารถลบโปรไฟล์"
+      }
+    },
+    "form": {
+      "backToProfiles": "กลับไปโปรไฟล์",
+      "newProfileTitle": "โปรไฟล์ {{kind}} ใหม่",
+      "editProfileTitle": "แก้ไข {{label}}",
+      "builtinHint": "โปรไฟล์ในตัวไม่สามารถแก้ไขได้ โคลนหนึ่งเพื่อปรับแต่ง",
+      "assignHint": "{{article}} {{kind}} โปรไฟล์สามารถกำหนดให้เรื่อเตอร์จำนวนใด ๆ ได้",
+      "noPermission": "คุณไม่มีสิทธิอนุญาตให้ดูโปรไฟล์",
+      "label": "ป้ายกำกับ",
+      "optimizers": "ตัวปรับปรุง",
+      "optimizersHint": "ลากเพื่อเรียงลำดับใหม่ สลับเพื่อเปิดใช้งาน พวกเขาวิ่งตามลำดับจากบนลงล่าง",
+      "createProfile": "สร้างโปรไฟล์",
+      "saveProfile": "บันทึกโปรไฟล์",
+      "cancel": "ยกเลิก",
+      "copySuffix": "{{label}} สำเนา",
+      "labelPlaceholders": {
+        "routing": "เช่น การกำหนดเส้นทางที่สมดุลของฉัน",
+        "optimizer": "เช่น ตัวตัดพรอมต์ของฉัน",
+        "security": "เช่น Guardrails ที่เข้มงวดของฉัน"
+      },
+      "errors": {
+        "notFound": "ไม่พบโปรไฟล์",
+        "loadFailed": "ไม่สามารถโหลดโปรไฟล์",
+        "saveFailed": "ไม่สามารถบันทึกโปรไฟล์"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "กลับไปเชื่อมต่อ",
+    "title": "เชื่อมต่อ",
+    "docs": "เอกสาร",
+    "notEnabledPrefix": "ตัวแต่งค่าไคลเอนต์ไม่ได้เปิดใช้งาน ขอให้ผู้ดูแลระบบเปิดใช้งานด้วย",
+    "noClientPrefix": "ไม่มีไคลเอนต์ชื่อ",
+    "errors": {
+      "loadFailed": "ไม่สามารถโหลดไคลเอนต์: {{error}}"
+    },
+    "oneCommand": {
+      "title": "เร็วที่สุด: คำสั่งเดียว",
+      "description": "เรียกใช้มันบนเครื่องที่ {{client}} ติดตั้งไว้ มันเขียน {{configPath}} เก็บการสำรองข้อมูลที่คุณสามารถเลิกทำได้"
+    },
+    "byHand": {
+      "titleAlt": "หรือตั้งค่าด้วยมือ",
+      "titleUi": "ตั้งค่าด้วยมือ",
+      "titleConfigFile": "ตั้งค่าไฟล์การกำหนดค่า",
+      "setValuesIn": "ตั้งค่าเหล่านี้ใน {{configPath}}",
+      "putThisIn": "ใส่สิ่งนี้ใน",
+      "replaceToken": "แทนที่",
+      "withRouterToken": "ด้วยโทเค็นเราเตอร์:",
+      "createOne": "สร้างหนึ่ง",
+      "onRoutersPage": "บนหน้าเราเตอร์",
+      "modelLabel": "รุ่น:",
+      "modelHint": "มอบให้ Routerly ปรึกษา ID รุ่มใด ๆ จาก",
+      "modelsLink": "รุ่น",
+      "worksToo": "ทำงานเช่นกัน",
+      "openaiCompatHint": "URL ฐานเดียวกัน ปุ่ม และรุ่นพอดีกับไคลเอนต์ใด ๆ ที่นำเสนอผู้ให้บริการ \"OpenAI เข้ากันได้\""
+    },
+    "mcp": {
+      "title": "เซิร์ฟเวอร์ MCP",
+      "description": "แยกจากขั้นตอนข้างบน: นี้ช่วยให้ {{client}} โทรเครื่องมือ Routerly มันต้องการโทเค็น MCP ส่วนตัว สร้างด้วย",
+      "orFromYour": "หรือจาก",
+      "profileLink": "โปรไฟล์"
+    },
+    "checkItWorked": {
+      "title": "ตรวจสอบมันใช้งานได้",
+      "restart": "รีสตาร์ท {{client}} ส่งข้อความ จากนั้นมองหาการโทรใน",
+      "usageLink": "การใช้",
+      "cliReports": "จากเครื่องเดียวกัน CLI รายงานสิ่งที่มันค้นพบ:"
+    }
+  },
+  "connect": {
+    "title": "เชื่อมต่อ",
+    "subtitle": "ชี้ไคลเอนต์การเข้ารหัส AI ไปยังเกตเวย์นี้ เลือกไคลเอนต์สำหรับขั้นตอนการตั้งค่า",
+    "llmLabel": "LLM",
+    "llmDescription": "เส้นทางไคลเอนต์ที่รับส่งข้อมูลรุ่นผ่าน Routerly",
+    "mcpLabel": "MCP",
+    "mcpDescription": "โหลด Routerly เป็นเซิร์ฟเวอร์เครื่องมือภายใน",
+    "notEnabledPrefix": "ตัวแต่งค่าไคลเอนต์ไม่ได้เปิดใช้งาน ขอให้ผู้ดูแลระบบเปิดใช้งานด้วย",
+    "errors": {
+      "loadFailed": "ไม่สามารถโหลดไคลเอนต์: {{error}}"
+    },
+    "oneCommand": {
+      "title": "คำสั่งเดียว",
+      "hint": "CLI เขียนไฟล์การกำหนดค่าสำหรับคุณ ด้วยการสำรองข้อมูลที่คุณสามารถเลิกทำได้"
+    },
+    "byHand": {
+      "title": "ด้วยมือ",
+      "hint": "คัดลอกข้อมูลโค้ดจากหน้าไคลเอนต์ลงในการตั้งค่าแล้วรีสตาร์ท"
+    },
+    "endpoint": {
+      "title": "ชี้ไคลเอนต์ใด ๆ ที่นี่",
+      "description": "สิ่งใดที่สร้างบน SDK OpenAI หรือ Anthropic ทำงานโดยการเปลี่ยน URL ฐาน และปุ่ม ไม่มีอื่น ๆ เปลี่ยน: คำขอและการตอบกลับข้ามเส้นทางเนื่องจากพวกเขา",
+      "openaiBaseUrl": "OpenAI URL ฐาน",
+      "anthropicBaseUrl": "Anthropic URL ฐาน",
+      "apiKey": "ปุ่ม API",
+      "model": "รุ่น",
+      "apiKeyDescription": "โทเค็นเราเตอร์ ส่งเป็น",
+      "or": "หรือ",
+      "createOne": "สร้างหนึ่ง",
+      "onRoutersPage": "บนหน้าเราเตอร์",
+      "modelDescription": "ปล่อยให้ Routerly ปรึกษา ID รุ่มใด ๆ จาก",
+      "modelsLink": "รุ่น",
+      "worksToo": "หน้าทำงานเช่นกัน"
+    }
+  }
+}

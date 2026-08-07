@@ -869,6 +869,8 @@ export interface Settings {
   telemetry?: TelemetryConfig;
   /** When true, all users must enroll in and pass 2FA before accessing the API */
   requireMfa?: boolean;
+  /** Instance-wide default dashboard language for users who haven't picked their own yet. Dashboard-owned code list; absent means English. */
+  defaultLanguage?: string;
   /** Configured integrations (metrics exporters, webhooks, etc.) */
   integrations?: Integration[];
   /** Provider catalog repos. Fetched at runtime via HTTP. First repo takes precedence on conflict. */
