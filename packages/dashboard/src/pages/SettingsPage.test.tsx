@@ -23,6 +23,8 @@ vi.mock('../api', () => ({
   refreshCatalog:       vi.fn(),
   getCatalogStatus:     vi.fn(),
   probeRepo:            vi.fn(),
+  getPermissionStatus:  vi.fn(),
+  fixPermissions:       vi.fn(),
   ALL_PERMISSIONS: [
     'router:read', 'router:write', 'model:read', 'model:write',
     'user:read', 'user:write', 'report:read', 'settings:read', 'settings:write',
@@ -79,6 +81,12 @@ vi.mock('../components/MultiSelect', () => ({
   ),
 }));
 
+// ponytail: default to a full-access role; individual tests override mockCan to check gating
+let mockCan = (_perm: string) => true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: (perm: string) => mockCan(perm) }),
+}));
+
 import {
   getSettings,
   updateSettings,
@@ -97,6 +105,8 @@ import {
   refreshCatalog,
   getCatalogStatus,
   probeRepo,
+  getPermissionStatus,
+  fixPermissions,
 } from '../api';
 
 import {
@@ -126,6 +136,8 @@ const mockTestIntegration         = vi.mocked(testIntegration);
 const mockRefreshCatalog          = vi.mocked(refreshCatalog);
 const mockGetCatalogStatus        = vi.mocked(getCatalogStatus);
 const mockProbeRepo               = vi.mocked(probeRepo);
+const mockGetPermissionStatus     = vi.mocked(getPermissionStatus);
+const mockFixPermissions          = vi.mocked(fixPermissions);
 
 // ── Base fixtures ─────────────────────────────────────────────────────────────
 
@@ -152,7 +164,7 @@ const baseSystemInfo = {
   updateInfo: null,
 };
 
-afterEach(() => { vi.clearAllMocks(); cleanup(); });
+afterEach(() => { vi.clearAllMocks(); cleanup(); mockCan = () => true; });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SettingsGeneralTab
@@ -462,6 +474,7 @@ describe('SettingsSecurityTab', () => {
   beforeEach(() => {
     mockGetSettings.mockResolvedValue({ ...baseSettings } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
   });
 
   function renderSecurity() {
@@ -528,6 +541,87 @@ describe('SettingsSecurityTab', () => {
     await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
     await waitFor(() => expect(screen.queryByText('Failed to save settings')).not.toBeNull());
+  });
+
+  // ── File Permissions section (RTR-08) ────────────────────────────────────
+  describe('File Permissions section', () => {
+    it('is hidden entirely without settings:read', async () => {
+      mockCan = (p) => p !== 'settings:read';
+      renderSecurity();
+      await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+      expect(screen.queryByText('File Permissions')).toBeNull();
+      expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    });
+
+    it('shows a calm all-good state when nothing is unsafe', async () => {
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
+    });
+
+    it('lists unsafe files with severity and offers Fix now with settings:write', async () => {
+      mockGetPermissionStatus.mockResolvedValue({
+        blocked: true,
+        bypassActive: false,
+        unsafe: [
+          { file: 'users.json', path: '/etc/routerly/users.json', mode: '644', severity: 'secret' },
+          { file: 'audit.json', path: '/etc/routerly/audit.json', mode: '644', severity: 'general' },
+        ],
+      });
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText('/etc/routerly/users.json')).toBeTruthy());
+      expect(screen.getByText('/etc/routerly/audit.json')).toBeTruthy();
+      expect(screen.getByText('Blocking')).toBeTruthy();
+      expect(screen.getByText('Warning')).toBeTruthy();
+      expect(screen.getByRole('button', { name: /Fix now/i })).toBeTruthy();
+    });
+
+    it('hides the fix button and explains without settings:write', async () => {
+      mockCan = (p) => p !== 'settings:write';
+      mockGetPermissionStatus.mockResolvedValue({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'notifications.json', path: '/etc/routerly/notifications.json', mode: '644', severity: 'general' }],
+      });
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText('/etc/routerly/notifications.json')).toBeTruthy());
+      expect(screen.queryByRole('button', { name: /Fix now/i })).toBeNull();
+      expect(screen.getByText(/Ask an operator/)).toBeTruthy();
+    });
+
+    it('calls fixPermissions and reloads the status on Fix now', async () => {
+      mockGetPermissionStatus
+        .mockResolvedValueOnce({
+          blocked: false,
+          bypassActive: false,
+          unsafe: [{ file: 'audit.json', path: '/etc/routerly/audit.json', mode: '644', severity: 'general' }],
+        })
+        .mockResolvedValueOnce({ blocked: false, bypassActive: false, unsafe: [] });
+      mockFixPermissions.mockResolvedValue({ fixed: ['/etc/routerly/audit.json'] });
+      renderSecurity();
+      await waitFor(() => screen.getByRole('button', { name: /Fix now/i }));
+      await userEvent.click(screen.getByRole('button', { name: /Fix now/i }));
+      await waitFor(() => expect(mockFixPermissions).toHaveBeenCalled());
+      await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
+    });
+
+    it('shows an error when the permission status fails to load', async () => {
+      mockGetPermissionStatus.mockRejectedValue(new Error('boom'));
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText('boom')).toBeTruthy());
+    });
+
+    it('shows an error when fixing fails', async () => {
+      mockGetPermissionStatus.mockResolvedValue({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'audit.json', path: '/etc/routerly/audit.json', mode: '644', severity: 'general' }],
+      });
+      mockFixPermissions.mockRejectedValue(new Error('fix failed'));
+      renderSecurity();
+      await waitFor(() => screen.getByRole('button', { name: /Fix now/i }));
+      await userEvent.click(screen.getByRole('button', { name: /Fix now/i }));
+      await waitFor(() => expect(screen.getByText('fix failed')).toBeTruthy());
+    });
   });
 });
 
