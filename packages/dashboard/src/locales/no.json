@@ -1158,9 +1158,6 @@
       "newRouter": "Ny ruter",
       "empty": "Ingen rutere ennå.",
       "emptyFiltered": "Ingen rutere av denne typen.",
-      "tabs": {
-        "all": "Alle"
-      },
       "columns": {
         "name": "Navn",
         "tokens": "Tokener",

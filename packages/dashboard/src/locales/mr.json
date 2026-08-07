@@ -1158,9 +1158,6 @@
       "newRouter": "New Router",
       "empty": "No routers yet.",
       "emptyFiltered": "या प्रकारचे कोणतेही राउटर नाही.",
-      "tabs": {
-        "all": "सर्व"
-      },
       "columns": {
         "name": "Name",
         "tokens": "Tokens",

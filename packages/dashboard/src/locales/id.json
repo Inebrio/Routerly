@@ -1158,9 +1158,6 @@
       "newRouter": "Router Baru",
       "empty": "Belum ada router.",
       "emptyFiltered": "Tidak ada router jenis ini.",
-      "tabs": {
-        "all": "Semua"
-      },
       "columns": {
         "name": "Nama",
         "tokens": "Token",

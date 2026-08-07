@@ -783,12 +783,6 @@
       "newRouter": "موجّه جديد",
       "empty": "لا توجد موجّهات بعد.",
       "emptyFiltered": "لا توجد أجهزة توجيه من هذا النوع.",
-      "tabs": {
-        "all": "الكل",
-        "router": "جهاز توجيه",
-        "orchestrator": "منسق",
-        "passthrough": "المسار المباشر"
-      },
       "columns": {
         "name": "الاسم",
         "tokens": "الرموز",
@@ -804,10 +798,7 @@
         "deleteFailed": "خطأ في حذف الموجّه"
       },
       "newOrchestrator": "منسّق جديد",
-      "newPassthrough": "تمرير مباشر جديد",
-      "tabs": {
-        "all": "الكل"
-      }
+      "newPassthrough": "تمرير مباشر جديد"
     },
     "layout": {
       "notFound": "الموجّه غير موجود",

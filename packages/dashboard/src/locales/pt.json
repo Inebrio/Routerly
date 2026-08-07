@@ -1158,9 +1158,6 @@
       "newRouter": "Novo Router",
       "empty": "Nenhum router ainda.",
       "emptyFiltered": "Nenhum roteador deste tipo.",
-      "tabs": {
-        "all": "Todos"
-      },
       "columns": {
         "name": "Nome",
         "tokens": "Tokens",

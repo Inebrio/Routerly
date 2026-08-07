@@ -1158,9 +1158,6 @@
       "newRouter": "Nouveau routeur",
       "empty": "Aucun routeur pour l'instant.",
       "emptyFiltered": "Aucun routeur de ce type.",
-      "tabs": {
-        "all": "Tous"
-      },
       "columns": {
         "name": "Nom",
         "tokens": "Jetons",

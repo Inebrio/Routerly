@@ -1158,9 +1158,6 @@
       "newRouter": "Nový smerovací modul",
       "empty": "Zatiaľ nie sú žiadne smerovacie moduly.",
       "emptyFiltered": "Žiadne smerovače tohto typu.",
-      "tabs": {
-        "all": "Všetky"
-      },
       "columns": {
         "name": "Názov",
         "tokens": "Tokeny",

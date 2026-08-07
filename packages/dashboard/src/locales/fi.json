@@ -1158,9 +1158,6 @@
       "newRouter": "Uusi reititin",
       "empty": "Reitittimiä ei ole vielä.",
       "emptyFiltered": "Ei reitittimiä tästä tyypistä.",
-      "tabs": {
-        "all": "Kaikki"
-      },
       "columns": {
         "name": "Nimi",
         "tokens": "Tokenit",

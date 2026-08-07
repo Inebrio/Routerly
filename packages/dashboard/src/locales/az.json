@@ -1158,9 +1158,6 @@
       "newRouter": "Yeni Router",
       "empty": "Hələ router yoxdur.",
       "emptyFiltered": "Bu cinsden marşrutçu yoxdur.",
-      "tabs": {
-        "all": "Hamısı"
-      },
       "columns": {
         "name": "Ad",
         "tokens": "Tokenlər",

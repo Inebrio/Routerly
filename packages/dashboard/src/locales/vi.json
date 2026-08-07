@@ -1158,9 +1158,6 @@
       "newRouter": "Bộ định tuyến mới",
       "empty": "Chưa có bộ định tuyến nào.",
       "emptyFiltered": "Không có router loại này.",
-      "tabs": {
-        "all": "Tất cả"
-      },
       "columns": {
         "name": "Tên",
         "tokens": "Token",

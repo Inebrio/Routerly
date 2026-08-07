@@ -1158,9 +1158,6 @@
       "newRouter": "Router nou",
       "empty": "Niciun router încă.",
       "emptyFiltered": "Nu sunt rutere de acest tip.",
-      "tabs": {
-        "all": "Toate"
-      },
       "columns": {
         "name": "Nume",
         "tokens": "Tokenuri",

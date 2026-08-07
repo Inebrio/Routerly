@@ -1158,9 +1158,6 @@
       "newRouter": "Bagong Router",
       "empty": "Walang router pa.",
       "emptyFiltered": "Walang router na ganitong uri.",
-      "tabs": {
-        "all": "Lahat"
-      },
       "columns": {
         "name": "Pangalan",
         "tokens": "Mga Token",
