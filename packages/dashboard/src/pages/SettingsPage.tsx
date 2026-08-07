@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield, Lock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
-import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
-import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus, UsageRetentionConfig } from '../api';
+import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo, getPermissionStatus, fixPermissions } from '../api';
+import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus, UsageRetentionConfig, PermissionCheckStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { writeToClipboard } from '../utils/clipboard';
 import { isCaptureMode } from '../utils/captureMode';
+import { useAuth } from '../AuthContext';
 import { NOTIFICATION_EVENTS, normalizeUpdateChannel } from '@routerly/shared';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
@@ -2142,6 +2143,117 @@ export function SettingsAboutTab() {
 
 // ── Security tab ─────────────────────────────────────────────────────────────
 
+/**
+ * On-demand view of GET /api/system/permissions plus a "Fix now" action for
+ * both severities (secret files already surface as a blocking modal — see
+ * PermissionGuardModal — but general-only warnings have no other dashboard
+ * entry point). settings:read gates visibility, settings:write gates the fix.
+ */
+function FilePermissionsSection() {
+  const { can } = useAuth();
+  const canRead = can('settings:read');
+  const canFix = can('settings:write');
+
+  const [status, setStatus] = useState<PermissionCheckStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [fixing, setFixing] = useState(false);
+  const [fixError, setFixError] = useState('');
+
+  useEffect(() => {
+    if (!canRead) { setLoading(false); return; }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canRead]);
+
+  async function load() {
+    setLoading(true);
+    setError('');
+    try {
+      setStatus(await getPermissionStatus());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load permission status');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleFix() {
+    setFixing(true);
+    setFixError('');
+    try {
+      await fixPermissions();
+      await load();
+    } catch (e) {
+      setFixError(e instanceof Error ? e.message : 'Failed to fix permissions');
+    } finally {
+      setFixing(false);
+    }
+  }
+
+  if (!canRead) return null;
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Lock size={13} /> File Permissions
+      </h3>
+
+      <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)' }}>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: 'var(--text-muted)' }}>
+            <div className="spinner" style={{ width: 14, height: 14 }} /> Checking configuration file permissions…
+          </div>
+        ) : error ? (
+          <p style={{ fontSize: '0.83rem', color: 'var(--error, #e53e3e)', margin: 0 }}>{error}</p>
+        ) : !status || status.unsafe.length === 0 ? (
+          <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CheckCircle2 size={15} style={{ color: '#22c55e', flexShrink: 0 }} />
+            All configuration files have safe permissions.
+            {status?.bypassActive && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(check bypassed via ROUTERLY_SKIP_PERMISSION_CHECK)</span>
+            )}
+          </p>
+        ) : (
+          <>
+            <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertTriangle size={15} style={{ color: '#eab308', flexShrink: 0 }} />
+              {status.unsafe.length} configuration file{status.unsafe.length > 1 ? 's' : ''} {status.unsafe.length > 1 ? 'are' : 'is'} readable by other local users.
+            </p>
+            <ul style={{ margin: '0 0 12px', paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {status.unsafe.map(u => (
+                <li key={u.path} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
+                  <span className={`badge ${u.severity === 'secret' ? 'badge-error' : 'badge-warning'}`}>
+                    {u.severity === 'secret' ? 'Blocking' : 'Warning'}
+                  </span>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>{u.path}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>(mode {u.mode})</span>
+                </li>
+              ))}
+            </ul>
+            {fixError && <p style={{ fontSize: '0.8rem', color: 'var(--error, #e53e3e)', margin: '0 0 10px' }}>{fixError}</p>}
+            {canFix ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                disabled={fixing}
+                onClick={handleFix}
+                style={{ fontSize: '0.8rem' }}
+              >
+                {fixing ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Fixing…</> : 'Fix now'}
+              </button>
+            ) : (
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                Ask an operator with the Settings – Write permission to fix this.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function SettingsSecurityTab() {
   const [requireMfa, setRequireMfa] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -2197,6 +2309,8 @@ export function SettingsSecurityTab() {
           </p>
         </div>
       </div>
+
+      <FilePermissionsSection />
 
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
       {saved && (
