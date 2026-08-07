@@ -31,6 +31,7 @@ Creating a Router, Orchestrator, or Passthrough no longer goes through one share
 - Usage records no longer cause unbounded `usage.json` growth or an OOM kill under sustained traffic (#124) — usage is now appended to `usage.ndjson`, an append-only log with a retention sweep, instead of being rewritten in full on every request.
 - Dashboard: fixing unsafe config file permissions (from the blocking modal or from Settings → Security) now refreshes every permission-related UI on the page immediately — the top banner, the blocking modal, and the Settings section previously each polled independently and stayed stale until a manual reload.
 - Orchestrators now honor their own `health`/`rate-limit`/`fairness` routing policies (including `enabled: false` and custom windows) when scoring candidate routers, instead of always applying hardcoded defaults regardless of what was saved.
+- Creating or updating an Orchestrator now rejects (HTTP 400) any policy type other than `health`, `rate-limit`, or `fairness` — the ones that score a candidate Router as a whole. The other types (`cheapest`, `capability`, `context`, `performance`, `llm`, `semantic-intent`, `model-preference`, `budget-remaining`) pick among a pool of models, which an Orchestrator has none of; previously they were silently accepted and had no effect.
 
 ### Breaking changes
 

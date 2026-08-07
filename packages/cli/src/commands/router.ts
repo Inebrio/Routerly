@@ -270,6 +270,7 @@ Examples:
     .description('Enable a routing policy (adds it if not present)')
     .addHelpText('after', `
 Policy types: health, context, capability, budget-remaining, rate-limit, llm, performance, fairness, cheapest, semantic-intent, model-preference
+Orchestrator routers only support: health, rate-limit, fairness — the others pick among a router's own models, which an orchestrator has none of.
 
 Examples:
   routerly router routing policy enable my-api health
