@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw } from 'lucide-react';
 import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, type Model, type ProviderHealth, type ResilienceState, type Connection } from '../api';
@@ -38,37 +40,37 @@ const STATUS_SEVERITY: Record<ExtendedStatus, number> = {
   nodata:      999, // always last
 };
 
-const STATUS_META: Record<ExtendedStatus, { label: string; color: string }> = {
-  healthy:     { label: 'Healthy',     color: 'var(--success)' },
-  degraded:    { label: 'Degraded',    color: 'var(--warning)' },
-  unavailable: { label: 'Unavailable', color: 'var(--danger)' },
-  cooldown:    { label: 'Cooldown',    color: 'var(--text-muted)' },
-  nodata:      { label: 'No data',     color: 'var(--text-muted)' },
+const STATUS_COLOR: Record<ExtendedStatus, string> = {
+  healthy:     'var(--success)',
+  degraded:    'var(--warning)',
+  unavailable: 'var(--danger)',
+  cooldown:    'var(--text-muted)',
+  nodata:      'var(--text-muted)',
 };
 
-function StatusBadge({ status }: { status: ExtendedStatus }) {
-  const meta = STATUS_META[status];
+function StatusBadge({ status, label }: { status: ExtendedStatus; label: string }) {
+  const color = STATUS_COLOR[status];
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
-      fontSize: '0.8rem', fontWeight: 600, color: meta.color,
+      fontSize: '0.8rem', fontWeight: 600, color,
     }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color }} />
-      {meta.label}
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+      {label}
     </span>
   );
 }
 
-function relativeTime(iso: string | null): string {
-  if (!iso) return 'never';
+function relativeTime(iso: string | null, t: TFunction): string {
+  if (!iso) return t('models.page.health.time.never');
   const diffMs = Date.now() - new Date(iso).getTime();
   const s = Math.floor(diffMs / 1000);
-  if (s < 60) return `${s}s ago`;
+  if (s < 60) return t('models.page.health.time.secondsAgo', { count: s });
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return t('models.page.health.time.minutesAgo', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return t('models.page.health.time.hoursAgo', { count: h });
+  return t('models.page.health.time.daysAgo', { count: Math.floor(h / 24) });
 }
 
 function cooldownTimer(until: number | null): string | null {
@@ -90,10 +92,10 @@ const CIRCUIT_BADGE: Record<ResilienceState, string> = {
 
 // Human-friendly labels: circuit-breaker "closed = healthy / open = tripped" reads backwards to
 // most people, so surface plain-meaning words. Internal state values stay closed/half-open/open.
-const CIRCUIT_LABEL: Record<ResilienceState, string> = {
-  closed: 'OK',
-  'half-open': 'Recovering',
-  open: 'Tripped',
+const CIRCUIT_LABEL_KEY: Record<ResilienceState, string> = {
+  closed: 'models.page.health.circuit.ok',
+  'half-open': 'models.page.health.circuit.recovering',
+  open: 'models.page.health.circuit.tripped',
 };
 
 // Sort severity: lower = worse (mirrors STATUS_SEVERITY so `sb - sa` puts worst first on desc).
@@ -113,18 +115,19 @@ function useNow(intervalMs = 1000): number {
   return now;
 }
 
-function formatCountdown(targetMs: number, now: number): string {
+function formatCountdown(targetMs: number, now: number, t: TFunction): string {
   const remaining = targetMs - now;
-  if (remaining <= 0) return 'now';
+  if (remaining <= 0) return t('models.page.health.time.now');
   const totalSec = Math.ceil(remaining / 1000);
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
-  return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+  return min > 0 ? t('models.page.health.time.minSec', { min, sec }) : t('models.page.health.time.sec', { sec });
 }
 
 // ── Models page ────────────────────────────────────────────────────────────────
 
 export function ModelsPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('resilience:manage');
   const canWriteModels = can('model:write');
@@ -225,7 +228,7 @@ export function ModelsPage() {
       ]);
       await fetchHealth();
     } catch (e) {
-      setResetError(e instanceof Error ? e.message : 'Failed to reset circuit breaker');
+      setResetError(e instanceof Error ? e.message : t('models.page.health.errors.resetModelFailed'));
     } finally {
       setResetBusy(null);
     }
@@ -238,7 +241,7 @@ export function ModelsPage() {
       await resetResilience();
       await fetchHealth();
     } catch (e) {
-      setResetError(e instanceof Error ? e.message : 'Failed to reset resilience state');
+      setResetError(e instanceof Error ? e.message : t('models.page.health.errors.resetAllFailed'));
     } finally {
       setResetBusy(null);
     }
@@ -246,14 +249,14 @@ export function ModelsPage() {
 
   function confirmResetModel(m: Model) {
     setConfirmState({
-      message: `Reset the circuit breaker for model "${m.id}"?`,
+      message: t('models.page.health.confirmResetModel', { id: m.id }),
       onConfirm: () => { setConfirmState(null); void handleResetModel(m); },
     });
   }
 
   function confirmResetAll() {
     setConfirmState({
-      message: 'Reset all resilience state? This clears every circuit breaker, cooldown, and lockout.',
+      message: t('models.page.health.confirmResetAll'),
       onConfirm: () => { setConfirmState(null); void handleResetAll(); },
     });
   }
@@ -266,7 +269,7 @@ export function ModelsPage() {
 
   function handleDelete(id: string) {
     setConfirmState({
-      message: `Remove model "${id}"?`,
+      message: t('models.page.deleteConfirm', { id }),
       onConfirm: async () => {
         setConfirmState(null);
         await deleteModel(id);
@@ -386,11 +389,11 @@ export function ModelsPage() {
   return (
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
-        <h1>Models</h1>
-        <p>LLM providers registered with Routerly</p>
+        <h1>{t('models.page.title')}</h1>
+        <p>{t('models.page.subtitle')}</p>
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 12 }}>
-          <button style={tabStyle('models')} onClick={() => setTab('models')}>Models</button>
-          <button style={tabStyle('health')} onClick={() => setTab('health')}>Health</button>
+          <button style={tabStyle('models')} onClick={() => setTab('models')}>{t('models.page.tabs.models')}</button>
+          <button style={tabStyle('health')} onClick={() => setTab('health')}>{t('models.page.tabs.health')}</button>
         </div>
       </div>
       <div className="page-body" style={{ paddingTop: 24 }}>
@@ -399,22 +402,22 @@ export function ModelsPage() {
             <div className="toolbar">
               <span className="toolbar-title">
                 {filtered.length !== models.length
-                  ? `${filtered.length} of ${models.length} model${models.length !== 1 ? 's' : ''}`
-                  : `${models.length} model${models.length !== 1 ? 's' : ''}`}
+                  ? t('models.page.toolbar.filteredCount', { filtered: filtered.length, count: models.length })
+                  : t('models.page.toolbar.count', { count: models.length })}
               </span>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <SearchableSelect
-                  options={[{ value: '', label: 'All providers' }, ...providerOptions.map(p => ({ value: p, label: providerLabel(p) }))]}
+                  options={[{ value: '', label: t('models.page.filters.allProviders') }, ...providerOptions.map(p => ({ value: p, label: providerLabel(p) }))]}
                   value={providerFilter}
                   onChange={updateProviderFilter}
-                  placeholder="All providers"
+                  placeholder={t('models.page.filters.allProviders')}
                   style={{ width: 160 }}
                 />
                 <SearchableSelect
-                  options={[{ value: '', label: 'All connections' }, ...connections.map(c => ({ value: c.id, label: c.label }))]}
+                  options={[{ value: '', label: t('models.page.filters.allConnections') }, ...connections.map(c => ({ value: c.id, label: c.label }))]}
                   value={connectionFilter}
                   onChange={updateConnectionFilter}
-                  placeholder="All connections"
+                  placeholder={t('models.page.filters.allConnections')}
                   style={{ width: 180 }}
                 />
                 <div style={{ position: 'relative' }}>
@@ -422,7 +425,7 @@ export function ModelsPage() {
                   <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="Filter models…"
+                    placeholder={t('models.page.filters.searchPlaceholder')}
                     style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
                   />
                   {search && (
@@ -434,13 +437,13 @@ export function ModelsPage() {
                 {canWriteModels && (
                   <>
                     <Link to="/dashboard/models/discover" className="btn">
-                      <Telescope size={16} /> Discover
+                      <Telescope size={16} /> {t('models.page.discover')}
                     </Link>
                     <Link
                       to={connectionFilter ? `/dashboard/models/new?connection=${encodeURIComponent(connectionFilter)}` : '/dashboard/models/new'}
                       className="btn btn-primary"
                     >
-                      <Plus size={16} /> Add Model
+                      <Plus size={16} /> {t('models.page.addModel')}
                     </Link>
                   </>
                 )}
@@ -449,22 +452,22 @@ export function ModelsPage() {
             {loading ? (
               <div className="loading-center"><div className="spinner" /></div>
             ) : models.length === 0 ? (
-              <div className="empty-state"><Server size={40} /><p>No models yet. Add one to get started.</p></div>
+              <div className="empty-state"><Server size={40} /><p>{t('models.page.empty.noModels')}</p></div>
             ) : sorted.length === 0 ? (
-              <div className="empty-state"><Search size={40} /><p>No models match the active filters.</p></div>
+              <div className="empty-state"><Search size={40} /><p>{t('models.page.empty.noMatches')}</p></div>
             ) : (
               <>
                 <div className="table-wrap" style={{ overflowX: 'auto' }}>
                   <table style={{ minWidth: 700 }}>
                     <thead>
                       <tr>
-                        <th style={thStyle}>{thInner('ID', 'id')}</th>
-                        <th style={thStyle}>{thInner('Provider', 'provider')}</th>
-                        <th style={thStyle}>{thInner('Endpoint', 'endpoint')}</th>
-                        <th style={thStyle}>{thInner('Input $/1M', 'input')}</th>
-                        <th style={thStyle}>{thInner('Output $/1M', 'output')}</th>
-                        <th style={thStyle}>{thInner('Cache $/1M', 'cache')}</th>
-                        <th style={thStyle}>{thInner('Context Size', 'context')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.id'), 'id')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.provider'), 'provider')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.endpoint'), 'endpoint')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.input'), 'input')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.output'), 'output')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.cache'), 'cache')}</th>
+                        <th style={thStyle}>{thInner(t('models.page.columns.context'), 'context')}</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -495,18 +498,18 @@ export function ModelsPage() {
                                 );
                                 return null;
                               })()}
-                              <button className="btn-icon" onClick={() => handleTest(m.id)} title="Test">
+                              <button className="btn-icon" onClick={() => handleTest(m.id)} title={t('models.page.actions.test')}>
                                 <FlaskConical size={15} />
                               </button>
                               {canWriteModels && (
                                 <>
-                                  <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title="Clone">
+                                  <Link to={`/dashboard/models/new?clone=${encodeURIComponent(m.id)}`} className="btn-icon" title={t('models.page.actions.clone')}>
                                     <Copy size={15} />
                                   </Link>
-                                  <Link to={`/dashboard/models/${encodeURIComponent(m.id)}`} className="btn-icon" title="Edit">
+                                  <Link to={`/dashboard/models/${encodeURIComponent(m.id)}`} className="btn-icon" title={t('models.page.actions.edit')}>
                                     <Edit2 size={15} />
                                   </Link>
-                                  <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title="Remove">
+                                  <button className="btn-icon danger" onClick={() => handleDelete(m.id)} title={t('models.page.actions.remove')}>
                                     <Trash2 size={15} />
                                   </button>
                                 </>
@@ -523,14 +526,14 @@ export function ModelsPage() {
                     marginTop: 16, padding: '10px 0',
                   }}>
                     <button className="btn btn-sm btn-secondary" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
-                      ← Previous
+                      {t('models.page.pagination.previous')}
                     </button>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                      Page {page} of {totalPages}
-                      <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({sorted.length} models)</span>
+                      {t('models.page.pagination.pageOf', { page, totalPages })}
+                      <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{t('models.page.pagination.total', { count: sorted.length })}</span>
                     </span>
                     <button className="btn btn-sm btn-secondary" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                      Next →
+                      {t('models.page.pagination.next')}
                     </button>
                   </div>
                 )}
@@ -543,19 +546,19 @@ export function ModelsPage() {
           loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : models.length === 0 ? (
-            <div className="empty-state"><Server size={40} /><p>No models configured.</p></div>
+            <div className="empty-state"><Server size={40} /><p>{t('models.page.health.emptyNoModels')}</p></div>
           ) : (
             <>
               <div className="toolbar">
                 <span className="toolbar-title">
                   {hFiltered.length !== models.length
-                    ? `${hFiltered.length} of ${models.length} model${models.length !== 1 ? 's' : ''}`
-                    : `${models.length} model${models.length !== 1 ? 's' : ''}`}
+                    ? t('models.page.toolbar.filteredCount', { filtered: hFiltered.length, count: models.length })
+                    : t('models.page.toolbar.count', { count: models.length })}
                 </span>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   {canManage && (
-                    <button className="btn btn-secondary" disabled={resetBusy !== null} onClick={confirmResetAll} title="Reset every circuit breaker, cooldown, and lockout">
-                      {resetBusy === 'all' ? <span className="spinner" /> : <><RotateCcw size={14} /> Reset all</>}
+                    <button className="btn btn-secondary" disabled={resetBusy !== null} onClick={confirmResetAll} title={t('models.page.health.resetAllTitle')}>
+                      {resetBusy === 'all' ? <span className="spinner" /> : <><RotateCcw size={14} /> {t('models.page.health.resetAll')}</>}
                     </button>
                   )}
                   <div style={{ position: 'relative' }}>
@@ -563,7 +566,7 @@ export function ModelsPage() {
                     <input
                       value={hSearch}
                       onChange={e => setHSearch(e.target.value)}
-                      placeholder="Filter models…"
+                      placeholder={t('models.page.filters.searchPlaceholder')}
                       style={{ paddingLeft: 28, paddingRight: hSearch ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
                     />
                     {hSearch && (
@@ -576,22 +579,22 @@ export function ModelsPage() {
               </div>
               {resetError && <div className="form-error" style={{ marginBottom: 16 }}>{resetError}</div>}
               {hSorted.length === 0 ? (
-                <div className="empty-state"><Search size={40} /><p>No models match the filter.</p></div>
+                <div className="empty-state"><Search size={40} /><p>{t('models.page.health.emptyNoMatches')}</p></div>
               ) : (
                 <>
                   <div className="table-wrap">
                     <table>
                       <thead>
                         <tr>
-                          {hTh('Model', 'id')}
-                          {hTh('Provider', 'provider')}
-                          {hTh('Status', 'status')}
-                          {hTh('Circuit', 'circuit')}
-                          {hTh('Error rate (5m)', 'errorRate', 'right')}
-                          {hTh('P95 latency (1h)', 'p95Latency', 'right')}
-                          {hTh('Requests (1h)', 'requests', 'right')}
-                          {hTh('Last success', 'lastSuccess', 'right')}
-                          {hTh('Cooldown / lockout', 'cooldown', 'right')}
+                          {hTh(t('models.page.health.columns.model'), 'id')}
+                          {hTh(t('models.page.health.columns.provider'), 'provider')}
+                          {hTh(t('models.page.health.columns.status'), 'status')}
+                          {hTh(t('models.page.health.columns.circuit'), 'circuit')}
+                          {hTh(t('models.page.health.columns.errorRate'), 'errorRate', 'right')}
+                          {hTh(t('models.page.health.columns.p95Latency'), 'p95Latency', 'right')}
+                          {hTh(t('models.page.health.columns.requests'), 'requests', 'right')}
+                          {hTh(t('models.page.health.columns.lastSuccess'), 'lastSuccess', 'right')}
+                          {hTh(t('models.page.health.columns.cooldownLockout'), 'cooldown', 'right')}
                           <th></th>
                         </tr>
                       </thead>
@@ -604,10 +607,10 @@ export function ModelsPage() {
                             <tr key={m.id}>
                               <td><span className="mono">{m.id}</span></td>
                               <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
-                              <td><StatusBadge status={status} /></td>
+                              <td><StatusBadge status={status} label={t(`models.page.health.status.${status}`)} /></td>
                               <td>
                                 {h
-                                  ? <span className={`badge ${CIRCUIT_BADGE[h.circuitState]}`}>{CIRCUIT_LABEL[h.circuitState]}</span>
+                                  ? <span className={`badge ${CIRCUIT_BADGE[h.circuitState]}`}>{t(CIRCUIT_LABEL_KEY[h.circuitState])}</span>
                                   : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                               </td>
                               <td style={{ textAlign: 'right' }}>
@@ -620,14 +623,14 @@ export function ModelsPage() {
                                 {h ? h.requestsLastHour : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                               </td>
                               <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                                {h ? relativeTime(h.lastSuccessAt) : '—'}
+                                {h ? relativeTime(h.lastSuccessAt, t) : '—'}
                               </td>
                               <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
                                 {(() => {
                                   if (!h) return '—';
                                   const parts: string[] = [];
-                                  if (h.cooldownUntil && h.cooldownUntil > now) parts.push(`cooldown ${formatCountdown(h.cooldownUntil, now)}`);
-                                  if (h.lockoutUntil && h.lockoutUntil > now) parts.push(`lockout ${formatCountdown(h.lockoutUntil, now)}`);
+                                  if (h.cooldownUntil && h.cooldownUntil > now) parts.push(t('models.page.health.time.cooldown', { time: formatCountdown(h.cooldownUntil, now, t) }));
+                                  if (h.lockoutUntil && h.lockoutUntil > now) parts.push(t('models.page.health.time.lockout', { time: formatCountdown(h.lockoutUntil, now, t) }));
                                   return parts.length ? parts.join(', ') : '—';
                                 })()}
                               </td>
@@ -637,7 +640,7 @@ export function ModelsPage() {
                                     className="btn-icon"
                                     disabled={resetBusy !== null}
                                     onClick={() => confirmResetModel(m)}
-                                    title="Reset circuit breaker"
+                                    title={t('models.page.health.resetTitle')}
                                   >
                                     {resetBusy === m.id ? <span className="spinner" /> : <RotateCcw size={15} />}
                                   </button>
@@ -652,14 +655,14 @@ export function ModelsPage() {
                   {hTotalPages > 1 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16, padding: '10px 0' }}>
                       <button className="btn btn-sm btn-secondary" disabled={hPage <= 1} onClick={() => setHPage(p => Math.max(1, p - 1))}>
-                        ← Previous
+                        {t('models.page.pagination.previous')}
                       </button>
                       <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                        Page {hPage} of {hTotalPages}
-                        <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({hSorted.length} models)</span>
+                        {t('models.page.pagination.pageOf', { page: hPage, totalPages: hTotalPages })}
+                        <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{t('models.page.pagination.total', { count: hSorted.length })}</span>
                       </span>
                       <button className="btn btn-sm btn-secondary" disabled={hPage >= hTotalPages} onClick={() => setHPage(p => p + 1)}>
-                        Next →
+                        {t('models.page.pagination.next')}
                       </button>
                     </div>
                   )}

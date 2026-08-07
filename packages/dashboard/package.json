@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "@routerly/shared": "*",
+    "i18next": "^26.3.6",
     "lucide-react": "^1.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-i18next": "^17.0.11",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.22.3",
     "recharts": "^3.8.1",

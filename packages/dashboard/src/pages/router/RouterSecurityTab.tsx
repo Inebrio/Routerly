@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import {
   getProfiles,
@@ -21,6 +22,7 @@ import {
 import { useRouter } from './RouterLayout';
 
 export function RouterSecurityTab() {
+  const { t } = useTranslation();
   const { router, setRouter } = useRouter();
 
   const [saving, setSaving] = useState(false);
@@ -75,7 +77,7 @@ export function RouterSecurityTab() {
       const updated = await assignRouterProfiles(router.id, { security: profileId === '' ? null : profileId });
       setRouter(updated);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to assign security profile');
+      setErr(e instanceof Error ? e.message : t('routers.security.errors.assignFailed'));
     }
   }
 
@@ -106,7 +108,7 @@ export function RouterSecurityTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error saving security settings');
+      setErr(e instanceof Error ? e.message : t('routers.security.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -123,7 +125,7 @@ export function RouterSecurityTab() {
     if ((next === 'profile') === profileAssigned) return;
     if (next === 'profile') {
       if (!defaultProfileId) {
-        setErr('No security profile available. Create one from the Profiles page.');
+        setErr(t('routers.security.errors.noProfileAvailable'));
         return;
       }
       await onAssignProfile(defaultProfileId);
@@ -144,9 +146,9 @@ export function RouterSecurityTab() {
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
       <div className="form-group">
-        <label className="form-label">Security</label>
+        <label className="form-label">{t('routers.security.title')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Use a shared security profile, or define this router's own guardrails and PII policies.
+          {t('routers.security.description')}
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -155,14 +157,14 @@ export function RouterSecurityTab() {
             className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => void onSelectMode('profile')}
           >
-            Profile
+            {t('routers.security.mode.profile')}
           </button>
           <button
             type="button"
             className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
             onClick={() => void onSelectMode('custom')}
           >
-            Custom
+            {t('routers.security.mode.custom')}
           </button>
         </div>
 
@@ -170,27 +172,27 @@ export function RouterSecurityTab() {
           <>
             <SearchableSelect
               style={{ maxWidth: 420 }}
-              ariaLabel="Security Profile"
+              ariaLabel={t('routers.security.profileSelect.ariaLabel')}
               value={assignedProfileId}
               onChange={v => void onAssignProfile(v)}
               options={[
-                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} (built-in)` })),
+                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: t('routers.security.profileSelect.builtinLabel', { label: p.label }) })),
                 ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
               ]}
             />
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
-              Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.
+              {t('routers.security.profileSelect.hint')}
             </p>
             {assignedProfile && (
               <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {(assignedProfile.guardrails.rules ?? []).map((r, i) => (
                   <li key={`rule-${i}`}>
                     {RULE_TYPE_LABELS[r.type] ?? r.type} ({r.target})
-                    {r.block === true ? ', blocking' : ''}
+                    {r.block === true ? t('routers.security.profileSelect.blockingSuffix') : ''}
                   </li>
                 ))}
                 {(assignedProfile.pii.policies ?? []).map((p, i) => (
-                  <li key={`pii-${i}`}>PII redaction ({p.target}){p.enabled === false ? ', disabled' : ''}</li>
+                  <li key={`pii-${i}`}>{t('routers.security.profileSelect.piiRedaction', { target: p.target })}{p.enabled === false ? t('routers.security.profileSelect.disabledSuffix') : ''}</li>
                 ))}
               </ul>
             )}
@@ -216,9 +218,9 @@ export function RouterSecurityTab() {
             {saving ? (
               <span className="spinner" />
             ) : saved ? (
-              <><Check size={15} style={{ marginRight: 6 }} />Saved!</>
+              <><Check size={15} style={{ marginRight: 6 }} />{t('routers.security.saved')}</>
             ) : (
-              'Save Security Settings'
+              t('routers.security.saveButton')
             )}
           </button>
         </>

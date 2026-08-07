@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { updateRouterToken, getModels } from '../../api';
@@ -17,30 +19,19 @@ type LimitRow = {
   value: string;
 };
 
-const LIMIT_METRIC_OPTIONS: { value: LimitMetric; label: string }[] = [
-  { value: 'cost',          label: 'Cost (USD)'      },
-  { value: 'calls',         label: 'Requests'        },
-  { value: 'input_tokens',  label: 'Input tokens'    },
-  { value: 'output_tokens', label: 'Output tokens'   },
-  { value: 'total_tokens',  label: 'Total tokens'    },
-];
+const LIMIT_METRIC_VALUES: LimitMetric[] = ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'];
+const PERIOD_VALUES: LimitPeriod[] = ['hourly', 'daily', 'weekly', 'monthly', 'yearly'];
+const ROLLING_UNIT_VALUES: RollingUnit[] = ['second', 'minute', 'hour', 'day', 'week', 'month'];
 
-const PERIOD_OPTIONS: { value: LimitPeriod; label: string }[] = [
-  { value: 'hourly',  label: 'Hourly'  },
-  { value: 'daily',   label: 'Daily'   },
-  { value: 'weekly',  label: 'Weekly'  },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly',  label: 'Yearly'  },
-];
-
-const ROLLING_UNIT_OPTIONS: { value: RollingUnit; label: string }[] = [
-  { value: 'second', label: 'seconds' },
-  { value: 'minute', label: 'minutes' },
-  { value: 'hour',   label: 'hours'   },
-  { value: 'day',    label: 'days'    },
-  { value: 'week',   label: 'weeks'   },
-  { value: 'month',  label: 'months'  },
-];
+function limitMetricLabel(t: TFunction, v: LimitMetric): string {
+  return t(`routers.token.edit.limitMetric.${v}`);
+}
+function periodLabel(t: TFunction, v: LimitPeriod): string {
+  return t(`routers.token.edit.period.${v}`);
+}
+function rollingUnitLabel(t: TFunction, v: RollingUnit): string {
+  return t(`routers.token.edit.rollingUnit.${v}`, { defaultValue: v });
+}
 
 const EMPTY_LIMIT_ROW: LimitRow = {
   metric: 'cost', windowType: 'period', period: 'monthly',
@@ -54,8 +45,8 @@ function rowKey(r: LimitRow): string {
 
 function findFreeCombo(rows: LimitRow[]): LimitRow | null {
   const used = new Set(rows.map(rowKey));
-  for (const m of LIMIT_METRIC_OPTIONS.map(o => o.value as LimitMetric)) {
-    for (const p of PERIOD_OPTIONS.map(o => o.value as LimitPeriod)) {
+  for (const m of LIMIT_METRIC_VALUES) {
+    for (const p of PERIOD_VALUES) {
       const candidate: LimitRow = { ...EMPTY_LIMIT_ROW, metric: m, windowType: 'period', period: p };
       if (!used.has(rowKey(candidate))) return candidate;
     }
@@ -93,22 +84,23 @@ function limitsToRows(limits: Limit[] | undefined): LimitRow[] {
   return limits.map(limitToRow);
 }
 
-function fmtLimit(l: Limit): string {
-  const metricLabel =
+function fmtLimit(t: TFunction, l: Limit): string {
+  const metricUnit =
     l.metric === 'cost'         ? `$${l.value}` :
-    l.metric === 'calls'        ? `${l.value} req` :
-    l.metric === 'input_tokens' ? `${l.value} in-tok` :
-    l.metric === 'output_tokens'? `${l.value} out-tok` :
-    /* total_tokens */             `${l.value} tok`;
+    l.metric === 'calls'        ? t('routers.token.edit.fmt.requests', { value: l.value }) :
+    l.metric === 'input_tokens' ? t('routers.token.edit.fmt.inputTokens', { value: l.value }) :
+    l.metric === 'output_tokens'? t('routers.token.edit.fmt.outputTokens', { value: l.value }) :
+    /* total_tokens */             t('routers.token.edit.fmt.totalTokens', { value: l.value });
   if (l.windowType === 'rolling') {
-    const unit = ROLLING_UNIT_OPTIONS.find(o => o.value === l.rollingUnit)?.label ?? l.rollingUnit ?? 'day';
-    return `${metricLabel} / every ${l.rollingAmount ?? 1} ${unit}`;
+    const unit = rollingUnitLabel(t, l.rollingUnit ?? 'day');
+    return t('routers.token.edit.fmt.everyRolling', { metric: metricUnit, amount: l.rollingAmount ?? 1, unit });
   }
-  const periodLabel = PERIOD_OPTIONS.find(o => o.value === l.period)?.label ?? l.period ?? 'monthly';
-  return `${metricLabel} / ${periodLabel.toLowerCase()}`;
+  const period = periodLabel(t, l.period ?? 'monthly').toLowerCase();
+  return t('routers.token.edit.fmt.perPeriod', { metric: metricUnit, period });
 }
 
 function inheritedLimitLabel(
+  t: TFunction,
   pm: { limits?: Limit[]; thresholds?: { daily?: number; weekly?: number; monthly?: number } },
   fullModel: Model | undefined,
 ): string {
@@ -129,8 +121,8 @@ function inheritedLimitLabel(
     : undefined);
 
   const effective = routerLimits ?? globalLimits;
-  if (!effective?.length) return 'No limits';
-  return effective.map(fmtLimit).join(' · ');
+  if (!effective?.length) return t('routers.token.edit.noLimits');
+  return effective.map(l => fmtLimit(t, l)).join(' · ');
 }
 
 type EditModel = {
@@ -139,6 +131,7 @@ type EditModel = {
 };
 
 export function RouterTokenEditPage() {
+  const { t } = useTranslation();
   const { id: routerId, tokenId } = useParams<{ id: string; tokenId: string }>();
   const navigate = useNavigate();
   const { router, setRouter } = useRouter();
@@ -160,9 +153,9 @@ export function RouterTokenEditPage() {
   const [newTagVal, setNewTagVal] = useState('');
 
   const tokens = router?.tokens || [];
-  const editingToken = tokens.find(t => t.id === tokenId);
-  const allLabels = Array.from(new Set(tokens.flatMap(t => t.labels || []))).sort();
-  const allScopes = Array.from(new Set(tokens.flatMap(t => t.scopes || []))).sort();
+  const editingToken = tokens.find(tok => tok.id === tokenId);
+  const allLabels = Array.from(new Set(tokens.flatMap(tok => tok.labels || []))).sort();
+  const allScopes = Array.from(new Set(tokens.flatMap(tok => tok.scopes || []))).sort();
 
   // Initialize form state from existing token data
   useEffect(() => {
@@ -190,9 +183,9 @@ export function RouterTokenEditPage() {
         limits: limitRowsToLimits(m.limitRows),
       }));
       const updated = await updateRouterToken(routerId, tokenId, cleanedModels, editLabels, editTags, editScopes);
-      setRouter(p => p ? { ...p, tokens: p.tokens?.map(t => t.id === tokenId ? updated : t) || [] } : p);
+      setRouter(p => p ? { ...p, tokens: p.tokens?.map(tok => tok.id === tokenId ? updated : tok) || [] } : p);
       navigate(`/dashboard/routers/${routerId}/token`);
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error saving token'); }
+    } catch (e) { setErr(e instanceof Error ? e.message : t('routers.token.edit.errors.saveFailed')); }
     finally { setLoading(false); }
   }
 
@@ -244,19 +237,19 @@ export function RouterTokenEditPage() {
 
         <button type="button" onClick={goBack}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem', padding: 0, marginBottom: 24 }}>
-          <ArrowLeft size={16} /> Back to tokens
+          <ArrowLeft size={16} /> {t('routers.token.create.backToTokens')}
         </button>
 
-        <h2 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 600 }}>Edit Token</h2>
+        <h2 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 600 }}>{t('routers.token.edit.title')}</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 28 }}>
-          Update labels and per-model limit overrides for this token.
+          {t('routers.token.edit.subtitle')}
         </p>
 
         <form onSubmit={handleUpdate}>
           {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
           <div className="form-group">
-            <label className="form-label">Token</label>
+            <label className="form-label">{t('routers.token.edit.token')}</label>
             <div className="form-input mono" style={{ opacity: 0.65, fontSize: '0.88rem', cursor: 'default', userSelect: 'text' }}>
               {editingToken.tokenSnippet}••••••••
             </div>
@@ -264,52 +257,52 @@ export function RouterTokenEditPage() {
 
           <div className="form-group">
             <label className="form-label">
-              Labels <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              {t('routers.token.edit.labels')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('routers.token.create.optional')})</span>
             </label>
             <LabelInput labels={editLabels} setLabels={setEditLabels} input={editLabelInput} setInput={setEditLabelInput} allLabels={allLabels} />
           </div>
 
           <div className="form-group">
             <label className="form-label">
-              Scopes <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              {t('routers.token.create.scopes')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('routers.token.create.optional')})</span>
             </label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-              Free-form scopes attached to this token (e.g. "batch", "internal"), stored with the token for your own bookkeeping.
+              {t('routers.token.create.scopesHint')}
             </p>
             <LabelInput labels={editScopes} setLabels={setEditScopes} input={editScopeInput} setInput={setEditScopeInput} allLabels={allScopes} />
           </div>
 
           <div className="form-group">
             <label className="form-label">
-              Tags <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              {t('routers.token.create.tags')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('routers.token.create.optional')})</span>
             </label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-              Key-value metadata forwarded to usage records (e.g. env=production).
+              {t('routers.token.create.tagsHint')}
             </p>
             {Object.entries(editTags).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                 <span className="mono" style={{ fontSize: '0.82rem', flex: 1, color: 'var(--text-primary)' }}>{k}={v}</span>
-                <button type="button" onClick={() => setEditTags(t => { const n = { ...t }; delete n[k]; return n; })}
+                <button type="button" onClick={() => setEditTags(tags => { const n = { ...tags }; delete n[k]; return n; })}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 2 }}>
                   <X size={13} />
                 </button>
               </div>
             ))}
             <div style={{ display: 'flex', gap: 6 }}>
-              <input className="form-input" placeholder="key" value={newTagKey} onChange={e => setNewTagKey(e.target.value)} style={{ flex: 1 }} />
-              <input className="form-input" placeholder="value" value={newTagVal} onChange={e => setNewTagVal(e.target.value)} style={{ flex: 1 }} />
+              <input className="form-input" placeholder={t('routers.token.create.keyPlaceholder')} value={newTagKey} onChange={e => setNewTagKey(e.target.value)} style={{ flex: 1 }} />
+              <input className="form-input" placeholder={t('routers.token.create.valuePlaceholder')} value={newTagVal} onChange={e => setNewTagVal(e.target.value)} style={{ flex: 1 }} />
               <button type="button" className="btn btn-secondary" style={{ padding: '0 10px' }}
                 disabled={!newTagKey.trim()}
-                onClick={() => { if (newTagKey.trim()) { setEditTags(t => ({ ...t, [newTagKey.trim()]: newTagVal })); setNewTagKey(''); setNewTagVal(''); } }}>
+                onClick={() => { if (newTagKey.trim()) { setEditTags(tags => ({ ...tags, [newTagKey.trim()]: newTagVal })); setNewTagKey(''); setNewTagVal(''); } }}>
                 <Plus size={14} />
               </button>
             </div>
           </div>
 
           <div style={{ marginTop: 28, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
-            <label className="form-label">Per-model limits</label>
+            <label className="form-label">{t('routers.token.edit.perModelLimits')}</label>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Override global and router-level limits for requests using this token.
+              {t('routers.token.edit.perModelLimitsHint')}
             </p>
 
             {(!router.models || router.models.length === 0) ? (
@@ -317,7 +310,7 @@ export function RouterTokenEditPage() {
                 padding: 20, border: '1px dashed var(--border)',
                 borderRadius: 8, color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center',
               }}>
-                Add target models in the Routing tab first.
+                {t('routers.token.edit.noTargetModels')}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -325,7 +318,7 @@ export function RouterTokenEditPage() {
                   const override = editModels.find(m => m.modelId === pm.modelId);
                   const isEnabled = !!override;
                   const fullModel = allModels.find(m => m.id === pm.modelId);
-                  const inheritedLabel = inheritedLimitLabel(pm as any, fullModel);
+                  const inheritedLabel = inheritedLimitLabel(t, pm as any, fullModel);
                   const activeCount = override?.limitRows.filter(r => r.value !== '').length ?? 0;
                   const freeCombo = override ? findFreeCombo(override.limitRows) : null;
 
@@ -345,11 +338,11 @@ export function RouterTokenEditPage() {
                         </span>
                         {isEnabled && activeCount > 0 ? (
                           <span style={{ fontSize: '0.72rem', background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 7px' }}>
-                            {activeCount} {activeCount === 1 ? 'limit' : 'limits'}
+                            {t('routers.orchestrator.limitCount', { count: activeCount })}
                           </span>
                         ) : (
                           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            {isEnabled ? 'no override' : inheritedLabel}
+                            {isEnabled ? t('routers.token.edit.noOverride') : inheritedLabel}
                           </span>
                         )}
                       </label>
@@ -358,7 +351,7 @@ export function RouterTokenEditPage() {
                         <div style={{ padding: '0 14px 14px' }}>
                           {override!.limitRows.length === 0 && (
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 8px', fontStyle: 'italic' }}>
-                              No limits set — inheriting from parent. Add a limit below to override.
+                              {t('routers.token.edit.noLimitsSet')}
                             </p>
                           )}
                           {override!.limitRows.map((lim, idx) => {
@@ -371,39 +364,39 @@ export function RouterTokenEditPage() {
                               <div key={idx} style={{ display: 'grid', gridTemplateColumns: '120px 100px 1fr 90px auto', gap: 6, alignItems: 'flex-end', marginBottom: 8 }}>
                                 {/* Metric */}
                                 <div className="form-group" style={{ margin: 0 }}>
-                                  <label className="form-label" style={{ fontSize: '0.72rem' }}>Metric</label>
+                                  <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('routers.token.edit.metric')}</label>
                                   <SearchableSelect
                                     value={lim.metric}
                                     onChange={v => upd({ metric: v as LimitMetric })}
-                                    options={LIMIT_METRIC_OPTIONS
-                                      .filter(o => !otherKeys.has(rowKey({ ...lim, metric: o.value as LimitMetric })))
-                                      .map(o => ({ value: o.value, label: o.label }))}
+                                    options={LIMIT_METRIC_VALUES
+                                      .filter(v => !otherKeys.has(rowKey({ ...lim, metric: v })))
+                                      .map(v => ({ value: v, label: limitMetricLabel(t, v) }))}
                                   />
                                 </div>
                                 {/* Window type */}
                                 <div className="form-group" style={{ margin: 0 }}>
-                                  <label className="form-label" style={{ fontSize: '0.72rem' }}>Type</label>
+                                  <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('routers.token.edit.type')}</label>
                                   <SearchableSelect
                                     value={lim.windowType}
                                     onChange={v => upd({ windowType: v as 'period' | 'rolling' })}
-                                    options={[{ value: 'period', label: 'Period' }, { value: 'rolling', label: 'Rolling' }]}
+                                    options={[{ value: 'period', label: t('routers.token.edit.windowType.period') }, { value: 'rolling', label: t('routers.token.edit.windowType.rolling') }]}
                                   />
                                 </div>
                                 {/* Period or rolling */}
                                 {lim.windowType === 'period' ? (
                                   <div className="form-group" style={{ margin: 0 }}>
-                                    <label className="form-label" style={{ fontSize: '0.72rem' }}>Period</label>
+                                    <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('routers.token.edit.periodLabel')}</label>
                                     <SearchableSelect
                                       value={lim.period}
                                       onChange={v => upd({ period: v as LimitPeriod })}
-                                      options={PERIOD_OPTIONS
-                                        .filter(o => !otherKeys.has(rowKey({ ...lim, period: o.value as LimitPeriod })))
-                                        .map(o => ({ value: o.value, label: o.label }))}
+                                      options={PERIOD_VALUES
+                                        .filter(v => !otherKeys.has(rowKey({ ...lim, period: v })))
+                                        .map(v => ({ value: v, label: periodLabel(t, v) }))}
                                     />
                                   </div>
                                 ) : (
                                   <div className="form-group" style={{ margin: 0 }}>
-                                    <label className="form-label" style={{ fontSize: '0.72rem' }}>Every</label>
+                                    <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('routers.token.edit.every')}</label>
                                     <div style={{ display: 'flex', gap: 4 }}>
                                       <input className="form-input" type="number" min="1" step="1" value={lim.rollingAmount}
                                         onChange={e => upd({ rollingAmount: e.target.value })}
@@ -411,7 +404,7 @@ export function RouterTokenEditPage() {
                                       <SearchableSelect
                                         value={lim.rollingUnit}
                                         onChange={v => upd({ rollingUnit: v as RollingUnit })}
-                                        options={ROLLING_UNIT_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+                                        options={ROLLING_UNIT_VALUES.map(v => ({ value: v, label: rollingUnitLabel(t, v) }))}
                                         style={{ flex: 1 }}
                                       />
                                     </div>
@@ -420,7 +413,7 @@ export function RouterTokenEditPage() {
                                 {/* Max value */}
                                 <div className="form-group" style={{ margin: 0 }}>
                                   <label className="form-label" style={{ fontSize: '0.72rem' }}>
-                                  {lim.metric === 'cost' ? 'Max ($)' : lim.metric === 'calls' ? 'Max (n.)' : 'Max (tokens)'}
+                                  {lim.metric === 'cost' ? t('routers.token.edit.maxCost') : lim.metric === 'calls' ? t('routers.token.edit.maxCalls') : t('routers.token.edit.maxTokens')}
                                   </label>
                                   <input className="form-input" type="number" step="any" min="0" value={lim.value}
                                     onChange={e => upd({ value: e.target.value })}
@@ -435,11 +428,11 @@ export function RouterTokenEditPage() {
                           })}
                           <button type="button" onClick={() => addLimitRow(pm.modelId)}
                             disabled={!freeCombo}
-                            title={!freeCombo ? 'All metric/period combinations are already set' : undefined}
+                            title={!freeCombo ? t('routers.token.edit.allCombosSet') : undefined}
                             style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, background: 'none', border: '1px dashed var(--border)', borderRadius: 6, cursor: freeCombo ? 'pointer' : 'not-allowed', color: 'var(--text-muted)', fontSize: '0.8rem', padding: '6px 12px', transition: 'all 0.15s', opacity: freeCombo ? 1 : 0.4 }}
                             onMouseEnter={e => { if (freeCombo) { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'; } }}
                             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}>
-                            <Plus size={12} /> Add limit
+                            <Plus size={12} /> {t('routers.token.edit.addLimit')}
                           </button>
                         </div>
                       )}
@@ -452,10 +445,10 @@ export function RouterTokenEditPage() {
 
           <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="spinner" /> : 'Save Changes'}
+              {loading ? <span className="spinner" /> : t('routers.general.form.saveChanges')}
             </button>
             <button type="button" className="btn btn-secondary" onClick={goBack} disabled={loading}>
-              Cancel
+              {t('routers.token.create.cancel')}
             </button>
           </div>
         </form>

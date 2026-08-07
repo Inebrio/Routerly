@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Terminal } from 'lucide-react';
 import { buildSnippet, buildMcpSnippet } from '@routerly/shared';
@@ -21,6 +22,7 @@ const SECTION_TEXT: React.CSSProperties = {
 };
 
 export function ConnectClientPage() {
+  const { t } = useTranslation();
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<ClientListItem | null>(null);
@@ -46,7 +48,7 @@ export function ConnectClientPage() {
       style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}
     >
       <ArrowLeft size={16} />
-      <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Connect</span>
+      <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>{t('connectClient.backToConnect')}</span>
     </button>
   );
 
@@ -55,17 +57,17 @@ export function ConnectClientPage() {
   if (notEnabled || error || !client) {
     return (
       <>
-        <div className="page-header">{back}<h1>Connect</h1></div>
+        <div className="page-header">{back}<h1>{t('connectClient.title')}</h1></div>
         <div className="page-body">
           {error ? (
-            <div className="form-error">Failed to load clients: {error}</div>
+            <div className="form-error">{t('connectClient.errors.loadFailed', { error })}</div>
           ) : (
             <div className="empty-state">
               <Terminal size={40} />
               <p>
                 {notEnabled
-                  ? <>Client configurator is not enabled. Ask an admin to enable it with <code>routerly modules enable clients</code>.</>
-                  : <>No client named <code>{id}</code>.</>}
+                  ? <>{t('connectClient.notEnabledPrefix')} <code>routerly modules enable clients</code>.</>
+                  : <>{t('connectClient.noClientPrefix')} <code>{id}</code>.</>}
               </p>
             </div>
           )}
@@ -103,7 +105,7 @@ export function ConnectClientPage() {
                 rel="noopener noreferrer"
                 style={{ fontSize: '0.78rem', color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
               >
-                Docs <ExternalLink size={12} />
+                {t('connectClient.docs')} <ExternalLink size={12} />
               </a>
             </div>
           </div>
@@ -113,10 +115,9 @@ export function ConnectClientPage() {
       <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 900 }}>
         {autoConfigurable && (
           <section>
-            <div style={SECTION_TITLE}>Fastest: one command</div>
+            <div style={SECTION_TITLE}>{t('connectClient.oneCommand.title')}</div>
             <p style={SECTION_TEXT}>
-              Run it on the machine where {client.label} is installed. It writes{' '}
-              {client.configPathHint}, keeping a backup you can undo.
+              {t('connectClient.oneCommand.description', { client: client.label, configPath: client.configPathHint })}
             </p>
             <CopyBlock text={cliCommand} />
           </section>
@@ -125,21 +126,22 @@ export function ConnectClientPage() {
         {snippet !== '' && (
           <section>
             <div style={SECTION_TITLE}>
-              {autoConfigurable ? 'Or set it up by hand' : client.configKind === 'ui' ? 'Set it up by hand' : 'Set up the config file'}
+              {autoConfigurable ? t('connectClient.byHand.titleAlt') : client.configKind === 'ui' ? t('connectClient.byHand.titleUi') : t('connectClient.byHand.titleConfigFile')}
             </div>
             <p style={SECTION_TEXT}>
               {client.configKind === 'ui'
-                ? `Set these values in ${client.configPathHint}.`
-                : <>Put this in <code>{client.configPathHint}</code>.</>}
-              {' '}Replace <code>{PLACEHOLDER_TOKEN}</code> with a router token:{' '}
-              <Link to="/dashboard/routers">create one</Link> on the Routers page.
+                ? t('connectClient.byHand.setValuesIn', { configPath: client.configPathHint })
+                : <>{t('connectClient.byHand.putThisIn')} <code>{client.configPathHint}</code>.</>}
+              {' '}{t('connectClient.byHand.replaceToken')}{' '}
+              <code>{PLACEHOLDER_TOKEN}</code> {t('connectClient.byHand.withRouterToken')}{' '}
+              <Link to="/dashboard/routers">{t('connectClient.byHand.createOne')}</Link> {t('connectClient.byHand.onRoutersPage')}
             </p>
             <CopyBlock text={snippet} />
             {client.modes.includes('llm') && (
               <p style={{ ...SECTION_TEXT, margin: '10px 0 0' }}>
-                Model: <code>{AUTO_MODEL}</code> hands the choice to Routerly, any model id
-                from <Link to="/dashboard/models">Models</Link> works too.
-                {client.wireFormat === 'openai' && ' The same base URL, key and model fit any client that offers an "OpenAI compatible" provider.'}
+                {t('connectClient.byHand.modelLabel')} <code>{AUTO_MODEL}</code> {t('connectClient.byHand.modelHint')}{' '}
+                <Link to="/dashboard/models">{t('connectClient.byHand.modelsLink')}</Link> {t('connectClient.byHand.worksToo')}
+                {client.wireFormat === 'openai' && ` ${t('connectClient.byHand.openaiCompatHint')}`}
               </p>
             )}
           </section>
@@ -147,23 +149,21 @@ export function ConnectClientPage() {
 
         {mcpSnippet !== '' && (
           <section>
-            <div style={SECTION_TITLE}>MCP server</div>
+            <div style={SECTION_TITLE}>{t('connectClient.mcp.title')}</div>
             <p style={SECTION_TEXT}>
-              Separate from the steps above: this one lets {client.label} call the
-              Routerly tools. It needs a personal MCP token, minted with{' '}
-              <code>routerly mcp token create {client.id}</code> or from your{' '}
-              <Link to="/dashboard/profile/mcp">profile</Link>.
+              {t('connectClient.mcp.description', { client: client.label })}{' '}
+              <code>routerly mcp token create {client.id}</code> {t('connectClient.mcp.orFromYour')}{' '}
+              <Link to="/dashboard/profile/mcp">{t('connectClient.mcp.profileLink')}</Link>.
             </p>
             <CopyBlock text={mcpSnippet} />
           </section>
         )}
 
         <section>
-          <div style={SECTION_TITLE}>Check it worked</div>
+          <div style={SECTION_TITLE}>{t('connectClient.checkItWorked.title')}</div>
           <p style={SECTION_TEXT}>
-            Restart {client.label}, send it a prompt, then look for the call in{' '}
-            <Link to="/dashboard/usage">Usage</Link>. From the same machine, the CLI
-            reports what it finds:
+            {t('connectClient.checkItWorked.restart', { client: client.label })}{' '}
+            <Link to="/dashboard/usage">{t('connectClient.checkItWorked.usageLink')}</Link>. {t('connectClient.checkItWorked.cliReports')}
           </p>
           <CopyBlock text="routerly clients doctor" />
         </section>

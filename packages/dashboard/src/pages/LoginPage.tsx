@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { checkSetupStatus, verify2fa } from '../api';
 import { Logo } from '../components/Logo';
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const { login, loginDirect, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,7 +48,7 @@ export function LoginPage() {
         navigate(redirectTo, { replace: true });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t('login.errors.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export function LoginPage() {
       loginDirect(result.token, result.user);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '2FA verification failed');
+      setError(err instanceof Error ? err.message : t('login.errors.totpFailed'));
     } finally {
       setLoading(false);
     }
@@ -79,14 +81,14 @@ export function LoginPage() {
         <div className="login-card">
           <div className="login-logo">
             <Logo size={52} />
-            <h1>Two-Factor Authentication</h1>
-            <p>{useBackupCode ? 'Enter a backup code.' : 'Enter the 6-digit code from your authenticator app.'}</p>
+            <h1>{t('login.totp.title')}</h1>
+            <p>{useBackupCode ? t('login.totp.backupPrompt') : t('login.totp.appPrompt')}</p>
           </div>
           <form onSubmit={handleTotpSubmit}>
             {error && <div className="form-error">{error}</div>}
             <div className="form-group">
               <label className="form-label" htmlFor="totp-code">
-                {useBackupCode ? 'Backup Code' : 'Authenticator Code'}
+                {useBackupCode ? t('login.totp.backupCodeLabel') : t('login.totp.authenticatorCodeLabel')}
               </label>
               <input
                 id="totp-code"
@@ -106,7 +108,7 @@ export function LoginPage() {
               disabled={loading}
               style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
             >
-              {loading ? <span className="spinner" /> : 'Verify'}
+              {loading ? <span className="spinner" /> : t('login.totp.verify')}
             </button>
             <button
               type="button"
@@ -114,7 +116,7 @@ export function LoginPage() {
               style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
               onClick={() => { setUseBackupCode(b => !b); setTotpCode(''); setError(''); }}
             >
-              {useBackupCode ? 'Use authenticator app instead' : 'Use a backup code instead'}
+              {useBackupCode ? t('login.totp.useAuthenticatorInstead') : t('login.totp.useBackupInstead')}
             </button>
           </form>
         </div>
@@ -128,12 +130,12 @@ export function LoginPage() {
         <div className="login-logo">
           <Logo size={52} />
           <h1>Routerly.ai</h1>
-          <p>One gateway. Any AI model. Total control.</p>
+          <p>{t('app.tagline')}</p>
         </div>
         <form onSubmit={handleSubmit}>
           {error && <div className="form-error">{error}</div>}
           <div className="form-group">
-            <label className="form-label" htmlFor="email">Email</label>
+            <label className="form-label" htmlFor="email">{t('login.emailLabel')}</label>
             <input
               id="email"
               type="email"
@@ -145,7 +147,7 @@ export function LoginPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
+            <label className="form-label" htmlFor="password">{t('login.passwordLabel')}</label>
             <input
               id="password"
               type="password"
@@ -162,7 +164,7 @@ export function LoginPage() {
             disabled={loading}
             style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
           >
-            {loading ? <span className="spinner" /> : 'Sign In'}
+            {loading ? <span className="spinner" /> : t('login.signIn')}
           </button>
         </form>
       </div>

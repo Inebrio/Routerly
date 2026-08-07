@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useRouter } from './RouterLayout';
 import { getUsers, addRouterMember, updateRouterMember, removeRouterMember, User } from '../../api';
@@ -6,6 +7,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { SearchableSelect } from '../../components/SearchableSelect';
 
 export function RouterUsersTab() {
+  const { t } = useTranslation();
   const { router, setRouter } = useRouter();
   if (!router) return null;
 
@@ -21,10 +23,16 @@ export function RouterUsersTab() {
   const [editRole, setEditRole] = useState('viewer');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
+  const roleOptions = [
+    { value: 'viewer', label: t('routers.users.roles.viewer') },
+    { value: 'editor', label: t('routers.users.roles.editor') },
+    { value: 'admin', label: t('routers.users.roles.admin') },
+  ];
+
   useEffect(() => {
     getUsers()
       .then(setUsers)
-      .catch((e) => setErr(e instanceof Error ? e.message : 'Failed to load users'));
+      .catch((e) => setErr(e instanceof Error ? e.message : t('routers.users.errors.loadFailed')));
   }, []);
 
   async function handleAddMember() {
@@ -45,7 +53,7 @@ export function RouterUsersTab() {
       setNewUserId('');
       setNewRole('viewer');
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error adding member');
+      setErr(e instanceof Error ? e.message : t('routers.users.errors.addFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +73,7 @@ export function RouterUsersTab() {
       });
       setEditingUserId(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error updating member');
+      setErr(e instanceof Error ? e.message : t('routers.users.errors.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -73,7 +81,7 @@ export function RouterUsersTab() {
 
   function handleRemoveMember(userId: string) {
     setConfirmState({
-      message: 'Are you sure you want to remove this member?',
+      message: t('routers.users.removeConfirm'),
       onConfirm: async () => {
         setConfirmState(null);
         setErr('');
@@ -87,7 +95,7 @@ export function RouterUsersTab() {
             return { ...p, members: p.members?.filter(m => m.userId !== userId) || [] };
           });
         } catch (e) {
-          setErr(e instanceof Error ? e.message : 'Error removing member');
+          setErr(e instanceof Error ? e.message : t('routers.users.errors.removeFailed'));
         } finally {
           setLoading(false);
         }
@@ -104,29 +112,29 @@ export function RouterUsersTab() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Router Members</h3>
+          <h3 style={{ margin: '0 0 4px', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{t('routers.users.title')}</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Manage users who have access to this router.
+            {t('routers.users.description')}
           </p>
         </div>
         {!adding && (
           <button type="button" className="btn btn-primary" onClick={() => setAdding(true)} disabled={loading}>
             <Plus size={16} />
-            Add Member
+            {t('routers.users.addButton')}
           </button>
         )}
       </div>
 
       {adding && (
         <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px dashed var(--border)', background: 'var(--surface-active)' }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>Add New Member</h4>
+          <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>{t('routers.users.addNewTitle')}</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
               <SearchableSelect
                 value={newUserId}
                 onChange={setNewUserId}
                 disabled={loading}
-                placeholder="Select a user..."
+                placeholder={t('routers.users.selectUserPlaceholder')}
                 options={availableUsers.map(u => ({ value: u.id, label: u.email }))}
               />
             </div>
@@ -135,16 +143,12 @@ export function RouterUsersTab() {
                 value={newRole}
                 onChange={setNewRole}
                 disabled={loading}
-                options={[
-                  { value: 'viewer', label: 'Viewer' },
-                  { value: 'editor', label: 'Editor' },
-                  { value: 'admin', label: 'Admin' },
-                ]}
+                options={roleOptions}
               />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-primary" onClick={handleAddMember} disabled={loading || !newUserId}>Add</button>
-              <button className="btn btn-secondary" onClick={() => setAdding(false)} disabled={loading}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleAddMember} disabled={loading || !newUserId}>{t('routers.users.addConfirmButton')}</button>
+              <button className="btn btn-secondary" onClick={() => setAdding(false)} disabled={loading}>{t('routers.users.cancelButton')}</button>
             </div>
           </div>
         </div>
@@ -152,16 +156,16 @@ export function RouterUsersTab() {
 
       {members.length === 0 ? (
         <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-          No members found.
+          {t('routers.users.empty')}
         </div>
       ) : (
         <div className="card" style={{ overflow: 'hidden' }}>
           <table className="table">
             <thead>
               <tr>
-                <th>User</th>
-                <th style={{ width: 200 }}>Role</th>
-                <th style={{ width: 100, textAlign: 'right' }}>Actions</th>
+                <th>{t('routers.users.columns.user')}</th>
+                <th style={{ width: 200 }}>{t('routers.users.columns.role')}</th>
+                <th style={{ width: 100, textAlign: 'right' }}>{t('routers.users.columns.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -188,11 +192,7 @@ export function RouterUsersTab() {
                           value={editRole}
                           onChange={setEditRole}
                           disabled={loading}
-                          options={[
-                            { value: 'viewer', label: 'Viewer' },
-                            { value: 'editor', label: 'Editor' },
-                            { value: 'admin', label: 'Admin' },
-                          ]}
+                          options={roleOptions}
                         />
                       ) : (
                         <span style={{
@@ -210,10 +210,10 @@ export function RouterUsersTab() {
                     <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }} onClick={e => e.stopPropagation()}>
                       {isEditing ? (
                         <>
-                          <button className="btn-icon" onClick={() => handleUpdateMember(member.userId)} disabled={loading} title="Save changes">
+                          <button className="btn-icon" onClick={() => handleUpdateMember(member.userId)} disabled={loading} title={t('routers.users.saveTitle')}>
                             <Check size={16} />
                           </button>
-                          <button className="btn-icon" onClick={() => setEditingUserId(null)} disabled={loading} title="Cancel">
+                          <button className="btn-icon" onClick={() => setEditingUserId(null)} disabled={loading} title={t('routers.users.cancelButton')}>
                             <X size={16} />
                           </button>
                         </>
@@ -223,7 +223,7 @@ export function RouterUsersTab() {
                             className="btn-icon"
                             onClick={() => { setEditingUserId(member.userId); setEditRole(member.role); }}
                             disabled={loading}
-                            title="Change Role"
+                            title={t('routers.users.changeRoleTitle')}
                           >
                             <Edit2 size={16} />
                           </button>
@@ -231,7 +231,7 @@ export function RouterUsersTab() {
                             className="btn-icon danger"
                             onClick={() => handleRemoveMember(member.userId)}
                             disabled={loading}
-                            title="Remove Member"
+                            title={t('routers.users.removeTitle')}
                           >
                             <Trash2 size={16} />
                           </button>

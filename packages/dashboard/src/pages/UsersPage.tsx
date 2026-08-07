@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Users, Pencil, ShieldOff } from 'lucide-react';
 import { getUsers, createUser, deleteUser, reset2faForUser, type User } from '../api';
@@ -9,6 +10,7 @@ import { useAuth } from '../AuthContext';
 type AddForm = { email: string; password: string; roleId: string };
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const canRead  = can('user:read');
   const canWrite = can('user:write');
@@ -30,7 +32,7 @@ export function UsersPage() {
       setUsers(await getUsers());
       setLoadErr('');
     } catch (e) {
-      setLoadErr(e instanceof Error ? e.message : 'Failed to load users');
+      setLoadErr(e instanceof Error ? e.message : t('users.errors.loadFailed'));
     } finally { setLoading(false); }
   }
 
@@ -42,13 +44,13 @@ export function UsersPage() {
       setShowAdd(false);
       setAddForm({ email: '', password: '', roleId: 'viewer' });
       await load();
-    } catch (e) { setAddErr(e instanceof Error ? e.message : 'Error'); }
+    } catch (e) { setAddErr(e instanceof Error ? e.message : t('users.errors.addFailed')); }
     finally { setAddSaving(false); }
   }
 
   function handleDelete(id: string) {
     setConfirmState({
-      message: 'Delete this user?',
+      message: t('users.deleteConfirm'),
       onConfirm: async () => {
         setConfirmState(null);
         await deleteUser(id);
@@ -59,7 +61,7 @@ export function UsersPage() {
 
   function handleReset2fa(id: string, email: string) {
     setConfirmState({
-      message: `Reset 2FA for ${email}? They will need to re-enroll.`,
+      message: t('users.resetTwoFaConfirm', { email }),
       onConfirm: async () => {
         setConfirmState(null);
         await reset2faForUser(id);
@@ -69,16 +71,16 @@ export function UsersPage() {
   }
 
   if (!canRead) {
-    return <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view users.</p></div>;
+    return <div className="empty-state"><ShieldOff size={40} /><p>{t('users.noPermission')}</p></div>;
   }
 
   return (
     <>
       <div className="toolbar">
-        <span className="toolbar-title">{users.length} user{users.length !== 1 ? 's' : ''}</span>
+        <span className="toolbar-title">{t('users.countLabel', { count: users.length })}</span>
         {canWrite && (
           <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
-            <Plus size={16} /> Add User
+            <Plus size={16} /> {t('users.addButton')}
           </button>
         )}
       </div>
@@ -88,11 +90,11 @@ export function UsersPage() {
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
       ) : users.length === 0 ? (
-        <div className="empty-state"><Users size={40} /><p>No users yet.</p></div>
+        <div className="empty-state"><Users size={40} /><p>{t('users.emptyTitle')}</p></div>
       ) : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Email</th><th>Role</th><th>Routers</th><th></th></tr></thead>
+            <thead><tr><th>{t('users.columns.email')}</th><th>{t('users.columns.role')}</th><th>{t('users.columns.routers')}</th><th></th></tr></thead>
             <tbody>
               {users.map(u => (
                 <tr
@@ -105,11 +107,11 @@ export function UsersPage() {
                   <td><strong style={{ color: 'var(--text-primary)' }}>{u.email}</strong></td>
                   <td><span className={`badge ${u.roleId === 'admin' ? 'badge-success' : 'badge-ollama'}`}>{u.roleId}</span></td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                    {u.routerIds.length === 0 ? 'All' : u.routerIds.join(', ')}
+                    {u.routerIds.length === 0 ? t('users.allRouters') : u.routerIds.join(', ')}
                   </td>
                   <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                     {canWrite && u.totpEnabled && (
-                      <button className="btn-icon" title="Reset 2FA" onClick={() => handleReset2fa(u.id, u.email)}>
+                      <button className="btn-icon" title={t('users.resetTwoFaTitle')} onClick={() => handleReset2fa(u.id, u.email)}>
                         <ShieldOff size={14} />
                       </button>
                     )}
@@ -135,31 +137,31 @@ export function UsersPage() {
       {showAdd && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="modal">
-            <h2 className="modal-title">Add User</h2>
+            <h2 className="modal-title">{t('users.modal.title')}</h2>
             <form onSubmit={handleAdd}>
               {addErr && <div className="form-error">{addErr}</div>}
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label">{t('users.modal.emailLabel')}</label>
                 <input className="form-input" type="email" value={addForm.email}
-                  onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" required />
+                  onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder={t('users.modal.emailPlaceholder')} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Password</label>
+                <label className="form-label">{t('users.modal.passwordLabel')}</label>
                 <input className="form-input" type="password" value={addForm.password}
-                  onChange={e => setAddForm(f => ({ ...f, password: e.target.value }))} placeholder="••••••••" required />
+                  onChange={e => setAddForm(f => ({ ...f, password: e.target.value }))} placeholder={t('users.modal.passwordPlaceholder')} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Role</label>
+                <label className="form-label">{t('users.modal.roleLabel')}</label>
                 <SearchableSelect
-                  options={[{ value: 'admin', label: 'Admin' }, { value: 'viewer', label: 'Viewer' }]}
+                  options={[{ value: 'admin', label: t('users.modal.roleAdmin') }, { value: 'viewer', label: t('users.modal.roleViewer') }]}
                   value={addForm.roleId}
                   onChange={v => setAddForm(f => ({ ...f, roleId: v }))}
                 />
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAdd(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAdd(false)}>{t('users.modal.cancelButton')}</button>
                 <button type="submit" className="btn btn-primary" disabled={addSaving}>
-                  {addSaving ? <span className="spinner" /> : 'Add User'}
+                  {addSaving ? <span className="spinner" /> : t('users.modal.submitButton')}
                 </button>
               </div>
             </form>

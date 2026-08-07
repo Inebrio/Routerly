@@ -1,4 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit2, Copy, Eye, Layers, ShieldOff } from 'lucide-react';
 import {
@@ -14,15 +16,19 @@ export const KIND_LABELS: Record<ProfileKind, string> = {
   security: 'Security',
 };
 
-const KIND_DESCRIPTIONS: Record<ProfileKind, string> = {
-  routing: 'Which model answers a request, and what happens when it cannot',
-  optimizer: 'What is stripped from a prompt before it is sent',
-  security: 'Guardrails and PII policies applied to traffic',
-};
+function kindDescriptions(t: TFunction): Record<ProfileKind, string> {
+  return {
+    routing: t('profiles.list.kindDescriptions.routing'),
+    optimizer: t('profiles.list.kindDescriptions.optimizer'),
+    security: t('profiles.list.kindDescriptions.security'),
+  };
+}
 
 const KINDS = Object.keys(KIND_LABELS) as ProfileKind[];
 
 /** One-line description of what a profile actually configures, shown in the list. */
+// ponytail: keeps plain English (existing unit tests assert exact strings); revisit if
+// profiles list needs full i18n pluralization.
 export function profileSummary(p: Profile): string {
   if (p.kind === 'routing') {
     const enabled = p.policies.filter(x => x.enabled).length;
@@ -38,6 +44,8 @@ export function profileSummary(p: Profile): string {
 }
 
 export function ProfilesPage() {
+  const { t } = useTranslation();
+  const KIND_DESCRIPTIONS = kindDescriptions(t);
   const { can } = useAuth();
   const navigate = useNavigate();
   const canRead = can('profiles:read');
@@ -54,13 +62,13 @@ export function ProfilesPage() {
     setLoading(true);
     getProfiles()
       .then(setProfiles)
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load profiles'))
+      .catch(e => setError(e instanceof Error ? e.message : t('profiles.list.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, [canRead]);
 
   function handleDelete(p: Profile) {
     setConfirmState({
-      message: `Delete profile "${p.label}"? This cannot be undone.`,
+      message: t('profiles.list.deleteConfirm', { label: p.label }),
       onConfirm: async () => {
         setConfirmState(null);
         setError('');
@@ -68,7 +76,7 @@ export function ProfilesPage() {
           await deleteProfile(p.id);
           setProfiles(ps => ps.filter(x => x.id !== p.id));
         } catch (e) {
-          setError(e instanceof Error ? e.message : 'Failed to delete profile');
+          setError(e instanceof Error ? e.message : t('profiles.list.errors.deleteFailed'));
         }
       },
     });
@@ -78,11 +86,11 @@ export function ProfilesPage() {
     return (
       <>
         <div className="page-header">
-          <h1>Profiles</h1>
-          <p>Reusable routing, optimizer and security configurations</p>
+          <h1>{t('profiles.list.title')}</h1>
+          <p>{t('profiles.list.subtitle')}</p>
         </div>
         <div className="page-body">
-          <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view profiles.</p></div>
+          <div className="empty-state"><ShieldOff size={40} /><p>{t('profiles.list.noPermission')}</p></div>
         </div>
       </>
     );
@@ -104,8 +112,8 @@ export function ProfilesPage() {
   return (
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
-        <h1>Profiles</h1>
-        <p>Reusable routing, optimizer and security configurations</p>
+        <h1>{t('profiles.list.title')}</h1>
+        <p>{t('profiles.list.subtitle')}</p>
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginTop: 12 }}>
           {KINDS.map(k => (
             <button key={k} style={tabStyle(k)} onClick={() => setKind(k)} aria-pressed={kind === k}>
@@ -132,7 +140,7 @@ export function ProfilesPage() {
               </span>
               {canManage && (
                 <button className="btn btn-primary" onClick={() => navigate(`/dashboard/profiles/new?kind=${kind}`)}>
-                  <Plus size={16} /> New {KIND_LABELS[kind]} Profile
+                  <Plus size={16} /> {t('profiles.list.newProfile', { kind: KIND_LABELS[kind] })}
                 </button>
               )}
             </div>
@@ -140,7 +148,7 @@ export function ProfilesPage() {
             {visible.length === 0 ? (
               <div className="empty-state">
                 <Layers size={40} />
-                <p>No {KIND_LABELS[kind].toLowerCase()} profiles yet.</p>
+                <p>{t('profiles.list.empty', { kind: KIND_LABELS[kind].toLowerCase() })}</p>
               </div>
             ) : (
               <div className="table-wrap" style={{ overflowX: 'auto' }}>
@@ -156,10 +164,10 @@ export function ProfilesPage() {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>Label</th>
-                      <th>Type</th>
-                      <th>Configuration</th>
-                      <th>Version</th>
+                      <th>{t('profiles.list.columns.label')}</th>
+                      <th>{t('profiles.list.columns.type')}</th>
+                      <th>{t('profiles.list.columns.configuration')}</th>
+                      <th>{t('profiles.list.columns.version')}</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -167,14 +175,14 @@ export function ProfilesPage() {
                     {visible.map(p => (
                       <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/dashboard/profiles/${p.id}`)}>
                         <td>{p.label}</td>
-                        <td><span className={`badge badge-${p.builtin ? 'success' : 'custom'}`}>{p.builtin ? 'Built-in' : 'Custom'}</span></td>
+                        <td><span className={`badge badge-${p.builtin ? 'success' : 'custom'}`}>{p.builtin ? t('profiles.list.builtin') : t('profiles.list.custom')}</span></td>
                         <td><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{profileSummary(p)}</span></td>
                         <td><span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.version}</span></td>
                         <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
                           <button
                             className="btn-icon"
                             onClick={() => navigate(`/dashboard/profiles/${p.id}`)}
-                            title={p.builtin || !canManage ? 'View' : 'Edit'}
+                            title={p.builtin || !canManage ? t('profiles.list.view') : t('profiles.list.edit')}
                           >
                             {p.builtin || !canManage ? <Eye size={15} /> : <Edit2 size={15} />}
                           </button>
@@ -182,13 +190,13 @@ export function ProfilesPage() {
                             <button
                               className="btn-icon"
                               onClick={() => navigate(`/dashboard/profiles/new?base=${encodeURIComponent(p.id)}`)}
-                              title="Clone"
+                              title={t('profiles.list.clone')}
                             >
                               <Copy size={15} />
                             </button>
                           )}
                           {canManage && !p.builtin && (
-                            <button className="btn-icon danger" onClick={() => handleDelete(p)} title="Delete">
+                            <button className="btn-icon danger" onClick={() => handleDelete(p)} title={t('profiles.list.delete')}>
                               <Trash2 size={15} />
                             </button>
                           )}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Pencil, ShieldOff, Split } from 'lucide-react';
 import {
@@ -37,6 +38,7 @@ export function useExperimentsEnabled(): boolean | null {
 }
 
 export function ExperimentsPage() {
+  const { t } = useTranslation();
   const { can } = useAuth();
   const navigate = useNavigate();
   const canRead = can('experiments:read');
@@ -53,7 +55,7 @@ export function ExperimentsPage() {
     setLoading(true);
     getExperiments()
       .then(setExperiments)
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load experiments'))
+      .catch(e => setError(e instanceof Error ? e.message : t('experiments.list.errors.loadFailed')))
       .finally(() => setLoading(false));
     // Variants name their router, not its id: a failed lookup only costs the
     // fallback label, so it never blocks the list.
@@ -69,7 +71,7 @@ export function ExperimentsPage() {
 
   function handleDelete(e: MaskedExperiment) {
     setConfirmState({
-      message: `Delete experiment "${e.name}"? Its tokens stop working immediately. This cannot be undone.`,
+      message: t('experiments.list.deleteConfirm', { name: e.name }),
       onConfirm: async () => {
         setConfirmState(null);
         setError('');
@@ -77,7 +79,7 @@ export function ExperimentsPage() {
           await deleteExperiment(e.id);
           setExperiments(list => list.filter(x => x.id !== e.id));
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to delete the experiment');
+          setError(err instanceof Error ? err.message : t('experiments.list.errors.deleteFailed'));
         }
       },
     });
@@ -87,11 +89,11 @@ export function ExperimentsPage() {
     return (
       <>
         <div className="page-header">
-          <h1>Experiments</h1>
-          <p>A/B tests that split traffic across whole routers</p>
+          <h1>{t('experiments.list.title')}</h1>
+          <p>{t('experiments.list.subtitle')}</p>
         </div>
         <div className="page-body">
-          <div className="empty-state"><ShieldOff size={40} /><p>You don't have permission to view experiments.</p></div>
+          <div className="empty-state"><ShieldOff size={40} /><p>{t('experiments.list.noPermission')}</p></div>
         </div>
       </>
     );
@@ -100,8 +102,8 @@ export function ExperimentsPage() {
   return (
     <>
       <div className="page-header">
-        <h1>Experiments</h1>
-        <p>A/B tests that split traffic across whole routers</p>
+        <h1>{t('experiments.list.title')}</h1>
+        <p>{t('experiments.list.subtitle')}</p>
       </div>
       <div className="page-body">
         {error && <div className="form-error" style={{ marginBottom: 20 }}>{error}</div>}
@@ -112,11 +114,11 @@ export function ExperimentsPage() {
           <>
             <div className="toolbar">
               <span className="toolbar-title">
-                {experiments.length} experiment{experiments.length !== 1 ? 's' : ''}
+                {t('experiments.list.count', { count: experiments.length })}
               </span>
               {canManage && (
                 <button className="btn btn-primary" onClick={() => navigate('/dashboard/experiments/new')}>
-                  <Plus size={16} /> New Experiment
+                  <Plus size={16} /> {t('experiments.list.newExperiment')}
                 </button>
               )}
             </div>
@@ -124,17 +126,17 @@ export function ExperimentsPage() {
             {experiments.length === 0 ? (
               <div className="empty-state">
                 <Split size={40} />
-                <p>No experiments yet. Create one to compare two routers on live traffic.</p>
+                <p>{t('experiments.list.empty')}</p>
               </div>
             ) : (
               <div className="table-wrap" style={{ overflowX: 'auto' }}>
                 <table style={{ minWidth: 760 }}>
                   <thead>
                     <tr>
-                      <th>Name</th>
-                      <th>Variants</th>
-                      <th>Rotation</th>
-                      <th>Created</th>
+                      <th>{t('experiments.list.columns.name')}</th>
+                      <th>{t('experiments.list.columns.variants')}</th>
+                      <th>{t('experiments.list.columns.rotation')}</th>
+                      <th>{t('experiments.list.columns.created')}</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -145,8 +147,8 @@ export function ExperimentsPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <Link to={`/dashboard/experiments/${e.id}`} style={{ fontWeight: 500 }}>{e.name}</Link>
                             {e.tokens.length === 0 && (
-                              <span className="badge badge-warning" title="Without a token no client can reach this experiment">
-                                No token
+                              <span className="badge badge-warning" title={t('experiments.list.noTokenTitle')}>
+                                {t('experiments.list.noToken')}
                               </span>
                             )}
                           </div>
@@ -164,10 +166,10 @@ export function ExperimentsPage() {
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             {canManage && (
                               <>
-                                <button className="btn-icon" onClick={() => navigate(`/dashboard/experiments/${e.id}/config`)} title="Edit experiment">
+                                <button className="btn-icon" onClick={() => navigate(`/dashboard/experiments/${e.id}/config`)} title={t('experiments.list.actions.edit')}>
                                   <Pencil size={15} />
                                 </button>
-                                <button className="btn-icon danger" onClick={() => handleDelete(e)} title="Delete">
+                                <button className="btn-icon danger" onClick={() => handleDelete(e)} title={t('experiments.list.actions.remove')}>
                                   <Trash2 size={15} />
                                 </button>
                               </>

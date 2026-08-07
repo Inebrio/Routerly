@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Square, Paperclip, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
@@ -15,11 +16,12 @@ interface Message {
 }
 
 export function RouterTestTab() {
+  const { t } = useTranslation();
   const { router } = useRouter();
   const [apiKey, setApiKey] = useState('');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'system', content: 'You are a helpful AI assistant.' }
+    { role: 'system', content: t('routers.test.defaultSystemMessage') }
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -230,7 +232,7 @@ export function RouterTestTab() {
       if (e instanceof Error && e.name === 'AbortError') {
         // Stop requested by user — not an error
       } else {
-        setError(e instanceof Error ? e.message : 'Unknown error occurred');
+        setError(e instanceof Error ? e.message : t('routers.test.errors.unknown'));
       }
     } finally {
       stopTrace();
@@ -248,7 +250,7 @@ export function RouterTestTab() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Only image attachments are supported for vision models currently.');
+      setError(t('routers.test.errors.onlyImages'));
       return;
     }
 
@@ -273,12 +275,12 @@ export function RouterTestTab() {
         {/* Chat Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Test Chat</h3>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Send test queries through the routing gateway.</p>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{t('routers.test.title')}</h3>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('routers.test.subtitle')}</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Router Token:</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('routers.test.routerToken')}</span>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
                   type={showKey ? "text" : "password"}
@@ -296,7 +298,7 @@ export function RouterTestTab() {
                     position: 'absolute', right: 8, background: 'none', border: 'none',
                     color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 4
                   }}
-                  title={showKey ? "Hide Token" : "Show Token"}
+                  title={showKey ? t('routers.test.hideToken') : t('routers.test.showToken')}
                 >
                   {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
@@ -308,12 +310,12 @@ export function RouterTestTab() {
               matchedToken ? (
                 <div style={{ fontSize: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <CheckCircle2 size={12} />
-                  Recognized Token {matchedToken.labels?.length && matchedToken.labels.length > 0 ? `(${matchedToken.labels.join(', ')})` : ''}
+                  {t('routers.test.recognizedToken')} {matchedToken.labels?.length && matchedToken.labels.length > 0 ? `(${matchedToken.labels.join(', ')})` : ''}
                 </div>
               ) : apiKey.length >= 10 ? (
                 <div style={{ fontSize: '0.75rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <AlertCircle size={12} />
-                  Unrecognized Token
+                  {t('routers.test.unrecognizedToken')}
                 </div>
               ) : null
             )}
@@ -324,11 +326,11 @@ export function RouterTestTab() {
         <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {messages.length === 1 && messages[0]?.role === 'system' ? (
             <div className="empty-state" style={{ padding: '40px 0', margin: 'auto' }}>
-              <p style={{ margin: 0 }}>No messages yet.</p>
+              <p style={{ margin: 0 }}>{t('routers.test.noMessages')}</p>
               {!apiKey ? (
-                <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--danger)' }}>Please enter a Router Token above to send a message.</p>
+                <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--danger)' }}>{t('routers.test.enterTokenHint')}</p>
               ) : (
-                <p style={{ fontSize: '0.8rem', marginTop: 4 }}>Type a message below to start testing.</p>
+                <p style={{ fontSize: '0.8rem', marginTop: 4 }}>{t('routers.test.typeMessageHint')}</p>
               )}
             </div>
           ) : (
@@ -349,7 +351,7 @@ export function RouterTestTab() {
                       background: 'var(--bg-surface)', border: '1px solid var(--border)',
                       borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
                     }}>
-                      💭 Reasoning {loading && i === messages.filter(m => m.role !== 'system').length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
+                      💭 {t('routers.test.reasoning')} {loading && i === messages.filter(m => m.role !== 'system').length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
                     </summary>
                     <div style={{
                       marginTop: 4, padding: '10px 14px',
@@ -377,7 +379,7 @@ export function RouterTestTab() {
                       : /* v8 ignore start */ <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {(msg.content as any[]).map((c, idx) => {
                             if (c.type === 'text') return <div key={idx} className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{c.text}</ReactMarkdown></div>;
-                            if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />;
+                            if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt={t('routers.test.attachedAlt')} style={{ maxWidth: 200, borderRadius: 8 }} />;
                             return null;
                           })}
                         </div> /* v8 ignore stop */
@@ -388,7 +390,7 @@ export function RouterTestTab() {
                           c.type === 'text'
                             ? <span key={idx}>{c.text}</span>
                             : /* v8 ignore next */
-                              <img key={idx} src={c.image_url.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} />
+                              <img key={idx} src={c.image_url.url} alt={t('routers.test.attachedAlt')} style={{ maxWidth: 200, borderRadius: 8 }} />
                         )}
                       </>
                     )
@@ -426,7 +428,7 @@ export function RouterTestTab() {
           {attachedImage && (
             <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img src={attachedImage} alt="Attachment" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
+                <img src={attachedImage} alt={t('routers.test.attachmentAlt')} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
                 <button
                   className="btn-icon danger"
                   style={{ position: 'absolute', top: -6, right: -6, padding: 2, background: 'var(--bg-elevated)' }}
@@ -445,13 +447,13 @@ export function RouterTestTab() {
               ref={fileInputRef}
               onChange={handleFileAttach}
             />
-            <button className="btn-icon" title="Attach image" onClick={() => fileInputRef.current?.click()}>
+            <button className="btn-icon" title={t('routers.test.attachImage')} onClick={() => fileInputRef.current?.click()}>
               <Paperclip size={18} />
             </button>
             <textarea
               className="form-input"
               rows={2}
-              placeholder="Type a message..."
+              placeholder={t('routers.test.typeMessagePlaceholder')}
               style={{ flex: 1, resize: 'none', fontFamily: 'inherit' }}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -463,11 +465,11 @@ export function RouterTestTab() {
               }}
             />
             {loading ? (
-              <button className="btn btn-danger" title="Stop generation" onClick={handleStop}>
+              <button className="btn btn-danger" title={t('routers.test.stopGeneration')} onClick={handleStop}>
                 <Square size={16} />
               </button>
             ) : (
-              <button className="btn btn-primary" title="Send (Enter)" onClick={handleSend} disabled={!input.trim() || !apiKey}>
+              <button className="btn btn-primary" title={t('routers.test.sendEnter')} onClick={handleSend} disabled={!input.trim() || !apiKey}>
                 <Send size={16} />
               </button>
             )}
@@ -480,13 +482,13 @@ export function RouterTestTab() {
 
         {/* Debug Header */}
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Debug Log</h3>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{t('routers.test.debugLog')}</h3>
           {debugTraceHistory.length > 0 && (
             <button
               onClick={() => { setDebugTraceHistory([]); }}
               style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
             >
-              Clear
+              {t('routers.test.clear')}
             </button>
           )}
         </div>
@@ -494,7 +496,7 @@ export function RouterTestTab() {
         {/* One turn per block: the recap card, and the full log a click below it */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 12, background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {debugTraceHistory.length === 0 ? (
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No request sent yet.</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{t('routers.test.noRequestSent')}</span>
           ) : debugTraceHistory.map((entries, i) => {
             const traces = (entries ?? []) as TraceEntry[];
             const pending = loading && i === debugTraceHistory.length - 1;
@@ -503,7 +505,7 @@ export function RouterTestTab() {
                 <TraceSummary trace={traces} turn={i + 1} />
                 <details style={{ marginTop: 4 }}>
                   <summary style={{ fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
-                    Turn #{i + 1} trace log · {traces.length} event{traces.length !== 1 ? 's' : ''}{pending ? ' ⏳' : ''}
+                    {t('routers.test.turnTraceLog', { turn: i + 1, count: traces.length })}{pending ? ' ⏳' : ''}
                   </summary>
                   <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                     <TraceLog entries={traces} collapsed />
