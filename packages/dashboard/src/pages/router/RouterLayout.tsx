@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Outlet, NavLink, useLocation } from 'react-router-dom';
 import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard, Shuffle } from 'lucide-react';
-import { getRouters, type Router } from '../../api';
+import { getRouters, type Router, type RouterKind } from '../../api';
 
 export function RouterLayout() {
   const { t } = useTranslation();
@@ -10,6 +10,8 @@ export function RouterLayout() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const isNew = !id;
+  // 'routers/new/router' | 'routers/new/orchestrator' | 'routers/new/passthrough'
+  const newKind = isNew ? (location.pathname.split('/').pop() as RouterKind) : undefined;
 
   const [router, setRouter] = useState<Router | null>(null);
   const [loading, setLoading] = useState(!isNew);
@@ -67,7 +69,13 @@ export function RouterLayout() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 style={{ margin: 0 }}>{isNew ? t('routers.layout.newRouter') : router?.name || t('routers.layout.loading')}</h1>
+            <h1 style={{ margin: 0 }}>
+              {isNew
+                ? (newKind && newKind !== 'router'
+                    ? t('routers.layout.newKind', { kind: t(`routers.general.kind.${newKind}.label`) })
+                    : t('routers.layout.newRouter'))
+                : router?.name || t('routers.layout.loading')}
+            </h1>
             {!isNew && router && (
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 {t('routers.layout.routerId')} <span className="mono">{router.id}</span>
