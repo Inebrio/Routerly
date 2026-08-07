@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Copy, Check, ChevronDown, ArrowRight } from 'lucide-react';
@@ -64,13 +65,14 @@ export function RouterCreateForm({ kind, buildExtraPayload, afterCreatePath, sub
         ...buildExtraPayload(),
       };
       const proj = await createRouter(payload);
-      // Reset so isDirty becomes false before navigating — otherwise the app's own
-      // post-create redirect trips the unsaved-changes blocker on itself (same
-      // reset-after-success pattern as RouterGeneralTab's save handler).
-      setCommon(f => ({ ...f, name: '' }));
       if (proj.token) {
         setRevealedToken({ token: proj.token, routerId: proj.id });
       } else {
+        // Reset so isDirty becomes false, and flush synchronously — the
+        // blocker reads isDirty from a ref updated by an effect, and a plain
+        // setState wouldn't flush before the navigate() call right below,
+        // leaving the blocker armed and trapping the app's own redirect.
+        flushSync(() => setCommon(f => ({ ...f, name: '' })));
         navigate(afterCreatePath(proj.id));
       }
     } catch (err) {
