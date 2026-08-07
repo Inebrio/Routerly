@@ -5,7 +5,7 @@ sidebar_position: 6
 
 # Budgets & Limits
 
-Routerly has a three-level budget hierarchy that lets you control spending at the platform, project, and individual-token levels. Budgets can be configured for any metric — cost, call count, or token usage — over a rolling or calendar window.
+Routerly has a three-level budget hierarchy that lets you control spending at the platform, router, and individual-token levels. Budgets can be configured for any metric — cost, call count, or token usage — over a rolling or calendar window.
 
 ---
 
@@ -13,7 +13,7 @@ Routerly has a three-level budget hierarchy that lets you control spending at th
 
 ```
 Global budget
-└── Project budget
+└── Router budget
     └── Per-token budget
 ```
 
@@ -29,34 +29,34 @@ None of the budget or limit checks on this page apply to **Passthrough** routers
 
 ### Global budget
 
-Applies to all requests across all projects. Useful for setting a hard ceiling on total platform spending.
+Applies to all requests across all routers. Useful for setting a hard ceiling on total platform spending.
 
 Configure via **Dashboard → Settings → Budgets** or in `settings.json`.
 
-### Project budget
+### Router budget
 
-Applies to all requests through a specific project. Configure per project via the **General** tab in the project settings.
+Applies to all requests through a specific router. Configure per router via the **General** tab in the router settings.
 
 ### Per-token budget
 
-Applies to requests made with a specific project token. Configured in the project's **Tokens** tab. Per-token limits are useful when different applications share a project and you want to isolate their spending.
+Applies to requests made with a specific router token. Configured in the router's **Tokens** tab. Per-token limits are useful when different applications share a router and you want to isolate their spending.
 
 ### Spend groups (org / team)
 
-Spend groups add an org- and team-level tier on top of the model/project/token
+Spend groups add an org- and team-level tier on top of the model/router/token
 limits, giving a full cascade:
 
 ```
 Organisation group
 └── Team group
-    └── Project (spendGroupId) → per-token budget
+    └── Router (spendGroupId) → per-token budget
 ```
 
-A project joins a group via its `spendGroupId`, and groups nest via
-`parentGroupId`. Usage is attributed to a group by the projects that belong to
-it and to its descendant groups. When a request runs through a project in a
+A router joins a group via its `spendGroupId`, and groups nest via
+`parentGroupId`. Usage is attributed to a group by the routers that belong to
+it and to its descendant groups. When a request runs through a router in a
 group, every group in the parent chain must have budget remaining, in addition
-to the per-model/project/token checks. **Child group limits cannot exceed their
+to the per-model/router/token checks. **Child group limits cannot exceed their
 parent's matching limit** — this is validated when creating or updating a group.
 
 Spend groups use the same `Limit` shape (metrics, period/rolling windows) as the
@@ -112,13 +112,13 @@ Track usage over a sliding time window:
 
 ## Limit Modes (per-token budgets)
 
-When a per-token budget is configured, the `mode` field controls how it interacts with the parent project budget:
+When a per-token budget is configured, the `mode` field controls how it interacts with the parent router budget:
 
 | Mode | Behaviour |
 |------|-----------|
-| `replace` | The per-token limit overrides the project limit entirely for this token |
-| `extend` | The per-token limit stacks on top of the project limit (both must pass) |
-| `disable` | No budget limit for this token, regardless of project limits |
+| `replace` | The per-token limit overrides the router limit entirely for this token |
+| `extend` | The per-token limit stacks on top of the router limit (both must pass) |
+| `disable` | No budget limit for this token, regardless of router limits |
 
 ---
 
@@ -127,7 +127,7 @@ When a per-token budget is configured, the `mode` field controls how it interact
 ### Dashboard
 
 **Global budget (per model):** Open **Models**, edit the model, then the **Limits** section.
-**Per-token budget:** Open the project → **Tokens** tab → click the edit icon next to a token. The editor shows the limit inherited from the model so you can see what you are overriding.
+**Per-token budget:** Open the router → **Tokens** tab → click the edit icon next to a token. The editor shows the limit inherited from the model so you can see what you are overriding.
 
 ### CLI
 
@@ -144,12 +144,12 @@ routerly model edit gpt-5-mini --limits-json \
 Per-token limits are set on the token, one spec per model:
 
 ```bash
-routerly project token edit "My App" <token-id> \
+routerly router token edit "My App" <token-id> \
   --add-limit "gpt-5-mini:cost:period:daily:5"
 ```
 
 :::note
-The project level (`limits` on a project's model entry) is honoured at request time but has no dashboard or CLI editor yet: it can only be written directly in `projects.json`. Set budgets on the model or on the token instead.
+The router level (`limits` on a router's model entry) is honoured at request time but has no dashboard or CLI editor yet: it can only be written directly in `routers.json`. Set budgets on the model or on the token instead.
 :::
 
 ---
@@ -158,7 +158,7 @@ The project level (`limits` on a project's model entry) is honoured at request t
 
 - Routerly returns **HTTP 503** with a JSON error body:
   ```json
-  {"error":"budget_exceeded","message":"Monthly cost limit for project 'my-app' reached ($50.00)"}
+  {"error":"budget_exceeded","message":"Monthly cost limit for router 'my-app' reached ($50.00)"}
   ```
 - The response is immediate — no provider API call is made.
 - Once the budget window resets (e.g. at the start of next month), requests are accepted again automatically.

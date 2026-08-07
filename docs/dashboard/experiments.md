@@ -6,7 +6,7 @@ sidebar_position: 13
 # Dashboard: Experiments
 
 The Experiments section runs A/B tests that split live traffic across whole
-projects. See [Concepts: Experiments](../concepts/experiments.md) for what a
+routers. See [Concepts: Experiments](../concepts/experiments.md) for what a
 variant is, how the rotation picks one, and how the numbers are computed.
 
 Navigate to `/dashboard/experiments`.
@@ -26,7 +26,7 @@ the entry is hidden; modules are turned on from the CLI
 | Column | Description |
 |--------|-------------|
 | **Name** | A link to the experiment, with its description underneath when it has one, plus a `No token` badge when no client can reach it yet |
-| **Variants** | What the test compares, by name: each variant's label, or the project it routes to when it has none |
+| **Variants** | What the test compares, by name: each variant's label, or the router it routes to when it has none |
 | **Rotation** | How traffic is split: Sticky per session, Random with weights, Round robin |
 | **Created** | Creation date |
 
@@ -71,8 +71,8 @@ explanation shown under the field. Choosing **Sticky per session** reveals
 
 **Variants**
 
-One row per arm: the **project** (searchable, required), an optional **label**
-shown in place of the project name, and, when the rotation is weighted, a
+One row per arm: the **router** (searchable, required), an optional **label**
+shown in place of the router name, and, when the rotation is weighted, a
 **weight**. The weight field shows the resulting share as a percentage, live,
 so `70` / `30` reads as 70% / 30% while you type. Rows can be added and
 removed; a test needs at least two.
@@ -118,7 +118,7 @@ under a value is its distance from the best arm.
 
 | Column | Description |
 |--------|-------------|
-| **Variant** | Label with the project it routes to underneath, and a `Low sample` badge below the minimum |
+| **Variant** | Label with the router it routes to underneath, and a `Low sample` badge below the minimum |
 | **Calls** | Client calls the variant served |
 | **Share** | That variant's percentage of the calls measured in the window |
 | **Errors** | Failed calls, with the rate |
@@ -153,9 +153,9 @@ the tab shows an empty state pointing at the experiment token.
 ### Token Tab
 
 The tab opens with the base URL to point a client at, with a Copy button: it
-is this instance's own address plus `/v1`, the same one projects use.
+is this instance's own address plus `/v1`, the same one routers use.
 
-The tokens clients call to reach the experiment. Same shape as a project's
+The tokens clients call to reach the experiment. Same shape as a router's
 tokens: only the first characters of each are ever shown again, with its
 creation date and last use.
 
@@ -163,9 +163,9 @@ creation date and last use.
 deletes a token after confirmation, and any client still using it starts
 failing immediately.
 
-A client calls the experiment exactly like a project: same base URL, this
-token in place of a project token. Each request lands on one variant and is
-billed to that variant's project.
+A client calls the experiment exactly like a router: same base URL, this
+token in place of a router token. Each request lands on one variant and is
+billed to that variant's router.
 
 ---
 
