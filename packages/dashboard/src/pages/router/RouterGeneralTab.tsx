@@ -198,6 +198,11 @@ export function RouterGeneralTab() {
                 not store or issue a credential for this router; whatever the client sends
                 goes straight to the provider.
               </p>
+              <p style={SECTION_TEXT}>
+                Budgets and limits do not apply to this router: cost is unknown for
+                Passthrough traffic, so it is never checked against or counted toward any
+                spend limit.
+              </p>
               {endpointOptions.length > 1 && (
                 <SearchableSelect
                   value={selectedEndpoint}

@@ -1135,6 +1135,7 @@ Examples:
 
   # A passthrough router: forwards the client's own credential unchanged
   routerly router create --name "My OpenAI" --kind passthrough --slug my-openai
+  # Note: budgets/limits do not apply to a passthrough router (cost is unknown for that traffic)
 
   # An orchestrator, routing to two candidate routers by weight
   routerly router create --name "Global" --kind orchestrator --candidate <router-id-1>:2 --candidate <router-id-2>:1
@@ -1157,7 +1158,7 @@ Units:    second | minute | hour | day | week | month
     .option('--routing-model <id>', 'Model ID for routing decisions')
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
-    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough (default: router)')
+    .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough (default: router). Budgets/limits do not apply to passthrough.')
     .option('--slug <path>', 'URL path segment for a passthrough router (required when --kind passthrough)')
     .option('--candidate <routerId:weight>', 'Candidate router for an orchestrator (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])

@@ -22,7 +22,12 @@ import type { ProxyContext } from '../reverse-proxy/context.js';
 
 // NOT authorization/x-api-key — RTR-03 forwards the client's own credential
 // untouched, unlike the model-execution passthrough.ts which swaps it out.
-const HOP_BY_HOP_REQUEST = new Set(['host', 'content-length', 'connection']);
+// `expect` is stripped too: Node's global fetch (undici) throws
+// NotSupportedError on `Expect: 100-continue`, some client stacks add it
+// automatically for larger bodies. Forwarding fails outright without this,
+// so dropping it here is what lets those clients reach the real upstream at
+// all — undici handles the body correctly without the header being present.
+const HOP_BY_HOP_REQUEST = new Set(['host', 'content-length', 'connection', 'expect']);
 const HOP_BY_HOP_RESPONSE = new Set(['content-encoding', 'content-length', 'transfer-encoding', 'connection']);
 
 const ANTHROPIC_BASE = 'https://api.anthropic.com';
