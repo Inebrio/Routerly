@@ -183,7 +183,7 @@ further settings into one reusable, named unit:
 - a **fallback strategy**: what happens when the picked model fails
 
 A Router either keeps its own inline policies (configured on its
-[Routing tab](../dashboard/projects.md#routing-tab)), or is assigned a shared
+[Routing tab](../dashboard/routers.md#routing-tab)), or is assigned a shared
 profile instead. Routing is one of three profile kinds, alongside optimizer
 and security profiles; see [Dashboard: Profiles](../dashboard/profiles.md)
 and [API: Profiles](../api/management.md#profiles) for how to manage and
