@@ -1159,10 +1159,7 @@
       "empty": "Inga routrar ännu.",
       "emptyFiltered": "Inga routrar av denna typ.",
       "tabs": {
-        "all": "Alla",
-        "router": "Router",
-        "orchestrator": "Orkestrering",
-        "passthrough": "Genomförning"
+        "all": "Alla"
       },
       "columns": {
         "name": "Namn",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Ta bort denna router?",
       "errors": {
         "deleteFailed": "Fel vid borttagning av router"
-      }
+      },
+      "newOrchestrator": "Ny orkestrator",
+      "newPassthrough": "Ny passthrough"
     },
     "layout": {
       "notFound": "Router hittades inte",
@@ -1197,7 +1196,8 @@
       "newRouter": "Ny router",
       "loading": "Laddar...",
       "routerId": "Router-ID:",
-      "saveFirstHint": "Spara routern först för att låsa upp denna flik"
+      "saveFirstHint": "Spara routern först för att låsa upp denna flik",
+      "newKind": "Ny {{kind}}"
     },
     "dashboard": {
       "period": "Period",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Typ",
-        "kindAriaLabel": "Routertyp",
         "kindFixedHint": "Fixerad när routern är skapad.",
         "routerName": "Routernamn",
         "routerNamePlaceholder": "Min app",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Spår registrerar alltid metadata (modeller, poäng, tokens, kostnad, latens). Slå på detta för att också registrera instruktionerna som skickats och svar som mottagits. De lagras med användningsposten och är synliga för alla som kan läsa rapporter.",
         "capturePromptsAndAnswers": "Fånga instruktioner och svar",
         "saveChanges": "Spara ändringar",
-        "createRouter": "Skapa router"
+        "createRouter": "Skapa router",
+        "passthroughPath": "Sökväg",
+        "passthroughPathHint": "Blir del av URL:en som klienter anropar: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Skapa orkestrator",
+        "createPassthrough": "Skapa passthrough"
       }
     },
     "orchestrator": {

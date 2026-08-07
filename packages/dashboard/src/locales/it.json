@@ -1159,10 +1159,7 @@
       "empty": "Nessun router ancora.",
       "emptyFiltered": "Nessun router di questo tipo.",
       "tabs": {
-        "all": "Tutti",
-        "router": "Router",
-        "orchestrator": "Orchestratore",
-        "passthrough": "Passaggio diretto"
+        "all": "Tutti"
       },
       "columns": {
         "name": "Nome",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Eliminare questo router?",
       "errors": {
         "deleteFailed": "Errore durante l'eliminazione del router"
-      }
+      },
+      "newOrchestrator": "Nuovo Orchestrator",
+      "newPassthrough": "Nuovo Passthrough"
     },
     "layout": {
       "notFound": "Router non trovato",
@@ -1197,7 +1196,8 @@
       "newRouter": "Nuovo router",
       "loading": "Caricamento in corso...",
       "routerId": "ID router:",
-      "saveFirstHint": "Salva prima il router per sbloccare questa scheda"
+      "saveFirstHint": "Salva prima il router per sbloccare questa scheda",
+      "newKind": "Nuovo {{kind}}"
     },
     "dashboard": {
       "period": "Periodo",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Tipo",
-        "kindAriaLabel": "Tipo di router",
         "kindFixedHint": "Fisso una volta creato il router.",
         "routerName": "Nome router",
         "routerNamePlaceholder": "La mia app",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Le tracce catturano sempre i metadati (modelli, punteggi, token, costi, latenza). Attiva questa opzione per catturare anche i prompt inviati e le risposte ricevute. Vengono salvati con il record di utilizzo e sono visibili a chiunque possa leggere i report.",
         "capturePromptsAndAnswers": "Cattura prompt e risposte",
         "saveChanges": "Salva modifiche",
-        "createRouter": "Crea router"
+        "createRouter": "Crea router",
+        "passthroughPath": "Percorso",
+        "passthroughPathHint": "Diventa parte dell'URL che i client chiamano: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Crea Orchestrator",
+        "createPassthrough": "Crea Passthrough"
       }
     },
     "orchestrator": {

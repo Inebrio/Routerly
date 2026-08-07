@@ -1159,10 +1159,7 @@
       "empty": "ابھی کوئی روٹرز نہیں۔",
       "emptyFiltered": "اس قسم کا کوئی روٹر نہیں۔",
       "tabs": {
-        "all": "تمام",
-        "router": "روٹر",
-        "orchestrator": "کنڈکٹر",
-        "passthrough": "پاس تھرو"
+        "all": "تمام"
       },
       "columns": {
         "name": "نام",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "یہ روٹر حذف کریں؟",
       "errors": {
         "deleteFailed": "روٹر حذف کرنے میں خرابی"
-      }
+      },
+      "newOrchestrator": "نیا آرکسٹریٹر",
+      "newPassthrough": "نیا Passthrough"
     },
     "layout": {
       "notFound": "روٹر نہیں ملا",
@@ -1197,7 +1196,8 @@
       "newRouter": "نیا روٹر",
       "loading": "لوڈ ہو رہا ہے...",
       "routerId": "روٹر ID:",
-      "saveFirstHint": "اس ٹیب کو کھولنے کے لیے پہلے روٹر کو محفوظ کریں"
+      "saveFirstHint": "اس ٹیب کو کھولنے کے لیے پہلے روٹر کو محفوظ کریں",
+      "newKind": "نیا {{kind}}"
     },
     "dashboard": {
       "period": "مدت",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "قسم",
-        "kindAriaLabel": "روٹر قسم",
         "kindFixedHint": "روٹر بننے کے بعد ثابت۔",
         "routerName": "روٹر نام",
         "routerNamePlaceholder": "میری ایپ",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "نشانات ہمیشہ میٹا ڈیٹا (ماڈلز، اسکورز، ٹوکنز، لاگت، لیٹنسی) ریکارڈ کرتے ہیں۔ اس کو ان کرنے کے لیے بھی پروموٹس بھیجے ہوئے اور جوابات موصول کیے ہوئے ریکارڈ کریں۔ وہ استعمال ریکارڈ کے ساتھ ذخیرہ ہوتے ہیں اور کوئی بھی رپورٹ پڑھ سکتا ہے۔",
         "capturePromptsAndAnswers": "پروموٹس اور جوابات کو حاصل کریں",
         "saveChanges": "تبدیلیاں محفوظ کریں",
-        "createRouter": "روٹر بنائیں"
+        "createRouter": "روٹر بنائیں",
+        "passthroughPath": "راستہ",
+        "passthroughPathHint": "جو URL کلائنٹ کال کرتے ہیں اس کا حصہ بن جاتا ہے: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "آرکسٹریٹر بنائیں",
+        "createPassthrough": "Passthrough بنائیں"
       }
     },
     "orchestrator": {

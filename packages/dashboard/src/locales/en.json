@@ -1163,12 +1163,6 @@
       },
       "empty": "No routers yet.",
       "emptyFiltered": "No routers of this kind.",
-      "tabs": {
-        "all": "All",
-        "router": "Router",
-        "orchestrator": "Orchestrator",
-        "passthrough": "Passthrough"
-      },
       "columns": {
         "name": "Name",
         "tokens": "Tokens",

@@ -1159,10 +1159,7 @@
       "empty": "ルーターがまだありません。",
       "emptyFiltered": "このタイプのルーターはありません。",
       "tabs": {
-        "all": "すべて",
-        "router": "ルーター",
-        "orchestrator": "オーケストレーター",
-        "passthrough": "パススルー"
+        "all": "すべて"
       },
       "columns": {
         "name": "名前",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "このルーターを削除しますか?",
       "errors": {
         "deleteFailed": "ルーター削除エラー"
-      }
+      },
+      "newOrchestrator": "新しいオーケストレーター",
+      "newPassthrough": "新しいパススルー"
     },
     "layout": {
       "notFound": "ルーターが見つかりません",
@@ -1197,7 +1196,8 @@
       "newRouter": "新しいルーター",
       "loading": "読み込み中...",
       "routerId": "ルーターID:",
-      "saveFirstHint": "このタブのロックを解除するにはまずルーターを保存してください"
+      "saveFirstHint": "このタブのロックを解除するにはまずルーターを保存してください",
+      "newKind": "新しい{{kind}}"
     },
     "dashboard": {
       "period": "期間",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "種類",
-        "kindAriaLabel": "ルーターの種類",
         "kindFixedHint": "ルーターが作成されると固定されます。",
         "routerName": "ルーター名",
         "routerNamePlaceholder": "マイアプリ",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "トレースは常にメタデータ(モデル、スコア、トークン、コスト、遅延)を記録します。これをオンにするとプロンプトとレスポンスも記録します。使用状況レコードと共に保存され、レポートを読む権限のある誰もが見ることができます。",
         "capturePromptsAndAnswers": "プロンプトと回答をキャプチャ",
         "saveChanges": "変更を保存",
-        "createRouter": "ルーター作成"
+        "createRouter": "ルーター作成",
+        "passthroughPath": "パス",
+        "passthroughPathHint": "クライアントが呼び出すURLの一部になります: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "オーケストレーターを作成",
+        "createPassthrough": "パススルーを作成"
       }
     },
     "orchestrator": {

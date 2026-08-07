@@ -1159,10 +1159,7 @@
       "empty": "Henüz yönlendirici yok.",
       "emptyFiltered": "Bu türde yönlendirici yok.",
       "tabs": {
-        "all": "Tümü",
-        "router": "Yönlendirici",
-        "orchestrator": "Orkestratör",
-        "passthrough": "Geçiş"
+        "all": "Tümü"
       },
       "columns": {
         "name": "Ad",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Bu yönlendiricyi sil?",
       "errors": {
         "deleteFailed": "Yönlendiriciyi silme hatası"
-      }
+      },
+      "newOrchestrator": "Yeni Orkestratör",
+      "newPassthrough": "Yeni Passthrough"
     },
     "layout": {
       "notFound": "Yönlendirici bulunamadı",
@@ -1197,7 +1196,8 @@
       "newRouter": "Yeni Yönlendirici",
       "loading": "Yükleniyor...",
       "routerId": "Yönlendirici Kimliği:",
-      "saveFirstHint": "Yönlendiricyi ilk kaydedin bu sekmeyi açmak için"
+      "saveFirstHint": "Yönlendiricyi ilk kaydedin bu sekmeyi açmak için",
+      "newKind": "Yeni {{kind}}"
     },
     "dashboard": {
       "period": "Dönem",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Tür",
-        "kindAriaLabel": "Yönlendirici Türü",
         "kindFixedHint": "Yönlendirici oluşturulduktan sonra sabitlenmiş.",
         "routerName": "Yönlendirici Adı",
         "routerNamePlaceholder": "Benim Uygulamam",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "İzlemeler her zaman meta verileri (modeller, puanlar, jetonlar, maliyet, gecikme) kaydeder. Gönderilen istem ve alınan yanıtları da kaydetmek için bunu açın. Kullanım kaydı ile depolanır ve raporları okuyabilen herkes tarafından görülebilir.",
         "capturePromptsAndAnswers": "İstemi ve cevapları yakala",
         "saveChanges": "Değişiklikleri Kaydet",
-        "createRouter": "Yönlendirici Oluştur"
+        "createRouter": "Yönlendirici Oluştur",
+        "passthroughPath": "Yol",
+        "passthroughPathHint": "İstemcilerin çağırdığı URL'nin bir parçası haline gelir: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orkestratör Oluştur",
+        "createPassthrough": "Passthrough Oluştur"
       }
     },
     "orchestrator": {

@@ -1159,10 +1159,7 @@
       "empty": "Ingen rutere ennå.",
       "emptyFiltered": "Ingen rutere av denne typen.",
       "tabs": {
-        "all": "Alle",
-        "router": "Ruter",
-        "orchestrator": "Orkestrering",
-        "passthrough": "Gjennomgang"
+        "all": "Alle"
       },
       "columns": {
         "name": "Navn",
@@ -1177,7 +1174,9 @@
       "deleteConfirm": "Slett denne ruteren?",
       "errors": {
         "deleteFailed": "Feil ved sletting av ruter"
-      }
+      },
+      "newOrchestrator": "Ny orkestrator",
+      "newPassthrough": "Ny passthrough"
     },
     "layout": {
       "notFound": "Ruter ikke funnet",
@@ -1197,7 +1196,8 @@
       "newRouter": "Ny ruter",
       "loading": "Laster...",
       "routerId": "Ruter-ID:",
-      "saveFirstHint": "Lagre ruteren først for å låse opp denne fanen"
+      "saveFirstHint": "Lagre ruteren først for å låse opp denne fanen",
+      "newKind": "Ny {{kind}}"
     },
     "dashboard": {
       "period": "Periode",
@@ -1294,7 +1294,6 @@
       },
       "form": {
         "kind": "Type",
-        "kindAriaLabel": "Ruter-type",
         "kindFixedHint": "Fast når ruteren er opprettet.",
         "routerName": "Ruter-navn",
         "routerNamePlaceholder": "Min app",
@@ -1305,7 +1304,11 @@
         "traceContentHint": "Spor registrerer alltid metadata (modeller, poengsum, tokens, kostnad, latens). Slå dette på for å også registrere meldingene som sendes og svarene som mottas. De er lagret med brukerposten og synlig for alle som kan lese rapporter.",
         "capturePromptsAndAnswers": "Fang meldinger og svar",
         "saveChanges": "Lagre endringer",
-        "createRouter": "Opprett ruter"
+        "createRouter": "Opprett ruter",
+        "passthroughPath": "Sti",
+        "passthroughPathHint": "Blir del av URL-en som klienter kaller: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Opprett orkestrator",
+        "createPassthrough": "Opprett passthrough"
       }
     },
     "orchestrator": {
