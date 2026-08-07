@@ -114,6 +114,30 @@ describe('routerPassthroughRoutes', () => {
     expect(Buffer.from(init.body).toString()).toBe('{not valid json');
   });
 
+  it('strips Expect: 100-continue before forwarding so the request reaches upstream instead of 502ing (B1)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'chatcmpl-1', object: 'chat.completion', choices: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', mockFetch);
+
+    const app = await buildApp([plainRouter]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/passthrough/my-openai/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-x', 'content-type': 'application/json', expect: '100-continue' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(200);
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    expect(init.headers['expect']).toBeUndefined();
+  });
+
   it('blocks a request matched by a blocking guardrail rule before forwarding', async () => {
     const mockFetch = vi.fn();
     vi.stubGlobal('fetch', mockFetch);

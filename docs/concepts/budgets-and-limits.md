@@ -19,6 +19,10 @@ Global budget
 
 A request must pass **all** applicable budget checks before Routerly forwards it to a provider. If any budget is exhausted, Routerly returns `503 Service Unavailable` with a descriptive message.
 
+:::caution Passthrough routers are not covered
+None of the budget or limit checks on this page apply to **Passthrough** routers. A Passthrough router forwards the request with the client's own upstream credential and no model resolution, so Routerly has no price to attribute — usage records for that traffic always show `cost: null`. Set budgets on the model or token as usual for regular routers; a Passthrough router bypasses them entirely, by design, regardless of any budget configured elsewhere in the account.
+:::
+
 ---
 
 ## Budget Levels
