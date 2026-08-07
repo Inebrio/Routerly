@@ -64,6 +64,10 @@ export function RouterCreateForm({ kind, buildExtraPayload, afterCreatePath, sub
         ...buildExtraPayload(),
       };
       const proj = await createRouter(payload);
+      // Reset so isDirty becomes false before navigating — otherwise the app's own
+      // post-create redirect trips the unsaved-changes blocker on itself (same
+      // reset-after-success pattern as RouterGeneralTab's save handler).
+      setCommon(f => ({ ...f, name: '' }));
       if (proj.token) {
         setRevealedToken({ token: proj.token, routerId: proj.id });
       } else {

@@ -1198,7 +1198,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // concurrent passthrough creations can never collide on slug either.
     let createdRouter: RouterConfig = router;
     const finalRouters = await updateConfig('routers', (routers) => {
-      if (routers.some(p => p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+      // Passthrough names are scoped to Passthroughs only — a Passthrough is
+      // reached by slug, not by name, so it never needs to avoid colliding with
+      // a plain Router or Orchestrator name. Router/Orchestrator uniqueness
+      // among themselves is unchanged (still global, as before this scoping).
+      const namesake = kind === 'passthrough'
+        ? routers.some(p => p.kind === 'passthrough' && p.name.trim().toLowerCase() === trimmedName.toLowerCase())
+        : routers.some(p => p.kind !== 'passthrough' && p.name.trim().toLowerCase() === trimmedName.toLowerCase());
+      if (namesake) {
         throw new ConfigUpdateAbort(409, { error: `A router named "${trimmedName}" already exists` });
       }
       const candidateError = validateOrchestratorCandidates({ kind, candidates, routers });
@@ -1263,12 +1270,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const finalRouters = await updateConfig('routers', (routers) => {
       const index = routers.findIndex(p => p.id === req.params.id);
       if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Not found' });
-      if (routers.some(p => p.id !== req.params.id && p.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
-        throw new ConfigUpdateAbort(409, { error: `A router named "${trimmedName}" already exists` });
-      }
       // Absent kind = keep the router's existing kind (default 'router'), same fallback
       // pattern as autoRouting/timeoutMs below — not a reset to plain router on every edit.
       const kind: RouterKind = parsedKind.data ?? routers[index]!.kind ?? 'router';
+      // Passthrough names are scoped to Passthroughs only — see the create route.
+      const namesake = kind === 'passthrough'
+        ? routers.some(p => p.id !== req.params.id && p.kind === 'passthrough' && p.name.trim().toLowerCase() === trimmedName.toLowerCase())
+        : routers.some(p => p.id !== req.params.id && p.kind !== 'passthrough' && p.name.trim().toLowerCase() === trimmedName.toLowerCase());
+      if (namesake) {
+        throw new ConfigUpdateAbort(409, { error: `A router named "${trimmedName}" already exists` });
+      }
       // Candidates: omitted from the request body = leave unchanged (same fallback as
       // guardrails/pii/optimizers below); an explicit array (including []) replaces it.
       // Computed before validation so an omitted body still validates (and keeps) the
