@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Globe, HardDrive, ArrowLeft, ChevronLeft, ChevronRight, Check, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { getModelCatalog, type CatalogEntry } from '../api';
@@ -51,6 +52,7 @@ function matchPrice(e: CatalogEntry, f: PriceFilter): boolean {
 }
 
 export function ModelDiscoveryPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,10 +132,10 @@ export function ModelDiscoveryPage() {
           style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}
         >
           <ArrowLeft size={16} />
-          <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Models</span>
+          <span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>{t('models.discovery.backToModels')}</span>
         </button>
-        <h1>Model Discovery</h1>
-        <p>Browse available models and add them to your routing configuration</p>
+        <h1>{t('models.discovery.title')}</h1>
+        <p>{t('models.discovery.subtitle')}</p>
       </div>
       <div className="page-body">
 
@@ -143,13 +145,13 @@ export function ModelDiscoveryPage() {
           {/* Row 1: search + provider */}
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, maxWidth: 300 }}>
-              <FilterLabel>Search</FilterLabel>
+              <FilterLabel>{t('models.discovery.filters.search')}</FilterLabel>
               <div style={{ position: 'relative' }}>
                 <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Model ID or name…"
+                  placeholder={t('models.discovery.filters.searchPlaceholder')}
                   className="form-input"
                   style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, width: '100%', boxSizing: 'border-box' }}
                 />
@@ -162,18 +164,20 @@ export function ModelDiscoveryPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, maxWidth: 320 }}>
-              <FilterLabel>Provider</FilterLabel>
+              <FilterLabel>{t('models.discovery.filters.provider')}</FilterLabel>
               <MultiSelect
                 options={providerOptions}
                 value={selectedProviders}
                 onChange={setSelectedProviders}
-                placeholder="All providers"
+                placeholder={t('models.discovery.filters.allProviders')}
               />
             </div>
 
             {!loading && !error && (
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: 'auto', paddingBottom: 8 }}>
-                {filtered.length === entries.length ? `${entries.length} models` : `${filtered.length} of ${entries.length}`}
+                {filtered.length === entries.length
+                  ? t('models.discovery.count', { count: entries.length })
+                  : t('models.discovery.filteredCount', { filtered: filtered.length, count: entries.length })}
               </span>
             )}
           </div>
@@ -184,35 +188,35 @@ export function ModelDiscoveryPage() {
           {/* Row 2: toggle filters */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FilterLabel>Context</FilterLabel>
+              <FilterLabel>{t('models.discovery.filters.context')}</FilterLabel>
               <div style={{ display: 'flex', gap: 5 }}>
                 {(['all', 'small', 'medium', 'large', 'xl'] as CtxFilter[]).map(f => (
                   <button key={f} className={`btn btn-sm ${ctxFilter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setCtxFilter(f)}>
-                    {{ all: 'All', small: '< 32k', medium: '32k–200k', large: '200k–1M', xl: '> 1M' }[f]}
+                    {t(`models.discovery.filters.ctxOptions.${f}`)}
                   </button>
                 ))}
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FilterLabel>Price / 1M</FilterLabel>
+              <FilterLabel>{t('models.discovery.filters.pricePer1M')}</FilterLabel>
               <div style={{ display: 'flex', gap: 5 }}>
                 {(['all', 'free', 'low', 'mid', 'high'] as PriceFilter[]).map(f => (
                   <button key={f} className={`btn btn-sm ${priceFilter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPriceFilter(f)}>
-                    {{ all: 'All', free: 'Free', low: '< $1', mid: '$1–$5', high: '> $5' }[f]}
+                    {t(`models.discovery.filters.priceOptions.${f}`)}
                   </button>
                 ))}
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FilterLabel>Show</FilterLabel>
+              <FilterLabel>{t('models.discovery.filters.show')}</FilterLabel>
               <div style={{ display: 'flex', gap: 5 }}>
                 <button className={`btn btn-sm ${onlyConfigured ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setOnlyConfigured(v => !v)}>
-                  Configured
+                  {t('models.discovery.filters.configured')}
                 </button>
                 <button className={`btn btn-sm ${onlyEmbedding ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setOnlyEmbedding(v => !v)}>
-                  Embedding
+                  {t('models.discovery.filters.embedding')}
                 </button>
               </div>
             </div>
@@ -220,7 +224,7 @@ export function ModelDiscoveryPage() {
             {hasReset && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <FilterLabel>&nbsp;</FilterLabel>
-                <button className="btn btn-sm btn-secondary" onClick={resetFilters}>Reset filters</button>
+                <button className="btn btn-sm btn-secondary" onClick={resetFilters}>{t('models.discovery.filters.resetFilters')}</button>
               </div>
             )}
           </div>
@@ -229,12 +233,12 @@ export function ModelDiscoveryPage() {
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
         ) : error ? (
-          <div className="empty-state"><p style={{ color: 'var(--error)' }}>Failed to load catalog: {error}</p></div>
+          <div className="empty-state"><p style={{ color: 'var(--error)' }}>{t('models.discovery.loadFailed', { error })}</p></div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <Search size={36} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-            <p>No models match your filters.</p>
-            <button type="button" className="btn btn-secondary" onClick={resetFilters} style={{ marginTop: 8 }}>Reset filters</button>
+            <p>{t('models.discovery.empty.noMatches')}</p>
+            <button type="button" className="btn btn-secondary" onClick={resetFilters} style={{ marginTop: 8 }}>{t('models.discovery.filters.resetFilters')}</button>
           </div>
         ) : (
           <>
@@ -243,11 +247,11 @@ export function ModelDiscoveryPage() {
                 <thead>
                   <tr>
                     {([
-                      { col: 'model' as SortCol, label: 'Model' },
-                      { col: 'provider' as SortCol, label: 'Provider' },
-                      { col: 'context' as SortCol, label: 'Context' },
-                      { col: 'input' as SortCol, label: 'Input / 1M' },
-                      { col: 'output' as SortCol, label: 'Output / 1M' },
+                      { col: 'model' as SortCol, label: t('models.discovery.columns.model') },
+                      { col: 'provider' as SortCol, label: t('models.discovery.columns.provider') },
+                      { col: 'context' as SortCol, label: t('models.discovery.columns.context') },
+                      { col: 'input' as SortCol, label: t('models.discovery.columns.input') },
+                      { col: 'output' as SortCol, label: t('models.discovery.columns.output') },
                     ]).map(({ col, label }) => {
                       const active = sortCol === col;
                       const Icon = active ? (sortDir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
@@ -276,14 +280,14 @@ export function ModelDiscoveryPage() {
                             <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 500 }}>{e.id}</span>
                             {e.isConfigured && (
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.68rem', fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: 'rgba(34,197,94,0.1)', color: '#22c55e', whiteSpace: 'nowrap' }}>
-                                <Check size={9} strokeWidth={3} /> Configured
+                                <Check size={9} strokeWidth={3} /> {t('models.discovery.badges.configured')}
                               </span>
                             )}
                             {e.embedding && (
-                              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', color: '#818cf8', whiteSpace: 'nowrap' }}>embedding</span>
+                              <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', color: '#818cf8', whiteSpace: 'nowrap' }}>{t('models.discovery.badges.embedding')}</span>
                             )}
                             {e.local && (
-                              <span title="Runs locally" style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center' }}>
+                              <span title={t('models.discovery.badges.runsLocally')} style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center' }}>
                                 <HardDrive size={11} />
                               </span>
                             )}
@@ -298,7 +302,7 @@ export function ModelDiscoveryPage() {
                       <td><span className={`badge badge-${e.provider}`}>{e.provider}</span></td>
                       <td style={{ whiteSpace: 'nowrap' }}>{e.contextWindow > 0 ? fmtCtx(e.contextWindow) : '—'}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        {e.local ? <span style={{ color: 'var(--success, #22c55e)', fontWeight: 600, fontSize: '0.82rem' }}>free</span> : fmtPricePer1M(e.pricing.inputPer1kTokens)}
+                        {e.local ? <span style={{ color: 'var(--success, #22c55e)', fontWeight: 600, fontSize: '0.82rem' }}>{t('models.discovery.free')}</span> : fmtPricePer1M(e.pricing.inputPer1kTokens)}
                       </td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {e.local ? <span style={{ color: 'var(--success, #22c55e)', fontWeight: 600, fontSize: '0.82rem' }}>free</span> : fmtPricePer1M(e.pricing.outputPer1kTokens)}
@@ -309,7 +313,7 @@ export function ModelDiscoveryPage() {
                           onClick={() => navigate(`/dashboard/models/new?provider=${encodeURIComponent(e.provider)}&modelId=${encodeURIComponent(e.id)}`, { state: { catalogEntry: e } })}
                           style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                         >
-                          <Globe size={12} /> {e.isConfigured ? 'Add again' : 'Add'}
+                          <Globe size={12} /> {e.isConfigured ? t('models.discovery.addAgain') : t('models.discovery.add')}
                         </button>
                       </td>
                     </tr>
@@ -327,10 +331,10 @@ export function ModelDiscoveryPage() {
                   disabled={page === 1}
                   onClick={() => setPage(p => p - 1)}
                 >
-                  <ChevronLeft size={14} /> Prev
+                  <ChevronLeft size={14} /> {t('models.discovery.pagination.prev')}
                 </button>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  {startIdx}–{endIdx} of {filtered.length}
+                  {t('models.discovery.pagination.range', { start: startIdx, end: endIdx, count: filtered.length })}
                 </span>
                 <button
                   type="button"
@@ -339,7 +343,7 @@ export function ModelDiscoveryPage() {
                   disabled={page === totalPages}
                   onClick={() => setPage(p => p + 1)}
                 >
-                  Next <ChevronRight size={14} />
+                  {t('models.discovery.pagination.next')} <ChevronRight size={14} />
                 </button>
               </div>
             )}

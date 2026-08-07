@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -96,6 +97,7 @@ function ComparePanel({
   compareModelA: string; compareModelB: string;
   setCompareModelA: (v: string) => void; setCompareModelB: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   const [messagesA, setMessagesA] = useState<Message[]>([]);
   const [messagesB, setMessagesB] = useState<Message[]>([]);
   const [loadingA, setLoadingA] = useState(false);
@@ -260,19 +262,19 @@ function ComparePanel({
             <div key={label} className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
               <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Model {label}:</span>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('playground.compare.modelLabel', { label })}</span>
                   <SearchableSelect
-                    options={[{ value: '', label: 'Select model...' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                    options={[{ value: '', label: t('playground.compare.modelSelectPlaceholder') }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
                     value={model}
                     onChange={setModel}
-                    placeholder="Select model..."
+                    placeholder={t('playground.compare.modelSelectPlaceholder')}
                     style={{ flex: 1, fontSize: '0.78rem' }}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <ParamSlider label="Temp" value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} />
-                  <ParamSlider label="Max tokens" value={params.maxTokens} min={64} max={8192} step={64} onChange={v => setParams((p: PanelParams) => ({ ...p, maxTokens: v }))} />
-                  <ParamSlider label="Top-p" value={params.topP} min={0} max={1} step={0.05} onChange={v => setParams((p: PanelParams) => ({ ...p, topP: v }))} />
+                  <ParamSlider label={t('playground.params.temp')} value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} />
+                  <ParamSlider label={t('playground.params.maxTokens')} value={params.maxTokens} min={64} max={8192} step={64} onChange={v => setParams((p: PanelParams) => ({ ...p, maxTokens: v }))} />
+                  <ParamSlider label={t('playground.params.topP')} value={params.topP} min={0} max={1} step={0.05} onChange={v => setParams((p: PanelParams) => ({ ...p, topP: v }))} />
                 </div>
                 {assistantMsgs.length > 0 && (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 4, borderTop: '1px solid var(--border)', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
@@ -284,7 +286,7 @@ function ComparePanel({
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {display.length === 0 ? (
-                  <p style={{ margin: 'auto', fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center' }}>No messages yet.</p>
+                  <p style={{ margin: 'auto', fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center' }}>{t('playground.compare.noMessages')}</p>
                 ) : (
                   display.map((msg, i) => {
                     const isAssistant = msg.role === 'assistant';
@@ -314,7 +316,7 @@ function ComparePanel({
                             ) : null}
                             {/* v8 ignore start */
                             (msg.guardrailInputTokens || msg.guardrailOutputTokens) ? (
-                              <span title="Guardrail judge tokens" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
+                              <span title={t('playground.compare.guardrailTokensTitle')} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace' }}>
                                 guardrail ↑{msg.guardrailInputTokens ?? 0} ↓{msg.guardrailOutputTokens ?? 0} tok | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
                               </span>
                             ) : null /* v8 ignore stop */}
@@ -338,7 +340,7 @@ function ComparePanel({
               {traceHistory.length > 0 && (
                 <details style={{ borderTop: '1px solid var(--border)' }}>
                   <summary style={{ cursor: 'pointer', padding: '6px 14px', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-surface)', userSelect: 'none', display: 'list-item' }}>
-                    Debug ({traceHistory.length} {traceHistory.length === 1 ? 'turn' : 'turns'})
+                    {t('playground.compare.debugTurns', { count: traceHistory.length })}
                   </summary>
                   <div style={{ maxHeight: 200, overflowY: 'auto', padding: 10, background: 'var(--bg-base)', fontSize: '0.82rem' }}>
                     {[...traceHistory.entries()].reverse().map(([i, traces]) => (
@@ -350,7 +352,7 @@ function ComparePanel({
                           defaultOpen={i === traceHistory.length - 1}
                         >
                           <details>
-                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>Turn #{i + 1} trace log</summary>
+                            <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '4px 8px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, userSelect: 'none', display: 'list-item' }}>{t('playground.debug.turnTraceLog', { turn: i + 1 })}</summary>
                             <div style={{ marginTop: 4, padding: 8, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4 }}>
                               <TraceLog entries={traces as TraceEntry[]} collapsed />
                             </div>
@@ -364,7 +366,7 @@ function ComparePanel({
               {colLoading && (
                 <div style={{ padding: '6px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
                   <button className="btn btn-danger" style={{ fontSize: '0.75rem', padding: '3px 8px', display: 'flex', gap: 4, alignItems: 'center' }} onClick={() => abortRef.current?.abort()}>
-                    <Square size={11} /> Stop
+                    <Square size={11} /> {t('playground.compare.stop')}
                   </button>
                 </div>
               )}
@@ -376,7 +378,7 @@ function ComparePanel({
         <textarea
           className="form-input"
           rows={2}
-          placeholder="Send the same message to both models..."
+          placeholder={t('playground.compare.inputPlaceholder')}
           style={{ flex: 1, resize: 'none', fontFamily: 'inherit' }}
           value={compareInput}
           onChange={e => setCompareInput(e.target.value)}
@@ -393,6 +395,7 @@ function ComparePanel({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function TestPage() {
+  const { t } = useTranslation();
   const [routers, setRouters] = useState<Router[]>([]);
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
@@ -688,7 +691,7 @@ export function TestPage() {
     const file = e.target.files?.[0];
     /* v8 ignore next */
     if (!file) return;
-    if (!file.type.startsWith('image/')) { setError('Only image attachments are supported.'); return; }
+    if (!file.type.startsWith('image/')) { setError(t('playground.errors.onlyImages')); return; }
     const reader = new FileReader();
     reader.onload = ev => setAttachedImage(ev.target?.result as string);
     reader.readAsDataURL(file);
@@ -748,9 +751,9 @@ export function TestPage() {
       <div className="page-header" style={{ paddingBottom: 16, flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 style={{ margin: 0 }}>Playground</h1>
+            <h1 style={{ margin: 0 }}>{t('playground.title')}</h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Test models, compare responses, and save prompt presets.
+              {t('playground.subtitle')}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -764,7 +767,7 @@ export function TestPage() {
                   display: 'flex', alignItems: 'center', gap: 5,
                 }}>
                   {m === 'single' ? <MessageSquare size={13} /> : <SplitSquareHorizontal size={13} />}
-                  {m === 'single' ? 'Single' : 'Compare'}
+                  {t(`playground.mode.${m}`)}
                 </button>
               ))}
             </div>
@@ -773,9 +776,9 @@ export function TestPage() {
             {mode === 'compare' ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 {([
-                  { label: 'Token A', value: apiKey, set: setApiKey, show: showKey, setShow: setShowKey },
-                  { label: 'Token B', value: apiKeyB, set: setApiKeyB, show: showKeyB, setShow: setShowKeyB },
-                ] as const).map(({ label, value, set, show, setShow }) => (
+                  { label: t('playground.token.labelA'), placeholder: t('playground.token.placeholder'), value: apiKey, set: setApiKey, show: showKey, setShow: setShowKey },
+                  { label: t('playground.token.labelB'), placeholder: t('playground.token.placeholderB'), value: apiKeyB, set: setApiKeyB, show: showKeyB, setShow: setShowKeyB },
+                ]).map(({ label, placeholder, value, set, show, setShow }) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{label}:</span>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -783,7 +786,7 @@ export function TestPage() {
                         type={show ? 'text' : 'password'}
                         className="form-input"
                         style={{ width: 180, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
-                        placeholder={label === 'Token B' ? 'same as A' : 'sk-rt-...'}
+                        placeholder={placeholder}
                         value={value}
                         onChange={e => set(e.target.value)}
                         autoComplete="new-password"
@@ -802,20 +805,20 @@ export function TestPage() {
                     </span>
                   ) : (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
-                      <AlertCircle size={12} /> Unknown token
+                      <AlertCircle size={12} /> {t('playground.token.unknownToken')}
                     </span>
                   )
                 )}
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Token:</span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('playground.token.label')}</span>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <input
                     type={showKey ? 'text' : 'password'}
                     className="form-input"
                     style={{ width: 220, padding: '5px 32px 5px 10px', fontSize: '0.82rem', fontFamily: 'monospace' }}
-                    placeholder="sk-rt-..."
+                    placeholder={t('playground.token.placeholder')}
                     value={apiKey}
                     onChange={e => setApiKey(e.target.value)}
                     autoComplete="new-password"
@@ -834,7 +837,7 @@ export function TestPage() {
                     </span>
                   ) : (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: '#f59e0b' }}>
-                      <AlertCircle size={12} /> Unknown token
+                      <AlertCircle size={12} /> {t('playground.token.unknownToken')}
                     </span>
                   )
                 )}
@@ -848,7 +851,7 @@ export function TestPage() {
                 onClick={() => setShowPresetsPanel(!showPresetsPanel)}
                 style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
               >
-                <BookOpen size={13} /> Presets {presets.length > 0 ? `(${presets.length})` : ''}
+                <BookOpen size={13} /> {t('playground.presets.button')} {presets.length > 0 ? `(${presets.length})` : ''}
               </button>
             )}
           </div>
@@ -862,13 +865,13 @@ export function TestPage() {
         {showPresetsPanel && matchedRouter && (
           <div className="card" style={{ width: 250, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0, flexShrink: 0 }}>
             <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.84rem', fontWeight: 600 }}>Presets</span>
+              <span style={{ fontSize: '0.84rem', fontWeight: 600 }}>{t('playground.presets.panelTitle')}</span>
               <button
                 onClick={() => setShowSaveForm(!showSaveForm)}
                 className="btn"
                 style={{ fontSize: '0.72rem', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                <Save size={11} /> Save current
+                <Save size={11} /> {t('playground.presets.saveCurrent')}
               </button>
             </div>
             {showSaveForm && (
@@ -876,20 +879,20 @@ export function TestPage() {
                 <input
                   className="form-input"
                   style={{ flex: 1, padding: '4px 8px', fontSize: '0.78rem' }}
-                  placeholder="Preset name..."
+                  placeholder={t('playground.presets.namePlaceholder')}
                   value={savePresetName}
                   onChange={e => setSavePresetName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') savePreset(); }}
                   autoFocus
                 />
-                <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.72rem' }} onClick={savePreset} disabled={!savePresetName.trim()}>Save</button>
+                <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.72rem' }} onClick={savePreset} disabled={!savePresetName.trim()}>{t('playground.presets.save')}</button>
               </div>
             )}
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 8px' }}>
               {presetsLoading ? (
                 <div style={{ textAlign: 'center', padding: 20 }}><span className="spinner" style={{ width: 14, height: 14 }} /></div>
               ) : presets.length === 0 ? (
-                <p style={{ margin: 0, padding: '20px 8px', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>No presets yet.</p>
+                <p style={{ margin: 0, padding: '20px 8px', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t('playground.presets.empty')}</p>
               ) : (
                 presets.map(p => (
                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 6px', borderRadius: 5, marginBottom: 2 }}
@@ -900,7 +903,7 @@ export function TestPage() {
                       style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', flex: 1, fontSize: '0.8rem', color: 'var(--text-primary)', padding: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.name}
                     </button>
-                    <button onClick={() => deletePreset(p.id)} className="btn-icon danger" style={{ padding: 3, flexShrink: 0 }} title="Delete preset">
+                    <button onClick={() => deletePreset(p.id)} className="btn-icon danger" style={{ padding: 3, flexShrink: 0 }} title={t('playground.presets.delete')}>
                       <Trash2 size={11} />
                     </button>
                   </div>
@@ -929,9 +932,7 @@ export function TestPage() {
                 >
                   <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
                   <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                    <strong style={{ color: '#b45309' }}>Streaming not available</strong> — this router has a
-                    response-blocking guardrail active. Routerly must inspect the full response before delivery,
-                    so responses arrive all at once.
+                    <strong style={{ color: '#b45309' }}>{t('playground.streamingDisabled.banner')}</strong> — {t('playground.streamingDisabled.bannerBody')}
                   </p>
                 </div>
               )}
@@ -939,7 +940,7 @@ export function TestPage() {
               <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', flexShrink: 0 }}>
                 <button onClick={() => setSystemPromptOpen(!systemPromptOpen)}
                   style={{ width: '100%', padding: '8px 16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <span style={{ fontWeight: 600 }}>System prompt</span>
+                  <span style={{ fontWeight: 600 }}>{t('playground.systemPrompt')}</span>
                   <span style={{ transform: systemPromptOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', display: 'inline-block', fontSize: '0.65rem' }}>▶</span>
                 </button>
                 {systemPromptOpen && (
@@ -951,20 +952,20 @@ export function TestPage() {
                 )}
                 <div style={{ padding: '6px 16px 10px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Model</label>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('playground.model')}</label>
                     <SearchableSelect
-                      options={[{ value: '', label: 'Auto (router default)' }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
+                      options={[{ value: '', label: t('playground.modelPlaceholder') }, ...availableModels.map(m => ({ value: m.modelId, label: m.modelId }))]}
                       value={selectedModelId}
                       onChange={setSelectedModelId}
-                      placeholder="Auto (router default)"
+                      placeholder={t('playground.modelPlaceholder')}
                       style={{ fontSize: '0.78rem', minWidth: 180 }}
                     />
                   </div>
-                  <ParamSlider label="Temp" value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} />
-                  <ParamSlider label="Max tokens" value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
-                  <ParamSlider label="Top-p" value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
+                  <ParamSlider label={t('playground.params.temp')} value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} />
+                  <ParamSlider label={t('playground.params.maxTokens')} value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
+                  <ParamSlider label={t('playground.params.topP')} value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
                   <label
-                    title={streamingDisabled ? 'Streaming is not available: a response-blocking guardrail requires the full response to be inspected before delivery.' : undefined}
+                    title={streamingDisabled ? t('playground.streamingDisabled.tooltip') : undefined}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 5,
                       fontSize: '0.75rem',
@@ -981,13 +982,13 @@ export function TestPage() {
                       onChange={e => setStreamEnabled(e.target.checked)}
                       style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: streamingDisabled ? 'not-allowed' : 'pointer' }}
                     />
-                    Stream
+                    {t('playground.stream')}
                     {streamingDisabled && (
-                      <AlertTriangle size={12} style={{ color: '#f59e0b' }} aria-label="Streaming unavailable" />
+                      <AlertTriangle size={12} style={{ color: '#f59e0b' }} aria-label={t('playground.streamingDisabled.ariaLabel')} />
                     )}
                   </label>
                   {messages.length > 0 && (
-                    <button className="btn" style={{ fontSize: '0.73rem', marginLeft: 'auto' }} onClick={() => { setMessages([]); setShowRaw({}); setDebugTraceHistory([]); }}>Clear</button>
+                    <button className="btn" style={{ fontSize: '0.73rem', marginLeft: 'auto' }} onClick={() => { setMessages([]); setShowRaw({}); setDebugTraceHistory([]); }}>{t('playground.clear')}</button>
                   )}
                 </div>
               </div>
@@ -996,8 +997,8 @@ export function TestPage() {
               <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {displayMessages.length === 0 ? (
                   <div className="empty-state" style={{ margin: 'auto' }}>
-                    <p style={{ margin: 0 }}>No messages yet.</p>
-                    {!apiKey && <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>Enter a Router Token above to start.</p>}
+                    <p style={{ margin: 0 }}>{t('playground.empty.noMessages')}</p>
+                    {!apiKey && <p style={{ fontSize: '0.8rem', marginTop: 4, color: 'var(--text-secondary)' }}>{t('playground.empty.enterToken')}</p>}
                   </div>
                 ) : (
                   displayMessages.map((msg, i) => {
@@ -1008,7 +1009,7 @@ export function TestPage() {
                         {isAssistant && msg.thinking && (
                           <details style={{ marginBottom: 5, width: '100%' }}>
                             <summary style={{ cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', padding: '3px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 4, userSelect: 'none' }}>
-                              Reasoning {loading && i === displayMessages.length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
+                              {t('playground.reasoning')} {loading && i === displayMessages.length - 1 && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
                             </summary>
                             <div style={{ marginTop: 4, padding: '10px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', fontStyle: 'italic', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>
                               {msg.thinking}
@@ -1027,7 +1028,7 @@ export function TestPage() {
                             /* v8 ignore start */
                             // ponytail: blocked with no content → show blockMessage as plain text
                             (msg.blocked && !msg.content)
-                              ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.blocked.blockMessage ?? 'This message was blocked by a guardrail.'}</span>
+                              ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.blocked.blockMessage ?? t('playground.blockedDefault')}</span>
                               : (typeof msg.content === 'string'
                                   ? (showRawThis
                                       ? <pre style={{ margin: 0, fontSize: '0.75rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{msg.rawJson ?? msg.content}</pre>
@@ -1042,7 +1043,7 @@ export function TestPage() {
                                   {(msg.content as ContentPart[]).map((c, idx) => (
                                     c.type === 'text' ? <span key={idx}>{c.text}</span> :
                                     /* v8 ignore next */
-                                    c.type === 'image_url' ? <img key={idx} src={c.image_url!.url} alt="Attached" style={{ maxWidth: 200, borderRadius: 8 }} /> : null
+                                    c.type === 'image_url' ? <img key={idx} src={c.image_url!.url} alt={t('playground.attachedImageAlt')} style={{ maxWidth: 200, borderRadius: 8 }} /> : null
                                   ))}
                                 </div>
                               )
@@ -1058,7 +1059,7 @@ export function TestPage() {
                           ) : null}
                           {isAssistant && (msg.guardrailInputTokens || msg.guardrailOutputTokens) ? (
                             /* v8 ignore next 3 */
-                            <span title="Guardrail judge tokens" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
+                            <span title={t('playground.compare.guardrailTokensTitle')} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>
                               guardrail: {(msg.guardrailInputTokens ?? 0) + (msg.guardrailOutputTokens ?? 0)} | {costEstimate(msg.guardrailInputTokens ?? 0, msg.guardrailOutputTokens ?? 0)}
                             </span>
                           ) : null}
@@ -1075,7 +1076,7 @@ export function TestPage() {
                                 color: '#b45309', fontWeight: 600,
                               }}
                             >
-                              <AlertTriangle size={10} /> Truncated — response cut off by max tokens
+                              <AlertTriangle size={10} /> {t('playground.truncated')}
                             </span>
                           )}
                           {/* Buffered-by-guardrail note */}
@@ -1090,7 +1091,7 @@ export function TestPage() {
                                 color: 'var(--text-muted)',
                               }}
                             >
-                              <AlertTriangle size={10} style={{ color: '#f59e0b' }} /> Held for security review
+                              <AlertTriangle size={10} style={{ color: '#f59e0b' }} /> {t('playground.bufferedNote')}
                             </span>
                           )}
                           {isAssistant && msg.rawJson && (
@@ -1098,7 +1099,7 @@ export function TestPage() {
                               onClick={() => setShowRaw(prev => ({ ...prev, [i]: !prev[i] }))}
                               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3, padding: 0, fontSize: '0.7rem' }}
                             >
-                              <Code size={11} /> {showRawThis ? 'rendered' : 'raw'}
+                              <Code size={11} /> {showRawThis ? t('playground.rawToggle.rendered') : t('playground.rawToggle.raw')}
                             </button>
                           )}
                         </div>
@@ -1124,7 +1125,7 @@ export function TestPage() {
                 {attachedImage && (
                   <div style={{ marginBottom: 10 }}>
                     <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={attachedImage} alt="Attachment" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }} />
+                      <img src={attachedImage} alt={t('playground.attachmentAlt')} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }} />
                       <button className="btn-icon danger" style={{ position: 'absolute', top: -5, right: -5, padding: 2, background: 'var(--bg-elevated)' }} onClick={() => setAttachedImage(null)}>
                         <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>×</span>
                       </button>
@@ -1133,11 +1134,11 @@ export function TestPage() {
                 )}
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                   <input type="file" accept="image/*" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileAttach} />
-                  <button className="btn-icon" title="Attach image" onClick={() => fileInputRef.current?.click()}><Paperclip size={17} /></button>
+                  <button className="btn-icon" title={t('playground.attachImage')} onClick={() => fileInputRef.current?.click()}><Paperclip size={17} /></button>
                   <textarea
                     className="form-input"
                     rows={2}
-                    placeholder="Type a message..."
+                    placeholder={t('playground.inputPlaceholder')}
                     style={{ flex: 1, resize: 'none', fontFamily: 'inherit' }}
                     value={input}
                     onChange={e => setInput(e.target.value)}
@@ -1155,20 +1156,20 @@ export function TestPage() {
             {showDebugSidebar && (
               <div className="card" style={{ width: 380, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Debug</h3>
+                  <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{t('playground.debug.title')}</h3>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {debugTraceHistory.length > 0 && (
-                      <button onClick={() => setDebugTraceHistory([])} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>Clear</button>
+                      <button onClick={() => setDebugTraceHistory([])} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>{t('playground.debug.clear')}</button>
                     )}
-                    <button onClick={() => setShowDebugSidebar(false)} className="btn-icon" style={{ padding: 4 }} title="Hide debug"><ChevronRight size={15} /></button>
+                    <button onClick={() => setShowDebugSidebar(false)} className="btn-icon" style={{ padding: 4 }} title={t('playground.debug.hide')}><ChevronRight size={15} /></button>
                   </div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 12, background: 'var(--bg-base)' }}>
                   <div ref={debugTopRef} />
                   {debugTraceHistory.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
-                      <p style={{ margin: 0, fontSize: '0.82rem' }}>No debug data yet.</p>
-                      <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>Send a message to see routing details.</p>
+                      <p style={{ margin: 0, fontSize: '0.82rem' }}>{t('playground.debug.empty')}</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>{t('playground.debug.emptyHint')}</p>
                     </div>
                   ) : (
                     // Newest turn first: the one you just sent is the one you want to read.
@@ -1185,7 +1186,7 @@ export function TestPage() {
                           >
                             <details>
                               <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                Turn #{i + 1} trace log
+                                {t('playground.debug.turnTraceLog', { turn: i + 1 })}
                               </summary>
                               <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
                                 <TraceLog entries={traces as TraceEntry[]} collapsed />
@@ -1202,7 +1203,7 @@ export function TestPage() {
             {!showDebugSidebar && (
               <button onClick={() => setShowDebugSidebar(true)} className="btn-icon"
                 style={{ position: 'fixed', right: 24, top: '50%', transform: 'translateY(-50%)', padding: 8, background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
-                title="Show debug">
+                title={t('playground.debug.show')}>
                 <ChevronLeft size={18} />
               </button>
             )}

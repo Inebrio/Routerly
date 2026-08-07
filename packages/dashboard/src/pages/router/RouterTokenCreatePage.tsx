@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Copy, Check, ArrowLeft, Plus, X } from 'lucide-react';
 import { createRouterToken } from '../../api';
@@ -6,6 +7,7 @@ import { useRouter } from './RouterLayout';
 import { LabelInput } from './RouterTokenTab'; // Will be exported next
 
 export function RouterTokenCreatePage() {
+  const { t } = useTranslation();
   const { id: routerId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { router, setRouter } = useRouter();
@@ -44,9 +46,9 @@ export function RouterTokenCreatePage() {
         el.select();
         const ok = document.execCommand('copy');
         document.body.removeChild(el);
-        if (ok) { success(); } else { setErr('Copy failed — please select and copy the token manually.'); }
+        if (ok) { success(); } else { setErr(t('routers.token.create.copyFailed')); }
       } catch {
-        setErr('Copy failed — please select and copy the token manually.');
+        setErr(t('routers.token.create.copyFailed'));
       }
     }
   }
@@ -58,7 +60,7 @@ export function RouterTokenCreatePage() {
       const result = await createRouterToken(routerId, createLabels, Object.keys(createTags).length ? createTags : undefined, createScopes.length ? createScopes : undefined);
       setRouter(p => p ? { ...p, tokens: [...(p.tokens || []), result.tokenInfo] } : p);
       setRevealedToken(result.token);
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Error creating token'); }
+    } catch (e) { setErr(e instanceof Error ? e.message : t('routers.token.create.errors.createFailed')); }
     finally { setLoading(false); }
   }
 
@@ -73,12 +75,12 @@ export function RouterTokenCreatePage() {
 
         <button type="button" onClick={goBack}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem', padding: 0, marginBottom: 24 }}>
-          <ArrowLeft size={16} /> Back to tokens
+          <ArrowLeft size={16} /> {t('routers.token.create.backToTokens')}
         </button>
 
-        <h2 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 600 }}>New API Token</h2>
+        <h2 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 600 }}>{t('routers.token.create.title')}</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 28 }}>
-          The full token is shown only once after creation — store it securely.
+          {t('routers.token.create.subtitle')}
         </p>
 
         {revealedToken ? (
@@ -88,7 +90,7 @@ export function RouterTokenCreatePage() {
               border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, marginBottom: 24,
             }}>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-                Token created successfully. Copy it now — it won't be shown again.
+                {t('routers.token.create.tokenCreated')}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>
@@ -96,11 +98,11 @@ export function RouterTokenCreatePage() {
                 </div>
                 <button className="btn btn-secondary" onClick={() => copyToClipboard(revealedToken)} style={{ flexShrink: 0 }}>
                   {copied ? <Check size={15} /> : <Copy size={15} />}
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? t('routers.token.create.copied') : t('routers.token.create.copy')}
                 </button>
               </div>
             </div>
-            <button className="btn btn-primary" onClick={goBack}>Done</button>
+            <button className="btn btn-primary" onClick={goBack}>{t('routers.token.create.done')}</button>
           </>
         ) : (
           <form onSubmit={handleCreate}>
@@ -108,30 +110,30 @@ export function RouterTokenCreatePage() {
 
             <div className="form-group">
               <label className="form-label">
-                Labels <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                {t('routers.token.create.labels')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('routers.token.create.optional')})</span>
               </label>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Tag this token to identify where it's used (e.g. "production", "ci").
+                {t('routers.token.create.labelsHint')}
               </p>
               <LabelInput labels={createLabels} setLabels={setCreateLabels} input={createLabelInput} setInput={setCreateLabelInput} allLabels={allLabels} />
             </div>
 
             <div className="form-group">
               <label className="form-label">
-                Scopes <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                {t('routers.token.create.scopes')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('routers.token.create.optional')})</span>
               </label>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Free-form scopes attached to this token (e.g. "batch", "internal"), stored with the token for your own bookkeeping.
+                {t('routers.token.create.scopesHint')}
               </p>
               <LabelInput labels={createScopes} setLabels={setCreateScopes} input={createScopeInput} setInput={setCreateScopeInput} allLabels={allScopes} />
             </div>
 
             <div className="form-group">
               <label className="form-label">
-                Tags <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+                {t('routers.token.create.tags')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('routers.token.create.optional')})</span>
               </label>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Key-value metadata forwarded to usage records (e.g. env=production).
+                {t('routers.token.create.tagsHint')}
               </p>
               {Object.entries(createTags).map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -143,8 +145,8 @@ export function RouterTokenCreatePage() {
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 6 }}>
-                <input className="form-input" placeholder="key" value={newTagKey} onChange={e => setNewTagKey(e.target.value)} style={{ flex: 1 }} />
-                <input className="form-input" placeholder="value" value={newTagVal} onChange={e => setNewTagVal(e.target.value)} style={{ flex: 1 }} />
+                <input className="form-input" placeholder={t('routers.token.create.keyPlaceholder')} value={newTagKey} onChange={e => setNewTagKey(e.target.value)} style={{ flex: 1 }} />
+                <input className="form-input" placeholder={t('routers.token.create.valuePlaceholder')} value={newTagVal} onChange={e => setNewTagVal(e.target.value)} style={{ flex: 1 }} />
                 <button type="button" className="btn btn-secondary" style={{ padding: '0 10px' }}
                   disabled={!newTagKey.trim()}
                   onClick={() => { if (newTagKey.trim()) { setCreateTags(t => ({ ...t, [newTagKey.trim()]: newTagVal })); setNewTagKey(''); setNewTagVal(''); } }}>
@@ -155,10 +157,10 @@ export function RouterTokenCreatePage() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
               <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? <span className="spinner" /> : 'Create Token'}
+                {loading ? <span className="spinner" /> : t('routers.token.create.createButton')}
               </button>
               <button type="button" className="btn btn-secondary" onClick={goBack} disabled={loading}>
-                Cancel
+                {t('routers.token.create.cancel')}
               </button>
             </div>
           </form>

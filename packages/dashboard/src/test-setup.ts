@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { afterEach } from 'vitest'
+import './i18n'
 
 // Filters and date ranges persist in localStorage, and jsdom keeps one store for
 // the whole file: without this, what a test picks in the picker is still picked

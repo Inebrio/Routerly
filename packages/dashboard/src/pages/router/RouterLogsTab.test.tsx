@@ -427,7 +427,7 @@ describe('RouterLogsTab — "No records match" empty state', () => {
 describe('RouterLogsTab — poll interval controls', () => {
   it('shows auto-refresh status text', async () => {
     renderTab();
-    // Either "Auto-refresh disabilitato" or "Auto-refresh ogni ..." is visible
+    // Either "Auto-refresh disabled" or "Auto-refresh every ..." is visible
     await waitFor(() => expect(document.querySelector('.card')).toBeTruthy());
     expect(document.body.textContent).toMatch(/Auto-refresh/);
   });
@@ -436,9 +436,9 @@ describe('RouterLogsTab — poll interval controls', () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: 'Off' }));
     await userEvent.click(screen.getByRole('button', { name: 'Off' }));
-    // "Auto-refresh disabilitato" should appear
+    // "Auto-refresh disabled" should appear
     await waitFor(() =>
-      expect(screen.getByText(/Auto-refresh disabilitato/)).toBeTruthy()
+      expect(screen.getByText(/Auto-refresh disabled/)).toBeTruthy()
     );
   });
 
@@ -447,7 +447,7 @@ describe('RouterLogsTab — poll interval controls', () => {
     await waitFor(() => screen.getByRole('button', { name: '5s' }));
     await userEvent.click(screen.getByRole('button', { name: '5s' }));
     await waitFor(() =>
-      expect(screen.getByText(/Auto-refresh ogni 5s/)).toBeTruthy()
+      expect(screen.getByText(/Auto-refresh every 5s/)).toBeTruthy()
     );
   });
 
@@ -513,51 +513,51 @@ describe('RouterLogsTab — pagination', () => {
     // mockResolvedValue (not Once) so re-fetches from dateRange init also return paged data
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
     renderTab();
-    await waitFor(() => expect(screen.getByText(/Pagina 1 di 3/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Page 1 of 3/)).toBeTruthy());
   });
 
   it('Previous button disabled on page 1', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
     renderTab();
-    await waitFor(() => screen.getByText(/Pagina 1 di 3/));
-    const prevBtn = screen.getByRole('button', { name: /Precedente/ }) as HTMLButtonElement;
+    await waitFor(() => screen.getByText(/Page 1 of 3/));
+    const prevBtn = screen.getByRole('button', { name: /Previous/ }) as HTMLButtonElement;
     expect(prevBtn.disabled).toBe(true);
   });
 
   it('Next button navigates to page 2', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
     renderTab();
-    await waitFor(() => screen.getByText(/Pagina 1 di 3/));
+    await waitFor(() => screen.getByText(/Page 1 of 3/));
     // Switch mock to return page 2 data before clicking Next
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 2, totalPages: 3, totalRecords: 300 } }));
-    await userEvent.click(screen.getByRole('button', { name: /Successiva/ }));
-    await waitFor(() => expect(screen.getByText(/Pagina 2 di 3/)).toBeTruthy());
+    await userEvent.click(screen.getByRole('button', { name: /Next/ }));
+    await waitFor(() => expect(screen.getByText(/Page 2 of 3/)).toBeTruthy());
   });
 
   it('Next button disabled on last page', async () => {
     // Start on page 1 of 2, navigate to last page, then check Next is disabled
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 2, totalRecords: 200 } }));
     renderTab();
-    await waitFor(() => screen.getByText(/Pagina 1 di 2/));
+    await waitFor(() => screen.getByText(/Page 1 of 2/));
     // Switch mock so clicking Next returns page 2 data
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 2, totalPages: 2, totalRecords: 200 } }));
-    await userEvent.click(screen.getByRole('button', { name: /Successiva/ }));
-    await waitFor(() => screen.getByText(/Pagina 2 di 2/));
+    await userEvent.click(screen.getByRole('button', { name: /Next/ }));
+    await waitFor(() => screen.getByText(/Page 2 of 2/));
     // Now React page state = 2 = totalPages → Next is disabled
-    const nextBtn = screen.getByRole('button', { name: /Successiva/ }) as HTMLButtonElement;
+    const nextBtn = screen.getByRole('button', { name: /Next/ }) as HTMLButtonElement;
     expect(nextBtn.disabled).toBe(true);
   });
 
   it('pagination hidden when totalPages <= 1', async () => {
     renderTab();
     await waitFor(() => screen.getByText('Request Logs'));
-    expect(screen.queryByText(/Pagina/)).toBeNull();
+    expect(screen.queryByText(/Page/)).toBeNull();
   });
 
   it('shows total record count in pagination', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
     renderTab();
-    await waitFor(() => expect(screen.getByText(/300 record totali/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/300 total records/)).toBeTruthy());
   });
 });
 
@@ -600,15 +600,15 @@ describe('RouterLogsTab — Previous page button', () => {
   it('clicking Previous from page 2 goes back to page 1', async () => {
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
     renderTab();
-    await waitFor(() => screen.getByText(/Pagina 1 di 3/));
+    await waitFor(() => screen.getByText(/Page 1 of 3/));
     // Navigate to page 2
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 2, totalPages: 3, totalRecords: 300 } }));
-    await userEvent.click(screen.getByRole('button', { name: /Successiva/ }));
-    await waitFor(() => screen.getByText(/Pagina 2 di 3/));
+    await userEvent.click(screen.getByRole('button', { name: /Next/ }));
+    await waitFor(() => screen.getByText(/Page 2 of 3/));
     // Go back — exercises setPage(p => Math.max(1, p - 1))
     mockGetUsage.mockResolvedValue(makeStats({ pagination: { page: 1, totalPages: 3, totalRecords: 300 } }));
-    await userEvent.click(screen.getByRole('button', { name: /Precedente/ }));
-    await waitFor(() => expect(screen.getByText(/Pagina 1 di 3/)).toBeTruthy());
+    await userEvent.click(screen.getByRole('button', { name: /Previous/ }));
+    await waitFor(() => expect(screen.getByText(/Page 1 of 3/)).toBeTruthy());
   });
 });
 

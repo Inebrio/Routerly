@@ -13,7 +13,7 @@ vi.mock('../api', () => ({
 // Stub sub-components; RoutingEditFields and RecipientsEditFields expose buttons
 // so tests can inject form values (events, targets) that trigger cleanup branches.
 vi.mock('./notificationChannelFields', () => ({
-  CHANNEL_PROVIDER_META: [
+  getChannelProviderMeta: () => [
     { key: 'dashboard', label: 'Dashboard (in-app inbox)', description: 'Routes events to the in-app inbox' },
     { key: 'smtp',      label: 'SMTP',                     description: 'Custom mail server' },
     { key: 'webhook',   label: 'Webhook',                   description: 'HTTP webhook callback' },

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type Router, type RoutingProfile } from '../../api';
 import { useRouter } from './RouterLayout';
@@ -13,6 +14,7 @@ type TargetModel = {
 };
 
 export function RouterRoutingTab() {
+  const { t } = useTranslation();
   const { router, setRouter } = useRouter();
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export function RouterRoutingTab() {
       const updated = await assignRouterProfiles(router.id, { routing: profileId === '' ? null : profileId });
       setRouter(updated);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to assign routing profile');
+      setErr(e instanceof Error ? e.message : t('routers.routing.errors.assignProfileFailed'));
     }
   }
 
@@ -91,7 +93,7 @@ export function RouterRoutingTab() {
     /* v8 ignore next */
     const savedTargets = router.models || [];
     if (targetModels.length !== savedTargets.length) return true;
-    if (targetModels.some((t, i) => t.modelId !== savedTargets[i]!.modelId || t.prompt !== (savedTargets[i]!.prompt /* v8 ignore next */ || ''))) return true;
+    if (targetModels.some((tm, i) => tm.modelId !== savedTargets[i]!.modelId || tm.prompt !== (savedTargets[i]!.prompt /* v8 ignore next */ || ''))) return true;
     return false;
   })();
 
@@ -149,7 +151,7 @@ export function RouterRoutingTab() {
 
   // --- Target Models Handlers ---
   function addTargetModel() {
-    const usedIds = new Set(targetModels.map(t => t.modelId));
+    const usedIds = new Set(targetModels.map(tm => tm.modelId));
     const firstAvailable = availableModels.find(m => !m.capabilities?.embedding && !usedIds.has(m.id));
     /* v8 ignore next */
     const firstAvailableId = firstAvailable?.id || '';
@@ -210,9 +212,9 @@ export function RouterRoutingTab() {
     setErr('');
 
     // Validate: target models cannot repeat
-    const targetIds = targetModels.map(t => t.modelId);
+    const targetIds = targetModels.map(m => m.modelId);
     if (new Set(targetIds).size !== targetIds.length) {
-      setErr('Target models cannot contain duplicates.');
+      setErr(t('routers.routing.errors.duplicateTargets'));
       return;
     }
 
@@ -235,7 +237,7 @@ export function RouterRoutingTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setErr(err instanceof Error ? err.message : 'Error saving router routing');
+      setErr(err instanceof Error ? err.message : t('routers.routing.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -270,7 +272,7 @@ export function RouterRoutingTab() {
     if ((next === 'profile') === profileAssigned) return;
     if (next === 'profile') {
       if (!defaultProfileId) {
-        setErr('No routing profile available. Create one from the Profiles page.');
+        setErr(t('routers.routing.errors.noProfileAvailable'));
         return;
       }
       await onAssignProfile(defaultProfileId);
@@ -294,9 +296,9 @@ export function RouterRoutingTab() {
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
 
         <div className="form-group">
-          <label className="form-label">Routing</label>
+          <label className="form-label">{t('routers.routing.form.routing')}</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-            Use a shared routing profile, or define this router's own policies. Target models stay configurable either way.
+            {t('routers.routing.form.routingHint')}
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: profileAssigned ? 16 : 0 }}>
             <button
@@ -304,30 +306,30 @@ export function RouterRoutingTab() {
               className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => void onSelectMode('profile')}
             >
-              Profile
+              {t('routers.routing.form.profileMode')}
             </button>
             <button
               type="button"
               className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
               onClick={() => void onSelectMode('custom')}
             >
-              Custom
+              {t('routers.routing.form.customMode')}
             </button>
           </div>
           {profileAssigned && (
             <>
               <SearchableSelect
                 style={{ maxWidth: 420 }}
-                ariaLabel="Routing Profile"
+                ariaLabel={t('routers.routing.form.routingProfile')}
                 value={assignedProfileId}
                 onChange={v => void onAssignProfile(v)}
                 options={[
-                  ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} (built-in)` })),
+                  ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} ${t('routers.routing.form.builtinSuffix')}` })),
                   ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
                 ]}
               />
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
-                Policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.
+                {t('routers.routing.form.profileHint')}
               </p>
             </>
           )}
@@ -355,11 +357,11 @@ export function RouterRoutingTab() {
         {/* Target Models Section */}
         <div className="form-group">
           <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Target Models</span>
+            <span>{t('routers.routing.targetModels.heading')}</span>
           </label>
 
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-            Define the pool of models that the Policies will filter and select from. Optional prompts instruct the AI Router on when to pick each model.
+            {t('routers.routing.targetModels.hint')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -390,11 +392,11 @@ export function RouterRoutingTab() {
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Endpoint Model</label>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.targetModels.endpointModel')}</label>
                     <SearchableSelect
                       value={item.modelId}
                       onChange={v => updateTargetModel(idx, 'modelId', v)}
-                      placeholder="Select model"
+                      placeholder={t('routers.routing.targetModels.selectModel')}
                       options={availableModels
                         .filter(m => !m.capabilities?.embedding && (m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id)))
                         .sort((a, b) => a.id.localeCompare(b.id))
@@ -409,12 +411,12 @@ export function RouterRoutingTab() {
                       onMouseEnter={() => setPromptHoverIdx(idx)}
                       onMouseLeave={() => setPromptHoverIdx(null)}
                     >
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>Prompt Definition</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.targetModels.promptDefinition')}</label>
                       <textarea
                         className="form-input"
                         value={item.prompt}
                         onChange={e => updateTargetModel(idx, 'prompt', e.target.value)}
-                        placeholder="Describe exactly when and why the router should pick this model..."
+                        placeholder={t('routers.routing.targetModels.promptPlaceholder')}
                         rows={2}
                         style={{ fontSize: '0.9rem', resize: 'vertical', minHeight: '60px' }}
                       />
@@ -423,7 +425,7 @@ export function RouterRoutingTab() {
 
                   {isSemanticIntentEnabled && Object.keys(semanticIntents).length > 0 && (
                     <div className="form-group" style={{ margin: 0 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>Intents</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>{t('routers.routing.targetModels.intents')}</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                         {Object.keys(semanticIntents).map(intentKey => {
                           const active = getIntentsForModel(item.modelId).has(intentKey);
@@ -458,7 +460,7 @@ export function RouterRoutingTab() {
                     type="button"
                     onClick={() => removeTargetModel(idx)}
                     className="btn-icon danger"
-                    title="Remove target model"
+                    title={t('routers.routing.targetModels.removeTarget')}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -468,7 +470,7 @@ export function RouterRoutingTab() {
 
             {targetModels.length === 0 && (
               <div className="empty-state" style={{ padding: 24, fontSize: '0.9rem' }}>
-                No target models configured.
+                {t('routers.routing.targetModels.empty')}
               </div>
             )}
           </div>
@@ -476,14 +478,14 @@ export function RouterRoutingTab() {
           <button
             type="button"
             onClick={addTargetModel}
-            disabled={availableModels.filter(m => !m.capabilities?.embedding && !targetModels.some(t => t.modelId === m.id)).length === 0}
+            disabled={availableModels.filter(m => !m.capabilities?.embedding && !targetModels.some(tm => tm.modelId === m.id)).length === 0}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center',
               width: '100%', padding: '10px', marginTop: 12,
               background: 'none', border: '1.5px dashed var(--border)', borderRadius: 8,
               color: 'var(--text-secondary)', fontSize: '0.9rem', cursor: 'pointer',
               transition: 'all 0.2s',
-              opacity: availableModels.filter(m => !targetModels.some(t => t.modelId === m.id)).length === 0 ? 0.4 : 1,
+              opacity: availableModels.filter(m => !targetModels.some(tm => tm.modelId === m.id)).length === 0 ? 0.4 : 1,
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--primary)';
@@ -494,7 +496,7 @@ export function RouterRoutingTab() {
               (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
             }}
           >
-            <Plus size={16} /> Add Target Model
+            <Plus size={16} /> {t('routers.routing.targetModels.addTarget')}
           </button>
         </div>
 
@@ -509,9 +511,9 @@ export function RouterRoutingTab() {
             {saving ? (
               <span className="spinner" />
             ) : saved ? (
-              <><Check size={15} style={{ marginRight: 6 }} />Saved!</>
+              <><Check size={15} style={{ marginRight: 6 }} />{t('routers.routing.form.saved')}</>
             ) : (
-              'Save Routing Configuration'
+              t('routers.routing.form.saveRoutingConfiguration')
             )}
           </button>
         </div>

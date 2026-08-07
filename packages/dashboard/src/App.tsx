@@ -1,7 +1,10 @@
+import './i18n';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, NavLink, Navigate, useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ThemeProvider, useTheme, type Theme } from './ThemeContext';
+import { LanguageProvider } from './LanguageContext';
 import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getPermissionStatus } from './api';
 import type { UpdateInfo } from './api';
 import { PermissionGuardModal, type PermissionBlockedDetail } from './components/PermissionGuardModal';
@@ -55,14 +58,18 @@ import { LayoutDashboard, Cpu, FolderOpen, BarChart2, FlaskConical, HelpCircle, 
 import { Logo } from './components/Logo';
 import { ProfileNotificationBadge } from './components/NotificationBell';
 
-const THEME_OPTIONS: { value: Theme; icon: ReactNode; label: string }[] = [
-  { value: 'auto',  icon: <Monitor size={14} />, label: 'Auto' },
-  { value: 'dark',  icon: <Moon size={14} />, label: 'Dark' },
-  { value: 'light', icon: <Sun size={14} />, label: 'Light' },
-];
+function useThemeOptions(): { value: Theme; icon: ReactNode; label: string }[] {
+  const { t } = useTranslation();
+  return [
+    { value: 'auto',  icon: <Monitor size={14} />, label: t('app.theme.auto') },
+    { value: 'dark',  icon: <Moon size={14} />, label: t('app.theme.dark') },
+    { value: 'light', icon: <Sun size={14} />, label: t('app.theme.light') },
+  ];
+}
 
 function ThemeSelector() {
   const { theme, setTheme } = useTheme();
+  const THEME_OPTIONS = useThemeOptions();
   return (
     <div className="theme-selector">
       {THEME_OPTIONS.map(opt => (
@@ -81,6 +88,7 @@ function ThemeSelector() {
 }
 
 function ThemeCycleButton() {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const order: Theme[] = ['auto', 'dark', 'light'];
   const icons: Record<Theme, ReactNode> = {
@@ -93,13 +101,14 @@ function ThemeCycleButton() {
     setTheme(next);
   }
   return (
-    <button className="nav-item" title={`Theme: ${theme}`} onClick={cycle}>
+    <button className="nav-item" title={t('app.themeCycle.title', { theme })} onClick={cycle}>
       {icons[theme]}
     </button>
   );
 }
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const profileRowRef = useRef<HTMLDivElement>(null);
@@ -117,14 +126,14 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   // app is not here: it configures the tools around Routerly rather than
   // Routerly itself, so it sits in the footer next to Settings.
   const navItems = [
-    { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: 'Overview' },
-    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: 'Providers' }] : []),
-    { to: '/dashboard/models', icon: <Cpu size={17} />, label: 'Models' },
-    ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: 'Profiles' }] : []),
-    { to: '/dashboard/routers', icon: <FolderOpen size={17} />, label: 'Routers' },
-    ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: 'Experiments' }] : []),
-    { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: 'Usage' },
-    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: 'Playground' },
+    { to: '/dashboard/overview', icon: <LayoutDashboard size={17} />, label: t('app.nav.overview') },
+    ...(can('connections:read') ? [{ to: '/dashboard/connections', icon: <Cloud size={17} />, label: t('app.nav.providers') }] : []),
+    { to: '/dashboard/models', icon: <Cpu size={17} />, label: t('app.nav.models') },
+    ...(can('profiles:read') ? [{ to: '/dashboard/profiles', icon: <Route size={17} />, label: t('app.nav.profiles') }] : []),
+    { to: '/dashboard/routers', icon: <FolderOpen size={17} />, label: t('app.nav.routers') },
+    ...(experimentsEnabled ? [{ to: '/dashboard/experiments', icon: <Split size={17} />, label: t('app.nav.experiments') }] : []),
+    { to: '/dashboard/usage', icon: <BarChart2 size={17} />, label: t('app.nav.usage') },
+    { to: '/dashboard/test', icon: <FlaskConical size={17} />, label: t('app.nav.playground') },
   ];
 
   return (
@@ -134,10 +143,10 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <Logo size={28} className="sidebar-logo-icon" />
           <span className="nav-label logo-full">
             <span className="logo-name-full">Routerly.ai</span>
-            <span className="logo-tag">One gateway. Any AI model. Total control.</span>
+            <span className="logo-tag">{t('app.tagline')}</span>
           </span>
         </div>
-        <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+        <button className="sidebar-toggle" onClick={onToggle} title={collapsed ? t('app.sidebar.expand') : t('app.sidebar.collapse')}>
           {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
         </button>
       </div>
@@ -175,33 +184,33 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         </div>
         <NavLink
           to="/dashboard/settings"
-          title={collapsed ? 'Settings' : undefined}
+          title={collapsed ? t('app.nav.settings') : undefined}
           className={({ isActive }) => `nav-item${/* v8 ignore next */ isActive ? ' active' : ''}`}
         >
           <SettingsIcon size={15} />
-          <span className="nav-label">Settings</span>
+          <span className="nav-label">{t('app.nav.settings')}</span>
         </NavLink>
         {clientsEnabled && (
           <NavLink
             to="/dashboard/connect"
-            title={collapsed ? 'Connect app' : undefined}
+            title={collapsed ? t('app.nav.connectApp') : undefined}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
             <AppWindow size={15} />
-            <span className="nav-label">Connect app</span>
+            <span className="nav-label">{t('app.nav.connectApp')}</span>
           </NavLink>
         )}
         <NavLink
           to="/dashboard/help"
-          title={collapsed ? 'Help' : undefined}
+          title={collapsed ? t('app.nav.help') : undefined}
           className={({ isActive }) => `nav-item${/* v8 ignore next */ isActive ? ' active' : ''}`}
         >
           <HelpCircle size={15} />
-          <span className="nav-label">Help</span>
+          <span className="nav-label">{t('app.nav.help')}</span>
         </NavLink>
-        <button className="nav-item sign-out" title="Sign Out" onClick={handleLogout}>
+        <button className="nav-item sign-out" title={t('app.nav.signOut')} onClick={handleLogout}>
           <LogOut size={15} />
-          <span className="nav-label">Sign Out</span>
+          <span className="nav-label">{t('app.nav.signOut')}</span>
         </button>
       </div>
     </aside>
@@ -221,6 +230,7 @@ export function __resetPermissionCheckForTests() {
 }
 
 function ProtectedLayout() {
+  const { t } = useTranslation();
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -334,12 +344,12 @@ function ProtectedLayout() {
             color: 'var(--warning-text, #744210)',
           }}>
             <span>
-              Some configuration files have permissive access ({permissionWarning.join(', ')}). Startup and requests still work, but fix this from the host filesystem when convenient.
+              {t('app.banner.permissionWarning', { files: permissionWarning.join(', ') })}
             </span>
             <button
               onClick={() => setPermissionWarningDismissed(true)}
               style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
-              title="Dismiss"
+              title={t('app.banner.dismiss')}
             >
               ×
             </button>
@@ -364,15 +374,15 @@ function ProtectedLayout() {
             color: 'var(--warning-text, #744210)',
           }}>
             <span>
-              Routerly <strong>v{updateInfo!.latestVersion}</strong> is available. You are on v{updateInfo!.currentVersion}.{' '}
+              {t('app.banner.updateAvailable', { latest: updateInfo!.latestVersion, current: updateInfo!.currentVersion })}{' '}
               <Link to="/dashboard/settings/about" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
-                Update in Settings
+                {t('app.banner.updateLink')}
               </Link>
             </span>
             <button
               onClick={dismissBanner}
               style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
-              title="Dismiss"
+              title={t('app.banner.dismiss')}
             >
               ×
             </button>
@@ -390,11 +400,11 @@ function ProtectedLayout() {
             color: 'var(--warning-text, #744210)',
           }}>
             <span>
-              Two-factor authentication is required for this instance.{' '}
+              {t('app.banner.mfaRequired')}{' '}
               <Link to="/dashboard/profile" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
-                Set up 2FA in your Profile
+                {t('app.banner.mfaLink')}
               </Link>
-              {' '}to secure your account.
+              {' '}{t('app.banner.mfaSuffix')}
             </span>
           </div>
         )}
@@ -410,28 +420,28 @@ function ProtectedLayout() {
             color: 'var(--info-text, #1e40af)',
           }}>
             <span style={{ flex: 1 }}>
-              <strong>Routerly never sends data automatically.</strong>{' '}
-              Would you like to help by sending anonymous install metrics? Only event type, version, platform, and a random ID — no personal data, no IP.{' '}
+              <strong>{t('app.banner.telemetryTitle')}</strong>{' '}
+              {t('app.banner.telemetryBody')}{' '}
               <a
                 href="https://doc.routerly.ai/next/reference/telemetry"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'inherit', textDecoration: 'underline' }}
               >
-                What is sent?
+                {t('app.banner.telemetryLink')}
               </a>
             </span>
             <button
               onClick={() => handleTelemetryChoice(true)}
               style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid currentColor', cursor: 'pointer', background: 'none', fontSize: '0.82rem', fontWeight: 600, color: 'inherit', whiteSpace: 'nowrap' }}
             >
-              Yes, help out
+              {t('app.banner.telemetryYes')}
             </button>
             <button
               onClick={() => handleTelemetryChoice(false)}
               style={{ padding: '4px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', background: 'none', fontSize: '0.82rem', opacity: 0.7, color: 'inherit', whiteSpace: 'nowrap' }}
             >
-              No thanks
+              {t('app.banner.telemetryNo')}
             </button>
           </div>
         )}
@@ -572,6 +582,7 @@ const router = createBrowserRouter([
           { path: 'profile/notifications', element: <ProfilePage initialTab="notifications" /> },
           { path: 'profile/mcp', element: <ProfilePage initialTab="mcp" /> },
           { path: 'profile/mcp/new', element: <McpTokenNewPage /> },
+          { path: 'profile/preferences', element: <ProfilePage initialTab="preferences" /> },
           { path: 'usage/:id', element: <UsageRecordPage /> },
           { path: '*', element: <Navigate to="overview" replace /> },
         ],
@@ -584,7 +595,9 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <LanguageProvider>
+        <RouterProvider router={router} />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

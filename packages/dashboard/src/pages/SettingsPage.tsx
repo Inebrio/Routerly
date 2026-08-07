@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield } from 'lucide-react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo } from '../api';
@@ -15,7 +17,8 @@ const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'e
 // ── Telemetry section (self-saving) ──────────────────────────────────────────
 
 function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
-  const t = settings.telemetry;
+  const { t } = useTranslation();
+  const telemetry = settings.telemetry;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,7 +29,7 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
       const updated = await updateSettings({ telemetry: { enabled } } as Partial<Settings>);
       onSaved(updated);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(e instanceof Error ? e.message : t('settings.general.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -35,29 +38,28 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
   return (
     <div style={{ marginBottom: 28 }}>
       <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <BarChart2 size={13} /> Anonymous Metrics
+        <BarChart2 size={13} /> {t('settings.general.telemetry.heading')}
       </h3>
 
       <div style={{ padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-elevated)' }}>
         <p style={{ fontSize: '0.83rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          <strong>Routerly never sends data automatically.</strong>{' '}
-          {t === undefined
-            ? 'You have not made a choice yet.'
-            : t.enabled
-              ? 'Anonymous install metrics are enabled.'
-              : 'Anonymous install metrics are disabled.'}
+          <strong>{t('settings.general.telemetry.neverAutomatic')}</strong>{' '}
+          {telemetry === undefined
+            ? t('settings.general.telemetry.noChoice')
+            : telemetry.enabled
+              ? t('settings.general.telemetry.enabledStatus')
+              : t('settings.general.telemetry.disabledStatus')}
         </p>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
-          When enabled, Routerly sends only: event type (install / upgrade / uninstall), version, platform, and a random ID.
-          No personal data, no usage data, no IP stored.{' '}
+          {t('settings.general.telemetry.explanation')}{' '}
           <a href="https://doc.routerly.ai/next/reference/telemetry" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-            What is sent?
+            {t('settings.general.telemetry.whatIsSent')}
           </a>
         </p>
 
-        {t?.enabled && t.installId && (
+        {telemetry?.enabled && telemetry.installId && (
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 12px', fontFamily: 'monospace' }}>
-            Install ID: {t.installId}
+            {t('settings.general.telemetry.installId', { id: telemetry.installId })}
           </p>
         )}
 
@@ -66,21 +68,21 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
             type="button"
-            className={`btn btn-sm ${t?.enabled ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || t?.enabled === true}
+            className={`btn btn-sm ${telemetry?.enabled ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || telemetry?.enabled === true}
             onClick={() => toggle(true)}
             style={{ fontSize: '0.8rem' }}
           >
-            {saving && !t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Enable'}
+            {saving && !telemetry?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> {t('settings.general.telemetry.saving')}</> : t('settings.general.telemetry.enable')}
           </button>
           <button
             type="button"
-            className={`btn btn-sm ${t?.enabled === false ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || t?.enabled === false}
+            className={`btn btn-sm ${telemetry?.enabled === false ? 'btn-primary' : 'btn-secondary'}`}
+            disabled={saving || telemetry?.enabled === false}
             onClick={() => toggle(false)}
             style={{ fontSize: '0.8rem' }}
           >
-            {saving && t?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> Saving…</> : 'Disable'}
+            {saving && telemetry?.enabled ? <><div className="spinner" style={{ width: 11, height: 11 }} /> {t('settings.general.telemetry.saving')}</> : t('settings.general.telemetry.disable')}
           </button>
         </div>
       </div>
@@ -91,12 +93,13 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
 // ── General tab ───────────────────────────────────────────────────────────────
 
 /** Which addresses only work on this machine, so the list says it instead of implying it. */
-function addressScope(address: string): string {
-  return /\/\/(127\.|\[?::1\]?|localhost)/.test(address) ? 'This machine' : 'Network';
+function addressScope(address: string, t: (k: string) => string): string {
+  return /\/\/(127\.|\[?::1\]?|localhost)/.test(address) ? t('settings.general.serverInfo.thisMachine') : t('settings.general.serverInfo.network');
 }
 
 
 export function SettingsGeneralTab() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [info, setInfo] = useState<SystemInfo | null>(null);
   const [form, setForm] = useState<Partial<Settings>>({});
@@ -117,7 +120,7 @@ export function SettingsGeneralTab() {
       // Version and uptime live on /api/system/info; a failure there must not hide the settings form.
       getSystemInfo().then(setInfo).catch(() => setInfo(null));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load settings');
+      setError(e instanceof Error ? e.message : t('settings.general.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -142,7 +145,7 @@ export function SettingsGeneralTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save settings');
+      setError(e instanceof Error ? e.message : t('settings.general.errors.saveSettingsFailed'));
     } finally {
       setSaving(false);
     }
@@ -165,7 +168,7 @@ export function SettingsGeneralTab() {
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
   /* v8 ignore next */
-  if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || 'Failed to load settings.'}</div>;
+  if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || t('settings.general.errors.loadFailedPeriod')}</div>;
 
   // Older services do not report the resolved interfaces: fall back to the bind address.
   const listenAddresses = settings.listeningAddresses?.length
@@ -177,14 +180,14 @@ export function SettingsGeneralTab() {
 
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>
-          Server Info
+          {t('settings.general.serverInfo.heading')}
         </h3>
         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: 1.5 }}>
-          Read-only. Host and port come from the environment or the settings file, not from here.
+          {t('settings.general.serverInfo.readOnly')}
         </p>
 
         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-          {listenAddresses.length === 1 ? 'Reachable at' : 'Reachable at any of these addresses'}
+          {listenAddresses.length === 1 ? t('settings.general.serverInfo.reachableAt') : t('settings.general.serverInfo.reachableAtAny')}
         </div>
         {listenAddresses.map(address => (
           <div key={address} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -192,49 +195,49 @@ export function SettingsGeneralTab() {
               <span style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {address}
               </span>
-              <span className="badge badge-neutral" style={{ flexShrink: 0 }}>{addressScope(address)}</span>
+              <span className="badge badge-neutral" style={{ flexShrink: 0 }}>{addressScope(address, t)}</span>
             </div>
             <button
               type="button"
               onClick={() => copyAddress(address)}
               className="btn btn-secondary"
-              aria-label={`Copy ${address}`}
+              aria-label={t('settings.general.serverInfo.copyAddress', { address })}
               style={{ flexShrink: 0, padding: '5px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}
             >
               {copied === address ? <Check size={13} /> : <Copy size={13} />}
-              {copied === address ? 'Copied!' : 'Copy'}
+              {copied === address ? t('settings.general.serverInfo.copied') : t('settings.general.serverInfo.copy')}
             </button>
           </div>
         ))}
 
         <div style={{ marginTop: 14 }}>
-          <InfoRow label="Host and port" value={`${settings.host}:${settings.port}`} mono />
-          {info && <InfoRow label="Version" value={info.version} mono />}
-          {info && <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />}
+          <InfoRow label={t('settings.general.serverInfo.hostAndPort')} value={`${settings.host}:${settings.port}`} mono />
+          {info && <InfoRow label={t('settings.general.serverInfo.version')} value={info.version} mono />}
+          {info && <InfoRow label={t('settings.general.serverInfo.uptime')} value={formatUptime(info.uptimeSeconds)} />}
         </div>
       </div>
 
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12 }}>
-          Runtime Settings
+          {t('settings.general.runtime.heading')}
         </h3>
 
         <div className="form-group">
-          <label className="form-label">Log Level</label>
+          <label className="form-label">{t('settings.general.runtime.logLevel')}</label>
           <SearchableSelect
             options={LOG_LEVELS.map(l => ({ value: l, label: l }))}
             value={form.logLevel ?? 'info'}
-            placeholder="Log Level"
-            ariaLabel="Log Level"
+            placeholder={t('settings.general.runtime.logLevel')}
+            ariaLabel={t('settings.general.runtime.logLevel')}
             onChange={v => field('logLevel', v as Settings['logLevel'])}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Controls the verbosity of service logs.
+            {t('settings.general.runtime.logLevelHint')}
           </p>
         </div>
 
         <div className="form-group">
-          <label className="form-label" htmlFor="s-publicurl">Public URL</label>
+          <label className="form-label" htmlFor="s-publicurl">{t('settings.general.runtime.publicUrl')}</label>
           <input
             id="s-publicurl"
             className="form-input"
@@ -244,22 +247,23 @@ export function SettingsGeneralTab() {
             onChange={e => field('publicUrl', e.target.value)}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>).
-            Used in the <strong>How to connect</strong> section of each router.
-            Useful when the dashboard runs on a different machine or port than the service.
+            <Trans
+              i18nKey="settings.general.runtime.publicUrlHint"
+              components={{ code: <code />, strong: <strong /> }}
+            />
           </p>
         </div>
 
         <div className="form-group">
-          <label className="form-label">Usage Retention</label>
+          <label className="form-label">{t('settings.general.runtime.usageRetention')}</label>
           <div style={{ display: 'flex', gap: 10 }}>
             <input
               id="s-usage-retention-days"
               className="form-input"
               type="number"
               min={1}
-              placeholder="No limit"
-              aria-label="Max age (days)"
+              placeholder={t('settings.general.runtime.noLimit')}
+              aria-label={t('settings.general.runtime.maxAgeDays')}
               value={form.usageRetention?.maxAgeDays ?? ''}
               onChange={e => retentionField('maxAgeDays', e.target.value)}
             />
@@ -268,19 +272,18 @@ export function SettingsGeneralTab() {
               className="form-input"
               type="number"
               min={1}
-              placeholder="No limit"
-              aria-label="Max size (MB)"
+              placeholder={t('settings.general.runtime.noLimit')}
+              aria-label={t('settings.general.runtime.maxSizeMb')}
               value={form.usageRetention?.maxSizeMb ?? ''}
               onChange={e => retentionField('maxSizeMb', e.target.value)}
             />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-            <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Max age (days)</p>
-            <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Max size (MB)</p>
+            <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{t('settings.general.runtime.maxAgeDays')}</p>
+            <p style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{t('settings.general.runtime.maxSizeMb')}</p>
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Usage/billing history older than this many days, or exceeding this size, is dropped from the active log.
-            Leave both empty for no retention limit.
+            {t('settings.general.runtime.retentionHint')}
           </p>
         </div>
 
@@ -294,12 +297,12 @@ export function SettingsGeneralTab() {
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
       {saved && (
         <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.85rem', color: '#22c55e' }}>
-          Settings saved successfully.
+          {t('settings.general.savedSuccess')}
         </div>
       )}
       <div>
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving…</> : <><Save size={15} /> Save Settings</>}
+          {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.general.saving')}</> : <><Save size={15} /> {t('settings.general.saveSettings')}</>}
         </button>
       </div>
 
@@ -313,102 +316,114 @@ type NotifForm = { notifications?: import('../api').NotificationsConfig };
 type EProvider = import('../api').ChannelProvider;
 type EChannel  = import('../api').NotificationChannel;
 
-const CHANNEL_PROVIDERS: Array<{ key: EProvider; label: string; description: string }> = [
-  { key: 'dashboard',  label: 'Dashboard (in-app inbox)', description: 'Routes events to the in-app inbox' },
-  { key: 'smtp',       label: 'SMTP',               description: 'Custom mail server' },
-  { key: 'ses',        label: 'Amazon SES',          description: 'AWS Simple Email Service' },
-  { key: 'sendgrid',   label: 'SendGrid',            description: 'Twilio SendGrid' },
-  { key: 'azure',      label: 'Azure Communication', description: 'Azure Communication Services' },
-  { key: 'google',     label: 'Google / Gmail',       description: 'Gmail via OAuth2' },
-  { key: 'webhook',    label: 'Webhook',             description: 'HTTP webhook callback' },
-  { key: 'slack',      label: 'Slack',               description: 'Slack Bot API' },
-  { key: 'teams',      label: 'Microsoft Teams',     description: 'Teams Incoming Webhook' },
-  { key: 'pagerduty',  label: 'PagerDuty',           description: 'PagerDuty Events API v2' },
-  { key: 'discord',    label: 'Discord',             description: 'Discord Webhook' },
-];
+function useChannelProviders(t: (k: string) => string): Array<{ key: EProvider; label: string; description: string }> {
+  return [
+    { key: 'dashboard',  label: t('settings.notifications.providers.dashboard.label'), description: t('settings.notifications.providers.dashboard.description') },
+    { key: 'smtp',       label: t('settings.notifications.providers.smtp.label'), description: t('settings.notifications.providers.smtp.description') },
+    { key: 'ses',        label: t('settings.notifications.providers.ses.label'), description: t('settings.notifications.providers.ses.description') },
+    { key: 'sendgrid',   label: t('settings.notifications.providers.sendgrid.label'), description: t('settings.notifications.providers.sendgrid.description') },
+    { key: 'azure',      label: t('settings.notifications.providers.azure.label'), description: t('settings.notifications.providers.azure.description') },
+    { key: 'google',     label: t('settings.notifications.providers.google.label'), description: t('settings.notifications.providers.google.description') },
+    { key: 'webhook',    label: t('settings.notifications.providers.webhook.label'), description: t('settings.notifications.providers.webhook.description') },
+    { key: 'slack',      label: t('settings.notifications.providers.slack.label'), description: t('settings.notifications.providers.slack.description') },
+    { key: 'teams',      label: t('settings.notifications.providers.teams.label'), description: t('settings.notifications.providers.teams.description') },
+    { key: 'pagerduty',  label: t('settings.notifications.providers.pagerduty.label'), description: t('settings.notifications.providers.pagerduty.description') },
+    { key: 'discord',    label: t('settings.notifications.providers.discord.label'), description: t('settings.notifications.providers.discord.description') },
+  ];
+}
 
 // Readable labels for the canonical events
-const EVENT_LABELS: Record<string, string> = {
-  'provider.error':            'Provider – Error',
-  'provider.degraded':         'Provider – Degraded',
-  'provider.recovered':        'Provider – Recovered',
-  'provider.rate_limited':     'Provider – Rate Limited',
-  'routing.no_candidates':     'Routing – No Candidates',
-  'routing.fallback_used':     'Routing – Fallback Used',
-  'auth.login_failed':         'Auth – Login Failed',
-  'auth.token_invalid':        'Auth – Token Invalid',
-  'config.model_added':        'Config – Model Added',
-  'config.model_deleted':      'Config – Model Deleted',
-  'config.router_created':    'Config – Router Created',
-  'config.router_deleted':    'Config – Router Deleted',
-  'budget.threshold_reached':  'Budget – Threshold Reached',
-  'budget.exceeded':           'Budget – Exceeded',
-  'budget.reset':              'Budget – Reset',
-  'system.startup':            'System – Startup',
-  'system.shutdown':           'System – Shutdown',
-  'system.update_available':   'System – Update Available',
-};
+function useEventLabels(t: (k: string) => string): Record<string, string> {
+  return {
+    'provider.error':            t('settings.notifications.events.providerError'),
+    'provider.degraded':         t('settings.notifications.events.providerDegraded'),
+    'provider.recovered':        t('settings.notifications.events.providerRecovered'),
+    'provider.rate_limited':     t('settings.notifications.events.providerRateLimited'),
+    'routing.no_candidates':     t('settings.notifications.events.routingNoCandidates'),
+    'routing.fallback_used':     t('settings.notifications.events.routingFallbackUsed'),
+    'auth.login_failed':         t('settings.notifications.events.authLoginFailed'),
+    'auth.token_invalid':        t('settings.notifications.events.authTokenInvalid'),
+    'config.model_added':        t('settings.notifications.events.configModelAdded'),
+    'config.model_deleted':      t('settings.notifications.events.configModelDeleted'),
+    'config.router_created':    t('settings.notifications.events.configRouterCreated'),
+    'config.router_deleted':    t('settings.notifications.events.configRouterDeleted'),
+    'budget.threshold_reached':  t('settings.notifications.events.budgetThresholdReached'),
+    'budget.exceeded':           t('settings.notifications.events.budgetExceeded'),
+    'budget.reset':              t('settings.notifications.events.budgetReset'),
+    'system.startup':            t('settings.notifications.events.systemStartup'),
+    'system.shutdown':           t('settings.notifications.events.systemShutdown'),
+    'system.update_available':   t('settings.notifications.events.systemUpdateAvailable'),
+  };
+}
 
-/* v8 ignore next */
-const EVENT_OPTIONS = NOTIFICATION_EVENTS.map(e => ({ value: e, label: EVENT_LABELS[e] ?? e }));
+function useEventOptions(t: (k: string) => string) {
+  const labels = useEventLabels(t);
+  /* v8 ignore next */
+  return NOTIFICATION_EVENTS.map(e => ({ value: e, label: labels[e] ?? e }));
+}
 
-const PERM_LABELS_LOCAL: Record<Permission, string> = {
-  'router:read':       'Routers – Read',
-  'router:write':      'Routers – Write',
-  'model:read':         'Models – Read',
-  'model:write':        'Models – Write',
-  'user:read':          'Users – Read',
-  'user:write':         'Users – Write',
-  'report:read':        'Reports – Read',
-  'settings:read':      'Settings – Read',
-  'settings:write':     'Settings – Write',
-  'notification:write': 'Notifications – Write',
-  'token:read':         'Tokens – Read',
-  'token:write':        'Tokens – Write',
-  'role:write':         'Roles – Write',
-  'audit:read':         'Audit Log – Read',
-  'modules:read':       'Modules – Read',
-  'modules:manage':     'Modules – Manage',
-  'connections:read':   'Connections – Read',
-  'connections:manage': 'Connections – Manage',
-  'resilience:read':    'Resilience – Read',
-  'resilience:manage':  'Resilience – Manage',
-  'profiles:read':      'Routing Profiles – Read',
-  'profiles:manage':    'Routing Profiles – Manage',
-  'optimizers:read':    'Optimizers – Read',
-  'optimizers:manage':  'Optimizers – Manage',
-  'experiments:read':   'Experiments – Read',
-  'experiments:manage': 'Experiments – Manage',
-};
+function usePermLabels(t: (k: string) => string): Record<Permission, string> {
+  return {
+    'router:read':       t('settings.notifications.perms.routerRead'),
+    'router:write':      t('settings.notifications.perms.routerWrite'),
+    'model:read':         t('settings.notifications.perms.modelRead'),
+    'model:write':        t('settings.notifications.perms.modelWrite'),
+    'user:read':          t('settings.notifications.perms.userRead'),
+    'user:write':         t('settings.notifications.perms.userWrite'),
+    'report:read':        t('settings.notifications.perms.reportRead'),
+    'settings:read':      t('settings.notifications.perms.settingsRead'),
+    'settings:write':     t('settings.notifications.perms.settingsWrite'),
+    'notification:write': t('settings.notifications.perms.notificationWrite'),
+    'token:read':         t('settings.notifications.perms.tokenRead'),
+    'token:write':        t('settings.notifications.perms.tokenWrite'),
+    'role:write':         t('settings.notifications.perms.roleWrite'),
+    'audit:read':         t('settings.notifications.perms.auditRead'),
+    'modules:read':       t('settings.notifications.perms.modulesRead'),
+    'modules:manage':     t('settings.notifications.perms.modulesManage'),
+    'connections:read':   t('settings.notifications.perms.connectionsRead'),
+    'connections:manage': t('settings.notifications.perms.connectionsManage'),
+    'resilience:read':    t('settings.notifications.perms.resilienceRead'),
+    'resilience:manage':  t('settings.notifications.perms.resilienceManage'),
+    'profiles:read':      t('settings.notifications.perms.profilesRead'),
+    'profiles:manage':    t('settings.notifications.perms.profilesManage'),
+    'optimizers:read':    t('settings.notifications.perms.optimizersRead'),
+    'optimizers:manage':  t('settings.notifications.perms.optimizersManage'),
+    'experiments:read':   t('settings.notifications.perms.experimentsRead'),
+    'experiments:manage': t('settings.notifications.perms.experimentsManage'),
+  };
+}
 
-/* v8 ignore next */
-const PERM_OPTIONS = ALL_PERMISSIONS.map(p => ({ value: p, label: PERM_LABELS_LOCAL[p] ?? p }));
+function usePermOptions(t: (k: string) => string) {
+  const labels = usePermLabels(t);
+  /* v8 ignore next */
+  return ALL_PERMISSIONS.map(p => ({ value: p, label: labels[p] ?? p }));
+}
 
 /** Fixed-endpoint channels: targets change inbox visibility/email recipients, but don't change the actual delivery destination */
 const FIXED_ENDPOINT_PROVIDERS: EProvider[] = ['webhook', 'slack', 'teams', 'pagerduty', 'discord'];
 
-function targetsHint(provider: EProvider): string | null {
+function targetsHint(provider: EProvider, t: (k: string) => string): string | null {
   if (FIXED_ENDPOINT_PROVIDERS.includes(provider)) {
-    return 'For this channel type, targets do not change delivery (the endpoint is fixed). They filter which events are logged in the audit trail per recipient.';
+    return t('settings.notifications.targetsHint.fixedEndpoint');
   }
   if (provider === 'dashboard') {
-    return 'Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox.';
+    return t('settings.notifications.targetsHint.dashboard');
   }
   // email providers
-  return 'Targets determine which users receive this email. Leave all empty to send to all users.';
+  return t('settings.notifications.targetsHint.email');
 }
 
 /** Summarise events + targets for collapsed card view */
-function summariseChannel(ch: EChannel): string {
+function summariseChannel(ch: EChannel, t: TFunction): string {
   const parts: string[] = [];
   const evCount = ch.events?.length ?? 0;
-  parts.push(evCount === 0 ? 'All events' : `${evCount} event${evCount > 1 ? 's' : ''}`);
-  const t = ch.targets;
+  parts.push(evCount === 0 ? t('settings.notifications.summary.allEvents') : t('settings.notifications.summary.eventCount', { count: evCount }));
+  const targets = ch.targets;
   const targetParts: string[] = [];
-  if (t?.roles?.length) targetParts.push(`${t.roles.length} role${t.roles.length > 1 ? 's' : ''}`);
-  if (t?.permissions?.length) targetParts.push(`${t.permissions.length} perm${t.permissions.length > 1 ? 's' : ''}`);
-  if (t?.users?.length) targetParts.push(`${t.users.length} user${t.users.length > 1 ? 's' : ''}`);
-  parts.push(targetParts.length ? targetParts.join(', ') : 'Everyone');
+  if (targets?.roles?.length) targetParts.push(t('settings.notifications.summary.roleCount', { count: targets.roles.length }));
+  if (targets?.permissions?.length) targetParts.push(t('settings.notifications.summary.permCount', { count: targets.permissions.length }));
+  if (targets?.users?.length) targetParts.push(t('settings.notifications.summary.userCount', { count: targets.users.length }));
+  parts.push(targetParts.length ? targetParts.join(', ') : t('settings.notifications.summary.everyone'));
   return parts.join(' · ');
 }
 
@@ -429,6 +444,10 @@ function migrateNotifications(raw: unknown): import('../api').NotificationsConfi
 }
 
 export function SettingsNotificationsTab() {
+  const { t } = useTranslation();
+  const CHANNEL_PROVIDERS = useChannelProviders(t);
+  const EVENT_OPTIONS = useEventOptions(t);
+  const PERM_OPTIONS = usePermOptions(t);
   const [form, setForm]       = useState<NotifForm>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -469,7 +488,7 @@ export function SettingsNotificationsTab() {
         const ids = notif?.channels?.map(ch => ch.id) ?? [];
         if (ids.length) setCollapsed(Object.fromEntries(ids.map(id => [id, true])));
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.notifications.errors.loadFailed')))
       .finally(() => setLoading(false));
     // ponytail: load roles + users in parallel for targets editor; failures are non-fatal
     getRoles().then(setRoles).catch(() => {});
@@ -657,7 +676,7 @@ export function SettingsNotificationsTab() {
   function eventsAndTargetsFields(ch: EChannel) {
     const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
     const userOptions = users.map(u => ({ value: u.id, label: u.email }));
-    const hint = targetsHint(ch.provider);
+    const hint = targetsHint(ch.provider, t);
 
     return (
       <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -945,7 +964,7 @@ export function SettingsNotificationsTab() {
                   {/* Collapsed summary: events + targets at a glance */}
                   {isCollapsed && (
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {summariseChannel(ch)}
+                      {summariseChannel(ch, t)}
                     </span>
                   )}
                   {removeActions(ch.id)}
@@ -1016,14 +1035,24 @@ export function SettingsNotificationsTab() {
 
 // ── Integrations tab ─────────────────────────────────────────────────────────
 
-const INTEGRATION_TYPES: Array<{ type: IntegrationType; label: string; description: string; Icon: React.ElementType }> = [
-  { type: 'prometheus', label: 'Prometheus',     description: 'pull — exposes /metrics',      Icon: BarChart2   },
-  { type: 'otel',       label: 'OpenTelemetry',  description: 'push — OTLP HTTP',             Icon: GitBranch   },
-  { type: 'datadog',    label: 'Datadog',         description: 'push — metrics API',           Icon: Dog         },
-  { type: 'grafana',    label: 'Grafana Cloud',   description: 'push — remote_write',          Icon: TrendingUp  },
-  { type: 'influxdb',   label: 'InfluxDB',        description: 'push — line protocol',         Icon: Database    },
-  { type: 'webhook',    label: 'Webhook',          description: 'push — HTTP POST JSON',        Icon: Webhook     },
-];
+const INTEGRATION_ICONS: Record<IntegrationType, React.ElementType> = {
+  prometheus: BarChart2,
+  otel: GitBranch,
+  datadog: Dog,
+  grafana: TrendingUp,
+  influxdb: Database,
+  webhook: Webhook,
+};
+
+function useIntegrationTypes(): Array<{ type: IntegrationType; label: string; description: string; Icon: React.ElementType }> {
+  const { t } = useTranslation();
+  return (Object.keys(INTEGRATION_ICONS) as IntegrationType[]).map(type => ({
+    type,
+    label: t(`settings.integrations.types.${type}.label`),
+    description: t(`settings.integrations.types.${type}.description`),
+    Icon: INTEGRATION_ICONS[type],
+  }));
+}
 
 const DATADOG_SITES = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com'] as const;
 
@@ -1055,6 +1084,7 @@ function TraceExportFields({ form, onChange }: {
   form: Record<string, unknown>;
   onChange: (patch: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation();
   const traces = form.traces as IntegrationTraces | undefined;
   const enabled = traces?.enabled === true;
   const rate = traces?.sampleRate;
@@ -1064,15 +1094,14 @@ function TraceExportFields({ form, onChange }: {
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
         <input type="checkbox" checked={enabled} style={{ accentColor: 'var(--primary)' }}
           onChange={e => onChange({ traces: { enabled: e.target.checked, ...(rate != null ? { sampleRate: rate } : {}) } })} />
-        <span className="form-label" style={{ margin: 0 }}>Export request traces</span>
+        <span className="form-label" style={{ margin: 0 }}>{t('settings.integrations.traces.label')}</span>
       </label>
       <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-        Ships the full trace of each proxied request: every phase, every module that
-        spoke, and prompts and answers for the routers that opted in.
+        {t('settings.integrations.traces.description')}
       </p>
       {enabled && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          <label className="form-label" style={{ margin: 0 }}>Sample rate</label>
+          <label className="form-label" style={{ margin: 0 }}>{t('settings.integrations.traces.sampleRateLabel')}</label>
           <input className="form-input" type="number" min={0} max={1} step={0.05} style={{ width: 100 }}
             value={rate ?? 1}
             onChange={e => {
@@ -1081,7 +1110,7 @@ function TraceExportFields({ form, onChange }: {
               const clamped = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1;
               onChange({ traces: { enabled: true, sampleRate: clamped } });
             }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>1 exports every request, 0.1 one in ten.</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('settings.integrations.traces.sampleRateHint')}</span>
         </div>
       )}
     </div>
@@ -1089,7 +1118,7 @@ function TraceExportFields({ form, onChange }: {
 }
 
 function IntegrationIcon({ type, size = 14 }: { type: IntegrationType; size?: number }) {
-  const Icon: React.ElementType = INTEGRATION_TYPES.find(t => t.type === type)?.Icon ?? Activity;
+  const Icon: React.ElementType = INTEGRATION_ICONS[type] ?? Activity;
   return <Icon size={size} />;
 }
 
@@ -1097,18 +1126,20 @@ function integrationFormFields(
   type: IntegrationType,
   form: Record<string, unknown>,
   onChange: (patch: Record<string, unknown>) => void,
+  t: (key: string) => string,
 ): React.ReactNode {
+  const f = (key: string) => `settings.integrations.fields.${key}`;
   switch (type) {
     case 'prometheus':
       return (
         <div className="form-group">
-          <label className="form-label">Bearer Token <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+          <label className="form-label">{t(f('prometheus.bearerToken'))} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.integrations.optional')}</span></label>
           <input className="form-input" type="password"
-            placeholder="Leave empty for open access"
+            placeholder={t(f('prometheus.placeholder'))}
             value={(form.authToken as string) ?? ''}
             onChange={e => onChange({ authToken: e.target.value || undefined })} />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Exposes <code>/metrics</code> in Prometheus text format. Set a token to require Bearer auth.
+            <Trans i18nKey={f('prometheus.description')} components={{ code: <code /> }} />
           </p>
         </div>
       );
@@ -1117,18 +1148,18 @@ function integrationFormFields(
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Collector endpoint</label>
+              <label className="form-label">{t(f('otel.endpoint'))}</label>
               <input className="form-input" type="url"
                 placeholder="http://otel-collector:4318"
                 value={(form.endpoint as string) ?? ''}
                 onChange={e => onChange({ endpoint: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>, and <code>/v1/traces</code> when trace export is on. Default HTTP port is 4318, gRPC is 4317.
+                <Trans i18nKey={f('otel.description')} components={{ code: <code /> }} />
               </p>
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Protocol</label>
+              <label className="form-label">{t(f('otel.protocol'))}</label>
               <SearchableSelect
                 options={[{ value: 'http', label: 'HTTP' }, { value: 'grpc', label: 'gRPC' }]}
                 value={(form.protocol as string) ?? 'http'}
@@ -1137,7 +1168,7 @@ function integrationFormFields(
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Headers <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional, one per line: Key: Value)</span></label>
+            <label className="form-label">{t(f('otel.headers'))} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.integrations.headersHint')}</span></label>
             <textarea className="form-input" rows={3}
               placeholder={'Authorization: Bearer token\nX-Custom: value'}
               value={headersToText(form.headers as Record<string, string> | undefined)}
@@ -1151,18 +1182,18 @@ function integrationFormFields(
       return (
         <>
           <div className="form-group">
-            <label className="form-label">API Key</label>
+            <label className="form-label">{t(f('datadog.apiKey'))}</label>
             <input className="form-input" type="password"
-              placeholder="Your Datadog API key"
+              placeholder={t(f('datadog.placeholder'))}
               value={(form.apiKey as string) ?? ''}
               onChange={e => onChange({ apiKey: e.target.value })}
               required />
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-              Found under <strong>Organization Settings → API Keys</strong> in your Datadog account.
+              <Trans i18nKey={f('datadog.description')} components={{ strong: <strong /> }} />
             </p>
           </div>
           <div className="form-group">
-            <label className="form-label">Site</label>
+            <label className="form-label">{t(f('datadog.site'))}</label>
             <SearchableSelect
               options={[
                 { value: 'datadoghq.com', label: 'datadoghq.com - US1' },
@@ -1181,37 +1212,37 @@ function integrationFormFields(
       return (
         <>
           <div className="form-group">
-            <label className="form-label">Remote Write URL</label>
+            <label className="form-label">{t(f('grafana.remoteWriteUrl'))}</label>
             <input className="form-input" type="url"
               placeholder="https://prometheus-prod-01.grafana.net/api/prom/push"
               value={(form.url as string) ?? ''}
               onChange={e => onChange({ url: e.target.value })}
               required />
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-              Found in <strong>Grafana Cloud → Connections → Prometheus → Details</strong> as "Remote Write Endpoint".
+              <Trans i18nKey={f('grafana.description')} components={{ strong: <strong /> }} />
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Username / Stack ID</label>
+              <label className="form-label">{t(f('grafana.username'))}</label>
               <input className="form-input"
                 placeholder="123456"
                 value={(form.username as string) ?? ''}
                 onChange={e => onChange({ username: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Numeric ID shown in the Prometheus connection details.
+                {t(f('grafana.usernameHint'))}
               </p>
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">API Key / Token</label>
+              <label className="form-label">{t(f('grafana.apiKey'))}</label>
               <input className="form-input" type="password"
                 placeholder="glc_eyJ..."
                 value={(form.apiKey as string) ?? ''}
                 onChange={e => onChange({ apiKey: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Grafana Cloud token with <strong>MetricsPublisher</strong> role.
+                <Trans i18nKey={f('grafana.apiKeyHint')} components={{ strong: <strong /> }} />
               </p>
             </div>
           </div>
@@ -1222,31 +1253,31 @@ function integrationFormFields(
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">URL</label>
+              <label className="form-label">{t(f('influxdb.url'))}</label>
               <input className="form-input" type="url"
                 placeholder="http://localhost:8086"
                 value={(form.url as string) ?? ''}
                 onChange={e => onChange({ url: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                InfluxDB v2 instance URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>
+                <Trans i18nKey={f('influxdb.urlHint')} components={{ code: <code /> }} />
               </p>
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Token</label>
+              <label className="form-label">{t(f('influxdb.token'))}</label>
               <input className="form-input" type="password"
-                placeholder="Your InfluxDB API token"
+                placeholder={t(f('influxdb.tokenPlaceholder'))}
                 value={(form.token as string) ?? ''}
                 onChange={e => onChange({ token: e.target.value })}
                 required />
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                Must have <strong>write</strong> access to the bucket.
+                <Trans i18nKey={f('influxdb.tokenHint')} components={{ strong: <strong /> }} />
               </p>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Organization</label>
+              <label className="form-label">{t(f('influxdb.org'))}</label>
               <input className="form-input"
                 placeholder="my-org"
                 value={(form.org as string) ?? ''}
@@ -1254,7 +1285,7 @@ function integrationFormFields(
                 required />
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Bucket</label>
+              <label className="form-label">{t(f('influxdb.bucket'))}</label>
               <input className="form-input"
                 placeholder="metrics"
                 value={(form.bucket as string) ?? ''}
@@ -1268,7 +1299,7 @@ function integrationFormFields(
       return (
         <>
           <div className="form-group">
-            <label className="form-label">URL</label>
+            <label className="form-label">{t(f('webhook.url'))}</label>
             <input className="form-input" type="url"
               placeholder="https://example.com/metrics-webhook"
               value={(form.url as string) ?? ''}
@@ -1276,13 +1307,13 @@ function integrationFormFields(
               required />
           </div>
           <div className="form-group">
-            <label className="form-label">Secret <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — HMAC-SHA256 signing key)</span></label>
+            <label className="form-label">{t(f('webhook.secret'))} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t(f('webhook.secretHint'))}</span></label>
             <input className="form-input" type="password"
               value={(form.secret as string) ?? ''}
               onChange={e => onChange({ secret: e.target.value || undefined })} />
           </div>
           <div className="form-group">
-            <label className="form-label">Headers <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional, one per line: Key: Value)</span></label>
+            <label className="form-label">{t(f('webhook.headers'))} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.integrations.headersHint')}</span></label>
             <textarea className="form-input" rows={3}
               placeholder={'Authorization: Bearer token\nX-Custom: value'}
               value={headersToText(form.headers as Record<string, string> | undefined)}
@@ -1296,6 +1327,8 @@ function integrationFormFields(
 }
 
 export function SettingsIntegrationsTab() {
+  const { t } = useTranslation();
+  const integrationTypes = useIntegrationTypes();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState('');
@@ -1310,7 +1343,7 @@ export function SettingsIntegrationsTab() {
   useEffect(() => {
     getIntegrations()
       .then(setIntegrations)
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load integrations'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.integrations.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -1344,7 +1377,7 @@ export function SettingsIntegrationsTab() {
       const updated = await updateIntegration(integration.id, { enabled: !integration.enabled });
       setIntegrations(prev => prev.map(i => i.id === updated.id ? updated : i));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update integration');
+      setError(e instanceof Error ? e.message : t('settings.integrations.errors.updateFailed'));
     }
   }
 
@@ -1364,7 +1397,7 @@ export function SettingsIntegrationsTab() {
         setCollapsed(c => ({ ...c, [id]: true }));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save integration');
+      setError(e instanceof Error ? e.message : t('settings.integrations.errors.saveFailed'));
     } finally {
       setSaving(s => ({ ...s, [id]: false }));
     }
@@ -1402,7 +1435,7 @@ export function SettingsIntegrationsTab() {
       setForms(f => { const n = { ...f }; delete n[id]; return n; });
       setTestResults(r => { const n = { ...r }; delete n[id]; return n; });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete integration');
+      setError(e instanceof Error ? e.message : t('settings.integrations.errors.deleteFailed'));
     }
   }
 
@@ -1424,13 +1457,13 @@ export function SettingsIntegrationsTab() {
 
       {integrations.length === 0 && (
         <div style={{ padding: '40px 0 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-          No integrations configured yet.
+          {t('settings.integrations.empty')}
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: integrations.length > 0 ? 16 : 0 }}>
         {integrations.map(integration => {
-          const meta = INTEGRATION_TYPES.find(t => t.type === integration.type);
+          const meta = integrationTypes.find(it => it.type === integration.type);
           const isEditing = collapsed[integration.id] === false;
           const form = forms[integration.id] ?? { ...integration };
           const testResult = testResults[integration.id];
@@ -1463,7 +1496,7 @@ export function SettingsIntegrationsTab() {
                     <input type="checkbox" checked={integration.enabled}
                       onChange={() => handleToggleEnabled(integration)}
                       style={{ width: 14, height: 14, cursor: 'pointer' }} />
-                    Enabled
+                    {t('settings.integrations.enabled')}
                   </label>
                   {/* Test button */}
                   <button type="button" className="btn btn-secondary"
@@ -1471,24 +1504,24 @@ export function SettingsIntegrationsTab() {
                     disabled={testResult === 'testing'}
                     onClick={() => handleTest(integration.id)}>
                     {testResult === 'testing'
-                      ? <><div className="spinner" style={{ width: 10, height: 10 }} /> Testing…</>
-                      : 'Test'}
+                      ? <><div className="spinner" style={{ width: 10, height: 10 }} /> {t('settings.integrations.testing')}</>
+                      : t('settings.integrations.test')}
                   </button>
                   {/* Delete */}
                   {pendingDelete === integration.id ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remove?</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('settings.integrations.removeConfirm')}</span>
                       <button type="button" onClick={() => handleDelete(integration.id)}
                         style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.1)', color: 'rgb(239,68,68)', cursor: 'pointer' }}>
-                        Remove
+                        {t('settings.integrations.remove')}
                       </button>
                       <button type="button" onClick={() => setPendingDelete(null)}
                         style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border)', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                        Cancel
+                        {t('settings.integrations.cancel')}
                       </button>
                     </div>
                   ) : (
-                    <button type="button" onClick={() => setPendingDelete(integration.id)} title="Remove integration"
+                    <button type="button" onClick={() => setPendingDelete(integration.id)} title={t('settings.integrations.removeTooltip')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
                       <Trash2 size={14} />
                     </button>
@@ -1511,17 +1544,17 @@ export function SettingsIntegrationsTab() {
               {/* Expanded form */}
               {isEditing && (
                 <div style={{ padding: 16 }}>
-                  {integrationFormFields(integration.type, form, patch => patchForm(integration.id, patch))}
+                  {integrationFormFields(integration.type, form, patch => patchForm(integration.id, patch), t)}
                   <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                     <button type="button" className="btn btn-primary" disabled={isSaving}
                       style={{ fontSize: '0.83rem' }}
                       onClick={() => handleSave(integration.id)}>
-                      {isSaving ? <><div className="spinner" style={{ width: 12, height: 12 }} /> Saving…</> : <><Save size={13} /> Save</>}
+                      {isSaving ? <><div className="spinner" style={{ width: 12, height: 12 }} /> {t('settings.integrations.saving')}</> : <><Save size={13} /> {t('settings.integrations.save')}</>}
                     </button>
                     <button type="button" className="btn btn-secondary" disabled={isSaving}
                       style={{ fontSize: '0.83rem' }}
                       onClick={() => handleCancel(integration.id)}>
-                      Cancel
+                      {t('settings.integrations.cancel')}
                     </button>
                   </div>
                 </div>
@@ -1536,7 +1569,7 @@ export function SettingsIntegrationsTab() {
         <button type="button" className="btn btn-secondary"
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           onClick={() => setAddOpen(o => !o)}>
-          <Plus size={14} /> Add Integration
+          <Plus size={14} /> {t('settings.integrations.addButton')}
         </button>
         {addOpen && (
           <div style={{
@@ -1544,16 +1577,16 @@ export function SettingsIntegrationsTab() {
             background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
             boxShadow: '0 8px 24px rgba(0,0,0,0.35)', minWidth: 260, zIndex: 100, overflow: 'hidden',
           }}>
-            {INTEGRATION_TYPES.map((t, i) => (
-              <button key={t.type} type="button" onClick={() => handleAdd(t.type)}
+            {integrationTypes.map((it, i) => (
+              <button key={it.type} type="button" onClick={() => handleAdd(it.type)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                   padding: '10px 14px', background: 'none', border: 'none',
                   cursor: 'pointer', textAlign: 'left',
-                  borderBottom: i < INTEGRATION_TYPES.length - 1 ? '1px solid var(--border)' : 'none',
+                  borderBottom: i < integrationTypes.length - 1 ? '1px solid var(--border)' : 'none',
                 }}>
-                <t.Icon size={13} style={{ color: 'var(--accent)' }} />
-                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{t.label}</span>
+                <it.Icon size={13} style={{ color: 'var(--accent)' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{it.label}</span>
               </button>
             ))}
           </div>
@@ -1568,6 +1601,7 @@ export function SettingsIntegrationsTab() {
 const DEFAULT_REPO_URL = 'https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/';
 
 export function SettingsCatalogTab() {
+  const { t } = useTranslation();
   const [repos, setRepos] = useState<ProviderRepo[]>([]);
   const [status, setStatus] = useState<RepoStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1592,7 +1626,7 @@ export function SettingsCatalogTab() {
         setRepos(s.providerRepos ?? [{ url: DEFAULT_REPO_URL, enabled: true }]);
         setStatus(st);
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load settings'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.catalog.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -1603,7 +1637,7 @@ export function SettingsCatalogTab() {
       const st = await refreshCatalog().catch(() => [] as RepoStatus[]);
       setStatus(st);
     }
-    setSaved('Saved.');
+    setSaved(t('settings.catalog.saved'));
     setTimeout(() => setSaved(''), 2000);
   }
 
@@ -1613,18 +1647,18 @@ export function SettingsCatalogTab() {
     if (!url) return;
     setAddError('');
     if (repos.some(r => r.url === url)) {
-      setAddError('This URL is already in the list.');
+      setAddError(t('settings.catalog.errors.duplicateUrl'));
       return;
     }
     setProbing(true);
     try {
       const probe = await probeRepo(url);
       if (!probe.ok) {
-        setAddError(probe.error ?? 'Could not reach a valid provider catalog at this URL.');
+        setAddError(probe.error ?? t('settings.catalog.errors.unreachable'));
         return;
       }
     } catch {
-      setAddError('Could not reach a valid provider catalog at this URL.');
+      setAddError(t('settings.catalog.errors.unreachable'));
       return;
     } finally {
       setProbing(false);
@@ -1650,7 +1684,7 @@ export function SettingsCatalogTab() {
     const url = editUrl.trim();
     setEditError('');
     if (repos.some((r, i) => i !== editIdx && r.url === url)) {
-      setEditError('This URL is already in the list.');
+      setEditError(t('settings.catalog.errors.duplicateUrl'));
       return;
     }
     /* v8 ignore next */
@@ -1683,7 +1717,7 @@ export function SettingsCatalogTab() {
     try {
       const st = await refreshCatalog().catch(() => [] as RepoStatus[]);
       setStatus(st);
-      setSaved('Refreshed.');
+      setSaved(t('settings.catalog.refreshed'));
       setTimeout(() => setSaved(''), 2000);
     } finally {
       setRefreshing(false);
@@ -1724,23 +1758,23 @@ export function SettingsCatalogTab() {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', margin: 0 }}>
-          Provider Catalog Repositories
+          {t('settings.catalog.heading')}
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
           <button type="button" className="btn btn-secondary"
             style={{ fontSize: '0.78rem', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
             disabled={refreshing}
             onClick={() => void handleRefresh()}>
-            {refreshing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> Refreshing…</> : 'Refresh'}
+            {refreshing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> {t('settings.catalog.refreshing')}</> : t('settings.catalog.refresh')}
           </button>
           {nextRefreshLabel && (
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Next: {nextRefreshLabel}</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('settings.catalog.nextRefresh', { date: nextRefreshLabel })}</span>
           )}
         </div>
       </div>
 
       <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16, marginTop: 0 }}>
-        Row order determines merge priority — row 1 wins on conflict. Use the arrows to reorder.
+        {t('settings.catalog.priorityHint')}
       </p>
 
       {saved && (
@@ -1752,14 +1786,14 @@ export function SettingsCatalogTab() {
       <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 20 }}>
         {/* Header */}
         <div style={{ display: 'grid', gridTemplateColumns: COL, gap: 0, background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', padding: '6px 14px' }}>
-          {['#', 'URL', 'Updated', 'Last Check', 'Status', ''].map(h => (
+          {[t('settings.catalog.columns.priority'), t('settings.catalog.columns.url'), t('settings.catalog.columns.updated'), t('settings.catalog.columns.lastCheck'), t('settings.catalog.columns.status'), ''].map(h => (
             <span key={h} style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</span>
           ))}
         </div>
 
         {repos.length === 0 && (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            No repositories configured. The default Routerly public catalog will be used.
+            {t('settings.catalog.empty')}
           </div>
         )}
 
@@ -1770,18 +1804,18 @@ export function SettingsCatalogTab() {
               {editIdx === idx ? (
                 <form onSubmit={e => void handleSaveEdit(e)} style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--bg-elevated)' }}>
                   <div>
-                    <label className="form-label" htmlFor={`edit-url-${idx}`}>URL</label>
+                    <label className="form-label" htmlFor={`edit-url-${idx}`}>{t('settings.catalog.columns.url')}</label>
                     <input id={`edit-url-${idx}`} className="form-input" type="url" value={editUrl}
                       onChange={e => { setEditUrl(e.target.value); setEditError(''); }} required autoFocus />
                     {editError && <div className="form-error" style={{ marginTop: 4 }}>{editError}</div>}
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem' }}>
                     <input type="checkbox" checked={editEnabled} onChange={e => setEditEnabled(e.target.checked)} />
-                    Enabled
+                    {t('settings.integrations.enabled')}
                   </label>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="submit" className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '4px 14px' }}>Save</button>
-                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '4px 14px' }} onClick={() => setEditIdx(null)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '4px 14px' }}>{t('settings.integrations.save')}</button>
+                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '4px 14px' }} onClick={() => setEditIdx(null)}>{t('settings.integrations.cancel')}</button>
                   </div>
                 </form>
               ) : (
@@ -1807,12 +1841,12 @@ export function SettingsCatalogTab() {
                   {/* Status */}
                   <span style={{ fontSize: '0.75rem', color: st?.error ? '#ef4444' : repo.enabled ? '#22c55e' : 'var(--text-muted)' }}
                     title={st?.error ?? ''}>
-                    {st?.error ? 'Error' : repo.enabled ? 'Active' : 'Disabled'}
+                    {st?.error ? t('settings.catalog.status.error') : repo.enabled ? t('settings.catalog.status.active') : t('settings.catalog.status.disabled')}
                   </span>
                   {/* Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => startEdit(idx)}>Edit</button>
-                    <button type="button" onClick={() => setConfirmRemoveIdx(idx)} title="Remove"
+                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => startEdit(idx)}>{t('settings.catalog.edit')}</button>
+                    <button type="button" onClick={() => setConfirmRemoveIdx(idx)} title={t('settings.catalog.removeTooltip')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
                       <Trash2 size={14} />
                     </button>
@@ -1826,22 +1860,22 @@ export function SettingsCatalogTab() {
 
       <form onSubmit={e => void handleAdd(e)} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: 600 }}>
         <div style={{ flex: 1 }}>
-          <label className="form-label" htmlFor="catalog-url">Add Repository</label>
+          <label className="form-label" htmlFor="catalog-url">{t('settings.catalog.addRepository')}</label>
           <input id="catalog-url" className="form-input" type="url" placeholder="https://example.com/catalog/"
             value={newUrl} onChange={e => { setNewUrl(e.target.value); setAddError(''); }} required />
           {addError && <div className="form-error" style={{ marginTop: 4 }}>{addError}</div>}
         </div>
         <button type="submit" className="btn btn-primary" style={{ fontSize: '0.83rem', display: 'flex', alignItems: 'center', gap: 5 }} disabled={probing}>
-          {probing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> Checking…</> : <><Plus size={14} /> Add</>}
+          {probing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> {t('settings.catalog.checking')}</> : <><Plus size={14} /> {t('settings.catalog.add')}</>}
         </button>
       </form>
 
       {confirmRemoveIdx !== null && (
         <ConfirmDialog
-          message={`Remove repository "${repos[confirmRemoveIdx]?.url}"?`}
+          message={t('settings.catalog.removeConfirm', { url: repos[confirmRemoveIdx]?.url })}
           onConfirm={() => void confirmRemove(confirmRemoveIdx)}
           onCancel={() => setConfirmRemoveIdx(null)}
-          confirmLabel="Remove"
+          confirmLabel={t('settings.catalog.removeTooltip')}
           danger={true}
         />
       )}
@@ -1860,6 +1894,7 @@ function ChannelSelector({
   current: string;
   onSave: (ch: string) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [releases, setReleases] = React.useState<AvailableReleases>(FALLBACK_RELEASES);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
@@ -1978,6 +2013,7 @@ function InfoRow({ label, value, mono = false }: { label: string; value: string;
 }
 
 export function SettingsAboutTab() {
+  const { t } = useTranslation();
   const [info, setInfo] = useState<SystemInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1994,7 +2030,7 @@ export function SettingsAboutTab() {
   useEffect(() => {
     getSystemInfo()
       .then(i => { setInfo(i); setUpdateInfo(i.updateInfo); })
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.about.errors.loadFailed')))
       .finally(() => setLoading(false));
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
@@ -2012,7 +2048,7 @@ export function SettingsAboutTab() {
       const result = await checkForUpdates();
       setUpdateInfo(result);
     } catch (e) {
-      setUpdateError(e instanceof Error ? e.message : 'Check failed');
+      setUpdateError(e instanceof Error ? e.message : t('settings.about.errors.checkFailed'));
     } finally {
       setChecking(false);
     }
@@ -2020,7 +2056,7 @@ export function SettingsAboutTab() {
 
   function handleUpdate() {
     setConfirmState({
-      message: 'This will download and install the latest version. The service will restart. Continue?',
+      message: t('settings.about.confirmUpdate'),
       onConfirm: () => { setConfirmState(null); doUpdate(); },
     });
   }
@@ -2040,18 +2076,18 @@ export function SettingsAboutTab() {
           const r = await fetch('/health');
           if (r.ok) {
             clearInterval(pollRef.current!);
-            setUpdateMsg('Update complete! Reloading…');
+            setUpdateMsg(t('settings.about.updateComplete'));
             setTimeout(() => window.location.reload(), 1500);
           }
         } catch { /* still restarting */ }
         if (attempts >= 20) {
           clearInterval(pollRef.current!);
           setUpdating(false);
-          setUpdateMsg('Service is restarting. Please reload the page in a moment.');
+          setUpdateMsg(t('settings.about.serviceRestarting'));
         }
       }, 3000);
     } catch (e) {
-      setUpdateError(e instanceof Error ? e.message : 'Update failed');
+      setUpdateError(e instanceof Error ? e.message : t('settings.about.errors.updateFailed'));
       setUpdating(false);
     }
   }
@@ -2068,36 +2104,36 @@ export function SettingsAboutTab() {
     <>
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Application</h3>
-        <InfoRow label="Version" value={`v${info.version}`} />
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>{t('settings.about.headings.application')}</h3>
+        <InfoRow label={t('settings.about.labels.version')} value={`v${info.version}`} />
         <ChannelSelector current={info.rawChannel ?? info.channel ?? 'latest'} onSave={handleChannelSave} />
-        <InfoRow label="Uptime" value={formatUptime(info.uptimeSeconds)} />
+        <InfoRow label={t('settings.about.labels.uptime')} value={formatUptime(info.uptimeSeconds)} />
       </div>
 
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Runtime</h3>
-        <InfoRow label="Node.js" value={info.nodeVersion} />
-        <InfoRow label="Platform" value={info.platform} />
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>{t('settings.about.headings.runtime')}</h3>
+        <InfoRow label={t('settings.about.labels.nodeVersion')} value={info.nodeVersion} />
+        <InfoRow label={t('settings.about.labels.platform')} value={info.platform} />
       </div>
 
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Storage</h3>
-        <InfoRow label="Config directory" value={info.configDir} mono />
-        <InfoRow label="Data directory" value={info.dataDir} mono />
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>{t('settings.about.headings.storage')}</h3>
+        <InfoRow label={t('settings.about.labels.configDir')} value={info.configDir} mono />
+        <InfoRow label={t('settings.about.labels.dataDir')} value={info.dataDir} mono />
       </div>
 
       <div>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>Software Update</h3>
+        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>{t('settings.about.headings.softwareUpdate')}</h3>
         {updateInfo ? (
           <>
-            <InfoRow label="Current version" value={`v${updateInfo.currentVersion}`} />
-            <InfoRow label="Available version" value={updateInfo.available ? `v${updateInfo.latestVersion}` : 'Up to date'} />
+            <InfoRow label={t('settings.about.labels.currentVersion')} value={`v${updateInfo.currentVersion}`} />
+            <InfoRow label={t('settings.about.labels.availableVersion')} value={updateInfo.available ? `v${updateInfo.latestVersion}` : t('settings.about.labels.upToDate')} />
             {updateInfo.checkedAt && (
-              <InfoRow label="Last checked" value={new Date(updateInfo.checkedAt).toLocaleString()} />
+              <InfoRow label={t('settings.about.labels.lastChecked')} value={new Date(updateInfo.checkedAt).toLocaleString()} />
             )}
           </>
         ) : (
-          <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', padding: '9px 0' }}>No update check performed yet.</p>
+          <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', padding: '9px 0' }}>{t('settings.about.noCheckPerformed')}</p>
         )}
         {updateError && <p style={{ color: 'var(--error, #e53e3e)', fontSize: '0.83rem', margin: '8px 0 0' }}>{updateError}</p>}
         {updateMsg && <p style={{ color: 'var(--accent)', fontSize: '0.83rem', margin: '8px 0 0' }}>{updateMsg}</p>}
@@ -2108,7 +2144,7 @@ export function SettingsAboutTab() {
             disabled={checking || updating}
             style={{ fontSize: '0.83rem' }}
           >
-            {checking ? <><span className="spinner" style={{ width: 12, height: 12, marginRight: 6 }} />Checking…</> : 'Check for updates'}
+            {checking ? <><span className="spinner" style={{ width: 12, height: 12, marginRight: 6 }} />{t('settings.about.checking')}</> : t('settings.about.checkForUpdates')}
           </button>
           {!info.isDocker && updateInfo?.available && (
             <button
@@ -2117,12 +2153,12 @@ export function SettingsAboutTab() {
               disabled={updating}
               style={{ fontSize: '0.83rem' }}
             >
-              {updating ? <><span className="spinner" style={{ width: 12, height: 12, marginRight: 6 }} />Updating…</> : `Update to v${updateInfo.latestVersion}`}
+              {updating ? <><span className="spinner" style={{ width: 12, height: 12, marginRight: 6 }} />{t('settings.about.updating')}</> : t('settings.about.updateTo', { version: updateInfo.latestVersion })}
             </button>
           )}
           {info.isDocker && (
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', alignSelf: 'center', margin: 0 }}>
-              Running in Docker — pull the latest image to update.
+              {t('settings.about.dockerHint')}
             </p>
           )}
         </div>
@@ -2143,6 +2179,7 @@ export function SettingsAboutTab() {
 // ── Security tab ─────────────────────────────────────────────────────────────
 
 export function SettingsSecurityTab() {
+  const { t } = useTranslation();
   const [requireMfa, setRequireMfa] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2152,7 +2189,7 @@ export function SettingsSecurityTab() {
   useEffect(() => {
     getSettings()
       .then(s => setRequireMfa(!!s.requireMfa))
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load settings'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.security.errors.loadFailed')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -2166,7 +2203,7 @@ export function SettingsSecurityTab() {
       setSaved(true);
       setTimeout(/* v8 ignore next */ () => setSaved(false), 3000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save settings');
+      setError(e instanceof Error ? e.message : t('settings.security.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -2178,7 +2215,7 @@ export function SettingsSecurityTab() {
     <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 28 }}>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Shield size={13} /> Authentication
+          <Shield size={13} /> {t('settings.security.authentication')}
         </h3>
 
         <div className="form-group">
@@ -2189,11 +2226,10 @@ export function SettingsSecurityTab() {
               onChange={e => setRequireMfa(e.target.checked)}
               style={{ width: 16, height: 16, cursor: 'pointer' }}
             />
-            Require Two-Factor Authentication for all users
+            {t('settings.security.requireMfa')}
           </label>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            When enabled, users who have not set up 2FA will see a prompt to do so after logging in.
-            Users can configure 2FA in their Profile page.
+            {t('settings.security.requireMfaHint')}
           </p>
         </div>
       </div>
@@ -2201,12 +2237,12 @@ export function SettingsSecurityTab() {
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
       {saved && (
         <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.85rem', color: '#22c55e' }}>
-          Settings saved successfully.
+          {t('settings.security.savedSuccess')}
         </div>
       )}
       <div>
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving…</> : <><Save size={15} /> Save Settings</>}
+          {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.security.saving')}</> : <><Save size={15} /> {t('settings.security.saveSettings')}</>}
         </button>
       </div>
     </form>

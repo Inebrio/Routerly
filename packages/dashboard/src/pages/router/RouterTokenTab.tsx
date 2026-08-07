@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit2, Key } from 'lucide-react';
 import { deleteRouterToken, type RouterToken } from '../../api';
 import { useRouter } from './RouterLayout';
@@ -6,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 
 export function RouterTokenTab() {
+  const { t } = useTranslation();
   const { router, setRouter } = useRouter();
   const navigate = useNavigate();
   if (!router) return null;
@@ -28,7 +30,7 @@ export function RouterTokenTab() {
 
   function handleDelete(tokenId: string, snippet: string) {
     setConfirmState({
-      message: `Revoke token "${snippet}..."? Apps using it will stop working immediately.`,
+      message: t('routers.token.revokeConfirm', { snippet }),
       onConfirm: async () => {
         setConfirmState(null);
         setErr(''); setLoading(true);
@@ -37,8 +39,8 @@ export function RouterTokenTab() {
         try {
           await deleteRouterToken(router.id, tokenId);
           /* v8 ignore next */
-          setRouter(p => p ? { ...p, tokens: p.tokens?.filter(t => t.id !== tokenId) || [] } : p);
-        } catch (e) { setErr(e instanceof Error ? e.message : 'Error deleting token'); }
+          setRouter(p => p ? { ...p, tokens: p.tokens?.filter(tk => tk.id !== tokenId) || [] } : p);
+        } catch (e) { setErr(e instanceof Error ? e.message : t('routers.token.errors.deleteFailed')); }
         finally { setLoading(false); }
       },
     });
@@ -52,7 +54,7 @@ export function RouterTokenTab() {
     <>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
         <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-          <Plus size={16} /> New Token
+          <Plus size={16} /> {t('routers.token.newButton')}
         </button>
       </div>
 
@@ -60,7 +62,7 @@ export function RouterTokenTab() {
         tokens.length === 0 ? (
           <div className="empty-state">
             <Key size={36} />
-            <p>No API tokens yet. Create one to start authenticating requests.</p>
+            <p>{t('routers.token.empty')}</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -84,7 +86,7 @@ export function RouterTokenTab() {
                         background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8',
                         padding: '2px 8px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 600, border: '1px solid rgba(56, 189, 248, 0.2)'
                       }}>
-                        Budget Overrides
+                        {t('routers.token.budgetOverrides')}
                       </span>
                     )}
                   </div>
@@ -123,28 +125,28 @@ export function RouterTokenTab() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Created</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('routers.token.created')}</span>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                       {new Date(token.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last used</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('routers.token.lastUsed')}</span>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                       {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
                     </span>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expires</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('routers.token.expires')}</span>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Never'}
+                      {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : t('routers.token.never')}
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn-icon" onClick={() => openEdit(token.id)} disabled={loading} title="Edit Configuration">
+                    <button className="btn-icon" onClick={() => openEdit(token.id)} disabled={loading} title={t('routers.token.editTitle')}>
                       <Edit2 size={16} />
                     </button>
-                    <button className="btn-icon danger" onClick={() => handleDelete(token.id, token.tokenSnippet || '')} disabled={loading} title="Revoke Token">
+                    <button className="btn-icon danger" onClick={() => handleDelete(token.id, token.tokenSnippet || '')} disabled={loading} title={t('routers.token.revokeTitle')}>
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -172,6 +174,7 @@ export function LabelInput({ labels, setLabels, input, setInput, allLabels = [] 
   input: string; setInput: (v: string) => void;
   allLabels?: string[];
 }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -232,7 +235,7 @@ export function LabelInput({ labels, setLabels, input, setInput, allLabels = [] 
         ))}
         <input
           type="text" value={input}
-          placeholder={labels.length === 0 ? 'Search or create a label…' : ''}
+          placeholder={labels.length === 0 ? t('routers.token.labelInput.placeholder') : ''}
           onChange={e => {
             setInput(e.target.value);
             setIsOpen(true);
@@ -280,13 +283,13 @@ export function LabelInput({ labels, setLabels, input, setInput, allLabels = [] 
               onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-active)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              Create <span style={{ fontWeight: 600 }}>"{input}"</span>
+              {t('routers.token.labelInput.createPrefix')} <span style={{ fontWeight: 600 }}>"{input}"</span>
             </div>
           )}
 
           {suggestions.length === 0 && !showCreateOption && (
             <div style={{ padding: '8px 12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              No matching labels found.
+              {t('routers.token.labelInput.noMatches')}
             </div>
           )}
         </div>
