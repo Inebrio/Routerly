@@ -371,20 +371,20 @@ function SemanticFields({ rule, onChange, modelOptions }: {
           options={modelOptions}
           value={cfg.embeddingModelId}
           onChange={v => onChange({ ...rule, config: { ...cfg, embeddingModelId: v } })}
-          placeholder="Select embedding model..."
+          placeholder={t('common.securityRules.embeddingModelPlaceholder')}
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.fallbackModelsLabel')}</label>
         <MultiSelect
           options={modelOptions.filter(o => o.value !== cfg.embeddingModelId)}
           value={cfg.fallbackModelIds ?? []}
           onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
-          placeholder="No fallback models..."
+          placeholder={t('common.securityRules.fallbackModelsPlaceholder')}
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Example texts to block (one per line)</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.exampleTextsLabel')}</label>
         <textarea
           className="form-input"
           rows={3}
@@ -393,12 +393,12 @@ function SemanticFields({ rule, onChange, modelOptions }: {
             const examples = e.target.value.split('\n').map(s => s.trimEnd());
             onChange({ ...rule, config: { ...cfg, examples } });
           }}
-          placeholder={'How do I hack...\n...'}
+          placeholder={t('common.securityRules.exampleTextsPlaceholder')}
           style={{ resize: 'vertical', fontSize: '0.85rem' }}
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Similarity threshold: <strong>{threshold.toFixed(2)}</strong></label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.similarityThresholdLabel')} <strong>{threshold.toFixed(2)}</strong></label>
         <input
           type="range" min="0" max="1" step="0.01"
           value={threshold}
@@ -431,33 +431,33 @@ function TopicFields({ rule, onChange, modelOptions }: {
           options={modelOptions}
           value={cfg.modelId ?? ''}
           onChange={v => onChange({ ...rule, config: { ...cfg, modelId: v } })}
-          placeholder="Select judge model..."
+          placeholder={t('common.securityRules.judgeModelPlaceholder')}
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.fallbackModelsLabel')}</label>
         <MultiSelect
           options={modelOptions.filter(o => o.value !== cfg.modelId)}
           value={cfg.fallbackModelIds ?? []}
           onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
-          placeholder="No fallback models..."
+          placeholder={t('common.securityRules.fallbackModelsPlaceholder')}
         />
       </div>
       </>)}
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Allowed topics (natural language)</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.allowedTopicsLabel')}</label>
         <textarea
           className="form-input"
           rows={3}
           value={cfg.allowedTopics}
           onChange={e => onChange({ ...rule, config: { ...cfg, allowedTopics: e.target.value } })}
-          placeholder="Customer support for software products. Technical troubleshooting. Billing questions."
+          placeholder={t('common.securityRules.allowedTopicsPlaceholder')}
           style={{ resize: 'vertical', fontSize: '0.85rem' }}
         />
       </div>
       {rule.target && (
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Block if on-topic score below: <strong>{threshold.toFixed(2)}</strong></label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.onTopicThresholdLabel')} <strong>{threshold.toFixed(2)}</strong></label>
         <input
           type="range" min="0" max="1" step="0.01"
           value={threshold}
@@ -492,20 +492,20 @@ function ModerationFields({ rule, onChange, modelOptions, instructionsError }: {
           options={modelOptions}
           value={cfg.modelId ?? ''}
           onChange={v => onChange({ ...rule, config: { ...cfg, modelId: v } })}
-          placeholder="Select judge model..."
+          placeholder={t('common.securityRules.judgeModelPlaceholder')}
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Fallback models (optional, tried in order)</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.fallbackModelsLabel')}</label>
         <MultiSelect
           options={modelOptions.filter(o => o.value !== cfg.modelId)}
           value={cfg.fallbackModelIds ?? []}
           onChange={v => onChange({ ...rule, config: { ...cfg, fallbackModelIds: v } })}
-          placeholder="No fallback models..."
+          placeholder={t('common.securityRules.fallbackModelsPlaceholder')}
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Block if harm score above: <strong>{threshold.toFixed(2)}</strong></label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.harmThresholdLabel')} <strong>{threshold.toFixed(2)}</strong></label>
         <input
           type="range" min="0" max="1" step="0.01"
           value={threshold}
@@ -516,7 +516,7 @@ function ModerationFields({ rule, onChange, modelOptions, instructionsError }: {
       </>)}
       <div className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label" style={{ fontSize: '0.75rem' }}>
-          Custom instructions
+          {t('common.securityRules.customInstructionsLabel')}
         </label>
         <textarea
           className="form-input"
@@ -528,7 +528,7 @@ function ModerationFields({ rule, onChange, modelOptions, instructionsError }: {
             if (val) next.systemPrompt = val; else delete next.systemPrompt;
             onChange({ ...rule, config: next });
           }}
-          placeholder={`You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\nRespond ONLY with a JSON object: {"score": <number between 0 and 1>}`}
+          placeholder={t('common.securityRules.customInstructionsPlaceholder')}
           style={{
             resize: 'vertical', fontFamily: 'monospace', fontSize: '0.82rem',
             ...(instructionsError ? { borderColor: 'var(--error, #ef4444)' } : {}),
@@ -536,7 +536,7 @@ function ModerationFields({ rule, onChange, modelOptions, instructionsError }: {
         />
         {instructionsError && (
           <p style={{ fontSize: '0.75rem', color: 'var(--error, #ef4444)', marginTop: 4 }}>
-            Custom instructions are required.
+            {t('common.securityRules.customInstructionsRequired')}
           </p>
         )}
       </div>
@@ -593,7 +593,7 @@ function RuleCard({ rule, onChange, onDelete, regexErrors, modelOptions, embeddi
             onChange={e => onChange({ ...rule, enabled: e.target.checked })}
             style={{ width: 13, height: 13, accentColor: 'var(--primary)', cursor: 'pointer' }}
           />
-          Enabled
+          {t('common.securityRules.enabledLabel')}
         </label>
 
         <button
@@ -623,6 +623,7 @@ const ALL_RULE_TYPES: GuardrailRuleType[] = ['regex', 'semantic', 'topic', 'mode
 // to the system prompt), but unlike a judge no extra model call runs. Same banner
 // treatment/placement as StreamingDisabledWarning (top of the guardrails section).
 function InjectionWarning() {
+  const { t } = useTranslation();
   return (
     <div
       data-testid="injection-warning"
@@ -638,12 +639,10 @@ function InjectionWarning() {
       <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
       <div>
         <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#b45309' }}>
-          Request payload modified by injection
+          {t('common.securityRules.injectionWarningTitle')}
         </p>
         <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          One or more rules inject their instruction into the outgoing request's system prompt, so the
-          payload sent to the provider is modified. No additional model call is made and nothing is
-          blocked; the serving model self-enforces the instruction.
+          {t('common.securityRules.injectionWarningBody')}
         </p>
       </div>
     </div>
@@ -653,6 +652,7 @@ function InjectionWarning() {
 // ── Streaming-disabled warning ────────────────────────────────────────────────
 
 function StreamingDisabledWarning() {
+  const { t } = useTranslation();
   return (
     <div
       data-testid="streaming-disabled-warning"
@@ -668,13 +668,10 @@ function StreamingDisabledWarning() {
       <AlertTriangle size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />
       <div>
         <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#b45309' }}>
-          Streaming disabled for this router
+          {t('common.securityRules.streamingDisabledWarningTitle')}
         </p>
         <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          One or more rules are configured to block responses (target: response or both). Because the entire response must be
-          inspected before a blocking decision can be made, Routerly holds the response in full before returning it
-          to the client. Streaming is not available while a response-blocking rule is active; clients will receive the
-          complete response at once instead of in incremental chunks.
+          {t('common.securityRules.streamingDisabledWarningBody')}
         </p>
       </div>
     </div>
@@ -746,7 +743,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
       <div style={{ marginBottom: 36 }}>
         <label className="form-label">{t('common.securityRules.contentGuardrails')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Inspect requests and responses against configured rules. Active when at least one rule is configured.
+          {t('common.securityRules.contentGuardrailsHint')}
         </p>
 
         {/* Guardrail warnings — grouped at the top of the section */}
@@ -756,12 +753,12 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
         {/* Rules */}
         <div>
           <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            Security Policies
+            {t('common.securityRules.securityPoliciesHeading')}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {rules.length === 0 && (
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                No security policies configured.
+                {t('common.securityRules.noSecurityPolicies')}
               </p>
             )}
             {rules.map(r => (
@@ -796,7 +793,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
       <div style={{ marginBottom: 32 }}>
         <label className="form-label">{t('common.securityRules.piiPolicies')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Detect and redact personal data. Each policy targets request input, model response, or both, and controls its own entity set.
+          {t('common.securityRules.piiPoliciesHint')}
         </p>
 
         {piiPolicies.map((policy, i) => (
@@ -810,7 +807,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
         ))}
         {piiPolicies.length === 0 && (
           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-            No PII policies configured.
+            {t('common.securityRules.noPiiPolicies')}
           </p>
         )}
         <button
@@ -819,7 +816,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
           style={{ fontSize: '0.85rem' }}
           onClick={() => setPiiPolicies(prev => [...prev, { enabled: true, target: 'request', entities: [] }])}
         >
-          + Add Policy
+          {t('common.securityRules.addPolicyButton')}
         </button>
       </div>
     </>

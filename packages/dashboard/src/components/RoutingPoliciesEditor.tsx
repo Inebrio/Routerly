@@ -334,18 +334,18 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                             }}
                             style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
                           />
-                          Auto Routing
+                          {t('common.routingPolicies.autoRoutingLabel')}
                         </label>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4, marginLeft: 22, lineHeight: 1.4, marginBottom: !(policy.config?.autoRouting /* v8 ignore next */ ?? true) ? 8 : 12 }}>
-                          If enabled, traffic is distributed without custom prompts. If disabled, you can write specific prompts instructing the AI when to select each target model.
+                          {t('common.routingPolicies.autoRoutingHint')}
                         </p>
                         {!(policy.config?.autoRouting /* v8 ignore next */ ?? true) && (
                           <div style={{ marginLeft: 22, marginBottom: 12 }}>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Additional Prompt Info <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>{t('common.routingPolicies.additionalPromptInfoLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({t('common.connectionFields.optional')})</span></label>
                             <textarea
                               className="form-input"
                               rows={3}
-                              placeholder="Extra instructions to include in the routing prompt..."
+                              placeholder={t('common.routingPolicies.additionalPromptInfoPlaceholder')}
                               value={policy.config?.additionalPromptInfo ?? ''}
                               onChange={e => updatePolicyConfig(idx, { additionalPromptInfo: e.target.value })}
                               /* v8 ignore next 2 */

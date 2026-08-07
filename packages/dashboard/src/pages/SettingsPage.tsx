@@ -594,14 +594,14 @@ export function SettingsNotificationsTab() {
     if (pendingDelete === id) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remove channel?</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('settings.notifications.removeChannelConfirm')}</span>
           <button type="button" onClick={() => { removeChannel(id); setPendingDelete(null); }}
             style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.1)', color: 'rgb(239,68,68)', cursor: 'pointer' }}>
-            Remove
+            {t('common.remove')}
           </button>
           <button type="button" onClick={() => setPendingDelete(null)}
             style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border)', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       );
@@ -645,7 +645,7 @@ export function SettingsNotificationsTab() {
             color: st.warn ? '#ca8a04' : st.ok ? '#22c55e' : '#ef4444',
           }}>
             {st.warn ? '⚠ ' : st.ok ? '✓ ' : '✕ '}{st.message}
-            {st.warn && <><br /><span style={{ fontSize: '0.72rem', opacity: 0.8 }}>Form updated — save to apply.</span></>}
+            {st.warn && <><br /><span style={{ fontSize: '0.72rem', opacity: 0.8 }}>{t('settings.notifications.formUpdatedHint')}</span></>}
           </div>
         )}
       </div>
@@ -661,12 +661,12 @@ export function SettingsNotificationsTab() {
         <div className="form-group" style={{ margin: 0 }}>
           <label className="form-label">{t('settings.notifications.fromAddress')}</label>
           <input className="form-input" type="email" value={c.fromAddress} required
-            onChange={e => uf(ch.id, 'fromAddress', e.target.value)} placeholder="noreply@example.com" />
+            onChange={e => uf(ch.id, 'fromAddress', e.target.value)} placeholder={t('settings.notifications.fields.emailFromAddressPlaceholder')} />
         </div>
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">From Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+          <label className="form-label">{t('settings.notifications.fields.labels.fromName')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
           <input className="form-input" value={c.fromName ?? ''}
-            onChange={e => uf(ch.id, 'fromName', e.target.value || undefined)} placeholder="Routerly" />
+            onChange={e => uf(ch.id, 'fromName', e.target.value || undefined)} placeholder={t('settings.notifications.fields.emailFromNamePlaceholder')} />
         </div>
       </div>
     );
@@ -682,21 +682,21 @@ export function SettingsNotificationsTab() {
       <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Events */}
         <div>
-          <div style={sectionLabelStyle}><Bell size={11} /> Events</div>
+          <div style={sectionLabelStyle}><Bell size={11} /> {t('settings.notifications.fields.routing.eventsHeading')}</div>
           <MultiSelect
             options={EVENT_OPTIONS}
             value={ch.events ?? []}
             onChange={v => uf(ch.id, 'events', v.length ? v : undefined)}
-            placeholder="All events (leave empty for all)"
+            placeholder={t('settings.notifications.fields.routing.eventsPlaceholder')}
           />
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-            Leave empty to receive all events. Select specific events to filter.
+            {t('settings.notifications.fields.routing.eventsHint')}
           </p>
         </div>
 
         {/* Targets */}
         <div>
-          <div style={sectionLabelStyle}><Users size={11} /> Recipients / Targets</div>
+          <div style={sectionLabelStyle}><Users size={11} /> {t('settings.notifications.fields.recipients.heading')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div>
               <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('common.roles')}</label>
@@ -704,7 +704,7 @@ export function SettingsNotificationsTab() {
                 options={roleOptions}
                 value={ch.targets?.roles ?? []}
                 onChange={v => uf(ch.id, 'targets', { ...(ch.targets ?? {}), roles: v.length ? v : undefined })}
-                placeholder="All roles (everyone)"
+                placeholder={t('settings.notifications.fields.recipients.rolesPlaceholder')}
               />
             </div>
             <div>
@@ -713,7 +713,7 @@ export function SettingsNotificationsTab() {
                 options={PERM_OPTIONS}
                 value={(ch.targets?.permissions ?? []) as string[]}
                 onChange={v => uf(ch.id, 'targets', { ...(ch.targets ?? {}), permissions: v.length ? (v as Permission[]) : undefined })}
-                placeholder="All permissions (everyone)"
+                placeholder={t('settings.notifications.fields.recipients.permissionsPlaceholder')}
               />
             </div>
             <div>
@@ -722,7 +722,7 @@ export function SettingsNotificationsTab() {
                 options={userOptions}
                 value={ch.targets?.users ?? []}
                 onChange={v => uf(ch.id, 'targets', { ...(ch.targets ?? {}), users: v.length ? v : undefined })}
-                placeholder="All users (everyone)"
+                placeholder={t('settings.notifications.fields.recipients.usersPlaceholder')}
               />
             </div>
           </div>
@@ -741,7 +741,7 @@ export function SettingsNotificationsTab() {
       case 'dashboard': return (
         <>
           <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
-            Routes matching events to the in-app notification inbox. No credentials required.
+            {t('settings.notifications.fields.dashboardHint')}
           </p>
           {eventsAndTargetsFields(ch)}
         </>
@@ -753,7 +753,7 @@ export function SettingsNotificationsTab() {
             <div className="form-group">
               <label className="form-label">{t('settings.notifications.host')}</label>
               <input className="form-input" value={ch.host}
-                onChange={e => uf(ch.id, 'host', e.target.value)} placeholder="smtp.example.com" required />
+                onChange={e => uf(ch.id, 'host', e.target.value)} placeholder={t('settings.notifications.fields.smtpHostPlaceholder')} required />
             </div>
             <div className="form-group">
               <label className="form-label">{t('settings.notifications.port')}</label>
@@ -772,19 +772,19 @@ export function SettingsNotificationsTab() {
                   setForm(f => ({ ...f, notifications: { ...f.notifications, channels: (f.notifications?.channels ?? []).map(c => c.id === ch.id ? { ...c, secure, port } : c) } }));
                 }}
                 style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }} />
-              <label htmlFor={`smtp-tls-${ch.id}`} style={{ cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-primary)' }}>Use TLS / SSL</label>
+              <label htmlFor={`smtp-tls-${ch.id}`} style={{ cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-primary)' }}>{t('settings.notifications.fields.smtpTlsLabel')}</label>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {ch.secure ? '(port 465 — direct SSL)' : '(port 587 — STARTTLS)'}
+                {ch.secure ? t('settings.notifications.fields.smtpTlsOnHint') : t('settings.notifications.fields.smtpTlsOffHint')}
               </span>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Username <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">{t('settings.notifications.fields.labels.username')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
               <input className="form-input" value={ch.username ?? ''} onChange={e => uf(ch.id, 'username', e.target.value || undefined)} />
             </div>
             <div className="form-group">
-              <label className="form-label">Password <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">{t('settings.notifications.fields.labels.password')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
               <input className="form-input" type="password" value={ch.password ?? ''} onChange={e => uf(ch.id, 'password', e.target.value || undefined)} />
             </div>
           </div>
@@ -796,19 +796,19 @@ export function SettingsNotificationsTab() {
           {emailBaseFields(ch)}
           <div className="form-group">
             <label className="form-label">{t('common.connectionFields.awsRegion')}</label>
-            <input className="form-input" value={ch.region} onChange={e => uf(ch.id, 'region', e.target.value)} placeholder="us-east-1" required />
+            <input className="form-input" value={ch.region} onChange={e => uf(ch.id, 'region', e.target.value)} placeholder={t('settings.notifications.fields.sesRegionPlaceholder')} required />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Access Key ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">{t('settings.notifications.fields.labels.accessKeyId')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
               <input className="form-input" value={ch.accessKeyId ?? ''} onChange={e => uf(ch.id, 'accessKeyId', e.target.value || undefined)} />
             </div>
             <div className="form-group">
-              <label className="form-label">Secret Access Key <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">{t('settings.notifications.fields.labels.secretAccessKey')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
               <input className="form-input" type="password" value={ch.secretAccessKey ?? ''} onChange={e => uf(ch.id, 'secretAccessKey', e.target.value || undefined)} />
             </div>
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Leave credentials blank to use the IAM instance role.</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{t('settings.notifications.fields.sesIamHint')}</p>
           {eventsAndTargetsFields(ch)}
         </>
       );
@@ -855,8 +855,8 @@ export function SettingsNotificationsTab() {
       case 'webhook': return (
         <>
           <div className="form-group">
-            <label className="form-label">URL</label>
-            <input className="form-input" type="url" value={ch.url} onChange={e => uf(ch.id, 'url', e.target.value)} placeholder="https://example.com/webhook" required />
+            <label className="form-label">{t('settings.notifications.fields.labels.url')}</label>
+            <input className="form-input" type="url" value={ch.url} onChange={e => uf(ch.id, 'url', e.target.value)} placeholder={t('settings.notifications.fields.webhookUrlPlaceholder')} required />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="form-group">
@@ -868,7 +868,7 @@ export function SettingsNotificationsTab() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Secret <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <label className="form-label">{t('settings.notifications.fields.labels.signingSecret')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
               <input className="form-input" type="password" value={ch.secret ?? ''} onChange={e => uf(ch.id, 'secret', e.target.value || undefined)} placeholder={t('settings.notifications.hmacSigningKeyPlaceholder')} />
             </div>
           </div>
@@ -879,11 +879,11 @@ export function SettingsNotificationsTab() {
         <>
           <div className="form-group">
             <label className="form-label">{t('settings.notifications.botToken')}</label>
-            <input className="form-input" type="password" value={ch.botToken} onChange={e => uf(ch.id, 'botToken', e.target.value)} placeholder="xoxb-…" required />
+            <input className="form-input" type="password" value={ch.botToken} onChange={e => uf(ch.id, 'botToken', e.target.value)} placeholder={t('settings.notifications.fields.slackBotTokenPlaceholder')} required />
           </div>
           <div className="form-group">
             <label className="form-label">{t('settings.notifications.channelId')}</label>
-            <input className="form-input" value={ch.channelId} onChange={e => uf(ch.id, 'channelId', e.target.value)} placeholder="C1234567890" required />
+            <input className="form-input" value={ch.channelId} onChange={e => uf(ch.id, 'channelId', e.target.value)} placeholder={t('settings.notifications.fields.slackChannelIdPlaceholder')} required />
           </div>
           {eventsAndTargetsFields(ch)}
         </>
@@ -892,7 +892,7 @@ export function SettingsNotificationsTab() {
         <>
           <div className="form-group">
             <label className="form-label">{t('settings.notifications.webhookUrl')}</label>
-            <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://outlook.office.com/webhook/…" required />
+            <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder={t('settings.notifications.fields.teamsWebhookPlaceholder')} required />
           </div>
           {eventsAndTargetsFields(ch)}
         </>
@@ -901,7 +901,7 @@ export function SettingsNotificationsTab() {
         <>
           <div className="form-group">
             <label className="form-label">{t('settings.notifications.integrationKey')}</label>
-            <input className="form-input" type="password" value={ch.integrationKey} onChange={e => uf(ch.id, 'integrationKey', e.target.value)} placeholder="32-character routing key" required />
+            <input className="form-input" type="password" value={ch.integrationKey} onChange={e => uf(ch.id, 'integrationKey', e.target.value)} placeholder={t('settings.notifications.fields.pagerdutyKeyPlaceholder')} required />
           </div>
           {eventsAndTargetsFields(ch)}
         </>
@@ -910,7 +910,7 @@ export function SettingsNotificationsTab() {
         <>
           <div className="form-group">
             <label className="form-label">{t('settings.notifications.webhookUrl')}</label>
-            <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder="https://discord.com/api/webhooks/…" required />
+            <input className="form-input" type="url" value={ch.webhookUrl} onChange={e => uf(ch.id, 'webhookUrl', e.target.value)} placeholder={t('settings.notifications.fields.discordWebhookPlaceholder')} required />
           </div>
           {eventsAndTargetsFields(ch)}
         </>
@@ -928,7 +928,7 @@ export function SettingsNotificationsTab() {
     <form onSubmit={handleSubmit} style={{ maxWidth: 600 }}>
       {channels.length === 0 && (
         <div style={{ padding: '40px 0 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-          No notification channels configured yet.
+          {t('settings.notifications.list.emptyTitle')}
         </div>
       )}
 
@@ -957,7 +957,7 @@ export function SettingsNotificationsTab() {
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>{meta?.label}</span>
                   <input value={ch.name ?? ''}
                     onChange={e => uf(ch.id, 'name', e.target.value || undefined)}
-                    placeholder="Label (optional)"
+                    placeholder={t('settings.notifications.list.nameInlinePlaceholder')}
                     style={{ background: 'none', border: 'none', outline: 'none', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', minWidth: 0, flex: 1 }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -997,7 +997,7 @@ export function SettingsNotificationsTab() {
             <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Search size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               <input ref={searchRef} type="text" value={channelSearch}
-                onChange={e => setChannelSearch(e.target.value)} placeholder="Search channels…"
+                onChange={e => setChannelSearch(e.target.value)} placeholder={t('settings.notifications.list.searchChannelsPlaceholder')}
                 style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '0.85rem', color: 'var(--text-primary)' }} />
             </div>
             {filteredToAdd.length === 0
