@@ -776,7 +776,15 @@ export const getSystemInfo = () => request<SystemInfo>('/system/info');
 // ── Permission guard (RTR-04) ─────────────────────────────────────────────
 export const getPermissionStatus = () => request<PermissionCheckStatus>('/system/permissions');
 export const fixPermissions = () =>
-  request<{ fixed: string[] }>('/system/permissions/fix', { method: 'POST', body: JSON.stringify({ confirm: true }) });
+  request<{ fixed: string[] }>('/system/permissions/fix', { method: 'POST', body: JSON.stringify({ confirm: true }) })
+    .then(result => {
+      // Multiple independent components poll permission status (App.tsx's
+      // banner, PermissionGuardModal, SettingsPage's FilePermissionsSection).
+      // A fix from any one of them must refresh all of them — mirrors the
+      // 'lr-permission-blocked' event above.
+      window.dispatchEvent(new CustomEvent('lr-permission-fixed'));
+      return result;
+    });
 
 export const checkForUpdates = () => request<UpdateInfo>('/system/update-check');
 export const triggerUpdate = () => request<{ message: string }>('/system/update', { method: 'POST' });

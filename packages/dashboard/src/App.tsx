@@ -288,6 +288,13 @@ function ProtectedLayout() {
     setPermissionWarning([]);
   }
 
+  // Fix can also happen from FilePermissionsSection (Settings → Security),
+  // not just this modal — pick that up too so the top banner clears either way.
+  useEffect(() => {
+    window.addEventListener('lr-permission-fixed', handlePermissionFixed);
+    return () => window.removeEventListener('lr-permission-fixed', handlePermissionFixed);
+  }, []);
+
   useEffect(() => {
     getSettings()
       .then(s => {
