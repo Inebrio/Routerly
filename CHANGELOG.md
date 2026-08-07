@@ -20,7 +20,10 @@ Projects are now Routers throughout the management API, CLI, dashboard, configur
 The dashboard now ships with 41 language catalogs (English plus 40 more, including Arabic, Hebrew, and Urdu with RTL layout), selectable per-account from a quick-access selector in the sidebar or from Profile → Preferences, and persisted server-side. Administrators can set an instance-wide default language (Settings → General → Internationalization, `defaultLanguage` in the management API, `routerly service configure --default-language`) used for any user who hasn't picked their own yet — the resolution order is personal choice, then browser locale, then the instance default, then English. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
 
 **Routers list grouped by kind**
-The Routers list now has tabs (All / Router / Orchestrator / Passthrough) filtering by `RouterKind`, with a count badge per tab.
+The Routers list now has tabs (All / Router / Orchestrator / Passthrough) filtering by `RouterKind`.
+
+**Dedicated creation form per router kind**
+Creating a Router, Orchestrator, or Passthrough no longer goes through one shared form with a kind dropdown. Each non-"All" tab on the Routers list has its own "New <Kind>" button that opens a form dedicated to that kind — the kind is fixed by which button was clicked, never chosen from a selector. Editing an existing router's General tab shows its kind as a fixed, read-only label; `kind` is never sent on save. Orchestrator creation stays two steps: create with name and timeout, then add candidate routers on the Orchestrator tab.
 
 ### Bug fixes
 
