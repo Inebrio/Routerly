@@ -1033,9 +1033,9 @@ export function ModelFormPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--border)', alignItems: 'center' }}>
-            <button type="button" className="btn btn-secondary" onClick={goBack} disabled={saving}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={goBack} disabled={saving}>{t('common.cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? <span className="spinner" /> : (editingModelId ? 'Save Changes' : isCloning ? 'Create Clone' : 'Create Model')}
+              {saving ? <span className="spinner" /> : (editingModelId ? t('models.form.saveChanges') : isCloning ? t('models.form.createClone') : t('models.form.createModel'))}
             </button>
             {editingModelId && (
               <button type="button" className="btn btn-secondary" disabled={testState === 'loading'}

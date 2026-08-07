@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EyeOff, Eye, Copy, Check, FlaskConical } from 'lucide-react';
 
 // ── Provider metadata (shared by the model form and the connection form) ─────────
@@ -179,6 +180,7 @@ interface Props {
 }
 
 export function ConnectionCredentialsFields(props: Props) {
+  const { t } = useTranslation();
   const { provider, values, onChange, editing, oauthTest } = props;
   const endpointRequired = props.endpointRequired !== false;
   const [showToken, setShowToken] = useState(false);
@@ -309,14 +311,14 @@ export function ConnectionCredentialsFields(props: Props) {
       {provider === 'azure-openai' && (
         <>
           <div className="form-group">
-            <label className="form-label">Azure Resource Name</label>
+            <label className="form-label">{t('common.connectionFields.azureResourceName')}</label>
             <input className="form-input" value={values.azureResourceName}
               onChange={e => onChange({ azureResourceName: e.target.value })}
               placeholder="myresource" required />
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The Azure OpenAI resource name (from the Azure portal).</div>
           </div>
           <div className="form-group">
-            <label className="form-label">Deployment ID</label>
+            <label className="form-label">{t('common.connectionFields.deploymentId')}</label>
             <input className="form-input" value={values.azureDeploymentId}
               onChange={e => onChange({ azureDeploymentId: e.target.value })}
               placeholder="gpt-4o-deployment" required />
@@ -335,19 +337,19 @@ export function ConnectionCredentialsFields(props: Props) {
       {provider === 'bedrock' && (
         <>
           <div className="form-group">
-            <label className="form-label">AWS Region</label>
+            <label className="form-label">{t('common.connectionFields.awsRegion')}</label>
             <input className="form-input" value={values.awsRegion}
               onChange={e => onChange({ awsRegion: e.target.value })}
               placeholder="us-east-1" required />
           </div>
           <div className="form-group">
-            <label className="form-label">AWS Access Key ID</label>
+            <label className="form-label">{t('common.connectionFields.awsAccessKeyId')}</label>
             <input className="form-input" value={values.awsAccessKeyId}
               onChange={e => onChange({ awsAccessKeyId: e.target.value })}
               placeholder="AKIAIOSFODNN7EXAMPLE" required />
           </div>
           <div className="form-group">
-            <label className="form-label">AWS Secret Access Key</label>
+            <label className="form-label">{t('common.connectionFields.awsSecretAccessKey')}</label>
             <input className="form-input" type="password" autoComplete="new-password"
               value={values.awsSecretAccessKey}
               onChange={e => onChange({ awsSecretAccessKey: e.target.value })}
@@ -367,7 +369,7 @@ export function ConnectionCredentialsFields(props: Props) {
       {provider === 'vertex' && (
         <>
           <div className="form-group">
-            <label className="form-label">GCP Router ID</label>
+            <label className="form-label">{t('common.connectionFields.gcpRouterId')}</label>
             <input className="form-input" value={values.VERTEXROUTERIDPLACEHOLDER}
               onChange={e => onChange({ VERTEXROUTERIDPLACEHOLDER: e.target.value })}
               placeholder="my-gcp-router" required />

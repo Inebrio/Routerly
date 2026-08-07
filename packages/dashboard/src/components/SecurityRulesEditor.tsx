@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import {
   getModels,
@@ -91,6 +92,7 @@ function PiiPolicyCard({
   onChange: (p: PiiPolicy) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const entities: Set<PiiEntity> = new Set(policy.entities ?? ALL_PII_ENTITIES);
   const showsResponse = policy.target === 'response' || policy.target === 'both';
 
@@ -144,7 +146,7 @@ function PiiPolicyCard({
 
       {/* Target selector (reuses the same checkbox pattern as TargetSelector) */}
       <div className="form-group" style={{ marginBottom: 10 }}>
-        <label className="form-label" style={{ fontSize: '0.72rem' }}>Apply to</label>
+        <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.securityRules.applyTo')}</label>
         <div style={{ display: 'flex', gap: 16 }}>
           {(['request', 'response'] as const).map(side => (
             <label key={side} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.85rem' }}>
@@ -163,7 +165,7 @@ function PiiPolicyCard({
       {/* Streaming buffer — only when response is targeted */}
       {showsResponse && (
         <div className="form-group" style={{ marginBottom: 10, marginLeft: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.72rem' }}>Streaming buffer size (characters)</label>
+          <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.securityRules.streamingBufferSize')}</label>
           <input
             className="form-input"
             type="number"
@@ -177,7 +179,7 @@ function PiiPolicyCard({
       )}
 
       <div style={{ marginBottom: 10 }}>
-        <label className="form-label" style={{ fontSize: '0.72rem' }}>Entity types</label>
+        <label className="form-label" style={{ fontSize: '0.72rem' }}>{t('common.securityRules.entityTypes')}</label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {ALL_PII_ENTITIES.map(entity => {
             const active = entities.has(entity);
@@ -219,6 +221,7 @@ function PiiPolicyCard({
 // ── Target selector ───────────────────────────────────────────────────────────
 
 function TargetSelector({ value, onChange }: { value: GuardrailTarget | undefined; onChange: (v: GuardrailTarget) => void }) {
+  const { t } = useTranslation();
   const reqChecked = value === 'request' || value === 'both';
   const resChecked = value === 'response' || value === 'both';
 
@@ -313,12 +316,13 @@ function RegexFields({ rule, onChange, regexErrors }: {
   onChange: (r: RuleWithId) => void;
   regexErrors: number[];
 }) {
+  const { t } = useTranslation();
   const cfg = rule.config as RegexGuardConfig;
   const text = cfg.patterns.join('\n');
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Target</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.target')}</label>
         <TargetSelector value={rule.target} onChange={t => onChange({ ...rule, target: t })} />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
@@ -352,16 +356,17 @@ function SemanticFields({ rule, onChange, modelOptions }: {
   onChange: (r: RuleWithId) => void;
   modelOptions: { value: string; label: string }[];
 }) {
+  const { t } = useTranslation();
   const cfg = rule.config as SemanticGuardConfig;
   const threshold = cfg.threshold ?? 0.82;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Target</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.target')}</label>
         <TargetSelector value={rule.target} onChange={t => onChange({ ...rule, target: t })} />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Embedding model</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.embeddingModel')}</label>
         <SearchableSelect
           options={modelOptions}
           value={cfg.embeddingModelId}
@@ -410,17 +415,18 @@ function TopicFields({ rule, onChange, modelOptions }: {
   onChange: (r: RuleWithId) => void;
   modelOptions: { value: string; label: string }[];
 }) {
+  const { t } = useTranslation();
   const cfg = rule.config as TopicGuardConfig;
   const threshold = cfg.threshold ?? 0.5;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Apply to</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.applyTo')}</label>
         <ScopeSelector rule={rule} onChange={onChange} />
       </div>
       {rule.target && (<>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Judge model</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.judgeModel')}</label>
         <SearchableSelect
           options={modelOptions}
           value={cfg.modelId ?? ''}
@@ -470,17 +476,18 @@ function ModerationFields({ rule, onChange, modelOptions, instructionsError }: {
   modelOptions: { value: string; label: string }[];
   instructionsError: boolean;
 }) {
+  const { t } = useTranslation();
   const cfg = rule.config as ModerationGuardConfig;
   const threshold = cfg.threshold ?? 0.5;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 10 }}>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Apply to</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.applyTo')}</label>
         <ScopeSelector rule={rule} onChange={onChange} />
       </div>
       {rule.target && (<>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.75rem' }}>Judge model</label>
+        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('common.securityRules.judgeModel')}</label>
         <SearchableSelect
           options={modelOptions}
           value={cfg.modelId ?? ''}
@@ -709,6 +716,7 @@ interface SecurityRulesEditorProps {
  * security profile form, so both edit the exact same rule set.
  */
 export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolicies }: SecurityRulesEditorProps) {
+  const { t } = useTranslation();
   const [allModels, setAllModels] = useState<Model[]>([]);
 
   useEffect(() => {
@@ -735,7 +743,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
     <>
       {/* ── Content Guardrails ─────────────────────────────────────────────── */}
       <div style={{ marginBottom: 36 }}>
-        <label className="form-label">Content Guardrails</label>
+        <label className="form-label">{t('common.securityRules.contentGuardrails')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
           Inspect requests and responses against configured rules. Active when at least one rule is configured.
         </p>
@@ -776,7 +784,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
                 }))}
                 value=""
                 onChange={(type) => setRules(prev => [...prev, makeDefaultRule(type as GuardrailRuleType)])}
-                placeholder="Add a security policy..."
+                placeholder={t('common.securityRules.addSecurityPolicyPlaceholder')}
               />
             </div>
           </div>
@@ -785,7 +793,7 @@ export function SecurityRulesEditor({ rules, setRules, piiPolicies, setPiiPolici
 
       {/* ── PII Policies ───────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 32 }}>
-        <label className="form-label">PII Policies</label>
+        <label className="form-label">{t('common.securityRules.piiPolicies')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
           Detect and redact personal data. Each policy targets request input, model response, or both, and controls its own entity set.
         </p>

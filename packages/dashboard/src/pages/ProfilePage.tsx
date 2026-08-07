@@ -191,7 +191,7 @@ function NotificationDetailDrawer({
             <FilterLabel>{t('profile.notifications.filters.date')}</FilterLabel>
             <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
               {fmtDate(item.timestamp)}
-              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({timeAgo(item.timestamp)})</span>
+              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({timeAgo(item.timestamp, t)})</span>
             </div>
           </div>
 
