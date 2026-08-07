@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # Integrations
 
-Routerly is compatible with any tool that speaks the OpenAI or Anthropic API. Point the tool at your Routerly instance, set your project token as the API key, and everything works — routing, budget enforcement, and cost tracking included.
+Routerly is compatible with any tool that speaks the OpenAI or Anthropic API. Point the tool at your Routerly instance, set your router token as the API key, and everything works — routing, budget enforcement, and cost tracking included.
 
 ---
 
@@ -101,7 +101,7 @@ Interactive computing environments.
 Every integration follows the same two-step pattern:
 
 1. **Set the base URL** to your Routerly instance — `http://localhost:3000/v1` for local, or your production URL.
-2. **Set the API key** to your project token — `sk-rt-YOUR_PROJECT_TOKEN`.
+2. **Set the API key** to your router token — `sk-rt-YOUR_ROUTER_TOKEN`.
 
 Routerly looks like OpenAI or Anthropic to any client. No SDK patches, no plugins.
 

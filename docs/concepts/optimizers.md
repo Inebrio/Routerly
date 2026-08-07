@@ -6,8 +6,8 @@ sidebar_position: 8
 # Optimizers
 
 Optimizers reduce the token footprint of a request's message array before it
-is forwarded to a provider. They run per-project, in a configurable pipeline,
-and are **off by default**. A project must explicitly enable each optimizer
+is forwarded to a provider. They run per-router, in a configurable pipeline,
+and are **off by default**. A router must explicitly enable each optimizer
 id it wants.
 
 Routerly ships 8 built-in optimizers. Each declares a **class** that
@@ -175,13 +175,13 @@ the disk.
 | `bert-multilingual-fp32` | Same repo as the default, at `fp32` | 713 MB | The export repo declares no license; the upstream weights are Apache-2.0 | Same model without the quantization loss, when scoring quality matters more than memory |
 
 Checkpoints are **host-shared and step-selected**: the download lives on the
-service host and every project that names a key uses the same files, while
-the key itself is a property of the step, set per project. A step with no
+service host and every router that names a key uses the same files, while
+the key itself is a property of the step, set per router. A step with no
 `model` runs on the default checkpoint.
 
 Files land under `<ROUTERLY_HOME>/models/<repo>/`, in the layout
 transformers.js expects. A checkpoint outside the curated list is an
-operator-level escape hatch, not a per-project choice, because it writes
+operator-level escape hatch, not a per-router choice, because it writes
 files to the host's disk:
 
 | Variable | Effect |
@@ -251,8 +251,8 @@ dashboard and by `routerly optimizers preview --fixture` ship with Routerly
 and contain nobody's data.
 
 Before 0.4.0 the service kept an in-memory buffer of the last few real
-prompts per project and served them to any holder of `optimizers:read`. That
-buffer, its route (`GET /api/projects/:id/optimizers/samples`) and its
+prompts per router and served them to any holder of `optimizers:read`. That
+buffer, its route (`GET /api/routers/:id/optimizers/samples`) and its
 command (`routerly optimizers samples`) are gone.
 
 ## Safety Gate and Fail-Open Guarantee
@@ -275,14 +275,14 @@ end by `core.test.ts`.
 
 ## Default State
 
-All 8 optimizers ship **disabled**. A new project's `optimizers.steps` is
-empty. A project must explicitly enable each optimizer id it wants, in the
+All 8 optimizers ship **disabled**. A new router's `optimizers.steps` is
+empty. A router must explicitly enable each optimizer id it wants, in the
 order it wants them applied, via its `optimizers.steps` config (see [API:
 Optimizers](../api/management.md#optimizers), [CLI: `routerly
 optimizers`](../cli/commands.md#routerly-optimizers), or the dashboard's
-[Optimizer tab](../dashboard/projects.md#optimizer-tab)). `llmlingua-2`
+[Optimizer tab](../dashboard/routers.md#optimizer-tab)). `llmlingua-2`
 additionally requires the runtime and a checkpoint described above before it
-can ever activate, even when enabled in a project's config.
+can ever activate, even when enabled in a router's config.
 
 ## Threshold Range
 
@@ -349,28 +349,28 @@ no JSON array long enough, the checkpoint not downloaded.
 result the safety gate rejected. Preview marks the second case explicitly
 (`rolledBack: true`), and the measured savings block counts rollbacks per
 optimizer over real traffic. Repeated rollbacks mean the threshold is too
-aggressive for this project, not that the optimizer is idle.
+aggressive for this router, not that the optimizer is idle.
 
 Once the pipeline is running, the measured effect per optimizer (calls
 changed, tokens removed, cost avoided, rollbacks) is reported in the savings
 block of `GET /api/usage?savings=1`, by [`routerly report
-savings`](../cli/commands.md#routerly-report-savings), and in the project's
+savings`](../cli/commands.md#routerly-report-savings), and in the router's
 Dashboard tab. Those
 numbers are recorded per call as it is served, so they are measurements, not
 estimates like the model counterfactual next to them.
 
 ## Upgrading from 0.3
 
-A project whose pipeline already lists `headroom` needs no edit, but the
+A router whose pipeline already lists `headroom` needs no edit, but the
 step that never fired now fires. A request that overflows the requested
 model's context window will start losing its oldest turns, where before it
 was forwarded whole and the provider decided what to do with it.
 
 Check what it did: the step is recorded in the request's trace, and its
 effect over a period appears in the savings block (`GET
-/api/usage?savings=1`, `routerly report savings`, the project Dashboard
-tab). To turn it off, disable the `headroom` step in the project's pipeline
-(the Optimizer tab, or `routerly optimizers config <project> --disable
+/api/usage?savings=1`, `routerly report savings`, the router Dashboard
+tab). To turn it off, disable the `headroom` step in the router's pipeline
+(the Optimizer tab, or `routerly optimizers config <router> --disable
 headroom`).
 
 Two defaults also changed: `ccr` keeps 3 recent turns instead of 6, and
@@ -412,4 +412,4 @@ approximation of relative reduction, not a provider-exact token count.
 - [Service: Routing Engine, Optimizers and Context Window Fit](../service/routing-engine.md#optimizers-and-context-window-fit)
 - [API: Optimizers](../api/management.md#optimizers)
 - [CLI: `routerly optimizers`](../cli/commands.md#routerly-optimizers)
-- [Dashboard: Projects, Optimizer Tab](../dashboard/projects.md#optimizer-tab)
+- [Dashboard: Routers, Optimizer Tab](../dashboard/routers.md#optimizer-tab)

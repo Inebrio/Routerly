@@ -47,11 +47,11 @@ Everything in this block is editable and saved with **Save Settings**.
 | Field | Description |
 |-------|-------------|
 | **Log Level** | `trace` / `debug` / `info` / `warn` / `error`. Routerly prints the [full request trace](../concepts/architecture.md#the-trace-on-the-console) on stdout, with failures on stderr; at `warn` and `error` only the failures are printed |
-| **Public URL** | The externally accessible URL of this Routerly instance. Shown in project connection snippets. Useful when the dashboard runs on a different machine or port than the service |
+| **Public URL** | The externally accessible URL of this Routerly instance. Shown in router connection snippets. Useful when the dashboard runs on a different machine or port than the service |
 
 **Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.
 
-Per-request timeouts are configured per project (see [Projects](./projects.md#general-tab)), not globally.
+Per-request timeouts are configured per router (see [Routers](./routers.md#general-tab)), not globally.
 
 ---
 
@@ -127,7 +127,7 @@ Click the **Delete** button on the channel row or edit page. You will be asked t
 
 ### Routing Rules
 
-Routing rules map event patterns to one or more channels. When an event matches a rule's patterns, it is dispatched to the specified channels (in addition to any project-level overrides via the Notifications tab on the project page).
+Routing rules map event patterns to one or more channels. When an event matches a rule's patterns, it is dispatched to the specified channels (in addition to any router-level overrides via the Notifications tab on the router page).
 
 By default, events are not routed to any channels — they are only recorded in the inbox. Add a rule to enable routing.
 
@@ -332,12 +332,12 @@ All push-type integrations (OpenTelemetry, Datadog, Grafana, InfluxDB, Webhook) 
 
 | Metric | Type | Dimensions | Description |
 |--------|------|-----------|-------------|
-| `routerly_requests_total` | Counter | project, model | Total request count by project and model |
-| `routerly_tokens_total` | Counter | type (input/output), project, model | Total tokens consumed |
-| `routerly_cost_usd_total` | Gauge | project, model | Estimated USD cost by project and model |
-| `routerly_request_duration_p50_ms` | Gauge | project | Median request latency per project |
-| `routerly_request_duration_p95_ms` | Gauge | project | 95th percentile latency per project |
-| `routerly_budget_used_ratio` | Gauge | project | Budget consumption ratio (0–1) per project |
+| `routerly_requests_total` | Counter | router, model | Total request count by router and model |
+| `routerly_tokens_total` | Counter | type (input/output), router, model | Total tokens consumed |
+| `routerly_cost_usd_total` | Gauge | router, model | Estimated USD cost by router and model |
+| `routerly_request_duration_p50_ms` | Gauge | router | Median request latency per router |
+| `routerly_request_duration_p95_ms` | Gauge | router | 95th percentile latency per router |
+| `routerly_budget_used_ratio` | Gauge | router | Budget consumption ratio (0–1) per router |
 
 Each platform receives metrics in its native format:
 - **OpenTelemetry** — OTLP JSON or gRPC
@@ -366,13 +366,13 @@ What each sink receives:
   pipeline phase, and each trace entry as a span event. No extra configuration:
   the same endpoint already used for metrics.
 - **Webhook** — one POST per completed request, `{ "source": "routerly", "type":
-  "trace", "timestamp", "trace": { "id", "projectId", "entries" } }`, signed with
+  "trace", "timestamp", "trace": { "id", "routerId", "entries" } }`, signed with
   the same `X-Routerly-Signature` HMAC as the metric payloads when a secret is set.
 
 Traces always carry metadata: models, policies, guardrail outcomes, PII scan
-results, tokens and timings. Prompts and answers are included only for projects
-that opted in (**Trace content** on the project's General tab, or `routerly
-project edit <project> --trace-content`).
+results, tokens and timings. Prompts and answers are included only for routers
+that opted in (**Trace content** on the router's General tab, or `routerly
+router edit <router> --trace-content`).
 
 ---
 
@@ -458,7 +458,7 @@ The Audit Log records every write operation performed on the Routerly instance: 
 | Event | Trigger |
 |-------|---------|
 | `model:create/update/delete` | Model added, edited, or removed |
-| `project:create/update/delete` | Project added, edited, or removed |
+| `router:create/update/delete` | Router added, edited, or removed |
 | `user:create/update/delete` | User added, edited, or removed |
 | `role:create/update/delete` | Role added, edited, or removed |
 | `token:create/delete` | API token issued or revoked |

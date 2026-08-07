@@ -5,13 +5,13 @@ sidebar_position: 10
 
 # Experiments
 
-An experiment is an A/B test that sits one level above projects. A client
-points at the experiment's own token instead of a project token; for every
+An experiment is an A/B test that sits one level above routers. A client
+points at the experiment's own token instead of a router token; for every
 request the experiment picks one of its **variants**, each variant being an
-existing project taken whole, and the rest of the pipeline runs exactly as if
-the client had used that project's token.
+existing router taken whole, and the rest of the pipeline runs exactly as if
+the client had used that router's token.
 
-Because a variant is a whole project, anything a project can express becomes
+Because a variant is a whole router, anything a router can express becomes
 comparable: two model sets, two routing profiles, two optimizer pipelines, two
 guardrail configurations, or the same setup against two providers.
 
@@ -44,7 +44,7 @@ Routerly reports the numbers; deciding which arm wins is the operator's call
 and lives outside the experiment.
 
 Deleting an experiment removes its tokens with it, so every client still
-calling one starts getting `401`. Move those clients to the winning project's
+calling one starts getting `401`. Move those clients to the winning router's
 own token first, then delete.
 
 ---
@@ -92,9 +92,9 @@ would pin a whole office to one arm.
 
 ## Tokens
 
-An experiment owns tokens of the same shape as a project's, `sk-rt-...`,
+An experiment owns tokens of the same shape as a router's, `sk-rt-...`,
 stored and matched the same way. The proxy compares an incoming bearer against
-both sets, so a client cannot tell whether it is calling a project or a test.
+both sets, so a client cannot tell whether it is calling a router or a test.
 
 The raw value is shown once, at creation, and never again. An experiment can
 hold several tokens, which is how one test can be handed to several clients
@@ -106,9 +106,9 @@ What a client gets back:
 |-----------|----------|
 | Variant resolved | The provider's own response, unaltered |
 | Token past its expiry | `401 Token expired` |
-| No variant points at an existing project | `503 experiment_misconfigured` |
+| No variant points at an existing router | `503 experiment_misconfigured` |
 
-A variant whose project was deleted is skipped rather than served as an error:
+A variant whose router was deleted is skipped rather than served as an error:
 the remaining arms are still a valid, if unbalanced, test. Only when no arm is
 left does the call fail.
 
@@ -121,7 +121,7 @@ on the usage record. The comparison is read straight off the usage log, so
 experiments keep no counters of their own and the numbers agree with
 [Usage](../dashboard/usage.md) by construction.
 
-Cost and usage stay attributed to the project that served the call. An
+Cost and usage stay attributed to the router that served the call. An
 experiment does not create a second billing entity; it labels the calls it
 routed.
 

@@ -65,20 +65,20 @@ routerly model add \
 
 ---
 
-## Step 3: Attach the model to a project
+## Step 3: Attach the model to a router
 
-In the dashboard, go to **Projects > your project > Models** and add the model you just created. Copy the project token: you will use it as the API key for your client.
+In the dashboard, go to **Routers > your router > Models** and add the model you just created. Copy the router token: you will use it as the API key for your client.
 
 ---
 
 ## Step 4: Use it from your client
 
-Point your client at Routerly and authenticate with the **Routerly project token** (not the OAuth token):
+Point your client at Routerly and authenticate with the **Routerly router token** (not the OAuth token):
 
 ```bash
 # Example with Claude Code
 export ANTHROPIC_BASE_URL="http://localhost:3000"
-export ANTHROPIC_AUTH_TOKEN="<routerly-project-token>"
+export ANTHROPIC_AUTH_TOKEN="<routerly-router-token>"
 
 claude -p "hello"
 ```
@@ -89,7 +89,7 @@ import anthropic
 
 client = anthropic.Anthropic(
     base_url="http://localhost:3000",
-    api_key="<routerly-project-token>",
+    api_key="<routerly-router-token>",
 )
 ```
 
@@ -105,4 +105,4 @@ Routerly authenticates the request, swaps in your stored subscription token, and
 | Cost tracking | per-token | not available (flat subscription) |
 | Compatible clients | any | any (token swap is server-side) |
 
-Both can coexist: you can have an `anthropic-oauth` model alongside your existing `anthropic` API-key models in the same project.
+Both can coexist: you can have an `anthropic-oauth` model alongside your existing `anthropic` API-key models in the same router.

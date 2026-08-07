@@ -56,18 +56,34 @@ Routerly is a monorepo composed of four packages:
 
 ---
 
+## Router, Orchestrator, Passthrough
+
+A **Router** is the entity your client authenticates against — created with
+`routerly router create` or the dashboard's Routers page, stored in
+`config/routers.json`. Every Router carries a `kind`, one of three:
+
+| Kind | Targets | Notes |
+|------|---------|-------|
+| `router` (default) | Models | Today's routing behaviour: policies pick a model from the Router's own model list. Absent `kind` on a record created before this field existed means `router`. |
+| `orchestrator` | Other Routers | Its candidate pool (`candidates`, each a `routerId` + `weight` + optional usage limits) is Routers, not models — an Orchestrator has no `models` list of its own. Candidate detail is opaque to clients: the management API returns only each candidate's resolved `name` and `weight`, never its internal configuration. |
+| `passthrough` | A fixed upstream family (OpenAI or Anthropic) | Requires a `slug`, which becomes the URL path segment at `/passthrough/<slug>/*`. Forwards the client's own credential unchanged to the real `api.openai.com`/`api.anthropic.com` — Routerly performs no authentication of its own on this path, resolves no model, and does not apply budgets or usage limits (cost is unknown for traffic Routerly never priced). Guardrails and PII policies still apply if configured on the Router. Carries no `models`. |
+
+See [Concepts: Routing](./routing.md) for how policies pick among an
+`router`-kind Router's models, and for what an Orchestrator's candidate
+selection and a Passthrough Router's exemptions mean for a live request.
+
 ## Request Lifecycle
 
 When your application sends a chat request to Routerly:
 
-1. **Authentication** — The Bearer token is validated against the list of project tokens.
-2. **Project resolution** — The project's routing configuration and budget are loaded.
-3. **Budget pre-check** — If the project or any parent budget is exhausted, Routerly returns `503` immediately.
-4. **Routing** — The configured routing policies are applied in priority order to select a model. Each policy can score or filter the candidate set.
-5. **Provider dispatch** — The request is translated to the target provider's wire format (OpenAI, Anthropic Messages, Gemini, …) and forwarded.
+1. **Authentication** — The Bearer token is validated against the list of Router tokens. Skipped entirely for a Passthrough Router: the request's own `Authorization`/`x-api-key` header is the client's real provider credential, forwarded as-is.
+2. **Router resolution** — The Router's routing configuration and budget are loaded (a Passthrough Router is resolved by its `slug` in the URL path instead of a Bearer token).
+3. **Budget pre-check** — If the Router or any parent budget is exhausted, Routerly returns `503` immediately. Not applied to a Passthrough Router.
+4. **Routing** — For a `router`-kind Router, the configured routing policies are applied in priority order to select a model; each policy can score or filter the candidate set. For an `orchestrator`, the candidate list is scored by weight to pick a target Router instead. A `passthrough` Router skips this step: the client's own request already names the upstream family.
+5. **Provider dispatch** — The request is translated to the target provider's wire format (OpenAI, Anthropic Messages, Gemini, …) and forwarded. A Passthrough Router forwards the request body and headers unchanged.
 6. **Streaming or buffering** — If `stream: true`, Routerly SSE-proxies the provider stream. Otherwise it buffers and returns a standard response.
-7. **Cost accounting** — Token counts and cost are computed and appended to `usage.json`.
-8. **Budget update** — All applicable budget windows (token, project, global) are incremented.
+7. **Cost accounting** — Token counts and cost are computed and appended to the usage store. Skipped for Passthrough traffic (cost is unknown; the record is still written for the request/response, with no cost figure).
+8. **Budget update** — All applicable budget windows (token, Router, global) are incremented. Not applied to Passthrough.
 9. **Notifications** — If any budget threshold was crossed, alert channels (email, webhook) are triggered.
 
 ---
@@ -126,7 +142,7 @@ Failures -- anything reporting an error, a block, or a failed outcome -- go to
 on it (`routerly start 2> errors.log`), and Docker and systemd capture both.
 
 Two things it never does: it does not print prompts or answers. `entry.content`
-is a per-project opt-in for the trace UI, and logs have a different lifetime, so
+is a per-Router opt-in (`traceContent`) for the trace UI, and logs have a different lifetime, so
 the line only says whether content was captured (`+content`), not what it said.
 And at log level `warn` or `error` it prints failures only -- an operator who
 asked for less output does not get the full trace.
@@ -140,11 +156,17 @@ All state is stored as JSON files on disk under `~/.routerly/` (override with `$
 | File | Contents |
 |------|----------|
 | `config/settings.json` | Service settings |
-| `config/models.json` | Registered LLM models (API keys AES-encrypted) |
-| `config/projects.json` | Projects, routing, tokens, member roles |
+| `config/connections.json` | Provider connections (credentials, endpoint) |
+| `config/instances.json` | Model instances bound to a connection (pricing, capability overrides) |
+| `config/routers.json` | Routers, Orchestrators, Passthrough Routers — routing config, tokens, member roles |
 | `config/users.json` | Dashboard users (passwords bcrypt-hashed) |
 | `config/roles.json` | Custom RBAC roles |
-| `data/usage.json` | Per-request usage records (append-only) |
+| `data/usage.ndjson` | Per-request usage records, append-only NDJSON (one JSON object per line) |
+
+`config/routers.json` is migrated automatically and idempotently from the
+pre-rename `config/projects.json` on first start; `data/usage.ndjson` is
+migrated the same way from a legacy `data/usage.json` array. See
+[Config Files](../reference/config-files.md) for the full field reference.
 
 ---
 
@@ -152,7 +174,8 @@ All state is stored as JSON files on disk under `~/.routerly/` (override with `$
 
 | Endpoint prefix | Protocol | Purpose |
 |----------------|----------|---------|
-| `/v1/*` | HTTP/1.1 + SSE | LLM proxy — authenticated with project tokens |
+| `/v1/*` | HTTP/1.1 + SSE | LLM proxy — authenticated with Router tokens |
+| `/passthrough/<slug>/*` | HTTP/1.1 + SSE | Passthrough Router traffic — unauthenticated by Routerly; the client's own upstream credential is forwarded as-is |
 | `/api/*` | HTTP/1.1 | Management API — authenticated with JWT session |
 | `/dashboard` | HTTP/1.1 | React SPA |
 | `/health` | HTTP/1.1 | Health check (unauthenticated) |

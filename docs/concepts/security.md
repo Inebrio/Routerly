@@ -5,7 +5,7 @@ sidebar_position: 6
 
 # Security Policies
 
-Routerly supports two independent security systems: content guardrails and PII scrubbing. Both operate on a per-project basis and can be configured to evaluate requests, responses, or both directions.
+Routerly supports two independent security systems: content guardrails and PII scrubbing. Both operate on a per-router basis and can be configured to evaluate requests, responses, or both directions.
 
 ---
 
@@ -112,7 +112,7 @@ Rules can be disabled individually via the `enabled` field. Disabled rules are s
 
 ### Usage Attribution
 
-When a judge model is called (semantic, topic, moderation rules), the call is recorded as a separate usage entry with `callType: "guardrail"`. These records are attributed to the same project and token and are subject to the same budget limits.
+When a judge model is called (semantic, topic, moderation rules), the call is recorded as a separate usage entry with `callType: "guardrail"`. These records are attributed to the same router and token and are subject to the same budget limits.
 
 When a request is blocked by a guardrail, a usage entry is created with `outcome: "blocked"`, `callType: "guardrail"`, zero tokens and cost, and `blockedBy` set to the rule identifier.
 

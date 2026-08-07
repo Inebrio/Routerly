@@ -14,7 +14,7 @@ The Playground lets you send chat requests directly from the browser without wri
 ![Playground empty state showing the Token field, chat area, and Debug panel](../assets/screenshot-playground.png)
 
 1. Open **Playground** from the sidebar
-2. Enter a **Project Token** in the Token field (top right): paste an `sk-rt-...` token from any project you have access to
+2. Enter a **Router Token** in the Token field (top right): paste an `sk-rt-...` token from any router you have access to
 3. Type a message in the input box at the bottom and press **Send** (or `Enter`)
 
 ---
@@ -40,9 +40,9 @@ The model actually used is shown above each assistant response. If routing assig
 
 ### Streaming
 
-Responses stream in real time when the selected project's routing configuration supports streaming. A stop button (⏹) appears while a response is in progress - click it to abort.
+Responses stream in real time when the selected router's routing configuration supports streaming. A stop button (⏹) appears while a response is in progress - click it to abort.
 
-**Streaming disabled notice:** When the project has one or more guardrail rules that judge responses (Response flag enabled), streaming is automatically disabled because the entire response must be buffered before the block decision is made. You will see a banner at the top of the chat area explaining this, and the stream toggle will be disabled.
+**Streaming disabled notice:** When the router has one or more guardrail rules that judge responses (Response flag enabled), streaming is automatically disabled because the entire response must be buffered before the block decision is made. You will see a banner at the top of the chat area explaining this, and the stream toggle will be disabled.
 
 ### Image Attachments
 
@@ -99,11 +99,11 @@ streaming: PII and guardrail checks first, then the routing decision, then the
 upstream call. The summary card appears at the end, when the recap is written --
 the Playground then reloads the stored trace, so the block you are left with is
 the same one the Usage page will show. Prompts and answers appear on the trace
-only for projects with **Trace content** enabled (Project → General); otherwise
+only for routers with **Trace content** enabled (Router → General); otherwise
 the trace is metadata only.
 
-The same two levels are shown on a project's **Test** tab, which runs the same
-Playground against that project.
+The same two levels are shown on a router's **Test** tab, which runs the same
+Playground against that router.
 
 ---
 

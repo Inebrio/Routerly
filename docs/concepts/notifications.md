@@ -193,9 +193,9 @@ The event name is the stable identifier: rules, cooldowns and filters all match 
 | `budget.exceeded` | budget | Budget exhausted | critical | Budget reached its limit |
 | `budget.reset` | budget | Budget period reset | info | Budget window reset |
 | `auth.login_failed` | security | Failed sign-in | warning | A dashboard login failed for an existing user (wrong password) |
-| `auth.token_invalid` | security | Invalid API token | warning | A project token that does not exist, or has expired, was used |
+| `auth.token_invalid` | security | Invalid API token | warning | A router token that does not exist, or has expired, was used |
 | `config.model_added` / `config.model_deleted` | config | Model added / Model deleted | info | A model was created or deleted |
-| `config.project_created` / `config.project_deleted` | config | Project created / Project deleted | info | A project was created or deleted |
+| `config.router_created` / `config.router_deleted` | config | Router created / Router deleted | info | A router was created or deleted |
 | `system.startup` / `system.shutdown` | system | Service started / Service stopped | info | Service lifecycle |
 | `system.update_available` | system | A newer release is available | info | The update checker found a release newer than the one running on the configured channel; `details` carries `currentVersion`, `latestVersion`, `channel` and, when known, `releaseUrl`. Raised once per distinct release/channel/version combination, not on every scheduled check |
 
@@ -254,8 +254,8 @@ Independently of external channels, every event matching a `dashboard` channel's
 The inbox is **per-user**. Three gates decide whether an item reaches a given user:
 
 1. **Audience** - the `targets` of the `dashboard` channel that created the item (no targeting means everyone).
-2. **Permissions** - sign-in events need `audit:read`, model events `model:read`, project events `project:read`, service lifecycle events `settings:read`. Operational events (routing, provider, budget) are not gated.
-3. **Projects** - an item about a project is hidden from users who cannot reach that project (scoped by `projectIds` or by membership). Users without a project scope see everything.
+2. **Permissions** - sign-in events need `audit:read`, model events `model:read`, router events `router:read`, service lifecycle events `settings:read`. Operational events (routing, provider, budget) are not gated.
+3. **Routers** - an item about a router is hidden from users who cannot reach that router (scoped by `routerIds` or by membership). Users without a router scope see everything.
 
 Each user independently:
 
@@ -272,7 +272,7 @@ Events emitted while serving the same request share a trace id. The inbox folds 
 
 The list shows the title with the event name underneath. The detail view adds the **cause**: one line built from the item's details, ending with the provider's own error message when there is one, for example `ollama/qwen2.5:3b on ollama - TTFT timeout after 3000ms`.
 
-Ids in the details are links in the dashboard: `projectId` opens the project, `modelId` (also `primaryModelId` and `fallbackModelId`) opens the model, `traceId` opens the matching record in Usage.
+Ids in the details are links in the dashboard: `routerId` opens the router, `modelId` (also `primaryModelId` and `fallbackModelId`) opens the model, `traceId` opens the matching record in Usage.
 
 ### Filtering and Pagination
 
@@ -289,14 +289,14 @@ See the [Management API](../api/management.md#notifications-inbox) for the inbox
 
 ---
 
-## Per-Project Recipients
+## Per-Router Recipients
 
-A project can override which channels its own events go to by setting `notifications.channels` on the project. These channel IDs are merged with the global `notificationRules` matches for events emitted in that project's context.
+A router can override which channels its own events go to by setting `notifications.channels` on the router. These channel IDs are merged with the global `notificationRules` matches for events emitted in that router's context.
 
 ```jsonc
-// projects.json — one project entry
+// routers.json — one router entry
 {
-  "id": "proj_123",
+  "id": "3f1c9e0a-7b2d-4e5f-9a6c-1d2e3f4a5b6c",
   "name": "Acme",
   "notifications": { "channels": ["webhook-acme"] }
 }
