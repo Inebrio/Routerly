@@ -4,31 +4,17 @@ vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
 }));
 
-vi.mock('./router.js', () => ({
-  scoreCandidates: vi.fn(),
-}));
-
-vi.mock('./profiles/store.js', () => ({
-  resolveRoutingProfile: vi.fn(),
-}));
-
 import { scoreOrchestratorCandidates } from './orchestrate.js';
 import { readConfig } from '../config/loader.js';
-import { scoreCandidates } from './router.js';
-import { resolveRoutingProfile } from './profiles/store.js';
-import type { OrchestratorCandidateRef, RouterConfig, RoutingProfile, ChatCompletionRequest } from '@routerly/shared';
+import type { OrchestratorCandidateRef, RouterConfig } from '@routerly/shared';
 
 const mockReadConfig = vi.mocked(readConfig);
-const mockScoreCandidates = vi.mocked(scoreCandidates);
-const mockResolveRoutingProfile = vi.mocked(resolveRoutingProfile);
 
 afterEach(() => { vi.clearAllMocks(); });
 
-function router(id: string, kind?: RouterConfig['kind'], models: RouterConfig['models'] = []): RouterConfig {
-  return { id, name: id, tokens: [], members: [], models, ...(kind !== undefined ? { kind } : {}) };
+function router(id: string, kind?: RouterConfig['kind']): RouterConfig {
+  return { id, name: id, tokens: [], members: [], models: [], ...(kind !== undefined ? { kind } : {}) };
 }
-
-const chatRequest: ChatCompletionRequest = { model: 'irrelevant', messages: [] };
 
 function candidate(routerId: string, weight: number): OrchestratorCandidateRef {
   return { routerId, weight };
@@ -118,48 +104,5 @@ describe('scoreOrchestratorCandidates', () => {
       { type: 'fairness', enabled: false },
     ]);
     expect(allDisabled.map(c => c.routerId)).toEqual(['r1', 'r2']);
-  });
-
-  function profile(policies: RoutingProfile['policies']): RoutingProfile {
-    return { id: 'p1', version: 1, label: 'p1', builtin: false, kind: 'routing', selector: 'top', fallbackStrategy: 'none', policies };
-  }
-
-  it("delegates to a candidate's own model-attribute policies (cheapest/capability/llm/...) via its own scoreCandidates pipeline, without touching the Orchestrator's weight-only signals", async () => {
-    mockReadConfig.mockResolvedValue([]);
-    const candidates = [candidate('r1', 1), candidate('r2', 1)];
-    const liveRouters = [
-      router('r1', 'router', [{ modelId: 'cheap-model' }]),
-      router('r2', 'router', [{ modelId: 'pricey-model' }]),
-    ];
-
-    mockResolveRoutingProfile.mockImplementation(async (r: RouterConfig) =>
-      profile([{ type: 'cheapest', enabled: true }]),
-    );
-    mockScoreCandidates.mockImplementation(async (_req, r: RouterConfig) => ({
-      scored: [{ model: r.models[0]!.modelId, score: r.id === 'r1' ? 0.9 : 0.2, cost: 0 }],
-      allAbstained: false,
-      successfulResults: [],
-      scoringIds: new Set(),
-      policyExcludes: new Set(),
-      excludeReasons: new Map(),
-      trace: [],
-    }));
-
-    const result = await scoreOrchestratorCandidates('orc-1', candidates, liveRouters, undefined, chatRequest);
-    expect(result.map(c => c.routerId)).toEqual(['r1', 'r2']);
-    expect(mockScoreCandidates).toHaveBeenCalledTimes(2);
-  });
-
-  it("never delegates when no request is passed, or when a candidate's own profile has no model-attribute policy enabled (cost/latency guard)", async () => {
-    mockReadConfig.mockResolvedValue([]);
-    const candidates = [candidate('r1', 1), candidate('r2', 2)];
-    const liveRouters = [router('r1', 'router', [{ modelId: 'm1' }]), router('r2', 'router', [{ modelId: 'm2' }])];
-    mockResolveRoutingProfile.mockResolvedValue(profile([{ type: 'health', enabled: true }]));
-
-    await scoreOrchestratorCandidates('orc-1', candidates, liveRouters); // no request at all
-    expect(mockScoreCandidates).not.toHaveBeenCalled();
-
-    await scoreOrchestratorCandidates('orc-1', candidates, liveRouters, undefined, chatRequest); // request, but no model-attribute policy
-    expect(mockScoreCandidates).not.toHaveBeenCalled();
   });
 });

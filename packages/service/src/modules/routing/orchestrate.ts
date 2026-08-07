@@ -1,12 +1,10 @@
-import type { ChatCompletionRequest, OrchestratorCandidateRef, RouterConfig, RoutingPolicy, UsageRecord } from '@routerly/shared';
+import type { OrchestratorCandidateRef, RouterConfig, RoutingPolicy, UsageRecord } from '@routerly/shared';
 import type { ProcessorRegistry } from '../../core/index.js';
 import type { ProxyContext } from '../reverse-proxy/context.js';
 import { readUsageRecords } from '../usage/usageStore.js';
 import { readConfig } from '../config/loader.js';
 import { isOrchestratorCandidateAllowed } from '../budget/budget.js';
 import { runCandidateLoop } from '../reverse-proxy/candidate-loop.js';
-import { scoreCandidates } from './router.js';
-import { resolveRoutingProfile } from './profiles/store.js';
 
 // Same policy types, same config keys and defaults as the plain-Router policies these
 // are adapted from (health.ts, rate-limit.ts, fairness.ts) — the Orchestrator's own
@@ -15,36 +13,6 @@ import { resolveRoutingProfile } from './profiles/store.js';
 // array, so an Orchestrator with no policies configured keeps today's always-on blend.
 function findPolicy(policies: RoutingPolicy[] | undefined, type: RoutingPolicy['type']) {
   return policies?.find(p => p.type === type);
-}
-
-/** Policy types that pick among a *pool of models*, never among candidate Routers themselves. */
-const MODEL_ATTRIBUTE_POLICY_TYPES = new Set([
-  'cheapest', 'capability', 'context', 'performance', 'llm', 'semantic-intent', 'model-preference', 'budget-remaining',
-]);
-
-/**
- * Delegates to the candidate Router's own `scoreCandidates` pipeline (unmodified — same
- * function a direct call to that Router runs) so its own cheapest/capability/llm/performance/
- * context/semantic-intent/model-preference policies, configured on *that* Router, decide how
- * good a deal it currently offers. Returns the candidate's best resolvable model score (0..1),
- * or `undefined` when the candidate has no model-attribute policy enabled on its own profile —
- * callers must skip the signal entirely in that case rather than treat it as a low score, and
- * this doubles as the cost/latency guard: a candidate that only relies on health/rate-limit/
- * fairness never pays for a second policy pipeline run.
- */
-async function candidateModelPolicyScore(request: ChatCompletionRequest, router: RouterConfig): Promise<number | undefined> {
-  if (router.models.length === 0) return undefined;
-  const profile = await resolveRoutingProfile(router);
-  if (!profile.policies.some(p => p.enabled && MODEL_ATTRIBUTE_POLICY_TYPES.has(p.type))) return undefined;
-  try {
-    const result = await scoreCandidates(request, router, profile);
-    if (result.bypass) return 1.0; // single resolvable model, no discriminating policy needed
-    if (result.scored.length === 0) return undefined;
-    return Math.max(...result.scored.map(s => s.score));
-  } catch {
-    // Candidate's own pipeline failed (e.g. no_models_available) — no signal, not a penalty.
-    return undefined;
-  }
 }
 
 /** Error-rate score, 0..1, higher is healthier. No recent records -> 1.0 (no signal yet). */
@@ -103,16 +71,12 @@ function fairnessScore(routerId: string, successCounts: Map<string, number>, tot
  * keyed by `routerId` instead of `modelId`. Each of those three signals is driven by
  * the Orchestrator's own `policies` array exactly like a Router's `health`/`rate-limit`/
  * `fairness` policies drive `scoreCandidates` — same config keys, same defaults, and
- * `enabled: false` drops that signal from the blend entirely.
- *
- * The model-attribute policy types (`cheapest`/`capability`/`context`/`performance`/`llm`/
- * `semantic-intent`/`model-preference`/`budget-remaining`) aren't reinterpreted for a Router
- * candidate — a router has no price or context window of its own. Instead each candidate is
- * asked, via `candidateModelPolicyScore`, what its *own* configured policies (the same
- * `policies` array a direct call to that Router would run, untouched) resolve to right now;
- * that resolved score joins the blend as one more signal, only for candidates that actually
- * enable one of those types on their own profile (AC8 still holds: zero policy-file changes,
- * and a candidate using none of them costs nothing extra).
+ * `enabled: false` drops that signal from the blend entirely. Deliberately never
+ * invokes any model-only policy (`context`/`capability`/`cheapest`/`llm`/`performance`/
+ * `budget-remaining`/`semantic-intent`/`model-preference`): those are structurally
+ * about a model's context window, capabilities or price, none of which a Router
+ * candidate has of its own. This is true by construction — this function simply
+ * never imports or calls them, not "invoked but no-op" (AC8).
  *
  * EC3 (read-side defense): a candidate is silently dropped, never throws, when its
  * `routerId` no longer resolves in `liveRouters` to a router of kind `'router'` — the
@@ -132,10 +96,8 @@ export async function scoreOrchestratorCandidates(
   candidates: OrchestratorCandidateRef[],
   liveRouters: RouterConfig[],
   policies?: RoutingPolicy[],
-  request?: ChatCompletionRequest,
 ): Promise<OrchestratorCandidateRef[]> {
   const liveRouterKind = new Map(liveRouters.map(r => [r.id, r.kind ?? 'router']));
-  const liveRouterById = new Map(liveRouters.map(r => [r.id, r]));
   const valid = candidates.filter(c => liveRouterKind.get(c.routerId) === 'router');
   if (valid.length <= 1) return valid;
 
@@ -164,26 +126,12 @@ export async function scoreOrchestratorCandidates(
   }
   const totalSuccessCalls = [...successCounts.values()].reduce((sum, n) => sum + n, 0);
 
-  const modelPolicyScores = request
-    ? new Map(
-        await Promise.all(
-          valid.map(async candidate => {
-            const target = liveRouterById.get(candidate.routerId);
-            const score = target ? await candidateModelPolicyScore(request, target) : undefined;
-            return [candidate.routerId, score] as const;
-          }),
-        ),
-      )
-    : new Map<string, number | undefined>();
-
   const scored = valid.map(candidate => {
     const ownRecords = forThisOrchestrator.filter(r => r.routerId === candidate.routerId);
     const signals: number[] = [];
     if (healthEnabled) signals.push(healthScore(ownRecords, now, healthPolicy?.config));
     if (rateLimitEnabled) signals.push(rateLimitScore(candidate.routerId, callCounts));
     if (fairnessEnabled) signals.push(fairnessScore(candidate.routerId, successCounts, totalSuccessCalls));
-    const modelPolicyScore = modelPolicyScores.get(candidate.routerId);
-    if (modelPolicyScore !== undefined) signals.push(modelPolicyScore);
     const quality = signals.length > 0 ? signals.reduce((a, b) => a + b, 0) / signals.length : 1.0;
     return { candidate, quality };
   });
@@ -248,7 +196,7 @@ export async function forwardToRouter(
 ): Promise<void> {
   const liveRouters = await readConfig('routers');
   const liveById = new Map(liveRouters.map(r => [r.id, r]));
-  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters, orchestrator.policies, ctx.request);
+  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters, orchestrator.policies);
 
   ctx.orchestratorId = orchestrator.id;
 
