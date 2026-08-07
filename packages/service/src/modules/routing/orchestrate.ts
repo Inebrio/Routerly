@@ -1,4 +1,4 @@
-import type { OrchestratorCandidateRef, RouterConfig, UsageRecord } from '@routerly/shared';
+import type { OrchestratorCandidateRef, RouterConfig, RoutingPolicy, UsageRecord } from '@routerly/shared';
 import type { ProcessorRegistry } from '../../core/index.js';
 import type { ProxyContext } from '../reverse-proxy/context.js';
 import { readUsageRecords } from '../usage/usageStore.js';
@@ -6,33 +6,38 @@ import { readConfig } from '../config/loader.js';
 import { isOrchestratorCandidateAllowed } from '../budget/budget.js';
 import { runCandidateLoop } from '../reverse-proxy/candidate-loop.js';
 
-// Windows mirror the plain-Router policies this is adapted from (health.ts,
-// rate-limit.ts, fairness.ts) — same defaults, keyed by routerId instead of modelId.
-const HEALTH_WINDOW_MS = 20 * 60 * 1000;
-const HEALTH_HALF_LIFE_MS = 5 * 60 * 1000;
-const HEALTH_PSEUDO_COUNTS = 2;
-const HEALTH_CIRCUIT_BREAKER = 0.9;
-const RATE_LIMIT_WINDOW_MS = 1 * 60 * 1000;
-const FAIRNESS_WINDOW_MS = 60 * 60 * 1000;
+// Same policy types, same config keys and defaults as the plain-Router policies these
+// are adapted from (health.ts, rate-limit.ts, fairness.ts) — the Orchestrator's own
+// `policies` array drives them exactly like a Router's does, just keyed by routerId
+// instead of modelId. `enabled` defaults to true when the type is absent from the
+// array, so an Orchestrator with no policies configured keeps today's always-on blend.
+function findPolicy(policies: RoutingPolicy[] | undefined, type: RoutingPolicy['type']) {
+  return policies?.find(p => p.type === type);
+}
 
 /** Error-rate score, 0..1, higher is healthier. No recent records -> 1.0 (no signal yet). */
-function healthScore(ownRecords: UsageRecord[], now: number): number {
-  const recent = ownRecords.filter(r => now - new Date(r.timestamp).getTime() <= HEALTH_WINDOW_MS && r.outcome !== 'blocked');
+function healthScore(ownRecords: UsageRecord[], now: number, config: Record<string, unknown> | undefined): number {
+  const windowMs = ((config?.windowMinutes as number) ?? 20) * 60 * 1000;
+  const halfLifeMs = ((config?.halfLifeMinutes as number) ?? 5) * 60 * 1000;
+  const pseudoCounts = (config?.pseudoCounts as number) ?? 2;
+  const circuitBreaker = (config?.circuitBreaker as number) ?? 0.9;
+
+  const recent = ownRecords.filter(r => now - new Date(r.timestamp).getTime() <= windowMs && r.outcome !== 'blocked');
   if (recent.length === 0) return 1.0;
 
   let weightedErrors = 0;
   let weightedTotal = 0;
   for (const r of recent) {
     const ageMs = now - new Date(r.timestamp).getTime();
-    const weight = Math.exp((-Math.LN2 * ageMs) / HEALTH_HALF_LIFE_MS);
+    const weight = Math.exp((-Math.LN2 * ageMs) / halfLifeMs);
     const isError = r.outcome === 'error' || r.outcome === 'timeout';
     weightedErrors += isError ? weight : 0;
     weightedTotal += weight;
   }
 
   const rawWeightedErrorRate = weightedErrors / weightedTotal;
-  const smoothedErrorRate = weightedErrors / (weightedTotal + HEALTH_PSEUDO_COUNTS);
-  const score = rawWeightedErrorRate >= HEALTH_CIRCUIT_BREAKER ? 0.0 : 1 - smoothedErrorRate;
+  const smoothedErrorRate = weightedErrors / (weightedTotal + pseudoCounts);
+  const score = rawWeightedErrorRate >= circuitBreaker ? 0.0 : 1 - smoothedErrorRate;
   return Math.max(0, Math.min(1, score));
 }
 
@@ -63,8 +68,11 @@ function fairnessScore(routerId: string, successCounts: Map<string, number>, tot
  * (`router.ts`'s `scoreCandidates`/`routeRequest`, and the `health`/`rate-limit`/
  * `fairness` policies it wires in) to a candidate whose only signals are its own
  * configured `weight` plus usage-derived health/recent-call-rate/fairness-share —
- * keyed by `routerId` instead of `modelId`. Deliberately never invokes any
- * model-only policy (`context`/`capability`/`cheapest`/`llm`/`performance`/
+ * keyed by `routerId` instead of `modelId`. Each of those three signals is driven by
+ * the Orchestrator's own `policies` array exactly like a Router's `health`/`rate-limit`/
+ * `fairness` policies drive `scoreCandidates` — same config keys, same defaults, and
+ * `enabled: false` drops that signal from the blend entirely. Deliberately never
+ * invokes any model-only policy (`context`/`capability`/`cheapest`/`llm`/`performance`/
  * `budget-remaining`/`semantic-intent`/`model-preference`): those are structurally
  * about a model's context window, capabilities or price, none of which a Router
  * candidate has of its own. This is true by construction — this function simply
@@ -77,19 +85,30 @@ function fairnessScore(routerId: string, successCounts: Map<string, number>, tot
  *
  * Returns every surviving candidate ordered most-preferred first — an empty array
  * when no candidate survives. Health/rate-limit/fairness are the primary ranking
- * signal; when two candidates tie on that (e.g. no usage history yet), the
- * configured `weight` breaks the tie (higher first), and `routerId` breaks any
- * remaining tie, for a fully deterministic order (AC8). Task 3's `forwardToRouter`
- * consumes this array by trying candidates in order, falling back down the list.
+ * signal; when two candidates tie on that (e.g. no usage history yet, or every signal
+ * disabled), the configured `weight` breaks the tie (higher first), and `routerId`
+ * breaks any remaining tie, for a fully deterministic order (AC8). Task 3's
+ * `forwardToRouter` consumes this array by trying candidates in order, falling back
+ * down the list.
  */
 export async function scoreOrchestratorCandidates(
   orchestratorId: string,
   candidates: OrchestratorCandidateRef[],
   liveRouters: RouterConfig[],
+  policies?: RoutingPolicy[],
 ): Promise<OrchestratorCandidateRef[]> {
   const liveRouterKind = new Map(liveRouters.map(r => [r.id, r.kind ?? 'router']));
   const valid = candidates.filter(c => liveRouterKind.get(c.routerId) === 'router');
   if (valid.length <= 1) return valid;
+
+  const healthPolicy = findPolicy(policies, 'health');
+  const rateLimitPolicy = findPolicy(policies, 'rate-limit');
+  const fairnessPolicy = findPolicy(policies, 'fairness');
+  const healthEnabled = healthPolicy?.enabled ?? true;
+  const rateLimitEnabled = rateLimitPolicy?.enabled ?? true;
+  const fairnessEnabled = fairnessPolicy?.enabled ?? true;
+  const rateLimitWindowMs = ((rateLimitPolicy?.config?.windowMinutes as number) ?? 1) * 60 * 1000;
+  const fairnessWindowMs = ((fairnessPolicy?.config?.windowMinutes as number) ?? 60) * 60 * 1000;
 
   const now = Date.now();
   const records = await readUsageRecords();
@@ -99,20 +118,22 @@ export async function scoreOrchestratorCandidates(
   const successCounts = new Map<string, number>();
   for (const candidate of valid) {
     const ownRecords = forThisOrchestrator.filter(r => r.routerId === candidate.routerId);
-    callCounts.set(candidate.routerId, ownRecords.filter(r => now - new Date(r.timestamp).getTime() <= RATE_LIMIT_WINDOW_MS).length);
+    callCounts.set(candidate.routerId, ownRecords.filter(r => now - new Date(r.timestamp).getTime() <= rateLimitWindowMs).length);
     successCounts.set(
       candidate.routerId,
-      ownRecords.filter(r => r.outcome === 'success' && now - new Date(r.timestamp).getTime() <= FAIRNESS_WINDOW_MS).length,
+      ownRecords.filter(r => r.outcome === 'success' && now - new Date(r.timestamp).getTime() <= fairnessWindowMs).length,
     );
   }
   const totalSuccessCalls = [...successCounts.values()].reduce((sum, n) => sum + n, 0);
 
   const scored = valid.map(candidate => {
     const ownRecords = forThisOrchestrator.filter(r => r.routerId === candidate.routerId);
-    const health = healthScore(ownRecords, now);
-    const rateLimit = rateLimitScore(candidate.routerId, callCounts);
-    const fairness = fairnessScore(candidate.routerId, successCounts, totalSuccessCalls);
-    return { candidate, quality: (health + rateLimit + fairness) / 3 };
+    const signals: number[] = [];
+    if (healthEnabled) signals.push(healthScore(ownRecords, now, healthPolicy?.config));
+    if (rateLimitEnabled) signals.push(rateLimitScore(candidate.routerId, callCounts));
+    if (fairnessEnabled) signals.push(fairnessScore(candidate.routerId, successCounts, totalSuccessCalls));
+    const quality = signals.length > 0 ? signals.reduce((a, b) => a + b, 0) / signals.length : 1.0;
+    return { candidate, quality };
   });
 
   scored.sort((a, b) => {
@@ -175,7 +196,7 @@ export async function forwardToRouter(
 ): Promise<void> {
   const liveRouters = await readConfig('routers');
   const liveById = new Map(liveRouters.map(r => [r.id, r]));
-  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters);
+  const ordered = await scoreOrchestratorCandidates(orchestrator.id, orchestrator.candidates ?? [], liveRouters, orchestrator.policies);
 
   ctx.orchestratorId = orchestrator.id;
 

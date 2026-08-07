@@ -82,4 +82,27 @@ describe('scoreOrchestratorCandidates', () => {
     const candidates = [candidate('gone-1', 1), candidate('gone-2', 2)];
     await expect(scoreOrchestratorCandidates('orc-1', candidates, [])).resolves.toEqual([]);
   });
+
+  it("reads the Orchestrator's own policies array, same as a plain Router's health/rate-limit/fairness policies", async () => {
+    const now = Date.now();
+    // r1 has recent errors that would tank its health score under default config.
+    mockReadConfig.mockResolvedValue([
+      { orchestratorId: 'orc-1', routerId: 'r1', outcome: 'error', timestamp: new Date(now - 1000).toISOString() },
+      { orchestratorId: 'orc-1', routerId: 'r1', outcome: 'error', timestamp: new Date(now - 2000).toISOString() },
+    ]);
+    const candidates = [candidate('r1', 5), candidate('r2', 1)];
+    const liveRouters = [router('r1'), router('r2')];
+
+    // Default (no policies configured): r1's error history should demote it below r2 despite the higher weight.
+    const withDefaultHealth = await scoreOrchestratorCandidates('orc-1', candidates, liveRouters);
+    expect(withDefaultHealth.map(c => c.routerId)).toEqual(['r2', 'r1']);
+
+    // health/rate-limit/fairness explicitly disabled on the Orchestrator: falls back to weight only.
+    const allDisabled = await scoreOrchestratorCandidates('orc-1', candidates, liveRouters, [
+      { type: 'health', enabled: false },
+      { type: 'rate-limit', enabled: false },
+      { type: 'fairness', enabled: false },
+    ]);
+    expect(allDisabled.map(c => c.routerId)).toEqual(['r1', 'r2']);
+  });
 });
