@@ -51,6 +51,7 @@ Examples:
         if (retention?.maxAgeDays !== undefined) retentionParts.push(`${retention.maxAgeDays}d`);
         if (retention?.maxSizeMb !== undefined) retentionParts.push(`${retention.maxSizeMb}MB`);
         console.log(`  ${chalk.cyan('Usage retention:')} ${retentionParts.length > 0 ? retentionParts.join(', ') : chalk.gray('not configured')}`);
+        console.log(`  ${chalk.cyan('Default language:')} ${settings.defaultLanguage ?? chalk.gray('en (default)')}`);
         console.log(`  ${chalk.cyan('Models:')}        ${models.length}`);
         console.log(`  ${chalk.cyan('Routers:')}      ${routers.length}`);
         for (const address of settings.listeningAddresses ?? []) {
@@ -100,6 +101,9 @@ Examples:
 
   # Clear the age limit, keeping the size cap (empty string clears, same convention as --metrics-token)
   routerly service configure --usage-retention-days ""
+
+  # Set the instance-wide default dashboard language (used until a user picks their own)
+  routerly service configure --default-language de
 `)
     .option('--port <port>', 'HTTP port to listen on')
     .option('--host <host>', 'Host to bind to')
@@ -111,11 +115,13 @@ Examples:
     .option('--require-mfa <bool>', 'Require two-factor authentication for all users (true|false)')
     .option('--usage-retention-days <n>', 'Drop usage history records older than N days (empty string clears it)')
     .option('--usage-retention-max-mb <n>', 'Cap usage history file size in MB, dropping oldest records first (empty string clears it)')
+    .option('--default-language <code>', 'Instance-wide default dashboard language for users who haven\'t picked their own yet')
     .action(async (opts: {
       port?: string; host?: string; dashboard?: string;
       logLevel?: string; metrics?: string; metricsToken?: string;
       publicUrl?: string; requireMfa?: string;
       usageRetentionDays?: string; usageRetentionMaxMb?: string;
+      defaultLanguage?: string;
     }) => {
       const patch: Partial<Settings> = {};
       if (opts.port) patch.port = parseInt(opts.port, 10);
@@ -126,6 +132,7 @@ Examples:
       if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken || undefined;
       if (opts.publicUrl !== undefined) patch.publicUrl = opts.publicUrl;
       if (opts.requireMfa !== undefined) patch.requireMfa = opts.requireMfa === 'true';
+      if (opts.defaultLanguage !== undefined) patch.defaultLanguage = opts.defaultLanguage;
 
       try {
         if (opts.usageRetentionDays !== undefined || opts.usageRetentionMaxMb !== undefined) {
@@ -145,7 +152,7 @@ Examples:
         }
 
         if (Object.keys(patch).length === 0) {
-          console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, --metrics-token, --public-url, --require-mfa, --usage-retention-days, or --usage-retention-max-mb.'));
+          console.log(chalk.yellow('No settings provided. Use --port, --host, --dashboard, --log-level, --metrics, --metrics-token, --public-url, --require-mfa, --usage-retention-days, --usage-retention-max-mb, or --default-language.'));
           return;
         }
 

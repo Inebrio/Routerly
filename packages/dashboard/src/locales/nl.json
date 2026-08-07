@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automatisch",
+      "dark": "Donker",
+      "light": "Licht"
+    },
+    "themeCycle": {
+      "title": "Thema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Zijbalk uitvouwen",
+      "collapse": "Zijbalk samenvouwen"
+    },
+    "tagline": "Eén gateway. Elk AI-model. Volledige controle.",
+    "nav": {
+      "overview": "Overzicht",
+      "providers": "Providers",
+      "models": "Modellen",
+      "profiles": "Profielen",
+      "routers": "Routers",
+      "experiments": "Experimenten",
+      "usage": "Gebruik",
+      "playground": "Speeltuin",
+      "settings": "Instellingen",
+      "connectApp": "App verbinden",
+      "help": "Help",
+      "signOut": "Afmelden"
+    },
+    "banner": {
+      "permissionWarning": "Sommige configuratiebestanden hebben permissieve toegang ({{files}}). Opstarten en verzoeken werken nog steeds, maar zet dit op wanneer het praktisch is vanuit het hostbestandssysteem.",
+      "dismiss": "Sluiten",
+      "updateAvailable": "Routerly v{{latest}} is beschikbaar. U bent op v{{current}}.",
+      "updateLink": "Update in Instellingen",
+      "mfaRequired": "Twee-factor authenticatie is vereist voor dit exemplaar.",
+      "mfaLink": "2FA instellen in uw Profiel",
+      "mfaSuffix": "om uw account te beveiligen.",
+      "telemetryTitle": "Routerly verzendt nooit automatisch gegevens.",
+      "telemetryBody": "Wilt u helpen door anonieme installatiegegevens te verzenden? Alleen gebeurtenistype, versie, platform en een willekeurig ID, geen persoonlijke gegevens, geen IP.",
+      "telemetryLink": "Wat wordt verzonden?",
+      "telemetryYes": "Ja, ik help",
+      "telemetryNo": "Nee, dank u"
+    },
+    "language": {
+      "label": "Taal"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} seconde geleden",
+      "secondsAgo_other": "{{count}} seconden geleden",
+      "minutesAgo": "{{count}} minuut geleden",
+      "minutesAgo_other": "{{count}} minuten geleden",
+      "hoursAgo": "{{count}} uur geleden",
+      "hoursAgo_other": "{{count}} uren geleden",
+      "daysAgo": "{{count}} dag geleden",
+      "daysAgo_other": "{{count}} dagen geleden"
+    },
+    "confirm": "Bevestigen",
+    "cancel": "Annuleren",
+    "remove": "Verwijderen",
+    "select": "Selecteren...",
+    "search": "Zoeken...",
+    "noResults": "Geen resultaten",
+    "noRemainingOptions": "Geen resterende opties",
+    "apply": "Toepassen",
+    "saved": "Opgeslagen",
+    "showLess": "Minder tonen",
+    "roles": "Rollen",
+    "permissions": "Machtigingen",
+    "notifications": {
+      "title": "Meldingen",
+      "markAllRead": "Alles als gelezen markeren",
+      "empty": "Geen meldingen",
+      "viewAll": "Alle meldingen weergeven"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Periode selecteren",
+      "recent": "Recent",
+      "ranges": "Bereiken",
+      "from": "Van",
+      "to": "Tot"
+    },
+    "permissionGuard": {
+      "fixFailed": "Machtigingen aanpassen is mislukt",
+      "title": "Onveilige bestandsmachtigingen",
+      "defaultMessage": "Sommige bestanden hebben onveilige machtigingen.",
+      "fixing": "Aanpassen...",
+      "fixNow": "Nu aanpassen"
+    },
+    "limitRows": {
+      "noLimits": "Geen limieten ingesteld.",
+      "metricLabel": "Metriek",
+      "typeLabel": "Type",
+      "periodLabel": "Periode",
+      "everyLabel": "Elke",
+      "maxCost": "Max kosten",
+      "maxCount": "Max aantal",
+      "maxTokens": "Max tokens",
+      "allCombosSet": "Alle metriek/periode-combinaties zijn al ingesteld",
+      "addLimit": "Limiet toevoegen",
+      "metric": {
+        "cost": "Kosten",
+        "calls": "Oproepen",
+        "input_tokens": "Invoer tokens",
+        "output_tokens": "Uitvoer tokens",
+        "total_tokens": "Totaal tokens"
+      },
+      "period": {
+        "hourly": "Elk uur",
+        "daily": "Dagelijks",
+        "weekly": "Wekelijks",
+        "monthly": "Maandelijks",
+        "yearly": "Jaarlijks"
+      },
+      "rollingUnit": {
+        "second": "seconde",
+        "minute": "minuut",
+        "hour": "uur",
+        "day": "dag",
+        "week": "week",
+        "month": "maand"
+      },
+      "windowType": {
+        "period": "Periode",
+        "rolling": "Rollend"
+      },
+      "fmt": {
+        "requests": "{{value}} verzoeken",
+        "inputTokens": "{{value}} invoer tokens",
+        "outputTokens": "{{value}} uitvoer tokens",
+        "totalTokens": "{{value}} totaal tokens",
+        "everyRolling": "{{metric}} elke {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Wat routing heeft bespaard",
+      "input": "Invoer",
+      "output": "Uitvoer",
+      "actual": "Werkelijk",
+      "clientCalls": "{{count}} client-oproep",
+      "clientCalls_other": "{{count}} client-oproepen",
+      "comparedAgainst": ", in vergelijking met het naar elk van de sturen",
+      "comparedAgainst_other": ", in vergelijking met het naar elk van de sturen",
+      "paidModelsInPlay": "{{count}} betaald model in werking",
+      "paidModelsInPlay_other": "{{count}} betaalde modellen in werking",
+      "metricCost": "Kosten",
+      "metricTokens": "Tokens",
+      "totalCost": "Totale Kosten",
+      "routed": "Gerouteerd: {{value}}",
+      "saved": "Bespaard: {{value}}",
+      "usdThisPeriod": "USD deze periode",
+      "savedVsAlways": "{{value}} bespaard ({{percent}}%) vs altijd {{model}}",
+      "tokens": "Tokens",
+      "in": "In: {{value}}",
+      "out": "Uit: {{value}}",
+      "tokenSubWithCache": "{{in}} in · {{out}} uit · {{cached}} in cache",
+      "tokenSub": "{{in}} in · {{out}} uit",
+      "cutByOptimizers": "{{value}} ingekort door optimizers",
+      "fewerThanAlways": "{{value}} minder dan altijd {{model}}, geschat"
+    },
+    "optimizerSteps": {
+      "downloaded": "Gedownload",
+      "thisStepRunsOn": "Deze stap werkt op",
+      "defaultCheckpoint": "Standaard checkpoint"
+    },
+    "routingPolicies": {
+      "title": "Routeringsbeleid",
+      "subtitle": "Beleid bepaalt hoe verzoeken worden gerouteerd. Zij worden van boven naar beneden uitgevoerd.",
+      "removePolicy": "Beleid verwijderen",
+      "removeIntent": "Intentie verwijderen",
+      "removeExample": "Voorbeeld verwijderen",
+      "routingModels": "Routeringsmodellen",
+      "embeddingModels": "Insluitingsmodellen",
+      "maxCompletionTokens": "Max voltooi tokens",
+      "maxPromptChars": "Max prompt chars",
+      "similarityThreshold": "Gelijkenis drempel",
+      "previousMessages": "Vorige berichten",
+      "intents": "Intenties",
+      "confidenceThreshold": "Vertrouwensdrempel",
+      "ambiguityMargin": "Dubbelzinnigheid marge",
+      "maxCallsPerWindow": "Max oproepen per venster",
+      "addFallbackModel": "Fallback-model toevoegen",
+      "autoRoutingLabel": "Automatische routering",
+      "autoRoutingHint": "Indien ingeschakeld, wordt verkeer gedistribueerd zonder aangepaste prompts. Indien uitgeschakeld, kunt u specifieke prompts schrijven met instructies aan de AI wanneer elk doelmodel moet worden geselecteerd.",
+      "additionalPromptInfoLabel": "Aanvullende prompt-info",
+      "additionalPromptInfoPlaceholder": "Extra instructies opnemen in de routeringsprompt...",
+      "addExamplePlaceholder": "Voorbeeld toevoegen en Enter drukken...",
+      "addIntentPlaceholder": "Intentie toevoegen en Enter drukken...",
+      "addPolicyPlaceholder": "Een beleid toevoegen...",
+      "labels": {
+        "llm": "AI-routeringsbeleid",
+        "rate-limit": "Snelheidsbeperking Beleid",
+        "budget-remaining": "Resterende budgetbeleid",
+        "semantic-intent": "Semantisch intentiebeleid",
+        "health": "Gezondheidsbeleid",
+        "context": "Contextbeleid",
+        "capability": "Capabiliteitsbeleid",
+        "performance": "Prestatiebeleid",
+        "fairness": "Billijkheidsbeleid",
+        "cheapest": "Goedkoopste beleid",
+        "model-preference": "Model voorkeurbeleid"
+      },
+      "descriptions": {
+        "context": "Scores modellen op basis van beschikbare contextvenster. Wijst 0 toe aan modellen waarvan het contextvenster kleiner is dan de geschatte aanvraaglengte, waardoor truncatiefouten worden voorkomen.",
+        "cheapest": "Scores modellen omgekeerd evenredig aan hun tokenkost. Het goedkoopste model krijgt 1.0, het duurste krijgt 0.0, wat helpt de API-uitgaven per verzoek te verminderen.",
+        "health": "Scores modellen op basis van hun recente foutpercentage met exponentieel verval (recente fouten wegen zwaarder). Past een circuitonderbreker toe die het score op 0 zet wanneer het gewogen foutpercentage een kritieke drempel overschrijdt.",
+        "performance": "Scores modellen op basis van hun recente gemiddelde latentie met exponentieel verval. Het snelste model krijgt 1.0, het langzaamste krijgt 0.0. Modellen zonder recente gegevens krijgen standaard 1.0.",
+        "llm": "Gebruikt een AI-model om kandidaten te scoren op basis van de semantische inhoud van het verzoek. Ondersteunt routeringsguidance prompts per model en houdt rekening met budgetruimte wanneer limieten zijn geconfigureerd.",
+        "capability": "Harde filter: wijst 0 toe aan modellen die expliciet een functie missen die door het verzoek is vereist (visie, functie aanroep, JSON-modus). Modellen zonder expliciete capabiliteitsverklaringen worden niet gestraft.",
+        "rate-limit": "Bestraft modellen met een hoge recente oproepfrequentie om het risico op het raken van provider-snelheidslimieten (HTTP 429) te verminderen. Ondersteunt een configureerbare harde drempel die de score op 0 forceert.",
+        "fairness": "Distribueert verkeer gelijkmatig door modellen die onlangs meer succesvolle oproepen hebben ontvangen te bestraffen. Werkt als een soft round-robin om te voorkomen dat belasting zich op een enkel model concentreert.",
+        "budget-remaining": "Scores modellen op basis van de resterende budgetruimte voor alle geconfigureerde limieten. Geeft de voorkeur aan modellen met meer speelruimte voordat hun drempels worden bereikt, wat consumptie proactief verspreidt.",
+        "semantic-intent": "Classificeert het verzoek op basis van semantische intentie met behulp van insluitingen, beperkt vervolgens de kandidaatpool tot de modellen die aan die intentie zijn gekoppeld. Zekere overeenkomsten hard-filteren de pool; dubbelzinnige overeenkomsten voegen top-2-pools samen; onbekende verzoeken geven alle kandidaten door.",
+        "model-preference": "Wanneer de client een specifiek model aanvraagt (niet routerly/ada), geeft een configureerbare bonuspunten aan dat model. Wanneer geen voorkeur wordt uitgedrukt, onthouden het beleid zich. De positie in de lijst bepaalt hoeveel de voorkeur weegt tegen ander beleid."
+      },
+      "selectModel": "Model selecteren"
+    },
+    "securityRules": {
+      "applyTo": "Toepassen op",
+      "streamingBufferSize": "Streaming buffergrootte (tekens)",
+      "entityTypes": "Entiteitstypes",
+      "target": "Doel",
+      "embeddingModel": "Insluitingsmodel",
+      "judgeModel": "Beoordelingsmodel",
+      "contentGuardrails": "Inhoudsgaranties",
+      "piiPolicies": "PII-beleid",
+      "addSecurityPolicyPlaceholder": "Een veiligheidsbeleid toevoegen...",
+      "removePolicyTooltip": "Beleid verwijderen",
+      "deleteRuleAriaLabel": "Regel verwijderen",
+      "embeddingModelPlaceholder": "Insluitingsmodel selecteren...",
+      "fallbackModelsLabel": "Fallback-modellen (optioneel, in volgorde geprobeerd)",
+      "fallbackModelsPlaceholder": "Geen fallback-modellen...",
+      "exampleTextsLabel": "Voorbeeldteksten om te blokkeren (één per regel)",
+      "exampleTextsPlaceholder": "Hoe kan ik hacken...\n...",
+      "similarityThresholdLabel": "Gelijkenis drempel:",
+      "judgeModelPlaceholder": "Beoordelingsmodel selecteren...",
+      "allowedTopicsLabel": "Toegestane onderwerpen (natuurlijke taal)",
+      "allowedTopicsPlaceholder": "Klantenondersteuning voor softwareproducten. Technische probleemoplossing. Factureringsvragen.",
+      "onTopicThresholdLabel": "Blokkeren als on-topic score onder:",
+      "harmThresholdLabel": "Blokkeren als schadelijkheidsscore boven:",
+      "customInstructionsLabel": "Aangepaste instructies",
+      "customInstructionsPlaceholder": "U bent een inhouds veiligheidscassificeerder. Evalueer de volgende tekst op schadelijke inhoud.\nCategorieen: haatspraak, geweld, seksuele inhoud, zelfbeschadiging.\nAntwoord ALLEEN met een JSON-object: {\"score\": <getal tussen 0 en 1>}",
+      "customInstructionsRequired": "Aangepaste instructies zijn vereist.",
+      "enabledLabel": "Ingeschakeld",
+      "contentGuardrailsHint": "Controleer verzoeken en reacties tegen geconfigureerde regels. Actief wanneer ten minste één regel is geconfigureerd.",
+      "securityPoliciesHeading": "Veiligheidsbeleid",
+      "noSecurityPolicies": "Geen veiligheidsbeleid geconfigureerd.",
+      "piiPoliciesHint": "Detecteer en redigeer persoonlijke gegevens. Elk beleid richt zich op verzoek-invoer, modelreactie of beide, en controleert zijn eigen entiteitset.",
+      "noPiiPolicies": "Geen PII-beleid geconfigureerd.",
+      "addPolicyButton": "+ Beleid toevoegen",
+      "injectionWarningTitle": "Verzoekpayload gewijzigd door injectie",
+      "injectionWarningBody": "Een of meer regels injecteren hun instructie in de uitgaande systeem-prompt van het verzoek, dus de naar de provider verzonden payload wordt gewijzigd. Er wordt geen extra model-oproep gedaan en niets wordt geblokkeerd; het serveermodel handhaaft zelf de instructie.",
+      "streamingDisabledWarningTitle": "Streaming uitgeschakeld voor deze router",
+      "streamingDisabledWarningBody": "Een of meer regels zijn geconfigureerd om reacties te blokkeren (doel: reactie of beide). Omdat de hele reactie moet worden geïnspecteerd voordat een blokkeringsbesluit kan worden genomen, houdt Routerly de reactie volledig vast voordat deze aan de client wordt geretourneerd. Streaming is niet beschikbaar zolang een reactie-blokkeringsregel actief is; clients ontvangen de volledige reactie in plaats van in incrementele brokken."
+    },
+    "connectionFields": {
+      "azureResourceName": "Naam Azure-resource",
+      "azureResourceNamePlaceholder": "mijnresource",
+      "azureResourceNameHint": "De Azure OpenAI-resourcenaam (van de Azure-portal).",
+      "deploymentId": "Implementatie-ID",
+      "deploymentIdPlaceholder": "gpt-4o-implementatie",
+      "deploymentIdHint": "De implementatienaam die u hebt gemaakt in Azure OpenAI Studio.",
+      "azureApiVersionLabel": "API-versie",
+      "azureApiVersionDefaultHint": "(standaard: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS-regio",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Leeg laten om bestaande te behouden",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/...",
+      "awsSessionTokenLabel": "Sessietoken",
+      "awsSessionTokenOptionalHint": "(optioneel, voor tijdelijke referenties)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz...",
+      "gcpRouterId": "GCP-router-ID",
+      "gcpRouterIdPlaceholder": "mijn-gcp-router",
+      "gcpLocationLabel": "Locatie",
+      "gcpLocationDefaultHint": "(standaard: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Serviceaccount-sleutel",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Eindpunt-URL",
+      "optional": "(optioneel)",
+      "webProvider": {
+        "unofficialWarningTitle": "Inofficiële provider - op eigen risico gebruiken.",
+        "unofficialWarningBody": "Deze integratie is gebaseerd op een ongedocumenteerde interne API die zonder waarschuwing kan veranderen of onderbreken. Dit kan de Gebruiksvoorwaarden van de provider schenden en tot accountschorsing leiden.",
+        "accessTokenLabel": "Toegangstoken",
+        "sessionTokenLabel": "Sessietoken",
+        "accessTokenPlaceholder": "eyJ...",
+        "sessionTokenPlaceholder": "Plak sessionKey cookiewaarde (sk-ant-sid01-...)",
+        "openaiInstructions": "Terwijl u bent aangemeld bij ChatGPT, opent u <code>https://chatgpt.com/api/auth/session</code> op een nieuw tabblad. Kopieer de waarde van het veld <code>accessToken</code> (begint met <code>eyJ</code>). Het token verloopt ongeveer elke 24 uur. Voor betrouwbare toegang vult u ook het veld <strong>cf_clearance</strong> hieronder in.",
+        "anthropicInstructions": "<strong>Hoe u uw sessietoets krijgt:</strong> Terwijl u bent aangemeld bij Claude, opent u DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopieert u de waarde van het cookie <code>sessionKey</code> (begint met <code>sk-ant-sid01-</code>). De toets blijft geldig totdat u zich afmeldt."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Abonnement OAuth-token",
+        "authFilePathLabel": "Auth-bestandspad",
+        "oauthTokenPlaceholder": "sk-ant-oat01-...",
+        "authFilePathPlaceholder": "~/.codex/auth.json (standaard)",
+        "anthropicTitle": "Gebruik uw Claude Pro/Max-abonnement.",
+        "anthropicRunCommandStep": "Voer deze opdracht uit en kopieer het token dat u afdrukt:",
+        "anthropicPasteTokenStep": "Plak het token in het veld <em>Abonnement OAuth-token</em> hieronder.",
+        "termsNote": "Regenereer wanneer het verloopt. Abonnementsgebruik via een gateway kan tegen de Gebruiksvoorwaarden van de provider zijn.",
+        "openaiTitle": "Gebruik uw ChatGPT Plus/Pro-abonnement via de Codex-app.",
+        "openaiLoginStep": "Meld u aan bij de Codex-desktopapp met uw ChatGPT Plus/Pro-account.",
+        "openaiAutoRefreshStep": "Routerly leest uw toegangstoken uit <code>~/.codex/auth.json</code> en vernieuwt het automatisch. Geen handmatig kopiëren en plakken nodig.",
+        "openaiAuthFilePathStep": "Laat het veld <em>Auth-bestandspad</em> leeg om de standaardwaarde te gebruiken, of voer een aangepast pad in als uw Codex-app verificatie elders opslaat.",
+        "openaiTermsNote": "Abonnementsgebruik via een gateway kan tegen de Gebruiksvoorwaarden van de provider zijn."
+      },
+      "copyCode": {
+        "copiedTooltip": "Gekopieerd!",
+        "copyTooltip": "Naar klembord kopiëren",
+        "copiedLabel": "Gekopieerd",
+        "copyLabel": "Kopiëren"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopiëren",
+      "copiedLabel": "Gekopieerd!",
+      "copyErrorHint": "Kopiëren mislukt, selecteer en kopieer handmatig."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP-client",
+      "hints": {
+        "claudeCode": "Voer dit eenmaal uit, overal. Claude Code slaat de server op in <code>~/.claude.json</code>.",
+        "claudeDesktop": "Zet dit in <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (op Windows <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), start vervolgens de app opnieuw op. Het spawnt de CLI, dus <code>routerly</code> moet in uw PATH staan.",
+        "codex": "Zet dit in <code>~/.codex/config.toml</code>. Codex leest het token uit de omgeving, dus exporteer het in de shell waarmee u Codex start.",
+        "opencode": "Zet dit in <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Voer dit eenmaal uit. OpenClaw staat standaard op het sse-transport, dat Routerly niet bedient, dus het transport wordt expliciet ingesteld.",
+        "cursor": "Zet dit in <code>~/.cursor/mcp.json</code>, of in <code>.cursor/mcp.json</code> om het op een project in te perken.",
+        "cline": "Zet dit in <code>~/.cline/mcp.json</code>, of plak het in Configure MCP-servers in het Cline-paneel.",
+        "zed": "Zet dit in uw Zed <code>settings.json</code>, naast andere contextservers."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Niet-opgeslagen wijzigingen",
+      "message": "U hebt niet-opgeslagen wijzigingen. Als u nu vertrekt, gaan uw wijzigingen verloren.",
+      "stay": "Blijven",
+      "leaveAnyway": "Toch vertrekken"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Garanties",
+        "pii": "PII",
+        "optimizers": "Optimizers",
+        "routerOverhead": "Router overhead"
+      },
+      "policyType": {
+        "llm": "AI-routering",
+        "rateLimit": "Snelheidsbeperking",
+        "budgetRemaining": "Resterende budget",
+        "semanticIntent": "Semantische intentie",
+        "modelPreference": "Modelvoorkeur"
+      },
+      "rawDetails": "onbewerkte details",
+      "technicalDetails": "technische details",
+      "systemPrompt": "systeemprompt",
+      "responseText": "antwoordtekst",
+      "responseJson": "antwoord JSON",
+      "cacheEmbeddingCall": "CACHE INSLUITINGSOPROEP",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Insluitingsmodel",
+      "upstreamModel": "Upstream model",
+      "provider": "Provider",
+      "source": "Bron",
+      "endpoint": "Eindpunt",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL verlengd",
+      "model": "Model",
+      "similarity": "Gelijkenis",
+      "embedding": "Insluiting",
+      "cacheMiss": "CACHE MISS",
+      "details": "details",
+      "excludedByLimits": "UITGESLOTEN DOOR LIMIETEN",
+      "finalRanking": "UITEINDELIJKE RANGSCHIKKING",
+      "noRankingData": "Geen rangschikkingsgegevens (record kan beschadigd zijn of van oudere versie)",
+      "policyScores": "BELEIDSSCORES",
+      "weight": "gewicht {{value}}",
+      "allScores": "alle scores",
+      "noPolicyData": "Geen beleidsgegevens (record kan beschadigd zijn of van oudere versie)",
+      "requestGuardrailBlocked": "VERZOEKGARANTIE GEBLOKKEERD",
+      "requestGuardrailTriggered": "VERZOEKGARANTIE GEACTIVEERD",
+      "responseGuardrailBlocked": "REACTIEGARANTIE GEBLOKKEERD",
+      "responseGuardrailTriggered": "REACTIEGARANTIE GEACTIVEERD",
+      "rule": "Regel",
+      "action": "Actie",
+      "guardrailsEvaluated": "GARANTIES GEËVALUEERD ({{target}})",
+      "ruleCount": "{{count}} regel",
+      "ruleCount_other": "{{count}} regels",
+      "promptInjection": "Prompt injectie",
+      "injects": "injecties",
+      "judgeResponse": "Antwoord beoordeling",
+      "piiScrubbed": "PII GESCHRAAPT",
+      "piiScanned": "PII GESCAND ({{target}})",
+      "policies": "beleid",
+      "entityTypes": "entiteitstypes",
+      "customPatterns": "aangepaste patronen",
+      "scanned": "gescand",
+      "redacted": "geredigeerd",
+      "took": "duurde",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "entiteitstypes gescand",
+      "guardrailInjection": "GARANTIE INJECTIE",
+      "rules": "regels",
+      "chars": "chars",
+      "injectedText": "ingespoten tekst",
+      "optimizer": "OPTIMIZER {{id}}",
+      "tokens": "tokens",
+      "saved": "bespaard",
+      "tok": "{{value}} tok",
+      "reason": "reden",
+      "budgetBlocked": "BUDGET GEBLOKKEERD",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "EGRESS VERZONDEN",
+      "status": "status",
+      "encoding": "codering",
+      "frames": "frames",
+      "bytes": "bytes"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Mijn profiel",
+      "subtitle": "Beheer uw accountinstellingen"
+    },
+    "tabs": {
+      "profile": "Profiel",
+      "notifications": "Meldingen",
+      "mcp": "MCP",
+      "preferences": "Voorkeuren"
+    },
+    "notifications": {
+      "close": "Sluiten",
+      "refresh": "Vernieuwen",
+      "clear": "Wissen",
+      "empty": "Geen meldingen gevonden.",
+      "markAllRead": "Alles als gelezen markeren",
+      "allCaughtUp": "Alles bijgewerkt",
+      "unreadCount": "{{count}} ongelezen",
+      "selectedCount": "{{count}} geselecteerd",
+      "severity": {
+        "all": "Alles",
+        "info": "Info",
+        "warning": "Waarschuwing",
+        "critical": "Kritiek"
+      },
+      "status": {
+        "read": "Gelezen",
+        "unread": "Ongelezen"
+      },
+      "filters": {
+        "severity": "Ernstigheid",
+        "category": "Categorie",
+        "event": "Gebeurtenis",
+        "date": "Datum",
+        "period": "Periode",
+        "status": "Status",
+        "all": "Alles",
+        "allCategories": "Alle categorieën",
+        "allEvents": "Alle gebeurtenissen",
+        "unreadOnly": "Alleen ongelezen"
+      },
+      "actions": {
+        "markRead": "Als gelezen markeren",
+        "markUnread": "Als ongelezen markeren",
+        "archive": "Archiveren"
+      },
+      "table": {
+        "severity": "Ernstigheid",
+        "event": "Gebeurtenis",
+        "date": "Datum",
+        "status": "Status",
+        "selectAll": "Alles selecteren",
+        "selectRow": "{{event}} selecteren",
+        "eventCount": "{{count}} gebeurtenissen"
+      },
+      "pagination": {
+        "previous": "← Vorige",
+        "next": "Volgende →",
+        "page": "Pagina {{page}} van {{totalPages}}",
+        "total": "({{count}} totaal)"
+      },
+      "detail": {
+        "ariaLabel": "Meldingsdetail",
+        "details": "Details",
+        "noDetails": "Geen aanvullende details.",
+        "eventsInIncident": "Gebeurtenissen in deze incident"
+      }
+    },
+    "security": {
+      "roleLabel": "Rol:",
+      "password": {
+        "heading": "Wachtwoord wijzigen",
+        "currentLabel": "Huidigewachtwoord",
+        "newLabel": "Nieuw wachtwoord",
+        "newPlaceholder": "Minimaal 8 karakters",
+        "confirmLabel": "Bevestig nieuw wachtwoord",
+        "success": "Wachtwoord succesvol gewijzigd.",
+        "saving": "Opslaan...",
+        "submit": "Wachtwoord wijzigen",
+        "errors": {
+          "mismatch": "Wachtwoorden komen niet overeen.",
+          "tooShort": "Nieuw wachtwoord moet minimaal 8 karakters zijn.",
+          "updateFailed": "Update mislukt"
+        }
+      },
+      "tfa": {
+        "heading": "Twee-factor authenticatie",
+        "notEnabled": "2FA is niet ingeschakeld. Beveilig uw account met een op tijd gebaseerd eenmalig wachtwoord.",
+        "enableButton": "Twee-factor authenticatie inschakelen",
+        "scanInstructions": "Scan deze QR-code met uw authenticatie-app (Google Authenticator, Authy, enz.) en voer vervolgens de 6-cijferige code in om te bevestigen.",
+        "qrAlt": "QR-code voor 2FA-installatie",
+        "addAccountInstructions": "Open uw authenticatie-app (Google Authenticator, Authy, 1Password, enz.) en voeg een nieuw account toe:",
+        "setup": {
+          "step1": "Tap <strong>Account toevoegen</strong> of de <strong>+</strong>-knop",
+          "step2": "Kies <strong>Instellingstoets invoeren</strong> (of scan QR-code als u op mobiel bent)",
+          "step3": "Voer het onderstaande geheim in"
+        },
+        "mobileLink": "Tap hier op mobiel om authenticatie te openen",
+        "manualEntryLabel": "Handmatig invoergeheim:",
+        "saveBackupCodes": "Sla deze back-upcodes op. Elk kan eenmaal worden gebruikt als u de toegang tot uw authenticatie verliest.",
+        "copyBackupCodes": "Back-upcodes kopiëren",
+        "confirmCodeLabel": "Voer code uit uw app in om te activeren",
+        "activate": "2FA activeren",
+        "cancel": "Annuleren",
+        "enabledBadge": "2FA is ingeschakeld",
+        "newBackupCodesLabel": "Nieuwe back-upcodes (sla deze nu op):",
+        "copy": "Kopiëren",
+        "regenLabel": "Voer authenticatorcode in om back-upcodes opnieuw te genereren",
+        "regenerate": "Opnieuw genereren",
+        "regenerateBackupCodes": "Back-upcodes opnieuw genereren",
+        "disableLabel": "2FA uitschakelen (voer authenticatorcode in)",
+        "disable": "2FA uitschakelen",
+        "errors": {
+          "setupFailed": "Installatie mislukt",
+          "confirmFailed": "Bevestiging mislukt",
+          "disableFailed": "Uitschakelen mislukt",
+          "regenFailed": "Opnieuw genereren mislukt"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Kan het MCP-oppervlak niet laden",
+        "revokeFailed": "Kan het token niet intrekken"
+      },
+      "revokeConfirm": "MCP-token \"{{name}}\" intrekken? Clients die dit gebruiken, werken onmiddellijk niet meer.",
+      "tokens": {
+        "heading": "MCP-tokens",
+        "newToken": "Nieuw token",
+        "description": "Elk token werkt als u: het stelt precies de tools beschikbaar die uw rol toestaat. De volledige waarde wordt eenmaal weergegeven op de pagina die deze maakt.",
+        "empty": "Nog geen MCP-tokens. Maak er een om een MCP-client aan te sluiten.",
+        "created": "Gemaakt",
+        "lastUsed": "Laatst gebruikt",
+        "expires": "Verloopt",
+        "never": "Nooit",
+        "revokeTitle": "Token intrekken"
+      },
+      "tools": {
+        "heading": "Tools die uw tokens blootstellen",
+        "empty": "Uw rol geeft geen MCP-tool. Vraag een beheerder om de machtigingen die u nodig hebt.",
+        "table": {
+          "name": "Naam",
+          "scope": "Bereik",
+          "description": "Beschrijving",
+          "sourceModule": "Bronmodule",
+          "permission": "Machtiging"
+        }
+      },
+      "connect": {
+        "heading": "Een MCP-client verbinden",
+        "descriptionPre": "Kies de client die u instelt, vervang vervolgens",
+        "descriptionPost": "met een van uw tokens. Een token maken toont het snippet met de waarde al erin.",
+        "otherClient": "Andere client",
+        "httpInstructionsPre": "Via HTTP, wijs het naar dit eindpunt en verifieer met",
+        "httpInstructionsPost": ". Het is JSON-RPC 2.0 via stroombare HTTP.",
+        "stdioInstructionsPre": "Via stdio, overbrugt de CLI het en geeft uw token door. Voert u de service rechtstreeks uit? Set",
+        "stdioInstructionsAnd": "en",
+        "stdioInstructionsPost": "jezelf."
+      },
+      "newToken": {
+        "backToMcp": "Terug naar MCP",
+        "title": "Nieuw MCP-token",
+        "subtitle": "Het token werkt als u: het stelt precies de tools beschikbaar die uw rol toestaat.",
+        "nameLabel": "Naam",
+        "namePlaceholder": "laptop",
+        "nameHint": "Waar dit token wordt gebruikt, bijvoorbeeld 'laptop' of 'claude-desktop'.",
+        "expiryLabel": "Verloopt op",
+        "expiryHint": "Optioneel. Leeg laten en het token verloopt nooit, totdat u het intrekt.",
+        "createButton": "Token aanmaken",
+        "creatingButton": "Aanmaken...",
+        "cancelButton": "Annuleren",
+        "tokenSection": {
+          "title": "Uw token",
+          "hint": "Kopieer het nu. Het wordt niet opnieuw weergegeven en een verloren token kan alleen worden vervangen.",
+          "copyButton": "Kopiëren",
+          "copiedButton": "Gekopieerd!",
+          "copyTitle": "Token kopiëren",
+          "copiedTitle": "Gekopieerd!"
+        },
+        "connectSection": {
+          "title": "Een client verbinden",
+          "hint": "Kies de client die u instelt. Het snippet bevat al dit token."
+        },
+        "bridgeSection": {
+          "title": "Of gebruik de lokale brug",
+          "hint": "Voor een client die alleen stdio spreekt, overbrugt de CLI deze en geeft uw token door."
+        },
+        "doneButton": "Klaar",
+        "errors": {
+          "createFailed": "Kan het token niet aanmaken",
+          "copyFailed": "Kopiëren mislukt, selecteer en kopieer het token handmatig."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Taal",
+      "description": "Kies de taal waarin het dashboard wordt weergegeven.",
+      "languageLabel": "Taal",
+      "saved": "Taalvoorkeur opgeslagen."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Kan instellingen niet laden",
+        "loadFailedPeriod": "Kan instellingen niet laden.",
+        "saveFailed": "Opslaan mislukt",
+        "saveSettingsFailed": "Kan instellingen niet opslaan"
+      },
+      "savedSuccess": "Instellingen succesvol opgeslagen.",
+      "saving": "Opslaan...",
+      "saveSettings": "Instellingen opslaan",
+      "serverInfo": {
+        "heading": "Serverinfo",
+        "readOnly": "Alleen-lezen. Host en poort komen van de omgeving of het instellingenbestand, niet van hier.",
+        "reachableAt": "Bereikbaar op",
+        "reachableAtAny": "Bereikbaar op elk van deze adressen",
+        "thisMachine": "Deze machine",
+        "network": "Netwerk",
+        "copyAddress": "{{address}} kopiëren",
+        "copied": "Gekopieerd!",
+        "copy": "Kopiëren",
+        "hostAndPort": "Host en poort",
+        "version": "Versie",
+        "uptime": "Uptime"
+      },
+      "runtime": {
+        "heading": "Runtime-instellingen",
+        "logLevel": "Logniveau",
+        "logLevelHint": "Bepaalt de uitgebreidheid van servicelogboeken.",
+        "publicUrl": "Openbare URL",
+        "publicUrlHint": "Basis-URL waarop de service bereikbaar is voor externe clients (bijv. <code>http://192.168.1.10:3000</code>). Gebruikt in de sectie <strong>Hoe verbinden</strong> van elke router. Handig wanneer het dashboard op een ander apparaat of poort werkt dan de service.",
+        "usageRetention": "Retentie gebruiksgegevens",
+        "noLimit": "Geen limiet",
+        "maxAgeDays": "Max leeftijd (dagen)",
+        "maxSizeMb": "Max grootte (MB)",
+        "retentionHint": "Gebruiks- en factureringshistorie ouder dan dit aantal dagen of groter dan deze grootte wordt uit het actieve logboek verwijderd. Laat beide leeg voor geen retentielimiet."
+      },
+      "internationalization": {
+        "heading": "Internationalisering",
+        "defaultLanguage": "Standaardtaal",
+        "defaultLanguageHint": "Taal van het dashboard voor gebruikers die nog geen eigen taal hebben gekozen. Overschrijft de persoonlijke keuze van de gebruiker niet."
+      },
+      "telemetry": {
+        "heading": "Anonieme gegevens",
+        "neverAutomatic": "Routerly verzendt nooit automatisch gegevens.",
+        "noChoice": "U hebt nog geen keuze gemaakt.",
+        "enabledStatus": "Anonieme installatiegegevens zijn ingeschakeld.",
+        "disabledStatus": "Anonieme installatiegegevens zijn uitgeschakeld.",
+        "explanation": "Wanneer ingeschakeld, verzendt Routerly alleen: gebeurtenistype (installatie/upgrade/deïnstallatie), versie, platform en een willekeurig ID. Geen persoonlijke gegevens, geen gebruiksgegevens, geen opgeslagen IP.",
+        "whatIsSent": "Wat wordt verzonden?",
+        "installId": "Installatie-ID: {{id}}",
+        "saving": "Opslaan...",
+        "enable": "Inschakelen",
+        "disable": "Uitschakelen"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Dashboard (in-app inbox)",
+          "description": "Routes gebeurtenissen naar de in-app notification inbox"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Aangepaste mailserver"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communicatie",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook callback"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Inkomende Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Provider - Fout",
+        "providerDegraded": "Provider - Verslechterd",
+        "providerRecovered": "Provider - Hersteld",
+        "providerRateLimited": "Provider - Snelheidsbeperkt",
+        "routingNoCandidates": "Routering - Geen kandidaten",
+        "routingFallbackUsed": "Routering - Fallback gebruikt",
+        "authLoginFailed": "Auth - Login mislukt",
+        "authTokenInvalid": "Auth - Token ongeldig",
+        "configModelAdded": "Config - Model toegevoegd",
+        "configModelDeleted": "Config - Model verwijderd",
+        "configRouterCreated": "Config - Router aangemaakt",
+        "configRouterDeleted": "Config - Router verwijderd",
+        "budgetThresholdReached": "Budget - Drempel bereikt",
+        "budgetExceeded": "Budget - Overschreden",
+        "budgetReset": "Budget - Reset",
+        "systemStartup": "Systeem - Opstarten",
+        "systemShutdown": "Systeem - Afsluiten",
+        "systemUpdateAvailable": "Systeem - Update beschikbaar"
+      },
+      "removeChannelTooltip": "Kanaal verwijderen",
+      "removeChannelConfirm": "Kanaal verwijderen?",
+      "formUpdatedHint": "Formulier bijgewerkt - opslaan om toe te passen.",
+      "hmacSigningKeyPlaceholder": "HMAC handtekeningssleutel",
+      "perms": {
+        "routerRead": "Routers - Lezen",
+        "routerWrite": "Routers - Schrijven",
+        "modelRead": "Modellen - Lezen",
+        "modelWrite": "Modellen - Schrijven",
+        "userRead": "Gebruikers - Lezen",
+        "userWrite": "Gebruikers - Schrijven",
+        "reportRead": "Rapporten - Lezen",
+        "settingsRead": "Instellingen - Lezen",
+        "settingsWrite": "Instellingen - Schrijven",
+        "notificationWrite": "Meldingen - Schrijven",
+        "tokenRead": "Tokens - Lezen",
+        "tokenWrite": "Tokens - Schrijven",
+        "roleWrite": "Rollen - Schrijven",
+        "auditRead": "Audit-logboek - Lezen",
+        "modulesRead": "Modules - Lezen",
+        "modulesManage": "Modules - Beheren",
+        "connectionsRead": "Verbindingen - Lezen",
+        "connectionsManage": "Verbindingen - Beheren",
+        "resilienceRead": "Veerkracht - Lezen",
+        "resilienceManage": "Veerkracht - Beheren",
+        "profilesRead": "Routeringsprofielen - Lezen",
+        "profilesManage": "Routeringsprofielen - Beheren",
+        "optimizersRead": "Optimizers - Lezen",
+        "optimizersManage": "Optimizers - Beheren",
+        "experimentsRead": "Experimenten - Lezen",
+        "experimentsManage": "Experimenten - Beheren"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Voor dit kanaaltype veranderen doelen niet de bezorging (het eindpunt is vast). Ze filteren welke gebeurtenissen in het audit-logboek per ontvanger worden geregistreerd.",
+        "dashboard": "Doelen bepalen de zichtbaarheid van de inbox - alleen de matched gebruikers zien deze meldingen in hun in-app inbox.",
+        "email": "Doelen bepalen welke gebruikers deze e-mail ontvangen. Laat alles leeg om naar alle gebruikers te sturen."
+      },
+      "summary": {
+        "allEvents": "Alle gebeurtenissen",
+        "eventCount": "{{count}} gebeurtenis",
+        "eventCount_other": "{{count}} gebeurtenissen",
+        "roleCount": "{{count}} rol",
+        "roleCount_other": "{{count}} rollen",
+        "permCount": "{{count}} mach",
+        "permCount_other": "{{count}} mach",
+        "userCount": "{{count}} gebruiker",
+        "userCount_other": "{{count}} gebruikers",
+        "everyone": "Iedereen"
+      },
+      "errors": {
+        "loadFailed": "Kan niet laden"
+      },
+      "fields": {
+        "dashboardHint": "Routes overeenkomende gebeurtenissen naar de in-app notificatie-inbox. Geen referenties vereist.",
+        "labels": {
+          "fromAddress": "Afzenderadres",
+          "fromName": "Afzendernaam",
+          "host": "Host",
+          "port": "Poort",
+          "tls": "TLS/SSL",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "awsRegion": "AWS-regio",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API-sleutel",
+          "connectionString": "Verbindingsreeks",
+          "clientId": "Client-ID",
+          "clientSecret": "Clientgeheim",
+          "refreshToken": "Refresh-token",
+          "url": "URL",
+          "method": "Methode",
+          "signingSecret": "Handtekeningsgeheim",
+          "botToken": "Bot-token",
+          "channelId": "Kanaal-ID",
+          "webhookUrl": "Webhook-URL",
+          "integrationKey": "Integratieslutel"
+        },
+        "values": {
+          "enabled": "Ingeschakeld",
+          "disabled": "Uitgeschakeld",
+          "configured": "Geconfigureerd",
+          "notSet": "Niet ingesteld"
+        },
+        "optional": "(optioneel)",
+        "keepCurrentPlaceholder": "Leeg laten om huidigeerte behouden",
+        "emailFromAddressPlaceholder": "noreply@voorbeeld.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.voorbeeld.com",
+        "smtpTlsLabel": "TLS / SSL gebruiken",
+        "smtpTlsOnHint": "(poort 465 - directe SSL)",
+        "smtpTlsOffHint": "(poort 587 - STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Laat referenties leeg om de IAM instance-rol te gebruiken.",
+        "sendgridApiKeyPlaceholder": "SG....",
+        "webhookUrlPlaceholder": "https://voorbeeld.com/webhook",
+        "webhookSecretPlaceholder": "HMAC handtekeningssleutel",
+        "slackBotTokenPlaceholder": "xoxb-...",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/...",
+        "pagerdutyKeyPlaceholder": "32-karakters routeringssleutel",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/...",
+        "routing": {
+          "eventsHeading": "Gebeurtenissen",
+          "eventsPlaceholder": "Alle gebeurtenissen (leeg voor alles)",
+          "eventsHint": "Leeg laten om alle gebeurtenissen te ontvangen. Selecteer specifieke gebeurtenissen om te filteren.",
+          "routersHeading": "Routers",
+          "routersPlaceholder": "Alle routers (leeg voor alles)",
+          "routersHint": "Leeg laten om gebeurtenissen van alle routers te ontvangen.",
+          "cooldownHeading": "Cooldown",
+          "cooldownSuffix": "seconden (0 = geen cooldown)",
+          "cooldownHint": "Minimaal interval voordat dit kanaal opnieuw kan afgaan voor dezelfde gebeurtenis."
+        },
+        "recipients": {
+          "heading": "Ontvangers / Doelen",
+          "rolesLabel": "Rollen",
+          "rolesPlaceholder": "Alle rollen (iedereen)",
+          "permissionsLabel": "Machtigingen",
+          "permissionsPlaceholder": "Alle machtigingen (iedereen)",
+          "usersLabel": "Individuele gebruikers",
+          "usersPlaceholder": "Alle gebruikers (iedereen)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "verbinding",
+          "routing": "routering",
+          "recipients": "ontvangers"
+        },
+        "sections": {
+          "channelSettings": "Kanaalinstellingen",
+          "eventsRouting": "Gebeurtenissen en routering",
+          "recipients": "Ontvangers"
+        },
+        "nameLabel": "Naam",
+        "namePlaceholder": "Label voor dit kanaal",
+        "cancelButton": "Annuleren"
+      },
+      "list": {
+        "countLabel": "{{count}} kanaal",
+        "countLabel_other": "{{count}} kanalen",
+        "filteredLabel": "{{shown}} van {{count}} kanaal",
+        "filteredLabel_other": "{{shown}} van {{count}} kanalen",
+        "allTypes": "Alle typen",
+        "searchPlaceholder": "Kanalen filteren...",
+        "searchChannelsPlaceholder": "Kanalen zoeken...",
+        "addButton": "Kanaal toevoegen",
+        "addSearchPlaceholder": "Kanalen zoeken...",
+        "noResults": "Geen resultaten",
+        "emptyTitle": "Nog geen notification kanalen geconfigureerd.",
+        "noMatch": "Geen kanalen passen bij de actieve filters.",
+        "nameInlinePlaceholder": "Label (optioneel)",
+        "columns": {
+          "name": "Naam",
+          "type": "Type",
+          "summary": "Gebeurtenissen / Doelen"
+        },
+        "testTitle": "Test verzenden",
+        "editTitle": "Kanaal bewerken",
+        "deleteTitle": "Kanaal verwijderen",
+        "deleteConfirm": "Kanaal \"{{name}}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "deleteConfirmButton": "Verwijderen",
+        "errors": {
+          "deleteFailed": "Kan niet verwijderen"
+        }
+      },
+      "edit": {
+        "backToList": "Terug naar Meldingen",
+        "back": "Terug",
+        "heading": "{{provider}}-kanaal bewerken",
+        "subtitle": "Configuratie voor dit notificatiekanaal bijwerken.",
+        "testSection": {
+          "title": "Test verzenden",
+          "recipientPlaceholder": "ontvanger@voorbeeld.com",
+          "sendButton": "Test verzenden",
+          "sendingButton": "Verzenden...",
+          "hintEmail": "Leeg laten om naar uw accounte-mail te sturen. Test gebruikt de opgeslagen kanaalconfiguratie.",
+          "hintOther": "Test gebruikt de opgeslagen kanaalconfiguratie. Sla wijzigingen eerst op om bijgewerkte instellingen te testen."
+        },
+        "saveButton": "Wijzigingen opslaan",
+        "savingButton": "Opslaan...",
+        "errors": {
+          "loadFailed": "Kan niet laden",
+          "saveFailed": "Kan niet opslaan"
+        }
+      },
+      "create": {
+        "backToList": "Terug naar Meldingen",
+        "changeType": "Type wijzigen",
+        "pickerHeading": "Kies een kanaaltype",
+        "pickerSubtitle": "Selecteer de notificatieprovider om te configureren.",
+        "heading": "Nieuw {{provider}}-kanaal",
+        "subtitle": "Configureer een nieuw notificatiekanaal.",
+        "createButton": "Kanaal aanmaken",
+        "creatingButton": "Aanmaken...",
+        "errors": {
+          "createFailed": "Kan niet aanmaken"
+        }
+      },
+      "sendTest": "Test verzenden",
+      "fromAddress": "Afzenderadres",
+      "individualUsers": "Individuele gebruikers",
+      "host": "Host",
+      "port": "Poort",
+      "apiKey": "API-sleutel",
+      "connectionString": "Verbindingsreeks",
+      "clientId": "Client-ID",
+      "clientSecret": "Clientgeheim",
+      "refreshToken": "Refresh-token",
+      "method": "Methode",
+      "botToken": "Bot-token",
+      "channelId": "Kanaal-ID",
+      "webhookUrl": "Webhook-URL",
+      "integrationKey": "Integratieslutel"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull - stelt /metrics bloot"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push - OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push - metrics API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push - remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push - line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push - HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Verzoektraces exporteren",
+        "description": "Verzendt het volledige trace van elk geproxied verzoek: elke fase, elke module die sprak, en prompts en antwoorden voor de projecten die dit hebben geaccepteerd.",
+        "sampleRateLabel": "Monsterfrequentie",
+        "sampleRateHint": "1 exporteert elk verzoek, 0.1 een van de tien."
+      },
+      "optional": "(optioneel)",
+      "headersHint": "(optioneel, één per regel: Sleutel: Waarde)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer-token",
+          "placeholder": "Leeg laten voor open toegang",
+          "description": "Stelt <code>/metrics</code> bloot in Prometheus-tekstindeling. Stel een token in om Bearer-auth vereist te maken."
+        },
+        "otel": {
+          "endpoint": "Collector-eindpunt",
+          "description": "Basis-URL van uw OTLP-ontvanger. Routerly voegt <code>/v1/metrics</code> toe, en <code>/v1/traces</code> wanneer traceexport is ingeschakeld. Standaard HTTP-poort is 4318, gRPC is 4317.",
+          "protocol": "Protocol",
+          "headers": "Headers"
+        },
+        "datadog": {
+          "apiKey": "API-sleutel",
+          "placeholder": "Uw Datadog API-sleutel",
+          "description": "Gevonden onder <strong>Organisatie-instellingen → API-sleutels</strong> in uw Datadog-account.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write-URL",
+          "description": "Gevonden in <strong>Grafana Cloud → Connections → Prometheus → Details</strong> als \"Remote Write Endpoint\".",
+          "username": "Gebruikersnaam / Stack-ID",
+          "usernameHint": "Numerieke ID weergegeven in de Prometheus-verbindingsdetails.",
+          "apiKey": "API-sleutel / Token",
+          "apiKeyHint": "Grafana Cloud-token met <strong>MetricsPublisher</strong>-rol."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2-instantie-URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Uw InfluxDB API-token",
+          "tokenHint": "Moet <strong>schrijf</strong>toegang tot de bucket hebben.",
+          "org": "Organisatie",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Geheim",
+          "secretHint": "(optioneel - HMAC-SHA256-handtekeningssleutel)",
+          "headers": "Headers"
+        }
+      },
+      "errors": {
+        "loadFailed": "Kan integratied niet laden",
+        "updateFailed": "Kan integratie niet bijwerken",
+        "saveFailed": "Kan integratie niet opslaan",
+        "deleteFailed": "Kan integratie niet verwijderen"
+      },
+      "empty": "Nog geen integraties geconfigureerd.",
+      "enabled": "Ingeschakeld",
+      "testing": "Testen...",
+      "test": "Test",
+      "removeConfirm": "Verwijderen?",
+      "remove": "Verwijderen",
+      "cancel": "Annuleren",
+      "removeTooltip": "Integratie verwijderen",
+      "saving": "Opslaan...",
+      "save": "Opslaan",
+      "addButton": "Integratie toevoegen"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Kan instellingen niet laden",
+        "duplicateUrl": "Deze URL staat al in de lijst.",
+        "unreachable": "Kan geen geldige providercatalogus bereiken op deze URL."
+      },
+      "saved": "Opgeslagen.",
+      "refreshed": "Vernieuwd.",
+      "heading": "Provider Catalog Repository's",
+      "refreshing": "Vernieuwen...",
+      "refresh": "Vernieuwen",
+      "nextRefresh": "Volgende: {{date}}",
+      "priorityHint": "Rijvolgorde bepaalt samenvoegprioriteit - rij 1 wint bij conflict. Gebruik de pijlen om opnieuw in te delen.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Bijgewerkt",
+        "lastCheck": "Laatst gecontroleerd",
+        "status": "Status"
+      },
+      "empty": "Geen repository's geconfigureerd. De standaard openbare Routerly-catalogus wordt gebruikt.",
+      "status": {
+        "error": "Fout",
+        "active": "Actief",
+        "disabled": "Uitgeschakeld"
+      },
+      "edit": "Bewerken",
+      "removeTooltip": "Verwijderen",
+      "addRepository": "Repository toevoegen",
+      "checking": "Controleren...",
+      "add": "Toevoegen",
+      "removeConfirm": "Repository \"{{url}}\" verwijderen?"
+    },
+    "about": {
+      "headings": {
+        "application": "Applicatie",
+        "runtime": "Runtime",
+        "storage": "Opslag",
+        "softwareUpdate": "Software-update"
+      },
+      "labels": {
+        "version": "Versie",
+        "uptime": "Uptime",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Configuratiemap",
+        "dataDir": "Gegevensmap",
+        "currentVersion": "Huidigeversie",
+        "availableVersion": "Beschikbare versie",
+        "upToDate": "Actueel",
+        "lastChecked": "Laatst gecontroleerd"
+      },
+      "noCheckPerformed": "Nog geen updatecontrole uitgevoerd.",
+      "checkForUpdates": "Op updates controleren",
+      "checking": "Controleren...",
+      "updateTo": "Update naar v{{version}}",
+      "updating": "Bijwerken...",
+      "dockerHint": "Wordt uitgevoerd in Docker - pull de nieuwste afbeelding om bij te werken.",
+      "confirmUpdate": "Dit downloadt en installeert de nieuwste versie. De service wordt opnieuw gestart. Doorgaan?",
+      "updateComplete": "Update voltooid! Opnieuw laden...",
+      "serviceRestarting": "Service wordt opnieuw gestart. Vernieuw de pagina over een moment.",
+      "errors": {
+        "loadFailed": "Kan niet laden",
+        "checkFailed": "Controle mislukt",
+        "updateFailed": "Update mislukt"
+      },
+      "channel": "Kanaal"
+    },
+    "security": {
+      "authentication": "Verificatie",
+      "requireMfa": "Twee-factor authenticatie vereisen voor alle gebruikers",
+      "requireMfaHint": "Wanneer ingeschakeld, zien gebruikers die 2FA niet hebben ingesteld een prompt om dit na het aanmelden in te stellen. Gebruikers kunnen 2FA configureren op hun profielpagina.",
+      "savedSuccess": "Instellingen succesvol opgeslagen.",
+      "saving": "Opslaan...",
+      "saveSettings": "Instellingen opslaan",
+      "errors": {
+        "loadFailed": "Kan instellingen niet laden",
+        "saveFailed": "Kan instellingen niet opslaan"
+      }
+    },
+    "title": "Instellingen",
+    "subtitle": "Configuratie voor Routerly",
+    "tabs": {
+      "general": "Algemeen",
+      "security": "Beveiliging",
+      "notifications": "Meldingen",
+      "integrations": "Integraties",
+      "catalog": "Provider-catalogus",
+      "users": "Gebruikers",
+      "roles": "Rollen",
+      "audit": "Audit-logboek",
+      "about": "Over"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Routers",
+      "subtitle": "Clienttoepassingen die Routerly benaderen",
+      "count": "1 router",
+      "count_other": "{{count}} routers",
+      "newRouter": "Nieuwe router",
+      "empty": "Nog geen routers.",
+      "emptyFiltered": "Geen routers van dit type.",
+      "tabs": {
+        "all": "Alle",
+        "router": "Router",
+        "orchestrator": "Orkestrator",
+        "passthrough": "Doorvoer"
+      },
+      "columns": {
+        "name": "Naam",
+        "tokens": "Tokens",
+        "policies": "Beleid",
+        "models": "Modellen"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokens",
+      "editRouter": "Router bewerken",
+      "deleteRouter": "Router verwijderen",
+      "deleteConfirm": "Deze router verwijderen?",
+      "errors": {
+        "deleteFailed": "Fout bij het verwijderen van router"
+      }
+    },
+    "layout": {
+      "notFound": "Router niet gevonden",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "general": "Algemeen",
+        "orchestrator": "Orchestrator",
+        "routing": "Routering",
+        "optimizer": "Optimizer",
+        "security": "Beveiliging",
+        "token": "Token",
+        "users": "Gebruikers",
+        "logs": "Logboeken"
+      },
+      "backToRouters": "Terug naar Routers",
+      "backToRoutersTitle": "Terug naar routers",
+      "newRouter": "Nieuwe router",
+      "loading": "Laden...",
+      "routerId": "Router-ID:",
+      "saveFirstHint": "Sla de router eerst op om dit tabblad ontgrendelen"
+    },
+    "dashboard": {
+      "period": "Periode",
+      "noTraffic": "Geen verkeer voor deze router in de geselecteerde periode.",
+      "stats": {
+        "savings": "Besparing",
+        "vsPrefix": "tegen",
+        "forEverything": "voor alles",
+        "noTargetToCompare": "geen doelmodel om mee te vergelijken",
+        "cost": "Kosten",
+        "callCount": "1 oproep",
+        "callCount_other": "{{count}} oproepen",
+        "latency": "Latentie",
+        "medianP95": "mediaan · p95 {{value}}",
+        "ttft": "Tijd tot eerste token",
+        "notMeasured": "niet gemeten op deze oproepen",
+        "reliability": "Betrouwbaarheid",
+        "errorsAndBlocked": "{{errors}} fouten · {{blocked}} geblokkeerd"
+      },
+      "tokens": {
+        "input": "Invoertokens:",
+        "output": "Uitvoertokens:",
+        "fromCache": "Uit cache:",
+        "cacheSaved": "({{amount}} bespaard)"
+      },
+      "oneModel": {
+        "heading": "Als alles naar één model was gegaan",
+        "empty": "Voeg doelmodellen toe aan deze router om de vergelijking te zien.",
+        "columns": {
+          "targetModel": "Doelmodel",
+          "wouldHaveCost": "Zou hebben gekost",
+          "saved": "Bespaard"
+        },
+        "costsHint": "Kosten zijn de waargenomen tokens tegen de tarieven van elk doel."
+      },
+      "optimizers": {
+        "heading": "Wat de optimizers hebben verwijderd",
+        "columns": {
+          "optimizer": "Optimizer",
+          "callsChanged": "Oproepen gewijzigd",
+          "tokensSaved": "Tokens bespaard",
+          "costSaved": "Kosten bespaard",
+          "rolledBack": "Teruggerold"
+        },
+        "hint": "Gemeten op de oproepen zelf, tegen het tarief van het model dat elk ervan serveerde. Een teruggerolde run betekent dat de uitvoer van de stap als onveilig werd afgewezen en de prompt werd hersteld: het bespaard niets, en een hoog aantal betekent dat de drempel te agressief is."
+      },
+      "traffic": {
+        "heading": "Waar het verkeer heen is gegaan",
+        "columns": {
+          "model": "Model",
+          "calls": "Oproepen",
+          "share": "Aandeel",
+          "cost": "Kosten",
+          "p95Latency": "p95 latentie",
+          "errors": "Fouten"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Fout bij het opslaan van router",
+        "copyFailed": "Kopiëren mislukt - selecteer en kopieer het token handmatig."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Routeert verzoeken over modelkandidaten."
+        },
+        "orchestrator": {
+          "label": "Orchestrator",
+          "description": "Routeert verzoeken over andere routers in plaats van modellen."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Stuurt verzoeken zonder wijziging door."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Sla dit token nu op.",
+        "saveNowHint": "Het zal niet opnieuw worden weergegeven - zodra u dit scherm verlaat, kan het niet worden hersteld.",
+        "copied": "Gekopieerd!",
+        "copy": "Kopiëren",
+        "goToRouter": "Ga naar router"
+      },
+      "connect": {
+        "heading": "Hoe verbinden",
+        "intro": "Wijs een OpenAI of Anthropic SDK naar Routerly en gebruik een <tokenLink>router-token</tokenLink> als API-sleutel. Vervang <code>{{token}}</code> hieronder door uw token. Model <code>{{model}}</code> geeft de keuze aan Routerly; elk model-ID van <modelsLink>Modellen</modelsLink> werkt ook.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Basis-URL <code>{{baseUrl}}</code>, dezelfde die elk veld voor 'OpenAI-compatibel' accepteert.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Basis-URL <code>{{baseUrl}}</code>, zonder de <code>/v1</code>: de SDK voegt het toe.",
+        "curl": "curl",
+        "curlHint": "Controleer de bedrading zonder iets te installeren, zoek vervolgens naar de oproep in <usageLink>Gebruik</usageLink>."
+      },
+      "form": {
+        "kind": "Soort",
+        "kindAriaLabel": "Router-soort",
+        "kindFixedHint": "Vast zodra de router is aangemaakt.",
+        "routerName": "Routernaam",
+        "routerNamePlaceholder": "Mijn app",
+        "advancedSettings": "Geavanceerde instellingen",
+        "ttftTimeout": "TTFT-time-out (ms)",
+        "ttftTimeoutHint": "Als een model niet de eerste responsebyte binnen deze tijd verzendt, zet Routerly het af en probeert de volgende kandidaat. Beperkt niet de totale antwoordduur. Stel het op 0 in om zo lang te wachten als de provider duurt.",
+        "traceContent": "Content traceren",
+        "traceContentHint": "Traces registreren altijd metagegevens (modellen, scores, tokens, kosten, latentie). Schakel dit in om ook de verzonden prompts en ontvangen antwoorden op te slaan. Ze worden opgeslagen met de gebruiksrecord en zijn zichtbaar voor iedereen die rapporten kan lezen.",
+        "capturePromptsAndAnswers": "Prompts en antwoorden vastleggen",
+        "saveChanges": "Wijzigingen opslaan",
+        "createRouter": "Router aanmaken"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Deze router is geen Orchestrator.",
+      "candidateRouters": "Kandidaat-routers",
+      "candidateRoutersHint": "De routers waar deze Orchestrator verzoeken naar stuurt. Gewicht beïnvloedt hoe vaak elke kandidaat wordt gekozen; alleen de naam, ID, gewicht en optionele per-kandidaat limieten worden hier weergegeven.",
+      "router": "Router",
+      "selectRouter": "Router selecteren",
+      "weight": "Gewicht",
+      "removeCandidate": "Kandidaat verwijderen",
+      "usageLimits": "Gebruikslimieten voor deze kandidaat",
+      "limitCount": "{{count}} limiet",
+      "limitCount_other": "{{count}} limieten",
+      "usageLimitsHint": "Optionele gebruikslimieten die alleen van toepassing zijn op verzoeken die deze Orchestrator naar deze kandidaat stuurt.",
+      "empty": "Nog geen kandidaat-routers. Een Orchestrator heeft er minimaal één nodig voordat deze verzoeken kan doorsturen.",
+      "addCandidate": "Kandidaat toevoegen",
+      "saved": "Opgeslagen!",
+      "saveCandidates": "Kandidaten opslaan",
+      "errors": {
+        "loadFailed": "Kan routers niet laden",
+        "saveFailed": "Fout bij het opslaan van orchestrator-kandidaten"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Kan routeringsprofiel niet toewijzen",
+        "duplicateTargets": "Doelmodellen mogen geen duplicaten bevatten.",
+        "saveFailed": "Fout bij het opslaan van routering router",
+        "noProfileAvailable": "Geen routeringsprofiel beschikbaar. Maak een op de profielenpagina."
+      },
+      "form": {
+        "routing": "Routering",
+        "routingHint": "Gebruik een gedeeld routeringsprofiel of definieer het eigen beleid van deze router. Doelmodellen kunnen toch worden geconfigureerd.",
+        "profileMode": "Profiel",
+        "customMode": "Aangepast",
+        "routingProfile": "Routeringsprofiel",
+        "builtinSuffix": "(ingebouwd)",
+        "profileHint": "Beleid komt uit het profiel en volgt de wijzigingen ervan. Bewerk ze op de profielenpagina of schakel naar Aangepast om met een kopie van deze te beginnen.",
+        "saved": "Opgeslagen!",
+        "saveRoutingConfiguration": "Routeringsconfiguratie opslaan"
+      },
+      "targetModels": {
+        "heading": "Doelmodellen",
+        "hint": "Definieer de pool van modellen die het Beleid zal filteren en selecteren. Optionele prompts instrueren de AI-router over wanneer elk model moet worden gekozen.",
+        "endpointModel": "Eindpuntmodel",
+        "selectModel": "Model selecteren",
+        "promptDefinition": "Promptdefinitie",
+        "promptPlaceholder": "Beschrijf precies wanneer en waarom de router dit model moet kiezen...",
+        "intents": "Intenties",
+        "removeTarget": "Doelmodel verwijderen",
+        "empty": "Geen doelmodellen geconfigureerd.",
+        "addTarget": "Doelmodel toevoegen"
+      }
+    },
+    "optimizer": {
+      "title": "Optimizers",
+      "description": "Optimizers verminderen prompttokens voordat verzoeken de provider bereiken. Ze werken van boven naar beneden. Gebruik een gedeeld optimizer-profiel of definieer deze routereigen pijplijn.",
+      "noPermission": "U hebt geen toestemming om optimizers te bekijken.",
+      "mode": {
+        "profile": "Profiel",
+        "custom": "Aangepast"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimizerprofiel",
+        "builtinLabel": "{{label}} (ingebouwd)",
+        "hint": "Stappen komen uit het profiel en volgen de wijzigingen ervan. Bewerk ze op de profielenpagina of schakel naar Aangepast om met een kopie van deze te beginnen.",
+        "disabledSuffix": "(uitgeschakeld)",
+        "thresholdSuffix": ", drempel {{threshold}}"
+      },
+      "customHint": "Sleep om opnieuw in te delen, wissel om in te schakelen. Sommige optimizers gebruiken een drempel om te bepalen hoe agressief ze trimmen.",
+      "saveButton": "Optimizers opslaan",
+      "saving": "Opslaan...",
+      "saved": "Opgeslagen",
+      "preview": {
+        "title": "Token-besparing voorvertoning",
+        "description": "Voer de huidigelopen) pijplijn uit op een prompt om te zien wat elke stap verwijdert en wat het kost. Kies een van de voorbeeldgesprekken of typ uw eigen prompt.",
+        "promptLabel": "Prompt",
+        "promptAriaLabel": "Prompt voor voorvertoning",
+        "typePromptOption": "Typ een prompt hieronder",
+        "fixturesHint": "Voorbeeldgesprekken geleverd met Routerly. Routerly registreert geen echte prompts.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model voor voorvertoning",
+        "modelWithContext": "{{id}} ({{k}}k context)",
+        "noModelOption": "Geen model",
+        "modelHint": "Stappen die worden ingekort voor een contextvenster moeten weten welk venster. Zonder een model worden ze overgeslagen, net zoals ze zouden zijn op een verzoek dat een model noemt waarvoor Routerly geen venster heeft.",
+        "sampleAriaLabel": "Voorbeeldprompt",
+        "samplePlaceholder": "Plak een voorbeeldbericht...",
+        "runButton": "Voorvertoning uitvoeren",
+        "running": "Uitvoering...",
+        "before": "Voor",
+        "after": "Na",
+        "saved": "Opgeslagen",
+        "columns": {
+          "optimizer": "Optimizer",
+          "before": "Voor",
+          "after": "Na",
+          "saved": "Bespaard"
+        },
+        "rolledBackNote": "teruggerold: de wijziging werd als onveilig afgewezen",
+        "skippedNote": "overgeslagen: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "De wijziging die deze stap produceerde, werd teruggerold, dus de prompt bereikt de volgende stap ongewijzigd.",
+          "skipped": "Deze stap is niet uitgevoerd: {{reason}}",
+          "unchanged": "Deze stap liet de prompt ongewijzigd."
+        }
+      },
+      "errors": {
+        "assignFailed": "Kan optimizerprofiel niet toewijzen",
+        "saveFailed": "Fout bij het opslaan van optimizers",
+        "previewFailed": "Fout bij het uitvoeren van voorvertoning",
+        "noProfileAvailable": "Geen optimizerprofiel beschikbaar. Maak een op de profielenpagina."
+      }
+    },
+    "token": {
+      "newButton": "Nieuw token",
+      "empty": "Nog geen API-tokens. Maak een om verzoeken te gaan authenticeren.",
+      "budgetOverrides": "Budgetoverschrijvingen",
+      "created": "Aangemaakt",
+      "lastUsed": "Laatst gebruikt",
+      "expires": "Verloopt",
+      "never": "Nooit",
+      "editTitle": "Configuratie bewerken",
+      "revokeTitle": "Token intrekken",
+      "revokeConfirm": "Token \"{{snippet}}...\" intrekken? Apps die het gebruiken, werken onmiddellijk niet meer.",
+      "labelInput": {
+        "placeholder": "Zoeken of label aanmaken...",
+        "createPrefix": "Aanmaken",
+        "noMatches": "Geen overeenkomende labels gevonden."
+      },
+      "errors": {
+        "deleteFailed": "Fout bij het verwijderen van token"
+      },
+      "create": {
+        "backToTokens": "Terug naar tokens",
+        "title": "Nieuw API-token",
+        "subtitle": "Het volledige token wordt alleen eenmaal na aanmaak weergegeven - sla het veilig op.",
+        "tokenCreated": "Token succesvol aangemaakt. Kopieer het nu - het zal niet opnieuw worden weergegeven.",
+        "copied": "Gekopieerd!",
+        "copy": "Kopiëren",
+        "done": "Klaar",
+        "optional": "optioneel",
+        "labels": "Labels",
+        "labelsHint": "Tag dit token om te identificeren waar het wordt gebruikt (bijv. 'productie', 'ci').",
+        "scopes": "Bereiken",
+        "scopesHint": "Gratis bereiken aan dit token (bijv. 'batch', 'intern'), opgeslagen bij het token voor uw eigen administratie.",
+        "tags": "Tags",
+        "tagsHint": "Sleutel-waardemetagegevens doorgestuurd naar gebruiksrecords (bijv. omgeving=productie).",
+        "keyPlaceholder": "sleutel",
+        "valuePlaceholder": "waarde",
+        "createButton": "Token aanmaken",
+        "cancel": "Annuleren",
+        "copyFailed": "Kopiëren mislukt - selecteer en kopieer het token handmatig.",
+        "errors": {
+          "createFailed": "Fout bij het aanmaken van token"
+        }
+      },
+      "edit": {
+        "title": "Token bewerken",
+        "subtitle": "Werk labels en per-modellimieten-overschrijvingen voor dit token bij.",
+        "token": "Token",
+        "labels": "Labels",
+        "perModelLimits": "Per-modellimieten",
+        "perModelLimitsHint": "Overschrijf globale en routerlimieten voor verzoeken met dit token.",
+        "noTargetModels": "Voeg eerst doelmodellen toe op het routeringtabblad.",
+        "noOverride": "geen overschrijving",
+        "noLimits": "Geen limieten",
+        "noLimitsSet": "Geen limieten ingesteld - erft van bovenliggend. Voeg hieronder een limiet toe om te overschrijven.",
+        "metric": "Metriek",
+        "type": "Type",
+        "periodLabel": "Periode",
+        "every": "Elke",
+        "maxCost": "Max ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (tokens)",
+        "allCombosSet": "Alle metriek/periode-combinaties zijn al ingesteld",
+        "addLimit": "Limiet toevoegen",
+        "windowType": {
+          "period": "Periode",
+          "rolling": "Rollend"
+        },
+        "limitMetric": {
+          "cost": "Kosten (USD)",
+          "calls": "Verzoeken",
+          "input_tokens": "Invoertokens",
+          "output_tokens": "Uitvoertokens",
+          "total_tokens": "Totale tokens"
+        },
+        "period": {
+          "hourly": "Elk uur",
+          "daily": "Dagelijks",
+          "weekly": "Wekelijks",
+          "monthly": "Maandelijks",
+          "yearly": "Jaarlijks"
+        },
+        "rollingUnit": {
+          "second": "seconden",
+          "minute": "minuten",
+          "hour": "uren",
+          "day": "dagen",
+          "week": "weken",
+          "month": "maanden"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} uit-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / elke {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Fout bij het opslaan van token"
+        }
+      }
+    },
+    "users": {
+      "title": "Routerleden",
+      "description": "Beheer gebruikers die toegang tot deze router hebben.",
+      "addButton": "Lid toevoegen",
+      "addNewTitle": "Nieuw lid toevoegen",
+      "selectUserPlaceholder": "Selecteer een gebruiker...",
+      "addConfirmButton": "Toevoegen",
+      "cancelButton": "Annuleren",
+      "empty": "Geen leden gevonden.",
+      "removeConfirm": "Weet u zeker dat u dit lid wilt verwijderen?",
+      "saveTitle": "Wijzigingen opslaan",
+      "changeRoleTitle": "Rol wijzigen",
+      "removeTitle": "Lid verwijderen",
+      "roles": {
+        "viewer": "Kijker",
+        "editor": "Redacteur",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "Gebruiker",
+        "role": "Rol",
+        "actions": "Acties"
+      },
+      "errors": {
+        "loadFailed": "Kan gebruikers niet laden",
+        "addFailed": "Fout bij het toevoegen van lid",
+        "updateFailed": "Fout bij het bijwerken van lid",
+        "removeFailed": "Fout bij het verwijderen van lid"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Uit"
+      },
+      "autoRefreshOff": "Automatisch vernieuwen uitgeschakeld",
+      "autoRefreshEvery": "Automatisch vernieuwen elke {{interval}}",
+      "lastUpdated": "laatst bijgewerkt: {{time}}",
+      "refresh": "Vernieuwen",
+      "refreshNowTitle": "Nu vernieuwen",
+      "refreshNowButton": "↻ Nu",
+      "filters": {
+        "period": "Periode",
+        "model": "Model",
+        "allModels": "Alle modellen",
+        "type": "Type",
+        "all": "Alles",
+        "completion": "Voltooiing",
+        "router": "Router",
+        "status": "Status",
+        "success": "Succes",
+        "blocked": "Geblokkeerd",
+        "error": "Fout",
+        "resetButton": "Filters opnieuw instellen"
+      },
+      "stats": {
+        "totalCost": "Totale kosten",
+        "totalCalls": "Totale oproepen",
+        "completionCalls": "Voltooiingsoproepen",
+        "routerCalls": "Routeroproepen",
+        "errors": "Fouten"
+      },
+      "requestLogs": "Verzoeklogboeken",
+      "emptyNoRequests": "Geen verzoeken voor deze router in de geselecteerde periode.",
+      "emptyNoMatches": "Geen records passen bij de actieve filters.",
+      "columns": {
+        "time": "Tijd",
+        "model": "Model",
+        "type": "Type",
+        "in": "In",
+        "out": "Uit",
+        "cost": "Kosten",
+        "latency": "Latentie",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Status"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "voltooiing",
+      "pagination": {
+        "previous": "← Vorige",
+        "next": "Volgende →",
+        "pageOf": "Pagina {{page}} van {{totalPages}}",
+        "totalRecords": "({{count}} totale records)"
+      }
+    },
+    "security": {
+      "title": "Beveiliging",
+      "description": "Gebruik een gedeeld veiligheidsprofiel of definieer deze routereigen garanties en PII-beleid.",
+      "mode": {
+        "profile": "Profiel",
+        "custom": "Aangepast"
+      },
+      "profileSelect": {
+        "ariaLabel": "Veiligheidsprofiel",
+        "builtinLabel": "{{label}} (ingebouwd)",
+        "hint": "Garanties en PII-beleid komen uit het profiel en volgen de wijzigingen ervan. Bewerk ze op de profielenpagina of schakel naar Aangepast om met een kopie van deze te beginnen.",
+        "blockingSuffix": ", blokkering",
+        "disabledSuffix": ", uitgeschakeld",
+        "piiRedaction": "PII-redactie ({{target}})"
+      },
+      "saveButton": "Veiligheidsinstellingen opslaan",
+      "saved": "Opgeslagen!",
+      "errors": {
+        "assignFailed": "Kan veiligheidsprofiel niet toewijzen",
+        "saveFailed": "Fout bij het opslaan van veiligheidsinstellingen",
+        "noProfileAvailable": "Geen veiligheidsprofiel beschikbaar. Maak een op de profielenpagina."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "U bent een behulpzame AI-assistent.",
+      "errors": {
+        "unknown": "Onbekende fout opgetreden",
+        "onlyImages": "Alleen afbeeldingsbijlagen worden momenteel ondersteund voor visiemodellen."
+      },
+      "title": "Test chatten",
+      "subtitle": "Verstuur testquery's via de routeringgateway.",
+      "routerToken": "Routertoken:",
+      "hideToken": "Token verbergen",
+      "showToken": "Token weergeven",
+      "recognizedToken": "Herkend token",
+      "unrecognizedToken": "Niet-herkend token",
+      "noMessages": "Nog geen berichten.",
+      "enterTokenHint": "Voer hierboven een routertoken in om een bericht te verzenden.",
+      "typeMessageHint": "Typ een bericht hieronder om te beginnen met testen.",
+      "reasoning": "Redenatie",
+      "attachedAlt": "Bijgevoegd",
+      "attachmentAlt": "Bijlage",
+      "attachImage": "Afbeelding bijvoegen",
+      "typeMessagePlaceholder": "Typ een bericht...",
+      "stopGeneration": "Generatie stoppen",
+      "sendEnter": "Verzenden (Enter)",
+      "debugLog": "Debug-logboek",
+      "clear": "Wissen",
+      "noRequestSent": "Nog geen verzoek verzonden.",
+      "turnTraceLog": "Beurt #{{turn}} trace logboek · {{count}} gebeurtenis",
+      "turnTraceLog_other": "Beurt #{{turn}} trace logboek · {{count}} gebeurtenissen"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Verbindingen",
+      "subtitle": "Provideraccounts waarmee modelinstanties worden uitgevoerd",
+      "noPermission": "U hebt geen toestemming om verbindingen te bekijken.",
+      "count": "{{count}} verbinding",
+      "count_other": "{{count}} verbindingen",
+      "addConnection": "Verbinding toevoegen",
+      "empty": "Nog geen verbindingen. Voeg een toe om aan de slag te gaan.",
+      "deleteConfirm": "Verbinding \"{{label}}\" verwijderen? Instanties die eraan zijn gekoppeld, werken niet meer.",
+      "errors": {
+        "loadFailed": "Kan verbindingen niet laden",
+        "deleteFailed": "Kan verbinding niet verwijderen"
+      },
+      "columns": {
+        "label": "Label",
+        "provider": "Provider",
+        "endpoint": "Eindpunt",
+        "status": "Status"
+      },
+      "status": {
+        "enabled": "Ingeschakeld",
+        "disabled": "Uitgeschakeld"
+      },
+      "actions": {
+        "models": "Modellen",
+        "edit": "Bewerken",
+        "remove": "Verwijderen"
+      }
+    },
+    "form": {
+      "backToConnections": "Terug naar verbindingen",
+      "editTitle": "Verbinding bewerken",
+      "addTitle": "Verbinding toevoegen",
+      "enabled": "Ingeschakeld",
+      "editSubtitle": "Werk de provideraccountinstellingen bij",
+      "addSubtitle": "Registreer een nieuw provideraccount",
+      "sectionTitle": "Verbindingsgegevens",
+      "sectionDesc": "Provideraccount, referenties en eindpunt dat voor verzoeken wordt gebruikt.",
+      "provider": "Provider",
+      "groups": {
+        "directApi": "Directe API",
+        "cloudPlatform": "Cloudplatform",
+        "subscription": "Abonnement",
+        "browserSession": "Browsersessie",
+        "selfHosted": "Zelf gehost"
+      },
+      "upstreamProvider": {
+        "label": "Provider",
+        "hintLabel": "(naam upstream provider)",
+        "placeholder": "bijv. deepseek, mistral, groq",
+        "description": "Noemt de service waartoe dit eindpunt behoort. Modellen op deze verbinding gebruiken het als hun ID-voorvoegsel (bijv. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Naam",
+        "hint": "Identificeert deze verbinding overal waar ernaar wordt verwezen, dus deze moet uniek zijn. Laat het leeg om <code>{{suggested}}</code> te gebruiken."
+      },
+      "credentialsBlankHint": "Laat referentievelden leeg om bestaande waarden te behouden.",
+      "save": "Opslaan",
+      "create": "Aanmaken",
+      "cancel": "Annuleren",
+      "oauth": {
+        "unknown": "onbekend",
+        "accountExpires": "Account: {{account}} - verloopt {{expires}}",
+        "unknownError": "Onbekende fout"
+      },
+      "errors": {
+        "notFound": "Verbinding niet gevonden",
+        "loadFailed": "Kan verbinding niet laden",
+        "updateFailed": "Kan verbinding niet bijwerken",
+        "createFailed": "Kan verbinding niet aanmaken"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Terug naar modellen",
+      "title": "Modeldetectie",
+      "subtitle": "Blader door beschikbare modellen en voeg ze toe aan uw routeringsconfiguratie",
+      "count": "{{count}} modellen",
+      "filteredCount": "{{filtered}} van {{count}}",
+      "free": "gratis",
+      "add": "Toevoegen",
+      "addAgain": "Opnieuw toevoegen",
+      "loadFailed": "Kan catalogus niet laden: {{error}}",
+      "filters": {
+        "search": "Zoeken",
+        "searchPlaceholder": "Model-ID of naam...",
+        "provider": "Provider",
+        "allProviders": "Alle providers",
+        "context": "Context",
+        "ctxOptions": {
+          "all": "Alles",
+          "small": "< 32k",
+          "medium": "32k-200k",
+          "large": "200k-1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Prijs / 1M",
+        "priceOptions": {
+          "all": "Alles",
+          "free": "Gratis",
+          "low": "< $1",
+          "mid": "$1-$5",
+          "high": "> $5"
+        },
+        "show": "Tonen",
+        "configured": "Geconfigureerd",
+        "embedding": "Insluiting",
+        "resetFilters": "Filters opnieuw instellen"
+      },
+      "empty": {
+        "noMatches": "Geen modellen passen bij uw filters."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Provider",
+        "context": "Context",
+        "input": "Invoer / 1M",
+        "output": "Uitvoer / 1M"
+      },
+      "badges": {
+        "configured": "Geconfigureerd",
+        "embedding": "insluiting",
+        "runsLocally": "Werkt lokaal"
+      },
+      "pagination": {
+        "prev": "Vorige",
+        "next": "Volgende",
+        "range": "{{start}}-{{end}} van {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Terug naar modellen",
+      "title": {
+        "add": "Model toevoegen",
+        "edit": "Model bewerken",
+        "clone": "Model klonen"
+      },
+      "subtitle": {
+        "add": "Registreer een nieuw LLM-providermodel",
+        "edit": "Configuratie voor {{id}} wijzigen",
+        "clone": "Klonen van {{id}} - wijs een nieuw ID toe om op te slaan"
+      },
+      "errors": {
+        "modelNotFound": "Model niet gevonden",
+        "sourceModelNotFound": "Bronmodel niet gevonden",
+        "loadFailed": "Fout bij het laden van modellen",
+        "idRequired": "Model-ID vereist",
+        "duplicateId": "Model \"{{id}}\" bestaat al - stel een ander aangepast ID in",
+        "selectConnection": "Selecteer een verbinding",
+        "saveFailed": "Fout"
+      },
+      "badge": {
+        "yes": "ja",
+        "no": "nee",
+        "override": "Overschrijven",
+        "auto": "Automatisch",
+        "default": "Standaard: {{value}}",
+        "reset": "Opnieuw instellen"
+      },
+      "oauth": {
+        "unknownExpiry": "onbekend",
+        "accountOk": "Account: {{account}} - verloopt {{expires}}",
+        "unknownError": "Onbekende fout"
+      },
+      "identification": {
+        "title": "Modelidentificatie",
+        "description": "Unieke identificatie en providerinstellingen voor deze modelconfiguratie.",
+        "routerlyId": "Routerly-ID",
+        "routerlyIdHintPre": "(optioneel - standaard:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "De identificatie die wordt gebruikt bij het verwijzen naar dit model in Routerly API-oproepen.",
+        "provider": "Provider",
+        "upstreamProviderHint": "(naam upstream provider)",
+        "upstreamProviderPlaceholder": "bijv. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Gebruikt als voorvoegsel voor de Routerly-ID (bijv.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(upstream model-ID)",
+        "upstreamModelPlaceholder": "bijv. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "De modelidentificatie die naar het upstream API-eindpunt wordt verzonden.",
+        "modelPreset": "Modelvoorinstelling",
+        "customModelOption": "- aangepaste modelnaam -",
+        "customModelPlaceholder": "bijv. mijn-fijnafgesteld-model"
+      },
+      "connection": {
+        "title": "Verbindingsgegevens",
+        "description": "API-eindpunt en verificatiereferenties vereist voor verzoeken.",
+        "preconfigured": "Vooraf geconfigureerd",
+        "custom": "Aangepast",
+        "connection": "Verbinding",
+        "selectPlaceholder": "- selecteer een verbinding -",
+        "noneAvailable": "Geen vooraf geconfigureerde verbindingen voor deze provider. Schakel over naar Aangepast of maak een op de verbindingenpagina.",
+        "editHint": "Deze verbinding later bewerken werkt elke modelupdate bij die eraan is gekoppeld."
+      },
+      "capabilities": {
+        "title": "Capaciteiten",
+        "description": "Geef het type en de mogelijkheden van dit model op.",
+        "embeddingModel": "Insluitingsmodel",
+        "embeddingModelHint": "Dit model genereert vectorinsluitingen (geen chat-voltooiingen)"
+      },
+      "pricing": {
+        "title": "Prijsstelling & context",
+        "description": "Kostenparameters en verwerkingslimieten gebruikt voor facturering en routering.",
+        "inputPerMillion": "Invoer $/1M",
+        "outputPerMillion": "Uitvoer $/1M",
+        "cachePerMillion": "Cache lezen $/1M",
+        "cacheWritePerMillion": "Cache schrijven $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "Contextvenster",
+        "contextWindowHint": "(tokens, optioneel)"
+      },
+      "tiers": {
+        "title": "Geavanceerd - Prijstrappen",
+        "description": "Overschrijf prijsstelling wanneer een metriek een drempel overschrijdt. Bijvoorbeeld: 'Boven de 200.000 contextokens veranderen de prijzen.'",
+        "removeTier": "Trap verwijderen",
+        "above": "Boven",
+        "metric": "Metriek",
+        "metricContextTokens": "Contexttokens",
+        "overridePricing": "Prijsstelling overschrijven",
+        "addTier": "Prijstrap toevoegen"
+      },
+      "limits": {
+        "title": "Limieten",
+        "description": "Gebruikslimieten voor dit model. Meerdere regels kunnen worden gecombineerd.",
+        "metric": "Metriek",
+        "type": "Type",
+        "addLimit": "Limiet toevoegen"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max-abonnement)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro-abonnement)"
+      },
+      "saveChanges": "Wijzigingen opslaan",
+      "createClone": "Kloon aanmaken",
+      "createModel": "Model aanmaken"
+    },
+    "page": {
+      "title": "Modellen",
+      "subtitle": "LLM-providers geregistreerd bij Routerly",
+      "tabs": {
+        "models": "Modellen",
+        "health": "Gezondheid"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} modellen",
+        "filteredCount": "{{filtered}} van {{count}} model",
+        "filteredCount_other": "{{filtered}} van {{count}} modellen"
+      },
+      "filters": {
+        "allProviders": "Alle providers",
+        "allConnections": "Alle verbindingen",
+        "searchPlaceholder": "Modellen filteren..."
+      },
+      "discover": "Ontdekken",
+      "addModel": "Model toevoegen",
+      "deleteConfirm": "Model \"{{id}}\" verwijderen?",
+      "empty": {
+        "noModels": "Nog geen modellen. Voeg een toe om aan de slag te gaan.",
+        "noMatches": "Geen modellen passen bij de actieve filters."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Provider",
+        "endpoint": "Eindpunt",
+        "input": "Invoer $/1M",
+        "output": "Uitvoer $/1M",
+        "cache": "Cache $/1M",
+        "context": "Contextgrootte"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Klonen",
+        "edit": "Bewerken",
+        "remove": "Verwijderen"
+      },
+      "pagination": {
+        "previous": "← Vorige",
+        "next": "Volgende →",
+        "pageOf": "Pagina {{page}} van {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} modellen)"
+      },
+      "health": {
+        "emptyNoModels": "Geen modellen geconfigureerd.",
+        "emptyNoMatches": "Geen modellen passen bij het filter.",
+        "resetAll": "Alles opnieuw instellen",
+        "resetAllTitle": "Elke circuitonderbreker, cooldown en vergrendeling opnieuw instellen",
+        "resetTitle": "Circuitonderbreker opnieuw instellen",
+        "confirmResetModel": "De circuitonderbreker voor model \"{{id}}\" opnieuw instellen?",
+        "confirmResetAll": "Alles veerkracht opnieuw instellen? Dit wist elke circuitonderbreker, cooldown en vergrendeling.",
+        "errors": {
+          "resetModelFailed": "Kan circuitonderbreker niet opnieuw instellen",
+          "resetAllFailed": "Kan veerkrachtsvlak niet opnieuw instellen"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Provider",
+          "status": "Status",
+          "circuit": "Schakeling",
+          "errorRate": "Foutpercentage (5m)",
+          "p95Latency": "P95-latentie (1u)",
+          "requests": "Verzoeken (1u)",
+          "lastSuccess": "Laatst gelukt",
+          "cooldownLockout": "Cooldown / vergrendeling"
+        },
+        "status": {
+          "healthy": "Gezond",
+          "degraded": "Verslechterd",
+          "unavailable": "Niet beschikbaar",
+          "cooldown": "Cooldown",
+          "nodata": "Geen gegevens"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Herstellen",
+          "tripped": "Afgebroken"
+        },
+        "time": {
+          "never": "nooit",
+          "now": "nu",
+          "secondsAgo": "{{count}}s geleden",
+          "minutesAgo": "{{count}}m geleden",
+          "hoursAgo": "{{count}}u geleden",
+          "daysAgo": "{{count}}d geleden",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "cooldown {{time}}",
+          "lockout": "vergrendeling {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Experimenten",
+      "subtitle": "A/B test routers tegen elkaar",
+      "noPermission": "U hebt geen toestemming om experimenten te bekijken.",
+      "count": "{{count}} experiment",
+      "count_other": "{{count}} experimenten",
+      "newExperiment": "Nieuw experiment",
+      "empty": "Nog geen experimenten. Maak een om routers head-to-head te vergelijken.",
+      "deleteConfirm": "Experiment \"{{name}}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "noToken": "Geen token",
+      "noTokenTitle": "Zonder token kan geen client dit experiment bereiken",
+      "errors": {
+        "loadFailed": "Kan experimenten niet laden",
+        "deleteFailed": "Kan experiment niet verwijderen"
+      },
+      "columns": {
+        "name": "Naam",
+        "variants": "Varianten",
+        "rotation": "Rotatie",
+        "created": "Aangemaakt"
+      },
+      "actions": {
+        "edit": "Experiment bewerken",
+        "remove": "Verwijderen"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Terug naar experimenten",
+      "newExperiment": "Nieuw experiment",
+      "loading": "Laden...",
+      "experimentId": "Experiment-ID:",
+      "disabledTabTitle": "Sla het experiment eerst op om dit tabblad ontgrendelen",
+      "errors": {
+        "notFound": "Experiment niet gevonden"
+      },
+      "tabs": {
+        "config": "Configuratie",
+        "metrics": "Statistieken",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Opgeslagen.",
+      "created": "Experiment aangemaakt. Wijs uw client naar dit token in plaats van een router-token. Het zal niet opnieuw worden weergegeven.",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd!",
+      "done": "Klaar",
+      "saving": "Opslaan...",
+      "create": "Experiment aanmaken",
+      "save": "Wijzigingen opslaan",
+      "cancel": "Annuleren",
+      "trafficSplit": "Verkeersplitsing",
+      "errors": {
+        "loadRoutersFailed": "Kan routers niet laden",
+        "saveFailed": "Kan experiment niet opslaan",
+        "copyFailed": "Kopiëren mislukt: selecteer en kopieer het token handmatig."
+      },
+      "fields": {
+        "name": "Naam",
+        "namePlaceholder": "Goedkope vs premium routering",
+        "description": "Beschrijving",
+        "optional": "(optioneel)",
+        "descriptionPlaceholder": "Wat deze test probeert op te lossen",
+        "minSamples": "Minimale oproepen per variant",
+        "minSamplesHint": "Hieronder markeert het statistiekentabblad de vergelijking als nog niet overtuigend.",
+        "rotation": "Rotatie",
+        "stickyOn": "Sticky aan",
+        "stickyKey": "Sticky-sleutel"
+      },
+      "variants": {
+        "title": "Varianten",
+        "desc": "Elke variant is een bestaande router, volledig: de modellen, routering en garanties ervan gelden allemaal. Een test heeft minstens twee nodig.",
+        "routerAriaLabel": "Variant {{index}} router",
+        "routerPlaceholder": "Selecteer een router",
+        "labelAriaLabel": "Variant {{index}} label",
+        "labelPlaceholder": "Label (optioneel)",
+        "weightAriaLabel": "Variant {{index}} gewicht",
+        "weightPlaceholder": "Gewicht",
+        "removeTitle": "Variant {{index}} verwijderen",
+        "add": "Variant toevoegen"
+      },
+      "judge": {
+        "title": "Rechter",
+        "desc": "Optioneel: een model leest elk bemonsterd antwoord en scoort het 0-10 tegen uw criteria. Elke beoordeelde oproep is een extra model-oproep, gefactureerd zoals elke ander.",
+        "enable": "Antwoorden scoren met een beoordelingsmodel",
+        "model": "Beoordelingsmodel",
+        "modelPlaceholder": "Selecteer een model",
+        "criteria": "Criteria",
+        "criteriaPlaceholder": "Één per regel, bijv.\nBeantwoordt de gestelde vraag\nBlijft feitelijk\nHoudt zich aan het aangevraagde formaat",
+        "sampleRate": "Aandeel oproepen beoordeeld (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Laden...",
+      "callsMeasured": "{{count}} oproep gemeten",
+      "callsMeasured_other": "{{count}} oproepen gemeten",
+      "empty": "Nog geen oproepen in dit venster. Wijs een client naar het experimenttoken om de vergelijking te starten.",
+      "notConclusive": "Nog niet overtuigend: elke variant heeft minstens {{minSamples}} oproepen in dit venster nodig. ",
+      "explanation": "De betere figuur van elk paar wordt gemarkeerd: goedkoper per oproep, sneller, hogere beoordelingsscore. Het percentage onder een waarde is de afstand tot de beste arm. De beoordelingsscore is een lopend gemiddelde over het hele leven van het experiment, dus het is de ene figuur die het venster niet versmalt.",
+      "lowSample": "Lage steekproef",
+      "lowSampleTitle": "Onder {{minSamples}} oproepen in dit venster",
+      "judgedCallsTitle": "{{count}} antwoord beoordeeld door de rechter sinds het experiment begon",
+      "judgedCallsTitle_other": "{{count}} antwoorden beoordeeld door de rechter sinds het experiment begon",
+      "errors": {
+        "loadFailed": "Kan statistieken niet laden"
+      },
+      "columns": {
+        "variant": "Variant",
+        "calls": "Oproepen",
+        "share": "Aandeel",
+        "errors": "Fouten",
+        "tokens": "Tokens in / uit",
+        "cost": "Kosten",
+        "costPerCall": "Kosten / oproep",
+        "avgLatency": "Gem. latentie",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Beoordelingsscore"
+      }
+    },
+    "token": {
+      "desc": "Een client roept het experiment net als een router aan: dezelfde basis-URL, dit token in plaats van een router-token. Elk verzoek landt op één variant en wordt gefactureerd aan de router van die variant.",
+      "baseUrlLabel": "Basis-URL voor de OpenAI of Anthropic SDK, met een experimenttoken als API-sleutel:",
+      "created": "Token aangemaakt. Kopieer het nu, het zal niet opnieuw worden weergegeven.",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd!",
+      "newToken": "Nieuw token",
+      "empty": "Geen tokens op dit experiment. Maak een zodat clients dit kunnen aanroepen.",
+      "revokeConfirm": "Token \"{{snippet}}...\" intrekken? Clients die het gebruiken, werken onmiddellijk niet meer.",
+      "revokeTitle": "Token intrekken",
+      "errors": {
+        "createFailed": "Kan token niet aanmaken",
+        "revokeFailed": "Kan token niet intrekken",
+        "copyFailed": "Kopiëren mislukt: selecteer en kopieer het token handmatig."
+      },
+      "columns": {
+        "created": "Aangemaakt",
+        "lastUsed": "Laatst gebruikt"
+      }
+    }
+  },
+  "overview": {
+    "title": "Overzicht",
+    "subtitle": "Gebruiksoverzicht en kostenverdeling",
+    "noPermission": "Geen toestemming om gebruiksgegevens te bekijken.",
+    "costByModel": "Kosten per model",
+    "noCostRecorded": "Geen kosten geregistreerd deze periode.",
+    "callsByModel": "Oproepen per model",
+    "columns": {
+      "model": "Model",
+      "calls": "Oproepen",
+      "errors": "Fouten",
+      "cost": "Kosten"
+    },
+    "stats": {
+      "totalCalls": "Totale oproepen",
+      "callsBreakdown": "{{routing}} routering · {{completion}} voltooiing",
+      "successRate": "Succespercentage",
+      "ofAllRequests": "van alle verzoeken",
+      "errors": "Fouten",
+      "failedRequests": "mislukte verzoeken",
+      "models": "Modellen",
+      "registered": "geregistreerd",
+      "routers": "Routers",
+      "active": "actief"
+    },
+    "connectCard": {
+      "title": "Een client verbinden",
+      "desc": "Wijs Claude Code, Codex, Cursor en {{count}} meer naar deze gateway."
+    }
+  },
+  "login": {
+    "emailLabel": "E-mailadres",
+    "passwordLabel": "Wachtwoord",
+    "signIn": "Aanmelden",
+    "errors": {
+      "loginFailed": "Aanmelding mislukt",
+      "totpFailed": "2FA-verificatie mislukt"
+    },
+    "totp": {
+      "title": "Twee-factor authenticatie",
+      "backupPrompt": "Voer een back-upcode in.",
+      "appPrompt": "Voer de 6-cijferige code uit uw authenticatie-app in.",
+      "backupCodeLabel": "Back-upcode",
+      "authenticatorCodeLabel": "Authenticatorcode",
+      "verify": "Verifiëren",
+      "useAuthenticatorInstead": "Authenticatie-app gebruiken in plaats daarvan",
+      "useBackupInstead": "In plaats daarvan een back-upcode gebruiken"
+    }
+  },
+  "setup": {
+    "welcome": "Welkom! Laten we u inrichten.",
+    "welcomeSubtitle": "Maak het eerste admin-account aan om Routerly te beheren.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly ontwikkelt zich actief. Fouten kunnen zich voordoen.",
+    "betaFeedback": "Uw feedback helpt bepalen wat het wordt -",
+    "betaLink": "meld problemen of deel ideeën",
+    "emailLabel": "Admin e-mailadres",
+    "emailPlaceholder": "admin@voorbeeld.com",
+    "passwordLabel": "Wachtwoord",
+    "passwordPlaceholder": "Minimaal 8 karakters",
+    "confirmLabel": "Bevestig wachtwoord",
+    "confirmPlaceholder": "Voer het wachtwoord opnieuw in",
+    "submit": "Admin-account aanmaken",
+    "errors": {
+      "mismatch": "Wachtwoorden komen niet overeen",
+      "tooShort": "Wachtwoord moet minimaal 8 karakters zijn",
+      "setupFailed": "Installatie mislukt"
+    }
+  },
+  "audit": {
+    "empty": "Geen audit-vermeldingen gevonden.",
+    "errors": {
+      "loadFailed": "Kan audit-logboek niet laden"
+    },
+    "filters": {
+      "period": "Periode",
+      "user": "Gebruiker",
+      "userPlaceholder": "E-mailadres of gebruikers-ID",
+      "action": "Actie",
+      "actionPlaceholder": "bijv. model:create",
+      "result": "Resultaat",
+      "results": {
+        "all": "Alles",
+        "success": "Succes",
+        "forbidden": "Verboden",
+        "error": "Fout"
+      },
+      "refresh": "Vernieuwen"
+    },
+    "columns": {
+      "timestamp": "Tijdstempel",
+      "user": "Gebruiker",
+      "action": "Actie",
+      "endpoint": "Eindpunt",
+      "result": "Resultaat",
+      "details": "Details"
+    },
+    "pagination": {
+      "previous": "Vorige",
+      "next": "Volgende",
+      "page": "Pagina {{page}} van {{totalPages}}",
+      "total": "({{count}} totaal)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Gebruik",
+      "live": "LIVE",
+      "subtitle": "Gedetailleerde oproeplogboeken en per-modeloverzicht",
+      "updatedAt": "· bijgewerkt op {{time}}",
+      "poll": {
+        "off": "Uit",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Live-modus uitschakelen",
+        "enable": "Live-modus inschakelen (elke 2 seconden vernieuwen)"
+      },
+      "refreshNow": "↻ Nu",
+      "refreshNowTitle": "Nu vernieuwen",
+      "filters": {
+        "period": "Periode",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Beller",
+        "type": "Type",
+        "status": "Status",
+        "allRouters": "Alle routers",
+        "allModels": "Alle modellen",
+        "allTokens": "Alle tokens",
+        "resetFilters": "Filters opnieuw instellen",
+        "all": "Alles",
+        "success": "Succes",
+        "blocked": "Geblokkeerd",
+        "error": "Fout"
+      },
+      "caller": {
+        "all": "Alles",
+        "completion": "Voltooiing",
+        "routing": "Router",
+        "guardrail": "Garantie",
+        "judge": "Rechter"
+      },
+      "callerBadge": {
+        "completion": "voltooiing",
+        "routing": "router",
+        "guardrail": "garantie",
+        "judge": "rechter"
+      },
+      "errors": {
+        "loadFailedPrefix": "Kan gebruiksgegevens niet laden:",
+        "retry": "Opnieuw proberen"
+      },
+      "stats": {
+        "totalCalls": "Totale oproepen",
+        "completionCalls": "Voltooiingsoproepen",
+        "routerCalls": "Routeroproepen",
+        "guardrailCalls": "Garantieoproepen",
+        "blockedCalls": "Geblokkeerde oproepen",
+        "errors": "Fouten"
+      },
+      "table": {
+        "rank": "Rang",
+        "model": "Model",
+        "provider": "Provider",
+        "calls": "Oproepen",
+        "errors": "Fouten",
+        "successRate": "Succespercentage",
+        "avgLatency": "Gem. latentie",
+        "p95Latency": "P95-latentie",
+        "inputTokens": "Invoertokens",
+        "outputTokens": "Uitvoertokens",
+        "costPer1k": "Kosten / 1K",
+        "cost": "Kosten (USD)",
+        "bestCostPerformance": "Beste kosteneffectiviteit"
+      },
+      "showMoreModels": "Toon {{count}} meer model",
+      "showMoreModels_other": "Toon {{count}} meer modellen",
+      "showFewerModels": "Minder modellen tonen",
+      "recentCalls": {
+        "title": "Recente oproepen",
+        "empty": "Geen gebruiksrecords voor deze periode.",
+        "columns": {
+          "time": "Tijd",
+          "router": "Router",
+          "model": "Model",
+          "type": "Type",
+          "caller": "Beller",
+          "in": "In",
+          "out": "Uit",
+          "cost": "Kosten",
+          "latency": "Latentie",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Status"
+        }
+      },
+      "pagination": {
+        "previous": "Vorige",
+        "next": "Volgende",
+        "pageOf": "Pagina {{page}} van {{totalPages}}",
+        "totalRecords": "({{count}} totale records)"
+      }
+    },
+    "record": {
+      "back": "Terug",
+      "title": "Oproepdetail",
+      "notFoundTitle": "Record niet gevonden",
+      "notFoundBody": "Gebruiksrecord {{id}} kon niet worden geladen.",
+      "errors": {
+        "loadFailed": "Kan record niet laden"
+      },
+      "sections": {
+        "identity": "Identiteit",
+        "tokensAndCost": "Tokens & kosten",
+        "performanceAndOutcome": "Prestatie & uitkomst",
+        "traceLog": "Tracelogboek"
+      },
+      "fields": {
+        "recordId": "Record-ID",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Oproeptype",
+        "requestType": "Verzoektype",
+        "inputTokens": "Invoertokens",
+        "outputTokens": "Uitvoertokens",
+        "totalTokens": "Totale tokens",
+        "costUsd": "Kosten (USD)",
+        "costUnknown": "Onbekend",
+        "latency": "Latentie",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Uitkomst",
+        "timestamp": "Tijdstempel",
+        "guardrailTriggered": "Garantie geactiveerd",
+        "blockedBy": "Geblokkeerd door",
+        "piiRedacted": "PII geredigeerd"
+      },
+      "errorMessage": "Foutbericht",
+      "eventCount": "{{count}} gebeurtenis",
+      "eventCount_other": "{{count}} gebeurtenissen",
+      "noTrace": "Geen trace beschikbaar. Tracegegevens worden vastgelegd voor nieuwe oproepen."
+    }
+  },
+  "playground": {
+    "title": "Speeltuin",
+    "subtitle": "Test modellen, vergelijk reacties en sla promptvoorinstellingen op.",
+    "mode": {
+      "single": "Enkel",
+      "compare": "Vergelijken"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "zelfde als A",
+      "unknownToken": "Onbekend token"
+    },
+    "presets": {
+      "button": "Voorinstellingen",
+      "panelTitle": "Voorinstellingen",
+      "saveCurrent": "Huidigewaardes opslaan",
+      "namePlaceholder": "Naam voorinstelling...",
+      "save": "Opslaan",
+      "empty": "Nog geen voorinstellingen.",
+      "delete": "Voorinstelling verwijderen"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming niet beschikbaar",
+      "bannerBody": "deze router heeft een reactie-blokkeringsgarantie actief. Routerly moet de volledige reactie inspecteren voordat deze wordt afgeleverd, dus reacties komen in één keer aan.",
+      "tooltip": "Streaming is niet beschikbaar: een reactie-blokkeringsgarantie vereist dat de volledige reactie wordt geïnspecteerd voordat deze wordt afgeleverd.",
+      "ariaLabel": "Streaming niet beschikbaar"
+    },
+    "systemPrompt": "Systeemprompt",
+    "model": "Model",
+    "modelPlaceholder": "Automatisch (router standaard)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Max tokens",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Wissen",
+    "empty": {
+      "noMessages": "Nog geen berichten.",
+      "enterToken": "Voer hierboven een routertoken in om te beginnen."
+    },
+    "reasoning": "Redenatie",
+    "blockedDefault": "Dit bericht werd geblokkeerd door een garantie.",
+    "truncated": "Afgekapt - reactie afgekapt door max tokens",
+    "bufferedNote": "Vastgehouden voor veiligheidsbeoordeling",
+    "errors": {
+      "onlyImages": "Alleen afbeeldingsbijlagen worden ondersteund."
+    },
+    "rawToggle": {
+      "rendered": "weergegeven",
+      "raw": "onbewerkt"
+    },
+    "inputPlaceholder": "Typ een bericht...",
+    "attachImage": "Afbeelding bijvoegen",
+    "attachedImageAlt": "Bijgevoegd",
+    "attachmentAlt": "Bijlage",
+    "debug": {
+      "title": "Debug",
+      "clear": "Wissen",
+      "hide": "Debug verbergen",
+      "show": "Debug tonen",
+      "empty": "Nog geen debug-gegevens.",
+      "emptyHint": "Verzend een bericht om routeringsdetails te zien.",
+      "turnTraceLog": "Beurt #{{turn}} trace logboek"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Model selecteren...",
+      "noMessages": "Nog geen berichten.",
+      "debugTurns": "Debug ({{count}} beurt)",
+      "debugTurns_other": "Debug ({{count}} beurten)",
+      "guardrailTokensTitle": "Garantiebeoordeeltokens",
+      "stop": "Stoppen",
+      "inputPlaceholder": "Verzend hetzelfde bericht naar beide modellen..."
+    }
+  },
+  "help": {
+    "title": "Help & ondersteuning",
+    "subtitle": "We zijn hier om te helpen - vind antwoorden of neem contact op.",
+    "docs": {
+      "title": "Documentatie",
+      "subtitle": "Handleidingen, API-referentie en configuratiedocumenten",
+      "body": "De officiële documenten behandelen alles van aan de slag tot geavanceerde routeringsbeleid, providerupstellingen, budgetten en de volledige API-referentie.",
+      "openLink": "Documentatie openen"
+    },
+    "issues": {
+      "title": "Meld een fout of stel een functie voor",
+      "subtitle": "Open een GitHub-probleem - het duurt 2 minuten",
+      "body": "GitHub-kwesties zijn de beste manier om fouten te melden of verbeteringen voor te stellen. Om ons dingen sneller op te lossen, voeg in: wat u deed, wat u verwachtte te gebeuren en wat er werkelijk gebeurde.",
+      "showTemplate": "Sjabloon probleem tonen",
+      "reportBug": "Fout melden",
+      "requestFeature": "Functie aanvragen"
+    },
+    "issueTemplate": {
+      "whatHappened": "Wat is er gebeurd?",
+      "whatHappenedHint": "Beschrijf het probleem in eenvoudige woorden",
+      "stepsToReproduce": "Stappen om te reproduceren",
+      "expectedBehaviour": "Verwacht gedrag",
+      "expectedBehaviourHint": "Wat u verwachtte te zien",
+      "version": "Routerly-versie",
+      "versionHint": "Voer `routerly --version` uit of controleer Instellingen → Over"
+    },
+    "email": {
+      "title": "Contact opnemen met ondersteuning",
+      "subtitle": "We lezen elk bericht en reageren zo snel mogelijk",
+      "body": "Voor alles wat niet in een GitHub-kwestie past - factureringsvragen, privéaangelegenheden of gewoon hallo zeggen - stuur ons een bericht."
+    },
+    "faq": {
+      "title": "Veelgestelde vragen",
+      "subtitle": "Snelle antwoorden op de meest gestelde vragen",
+      "items": {
+        "connect": {
+          "q": "Hoe verbind ik mijn app met Routerly?",
+          "a": "Wijs uw OpenAI of Anthropic SDK naar uw Routerly-instantie. Vervang de basis-URL door http://uw-host:3000/v1 (OpenAI-compatibel) of http://uw-host:3000/anthropic (Anthropic-compatibel), gebruik vervolgens een router-token als API-sleutel. Dat is het - geen andere wijzigingen nodig."
+        },
+        "openaiCompat": {
+          "q": "Is Routerly compatibel met hulpmiddelen die de OpenAI SDK gebruiken?",
+          "a": "Ja. Routerly is een drop-in vervanging: elk hulpmiddel dat een aangepaste basis-URL en API-sleutel ondersteunt (LangChain, LlamaIndex, Cursor, Continue, enz.) werkt standaard. Voor Anthropic-formatclients gebruikt u in plaats daarvan het /anthropic-eindpunt."
+        },
+        "routing": {
+          "q": "Hoe werkt modelroutering?",
+          "a": "Elke router heeft een routeringsbeleid dat bepaalt welk model een verzoek ontvangt. Beleid omvat round-robin, laagste kosten, snelste reactie, fallback-ketens en meer. U configureert deze per router onder Routers → Routering."
+        },
+        "addModel": {
+          "q": "Hoe voeg ik een nieuw AI-model toe?",
+          "a": "Ga naar Modellen → Model toevoegen. U kunt elke OpenAI-compatibele provider (Ollama, LM Studio, aangepaste eindpunten) of een native Anthropic-eindpunt toevoegen. Vul de basis-URL, API-sleutel en model-ID in - Routerly doet de rest."
+        },
+        "dataStored": {
+          "q": "Worden mijn gegevens opgeslagen? Worden mijn prompts geregistreerd?",
+          "a": "Routerly is zelf-gehost en slaat gegevens alleen op uw machine op (standaard in ~/.routerly/). Prompts en reacties worden nooit ergens door Routerly verzonden. Verzoeklogboeken worden lokaal opgeslagen en alleen als u deze per router inschakelt."
+        },
+        "routerToken": {
+          "q": "Wat is een router-token en hoe verschilt het van een provider API-sleutel?",
+          "a": "Een router-token is een referentie die u aan uw app of teamleden geeft om te verificeren met Routerly. Het staat los van uw provider API-sleutels, die Routerly veilig aan de serverzijde opslaat. Uw apps zien nooit de echte providerssleutels."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} gebruiker",
+    "countLabel_other": "{{count}} gebruikers",
+    "addButton": "Gebruiker toevoegen",
+    "columns": {
+      "email": "E-mailadres",
+      "role": "Rol",
+      "routers": "Routers"
+    },
+    "allRouters": "Alles",
+    "resetTwoFaTitle": "2FA opnieuw instellen",
+    "resetTwoFaConfirm": "2FA opnieuw instellen voor {{email}}? Ze moeten zich opnieuw inschrijven.",
+    "deleteConfirm": "Deze gebruiker verwijderen?",
+    "emptyTitle": "Nog geen gebruikers.",
+    "noPermission": "U hebt geen toestemming om gebruikers te bekijken.",
+    "modal": {
+      "title": "Gebruiker toevoegen",
+      "emailLabel": "E-mailadres",
+      "emailPlaceholder": "gebruiker@voorbeeld.com",
+      "passwordLabel": "Wachtwoord",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rol",
+      "roleAdmin": "Admin",
+      "roleViewer": "Kijker",
+      "cancelButton": "Annuleren",
+      "submitButton": "Gebruiker toevoegen"
+    },
+    "errors": {
+      "loadFailed": "Kan gebruikers niet laden",
+      "addFailed": "Fout"
+    }
+  },
+  "userEdit": {
+    "title": "Gebruiker bewerken",
+    "account": "Account",
+    "email": "E-mailadres",
+    "role": "Rol",
+    "changePassword": "Wachtwoord wijzigen",
+    "newPassword": "Nieuw wachtwoord",
+    "newPasswordHint": "(leeg laten om huidigeerte behouden)",
+    "save": "Opslaan",
+    "saved": "Opgeslagen!",
+    "errors": {
+      "loadFailed": "Kan gebruiker niet laden",
+      "saveFailed": "Kan niet opslaan"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Rollen en machtigingen beheren. Ingebouwde rollen kunnen niet worden gewijzigd.",
+    "newRole": "Nieuwe rol",
+    "builtin": "ingebouwd",
+    "edit": "Bewerken",
+    "deleteConfirm": "Deze rol verwijderen? Gebruikers met deze rol worden beïnvloed.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "bijv. operator",
+      "name": "Naam",
+      "namePlaceholder": "Rolnaam",
+      "permissions": "Machtigingen",
+      "create": "Aanmaken",
+      "save": "Opslaan",
+      "cancel": "Annuleren"
+    },
+    "permissions": {
+      "routerRead": "Routers - Lezen",
+      "routerWrite": "Routers - Schrijven",
+      "modelRead": "Modellen - Lezen",
+      "modelWrite": "Modellen - Schrijven",
+      "userRead": "Gebruikers - Lezen",
+      "userWrite": "Gebruikers - Schrijven",
+      "reportRead": "Rapporten - Lezen",
+      "settingsRead": "Instellingen - Lezen",
+      "settingsWrite": "Instellingen - Schrijven",
+      "notificationWrite": "Meldingen - Schrijven",
+      "tokenRead": "Tokens - Lezen",
+      "tokenWrite": "Tokens - Schrijven",
+      "roleWrite": "Rollen - Schrijven",
+      "auditRead": "Audit-logboek - Lezen",
+      "modulesRead": "Modules - Lezen",
+      "modulesManage": "Modules - Beheren",
+      "connectionsRead": "Verbindingen - Lezen",
+      "connectionsManage": "Verbindingen - Beheren",
+      "resilienceRead": "Veerkracht - Lezen",
+      "resilienceManage": "Veerkracht - Beheren",
+      "profilesRead": "Routeringsprofielen - Lezen",
+      "profilesManage": "Routeringsprofielen - Beheren",
+      "optimizersRead": "Optimizers - Lezen",
+      "optimizersManage": "Optimizers - Beheren",
+      "experimentsRead": "Experimenten - Lezen",
+      "experimentsManage": "Experimenten - Beheren"
+    },
+    "errors": {
+      "loadFailed": "Kan rollen niet laden",
+      "updateFailed": "Kan rol niet bijwerken",
+      "createFailed": "Kan rol niet aanmaken",
+      "deleteFailed": "Kan rol niet verwijderen"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profielen",
+      "subtitle": "Herbruikbare routerings-, optimizer en beveiligingsconfiguraties",
+      "noPermission": "U hebt geen toestemming om profielen te bekijken.",
+      "newProfile": "Nieuw {{kind}} profiel",
+      "empty": "Nog geen {{kind}} profielen.",
+      "builtin": "Ingebouwd",
+      "custom": "Aangepast",
+      "view": "Bekijken",
+      "edit": "Bewerken",
+      "clone": "Klonen",
+      "delete": "Verwijderen",
+      "deleteConfirm": "Profiel \"{{label}}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "kindDescriptions": {
+        "routing": "Welk model beantwoordt een verzoek en wat gebeurt er als het niet kan",
+        "optimizer": "Wat wordt uit een prompt verwijderd voordat het wordt verzonden",
+        "security": "Garanties en PII-beleid toegepast op verkeer"
+      },
+      "columns": {
+        "label": "Label",
+        "type": "Type",
+        "configuration": "Configuratie",
+        "version": "Versie"
+      },
+      "errors": {
+        "loadFailed": "Kan profielen niet laden",
+        "deleteFailed": "Kan profiel niet verwijderen"
+      }
+    },
+    "form": {
+      "backToProfiles": "Terug naar profielen",
+      "newProfileTitle": "Nieuw {{kind}} profiel",
+      "editProfileTitle": "{{label}} bewerken",
+      "builtinHint": "Ingebouwde profielen kunnen niet worden bewerkt. Kloon er een om het aan te passen.",
+      "assignHint": "{{article}} {{kind}} profiel kan aan willekeurig veel routers worden toegewezen.",
+      "noPermission": "U hebt geen toestemming om profielen te bekijken.",
+      "label": "Label",
+      "optimizers": "Optimizers",
+      "optimizersHint": "Sleep om opnieuw in te delen, wissel om in te schakelen. Ze werken van boven naar beneden in volgorde.",
+      "createProfile": "Profiel aanmaken",
+      "saveProfile": "Profiel opslaan",
+      "cancel": "Annuleren",
+      "copySuffix": "{{label}} kopie",
+      "labelPlaceholders": {
+        "routing": "bijv. Mijn Gebalanceerde routering",
+        "optimizer": "bijv. Mijn Prompt Trimmer",
+        "security": "bijv. Mijn Strikte garanties"
+      },
+      "errors": {
+        "notFound": "Profiel niet gevonden.",
+        "loadFailed": "Kan profiel niet laden",
+        "saveFailed": "Kan profiel niet opslaan"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Terug naar verbinden",
+    "title": "Verbinden",
+    "docs": "Documenten",
+    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
+    "noClientPrefix": "Geen client met de naam",
+    "errors": {
+      "loadFailed": "Kan clients niet laden: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Snelste: één opdracht",
+      "description": "Voer het uit op de machine waar {{client}} is geïnstalleerd. Het schrijft {{configPath}} en houdt een back-up bij die u kunt ongedaan maken."
+    },
+    "byHand": {
+      "titleAlt": "Of stel het handmatig in",
+      "titleUi": "Handmatig instellen",
+      "titleConfigFile": "Configuratiebestand instellen",
+      "setValuesIn": "Stel deze waarden in {{configPath}}.",
+      "putThisIn": "Zet dit in",
+      "replaceToken": "Vervangen",
+      "withRouterToken": "met een routertoken:",
+      "createOne": "maak een",
+      "onRoutersPage": "op de routerspagina.",
+      "modelLabel": "Model:",
+      "modelHint": "geeft de keuze aan Routerly, elk model-ID van",
+      "modelsLink": "Modellen",
+      "worksToo": "werkt ook.",
+      "openaiCompatHint": "Dezelfde basis-URL, sleutel en model passen in elke client die een 'OpenAI-compatibele' provider biedt."
+    },
+    "mcp": {
+      "title": "MCP-server",
+      "description": "Gescheiden van de stappen hierboven: deze laat {{client}} de Routerly-tools aanroepen. Het heeft een persoonlijk MCP-token nodig, gemunt met",
+      "orFromYour": "of van uw",
+      "profileLink": "profiel"
+    },
+    "checkItWorked": {
+      "title": "Controleer of het werkte",
+      "restart": "Herstart {{client}}, verzend het een prompt, zoek vervolgens naar de oproep in",
+      "usageLink": "Gebruik",
+      "cliReports": "Van dezelfde machine rapporteert de CLI wat het vindt:"
+    }
+  },
+  "connect": {
+    "title": "Verbinden",
+    "subtitle": "Wijs een AI-codeerclient naar deze gateway. Kies een client voor de setup-stappen.",
+    "llmLabel": "LLM",
+    "llmDescription": "routeert dat clientmodelverkeer door Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "laadt Routerly als toolserver erin.",
+    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
+    "errors": {
+      "loadFailed": "Kan clients niet laden: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Één opdracht",
+      "hint": "De CLI schrijft het configuratiebestand voor u, met een back-up die u kunt ongedaan maken."
+    },
+    "byHand": {
+      "title": "Handmatig",
+      "hint": "Kopieer het snippet van de clientpagina naar de instellingen, herstart het vervolgens."
+    },
+    "endpoint": {
+      "title": "Wijs elke client hier naar",
+      "description": "Alles wat op de OpenAI of Anthropic SDK is gebaseerd, werkt door alleen de basis-URL en de sleutel te wijzigen. Niets anders verandert: verzoeken en reacties kruisen Routerly zoals ze zijn.",
+      "openaiBaseUrl": "OpenAI basis-URL",
+      "anthropicBaseUrl": "Anthropic basis-URL",
+      "apiKey": "API-sleutel",
+      "model": "Model",
+      "apiKeyDescription": "Een router-token, verzonden als",
+      "or": "of",
+      "createOne": "Maak een",
+      "onRoutersPage": "op de routerspagina.",
+      "modelDescription": "laat Routerly kiezen. Elk model-ID van de",
+      "modelsLink": "Modellen",
+      "worksToo": "pagina werkt ook."
+    }
+  }
+}

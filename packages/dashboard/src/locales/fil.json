@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Awtomatiko",
+      "dark": "Madilim",
+      "light": "Maliwanag"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Palawakin ang sidebar",
+      "collapse": "Itiklop ang sidebar"
+    },
+    "tagline": "Isang gateway. Kahit anong AI model. Kumpletong kontrol.",
+    "nav": {
+      "overview": "Pangkalahatang-ideya",
+      "providers": "Mga Provider",
+      "models": "Mga Model",
+      "profiles": "Mga Profile",
+      "routers": "Mga Router",
+      "experiments": "Mga Eksperimento",
+      "usage": "Paggamit",
+      "playground": "Playground",
+      "settings": "Mga Setting",
+      "connectApp": "Ikonekta ang app",
+      "help": "Tulong",
+      "signOut": "Mag-sign Out"
+    },
+    "banner": {
+      "permissionWarning": "May mga configuration file na may permisibong access ({{files}}). Gumagana pa rin ang startup at mga request, pero ayusin ito mula sa host filesystem kapag may oras.",
+      "dismiss": "Isara",
+      "updateAvailable": "Available na ang Routerly v{{latest}}. Ikaw ay sa v{{current}}.",
+      "updateLink": "I-update sa Mga Setting",
+      "mfaRequired": "Kinakailangan ang two-factor authentication para sa instance na ito.",
+      "mfaLink": "I-set up ang 2FA sa iyong Profile",
+      "mfaSuffix": "para protektahan ang iyong account.",
+      "telemetryTitle": "Hindi kailanman awtomatikong nagpapadala ng data ang Routerly.",
+      "telemetryBody": "Nais mo bang tumulong sa pagpapadala ng anonymous install metrics? Event type, version, platform, at random ID lamang — walang personal data, walang IP.",
+      "telemetryLink": "Ano ang ipinapadala?",
+      "telemetryYes": "Oo, tutulong ako",
+      "telemetryNo": "Hindi, salamat"
+    },
+    "language": {
+      "label": "Wika"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} segundo ang nakalipas",
+      "secondsAgo_other": "{{count}} segundo ang nakalipas",
+      "minutesAgo": "{{count}} minuto ang nakalipas",
+      "minutesAgo_other": "{{count}} minuto ang nakalipas",
+      "hoursAgo": "{{count}} oras ang nakalipas",
+      "hoursAgo_other": "{{count}} oras ang nakalipas",
+      "daysAgo": "{{count}} araw ang nakalipas",
+      "daysAgo_other": "{{count}} araw ang nakalipas"
+    },
+    "confirm": "Kumpirmahin",
+    "cancel": "Kanselahin",
+    "remove": "Alisin",
+    "select": "Pumili...",
+    "search": "Maghanap...",
+    "noResults": "Walang resulta",
+    "noRemainingOptions": "Walang natitirang opsyon",
+    "apply": "Ilapat",
+    "saved": "Na-save",
+    "showLess": "Ipakita ang mas kaunti",
+    "roles": "Mga Role",
+    "permissions": "Mga Permiso",
+    "notifications": {
+      "title": "Mga Notipikasyon",
+      "markAllRead": "Markahan lahat bilang nabasa",
+      "empty": "Walang notipikasyon",
+      "viewAll": "Tingnan lahat ng notipikasyon"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Piliin ang panahon",
+      "recent": "Kamakailan",
+      "ranges": "Mga Saklaw",
+      "from": "Mula",
+      "to": "Hanggang"
+    },
+    "permissionGuard": {
+      "fixFailed": "Nabigo ang pag-ayos ng mga permiso",
+      "title": "Hindi ligtas na file permissions",
+      "defaultMessage": "May mga file na hindi ligtas ang permisyon.",
+      "fixing": "Inaayos…",
+      "fixNow": "Ayusin na"
+    },
+    "limitRows": {
+      "noLimits": "Walang itinakdang limitasyon.",
+      "metricLabel": "Metric",
+      "typeLabel": "Uri",
+      "periodLabel": "Panahon",
+      "everyLabel": "Bawat",
+      "maxCost": "Max na gastos",
+      "maxCount": "Max na bilang",
+      "maxTokens": "Max na tokens",
+      "allCombosSet": "Naitakda na lahat ng kombinasyon ng metric/panahon",
+      "addLimit": "Magdagdag ng limitasyon",
+      "metric": {
+        "cost": "Gastos",
+        "calls": "Mga Tawag",
+        "input_tokens": "Input tokens",
+        "output_tokens": "Output tokens",
+        "total_tokens": "Kabuuang tokens"
+      },
+      "period": {
+        "hourly": "Oras-oras",
+        "daily": "Araw-araw",
+        "weekly": "Lingguhan",
+        "monthly": "Buwanan",
+        "yearly": "Taunan"
+      },
+      "rollingUnit": {
+        "second": "segundo",
+        "minute": "minuto",
+        "hour": "oras",
+        "day": "araw",
+        "week": "linggo",
+        "month": "buwan"
+      },
+      "windowType": {
+        "period": "Panahon",
+        "rolling": "Rolling"
+      },
+      "fmt": {
+        "requests": "{{value}} na request",
+        "inputTokens": "{{value}} input tokens",
+        "outputTokens": "{{value}} output tokens",
+        "totalTokens": "{{value}} kabuuang tokens",
+        "everyRolling": "{{metric}} bawat {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} kada {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Ang naitipid ng routing",
+      "input": "Input",
+      "output": "Output",
+      "actual": "Aktwal",
+      "clientCalls": "{{count}} client call",
+      "clientCalls_other": "{{count}} client calls",
+      "comparedAgainst": ", inihambing laban sa pagpapadala nito sa bawat isa sa",
+      "comparedAgainst_other": ", inihambing laban sa pagpapadala ng lahat sa bawat isa sa",
+      "paidModelsInPlay": "{{count}} bayad na model na kasangkot",
+      "paidModelsInPlay_other": "{{count}} bayad na mga model na kasangkot",
+      "metricCost": "Gastos",
+      "metricTokens": "Tokens",
+      "totalCost": "Kabuuang Gastos",
+      "routed": "Nairuta: {{value}}",
+      "saved": "Naitipid: {{value}}",
+      "usdThisPeriod": "USD sa panahong ito",
+      "savedVsAlways": "{{value}} naitipid ({{percent}}%) laban sa palaging {{model}}",
+      "tokens": "Tokens",
+      "in": "In: {{value}}",
+      "out": "Out: {{value}}",
+      "tokenSubWithCache": "{{in}} in · {{out}} out · {{cached}} cached",
+      "tokenSub": "{{in}} in · {{out}} out",
+      "cutByOptimizers": "{{value}} binawas ng mga optimizer",
+      "fewerThanAlways": "{{value}} mas kaunti kaysa sa palaging {{model}}, tinatayang halaga"
+    },
+    "optimizerSteps": {
+      "downloaded": "Na-download",
+      "thisStepRunsOn": "Tumatakbo ang hakbang na ito sa",
+      "defaultCheckpoint": "Default na checkpoint"
+    },
+    "routingPolicies": {
+      "title": "Mga Patakaran sa Routing",
+      "subtitle": "Ang mga patakaran ay tumutukoy kung paano nairuruta ang mga request. Isinasagawa ang mga ito sa pagkasunod-sunod mula sa taas hanggang ibaba.",
+      "removePolicy": "Alisin ang patakaran",
+      "removeIntent": "Alisin ang intent",
+      "removeExample": "Alisin ang halimbawa",
+      "routingModels": "Mga Routing Model",
+      "embeddingModels": "Mga Embedding Model",
+      "maxCompletionTokens": "Max na completion tokens",
+      "maxPromptChars": "Max na prompt chars",
+      "similarityThreshold": "Similarity threshold",
+      "previousMessages": "Mga naunang mensahe",
+      "intents": "Mga Intent",
+      "confidenceThreshold": "Confidence threshold",
+      "ambiguityMargin": "Ambiguity margin",
+      "maxCallsPerWindow": "Max na tawag kada window",
+      "addFallbackModel": "Magdagdag ng Fallback Model",
+      "autoRoutingLabel": "Auto Routing",
+      "autoRoutingHint": "Kung pinagana, ipinamamahagi ang trapiko nang walang custom na prompt. Kung hindi pinagana, maaari kang sumulat ng partikular na prompt na nagtuturo sa AI kung kailan pipiliin ang bawat target model.",
+      "additionalPromptInfoLabel": "Karagdagang Impormasyon sa Prompt",
+      "additionalPromptInfoPlaceholder": "Karagdagang tagubilin na isasama sa routing prompt...",
+      "addExamplePlaceholder": "Magdagdag ng halimbawa at pindutin ang Enter…",
+      "addIntentPlaceholder": "Magdagdag ng intent at pindutin ang Enter…",
+      "addPolicyPlaceholder": "Magdagdag ng patakaran...",
+      "labels": {
+        "llm": "AI Routing Policy",
+        "rate-limit": "Rate Limit Policy",
+        "budget-remaining": "Budget Remaining Policy",
+        "semantic-intent": "Semantic Intent Policy",
+        "health": "Health Policy",
+        "context": "Context Policy",
+        "capability": "Capability Policy",
+        "performance": "Performance Policy",
+        "fairness": "Fairness Policy",
+        "cheapest": "Cheapest Policy",
+        "model-preference": "Model Preference Policy"
+      },
+      "descriptions": {
+        "context": "Nagtatakda ng score sa mga model batay sa available na context window. Nagbibigay ng 0 sa mga model kung mas maliit ang context window kaysa sa tinatayang haba ng request, iniiwasan ang truncation errors.",
+        "cheapest": "Nagtatakda ng score sa mga model nang inversely proportional sa gastos kada token. Ang pinakamurang model ay nakakakuha ng 1.0, ang pinakamahal ay 0.0, nakakatulong bawasan ang gastos sa API sa mga request.",
+        "health": "Nagtatakda ng score sa mga model batay sa kanilang kamakailang error rate gamit ang exponential decay (mas mabigat ang bagong errors). Naglalapat ng circuit breaker na nagtatakda ng score sa 0 kapag lumampas ang weighted error rate sa kritikal na threshold.",
+        "performance": "Nagtatakda ng score sa mga model batay sa kanilang kamakailang average latency gamit ang exponential decay. Ang pinakamabilis na model ay nakakakuha ng 1.0, ang pinakamabagal ay 0.0. Ang mga model na walang kamakailang datos ay default sa 1.0.",
+        "llm": "Gumagamit ng AI model upang bigyang-score ang mga kandidato batay sa semantikong nilalaman ng request. Sinusuportahan ang mga routing guidance prompt kada model at isinasaalang-alang ang budget headroom kung nakakonfigure ang mga limitasyon.",
+        "capability": "Hard filter: nagbibigay ng 0 sa mga model na hayagang walang feature na kailangan ng request (vision, function calling, JSON mode). Hindi pinaparusahan ang mga model na walang hayagang deklarasyon ng kapasidad.",
+        "rate-limit": "Pinaparusahan ang mga model na may mataas na kamakailang dalas ng tawag upang bawasan ang panganib ng pag-abot sa rate limit ng provider (HTTP 429). Sinusuportahan ang isang naikonfigureng hard threshold na pumipwersa sa score na 0.",
+        "fairness": "Pantay-pantay na ipinamamahagi ang trapiko sa pamamagitan ng pagparusa sa mga model na nakatanggap ng mas maraming matagumpay na tawag kamakailan. Kumikilos bilang soft round-robin upang maiwasan ang konsentrasyon ng load sa isang model.",
+        "budget-remaining": "Nagtatakda ng score sa mga model batay sa natitirang budget headroom sa lahat ng nakakonfigureng limitasyon. Pinapaboran ang mga model na may mas maraming espasyo bago maabot ang kanilang threshold, kusang ipinamamahagi ang pagkonsumo.",
+        "semantic-intent": "Iniuri ang request ayon sa semantikong intent gamit ang embeddings, pagkatapos ay ipinipigil ang pool ng kandidato sa mga model na naka-map sa intent na iyon. Ang tiwalang tugma ay hard-filter sa pool; ang malabong tugma ay pinagsasama ang top-2 pools; ang hindi kilalang request ay pinapasa lahat ng kandidato.",
+        "model-preference": "Kapag humingi ang client ng partikular na model (hindi routerly/ada), nagbibigay ng naikonfigureng bonus score sa model na iyon. Kapag walang preference na naipahayag, hindi kumikilos ang patakaran. Ang posisyon sa listahan ay kontrolado kung gaano ito bumibigat laban sa iba pang patakaran."
+      },
+      "selectModel": "Piliin ang model"
+    },
+    "securityRules": {
+      "applyTo": "Ilapat sa",
+      "streamingBufferSize": "Laki ng streaming buffer (mga karakter)",
+      "entityTypes": "Mga uri ng entity",
+      "target": "Target",
+      "embeddingModel": "Embedding model",
+      "judgeModel": "Judge model",
+      "contentGuardrails": "Content Guardrails",
+      "piiPolicies": "Mga PII Policy",
+      "addSecurityPolicyPlaceholder": "Magdagdag ng security policy...",
+      "removePolicyTooltip": "Alisin ang patakaran",
+      "deleteRuleAriaLabel": "Burahin ang rule",
+      "embeddingModelPlaceholder": "Piliin ang embedding model...",
+      "fallbackModelsLabel": "Mga fallback model (opsyonal, sinusubukan ayon sa pagkasunod-sunod)",
+      "fallbackModelsPlaceholder": "Walang fallback model...",
+      "exampleTextsLabel": "Mga halimbawang teksto na hahadlangan (isa kada linya)",
+      "exampleTextsPlaceholder": "Paano ako mag-hack...\n...",
+      "similarityThresholdLabel": "Similarity threshold:",
+      "judgeModelPlaceholder": "Piliin ang judge model...",
+      "allowedTopicsLabel": "Pinapayagang mga topiko (natural na wika)",
+      "allowedTopicsPlaceholder": "Suporta sa customer para sa mga produktong software. Technical troubleshooting. Mga tanong sa billing.",
+      "onTopicThresholdLabel": "Hadlangan kung mas mababa ang on-topic score sa:",
+      "harmThresholdLabel": "Hadlangan kung mas mataas ang harm score sa:",
+      "customInstructionsLabel": "Custom na tagubilin",
+      "customInstructionsPlaceholder": "Ikaw ay isang content safety classifier. Suriin ang sumusunod na teksto para sa nakakapinsalang nilalaman.\nMga kategorya: hate speech, karahasan, sexual content, self-harm.\nSumagot LAMANG gamit ang JSON object: {\"score\": <numero mula 0 hanggang 1>}",
+      "customInstructionsRequired": "Kinakailangan ang custom na tagubilin.",
+      "enabledLabel": "Pinagana",
+      "contentGuardrailsHint": "Sinusuri ang mga request at response laban sa nakakonfigureng mga rule. Aktibo kapag may kahit isang rule na nakakonfigure.",
+      "securityPoliciesHeading": "Mga Security Policy",
+      "noSecurityPolicies": "Walang nakakonfigureng security policy.",
+      "piiPoliciesHint": "Nakikita at binubura ang personal na data. Ang bawat policy ay nakatutok sa request input, model response, o pareho, at kontrolado ang sarili nitong set ng entity.",
+      "noPiiPolicies": "Walang nakakonfigureng PII policy.",
+      "addPolicyButton": "+ Magdagdag ng Policy",
+      "injectionWarningTitle": "Binago ng injection ang request payload",
+      "injectionWarningBody": "Isa o higit pang rule ang nagtuturok ng kanilang tagubilin sa system prompt ng papalabas na request, kaya binago ang payload na ipinapadala sa provider. Walang karagdagang model call ang gagawin at walang hinaharang; ang naghahatid na model ang mismong nagpapatupad ng tagubilin.",
+      "streamingDisabledWarningTitle": "Naka-disable ang streaming para sa router na ito",
+      "streamingDisabledWarningBody": "Isa o higit pang rule ang nakakonfigure upang hadlangan ang mga response (target: response o pareho). Dahil kailangang suriin nang buo ang buong response bago gumawa ng desisyon sa pagharang, hinahawakan ng Routerly ang response sa kabuuan bago ito ibalik sa client. Hindi available ang streaming habang aktibo ang isang rule na humaharang sa response; makakatanggap ang mga client ng kumpletong response nang sabay-sabay sa halip na paunti-unti."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure Resource Name",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Ang pangalan ng Azure OpenAI resource (mula sa Azure portal).",
+      "deploymentId": "Deployment ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Ang pangalan ng deployment na ginawa mo sa Azure OpenAI Studio.",
+      "azureApiVersionLabel": "API Version",
+      "azureApiVersionDefaultHint": "(default: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS Region",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Iwanang blangko upang panatilihin ang umiiral na halaga",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Session Token",
+      "awsSessionTokenOptionalHint": "(opsyonal, para sa pansamantalang kredensyal)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Router ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Lokasyon",
+      "gcpLocationDefaultHint": "(default: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Service Account Key",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Endpoint URL",
+      "optional": "(opsyonal)",
+      "webProvider": {
+        "unofficialWarningTitle": "Hindi opisyal na provider — gamitin sa iyong sariling panganib.",
+        "unofficialWarningBody": "Ang integration na ito ay umaasa sa isang undocumented internal API na maaaring magbago o masira nang walang paunawa. Maaari itong labagin ang Terms of Service ng provider at maging sanhi ng suspension ng account.",
+        "accessTokenLabel": "Access Token",
+        "sessionTokenLabel": "Session Token",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "I-paste ang halaga ng sessionKey cookie (sk-ant-sid01-…)",
+        "openaiInstructions": "Habang naka-login sa ChatGPT, buksan ang <code>https://chatgpt.com/api/auth/session</code> sa bagong tab. Kopyahin ang halaga ng field na <code>accessToken</code> (nagsisimula sa <code>eyJ</code>). Ang token ay mawawalan ng bisa kada ~24 oras. Para sa maaasahang access, punan din ang <strong>cf_clearance</strong> field sa ibaba.",
+        "anthropicInstructions": "<strong>Paano makuha ang iyong session key:</strong> Habang naka-login sa Claude, buksan ang DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopyahin ang halaga ng <code>sessionKey</code> cookie (nagsisimula sa <code>sk-ant-sid01-</code>). Ang key ay mananatiling wasto hanggang sa mag-log out ka."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Subscription OAuth Token",
+        "authFilePathLabel": "Auth file path",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (default)",
+        "anthropicTitle": "Gamitin ang iyong Claude Pro/Max subscription.",
+        "anthropicRunCommandStep": "Patakbuhin ang command na ito at kopyahin ang token na inilathala nito:",
+        "anthropicPasteTokenStep": "I-paste ang token sa <em>Subscription OAuth Token</em> field sa ibaba.",
+        "termsNote": "I-regenerate kapag nag-expire ito. Ang paggamit ng subscription sa pamamagitan ng gateway ay maaaring labag sa Terms ng provider.",
+        "openaiTitle": "Gamitin ang iyong ChatGPT Plus/Pro subscription sa pamamagitan ng Codex app.",
+        "openaiLoginStep": "Mag-log in sa Codex desktop app gamit ang iyong ChatGPT Plus/Pro account.",
+        "openaiAutoRefreshStep": "Binabasa ng Routerly ang iyong access token mula sa <code>~/.codex/auth.json</code> at awtomatikong niri-refresh ito. Hindi kailangan ng manual copy/paste.",
+        "openaiAuthFilePathStep": "Iwanang blangko ang <em>Auth file path</em> field upang gamitin ang default, o maglagay ng custom path kung saan ibang lugar iniimbak ng iyong Codex app ang auth.",
+        "openaiTermsNote": "Ang paggamit ng subscription sa pamamagitan ng gateway ay maaaring labag sa Terms ng provider."
+      },
+      "copyCode": {
+        "copiedTooltip": "Nakopya!",
+        "copyTooltip": "Kopyahin sa clipboard",
+        "copiedLabel": "Nakopya",
+        "copyLabel": "Kopyahin"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopyahin",
+      "copiedLabel": "Nakopya!",
+      "copyErrorHint": "Nabigo ang kopya, piliin at kopyahin nang manwal."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP client",
+      "hints": {
+        "claudeCode": "Patakbuhin ito nang isang beses, kahit saan. Iniimbak ng Claude Code ang server sa <code>~/.claude.json</code>.",
+        "claudeDesktop": "Ilagay ito sa <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (sa Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), pagkatapos ay i-restart ang app. Nagsisimula ito ng CLI, kaya kailangang naka-PATH ang <code>routerly</code>.",
+        "codex": "Ilagay ito sa <code>~/.codex/config.toml</code>. Binabasa ng Codex ang token mula sa environment, kaya i-export ito sa shell kung saan mo pinapasimulan ang Codex.",
+        "opencode": "Ilagay ito sa <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Patakbuhin ito nang isang beses. Ang default ng OpenClaw ay sse transport, na hindi pinaghahatid ng Routerly, kaya itinatakda nang hayagan ang transport.",
+        "cursor": "Ilagay ito sa <code>~/.cursor/mcp.json</code>, o sa <code>.cursor/mcp.json</code> upang limitahan sa isang proyekto.",
+        "cline": "Ilagay ito sa <code>~/.cline/mcp.json</code>, o i-paste ito sa Configure MCP Servers sa Cline panel.",
+        "zed": "Ilagay ito sa iyong Zed <code>settings.json</code>, kasama ng iba pang context server."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Mga Hindi Na-save na Pagbabago",
+      "message": "May mga hindi na-save na pagbabago ka. Kung aalis ka ngayon, mawawala ang iyong mga pagbabago.",
+      "stay": "Manatili",
+      "leaveAnyway": "Umalis na rin"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Guardrails",
+        "pii": "PII",
+        "optimizers": "Mga Optimizer",
+        "routerOverhead": "Overhead ng router"
+      },
+      "policyType": {
+        "llm": "AI Routing",
+        "rateLimit": "Rate Limit",
+        "budgetRemaining": "Budget Remaining",
+        "semanticIntent": "Semantic Intent",
+        "modelPreference": "Model Preference"
+      },
+      "rawDetails": "raw details",
+      "technicalDetails": "technical details",
+      "systemPrompt": "system prompt",
+      "responseText": "response text",
+      "responseJson": "response JSON",
+      "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Embedding Model",
+      "upstreamModel": "Upstream Model",
+      "provider": "Provider",
+      "source": "Pinagmulan",
+      "endpoint": "Endpoint",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "Pinahaba ang TTL",
+      "model": "Model",
+      "similarity": "Similarity",
+      "embedding": "Embedding",
+      "cacheMiss": "CACHE MISS",
+      "details": "detalye",
+      "excludedByLimits": "IBINUKOD DAHIL SA LIMITASYON",
+      "finalRanking": "FINAL RANKING",
+      "noRankingData": "Walang ranking data (maaaring sira ang record o mula sa lumang bersyon)",
+      "policyScores": "MGA SCORE NG POLICY",
+      "weight": "timbang {{value}}",
+      "allScores": "lahat ng score",
+      "noPolicyData": "Walang policy data (maaaring sira ang record o mula sa lumang bersyon)",
+      "requestGuardrailBlocked": "REQUEST GUARDRAIL BLOCKED",
+      "requestGuardrailTriggered": "REQUEST GUARDRAIL TRIGGERED",
+      "responseGuardrailBlocked": "RESPONSE GUARDRAIL BLOCKED",
+      "responseGuardrailTriggered": "RESPONSE GUARDRAIL TRIGGERED",
+      "rule": "Rule",
+      "action": "Aksyon",
+      "guardrailsEvaluated": "MGA GUARDRAIL NA NASURI ({{target}})",
+      "ruleCount": "{{count}} rule",
+      "ruleCount_other": "{{count}} rule",
+      "promptInjection": "Prompt injection",
+      "injects": "itutok",
+      "judgeResponse": "Tugon ng judge",
+      "piiScrubbed": "PII SCRUBBED",
+      "piiScanned": "PII SCANNED ({{target}})",
+      "policies": "mga patakaran",
+      "entityTypes": "mga uri ng entity",
+      "customPatterns": "custom patterns",
+      "scanned": "na-scan",
+      "redacted": "binura",
+      "took": "tumagal",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "mga uri ng entity na na-scan",
+      "guardrailInjection": "GUARDRAIL INJECTION",
+      "rules": "mga rule",
+      "chars": "mga karakter",
+      "injectedText": "itinurok na teksto",
+      "optimizer": "OPTIMIZER {{id}}",
+      "tokens": "tokens",
+      "saved": "naitipid",
+      "tok": "{{value}} tok",
+      "reason": "dahilan",
+      "budgetBlocked": "BUDGET BLOCKED",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "EGRESS SENT",
+      "status": "status",
+      "encoding": "encoding",
+      "frames": "mga frame",
+      "bytes": "bytes"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Aking Profile",
+      "subtitle": "Pamahalaan ang mga setting ng iyong account"
+    },
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Mga Notipikasyon",
+      "mcp": "MCP",
+      "preferences": "Mga Kagustuhan"
+    },
+    "notifications": {
+      "close": "Isara",
+      "refresh": "I-refresh",
+      "clear": "Alisin",
+      "empty": "Walang nahanap na notipikasyon.",
+      "markAllRead": "Markahan lahat bilang nabasa",
+      "allCaughtUp": "Wala nang bago",
+      "unreadCount": "{{count}} hindi nabasa",
+      "selectedCount": "{{count}} napili",
+      "severity": {
+        "all": "Lahat",
+        "info": "Impormasyon",
+        "warning": "Babala",
+        "critical": "Kritikal"
+      },
+      "status": {
+        "read": "Nabasa",
+        "unread": "Hindi Nabasa"
+      },
+      "filters": {
+        "severity": "Antas ng Kaseryosohan",
+        "category": "Kategorya",
+        "event": "Kaganapan",
+        "date": "Petsa",
+        "period": "Panahon",
+        "status": "Status",
+        "all": "Lahat",
+        "allCategories": "Lahat ng kategorya",
+        "allEvents": "Lahat ng kaganapan",
+        "unreadOnly": "Hindi nabasa lamang"
+      },
+      "actions": {
+        "markRead": "Markahan bilang nabasa",
+        "markUnread": "Markahan bilang hindi nabasa",
+        "archive": "I-archive"
+      },
+      "table": {
+        "severity": "Antas ng Kaseryosohan",
+        "event": "Kaganapan",
+        "date": "Petsa",
+        "status": "Status",
+        "selectAll": "Piliin lahat",
+        "selectRow": "Piliin ang {{event}}",
+        "eventCount": "{{count}} kaganapan"
+      },
+      "pagination": {
+        "previous": "← Nauna",
+        "next": "Susunod →",
+        "page": "Pahina {{page}} ng {{totalPages}}",
+        "total": "({{count}} kabuuan)"
+      },
+      "detail": {
+        "ariaLabel": "Detalye ng notipikasyon",
+        "details": "Mga Detalye",
+        "noDetails": "Walang karagdagang detalye.",
+        "eventsInIncident": "Mga kaganapan sa insidenteng ito"
+      }
+    },
+    "security": {
+      "roleLabel": "Role:",
+      "password": {
+        "heading": "Palitan ang Password",
+        "currentLabel": "Kasalukuyang Password",
+        "newLabel": "Bagong Password",
+        "newPlaceholder": "Minimum na 8 karakter",
+        "confirmLabel": "Kumpirmahin ang Bagong Password",
+        "success": "Matagumpay na napalitan ang password.",
+        "saving": "Sine-save...",
+        "submit": "Palitan ang Password",
+        "errors": {
+          "mismatch": "Hindi tugma ang mga password.",
+          "tooShort": "Ang bagong password ay dapat hindi bababa sa 8 karakter.",
+          "updateFailed": "Nabigo ang pag-update"
+        }
+      },
+      "tfa": {
+        "heading": "Two-Factor Authentication",
+        "notEnabled": "Hindi pinagana ang 2FA. Protektahan ang iyong account gamit ang time-based one-time password.",
+        "enableButton": "Paganahin ang Two-Factor Authentication",
+        "scanInstructions": "I-scan ang QR code na ito gamit ang iyong authenticator app (Google Authenticator, Authy, atbp.), pagkatapos ilagay ang 6-digit code upang kumpirmahin.",
+        "qrAlt": "QR code ng 2FA setup",
+        "addAccountInstructions": "Buksan ang iyong authenticator app (Google Authenticator, Authy, 1Password, atbp.) at magdagdag ng bagong account:",
+        "setup": {
+          "step1": "Pindutin ang <strong>Add account</strong> o ang <strong>+</strong> button",
+          "step2": "Piliin ang <strong>Enter setup key</strong> (o i-scan ang QR code kung sa mobile)",
+          "step3": "Ilagay ang secret na nasa ibaba"
+        },
+        "mobileLink": "Pindutin dito sa mobile upang buksan ang authenticator",
+        "manualEntryLabel": "Manual entry secret:",
+        "saveBackupCodes": "I-save ang mga backup code na ito. Ang bawat isa ay maaaring gamitin nang isang beses kung mawala ang access mo sa iyong authenticator.",
+        "copyBackupCodes": "Kopyahin ang mga backup code",
+        "confirmCodeLabel": "Ilagay ang code mula sa iyong app upang i-activate",
+        "activate": "I-activate ang 2FA",
+        "cancel": "Kanselahin",
+        "enabledBadge": "Pinagana ang 2FA",
+        "newBackupCodesLabel": "Mga bagong backup code (i-save ito ngayon):",
+        "copy": "Kopyahin",
+        "regenLabel": "Ilagay ang authenticator code upang i-regenerate ang mga backup code",
+        "regenerate": "I-regenerate",
+        "regenerateBackupCodes": "I-regenerate ang mga backup code",
+        "disableLabel": "I-disable ang 2FA (ilagay ang authenticator code)",
+        "disable": "I-disable ang 2FA",
+        "errors": {
+          "setupFailed": "Nabigo ang setup",
+          "confirmFailed": "Nabigo ang kumpirmasyon",
+          "disableFailed": "Nabigo ang pag-disable",
+          "regenFailed": "Nabigo ang pag-regenerate"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Nabigong i-load ang MCP surface",
+        "revokeFailed": "Nabigong bawiin ang token"
+      },
+      "revokeConfirm": "Bawiin ang MCP token \"{{name}}\"? Agad na titigil sa paggana ang mga client na gumagamit nito.",
+      "tokens": {
+        "heading": "Mga MCP Token",
+        "newToken": "Bagong Token",
+        "description": "Ang bawat token ay kumikilos bilang ikaw: nagpapakita ito ng eksaktong mga tool na pinapayagan ng iyong role. Ipapakita ang buong halaga nang isang beses lamang, sa pahinang gumawa nito.",
+        "empty": "Walang MCP token pa. Gumawa ng isa upang ikonekta ang MCP client.",
+        "created": "Ginawa",
+        "lastUsed": "Huling ginamit",
+        "expires": "Mawawalan ng bisa",
+        "never": "Kailanman",
+        "revokeTitle": "Bawiin ang token"
+      },
+      "tools": {
+        "heading": "Mga Tool na Ipinapakita ng Iyong Mga Token",
+        "empty": "Walang MCP tool na binibigay ng iyong role. Humingi ng permiso na kailangan mo mula sa administrator.",
+        "table": {
+          "name": "Pangalan",
+          "scope": "Saklaw",
+          "description": "Paglalarawan",
+          "sourceModule": "Modyul na pinagmulan",
+          "permission": "Permiso"
+        }
+      },
+      "connect": {
+        "heading": "Ikonekta ang MCP Client",
+        "descriptionPre": "Piliin ang client na iyong ikonekonekta, tapos palitan",
+        "descriptionPost": "ng isa sa iyong mga token. Ang paggawa ng token ay nagpapakita ng parehong snippet na may halaga na na nailagay.",
+        "otherClient": "Kahit anong ibang client",
+        "httpInstructionsPre": "Sa HTTP, ituro ito sa endpoint na ito at mag-authenticate gamit ang",
+        "httpInstructionsPost": ". Ito ay JSON-RPC 2.0 sa ibabaw ng Streamable HTTP.",
+        "stdioInstructionsPre": "Sa stdio, ang CLI ang nagkokonekta at nagpapasa ng iyong token. Direktang pinapatakbo ang service sa halip? Itakda ang",
+        "stdioInstructionsAnd": "at",
+        "stdioInstructionsPost": "mismo."
+      },
+      "newToken": {
+        "backToMcp": "Bumalik sa MCP",
+        "title": "Bagong MCP Token",
+        "subtitle": "Kikilos ang token bilang ikaw: eksaktong ipapakita ang mga tool na pinapayagan ng iyong role.",
+        "nameLabel": "Pangalan",
+        "namePlaceholder": "laptop",
+        "nameHint": "Kung saan ginagamit ang token na ito, halimbawa \"laptop\" o \"claude-desktop\".",
+        "expiryLabel": "Mawawalan ng bisa sa",
+        "expiryHint": "Opsyonal. Iwanang blangko at hindi mawawalan ng bisa ang token, hanggang sa bawiin mo ito.",
+        "createButton": "Gumawa ng token",
+        "creatingButton": "Ginagawa…",
+        "cancelButton": "Kanselahin",
+        "tokenSection": {
+          "title": "Ang iyong token",
+          "hint": "Kopyahin na ito ngayon. Hindi na ito ipapakita ulit, at ang nawalang token ay mapapalitan lamang.",
+          "copyButton": "Kopyahin",
+          "copiedButton": "Nakopya!",
+          "copyTitle": "Kopyahin ang token",
+          "copiedTitle": "Nakopya!"
+        },
+        "connectSection": {
+          "title": "Ikonekta ang isang client",
+          "hint": "Piliin ang client na iyong ikonekonekta. Ang snippet ay dala na ang token na ito."
+        },
+        "bridgeSection": {
+          "title": "O gamitin ang local bridge",
+          "hint": "Para sa client na sumusuporta lamang sa stdio, ang CLI ang nagkokonekta at nagpapasa ng iyong token."
+        },
+        "doneButton": "Tapos",
+        "errors": {
+          "createFailed": "Nabigong gumawa ng token",
+          "copyFailed": "Nabigo ang kopya, piliin at kopyahin ang token nang manwal."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Wika",
+      "description": "Piliin ang wikang gagamitin sa pagpapakita ng dashboard.",
+      "languageLabel": "Wika",
+      "saved": "Na-save ang kagustuhan sa wika."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga setting",
+        "loadFailedPeriod": "Nabigong i-load ang mga setting.",
+        "saveFailed": "Nabigong i-save",
+        "saveSettingsFailed": "Nabigong i-save ang mga setting"
+      },
+      "savedSuccess": "Matagumpay na na-save ang mga setting.",
+      "saving": "Sine-save…",
+      "saveSettings": "I-save ang mga Setting",
+      "serverInfo": {
+        "heading": "Impormasyon ng Server",
+        "readOnly": "Read-only lamang. Ang host at port ay galing sa environment o sa settings file, hindi mula rito.",
+        "reachableAt": "Naaabot sa",
+        "reachableAtAny": "Naaabot sa kahit alin sa mga address na ito",
+        "thisMachine": "Ang makinang ito",
+        "network": "Network",
+        "copyAddress": "Kopyahin ang {{address}}",
+        "copied": "Nakopya!",
+        "copy": "Kopyahin",
+        "hostAndPort": "Host at Port",
+        "version": "Bersyon",
+        "uptime": "Uptime"
+      },
+      "runtime": {
+        "heading": "Mga Runtime Setting",
+        "logLevel": "Log Level",
+        "logLevelHint": "Kontrolado ang detalye ng mga log ng service.",
+        "publicUrl": "Public URL",
+        "publicUrlHint": "Base URL kung saan naaabot ang service mula sa mga panlabas na client (hal. <code>http://192.168.1.10:3000</code>). Ginagamit sa seksyong <strong>Paano magkonekta</strong> ng bawat router. Kapaki-pakinabang kung ang dashboard ay tumatakbo sa ibang makina o port kaysa sa service.",
+        "usageRetention": "Usage Retention",
+        "noLimit": "Walang limitasyon",
+        "maxAgeDays": "Max na edad (araw)",
+        "maxSizeMb": "Max na laki (MB)",
+        "retentionHint": "Ang kasaysayan ng usage/billing na mas matanda sa bilang na ito ng araw, o lumagpas sa laking ito, ay tinatanggal mula sa aktibong log. Iwanang blangko ang dalawa upang walang limitasyon sa retention."
+      },
+      "internationalization": {
+        "heading": "Pandaigdigang Wika",
+        "defaultLanguage": "Wika na Bilang Default",
+        "defaultLanguageHint": "Wika ng dashboard para sa mga gumagamit na hindi pa nakapili ng kanilang sariling wika. Hindi hindi-lamang ang personal na pagpili ng user."
+      },
+      "telemetry": {
+        "heading": "Anonymous Metrics",
+        "neverAutomatic": "Hindi kailanman awtomatikong nagpapadala ng data ang Routerly.",
+        "noChoice": "Wala ka pang napiling opsyon.",
+        "enabledStatus": "Pinagana ang anonymous install metrics.",
+        "disabledStatus": "Naka-disable ang anonymous install metrics.",
+        "explanation": "Kapag pinagana, ipapadala lamang ng Routerly: event type (install / upgrade / uninstall), bersyon, platform, at random ID. Walang personal data, walang usage data, walang IP na naiimbak.",
+        "whatIsSent": "Ano ang ipinapadala?",
+        "installId": "Install ID: {{id}}",
+        "saving": "Sine-save…",
+        "enable": "Paganahin",
+        "disable": "I-disable"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Dashboard (in-app inbox)",
+          "description": "Ipinapadala ang mga kaganapan sa in-app inbox"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Custom mail server"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail sa pamamagitan ng OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook callback"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Provider – Error",
+        "providerDegraded": "Provider – Degraded",
+        "providerRecovered": "Provider – Nabawi",
+        "providerRateLimited": "Provider – Rate Limited",
+        "routingNoCandidates": "Routing – Walang Kandidato",
+        "routingFallbackUsed": "Routing – Ginamit ang Fallback",
+        "authLoginFailed": "Auth – Nabigo ang Login",
+        "authTokenInvalid": "Auth – Hindi Wastong Token",
+        "configModelAdded": "Config – Idinagdag ang Model",
+        "configModelDeleted": "Config – Binura ang Model",
+        "configRouterCreated": "Config – Ginawa ang Router",
+        "configRouterDeleted": "Config – Binura ang Router",
+        "budgetThresholdReached": "Budget – Naabot ang Threshold",
+        "budgetExceeded": "Budget – Nalampasan",
+        "budgetReset": "Budget – Na-reset",
+        "systemStartup": "System – Startup",
+        "systemShutdown": "System – Shutdown",
+        "systemUpdateAvailable": "System – Available ang Update"
+      },
+      "removeChannelTooltip": "Alisin ang channel",
+      "removeChannelConfirm": "Alisin ang channel?",
+      "formUpdatedHint": "Na-update ang form — i-save upang ilapat.",
+      "hmacSigningKeyPlaceholder": "HMAC signing key",
+      "perms": {
+        "routerRead": "Routers – Read",
+        "routerWrite": "Routers – Write",
+        "modelRead": "Models – Read",
+        "modelWrite": "Models – Write",
+        "userRead": "Users – Read",
+        "userWrite": "Users – Write",
+        "reportRead": "Reports – Read",
+        "settingsRead": "Settings – Read",
+        "settingsWrite": "Settings – Write",
+        "notificationWrite": "Notifications – Write",
+        "tokenRead": "Tokens – Read",
+        "tokenWrite": "Tokens – Write",
+        "roleWrite": "Roles – Write",
+        "auditRead": "Audit Log – Read",
+        "modulesRead": "Modules – Read",
+        "modulesManage": "Modules – Manage",
+        "connectionsRead": "Connections – Read",
+        "connectionsManage": "Connections – Manage",
+        "resilienceRead": "Resilience – Read",
+        "resilienceManage": "Resilience – Manage",
+        "profilesRead": "Routing Profiles – Read",
+        "profilesManage": "Routing Profiles – Manage",
+        "optimizersRead": "Optimizers – Read",
+        "optimizersManage": "Optimizers – Manage",
+        "experimentsRead": "Experiments – Read",
+        "experimentsManage": "Experiments – Manage"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Para sa uring channel na ito, hindi binabago ng mga target ang paghahatid (naayos ang endpoint). Pinipilian lang nila kung aling mga kaganapan ang naitatala sa audit trail kada tatanggap.",
+        "dashboard": "Kontrolado ng mga target ang visibility sa inbox — makikita lamang ng mga naitugmang user ang mga notipikasyong ito sa kanilang in-app inbox.",
+        "email": "Tinutukoy ng mga target kung sino ang tumatanggap ng email na ito. Iwanan lahat na blangko upang ipadala sa lahat ng user."
+      },
+      "summary": {
+        "allEvents": "Lahat ng kaganapan",
+        "eventCount": "{{count}} kaganapan",
+        "eventCount_other": "{{count}} kaganapan",
+        "roleCount": "{{count}} role",
+        "roleCount_other": "{{count}} role",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perm",
+        "userCount": "{{count}} user",
+        "userCount_other": "{{count}} user",
+        "everyone": "Lahat"
+      },
+      "errors": {
+        "loadFailed": "Nabigong i-load"
+      },
+      "fields": {
+        "dashboardHint": "Ipinapadala ang mga tumugmang kaganapan sa in-app notification inbox. Hindi kinakailangan ang kredensyal.",
+        "labels": {
+          "fromAddress": "From Address",
+          "fromName": "From Name",
+          "host": "Host",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Username",
+          "password": "Password",
+          "awsRegion": "AWS Region",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API Key",
+          "connectionString": "Connection String",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "Method",
+          "signingSecret": "Signing Secret",
+          "botToken": "Bot Token",
+          "channelId": "Channel ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "Integration Key"
+        },
+        "values": {
+          "enabled": "Pinagana",
+          "disabled": "Naka-disable",
+          "configured": "Nakakonfigure",
+          "notSet": "Hindi naitakda"
+        },
+        "optional": "(opsyonal)",
+        "keepCurrentPlaceholder": "Iwanang blangko upang panatilihin ang kasalukuyan",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Gamitin ang TLS / SSL",
+        "smtpTlsOnHint": "(port 465 — direktang SSL)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Iwanang blangko ang kredensyal upang gamitin ang IAM instance role.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC signing key",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-character routing key",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Mga Kaganapan",
+          "eventsPlaceholder": "Lahat ng kaganapan (iwanang blangko para sa lahat)",
+          "eventsHint": "Iwanang blangko upang matanggap lahat ng kaganapan. Piliin ang partikular na kaganapan upang i-filter.",
+          "routersHeading": "Mga Router",
+          "routersPlaceholder": "Lahat ng router (iwanang blangko para sa lahat)",
+          "routersHint": "Iwanang blangko upang matanggap ang mga kaganapan mula sa lahat ng router.",
+          "cooldownHeading": "Cooldown",
+          "cooldownSuffix": "segundo (0 = walang cooldown)",
+          "cooldownHint": "Minimum na agwat bago makapag-fire ulit ang channel na ito para sa parehong kaganapan."
+        },
+        "recipients": {
+          "heading": "Mga Tatanggap / Target",
+          "rolesLabel": "Mga Role",
+          "rolesPlaceholder": "Lahat ng role (lahat)",
+          "permissionsLabel": "Mga Permiso",
+          "permissionsPlaceholder": "Lahat ng permiso (lahat)",
+          "usersLabel": "Mga indibidwal na user",
+          "usersPlaceholder": "Lahat ng user (lahat)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "connection",
+          "routing": "routing",
+          "recipients": "recipients"
+        },
+        "sections": {
+          "channelSettings": "Mga Setting ng Channel",
+          "eventsRouting": "Mga Kaganapan at Routing",
+          "recipients": "Mga Tatanggap"
+        },
+        "nameLabel": "Pangalan",
+        "namePlaceholder": "Label para sa channel na ito",
+        "cancelButton": "Kanselahin"
+      },
+      "list": {
+        "countLabel": "{{count}} channel",
+        "countLabel_other": "{{count}} na channel",
+        "filteredLabel": "{{shown}} sa {{count}} channel",
+        "filteredLabel_other": "{{shown}} sa {{count}} na channel",
+        "allTypes": "Lahat ng uri",
+        "searchPlaceholder": "I-filter ang mga channel…",
+        "searchChannelsPlaceholder": "Maghanap ng mga channel…",
+        "addButton": "Magdagdag ng Channel",
+        "addSearchPlaceholder": "Maghanap ng mga channel…",
+        "noResults": "Walang resulta",
+        "emptyTitle": "Walang nakakonfigureng notification channel pa.",
+        "noMatch": "Walang channel na tumutugma sa aktibong filter.",
+        "nameInlinePlaceholder": "Label (opsyonal)",
+        "columns": {
+          "name": "Pangalan",
+          "type": "Uri",
+          "summary": "Mga Kaganapan / Target"
+        },
+        "testTitle": "Magpadala ng test",
+        "editTitle": "I-edit ang channel",
+        "deleteTitle": "Burahin ang channel",
+        "deleteConfirm": "Alisin ang channel \"{{name}}\"? Hindi na ito maibabalik.",
+        "deleteConfirmButton": "Burahin",
+        "errors": {
+          "deleteFailed": "Nabigong burahin"
+        }
+      },
+      "edit": {
+        "backToList": "Bumalik sa Notifications",
+        "back": "Bumalik",
+        "heading": "I-edit ang channel na {{provider}}",
+        "subtitle": "I-update ang konfigurasyon para sa notification channel na ito.",
+        "testSection": {
+          "title": "Magpadala ng test",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Magpadala ng Test",
+          "sendingButton": "Ipinapadala…",
+          "hintEmail": "Iwanang blangko upang ipadala sa email ng iyong account. Ang test ay gumagamit ng na-save na konfigurasyon ng channel.",
+          "hintOther": "Ang test ay gumagamit ng na-save na konfigurasyon ng channel. I-save muna ang mga pagbabago upang subukan ang mga updated na setting."
+        },
+        "saveButton": "I-save ang mga Pagbabago",
+        "savingButton": "Sine-save…",
+        "errors": {
+          "loadFailed": "Nabigong i-load",
+          "saveFailed": "Nabigong i-save"
+        }
+      },
+      "create": {
+        "backToList": "Bumalik sa Notifications",
+        "changeType": "Palitan ang uri",
+        "pickerHeading": "Pumili ng uring channel",
+        "pickerSubtitle": "Piliin ang notification provider na iikonfigure.",
+        "heading": "Bagong channel na {{provider}}",
+        "subtitle": "I-konfigure ang bagong notification channel.",
+        "createButton": "Gumawa ng Channel",
+        "creatingButton": "Ginagawa…",
+        "errors": {
+          "createFailed": "Nabigong gumawa"
+        }
+      },
+      "sendTest": "Magpadala ng test",
+      "fromAddress": "From Address",
+      "individualUsers": "Mga indibidwal na user",
+      "host": "Host",
+      "port": "Port",
+      "apiKey": "API Key",
+      "connectionString": "Connection String",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Method",
+      "botToken": "Bot Token",
+      "channelId": "Channel ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "Integration Key"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — ilalantad ang /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — metrics API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "I-export ang mga trace ng request",
+        "description": "Ipinapadala ang kumpletong trace ng bawat naiproxy na request: bawat yugto, bawat modyul na nagsalita, at mga prompt at sagot para sa mga proyekto na sumang-ayon.",
+        "sampleRateLabel": "Sample rate",
+        "sampleRateHint": "Ang 1 ay nag-export ng bawat request, ang 0.1 ay isa sa sampu."
+      },
+      "optional": "(opsyonal)",
+      "headersHint": "(opsyonal, isa kada linya: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Iwanang blangko para sa bukas na access",
+          "description": "Ilalantad ang <code>/metrics</code> sa Prometheus text format. Itakda ang token upang kailanganin ang Bearer auth."
+        },
+        "otel": {
+          "endpoint": "Collector endpoint",
+          "description": "Base URL ng iyong OTLP receiver. Idadugtong ng Routerly ang <code>/v1/metrics</code>, at <code>/v1/traces</code> kapag naka-on ang trace export. Default HTTP port ay 4318, gRPC ay 4317.",
+          "protocol": "Protocol",
+          "headers": "Mga Header"
+        },
+        "datadog": {
+          "apiKey": "API Key",
+          "placeholder": "Ang iyong Datadog API key",
+          "description": "Nakikita sa ilalim ng <strong>Organization Settings → API Keys</strong> sa iyong Datadog account.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "Nakikita sa <strong>Grafana Cloud → Connections → Prometheus → Details</strong> bilang \"Remote Write Endpoint\".",
+          "username": "Username / Stack ID",
+          "usernameHint": "Numeric ID na nakikita sa detalye ng koneksyon ng Prometheus.",
+          "apiKey": "API Key / Token",
+          "apiKeyHint": "Grafana Cloud token na may <strong>MetricsPublisher</strong> role."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL ng InfluxDB v2 instance. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Ang iyong InfluxDB API token",
+          "tokenHint": "Dapat may <strong>write</strong> access sa bucket.",
+          "org": "Organization",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Secret",
+          "secretHint": "(opsyonal — HMAC-SHA256 signing key)",
+          "headers": "Mga Header"
+        }
+      },
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga integration",
+        "updateFailed": "Nabigong i-update ang integration",
+        "saveFailed": "Nabigong i-save ang integration",
+        "deleteFailed": "Nabigong burahin ang integration"
+      },
+      "empty": "Walang nakakonfigureng integration pa.",
+      "enabled": "Pinagana",
+      "testing": "Sinusuri…",
+      "test": "Test",
+      "removeConfirm": "Alisin?",
+      "remove": "Alisin",
+      "cancel": "Kanselahin",
+      "removeTooltip": "Alisin ang integration",
+      "saving": "Sine-save…",
+      "save": "I-save",
+      "addButton": "Magdagdag ng Integration"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga setting",
+        "duplicateUrl": "Ang URL na ito ay nasa listahan na.",
+        "unreachable": "Hindi maabot ang isang wastong provider catalog sa URL na ito."
+      },
+      "saved": "Na-save.",
+      "refreshed": "Na-refresh.",
+      "heading": "Mga Provider Catalog Repository",
+      "refreshing": "Nire-refresh…",
+      "refresh": "I-refresh",
+      "nextRefresh": "Susunod: {{date}}",
+      "priorityHint": "Ang pagkasunod-sunod ng row ay tumutukoy sa priyoridad ng merge — nagwawagi ang row 1 sa conflict. Gamitin ang mga arrow upang ayusin ulit.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Na-update",
+        "lastCheck": "Huling Suri",
+        "status": "Status"
+      },
+      "empty": "Walang nakakonfigureng repository. Gagamitin ang default na pampublikong catalog ng Routerly.",
+      "status": {
+        "error": "Error",
+        "active": "Aktibo",
+        "disabled": "Naka-disable"
+      },
+      "edit": "I-edit",
+      "removeTooltip": "Alisin",
+      "addRepository": "Magdagdag ng Repository",
+      "checking": "Sinusuri…",
+      "add": "Idagdag",
+      "removeConfirm": "Alisin ang repository \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Application",
+        "runtime": "Runtime",
+        "storage": "Storage",
+        "softwareUpdate": "Software Update"
+      },
+      "labels": {
+        "version": "Bersyon",
+        "uptime": "Uptime",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Config directory",
+        "dataDir": "Data directory",
+        "currentVersion": "Kasalukuyang bersyon",
+        "availableVersion": "Available na bersyon",
+        "upToDate": "Napapanahon",
+        "lastChecked": "Huling nasuri"
+      },
+      "noCheckPerformed": "Walang update check na isinagawa pa.",
+      "checkForUpdates": "Suriin ang mga update",
+      "checking": "Sinusuri…",
+      "updateTo": "I-update sa v{{version}}",
+      "updating": "Ina-update…",
+      "dockerHint": "Tumatakbo sa Docker — kunin ang pinakabagong image upang i-update.",
+      "confirmUpdate": "Ito ay magda-download at magi-install ng pinakabagong bersyon. Mag-restart ang service. Magpatuloy?",
+      "updateComplete": "Tapos na ang update! Nire-reload…",
+      "serviceRestarting": "Nag-restart ang service. Paki-reload ang pahina sa ilang sandali.",
+      "errors": {
+        "loadFailed": "Nabigong i-load",
+        "checkFailed": "Nabigo ang pagsusuri",
+        "updateFailed": "Nabigo ang update"
+      },
+      "channel": "Channel"
+    },
+    "security": {
+      "authentication": "Authentication",
+      "requireMfa": "Kailanganin ang Two-Factor Authentication para sa lahat ng user",
+      "requireMfaHint": "Kapag pinagana, makikita ng mga user na hindi pa nag-set up ng 2FA ang isang prompt upang gawin ito matapos mag-log in. Maaaring i-konfigure ng mga user ang 2FA sa kanilang Profile page.",
+      "savedSuccess": "Matagumpay na na-save ang mga setting.",
+      "saving": "Sine-save…",
+      "saveSettings": "I-save ang mga Setting",
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga setting",
+        "saveFailed": "Nabigong i-save ang mga setting"
+      }
+    },
+    "title": "Mga Setting",
+    "subtitle": "Konfigurasyon para sa Routerly",
+    "tabs": {
+      "general": "Pangkalahatan",
+      "security": "Seguridad",
+      "notifications": "Mga Notipikasyon",
+      "integrations": "Mga Integration",
+      "catalog": "Provider Catalog",
+      "users": "Mga User",
+      "roles": "Mga Role",
+      "audit": "Audit Log",
+      "about": "Tungkol"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Mga Router",
+      "subtitle": "Mga client application na nag-a-access sa Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} na router",
+      "newRouter": "Bagong Router",
+      "empty": "Walang router pa.",
+      "emptyFiltered": "Walang router na ganitong uri.",
+      "tabs": {
+        "all": "Lahat",
+        "router": "Router",
+        "orchestrator": "Orkestrador",
+        "passthrough": "Dumaan"
+      },
+      "columns": {
+        "name": "Pangalan",
+        "tokens": "Mga Token",
+        "policies": "Mga Patakaran",
+        "models": "Mga Model"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} na token",
+      "editRouter": "I-edit ang router",
+      "deleteRouter": "Burahin ang router",
+      "deleteConfirm": "Burahin ang router na ito?",
+      "errors": {
+        "deleteFailed": "Error sa pagbura ng router"
+      }
+    },
+    "layout": {
+      "notFound": "Hindi natagpuan ang router",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "general": "Pangkalahatan",
+        "orchestrator": "Orchestrator",
+        "routing": "Routing",
+        "optimizer": "Optimizer",
+        "security": "Seguridad",
+        "token": "Token",
+        "users": "Mga User",
+        "logs": "Mga Log"
+      },
+      "backToRouters": "Bumalik sa Mga Router",
+      "backToRoutersTitle": "Bumalik sa mga router",
+      "newRouter": "Bagong Router",
+      "loading": "Nag-lo-load...",
+      "routerId": "Router ID:",
+      "saveFirstHint": "I-save muna ang router upang mabuksan ang tab na ito"
+    },
+    "dashboard": {
+      "period": "Panahon",
+      "noTraffic": "Walang trapiko para sa router na ito sa napiling panahon.",
+      "stats": {
+        "savings": "Naitipid",
+        "vsPrefix": "laban sa",
+        "forEverything": "para sa lahat",
+        "noTargetToCompare": "walang target model na ihahambing",
+        "cost": "Gastos",
+        "callCount": "1 tawag",
+        "callCount_other": "{{count}} tawag",
+        "latency": "Latency",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Time to first token",
+        "notMeasured": "hindi nasukat sa mga tawag na ito",
+        "reliability": "Kaasahan",
+        "errorsAndBlocked": "{{errors}} error · {{blocked}} nahadlangan"
+      },
+      "tokens": {
+        "input": "Input tokens:",
+        "output": "Output tokens:",
+        "fromCache": "Mula sa cache:",
+        "cacheSaved": "({{amount}} naitipid)"
+      },
+      "oneModel": {
+        "heading": "Kung napunta ang lahat sa isang model",
+        "empty": "Magdagdag ng target model sa router na ito upang makita ang paghambing.",
+        "columns": {
+          "targetModel": "Target model",
+          "wouldHaveCost": "Sana gastos",
+          "saved": "Naitipid"
+        },
+        "costsHint": "Ang gastos ay ang naobserbahang tokens na nirepresyo sa rate ng bawat target."
+      },
+      "optimizers": {
+        "heading": "Ang inalis ng mga optimizer",
+        "columns": {
+          "optimizer": "Optimizer",
+          "callsChanged": "Nabagong tawag",
+          "tokensSaved": "Naitipid na tokens",
+          "costSaved": "Naitipid na gastos",
+          "rolledBack": "Nabawi"
+        },
+        "hint": "Nasukat sa mismong mga tawag, presyo batay sa model na naghatid sa bawat isa. Ang isang rolled-back run ay nangahulugang tinanggihan bilang hindi ligtas ang output ng hakbang at ibinalik ang prompt: walang naitipid ito, at ang mataas na bilang ay nangahulugang masyadong agresibo ang threshold."
+      },
+      "traffic": {
+        "heading": "Kung saan napunta ang trapiko",
+        "columns": {
+          "model": "Model",
+          "calls": "Mga Tawag",
+          "share": "Bahagi",
+          "cost": "Gastos",
+          "p95Latency": "p95 latency",
+          "errors": "Mga Error"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Error sa pagsave ng router",
+        "copyFailed": "Nabigo ang kopya — piliin at kopyahin ang token nang manwal."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Iniiruta ang mga request sa mga kandidatong model."
+        },
+        "orchestrator": {
+          "label": "Orchestrator",
+          "description": "Iniiruta ang mga request sa iba pang router sa halip na mga model."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Ipinapasa ang mga request nang walang pagbabago."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "I-save ang token na ito ngayon.",
+        "saveNowHint": "Hindi na ito ipapakita ulit — kapag umalis ka sa screen na ito hindi na ito maibabalik.",
+        "copied": "Nakopya!",
+        "copy": "Kopyahin",
+        "goToRouter": "Pumunta sa router"
+      },
+      "connect": {
+        "heading": "Paano magkonekta",
+        "intro": "Ituro ang kahit anong OpenAI o Anthropic SDK sa Routerly at gamitin ang <tokenLink>router token</tokenLink> bilang API key. Palitan ang <code>{{token}}</code> sa ibaba ng iyong sarili. Ang model <code>{{model}}</code> ay ipinapasa ang pagpili sa Routerly; gumagana din ang kahit anong model id mula sa <modelsLink>Mga Model</modelsLink>.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, ang parehong kinukuha ng kahit anong \"OpenAI compatible\" na field ng provider.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, walang <code>/v1</code>: idinadagdag ito ng SDK.",
+        "curl": "curl",
+        "curlHint": "Suriin ang koneksyon nang walang mag-i-install, pagkatapos hanapin ang tawag sa <usageLink>Paggamit</usageLink>."
+      },
+      "form": {
+        "kind": "Uri",
+        "kindAriaLabel": "Uri ng Router",
+        "kindFixedHint": "Naayos kapag nagawa na ang router.",
+        "routerName": "Pangalan ng Router",
+        "routerNamePlaceholder": "Aking App",
+        "advancedSettings": "Mga advanced na setting",
+        "ttftTimeout": "TTFT Timeout (ms)",
+        "ttftTimeoutHint": "Kung hindi nagpapadala ang model ng unang response byte sa loob ng oras na ito, ihihinto ito ng Routerly at susubukan ang susunod na kandidato. Hindi nililimitahan ang kabuuang tagal ng response. Itakda sa 0 upang hintayin kung magkano ang gugugol ng provider.",
+        "traceContent": "Trace content",
+        "traceContentHint": "Ang mga trace ay lagi ring naitatala ang metadata (mga model, score, tokens, gastos, latency). Buksan ito upang itala din ang mga prompt na ipinadala at ang mga sagot na natanggap. Naiimbak ito kasama ng usage record at nakikita ng sinumang makakabasa ng mga report.",
+        "capturePromptsAndAnswers": "Itala ang mga prompt at sagot",
+        "saveChanges": "I-save ang mga Pagbabago",
+        "createRouter": "Gumawa ng Router"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Hindi Orchestrator ang router na ito.",
+      "candidateRouters": "Mga Kandidatong Router",
+      "candidateRoutersHint": "Ang mga router na ipinapasa ng Orchestrator na ito ng mga request. Ang timbang ay nakakaapekto kung gaano kadalas napipili ang bawat kandidato; ang pangalan lamang, id, timbang, at opsyonal na per-candidate na limitasyon nito ang ipinapakita dito.",
+      "router": "Router",
+      "selectRouter": "Piliin ang router",
+      "weight": "Timbang",
+      "removeCandidate": "Alisin ang kandidato",
+      "usageLimits": "Mga limitasyon sa paggamit para sa kandidatong ito",
+      "limitCount": "{{count}} limitasyon",
+      "limitCount_other": "{{count}} na limitasyon",
+      "usageLimitsHint": "Opsyonal na mga limitasyon sa paggamit na ilalapat lamang sa mga request na ipinasa ng Orchestrator na ito sa kandidatong ito.",
+      "empty": "Walang kandidatong router pa. Kailangan ng Orchestrator ng kahit isa bago ito makapag-ipasa ng mga request.",
+      "addCandidate": "Magdagdag ng Kandidato",
+      "saved": "Na-save!",
+      "saveCandidates": "I-save ang mga Kandidato",
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga router",
+        "saveFailed": "Error sa pagsave ng mga kandidato ng orchestrator"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Nabigong itakda ang routing profile",
+        "duplicateTargets": "Hindi maaaring magkaroon ng duplikado ang mga target model.",
+        "saveFailed": "Error sa pagsave ng routing ng router",
+        "noProfileAvailable": "Walang available na routing profile. Gumawa ng isa mula sa Profiles page."
+      },
+      "form": {
+        "routing": "Routing",
+        "routingHint": "Gamitin ang isang shared routing profile, o tukuyin ang sariling mga patakaran ng router na ito. Ang mga target model ay maaari pa ring i-konfigure sa alinman.",
+        "profileMode": "Profile",
+        "customMode": "Custom",
+        "routingProfile": "Routing Profile",
+        "builtinSuffix": "(built-in)",
+        "profileHint": "Ang mga patakaran ay galing sa profile at sumusunod sa mga pagbabago nito. I-edit ang mga ito sa Profiles page, o lumipat sa Custom upang magsimula mula sa kopya nito.",
+        "saved": "Na-save!",
+        "saveRoutingConfiguration": "I-save ang Konfigurasyon ng Routing"
+      },
+      "targetModels": {
+        "heading": "Mga Target Model",
+        "hint": "Tukuyin ang pool ng mga model na sasala at pipiliin ng mga Patakaran. Ang opsyonal na mga prompt ay nagtuturo sa AI Router kung kailan pipiliin ang bawat model.",
+        "endpointModel": "Endpoint Model",
+        "selectModel": "Piliin ang model",
+        "promptDefinition": "Kahulugan ng Prompt",
+        "promptPlaceholder": "Ilarawan nang eksakto kung kailan at bakit dapat piliin ng router ang model na ito...",
+        "intents": "Mga Intent",
+        "removeTarget": "Alisin ang target model",
+        "empty": "Walang nakakonfigureng target model.",
+        "addTarget": "Magdagdag ng Target Model"
+      }
+    },
+    "optimizer": {
+      "title": "Mga Optimizer",
+      "description": "Binabawasan ng mga optimizer ang prompt tokens bago maabot ng mga request ang provider. Isinasagawa ang mga ito sa pagkasunod-sunod mula sa taas hanggang ibaba. Gamitin ang shared optimizer profile, o tukuyin ang sariling pipeline ng router na ito.",
+      "noPermission": "Walang ka permiso upang tingnan ang mga optimizer.",
+      "mode": {
+        "profile": "Profile",
+        "custom": "Custom"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimizer Profile",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Ang mga hakbang ay galing sa profile at sumusunod sa mga pagbabago nito. I-edit ang mga ito sa Profiles page, o lumipat sa Custom upang magsimula mula sa kopya nito.",
+        "disabledSuffix": "(naka-disable)",
+        "thresholdSuffix": ", threshold {{threshold}}"
+      },
+      "customHint": "I-drag upang ayusin ulit, i-toggle upang paganahin. May mga optimizer na gumagamit ng threshold upang kontrolin kung gaano agresibo ang pagbawas.",
+      "saveButton": "I-save ang mga Optimizer",
+      "saving": "Sine-save...",
+      "saved": "Na-save",
+      "preview": {
+        "title": "I-preview ang naitipid na token",
+        "description": "Patakbuhin ang kasalukuyan (hindi na-save) na pipeline sa isang prompt upang makita kung ano ang inalis ng bawat hakbang at ang gastos nito. Piliin ang isa sa mga sample conversation, o mag-type ng iyong sariling prompt.",
+        "promptLabel": "Prompt",
+        "promptAriaLabel": "Prompt na i-preview",
+        "typePromptOption": "Mag-type ng prompt sa ibaba",
+        "fixturesHint": "Mga sample conversation na kasama sa Routerly. Hindi nagtatala ang Routerly ng tunay na mga prompt.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model na ipapreview",
+        "modelWithContext": "{{id}} ({{k}}k context)",
+        "noModelOption": "Walang model",
+        "modelHint": "Ang mga hakbang na nagbabawas upang umagap sa context window ay kailangang malaman kung aling window. Kung walang model, nilalaktawan ang mga ito, tulad lamang ng gagawin sa isang request na nagbabanggit ng model na walang alam ang Routerly ng window.",
+        "sampleAriaLabel": "Sample prompt",
+        "samplePlaceholder": "I-paste ang sample user message...",
+        "runButton": "Patakbuhin ang Preview",
+        "running": "Tumatakbo...",
+        "before": "Bago",
+        "after": "Pagkatapos",
+        "saved": "Naitipid",
+        "columns": {
+          "optimizer": "Optimizer",
+          "before": "Bago",
+          "after": "Pagkatapos",
+          "saved": "Naitipid"
+        },
+        "rolledBackNote": "nabawi: tinanggihan ang pagbabago bilang hindi ligtas",
+        "skippedNote": "nilaktawan: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Ang pagbabagong ginawa ng hakbang na ito ay nabawi, kaya naabot ng prompt ang susunod na hakbang nang hindi nagalaw.",
+          "skipped": "Hindi tumakbo ang hakbang na ito: {{reason}}",
+          "unchanged": "Iniwan ng hakbang na ito ang prompt na hindi nagbago."
+        }
+      },
+      "errors": {
+        "assignFailed": "Nabigong itakda ang optimizer profile",
+        "saveFailed": "Error sa pagsave ng mga optimizer",
+        "previewFailed": "Error sa pagpatakbo ng preview",
+        "noProfileAvailable": "Walang available na optimizer profile. Gumawa ng isa mula sa Profiles page."
+      }
+    },
+    "token": {
+      "newButton": "Bagong Token",
+      "empty": "Walang API token pa. Gumawa ng isa upang magsimulang mag-authenticate ng mga request.",
+      "budgetOverrides": "Mga Budget Override",
+      "created": "Ginawa",
+      "lastUsed": "Huling ginamit",
+      "expires": "Mawawalan ng bisa",
+      "never": "Kailanman",
+      "editTitle": "I-edit ang Konfigurasyon",
+      "revokeTitle": "Bawiin ang Token",
+      "revokeConfirm": "Bawiin ang token \"{{snippet}}...\"? Agad na titigil sa paggana ang mga app na gumagamit nito.",
+      "labelInput": {
+        "placeholder": "Maghanap o gumawa ng label…",
+        "createPrefix": "Gumawa",
+        "noMatches": "Walang natagpuang tumutugmang label."
+      },
+      "errors": {
+        "deleteFailed": "Error sa pagbura ng token"
+      },
+      "create": {
+        "backToTokens": "Bumalik sa mga token",
+        "title": "Bagong API Token",
+        "subtitle": "Ang buong token ay ipapakita lamang nang isang beses pagkatapos gawin — imbakin ito nang ligtas.",
+        "tokenCreated": "Matagumpay na nagawa ang token. Kopyahin na ito ngayon — hindi na ito ipapakita ulit.",
+        "copied": "Nakopya!",
+        "copy": "Kopyahin",
+        "done": "Tapos",
+        "optional": "opsyonal",
+        "labels": "Mga Label",
+        "labelsHint": "Markahan ang token na ito upang malaman kung saan ito ginagamit (hal. \"production\", \"ci\").",
+        "scopes": "Mga Scope",
+        "scopesHint": "Malayang scope na naikabit sa token na ito (hal. \"batch\", \"internal\"), naiimbak sa token para sa sariling paggamit mo.",
+        "tags": "Mga Tag",
+        "tagsHint": "Key-value metadata na ipinapasa sa mga usage record (hal. env=production).",
+        "keyPlaceholder": "key",
+        "valuePlaceholder": "value",
+        "createButton": "Gumawa ng Token",
+        "cancel": "Kanselahin",
+        "copyFailed": "Nabigo ang kopya — piliin at kopyahin ang token nang manwal.",
+        "errors": {
+          "createFailed": "Error sa paggawa ng token"
+        }
+      },
+      "edit": {
+        "title": "I-edit ang Token",
+        "subtitle": "I-update ang mga label at per-model na limitasyon override para sa token na ito.",
+        "token": "Token",
+        "labels": "Mga Label",
+        "perModelLimits": "Mga limitasyon kada model",
+        "perModelLimitsHint": "I-override ang global at router-level na limitasyon para sa mga request na gumagamit ng token na ito.",
+        "noTargetModels": "Magdagdag muna ng target model sa Routing tab.",
+        "noOverride": "walang override",
+        "noLimits": "Walang limitasyon",
+        "noLimitsSet": "Walang itinakdang limitasyon — nagmana mula sa parent. Magdagdag ng limitasyon sa ibaba upang i-override.",
+        "metric": "Metric",
+        "type": "Uri",
+        "periodLabel": "Panahon",
+        "every": "Bawat",
+        "maxCost": "Max ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (tokens)",
+        "allCombosSet": "Naitakda na lahat ng kombinasyon ng metric/panahon",
+        "addLimit": "Magdagdag ng limitasyon",
+        "windowType": {
+          "period": "Panahon",
+          "rolling": "Rolling"
+        },
+        "limitMetric": {
+          "cost": "Gastos (USD)",
+          "calls": "Mga Request",
+          "input_tokens": "Input tokens",
+          "output_tokens": "Output tokens",
+          "total_tokens": "Kabuuang tokens"
+        },
+        "period": {
+          "hourly": "Oras-oras",
+          "daily": "Araw-araw",
+          "weekly": "Lingguhan",
+          "monthly": "Buwanan",
+          "yearly": "Taunan"
+        },
+        "rollingUnit": {
+          "second": "segundo",
+          "minute": "minuto",
+          "hour": "oras",
+          "day": "araw",
+          "week": "linggo",
+          "month": "buwan"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / bawat {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Error sa pagsave ng token"
+        }
+      }
+    },
+    "users": {
+      "title": "Mga Miyembro ng Router",
+      "description": "Pamahalaan ang mga user na may access sa router na ito.",
+      "addButton": "Magdagdag ng Miyembro",
+      "addNewTitle": "Magdagdag ng Bagong Miyembro",
+      "selectUserPlaceholder": "Pumili ng user...",
+      "addConfirmButton": "Idagdag",
+      "cancelButton": "Kanselahin",
+      "empty": "Walang natagpuang miyembro.",
+      "removeConfirm": "Sigurado ka bang aalisin ang miyembrong ito?",
+      "saveTitle": "I-save ang mga pagbabago",
+      "changeRoleTitle": "Palitan ang Role",
+      "removeTitle": "Alisin ang Miyembro",
+      "roles": {
+        "viewer": "Viewer",
+        "editor": "Editor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "actions": "Mga Aksyon"
+      },
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga user",
+        "addFailed": "Error sa pagdagdag ng miyembro",
+        "updateFailed": "Error sa pag-update ng miyembro",
+        "removeFailed": "Error sa pag-alis ng miyembro"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Off"
+      },
+      "autoRefreshOff": "Naka-disable ang auto-refresh",
+      "autoRefreshEvery": "Auto-refresh kada {{interval}}",
+      "lastUpdated": "huling na-update: {{time}}",
+      "refresh": "I-refresh",
+      "refreshNowTitle": "I-refresh ngayon",
+      "refreshNowButton": "↻ Ngayon",
+      "filters": {
+        "period": "Panahon",
+        "model": "Model",
+        "allModels": "Lahat ng Model",
+        "type": "Uri",
+        "all": "Lahat",
+        "completion": "Completion",
+        "router": "Router",
+        "status": "Status",
+        "success": "Tagumpay",
+        "blocked": "Nahadlangan",
+        "error": "Error",
+        "resetButton": "I-reset ang mga filter"
+      },
+      "stats": {
+        "totalCost": "Kabuuang Gastos",
+        "totalCalls": "Kabuuang Tawag",
+        "completionCalls": "Mga Completion Call",
+        "routerCalls": "Mga Router Call",
+        "errors": "Mga Error"
+      },
+      "requestLogs": "Mga Log ng Request",
+      "emptyNoRequests": "Walang request para sa router na ito sa napiling panahon.",
+      "emptyNoMatches": "Walang record na tumutugma sa aktibong filter.",
+      "columns": {
+        "time": "Oras",
+        "model": "Model",
+        "type": "Uri",
+        "in": "In",
+        "out": "Out",
+        "cost": "Gastos",
+        "latency": "Latency",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Status"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "completion",
+      "pagination": {
+        "previous": "← Nauna",
+        "next": "Susunod →",
+        "pageOf": "Pahina {{page}} ng {{totalPages}}",
+        "totalRecords": "({{count}} kabuuang record)"
+      }
+    },
+    "security": {
+      "title": "Seguridad",
+      "description": "Gamitin ang shared security profile, o tukuyin ang sariling guardrails at PII policies ng router na ito.",
+      "mode": {
+        "profile": "Profile",
+        "custom": "Custom"
+      },
+      "profileSelect": {
+        "ariaLabel": "Security Profile",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Ang guardrails at PII policies ay galing sa profile at sumusunod sa mga pagbabago nito. I-edit ang mga ito sa Profiles page, o lumipat sa Custom upang magsimula mula sa kopya nito.",
+        "blockingSuffix": ", humaharang",
+        "disabledSuffix": ", naka-disable",
+        "piiRedaction": "PII redaction ({{target}})"
+      },
+      "saveButton": "I-save ang Mga Setting ng Seguridad",
+      "saved": "Na-save!",
+      "errors": {
+        "assignFailed": "Nabigong itakda ang security profile",
+        "saveFailed": "Error sa pagsave ng mga setting ng seguridad",
+        "noProfileAvailable": "Walang available na security profile. Gumawa ng isa mula sa Profiles page."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Ikaw ay isang matulungin na AI assistant.",
+      "errors": {
+        "unknown": "Nagkaroon ng hindi kilalang error",
+        "onlyImages": "Suportado lamang ang mga attachment na larawan para sa vision models sa kasalukuyan."
+      },
+      "title": "Test Chat",
+      "subtitle": "Magpadala ng mga test query sa pamamagitan ng routing gateway.",
+      "routerToken": "Router Token:",
+      "hideToken": "Itago ang Token",
+      "showToken": "Ipakita ang Token",
+      "recognizedToken": "Nakilalang Token",
+      "unrecognizedToken": "Hindi Nakilalang Token",
+      "noMessages": "Walang mensahe pa.",
+      "enterTokenHint": "Paki-lagay ang Router Token sa itaas upang magpadala ng mensahe.",
+      "typeMessageHint": "Mag-type ng mensahe sa ibaba upang magsimulang mag-test.",
+      "reasoning": "Reasoning",
+      "attachedAlt": "Naikabit",
+      "attachmentAlt": "Attachment",
+      "attachImage": "Ikabit ang larawan",
+      "typeMessagePlaceholder": "Mag-type ng mensahe...",
+      "stopGeneration": "Ihinto ang generation",
+      "sendEnter": "Ipadala (Enter)",
+      "debugLog": "Debug Log",
+      "clear": "Alisin",
+      "noRequestSent": "Walang request na ipinadala pa.",
+      "turnTraceLog": "Turn #{{turn}} trace log · {{count}} kaganapan",
+      "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} kaganapan"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Mga Koneksyon",
+      "subtitle": "Mga account ng provider na ginagamit upang patakbuhin ang mga model instance",
+      "noPermission": "Walang ka permiso upang tingnan ang mga koneksyon.",
+      "count": "{{count}} koneksyon",
+      "count_other": "{{count}} na koneksyon",
+      "addConnection": "Magdagdag ng Koneksyon",
+      "empty": "Walang koneksyon pa. Magdagdag ng isa upang magsimula.",
+      "deleteConfirm": "Alisin ang koneksyon \"{{label}}\"? Titigil sa paggana ang mga instance na naikabit dito.",
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga koneksyon",
+        "deleteFailed": "Nabigong burahin ang koneksyon"
+      },
+      "columns": {
+        "label": "Label",
+        "provider": "Provider",
+        "endpoint": "Endpoint",
+        "status": "Status"
+      },
+      "status": {
+        "enabled": "Pinagana",
+        "disabled": "Naka-disable"
+      },
+      "actions": {
+        "models": "Mga Model",
+        "edit": "I-edit",
+        "remove": "Alisin"
+      }
+    },
+    "form": {
+      "backToConnections": "Bumalik sa Mga Koneksyon",
+      "editTitle": "I-edit ang Koneksyon",
+      "addTitle": "Magdagdag ng Koneksyon",
+      "enabled": "Pinagana",
+      "editSubtitle": "I-update ang mga setting ng account ng provider",
+      "addSubtitle": "Magrehistro ng bagong account ng provider",
+      "sectionTitle": "Mga detalye ng koneksyon",
+      "sectionDesc": "Account ng provider, mga kredensyal, at endpoint na ginagamit upang magsagawa ng mga request.",
+      "provider": "Provider",
+      "groups": {
+        "directApi": "Direct API",
+        "cloudPlatform": "Cloud platform",
+        "subscription": "Subscription",
+        "browserSession": "Browser session",
+        "selfHosted": "Self-hosted"
+      },
+      "upstreamProvider": {
+        "label": "Provider",
+        "hintLabel": "(pangalan ng upstream provider)",
+        "placeholder": "hal. deepseek, mistral, groq",
+        "description": "Pinangalanan ang serbisyong kinabibilangan ng endpoint na ito. Ang mga model sa koneksyong ito ay gumagamit nito bilang prefix ng ID (hal. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Pangalan",
+        "hint": "Kinikilala ang koneksyong ito saan man ito tinutukoy, kaya kailangang unique ito. Iwanang blangko upang gamitin ang <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Iwanang blangko ang mga field ng kredensyal upang panatilihin ang umiiral na halaga.",
+      "save": "I-save",
+      "create": "Gumawa",
+      "cancel": "Kanselahin",
+      "oauth": {
+        "unknown": "hindi kilala",
+        "accountExpires": "Account: {{account}} — mawawalan ng bisa {{expires}}",
+        "unknownError": "Hindi kilalang error"
+      },
+      "errors": {
+        "notFound": "Hindi natagpuan ang koneksyon",
+        "loadFailed": "Nabigong i-load ang koneksyon",
+        "updateFailed": "Nabigong i-update ang koneksyon",
+        "createFailed": "Nabigong gumawa ng koneksyon"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Bumalik sa Mga Model",
+      "title": "Model Discovery",
+      "subtitle": "Tingnan ang mga available na model at idagdag ang mga ito sa iyong routing configuration",
+      "count": "{{count}} model",
+      "filteredCount": "{{filtered}} sa {{count}}",
+      "free": "libre",
+      "add": "Idagdag",
+      "addAgain": "Idagdag ulit",
+      "loadFailed": "Nabigong i-load ang catalog: {{error}}",
+      "filters": {
+        "search": "Maghanap",
+        "searchPlaceholder": "Model ID o pangalan…",
+        "provider": "Provider",
+        "allProviders": "Lahat ng provider",
+        "context": "Context",
+        "ctxOptions": {
+          "all": "Lahat",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Presyo / 1M",
+        "priceOptions": {
+          "all": "Lahat",
+          "free": "Libre",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Ipakita",
+        "configured": "Nakakonfigure",
+        "embedding": "Embedding",
+        "resetFilters": "I-reset ang mga filter"
+      },
+      "empty": {
+        "noMatches": "Walang model na tumutugma sa iyong mga filter."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Provider",
+        "context": "Context",
+        "input": "Input / 1M",
+        "output": "Output / 1M"
+      },
+      "badges": {
+        "configured": "Nakakonfigure",
+        "embedding": "embedding",
+        "runsLocally": "Tumatakbo nang lokal"
+      },
+      "pagination": {
+        "prev": "Nauna",
+        "next": "Susunod",
+        "range": "{{start}}–{{end}} sa {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Bumalik sa Mga Model",
+      "title": {
+        "add": "Magdagdag ng Model",
+        "edit": "I-edit ang Model",
+        "clone": "I-clone ang Model"
+      },
+      "subtitle": {
+        "add": "Magrehistro ng bagong LLM provider model",
+        "edit": "Binabago ang konfigurasyon para sa {{id}}",
+        "clone": "Kumokopya mula sa {{id}} — itakda ang bagong ID upang i-save"
+      },
+      "errors": {
+        "modelNotFound": "Hindi natagpuan ang model",
+        "sourceModelNotFound": "Hindi natagpuan ang pinagmulang model",
+        "loadFailed": "Error sa pag-load ng mga model",
+        "idRequired": "Kinakailangan ang Model ID",
+        "duplicateId": "Umiiral na ang model \"{{id}}\" — itakda ng ibang Custom ID",
+        "selectConnection": "Piliin ang koneksyon",
+        "saveFailed": "Error"
+      },
+      "badge": {
+        "yes": "oo",
+        "no": "hindi",
+        "override": "Override",
+        "auto": "Auto",
+        "default": "Default: {{value}}",
+        "reset": "I-reset"
+      },
+      "oauth": {
+        "unknownExpiry": "hindi kilala",
+        "accountOk": "Account: {{account}} — mawawalan ng bisa {{expires}}",
+        "unknownError": "Hindi kilalang error"
+      },
+      "identification": {
+        "title": "Pagkakakilanlan ng Model",
+        "description": "Natatanging identifier at mga setting ng provider para sa konfigurasyong ito ng model.",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(opsyonal — default:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Ang identifier na ginagamit kapag itinukoy ang model na ito sa mga tawag sa Routerly API.",
+        "provider": "Provider",
+        "upstreamProviderHint": "(pangalan ng upstream provider)",
+        "upstreamProviderPlaceholder": "hal. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Ginagamit bilang prefix para sa Routerly ID (hal.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(upstream model ID)",
+        "upstreamModelPlaceholder": "hal. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Ang model identifier na ipinapadala sa upstream API endpoint.",
+        "modelPreset": "Model Preset",
+        "customModelOption": "— custom na pangalan ng model —",
+        "customModelPlaceholder": "hal. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Mga detalye ng koneksyon",
+        "description": "API endpoint at mga kredensyal ng authentication na kailangan upang magsagawa ng mga request.",
+        "preconfigured": "Preconfigured",
+        "custom": "Custom",
+        "connection": "Koneksyon",
+        "selectPlaceholder": "— piliin ang koneksyon —",
+        "noneAvailable": "Walang preconfigured na koneksyon para sa provider na ito. Lumipat sa Custom, o gumawa ng isa sa Connections page.",
+        "editHint": "Ang pag-edit ng koneksyong ito sa susunod ay nag-a-update sa bawat model na naikabit dito."
+      },
+      "capabilities": {
+        "title": "Mga Kapasidad",
+        "description": "Tukuyin ang uri at mga kapasidad ng model na ito.",
+        "embeddingModel": "Embedding model",
+        "embeddingModelHint": "Ang model na ito ay gumagawa ng vector embeddings (hindi chat completions)"
+      },
+      "pricing": {
+        "title": "Presyo at context",
+        "description": "Mga parameter ng gastos at limitasyon ng pagproseso na ginagamit para sa billing at routing.",
+        "inputPerMillion": "Input $/1M",
+        "outputPerMillion": "Output $/1M",
+        "cachePerMillion": "Cache read $/1M",
+        "cacheWritePerMillion": "Cache write $/1M",
+        "optional": "(opsyonal)",
+        "contextWindow": "Context Window",
+        "contextWindowHint": "(tokens, opsyonal)"
+      },
+      "tiers": {
+        "title": "Advanced — Mga tier ng presyo",
+        "description": "I-override ang presyo kapag lumagpas ang metric sa threshold. Halimbawa: \"Sa itaas ng 200 000 context tokens, magbabago ang presyo.\"",
+        "removeTier": "Alisin ang tier",
+        "above": "Sa itaas ng",
+        "metric": "Metric",
+        "metricContextTokens": "Context tokens",
+        "overridePricing": "I-override ang presyo",
+        "addTier": "Magdagdag ng pricing tier"
+      },
+      "limits": {
+        "title": "Mga Limitasyon",
+        "description": "Mga limitasyon sa paggamit para sa model na ito. Maaaring pagsamahin ang maraming rule.",
+        "metric": "Metric",
+        "type": "Uri",
+        "addLimit": "Magdagdag ng limitasyon"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max subscription)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro subscription)"
+      },
+      "saveChanges": "I-save ang mga Pagbabago",
+      "createClone": "Gumawa ng Clone",
+      "createModel": "Gumawa ng Model"
+    },
+    "page": {
+      "title": "Mga Model",
+      "subtitle": "Mga LLM provider na naka-rehistro sa Routerly",
+      "tabs": {
+        "models": "Mga Model",
+        "health": "Health"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} na model",
+        "filteredCount": "{{filtered}} sa {{count}} model",
+        "filteredCount_other": "{{filtered}} sa {{count}} na model"
+      },
+      "filters": {
+        "allProviders": "Lahat ng provider",
+        "allConnections": "Lahat ng koneksyon",
+        "searchPlaceholder": "I-filter ang mga model…"
+      },
+      "discover": "Tuklasin",
+      "addModel": "Magdagdag ng Model",
+      "deleteConfirm": "Alisin ang model \"{{id}}\"?",
+      "empty": {
+        "noModels": "Walang model pa. Magdagdag ng isa upang magsimula.",
+        "noMatches": "Walang model na tumutugma sa aktibong filter."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Provider",
+        "endpoint": "Endpoint",
+        "input": "Input $/1M",
+        "output": "Output $/1M",
+        "cache": "Cache $/1M",
+        "context": "Context Size"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "I-clone",
+        "edit": "I-edit",
+        "remove": "Alisin"
+      },
+      "pagination": {
+        "previous": "← Nauna",
+        "next": "Susunod →",
+        "pageOf": "Pahina {{page}} ng {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} na model)"
+      },
+      "health": {
+        "emptyNoModels": "Walang nakakonfigureng model.",
+        "emptyNoMatches": "Walang model na tumutugma sa filter.",
+        "resetAll": "I-reset lahat",
+        "resetAllTitle": "I-reset ang bawat circuit breaker, cooldown, at lockout",
+        "resetTitle": "I-reset ang circuit breaker",
+        "confirmResetModel": "I-reset ang circuit breaker para sa model \"{{id}}\"?",
+        "confirmResetAll": "I-reset ang lahat ng resilience state? Ito ay maglilinis ng bawat circuit breaker, cooldown, at lockout.",
+        "errors": {
+          "resetModelFailed": "Nabigong i-reset ang circuit breaker",
+          "resetAllFailed": "Nabigong i-reset ang resilience state"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Provider",
+          "status": "Status",
+          "circuit": "Circuit",
+          "errorRate": "Error rate (5m)",
+          "p95Latency": "P95 latency (1h)",
+          "requests": "Mga Request (1h)",
+          "lastSuccess": "Huling tagumpay",
+          "cooldownLockout": "Cooldown / lockout"
+        },
+        "status": {
+          "healthy": "Malusog",
+          "degraded": "Degraded",
+          "unavailable": "Hindi available",
+          "cooldown": "Cooldown",
+          "nodata": "Walang datos"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Naghihilom",
+          "tripped": "Tripped"
+        },
+        "time": {
+          "never": "kailanman",
+          "now": "ngayon",
+          "secondsAgo": "{{count}}s ang nakalipas",
+          "minutesAgo": "{{count}}m ang nakalipas",
+          "hoursAgo": "{{count}}h ang nakalipas",
+          "daysAgo": "{{count}}d ang nakalipas",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "cooldown {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Mga Eksperimento",
+      "subtitle": "A/B testing ng mga router laban sa isa't isa",
+      "noPermission": "Walang ka permiso upang tingnan ang mga eksperimento.",
+      "count": "{{count}} eksperimento",
+      "count_other": "{{count}} na eksperimento",
+      "newExperiment": "Bagong Eksperimento",
+      "empty": "Walang eksperimento pa. Gumawa ng isa upang ihambing ang mga router nang direkta.",
+      "deleteConfirm": "Burahin ang eksperimento \"{{name}}\"? Hindi na ito maibabalik.",
+      "noToken": "Walang token",
+      "noTokenTitle": "Kung walang token, walang client na makaka-abot sa eksperimentong ito",
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga eksperimento",
+        "deleteFailed": "Nabigong burahin ang eksperimento"
+      },
+      "columns": {
+        "name": "Pangalan",
+        "variants": "Mga Variant",
+        "rotation": "Rotation",
+        "created": "Ginawa"
+      },
+      "actions": {
+        "edit": "I-edit ang eksperimento",
+        "remove": "Burahin"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Bumalik sa mga eksperimento",
+      "newExperiment": "Bagong Eksperimento",
+      "loading": "Nag-lo-load...",
+      "experimentId": "Experiment ID:",
+      "disabledTabTitle": "I-save muna ang eksperimento upang mabuksan ang tab na ito",
+      "errors": {
+        "notFound": "Hindi natagpuan ang eksperimento"
+      },
+      "tabs": {
+        "config": "Konfigurasyon",
+        "metrics": "Metrics",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Na-save.",
+      "created": "Nagawa ang eksperimento. Ituro ang iyong client sa token na ito sa halip na router token. Hindi na ito ipapakita ulit.",
+      "copy": "Kopyahin",
+      "copied": "Nakopya!",
+      "done": "Tapos",
+      "saving": "Sine-save...",
+      "create": "Gumawa ng Eksperimento",
+      "save": "I-save ang mga Pagbabago",
+      "cancel": "Kanselahin",
+      "trafficSplit": "Paghati ng trapiko",
+      "errors": {
+        "loadRoutersFailed": "Nabigong i-load ang mga router",
+        "saveFailed": "Nabigong i-save ang eksperimento",
+        "copyFailed": "Nabigo ang kopya: piliin at kopyahin ang token nang manwal."
+      },
+      "fields": {
+        "name": "Pangalan",
+        "namePlaceholder": "Murang laban sa premium routing",
+        "description": "Paglalarawan",
+        "optional": "(opsyonal)",
+        "descriptionPlaceholder": "Ano ang sinusubukang lutasin ng test na ito",
+        "minSamples": "Minimum na tawag kada variant",
+        "minSamplesHint": "Sa ibaba nito, minarkahan ng Metrics tab ang paghambing bilang hindi pa konklusibo.",
+        "rotation": "Rotation",
+        "stickyOn": "Sticky sa",
+        "stickyKey": "Sticky key"
+      },
+      "variants": {
+        "title": "Mga Variant",
+        "desc": "Ang bawat variant ay isang umiiral na router, kinukuha nang buo: ang mga model, routing, at guardrails nito ay lahat naaangkop. Kailangan ng test ng hindi bababa sa dalawa.",
+        "routerAriaLabel": "Router ng Variant {{index}}",
+        "routerPlaceholder": "Piliin ang router",
+        "labelAriaLabel": "Label ng Variant {{index}}",
+        "labelPlaceholder": "Label (opsyonal)",
+        "weightAriaLabel": "Timbang ng Variant {{index}}",
+        "weightPlaceholder": "Timbang",
+        "removeTitle": "Alisin ang variant {{index}}",
+        "add": "Magdagdag ng variant"
+      },
+      "judge": {
+        "title": "Judge",
+        "desc": "Opsyonal: nagbabasa ang model ng bawat sampled na sagot at nagtatakda ng score na 0-10 laban sa iyong pamantayan. Ang bawat naiharap na tawag ay isang karagdagang tawag sa model, sinisingil tulad ng iba.",
+        "enable": "Bigyan ng score ang mga sagot gamit ang judge model",
+        "model": "Judge model",
+        "modelPlaceholder": "Piliin ang model",
+        "criteria": "Pamantayan",
+        "criteriaPlaceholder": "Isa kada linya, hal.\nSumasagot sa tanong na itinanong\nNananatiling factual\nSusunod sa hiningi na format",
+        "sampleRate": "Bahagi ng tawag na naiharap (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Nag-lo-load...",
+      "callsMeasured": "{{count}} tawag na nasukat",
+      "callsMeasured_other": "{{count}} na tawag na nasukat",
+      "empty": "Walang tawag sa window na ito pa. Ituro ang isang client sa experiment token upang magsimula ang paghambing.",
+      "notConclusive": "Hindi pa konklusibo: kailangan ng bawat variant ng hindi bababa sa {{minSamples}} tawag sa window na ito. ",
+      "explanation": "Ang mas magandang halaga sa bawat pares ay naka-highlight: mas mura kada tawag, mas mabilis, mas mataas na judge score. Ang porsyento sa ilalim ng halaga ay ang distansya nito mula sa pinakamahusay na arm. Ang judge score ay isang running average sa buong buhay ng eksperimento, kaya ito ang isang figure na hindi napapaikli ng window.",
+      "lowSample": "Mababang sample",
+      "lowSampleTitle": "Mas mababa sa {{minSamples}} tawag sa window na ito",
+      "judgedCallsTitle": "{{count}} sagot na binigyan ng score ng judge mula noong nagsimula ang eksperimento",
+      "judgedCallsTitle_other": "{{count}} na sagot na binigyan ng score ng judge mula noong nagsimula ang eksperimento",
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga metrics"
+      },
+      "columns": {
+        "variant": "Variant",
+        "calls": "Mga Tawag",
+        "share": "Bahagi",
+        "errors": "Mga Error",
+        "tokens": "Tokens in / out",
+        "cost": "Gastos",
+        "costPerCall": "Gastos / tawag",
+        "avgLatency": "Avg latency",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Judge score"
+      }
+    },
+    "token": {
+      "desc": "Tumatawag ang client sa eksperimento nang eksaktong tulad ng router: parehong base URL, ang token na ito sa halip na router token. Ang bawat request ay napupunta sa isang variant at sinisingil sa router ng variant na iyon.",
+      "baseUrlLabel": "Base URL para sa OpenAI o Anthropic SDK, na may experiment token bilang API key:",
+      "created": "Nagawa ang token. Kopyahin na ito ngayon, hindi na ito ipapakita ulit.",
+      "copy": "Kopyahin",
+      "copied": "Nakopya!",
+      "newToken": "Bagong Token",
+      "empty": "Walang token sa eksperimentong ito. Gumawa ng isa upang matawagan ito ng mga client.",
+      "revokeConfirm": "Bawiin ang token \"{{snippet}}...\"? Agad na titigil sa paggana ang mga client na gumagamit nito.",
+      "revokeTitle": "Bawiin ang Token",
+      "errors": {
+        "createFailed": "Nabigong gumawa ng token",
+        "revokeFailed": "Nabigong bawiin ang token",
+        "copyFailed": "Nabigo ang kopya: piliin at kopyahin ang token nang manwal."
+      },
+      "columns": {
+        "created": "Ginawa",
+        "lastUsed": "Huling ginamit"
+      }
+    }
+  },
+  "overview": {
+    "title": "Pangkalahatang-ideya",
+    "subtitle": "Buod ng paggamit at breakdown ng gastos",
+    "noPermission": "Walang permiso upang tingnan ang usage data.",
+    "costByModel": "Gastos kada Model",
+    "noCostRecorded": "Walang naitalang gastos sa panahong ito.",
+    "callsByModel": "Mga Tawag kada Model",
+    "columns": {
+      "model": "Model",
+      "calls": "Mga Tawag",
+      "errors": "Mga Error",
+      "cost": "Gastos"
+    },
+    "stats": {
+      "totalCalls": "Kabuuang Tawag",
+      "callsBreakdown": "{{routing}} routing · {{completion}} completion",
+      "successRate": "Success Rate",
+      "ofAllRequests": "sa lahat ng request",
+      "errors": "Mga Error",
+      "failedRequests": "nabigong request",
+      "models": "Mga Model",
+      "registered": "naka-rehistro",
+      "routers": "Mga Router",
+      "active": "aktibo"
+    },
+    "connectCard": {
+      "title": "Ikonekta ang isang client",
+      "desc": "Ituro ang Claude Code, Codex, Cursor at {{count}} pa sa gateway na ito."
+    }
+  },
+  "login": {
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "signIn": "Mag-sign In",
+    "errors": {
+      "loginFailed": "Nabigo ang login",
+      "totpFailed": "Nabigo ang beripikasyon ng 2FA"
+    },
+    "totp": {
+      "title": "Two-Factor Authentication",
+      "backupPrompt": "Ilagay ang backup code.",
+      "appPrompt": "Ilagay ang 6-digit code mula sa iyong authenticator app.",
+      "backupCodeLabel": "Backup Code",
+      "authenticatorCodeLabel": "Authenticator Code",
+      "verify": "I-verify",
+      "useAuthenticatorInstead": "Gamitin ang authenticator app sa halip",
+      "useBackupInstead": "Gamitin ang backup code sa halip"
+    }
+  },
+  "setup": {
+    "welcome": "Maligayang pagdating! I-set up ka natin.",
+    "welcomeSubtitle": "Gumawa ng unang admin account upang simulan ang pamamahala ng Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Patuloy na umuunlad ang Routerly. Maaaring magkaroon ng bug.",
+    "betaFeedback": "Ang iyong feedback ay tumutulong hubugin ang magiging hitsura nito —",
+    "betaLink": "iulat ang mga isyu o ibahagi ang mga ideya",
+    "emailLabel": "Email ng Admin",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Minimum na 8 karakter",
+    "confirmLabel": "Kumpirmahin ang Password",
+    "confirmPlaceholder": "Ilagay ulit ang password",
+    "submit": "Gumawa ng Admin Account",
+    "errors": {
+      "mismatch": "Hindi tugma ang mga password",
+      "tooShort": "Ang password ay dapat hindi bababa sa 8 karakter",
+      "setupFailed": "Nabigo ang setup"
+    }
+  },
+  "audit": {
+    "empty": "Walang natagpuang audit entry.",
+    "errors": {
+      "loadFailed": "Nabigong i-load ang audit log"
+    },
+    "filters": {
+      "period": "Panahon",
+      "user": "User",
+      "userPlaceholder": "Email o user ID",
+      "action": "Aksyon",
+      "actionPlaceholder": "hal. model:create",
+      "result": "Resulta",
+      "results": {
+        "all": "Lahat",
+        "success": "Tagumpay",
+        "forbidden": "Ipinagbabawal",
+        "error": "Error"
+      },
+      "refresh": "I-refresh"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "action": "Aksyon",
+      "endpoint": "Endpoint",
+      "result": "Resulta",
+      "details": "Mga Detalye"
+    },
+    "pagination": {
+      "previous": "Nauna",
+      "next": "Susunod",
+      "page": "Pahina {{page}} ng {{totalPages}}",
+      "total": "({{count}} kabuuan)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Paggamit",
+      "live": "LIVE",
+      "subtitle": "Detalyadong log ng tawag at breakdown kada model",
+      "updatedAt": "· na-update noong {{time}}",
+      "poll": {
+        "off": "Off",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "I-disable ang live mode",
+        "enable": "Paganahin ang live mode (i-refresh kada 2s)"
+      },
+      "refreshNow": "↻ Ngayon",
+      "refreshNowTitle": "I-refresh ngayon",
+      "filters": {
+        "period": "Panahon",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Caller",
+        "type": "Uri",
+        "status": "Status",
+        "allRouters": "Lahat ng Router",
+        "allModels": "Lahat ng Model",
+        "allTokens": "Lahat ng Token",
+        "resetFilters": "I-reset ang mga filter",
+        "all": "Lahat",
+        "success": "Tagumpay",
+        "blocked": "Nahadlangan",
+        "error": "Error"
+      },
+      "caller": {
+        "all": "Lahat",
+        "completion": "Completion",
+        "routing": "Router",
+        "guardrail": "Guardrail",
+        "judge": "Judge"
+      },
+      "callerBadge": {
+        "completion": "completion",
+        "routing": "router",
+        "guardrail": "guardrail",
+        "judge": "judge"
+      },
+      "errors": {
+        "loadFailedPrefix": "Nabigong i-load ang usage data:",
+        "retry": "Subukan ulit"
+      },
+      "stats": {
+        "totalCalls": "Kabuuang Tawag",
+        "completionCalls": "Mga Completion Call",
+        "routerCalls": "Mga Router Call",
+        "guardrailCalls": "Mga Guardrail Call",
+        "blockedCalls": "Mga Nahadlangang Tawag",
+        "errors": "Mga Error"
+      },
+      "table": {
+        "rank": "Rank",
+        "model": "Model",
+        "provider": "Provider",
+        "calls": "Mga Tawag",
+        "errors": "Mga Error",
+        "successRate": "Success rate",
+        "avgLatency": "Avg latency",
+        "p95Latency": "P95 latency",
+        "inputTokens": "Input tokens",
+        "outputTokens": "Output tokens",
+        "costPer1k": "Gastos / 1K",
+        "cost": "Gastos (USD)",
+        "bestCostPerformance": "Pinakamahusay na cost-performance"
+      },
+      "showMoreModels": "Ipakita ang {{count}} pang model",
+      "showMoreModels_other": "Ipakita ang {{count}} pang mga model",
+      "showFewerModels": "Ipakita ang mas kaunting model",
+      "recentCalls": {
+        "title": "Mga Kamakailang Tawag",
+        "empty": "Walang usage record para sa panahong ito.",
+        "columns": {
+          "time": "Oras",
+          "router": "Router",
+          "model": "Model",
+          "type": "Uri",
+          "caller": "Caller",
+          "in": "In",
+          "out": "Out",
+          "cost": "Gastos",
+          "latency": "Latency",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Status"
+        }
+      },
+      "pagination": {
+        "previous": "Nauna",
+        "next": "Susunod",
+        "pageOf": "Pahina {{page}} ng {{totalPages}}",
+        "totalRecords": "({{count}} kabuuang record)"
+      }
+    },
+    "record": {
+      "back": "Bumalik",
+      "title": "Detalye ng Tawag",
+      "notFoundTitle": "Hindi Natagpuan ang Record",
+      "notFoundBody": "Hindi na-load ang usage record {{id}}.",
+      "errors": {
+        "loadFailed": "Nabigong i-load ang record"
+      },
+      "sections": {
+        "identity": "Pagkakakilanlan",
+        "tokensAndCost": "Tokens at Gastos",
+        "performanceAndOutcome": "Performance at Kinalabasan",
+        "traceLog": "Trace Log"
+      },
+      "fields": {
+        "recordId": "Record ID",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Uri ng Tawag",
+        "requestType": "Uri ng Request",
+        "inputTokens": "Input Tokens",
+        "outputTokens": "Output Tokens",
+        "totalTokens": "Kabuuang Tokens",
+        "costUsd": "Gastos (USD)",
+        "costUnknown": "Hindi Kilala",
+        "latency": "Latency",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Kinalabasan",
+        "timestamp": "Timestamp",
+        "guardrailTriggered": "Na-trigger ang Guardrail",
+        "blockedBy": "Nahadlangan Ng",
+        "piiRedacted": "Binurang PII"
+      },
+      "errorMessage": "Mensahe ng Error",
+      "eventCount": "{{count}} kaganapan",
+      "eventCount_other": "{{count}} kaganapan",
+      "noTrace": "Walang available na trace. Ang trace data ay naitatala lamang para sa mga bagong tawag."
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "subtitle": "Subukan ang mga model, ihambing ang mga sagot, at i-save ang mga prompt preset.",
+    "mode": {
+      "single": "Single",
+      "compare": "Compare"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "kapareho ng A",
+      "unknownToken": "Hindi kilalang token"
+    },
+    "presets": {
+      "button": "Mga Preset",
+      "panelTitle": "Mga Preset",
+      "saveCurrent": "I-save ang kasalukuyan",
+      "namePlaceholder": "Pangalan ng preset...",
+      "save": "I-save",
+      "empty": "Walang preset pa.",
+      "delete": "Burahin ang preset"
+    },
+    "streamingDisabled": {
+      "banner": "Hindi available ang streaming",
+      "bannerBody": "may aktibong response-blocking guardrail ang router na ito. Kailangang suriin ng Routerly ang buong response bago ihatid, kaya darating nang sabay-sabay ang mga sagot.",
+      "tooltip": "Hindi available ang streaming: kailangang suriin ang buong response bago ihatid dahil sa isang response-blocking guardrail.",
+      "ariaLabel": "Hindi available ang streaming"
+    },
+    "systemPrompt": "System prompt",
+    "model": "Model",
+    "modelPlaceholder": "Auto (default ng router)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Max tokens",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Alisin",
+    "empty": {
+      "noMessages": "Walang mensahe pa.",
+      "enterToken": "Ilagay ang Router Token sa itaas upang magsimula."
+    },
+    "reasoning": "Reasoning",
+    "blockedDefault": "Nahadlangan ang mensaheng ito ng guardrail.",
+    "truncated": "Naputol — pinutol ang sagot ng max tokens",
+    "bufferedNote": "Hinawakan para sa pagsusuri ng seguridad",
+    "errors": {
+      "onlyImages": "Suportado lamang ang mga attachment na larawan."
+    },
+    "rawToggle": {
+      "rendered": "rendered",
+      "raw": "raw"
+    },
+    "inputPlaceholder": "Mag-type ng mensahe...",
+    "attachImage": "Ikabit ang larawan",
+    "attachedImageAlt": "Naikabit",
+    "attachmentAlt": "Attachment",
+    "debug": {
+      "title": "Debug",
+      "clear": "Alisin",
+      "hide": "Itago ang debug",
+      "show": "Ipakita ang debug",
+      "empty": "Walang debug data pa.",
+      "emptyHint": "Magpadala ng mensahe upang makita ang mga detalye ng routing.",
+      "turnTraceLog": "Turn #{{turn}} trace log"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Piliin ang model...",
+      "noMessages": "Walang mensahe pa.",
+      "debugTurns": "Debug ({{count}} turn)",
+      "debugTurns_other": "Debug ({{count}} turn)",
+      "guardrailTokensTitle": "Guardrail judge tokens",
+      "stop": "Ihinto",
+      "inputPlaceholder": "Ipadala ang parehong mensahe sa dalawang model..."
+    }
+  },
+  "help": {
+    "title": "Tulong at Suporta",
+    "subtitle": "Nandito kami upang tumulong — humanap ng sagot o makipag-ugnayan anumang oras.",
+    "docs": {
+      "title": "Dokumentasyon",
+      "subtitle": "Mga gabay, API reference, at dokumentasyon ng konfigurasyon",
+      "body": "Sinasaklaw ng opisyal na dokumentasyon ang lahat mula sa pagsisimula hanggang sa mga advanced na routing policy, pag-set up ng provider, budget, at ang buong API reference.",
+      "openLink": "Buksan ang dokumentasyon"
+    },
+    "issues": {
+      "title": "Iulat ang bug o magmungkahi ng feature",
+      "subtitle": "Magbukas ng GitHub issue — dalawang minuto lang",
+      "body": "Ang GitHub issues ang pinakamainam na paraan upang mag-ulat ng bug o magmungkahi ng mga pagpapabuti. Upang matulungan kaming ayusin ang mga bagay nang mas mabilis, isama: kung ano ang ginawa mo, kung ano ang inaasahan mong mangyari, at kung ano talaga ang nangyari.",
+      "showTemplate": "Ipakita ang issue template",
+      "reportBug": "Mag-ulat ng bug",
+      "requestFeature": "Humiling ng feature"
+    },
+    "issueTemplate": {
+      "whatHappened": "Ano ang nangyari?",
+      "whatHappenedHint": "Ilarawan ang problema sa simpleng pananalita",
+      "stepsToReproduce": "Mga hakbang upang maulit",
+      "expectedBehaviour": "Inaasahang pag-uugali",
+      "expectedBehaviourHint": "Ano ang inaasahan mong makita",
+      "version": "Bersyon ng Routerly",
+      "versionHint": "Patakbuhin ang `routerly --version` o tingnan ang Settings → About"
+    },
+    "email": {
+      "title": "Makipag-ugnayan sa suporta",
+      "subtitle": "Binabasa namin ang bawat mensahe at tumutugon kaagad kung kaya",
+      "body": "Para sa kahit anong hindi angkop sa GitHub issue — mga tanong sa billing, pribadong alalahanin, o kung nais mo lamang magbati — mag-iwan ng mensahe."
+    },
+    "faq": {
+      "title": "Mga madalas itanong",
+      "subtitle": "Mabibilis na sagot sa mga pinakakaraniwang tanong",
+      "items": {
+        "connect": {
+          "q": "Paano ikonekta ang aking app sa Routerly?",
+          "a": "Ituro ang iyong OpenAI o Anthropic SDK sa iyong Routerly instance. Palitan ang base URL ng http://your-host:3000/v1 (OpenAI-compatible) o http://your-host:3000/anthropic (Anthropic-compatible), pagkatapos gamitin ang router token bilang API key. Iyon lang — walang ibang pagbabagong kailangan."
+        },
+        "openaiCompat": {
+          "q": "Compatible ba ang Routerly sa mga tool na gumagamit ng OpenAI SDK?",
+          "a": "Oo. Ang Routerly ay drop-in replacement: kahit anong tool na sumusuporta sa custom base URL at API key (LangChain, LlamaIndex, Cursor, Continue, atbp.) ay gagana nang direkta. Para sa mga client na Anthropic-format, gamitin ang /anthropic endpoint sa halip."
+        },
+        "routing": {
+          "q": "Paano gumagana ang model routing?",
+          "a": "Ang bawat router ay may routing policy na nagpapasya kung aling model ang tumatanggap ng request. Ang mga patakaran ay kinabibilangan ng round-robin, pinakamurang gastos, pinakamabilis na tugon, fallback chains, at iba pa. I-konfigure mo ang mga ito kada router sa ilalim ng Routers → Routing."
+        },
+        "addModel": {
+          "q": "Paano magdagdag ng bagong AI model?",
+          "a": "Pumunta sa Models → Add model. Maaari kang magdagdag ng kahit anong OpenAI-compatible provider (Ollama, LM Studio, custom endpoints) o native Anthropic endpoint. Punan ang base URL, API key, at model ID — bahala na ang Routerly sa iba."
+        },
+        "dataStored": {
+          "q": "Naiimbak ba ang aking data? Naitatala ba ang aking mga prompt?",
+          "a": "Ang Routerly ay self-hosted at nag-iimbak ng data lamang sa iyong makina (sa ~/.routerly/ bilang default). Ang mga prompt at sagot ay hindi kailanman ipinapadala kahit saan ng Routerly. Ang mga request log ay naiimbak nang lokal at kung pinagana mo lamang ito kada router."
+        },
+        "routerToken": {
+          "q": "Ano ang router token at paano ito naiiba sa provider API key?",
+          "a": "Ang router token ay kredensyal na ibinibigay mo sa iyong app o sa mga miyembro ng iyong team upang mag-authenticate sa Routerly. Hiwalay ito sa iyong mga provider API key, na iniimbak nang ligtas ng Routerly sa server side. Hindi kailanman nakikita ng iyong mga app ang tunay na mga key ng provider."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} user",
+    "countLabel_other": "{{count}} na user",
+    "addButton": "Magdagdag ng User",
+    "columns": {
+      "email": "Email",
+      "role": "Role",
+      "routers": "Mga Router"
+    },
+    "allRouters": "Lahat",
+    "resetTwoFaTitle": "I-reset ang 2FA",
+    "resetTwoFaConfirm": "I-reset ang 2FA para sa {{email}}? Kakailanganin nilang mag-enroll ulit.",
+    "deleteConfirm": "Burahin ang user na ito?",
+    "emptyTitle": "Walang user pa.",
+    "noPermission": "Walang ka permiso upang tingnan ang mga user.",
+    "modal": {
+      "title": "Magdagdag ng User",
+      "emailLabel": "Email",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Role",
+      "roleAdmin": "Admin",
+      "roleViewer": "Viewer",
+      "cancelButton": "Kanselahin",
+      "submitButton": "Magdagdag ng User"
+    },
+    "errors": {
+      "loadFailed": "Nabigong i-load ang mga user",
+      "addFailed": "Error"
+    }
+  },
+  "userEdit": {
+    "title": "I-edit ang User",
+    "account": "Account",
+    "email": "Email",
+    "role": "Role",
+    "changePassword": "Palitan ang Password",
+    "newPassword": "Bagong Password",
+    "newPasswordHint": "(iwanang blangko upang panatilihin ang kasalukuyan)",
+    "save": "I-save",
+    "saved": "Na-save!",
+    "errors": {
+      "loadFailed": "Nabigong i-load ang user",
+      "saveFailed": "Nabigong i-save"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Pamahalaan ang mga role at permiso. Hindi maaaring baguhin ang mga built-in na role.",
+    "newRole": "Bagong Role",
+    "builtin": "built-in",
+    "edit": "I-edit",
+    "deleteConfirm": "Burahin ang role na ito? Maaapektuhan ang mga user na may role na ito.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "hal. operator",
+      "name": "Pangalan",
+      "namePlaceholder": "Pangalan ng role",
+      "permissions": "Mga Permiso",
+      "create": "Gumawa",
+      "save": "I-save",
+      "cancel": "Kanselahin"
+    },
+    "permissions": {
+      "routerRead": "Routers – Read",
+      "routerWrite": "Routers – Write",
+      "modelRead": "Models – Read",
+      "modelWrite": "Models – Write",
+      "userRead": "Users – Read",
+      "userWrite": "Users – Write",
+      "reportRead": "Reports – Read",
+      "settingsRead": "Settings – Read",
+      "settingsWrite": "Settings – Write",
+      "notificationWrite": "Notifications – Write",
+      "tokenRead": "Tokens – Read",
+      "tokenWrite": "Tokens – Write",
+      "roleWrite": "Roles – Write",
+      "auditRead": "Audit Log – Read",
+      "modulesRead": "Modules – Read",
+      "modulesManage": "Modules – Manage",
+      "connectionsRead": "Connections – Read",
+      "connectionsManage": "Connections – Manage",
+      "resilienceRead": "Resilience – Read",
+      "resilienceManage": "Resilience – Manage",
+      "profilesRead": "Routing Profiles – Read",
+      "profilesManage": "Routing Profiles – Manage",
+      "optimizersRead": "Optimizers – Read",
+      "optimizersManage": "Optimizers – Manage",
+      "experimentsRead": "Experiments – Read",
+      "experimentsManage": "Experiments – Manage"
+    },
+    "errors": {
+      "loadFailed": "Nabigong i-load ang mga role",
+      "updateFailed": "Nabigong i-update ang role",
+      "createFailed": "Nabigong gumawa ng role",
+      "deleteFailed": "Nabigong burahin ang role"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Mga Profile",
+      "subtitle": "Maaaring gamitin ulit ang mga konfigurasyon ng routing, optimizer at seguridad",
+      "noPermission": "Walang ka permiso upang tingnan ang mga profile.",
+      "newProfile": "Bagong Profile ng {{kind}}",
+      "empty": "Walang profile ng {{kind}} pa.",
+      "builtin": "Built-in",
+      "custom": "Custom",
+      "view": "Tingnan",
+      "edit": "I-edit",
+      "clone": "I-clone",
+      "delete": "Burahin",
+      "deleteConfirm": "Burahin ang profile \"{{label}}\"? Hindi na ito maibabalik.",
+      "kindDescriptions": {
+        "routing": "Aling model ang sumasagot sa request, at ano ang mangyayari kung hindi ito kaya",
+        "optimizer": "Ano ang tinatanggal sa prompt bago ito ipadala",
+        "security": "Guardrails at PII policies na ilalapat sa trapiko"
+      },
+      "columns": {
+        "label": "Label",
+        "type": "Uri",
+        "configuration": "Konfigurasyon",
+        "version": "Bersyon"
+      },
+      "errors": {
+        "loadFailed": "Nabigong i-load ang mga profile",
+        "deleteFailed": "Nabigong burahin ang profile"
+      }
+    },
+    "form": {
+      "backToProfiles": "Bumalik sa Mga Profile",
+      "newProfileTitle": "Bagong Profile ng {{kind}}",
+      "editProfileTitle": "I-edit ang {{label}}",
+      "builtinHint": "Hindi maaaring i-edit ang mga built-in na profile. I-clone ang isa upang i-customize ito.",
+      "assignHint": "Maaaring itakda ang {{article}} {{kind}} profile sa kahit ilang router.",
+      "noPermission": "Walang ka permiso upang tingnan ang mga profile.",
+      "label": "Label",
+      "optimizers": "Mga Optimizer",
+      "optimizersHint": "I-drag upang ayusin ulit, i-toggle upang paganahin. Isinasagawa ang mga ito sa pagkasunod-sunod mula sa taas hanggang ibaba.",
+      "createProfile": "Gumawa ng Profile",
+      "saveProfile": "I-save ang Profile",
+      "cancel": "Kanselahin",
+      "copySuffix": "kopya ng {{label}}",
+      "labelPlaceholders": {
+        "routing": "hal. Aking Balanseng Routing",
+        "optimizer": "hal. Aking Prompt Trimmer",
+        "security": "hal. Aking Mahigpit na Guardrails"
+      },
+      "errors": {
+        "notFound": "Hindi natagpuan ang profile.",
+        "loadFailed": "Nabigong i-load ang profile",
+        "saveFailed": "Nabigong i-save ang profile"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Bumalik sa Connect",
+    "title": "Connect",
+    "docs": "Docs",
+    "notEnabledPrefix": "Hindi pinagana ang client configurator. Humingi sa admin na paganahin ito gamit ang",
+    "noClientPrefix": "Walang client na pinangalanang",
+    "errors": {
+      "loadFailed": "Nabigong i-load ang mga client: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Pinakamabilis: isang command",
+      "description": "Patakbuhin ito sa makina kung saan naka-install ang {{client}}. Isusulat nito ang {{configPath}}, na may backup na maibabalik mo."
+    },
+    "byHand": {
+      "titleAlt": "O i-set up nang manwal",
+      "titleUi": "I-set up nang manwal",
+      "titleConfigFile": "I-set up ang config file",
+      "setValuesIn": "Itakda ang mga halagang ito sa {{configPath}}.",
+      "putThisIn": "Ilagay ito sa",
+      "replaceToken": "Palitan",
+      "withRouterToken": "ng router token:",
+      "createOne": "gumawa ng isa",
+      "onRoutersPage": "sa Routers page.",
+      "modelLabel": "Model:",
+      "modelHint": "ipinapasa ang pagpili sa Routerly, kahit anong model id mula sa",
+      "modelsLink": "Mga Model",
+      "worksToo": "gumagana din.",
+      "openaiCompatHint": "Ang parehong base URL, key at model ay angkop sa kahit anong client na may \"OpenAI compatible\" na provider option."
+    },
+    "mcp": {
+      "title": "MCP server",
+      "description": "Hiwalay sa mga hakbang sa itaas: pinahihintulutan nito ang {{client}} na tawagin ang mga tool ng Routerly. Kailangan nito ng personal na MCP token, ginagawa gamit ang",
+      "orFromYour": "o mula sa iyong",
+      "profileLink": "profile"
+    },
+    "checkItWorked": {
+      "title": "Tingnan kung gumana",
+      "restart": "I-restart ang {{client}}, magpadala ng prompt, pagkatapos hanapin ang tawag sa",
+      "usageLink": "Paggamit",
+      "cliReports": "Mula sa parehong makina, iniuulat ng CLI ang kanyang natagpuan:"
+    }
+  },
+  "connect": {
+    "title": "Connect",
+    "subtitle": "Ituro ang isang AI coding client sa gateway na ito. Piliin ang client para sa mga hakbang sa pag-set up.",
+    "llmLabel": "LLM",
+    "llmDescription": "iniiruta ang trapiko ng model ng client na iyon sa pamamagitan ng Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "kinakarga ang Routerly bilang tool server sa loob nito.",
+    "notEnabledPrefix": "Hindi pinagana ang client configurator. Humingi sa admin na paganahin ito gamit ang",
+    "errors": {
+      "loadFailed": "Nabigong i-load ang mga client: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Isang command",
+      "hint": "Isusulat ng CLI ang config file para sa iyo, na may backup na maibabalik mo."
+    },
+    "byHand": {
+      "title": "Manwal",
+      "hint": "Kopyahin ang snippet mula sa pahina ng client patungo sa mga setting nito, pagkatapos i-restart ito."
+    },
+    "endpoint": {
+      "title": "Ituro ang kahit anong client dito",
+      "description": "Kahit anong nabuo sa OpenAI o Anthropic SDK ay gumagana sa pagpalit ng base URL at key. Walang ibang nagbabago: tumawid ang mga request at response sa Routerly gaya ng kanilang kalikasan.",
+      "openaiBaseUrl": "OpenAI base URL",
+      "anthropicBaseUrl": "Anthropic base URL",
+      "apiKey": "API key",
+      "model": "Model",
+      "apiKeyDescription": "Isang router token, ipinapadala bilang",
+      "or": "o",
+      "createOne": "Gumawa ng isa",
+      "onRoutersPage": "sa Routers page.",
+      "modelDescription": "hahayaan ang Routerly na pumili. Kahit anong model id mula sa",
+      "modelsLink": "Mga Model",
+      "worksToo": "page ay gumagana din."
+    }
+  }
+}

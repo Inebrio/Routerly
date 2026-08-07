@@ -1,0 +1,2762 @@
+{
+  "app": {
+    "theme": {
+      "auto": "స్వయంచాలక",
+      "dark": "చీకటి",
+      "light": "ప్రకాశవంతమైన"
+    },
+    "themeCycle": {
+      "title": "థీమ్: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "సైడ్‌బార్‌ను విస్తరించండి",
+      "collapse": "సైడ్‌బార్‌ను కుదించండి"
+    },
+    "tagline": "ఒక గేట్‌వే. ఏదైనా AI మోడల్. పూర్తి నియంత్రణ.",
+    "nav": {
+      "overview": "సమీక్ష",
+      "providers": "ప్రదాతలు",
+      "models": "మోడల్‌లు",
+      "profiles": "ప్రొఫైల్‌లు",
+      "routers": "రౌటర్‌లు",
+      "experiments": "ప్రయోగాలు",
+      "usage": "ఉపయోగం",
+      "playground": "ప్లేగ్రౌండ్",
+      "settings": "సెట్టింగ్‌లు",
+      "connectApp": "యాప్‌ను కనెక్ట్ చేయండి",
+      "help": "సహాయం",
+      "signOut": "సైన్ అవుట్ చేయండి"
+    },
+    "banner": {
+      "permissionWarning": "కొన్ని కాన్ఫిగరేషన్ ఫైల్‌లకు అనుమతిని ఇవ్వడం ({{files}}). ప్రారంభం మరియు అభ్యర్థనలు ఇప్పటికీ పనిచేస్తాయి, కానీ సౌకర్యవంతమైన సమయంలో హోస్ట్ ఫైల్‌సిస్టమ్‌ నుండి దీనిని సరిచేయండి.",
+      "dismiss": "విస్మరించండి",
+      "updateAvailable": "Routerly v{{latest}} అందుబాటులో ఉంది. మీరు v{{current}}లో ఉన్నారు.",
+      "updateLink": "సెట్టింగ్‌లలో నవీకరించండి",
+      "mfaRequired": "ఈ ఇన్‌స్టెన్‌స్‌కు రెండు-ఫ్యాక్టర్ ప్రమాణీకరణ అవసరం.",
+      "mfaLink": "మీ ప్రొఫైల్‌లో 2FA సెటప్ చేయండి",
+      "mfaSuffix": "మీ ఖాతాను సురక్షితం చేయడానికి.",
+      "telemetryTitle": "Routerly ఎప్పుడూ డేటాను స్వయంచాలకంగా పంపదు.",
+      "telemetryBody": "గుమ్మడి సంస్థాపన మెట్రిక్‌లను పంపడం ద్వారా సహాయం చేయాలనుకుంటున్నారా? కేవలం ఈవెంట్ రకం, సంస్కరణ, ప్లాట్‌ఫారమ్ మరియు యాదృచ్ఛిక ID - ఎటువంటి వ్యక్తిగత డేటా లేదు, IP లేదు.",
+      "telemetryLink": "ఏ చేయించారు?",
+      "telemetryYes": "అవును, సహాయం చేయండి",
+      "telemetryNo": "వద్దు, ధన్యవాదాలు"
+    },
+    "language": {
+      "label": "భాష"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} సెకను ముందు",
+      "secondsAgo_other": "{{count}} సెకన్ల ముందు",
+      "minutesAgo": "{{count}} నిమిషం ముందు",
+      "minutesAgo_other": "{{count}} నిమిషాల ముందు",
+      "hoursAgo": "{{count}} గంట ముందు",
+      "hoursAgo_other": "{{count}} గంటల ముందు",
+      "daysAgo": "{{count}} రోజు ముందు",
+      "daysAgo_other": "{{count}} రోజుల ముందు"
+    },
+    "confirm": "నిర్ధారించండి",
+    "cancel": "రద్దు చేయండి",
+    "remove": "తీసివేయండి",
+    "select": "ఎంచుకోండి...",
+    "search": "శోధించండి...",
+    "noResults": "ఫలితాలు లేవు",
+    "noRemainingOptions": "మిగిలిన ఎంపికలు లేవు",
+    "apply": "వర్తించండి",
+    "saved": "సేవ్ చేసారు",
+    "showLess": "తక్కువ చూపించండి",
+    "roles": "పాత్రలు",
+    "permissions": "అనుమతులు",
+    "notifications": {
+      "title": "నోటిఫికేషన్‌లు",
+      "markAllRead": "అన్నింటిని చదివినవిగా గుర్తించండి",
+      "empty": "నోటిఫికేషన్‌లు లేవు",
+      "viewAll": "అన్ని నోటిఫికేషన్‌లను చూడండి"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "కాలాన్ని ఎంచుకోండి",
+      "recent": "ఇటీవल",
+      "ranges": "పరిధులు",
+      "from": "నుండి",
+      "to": "కు"
+    },
+    "permissionGuard": {
+      "fixFailed": "అనుమతులను సరిచేయడం విఫలమైంది",
+      "title": "అసురక్షిత ఫైల్ అనుమతులు",
+      "defaultMessage": "కొన్ని ఫైల్‌లకు అసురక్షిత అనుమతులు ఉన్నాయి.",
+      "fixing": "సరిచేస్తోంది…",
+      "fixNow": "ఇప్పుడే సరిచేయండి"
+    },
+    "limitRows": {
+      "noLimits": "పరిమితులు సెట్ చేయబడలేదు.",
+      "metricLabel": "మెట్రిక్",
+      "typeLabel": "రకం",
+      "periodLabel": "కాలం",
+      "everyLabel": "ప్రతి",
+      "maxCost": "గరిష్ట ధర",
+      "maxCount": "గరిష్ట గణన",
+      "maxTokens": "గరిష్ట టోకెన్‌లు",
+      "allCombosSet": "అన్ని మెట్రిక్/పిరియడ్ కలయికలు ఇప్పటికే సెట్ చేయబడ్డాయి",
+      "addLimit": "పరిమితి జోడించండి",
+      "metric": {
+        "cost": "ధర",
+        "calls": "కాల్‌లు",
+        "input_tokens": "ఇన్‌పుట్ టోకెన్‌లు",
+        "output_tokens": "అవుట్‌పుట్ టోకెన్‌లు",
+        "total_tokens": "మొత్తం టోకెన్‌లు"
+      },
+      "period": {
+        "hourly": "ప్రతి గంటకు",
+        "daily": "రోజువారీ",
+        "weekly": "సాప్తాహిక",
+        "monthly": "నెలవారీ",
+        "yearly": "సంవత్సరానికి"
+      },
+      "rollingUnit": {
+        "second": "సెకను",
+        "minute": "నిమిషం",
+        "hour": "గంట",
+        "day": "రోజు",
+        "week": "వారం",
+        "month": "నెల"
+      },
+      "windowType": {
+        "period": "కాలం",
+        "rolling": "రోలింగ్"
+      },
+      "fmt": {
+        "requests": "{{value}} అభ్యర్థనలు",
+        "inputTokens": "{{value}} ఇన్‌పుట్ టోకెన్‌లు",
+        "outputTokens": "{{value}} అవుట్‌పుట్ టోకెన్‌లు",
+        "totalTokens": "{{value}} మొత్తం టోకెన్‌లు",
+        "everyRolling": "{{metric}} ప్రతి {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} ప్రతి {{period}}"
+      }
+    },
+    "savings": {
+      "title": "రూటింగ్ ఏ చేసింది",
+      "input": "ఇన్‌పుట్",
+      "output": "అవుట్‌పుట్",
+      "actual": "వాస్తవ",
+      "clientCalls": "{{count}} క్లయింట్ కాల్",
+      "clientCalls_other": "{{count}} క్లయింట్ కాల్‌లు",
+      "comparedAgainst": ", దానిని ఆ ప్రతిదానికి పంపడంతో పోలిస్తే",
+      "comparedAgainst_other": ", వాటన్నింటిని ఆ ప్రతిదానికి పంపడంతో పోలిస్తే",
+      "paidModelsInPlay": "{{count}} చెల్లిస్తే మోడల్ ఆడుతోంది",
+      "paidModelsInPlay_other": "{{count}} చెల్లిస్తే మోడల్‌లు ఆడుతోంది",
+      "metricCost": "ధర",
+      "metricTokens": "టోకెన్‌లు",
+      "totalCost": "మొత్తం ధర",
+      "routed": "రూట్ చేసారు: {{value}}",
+      "saved": "సేవ్ చేసారు: {{value}}",
+      "usdThisPeriod": "USD ఈ కాలంలో",
+      "savedVsAlways": "{{value}} సేవ్ చేసారు ({{percent}}%) vs ఎప్పుడూ {{model}}",
+      "tokens": "టోకెన్‌లు",
+      "in": "In: {{value}}",
+      "out": "Out: {{value}}",
+      "tokenSubWithCache": "{{in}} in · {{out}} out · {{cached}} cached",
+      "tokenSub": "{{in}} in · {{out}} out",
+      "cutByOptimizers": "{{value}} ఆప్టిమైజర్‌ల ద్వారా కత్తిరించారు",
+      "fewerThanAlways": "{{value}} ఎప్పుడూ {{model}} కంటే తక్కువ, అంచనా"
+    },
+    "optimizerSteps": {
+      "downloaded": "డౌన్‌లోడ్ చేసారు",
+      "thisStepRunsOn": "ఈ దశ ఆన్‌లో నడుస్తుంది",
+      "defaultCheckpoint": "డిఫాల్ట్ చెక్‌పాయింట్"
+    },
+    "routingPolicies": {
+      "title": "రూటింగ్ విధానాలు",
+      "subtitle": "విధానాలు అభ్యర్థనలు ఎలా రూట్ చేయబడతాయో నిర్ణయిస్తాయి. అవి ఎగువ నుండి దిగువకు క్రమంలో అమలు చేయబడతాయి.",
+      "removePolicy": "విధానాన్ని తీసివేయండి",
+      "removeIntent": "ఉద్దేశ్యాన్ని తీసివేయండి",
+      "removeExample": "ఉదాహరణను తీసివేయండి",
+      "routingModels": "రూటింగ్ మోడల్‌లు",
+      "embeddingModels": "ఎంబెడింగ్ మోడల్‌లు",
+      "maxCompletionTokens": "గరిష్ట సంపూర్ణ టోకెన్‌లు",
+      "maxPromptChars": "గరిష్ట ప్రాంప్ట్ అక్షరాలు",
+      "similarityThreshold": "సారూప్యత థ్రెషోల్డ్",
+      "previousMessages": "మునుపటి సందేశాలు",
+      "intents": "ఉద్దేశ్యాలు",
+      "confidenceThreshold": "విశ్వాస థ్రెషోల్డ్",
+      "ambiguityMargin": "అస్పష్టత మార్జిన్",
+      "maxCallsPerWindow": "విండో ప్రতి గరిష్ట కాల్‌లు",
+      "addFallbackModel": "ఫాల్‌బ్యాక్ మోడల్ జోడించండి",
+      "autoRoutingLabel": "ఆటో రూటింగ్",
+      "autoRoutingHint": "ప్రారంభం చేస్తే, ట్రాఫిక్ కస్టమ్ ప్రాంప్ట్‌లు లేకుండా పంపిణీ చేయబడుతుంది. నిష్క్రియం చేస్తే, ప్రతి టార్గెట్ మోడల్‌ను ఎప్పుడు ఎంచుకోవాలో AI ను సూచించే నిర్దిష్ట ప్రాంప్ట్‌లను వ్రాయవచ్చు.",
+      "additionalPromptInfoLabel": "అదనపు ప్రాంప్ట్ సమాచారం",
+      "additionalPromptInfoPlaceholder": "రూటింగ్ ప్రాంప్ట్‌లో చేర్చడానికి అదనపు సూచనలు...",
+      "addExamplePlaceholder": "ఉదాహరణ జోడించండి మరియు ఎంటర్ నొక్కండి…",
+      "addIntentPlaceholder": "ఉద్దేశ్యం జోడించండి మరియు ఎంటర్ నొక్కండి…",
+      "addPolicyPlaceholder": "విధానం జోడించండి...",
+      "labels": {
+        "llm": "AI రూటింగ్ విధానం",
+        "rate-limit": "రేట్ పరిమితి విధానం",
+        "budget-remaining": "బడ్జెట్ ఉద్రిక్త విధానం",
+        "semantic-intent": "సెమాంటిక్ ఉద్దేశ్య విధానం",
+        "health": "ఆరోగ్య విధానం",
+        "context": "సందర్భం విధానం",
+        "capability": "సామర్థ్య విధానం",
+        "performance": "పనితీరు విధానం",
+        "fairness": "న్యాయం విధానం",
+        "cheapest": "చcheapest విధానం",
+        "model-preference": "మోడల్ ఇష్టపరిచిన విధానం"
+      },
+      "descriptions": {
+        "context": "ఉपलब్ధ సందర్భం విండో ఆధారంగా స్కోర్ మోడల్‌లు. అంచనా వేసిన అభ్యర్థన పొడవు కంటే చిన్నదైన సందర్భం విండో కలిగిన మోడల్‌లకు 0 ని కేటాయిస్తుంది, కత్తిరణ లోపాలను నిరోధిస్తుంది.",
+        "cheapest": "టోకెన్ ఖర్చుకు విలోమానికి ఆనుపూర్వ స్కోర్ మోడల్‌లు. చీపెస్ట్ మోడల్ 1.0 పొందుతుంది, చిన్న ఖర్చుతో 0.0, అభ్యర్థనల్లో API వ్యయం తగ్గడానికి సహాయం చేస్తుంది.",
+        "health": "ఘాతాంక క్షయ ఉపయోగించి ఇటీవలి లోపం రేట్ ఆధారంగా స్కోర్ మోడల్‌లు (ఇటీవల లోపాలు ఎక్కువ బరువు కలిగి ఉంటాయి). వెయిట్ లోపం రేట్ కీలక థ్రెషోల్డ్‌ను అధిగమించినప్పుడు స్కోర్‌ను 0కు సెట్ చేసే సర్క్యూట్ బ్రేకర్‌ను వర్తింపజేస్తుంది.",
+        "performance": "ఘాతాంక క్షయ ఉపయోగించి ఇటీవల సగటు లేటెన్సీ ఆధారంగా స్కోర్ మోడల్‌లు. వేగవంతమైన మోడల్ 1.0 పొందుతుంది, నెమ్మదైనది 0.0 పొందుతుంది. ఇటీవల డేటా లేని మోడల్‌లు 1.0కు డిఫాల్ట్‌లు.",
+        "llm": "అభ్యర్థన యొక్క సెమాంటిక్ కంటెంట్ ఆధారంగా అభ్యర్థులను స్కోర్ చేయడానికి AI మోడల్‌ను ఉపయోగిస్తుంది. ప్రతి మోడల్‌కు రూటింగ్ గైడెన్స్ ప్రాంప్ట్‌లను మద్దతు ఇస్తుంది మరియు పరిమితులు కాన్ఫిగర్ చేసినప్పుడు బడ్జెట్ హెడరూమ్‌ను పరిగణిస్తుంది.",
+        "capability": "హార్డ్ ఫిల్టర్: అభ్యర్థన (దృష్టి, ఫంక్షన్ కాలింగ్, JSON మోడ్) కోసం అవసరమైన ఫీచర్‌ను స్పష్టంగా లేనిది చేస్తుంది, 0కు కేటాయిస్తుంది. స్పష్టమైన సామర్థ్య ప్రకటనలు లేని మోడల్‌లను పెనాల్టీ ఇవ్వరు.",
+        "rate-limit": "ప్రిందరికి రేట్ లిమిట్ (HTTP 429) హిట్ చేసే ప్రమాదాన్ని తగ్గించడానికి ఇటీవల కాల్ ఫ్రీక్వెన్సీ ఉన్న మోడల్‌లను పెనాల్టీ చేస్తుంది. స్కోర్‌ను 0కు బలవంతం చేసే కాన్ఫిగర్‌బుల్ హార్డ్ థ్రెషోల్డ్‌ను మద్దతు ఇస్తుంది.",
+        "fairness": "ఇటీవల విజయవంతమైన కాల్‌లు ఎక్కువ పొందిన మోడల్‌లను పెనాల్టీ చేయడం ద్వారా ట్రాఫిక్‌ను సమానంగా పంపిణీ చేస్తుంది. చేతిలో లోడ్ నిరోధించడానికి సాఫ్ట్ రౌండ్-రాబిన్‌గా పనిచేస్తుంది.",
+        "budget-remaining": "అన్ని కాన్ఫిగర్ చేసిన పరిమితుల్లో ఉద్రిక్త బడ్జెట్ హెడరూమ్ ఆధారంగా స్కోర్ మోడల్‌లు. తుష్టి ఠానాలకు ముందు తమ థ్రెషోల్డ్‌ల ముందు గది ఉన్న మోడల్‌లను ప్రిఫర్ చేస్తుంది.",
+        "semantic-intent": "ఎంబెడింగ్‌ల ఉపయోగించి సెమాంటిక్ ఉద్దేశ్యం ద్వారా అభ్యర్థనను వర్గీకరిస్తుంది, ఆ ఉద్దేశ్యానికి మ్యాప్ చేసిన మోడల్‌లకు అభ్యర్థీ పూల్‌ను పరిమితం చేస్తుంది. నిశ్చితమైన ఉపసరాలు పూల్‌ను కఠినంగా ఫిల్టర్ చేస్తాయి; అస్పష్టమైన ఉపసరాలు టాప్-2 పూల్‌లను విలీనం చేస్తాయి; తెలియని అభ్యర్థనలు అన్ని అభ్యర్థులను పాస్ చేస్తాయి.",
+        "model-preference": "క్లయింట్ నిర్దిష్ట మోడల్‌ను అభ్యర్థించినప్పుడు (routerly/ada కాకుండా), ఆ మోడల్‌కు కాన్ఫిగర్‌బుల్ బోనస్ స్కోర్‌ను అందిస్తుంది. ఎటువంటి ఆదరణ వ్యక్త చేయకపోతే, విధానం దూరంగా ఉంటుంది. జాబితాలో స్థానం ఇతర విధానాలకు వ్యతిరేకంగా ఆదరణ ఎంత బరువుకు నియంత్రిస్తుంది."
+      },
+      "selectModel": "మోడల్‌ను ఎంచుకోండి"
+    },
+    "securityRules": {
+      "applyTo": "దీనికి వర్తించండి",
+      "streamingBufferSize": "స్ట్రీమింగ్ బఫర్ సైజ్ (అక్షరాలు)",
+      "entityTypes": "సంస్థ రకాలు",
+      "target": "లక్ష్య",
+      "embeddingModel": "ఎంబెడింగ్ మోడల్",
+      "judgeModel": "జడ్జ్ మోడల్",
+      "contentGuardrails": "కంటెంట్ గార్డ్‌రెయిల్‌లు",
+      "piiPolicies": "PII విధానాలు",
+      "addSecurityPolicyPlaceholder": "భద్రతా విధానం జోడించండి...",
+      "removePolicyTooltip": "విధానాన్ని తీసివేయండి",
+      "deleteRuleAriaLabel": "నియమం తొలగించండి",
+      "embeddingModelPlaceholder": "ఎంబెడింగ్ మోడల్‌ను ఎంచుకోండి...",
+      "fallbackModelsLabel": "ఫాల్‌బ్యాక్ మోడల్‌లు (ఐచ్ఛికం, క్రమంలో ప్రయత్నించారు)",
+      "fallbackModelsPlaceholder": "ఫాల్‌బ్యాక్ మోడల్‌లు లేవు...",
+      "exampleTextsLabel": "టెక్స్ట్ నమూనాలను బ్లాక్ చేయండి (ఒక్కటి ఒక్కటి)",
+      "exampleTextsPlaceholder": "నేను ఎలా హ్యాక్ చేయగలను...\n...",
+      "similarityThresholdLabel": "సారూప్యత థ్రెషోల్డ్:",
+      "judgeModelPlaceholder": "జడ్జ్ మోడల్‌ను ఎంచుకోండి...",
+      "allowedTopicsLabel": "అనుమతించిన విషయాలు (సహజ భాష)",
+      "allowedTopicsPlaceholder": "సాఫ్ట్‌వేర్ ఉత్పత్తుల కోసం కస్టమర్ సపోర్ట్. సాంకేతిక సమస్య పరిష్కారం. బిల్లింగ్ ప్రశ్నలు.",
+      "onTopicThresholdLabel": "విషయం-విషయానికి స్కోర్ క్రింద బ్లాక్ చేయండి:",
+      "harmThresholdLabel": "హానికరం స్కోర్ కంటే ఎక్కువ బ్లాక్ చేయండి:",
+      "customInstructionsLabel": "కస్టమ్ సూచనలు",
+      "customInstructionsPlaceholder": "మీరు కంటెంట్ సేఫ్టీ క్లాసిఫైయర్ కు. కింది పాఠ్యం కోసం హానికరం కంటెంట్ మూల్యాంకనం చేయండి.\nకేటగిరీలు: ద్వేష ప్రసంగం, హింస, లైంగిక కంటెంట్, ఆత్మ-హానికారం.\nప్రతిస్పందన ONLY JSON ఆబ్జెక్ట్ తో: {\"score\": <number 0 మరియు 1 మధ్య>}",
+      "customInstructionsRequired": "కస్టమ్ సూచనలు అవసరం.",
+      "enabledLabel": "ప్రారంభం చేసారు",
+      "contentGuardrailsHint": "అభ్యర్థనలను మరియు ప్రతిస్పందనలను కాన్ఫిగర్ చేసిన నియమాలకు వ్యతిరేకంగా సరిపరుస్తుంది. కనీసం ఒక నియమం కాన్ఫిగర్ చేసినప్పుడు క్రియాశీలం.",
+      "securityPoliciesHeading": "భద్రతా విధానాలు",
+      "noSecurityPolicies": "భద్రతా విధానాలు కాన్ఫిగర్ చేయబడలేదు.",
+      "piiPoliciesHint": "వ్యక్తిగత డేటాను సంవేదనశీలంగా గుర్తించండి. ప్రతి విధానం అభ్యర్థన ఇన్‌పుట్, మోడల్ ప్రతిస్పందన, లేదా రెండు లక్ష్యం చేస్తుంది, మరియు దాని స్వంత సంస్థ సెట్ నియంత్రిస్తుంది.",
+      "noPiiPolicies": "PII విధానాలు కాన్ఫిగర్ చేయబడలేదు.",
+      "addPolicyButton": "+ విధానం జోడించండి",
+      "injectionWarningTitle": "ఇంజెక్షన్ ద్వారా అభ్యర్థన పేలోడ్ సవరించారు",
+      "injectionWarningBody": "ఒకటి లేదా అంతకంటే ఎక్కువ నియమాలు వెలుపలకు అభ్యర్థన యొక్క సిస్టమ్ ప్రాంప్ట్ కు పంపిన పేలోడ్ సవరించారు ఇంజెక్ట్ చేస్తాయి. అదనపు మోడల్ కాల్ చేయబడదు, ఖచ్చితమైన నిషేధం ఉండదు; సేవ చేస్తోన్న మోడల్ సూచనను ఖుద-సంపాదకం చేస్తుంది.",
+      "streamingDisabledWarningTitle": "ఈ రౌటర్ కోసం స్ట్రీమింగ్ నిష్క్రియం చేయబడింది",
+      "streamingDisabledWarningBody": "ఒకటి లేదా అంతకంటే ఎక్కువ నియమాలు ప్రతిస్పందనలను బ్లాక్ చేయడానికి కాన్ఫిగర్ చేయబడ్డాయి (లక్ష్య: ప్రతిస్పందన లేదా రెండు). మొత్తం ప్రతిస్పందన ఫిరిబాటు ముందు తనిఖీ చేయాల్సిన కారణంగా, Routerly ఫిరిబాటు నిర్ణయం ముందు సమూహం నుండి ప్రతిస్పందన కలిగి ఉంటుంది. స్ట్రీమింగ్ ప్రతిస్పందన-బ్లాకింగ్ నియమం క్రియాశీలం అయ్యాయ్ సమయంలో అందుబాటులో లేదు; క్లయింట్‌లు సంపూర్ణ ప్రతిస్పందన చిన్నపాటిపోతుంది స్థానంలో ఇంక్రిమెంటల్ చంక్‌లలో చేరుకోదు."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure రిసోర్స్ నామం",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI సంస్థ నామం (Azure పోర్టల్ నుండి).",
+      "deploymentId": "అమలు ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI స్టూడియోలో మీరు సృష్టించిన అమలు నామం.",
+      "azureApiVersionLabel": "API సంస్కరణ",
+      "azureApiVersionDefaultHint": "(డిఫాల్ట్: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS ప్రాంతం",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS ప్రాప్యత కీ ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS రహస్య ప్రాప్యత కీ",
+      "awsSecretAccessKeyPlaceholderExisting": "ఈ ఆర్డర చేసిన విషయాన్ని వదిలివేయండి",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "సెషన్ టోకెన్",
+      "awsSessionTokenOptionalHint": "(ఐచ్ఛికం, తాత్కాలిక నిమ్నాభిలాష కోసం)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP రౌటర్ ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "స్థానం",
+      "gcpLocationDefaultHint": "(డిఫాల్ట్: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "సేవ ఖాతా కీ",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "ఎండ్‌పాయింట్ URL",
+      "optional": "(ఐచ్ఛికం)",
+      "webProvider": {
+        "unofficialWarningTitle": "అనధికార ప్రదాత — మీ స్వంత ప్రమాదంలో ఉపయోగించండి.",
+        "unofficialWarningBody": "ఈ ఇంటిగ్రేషన్ తెలియని అంతర్గత API ఆధారపడి ఉంటుంది, అది సూచన లేకుండా మార్చవచ్చు లేదా విచ్ఛిన్నం కాబోతుంది. ఇది ప్రదాత యొక్క సేవా నిబంధనలను ఉల్లంఘించవచ్చు మరియు ఖాతా సస్పెన్షన్‌కు కారణం కాబోతుంది.",
+        "accessTokenLabel": "ప్రాప్యత టోకెన్",
+        "sessionTokenLabel": "సెషన్ టోకెన్",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "సెషన్ కీ కుకీ విలువను పేస్ట్ చేయండి (sk-ant-sid01-…)",
+        "openaiInstructions": "ChatGPT లో సైన్ చేసిన సమయంలో, <code>https://chatgpt.com/api/auth/session</code> కొత్త ట్యాబ్‌లో తెరవండి. <code>accessToken</code> ఫీల్డ్ విలువ (ఎలక్ట్రాన్ అందాలు <code>eyJ</code>) కాపీ చేయండి. టోకెన్ ప్రతి ~24 గంటలకు గడువు ముగుస్తుంది. విశ్వసనీయ ప్రాప్యత కోసం, కింద <strong>cf_clearance</strong> ఫీల్డ్ కూడా నింపండి.",
+        "anthropicInstructions": "<strong>మీ సెషన్ కీ పొందడానికి:</strong> Claude లో సైన్ చేసిన సమయంలో, DevTools (F12) → అప్లికేషన్ → కుకీలు → <code>claude.ai</code> → <code>sessionKey</code> కుకీ విలువ (ఇది <code>sk-ant-sid01-</code> నుండి ప్రారంభం) కాపీ చేయండి. మీరు సైన్ అవుట్ చేసే వరకు కీ చెల్లుబాటులో ఉంటుంది."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "సబ్‌స్క్రిప్షన్ OAuth టోకెన్",
+        "authFilePathLabel": "ఆ దస్త్రపथ",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (డిఫాల్ట్)",
+        "anthropicTitle": "మీ Claude Pro/Max సబ్‌స్క్రిప్షన్ ఉపయోగించండి.",
+        "anthropicRunCommandStep": "ఈ కమాండ్‌ను నడుపండి మరియు ఆ టోకెన్‌ను కాపీ చేయండి:",
+        "anthropicPasteTokenStep": "టోకెన్‌ను <em>సబ్‌స్క్రిప్షన్ OAuth టోకెన్</em> ఫీల్డ్‌లో పేస్ట్ చేయండి.",
+        "termsNote": "అది గడువు ముగిసినప్పుడు పునర్జన్మమవండి. గేట్‌వే ద్వారా సబ్‌స్క్రిప్షన్ ఉపయోగం ప్రదాత యొక్క నిబంధనల నుండి విపరీతం కాబోతుంది.",
+        "openaiTitle": "Codex యాప్ ద్వారా ChatGPT Plus/Pro సబ్‌స్క్రిప్షన్ ఉపయోగించండి.",
+        "openaiLoginStep": "మీ ChatGPT Plus/Pro ఖాతాతో Codex డెస్క్‌టాప్ యాప్‌లో సైన్ చేయండి.",
+        "openaiAutoRefreshStep": "Routerly <code>~/.codex/auth.json</code> నుండి మీ ప్రాప్యత టోకెన్ చదువుతుంది మరియు దాని ఫలితాలను తరలిస్తుంది. ఎటువంటి ఆర్డర పేస్ట్ అవసరం లేదు.",
+        "openaiAuthFilePathStep": "ఆ దస్త్రపథ ఫీల్డ్ డిఫాల్ట్ ఉపయోగించడానికి ఖాళీగా వదిలివేయండి, లేదా మీ Codex యాప్ ఉపయోగించిన మార్గానికి కస్టమ్ అవతరణను నిర్వచించండి.",
+        "openaiTermsNote": "గేట్‌వే ద్వారా సబ్‌స్క్రిప్షన్ ఉపయోగం ప్రదాత యొక్క నిబంధనల నుండి విపరీతం కాబోతుంది."
+      },
+      "copyCode": {
+        "copiedTooltip": "కాపీ చేసారు!",
+        "copyTooltip": "క్లిప్‌బోర్డ్‌కు కాపీ చేయండి",
+        "copiedLabel": "కాపీ చేసారు",
+        "copyLabel": "కాపీ చేయండి"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "కాపీ చేయండి",
+      "copiedLabel": "కాపీ చేసారు!",
+      "copyErrorHint": "కాపీ విఫలమైంది, నిర్వహణ మరియు కాపీ చేయండి."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP క్లయింట్",
+      "hints": {
+        "claudeCode": "దీన్ని ఎక్కడైనా ఒకసారి నడుపండి. Claude Code సర్వర్‌ను <code>~/.claude.json</code>లో నిల్ము చేస్తుంది.",
+        "claudeDesktop": "దీన్ని <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (Windows లో, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>) లో ఉంచండి, ఆ అనువర్తనాన్ని పునరారంభించండి. ఇది CLI ను జన్మిస్తుంది, కాబట్టి <code>routerly</code> మీ PATH లో ఉండాలి.",
+        "codex": "దీన్ని <code>~/.codex/config.toml</code> లో ఉంచండి. Codex పరిసరం నుండి టోకెన్‌ను చదువుతుంది, కాబట్టి మీరు Codex చేయిన షెల్‌లో దానిని ఎగుమతి చేయండి.",
+        "opencode": "దీన్ని <code>~/.config/opencode/opencode.json</code> లో ఉంచండి.",
+        "openclaw": "దీన్ని ఒకసారి నడుపండి. OpenClaw డిఫాల్ట్‌ను sse రవాణా, ఇది Routerly సేవలో కాదు, కాబట్టి రవాణా స్పష్టంగా సెట్ చేయబడ్డ.",
+        "cursor": "దీన్ని <code>~/.cursor/mcp.json</code> లో ఉంచండి, లేదా ఒక ప్రకల్పనకు దీనిని నిర్వీక్షణ చేయడానికి <code>.cursor/mcp.json</code> లో.",
+        "cline": "దీన్ని <code>~/.cline/mcp.json</code> లో ఉంచండి, లేదా దానిని Cline ప్యానెల్‌లో MCP సర్వర్‌లను ఆకృతిపరిచే కోసం పేస్ట్ చేయండి.",
+        "zed": "దీన్ని మీ Zed <code>settings.json</code>లో ఉంచండి, సందర్భం సర్వర్‌ల ఆకృతిపరచిన ఇతర అంతటా."
+      }
+    },
+    "unsavedChanges": {
+      "title": "సేవ చేయని మార్పులు",
+      "message": "మీకు సేవ చేయని మార్పులు ఉన్నాయి. ఈ సమయంలో వెళ్లిన నిర్ణయం వలన మీ మార్పులు కోల్పోతాయి.",
+      "stay": "ఉండండి",
+      "leaveAnyway": "సరిసరిపోకుండా విడిచిపెట్టండి"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "గార్డ్‌రెయిల్‌లు",
+        "pii": "PII",
+        "optimizers": "ఆప్టిమైజర్‌లు",
+        "routerOverhead": "రౌటర్ ఓవర్‌హెడ్"
+      },
+      "policyType": {
+        "llm": "AI రూటింగ్",
+        "rateLimit": "రేట్ పరిమితి",
+        "budgetRemaining": "బడ్జెట్ ఉద్రిక్త",
+        "semanticIntent": "సెమాంటిక్ ఉద్దేశ్యం",
+        "modelPreference": "మోడల్ ఇష్టపరిచిన"
+      },
+      "rawDetails": "ముడిపూర్తి వివరాలు",
+      "technicalDetails": "సాంకేతిక వివరాలు",
+      "systemPrompt": "సిస్టమ్ ప్రాంప్ట్",
+      "responseText": "ప్రతిస్పందన కూర్పు",
+      "responseJson": "ప్రతిస్పందన JSON",
+      "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
+      "fallbackAttempt": "ఫాల్‌బ్యాక్ #{{attempt}}",
+      "embeddingModel": "ఎంబెడింగ్ మోడల్",
+      "upstreamModel": "అప్‌స్ట్రీమ్ మోడల్",
+      "provider": "ప్రదాత",
+      "source": "మూలం",
+      "endpoint": "ఎండ్‌పాయింట్",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL విస్తరించారు",
+      "model": "మోడల్",
+      "similarity": "సారూప్యత",
+      "embedding": "ఎంబెడింగ్",
+      "cacheMiss": "CACHE MISS",
+      "details": "వివరాలు",
+      "excludedByLimits": "పరిమితుల ద్వారా తోలుకు పెట్టారు",
+      "finalRanking": "చివరిచ ర్యాంకింగ్",
+      "noRankingData": "ర్యాంకింగ్ డేటా లేదు (రికార్డ్ చెడిపోయి ఉండవచ్చు లేదా పాత సంస్కరణ నుండి)",
+      "policyScores": "విధాన స్కోర్‌లు",
+      "weight": "బరువు {{value}}",
+      "allScores": "అన్ని స్కోర్‌లు",
+      "noPolicyData": "విధాన డేటా లేదు (రికార్డ్ చెడిపోయి ఉండవచ్చు లేదా పాత సంస్కరణ నుండి)",
+      "requestGuardrailBlocked": "అభ్యర్థన గార్డ్‌రెయిల్ బ్లాక్ చేసారు",
+      "requestGuardrailTriggered": "అభ్యర్థన గార్డ్‌రెయిల్ ట్రిగర్ చేసారు",
+      "responseGuardrailBlocked": "ప్రతిస్పందన గార్డ్‌రెయిల్ బ్లాక్ చేసారు",
+      "responseGuardrailTriggered": "ప్రతిస్పందన గార్డ్‌రెయిల్ ట్రిగర్ చేసారు",
+      "rule": "నియమం",
+      "action": "చర్య",
+      "guardrailsEvaluated": "గార్డ్‌రెయిల్‌లు మూల్యాంకనం చేసారు ({{target}})",
+      "ruleCount": "{{count}} నియమం",
+      "ruleCount_other": "{{count}} నియమాలు",
+      "promptInjection": "ప్రాంప్ట్ ఇంజెక్షన్",
+      "injects": "ఇంజెక్ట్‌లు",
+      "judgeResponse": "జడ్జ్ ప్రతిస్పందన",
+      "piiScrubbed": "PII శుద్ధీకరించారు",
+      "piiScanned": "PII స్కాన్ చేసారు ({{target}})",
+      "policies": "విధానాలు",
+      "entityTypes": "సంస్థ రకాలు",
+      "customPatterns": "కస్టమ్ నమూనాలు",
+      "scanned": "స్కాన్ చేసారు",
+      "redacted": "నిరాకరణ చేసారు",
+      "took": "తీసుకుంది",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "సంస్థ రకాలు స్కాన్ చేసారు",
+      "guardrailInjection": "గార్డ్‌రెయిల్ ఇంజెక్షన్",
+      "rules": "నియమాలు",
+      "chars": "అక్షరాలు",
+      "injectedText": "ఇంజెక్ట్ చేసిన కూర్పు",
+      "optimizer": "ఆప్టిమైజర్ {{id}}",
+      "tokens": "టోకెన్‌లు",
+      "saved": "సేవ్ చేసారు",
+      "tok": "{{value}} tok",
+      "reason": "కారణం",
+      "budgetBlocked": "బడ్జెట్ బ్లాక్ చేసారు",
+      "budgetOk": "బడ్జెట్ సరిగా",
+      "egressSent": "ఎగ్రెస్ పంపిన",
+      "status": "స్థితి",
+      "encoding": "ఎన్‌కోడింగ్",
+      "frames": "ఫ్రేమ్‌లు",
+      "bytes": "బైట్‌లు"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "నా ప్రొఫైల్",
+      "subtitle": "మీ ఖాతా సెట్టింగ్‌లను నిర్వహించండి"
+    },
+    "tabs": {
+      "profile": "ప్రొఫైల్",
+      "notifications": "నోటిఫికేషన్‌లు",
+      "mcp": "MCP",
+      "preferences": "ఆదరణలు"
+    },
+    "notifications": {
+      "close": "ఘోష",
+      "refresh": "రిఫ్రెష్ చేయండి",
+      "clear": "స్పష్టం చేయండి",
+      "empty": "నోటిఫికేషన్‌లు కనుగొనబడలేదు.",
+      "markAllRead": "అన్నింటిని చదివినవిగా గుర్తించండి",
+      "allCaughtUp": "అన్నీ చేరుకున్నాయి",
+      "unreadCount": "{{count}} చదువని",
+      "selectedCount": "{{count}} ఎంచుకున్న",
+      "severity": {
+        "all": "అంతటా",
+        "info": "సమాచారం",
+        "warning": "హెచ్చరిక",
+        "critical": "క్లిష్టమైన"
+      },
+      "status": {
+        "read": "చదువారు",
+        "unread": "చదువని"
+      },
+      "filters": {
+        "severity": "తీవ్రత",
+        "category": "వర్గీకరణ",
+        "event": "ఈవెంట్",
+        "date": "తేదీ",
+        "period": "కాలం",
+        "status": "స్థితి",
+        "all": "అంతటా",
+        "allCategories": "అన్ని వర్గీకరణలు",
+        "allEvents": "అన్ని ఈవెంట్‌లు",
+        "unreadOnly": "చదువని మాత్రమే"
+      },
+      "actions": {
+        "markRead": "చదివినవిగా గుర్తించండి",
+        "markUnread": "చదువని గా గుర్తించండి",
+        "archive": "సంరక్షణలయం"
+      },
+      "table": {
+        "severity": "తీవ్రత",
+        "event": "ఈవెంట్",
+        "date": "తేదీ",
+        "status": "స్థితి",
+        "selectAll": "అన్నింటిని ఎంచుకోండి",
+        "selectRow": "{{event}} ఎంచుకోండి",
+        "eventCount": "{{count}} ఈవెంట్‌లు"
+      },
+      "pagination": {
+        "previous": "← మునుపటి",
+        "next": "తదుపరి →",
+        "page": "{{totalPages}} నుండి {{page}} పేజీ",
+        "total": "({{count}} మొత్తం)"
+      },
+      "detail": {
+        "ariaLabel": "నోటిఫికేషన్ వివరం",
+        "details": "వివరాలు",
+        "noDetails": "అదనపు వివరాలు లేవు.",
+        "eventsInIncident": "ఈ సంఘటనలో ఈవెంట్‌లు"
+      }
+    },
+    "security": {
+      "roleLabel": "పాత్ర:",
+      "password": {
+        "heading": "పాస్‌వర్డ్ మార్చండి",
+        "currentLabel": "ప్రస్తుత పాస్‌వర్డ్",
+        "newLabel": "నవీన పాస్‌వర్డ్",
+        "newPlaceholder": "కనీసం 8 అక్షరాలు",
+        "confirmLabel": "నవీన పాస్‌వర్డ్‌ను నిర్ధారించండి",
+        "success": "పాస్‌వర్డ్ విజయవంతంగా మార్చారు.",
+        "saving": "సేవ చేస్తోంది...",
+        "submit": "పాస్‌వర్డ్ మార్చండి",
+        "errors": {
+          "mismatch": "పాస్‌వర్డ్‌లు సరిపోవు.",
+          "tooShort": "నవీన పాస్‌వర్డ్ కనీసం 8 అక్షరాలు ఉండాలి.",
+          "updateFailed": "నవీకరణ విఫలమైంది"
+        }
+      },
+      "tfa": {
+        "heading": "రెండు-ఫ్యాక్టర్ ప్రమాణీకరణ",
+        "notEnabled": "2FA ప్రారంభం చేయబడలేదు. సమయ-ఆధారిత ఒక-సార్ గూపస్ తో మీ ఖాతాను రక్షించండి.",
+        "enableButton": "రెండు-ఫ్యాక్టర్ ప్రమాణీకరణ ప్రారంభం చేయండి",
+        "scanInstructions": "మీ ప్రామాణికేటర్ యాప్ (Google Authenticator, Authy, వంటివి) తో ఈ QR కోడ్‌ను స్కాన్ చేయండి, ఆ 6-అంకెలు కోడ్‌ను నిర్ధారించడానికి నిర్ణయించండి.",
+        "qrAlt": "2FA సెటప్ QR కోడ్",
+        "addAccountInstructions": "మీ ప్రామాణికేటర్ యాప్ (Google Authenticator, Authy, 1Password, వంటివి) తెరవండి మరియు కొత్త ఖాతాను జోడించండి:",
+        "setup": {
+          "step1": "<strong>ఖాతాను జోడించండి</strong> లేదా <strong>+</strong> బటన్‌ను నొక్కండి",
+          "step2": "<strong>సెటప్ కీ నిర్ణయించండి</strong> ఎంచుకోండి (లేదా మొబైల్‌లో QR కోడ్ స్కాన్ చేయండి)",
+          "step3": "క్రింద చూపిన రహస్యాన్ని నిర్ణయించండి"
+        },
+        "mobileLink": "మొబైల్‌లో ప్రామాణికేటర్‌ను తెరవడానికి ఇక్కడ నొక్కండి",
+        "manualEntryLabel": "ఆర్డర నిర్ణయ గుట్టు:",
+        "saveBackupCodes": "ఈ బ్యాకప్ కోడ్‌లను సేవ్ చేయండి. ఆపై మీరు ప్రామాణికేటర్‌కు ప్రవేశం కోల్పోతే ప్రతిదీ ఒకసారి ఉపయోగించవచ్చు.",
+        "copyBackupCodes": "బ్యాకప్ కోడ్‌లను కాపీ చేయండి",
+        "confirmCodeLabel": "ప్రారంభం చేయడానికి మీ యాప్ నుండి కోడ్ నిర్ణయించండి",
+        "activate": "2FA ప్రారంభం చేయండి",
+        "cancel": "రద్దు చేయండి",
+        "enabledBadge": "2FA ప్రారంభం చేయబడింది",
+        "newBackupCodesLabel": "నవీన బ్యాకప్ కోడ్‌లు (ఈ సమయంలో సేవ్ చేయండి):",
+        "copy": "కాపీ చేయండి",
+        "regenLabel": "బ్యాకప్ కోడ్‌లను పున: సంపాదకం చేయడానికి ప్రామాణికేటర్ కోడ్ నిర్ణయించండి",
+        "regenerate": "పున: సంపాదకం చేయండి",
+        "regenerateBackupCodes": "బ్యాకప్ కోడ్‌లను పున: సంపాదకం చేయండి",
+        "disableLabel": "2FA నిష్క్రియం చేయండి (ప్రామాణికేటర్ కోడ్ నిర్ణయించండి)",
+        "disable": "2FA నిష్క్రియం చేయండి",
+        "errors": {
+          "setupFailed": "సెటప్ విఫలమైంది",
+          "confirmFailed": "నిర్ధారణ విఫలమైంది",
+          "disableFailed": "నిష్క్రియం చేయడం విఫలమైంది",
+          "regenFailed": "పున: సంపాదకం చేయడం విఫలమైంది"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP ఉపరితలం లోడ్ చేయడం విఫలమైంది",
+        "revokeFailed": "టోకెన్ ను రిభోక్ చేయడం విఫలమైంది"
+      },
+      "revokeConfirm": "MCP టోకెన్ \"{{name}}\" రిభోక్ చేయండి? ఆ ఉపయోగించిన క్లయింట్‌లు తక్షణం చేయడం నిలిపివేస్తాయి.",
+      "tokens": {
+        "heading": "MCP టోకెన్‌లు",
+        "newToken": "నవీన టోకెన్",
+        "description": "ప్రతిదీ నిజానికి మీ నుండి: ఇది చేయిన నిర్దిష్ట సాధనాలను వెల్లడిస్తుంది మీ పాత్ర అనుమతిస్తుంది. సંపూర్ణ విలువ ఒక్కసారి, దానిని సృష్టించిన పేజీలో చూపబడుతుంది.",
+        "empty": "MCP టోకెన్‌లు లేవు. MCP క్లయింట్‌ను కనెక్ట్ చేయడానికి ఒకటి సృష్టించండి.",
+        "created": "సృష్టించారు",
+        "lastUsed": "చివరిసారి ఉపయోగించారు",
+        "expires": "గడువు ముగుస్తుంది",
+        "never": "ఎప్పుడూ లేదు",
+        "revokeTitle": "టోకెన్ రిభోక్ చేయండి"
+      },
+      "tools": {
+        "heading": "మీ టోకెన్‌లు ఎక్స్‌పోజ్ చేసిన సాధనాలు",
+        "empty": "మీ పాత్ర MCP సాధనం ఇవ్వదు. మీకు అవసరమైన అనుమతుల కోసం అడ్మినిస్ట్రేటర్‌ను అడగండి.",
+        "table": {
+          "name": "నామం",
+          "scope": "పరిధి",
+          "description": "వివరణ",
+          "sourceModule": "మూల మాడ్యూల్",
+          "permission": "అనుమతి"
+        }
+      },
+      "connect": {
+        "heading": "MCP క్లయింట్‌ను కనెక్ట్ చేయండి",
+        "descriptionPre": "మీరు వైర్ చేయిన క్లయింట్‌ను ఎంచుకోండి, ఆ వాటిని భర్తీ చేయండి",
+        "descriptionPost": "మీ టోకెన్‌లలో ఒకటి నుండి. టోకెన్‌ను సృష్టించడం విలువ ఇప్పటికే ఆ స్నిప్‌లను చూపుతుంది.",
+        "otherClient": "ఇతర క్లయింట్",
+        "httpInstructionsPre": "HTTP ఫలితంగా, దీన్ని ఈ ఎండ్‌పాయింట్ పై ఉంచండి మరియు ఆర్డర చేయండి",
+        "httpInstructionsPost": ". ఇది JSON-RPC 2.0 స్ట్రీమేబుల్ HTTP ఫలితంగా.",
+        "stdioInstructionsPre": "stdio ఫలితంగా, CLI ఆ బ్రిడ్జ్ చేస్తుంది మరియు మీ టోకెన్‌ను ఆ దిశలో పంపుతుంది. సంస్థాను నేరుగా ఉపయోగిస్తున్నారా? సెట్ చేయండి",
+        "stdioInstructionsAnd": "మరియు",
+        "stdioInstructionsPost": "మీరు."
+      },
+      "newToken": {
+        "backToMcp": "MCP కు వెనుకకు",
+        "title": "నవీన MCP టోకెన్",
+        "subtitle": "టోకెన్ మీ నుండి చేయిన చర్య: ఇది చేయిన నిర్దిష్ట సాధనాలను వెల్లడిస్తుంది మీ పాత్ర అనుమతిస్తుంది.",
+        "nameLabel": "నామం",
+        "namePlaceholder": "laptop",
+        "nameHint": "ఇది టోకెన్ ఎక్కడ ఉపయోగించబడుతుందో, ఉదాహరణకు \"laptop\" లేదా \"claude-desktop\".",
+        "expiryLabel": "గడువు",
+        "expiryHint": "ఐచ్ఛికం. దీన్ని ఖాళీ వదిలివేయండి మరియు టోకెన్ ఎప్పుడూ గడువు ముగియదు, మీరు దానిని రిభోక్ చేసే వరకు.",
+        "createButton": "టోకెన్ సృష్టించండి",
+        "creatingButton": "సృష్టిస్తోంది…",
+        "cancelButton": "రద్దు చేయండి",
+        "tokenSection": {
+          "title": "మీ టోకెన్",
+          "hint": "ఈ సమయంలో కాపీ చేయండి. ఇది పున: చూపబడదు, మరియు కోల్పోయిన టోకెన్ భర్తీ చేయవచ్చు.",
+          "copyButton": "కాపీ చేయండి",
+          "copiedButton": "కాపీ చేసారు!",
+          "copyTitle": "టోకెన్ కాపీ చేయండి",
+          "copiedTitle": "కాపీ చేసారు!"
+        },
+        "connectSection": {
+          "title": "క్లయింట్‌ను కనెక్ట్ చేయండి",
+          "hint": "మీరు వైర్ చేయిన క్లయింట్‌ను ఎంచుకోండి. స్నిప్ పటిష్టంగా ఈ టోకెన్‌ను కలిగి ఉంది."
+        },
+        "bridgeSection": {
+          "title": "లేదా స్థానిక సేతువను ఉపయోగించండి",
+          "hint": "stdio మాత్రమే చెప్పిన క్లయింట్ కోసం, CLI దానిని బ్రిడ్జ్ చేస్తుంది మరియు మీ టోకెన్‌ను ఆ దిశలో పంపుతుంది."
+        },
+        "doneButton": "సంపూర్ణం",
+        "errors": {
+          "createFailed": "టోకెన్‌ను సృష్టించడం విఫలమైంది",
+          "copyFailed": "కాపీ విఫలమైంది, టోకెన్‌ను నిర్వహణ మరియు కాపీ చేయండి."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "భాష",
+      "description": "డ్యాష్‌బోర్డ్ ప్రదర్శించిన భాష ఎంచుకోండి.",
+      "languageLabel": "భాష",
+      "saved": "భాష ఆదరణ సేవ్ చేసారు."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "సెట్టింగ్‌లను లోడ్ చేయడం విఫలమైంది",
+        "loadFailedPeriod": "సెట్టింగ్‌లను లోడ్ చేయడం విఫలమైంది.",
+        "saveFailed": "సేవ చేయడం విఫలమైంది",
+        "saveSettingsFailed": "సెట్టింగ్‌లను సేవ చేయడం విఫలమైంది"
+      },
+      "savedSuccess": "సెట్టింగ్‌లు విజయవంతంగా సేవ్ చేయబడ్డాయి.",
+      "saving": "సేవ చేస్తోంది…",
+      "saveSettings": "సెట్టింగ్‌లను సేవ చేయండి",
+      "serverInfo": {
+        "heading": "సంస్థ సమాచారం",
+        "readOnly": "చదువుమాత్రమే. హోస్ట్ మరియు పోర్ట్ పరిసరం లేదా సెట్టింగ్‌ల ఫైల్ నుండి వచ్చాయి, ఇక్కడ నుండి కాదు.",
+        "reachableAt": "కు ప్రాప్యమైనది",
+        "reachableAtAny": "ఈ చిరునామాల్లో ఏదైనా కు ప్రాప్యమైనది",
+        "thisMachine": "ఈ యంత్రం",
+        "network": "నెట్‌వర్క్",
+        "copyAddress": "{{address}} కాపీ చేయండి",
+        "copied": "కాపీ చేసారు!",
+        "copy": "కాపీ చేయండి",
+        "hostAndPort": "హోస్ట్ మరియు పోర్ట్",
+        "version": "సంస్కరణ",
+        "uptime": "అప్‌టైమ్"
+      },
+      "runtime": {
+        "heading": "రన్‌టైమ్ సెట్టింగ్‌లు",
+        "logLevel": "లాగ్ స్థితి",
+        "logLevelHint": "సంస్థ లాగ్‌ల సంచయకర్త నియంత్రిస్తుంది.",
+        "publicUrl": "పబ్లిక్ URL",
+        "publicUrlHint": "బేస్ URL ఏ బాహ్య క్లయింట్‌లు నుండి సంస్థ చేరుకోవటానికి (ఉదాహరణకు <code>http://192.168.1.10:3000</code>). ప్రతిదీ రౌటర్ యొక్క \"కనెక్ట్ చేయడానికి ఎలా\" విభాగంలో ఉపయోగించబడుతుంది. డ్యాష్‌బోర్డ్ సంస్థ కంటే విభిన్న యంత్రం లేదా పోర్ట్‌లో నడుస్తుందిగా సౌకర్యవంతం.",
+        "usageRetention": "ఉపయోగం ఆర్డర చేయడం",
+        "noLimit": "సीమ లేదు",
+        "maxAgeDays": "గరిష్ట వయస్సు (రోజులు)",
+        "maxSizeMb": "గరిష్ట సైజ్ (MB)",
+        "retentionHint": "ఉపయోగం/బిల్లింగ్ చరిత్ర ఆ చాలా రోజుల కంటే పాతది, లేదా ఈ సైజ్ నిర్ధారణ చేస్తే, క్రియాశీల లాగ్‌ నుండి ఉతికివేయబడుతుంది. ఆర్డర చేయడం సవరణ సీమ కోసం ఖాళీ వదిలివేయండి."
+      },
+      "internationalization": {
+        "heading": "అంతర్జాతీయకరణ",
+        "defaultLanguage": "డిఫాల్ట్ భాష",
+        "defaultLanguageHint": "తమ స్వంత భాషను ఇంకా ఎంచుకోని వినియోగదారుల కోసం డ్যాష్‌బోర్డ్ భాష. వినియోగదారის వ్యక్తిగత ఎంపికను రద్దు చేయదు."
+      },
+      "telemetry": {
+        "heading": "గుమ్మడి మెట్రిక్‌లు",
+        "neverAutomatic": "Routerly ఎప్పుడూ డేటాను స్వయంచాలకంగా పంపదు.",
+        "noChoice": "మీరు ఇంకా ఎంచుకోవలేదు.",
+        "enabledStatus": "గుమ్మడి సంస్థాపన మెట్రిక్‌లు ప్రారంభం చేయబడ్డాయి.",
+        "disabledStatus": "గుమ్మడి సంస్థాపన మెట్రిక్‌లు నిష్క్రియం చేయబడ్డాయి.",
+        "explanation": "ప్రారంభం చేసినప్పుడు, Routerly కేవలం పంపుతుంది: ఈవెంట్ రకం (సంస్థాపనకు / అపగ్రేడ్ చేయుటకు / అన్‌ఇన్‌స్టాల్ చేయుటకు), సంస్కరణ, ప్లాట్‌ఫారమ్, మరియు యాదృచ్ఛిక ID. వ్యక్తిగత డేటా, ఉపయోగ డేటా, IP నిల్లబడలేదు.",
+        "whatIsSent": "ఏ చేయించారు?",
+        "installId": "సంస్థాపన ID: {{id}}",
+        "saving": "సేవ చేస్తోంది…",
+        "enable": "ప్రారంభం చేయండి",
+        "disable": "నిష్క్రియం చేయండి"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "డ్యాష్‌బోర్డ్ (యాప్-ఇన్-యాప్ ఇన్‌బాక్స్)",
+          "description": "ఈవెంట్‌లను యాప్-ఇన్-యాప్ ఇన్‌బాక్స్‌కు రూట్ చేస్తుంది"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "కస్టమ్ చిరునామా సంస్థ"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS సాధారణ ఇమెయిల్ సంస్కర"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure సంభాషణ",
+          "description": "Azure సంభాషణ సంస్కరణలు"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook కాల్‌బ్యాక్"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "టీమ్‌లు అంతర్గత Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty ఈవెంట్‌లు API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "ప్రదాత – లోపం",
+        "providerDegraded": "ప్రదాత – క్షీణం",
+        "providerRecovered": "ప్రదాత – పునరుద్ధరించారు",
+        "providerRateLimited": "ప్రదాత – రేట్ పరిమితం",
+        "routingNoCandidates": "రూటింగ్ – అభ్యర్థీలు లేవు",
+        "routingFallbackUsed": "రూటింగ్ – ఫాల్‌బ్యాక్ ఉపయోగించారు",
+        "authLoginFailed": "ఆర్డర – సైన్ విఫలమైంది",
+        "authTokenInvalid": "ఆర్డర – టోకెన్ చెల్లుబాటుకు లేనిది",
+        "configModelAdded": "ఆర్డర – మోడల్ జోడించారు",
+        "configModelDeleted": "ఆర్డర – మోడల్ తొలగించారు",
+        "configRouterCreated": "ఆర్డర – రౌటర్ సృష్టించారు",
+        "configRouterDeleted": "ఆర్డర – రౌటర్ తొలగించారు",
+        "budgetThresholdReached": "బడ్జెట్ – థ్రెషోల్డ్ చేరుకున్నారు",
+        "budgetExceeded": "బడ్జెట్ – అధిగమించారు",
+        "budgetReset": "బడ్జెట్ – రీసెట్ చేసారు",
+        "systemStartup": "సిస్టమ్ – ప్రారంభం చేసారు",
+        "systemShutdown": "సిస్టమ్ – నిష్క్రియం చేసారు",
+        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది"
+      },
+      "removeChannelTooltip": "సరిభాగం తీసివేయండి",
+      "removeChannelConfirm": "సరిభాగం తీసివేయండి?",
+      "formUpdatedHint": "సవరించిన ఫారం — సంరక్షణ చేయుటకు వర్తించండి.",
+      "hmacSigningKeyPlaceholder": "HMAC సంతకం కీ",
+      "perms": {
+        "routerRead": "రౌటర్‌లు – చదువండి",
+        "routerWrite": "రౌటర్‌లు – రాయండి",
+        "modelRead": "మోడల్‌లు – చదువండి",
+        "modelWrite": "మోడల్‌లు – రాయండి",
+        "userRead": "ఆర్డర – చదువండి",
+        "userWrite": "ఆర్డర – రాయండి",
+        "reportRead": "నివేదనలు – చదువండి",
+        "settingsRead": "సెట్టింగ్‌లు – చదువండి",
+        "settingsWrite": "సెట్టింగ్‌లు – రాయండి",
+        "notificationWrite": "నోటిఫికేషన్‌లు – రాయండి",
+        "tokenRead": "టోకెన్‌లు – చదువండి",
+        "tokenWrite": "టోకెన్‌లు – రాయండి",
+        "roleWrite": "పాత్రలు – రాయండి",
+        "auditRead": "ఆర్డర లాగ్ – చదువండి",
+        "modulesRead": "మాడ్యూల్‌లు – చదువండి",
+        "modulesManage": "మాడ్యూల్‌లు – నిర్వహించండి",
+        "connectionsRead": "కనెక్షన్‌లు – చదువండి",
+        "connectionsManage": "కనెక్షన్‌లు – నిర్వహించండి",
+        "resilienceRead": "స్థితిస్థాపకత – చదువండి",
+        "resilienceManage": "స్థితిస్థాపకత – నిర్వహించండి",
+        "profilesRead": "రూటింగ్ ప్రొఫైల్‌లు – చదువండి",
+        "profilesManage": "రూటింగ్ ప్రొఫైల్‌లు – నిర్వహించండి",
+        "optimizersRead": "ఆప్టిమైజర్‌లు – చదువండి",
+        "optimizersManage": "ఆప్టిమైజర్‌లు – నిర్వహించండి",
+        "experimentsRead": "ప్రయోగాలు – చదువండి",
+        "experimentsManage": "ప్రయోగాలు – నిర్వహించండి"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "ఈ సరిభాగం రకం కోసం, లక్ష్య డెలివరీ మార్చవు (ఎండ్‌పాయింట్ స్థిరం). ఆర్డర ట్రైల్ ప్రతి గ్రహీత కోసం కాన్ఫిగర్ చేసిన ఈవెంట్‌లను ఫిల్టర్ చేస్తుంది.",
+        "dashboard": "లక్ష్య ఇన్‌బాక్స్ కనిపిస్తుంది — సరిపోయిన ఆర్డర అందమైన ఉపయోగకారీలు మాత్రమే ఈ నోటిఫికేషన్‌లను యాప్-ఇన్-యాప్ ఇన్‌బాక్స్‌లో చూస్తారు.",
+        "email": "లక్ష్య ఈ ఇమెయిల్‌ను చేరుకోవడానికి ఆర్డర నిర్ణయించు. ఎక్కడైనా ఖాళీ అన్ని ఆర్డర కు పంపడానికి."
+      },
+      "summary": {
+        "allEvents": "అన్ని ఈవెంట్‌లు",
+        "eventCount": "{{count}} ఈవెంట్",
+        "eventCount_other": "{{count}} ఈవెంట్‌లు",
+        "roleCount": "{{count}} పాత్ర",
+        "roleCount_other": "{{count}} పాత్రలు",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} ఆర్డర",
+        "userCount_other": "{{count}} ఆర్డర",
+        "everyone": "అందరూ"
+      },
+      "errors": {
+        "loadFailed": "లోడ్ చేయడం విఫలమైంది"
+      },
+      "fields": {
+        "dashboardHint": "సరిపోయిన ఈవెంట్‌లను యాప్-ఇన్-యాప్ నోటిఫికేషన్ ఇన్‌బాక్స్‌కు రూట్ చేస్తుంది. ఎటువంటి నిమ్నాభిలాష అవసరం లేదు.",
+        "labels": {
+          "fromAddress": "చిరునామా నుండి",
+          "fromName": "నుండి నామం",
+          "host": "హోస్ట్",
+          "port": "పోర్ట్",
+          "tls": "TLS/SSL",
+          "username": "చిరునామా",
+          "password": "పాస్‌వర్డ్",
+          "awsRegion": "AWS ప్రాంతం",
+          "accessKeyId": "ప్రాప్యత కీ ID",
+          "secretAccessKey": "రహస్య ప్రాప్యత కీ",
+          "apiKey": "API కీ",
+          "connectionString": "కనెక్షన్ స్ట్రింగ్",
+          "clientId": "క్లయింట్ ID",
+          "clientSecret": "క్లయింట్ రహస్యం",
+          "refreshToken": "రిఫ్రెష్ టోకెన్",
+          "url": "URL",
+          "method": "పద్ధతి",
+          "signingSecret": "సంతకం రహస్యం",
+          "botToken": "బాట్ టోకెన్",
+          "channelId": "సరిభాగం ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "సమన్వయం కీ"
+        },
+        "values": {
+          "enabled": "ప్రారంభం చేయబడింది",
+          "disabled": "నిష్క్రియం చేయబడింది",
+          "configured": "ఆర్డర చేయడం",
+          "notSet": "సెట్ చేయబడలేదు"
+        },
+        "optional": "(ఐచ్ఛికం)",
+        "keepCurrentPlaceholder": "ప్రస్తుత ఆర్డర చేయుటకు",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSL ఉపయోగించండి",
+        "smtpTlsOnHint": "(పోర్ట్ 465 — నేరుగా SSL)",
+        "smtpTlsOffHint": "(పోర్ట్ 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAM ఇన్‌స్టెన్స్ పాత్ర ఉపయోగించుటకు నిమ్నాభిలాష ఖాళీ వదిలివేయండి.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC సంతకం కీ",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-అక్షర రూటింగ్ కీ",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "ఈవెంట్‌లు",
+          "eventsPlaceholder": "అన్ని ఈవెంట్‌లు (అన్ని కోసం ఖాళీ వదిలివేయండి)",
+          "eventsHint": "అన్ని ఈవెంట్‌లను చేరుకోవడానికి ఖాళీ వదిలివేయండి. నిర్దిష్ట ఈవెంట్‌లను ఎంచుకోండి.",
+          "routersHeading": "రౌటర్‌లు",
+          "routersPlaceholder": "అన్ని రౌటర్‌లు (అన్ని కోసం ఖాళీ వదిలివేయండి)",
+          "routersHint": "సమూహ ఈవెంట్‌లను చేరుకోవడానికి ఖాళీ వదిలివేయండి.",
+          "cooldownHeading": "కూల్‌డౌన్",
+          "cooldownSuffix": "సెకన్లు (0 = కూల్‌డౌన్ లేదు)",
+          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।"
+        },
+        "recipients": {
+          "heading": "గ్రహీత / లక్ష్య",
+          "rolesLabel": "పాత్రలు",
+          "rolesPlaceholder": "అన్ని పాత్రలు (అందరూ)",
+          "permissionsLabel": "అనుమతులు",
+          "permissionsPlaceholder": "అన్ని అనుమతులు (అందరూ)",
+          "usersLabel": "వ్యక్తిగత ఆర్డర",
+          "usersPlaceholder": "అన్ని ఆర్డర (అందరూ)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "కనెక్షన్",
+          "routing": "రూటింగ్",
+          "recipients": "గ్రహీత"
+        },
+        "sections": {
+          "channelSettings": "సరిభాగం సెట్టింగ్‌లు",
+          "eventsRouting": "ఈవెంట్‌లు మరియు రూటింగ్",
+          "recipients": "గ్రహీత"
+        },
+        "nameLabel": "నామం",
+        "namePlaceholder": "ఈ సరిభాగం కోసం లేబుల్",
+        "cancelButton": "రద్దు చేయండి"
+      },
+      "list": {
+        "countLabel": "{{count}} సరిభాగం",
+        "countLabel_other": "{{count}} సరిభాగాలు",
+        "filteredLabel": "{{shown}} ఆ {{count}} సరిభాగం",
+        "filteredLabel_other": "{{shown}} ఆ {{count}} సరిభాగాలు",
+        "allTypes": "అన్ని రకాలు",
+        "searchPlaceholder": "ఫిల్టర్ సరిభాగాలు…",
+        "searchChannelsPlaceholder": "సరిభాగాలను శోధించండి…",
+        "addButton": "సరిభాగం జోడించండి",
+        "addSearchPlaceholder": "సరిభాగాలను శోధించండి…",
+        "noResults": "ఫలితాలు లేవు",
+        "emptyTitle": "ఇంకా నోటిఫికేషన్ సరిభాగాలు ఆర్డర చేయబడలేదు.",
+        "noMatch": "క్రియాశీల ఫిల్టర్‌లకు సరిభాగాలు సరిపోవు.",
+        "nameInlinePlaceholder": "లేబుల్ (ఐచ్ఛికం)",
+        "columns": {
+          "name": "నామం",
+          "type": "రకం",
+          "summary": "ఈవెంట్‌లు / లక్ష్య"
+        },
+        "testTitle": "పరీక్ష పంపండి",
+        "editTitle": "సరిభాగం సవరించండి",
+        "deleteTitle": "సరిభాగం తొలగించండి",
+        "deleteConfirm": "సరిభాగం \"{{name}}\" తీసివేయండి? దీనిని పూర్వవత్తు చేయలేము.",
+        "deleteConfirmButton": "తొలగించండి",
+        "errors": {
+          "deleteFailed": "తొలగించడం విఫలమైంది"
+        }
+      },
+      "edit": {
+        "backToList": "నోటిఫికేషన్‌లకు వెనుకకు",
+        "back": "వెనుకకు",
+        "heading": "{{provider}} సరిభాగం సవరించండి",
+        "subtitle": "ఈ నోటిఫికేషన్ సరిభాగం కోసం ఆర్డర చేయడం నవీకరించండి.",
+        "testSection": {
+          "title": "పరీక్ష పంపండి",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "పరీక్ష పంపండి",
+          "sendingButton": "పంపుతోంది…",
+          "hintEmail": "మీ ఖాతా చిరునామాకు పంపడానికి ఖాళీ వదిలివేయండి. పరీక్ష సేవ చేసిన సరిభాగం ఆర్డర చేయడం ఉపయోగిస్తుంది.",
+          "hintOther": "పరీక్ష సేవ చేసిన సరిభాగం ఆర్డర చేయడం ఉపయోగిస్తుంది. సవరించిన సెట్టింగ్‌లను పరీక్ష చేయుటకు ముందు సవరణ సేవ చేయండి."
+        },
+        "saveButton": "మార్పులను సేవ చేయండి",
+        "savingButton": "సేవ చేస్తోంది…",
+        "errors": {
+          "loadFailed": "లోడ్ చేయడం విఫలమైంది",
+          "saveFailed": "సేవ చేయడం విఫలమైంది"
+        }
+      },
+      "create": {
+        "backToList": "నోటిఫికేషన్‌లకు వెనుకకు",
+        "changeType": "రకం మార్చండి",
+        "pickerHeading": "సరిభాగం రకం ఎంచుకోండి",
+        "pickerSubtitle": "ఆర్డర చేయుటకు నోటిఫికేషన్ ప్రదాత ఎంచుకోండి.",
+        "heading": "నవీన {{provider}} సరిభాగం",
+        "subtitle": "నవీన నోటిఫికేషన్ సరిభాగం ఆర్డర చేయండి.",
+        "createButton": "సరిభాగం సృష్టించండి",
+        "creatingButton": "సృష్టిస్తోంది…",
+        "errors": {
+          "createFailed": "సృష్టించడం విఫలమైంది"
+        }
+      },
+      "sendTest": "పరీక్ష పంపండి",
+      "fromAddress": "చిరునామా నుండి",
+      "individualUsers": "వ్యక్తిగత ఆర్డర",
+      "host": "హోస్ట్",
+      "port": "పోర్ట్",
+      "apiKey": "API కీ",
+      "connectionString": "కనెక్షన్ స్ట్రింగ్",
+      "clientId": "క్లయింట్ ID",
+      "clientSecret": "క్లయింట్ రహస్యం",
+      "refreshToken": "రిఫ్రెష్ టోకెన్",
+      "method": "పద్ధతి",
+      "botToken": "బాట్ టోకెన్",
+      "channelId": "సరిభాగం ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "సమన్వయం కీ"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — /metrics ఎక్స్‌పోజ్ చేస్తుంది"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — మెట్రిక్‌లు API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — లైన్ ప్రోటోకాల్"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "అభ్యర్థన ట్రేస్‌లను ఎగుమతి చేయండి",
+        "description": "ప్రతిదీ ప్రాక్సీ చేసిన అభ్యర్థన యొక్క పూర్తి ట్రేస్‌ను ఆపండి: ప్రతిదీ దశ, ప్రతిదీ మాడ్యూల్ చెప్పారు, మరియు ప్రాంప్ట్‌లు మరియు ప్రకల్పనకు సమ్మతి కలిపిన ఆర్డర।",
+        "sampleRateLabel": "నమూనా రేట్",
+        "sampleRateHint": "1 ప్రతిదీ అభ్యర్థన ఎక్స్‌పోర్ట్ చేస్తుంది, 0.1 పదిలో ఒకటి."
+      },
+      "optional": "(ఐచ్ఛికం)",
+      "headersHint": "(ఐచ్ఛికం, ఒక్కటి ఒక్కటి: కీ: విలువ)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "బేరర్ టోకెన్",
+          "placeholder": "ఓపెన్ ప్రాప్యత కోసం ఖాళీ వదిలివేయండి",
+          "description": "<code>/metrics</code> Prometheus కూర్పు ఫలితంగా ఎక్స్‌పోజ్ చేస్తుంది. బేరర్ ఆర్డర కోసం టోకెన్ సెట్ చేయండి."
+        },
+        "otel": {
+          "endpoint": "సంగ్రహకర్త ఎండ్‌పాయింట్",
+          "description": "మీ OTLP గ్రహణ యొక్క బేస్ URL. Routerly <code>/v1/metrics</code>, మరియు ట్రేస్ ఎగుమతి ఉన్నప్పుడు <code>/v1/traces</code> జోడిస్తుంది. డిఫాల్ట్ HTTP పోర్ట్ 4318, gRPC 4317.",
+          "protocol": "ప్రోటోకాల్",
+          "headers": "ఎగువ"
+        },
+        "datadog": {
+          "apiKey": "API కీ",
+          "placeholder": "మీ Datadog API కీ",
+          "description": "<strong>సంస్థ సెట్టింగ్‌లు → API కీలు</strong> లో మీ Datadog ఖాతాలో కనుగొనబడుతుంది.",
+          "site": "స్థానం"
+        },
+        "grafana": {
+          "remoteWriteUrl": "రిమోట్ రాయండి URL",
+          "description": "<strong>Grafana Cloud → కనెక్షన్‌లు → Prometheus → వివరాలు</strong>లో \"రిమోట్ రాయండి ఎండ్‌పాయింట్\" గా కనుగొనబడుతుంది.",
+          "username": "చిరునామా / స్టాక్ ID",
+          "usernameHint": "Prometheus కనెక్షన్ వివరాల్లో చూపిన సంఖ్యా ID.",
+          "apiKey": "API కీ / టోకెన్",
+          "apiKeyHint": "Grafana Cloud టోకెన్ <strong>MetricsPublisher</strong> పాత్రతో."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 ఇన్‌స్టెన్‌స్ URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "టోకెన్",
+          "tokenPlaceholder": "మీ InfluxDB API టోకెన్",
+          "tokenHint": "బకెట్ కు <strong>రాయండి</strong> ప్రాప్యత ఉండాలి.",
+          "org": "సంస్థ",
+          "bucket": "బకెట్"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "రహస్యం",
+          "secretHint": "(ఐచ్ఛికం — HMAC-SHA256 సంతకం కీ)",
+          "headers": "ఎగువ"
+        }
+      },
+      "errors": {
+        "loadFailed": "సమన్వయాలను లోడ్ చేయడం విఫలమైంది",
+        "updateFailed": "సమన్వయం నవీకరించడం విఫలమైంది",
+        "saveFailed": "సమన్వయం సేవ చేయడం విఫలమైంది",
+        "deleteFailed": "సమన్వయం తొలగించడం విఫలమైంది"
+      },
+      "empty": "ఇంకా ఎటువంటి సమన్వయాలు ఆర్డర చేయబడలేదు.",
+      "enabled": "ప్రారంభం చేయబడింది",
+      "testing": "పరీక్ష చేస్తోంది…",
+      "test": "పరీక్ష",
+      "removeConfirm": "తీసివేయండి?",
+      "remove": "తీసివేయండి",
+      "cancel": "రద్దు చేయండి",
+      "removeTooltip": "సమన్వయం తీసివేయండి",
+      "saving": "సేవ చేస్తోంది…",
+      "save": "సేవ చేయండి",
+      "addButton": "సమన్వయం జోడించండి"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "సెట్టింగ్‌లను లోడ్ చేయడం విఫలమైంది",
+        "duplicateUrl": "ఈ URL ఇప్పటికే జాబితాలో ఉంది.",
+        "unreachable": "ఈ URL లో చెల్లుబాటు ప్రదాత కటలాగ్ చేరుకోలేకపోయారు."
+      },
+      "saved": "సేవ చేసారు.",
+      "refreshed": "రిఫ్రెష్ చేసారు.",
+      "heading": "ప్రదాత కటలాగ్ భాండారాలు",
+      "refreshing": "రిఫ్రెష్ చేస్తోంది…",
+      "refresh": "రిఫ్రెష్ చేయండి",
+      "nextRefresh": "తదుపరి: {{date}}",
+      "priorityHint": "అంతర్గత క్రమం విలీనం ప్రిముఖతను నిర్ణయిస్తుంది — అంతర్గత 1 విలీనం అందుకుంటుంది. బాణాలను ఉపయోగించుటకు పున: క్రమం చేయండి.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "నవీకరించారు",
+        "lastCheck": "చివరి తనిఖీ",
+        "status": "స్థితి"
+      },
+      "empty": "ఎటువంటి భాండారాలు ఆర్డర చేయబడలేదు. డిఫాల్ట్ Routerly పబ్లిక్ కటలాగ్ ఉపయోగించబడుతుంది.",
+      "status": {
+        "error": "ఉద్దాటన",
+        "active": "క్రియాశీల",
+        "disabled": "నిష్క్రియం చేయబడింది"
+      },
+      "edit": "సవరించండి",
+      "removeTooltip": "తీసివేయండి",
+      "addRepository": "భాండారం జోడించండి",
+      "checking": "తనిఖీ చేస్తోంది…",
+      "add": "జోడించండి",
+      "removeConfirm": "భాండారం \"{{url}}\" తీసివేయండి?"
+    },
+    "about": {
+      "headings": {
+        "application": "ఆర్డర",
+        "runtime": "రన్‌టైమ్",
+        "storage": "నిల్ము",
+        "softwareUpdate": "సాఫ్ట్‌వేర్ నవీకరణ"
+      },
+      "labels": {
+        "version": "సంస్కరణ",
+        "uptime": "అప్‌టైమ్",
+        "nodeVersion": "Node.js",
+        "platform": "ప్లాట్‌ఫారమ్",
+        "configDir": "ఆర్డర చేయడం డైరెక్టరీ",
+        "dataDir": "డేటా డైరెక్టరీ",
+        "currentVersion": "ప్రస్తుత సంస్కరణ",
+        "availableVersion": "అందుబాటులో సంస్కరణ",
+        "upToDate": "తాజా",
+        "lastChecked": "చివరిసారి తనిఖీ చేసారు"
+      },
+      "noCheckPerformed": "ఇంకా నవీకరణ తనిఖీ చేయబడలేదు.",
+      "checkForUpdates": "నవీకరణల కోసం తనిఖీ చేయండి",
+      "checking": "తనిఖీ చేస్తోంది…",
+      "updateTo": "v{{version}}కు నవీకరించండి",
+      "updating": "నవీకరిస్తోంది…",
+      "dockerHint": "Docker లో నడుస్తోంది — నవీకరించుటకు సమీప చిత్రాన్ని లాగండి.",
+      "confirmUpdate": "ఇది సమీప సంస్కరణ డౌన్‌లోడ్ చేస్తుంది మరియు సంస్థాపన చేస్తుంది. సంస్థ పునరారంభం చేయబడుతుంది. కొనసాగించండి?",
+      "updateComplete": "నవీకరణ సంపూర్ణం! పున: లోడ్ చేస్తోంది…",
+      "serviceRestarting": "సంస్థ పునరారంభం చేయుతోంది. దయచేసి తరువాత పేజీని పున: లోడ్ చేయండి.",
+      "errors": {
+        "loadFailed": "లోడ్ చేయడం విఫలమైంది",
+        "checkFailed": "తనిఖీ విఫలమైంది",
+        "updateFailed": "నవీకరణ విఫలమైంది"
+      },
+      "channel": "సరిభాగం"
+    },
+    "security": {
+      "authentication": "ప్రమాణీకరణ",
+      "requireMfa": "అన్ని ఆర్డర కోసం రెండు-ఫ్యాక్టర్ ప్రమాణీకరణ అవసరం",
+      "requireMfaHint": "ప్రారంభం చేసినప్పుడు, 2FA సెటప్ చేయని ఆర్డర సైన్ చేసిన తర్వాత సెటప్ చేయుటకు సూచన చూస్తారు. ఆర్డర తమ ప్రొఫైల్ పేజీలో 2FA ఆర్డర చేయుటకు చేయవచ్చు.",
+      "savedSuccess": "సెట్టింగ్‌లు విజయవంతంగా సేవ్ చేయబడ్డాయి.",
+      "saving": "సేవ చేస్తోంది…",
+      "saveSettings": "సెట్టింగ్‌లను సేవ చేయండి",
+      "errors": {
+        "loadFailed": "సెట్టింగ్‌లను లోడ్ చేయడం విఫలమైంది",
+        "saveFailed": "సెట్టింగ్‌లను సేవ చేయడం విఫలమైంది"
+      }
+    },
+    "title": "సెట్టింగ్‌లు",
+    "subtitle": "Routerly కోసం ఆర్డర చేయడం",
+    "tabs": {
+      "general": "సాధారణ",
+      "security": "భద్రత",
+      "notifications": "నోటిఫికేషన్‌లు",
+      "integrations": "సమన్వయాలు",
+      "catalog": "ప్రదాత కటలాగ్",
+      "users": "ఆర్డర",
+      "roles": "పాత్రలు",
+      "audit": "ఆర్డర లాగ్",
+      "about": "గురించి"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "రౌటర్‌లు",
+      "subtitle": "Routerly నిమ్నాభిలాష ఆర్డర ఆర్డర",
+      "count": "1 రౌటర్",
+      "count_other": "{{count}} రౌటర్‌లు",
+      "newRouter": "నవీన రౌటర్",
+      "empty": "ఇంకా రౌటర్‌లు లేవు.",
+      "emptyFiltered": "ఈ రకమైన రూటర్ లేదు.",
+      "tabs": {
+        "all": "అన్నీ",
+        "router": "రూటర్",
+        "orchestrator": "సమన్వయకర్త",
+        "passthrough": "పాస్థ్రూ"
+      },
+      "columns": {
+        "name": "నామం",
+        "tokens": "టోకెన్‌లు",
+        "policies": "విధానాలు",
+        "models": "మోడల్‌లు"
+      },
+      "tokenCount": "1 టోకెన్",
+      "tokenCount_other": "{{count}} టోకెన్‌లు",
+      "editRouter": "రౌటర్ సవరించండి",
+      "deleteRouter": "రౌటర్ తొలగించండి",
+      "deleteConfirm": "ఈ రౌటర్‌ను తొలగించండి?",
+      "errors": {
+        "deleteFailed": "రౌటర్‌ను తొలగించటంలో ఉద్దాటన"
+      }
+    },
+    "layout": {
+      "notFound": "రౌటర్ కనుగొనబడలేదు",
+      "tabs": {
+        "dashboard": "డ్యాష్‌బోర్డ్",
+        "general": "సాధారణ",
+        "orchestrator": "ఎర్కెస్ట్రేటర్",
+        "routing": "రూటింగ్",
+        "optimizer": "ఆప్టిమైజర్",
+        "security": "భద్రత",
+        "token": "టోకెన్",
+        "users": "ఆర్డర",
+        "logs": "లాగ్‌లు"
+      },
+      "backToRouters": "రౌటర్‌లకు వెనుకకు",
+      "backToRoutersTitle": "రౌటర్‌లకు వెనుకకు",
+      "newRouter": "నవీన రౌటర్",
+      "loading": "లోడ్ చేస్తోంది...",
+      "routerId": "రౌటర్ ID:",
+      "saveFirstHint": "ఈ ట్యాబ్‌ను అన్‌లాక్ చేయుటకు ముందు రౌటర్‌ను సేవ చేయండి"
+    },
+    "dashboard": {
+      "period": "కాలం",
+      "noTraffic": "ఎంచుకున్న కాలంలో ఈ రౌటర్‌కు ట్రాఫిక్ లేదు.",
+      "stats": {
+        "savings": "బ్యాకపు",
+        "vsPrefix": "వర్సస్",
+        "forEverything": "అన్నికటకు",
+        "noTargetToCompare": "సరిపోయిన లక్ష్య మోడల్ లేదు",
+        "cost": "ధర",
+        "callCount": "1 కాల్",
+        "callCount_other": "{{count}} కాల్‌లు",
+        "latency": "లేటెన్సీ",
+        "medianP95": "మధ్యస్థ · p95 {{value}}",
+        "ttft": "మొదటి టోకెన్ కు సమయం",
+        "notMeasured": "ఈ కాల్‌లలో కొలparís సరిపోవు",
+        "reliability": "విశ్వసనీయత",
+        "errorsAndBlocked": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు"
+      },
+      "tokens": {
+        "input": "ఇన్‌పుట్ టోకెన్‌లు:",
+        "output": "అవుట్‌పుట్ టోకెన్‌లు:",
+        "fromCache": "తటస్థల నుండి:",
+        "cacheSaved": "({{amount}} సేవ చేసారు)"
+      },
+      "oneModel": {
+        "heading": "ఒక మోడల్‌కు అన్నీ వెళ్లిఉండితే",
+        "empty": "ఈ రౌటర్ కు లక్ష్య మోడల్‌లను జోడించండి పోలిక చూడటానికి.",
+        "columns": {
+          "targetModel": "లక్ష్య మోడల్",
+          "wouldHaveCost": "ఖర్చు ఉండేది",
+          "saved": "సేవ చేసారు"
+        },
+        "costsHint": "ధరలు గమనించిన టోకెన్‌లు ప్రతిదీ లక్ష్య డిందరు తరలించారు।"
+      },
+      "optimizers": {
+        "heading": "ఆప్టిమైజర్‌లు ఎక్కడ తీసివేయబడ్డాయి",
+        "columns": {
+          "optimizer": "ఆప్టిమైజర్",
+          "callsChanged": "కాల్‌లు మార్చారు",
+          "tokensSaved": "టోకెన్‌లు సేవ చేసారు",
+          "costSaved": "ధర సేవ చేసారు",
+          "rolledBack": "వెనుకకు రోల్ చేసారు"
+        },
+        "hint": "కాల్‌లపై గమనించిన, ప్రతిదీ లక్ష్య చేసిన ధరలు. వెనుకకు రోల్ చేసిన నడుస్తుందని సరిబాటు తిరస్కరించబడింది: ఇది ఖర్చు సేవ చేయనందున, ఎక్కువ గణనీయం థ్రెషోల్డ్ చాలా ఆక్రమణాత్మకమని అర్థం చేస్కుంటుంది."
+      },
+      "traffic": {
+        "heading": "ట్రాఫిక్ ఎక్కడ వెళ్లిఉంది",
+        "columns": {
+          "model": "మోడల్",
+          "calls": "కాల్‌లు",
+          "share": "భాగం",
+          "cost": "ధర",
+          "p95Latency": "p95 లేటెన్సీ",
+          "errors": "ఉద్దాటనలు"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "రౌటర్‌ను సేవ చేయటంలో ఉద్దాటన",
+        "copyFailed": "కాపీ విఫలమైంది — దయచేసి టోకెన్‌ను నిర్వహణ మరియు కాపీ చేయండి."
+      },
+      "kind": {
+        "router": {
+          "label": "రౌటర్",
+          "description": "మోడల్ అభ్యర్థుల్లో అభ్యర్థనలను రూట్ చేస్తుంది."
+        },
+        "orchestrator": {
+          "label": "ఎర్కెస్ట్రేటర్",
+          "description": "మోడల్‌ల కంటే ఇతర రౌటర్‌ల్లో అభ్యర్థనలను రూట్ చేస్తుంది."
+        },
+        "passthrough": {
+          "label": "పాస్‌థ్రూ",
+          "description": "అభ్యర్థనలను సవరించిన విధానలను ముందుకు చేస్తుంది."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "ఈ టోకెన్‌ను ఈ సమయంలో సేవ చేయండి.",
+        "saveNowHint": "ఇది పున: చూపబడదు — మీరు ఈ స్క్రీన్ వదిలిపోతే దీనిని పునరుద్ధరించలేము.",
+        "copied": "కాపీ చేసారు!",
+        "copy": "కాపీ చేయండి",
+        "goToRouter": "రౌటర్‌కు వెళ్లండి"
+      },
+      "connect": {
+        "heading": "ఎలా కనెక్ట్ చేయాలి",
+        "intro": "ఏదైనా OpenAI లేదా Anthropic SDK Routerly వద్ద చేర్చండి మరియు <tokenLink>రౌటర్ టోకెన్</tokenLink> API కీ గా ఉపయోగించండి. <code>{{token}}</code> కింద మీ టోకెన్ తో భర్తీ చేయండి. మోడల్ <code>{{model}}</code> ఎంపిక Routerly కు హాండ్లర్; ఏదైనా మోడల్ id <modelsLink>మోడల్‌లు</modelsLink> నుండి చేయిస్తుంది.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "బేస్ URL <code>{{baseUrl}}</code>, అదే ఏదైనా \"OpenAI సరిపోయిన\" ప్రదాత ఫీల్డ్ తీసుకుంటుంది.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "బేస్ URL <code>{{baseUrl}}</code>, <code>/v1</code> లేకుండా: SDK దానిని జోడిస్తుంది.",
+        "curl": "curl",
+        "curlHint": "ఈ కేబిల్ చేయడం చూడండి ఇన్‌స్టాల్ చేయకుండా, ఆ <usageLink>ఉపయోగం</usageLink>లో కాల్‌ను చూడండి."
+      },
+      "form": {
+        "kind": "రకం",
+        "kindAriaLabel": "రౌటర్ రకం",
+        "kindFixedHint": "రౌటర్ సృష్టించిన తర్వాత స్థిరం.",
+        "routerName": "రౌటర్ నామం",
+        "routerNamePlaceholder": "నా యాప్",
+        "advancedSettings": "ఆధునిక సెట్టింగ్‌లు",
+        "ttftTimeout": "TTFT సమయపాలన (ms)",
+        "ttftTimeoutHint": "ఒక మోడల్ ఈ సమయంలో మొదటి ప్రతిస్పందన బైట్‌ను పంపకపోతే, Routerly ఆ రద్దు చేస్తుంది మరియు తదుపరి అభ్యర్థిని ప్రయత్నిస్తుంది. సంపూర్ణ ప్రతిస్పందన వ్యవధిని సీమితం చేయదు. ఇది 0 కు సెట్ చేయండి ప్రదాత తీసుకోవడానికి సమయానికి చేరుకోవటానికి.",
+        "traceContent": "ట్రేస్ కంటెంట్",
+        "traceContentHint": "ట్రేస్‌లు ఎప్పుడూ సమాచారం రికార్డ్ చేస్తాయి (మోడల్‌లు, స్కోర్‌లు, టోకెన్‌లు, ధర, లేటెన్సీ). ఈ ప్రాంప్ట్‌లను పంపిన మరియు చేరుకున్న ప్రతిస్పందనలను రికార్డ్ చేయుటకు దీనిని ఆన్ చేయండి. ఉపయోగ రికార్డ్ తో నిల్లబడవు మరియు నివేదనలను చదువుటకు అనుమతిచేసిన అందరికి చూపబడుతుంది.",
+        "capturePromptsAndAnswers": "ప్రాంప్ట్‌లు మరియు చేరుకున్న సందేశాలను సంగ్రహించండి",
+        "saveChanges": "మార్పులను సేవ చేయండి",
+        "createRouter": "రౌటర్ సృష్టించండి"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "ఈ రౌటర్ ఎర్కెస్ట్రేటర్ కాదు.",
+      "candidateRouters": "అభ్యర్థీ రౌటర్‌లు",
+      "candidateRoutersHint": "ఈ ఎర్కెస్ట్రేటర్ ఫారవర్డ్ చేసిన రౌటర్‌లు. బరువు ప్రభావితం చేస్తుంది ఎంత తరచుగా ప్రతిదీ అభ్యర్థీ ఎంపిక చేయబడుతుంది; కేవలం దాని నామం, id, బరువు మరియు ఐచ్ఛిక ప్రతిదీ-అభ్యర్థీ సీమలు చూపబడుతాయి.",
+      "router": "రౌటర్",
+      "selectRouter": "రౌటర్‌ను ఎంచుకోండి",
+      "weight": "బరువు",
+      "removeCandidate": "అభ్యర్థీని తీసివేయండి",
+      "usageLimits": "ఈ అభ్యర్థీకు ఉపయోగ సీమలు",
+      "limitCount": "{{count}} సీమ",
+      "limitCount_other": "{{count}} సీమలు",
+      "usageLimitsHint": "ఐచ్ఛిక ఉపయోగ సీమలు ఈ ఎర్కెస్ట్రేటర్ ఫారవర్డ్ చేసిన అభ్యర్థనలకు ఈ అభ్యర్థీకు దీనిని మాత్రమే చేయబడుతుంది.",
+      "empty": "ఇంకా అభ్యర్థీ రౌటర్‌లు లేవు. ఎర్కెస్ట్రేటర్ ఫారవర్డ్ చేయటకు ముందు ఎర్కెస్ట్రేటర్ కనీసం ఒకటి అవసరం.",
+      "addCandidate": "అభ్యర్థీని జోడించండి",
+      "saved": "సేవ చేసారు!",
+      "saveCandidates": "అభ్యర్థులను సేవ చేయండి",
+      "errors": {
+        "loadFailed": "రౌటర్‌లను లోడ్ చేయడం విఫలమైంది",
+        "saveFailed": "ఎర్కెస్ట్రేటర్ అభ్యర్థులను సేవ చేయటంలో ఉద్దాటన"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "రూటింగ్ ప్రొఫైల్‌ను కేటాయించటం విఫలమైంది",
+        "duplicateTargets": "లక్ష్య మోడల్‌లలో నకలు ఉండకూడదు.",
+        "saveFailed": "రౌటర్ రూటింగ్‌ను సేవ చేయటంలో ఉద్దాటన",
+        "noProfileAvailable": "ఆర్డర ప్రొఫైల్ అందుబాటులో లేదు. ప్రొఫైల్‌లు పేజీ నుండి ఒకటి సృష్టించండి."
+      },
+      "form": {
+        "routing": "రూటింగ్",
+        "routingHint": "భాగస్వామ్য రూటింగ్ ప్రొఫైల్‌ను ఉపయోగించండి, లేదా ఈ రౌటర్ యొక్క తన విధానాలను నిర్వచించండి. లక్ష్య మోడల్‌లు ఏదైనా విధానం స్థిరం.",
+        "profileMode": "ప్రొఫైల్",
+        "customMode": "కస్టమ్",
+        "routingProfile": "రూటింగ్ ప్రొఫైల్",
+        "builtinSuffix": "(నిర్మితం-ఇన్)",
+        "profileHint": "విధానాలు ప్రొఫైల్ నుండి వస్తాయి మరియు దాని మార్పులను అనుసరిస్తాయి. ప్రొఫైల్‌లు పేజీలో వాటిని సవరించండి, లేదా కస్టమ్‌కు మారండి నకలు నుండి ప్రారంభించుటకు.",
+        "saved": "సేవ చేసారు!",
+        "saveRoutingConfiguration": "రూటింగ్ ఆర్డర చేయడం సేవ చేయండి"
+      },
+      "targetModels": {
+        "heading": "లక్ష్య మోడల్‌లు",
+        "hint": "విధానాలు ఫిల్టర్ చేయవలసిన మోడల్ అభ్యర్థుల సమూహాన్ని నిర్వచించండి. ఐచ్ఛిక ప్రాంప్ట్‌లు AI రౌటర్‌ను ఈ మోడల్‌ను ఎప్పుడు ఎంచుకోవాలో సూచిస్తాయి.",
+        "endpointModel": "ఎండ్‌పాయింట్ మోడల్",
+        "selectModel": "మోడల్‌ను ఎంచుకోండి",
+        "promptDefinition": "ప్రాంప్ట్ నిర్వచనం",
+        "promptPlaceholder": "రౌటర్ ఈ మోడల్‌ను ఎంచుకోవలసిన సమయం మరియు కారణం ఖచ్చితమైనవిగా వర్ణించండి...",
+        "intents": "ఉద్దేశ్యాలు",
+        "removeTarget": "లక్ష్య మోడల్‌ను తీసివేయండి",
+        "empty": "ఎటువంటి లక్ష్య మోడల్‌లు ఆర్డర చేయబడలేదు.",
+        "addTarget": "లక్ష్య మోడల్‌ను జోడించండి"
+      }
+    },
+    "optimizer": {
+      "title": "ఆప్టిమైజర్‌లు",
+      "description": "ఆప్టిమైజర్‌లు ప్రదాత చేరుకోటకు ముందు ప్రాంప్ట్ టోకెన్‌లను తగ్గిస్తాయి. ఈ ఎగువ నుండి దిగువకు క్రమంలో నడుస్తాయి. భాగస్వామ్య ఆప్టిమైజర్ ప్రొఫైల్ ఉపయోగించండి, లేదా ఈ రౌటర్ యొక్క తన పైపు నిర్వచించండి.",
+      "noPermission": "మీకు ఆప్టిమైజర్‌లను చూడటానికి అనుమతి లేదు.",
+      "mode": {
+        "profile": "ప్రొఫైల్",
+        "custom": "కస్టమ్"
+      },
+      "profileSelect": {
+        "ariaLabel": "ఆప్టిమైజర్ ప్రొఫైల్",
+        "builtinLabel": "{{label}} (నిర్మితం-ఇన్)",
+        "hint": "దశలు ప్రొఫైల్ నుండి వస్తాయి మరియు దాని మార్పులను అనుసరిస్తాయి. ప్రొఫైల్‌లు పేజీలో వాటిని సవరించండి, లేదా కస్టమ్‌కు మారండి నకలు నుండి ప్రారంభించుటకు.",
+        "disabledSuffix": "(నిష్క్రియం చేయబడింది)",
+        "thresholdSuffix": ", థ్రెషోల్డ్ {{threshold}}"
+      },
+      "customHint": "పున: క్రమం చేయుటకు లాగండి, ఆర్డర చేయుటకు టాగుల్. కొన్ని ఆప్టిమైజర్‌లు సందర్భం విండో సరిపోయిన కు ఎంత ఆక్రమణాత్మక ట్రిమ్ నియంత్రించుటకు థ్రెషోల్డ్ ఉపయోగిస్తాయి.",
+      "saveButton": "ఆప్టిమైజర్‌లను సేవ చేయండి",
+      "saving": "సేవ చేస్తోంది...",
+      "saved": "సేవ చేసారు",
+      "preview": {
+        "title": "టోకెన్ బ్యాకపు సూచన చూడండి",
+        "description": "ప్రస్తుత (సేవ చేయని) పైపు ప్రాంప్ట్‌పై నడుపండి ప్రతిదీ దశ తీసివేస్తుందో మరియు ఇది ఖర్చు చేస్తుందో చూడటానికి. నమూనా సంభాషణలలో ఒకటి ఎంచుకోండి, లేదా మీ తన ప్రాంప్ట్ వర్ణించండి.",
+        "promptLabel": "ప్రాంప్ట్",
+        "promptAriaLabel": "సూచన చూడటానికి ప్రాంప్ట్",
+        "typePromptOption": "దిగువ ప్రాంప్ట్ వర్ణించండి",
+        "fixturesHint": "నమూనా సంభాషణలు Routerly తో పంపిణీ చేయబడ్డాయి. Routerly నిజ ప్రాంప్ట్‌లను రికార్డ్ చేయదు.",
+        "modelLabel": "మోడల్",
+        "modelAriaLabel": "సూచన చూడటానికి మోడల్",
+        "modelWithContext": "{{id}} ({{k}}k సందర్భం)",
+        "noModelOption": "ఎటువంటి మోడల్ లేదు",
+        "modelHint": "సందర్భం విండో సరిపోయిన దశలు ఏ విండో తెలుసుకోవాలి. మోడల్ లేకుండా ఎక్స్‌ట్రాక్ట్ చేయబడ్డాయి, ఏ ఈ సంస్కరణ Routerly అభ్యర్థనలో లేని విండో ఎటువంటి ఆర్డర చేయడం లేని సమయానికి.",
+        "sampleAriaLabel": "నమూనా ప్రాంప్ట్",
+        "samplePlaceholder": "నమూనా ఆర్డర సందేశం పేస్ట్ చేయండి...",
+        "runButton": "సూచన చూడటానికి నడుపండి",
+        "running": "నడుస్తోంది...",
+        "before": "ముందు",
+        "after": "తర్వాత",
+        "saved": "సేవ చేసారు",
+        "columns": {
+          "optimizer": "ఆప్టిమైజర్",
+          "before": "ముందు",
+          "after": "తర్వాత",
+          "saved": "సేవ చేసారు"
+        },
+        "rolledBackNote": "వెనుకకు రోల్ చేసారు: ఈ మార్పు తిరస్కరించబడింది అసురక్షితంగా",
+        "skippedNote": "తప్పిపోయారు: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "ఈ దశ ఉత్పత్తి చేసిన మార్పు వెనుకకు రోల్ చేయబడింది, కాబట్టి ప్రాంప్ట్ తదుపరి దశ చేరుకుంది నాటు.",
+          "skipped": "ఈ దశ నడుకోలేదు: {{reason}}",
+          "unchanged": "ఈ దశ ప్రాంప్ట్‌ను నిర్ధారించని వదిలివేసింది."
+        }
+      },
+      "errors": {
+        "assignFailed": "ఆప్టిమైజర్ ప్రొఫైల్‌ను కేటాయించటం విఫలమైంది",
+        "saveFailed": "ఆప్టిమైజర్‌లను సేవ చేయటంలో ఉద్దాటన",
+        "previewFailed": "సూచన చూడటం విఫలమైంది",
+        "noProfileAvailable": "ఆర్డర ప్రొఫైల్ అందుబాటులో లేదు. ప్రొఫైల్‌లు పేజీ నుండి ఒకటి సృష్టించండి."
+      }
+    },
+    "token": {
+      "newButton": "నవీన టోకెన్",
+      "empty": "API టోకెన్‌లు లేవు. అభ్యర్థనలను ప్రామాణీకరణ చేయుటకు ఒకటి సృష్టించండి.",
+      "budgetOverrides": "బడ్జెట్ భర్తీలు",
+      "created": "సృష్టించారు",
+      "lastUsed": "చివరిసారి ఉపయోగించారు",
+      "expires": "గడువు ముగుస్తుంది",
+      "never": "ఎప్పుడూ లేదు",
+      "editTitle": "ఆర్డర చేయడం సవరించండి",
+      "revokeTitle": "టోకెన్ రిభోక్ చేయండి",
+      "revokeConfirm": "టోకెన్ \"{{snippet}}...\" రిభోక్ చేయండి? ఆ ఉపయోగించిన యాప్‌లు తక్షణం చేయడం నిలిపివేస్తాయి.",
+      "labelInput": {
+        "placeholder": "లేబుల్‌ను శోధించండి లేదా సృష్టించండి…",
+        "createPrefix": "సృష్టించండి",
+        "noMatches": "సరిపోయిన లేబుల్‌లు కనుగొనబడలేదు."
+      },
+      "errors": {
+        "deleteFailed": "టోకెన్‌ను తొలగించటంలో ఉద్దాటన"
+      },
+      "create": {
+        "backToTokens": "టోకెన్‌లకు వెనుకకు",
+        "title": "నవీన API టోకెన్",
+        "subtitle": "సంపూర్ణ టోకెన్ సృష్టన తర్వాత ఒకసారి చూపబడుతుంది — దీనిని సురక్షితంగా నిల్ము చేయండి.",
+        "tokenCreated": "టోకెన్ విజయవంతంగా సృష్టించారు. దీనిని ఈ సమయంలో కాపీ చేయండి — ఇది పున: చూపబడదు.",
+        "copied": "కాపీ చేసారు!",
+        "copy": "కాపీ చేయండి",
+        "done": "సంపూర్ణం",
+        "optional": "ఐచ్ఛికం",
+        "labels": "లేబుల్‌లు",
+        "labelsHint": "ఈ టోకెన్ ఎక్కడ ఉపయోగించబడుతుందో గుర్తించుటకు ట్యాగ్ చేయండి (ఉదాహరణకు \"ఉత్పత్తి\", \"ci\").",
+        "scopes": "పరిధులు",
+        "scopesHint": "ఈ టోకెన్‌కు జతచేసిన ఉచిత-రూప పరిధులు (ఉదాహరణకు \"batch\", \"అంతర్గత\"), మీ సాప్టీపై నిల్లబడిన పుస్తకం కోసం నిల్లబడిన.",
+        "tags": "ట్యాగ్‌లు",
+        "tagsHint": "కీ-విలువ సమాచారం ఉపయోగ రికార్డ్‌లకు ఆ దిశలో పంపిన (ఉదాహరణకు env=ఉత్పత్తి).",
+        "keyPlaceholder": "కీ",
+        "valuePlaceholder": "విలువ",
+        "createButton": "టోకెన్ సృష్టించండి",
+        "cancel": "రద్దు చేయండి",
+        "copyFailed": "కాపీ విఫలమైంది — దయచేసి టోకెన్‌ను నిర్వహణ మరియు కాపీ చేయండి.",
+        "errors": {
+          "createFailed": "టోకెన్‌ను సృష్టించటంలో ఉద్దాటన"
+        }
+      },
+      "edit": {
+        "title": "టోకెన్ సవరించండి",
+        "subtitle": "ఈ టోకెన్ కోసం లేబుల్‌లు మరియు ప్రతిదీ-మోడల్ సీమ భర్తీలను నవీకరించండి.",
+        "token": "టోకెన్",
+        "labels": "లేబుల్‌లు",
+        "perModelLimits": "ప్రతిదీ-మోడల్ సీమలు",
+        "perModelLimitsHint": "ఈ టోకెన్ ఉపయోగించిన అభ్యర్థనల కోసం సమూహ మరియు రౌటర్-స్థర సీమలను భర్తీ చేయండి.",
+        "noTargetModels": "రూటింగ్ ట్యాబ్‌లో ముందుగా లక్ష్య మోడల్‌లను జోడించండి.",
+        "noOverride": "ఎటువంటి భర్తీ లేదు",
+        "noLimits": "ఎటువంటి సీమలు లేవు",
+        "noLimitsSet": "ఎటువంటి సీమలు సెట్ చేయబడలేదు — మాతృ నుండి ఆర్డర చేయడం. ఆర్డర చేయుటకు దిగువ సీమ జోడించండి.",
+        "metric": "మెట్రిక్",
+        "type": "రకం",
+        "periodLabel": "కాలం",
+        "every": "ప్రతి",
+        "maxCost": "గరిష్ట ($)",
+        "maxCalls": "గరిష్ట (n.)",
+        "maxTokens": "గరిష్ట (టోకెన్‌లు)",
+        "allCombosSet": "అన్ని మెట్రిక్/కాలం కలయికలు ఇప్పటికే సెట్ చేయబడ్డాయి",
+        "addLimit": "సీమ జోడించండి",
+        "windowType": {
+          "period": "కాలం",
+          "rolling": "రోలింగ్"
+        },
+        "limitMetric": {
+          "cost": "ధర (USD)",
+          "calls": "అభ్యర్థనలు",
+          "input_tokens": "ఇన్‌పుట్ టోకెన్‌లు",
+          "output_tokens": "అవుట్‌పుట్ టోకెన్‌లు",
+          "total_tokens": "మొత్తం టోకెన్‌లు"
+        },
+        "period": {
+          "hourly": "ప్రతి గంటకు",
+          "daily": "రోజువారీ",
+          "weekly": "సాప్తాహిక",
+          "monthly": "నెలవారీ",
+          "yearly": "సంవత్సరానికి"
+        },
+        "rollingUnit": {
+          "second": "సెకన్లు",
+          "minute": "నిమిషాలు",
+          "hour": "గంటలు",
+          "day": "రోజులు",
+          "week": "వారాలు",
+          "month": "నెలలు"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / ప్రతి {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "టోకెన్‌ను సేవ చేయటంలో ఉద్దాటన"
+        }
+      }
+    },
+    "users": {
+      "title": "రౌటర్ సభ్యులు",
+      "description": "ఈ రౌటర్‌కు ప్రాప్యత ఉన్న ఆర్డర నిర్వహించండి.",
+      "addButton": "సభ్యుని జోడించండి",
+      "addNewTitle": "సభ్యుని జోడించండి",
+      "selectUserPlaceholder": "ఆర్డర ఎంచుకోండి...",
+      "addConfirmButton": "జోడించండి",
+      "cancelButton": "రద్దు చేయండి",
+      "empty": "ఎటువంటి సభ్యులు కనుగొనబడలేదు.",
+      "removeConfirm": "మీరు ఈ సభ్యుని తీసివేయుటకు ఖచ్చితమైనరా?",
+      "saveTitle": "మార్పులను సేవ చేయండి",
+      "changeRoleTitle": "పాత్ర మార్చండి",
+      "removeTitle": "సభ్యుని తీసివేయండి",
+      "roles": {
+        "viewer": "వీక్షకుడు",
+        "editor": "సంపాదకుడు",
+        "admin": "నిర్వాహకుడు"
+      },
+      "columns": {
+        "user": "ఆర్డర",
+        "role": "పాత్ర",
+        "actions": "చర్యలు"
+      },
+      "errors": {
+        "loadFailed": "ఆర్డరను లోడ్ చేయడం విఫలమైంది",
+        "addFailed": "సభ్యుని జోడించటంలో ఉద్దాటన",
+        "updateFailed": "సభ్యుని నవీకరించటంలో ఉద్దాటన",
+        "removeFailed": "సభ్యుని తీసివేయటంలో ఉద్దాటన"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "బయటకు"
+      },
+      "autoRefreshOff": "స్వయం-రిఫ్రెష్ నిష్క్రియం చేయబడింది",
+      "autoRefreshEvery": "స్వయం-రిఫ్రెష్ ప్రతి {{interval}}",
+      "lastUpdated": "చివరిసారి నవీకరించారు: {{time}}",
+      "refresh": "రిఫ్రెష్ చేయండి",
+      "refreshNowTitle": "ఈ సమయంలో రిఫ్రెష్ చేయండి",
+      "refreshNowButton": "↻ ఇప్పుడు",
+      "filters": {
+        "period": "కాలం",
+        "model": "మోడల్",
+        "allModels": "అన్ని మోడల్‌లు",
+        "type": "రకం",
+        "all": "అంతటా",
+        "completion": "సంపూర్ణం",
+        "router": "రౌటర్",
+        "status": "స్థితి",
+        "success": "విజయం",
+        "blocked": "బ్లాక్ చేసారు",
+        "error": "ఉద్దాటన",
+        "resetButton": "ఫిల్టర్‌లను రీసెట్ చేయండి"
+      },
+      "stats": {
+        "totalCost": "మొత్తం ధర",
+        "totalCalls": "మొత్తం కాల్‌లు",
+        "completionCalls": "సంపూర్ణం కాల్‌లు",
+        "routerCalls": "రౌటర్ కాల్‌లు",
+        "errors": "ఉద్దాటనలు"
+      },
+      "requestLogs": "అభ్యర్థన లాగ్‌లు",
+      "emptyNoRequests": "ఎంచుకున్న కాలంలో ఈ రౌటర్‌కు అభ్యర్థనలు లేవు.",
+      "emptyNoMatches": "కనిపించిన ఫిల్టర్‌లకు రికార్డ్‌లు సరిపోవు.",
+      "columns": {
+        "time": "సమయం",
+        "model": "మోడల్",
+        "type": "రకం",
+        "in": "ఇన్",
+        "out": "బయటకు",
+        "cost": "ధర",
+        "latency": "లేటెన్సీ",
+        "ttft": "TTFT",
+        "tokPerSec": "టోక్/సె",
+        "status": "స్థితి"
+      },
+      "typeRouter": "రౌటర్",
+      "typeCompletion": "సంపూర్ణం",
+      "pagination": {
+        "previous": "← మునుపటి",
+        "next": "తదుపరి →",
+        "pageOf": "{{totalPages}} నుండి {{page}} పేజీ",
+        "totalRecords": "({{count}} మొత్తం రికార్డ్‌లు)"
+      }
+    },
+    "security": {
+      "title": "భద్రత",
+      "description": "భాగస్వామ్య భద్రత ప్రొఫైల్‌ను ఉపయోగించండి, లేదా ఈ రౌటర్ యొక్క తన గార్డ్‌రెయిల్‌లు మరియు PII విధానాలను నిర్వచించండి.",
+      "mode": {
+        "profile": "ప్రొఫైల్",
+        "custom": "కస్టమ్"
+      },
+      "profileSelect": {
+        "ariaLabel": "భద్రత ప్రొఫైల్",
+        "builtinLabel": "{{label}} (నిర్మితం-ఇన్)",
+        "hint": "గార్డ్‌రెయిల్‌లు మరియు PII విధానాలు ప్రొఫైల్ నుండి వస్తాయి మరియు దాని మార్పులను అనుసరిస్తాయి. ప్రొఫైల్‌లు పేజీలో వాటిని సవరించండి, లేదా కస్టమ్‌కు మారండి నకలు నుండి ప్రారంభించుటకు.",
+        "blockingSuffix": ", బ్లాక్ చేస్తోంది",
+        "disabledSuffix": ", నిష్క్రియం చేయబడింది",
+        "piiRedaction": "PII నిరాకరణ ({{target}})"
+      },
+      "saveButton": "భద్రత సెట్టింగ్‌లను సేవ చేయండి",
+      "saved": "సేవ చేసారు!",
+      "errors": {
+        "assignFailed": "భద్రత ప్రొఫైల్‌ను కేటాయించటం విఫలమైంది",
+        "saveFailed": "భద్రత సెట్టింగ్‌లను సేవ చేయటంలో ఉద్దాటన",
+        "noProfileAvailable": "ఆర్డర ప్రొఫైల్ అందుబాటులో లేదు. ప్రొఫైల్‌లు పేజీ నుండి ఒకటి సృష్టించండి."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "మీరు సహాయక AI సహాయకుడు.",
+      "errors": {
+        "unknown": "తెలియని ఉద్దాటన సంభవించింది",
+        "onlyImages": "చిత్రం జోడింపులు మాత్రమే ప్రస్తుతం దృష్టి మోడల్‌ల కోసం సపోర్టు చేయబడ్డాయి."
+      },
+      "title": "చాట్ పరీక్ష చేయండి",
+      "subtitle": "రూటింగ్ గేట్‌వే ద్వారా పరీక్ష చేయిన అభ్యర్థనలను పంపండి.",
+      "routerToken": "రౌటర్ టోకెన్:",
+      "hideToken": "టోకెన్ లుకించండి",
+      "showToken": "టోకెన్ చూపండి",
+      "recognizedToken": "గుర్తించిన టోకెన్",
+      "unrecognizedToken": "గుర్తించని టోకెన్",
+      "noMessages": "ఇంకా సందేశాలు లేవు.",
+      "enterTokenHint": "సందేశం పంపడానికి ఎక్కువ రౌటర్ టోకెన్‌ను నిర్వచించండి.",
+      "typeMessageHint": "పరీక్ష ప్రారంభించుటకు ఎక్కువ సందేశం వర్ణించండి.",
+      "reasoning": "తర్కం",
+      "attachedAlt": "జతపరిచారు",
+      "attachmentAlt": "జతపరిచారు",
+      "attachImage": "చిత్రం జతపరిచారు",
+      "typeMessagePlaceholder": "సందేశం వర్ణించండి...",
+      "stopGeneration": "చిత్రకరణ నిలుపుకోండి",
+      "sendEnter": "పంపండి (Enter)",
+      "debugLog": "లాగ్ చెప్పుటకు",
+      "clear": "స్పష్టం చేయండి",
+      "noRequestSent": "ఇంకా అభ్యర్థన పంపబడలేదు.",
+      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్",
+      "turnTraceLog_other": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్‌లు"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "కనెక్షన్‌లు",
+      "subtitle": "మోడల్ ఉదాహరణలను నడుపుటకు ప్రదాత ఖాతాలు",
+      "noPermission": "మీకు కనెక్షన్‌లను చూడటానికి అనుమతి లేదు.",
+      "count": "{{count}} కనెక్షన్",
+      "count_other": "{{count}} కనెక్షన్‌లు",
+      "addConnection": "కనెక్షన్ జోడించండి",
+      "empty": "ఇంకా కనెక్షన్‌లు లేవు. ప్రారంభించుటకు ఒకటి జోడించండి.",
+      "deleteConfirm": "కనెక్షన్ \"{{label}}\" తీసివేయండి? దీనిని నిమజ్జన చేసిన ఉదాహరణలు చేయడం నిలిపివేస్తాయి.",
+      "errors": {
+        "loadFailed": "కనెక్షన్‌లను లోడ్ చేయడం విఫలమైంది",
+        "deleteFailed": "కనెక్షన్‌ను తొలగించడం విఫలమైంది"
+      },
+      "columns": {
+        "label": "లేబుల్",
+        "provider": "ప్రదాత",
+        "endpoint": "ఎండ్‌పాయింట్",
+        "status": "స్థితి"
+      },
+      "status": {
+        "enabled": "ప్రారంభం చేయబడింది",
+        "disabled": "నిష్క్రియం చేయబడింది"
+      },
+      "actions": {
+        "models": "మోడల్‌లు",
+        "edit": "సవరించండి",
+        "remove": "తీసివేయండి"
+      }
+    },
+    "form": {
+      "backToConnections": "కనెక్షన్‌లకు వెనుకకు",
+      "editTitle": "కనెక్షన్ సవరించండి",
+      "addTitle": "కనెక్షన్ జోడించండి",
+      "enabled": "ప్రారంభం చేయబడింది",
+      "editSubtitle": "ప్రదాత ఖాతా సెట్టింగ్‌లు నవీకరించండి",
+      "addSubtitle": "నవీన ప్రదాత ఖాతాను నమోదు చేయండి",
+      "sectionTitle": "కనెక్షన్ వివరాలు",
+      "sectionDesc": "ప్రదాత ఖాతా, నిమ్నాభిలాష, మరియు అభ్యర్థనలను చేయుటకు ఎండ్‌పాయింట్ ఉపయోగించారు.",
+      "provider": "ప్రదాత",
+      "groups": {
+        "directApi": "నేరుగా API",
+        "cloudPlatform": "Cloud ప్లాట్‌ఫారమ్",
+        "subscription": "సదస్సు",
+        "browserSession": "బ్రౌజర్ సెషన్",
+        "selfHosted": "స్వయం నిమజ్జన"
+      },
+      "upstreamProvider": {
+        "label": "ప్రదాత",
+        "hintLabel": "(అప్‌స్ట్రీమ్ ప్రదాత నామం)",
+        "placeholder": "ఉదాహరణకు deepseek, mistral, groq",
+        "description": "ఈ ఎండ్‌పాయింట్ కేటాయించిన సేవ నామం చేస్తుంది. ఈ కనెక్షన్‌పై మోడల్‌లు తమ ID ఆ ఉపసర్గ ఉపయోగిస్తాయి (ఉదాహరణకు <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "నామం",
+        "hint": "ఆ కనెక్షన్ సూచించిన ప్రతిస్థానాలో గుర్తిస్తుంది, కాబట్టి ఇది ఐక్యమైనది ఉండాలి. <code>{{suggested}}</code> ఉపయోగించుటకు ఇది ఖాళీ వదిలివేయండి."
+      },
+      "credentialsBlankHint": "విద్యమాన విలువలను నిల్ము చేయుటకు నిమ్నాభిలాష ఫీల్డ్‌ను ఖాళీ వదిలివేయండి.",
+      "save": "సేవ చేయండి",
+      "create": "సృష్టించండి",
+      "cancel": "రద్దు చేయండి",
+      "oauth": {
+        "unknown": "తెలియని",
+        "accountExpires": "ఖాతా: {{account}} — గడువు {{expires}}",
+        "unknownError": "తెలియని ఉద్దాటన"
+      },
+      "errors": {
+        "notFound": "కనెక్షన్ కనుగొనబడలేదు",
+        "loadFailed": "కనెక్షన్‌ను లోడ్ చేయడం విఫలమైంది",
+        "updateFailed": "కనెక్షన్‌ను నవీకరించడం విఫలమైంది",
+        "createFailed": "కనెక్షన్‌ను సృష్టించడం విఫలమైంది"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "మోడల్‌లకు వెనుకకు",
+      "title": "ఆవిష్కరణ",
+      "subtitle": "మోడల్‌ల జోడించండి",
+      "count": "{{count}} మోడల్‌లు",
+      "filteredCount": "{{filtered}} / {{count}}",
+      "free": "ఉచితం",
+      "add": "జోడించండి",
+      "addAgain": "మళ్ళీ జోడించండి",
+      "loadFailed": "కేటలాగ్ లోడ్ విఫలమైంది",
+      "filters": {
+        "search": "శోధించండి",
+        "searchPlaceholder": "ID లేదా నామం...",
+        "provider": "ప్రదాత",
+        "allProviders": "అన్ని ప్రదాతలు",
+        "context": "సందర్భం",
+        "ctxOptions": {
+          "all": "అంతటా",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "ధర / 1M",
+        "priceOptions": {
+          "all": "అంతటా",
+          "free": "ఉచితం",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "చూపించండి",
+        "configured": "ఆకృతిపరచారు",
+        "embedding": "ఎంబెడింగ్",
+        "resetFilters": "రీసెట్"
+      },
+      "empty": {
+        "noMatches": "సరిపోవు లేదు."
+      },
+      "columns": {
+        "model": "మోడల్",
+        "provider": "ప్రదాత",
+        "context": "సందర్భం",
+        "input": "ఇన్‌పుట్",
+        "output": "అవుట్‌పుట్"
+      },
+      "badges": {
+        "configured": "ఆకృతిపరచారు",
+        "embedding": "ఎంబెడింగ్",
+        "runsLocally": "స్థానికంగా"
+      },
+      "pagination": {
+        "prev": "మునుపటి",
+        "next": "తదుపరి",
+        "range": "{{start}}–{{end}} / {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "మోడల్‌లకు వెనుకకు",
+      "title": {
+        "add": "మోడల్ జోడించండి",
+        "edit": "మోడల్ సవరించండి",
+        "clone": "మోడల్ నకలు చేయండి"
+      },
+      "subtitle": {
+        "add": "నవీన LLM ప్రదాత మోడల్ నమోదు చేయండి",
+        "edit": "{{id}} కోసం ఆర్డర చేయడం సవరిస్తోంది",
+        "clone": "{{id}} నుండి నకలు చేయుటకు — సేవ చేయుటకు నవీన ID కేటాయించండి"
+      },
+      "errors": {
+        "modelNotFound": "మోడల్ కనుగొనబడలేదు",
+        "sourceModelNotFound": "మూల మోడల్ కనుగొనబడలేదు",
+        "loadFailed": "మోడల్‌లను లోడ్ చేయటంలో ఉద్దాటన",
+        "idRequired": "మోడల్ ID అవసరం",
+        "duplicateId": "మోడల్ \"{{id}}\" ఇప్పటికే ఉంది — విభిన్న కస్టమ్ ID సెట్ చేయండి",
+        "selectConnection": "కనెక్షన్‌ను ఎంచుకోండి",
+        "saveFailed": "ఉద్దాటన"
+      },
+      "badge": {
+        "yes": "అవును",
+        "no": "లేదు",
+        "override": "భర్తీ చేయండి",
+        "auto": "ఆటో",
+        "default": "డిఫాల్ట్: {{value}}",
+        "reset": "రీసెట్ చేయండి"
+      },
+      "oauth": {
+        "unknownExpiry": "తెలియని",
+        "accountOk": "ఖాతా: {{account}} — గడువు {{expires}}",
+        "unknownError": "తెలియని ఉద్దాటన"
+      },
+      "identification": {
+        "title": "మోడల్ గుర్తింపు",
+        "description": "ఈ మోడల్ ఆర్డర చేయడం కోసం యూనిక్ ఐడెంటిఫైయర్ మరియు ప్రదాత సెట్టింగ్‌లు.",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(ఐచ్ఛికం — డిఫాల్ట్:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "ఆ Routerly API కాల్‌లలో ఈ మోడల్‌ను సూచించేటప్పుడు ఉపయోగించిన ఐడెంటిఫైయర్.",
+        "provider": "ప్రదాత",
+        "upstreamProviderHint": "(అప్‌స్ట్రీమ్ ప్రదాత నామం)",
+        "upstreamProviderPlaceholder": "ఉదాహరణకు deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly ID కోసం ఉపసర్గ ఉపయోగించారు (ఉదాహరణకు",
+        "upstreamProviderDescPost": ").",
+        "model": "మోడల్",
+        "upstreamModelHint": "(అప్‌స్ట్రీమ్ మోడల్ ID)",
+        "upstreamModelPlaceholder": "ఉదాహరణకు deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "అప్‌స్ట్రీమ్ API ఎండ్‌పాయింట్‌కు పంపిన మోడల్ ఐడెంటిఫైయర్.",
+        "modelPreset": "మోడల్ ప్రీసెట్",
+        "customModelOption": "— కస్టమ్ మోడల్ నామం —",
+        "customModelPlaceholder": "ఉదాహరణకు my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "కనెక్షన్ వివరాలు",
+        "description": "అభ్యర్థనలను చేయుటకు చేరుకోవటానికి API ఎండ్‌పాయింట్ మరియు ప్రామాణీకరణ నిమ్నాభిలాష.",
+        "preconfigured": "ఆర్డర చేయడం",
+        "custom": "కస్టమ్",
+        "connection": "కనెక్షన్",
+        "selectPlaceholder": "— కనెక్షన్‌ను ఎంచుకోండి —",
+        "noneAvailable": "ఈ ప్రదాత కోసం ఎటువంటి ఆర్డర చేసిన కనెక్షన్‌లు లేవు. కస్టమ్‌కు మారండి, లేదా కనెక్షన్‌లు పేజీలో ఒకటి సృష్టించండి.",
+        "editHint": "తర్వాత ఈ కనెక్షన్‌ను సవరిస్తే ఆ నిమజ్జన చేసిన ప్రతిదీ మోడల్‌ను నవీకరించండి."
+      },
+      "capabilities": {
+        "title": "సామర్థ్యాలు",
+        "description": "ఈ మోడల్ రకం మరియు సామర్థ్యాలు నిర్దిష్ట చేయండి.",
+        "embeddingModel": "ఎంబెడింగ్ మోడల్",
+        "embeddingModelHint": "ఈ మోడల్ వెక్టర్ ఎంబెడింగ్ ఉత్పత్తి చేస్తుంది (చాట్ సంపూర్ణం కాదు)"
+      },
+      "pricing": {
+        "title": "ధర & సందర్భం",
+        "description": "ధర పారామితులు మరియు బిల్లింగ్ మరియు రూటింగ్ కోసం ఉపయోగించిన ప్రక్రియ సీమలు.",
+        "inputPerMillion": "ఇన్‌పుట్ $/1M",
+        "outputPerMillion": "అవుట్‌పుట్ $/1M",
+        "cachePerMillion": "కేష్ చదువు $/1M",
+        "cacheWritePerMillion": "కేష్ రాయండి $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "సందర్భం విండో",
+        "contextWindowHint": "(టోకెన్‌లు, ఐచ్ఛికం)"
+      },
+      "tiers": {
+        "title": "ఆధునిక — ధర స్థరాలు",
+        "description": "మెట్రిక్ థ్రెషోల్డ్‌ను అధిగమించినప్పుడు ధర భర్తీ చేయండి. ఉదాహరణకు: \"200 000 సందర్భం టోకెన్‌ల కంటే ఎక్కువ, ధరలు మార్చండి.\"",
+        "removeTier": "స్థరం తీసివేయండి",
+        "above": "కంటే ఎక్కువ",
+        "metric": "మెట్రిక్",
+        "metricContextTokens": "సందర్భం టోకెన్‌లు",
+        "overridePricing": "భర్తీ ధర",
+        "addTier": "ధర స్థరం జోడించండి"
+      },
+      "limits": {
+        "title": "సీమలు",
+        "description": "ఈ మోడల్ కోసం ఉపయోగ సీమలు. ఏ సంజామమైన నియమాలు కలయిక చేయవచ్చు.",
+        "metric": "మెట్రిక్",
+        "type": "రకం",
+        "addLimit": "సీమ జోడించండి"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max సదస్సు)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro సదస్సు)"
+      },
+      "saveChanges": "మార్పులను సేవ చేయండి",
+      "createClone": "నకలు సృష్టించండి",
+      "createModel": "మోడల్ సృష్టించండి"
+    },
+    "page": {
+      "title": "మోడల్‌లు",
+      "subtitle": "Routerly తో నమోదు చేసిన LLM ప్రదాతలు",
+      "tabs": {
+        "models": "మోడల్‌లు",
+        "health": "ఆరోగ్య"
+      },
+      "toolbar": {
+        "count": "{{count}} మోడల్",
+        "count_other": "{{count}} మోడల్‌లు",
+        "filteredCount": "{{filtered}} ఆ {{count}} మోడల్",
+        "filteredCount_other": "{{filtered}} ఆ {{count}} మోడల్‌లు"
+      },
+      "filters": {
+        "allProviders": "అన్ని ప్రదాతలు",
+        "allConnections": "అన్ని కనెక్షన్‌లు",
+        "searchPlaceholder": "ఫిల్టర్ మోడల్‌లు…"
+      },
+      "discover": "కనుగొనుట",
+      "addModel": "మోడల్ జోడించండి",
+      "deleteConfirm": "మోడల్ \"{{id}}\" తీసివేయండి?",
+      "empty": {
+        "noModels": "ఇంకా మోడల్‌లు లేవు. ప్రారంభించుటకు ఒకటి జోడించండి.",
+        "noMatches": "కనిపించిన ఫిల్టర్‌లకు మోడల్‌లు సరిపోవు."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "ప్రదాత",
+        "endpoint": "ఎండ్‌పాయింట్",
+        "input": "ఇన్‌పుట్ $/1M",
+        "output": "అవుట్‌పుట్ $/1M",
+        "cache": "కేష్ $/1M",
+        "context": "సందర్భం సైజ్"
+      },
+      "actions": {
+        "test": "పరీక్ష",
+        "clone": "నకలు చేయండు",
+        "edit": "సవరించండు",
+        "remove": "తీసివేయండు"
+      },
+      "pagination": {
+        "previous": "← మునుపటి",
+        "next": "తదుపరి →",
+        "pageOf": "{{totalPages}} నుండి {{page}} పేజీ",
+        "total": "({{count}} మోడల్)",
+        "total_other": "({{count}} మోడల్‌లు)"
+      },
+      "health": {
+        "emptyNoModels": "ఎటువంటి మోడల్‌లు ఆర్డర చేయబడలేదు.",
+        "emptyNoMatches": "ఎటువంటి మోడల్‌లు ఫిల్టర్‌కు సరిపోవు.",
+        "resetAll": "అన్నింటిని రీసెట్ చేయండు",
+        "resetAllTitle": "ప్రతిదీ సర్క్యూట్ బ్రేకర్, కూల్‌డౌన్, మరియు లాకআউట్ రీసెట్ చేయండు",
+        "resetTitle": "సర్క్యూట్ బ్రేకర్ రీసెట్ చేయండు",
+        "confirmResetModel": "మోడల్ \"{{id}}\" కోసం సర్క్యూట్ బ్రేకర్‌ను రీసెట్ చేయండు?",
+        "confirmResetAll": "అన్ని స్థితిస్థాపకత స్థితి రీసెట్ చేయండు? ఇది ప్రతిదీ సర్క్యూట్ బ్రేకర్, కూల్‌డౌన్, మరియు లాకআউట్‌ను స్పష్టం చేస్తుంది.",
+        "errors": {
+          "resetModelFailed": "సర్క్యూట్ బ్రేకర్‌ను రీసెట్ చేయటం విఫలమైంది",
+          "resetAllFailed": "స్థితిస్థాపకత స్థితి రీసెట్ చేయటం విఫలమైంది"
+        },
+        "columns": {
+          "model": "మోడల్",
+          "provider": "ప్రదాత",
+          "status": "స్థితి",
+          "circuit": "సర్క్యూట్",
+          "errorRate": "ఉద్దాటన రేటు (5m)",
+          "p95Latency": "P95 లేటెన్సీ (1h)",
+          "requests": "అభ్యర్థనలు (1h)",
+          "lastSuccess": "చివరిసారి విజయం",
+          "cooldownLockout": "కూల్‌డౌన్ / లాకআউట్"
+        },
+        "status": {
+          "healthy": "ఆరోగ్యకరమైన",
+          "degraded": "క్షీణం",
+          "unavailable": "అందుబాటులో లేదు",
+          "cooldown": "కూల్‌డౌన్",
+          "nodata": "డేటా లేదు"
+        },
+        "circuit": {
+          "ok": "సరిగా",
+          "recovering": "పునరుద్ధరిస్తోంది",
+          "tripped": "ట్రిప్ చేసారు"
+        },
+        "time": {
+          "never": "ఎప్పుడూ లేదు",
+          "now": "ఇప్పుడు",
+          "secondsAgo": "{{count}}s ముందు",
+          "minutesAgo": "{{count}}m ముందు",
+          "hoursAgo": "{{count}}h ముందు",
+          "daysAgo": "{{count}}d ముందు",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "కూల్‌డౌన్ {{time}}",
+          "lockout": "లాకআউట్ {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "ప్రయోగాలు",
+      "subtitle": "A/B రౌటర్‌ల పరీక్ష",
+      "noPermission": "ప్రయోగాలు చూడటానికి అనుమతి లేదు",
+      "count": "{{count}} ప్రయోగం",
+      "count_other": "{{count}} ప్రయోగాలు",
+      "newExperiment": "నవీన ప్రయోగం",
+      "empty": "ఇంకా ప్రయోగాలు లేవు.",
+      "deleteConfirm": "\"{{name}}\" తొలగించండి?",
+      "noToken": "టోకెన్ లేదు",
+      "noTokenTitle": "టోకెన్ లేకుండా ఏ క్లయింట్ చేరుకోలేదు",
+      "errors": {
+        "loadFailed": "ప్రయోగాలు లోడ్ విఫలమైంది",
+        "deleteFailed": "తొలగించడం విఫలమైంది"
+      },
+      "columns": {
+        "name": "నామం",
+        "variants": "రూపాయిన్‌లు",
+        "rotation": "భ్రమణం",
+        "created": "సృష్టించారు"
+      },
+      "actions": {
+        "edit": "సవరించండి",
+        "remove": "తొలగించండి"
+      }
+    },
+    "layout": {
+      "backToExperiments": "ప్రయోగాలకు",
+      "newExperiment": "నవీన ప్రయోగం",
+      "loading": "లోడ్ చేస్తోంది...",
+      "experimentId": "ప్రయోగం ID:",
+      "disabledTabTitle": "ఈ ట్యాబ్‌ను అన్‌లాక్ చేయడానికి మొదటిసారి సేవ చేయండి",
+      "errors": {
+        "notFound": "ప్రయోగం కనుగొనబడలేదు"
+      },
+      "tabs": {
+        "config": "కాన్ఫిగరేషన్",
+        "metrics": "మెట్రిక్‌లు",
+        "token": "టోకెన్"
+      }
+    },
+    "config": {
+      "saved": "సేవ చేసారు.",
+      "created": "ప్రయోగం సృష్టించారు.",
+      "copy": "కాపీ చేయండి",
+      "copied": "కాపీ చేసారు!",
+      "done": "సంపూర్ణం",
+      "saving": "సేవ చేస్తోంది...",
+      "create": "ప్రయోగం సృష్టించండి",
+      "save": "మార్పులను సేవ చేయండి",
+      "cancel": "రద్దు చేయండి",
+      "trafficSplit": "ట్రాఫిక్ విభజన",
+      "errors": {
+        "loadRoutersFailed": "రౌటర్‌లను లోడ్ చేయడం విఫలమైంది",
+        "saveFailed": "ప్రయోగం సేవ చేయడం విఫలమైంది",
+        "copyFailed": "కాపీ విఫలమైంది"
+      },
+      "fields": {
+        "name": "నామం",
+        "namePlaceholder": "సరే vs ప్రిమియం",
+        "description": "వివరణ",
+        "optional": "(ఐచ్ఛికం)",
+        "descriptionPlaceholder": "ఈ పరీక్ష ఏందుకు",
+        "minSamples": "ప్రతి రూపాయిన్‌కు కనీస కాల్‌లు",
+        "minSamplesHint": "ఇందుకు కంటే తక్కువ, మెట్రిక్‌ల నిశ్చితం కాలేదు",
+        "rotation": "భ్రమణం",
+        "stickyOn": "Sticky",
+        "stickyKey": "Sticky కీ"
+      },
+      "variants": {
+        "title": "రూపాయిన్‌లు",
+        "desc": "ప్రతిదీ సంపూర్ణ రూటర్",
+        "routerAriaLabel": "రూపాయిన్ {{index}} రూటర్",
+        "routerPlaceholder": "రూటర్‌ను ఎంచుకోండి",
+        "labelAriaLabel": "రూపాయిన్ {{index}} లేబుల్",
+        "labelPlaceholder": "లేబుల్ (ఐచ్ఛికం)",
+        "weightAriaLabel": "రూపాయిన్ {{index}} బరువు",
+        "weightPlaceholder": "బరువు",
+        "removeTitle": "రూపాయిన్ {{index}} తీసివేయండి",
+        "add": "రూపాయిన్ జోడించండి"
+      },
+      "judge": {
+        "title": "న్యాయుడు",
+        "desc": "ఐచ్ఛికం: సమాధానం 0-10 స్కోర్ చేస్తుంది",
+        "enable": "న్యాయుడు మోడల్ తో సమాధానాలను స్కోర్ చేయండి",
+        "model": "న్యాయుడు మోడల్",
+        "modelPlaceholder": "మోడల్‌ను ఎంచుకోండి",
+        "criteria": "ప్రమాణం",
+        "criteriaPlaceholder": "ఒక్క ఒక్క, ఉదాహరణకు\nఇచ్చిన ప్రశ్న సమాధానం\nనిజానికీ ఉంచండు\nనిర్దేశించిన ఫార్మాట్‌కు చేయండు",
+        "sampleRate": "ఎంచుకుంటారు కాల్‌ల % "
+      }
+    },
+    "metrics": {
+      "loading": "లోడ్ చేస్తోంది...",
+      "callsMeasured": "{{count}} కాల్ కొలుస్తారు",
+      "callsMeasured_other": "{{count}} కాల్‌లు",
+      "empty": "ఈ విండోలో ఇంకా కాల్‌లు లేవు.",
+      "notConclusive": "ఇంకా నిశ్చితం కాలేదు.",
+      "explanation": "ప్రతిదీ జత యొక్క ఉత్తమం నిర్ధారించబడుతుంది.",
+      "lowSample": "తక్కువ నమూనా",
+      "lowSampleTitle": "ఈ విండోలో కంటే కనీసం కాల్‌ల క్రిందకు",
+      "judgedCallsTitle": "సమాధానం స్కోర్ చేసారు",
+      "judgedCallsTitle_other": "సమాధానాలు స్కోర్ చేసారు",
+      "errors": {
+        "loadFailed": "మెట్రిక్‌లు లోడ్ విఫలమైంది"
+      },
+      "columns": {
+        "variant": "రూపాయిన్",
+        "calls": "కాల్‌లు",
+        "share": "భాగం",
+        "errors": "లోపాలు",
+        "tokens": "టోకెన్‌లు",
+        "cost": "ధర",
+        "costPerCall": "ధర / కాల్",
+        "avgLatency": "సరాసరి",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "స్కోర్"
+      }
+    },
+    "token": {
+      "desc": "క్లయింట్ ప్రయోగం కాల్ చేస్తుంది.",
+      "baseUrlLabel": "బేస్ URL",
+      "created": "టోకెన్ సృష్టించారు.",
+      "copy": "కాపీ చేయండి",
+      "copied": "కాపీ చేసారు!",
+      "newToken": "నవీన టోకెన్",
+      "empty": "టోకెన్‌లు లేవు.",
+      "revokeConfirm": "టోకెన్ రిభోక్ చేయండి?",
+      "revokeTitle": "రిభోక్ చేయండి",
+      "errors": {
+        "createFailed": "సృష్టించడం విఫలమైంది",
+        "revokeFailed": "రిభోక్ చేయడం విఫలమైంది",
+        "copyFailed": "కాపీ విఫలమైంది"
+      },
+      "columns": {
+        "created": "సృష్టించారు",
+        "lastUsed": "చివరిసారి"
+      }
+    }
+  },
+  "overview": {
+    "title": "సమీక్ష",
+    "subtitle": "ఉపయోగం సారాంశం మరియు ధర విభజన",
+    "noPermission": "ఉపయోగ డేటా చూడటానికి అనుమతి లేదు.",
+    "costByModel": "మోడల్ ద్వారా ధర",
+    "noCostRecorded": "ఈ కాలంలో ఎటువంటి ధర రికార్డ్ చేయబడలేదు.",
+    "callsByModel": "మోడల్ ద్వారా కాల్‌లు",
+    "columns": {
+      "model": "మోడల్",
+      "calls": "కాల్‌లు",
+      "errors": "ఉద్దాటనలు",
+      "cost": "ధర"
+    },
+    "stats": {
+      "totalCalls": "మొత్తం కాల్‌లు",
+      "callsBreakdown": "{{routing}} రూటింగ్ · {{completion}} సంపూర్ణం",
+      "successRate": "విజయం రేటు",
+      "ofAllRequests": "అన్ని అభ్యర్థనల ఆ",
+      "errors": "ఉద్దాటనలు",
+      "failedRequests": "విఫల అభ్యర్థనలు",
+      "models": "మోడల్‌లు",
+      "registered": "నమోదు చేసారు",
+      "routers": "రౌటర్‌లు",
+      "active": "క్రియాశీల"
+    },
+    "connectCard": {
+      "title": "క్లయింట్‌ను కనెక్ట్ చేయండు",
+      "desc": "Claude Code, Codex, Cursor మరియు {{count}} ఇతర వాటిని ఈ గేట్‌వే వద్ద పాయింట్ చేయండు."
+    }
+  },
+  "login": {
+    "emailLabel": "చిరునామా",
+    "passwordLabel": "పాస్‌వర్డ్",
+    "signIn": "సైన్ చేయండు",
+    "errors": {
+      "loginFailed": "సైన్ విఫలమైంది",
+      "totpFailed": "2FA ధృవీకరణ విఫలమైంది"
+    },
+    "totp": {
+      "title": "రెండు-ఫ్యాక్టర్ ప్రమాణీకరణ",
+      "backupPrompt": "బ్యాకప్ కోడ్ నిర్ణయించండు.",
+      "appPrompt": "మీ ప్రామాణికేటర్ యాప్ నుండి 6-అంకెలు కోడ్ నిర్ణయించండు.",
+      "backupCodeLabel": "బ్యాకప్ కోడ్",
+      "authenticatorCodeLabel": "ప్రామాణికేటర్ కోడ్",
+      "verify": "ధృవీకరణ చేయండు",
+      "useAuthenticatorInstead": "బదులుగా ప్రామాణికేటర్ యాప్ ఉపయోగించండు",
+      "useBackupInstead": "బదులుగా బ్యాకప్ కోడ్ ఉపయోగించండు"
+    }
+  },
+  "setup": {
+    "welcome": "స్వాగతం! మీరు సెటప్ చేస్తాము.",
+    "welcomeSubtitle": "Routerly నిర్వహించుటకు ముందు అడ్‌మిన్ ఖాతా సృష్టించండు.",
+    "betaBadge": "🚧 బీటా",
+    "betaNotice": "Routerly సక్రియంగా పరిణమిస్తోంది. బగ్‌లు సంభవించవచ్చు.",
+    "betaFeedback": "మీ ఫీడ్‌బ్యాక్ ఏ ఆ నిర్ణయించుటకు సహాయం చేస్తుంది —",
+    "betaLink": "ఇష్టాలు నివేదించండు లేదా ఆలోచనలను షేర్ చేయండు",
+    "emailLabel": "నిర్వాహకుడు చిరునామా",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "పాస్‌వర్డ్",
+    "passwordPlaceholder": "కనీసం 8 అక్షరాలు",
+    "confirmLabel": "పాస్‌వర్డ్‌ను నిర్ధారించండు",
+    "confirmPlaceholder": "పాస్‌వర్డ్ తిరిగి నిర్ణయించండు",
+    "submit": "నిర్వాహకుడు ఖాతా సృష్టించండు",
+    "errors": {
+      "mismatch": "పాస్‌వర్డ్‌లు సరిపోవు",
+      "tooShort": "పాస్‌వర్డ్ కనీసం 8 అక్షరాలు ఉండాలి",
+      "setupFailed": "సెటప్ విఫలమైంది"
+    }
+  },
+  "audit": {
+    "empty": "ఆడిట్ ఎంట్రీలు కనుగొనబడలేదు.",
+    "errors": {
+      "loadFailed": "ఆడిట్ లాగ్‌ను లోడ్ చేయడం విఫలమైంది"
+    },
+    "filters": {
+      "period": "కాలం",
+      "user": "వినియోగదారు",
+      "userPlaceholder": "ఇమెయిల్ లేదా వినియోగదారు ID",
+      "action": "చర్య",
+      "actionPlaceholder": "ఉదాహరణకు model:create",
+      "result": "ఫలితం",
+      "results": {
+        "all": "అంతటా",
+        "success": "విజయం",
+        "forbidden": "నిషేధించారు",
+        "error": "లోపం"
+      },
+      "refresh": "రిఫ్రెష్ చేయండి"
+    },
+    "columns": {
+      "timestamp": "టైమ్‌స్టాంప్",
+      "user": "వినియోగదారు",
+      "action": "చర్య",
+      "endpoint": "ఎండ్‌పాయింట్",
+      "result": "ఫలితం",
+      "details": "వివరాలు"
+    },
+    "pagination": {
+      "previous": "మునుపటి",
+      "next": "తదుపరి",
+      "page": "పేజీ {{page}} / {{totalPages}}",
+      "total": "({{count}} మొత్తం)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "ఉపయోగం",
+      "live": "LIVE",
+      "subtitle": "విస్తారిత కాల్ లాగ్‌లు మరియు ప్రతిదీ-మోడల్ విభజన",
+      "updatedAt": "· {{time}} చేయిన నవీకరించారు",
+      "poll": {
+        "off": "బయటకు",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "లైవ్ మోడ్ నిష్క్రియం చేయండు",
+        "enable": "లైవ్ మోడ్ ప్రారంభం చేయండు (ప్రతి 2s రిఫ్రెష్ చేయండు)"
+      },
+      "refreshNow": "↻ ఇప్పుడు",
+      "refreshNowTitle": "ఈ సమయంలో రిఫ్రెష్ చేయండు",
+      "filters": {
+        "period": "కాలం",
+        "router": "రౌటర్",
+        "model": "మోడల్",
+        "token": "టోకెన్",
+        "caller": "కాలర్",
+        "type": "రకం",
+        "status": "స్థితి",
+        "allRouters": "అన్ని రౌటర్‌లు",
+        "allModels": "అన్ని మోడల్‌లు",
+        "allTokens": "అన్ని టోకెన్‌లు",
+        "resetFilters": "ఫిల్టర్‌లను రీసెట్ చేయండు",
+        "all": "అంతటా",
+        "success": "విజయం",
+        "blocked": "బ్లాక్ చేసారు",
+        "error": "ఉద్దాటన"
+      },
+      "caller": {
+        "all": "అంతటా",
+        "completion": "సంపూర్ణం",
+        "routing": "రౌటర్",
+        "guardrail": "గార్డ్‌రెయిల్",
+        "judge": "జడ్జ్"
+      },
+      "callerBadge": {
+        "completion": "సంపూర్ణం",
+        "routing": "రౌటర్",
+        "guardrail": "గార్డ్‌రెయిల్",
+        "judge": "జడ్జ్"
+      },
+      "errors": {
+        "loadFailedPrefix": "ఉపయోగ డేటా లోడ్ చేయటం విఫలమైంది:",
+        "retry": "తిరిగి ప్రయత్నించండు"
+      },
+      "stats": {
+        "totalCalls": "మొత్తం కాల్‌లు",
+        "completionCalls": "సంపూర్ణం కాల్‌లు",
+        "routerCalls": "రౌటర్ కాల్‌లు",
+        "guardrailCalls": "గార్డ్‌రెయిల్ కాల్‌లు",
+        "blockedCalls": "బ్లాక్ కాల్‌లు",
+        "errors": "ఉద్దాటనలు"
+      },
+      "table": {
+        "rank": "రాంక్",
+        "model": "మోడల్",
+        "provider": "ప్రదాత",
+        "calls": "కాల్‌లు",
+        "errors": "ఉద్దాటనలు",
+        "successRate": "విజయం రేటు",
+        "avgLatency": "సగటు లేటెన్సీ",
+        "p95Latency": "P95 లేటెన్సీ",
+        "inputTokens": "ఇన్‌పుట్ టోకెన్‌లు",
+        "outputTokens": "అవుట్‌పుట్ టోకెన్‌లు",
+        "costPer1k": "ధర / 1K",
+        "cost": "ధర (USD)",
+        "bestCostPerformance": "ఉత్తమ ధర-పనితీరు"
+      },
+      "showMoreModels": "{{count}} ఇతర మోడల్ చూపండు",
+      "showMoreModels_other": "{{count}} ఇతర మోడల్‌లు చూపండు",
+      "showFewerModels": "తక్కువ మోడల్‌లు చూపండు",
+      "recentCalls": {
+        "title": "ఇటీవల కాల్‌లు",
+        "empty": "ఈ కాలంలో ఎటువంటి ఉపయోగ రికార్డ్‌లు లేవు.",
+        "columns": {
+          "time": "సమయం",
+          "router": "రౌటర్",
+          "model": "మోడల్",
+          "type": "రకం",
+          "caller": "కాలర్",
+          "in": "ఇన్",
+          "out": "బయటకు",
+          "cost": "ధర",
+          "latency": "లేటెన్సీ",
+          "ttft": "TTFT",
+          "tokensPerSec": "టోక్/సె",
+          "status": "స్థితి"
+        }
+      },
+      "pagination": {
+        "previous": "మునుపటి",
+        "next": "తదుపరి",
+        "pageOf": "{{totalPages}} నుండి {{page}} పేజీ",
+        "totalRecords": "({{count}} మొత్తం రికార్డ్‌లు)"
+      }
+    },
+    "record": {
+      "back": "వెనుకకు",
+      "title": "కాల్ వివరం",
+      "notFoundTitle": "రికార్డ్ కనుగొనబడలేదు",
+      "notFoundBody": "ఉపయోగ రికార్డ్ {{id}} లోడ్ చేయలేకపోయారు.",
+      "errors": {
+        "loadFailed": "రికార్డ్ లోడ్ చేయడం విఫలమైంది"
+      },
+      "sections": {
+        "identity": "గుర్తింపు",
+        "tokensAndCost": "టోకెన్‌లు & ధర",
+        "performanceAndOutcome": "పనితీరు & ఫలితం",
+        "traceLog": "ట్రేస్ లాగ్"
+      },
+      "fields": {
+        "recordId": "రికార్డ్ ID",
+        "router": "రౌటర్",
+        "token": "టోకెన్",
+        "model": "మోడల్",
+        "callType": "కాల్ రకం",
+        "requestType": "అభ్యర్థన రకం",
+        "inputTokens": "ఇన్‌పుట్ టోకెన్‌లు",
+        "outputTokens": "అవుట్‌పుట్ టోకెన్‌లు",
+        "totalTokens": "మొత్తం టోకెన్‌లు",
+        "costUsd": "ధర (USD)",
+        "costUnknown": "తెలియని",
+        "latency": "లేటెన్సీ",
+        "ttft": "TTFT",
+        "tokensPerSec": "టోక్/సె",
+        "outcome": "ఫలితం",
+        "timestamp": "సమయపాలన",
+        "guardrailTriggered": "గార్డ్‌రెయిల్ ట్రిగర్ చేసారు",
+        "blockedBy": "ఆ ద్వారా బ్లాక్ చేసారు",
+        "piiRedacted": "PII నిరాకరణ చేసారు"
+      },
+      "errorMessage": "ఉద్దాటన సందేశం",
+      "eventCount": "{{count}} ఈవెంట్",
+      "eventCount_other": "{{count}} ఈవెంట్‌లు",
+      "noTrace": "ఎటువంటి ట్రేస్ అందుబాటులో లేదు. ట్రేస్ డేటా కేవలం నవీన కాల్‌ల కోసం సంగ్రహించిన."
+    }
+  },
+  "playground": {
+    "title": "ప్లేగ్రౌండ్",
+    "subtitle": "పరీక్ష మోడల్‌లు, ప్రతిస్పందనలను సరిపోల్చండు, మరియు ప్రాంప్ట్ ప్రీసెట్‌లను సేవ చేయండు.",
+    "mode": {
+      "single": "ఒకటి",
+      "compare": "సరిపోల్చండు"
+    },
+    "token": {
+      "label": "టోకెన్:",
+      "labelA": "టోకెన్ A",
+      "labelB": "టోకెన్ B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "A గా సేమ",
+      "unknownToken": "తెలియని టోకెన్"
+    },
+    "presets": {
+      "button": "ప్రీసెట్‌లు",
+      "panelTitle": "ప్రీసెట్‌లు",
+      "saveCurrent": "ప్రస్తుత సేవ చేయండు",
+      "namePlaceholder": "ప్రీసెట్ నామం...",
+      "save": "సేవ చేయండు",
+      "empty": "ఇంకా ప్రీసెట్‌లు లేవు.",
+      "delete": "ప్రీసెట్ తొలగించండు"
+    },
+    "streamingDisabled": {
+      "banner": "స్ట్రీమింగ్ అందుబాటులో లేదు",
+      "bannerBody": "ఈ రౌటర్ ప్రతిస్పందన-బ్లాకింగ్ గార్డ్‌రెయిల్ సక్రియమైనది ఉంది. Routerly డెలివరీ ముందు సంపూర్ణ ప్రతిస్పందన సరిపరిస్తే, ప్రతిస్పందనలు సమూహం చేయి చేరుకోవడానికి.",
+      "tooltip": "స్ట్రీమింగ్ అందుబాటులో లేదు: డెలివరీ ముందు సంపూర్ణ ప్రతిస్పందన సరిపరిస్తాలని ప్రతిస్పందన-బ్లాకింగ్ గార్డ్‌రెయిల్ చేరుకోవాలి.",
+      "ariaLabel": "స్ట్రీమింగ్ అందుబాటులో లేదు"
+    },
+    "systemPrompt": "సిస్టమ్ ప్రాంప్ట్",
+    "model": "మోడల్",
+    "modelPlaceholder": "ఆటో (రౌటర్ డిఫాల్ట్)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "గరిష్ట టోకెన్‌లు",
+      "topP": "Top-p"
+    },
+    "stream": "స్ట్రీమ్",
+    "clear": "స్పష్టం చేయండు",
+    "empty": {
+      "noMessages": "ఇంకా సందేశాలు లేవు.",
+      "enterToken": "ప్రారంభించుటకు ఎక్కువ రౌటర్ టోకెన్‌ను నిర్వచించండు."
+    },
+    "reasoning": "తర్కం",
+    "blockedDefault": "ఈ సందేశం గార్డ్‌రెయిల్ ద్వారా బ్లాక్ చేయబడింది.",
+    "truncated": "కుదించారు — సరిపరిచిన గరిష్ట టోకెన్‌ల ద్వారా కత్తిరించారు",
+    "bufferedNote": "భద్రత పరిశీలన కోసం నిర్వహించారు",
+    "errors": {
+      "onlyImages": "కేవలం చిత్రం జోడింపులు సపోర్టు చేయబడ్డాయి."
+    },
+    "rawToggle": {
+      "rendered": "చిత్రకరణ",
+      "raw": "కఠిన"
+    },
+    "inputPlaceholder": "సందేశం వర్ణించండు...",
+    "attachImage": "చిత్రం జతపరిచారు",
+    "attachedImageAlt": "జతపరిచారు",
+    "attachmentAlt": "జతపరిచారు",
+    "debug": {
+      "title": "చెప్పుటకు",
+      "clear": "స్పష్టం చేయండు",
+      "hide": "చెప్పుటకు లుకించండు",
+      "show": "చెప్పుటకు చూపండు",
+      "empty": "ఇంకా చెప్పుటకు డేటా లేవు.",
+      "emptyHint": "రూటింగ్ వివరాలు చూడటానికి సందేశం పంపండు.",
+      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్"
+    },
+    "compare": {
+      "modelLabel": "మోడల్ {{label}}:",
+      "modelSelectPlaceholder": "మోడల్‌ను ఎంచుకోండు...",
+      "noMessages": "ఇంకా సందేశాలు లేవు.",
+      "debugTurns": "చెప్పుటకు ({{count}} చేయుట)",
+      "debugTurns_other": "చెప్పుటకు ({{count}} చేస్తోంది)",
+      "guardrailTokensTitle": "గార్డ్‌రెయిల్ జడ్జ్ టోకెన్‌లు",
+      "stop": "నిలుపుకోండు",
+      "inputPlaceholder": "రెండు మోడల్‌లకు సేమ సందేశం పంపండు..."
+    }
+  },
+  "help": {
+    "title": "సహాయం & సపోర్ట్",
+    "subtitle": "మేము సహాయక చేయటానికి ఉన్నాము — ఎంచుకోండు ఎంచుకోండి లేదా ఎంచుకోండి.",
+    "docs": {
+      "title": "డాక్యుమెంటేషన్",
+      "subtitle": "గైడ్‌లు, API సూచన, మరియు ఆర్డర చేయడం డాక్‌లు",
+      "body": "సమీప డాక్‌లు చేయుటకు ప్రారంభం నుండి ఉన్నత రూటింగ్ విధానాలు, ప్రదాత సెటప్, బడ్జెట్‌లు, మరియు సంపూర్ణ API సూచన కవర్.",
+      "openLink": "డాక్యుమెంటేషన్ తెరవండు"
+    },
+    "issues": {
+      "title": "బగ్ నివేదించండు లేదా ఫీచర్ సూచన చేయండు",
+      "subtitle": "GitHub ఇష్టం తెరవండు — ఇది 2 నిమిషాలు తీసుకుంటుంది",
+      "body": "GitHub ఇష్టాలు బగ్‌లను నివేదించటానికి లేదా మెరుమాటలను సూచన చేయుటకు ఉత్తమ విధానం. దీని నుండి సమస్యలను సరిచేయుటకు సహాయం చేయుటకు, చేర్చండి: మీరు చేసిన చర్య, మీరు ఏ సంభవించుటకు ఆశిస్తారు, మరియు ఏ నిజానికీ సంభవించింది.",
+      "showTemplate": "ఇష్టం సాధారణం చూపండు",
+      "reportBug": "బగ్ నివేదించండు",
+      "requestFeature": "ఫీచర్ సూచన చేయండు"
+    },
+    "issueTemplate": {
+      "whatHappened": "ఏ సంభవించింది?",
+      "whatHappenedHint": "సాధారణ పదాలలో సమస్యను వర్ణించండు",
+      "stepsToReproduce": "చేయుటకు దశలు",
+      "expectedBehaviour": "ఆశించిన ప్రవర్తన",
+      "expectedBehaviourHint": "మీరు ఏ చూడుటకు ఆశిస్తారు",
+      "version": "Routerly సంస్కరణ",
+      "versionHint": "నడుపండు `routerly --version` లేదా సెట్టింగ్‌లు → గురించి చూడండు"
+    },
+    "email": {
+      "title": "సపోర్ట్ సంపర్కం చేయండు",
+      "subtitle": "మేము ప్రతిదీ సందేశం చదువుతాము మరియు వీలైనంత త్వరగా ప్రతిస్పందన చేస్తాము",
+      "body": "GitHub ఇష్టం సరిపోవు అన్నింటి కోసం — బిల్లింగ్ ప్రశ్నలు, ప్రైవేట్ ఆందోళనలు, లేదా మీరు చెప్పుటకు కోరుకుంటే — మాకు లైన్ వదిలివేయండి."
+    },
+    "faq": {
+      "title": "తరచుగా అడిగే ప్రశ్నలు",
+      "subtitle": "చాలా సాధారణ ప్రశ్నలకు త్వరిత సమాధానాలు",
+      "items": {
+        "connect": {
+          "q": "నా యాప్ Routerly కు ఎలా కనెక్ట్ చేయాలి?",
+          "a": "మీ OpenAI లేదా Anthropic SDK Routerly ఇన్‌స్టెన్‌స్‌కు పాయింట్ చేయండి. బేస్ URL http://your-host:3000/v1 (OpenAI-సరిపోయిన) లేదా http://your-host:3000/anthropic (Anthropic-సరిపోయిన) తో భర్తీ చేయండి, ఆ API కీ గా రౌటర్ టోకెన్ ఉపయోగించండు. ఇది — ఇతర మార్పులు అవసరం లేదు."
+        },
+        "openaiCompat": {
+          "q": "Routerly OpenAI SDK ఉపయోగించిన సాధనాలకు సరిపోయిందా?",
+          "a": "అవును. Routerly డ్రాప్-ఇన్ భర్తీ: ఏదైనా సాధనం కస్టమ్ బేస్ URL మరియు API కీ (LangChain, LlamaIndex, Cursor, కొనసాగిస్తాయి, వంటివి) సపోర్ట్ చేస్తే చేయిస్తుంది పెట్టె. Anthropic-ఫార్మాట్ క్లయింట్‌ల కోసం, బదులుగా /anthropic ఎండ్‌పాయింట్ ఉపయోగించండు."
+        },
+        "routing": {
+          "q": "మోడల్ రూటింగ్ ఎలా చేయిస్తుంది?",
+          "a": "ప్రతిదీ రౌటర్ రూటింగ్ విధానం ఏ మోడల్ అభ్యర్థన చేరుకుంటుంది నిర్ణయిస్తుంది. విధానాలు రౌండ్-రాబిన్, తక్క ధర, వేగవంత ప్రతిస్పందన, ఫాల్‌బ్యాక్ శృంఖలలు, మరియు ఇంకా ఎక్కువ చేర్చండి. మీరు ప్రతిదీ రౌటర్ కిందంగా రూటింగ్‌లను నిర్ధారించండి."
+        },
+        "addModel": {
+          "q": "నవీన AI మోడల్‌ను ఎలా జోడించాలి?",
+          "a": "మోడల్‌లకు వెళ్లండి → మోడల్ జోడించండు. ఏదైనా OpenAI-సరిపోయిన ప్రదాత (Ollama, LM Studio, కస్టమ్ ఎండ్‌పాయింట్‌లు) లేదా నేటివ్ Anthropic ఎండ్‌పాయింట్ జోడించాలి. బేస్ URL, API కీ, మరియు మోడల్ ID నిర్వచించండు — Routerly మిగిలిన చేయిస్తుంది."
+        },
+        "dataStored": {
+          "q": "నా డేటా నిల్లబడదా? నా ప్రాంప్ట్‌లు లాగ్ చేయబడ్డాయిందా?",
+          "a": "Routerly స్వయం-హోస్ట్ చేయబడింది మరియు కేవలం మీ యంత్రం (డిఫాల్ట్‌కు ~/.routerly/ ద్వారా) డేటా నిల్ము చేస్తుంది. ప్రాంప్ట్‌లు మరియు ప్రతిస్పందనలు Routerly ఎక్కడైనా పంపబడవు. అభ్యర్థన లాగ్‌లు స్థానికంగా నిల్లబడవు మరియు ఐచ్ఛిక ప్రతిదీ-రౌటర్ ఉంది."
+        },
+        "routerToken": {
+          "q": "రౌటర్ టోకెన్ ఏ మరియు ఎలా ప్రదాత API కీ నుండి విభిన్నమైనది?",
+          "a": "రౌటర్ టోకెన్ మీ యాప్ లేదా గుంపు సభ్యులు Routerly ప్రామాణీకరణ చేయుటకు దేవుడు ఆర్డర. ఆ ప్రదాత API కీలు నుండి వేరుగా, ఏ Routerly సంస్థ పక్క సురక్షితంగా నిల్ము చేస్తుంది. మీ యాప్‌లు నిజ ప్రదాత కీలు చూడవు."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} ఆర్డర",
+    "countLabel_other": "{{count}} ఆర్డర",
+    "addButton": "ఆర్డర జోడించండు",
+    "columns": {
+      "email": "చిరునామా",
+      "role": "పాత్ర",
+      "routers": "రౌటర్‌లు"
+    },
+    "allRouters": "అంతటా",
+    "resetTwoFaTitle": "2FA రీసెట్ చేయండు",
+    "resetTwoFaConfirm": "{{email}} కోసం 2FA రీసెట్ చేయండు? ఈ తిరిగి పంజీకరణ చేయుటకు అవసరం.",
+    "deleteConfirm": "ఈ ఆర్డర తొలగించండు?",
+    "emptyTitle": "ఇంకా ఆర్డర లేవు.",
+    "noPermission": "మీకు ఆర్డర చూడటానికి అనుమతి లేదు.",
+    "modal": {
+      "title": "ఆర్డర జోడించండు",
+      "emailLabel": "చిరునామా",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "పాస్‌వర్డ్",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "పాత్ర",
+      "roleAdmin": "నిర్వాహకుడు",
+      "roleViewer": "వీక్షకుడు",
+      "cancelButton": "రద్దు చేయండు",
+      "submitButton": "ఆర్డర జోడించండు"
+    },
+    "errors": {
+      "loadFailed": "ఆర్డరను లోడ్ చేయడం విఫలమైంది",
+      "addFailed": "ఉద్దాటన"
+    }
+  },
+  "userEdit": {
+    "title": "ఆర్డర సవరించండు",
+    "account": "ఖాతా",
+    "email": "చిరునామా",
+    "role": "పాత్ర",
+    "changePassword": "పాస్‌వర్డ్ మార్చండు",
+    "newPassword": "నవీన పాస్‌వర్డ్",
+    "newPasswordHint": "(ప్రస్తుత ఆర్డర చేయుటకు ఖాళీ)",
+    "save": "సేవ చేయండు",
+    "saved": "సేవ చేసారు!",
+    "errors": {
+      "loadFailed": "ఆర్డర లోడ్ చేయడం విఫలమైంది",
+      "saveFailed": "సేవ చేయడం విఫలమైంది"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "పాత్రలు మరియు అనుమతులు నిర్వహించండు. నిర్మితం-ఇన్ పాత్రలు సవరించలేవు.",
+    "newRole": "నవీన పాత్ర",
+    "builtin": "నిర్మితం-ఇన్",
+    "edit": "సవరించండు",
+    "deleteConfirm": "ఈ పాత్ర తొలగించండు? ఈ పాత్ర సమీప ఆర్డర ప్రభావితం చేయబడుతుంది.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "ఉదాహరణకు ఆపరేటర్",
+      "name": "నామం",
+      "namePlaceholder": "పాత్ర నామం",
+      "permissions": "అనుమతులు",
+      "create": "సృష్టించండు",
+      "save": "సేవ చేయండు",
+      "cancel": "రద్దు చేయండు"
+    },
+    "permissions": {
+      "routerRead": "రౌటర్‌లు – చదువండి",
+      "routerWrite": "రౌటర్‌లు – రాయండి",
+      "modelRead": "మోడల్‌లు – చదువండి",
+      "modelWrite": "మోడల్‌లు – రాయండి",
+      "userRead": "ఆర్డర – చదువండి",
+      "userWrite": "ఆర్డర – రాయండి",
+      "reportRead": "నివేదనలు – చదువండి",
+      "settingsRead": "సెట్టింగ్‌లు – చదువండి",
+      "settingsWrite": "సెట్టింగ్‌లు – రాయండి",
+      "notificationWrite": "నోటిఫికేషన్‌లు – రాయండి",
+      "tokenRead": "టోకెన్‌లు – చదువండి",
+      "tokenWrite": "టోకెన్‌లు – రాయండి",
+      "roleWrite": "పాత్రలు – రాయండి",
+      "auditRead": "ఆర్డర లాగ్ – చదువండి",
+      "modulesRead": "మాడ్యూల్‌లు – చదువండి",
+      "modulesManage": "మాడ్యూల్‌లు – నిర్వహించండి",
+      "connectionsRead": "కనెక్షన్‌లు – చదువండి",
+      "connectionsManage": "కనెక్షన్‌లు – నిర్వహించండి",
+      "resilienceRead": "స్థితిస్థాపకత – చదువండి",
+      "resilienceManage": "స్థితిస్థాపకత – నిర్వహించండు",
+      "profilesRead": "రూటింగ్ ప్రొఫైల్‌లు – చదువండి",
+      "profilesManage": "రూటింగ్ ప్రొఫైల్‌లు – నిర్వహించండి",
+      "optimizersRead": "ఆప్టిమైజర్‌లు – చదువండి",
+      "optimizersManage": "ఆప్టిమైజర్‌లు – నిర్వహించండండు",
+      "experimentsRead": "ప్రయోగాలు – చదువండు",
+      "experimentsManage": "ప్రయోగాలు – నిర్వహించండు"
+    },
+    "errors": {
+      "loadFailed": "పాత్రలను లోడ్ చేయడం విఫలమైంది",
+      "updateFailed": "పాత్ర నవీకరించడం విఫలమైంది",
+      "createFailed": "పాత్ర సృష్టించడం విఫలమైంది",
+      "deleteFailed": "పాత్ర తొలగించడం విఫలమైంది"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "ప్రొఫైల్‌లు",
+      "subtitle": "పున:ఉపయోగపడు రూటింగ్, ఆప్టిమైజర్ మరియు భద్రత ఆర్డర చేయడం",
+      "noPermission": "మీకు ప్రొఫైల్‌లను చూడటానికి అనుమతి లేదు.",
+      "newProfile": "నవీన {{kind}} ప్రొఫైల్",
+      "empty": "ఎటువంటి {{kind}} ప్రొఫైల్‌లు లేవు.",
+      "builtin": "నిర్మితం-ఇన్",
+      "custom": "కస్టమ్",
+      "view": "చూడండు",
+      "edit": "సవరించండు",
+      "clone": "నకలు చేయండు",
+      "delete": "తొలగించండు",
+      "deleteConfirm": "ప్రొఫైల్ \"{{label}}\" తొలగించండు? దీనిని పూర్వవత్తు చేయలేము.",
+      "kindDescriptions": {
+        "routing": "ఏ మోడల్ అభ్యర్థన, మరియు ఏ సంభవించుతుంది ఎందుకు చేయలేనట్లు",
+        "optimizer": "ఏ ప్రాంప్ట్ నుండి చేయిస్తుంది కంటే ఉన్నతస్థర చేరుకోవటానికి ముందు",
+        "security": "ట్రాఫిక్ చేరుకోవటానికి గార్డ్‌రెయిల్‌లు మరియు PII విధానాలు చేయిస్తుంది"
+      },
+      "columns": {
+        "label": "లేబుల్",
+        "type": "రకం",
+        "configuration": "ఆర్డర చేయడం",
+        "version": "సంస్కరణ"
+      },
+      "errors": {
+        "loadFailed": "ప్రొఫైల్‌లను లోడ్ చేయడం విఫలమైంది",
+        "deleteFailed": "ప్రొఫైల్‌ను తొలగించడం విఫలమైంది"
+      }
+    },
+    "form": {
+      "backToProfiles": "ప్రొఫైల్‌లకు వెనుకకు",
+      "newProfileTitle": "నవీన {{kind}} ప్రొఫైల్",
+      "editProfileTitle": "సవరించండు {{label}}",
+      "builtinHint": "నిర్మితం-ఇన్ ప్రొఫైల్‌లు సవరించలేవు. కస్టమ్‌కు నకలు చేయండు.",
+      "assignHint": "{{article}} {{kind}} ప్రొఫైల్ ఎటువంటి సంఖ్యామోడల్ రౌటర్‌లకు కేటాయించవచ్చు.",
+      "noPermission": "మీకు ప్రొఫైల్‌లను చూడటానికి అనుమతి లేదు.",
+      "label": "లేబుల్",
+      "optimizers": "ఆప్టిమైజర్‌లు",
+      "optimizersHint": "పున:క్రమం చేయుటకు లాగండు, ఆర్డర చేయుటకు టాగుల్. ఈ ఎగువ నుండి దిగువకు క్రమంలో నడుస్తాయి.",
+      "createProfile": "ప్రొఫైల్ సృష్టించండు",
+      "saveProfile": "ప్రొఫైల్ సేవ చేయండు",
+      "cancel": "రద్దు చేయండు",
+      "copySuffix": "{{label}} నకలు",
+      "labelPlaceholders": {
+        "routing": "ఉదాహరణకు నా సమూహం రూటింగ్",
+        "optimizer": "ఉదాహరణకు నా ప్రాంప్ట్ Trimmer",
+        "security": "ఉదాహరణకు నా కఠిన గార్డ్‌రెయిల్‌లు"
+      },
+      "errors": {
+        "notFound": "ప్రొఫైల్ కనుగొనబడలేదు.",
+        "loadFailed": "ప్రొఫైల్ లోడ్ చేయడం విఫలమైంది",
+        "saveFailed": "ప్రొఫైల్ సేవ చేయడం విఫలమైంది"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "కనెక్ట్‌కు వెనుకకు",
+    "title": "కనెక్ట్ చేయండి",
+    "docs": "డాక్‌లు",
+    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
+    "noClientPrefix": "పేరు గల క్లయింట్ లేదు",
+    "errors": {
+      "loadFailed": "క్లయింట్‌లను లోడ్ చేయడం విఫలమైంది"
+    },
+    "oneCommand": {
+      "title": "వేగవంతమైన: ఒక కమాండ్",
+      "description": "{{client}} ఇన్‌స్టాల్ చేసిన యంత్రంలో దీన్ని నడుపండి."
+    },
+    "byHand": {
+      "titleAlt": "లేదా ఖాళీచేయండి",
+      "titleUi": "ఖాళీచేయండి",
+      "titleConfigFile": "కాన్ఫిగ్ ఫైల్‌ను సెటప్ చేయండి",
+      "setValuesIn": "{{configPath}}లో ఈ విలువలను సెట్ చేయండి.",
+      "putThisIn": "దీన్ని ఉంచండి",
+      "replaceToken": "భర్తీ చేయండి",
+      "withRouterToken": "రూటర్ టోకెన్ కోసం:",
+      "createOne": "ఒకటి సృష్టించండి",
+      "onRoutersPage": "రౌటర్‌ల పేజీలో.",
+      "modelLabel": "మోడల్:",
+      "modelHint": "Routerly ను ఎంపిక చేయడానికి సాధ్యం చేస్తుంది, {{modelsLink}} నుండి ఏదైనా మోడల్ id కూడా పనిచేస్తుంది.",
+      "modelsLink": "మోడల్‌లు",
+      "worksToo": "కూడా పనిచేస్తుంది.",
+      "openaiCompatHint": "బేస్ URL, కీ మరియు మోడల్ OpenAI సారూప్య ఆఫర్ చేసే ఏదైనా క్లయింట్‌కు సరిపోతాయి."
+    },
+    "mcp": {
+      "title": "MCP సర్వర్",
+      "description": "ఈ దశల నుండి భిన్నం: ఇది Routerly సాధనాలను కాల్ చేయడానికి {{client}} సక్షమ చేస్తుంది.",
+      "orFromYour": "లేదా",
+      "profileLink": "ప్రొఫైల్"
+    },
+    "checkItWorked": {
+      "title": "ఇది పనిచేసిందని చెక్ చేయండి",
+      "restart": "{{client}} రీస్టార్ట్ చేయండి, ప్రాంప్ట్ పంపండి, ఆ {{usageLink}}లో కాల్‌ను చూడండి.",
+      "usageLink": "ఉపయోగం",
+      "cliReports": "అదే యంత్రం నుండి, CLI నివేదించింది:"
+    }
+  },
+  "connect": {
+    "title": "కనెక్ట్ చేయండి",
+    "subtitle": "AI కోడింగ్ క్లయింట్‌ను ఈ గేట్‌వేకు చూపండి. క్లయింట్ కోసం సెటప్ దశలకు ఒకటి ఎంచుకోండి.",
+    "llmLabel": "LLM",
+    "llmDescription": "ఆ క్లయింట్ మోడల్ ట్రాఫిక్‌ను Routerly ద్వారా రూట్ చేస్తుంది.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Routerly ను టూల్ సర్వర్‌గా లోడ్ చేస్తుంది.",
+    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
+    "errors": {
+      "loadFailed": "క్లయింట్‌లను లోడ్ చేయడం విఫలమైంది"
+    },
+    "oneCommand": {
+      "title": "ఒక కమాండ్",
+      "hint": "CLI కాన్ఫిగ్ ఫైల్‌ను మీ కోసం రాస్తుంది, బ్యాకప్ కలిగి ఉంటుంది."
+    },
+    "byHand": {
+      "title": "ఖాళీచేయండి",
+      "hint": "క్లయింట్ సెట్టింగ్‌లలో స్నిప్‌ను కాపీ చేయండి, ఆ రీస్టార్ట్ చేయండి."
+    },
+    "endpoint": {
+      "title": "ఏదైనా క్లయింట్‌ను ఇక్కడ చూపండి",
+      "description": "OpenAI లేదా Anthropic SDK ఆధారంగా నిర్మించిన ఏదీ బేస్ URL మరియు కీని మార్చడం ద్వారా పనిచేస్తుంది.",
+      "openaiBaseUrl": "OpenAI బేస్ URL",
+      "anthropicBaseUrl": "Anthropic బేస్ URL",
+      "apiKey": "API కీ",
+      "model": "మోడల్",
+      "apiKeyDescription": "రూటర్ టోకెన్, పంపినది",
+      "or": "లేదా",
+      "createOne": "ఒకటి సృష్టించండి",
+      "onRoutersPage": "రౌటర్‌ల పేజీలో.",
+      "modelDescription": "Routerly ను ఎంపిక చేయడానికి సాధ్యం చేస్తుంది.",
+      "modelsLink": "మోడల్‌లు",
+      "worksToo": "కూడా పనిచేస్తుంది."
+    }
+  }
+}
