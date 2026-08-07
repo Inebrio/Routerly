@@ -218,7 +218,9 @@
       "judgeModel": "Judge model",
       "contentGuardrails": "Content Guardrails",
       "piiPolicies": "PII Policies",
-      "addSecurityPolicyPlaceholder": "Add a security policy..."
+      "addSecurityPolicyPlaceholder": "Add a security policy...",
+      "removePolicyTooltip": "Remove policy",
+      "deleteRuleAriaLabel": "Delete rule"
     },
     "connectionFields": {
       "azureResourceName": "Azure Resource Name",
@@ -226,7 +228,38 @@
       "awsRegion": "AWS Region",
       "awsAccessKeyId": "AWS Access Key ID",
       "awsSecretAccessKey": "AWS Secret Access Key",
-      "gcpRouterId": "GCP Router ID"
+      "gcpRouterId": "GCP Router ID",
+      "webProvider": {
+        "unofficialWarningTitle": "Unofficial provider — use at your own risk.",
+        "unofficialWarningBody": "This integration relies on an undocumented internal API that may change or break without notice. It may violate the provider's Terms of Service and could result in account suspension.",
+        "accessTokenLabel": "Access Token",
+        "sessionTokenLabel": "Session Token",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Paste sessionKey cookie value (sk-ant-sid01-…)",
+        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token expires every ~24 hours. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
+        "anthropicInstructions": "<strong>How to get your session key:</strong> While logged in to Claude, open DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copy the value of the <code>sessionKey</code> cookie (starts with <code>sk-ant-sid01-</code>). The key stays valid until you log out."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Subscription OAuth Token",
+        "authFilePathLabel": "Auth file path",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (default)",
+        "anthropicTitle": "Use your Claude Pro/Max subscription.",
+        "anthropicRunCommandStep": "Run this command and copy the token it prints:",
+        "anthropicPasteTokenStep": "Paste the token into the <em>Subscription OAuth Token</em> field below.",
+        "termsNote": "Regenerate when it expires. Subscription use via a gateway may be against the provider's Terms.",
+        "openaiTitle": "Use your ChatGPT Plus/Pro subscription via the Codex app.",
+        "openaiLoginStep": "Log in to the Codex desktop app with your ChatGPT Plus/Pro account.",
+        "openaiAutoRefreshStep": "Routerly reads your access token from <code>~/.codex/auth.json</code> and refreshes it automatically. No manual copy/paste needed.",
+        "openaiAuthFilePathStep": "Leave the <em>Auth file path</em> field blank to use the default, or enter a custom path if your Codex app stores auth elsewhere.",
+        "openaiTermsNote": "Subscription use via a gateway may be against the provider's Terms."
+      },
+      "copyCode": {
+        "copiedTooltip": "Copied!",
+        "copyTooltip": "Copy to clipboard",
+        "copiedLabel": "Copied",
+        "copyLabel": "Copy"
+      }
     },
     "unsavedChanges": {
       "title": "Unsaved Changes",
@@ -634,6 +667,8 @@
         "systemShutdown": "System – Shutdown",
         "systemUpdateAvailable": "System – Update Available"
       },
+      "removeChannelTooltip": "Remove channel",
+      "hmacSigningKeyPlaceholder": "HMAC signing key",
       "perms": {
         "routerRead": "Routers – Read",
         "routerWrite": "Routers – Write",
