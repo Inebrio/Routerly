@@ -33,6 +33,7 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateNotificationChannelScope: vi.fn(async () => 0),
   migrateUsageToNdjson: vi.fn(async () => 0),
   migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
+  migratePassthroughPseudoModel: vi.fn(async () => 0),
 }))
 vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }))
 
