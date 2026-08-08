@@ -25,6 +25,9 @@ The Routers list now has tabs (Router / Orchestrator / Passthrough) filtering by
 **Dedicated creation form per router kind**
 Creating a Router, Orchestrator, or Passthrough no longer goes through one shared form with a kind dropdown. Each non-"All" tab on the Routers list has its own "New <Kind>" button that opens a form dedicated to that kind — the kind is fixed by which button was clicked, never chosen from a selector. Editing an existing router's General tab shows its kind as a fixed, read-only label; `kind` is never sent on save. Orchestrator creation stays two steps: create with name and timeout, then add candidate routers on the Orchestrator tab.
 
+**Real target models alongside a Passthrough router's pass-through entry**
+A Passthrough router's model list can now hold real target models alongside its fixed, non-deletable pass-through entry, in one ordered array — the pass-through entry is inserted automatically on creation and cannot be removed or duplicated, but real models can be added, removed, and reordered around it from the dashboard (`RouterRoutingTab`), the CLI (`router model add`/`remove`/`set-prompt`/new `router model reorder`), and the management API. Existing Passthrough routers are migrated automatically on first start to gain the pass-through entry. Execution wiring — actually routing to those real models — ships in a follow-up; this change is the config/CLI/dashboard surface only.
+
 ### Bug fixes
 
 - Secret config files (`models.json`, `connections.json`, `routers.json`, `users.json`) no longer revert to unsafe file permissions on every write — `writeConfig()` now preserves the `0600` mode instead of recreating the file at the umask default, which previously re-tripped the startup permission guard on the very next write after a fix.
