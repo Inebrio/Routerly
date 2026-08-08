@@ -18,7 +18,7 @@ import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-p
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -1165,6 +1165,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const rawToken = kind === 'passthrough' ? undefined : `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
+    // Normalize `models` for the resolved kind before it's used for both storage
+    // and validation below. Passthrough: auto-insert the pass-through entry when
+    // the submission omits it (AC1 — no client action needed on create). Any
+    // other kind: strip a sentinel entry if one was submitted; real models are
+    // untouched either way.
+    const submittedModels = req.body.models ?? [];
+    const normalizedModels = kind === 'passthrough'
+      ? (submittedModels.some(m => m.modelId === PASSTHROUGH_MODEL_ID)
+        ? submittedModels
+        : [{ modelId: PASSTHROUGH_MODEL_ID }, ...submittedModels])
+      : submittedModels.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+
     const router: RouterConfig = {
       id: uuidv4(),
       name: trimmedName,
@@ -1179,7 +1191,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       autoRouting: req.body.autoRouting ?? true,
       ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
       ...(req.body.policies !== undefined && req.body.policies.length > 0 ? { policies: req.body.policies } : {}),
-      models: (req.body.models ?? []).map(m => ({
+      models: normalizedModels.map(m => ({
         modelId: m.modelId,
         ...(m.prompt ? { prompt: m.prompt } : {}),
       })),
@@ -1212,7 +1224,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
       const policiesError = validateOrchestratorPolicies(kind, req.body.policies);
       if (policiesError) throw new ConfigUpdateAbort(400, { error: policiesError });
-      const modelsError = validatePassthroughModels({ kind, models: req.body.models });
+      const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
       if (kind === 'passthrough') {
         const slug = suggestRouterSlug(trimmedName, routers.filter(r => r.kind === 'passthrough').map(r => r.slug ?? ''));
@@ -1300,7 +1312,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         const policiesError = validateOrchestratorPolicies(kind, req.body.policies);
         if (policiesError) throw new ConfigUpdateAbort(400, { error: policiesError });
       }
-      const modelsError = validatePassthroughModels({ kind, models: req.body.models });
+      // Normalize `models` for the resolved kind before validation/storage. Unlike
+      // POST, a passthrough kind here gets NO auto-insert — an omitted or duplicate
+      // pass-through entry is a hard reject below (AC2/EC4: removal or a
+      // sentinel-dropping edit is rejected, never silently healed on this route;
+      // only the startup migration heals pre-existing data). A kind switching away
+      // from passthrough (EC3) strips any sentinel from the submitted list; real
+      // models in the same list are kept untouched.
+      const normalizedModels = kind === 'passthrough'
+        ? req.body.models
+        : req.body.models.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+      const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
       // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
       let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
@@ -1342,7 +1364,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         autoRouting: req.body.autoRouting ?? existing.autoRouting ?? true,
         ...(req.body.fallbackRoutingModelIds !== undefined && { fallbackRoutingModelIds: req.body.fallbackRoutingModelIds }),
         ...(req.body.policies !== undefined && { policies: req.body.policies }),
-        models: req.body.models.map(m => ({
+        models: normalizedModels.map(m => ({
           modelId: m.modelId,
           ...(m.prompt ? { prompt: m.prompt } : {}),
         })),

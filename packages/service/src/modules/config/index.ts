@@ -8,6 +8,7 @@ import {
   migrateRolePermissions,
   migrateUsageRouterId,
   migrateNotificationChannelScope,
+  migratePassthroughPseudoModel,
 } from './migrate.js'
 
 /**
@@ -61,6 +62,11 @@ export const configModule = defineModule({
     if (dropped.length > 0) {
       // eslint-disable-next-line no-console
       console.log(`[startup] dropped removed setting(s) from settings.json: ${dropped.join(', ')}`)
+    }
+    const passthroughMigrated = await migratePassthroughPseudoModel()
+    if (passthroughMigrated > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[startup] migrated ${passthroughMigrated} passthrough router(s) with a pass-through entry`)
     }
     // migrateUsageToNdjson() deliberately does NOT run here: this migrate()
     // is wrapped by the kernel in a best-effort try/catch that logs and

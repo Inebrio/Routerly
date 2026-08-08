@@ -12,6 +12,7 @@
 import { readFile, writeFile, rename, unlink, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { RouterConfig, GuardrailConfig, PiiConfig, GuardrailRule, PiiPolicy, Settings, UsageRecord } from '@routerly/shared';
+import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 
@@ -350,4 +351,27 @@ export async function migrateUsageToNdjson(): Promise<number> {
   await rename(CONFIG_PATHS.usageLegacyJson, `${CONFIG_PATHS.usageLegacyJson}.migrated`);
 
   return usageRecords.length;
+}
+
+/**
+ * Inserts the pinned pass-through entry into every pre-existing
+ * passthrough-kind router's `models[]` (PR-D). Before this change,
+ * `validatePassthroughModels` rejected any non-empty model list on a
+ * passthrough router, so every one stored before now has `models: []`.
+ * Idempotent: a router whose `models` already contains
+ * `{ modelId: PASSTHROUGH_MODEL_ID }` is left untouched, so a second run is a
+ * no-op. Non-passthrough routers are never touched. Returns the number of
+ * routers changed.
+ */
+export async function migratePassthroughPseudoModel(): Promise<number> {
+  const routers = await readConfig('routers');
+  let count = 0;
+  const updated = routers.map((router) => {
+    if (router.kind !== 'passthrough') return router;
+    if (router.models.some((m) => m.modelId === PASSTHROUGH_MODEL_ID)) return router;
+    count++;
+    return { ...router, models: [{ modelId: PASSTHROUGH_MODEL_ID }, ...router.models] };
+  });
+  if (count > 0) await writeConfig('routers', updated);
+  return count;
 }
