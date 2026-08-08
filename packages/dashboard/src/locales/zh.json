@@ -1359,7 +1359,9 @@
         "intents": "意图",
         "removeTarget": "删除目标模型",
         "empty": "未配置目标模型。",
-        "addTarget": "添加目标模型"
+        "addTarget": "添加目标模型",
+        "passthroughLabel": "直通(原始转发)",
+        "passthroughNotRemovable": "直通条目无法删除"
       }
     },
     "optimizer": {

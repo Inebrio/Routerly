@@ -9,6 +9,7 @@ import {
   migrateUsageRouterId,
   migrateNotificationChannelScope,
   migrateOrchestratorCandidateOrder,
+  migratePassthroughPseudoModel,
 } from './migrate.js'
 
 /**
@@ -67,6 +68,11 @@ export const configModule = defineModule({
     if (orchestratorsMigrated > 0) {
       // eslint-disable-next-line no-console
       console.log(`[startup] migrated ${orchestratorsMigrated} orchestrator(s) candidate order from legacy weight`)
+    }
+    const passthroughMigrated = await migratePassthroughPseudoModel()
+    if (passthroughMigrated > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[startup] migrated ${passthroughMigrated} passthrough router(s) with a pass-through entry`)
     }
     // migrateUsageToNdjson() deliberately does NOT run here: this migrate()
     // is wrapped by the kernel in a best-effort try/catch that logs and

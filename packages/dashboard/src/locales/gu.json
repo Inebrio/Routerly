@@ -1359,7 +1359,9 @@
         "intents": "ઉદ્દેશ્યો",
         "removeTarget": "લક્ષ્ય મોડલ દૂર કરો",
         "empty": "કોઈ લક્ષ્ય મોડલ્સ ગઠીત નથી.",
-        "addTarget": "લક્ષ્ય મોડલ ઉમેરો"
+        "addTarget": "લક્ષ્ય મોડલ ઉમેરો",
+        "passthroughLabel": "પાસ-થ્રુ (કાચું ફોરવર્ડ)",
+        "passthroughNotRemovable": "પાસ-થ્રુ એન્ટ્રી દૂર કરી શકાતી નથી"
       }
     },
     "optimizer": {

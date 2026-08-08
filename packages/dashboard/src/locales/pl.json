@@ -1359,7 +1359,9 @@
         "intents": "Intencje",
         "removeTarget": "Usuń model docelowy",
         "empty": "Nie skonfigurowano modeli docelowych.",
-        "addTarget": "Dodaj model docelowy"
+        "addTarget": "Dodaj model docelowy",
+        "passthroughLabel": "Przepuszczenie (surowe przekazanie)",
+        "passthroughNotRemovable": "Nie można usunąć wpisu przepuszczenia"
       }
     },
     "optimizer": {

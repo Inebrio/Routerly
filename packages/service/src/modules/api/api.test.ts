@@ -102,7 +102,7 @@ import { OptimizerRegistry, setOptimizerRegistry, type Optimizer } from '../opti
 import { readMessages, writeMessages, tokensOf } from '../optimizers/messages.js'
 import * as llmlingua2Model from '../optimizers/llmlingua2/model.js'
 import { setClientConfiguratorEnabled } from '../clients/module.js'
-import { CLIENT_REGISTRY } from '@routerly/shared'
+import { CLIENT_REGISTRY, PASSTHROUGH_MODEL_ID } from '@routerly/shared'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js'
 
@@ -1805,7 +1805,7 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
 })
 
 describe('POST /api/routers — passthrough kind (RTR-03)', () => {
-  it('returns 400 when a passthrough router is created with a non-empty model list', async () => {
+  it('accepts a passthrough router created with real models alongside the auto-inserted pass-through entry', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1813,6 +1813,7 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
       if (t === 'routers') return []
       return []
     })
+    mockWriteConfig.mockResolvedValue(undefined)
 
     const app = await buildApp()
     const res = await app.inject({
@@ -1821,8 +1822,8 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
       payload: JSON.stringify({ name: 'PT', kind: 'passthrough', models: [{ modelId: 'gpt-4o' }] }),
     })
     await app.close()
-    expect(res.statusCode).toBe(400)
-    expect(res.json().error).toBe('A passthrough router cannot have models')
+    expect(res.statusCode).toBe(201)
+    expect(res.json().models).toEqual([{ modelId: PASSTHROUGH_MODEL_ID }, { modelId: 'gpt-4o' }])
   })
 
   it('disambiguates the slug when another passthrough router already slugs to the same name', async () => {
@@ -1920,7 +1921,7 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
 describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
   it('leaves the slug unchanged on rename — slug is computed once at creation, never re-derived (see suggestRouterSlug)', async () => {
     setupAdminAuth()
-    const target = { id: 'pt-1', name: 'PT', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [] }
+    const target = { id: 'pt-1', name: 'PT', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [{ modelId: PASSTHROUGH_MODEL_ID }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
@@ -1933,7 +1934,7 @@ describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
     const res = await app.inject({
       method: 'PUT', url: '/api/routers/pt-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'PT Renamed', kind: 'passthrough', models: [] }),
+      payload: JSON.stringify({ name: 'PT Renamed', kind: 'passthrough', models: [{ modelId: PASSTHROUGH_MODEL_ID }] }),
     })
     await app.close()
     expect(res.statusCode).toBe(200)

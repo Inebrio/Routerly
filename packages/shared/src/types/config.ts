@@ -252,10 +252,23 @@ export type EffectiveModel = ModelConfig & { connectionId: string };
  * `'router'` routes to models (today's behaviour, and the implicit default
  * when `kind` is absent — every router stored before this field existed).
  * An `'orchestrator'` routes to other routers instead of models (RTR-02).
- * `'passthrough'` is reserved for a later story and carries neither
- * `candidates` nor `models`.
+ * `'passthrough'` carries no `candidates`, but always carries exactly one
+ * `models[]` entry with `modelId === PASSTHROUGH_MODEL_ID` (the pinned
+ * pass-through entry), plus zero or more real target models alongside it.
  */
 export type RouterKind = 'router' | 'orchestrator' | 'passthrough';
+
+/**
+ * Reserved `RouterModelRef.modelId` value representing "forward the call
+ * unmodified" on a passthrough-kind router. Not a real model id — real model
+ * ids are always `provider/modelId`-shaped, so this bare double-underscore
+ * token can never collide with one. Stored inline in `RouterConfig.models[]`
+ * like any other `RouterModelRef`; `prompt` is never set/read for it.
+ * `toRouterResponse` passes `models` through unchanged, so no read-path
+ * handling is needed here — see `packages/service/src/modules/api/api.ts`'s
+ * `toRouterResponse`.
+ */
+export const PASSTHROUGH_MODEL_ID = '__passthrough__';
 
 /**
  * One candidate Router an Orchestrator may forward to. Points at a Router id

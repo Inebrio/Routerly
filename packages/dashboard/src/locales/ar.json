@@ -984,7 +984,9 @@
         "intents": "النوايا",
         "removeTarget": "إزالة النموذج المستهدف",
         "empty": "لا توجد نماذج مستهدفة مُعدّة.",
-        "addTarget": "إضافة نموذج مستهدف"
+        "addTarget": "إضافة نموذج مستهدف",
+        "passthroughLabel": "تمرير مباشر (توجيه خام)",
+        "passthroughNotRemovable": "لا يمكن إزالة إدخال التمرير المباشر"
       }
     },
     "optimizer": {

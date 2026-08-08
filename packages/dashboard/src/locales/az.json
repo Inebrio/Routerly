@@ -1359,7 +1359,9 @@
         "intents": "Niyyətlər",
         "removeTarget": "Hədəf modeli sil",
         "empty": "Hədəf model konfiqurasiya edilməyib.",
-        "addTarget": "Hədəf Model Əlavə Et"
+        "addTarget": "Hədəf Model Əlavə Et",
+        "passthroughLabel": "Ötürmə (xam yönləndirmə)",
+        "passthroughNotRemovable": "Ötürmə girişi silinə bilməz"
       }
     },
     "optimizer": {

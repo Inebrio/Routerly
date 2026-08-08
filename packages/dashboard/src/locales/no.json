@@ -1359,7 +1359,9 @@
         "intents": "Intensjoner",
         "removeTarget": "Fjern målmodell",
         "empty": "Ingen målmodeller konfigurert.",
-        "addTarget": "Legg til målmodell"
+        "addTarget": "Legg til målmodell",
+        "passthroughLabel": "Gjennomstrømning (rå videresending)",
+        "passthroughNotRemovable": "Gjennomstrømningsoppføringen kan ikke fjernes"
       }
     },
     "optimizer": {
