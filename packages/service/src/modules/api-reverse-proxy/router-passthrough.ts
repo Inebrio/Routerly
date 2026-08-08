@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply, FastifyBaseLogger } from 'fastify';
 import { Readable } from 'node:stream';
 import { randomUUID } from 'node:crypto';
 import type { RouterConfig } from '@routerly/shared';
@@ -72,60 +72,61 @@ function serializeOpenAISSE(chunk: unknown): string {
   return `data: ${JSON.stringify(chunk)}\n\n`;
 }
 
-export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
-  // Raw bytes in — Fastify's default JSON parser would 400 a malformed/empty
-  // body before this handler ever runs, which breaks EC2 ("forward as-is").
-  // Scoped to this plugin only (Fastify content-type parsers are per-instance).
-  const rawParser = (_req: unknown, body: Buffer, done: (err: null, body: Buffer) => void) => done(null, body);
-  fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, rawParser);
-  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, rawParser);
-
-  fastify.all('/passthrough/:slug/*', async (request, reply) => {
-    const { slug } = request.params as { slug: string };
-    const rest = (request.params as Record<string, string>)['*'] ?? '';
-    const path = `/${rest}`;
-
-    const routers = await readConfig('routers');
-    const router = routers.find((r: RouterConfig) => r.kind === 'passthrough' && r.slug === slug);
-    if (!router) {
-      return reply.code(404).send({ error: 'not_found', message: 'No passthrough router at this path' });
-    }
-
-    const match = resolveFamily(path);
+/**
+ * Raw-forward logic shared by the unauthenticated `/passthrough/:slug/*` route and
+ * `routing/index.ts`'s authenticated-lane fallback (RTR-03/PR-E). `requestHeaders` is
+ * consumed the same way regardless of caller: lower-cased and hop-by-hop-filtered
+ * here, so neither caller needs to pre-normalize its own headers object.
+ *
+ * `path` may carry a trailing `?query` (as `/passthrough/:slug/*`'s own route derives
+ * it from `request.url`, byte-for-byte preserved by this extraction) — family
+ * resolution below always matches against the query-stripped form, while the
+ * upstream target URL forwards `path` verbatim, query string included.
+ */
+export async function forwardPassthroughRaw(
+  router: RouterConfig,
+  path: string,
+  method: string,
+  requestHeaders: Record<string, unknown>,
+  body: Buffer | undefined,
+  reply: FastifyReply,
+  log: FastifyBaseLogger,
+): Promise<void> {
+    const pathOnly = path.includes('?') ? path.slice(0, path.indexOf('?')) : path;
+    const match = resolveFamily(pathOnly);
     if (!match) {
-      return reply.code(400).send({
+      reply.code(400).send({
         error: 'unrecognized_wire_format',
         message: 'Could not match this request to a known upstream wire format',
       });
+      return;
     }
     const { family, base, requestType } = match;
 
-    const search = request.url.includes('?') ? request.url.slice(request.url.indexOf('?')) : '';
-    const targetUrl = base + path + search;
+    const targetUrl = base + path;
 
     const headers: Record<string, string> = {};
-    for (const [key, value] of Object.entries(request.headers)) {
+    for (const [key, value] of Object.entries(requestHeaders)) {
       if (value === undefined) continue;
       const lower = key.toLowerCase();
       if (HOP_BY_HOP_REQUEST.has(lower)) continue;
-      headers[lower] = Array.isArray(value) ? value.join(', ') : value;
+      headers[lower] = Array.isArray(value) ? value.join(', ') : String(value);
     }
 
-    const rawBody = Buffer.isBuffer(request.body) ? request.body : undefined;
-    const hasBody = request.method !== 'GET' && request.method !== 'HEAD' && rawBody !== undefined && rawBody.length > 0;
+    const hasBody = body !== undefined;
 
     // Best-effort JSON parse for model id / guardrails / PII / usage — a parse
     // failure never blocks forwarding (EC2: malformed body goes out as-is).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let parsed: any;
-    if (hasBody) {
-      try { parsed = JSON.parse(rawBody.toString('utf8')); } catch { parsed = undefined; }
+    if (hasBody && body) {
+      try { parsed = JSON.parse(body.toString('utf8')); } catch { parsed = undefined; }
     }
     const modelId: string = typeof parsed?.model === 'string' ? parsed.model : 'unknown';
     const isStream = parsed?.stream === true;
 
     const guardrailPctx: GuardrailRouterCtx = { routerId: router.id, router };
-    let outBody: Buffer | undefined = hasBody ? rawBody : undefined;
+    let outBody: Buffer | undefined = hasBody ? body : undefined;
     let piiRedactedRequest: string[] = [];
     let guardrailTriggeredName: string | undefined;
     let blockedBy: string | undefined;
@@ -134,7 +135,7 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
     if (parsed && Array.isArray(parsed.messages)) {
       if (router.guardrails) {
         const text = conversationText(parsed);
-        const result = await checkGuardrails('request', text, router.guardrails, guardrailPctx, request.log, text);
+        const result = await checkGuardrails('request', text, router.guardrails, guardrailPctx, log, text);
         if (result.triggered) {
           if (result.block) blockedBy = result.triggered;
           else if (result.log) guardrailTriggeredName = result.triggered;
@@ -158,7 +159,7 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     if (blockedBy) {
-      const body = family === 'anthropic'
+      const blockedBody = family === 'anthropic'
         ? {
           id: `msg_${randomUUID()}`, type: 'message', role: 'assistant', content: [],
           model: modelId, stop_reason: 'refusal', stop_details: { type: 'refusal' },
@@ -174,26 +175,28 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
         outcome: 'blocked', blockedBy, requestType,
         ...(piiRedactedRequest.length ? { piiRedacted: piiRedactedRequest } : {}),
       }).catch(() => {});
-      return reply.code(200).send(body);
+      reply.code(200).send(blockedBody);
+      return;
     }
 
     const startedAt = Date.now();
     let upstream: Response;
     try {
       upstream = await fetch(targetUrl, {
-        method: request.method,
+        method,
         headers,
         ...(outBody !== undefined ? { body: outBody, duplex: 'half' } : {}),
       } as RequestInit);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'upstream request failed';
-      request.log.error({ err, url: targetUrl }, 'passthrough upstream error');
+      log.error({ err, url: targetUrl }, 'passthrough upstream error');
       void trackUsage({
         routerId: router.id, modelId, inputTokens: 0, outputTokens: 0,
         latencyMs: Date.now() - startedAt, outcome: 'error', errorMessage: message, requestType,
         ...(piiRedactedRequest.length ? { piiRedacted: piiRedactedRequest } : {}),
       }).catch(() => {});
-      return reply.code(502).send({ error: 'upstream_error', message });
+      reply.code(502).send({ error: 'upstream_error', message });
+      return;
     }
 
     upstream.headers.forEach((value, key) => {
@@ -224,12 +227,14 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
 
     if (!upstream.body) {
       finalizeUsage(upstream.status < 400 ? 'success' : 'error');
-      return reply.send();
+      reply.send();
+      return;
     }
 
     if (!wantsOutputPii && !wantsOutputGuardrail) {
       finalizeUsage(upstream.status < 400 ? 'success' : 'error');
-      return reply.send(Readable.fromWeb(upstream.body as never));
+      reply.send(Readable.fromWeb(upstream.body as never));
+      return;
     }
 
     // From here on: guardrails and/or PII are configured for this router's response side.
@@ -243,7 +248,8 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
       const content = json?.choices?.[0]?.message?.content;
       if (typeof content !== 'string') {
         finalizeUsage(upstream.status < 400 ? 'success' : 'error');
-        return reply.send(buf);
+        reply.send(buf);
+        return;
       }
       let text = content;
       let redacted: string[] = [];
@@ -254,7 +260,7 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
       let responseBlockedBy: string | undefined;
       let responseLoggedOnly: string | undefined;
       if (wantsOutputGuardrail && router.guardrails) {
-        const result = await checkGuardrails('response', text, router.guardrails, guardrailPctx, request.log);
+        const result = await checkGuardrails('response', text, router.guardrails, guardrailPctx, log);
         if (result.triggered) {
           if (result.block) responseBlockedBy = result.triggered;
           else if (result.log) responseLoggedOnly = result.triggered;
@@ -268,13 +274,14 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
       }
       guardrailTriggeredName = responseLoggedOnly ?? guardrailTriggeredName;
       finalizeUsage(responseBlockedBy ? 'blocked' : (upstream.status < 400 ? 'success' : 'error'), { redacted, ...(responseBlockedBy ? { blockedBy: responseBlockedBy } : {}) });
-      return reply.send(Buffer.from(JSON.stringify(json)));
+      reply.send(Buffer.from(JSON.stringify(json)));
+      return;
     }
 
     if (isStream && contentType.includes('text/event-stream')) {
       let iter: AsyncIterable<unknown> = parseOpenAISSE(upstream.body as never);
       if (wantsOutputPii && piiOutput) iter = wrapWithStreamingScrubber(iter, piiOutput, fakeCtx);
-      if (wantsOutputGuardrail) iter = wrapWithResponseGuardrail(iter, router, guardrailPctx, request.log, fakeCtx);
+      if (wantsOutputGuardrail) iter = wrapWithResponseGuardrail(iter, router, guardrailPctx, log, fakeCtx);
       // finalizeUsage must run after the stream is fully drained: fakeCtx.blockedBy
       // is only set (by wrapWithResponseGuardrail) once the buffered guardrail
       // check completes, which happens mid-iteration, not before it starts.
@@ -286,14 +293,41 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
           finalizeUsage(fakeCtx.blockedBy ? 'blocked' : (upstream.status < 400 ? 'success' : 'error'), fakeCtx.blockedBy ? { blockedBy: fakeCtx.blockedBy } : undefined);
         }
       })();
-      return reply.send(Readable.from(out));
+      reply.send(Readable.from(out));
+      return;
     }
 
     // Neither a recognized JSON nor SSE response shape (e.g. a binary/other
     // content-type on an OpenAI-family path) — no place to apply guardrails/PII,
     // forward untouched.
     finalizeUsage(upstream.status < 400 ? 'success' : 'error');
-    return reply.send(Readable.fromWeb(upstream.body as never));
+    reply.send(Readable.fromWeb(upstream.body as never));
+}
+
+export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
+  // Raw bytes in — Fastify's default JSON parser would 400 a malformed/empty
+  // body before this handler ever runs, which breaks EC2 ("forward as-is").
+  // Scoped to this plugin only (Fastify content-type parsers are per-instance).
+  const rawParser = (_req: unknown, body: Buffer, done: (err: null, body: Buffer) => void) => done(null, body);
+  fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, rawParser);
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, rawParser);
+
+  fastify.all('/passthrough/:slug/*', async (request, reply) => {
+    const { slug } = request.params as { slug: string };
+    const rest = (request.params as Record<string, string>)['*'] ?? '';
+    const search = request.url.includes('?') ? request.url.slice(request.url.indexOf('?')) : '';
+    const path = `/${rest}${search}`;
+
+    const routers = await readConfig('routers');
+    const router = routers.find((r: RouterConfig) => r.kind === 'passthrough' && r.slug === slug);
+    if (!router) {
+      return reply.code(404).send({ error: 'not_found', message: 'No passthrough router at this path' });
+    }
+
+    const rawBody = Buffer.isBuffer(request.body) ? request.body : undefined;
+    const hasBody = request.method !== 'GET' && request.method !== 'HEAD' && rawBody !== undefined && rawBody.length > 0;
+
+    await forwardPassthroughRaw(router, path, request.method, request.headers, hasBody ? rawBody : undefined, reply, request.log);
   });
 };
 
