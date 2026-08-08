@@ -263,7 +263,11 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
   try {
     await readFile(filePath);
   } catch {
-    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), 'utf-8');
+    // Same seed-mode logic as writeConfig: a secret-tier file must never be
+    // seeded at the umask default, even on its very first write.
+    const seedOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
+    if ((SECRET_KEYS as readonly string[]).includes(key)) seedOptions.mode = 0o600;
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), seedOptions);
   }
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
@@ -275,7 +279,22 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
     const current = await readConfig(key);
     const next = await mutate(current);
     if (next === current) return next; // no-op: mutator made no change, nothing to publish
-    await writeFile(tmpPath, JSON.stringify(next, null, 2), 'utf-8');
+    // Same mode logic as writeConfig (see its comment): secret-tier files are
+    // always 0600; general-tier files preserve whatever mode is already on
+    // disk instead of silently regressing it to the umask default.
+    let mode: number | undefined;
+    if ((SECRET_KEYS as readonly string[]).includes(key)) {
+      mode = 0o600;
+    } else {
+      try {
+        mode = (await stat(filePath)).mode & 0o777;
+      } catch {
+        // File doesn't exist yet — no mode to preserve, use the default.
+      }
+    }
+    const writeOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
+    if (mode !== undefined) writeOptions.mode = mode;
+    await writeFile(tmpPath, JSON.stringify(next, null, 2), writeOptions);
     await rename(tmpPath, filePath);
     return next;
   } catch (err) {
