@@ -94,7 +94,14 @@ Drag and drop to reorder.
 **Pass-through (raw forward)** — it forwards the client's own credential to
 the provider unmodified, is created automatically with the router and cannot
 be removed (its delete button is disabled). It can be dragged to any position
-alongside the router's real target models, same as any other row.
+alongside the router's real target models, same as any other row. Where it
+sits decides the router's default behaviour: dragging it to the top (position
+0) makes raw-forward the default outcome for every request, and real models
+are never scored regardless of how many are configured; anywhere else, real
+models are scored and routed normally and the pass-through entry is used
+only as a last-resort fallback when none of them are eligible. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-which-path-a-request-takes)
+for the full rule, including the fallback's forwarded-credential caveat.
 
 ### Adding Policies
 
