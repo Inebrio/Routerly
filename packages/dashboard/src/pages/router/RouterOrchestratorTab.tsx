@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Check, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import { getRouters, updateRouter, type Router } from '../../api';
 import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -18,7 +18,6 @@ const ORCHESTRATOR_POLICY_TYPES = ['health', 'rate-limit', 'fairness'] as const;
 type CandidateRow = {
   internalId: string; // for React keys
   routerId: string;
-  weight: number;
   limitRows: LimitRow[];
 };
 
@@ -50,12 +49,13 @@ export function RouterOrchestratorTab() {
   }, [router?.id]);
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [draggedRowIdx, setDraggedRowIdx] = useState<number | null>(null);
 
   useEffect(() => {
     /* v8 ignore next */
     if (!router) return;
     setRows((router.candidates ?? []).map(c => ({
-      internalId: mkId(), routerId: c.routerId, weight: c.weight, limitRows: limitsToRows(c.limits),
+      internalId: mkId(), routerId: c.routerId, limitRows: limitsToRows(c.limits),
     })));
     setPolicies((router.policies ?? []).map(p => ({ ...p, internalId: mkPolicyId() })));
   }, [router]);
@@ -67,7 +67,6 @@ export function RouterOrchestratorTab() {
     if (rows.length !== savedCandidates.length) return true;
     if (rows.some((r, i) =>
       r.routerId !== savedCandidates[i]!.routerId ||
-      r.weight !== savedCandidates[i]!.weight ||
       JSON.stringify(limitRowsToLimits(r.limitRows)) !== JSON.stringify(savedCandidates[i]!.limits ?? [])
     )) return true;
 
@@ -92,7 +91,36 @@ export function RouterOrchestratorTab() {
     const used = usedRouterIds(-1);
     const first = candidateRouters.find(r => !used.has(r.id));
     /* v8 ignore next */
-    setRows(prev => [...prev, { internalId: mkId(), routerId: first?.id ?? '', weight: 1, limitRows: [] }]);
+    setRows(prev => [...prev, { internalId: mkId(), routerId: first?.id ?? '', limitRows: [] }]);
+  }
+
+  // Candidate row drag/drop reordering — same mechanics as RoutingPoliciesEditor's policy DnD.
+  function onDragStartRow(e: React.DragEvent, idx: number) {
+    setDraggedRowIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    /* v8 ignore next 3 */
+    setTimeout(() => {
+      const el = document.getElementById(`candidate-row-${idx}`);
+      if (el) el.style.opacity = '0.4';
+    }, 0);
+  }
+  function onDragEnterRow(e: React.DragEvent, targetIdx: number) {
+    e.preventDefault();
+    if (draggedRowIdx === null || draggedRowIdx === targetIdx) return;
+    setRows(prev => {
+      const copy = [...prev];
+      const draggedItem = copy[draggedRowIdx]!;
+      copy.splice(draggedRowIdx, 1);
+      copy.splice(targetIdx, 0, draggedItem);
+      return copy;
+    });
+    setDraggedRowIdx(targetIdx);
+  }
+  function onDragEndRow(_e: React.DragEvent, idx: number) {
+    setDraggedRowIdx(null);
+    const el = document.getElementById(`candidate-row-${idx}`);
+    /* v8 ignore next */
+    if (el) el.style.opacity = '1';
   }
 
   function toggleExpanded(internalId: string) {
@@ -122,7 +150,7 @@ export function RouterOrchestratorTab() {
         models: router.models.map(m => ({ modelId: m.modelId })),
         candidates: rows.map(r => {
           const limits = limitRowsToLimits(r.limitRows);
-          return { routerId: r.routerId, weight: r.weight, ...(limits.length > 0 ? { limits } : {}) };
+          return { routerId: r.routerId, ...(limits.length > 0 ? { limits } : {}) };
         }),
         policies: policies.map(p => {
           const { internalId, ...rest } = p;
@@ -184,20 +212,30 @@ export function RouterOrchestratorTab() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {rows.map((row, idx) => {
-              const resolved = candidateRouters.find(r => r.id === row.routerId);
               const isExpanded = expanded.has(row.internalId);
               const limitCount = row.limitRows.filter(r => r.value !== '').length;
               return (
                 <div
                   key={row.internalId}
+                  id={`candidate-row-${idx}`}
+                  draggable
+                  onDragStart={e => onDragStartRow(e, idx)}
+                  onDragEnter={e => onDragEnterRow(e, idx)}
+                  onDragEnd={e => onDragEndRow(e, idx)}
+                  /* v8 ignore next */
+                  onDragOver={e => e.preventDefault()}
                   style={{
                     background: 'var(--surface-active)',
                     padding: 12,
                     borderRadius: 8,
                     border: '1px solid var(--border)',
+                    cursor: 'grab',
+                    transition: 'opacity 0.2s',
                   }}
                 >
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--text-muted)', paddingTop: 24, flexShrink: 0 }}><GripVertical size={16} /></div>
+
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.orchestrator.router')}</label>
                       <SearchableSelect
@@ -206,24 +244,7 @@ export function RouterOrchestratorTab() {
                         placeholder={t('routers.orchestrator.selectRouter')}
                         options={candidateRouters
                           .filter(r => r.id === row.routerId || !usedRouterIds(idx).has(r.id))
-                          .map(r => ({ value: r.id, label: r.name, description: r.id }))}
-                      />
-                      {resolved && (
-                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4, fontFamily: 'monospace' }}>
-                          {resolved.id}
-                        </p>
-                      )}
-                    </div>
-
-                    <div style={{ width: 120 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.orchestrator.weight')}</label>
-                      <input
-                        className="form-input"
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={row.weight}
-                        onChange={e => updateRow(idx, { weight: Number(e.target.value) })}
+                          .map(r => ({ value: r.id, label: r.name }))}
                       />
                     </div>
 
