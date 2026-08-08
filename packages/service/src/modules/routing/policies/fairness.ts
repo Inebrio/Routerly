@@ -1,5 +1,6 @@
 import type { PolicyFn } from './types.js';
 import { readUsageRecords } from '../../usage/usageStore.js';
+import { shareScore } from './scoring.js';
 
 /**
  * Policy: fairness
@@ -43,13 +44,9 @@ export const fairnessPolicy: PolicyFn = async ({ candidates, config, routerId })
   const totalCalls = counts.reduce((sum, c) => sum + c.callCount, 0);
 
   const routing = counts.map(({ modelId, callCount }) => {
-    const point = totalCalls === 0
-      ? 1.0
-      : 1 - (callCount / totalCalls);
-
     return {
       model: modelId,
-      point: Math.max(0, Math.min(1, point)),
+      point: shareScore(callCount, totalCalls),
       callCount,
       totalCalls,
     };

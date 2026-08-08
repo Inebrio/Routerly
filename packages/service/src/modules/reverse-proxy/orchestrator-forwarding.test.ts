@@ -223,6 +223,53 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     expect((mockLlmChat.mock.calls[0]![1] as ModelConfig).id).toBe(modelB.id)
   })
 
+  it("EC3: budget-remaining's soft score never overrides the hard isOrchestratorCandidateAllowed gate, even when the blocked candidate ranks first", async () => {
+    buildPipeline()
+    const modelA = makeModel(`m-${randomUUID()}`)
+    const modelB = makeModel(`m-${randomUUID()}`)
+    await seedModels([modelA, modelB])
+    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id]) // budget-exhausted, but perfect health + higher weight
+    const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id]) // healthy budget, but tanked health score
+    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
+      { routerId: routerA.id, weight: 2, limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 1 }] },
+      { routerId: routerB.id, weight: 1 },
+    ])
+    // Only health + budget-remaining drive the blend, isolating the two signals under test.
+    orchestrator.policies = [
+      { type: 'rate-limit', enabled: false }, { type: 'fairness', enabled: false }, { type: 'performance', enabled: false },
+    ]
+    await writeConfig('routers', [orchestrator, routerA, routerB])
+
+    // A's one and only call already exhausts its 1/day orchestrator-level limit (hard gate) —
+    // a plain success record, so it does not also tank A's health score.
+    await appendUsageRecord({
+      id: randomUUID(), timestamp: new Date().toISOString(), routerId: routerA.id, modelId: modelA.id,
+      inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 1, outcome: 'success', orchestratorId: orchestrator.id,
+    })
+    // B has no budget limit at all (neutral 1.0 on budget-remaining) but a crashed health score.
+    const now = Date.now()
+    for (let i = 0; i < 5; i++) {
+      await appendUsageRecord({
+        id: randomUUID(), timestamp: new Date(now - i * 1000).toISOString(), routerId: routerB.id, modelId: modelB.id,
+        inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 1, outcome: 'error', orchestratorId: orchestrator.id,
+      })
+    }
+    // A: health=1.0, budget-remaining=0.0 (exhausted) -> quality 0.5.
+    // B: health=0.0 (all-error circuit breaker), budget-remaining=1.0 (no limits) -> quality 0.5.
+    // Tied quality -> A's higher weight ranks it first, despite being hard-blocked.
+
+    mockLlmChat.mockResolvedValueOnce(makeResponse(modelB.id))
+
+    const ctx = buildCtx(orchestrator)
+    await openaiAttempt.run(ctx)
+
+    // If the hard gate were skipped, A (ranked first, "favorable" tied quality) would be tried
+    // and would succeed — this assertion fails in that case.
+    expect(mockLlmChat).toHaveBeenCalledTimes(1)
+    expect((mockLlmChat.mock.calls[0]![1] as ModelConfig).id).toBe(modelB.id)
+    expect(ctx.result).toEqual({ kind: 'json', body: makeResponse(modelB.id) })
+  })
+
   it('EC3: a candidate deleted from the router config since it was scored is never attempted; the surviving candidate is used', async () => {
     buildPipeline()
     const survivorModel = makeModel(`m-${randomUUID()}`)
