@@ -72,6 +72,23 @@ describe('validateOrchestratorCandidates', () => {
     })).toBe('Unknown candidate router: ghost')
   })
 
+  it('skips the "at least one" error when candidatesChanged is false (PR-B AC1/AC2), even with zero/undefined candidates', () => {
+    const routers = [router('orc-1', 'orchestrator')]
+    expect(validateOrchestratorCandidates({
+      kind: 'orchestrator', candidates: undefined, routers, selfId: 'orc-1', candidatesChanged: false,
+    })).toBeNull()
+    expect(validateOrchestratorCandidates({
+      kind: 'orchestrator', candidates: [], routers, selfId: 'orc-1', candidatesChanged: false,
+    })).toBeNull()
+  })
+
+  it('still rejects zero candidates when candidatesChanged is explicitly true (PR-B AC3)', () => {
+    const routers = [router('orc-1', 'orchestrator')]
+    expect(validateOrchestratorCandidates({
+      kind: 'orchestrator', candidates: [], routers, selfId: 'orc-1', candidatesChanged: true,
+    })).toBe('An orchestrator needs at least one candidate router')
+  })
+
   it('accepts a valid multi-candidate orchestrator', () => {
     const routers = [router('r1'), router('r2')]
     expect(validateOrchestratorCandidates({

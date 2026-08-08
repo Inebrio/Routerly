@@ -1957,6 +1957,110 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     expect(res.json().error).toBe('An orchestrator needs at least one candidate router')
   })
 
+  it('saves general settings on a zero-candidate orchestrator when candidates is omitted from the body (PR-B AC1)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Renamed Orc', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().name).toBe('Renamed Orc')
+  })
+
+  it('leaves a non-empty candidate list unchanged and succeeds when a general-settings save omits candidates (PR-B AC2)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }
+    const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc, r1]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Renamed Orc', models: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const writtenRouters = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')![1] as any[]
+    expect(writtenRouters.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', weight: 1 }])
+  })
+
+  it('succeeds when an explicit empty candidate list matches an already-empty stored list (PR-B EC1, no-op resubmission)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('a general-settings-style save and a candidate-list-style save on the same orchestrator each validate against their own body only (PR-B EC3)', async () => {
+    setupAdminAuth()
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }
+    const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [orc, r1]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    // General-settings-style save: no candidates key at all — must succeed and
+    // must not be influenced by the fact that a candidate-list-style save (below)
+    // targets the same orchestrator.
+    const appGeneral = await buildApp()
+    const resGeneral = await appGeneral.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Renamed Orc', models: [] }),
+    })
+    await appGeneral.close()
+    expect(resGeneral.statusCode).toBe(200)
+
+    // Candidate-list-style save: explicit empty array — must still fail, unaffected
+    // by the general-settings save that just ran against the same router.
+    const appCandidates = await buildApp()
+    const resCandidates = await appCandidates.inject({
+      method: 'PUT', url: '/api/routers/orc-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [] }),
+    })
+    await appCandidates.close()
+    expect(resCandidates.statusCode).toBe(400)
+    expect(resCandidates.json().error).toBe('An orchestrator needs at least one candidate router')
+  })
+
   it('returns 400 when an orchestrator update sets a model-attribute policy type', async () => {
     setupAdminAuth()
     const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }

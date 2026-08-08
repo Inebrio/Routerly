@@ -1290,8 +1290,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       } else if (routers[index]!.candidates) {
         candidatesUpdate = { candidates: routers[index]!.candidates };
       }
+      // Omitted body field = untouched (false). Explicit field = changed unless it's
+      // a no-op resubmission identical to what's stored (EC1) — content comparison,
+      // not identity, so a client re-sending the same list doesn't trip AC3's rule.
+      const candidatesChanged = candidates !== undefined
+        && JSON.stringify(candidates) !== JSON.stringify(routers[index]!.candidates ?? []);
       const candidateError = validateOrchestratorCandidates({
-        kind, candidates: candidatesUpdate.candidates, routers, selfId: req.params.id,
+        kind, candidates: candidatesUpdate.candidates, routers, selfId: req.params.id, candidatesChanged,
       });
       if (candidateError) throw new ConfigUpdateAbort(400, { error: candidateError });
       // Policies: omitted body = leave unchanged and unvalidated — a legacy record
