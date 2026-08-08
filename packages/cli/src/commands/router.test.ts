@@ -1534,6 +1534,22 @@ describe('model list', () => {
     expect(lines.join('\n')).toContain('No models configured');
   });
 
+  it('renders the pass-through entry with a distinct label, not a bare modelId', async () => {
+    const router = {
+      ...baseRouter,
+      kind: 'passthrough' as const,
+      models: [{ modelId: '__passthrough__' }, { modelId: 'openai/gpt-4' }],
+    };
+    mockApi.mockResolvedValueOnce([router]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api']);
+    const out = lines.join('\n');
+    expect(out).toContain('pass-through');
+    expect(out).toContain('__passthrough__');
+    expect(out).toContain('openai/gpt-4');
+  });
+
   it('exits 1 on error', async () => {
     mockApi.mockResolvedValueOnce([]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
@@ -1585,6 +1601,14 @@ describe('model add', () => {
     expect(lines.join('\n')).toContain('already in router');
   });
 
+  it('rejects adding the pass-through entry, no network call', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'add', 'my-api', '__passthrough__'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('cannot be added manually'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockResolvedValueOnce([baseRouter]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
@@ -1628,6 +1652,14 @@ describe('model remove', () => {
     await expect(makeCmd().parseAsync(['node', 'router', 'model', 'remove', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not in router'));
+  });
+
+  it('rejects removing the pass-through entry, no network call', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'remove', 'my-api', '__passthrough__'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('cannot be removed'));
+    expect(mockApi).not.toHaveBeenCalled();
   });
 
   it('exits 1 on ApiError', async () => {
@@ -1686,6 +1718,14 @@ describe('model set-prompt', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not in router'));
   });
 
+  it('rejects setting a prompt on the pass-through entry, no network call', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', '__passthrough__', '--prompt', 'x'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('no prompt'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('exits 1 on ApiError', async () => {
     const { ApiError } = await import('../api.js');
     const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
@@ -1701,6 +1741,95 @@ describe('model set-prompt', () => {
     mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'model', 'set-prompt', 'my-api', 'openai/gpt-4', '--prompt', 'x'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
+  });
+});
+
+describe('model reorder', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('reorders models per given order, appends unmentioned', async () => {
+    const router = {
+      ...baseRouter,
+      models: [{ modelId: 'openai/gpt-4' }, { modelId: 'openai/gpt-3.5' }, { modelId: 'anthropic/claude-opus-4-6' }],
+    };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'model', 'reorder', 'my-api', 'openai/gpt-3.5,openai/gpt-4']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { models: Array<{ modelId: string }> };
+    expect(body.models[0]!.modelId).toBe('openai/gpt-3.5');
+    expect(body.models[1]!.modelId).toBe('openai/gpt-4');
+    // not mentioned → appended, preserving relative order
+    expect(body.models[2]!.modelId).toBe('anthropic/claude-opus-4-6');
+    expect(lines.join('\n')).toContain('reordered');
+  });
+
+  it('accepts the pass-through entry anywhere in the order — first', async () => {
+    const router = {
+      ...baseRouter,
+      kind: 'passthrough' as const,
+      models: [{ modelId: '__passthrough__' }, { modelId: 'openai/gpt-4' }],
+    };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'reorder', 'my-api', '__passthrough__,openai/gpt-4']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { models: Array<{ modelId: string }> };
+    expect(body.models[0]!.modelId).toBe('__passthrough__');
+    expect(body.models[1]!.modelId).toBe('openai/gpt-4');
+  });
+
+  it('accepts the pass-through entry anywhere in the order — last', async () => {
+    const router = {
+      ...baseRouter,
+      kind: 'passthrough' as const,
+      models: [{ modelId: '__passthrough__' }, { modelId: 'openai/gpt-4' }],
+    };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'model', 'reorder', 'my-api', 'openai/gpt-4,__passthrough__']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { models: Array<{ modelId: string }> };
+    expect(body.models[0]!.modelId).toBe('openai/gpt-4');
+    expect(body.models[1]!.modelId).toBe('__passthrough__');
+  });
+
+  it('accepts the pass-through entry anywhere in the order — middle', async () => {
+    const router = {
+      ...baseRouter,
+      kind: 'passthrough' as const,
+      models: [{ modelId: '__passthrough__' }, { modelId: 'openai/gpt-4' }, { modelId: 'anthropic/claude-opus-4-6' }],
+    };
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(undefined);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'model', 'reorder', 'my-api', 'openai/gpt-4,__passthrough__,anthropic/claude-opus-4-6']);
+    const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
+    const body = putCall![2] as { models: Array<{ modelId: string }> };
+    expect(body.models.map(m => m.modelId)).toEqual(['openai/gpt-4', '__passthrough__', 'anthropic/claude-opus-4-6']);
+    // printed confirmation uses the same distinct label as `model list`
+    expect(lines.join('\n')).toContain('pass-through');
+  });
+
+  it('exits 1 on ApiError', async () => {
+    const { ApiError } = await import('../api.js');
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'reorder', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
+  });
+
+  it('exits 1 on non-ApiError', async () => {
+    const router = { ...baseRouter, models: [{ modelId: 'openai/gpt-4' }] };
+    mockApi.mockResolvedValueOnce([router]).mockRejectedValueOnce(new Error('fail'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', 'model', 'reorder', 'my-api', 'openai/gpt-4'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('fail'));
   });

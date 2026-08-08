@@ -1359,7 +1359,9 @@
         "intents": "Intentions",
         "removeTarget": "Supprimer le modèle cible",
         "empty": "Aucun modèle cible configuré.",
-        "addTarget": "Ajouter un modèle cible"
+        "addTarget": "Ajouter un modèle cible",
+        "passthroughLabel": "Transfert direct (retransmission brute)",
+        "passthroughNotRemovable": "L'entrée de transfert direct ne peut pas être supprimée"
       }
     },
     "optimizer": {

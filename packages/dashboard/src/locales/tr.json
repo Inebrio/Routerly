@@ -1359,7 +1359,9 @@
         "intents": "Niyetler",
         "removeTarget": "Hedef modeli kaldır",
         "empty": "Hiçbir hedef model yapılandırılmadı.",
-        "addTarget": "Hedef Model Ekle"
+        "addTarget": "Hedef Model Ekle",
+        "passthroughLabel": "Doğrudan geçiş (ham iletim)",
+        "passthroughNotRemovable": "Doğrudan geçiş girdisi kaldırılamaz"
       }
     },
     "optimizer": {

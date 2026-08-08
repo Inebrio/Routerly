@@ -1359,7 +1359,9 @@
         "intents": "مقاصد",
         "removeTarget": "ہدف ماڈل ہٹائیں",
         "empty": "کوئی ہدف ماڈلز کنفیگر شدہ نہیں۔",
-        "addTarget": "ہدف ماڈل شامل کریں"
+        "addTarget": "ہدف ماڈل شامل کریں",
+        "passthroughLabel": "پاس تھرو (خام فارورڈ)",
+        "passthroughNotRemovable": "پاس تھرو اندراج ہٹایا نہیں جا سکتا"
       }
     },
     "optimizer": {

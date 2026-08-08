@@ -1359,7 +1359,9 @@
         "intents": "Mga Intent",
         "removeTarget": "Alisin ang target model",
         "empty": "Walang nakakonfigureng target model.",
-        "addTarget": "Magdagdag ng Target Model"
+        "addTarget": "Magdagdag ng Target Model",
+        "passthroughLabel": "Pass-through (hilaw na pagpasa)",
+        "passthroughNotRemovable": "Hindi maaaring alisin ang pass-through entry"
       }
     },
     "optimizer": {

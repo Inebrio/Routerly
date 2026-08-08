@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
-import { DEFAULT_ROUTER_TIMEOUT_MS } from '@routerly/shared';
-import type { RouterConfig, RouterKind, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
+import { DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID } from '@routerly/shared';
+import type { RouterConfig, RouterKind, RouterModelRef, RoutingPolicy, RoutingPolicyType, TokenModelRef, Limit, LimitMetric, LimitPeriod, RollingUnit, UserConfig, GuardrailConfig, GuardrailRule, GuardrailRuleType, RegexGuardConfig, SemanticGuardConfig, TopicGuardConfig, ModerationGuardConfig, PiiConfig, PiiPolicy } from '@routerly/shared';
 
 /**
  * Wire shape of an Orchestrator's candidate as returned by GET /api/routers —
@@ -28,6 +28,12 @@ function parseTimeoutOption(raw: string): number {
     process.exit(1);
   }
   return ms;
+}
+
+/** The pass-through entry (`__passthrough__`) is rendered distinctly wherever a
+ * model list shows model IDs — `model list` and `model reorder`'s confirmation. */
+function formatModelId(modelId: string): string {
+  return modelId === PASSTHROUGH_MODEL_ID ? `${chalk.gray('(pass-through)')} ${modelId}` : modelId;
 }
 
 /** Parses --kind, rejecting anything outside the three valid RouterKind values. */
@@ -402,7 +408,7 @@ Examples:
         });
         for (const m of router.models) {
           const prompt = m.prompt ? (m.prompt.length > 60 ? m.prompt.slice(0, 57) + '…' : m.prompt) : chalk.gray('—');
-          table.push([m.modelId, prompt]);
+          table.push([formatModelId(m.modelId), prompt]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -420,6 +426,10 @@ Examples:
 `)
     .option('--prompt <text>', 'System prompt hint used when this model is selected')
     .action(async (nameOrId: string, modelId: string, opts: { prompt?: string }) => {
+      if (modelId === PASSTHROUGH_MODEL_ID) {
+        console.error(chalk.red('The pass-through entry cannot be added manually — it is always present on a passthrough-kind router.'));
+        process.exit(1);
+      }
       try {
         const router = await resolveRouter(nameOrId);
         if (router.models.find(m => m.modelId === modelId)) {
@@ -447,6 +457,10 @@ Examples:
   routerly router model remove my-api openai/gpt-5.2
 `)
     .action(async (nameOrId: string, modelId: string) => {
+      if (modelId === PASSTHROUGH_MODEL_ID) {
+        console.error(chalk.red('The pass-through entry cannot be removed — it is always present on a passthrough-kind router.'));
+        process.exit(1);
+      }
       try {
         const router = await resolveRouter(nameOrId);
         if (!router.models.find(m => m.modelId === modelId)) {
@@ -478,6 +492,10 @@ Examples:
 `)
     .requiredOption('--prompt <text>', 'New prompt text (use empty string to clear)')
     .action(async (nameOrId: string, modelId: string, opts: { prompt: string }) => {
+      if (modelId === PASSTHROUGH_MODEL_ID) {
+        console.error(chalk.red('The pass-through entry has no prompt — it forwards the request unmodified.'));
+        process.exit(1);
+      }
       try {
         const router = await resolveRouter(nameOrId);
         const entry = router.models.find(m => m.modelId === modelId);
@@ -496,6 +514,43 @@ Examples:
           policies: router.policies, models: updatedModels,
         });
         console.log(chalk.green(`✓ Prompt updated for "${modelId}" in "${router.name}".`));
+      } catch (err) {
+        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        else console.error(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
+      }
+    });
+
+  cmd.command('reorder <router> <model-ids>')
+    .description('Reorder target models (comma-separated list of model IDs in desired order)')
+    .addHelpText('after', `
+Examples:
+  routerly router model reorder my-api openai/gpt-5.2,anthropic/claude-opus-4-6
+
+  # Move the pass-through entry to the front of a passthrough router's model list
+  routerly router model reorder my-api __passthrough__,openai/gpt-5.2
+`)
+    .action(async (nameOrId: string, modelIdsStr: string) => {
+      try {
+        const router = await resolveRouter(nameOrId);
+        const order = modelIdsStr.split(',').map(s => s.trim()).filter(Boolean);
+        const existing = router.models;
+        // Place models matching the order first, then append any not mentioned
+        const reordered: RouterModelRef[] = [];
+        for (const id of order) {
+          const found = existing.find(m => m.modelId === id);
+          if (found) reordered.push(found);
+        }
+        for (const m of existing) {
+          if (!reordered.includes(m)) reordered.push(m);
+        }
+        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+          name: router.name, timeoutMs: router.timeoutMs, autoRouting: router.autoRouting,
+          routingModelId: router.routingModelId, fallbackRoutingModelIds: router.fallbackRoutingModelIds,
+          policies: router.policies, models: reordered,
+        });
+        console.log(chalk.green(`✓ Models reordered for "${router.name}".`));
+        reordered.forEach((m, i) => console.log(chalk.gray(`  ${i + 1}. ${formatModelId(m.modelId)}`)));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
         else console.error(chalk.red(`Error: ${err.message}`));

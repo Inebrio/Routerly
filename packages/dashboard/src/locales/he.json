@@ -1359,7 +1359,9 @@
         "intents": "כוונות",
         "removeTarget": "הסר מודל יעד",
         "empty": "לא הוגדרו מודלי יעד.",
-        "addTarget": "הוסף מודל יעד"
+        "addTarget": "הוסף מודל יעד",
+        "passthroughLabel": "מעבר ישיר (העברה גולמית)",
+        "passthroughNotRemovable": "לא ניתן להסיר את רשומת המעבר הישיר"
       }
     },
     "optimizer": {

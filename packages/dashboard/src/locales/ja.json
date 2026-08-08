@@ -1359,7 +1359,9 @@
         "intents": "インテント",
         "removeTarget": "ターゲットモデルを削除",
         "empty": "ターゲットモデルが構成されていません。",
-        "addTarget": "ターゲットモデルを追加"
+        "addTarget": "ターゲットモデルを追加",
+        "passthroughLabel": "パススルー(生転送)",
+        "passthroughNotRemovable": "パススルーエントリは削除できません"
       }
     },
     "optimizer": {

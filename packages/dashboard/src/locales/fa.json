@@ -1359,7 +1359,9 @@
         "intents": "قصدها",
         "removeTarget": "حذف مدل هدف",
         "empty": "هیچ مدل هدفی پیکربندی نشده است.",
-        "addTarget": "افزودن مدل هدف"
+        "addTarget": "افزودن مدل هدف",
+        "passthroughLabel": "عبور مستقیم (ارسال خام)",
+        "passthroughNotRemovable": "ورودی عبور مستقیم قابل حذف نیست"
       }
     },
     "optimizer": {
