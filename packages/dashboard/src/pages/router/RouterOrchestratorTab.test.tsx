@@ -124,16 +124,12 @@ describe('RouterOrchestratorTab — add row and save', () => {
     const select = await screen.findByTestId('searchable-Select router');
     await userEvent.selectOptions(select, 'router-b');
 
-    const weightInput = document.querySelector('input[type="number"]') as HTMLInputElement;
-    await userEvent.clear(weightInput);
-    await userEvent.type(weightInput, '3');
-
     await userEvent.click(screen.getByRole('button', { name: /Save Candidates/i }));
 
     await waitFor(() =>
       expect(mockUpdateRouter).toHaveBeenCalledWith(
         'orch-1',
-        expect.objectContaining({ candidates: [{ routerId: 'router-b', weight: 3 }] })
+        expect.objectContaining({ candidates: [{ routerId: 'router-b' }] })
       )
     );
   });
@@ -172,7 +168,7 @@ describe('RouterOrchestratorTab — per-candidate limits', () => {
   it('loads existing candidate limits and omits the key entirely when cleared', async () => {
     const withLimits = {
       ...orchestrator,
-      candidates: [{ routerId: 'router-a', weight: 1, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }] }],
+      candidates: [{ routerId: 'router-a', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 10 }] }],
     };
     renderTab(withLimits);
     await waitFor(() => screen.getByRole('button', { name: /Usage limits for this candidate/i }));
@@ -188,7 +184,7 @@ describe('RouterOrchestratorTab — per-candidate limits', () => {
       expect(mockUpdateRouter).toHaveBeenCalledWith(
         'orch-1',
         expect.objectContaining({
-          candidates: [{ routerId: 'router-a', weight: 1 }],
+          candidates: [{ routerId: 'router-a' }],
         })
       )
     );
