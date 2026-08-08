@@ -2442,3 +2442,30 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     expect(Array.from(sel.options).map(o => o.value)).toEqual(['']);
   });
 });
+
+describe('RouterRoutingTab — policy allow-list by router kind', () => {
+  it('restricts the add-policy dropdown to orchestrator-compatible types for an orchestrator', async () => {
+    renderTab({ ...mockRouter, kind: 'orchestrator' });
+    const select = await screen.findByTestId('searchable-Add a policy...');
+    const optionLabels = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
+
+    expect(optionLabels).toContain('Health Policy');
+    expect(optionLabels).toContain('Rate Limit Policy');
+    expect(optionLabels).toContain('Fairness Policy');
+    expect(optionLabels).not.toContain('Cheapest Policy');
+    expect(optionLabels).not.toContain('Context Policy');
+    expect(optionLabels).not.toContain('Capability Policy');
+    expect(optionLabels).not.toContain('AI Routing Policy');
+    expect(optionLabels).not.toContain('Semantic Intent Policy');
+    expect(optionLabels).not.toContain('Model Preference Policy');
+  });
+
+  it('offers all policy types for a plain router', async () => {
+    renderTab(mockRouter);
+    const select = await screen.findByTestId('searchable-Add a policy...');
+    const optionLabels = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
+
+    expect(optionLabels).toContain('Cheapest Policy');
+    expect(optionLabels).toContain('Health Policy');
+  });
+});
