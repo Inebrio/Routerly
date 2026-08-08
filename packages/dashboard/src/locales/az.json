@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Avto",
+      "dark": "Qaranlıq",
+      "light": "Işıqlı"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Yan paneli genişləndir",
+      "collapse": "Yan paneli yığ"
+    },
+    "tagline": "Bir keçid. İstənilən AI modeli. Tam nəzarət.",
+    "nav": {
+      "overview": "İcmal",
+      "providers": "Provayderlər",
+      "models": "Modellər",
+      "profiles": "Profillər",
+      "routers": "Routerlər",
+      "experiments": "Eksperimentlər",
+      "usage": "İstifadə",
+      "playground": "Sınaq meydançası",
+      "settings": "Parametrlər",
+      "connectApp": "Tətbiqi qoşun",
+      "help": "Kömək",
+      "signOut": "Çıxış"
+    },
+    "banner": {
+      "permissionWarning": "Bəzi konfiqurasiya fayllarında icazəli giriş var ({{files}}). Başlanğıc və sorğular hələ də işləyir, amma münasib vaxtda host fayl sistemindən bunu düzəldin.",
+      "dismiss": "Bağla",
+      "updateAvailable": "Routerly v{{latest}} mövcuddur. Siz v{{current}} versiyasındasınız.",
+      "updateLink": "Parametrlərdə yenilə",
+      "mfaRequired": "Bu instansiya üçün ikifaktorlu autentifikasiya tələb olunur.",
+      "mfaLink": "Profilinizdə 2FA quraşdırın",
+      "mfaSuffix": "hesabınızı qorumaq üçün.",
+      "telemetryTitle": "Routerly heç vaxt məlumatları avtomatik göndərmir.",
+      "telemetryBody": "Anonim quraşdırma metrikaları göndərməklə köməklik etmək istərdinizmi? Yalnız hadisə növü, versiya, platforma və təsadüfi ID — şəxsi məlumat yox, IP yox.",
+      "telemetryLink": "Nə göndərilir?",
+      "telemetryYes": "Bəli, kömək edim",
+      "telemetryNo": "Xeyr, sağ olun"
+    },
+    "language": {
+      "label": "Dil"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} saniyə əvvəl",
+      "secondsAgo_other": "{{count}} saniyə əvvəl",
+      "minutesAgo": "{{count}} dəqiqə əvvəl",
+      "minutesAgo_other": "{{count}} dəqiqə əvvəl",
+      "hoursAgo": "{{count}} saat əvvəl",
+      "hoursAgo_other": "{{count}} saat əvvəl",
+      "daysAgo": "{{count}} gün əvvəl",
+      "daysAgo_other": "{{count}} gün əvvəl"
+    },
+    "confirm": "Təsdiq et",
+    "cancel": "Ləğv et",
+    "remove": "Sil",
+    "select": "Seçin...",
+    "search": "Axtar...",
+    "noResults": "Nəticə yoxdur",
+    "noRemainingOptions": "Qalan seçim yoxdur",
+    "apply": "Tətbiq et",
+    "saved": "Saxlanıldı",
+    "showLess": "Daha az göstər",
+    "roles": "Rollar",
+    "permissions": "İcazələr",
+    "notifications": {
+      "title": "Bildirişlər",
+      "markAllRead": "Hamısını oxunmuş kimi qeyd et",
+      "empty": "Bildiriş yoxdur",
+      "viewAll": "Bütün bildirişlərə bax"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Dövr seçin",
+      "recent": "Son",
+      "ranges": "Aralıqlar",
+      "from": "Başlanğıc",
+      "to": "Son"
+    },
+    "permissionGuard": {
+      "fixFailed": "İcazələri düzəltmək alınmadı",
+      "title": "Təhlükəsiz olmayan fayl icazələri",
+      "defaultMessage": "Bəzi faylların icazələri təhlükəsiz deyil.",
+      "fixing": "Düzəldilir…",
+      "fixNow": "İndi düzəlt"
+    },
+    "limitRows": {
+      "noLimits": "Heç bir limit təyin olunmayıb.",
+      "metricLabel": "Metrika",
+      "typeLabel": "Növ",
+      "periodLabel": "Dövr",
+      "everyLabel": "Hər",
+      "maxCost": "Maks. dəyər",
+      "maxCount": "Maks. say",
+      "maxTokens": "Maks. token",
+      "allCombosSet": "Bütün metrika/dövr kombinasiyaları artıq təyin olunub",
+      "addLimit": "Limit əlavə et",
+      "metric": {
+        "cost": "Dəyər",
+        "calls": "Çağırışlar",
+        "input_tokens": "Giriş tokenləri",
+        "output_tokens": "Çıxış tokenləri",
+        "total_tokens": "Ümumi tokenlər"
+      },
+      "period": {
+        "hourly": "Saatlıq",
+        "daily": "Gündəlik",
+        "weekly": "Həftəlik",
+        "monthly": "Aylıq",
+        "yearly": "İllik"
+      },
+      "rollingUnit": {
+        "second": "saniyə",
+        "minute": "dəqiqə",
+        "hour": "saat",
+        "day": "gün",
+        "week": "həftə",
+        "month": "ay"
+      },
+      "windowType": {
+        "period": "Dövr",
+        "rolling": "Sürüşkən"
+      },
+      "fmt": {
+        "requests": "{{value}} sorğu",
+        "inputTokens": "{{value}} giriş tokeni",
+        "outputTokens": "{{value}} çıxış tokeni",
+        "totalTokens": "{{value}} ümumi token",
+        "everyRolling": "{{metric}} hər {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} / {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Yönləndirmə nə qədər qənaət etdi",
+      "input": "Giriş",
+      "output": "Çıxış",
+      "actual": "Faktiki",
+      "clientCalls": "{{count}} müştəri çağırışı",
+      "clientCalls_other": "{{count}} müştəri çağırışı",
+      "comparedAgainst": ", hər birini ayrı-ayrılıqda göndərməklə müqayisədə",
+      "comparedAgainst_other": ", hamısını hər birinə göndərməklə müqayisədə",
+      "paidModelsInPlay": "{{count}} ödənişli model iştirakda",
+      "paidModelsInPlay_other": "{{count}} ödənişli model iştirakda",
+      "metricCost": "Dəyər",
+      "metricTokens": "Tokenlər",
+      "totalCost": "Ümumi Dəyər",
+      "routed": "Yönləndirildi: {{value}}",
+      "saved": "Qənaət: {{value}}",
+      "usdThisPeriod": "USD bu dövr üçün",
+      "savedVsAlways": "{{value}} qənaət ({{percent}}%) həmişə {{model}} istifadə etməklə müqayisədə",
+      "tokens": "Tokenlər",
+      "in": "Giriş: {{value}}",
+      "out": "Çıxış: {{value}}",
+      "tokenSubWithCache": "{{in}} giriş · {{out}} çıxış · {{cached}} keşdən",
+      "tokenSub": "{{in}} giriş · {{out}} çıxış",
+      "cutByOptimizers": "{{value}} optimizatorlar tərəfindən azaldıldı",
+      "fewerThanAlways": "həmişə {{model}} istifadə etməkdən {{value}} az, təxmini"
+    },
+    "optimizerSteps": {
+      "downloaded": "Yükləndi",
+      "thisStepRunsOn": "Bu addım işləyir",
+      "defaultCheckpoint": "Standart nəzarət nöqtəsi"
+    },
+    "routingPolicies": {
+      "title": "Yönləndirmə Siyasətləri",
+      "subtitle": "Siyasətlər sorğuların necə yönləndirildiyini müəyyən edir. Onlar yuxarıdan aşağıya ardıcıllıqla icra olunur.",
+      "removePolicy": "Siyasəti sil",
+      "removeIntent": "Niyyəti sil",
+      "removeExample": "Nümunəni sil",
+      "routingModels": "Yönləndirmə Modelləri",
+      "embeddingModels": "Embedding Modelləri",
+      "maxCompletionTokens": "Maks. tamamlama tokeni",
+      "maxPromptChars": "Maks. sorğu simvolu",
+      "similarityThreshold": "Oxşarlıq həddi",
+      "previousMessages": "Əvvəlki mesajlar",
+      "intents": "Niyyətlər",
+      "confidenceThreshold": "Əminlik həddi",
+      "ambiguityMargin": "Qeyri-müəyyənlik marjası",
+      "maxCallsPerWindow": "Pəncərə üzrə maks. çağırış",
+      "addFallbackModel": "Ehtiyat Model Əlavə Et",
+      "autoRoutingLabel": "Avtomatik Yönləndirmə",
+      "autoRoutingHint": "Aktivdirsə, trafik xüsusi sorğular olmadan paylanır. Deaktivdirsə, AI-ya hər hədəf modeli nə vaxt seçəcəyini göstərən xüsusi sorğular yaza bilərsiniz.",
+      "additionalPromptInfoLabel": "Əlavə Sorğu Məlumatı",
+      "additionalPromptInfoPlaceholder": "Yönləndirmə sorğusuna daxil ediləcək əlavə təlimatlar...",
+      "addExamplePlaceholder": "Nümunə əlavə edin və Enter basın…",
+      "addIntentPlaceholder": "Niyyət əlavə edin və Enter basın…",
+      "addPolicyPlaceholder": "Siyasət əlavə edin...",
+      "labels": {
+        "llm": "AI Yönləndirmə Siyasəti",
+        "rate-limit": "Sürət Limiti Siyasəti",
+        "budget-remaining": "Qalan Büdcə Siyasəti",
+        "semantic-intent": "Semantik Niyyət Siyasəti",
+        "health": "Sağlamlıq Siyasəti",
+        "context": "Kontekst Siyasəti",
+        "capability": "Qabiliyyət Siyasəti",
+        "performance": "Performans Siyasəti",
+        "fairness": "Ədalətlilik Siyasəti",
+        "cheapest": "Ən Ucuz Siyasəti",
+        "model-preference": "Model Üstünlüyü Siyasəti"
+      },
+      "descriptions": {
+        "context": "Modelləri mövcud kontekst pəncərəsinə əsasən qiymətləndirir. Kontekst pəncərəsi qiymətləndirilən sorğu uzunluğundan kiçik olan modellərə 0 bal verir, bu da kəsilmə xətalarının qarşısını alır.",
+        "cheapest": "Modelləri token dəyərinə tərs mütənasib qiymətləndirir. Ən ucuz model 1.0, ən dəyərli model 0.0 alır, bu da sorğular üzrə API xərcini azaltmağa kömək edir.",
+        "health": "Modelləri son xəta nisbətinə əsasən eksponensial azalma ilə qiymətləndirir (son xətalar daha çox çəki alır). Çəkili xəta nisbəti kritik həddi keçəndə balı 0-a təyin edən dövrə kəsici tətbiq edir.",
+        "performance": "Modelləri son orta gecikməyə əsasən eksponensial azalma ilə qiymətləndirir. Ən sürətli model 1.0, ən yavaş model 0.0 alır. Son məlumatı olmayan modellər standart olaraq 1.0 alır.",
+        "llm": "Sorğunun semantik məzmununa əsasən namizədləri qiymətləndirmək üçün AI modelindən istifadə edir. Model üzrə yönləndirmə təlimat sorğularını dəstəkləyir və limitlər təyin ediləndə büdcə marjasını nəzərə alır.",
+        "capability": "Sərt filtr: sorğu tərəfindən tələb olunan xüsusiyyəti (görmə, funksiya çağırışı, JSON rejimi) açıq şəkildə olmayan modellərə 0 bal verir. Açıq qabiliyyət bəyanatı olmayan modellər cəzalandırılmır.",
+        "rate-limit": "Provayder sürət limitlərinə (HTTP 429) düşmə riskini azaltmaq üçün son zamanlarda yüksək çağırış tezliyi olan modelləri cəzalandırır. Balı 0-a məcbur edən konfiqurasiya edilə bilən sərt hədi dəstəkləyir.",
+        "fairness": "Son zamanlarda daha çox uğurlu çağırış alan modelləri cəzalandıraraq trafiki bərabər paylayır. Yükün bir modeldə cəmlənməsinin qarşısını almaq üçün yumşaq növbə ilə fəaliyyət göstərir.",
+        "budget-remaining": "Modelləri bütün konfiqurasiya edilmiş limitlər üzrə qalan büdcə marjasına əsasən qiymətləndirir. Hədlərinə çatmadan daha çox yeri olan modellərə üstünlük verir, istehlakı proaktiv şəkildə yayır.",
+        "semantic-intent": "Embeddinglərdən istifadə edərək sorğunu semantik niyyətə görə təsnif edir, sonra namizəd hovuzunu həmin niyyətə uyğunlaşdırılmış modellərlə məhdudlaşdırır. Əminlikli uyğunluqlar hovuzu sərt filtrləyir; qeyri-müəyyən uyğunluqlar ən yaxşı iki hovuzu birləşdirir; naməlum sorğular bütün namizədləri keçirir.",
+        "model-preference": "Müştəri xüsusi model tələb etdikdə (routerly/ada deyil), həmin modelə konfiqurasiya edilə bilən bonus bal verir. Heç bir üstünlük ifadə edilmədikdə, siyasət çəkinir. Siyahıdakı yer üstünlüyün digər siyasətlərə nisbətən nə qədər çəkiyə malik olduğunu idarə edir."
+      },
+      "selectModel": "Model seçin"
+    },
+    "securityRules": {
+      "applyTo": "Tətbiq et",
+      "streamingBufferSize": "Axın buferinin ölçüsü (simvollar)",
+      "entityTypes": "Element növləri",
+      "target": "Hədəf",
+      "embeddingModel": "Embedding modeli",
+      "judgeModel": "Qiymətləndirici model",
+      "contentGuardrails": "Məzmun Mühafizələri",
+      "piiPolicies": "PII Siyasətləri",
+      "addSecurityPolicyPlaceholder": "Təhlükəsizlik siyasəti əlavə edin...",
+      "removePolicyTooltip": "Siyasəti sil",
+      "deleteRuleAriaLabel": "Qaydanı sil",
+      "embeddingModelPlaceholder": "Embedding modeli seçin...",
+      "fallbackModelsLabel": "Ehtiyat modellər (isteğe bağlı, ardıcıllıqla sınanır)",
+      "fallbackModelsPlaceholder": "Ehtiyat model yoxdur...",
+      "exampleTextsLabel": "Bloklanacaq nümunə mətnlər (hər sətirdə bir)",
+      "exampleTextsPlaceholder": "Necə hack edim...\n...",
+      "similarityThresholdLabel": "Oxşarlıq həddi:",
+      "judgeModelPlaceholder": "Qiymətləndirici model seçin...",
+      "allowedTopicsLabel": "İcazə verilən mövzular (təbii dildə)",
+      "allowedTopicsPlaceholder": "Proqram təminatı üçün müştəri dəstəyi. Texniki nasazlıqların həlli. Hesablaşma sualları.",
+      "onTopicThresholdLabel": "Mövzuya uyğunluq balı bundan aşağı olarsa blokla:",
+      "harmThresholdLabel": "Zərər balı bundan yuxarı olarsa blokla:",
+      "customInstructionsLabel": "Xüsusi təlimatlar",
+      "customInstructionsPlaceholder": "Siz məzmun təhlükəsizliyi klassifikatorusunuz. Aşağıdaki mətni zərərli məzmun üçün qiymətləndirin.\nKateqoriyalar: nifrət nitqi, zorakılıq, cinsi məzmun, özünə zərər.\nYALNIZ JSON obyekti ilə cavab verin: {\"score\": <0 ilə 1 arasında rəqəm>}",
+      "customInstructionsRequired": "Xüsusi təlimatlar tələb olunur.",
+      "enabledLabel": "Aktiv",
+      "contentGuardrailsHint": "Sorğuları və cavabları konfiqurasiya edilmiş qaydalara qarşı yoxlayır. Ən azı bir qayda konfiqurasiya edildikdə aktivdir.",
+      "securityPoliciesHeading": "Təhlükəsizlik Siyasətləri",
+      "noSecurityPolicies": "Təhlükəsizlik siyasəti konfiqurasiya edilməyib.",
+      "piiPoliciesHint": "Şəxsi məlumatları aşkarlayır və gizlədir. Hər siyasət sorğu girişini, model cavabını və ya hər ikisini hədəf alır və öz element dəstini idarə edir.",
+      "noPiiPolicies": "PII siyasəti konfiqurasiya edilməyib.",
+      "addPolicyButton": "+ Siyasət Əlavə Et",
+      "injectionWarningTitle": "Sorğu yükü inyeksiya ilə dəyişdirilib",
+      "injectionWarningBody": "Bir və ya bir neçə qayda öz təlimatını gedən sorğunun sistem sorğusuna yeridir, buna görə provayderə göndərilən yük dəyişdirilir. Əlavə model çağırışı edilmir və heç nə bloklanmır; xidmət göstərən model təlimatı özü tətbiq edir.",
+      "streamingDisabledWarningTitle": "Bu router üçün axın deaktiv edilib",
+      "streamingDisabledWarningBody": "Bir və ya bir neçə qayda cavabları bloklamaq üçün konfiqurasiya edilib (hədəf: cavab və ya hər ikisi). Bloklama qərarı verilməzdən əvvəl bütün cavab yoxlanmalı olduğundan, Routerly cavabı müştəriyə qaytarmadan əvvəl tam saxlayır. Cavab bloklayan qayda aktiv olduqda axın mövcud deyil; müştərilər cavabı hissə-hissə deyil, bütöv şəkildə alacaq."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure Resurs Adı",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI resursunun adı (Azure portalından).",
+      "deploymentId": "Deployment ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI Studio-da yaratdığınız deployment adı.",
+      "azureApiVersionLabel": "API Versiyası",
+      "azureApiVersionDefaultHint": "(standart: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS Region",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Mövcud dəyəri saxlamaq üçün boş qoyun",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Sessiya Tokeni",
+      "awsSessionTokenOptionalHint": "(isteğe bağlı, müvəqqəti kimlik məlumatları üçün)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Router ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Yerləşmə",
+      "gcpLocationDefaultHint": "(standart: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Xidmət Hesabı Açarı",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Endpoint URL",
+      "optional": "(isteğe bağlı)",
+      "webProvider": {
+        "unofficialWarningTitle": "Qeyri-rəsmi provayder — öz riskinizlə istifadə edin.",
+        "unofficialWarningBody": "Bu inteqrasiya sənədləşdirilməmiş daxili API-dən istifadə edir, bu da xəbərdarlıq etmədən dəyişə və ya pozula bilər. Provayderin İstifadə Şərtlərini pozaraq hesabın dayandırılmasına səbəb ola bilər.",
+        "accessTokenLabel": "Access Token",
+        "sessionTokenLabel": "Sessiya Tokeni",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "sessionKey cookie dəyərini yerləşdirin (sk-ant-sid01-…)",
+        "openaiInstructions": "ChatGPT-yə daxil olduqda, yeni tabda <code>https://chatgpt.com/api/auth/session</code> açın. <code>accessToken</code> sahəsinin dəyərini (eyJ ilə başlayır) kopyalayın. Token təxminən hər 24 saatdan bir bitir. Etibarlı giriş üçün aşağıdaki <strong>cf_clearance</strong> sahəsini də doldurun.",
+        "anthropicInstructions": "<strong>Sessiya açarınızı necə əldə edin:</strong> Claude-a daxil olduqda, DevTools (F12) → Application → Cookies → <code>claude.ai</code> açın → <code>sessionKey</code> cookie-nin dəyərini kopyalayın (sk-ant-sid01- ilə başlayır). Açar çıxış edənə qədər etibarlıdır."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Abunə OAuth Tokeni",
+        "authFilePathLabel": "Autentifikasiya faylının yolu",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (standart)",
+        "anthropicTitle": "Claude Pro/Max abunənizdən istifadə edin.",
+        "anthropicRunCommandStep": "Bu əmri işə salın və çap etdiyi tokeni kopyalayın:",
+        "anthropicPasteTokenStep": "Tokeni aşağıdaki <em>Abunə OAuth Tokeni</em> sahəsinə yerləşdirin.",
+        "termsNote": "Bitəndə yenidən yaradın. Keçid vasitəsilə abunədən istifadə provayderin Şərtlərinə zidd ola bilər.",
+        "openaiTitle": "Codex tətbiqi vasitəsilə ChatGPT Plus/Pro abunənizdən istifadə edin.",
+        "openaiLoginStep": "ChatGPT Plus/Pro hesabınızla Codex desktop tətbiqinə daxil olun.",
+        "openaiAutoRefreshStep": "Routerly access tokeninizi <code>~/.codex/auth.json</code> faylından oxuyur və avtomatik yeniləyir. Əl ilə kopyalama/yerləşdirmə lazım deyil.",
+        "openaiAuthFilePathStep": "Standart yolu istifadə etmək üçün <em>Autentifikasiya faylının yolu</em> sahəsini boş qoyun, ya da Codex tətbiqiniz autentifikasiyanı başqa yerdə saxlayırsa xüsusi yol daxil edin.",
+        "openaiTermsNote": "Keçid vasitəsilə abunədən istifadə provayderin Şərtlərinə zidd ola bilər."
+      },
+      "copyCode": {
+        "copiedTooltip": "Kopyalandı!",
+        "copyTooltip": "Mübadilə buferinə kopyala",
+        "copiedLabel": "Kopyalandı",
+        "copyLabel": "Kopyala"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopyala",
+      "copiedLabel": "Kopyalandı!",
+      "copyErrorHint": "Kopyalama alınmadı, əl ilə seçib kopyalayın."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP müştərisi",
+      "hints": {
+        "claudeCode": "Bunu bir dəfə, istənilən yerdə işə salın. Claude Code serveri <code>~/.claude.json</code>-da saxlayır.",
+        "claudeDesktop": "Bunu <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> faylına yerləşdirin (Windows-da <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), sonra tətbiqi yenidən başladın. O CLI-ni işə salır, buna görə <code>routerly</code> PATH-də olmalıdır.",
+        "codex": "Bunu <code>~/.codex/config.toml</code> faylına yerləşdirin. Codex tokeni mühitdən oxuyur, buna görə onu Codex-i başlatdığınız shell-də ixrac edin.",
+        "opencode": "Bunu <code>~/.config/opencode/opencode.json</code> faylına yerləşdirin.",
+        "openclaw": "Bunu bir dəfə işə salın. OpenClaw standart olaraq Routerly-nin xidmət göstərmədiyi sse nəqliyyatını istifadə edir, buna görə nəqliyyat açıq şəkildə təyin olunub.",
+        "cursor": "Bunu <code>~/.cursor/mcp.json</code> faylına, yaxud bir layihəyə aid etmək üçün <code>.cursor/mcp.json</code> faylına yerləşdirin.",
+        "cline": "Bunu <code>~/.cline/mcp.json</code> faylına yerləşdirin, ya da Cline panelindəki Configure MCP Servers bölməsinə yapıştırın.",
+        "zed": "Bunu Zed <code>settings.json</code> faylınıza, digər kontekst serverlərinin yanına yerləşdirin."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Saxlanmamış Dəyişikliklər",
+      "message": "Saxlanmamış dəyişiklikləriniz var. İndi çıxsanız, dəyişiklikləriniz itəcək.",
+      "stay": "Qal",
+      "leaveAnyway": "Hər halda çıx"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Mühafizələr",
+        "pii": "PII",
+        "optimizers": "Optimizatorlar",
+        "routerOverhead": "Router yükü"
+      },
+      "policyType": {
+        "llm": "AI Yönləndirmə",
+        "rateLimit": "Sürət Limiti",
+        "budgetRemaining": "Qalan Büdcə",
+        "semanticIntent": "Semantik Niyyət",
+        "modelPreference": "Model Üstünlüyü"
+      },
+      "rawDetails": "xam detallar",
+      "technicalDetails": "texniki detallar",
+      "systemPrompt": "sistem sorğusu",
+      "responseText": "cavab mətni",
+      "responseJson": "cavab JSON",
+      "cacheEmbeddingCall": "KEŞ EMBEDDING ÇAĞIRIŞI",
+      "fallbackAttempt": "ehtiyat cəhd #{{attempt}}",
+      "embeddingModel": "Embedding Modeli",
+      "upstreamModel": "Yuxarı Axın Modeli",
+      "provider": "Provayder",
+      "source": "Mənbə",
+      "endpoint": "Endpoint",
+      "cacheHit": "KEŞ UĞURLU",
+      "ttlExtended": "TTL uzadıldı",
+      "model": "Model",
+      "similarity": "Oxşarlıq",
+      "embedding": "Embedding",
+      "cacheMiss": "KEŞ UĞURSUZ",
+      "details": "detallar",
+      "excludedByLimits": "LİMİTLƏRLƏ İSTİSNA EDİLDİ",
+      "finalRanking": "YEKUN SIRALAMA",
+      "noRankingData": "Sıralama məlumatı yoxdur (qeyd zədələnib və ya köhnə versiyadan ola bilər)",
+      "policyScores": "SİYASƏT BALLARI",
+      "weight": "çəki {{value}}",
+      "allScores": "bütün ballar",
+      "noPolicyData": "Siyasət məlumatı yoxdur (qeyd zədələnib və ya köhnə versiyadan ola bilər)",
+      "requestGuardrailBlocked": "SORĞU MÜHAFİZƏSİ BLOKLADI",
+      "requestGuardrailTriggered": "SORĞU MÜHAFİZƏSİ İŞƏ DÜŞDÜ",
+      "responseGuardrailBlocked": "CAVAB MÜHAFİZƏSİ BLOKLADI",
+      "responseGuardrailTriggered": "CAVAB MÜHAFİZƏSİ İŞƏ DÜŞDÜ",
+      "rule": "Qayda",
+      "action": "Əməliyyat",
+      "guardrailsEvaluated": "MÜHAFİZƏLƏR QİYMƏTLƏNDİRİLDİ ({{target}})",
+      "ruleCount": "{{count}} qayda",
+      "ruleCount_other": "{{count}} qayda",
+      "promptInjection": "Sorğu inyeksiyası",
+      "injects": "yeridir",
+      "judgeResponse": "Qiymətləndirici cavabı",
+      "piiScrubbed": "PII GİZLƏDİLDİ",
+      "piiScanned": "PII SKAN EDİLDİ ({{target}})",
+      "policies": "siyasətlər",
+      "entityTypes": "element növləri",
+      "customPatterns": "xüsusi şablonlar",
+      "scanned": "skan edildi",
+      "redacted": "gizlədildi",
+      "took": "çəkdi",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "skan edilmiş element növləri",
+      "guardrailInjection": "MÜHAFİZƏ İNYEKSİYASI",
+      "rules": "qaydalar",
+      "chars": "simvol",
+      "injectedText": "yeridilmiş mətn",
+      "optimizer": "OPTİMİZATOR {{id}}",
+      "tokens": "tokenlər",
+      "saved": "qənaət edildi",
+      "tok": "{{value}} token",
+      "reason": "səbəb",
+      "budgetBlocked": "BÜDCƏ BLOKLADI",
+      "budgetOk": "BÜDCƏ OK",
+      "egressSent": "ÇIXIŞ GÖNDƏRİLDİ",
+      "status": "vəziyyət",
+      "encoding": "kodlaşdırma",
+      "frames": "kadrlar",
+      "bytes": "baytlar"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Mənim Profilim",
+      "subtitle": "Hesab parametrlərinizi idarə edin"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Bildirişlər",
+      "mcp": "MCP",
+      "preferences": "Seçimlər"
+    },
+    "notifications": {
+      "close": "Bağla",
+      "refresh": "Yenilə",
+      "clear": "Təmizlə",
+      "empty": "Bildiriş tapılmadı.",
+      "markAllRead": "Hamısını oxunmuş kimi qeyd et",
+      "allCaughtUp": "Hamısı oxunub",
+      "unreadCount": "{{count}} oxunmamış",
+      "selectedCount": "{{count}} seçilmiş",
+      "severity": {
+        "all": "Hamısı",
+        "info": "Məlumat",
+        "warning": "Xəbərdarlıq",
+        "critical": "Kritik"
+      },
+      "status": {
+        "read": "Oxunub",
+        "unread": "Oxunmayıb"
+      },
+      "filters": {
+        "severity": "Ciddilik",
+        "category": "Kateqoriya",
+        "event": "Hadisə",
+        "date": "Tarix",
+        "period": "Dövr",
+        "status": "Vəziyyət",
+        "all": "Hamısı",
+        "allCategories": "Bütün kateqoriyalar",
+        "allEvents": "Bütün hadisələr",
+        "unreadOnly": "Yalnız oxunmamışlar"
+      },
+      "actions": {
+        "markRead": "Oxunmuş kimi qeyd et",
+        "markUnread": "Oxunmamış kimi qeyd et",
+        "archive": "Arxivləşdir"
+      },
+      "table": {
+        "severity": "Ciddilik",
+        "event": "Hadisə",
+        "date": "Tarix",
+        "status": "Vəziyyət",
+        "selectAll": "Hamısını seç",
+        "selectRow": "{{event}} seç",
+        "eventCount": "{{count}} hadisə"
+      },
+      "pagination": {
+        "previous": "← Əvvəlki",
+        "next": "Növbəti →",
+        "page": "Səhifə {{page}} / {{totalPages}}",
+        "total": "(cəmi {{count}})"
+      },
+      "detail": {
+        "ariaLabel": "Bildiriş detalı",
+        "details": "Detallar",
+        "noDetails": "Əlavə detal yoxdur.",
+        "eventsInIncident": "Bu insidentdəki hadisələr"
+      }
+    },
+    "security": {
+      "roleLabel": "Rol:",
+      "password": {
+        "heading": "Parolu Dəyişdir",
+        "currentLabel": "Cari Parol",
+        "newLabel": "Yeni Parol",
+        "newPlaceholder": "Minimum 8 simvol",
+        "confirmLabel": "Yeni Parolu Təsdiqlə",
+        "success": "Parol uğurla dəyişdirildi.",
+        "saving": "Saxlanılır...",
+        "submit": "Parolu Dəyişdir",
+        "errors": {
+          "mismatch": "Parollar uyğun gəlmir.",
+          "tooShort": "Yeni parol ən azı 8 simvol olmalıdır.",
+          "updateFailed": "Yeniləmə alınmadı"
+        }
+      },
+      "tfa": {
+        "heading": "İkifaktorlu Autentifikasiya",
+        "notEnabled": "2FA aktiv deyil. Hesabınızı zamana əsaslanan birdəfəlik parolla qoruyun.",
+        "enableButton": "İkifaktorlu Autentifikasiyanı Aktivləşdir",
+        "scanInstructions": "Autentifikator tətbiqinizlə (Google Authenticator, Authy və s.) bu QR kodunu skan edin, sonra təsdiq üçün 6 rəqəmli kodu daxil edin.",
+        "qrAlt": "2FA quraşdırma QR kodu",
+        "addAccountInstructions": "Autentifikator tətbiqinizi açın (Google Authenticator, Authy, 1Password və s.) və yeni hesab əlavə edin:",
+        "setup": {
+          "step1": "<strong>Hesab əlavə et</strong> və ya <strong>+</strong> düyməsinə basın",
+          "step2": "<strong>Quraşdırma açarını daxil et</strong> seçin (ya da mobil cihazda QR kodunu skan edin)",
+          "step3": "Aşağıda göstərilən gizli açarı daxil edin"
+        },
+        "mobileLink": "Autentifikatoru açmaq üçün mobil cihazda buraya toxunun",
+        "manualEntryLabel": "Əl ilə giriş üçün gizli açar:",
+        "saveBackupCodes": "Bu ehtiyat kodları saxlayın. Autentifikatorunuza girişi itirsəniz, hər biri bir dəfə istifadə edilə bilər.",
+        "copyBackupCodes": "Ehtiyat kodları kopyala",
+        "confirmCodeLabel": "Aktivləşdirmək üçün tətbiqinizdən kodu daxil edin",
+        "activate": "2FA-nı Aktivləşdir",
+        "cancel": "Ləğv et",
+        "enabledBadge": "2FA aktivdir",
+        "newBackupCodesLabel": "Yeni ehtiyat kodları (indi saxlayın):",
+        "copy": "Kopyala",
+        "regenLabel": "Ehtiyat kodları yenidən yaratmaq üçün autentifikator kodunu daxil edin",
+        "regenerate": "Yenidən yarat",
+        "regenerateBackupCodes": "Ehtiyat kodları yenidən yarat",
+        "disableLabel": "2FA-nı deaktiv et (autentifikator kodunu daxil edin)",
+        "disable": "2FA-nı Deaktiv Et",
+        "errors": {
+          "setupFailed": "Quraşdırma alınmadı",
+          "confirmFailed": "Təsdiq alınmadı",
+          "disableFailed": "Deaktiv etmə alınmadı",
+          "regenFailed": "Yenidən yaratma alınmadı"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP səthini yükləmək alınmadı",
+        "revokeFailed": "Tokeni ləğv etmək alınmadı"
+      },
+      "revokeConfirm": "\"{{name}}\" MCP tokenini ləğv edilsin? Onu istifadə edən müştərilər dərhal işləməyi dayandıracaq.",
+      "tokens": {
+        "heading": "MCP Tokenləri",
+        "newToken": "Yeni Token",
+        "description": "Hər token sizin adınızdan hərəkət edir: rolunuzun icazə verdiyi alətləri dəqiq göstərir. Tam dəyər yalnız bir dəfə, onu yaradan səhifədə göstərilir.",
+        "empty": "Hələ MCP tokeni yoxdur. MCP müştərisini qoşmaq üçün bir tokendir yaradın.",
+        "created": "Yaradıldı",
+        "lastUsed": "Sonuncu istifadə",
+        "expires": "Bitmə tarixi",
+        "never": "Heç vaxt",
+        "revokeTitle": "Tokeni ləğv et"
+      },
+      "tools": {
+        "heading": "Tokenlərinizin Əlçatan Etdiyi Alətlər",
+        "empty": "Rolunuz heç bir MCP aləti verilmir. Lazım olan icazələr üçün administratordan xahiş edin.",
+        "table": {
+          "name": "Ad",
+          "scope": "Əhatə dairəsi",
+          "description": "Təsvir",
+          "sourceModule": "Mənbə modulu",
+          "permission": "İcazə"
+        }
+      },
+      "connect": {
+        "heading": "MCP Müştərisini Qoşun",
+        "descriptionPre": "Qoşduğunuz müştərini seçin, sonra",
+        "descriptionPost": "əvəzinə tokenlərinizdən birini istifadə edin. Token yaradıldıqda eyni parça artıq dəyər ilə göstərilir.",
+        "otherClient": "Digər hər hansı müştəri",
+        "httpInstructionsPre": "HTTP üzərindən bu endpoint-ə müraciət edin və",
+        "httpInstructionsPost": "ilə doğrulama edin. Bu, Streamable HTTP üzərindən JSON-RPC 2.0-dır.",
+        "stdioInstructionsPre": "stdio üzərindən CLI onu körpüləyir və tokeninizi ötürür. Xidməti birbaşa özünüz işə salırsınız? Onda",
+        "stdioInstructionsAnd": "və",
+        "stdioInstructionsPost": "özünüz təyin edin."
+      },
+      "newToken": {
+        "backToMcp": "MCP-yə qayıt",
+        "title": "Yeni MCP Tokeni",
+        "subtitle": "Token sizin adınızdan hərəkət edir: rolunuzun icazə verdiyi alətləri dəqiq göstərir.",
+        "nameLabel": "Ad",
+        "namePlaceholder": "laptop",
+        "nameHint": "Bu tokenin harada istifadə olunduğu, məsələn \"laptop\" və ya \"claude-desktop\".",
+        "expiryLabel": "Bitmə tarixi",
+        "expiryHint": "İsteğe bağlı. Boş qoyun, token siz onu ləğv edənə qədər heç vaxt bitməyəcək.",
+        "createButton": "Token yarat",
+        "creatingButton": "Yaradılır…",
+        "cancelButton": "Ləğv et",
+        "tokenSection": {
+          "title": "Sizin tokeniniz",
+          "hint": "İndi kopyalayın. Bir daha göstərilməyəcək, itirilmiş token yalnız yenisi ilə əvəz edilə bilər.",
+          "copyButton": "Kopyala",
+          "copiedButton": "Kopyalandı!",
+          "copyTitle": "Tokeni kopyala",
+          "copiedTitle": "Kopyalandı!"
+        },
+        "connectSection": {
+          "title": "Müştəri qoşun",
+          "hint": "Qoşduğunuz müştərini seçin. Parça artıq bu tokeni daşıyır."
+        },
+        "bridgeSection": {
+          "title": "Ya da yerli körpüdən istifadə edin",
+          "hint": "Yalnız stdio dəstəkləyən müştəri üçün CLI onu körpüləyir və tokeninizi ötürür."
+        },
+        "doneButton": "Hazır",
+        "errors": {
+          "createFailed": "Tokeni yaratmaq alınmadı",
+          "copyFailed": "Kopyalama alınmadı, tokeni əl ilə seçib kopyalayın."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Dil",
+      "description": "İdarə panelinin göstərildiyi dili seçin.",
+      "languageLabel": "Dil",
+      "saved": "Dil seçimi saxlanıldı."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Parametrləri yükləmək alınmadı",
+        "loadFailedPeriod": "Parametrləri yükləmək alınmadı.",
+        "saveFailed": "Saxlamaq alınmadı",
+        "saveSettingsFailed": "Parametrləri saxlamaq alınmadı"
+      },
+      "savedSuccess": "Parametrlər uğurla saxlanıldı.",
+      "saving": "Saxlanılır…",
+      "saveSettings": "Parametrləri Saxla",
+      "serverInfo": {
+        "heading": "Server Məlumatı",
+        "readOnly": "Yalnız oxumaq üçün. Host və port mühitdən və ya parametr faylından gəlir, buradan deyil.",
+        "reachableAt": "Əlçatan ünvan",
+        "reachableAtAny": "Bu ünvanlardan hər hansı birindən əlçatandır",
+        "thisMachine": "Bu maşın",
+        "network": "Şəbəkə",
+        "copyAddress": "{{address}} kopyala",
+        "copied": "Kopyalandı!",
+        "copy": "Kopyala",
+        "hostAndPort": "Host və port",
+        "version": "Versiya",
+        "uptime": "İşləmə müddəti"
+      },
+      "runtime": {
+        "heading": "İşləmə Vaxtı Parametrləri",
+        "logLevel": "Jurnal Səviyyəsi",
+        "logLevelHint": "Xidmət jurnallarının ətraflılığını idarə edir.",
+        "publicUrl": "Açıq URL",
+        "publicUrlHint": "Xidmətin xarici müştərilər üçün əlçatan olduğu əsas URL (məs. <code>http://192.168.1.10:3000</code>). Hər router-in <strong>Necə qoşulmalı</strong> bölməsində istifadə olunur. İdarə paneli xidmətdən fərqli maşında və ya portda işlədikdə faydalıdır.",
+        "usageRetention": "İstifadə Saxlama",
+        "noLimit": "Limit yoxdur",
+        "maxAgeDays": "Maks. yaş (gün)",
+        "maxSizeMb": "Maks. ölçü (MB)",
+        "retentionHint": "Bu qədər gündən köhnə, ya da bu ölçüdən çox olan istifadə/hesablaşma tarixçəsi aktiv jurnaldan silinir. Saxlama limiti olmaması üçün hər ikisini boş qoyun."
+      },
+      "internationalization": {
+        "heading": "Beynəlmiləlləşdirmə",
+        "defaultLanguage": "Standart Dil",
+        "defaultLanguageHint": "Öz dilini seçməyən istifadəçilər üçün panel dilində. İstifadəçinin şəxsi seçimini ləğv etmir."
+      },
+      "telemetry": {
+        "heading": "Anonim Metrikalar",
+        "neverAutomatic": "Routerly heç vaxt məlumatları avtomatik göndərmir.",
+        "noChoice": "Hələ seçim etməmisiniz.",
+        "enabledStatus": "Anonim quraşdırma metrikaları aktivdir.",
+        "disabledStatus": "Anonim quraşdırma metrikaları deaktivdir.",
+        "explanation": "Aktiv olduqda, Routerly yalnız bunları göndərir: hadisə növü (quraşdırma / yenilənmə / silinmə), versiya, platforma və təsadüfi ID. Şəxsi məlumat, istifadə məlumatı, IP saxlanmır.",
+        "whatIsSent": "Nə göndərilir?",
+        "installId": "Quraşdırma ID: {{id}}",
+        "saving": "Saxlanılır…",
+        "enable": "Aktivləşdir",
+        "disable": "Deaktivləşdir"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "İdarə paneli (daxili poçt qutusu)",
+          "description": "Hadisələri daxili bildiriş qutusuna yönləndirir"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Xüsusi poçt serveri"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "OAuth2 vasitəsilə Gmail"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook geri çağırışı"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Gələn Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Provayder – Xəta",
+        "providerDegraded": "Provayder – Zəifləmə",
+        "providerRecovered": "Provayder – Bərpa olundu",
+        "providerRateLimited": "Provayder – Sürət Limitli",
+        "routingNoCandidates": "Yönləndirmə – Namizəd Yoxdur",
+        "routingFallbackUsed": "Yönləndirmə – Ehtiyat İstifadə Edildi",
+        "authLoginFailed": "Autentifikasiya – Giriş Uğursuz",
+        "authTokenInvalid": "Autentifikasiya – Token Yanlış",
+        "configModelAdded": "Konfiqurasiya – Model Əlavə Edildi",
+        "configModelDeleted": "Konfiqurasiya – Model Silindi",
+        "configRouterCreated": "Konfiqurasiya – Router Yaradıldı",
+        "configRouterDeleted": "Konfiqurasiya – Router Silindi",
+        "budgetThresholdReached": "Büdcə – Hədə Çatıldı",
+        "budgetExceeded": "Büdcə – Keçildi",
+        "budgetReset": "Büdcə – Sıfırlandı",
+        "systemStartup": "Sistem – Başlanğıc",
+        "systemShutdown": "Sistem – Söndürmə",
+        "systemUpdateAvailable": "Sistem – Yenilənmə Mövcuddur"
+      },
+      "removeChannelTooltip": "Kanalı sil",
+      "removeChannelConfirm": "Kanal silinsin?",
+      "formUpdatedHint": "Forma yeniləndi — tətbiq etmək üçün saxlayın.",
+      "hmacSigningKeyPlaceholder": "HMAC imza açarı",
+      "perms": {
+        "routerRead": "Routerlər – Oxu",
+        "routerWrite": "Routerlər – Yazı",
+        "modelRead": "Modellər – Oxu",
+        "modelWrite": "Modellər – Yazı",
+        "userRead": "İstifadəçilər – Oxu",
+        "userWrite": "İstifadəçilər – Yazı",
+        "reportRead": "Hesabatlar – Oxu",
+        "settingsRead": "Parametrlər – Oxu",
+        "settingsWrite": "Parametrlər – Yazı",
+        "notificationWrite": "Bildirişlər – Yazı",
+        "tokenRead": "Tokenlər – Oxu",
+        "tokenWrite": "Tokenlər – Yazı",
+        "roleWrite": "Rollar – Yazı",
+        "auditRead": "Audit Jurnalı – Oxu",
+        "modulesRead": "Modullar – Oxu",
+        "modulesManage": "Modullar – İdarə et",
+        "connectionsRead": "Bağlantılar – Oxu",
+        "connectionsManage": "Bağlantılar – İdarə et",
+        "resilienceRead": "Dözümlülük – Oxu",
+        "resilienceManage": "Dözümlülük – İdarə et",
+        "profilesRead": "Yönləndirmə Profilləri – Oxu",
+        "profilesManage": "Yönləndirmə Profilləri – İdarə et",
+        "optimizersRead": "Optimizatorlar – Oxu",
+        "optimizersManage": "Optimizatorlar – İdarə et",
+        "experimentsRead": "Eksperimentlər – Oxu",
+        "experimentsManage": "Eksperimentlər – İdarə et"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Bu kanal növü üçün hədəflər çatdırılmanı dəyişmir (endpoint sabitdir). Onlar hər alıcı üzrə audit izində hansı hadisələrin qeyd olunduğunu filtrləyir.",
+        "dashboard": "Hədəflər poçt qutusu görünürlüyünü idarə edir — yalnız uyğun gələn istifadəçilər bu bildirişləri öz daxili poçt qutularında görəcək.",
+        "email": "Hədəflər bu e-poçtu hansı istifadəçilərin alacağını müəyyən edir. Hamıya göndərmək üçün hamısını boş qoyun."
+      },
+      "summary": {
+        "allEvents": "Bütün hadisələr",
+        "eventCount": "{{count}} hadisə",
+        "eventCount_other": "{{count}} hadisə",
+        "roleCount": "{{count}} rol",
+        "roleCount_other": "{{count}} rol",
+        "permCount": "{{count}} icazə",
+        "permCount_other": "{{count}} icazə",
+        "userCount": "{{count}} istifadəçi",
+        "userCount_other": "{{count}} istifadəçi",
+        "everyone": "Hamı"
+      },
+      "errors": {
+        "loadFailed": "Yükləmək alınmadı"
+      },
+      "fields": {
+        "dashboardHint": "Uyğun hadisələri daxili bildiriş qutusuna yönləndirir. Kimlik məlumatı tələb olunmur.",
+        "labels": {
+          "fromAddress": "Göndərən Ünvan",
+          "fromName": "Göndərən Ad",
+          "host": "Host",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "İstifadəçi adı",
+          "password": "Parol",
+          "awsRegion": "AWS Region",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API Açarı",
+          "connectionString": "Bağlantı Sətri",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "Metod",
+          "signingSecret": "İmza Sirri",
+          "botToken": "Bot Tokeni",
+          "channelId": "Kanal ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "İnteqrasiya Açarı"
+        },
+        "values": {
+          "enabled": "Aktiv",
+          "disabled": "Deaktiv",
+          "configured": "Konfiqurasiya edilib",
+          "notSet": "Təyin edilməyib"
+        },
+        "optional": "(isteğe bağlı)",
+        "keepCurrentPlaceholder": "Cari dəyəri saxlamaq üçün boş qoyun",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSL istifadə et",
+        "smtpTlsOnHint": "(port 465 — birbaşa SSL)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAM instansiya rolundan istifadə etmək üçün kimlik məlumatlarını boş qoyun.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC imza açarı",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32 simvollu yönləndirmə açarı",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Hadisələr",
+          "eventsPlaceholder": "Bütün hadisələr (hamısı üçün boş qoyun)",
+          "eventsHint": "Bütün hadisələri almaq üçün boş qoyun. Filtrləmək üçün xüsusi hadisələr seçin.",
+          "routersHeading": "Routerlər",
+          "routersPlaceholder": "Bütün routerlər (hamısı üçün boş qoyun)",
+          "routersHint": "Bütün routerlərdən hadisə almaq üçün boş qoyun.",
+          "cooldownHeading": "Sərinləmə",
+          "cooldownSuffix": "saniyə (0 = sərinləmə yoxdur)",
+          "cooldownHint": "Bu kanalın eyni hadisə üçün yenidən işə düşməsindən əvvəl minimum interval."
+        },
+        "recipients": {
+          "heading": "Alıcılar / Hədəflər",
+          "rolesLabel": "Rollar",
+          "rolesPlaceholder": "Bütün rollar (hamı)",
+          "permissionsLabel": "İcazələr",
+          "permissionsPlaceholder": "Bütün icazələr (hamı)",
+          "usersLabel": "Fərdi istifadəçilər",
+          "usersPlaceholder": "Bütün istifadəçilər (hamı)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "bağlantı",
+          "routing": "yönləndirmə",
+          "recipients": "alıcılar"
+        },
+        "sections": {
+          "channelSettings": "Kanal parametrləri",
+          "eventsRouting": "Hadisələr və yönləndirmə",
+          "recipients": "Alıcılar"
+        },
+        "nameLabel": "Ad",
+        "namePlaceholder": "Bu kanal üçün ad",
+        "cancelButton": "Ləğv et"
+      },
+      "list": {
+        "countLabel": "{{count}} kanal",
+        "countLabel_other": "{{count}} kanal",
+        "filteredLabel": "{{count}}-dən {{shown}}",
+        "filteredLabel_other": "{{count}}-dən {{shown}}",
+        "allTypes": "Bütün növlər",
+        "searchPlaceholder": "Kanalları filtrlə…",
+        "searchChannelsPlaceholder": "Kanalları axtar…",
+        "addButton": "Kanal Əlavə Et",
+        "addSearchPlaceholder": "Kanalları axtar…",
+        "noResults": "Nəticə yoxdur",
+        "emptyTitle": "Hələ heç bir bildiriş kanalı konfiqurasiya edilməyib.",
+        "noMatch": "Aktiv filtrlərə uyğun kanal yoxdur.",
+        "nameInlinePlaceholder": "Ad (isteğe bağlı)",
+        "columns": {
+          "name": "Ad",
+          "type": "Növ",
+          "summary": "Hadisələr / Hədəflər"
+        },
+        "testTitle": "Test göndər",
+        "editTitle": "Kanalı redaktə et",
+        "deleteTitle": "Kanalı sil",
+        "deleteConfirm": "\"{{name}}\" kanalı silinsin? Bu geri qaytarıla bilməz.",
+        "deleteConfirmButton": "Sil",
+        "errors": {
+          "deleteFailed": "Silmək alınmadı"
+        }
+      },
+      "edit": {
+        "backToList": "Bildirişlərə qayıt",
+        "back": "Geri",
+        "heading": "{{provider}} kanalını redaktə et",
+        "subtitle": "Bu bildiriş kanalının konfiqurasiyasını yeniləyin.",
+        "testSection": {
+          "title": "Test göndər",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Test Göndər",
+          "sendingButton": "Göndərilir…",
+          "hintEmail": "Öz hesab e-poçtunuza göndərmək üçün boş qoyun. Test saxlanmış kanal konfiqurasiyasını istifadə edir.",
+          "hintOther": "Test saxlanmış kanal konfiqurasiyasını istifadə edir. Yenilənmiş parametrləri sınamaq üçün əvvəlcə dəyişiklikləri saxlayın."
+        },
+        "saveButton": "Dəyişiklikləri Saxla",
+        "savingButton": "Saxlanılır…",
+        "errors": {
+          "loadFailed": "Yükləmək alınmadı",
+          "saveFailed": "Saxlamaq alınmadı"
+        }
+      },
+      "create": {
+        "backToList": "Bildirişlərə qayıt",
+        "changeType": "Növü dəyiş",
+        "pickerHeading": "Kanal növü seçin",
+        "pickerSubtitle": "Konfiqurasiya etmək üçün bildiriş provayderini seçin.",
+        "heading": "Yeni {{provider}} kanalı",
+        "subtitle": "Yeni bildiriş kanalı konfiqurasiya edin.",
+        "createButton": "Kanal Yarat",
+        "creatingButton": "Yaradılır…",
+        "errors": {
+          "createFailed": "Yaratmaq alınmadı"
+        }
+      },
+      "sendTest": "Test göndər",
+      "fromAddress": "Göndərən Ünvan",
+      "individualUsers": "Fərdi istifadəçilər",
+      "host": "Host",
+      "port": "Port",
+      "apiKey": "API Açarı",
+      "connectionString": "Bağlantı Sətri",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Metod",
+      "botToken": "Bot Tokeni",
+      "channelId": "Kanal ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "İnteqrasiya Açarı"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — /metrics-i açır"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — metrikalar API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — sətir protokolu"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Sorğu izlərini ixrac et",
+        "description": "Hər keçirilmiş sorğunun tam izini göndərir: hər mərhələ, danışan hər modul, iştirak etmiş layihələr üçün sorğular və cavablar.",
+        "sampleRateLabel": "Nümunə nisbəti",
+        "sampleRateHint": "1 hər sorğuyu ixrac edir, 0.1 hər ondan birini."
+      },
+      "optional": "(isteğe bağlı)",
+      "headersHint": "(isteğe bağlı, hər sətirdə bir: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Açıq giriş üçün boş qoyun",
+          "description": "<code>/metrics</code>-i Prometheus mətn formatında açır. Bearer autentifikasiyası tələb etmək üçün token təyin edin."
+        },
+        "otel": {
+          "endpoint": "Kollektor endpoint",
+          "description": "OTLP qəbulediciniziin əsas URL-i. Routerly <code>/v1/metrics</code>, izlərin ixracı aktiv olduqda isə <code>/v1/traces</code> əlavə edir. Standart HTTP portu 4318, gRPC 4317-dir.",
+          "protocol": "Protokol",
+          "headers": "Başlıqlar"
+        },
+        "datadog": {
+          "apiKey": "API Açarı",
+          "placeholder": "Datadog API açarınız",
+          "description": "Datadog hesabınızda <strong>Organization Settings → API Keys</strong> altında tapılır.",
+          "site": "Sayt"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "<strong>Grafana Cloud → Connections → Prometheus → Details</strong> bölməsində \"Remote Write Endpoint\" kimi tapılır.",
+          "username": "İstifadəçi adı / Stack ID",
+          "usernameHint": "Prometheus bağlantı detallarında göstərilən rəqəm ID.",
+          "apiKey": "API Açarı / Token",
+          "apiKeyHint": "<strong>MetricsPublisher</strong> roluna malik Grafana Cloud tokeni."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 instansiya URL-i. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "InfluxDB API tokeniniz",
+          "tokenHint": "Bucket-ə <strong>yazma</strong> hüququ olmalıdır.",
+          "org": "Təşkilat",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Sirr",
+          "secretHint": "(isteğe bağlı — HMAC-SHA256 imza açarı)",
+          "headers": "Başlıqlar"
+        }
+      },
+      "errors": {
+        "loadFailed": "İnteqrasiyaları yükləmək alınmadı",
+        "updateFailed": "İnteqrasiyanı yeniləmək alınmadı",
+        "saveFailed": "İnteqrasiyanı saxlamaq alınmadı",
+        "deleteFailed": "İnteqrasiyanı silmək alınmadı"
+      },
+      "empty": "Hələ heç bir inteqrasiya konfiqurasiya edilməyib.",
+      "enabled": "Aktiv",
+      "testing": "Sınanır…",
+      "test": "Sına",
+      "removeConfirm": "Silinsin?",
+      "remove": "Sil",
+      "cancel": "Ləğv et",
+      "removeTooltip": "İnteqrasiyanı sil",
+      "saving": "Saxlanılır…",
+      "save": "Saxla",
+      "addButton": "İnteqrasiya Əlavə Et"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Parametrləri yükləmək alınmadı",
+        "duplicateUrl": "Bu URL artıq siyahıdadır.",
+        "unreachable": "Bu URL-də etibarlı provayder kataloquna çatmaq mümkün olmadı."
+      },
+      "saved": "Saxlanıldı.",
+      "refreshed": "Yeniləndi.",
+      "heading": "Provayder Kataloq Anbarları",
+      "refreshing": "Yenilənir…",
+      "refresh": "Yenilə",
+      "nextRefresh": "Növbəti: {{date}}",
+      "priorityHint": "Sətirlərin sırası birləşmə üstünlüyünü müəyyən edir — 1-ci sətir münaqişədə üstünlük daşıyır. Yenidən sıralamaq üçün oxlardan istifadə edin.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Yeniləndi",
+        "lastCheck": "Sonuncu Yoxlama",
+        "status": "Vəziyyət"
+      },
+      "empty": "Anbar konfiqurasiya edilməyib. Standart Routerly ictimai kataloqu istifadə olunacaq.",
+      "status": {
+        "error": "Xəta",
+        "active": "Aktiv",
+        "disabled": "Deaktiv"
+      },
+      "edit": "Redaktə et",
+      "removeTooltip": "Sil",
+      "addRepository": "Anbar Əlavə Et",
+      "checking": "Yoxlanılır…",
+      "add": "Əlavə et",
+      "removeConfirm": "\"{{url}}\" anbarı silinsin?"
+    },
+    "about": {
+      "headings": {
+        "application": "Tətbiq",
+        "runtime": "İşləmə Vaxtı",
+        "storage": "Yaddaş",
+        "softwareUpdate": "Proqram Yenilənməsi"
+      },
+      "labels": {
+        "version": "Versiya",
+        "uptime": "İşləmə müddəti",
+        "nodeVersion": "Node.js",
+        "platform": "Platforma",
+        "configDir": "Konfiqurasiya qovluğu",
+        "dataDir": "Məlumat qovluğu",
+        "currentVersion": "Cari versiya",
+        "availableVersion": "Mövcud versiya",
+        "upToDate": "Yenilənib",
+        "lastChecked": "Sonuncu yoxlanılma"
+      },
+      "noCheckPerformed": "Hələ yenilənmə yoxlanılmayıb.",
+      "checkForUpdates": "Yenilənmələri yoxla",
+      "checking": "Yoxlanılır…",
+      "updateTo": "v{{version}}-ə yenilə",
+      "updating": "Yenilənir…",
+      "dockerHint": "Docker-da işləyir — yeniləmək üçün ən son imici çəkin.",
+      "confirmUpdate": "Bu ən son versiyanı yükləyəcək və quraşdıracaq. Xidmət yenidən başlayacaq. Davam edilsin?",
+      "updateComplete": "Yenilənmə tamamlandı! Yenidən yüklənir…",
+      "serviceRestarting": "Xidmət yenidən başlayır. Zəhmət olmasa bir azdan səhifəni yenidən yükləyin.",
+      "errors": {
+        "loadFailed": "Yükləmək alınmadı",
+        "checkFailed": "Yoxlama alınmadı",
+        "updateFailed": "Yenilənmə alınmadı"
+      },
+      "channel": "Kanal"
+    },
+    "security": {
+      "authentication": "Autentifikasiya",
+      "requireMfa": "Bütün istifadəçilər üçün İkifaktorlu Autentifikasiya tələb et",
+      "requireMfaHint": "Aktiv olduqda, 2FA quraşdırmayan istifadəçilər daxil olduqdan sonra bunu etmək üçün təklif görəcək. İstifadəçilər 2FA-nı öz Profil səhifəsində konfiqurasiya edə bilər.",
+      "savedSuccess": "Parametrlər uğurla saxlanıldı.",
+      "saving": "Saxlanılır…",
+      "saveSettings": "Parametrləri Saxla",
+      "errors": {
+        "loadFailed": "Parametrləri yükləmək alınmadı",
+        "saveFailed": "Parametrləri saxlamaq alınmadı"
+      }
+    },
+    "title": "Parametrlər",
+    "subtitle": "Routerly üçün konfiqurasiya",
+    "tabs": {
+      "general": "Ümumi",
+      "security": "Təhlükəsizlik",
+      "notifications": "Bildirişlər",
+      "integrations": "İnteqrasiyalar",
+      "catalog": "Provayder Kataloqu",
+      "users": "İstifadəçilər",
+      "roles": "Rollar",
+      "audit": "Audit Jurnalı",
+      "about": "Haqqında"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Routerlər",
+      "subtitle": "Routerly-yə giriş edən müştəri tətbiqlər",
+      "count": "1 router",
+      "count_other": "{{count}} router",
+      "newRouter": "Yeni Router",
+      "empty": "Hələ router yoxdur.",
+      "emptyFiltered": "Bu cinsden marşrutçu yoxdur.",
+      "columns": {
+        "name": "Ad",
+        "tokens": "Tokenlər",
+        "policies": "Siyasətlər",
+        "models": "Modellər"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} token",
+      "editRouter": "Router-i redaktə et",
+      "deleteRouter": "Router-i sil",
+      "deleteConfirm": "Bu router silinsin?",
+      "errors": {
+        "deleteFailed": "Router-i silmə xətası"
+      },
+      "newOrchestrator": "Yeni Orkestrator",
+      "newPassthrough": "Yeni Passthrough"
+    },
+    "layout": {
+      "notFound": "Router tapılmadı",
+      "tabs": {
+        "dashboard": "İdarə paneli",
+        "general": "Ümumi",
+        "orchestrator": "Orkestrator",
+        "routing": "Yönləndirmə",
+        "optimizer": "Optimizator",
+        "security": "Təhlükəsizlik",
+        "token": "Token",
+        "users": "İstifadəçilər",
+        "logs": "Jurnallar"
+      },
+      "backToRouters": "Routerlərə qayıt",
+      "backToRoutersTitle": "Routerlərə qayıt",
+      "newRouter": "Yeni Router",
+      "loading": "Yüklənir...",
+      "routerId": "Router ID:",
+      "saveFirstHint": "Bu tabı açmaq üçün əvvəlcə router-i saxlayın",
+      "newKind": "Yeni {{kind}}"
+    },
+    "dashboard": {
+      "period": "Dövr",
+      "noTraffic": "Seçilmiş dövrdə bu router üçün trafik yoxdur.",
+      "stats": {
+        "savings": "Qənaət",
+        "vsPrefix": "vs",
+        "forEverything": "hər şey üçün",
+        "noTargetToCompare": "müqayisə üçün hədəf model yoxdur",
+        "cost": "Dəyər",
+        "callCount": "1 çağırış",
+        "callCount_other": "{{count}} çağırış",
+        "latency": "Gecikmə",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "İlk tokenə qədər vaxt",
+        "notMeasured": "bu çağırışlarda ölçülməyib",
+        "reliability": "Etibarlılıq",
+        "errorsAndBlocked": "{{errors}} xəta · {{blocked}} bloklanıb"
+      },
+      "tokens": {
+        "input": "Giriş tokenləri:",
+        "output": "Çıxış tokenləri:",
+        "fromCache": "Keşdən:",
+        "cacheSaved": "({{amount}} qənaət)"
+      },
+      "oneModel": {
+        "heading": "Hər şey bir modelə göndərilsəydi",
+        "empty": "Müqayisəni görmək üçün bu router-ə hədəf modellər əlavə edin.",
+        "columns": {
+          "targetModel": "Hədəf model",
+          "wouldHaveCost": "Nə qədər xərcləyərdi",
+          "saved": "Qənaət"
+        },
+        "costsHint": "Dəyərlər müşahidə olunan tokenlərin hər hədəfin qiymətlərinə yenidən qiymətləndirilməsindir."
+      },
+      "optimizers": {
+        "heading": "Optimizatorların çıxardığı",
+        "columns": {
+          "optimizer": "Optimizator",
+          "callsChanged": "Dəyişdirilmiş çağırışlar",
+          "tokensSaved": "Qənaət edilmiş tokenlər",
+          "costSaved": "Qənaət edilmiş dəyər",
+          "rolledBack": "Geri qaytarıldı"
+        },
+        "hint": "Çağırışların özündə ölçülüb, hər birinə xidmət göstərən modelin qiymətinə əsasən. Geri qaytarılmış icra o deməkdir ki, addımın çıxışı təhlükəsiz olmayan kimi rədd edildi və sorğu bərpa olundu: heç nə qənaət etmədi, yüksək say isə hədin çox aqressiv olduğunu göstərir."
+      },
+      "traffic": {
+        "heading": "Trafik haraya getdi",
+        "columns": {
+          "model": "Model",
+          "calls": "Çağırışlar",
+          "share": "Pay",
+          "cost": "Dəyər",
+          "p95Latency": "p95 gecikmə",
+          "errors": "Xətalar"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Router-i saxlama xətası",
+        "copyFailed": "Kopyalama alınmadı — zəhmət olmasa tokeni əl ilə seçib kopyalayın."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Sorğuları model namizədləri arasında yönləndirir."
+        },
+        "orchestrator": {
+          "label": "Orkestrator",
+          "description": "Sorğuları modellər əvəzinə digər routerlər arasında yönləndirir."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Sorğuları dəyişdirmədən ötürür."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Bu tokeni indi saxlayın.",
+        "saveNowHint": "Bir daha göstərilməyəcək — bu ekranı tərk etdikdən sonra bərpa edilə bilməz.",
+        "copied": "Kopyalandı!",
+        "copy": "Kopyala",
+        "goToRouter": "Router-ə keç"
+      },
+      "connect": {
+        "heading": "Necə qoşulmalı",
+        "intro": "İstənilən OpenAI və ya Anthropic SDK-nı Routerly-yə yönləndirin və API açarı kimi <tokenLink>router tokeni</tokenLink> istifadə edin. Aşağıda <code>{{token}}</code>-i özününküylə əvəz edin. <code>{{model}}</code> modeli seçimi Routerly-yə həvalə edir; <modelsLink>Modellər</modelsLink> bölməsindəki hər hansı model ID-si də işləyir.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Əsas URL <code>{{baseUrl}}</code>, istənilən \"OpenAI compatible\" provayder sahəsinin qəbul etdiyi eyni URL.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Əsas URL <code>{{baseUrl}}</code>, <code>/v1</code>-siz: SDK onu özü əlavə edir.",
+        "curl": "curl",
+        "curlHint": "Heç nə quraşdırmadan bağlantını yoxlayın, sonra çağırışı <usageLink>İstifadə</usageLink> bölməsində axtarın."
+      },
+      "form": {
+        "kind": "Növ",
+        "kindFixedHint": "Router yaradıldıqdan sonra sabitdir.",
+        "routerName": "Router Adı",
+        "routerNamePlaceholder": "Mənim Tətbiqim",
+        "advancedSettings": "Əlavə parametrlər",
+        "ttftTimeout": "TTFT Timeout (ms)",
+        "ttftTimeoutHint": "Model bu vaxt ərzində ilk cavab baytını göndərmirsə, Routerly onu ləğv edir və növbəti namizədi sınayır. Ümumi cavab müddətini məhdudlaşdırmır. Provayderin istədiyi qədər gözləmək üçün 0-a təyin edin.",
+        "traceContent": "Məzmun izi",
+        "traceContentHint": "İzlər həmişə metadatanı qeyd edir (modellər, ballar, tokenlər, dəyər, gecikmə). Göndərilən sorğuları və alınan cavabları da qeyd etmək üçün bunu aktivləşdirin. Onlar istifadə qeydi ilə birgə saxlanılır və hesabatları oxuya bilən hər kəsə görünür.",
+        "capturePromptsAndAnswers": "Sorğuları və cavabları qeyd et",
+        "saveChanges": "Dəyişiklikləri Saxla",
+        "createRouter": "Router Yarat",
+        "passthroughPath": "Yol",
+        "passthroughPathHint": "Müşterilerin çağırdığı URL'nin bir hissəsi olur: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orkestrator Yarat",
+        "createPassthrough": "Passthrough Yarat"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Bu router Orkestrator deyil.",
+      "candidateRouters": "Namizəd Routerlər",
+      "candidateRoutersHint": "Bu Orkestratorun sorğuları yönləndirdiyi routerlər. Çəki hər namizədin nə qədər tez-tez seçildiyinə təsir edir; burada yalnız onun adı, ID-si, çəkisi və isteğe bağlı namizəd üzrə limitlər göstərilir.",
+      "routingPolicies": "Marşrutlaşdırma Siyasətləri",
+      "routingPoliciesHint": "Bir Orkestr hər bir namizəd Routeri bir tam kimi qiymətləndirir, buna görə də burada yalnız sağlamlıq, sıra limiti və ədalətlilik siyasətləri tətbiq olunur. Digər siyasət növləri routerin öz modelləri arasından seçim edir, bunları Orkestr heç bir şeyə malikdir.",
+      "router": "Router",
+      "selectRouter": "Router seçin",
+      "weight": "Çəki",
+      "removeCandidate": "Namizədi sil",
+      "usageLimits": "Bu namizəd üçün istifadə limitləri",
+      "limitCount": "{{count}} limit",
+      "limitCount_other": "{{count}} limit",
+      "usageLimitsHint": "Yalnız bu Orkestratorun bu namizədə yönləndirdiyi sorğulara tətbiq edilən isteğe bağlı istifadə limitləri.",
+      "empty": "Hələ namizəd router yoxdur. Orkestratorun sorğuları yönləndirə bilməsi üçün ən azı birinə ehtiyacı var.",
+      "addCandidate": "Namizəd Əlavə Et",
+      "saved": "Saxlanıldı!",
+      "saveCandidates": "Namizədləri Saxla",
+      "errors": {
+        "loadFailed": "Routerləri yükləmək alınmadı",
+        "saveFailed": "Orkestrator namizədlərini saxlama xətası"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Yönləndirmə profilini təyin etmək alınmadı",
+        "duplicateTargets": "Hədəf modellər təkrarlana bilməz.",
+        "saveFailed": "Router yönləndirməsini saxlama xətası",
+        "noProfileAvailable": "Yönləndirmə profili mövcud deyil. Profillər səhifəsindən bir yaradın."
+      },
+      "form": {
+        "routing": "Yönləndirmə",
+        "routingHint": "Ortaq bir yönləndirmə profili istifadə edin, ya da bu router-in öz siyasətlərini müəyyən edin. Hər halda hədəf modellər konfiqurasiya edilə bilər.",
+        "profileMode": "Profil",
+        "customMode": "Xüsusi",
+        "routingProfile": "Yönləndirmə Profili",
+        "builtinSuffix": "(daxili)",
+        "profileHint": "Siyasətlər profildən gəlir və onun dəyişikliklərinə uyğunlaşır. Onları Profillər səhifəsində redaktə edin, ya da onların surətindən başlamaq üçün Xüsusi-yə keçin.",
+        "saved": "Saxlanıldı!",
+        "saveRoutingConfiguration": "Yönləndirmə Konfiqurasiyasını Saxla"
+      },
+      "targetModels": {
+        "heading": "Hədəf Modellər",
+        "hint": "Siyasətlərin filtrləyəcəyi və seçəcəyi model hovuzunu müəyyən edin. İsteğe bağlı sorğular AI Router-ə hər modeli nə vaxt seçəcəyini bildirir.",
+        "endpointModel": "Endpoint Modeli",
+        "selectModel": "Model seçin",
+        "promptDefinition": "Sorğu Tərifi",
+        "promptPlaceholder": "Router-in bu modeli dəqiq nə vaxt və niyə seçməli olduğunu təsvir edin...",
+        "intents": "Niyyətlər",
+        "removeTarget": "Hədəf modeli sil",
+        "empty": "Hədəf model konfiqurasiya edilməyib.",
+        "addTarget": "Hədəf Model Əlavə Et",
+        "passthroughLabel": "Ötürmə (xam yönləndirmə)",
+        "passthroughNotRemovable": "Ötürmə girişi silinə bilməz"
+      }
+    },
+    "optimizer": {
+      "title": "Optimizatorlar",
+      "description": "Optimizatorlar sorğular provayderə çatmadan əvvəl sorğu tokenlərini azaldır. Yuxarıdan aşağıya ardıcıllıqla işləyirlər. Ortaq bir optimizator profili istifadə edin, ya da bu router-in öz boru xəttini müəyyən edin.",
+      "noPermission": "Optimizatorları görmək icazəniz yoxdur.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Xüsusi"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimizator Profili",
+        "builtinLabel": "{{label}} (daxili)",
+        "hint": "Addımlar profildən gəlir və onun dəyişikliklərinə uyğunlaşır. Onları Profillər səhifəsində redaktə edin, ya da onların surətindən başlamaq üçün Xüsusi-yə keçin.",
+        "disabledSuffix": "(deaktiv)",
+        "thresholdSuffix": ", həd {{threshold}}"
+      },
+      "customHint": "Yenidən sıralamaq üçün sürüşdürün, aktivləşdirmək üçün keçid edin. Bəzi optimizatorlar nə qədər aqressiv qırpacağını idarə etmək üçün həddən istifadə edir.",
+      "saveButton": "Optimizatorları Saxla",
+      "saving": "Saxlanılır...",
+      "saved": "Saxlanıldı",
+      "preview": {
+        "title": "Token qənaətinə önizləmə",
+        "description": "Hər addımın nə çıxardığını və nə qədər başa gəldiyini görmək üçün cari (saxlanmamış) boru xəttini bir sorğu üzərində işə salın. Nümunə söhbətlərdən birini seçin, ya da öz sorğunuzu yazın.",
+        "promptLabel": "Sorğu",
+        "promptAriaLabel": "Önizləmə üçün sorğu",
+        "typePromptOption": "Aşağıda sorğu yazın",
+        "fixturesHint": "Routerly ilə göndərilən nümunə söhbətlər. Routerly həqiqi sorğuları qeyd etmir.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Önizləmə üçün model",
+        "modelWithContext": "{{id}} ({{k}}k kontekst)",
+        "noModelOption": "Model yoxdur",
+        "modelHint": "Kontekst pəncərəsinə uyğunlaşdıran addımlar hansı pəncərəni bilməlidir. Model olmadan onlar atlanılır, məhz Routerly-nin pəncərəsi olmayan model adlandıran sorğuda olduğu kimi.",
+        "sampleAriaLabel": "Nümunə sorğu",
+        "samplePlaceholder": "Nümunə istifadəçi mesajı yapıştırın...",
+        "runButton": "Önizləməni İşə Sal",
+        "running": "İşə salınır...",
+        "before": "Əvvəl",
+        "after": "Sonra",
+        "saved": "Qənaət edildi",
+        "columns": {
+          "optimizer": "Optimizator",
+          "before": "Əvvəl",
+          "after": "Sonra",
+          "saved": "Qənaət"
+        },
+        "rolledBackNote": "geri qaytarıldı: dəyişiklik təhlükəsiz olmayan kimi rədd edildi",
+        "skippedNote": "atlanıldı: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Bu addımın istehsal etdiyi dəyişiklik geri qaytarıldı, buna görə sorğu növbəti addıma dəyişməz çatdı.",
+          "skipped": "Bu addım işləmədi: {{reason}}",
+          "unchanged": "Bu addım sorğunu dəyişməz qoydu."
+        }
+      },
+      "errors": {
+        "assignFailed": "Optimizator profilini təyin etmək alınmadı",
+        "saveFailed": "Optimizatorları saxlama xətası",
+        "previewFailed": "Önizləməni işə salma xətası",
+        "noProfileAvailable": "Optimizator profili mövcud deyil. Profillər səhifəsindən bir yaradın."
+      }
+    },
+    "token": {
+      "newButton": "Yeni Token",
+      "empty": "Hələ API tokeni yoxdur. Sorğuları autentifikasiya etməyə başlamaq üçün bir yaradın.",
+      "budgetOverrides": "Büdcə Ötürmələri",
+      "created": "Yaradıldı",
+      "lastUsed": "Sonuncu istifadə",
+      "expires": "Bitmə tarixi",
+      "never": "Heç vaxt",
+      "editTitle": "Konfiqurasiyanı Redaktə Et",
+      "revokeTitle": "Tokeni Ləğv Et",
+      "revokeConfirm": "\"{{snippet}}...\" tokeni ləğv edilsin? Onu istifadə edən tətbiqlər dərhal işləməyi dayandıracaq.",
+      "labelInput": {
+        "placeholder": "Etiket axtarın və ya yaradın…",
+        "createPrefix": "Yarat",
+        "noMatches": "Uyğun etiket tapılmadı."
+      },
+      "errors": {
+        "deleteFailed": "Tokeni silmə xətası"
+      },
+      "create": {
+        "backToTokens": "Tokenlərə qayıt",
+        "title": "Yeni API Tokeni",
+        "subtitle": "Tam token yalnız yaradıldıqdan sonra bir dəfə göstərilir — onu təhlükəsiz saxlayın.",
+        "tokenCreated": "Token uğurla yaradıldı. İndi kopyalayın — bir daha göstərilməyəcək.",
+        "copied": "Kopyalandı!",
+        "copy": "Kopyala",
+        "done": "Hazır",
+        "optional": "isteğe bağlı",
+        "labels": "Etiketlər",
+        "labelsHint": "Bu tokenin harada istifadə olunduğunu müəyyən etmək üçün onu etiketləyin (məs. \"production\", \"ci\").",
+        "scopes": "Əhatə dairələri",
+        "scopesHint": "Bu tokenə əlavə olunan sərbəst formalı əhatə dairələri (məs. \"batch\", \"internal\"), sizin öz uçotunuz üçün tokenlə saxlanılır.",
+        "tags": "Etiketlər",
+        "tagsHint": "İstifadə qeydlərinə ötürülən açar-dəyər metadatası (məs. env=production).",
+        "keyPlaceholder": "açar",
+        "valuePlaceholder": "dəyər",
+        "createButton": "Token Yarat",
+        "cancel": "Ləğv et",
+        "copyFailed": "Kopyalama alınmadı — zəhmət olmasa tokeni əl ilə seçib kopyalayın.",
+        "errors": {
+          "createFailed": "Token yaratma xətası"
+        }
+      },
+      "edit": {
+        "title": "Tokeni Redaktə Et",
+        "subtitle": "Bu token üçün etiketləri və model üzrə limit ötürmələrini yeniləyin.",
+        "token": "Token",
+        "labels": "Etiketlər",
+        "perModelLimits": "Model üzrə limitlər",
+        "perModelLimitsHint": "Bu tokendən istifadə edən sorğular üçün qlobal və router səviyyəli limitləri ötürün.",
+        "noTargetModels": "Əvvəlcə Yönləndirmə tabında hədəf modellər əlavə edin.",
+        "noOverride": "ötürmə yoxdur",
+        "noLimits": "Limit yoxdur",
+        "noLimitsSet": "Limit təyin edilməyib — valideyndən miras alır. Ötürmək üçün aşağıda limit əlavə edin.",
+        "metric": "Metrika",
+        "type": "Növ",
+        "periodLabel": "Dövr",
+        "every": "Hər",
+        "maxCost": "Maks. ($)",
+        "maxCalls": "Maks. (say)",
+        "maxTokens": "Maks. (token)",
+        "allCombosSet": "Bütün metrika/dövr kombinasiyaları artıq təyin olunub",
+        "addLimit": "Limit əlavə et",
+        "windowType": {
+          "period": "Dövr",
+          "rolling": "Sürüşkən"
+        },
+        "limitMetric": {
+          "cost": "Dəyər (USD)",
+          "calls": "Sorğular",
+          "input_tokens": "Giriş tokenləri",
+          "output_tokens": "Çıxış tokenləri",
+          "total_tokens": "Ümumi tokenlər"
+        },
+        "period": {
+          "hourly": "Saatlıq",
+          "daily": "Gündəlik",
+          "weekly": "Həftəlik",
+          "monthly": "Aylıq",
+          "yearly": "İllik"
+        },
+        "rollingUnit": {
+          "second": "saniyə",
+          "minute": "dəqiqə",
+          "hour": "saat",
+          "day": "gün",
+          "week": "həftə",
+          "month": "ay"
+        },
+        "fmt": {
+          "requests": "{{value}} sorğu",
+          "inputTokens": "{{value}} giriş-token",
+          "outputTokens": "{{value}} çıxış-token",
+          "totalTokens": "{{value}} token",
+          "everyRolling": "{{metric}} / hər {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Tokeni saxlama xətası"
+        }
+      }
+    },
+    "users": {
+      "title": "Router Üzvləri",
+      "description": "Bu router-ə girişi olan istifadəçiləri idarə edin.",
+      "addButton": "Üzv Əlavə Et",
+      "addNewTitle": "Yeni Üzv Əlavə Et",
+      "selectUserPlaceholder": "İstifadəçi seçin...",
+      "addConfirmButton": "Əlavə et",
+      "cancelButton": "Ləğv et",
+      "empty": "Üzv tapılmadı.",
+      "removeConfirm": "Bu üzvü silmək istədiyinizə əminsiniz?",
+      "saveTitle": "Dəyişiklikləri saxla",
+      "changeRoleTitle": "Rolu Dəyiş",
+      "removeTitle": "Üzvü Sil",
+      "roles": {
+        "viewer": "İzləyici",
+        "editor": "Redaktor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "İstifadəçi",
+        "role": "Rol",
+        "actions": "Əməliyyatlar"
+      },
+      "errors": {
+        "loadFailed": "İstifadəçiləri yükləmək alınmadı",
+        "addFailed": "Üzv əlavə etmə xətası",
+        "updateFailed": "Üzv yeniləmə xətası",
+        "removeFailed": "Üzv silmə xətası"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Söndürülüb"
+      },
+      "autoRefreshOff": "Avtomatik yenilənmə deaktivdir",
+      "autoRefreshEvery": "Avtomatik yenilənmə hər {{interval}}",
+      "lastUpdated": "sonuncu yenilənmə: {{time}}",
+      "refresh": "Yenilə",
+      "refreshNowTitle": "İndi yenilə",
+      "refreshNowButton": "↻ İndi",
+      "filters": {
+        "period": "Dövr",
+        "model": "Model",
+        "allModels": "Bütün Modellər",
+        "type": "Növ",
+        "all": "Hamısı",
+        "completion": "Tamamlama",
+        "router": "Router",
+        "status": "Vəziyyət",
+        "success": "Uğurlu",
+        "blocked": "Bloklandı",
+        "error": "Xəta",
+        "resetButton": "Filtrləri sıfırla"
+      },
+      "stats": {
+        "totalCost": "Ümumi Dəyər",
+        "totalCalls": "Ümumi Çağırışlar",
+        "completionCalls": "Tamamlama Çağırışları",
+        "routerCalls": "Router Çağırışları",
+        "errors": "Xətalar"
+      },
+      "requestLogs": "Sorğu Jurnalları",
+      "emptyNoRequests": "Seçilmiş dövrdə bu router üçün sorğu yoxdur.",
+      "emptyNoMatches": "Aktiv filtrlərə uyğun qeyd yoxdur.",
+      "columns": {
+        "time": "Vaxt",
+        "model": "Model",
+        "type": "Növ",
+        "in": "Giriş",
+        "out": "Çıxış",
+        "cost": "Dəyər",
+        "latency": "Gecikmə",
+        "ttft": "TTFT",
+        "tokPerSec": "Token/san",
+        "status": "Vəziyyət"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "tamamlama",
+      "pagination": {
+        "previous": "← Əvvəlki",
+        "next": "Növbəti →",
+        "pageOf": "Səhifə {{page}} / {{totalPages}}",
+        "totalRecords": "(cəmi {{count}} qeyd)"
+      }
+    },
+    "security": {
+      "title": "Təhlükəsizlik",
+      "description": "Ortaq bir təhlükəsizlik profili istifadə edin, ya da bu router-in öz mühafizələrini və PII siyasətlərini müəyyən edin.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Xüsusi"
+      },
+      "profileSelect": {
+        "ariaLabel": "Təhlükəsizlik Profili",
+        "builtinLabel": "{{label}} (daxili)",
+        "hint": "Mühafizələr və PII siyasətləri profildən gəlir və onun dəyişikliklərinə uyğunlaşır. Onları Profillər səhifəsində redaktə edin, ya da onların surətindən başlamaq üçün Xüsusi-yə keçin.",
+        "blockingSuffix": ", bloklayır",
+        "disabledSuffix": ", deaktiv",
+        "piiRedaction": "PII gizlətmə ({{target}})"
+      },
+      "saveButton": "Təhlükəsizlik Parametrlərini Saxla",
+      "saved": "Saxlanıldı!",
+      "errors": {
+        "assignFailed": "Təhlükəsizlik profilini təyin etmək alınmadı",
+        "saveFailed": "Təhlükəsizlik parametrlərini saxlama xətası",
+        "noProfileAvailable": "Təhlükəsizlik profili mövcud deyil. Profillər səhifəsindən bir yaradın."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Siz köməkçi AI assistentisiniz.",
+      "errors": {
+        "unknown": "Naməlum xəta baş verdi",
+        "onlyImages": "Hazırda görmə modelləri üçün yalnız şəkil əlavələri dəstəklənir."
+      },
+      "title": "Test Söhbəti",
+      "subtitle": "Test sorğularını yönləndirmə keçidi üzərindən göndərin.",
+      "routerToken": "Router Tokeni:",
+      "hideToken": "Tokeni Gizlət",
+      "showToken": "Tokeni Göstər",
+      "recognizedToken": "Tanınan Token",
+      "unrecognizedToken": "Tanınmayan Token",
+      "noMessages": "Hələ mesaj yoxdur.",
+      "enterTokenHint": "Mesaj göndərmək üçün yuxarıda bir Router Tokeni daxil edin.",
+      "typeMessageHint": "Sınamağa başlamaq üçün aşağıda bir mesaj yazın.",
+      "reasoning": "Əsaslandırma",
+      "attachedAlt": "Əlavə edilib",
+      "attachmentAlt": "Əlavə",
+      "attachImage": "Şəkil əlavə et",
+      "typeMessagePlaceholder": "Mesaj yazın...",
+      "stopGeneration": "Yaratmağı dayandır",
+      "sendEnter": "Göndər (Enter)",
+      "debugLog": "Sazlama Jurnalı",
+      "clear": "Təmizlə",
+      "noRequestSent": "Hələ sorğu göndərilməyib.",
+      "turnTraceLog": "Növbə #{{turn}} iz jurnalı · {{count}} hadisə",
+      "turnTraceLog_other": "Növbə #{{turn}} iz jurnalı · {{count}} hadisə"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Bağlantılar",
+      "subtitle": "Model instansiyalarını işlədən provayder hesabları",
+      "noPermission": "Bağlantıları görmək icazəniz yoxdur.",
+      "count": "{{count}} bağlantı",
+      "count_other": "{{count}} bağlantı",
+      "addConnection": "Bağlantı Əlavə Et",
+      "empty": "Hələ bağlantı yoxdur. Başlamaq üçün bir əlavə edin.",
+      "deleteConfirm": "\"{{label}}\" bağlantısı silinsin? Ona bağlı instansiyalar işləməyi dayandıracaq.",
+      "errors": {
+        "loadFailed": "Bağlantıları yükləmək alınmadı",
+        "deleteFailed": "Bağlantını silmək alınmadı"
+      },
+      "columns": {
+        "label": "Etiket",
+        "provider": "Provayder",
+        "endpoint": "Endpoint",
+        "status": "Vəziyyət"
+      },
+      "status": {
+        "enabled": "Aktiv",
+        "disabled": "Deaktiv"
+      },
+      "actions": {
+        "models": "Modellər",
+        "edit": "Redaktə et",
+        "remove": "Sil"
+      }
+    },
+    "form": {
+      "backToConnections": "Bağlantılara qayıt",
+      "editTitle": "Bağlantını Redaktə Et",
+      "addTitle": "Bağlantı Əlavə Et",
+      "enabled": "Aktiv",
+      "editSubtitle": "Provayder hesabı parametrlərini yeniləyin",
+      "addSubtitle": "Yeni provayder hesabı qeydiyyatdan keçirin",
+      "sectionTitle": "Bağlantı detalları",
+      "sectionDesc": "Sorğuları yerinə yetirmək üçün istifadə olunan provayder hesabı, kimlik məlumatları və endpoint.",
+      "provider": "Provayder",
+      "groups": {
+        "directApi": "Birbaşa API",
+        "cloudPlatform": "Bulud platforması",
+        "subscription": "Abunə",
+        "browserSession": "Brauzer sessiyası",
+        "selfHosted": "Öz-özünə hostlanan"
+      },
+      "upstreamProvider": {
+        "label": "Provayder",
+        "hintLabel": "(yuxarı axın provayder adı)",
+        "placeholder": "məs. deepseek, mistral, groq",
+        "description": "Bu endpoint-in aid olduğu xidməti adlandırır. Bu bağlantıdaki modellər onu ID prefiksi kimi istifadə edir (məs. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Ad",
+        "hint": "Bu bağlantını istinad olunan hər yerdə müəyyən edir, buna görə unikal olmalıdır. <code>{{suggested}}</code>-dan istifadə etmək üçün boş qoyun."
+      },
+      "credentialsBlankHint": "Mövcud dəyərləri saxlamaq üçün kimlik məlumatları sahələrini boş qoyun.",
+      "save": "Saxla",
+      "create": "Yarat",
+      "cancel": "Ləğv et",
+      "oauth": {
+        "unknown": "naməlum",
+        "accountExpires": "Hesab: {{account}} — bitmə tarixi {{expires}}",
+        "unknownError": "Naməlum xəta"
+      },
+      "errors": {
+        "notFound": "Bağlantı tapılmadı",
+        "loadFailed": "Bağlantını yükləmək alınmadı",
+        "updateFailed": "Bağlantını yeniləmək alınmadı",
+        "createFailed": "Bağlantını yaratmaq alınmadı"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Modellərə qayıt",
+      "title": "Model Kəşfi",
+      "subtitle": "Mövcud modellərə baxın və onları yönləndirmə konfiqurasiyanıza əlavə edin",
+      "count": "{{count}} model",
+      "filteredCount": "{{count}}-dən {{filtered}}",
+      "free": "pulsuz",
+      "add": "Əlavə et",
+      "addAgain": "Yenidən əlavə et",
+      "loadFailed": "Kataloqu yükləmək alınmadı: {{error}}",
+      "filters": {
+        "search": "Axtar",
+        "searchPlaceholder": "Model ID və ya adı…",
+        "provider": "Provayder",
+        "allProviders": "Bütün provayderlər",
+        "context": "Kontekst",
+        "ctxOptions": {
+          "all": "Hamısı",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Qiymət / 1M",
+        "priceOptions": {
+          "all": "Hamısı",
+          "free": "Pulsuz",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Göstər",
+        "configured": "Konfiqurasiya edilib",
+        "embedding": "Embedding",
+        "resetFilters": "Filtrləri sıfırla"
+      },
+      "empty": {
+        "noMatches": "Filtrlərinizə uyğun model yoxdur."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Provayder",
+        "context": "Kontekst",
+        "input": "Giriş / 1M",
+        "output": "Çıxış / 1M"
+      },
+      "badges": {
+        "configured": "Konfiqurasiya edilib",
+        "embedding": "embedding",
+        "runsLocally": "Lokal işləyir"
+      },
+      "pagination": {
+        "prev": "Əvvəlki",
+        "next": "Növbəti",
+        "range": "{{count}}-dən {{start}}–{{end}}"
+      }
+    },
+    "form": {
+      "backToModels": "Modellərə qayıt",
+      "title": {
+        "add": "Model Əlavə Et",
+        "edit": "Modeli Redaktə Et",
+        "clone": "Modeli Klonla"
+      },
+      "subtitle": {
+        "add": "Yeni LLM provayder modeli qeydiyyatdan keçirin",
+        "edit": "{{id}} üçün konfiqurasiya dəyişdirilir",
+        "clone": "{{id}}-dən klonlanır — saxlamaq üçün yeni ID təyin edin"
+      },
+      "errors": {
+        "modelNotFound": "Model tapılmadı",
+        "sourceModelNotFound": "Mənbə model tapılmadı",
+        "loadFailed": "Modelləri yükləmə xətası",
+        "idRequired": "Model ID tələb olunur",
+        "duplicateId": "\"{{id}}\" modeli artıq mövcuddur — başqa Xüsusi ID təyin edin",
+        "selectConnection": "Bağlantı seçin",
+        "saveFailed": "Xəta"
+      },
+      "badge": {
+        "yes": "bəli",
+        "no": "xeyr",
+        "override": "Ötürmə",
+        "auto": "Avto",
+        "default": "Standart: {{value}}",
+        "reset": "Sıfırla"
+      },
+      "oauth": {
+        "unknownExpiry": "naməlum",
+        "accountOk": "Hesab: {{account}} — bitmə tarixi {{expires}}",
+        "unknownError": "Naməlum xəta"
+      },
+      "identification": {
+        "title": "Model Kimləşdirilməsi",
+        "description": "Bu model konfiqurasiyası üçün unikal identifikator və provayder parametrləri.",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(isteğe bağlı — standart:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Routerly API çağırışlarında bu modelə istinad edərkən istifadə olunan identifikator.",
+        "provider": "Provayder",
+        "upstreamProviderHint": "(yuxarı axın provayder adı)",
+        "upstreamProviderPlaceholder": "məs. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly ID üçün prefiks kimi istifadə olunur (məs.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(yuxarı axın model ID-si)",
+        "upstreamModelPlaceholder": "məs. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Yuxarı axın API endpoint-inə göndərilən model identifikatoru.",
+        "modelPreset": "Model Şablonu",
+        "customModelOption": "— xüsusi model adı —",
+        "customModelPlaceholder": "məs. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Bağlantı detalları",
+        "description": "Sorğuları yerinə yetirmək üçün tələb olunan API endpoint və doğrulama kimlik məlumatları.",
+        "preconfigured": "Əvvəlcədən konfiqurasiya edilib",
+        "custom": "Xüsusi",
+        "connection": "Bağlantı",
+        "selectPlaceholder": "— bir bağlantı seçin —",
+        "noneAvailable": "Bu provayder üçün əvvəlcədən konfiqurasiya edilmiş bağlantı yoxdur. Xüsusiyə keçin, ya da Bağlantılar səhifəsində bir yaradın.",
+        "editHint": "Bu bağlantını sonradan redaktə etmək ona bağlı hər modeli yeniləyir."
+      },
+      "capabilities": {
+        "title": "Qabiliyyətlər",
+        "description": "Bu modelin növünü və qabiliyyətlərini göstərin.",
+        "embeddingModel": "Embedding modeli",
+        "embeddingModelHint": "Bu model vektor embeddingi yaradır (söhbət tamamlaması yox)"
+      },
+      "pricing": {
+        "title": "Qiymət və kontekst",
+        "description": "Hesablaşma və yönləndirmə üçün istifadə olunan dəyər parametrləri və emal limitləri.",
+        "inputPerMillion": "Giriş $/1M",
+        "outputPerMillion": "Çıxış $/1M",
+        "cachePerMillion": "Keş oxuma $/1M",
+        "cacheWritePerMillion": "Keş yazma $/1M",
+        "optional": "(isteğe bağlı)",
+        "contextWindow": "Kontekst Pəncərəsi",
+        "contextWindowHint": "(tokenlər, isteğe bağlı)"
+      },
+      "tiers": {
+        "title": "Əlavə — Qiymət pillələri",
+        "description": "Bir metrika hədddi keçəndə qiyməti ötürün. Məsələn: \"200 000 kontekst tokenindən yuxarı, qiymətlər dəyişir.\"",
+        "removeTier": "Pilləni sil",
+        "above": "Bundan yuxarı",
+        "metric": "Metrika",
+        "metricContextTokens": "Kontekst tokenləri",
+        "overridePricing": "Qiyməti ötür",
+        "addTier": "Qiymət pilləsi əlavə et"
+      },
+      "limits": {
+        "title": "Limitlər",
+        "description": "Bu model üçün istifadə limitləri. Bir neçə qayda birləşdirilə bilər.",
+        "metric": "Metrika",
+        "type": "Növ",
+        "addLimit": "Limit əlavə et"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max abunəsi)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro abunəsi)"
+      },
+      "saveChanges": "Dəyişiklikləri Saxla",
+      "createClone": "Klon Yarat",
+      "createModel": "Model Yarat"
+    },
+    "page": {
+      "title": "Modellər",
+      "subtitle": "Routerly-yə qeydiyyatdan keçmiş LLM provayderləri",
+      "tabs": {
+        "models": "Modellər",
+        "health": "Sağlamlıq"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} model",
+        "filteredCount": "{{count}} modeldən {{filtered}}",
+        "filteredCount_other": "{{count}} modeldən {{filtered}}"
+      },
+      "filters": {
+        "allProviders": "Bütün provayderlər",
+        "allConnections": "Bütün bağlantılar",
+        "searchPlaceholder": "Modelləri filtrlə…"
+      },
+      "discover": "Kəşf et",
+      "addModel": "Model Əlavə Et",
+      "deleteConfirm": "\"{{id}}\" modeli silinsin?",
+      "empty": {
+        "noModels": "Hələ model yoxdur. Başlamaq üçün bir əlavə edin.",
+        "noMatches": "Aktiv filtrlərə uyğun model yoxdur."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Provayder",
+        "endpoint": "Endpoint",
+        "input": "Giriş $/1M",
+        "output": "Çıxış $/1M",
+        "cache": "Keş $/1M",
+        "context": "Kontekst Ölçüsü"
+      },
+      "actions": {
+        "test": "Sına",
+        "clone": "Klonla",
+        "edit": "Redaktə et",
+        "remove": "Sil"
+      },
+      "pagination": {
+        "previous": "← Əvvəlki",
+        "next": "Növbəti →",
+        "pageOf": "Səhifə {{page}} / {{totalPages}}",
+        "total": "(cəmi {{count}} model)",
+        "total_other": "(cəmi {{count}} model)"
+      },
+      "health": {
+        "emptyNoModels": "Model konfiqurasiya edilməyib.",
+        "emptyNoMatches": "Filtrə uyğun model yoxdur.",
+        "resetAll": "Hamısını sıfırla",
+        "resetAllTitle": "Bütün dövrə kəsicilərini, sərinləmə vaxtlarını və kilidlənmələri sıfırla",
+        "resetTitle": "Dövrə kəsicisini sıfırla",
+        "confirmResetModel": "\"{{id}}\" modeli üçün dövrə kəsicisi sıfırlansın?",
+        "confirmResetAll": "Bütün dözümlülük vəziyyəti sıfırlansın? Bu, hər dövrə kəsicisini, sərinləmə vaxtını və kilidlənməni təmizləyir.",
+        "errors": {
+          "resetModelFailed": "Dövrə kəsicisini sıfırlamaq alınmadı",
+          "resetAllFailed": "Dözümlülük vəziyyətini sıfırlamaq alınmadı"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Provayder",
+          "status": "Vəziyyət",
+          "circuit": "Dövrə",
+          "errorRate": "Xəta nisbəti (5dq)",
+          "p95Latency": "P95 gecikmə (1saat)",
+          "requests": "Sorğular (1saat)",
+          "lastSuccess": "Sonuncu uğur",
+          "cooldownLockout": "Sərinləmə / kilidlənmə"
+        },
+        "status": {
+          "healthy": "Sağlam",
+          "degraded": "Zəifləyib",
+          "unavailable": "Əlçatan deyil",
+          "cooldown": "Sərinləmə",
+          "nodata": "Məlumat yoxdur"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Bərpa olunur",
+          "tripped": "Tıxandı"
+        },
+        "time": {
+          "never": "heç vaxt",
+          "now": "indi",
+          "secondsAgo": "{{count}}s əvvəl",
+          "minutesAgo": "{{count}}dq əvvəl",
+          "hoursAgo": "{{count}}saat əvvəl",
+          "daysAgo": "{{count}}gün əvvəl",
+          "minSec": "{{min}}dq {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "sərinləmə {{time}}",
+          "lockout": "kilidlənmə {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Eksperimentlər",
+      "subtitle": "Routerlları bir-birinə qarşı A/B testindən keçirin",
+      "noPermission": "Eksperimentləri görmək icazəniz yoxdur.",
+      "count": "{{count}} eksperiment",
+      "count_other": "{{count}} eksperiment",
+      "newExperiment": "Yeni Eksperiment",
+      "empty": "Hələ eksperiment yoxdur. Routerları üz-üzə müqayisə etmək üçün bir yaradın.",
+      "deleteConfirm": "\"{{name}}\" eksperimenti silinsin? Bu geri qaytarıla bilməz.",
+      "noToken": "Token yoxdur",
+      "noTokenTitle": "Token olmadan heç bir müştəri bu eksperimentə çata bilməz",
+      "errors": {
+        "loadFailed": "Eksperimentləri yükləmək alınmadı",
+        "deleteFailed": "Eksperimenti silmək alınmadı"
+      },
+      "columns": {
+        "name": "Ad",
+        "variants": "Variantlar",
+        "rotation": "Növbələşmə",
+        "created": "Yaradıldı"
+      },
+      "actions": {
+        "edit": "Eksperimenti redaktə et",
+        "remove": "Sil"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Eksperimentlərə qayıt",
+      "newExperiment": "Yeni Eksperiment",
+      "loading": "Yüklənir...",
+      "experimentId": "Eksperiment ID:",
+      "disabledTabTitle": "Bu tabı açmaq üçün əvvəlcə eksperimenti saxlayın",
+      "errors": {
+        "notFound": "Eksperiment tapılmadı"
+      },
+      "tabs": {
+        "config": "Konfiqurasiya",
+        "metrics": "Metrikalar",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Saxlanıldı.",
+      "created": "Eksperiment yaradıldı. Müştərinizi router tokeni əvəzinə bu tokenə yönləndirin. Bir daha göstərilməyəcək.",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı!",
+      "done": "Hazır",
+      "saving": "Saxlanılır...",
+      "create": "Eksperiment Yarat",
+      "save": "Dəyişiklikləri Saxla",
+      "cancel": "Ləğv et",
+      "trafficSplit": "Trafik bölgüsü",
+      "errors": {
+        "loadRoutersFailed": "Routerləri yükləmək alınmadı",
+        "saveFailed": "Eksperimenti saxlamaq alınmadı",
+        "copyFailed": "Kopyalama alınmadı: tokeni əl ilə seçib kopyalayın."
+      },
+      "fields": {
+        "name": "Ad",
+        "namePlaceholder": "Ucuz vs premium yönləndirmə",
+        "description": "Təsvir",
+        "optional": "(isteğe bağlı)",
+        "descriptionPlaceholder": "Bu test nəyi həll etməyə çalışır",
+        "minSamples": "Variant üzrə minimum çağırış",
+        "minSamplesHint": "Bundan aşağı olduqda, Metrikalar tabı müqayisəni hələ qəti olmayan kimi qeyd edir.",
+        "rotation": "Növbələşmə",
+        "stickyOn": "Yapışqan aktiv",
+        "stickyKey": "Yapışqan açar"
+      },
+      "variants": {
+        "title": "Variantlar",
+        "desc": "Hər variant mövcud bir router-dir, bütövlükdə götürülür: onun modelləri, yönləndirməsi və mühafizələri hamısı tətbiq olunur. Test ən azı ikisinə ehtiyac duyur.",
+        "routerAriaLabel": "Variant {{index}} router-i",
+        "routerPlaceholder": "Router seçin",
+        "labelAriaLabel": "Variant {{index}} etiketi",
+        "labelPlaceholder": "Etiket (isteğe bağlı)",
+        "weightAriaLabel": "Variant {{index}} çəkisi",
+        "weightPlaceholder": "Çəki",
+        "removeTitle": "Variant {{index}}-i sil",
+        "add": "Variant əlavə et"
+      },
+      "judge": {
+        "title": "Qiymətləndirici",
+        "desc": "İsteğe bağlı: bir model hər nümunə cavabı oxuyur və onu meyarlarınıza görə 0-10 bal ilə qiymətləndirir. Hər qiymətləndirilmiş çağırış əlavə bir model çağırışıdır, digərləri kimi hesablanır.",
+        "enable": "Cavabları qiymətləndirici model ilə qiymətləndir",
+        "model": "Qiymətləndirici model",
+        "modelPlaceholder": "Model seçin",
+        "criteria": "Meyarlar",
+        "criteriaPlaceholder": "Hər sətirdə bir, məs.\nVerilən sualı cavablandırır\nFaktiki qalır\nİstənilən formata uyğun gəlir",
+        "sampleRate": "Qiymətləndirilən çağırışların payı (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Yüklənir...",
+      "callsMeasured": "{{count}} çağırış ölçülüb",
+      "callsMeasured_other": "{{count}} çağırış ölçülüb",
+      "empty": "Bu pəncərədə hələ çağırış yoxdur. Müqayisəyə başlamaq üçün eksperiment tokenini müştəriyə yönləndirin.",
+      "notConclusive": "Hələ qəti deyil: hər variant bu pəncərədə ən azı {{minSamples}} çağırışa ehtiyac duyur. ",
+      "explanation": "Hər cütün daha yaxşı göstəricisi vurğulanıb: çağırış üzrə daha ucuz, daha sürətli, daha yüksək qiymətləndirici balı. Bir dəyərin altındaki faiz onun ən yaxşı qoldan olan fərqidir. Qiymətləndirici balı eksperimentin bütün ömrü üzrə davamlı ortadır, buna görə də pəncərənin azaltmadığı yeganə göstəricidir.",
+      "lowSample": "Az nümunə",
+      "lowSampleTitle": "Bu pəncərədə {{minSamples}}-dən az çağırış",
+      "judgedCallsTitle": "Eksperiment başladıqdan bəri qiymətləndirici tərəfindən {{count}} cavab qiymətləndirilib",
+      "judgedCallsTitle_other": "Eksperiment başladıqdan bəri qiymətləndirici tərəfindən {{count}} cavab qiymətləndirilib",
+      "errors": {
+        "loadFailed": "Metrikaları yükləmək alınmadı"
+      },
+      "columns": {
+        "variant": "Variant",
+        "calls": "Çağırışlar",
+        "share": "Pay",
+        "errors": "Xətalar",
+        "tokens": "Tokenlər giriş / çıxış",
+        "cost": "Dəyər",
+        "costPerCall": "Dəyər / çağırış",
+        "avgLatency": "Orta gecikmə",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Qiymətləndirici balı"
+      }
+    },
+    "token": {
+      "desc": "Müştəri eksperimenti tam bir router kimi çağırır: eyni əsas URL, router tokeni əvəzinə bu token. Hər sorğu bir variantda düşür və həmin variantın router-inə hesablanır.",
+      "baseUrlLabel": "API açarı kimi eksperiment tokeni ilə OpenAI ya da Anthropic SDK üçün əsas URL:",
+      "created": "Token yaradıldı. İndi kopyalayın, bir daha göstərilməyəcək.",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı!",
+      "newToken": "Yeni Token",
+      "empty": "Bu eksperimentdə token yoxdur. Müştərilərin onu çağıra bilməsi üçün bir yaradın.",
+      "revokeConfirm": "\"{{snippet}}...\" tokeni ləğv edilsin? Onu istifadə edən müştərilər dərhal işləməyi dayandıracaq.",
+      "revokeTitle": "Tokeni Ləğv Et",
+      "errors": {
+        "createFailed": "Tokeni yaratmaq alınmadı",
+        "revokeFailed": "Tokeni ləğv etmək alınmadı",
+        "copyFailed": "Kopyalama alınmadı: tokeni əl ilə seçib kopyalayın."
+      },
+      "columns": {
+        "created": "Yaradıldı",
+        "lastUsed": "Sonuncu istifadə"
+      }
+    }
+  },
+  "overview": {
+    "title": "İcmal",
+    "subtitle": "İstifadə xülasəsi və dəyər bölgüsü",
+    "noPermission": "İstifadə məlumatını görmək icazəsi yoxdur.",
+    "costByModel": "Model üzrə Dəyər",
+    "noCostRecorded": "Bu dövrdə heç bir dəyər qeydə alınmayıb.",
+    "callsByModel": "Model üzrə Çağırışlar",
+    "columns": {
+      "model": "Model",
+      "calls": "Çağırışlar",
+      "errors": "Xətalar",
+      "cost": "Dəyər"
+    },
+    "stats": {
+      "totalCalls": "Ümumi Çağırışlar",
+      "callsBreakdown": "{{routing}} yönləndirmə · {{completion}} tamamlama",
+      "successRate": "Uğur Nisbəti",
+      "ofAllRequests": "bütün sorğuların",
+      "errors": "Xətalar",
+      "failedRequests": "uğursuz sorğular",
+      "models": "Modellər",
+      "registered": "qeydiyyatdan keçmiş",
+      "routers": "Routerlər",
+      "active": "aktiv"
+    },
+    "connectCard": {
+      "title": "Müştəri qoşun",
+      "desc": "Claude Code, Codex, Cursor və daha {{count}}-nı bu keçidə yönləndirin."
+    }
+  },
+  "login": {
+    "emailLabel": "E-poçt",
+    "passwordLabel": "Parol",
+    "signIn": "Daxil ol",
+    "errors": {
+      "loginFailed": "Giriş uğursuz oldu",
+      "totpFailed": "2FA doğrulaması uğursuz oldu"
+    },
+    "totp": {
+      "title": "İkifaktorlu Autentifikasiya",
+      "backupPrompt": "Ehtiyat kodu daxil edin.",
+      "appPrompt": "Autentifikator tətbiqinizdən 6 rəqəmli kodu daxil edin.",
+      "backupCodeLabel": "Ehtiyat Kod",
+      "authenticatorCodeLabel": "Autentifikator Kodu",
+      "verify": "Doğrula",
+      "useAuthenticatorInstead": "Əvəzinə autentifikator tətbiqi istifadə et",
+      "useBackupInstead": "Əvəzinə ehtiyat kod istifadə et"
+    }
+  },
+  "setup": {
+    "welcome": "Xoş gəlmisiniz! Sizi quraşdıraq.",
+    "welcomeSubtitle": "Routerly-ni idarə etməyə başlamaq üçün ilk admin hesabını yaradın.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly fəal şəkildə inkişaf edir. Xətalar baş verə bilər.",
+    "betaFeedback": "Rəyiniz onun necə formalaşdığına kömək edir —",
+    "betaLink": "problem bildirin və ya ideya paylaşın",
+    "emailLabel": "Admin E-poçtu",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Parol",
+    "passwordPlaceholder": "Minimum 8 simvol",
+    "confirmLabel": "Parolu Təsdiqlə",
+    "confirmPlaceholder": "Parolu yenidən daxil edin",
+    "submit": "Admin Hesabı Yarat",
+    "errors": {
+      "mismatch": "Parollar uyğun gəlmir",
+      "tooShort": "Parol ən azı 8 simvol olmalıdır",
+      "setupFailed": "Quraşdırma alınmadı"
+    }
+  },
+  "audit": {
+    "empty": "Audit qeydi tapılmadı.",
+    "errors": {
+      "loadFailed": "Audit jurnalını yükləmək alınmadı"
+    },
+    "filters": {
+      "period": "Dövr",
+      "user": "İstifadəçi",
+      "userPlaceholder": "E-poçt və ya istifadəçi ID",
+      "action": "Əməliyyat",
+      "actionPlaceholder": "məs. model:create",
+      "result": "Nəticə",
+      "results": {
+        "all": "Hamısı",
+        "success": "Uğurlu",
+        "forbidden": "Qadağan",
+        "error": "Xəta"
+      },
+      "refresh": "Yenilə"
+    },
+    "columns": {
+      "timestamp": "Vaxt möhürü",
+      "user": "İstifadəçi",
+      "action": "Əməliyyat",
+      "endpoint": "Endpoint",
+      "result": "Nəticə",
+      "details": "Detallar"
+    },
+    "pagination": {
+      "previous": "Əvvəlki",
+      "next": "Növbəti",
+      "page": "Səhifə {{page}} / {{totalPages}}",
+      "total": "(cəmi {{count}})"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "İstifadə",
+      "live": "CANLI",
+      "subtitle": "Ətraflı çağırış jurnalları və model üzrə bölgü",
+      "updatedAt": "· {{time}}-də yeniləndi",
+      "poll": {
+        "off": "Söndürülüb",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1dq",
+        "5m": "5dq"
+      },
+      "liveButton": "● Canlı",
+      "liveButtonTitle": {
+        "disable": "Canlı rejimi deaktiv et",
+        "enable": "Canlı rejimi aktivləşdir (hər 2s yenilənir)"
+      },
+      "refreshNow": "↻ İndi",
+      "refreshNowTitle": "İndi yenilə",
+      "filters": {
+        "period": "Dövr",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Çağıran",
+        "type": "Növ",
+        "status": "Vəziyyət",
+        "allRouters": "Bütün Routerlər",
+        "allModels": "Bütün Modellər",
+        "allTokens": "Bütün Tokenlər",
+        "resetFilters": "Filtrləri sıfırla",
+        "all": "Hamısı",
+        "success": "Uğurlu",
+        "blocked": "Bloklandı",
+        "error": "Xəta"
+      },
+      "caller": {
+        "all": "Hamısı",
+        "completion": "Tamamlama",
+        "routing": "Router",
+        "guardrail": "Mühafizə",
+        "judge": "Qiymətləndirici"
+      },
+      "callerBadge": {
+        "completion": "tamamlama",
+        "routing": "router",
+        "guardrail": "mühafizə",
+        "judge": "qiymətləndirici"
+      },
+      "errors": {
+        "loadFailedPrefix": "İstifadə məlumatını yükləmək alınmadı:",
+        "retry": "Yenidən cəhd et"
+      },
+      "stats": {
+        "totalCalls": "Ümumi Çağırışlar",
+        "completionCalls": "Tamamlama Çağırışları",
+        "routerCalls": "Router Çağırışları",
+        "guardrailCalls": "Mühafizə Çağırışları",
+        "blockedCalls": "Bloklanmış Çağırışlar",
+        "errors": "Xətalar"
+      },
+      "table": {
+        "rank": "Sıra",
+        "model": "Model",
+        "provider": "Provayder",
+        "calls": "Çağırışlar",
+        "errors": "Xətalar",
+        "successRate": "Uğur nisbəti",
+        "avgLatency": "Orta gecikmə",
+        "p95Latency": "P95 gecikmə",
+        "inputTokens": "Giriş tokenləri",
+        "outputTokens": "Çıxış tokenləri",
+        "costPer1k": "Dəyər / 1K",
+        "cost": "Dəyər (USD)",
+        "bestCostPerformance": "Ən yaxşı dəyər-performans"
+      },
+      "showMoreModels": "{{count}} model daha göstər",
+      "showMoreModels_other": "{{count}} model daha göstər",
+      "showFewerModels": "Daha az model göstər",
+      "recentCalls": {
+        "title": "Son Çağırışlar",
+        "empty": "Bu dövr üçün istifadə qeydi yoxdur.",
+        "columns": {
+          "time": "Vaxt",
+          "router": "Router",
+          "model": "Model",
+          "type": "Növ",
+          "caller": "Çağıran",
+          "in": "Giriş",
+          "out": "Çıxış",
+          "cost": "Dəyər",
+          "latency": "Gecikmə",
+          "ttft": "TTFT",
+          "tokensPerSec": "Token/san",
+          "status": "Vəziyyət"
+        }
+      },
+      "pagination": {
+        "previous": "Əvvəlki",
+        "next": "Növbəti",
+        "pageOf": "Səhifə {{page}} / {{totalPages}}",
+        "totalRecords": "(cəmi {{count}} qeyd)"
+      }
+    },
+    "record": {
+      "back": "Geri",
+      "title": "Çağırış Detalı",
+      "notFoundTitle": "Qeyd Tapılmadı",
+      "notFoundBody": "İstifadə qeydi {{id}} yüklənə bilmədi.",
+      "errors": {
+        "loadFailed": "Qeydi yükləmək alınmadı"
+      },
+      "sections": {
+        "identity": "Kimlik",
+        "tokensAndCost": "Tokenlər və Dəyər",
+        "performanceAndOutcome": "Performans və Nəticə",
+        "traceLog": "İz Jurnalı"
+      },
+      "fields": {
+        "recordId": "Qeyd ID",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Çağırış Növü",
+        "requestType": "Sorğu Növü",
+        "inputTokens": "Giriş Tokenləri",
+        "outputTokens": "Çıxış Tokenləri",
+        "totalTokens": "Ümumi Tokenlər",
+        "costUsd": "Dəyər (USD)",
+        "costUnknown": "Naməlum",
+        "latency": "Gecikmə",
+        "ttft": "TTFT",
+        "tokensPerSec": "Token/san",
+        "outcome": "Nəticə",
+        "timestamp": "Vaxt möhürü",
+        "guardrailTriggered": "Mühafizə İşə Düşdü",
+        "blockedBy": "Bloklayan",
+        "piiRedacted": "PII Gizlədildi"
+      },
+      "errorMessage": "Xəta Mesajı",
+      "eventCount": "{{count}} hadisə",
+      "eventCount_other": "{{count}} hadisə",
+      "noTrace": "İz mövcud deyil. İz məlumatı yalnız yeni çağırışlar üçün qeydə alınır."
+    }
+  },
+  "playground": {
+    "title": "Sınaq meydançası",
+    "subtitle": "Modelləri sınayın, cavabları müqayisə edin və sorğu şablonlarını saxlayın.",
+    "mode": {
+      "single": "Tək",
+      "compare": "Müqayisə"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "A ilə eyni",
+      "unknownToken": "Naməlum token"
+    },
+    "presets": {
+      "button": "Şablonlar",
+      "panelTitle": "Şablonlar",
+      "saveCurrent": "Cari halı saxla",
+      "namePlaceholder": "Şablon adı...",
+      "save": "Saxla",
+      "empty": "Hələ şablon yoxdur.",
+      "delete": "Şablonu sil"
+    },
+    "streamingDisabled": {
+      "banner": "Axın mövcud deyil",
+      "bannerBody": "bu router-də cavab bloklayan mühafizə aktivdir. Routerly çatdırmadan əvvəl bütün cavabı yoxlamalıdır, buna görə cavablar bir dəfəyə çatır.",
+      "tooltip": "Axın mövcud deyil: cavab bloklayan mühafizə çatdırmadan əvvəl bütün cavabın yoxlanılmasını tələb edir.",
+      "ariaLabel": "Axın mövcud deyil"
+    },
+    "systemPrompt": "Sistem sorğusu",
+    "model": "Model",
+    "modelPlaceholder": "Avto (router standartı)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Maks. token",
+      "topP": "Top-p"
+    },
+    "stream": "Axın",
+    "clear": "Təmizlə",
+    "empty": {
+      "noMessages": "Hələ mesaj yoxdur.",
+      "enterToken": "Başlamaq üçün yuxarıda bir Router Tokeni daxil edin."
+    },
+    "reasoning": "Əsaslandırma",
+    "blockedDefault": "Bu mesaj bir mühafizə tərəfindən bloklandı.",
+    "truncated": "Kəsildi — cavab maks. token tərəfindən kəsildi",
+    "bufferedNote": "Təhlükəsizlik yoxlaması üçün saxlanıldı",
+    "errors": {
+      "onlyImages": "Yalnız şəkil əlavələri dəstəklənir."
+    },
+    "rawToggle": {
+      "rendered": "göstərilmiş",
+      "raw": "xam"
+    },
+    "inputPlaceholder": "Mesaj yazın...",
+    "attachImage": "Şəkil əlavə et",
+    "attachedImageAlt": "Əlavə edilib",
+    "attachmentAlt": "Əlavə",
+    "debug": {
+      "title": "Sazlama",
+      "clear": "Təmizlə",
+      "hide": "Sazlamanı gizlət",
+      "show": "Sazlamanı göstər",
+      "empty": "Hələ sazlama məlumatı yoxdur.",
+      "emptyHint": "Yönləndirmə detallarını görmək üçün mesaj göndərin.",
+      "turnTraceLog": "Növbə #{{turn}} iz jurnalı"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Model seçin...",
+      "noMessages": "Hələ mesaj yoxdur.",
+      "debugTurns": "Sazlama ({{count}} növbə)",
+      "debugTurns_other": "Sazlama ({{count}} növbə)",
+      "guardrailTokensTitle": "Mühafizə qiymətləndirici tokenləri",
+      "stop": "Dayandır",
+      "inputPlaceholder": "Eyni mesajı hər iki modelə göndərin..."
+    }
+  },
+  "help": {
+    "title": "Kömək və Dəstək",
+    "subtitle": "Biz buradayıq — istənilən vaxt cavab tapın və ya bizə müraciət edin.",
+    "docs": {
+      "title": "Sənədləşmə",
+      "subtitle": "Bələdçilər, API arayışı və konfiqurasiya sənədləri",
+      "body": "Rəsmi sənədlər başlanğıcdan qabaqcıl yönləndirmə siyasətlərinə, provayder quraşdırılmasına, büdcələrə və tam API arayışına qədər hər şeyi əhatə edir.",
+      "openLink": "Sənədləşməni aç"
+    },
+    "issues": {
+      "title": "Xəta bildirin və ya funksiya təklif edin",
+      "subtitle": "GitHub issue açın — 2 dəqiqə çəkir",
+      "body": "GitHub issue-lar xəta bildirmək və ya təkmilləşdirmə təklif etmək üçün ən yaxşı yoldur. Şeyləri daha tez düzəltmək üçün bunları daxil edin: nə etdiniz, nə gözlədiniz, əslində nə baş verdi.",
+      "showTemplate": "Issue şablonunu göstər",
+      "reportBug": "Xəta bildir",
+      "requestFeature": "Funksiya tələb et"
+    },
+    "issueTemplate": {
+      "whatHappened": "Nə baş verdi?",
+      "whatHappenedHint": "Problemi sadə sözlərlə təsvir edin",
+      "stepsToReproduce": "Təkrarlama addımları",
+      "expectedBehaviour": "Gözlənilən davranış",
+      "expectedBehaviourHint": "Nə görməyi gözləyirdiniz",
+      "version": "Routerly versiyası",
+      "versionHint": "`routerly --version` işə salın, ya da Parametrlər → Haqqında yoxlayın"
+    },
+    "email": {
+      "title": "Dəstəklə əlaqə",
+      "subtitle": "Hər mesajı oxuyuruq və mümkün qədər tez cavab veririk",
+      "body": "GitHub issue-ya uyğun gəlməyən hər şey üçün — hesablaşma sualları, şəxsi məsələlər, ya da sadəcə salam demək istəyirsinizsə — bizə yazın."
+    },
+    "faq": {
+      "title": "Tez-tez verilən suallar",
+      "subtitle": "Ən çox verilən suallara qısa cavablar",
+      "items": {
+        "connect": {
+          "q": "Tətbiqimi Routerly-ə necə qoşum?",
+          "a": "OpenAI ya da Anthropic SDK-nızı Routerly instansiyanıza yönləndirin. Əsas URL-i http://your-host:3000/v1 (OpenAI-uyğun) ya da http://your-host:3000/anthropic (Anthropic-uyğun) ilə əvəz edin, sonra API açarı kimi router tokeni istifadə edin. Hamısı bu qədər — başqa dəyişiklik lazım deyil."
+        },
+        "openaiCompat": {
+          "q": "Routerly OpenAI SDK istifadə edən alətlərlə uyğundur?",
+          "a": "Bəli. Routerly hazır əvəzedicidir: xüsusi əsas URL və API açarını dəstəkləyən hər alət (LangChain, LlamaIndex, Cursor, Continue və s.) qutudan çıxan kimi işləyir. Anthropic-format müştəriləri üçün /anthropic endpoint-indən istifadə edin."
+        },
+        "routing": {
+          "q": "Model yönləndirməsi necə işləyir?",
+          "a": "Hər router-in sorğunun hansı modelə yönləndirilməsini müəyyən edən yönləndirmə siyasəti var. Siyasətlərə növbə ilə, ən aşağı dəyər, ən sürətli cavab, ehtiyat zəncirlər və başqaları daxildir. Onları hər router üçün Routerlər → Yönləndirmə altında konfiqurasiya edirsiniz."
+        },
+        "addModel": {
+          "q": "Yeni AI modeli necə əlavə edim?",
+          "a": "Modellər → Model əlavə et bölməsinə keçin. İstənilən OpenAI-uyğun provayderi (Ollama, LM Studio, xüsusi endpoint-lər) ya da yerli Anthropic endpoint-i əlavə edə bilərsiniz. Əsas URL-i, API açarını və model ID-sini doldurun — qalanını Routerly həll edəcək."
+        },
+        "dataStored": {
+          "q": "Məlumatım saxlanılır? Sorğularım qeydə alınır?",
+          "a": "Routerly özü hostlanır və məlumatları yalnız sizin maşınınızda saxlayır (standart olaraq ~/.routerly/ qovluğunda). Sorğular və cavablar heç vaxt Routerly tərəfindən heç yerə göndərilmir. Sorğu jurnalları yalnız lokal saxlanılır və yalnız onları router üzrə aktivləşdirsəniz."
+        },
+        "routerToken": {
+          "q": "Router tokeni nədir və provayder API açarından fərqi nədir?",
+          "a": "Router tokeni tətbiqinizə ya da komanda üzvlərinizə Routerly ilə doğrulamaq üçün verdiyiniz kimlik məlumatıdır. Bu, Routerly-nin server tərəfində təhlükəsiz saxladığı provayder API açarlarınızdan ayrıdır. Tətbiqləriniz həqiqi provayder açarlarını heç vaxt görmür."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} istifadəçi",
+    "countLabel_other": "{{count}} istifadəçi",
+    "addButton": "İstifadəçi Əlavə Et",
+    "columns": {
+      "email": "E-poçt",
+      "role": "Rol",
+      "routers": "Routerlər"
+    },
+    "allRouters": "Hamısı",
+    "resetTwoFaTitle": "2FA-nı Sıfırla",
+    "resetTwoFaConfirm": "{{email}} üçün 2FA sıfırlansın? Yenidən qeydiyyatdan keçməli olacaqlar.",
+    "deleteConfirm": "Bu istifadəçi silinsin?",
+    "emptyTitle": "Hələ istifadəçi yoxdur.",
+    "noPermission": "İstifadəçiləri görmək icazəniz yoxdur.",
+    "modal": {
+      "title": "İstifadəçi Əlavə Et",
+      "emailLabel": "E-poçt",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Parol",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rol",
+      "roleAdmin": "Admin",
+      "roleViewer": "İzləyici",
+      "cancelButton": "Ləğv et",
+      "submitButton": "İstifadəçi Əlavə Et"
+    },
+    "errors": {
+      "loadFailed": "İstifadəçiləri yükləmək alınmadı",
+      "addFailed": "Xəta"
+    }
+  },
+  "userEdit": {
+    "title": "İstifadəçini Redaktə Et",
+    "account": "Hesab",
+    "email": "E-poçt",
+    "role": "Rol",
+    "changePassword": "Parolu Dəyişdir",
+    "newPassword": "Yeni Parol",
+    "newPasswordHint": "(cari saxlamaq üçün boş qoyun)",
+    "save": "Saxla",
+    "saved": "Saxlanıldı!",
+    "errors": {
+      "loadFailed": "İstifadəçini yükləmək alınmadı",
+      "saveFailed": "Saxlamaq alınmadı"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Rolları və icazələri idarə edin. Daxili rollar dəyişdirilə bilməz.",
+    "newRole": "Yeni Rol",
+    "builtin": "daxili",
+    "edit": "Redaktə et",
+    "deleteConfirm": "Bu rol silinsin? Bu rolu olan istifadəçilər təsirlənəcək.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "məs. operator",
+      "name": "Ad",
+      "namePlaceholder": "Rol adı",
+      "permissions": "İcazələr",
+      "create": "Yarat",
+      "save": "Saxla",
+      "cancel": "Ləğv et"
+    },
+    "permissions": {
+      "routerRead": "Routerlər – Oxu",
+      "routerWrite": "Routerlər – Yazı",
+      "modelRead": "Modellər – Oxu",
+      "modelWrite": "Modellər – Yazı",
+      "userRead": "İstifadəçilər – Oxu",
+      "userWrite": "İstifadəçilər – Yazı",
+      "reportRead": "Hesabatlar – Oxu",
+      "settingsRead": "Parametrlər – Oxu",
+      "settingsWrite": "Parametrlər – Yazı",
+      "notificationWrite": "Bildirişlər – Yazı",
+      "tokenRead": "Tokenlər – Oxu",
+      "tokenWrite": "Tokenlər – Yazı",
+      "roleWrite": "Rollar – Yazı",
+      "auditRead": "Audit Jurnalı – Oxu",
+      "modulesRead": "Modullar – Oxu",
+      "modulesManage": "Modullar – İdarə et",
+      "connectionsRead": "Bağlantılar – Oxu",
+      "connectionsManage": "Bağlantılar – İdarə et",
+      "resilienceRead": "Dözümlülük – Oxu",
+      "resilienceManage": "Dözümlülük – İdarə et",
+      "profilesRead": "Yönləndirmə Profilləri – Oxu",
+      "profilesManage": "Yönləndirmə Profilləri – İdarə et",
+      "optimizersRead": "Optimizatorlar – Oxu",
+      "optimizersManage": "Optimizatorlar – İdarə et",
+      "experimentsRead": "Eksperimentlər – Oxu",
+      "experimentsManage": "Eksperimentlər – İdarə et"
+    },
+    "errors": {
+      "loadFailed": "Rolları yükləmək alınmadı",
+      "updateFailed": "Rolu yeniləmək alınmadı",
+      "createFailed": "Rolu yaratmaq alınmadı",
+      "deleteFailed": "Rolu silmək alınmadı"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profillər",
+      "subtitle": "Yenidən istifadə oluna bilən yönləndirmə, optimizator və təhlükəsizlik konfiqurasiyaları",
+      "noPermission": "Profilləri görmək icazəniz yoxdur.",
+      "newProfile": "Yeni {{kind}} Profili",
+      "empty": "Hələ {{kind}} profili yoxdur.",
+      "builtin": "Daxili",
+      "custom": "Xüsusi",
+      "view": "Bax",
+      "edit": "Redaktə et",
+      "clone": "Klonla",
+      "delete": "Sil",
+      "deleteConfirm": "\"{{label}}\" profili silinsin? Bu geri qaytarıla bilməz.",
+      "kindDescriptions": {
+        "routing": "Sorğuya hansı model cavab verir və o bacarmadıqda nə olur",
+        "optimizer": "Sorğu göndərilmədən əvvəl ondan nə çıxarılır",
+        "security": "Trafikə tətbiq olunan mühafizələr və PII siyasətləri"
+      },
+      "columns": {
+        "label": "Etiket",
+        "type": "Növ",
+        "configuration": "Konfiqurasiya",
+        "version": "Versiya"
+      },
+      "errors": {
+        "loadFailed": "Profilləri yükləmək alınmadı",
+        "deleteFailed": "Profili silmək alınmadı"
+      }
+    },
+    "form": {
+      "backToProfiles": "Profillərə qayıt",
+      "newProfileTitle": "Yeni {{kind}} Profili",
+      "editProfileTitle": "{{label}} Redaktə Et",
+      "builtinHint": "Daxili profillər redaktə edilə bilməz. Onu fərdiləşdirmək üçün klonlayın.",
+      "assignHint": "{{article}} {{kind}} profili istənilən sayda router-ə təyin edilə bilər.",
+      "noPermission": "Profilləri görmək icazəniz yoxdur.",
+      "label": "Etiket",
+      "optimizers": "Optimizatorlar",
+      "optimizersHint": "Yenidən sıralamaq üçün sürüşdürün, aktivləşdirmək üçün keçid edin. Yuxarıdan aşağıya ardıcıllıqla işləyirlər.",
+      "createProfile": "Profil Yarat",
+      "saveProfile": "Profili Saxla",
+      "cancel": "Ləğv et",
+      "copySuffix": "{{label}} surəti",
+      "labelPlaceholders": {
+        "routing": "məs. Mənim Balanslı Yönləndirməm",
+        "optimizer": "məs. Mənim Sorğu Qırpanım",
+        "security": "məs. Mənim Sərt Mühafizələrim"
+      },
+      "errors": {
+        "notFound": "Profil tapılmadı.",
+        "loadFailed": "Profili yükləmək alınmadı",
+        "saveFailed": "Profili saxlamaq alınmadı"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Qoşulmaya qayıt",
+    "title": "Qoşul",
+    "docs": "Sənədlər",
+    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
+    "noClientPrefix": "Belə adlı müştəri yoxdur",
+    "errors": {
+      "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Ən sürətli: bir əmr",
+      "description": "{{client}} quraşdırılmış maşında işə salın. O, {{configPath}}-i yazır, geri qaytarıla bilən yedək saxlayaraq."
+    },
+    "byHand": {
+      "titleAlt": "Ya da əl ilə quraşdırın",
+      "titleUi": "Əl ilə quraşdırın",
+      "titleConfigFile": "Konfiqurasiya faylını quraşdırın",
+      "setValuesIn": "Bu dəyərləri {{configPath}}-da təyin edin.",
+      "putThisIn": "Bunu buraya qoyun",
+      "replaceToken": "Əvəz et",
+      "withRouterToken": "router tokeni ilə:",
+      "createOne": "bir yarat",
+      "onRoutersPage": "Routerlər səhifəsində.",
+      "modelLabel": "Model:",
+      "modelHint": "seçimi Routerly-ə həvalə edir, bura",
+      "modelsLink": "Modellər",
+      "worksToo": "bölməsindəki hər hansı model ID-si də işləyir.",
+      "openaiCompatHint": "Eyni əsas URL, açar və model \"OpenAI compatible\" provayder təklif edən istənilən müştəriyə uyğun gəlir."
+    },
+    "mcp": {
+      "title": "MCP serveri",
+      "description": "Yuxarıdaki addımlardan ayrı: bu, {{client}}-in Routerly alətlərini çağırmasına imkan verir. Buna",
+      "orFromYour": "ya da sizin",
+      "profileLink": "profilinizdən"
+    },
+    "checkItWorked": {
+      "title": "İşlədiyini yoxlayın",
+      "restart": "{{client}}-i yenidən başladın, ona bir sorğu göndərin, sonra çağırışı burada axtarın",
+      "usageLink": "İstifadə",
+      "cliReports": "Eyni maşından CLI tapdıqlarını bildirir:"
+    }
+  },
+  "connect": {
+    "title": "Qoşul",
+    "subtitle": "AI kodlaşdırma müştərisini bu keçidə yönləndirin. Quraşdırma addımları üçün müştəri seçin.",
+    "llmLabel": "LLM",
+    "llmDescription": "həmin müştərinin model trafikini Routerly üzərindən yönləndirir.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Routerly-ni onun içində alət serveri kimi yükləyir.",
+    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
+    "errors": {
+      "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Bir əmr",
+      "hint": "CLI konfiqurasiya faylını sizin üçün yazır, geri qaytarıla bilən yedəklə."
+    },
+    "byHand": {
+      "title": "Əl ilə",
+      "hint": "Parçayı müştəri səhifəsindən onun parametrlərinə kopyalayın, sonra onu yenidən başladın."
+    },
+    "endpoint": {
+      "title": "İstənilən müştərini buraya yönləndirin",
+      "description": "OpenAI ya da Anthropic SDK üzərində qurulan hər şey əsas URL-i və açarı dəyişməklə işləyir. Başqa heç nə dəyişmir: sorğular və cavablar Routerly-dən olduğu kimi keçir.",
+      "openaiBaseUrl": "OpenAI əsas URL",
+      "anthropicBaseUrl": "Anthropic əsas URL",
+      "apiKey": "API açarı",
+      "model": "Model",
+      "apiKeyDescription": "Bir router tokeni, göndərilir",
+      "or": "ya da",
+      "createOne": "Bir yarat",
+      "onRoutersPage": "Routerlər səhifəsində.",
+      "modelDescription": "seçimi Routerly-yə həvalə edir. Bura",
+      "modelsLink": "Modellər",
+      "worksToo": "səhifəsindəki hər hansı model ID-si də işləyir."
+    }
+  }
+}

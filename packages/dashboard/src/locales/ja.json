@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "自動",
+      "dark": "ダーク",
+      "light": "ライト"
+    },
+    "themeCycle": {
+      "title": "テーマ: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "サイドバーを展開",
+      "collapse": "サイドバーを折りたたむ"
+    },
+    "tagline": "1つのゲートウェイ。任意のAIモデル。完全なコントロール。",
+    "nav": {
+      "overview": "概要",
+      "providers": "プロバイダー",
+      "models": "モデル",
+      "profiles": "プロファイル",
+      "routers": "ルーター",
+      "experiments": "実験",
+      "usage": "使用状況",
+      "playground": "プレイグラウンド",
+      "settings": "設定",
+      "connectApp": "アプリを接続",
+      "help": "ヘルプ",
+      "signOut": "ログアウト"
+    },
+    "banner": {
+      "permissionWarning": "一部の設定ファイルが許可的なアクセス権限を持っています({{files}})。スタートアップとリクエストは引き続き機能しますが、都合がつきましたらホストファイルシステムから修正してください。",
+      "dismiss": "閉じる",
+      "updateAvailable": "Routerly v{{latest}}が利用可能です。現在のバージョンはv{{current}}です。",
+      "updateLink": "設定で更新",
+      "mfaRequired": "このインスタンスでは2要素認証が必須です。",
+      "mfaLink": "プロファイルで2FAをセットアップ",
+      "mfaSuffix": "してアカウントを保護してください。",
+      "telemetryTitle": "Routerlyは自動的にデータを送信することはありません。",
+      "telemetryBody": "匿名のインストール指標を送信して手伝っていただけますか?イベントタイプ、バージョン、プラットフォーム、ランダムIDのみ — 個人データなし、IPなし。",
+      "telemetryLink": "何が送信されますか?",
+      "telemetryYes": "はい、手伝います",
+      "telemetryNo": "結構です"
+    },
+    "language": {
+      "label": "言語"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}}秒前",
+      "secondsAgo_other": "{{count}}秒前",
+      "minutesAgo": "{{count}}分前",
+      "minutesAgo_other": "{{count}}分前",
+      "hoursAgo": "{{count}}時間前",
+      "hoursAgo_other": "{{count}}時間前",
+      "daysAgo": "{{count}}日前",
+      "daysAgo_other": "{{count}}日前"
+    },
+    "confirm": "確認",
+    "cancel": "キャンセル",
+    "remove": "削除",
+    "select": "選択...",
+    "search": "検索...",
+    "noResults": "結果がありません",
+    "noRemainingOptions": "残りのオプションがありません",
+    "apply": "適用",
+    "saved": "保存されました",
+    "showLess": "少なく表示",
+    "roles": "ロール",
+    "permissions": "権限",
+    "notifications": {
+      "title": "通知",
+      "markAllRead": "すべて既読にする",
+      "empty": "通知がありません",
+      "viewAll": "すべての通知を表示"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "期間を選択",
+      "recent": "最近",
+      "ranges": "範囲",
+      "from": "開始",
+      "to": "終了"
+    },
+    "permissionGuard": {
+      "fixFailed": "権限の修正に失敗しました",
+      "title": "安全でないファイル権限",
+      "defaultMessage": "一部のファイルが安全でない権限を持っています。",
+      "fixing": "修正中...",
+      "fixNow": "今すぐ修正"
+    },
+    "limitRows": {
+      "noLimits": "制限が設定されていません。",
+      "metricLabel": "メトリック",
+      "typeLabel": "タイプ",
+      "periodLabel": "期間",
+      "everyLabel": "毎",
+      "maxCost": "最大コスト",
+      "maxCount": "最大数",
+      "maxTokens": "最大トークン",
+      "allCombosSet": "すべてのメトリック/期間の組み合わせが既に設定されています",
+      "addLimit": "制限を追加",
+      "metric": {
+        "cost": "コスト",
+        "calls": "呼び出し",
+        "input_tokens": "入力トークン",
+        "output_tokens": "出力トークン",
+        "total_tokens": "合計トークン"
+      },
+      "period": {
+        "hourly": "毎時間",
+        "daily": "毎日",
+        "weekly": "毎週",
+        "monthly": "毎月",
+        "yearly": "毎年"
+      },
+      "rollingUnit": {
+        "second": "秒",
+        "minute": "分",
+        "hour": "時間",
+        "day": "日",
+        "week": "週",
+        "month": "月"
+      },
+      "windowType": {
+        "period": "期間",
+        "rolling": "ローリング"
+      },
+      "fmt": {
+        "requests": "{{value}}リクエスト",
+        "inputTokens": "{{value}}入力トークン",
+        "outputTokens": "{{value}}出力トークン",
+        "totalTokens": "{{value}}合計トークン",
+        "everyRolling": "{{metric}}毎{{amount}}{{unit}}",
+        "perPeriod": "{{metric}}毎{{period}}"
+      }
+    },
+    "savings": {
+      "title": "ルーティングで節約された金額",
+      "input": "入力",
+      "output": "出力",
+      "actual": "実際",
+      "clientCalls": "{{count}}クライアント呼び出し",
+      "clientCalls_other": "{{count}}クライアント呼び出し",
+      "comparedAgainst": "、各",
+      "comparedAgainst_other": "、各",
+      "paidModelsInPlay": "{{count}}つの有料モデルが稼働中",
+      "paidModelsInPlay_other": "{{count}}つの有料モデルが稼働中",
+      "metricCost": "コスト",
+      "metricTokens": "トークン",
+      "totalCost": "総コスト",
+      "routed": "ルーティング: {{value}}",
+      "saved": "節約: {{value}}",
+      "usdThisPeriod": "この期間のUSD",
+      "savedVsAlways": "{{value}}節約({{percent}}%) 常に{{model}}との比較",
+      "tokens": "トークン",
+      "in": "入力: {{value}}",
+      "out": "出力: {{value}}",
+      "tokenSubWithCache": "{{in}}入力・{{out}}出力・{{cached}}キャッシュ",
+      "tokenSub": "{{in}}入力・{{out}}出力",
+      "cutByOptimizers": "オプティマイザーで{{value}}削減",
+      "fewerThanAlways": "常に{{model}}よりも{{value}}少ない、推定値"
+    },
+    "optimizerSteps": {
+      "downloaded": "ダウンロード済み",
+      "thisStepRunsOn": "このステップは次で実行されます",
+      "defaultCheckpoint": "デフォルトチェックポイント"
+    },
+    "routingPolicies": {
+      "title": "ルーティングポリシー",
+      "subtitle": "ポリシーはリクエストのルーティング方法を決定します。上から順に実行されます。",
+      "removePolicy": "ポリシーを削除",
+      "removeIntent": "インテントを削除",
+      "removeExample": "例を削除",
+      "routingModels": "ルーティングモデル",
+      "embeddingModels": "埋め込みモデル",
+      "maxCompletionTokens": "最大補完トークン",
+      "maxPromptChars": "最大プロンプト文字数",
+      "similarityThreshold": "類似度しきい値",
+      "previousMessages": "前のメッセージ",
+      "intents": "インテント",
+      "confidenceThreshold": "信頼度しきい値",
+      "ambiguityMargin": "曖昧性マージン",
+      "maxCallsPerWindow": "ウィンドウごとの最大呼び出し数",
+      "addFallbackModel": "フォールバックモデルを追加",
+      "autoRoutingLabel": "自動ルーティング",
+      "autoRoutingHint": "有効にすると、トラフィックはカスタムプロンプトなしで配分されます。無効にすると、各ターゲットモデルをいつ選択するかをAIに指示する特定のプロンプトを記述できます。",
+      "additionalPromptInfoLabel": "追加プロンプト情報",
+      "additionalPromptInfoPlaceholder": "ルーティングプロンプトに含める追加の指示...",
+      "addExamplePlaceholder": "例を追加してEnterキーを押してください...",
+      "addIntentPlaceholder": "インテントを追加してEnterキーを押してください...",
+      "addPolicyPlaceholder": "ポリシーを追加...",
+      "labels": {
+        "llm": "AIルーティングポリシー",
+        "rate-limit": "レート制限ポリシー",
+        "budget-remaining": "予算残高ポリシー",
+        "semantic-intent": "セマンティックインテントポリシー",
+        "health": "ヘルスポリシー",
+        "context": "コンテキストポリシー",
+        "capability": "機能ポリシー",
+        "performance": "パフォーマンスポリシー",
+        "fairness": "公平性ポリシー",
+        "cheapest": "最安値ポリシー",
+        "model-preference": "モデル設定ポリシー"
+      },
+      "descriptions": {
+        "context": "利用可能なコンテキストウィンドウに基づいてモデルをスコアします。推定リクエスト長より小さいコンテキストウィンドウを持つモデルに0を割り当て、切り詰めエラーを防ぎます。",
+        "cheapest": "トークンコストに反比例してモデルをスコアします。最安値のモデルは1.0、最も高価なモデルは0.0を取得し、リクエスト全体のAPI支出を削減するのに役立ちます。",
+        "health": "指数減衰を使用した最近のエラー率に基づいてモデルをスコアします(最近のエラーはより高い重み付けがされます)。加重エラー率が重大なしきい値を超えたときにスコアを0に設定するサーキットブレーカーを適用します。",
+        "performance": "指数減衰を使用した最近の平均遅延に基づいてモデルをスコアします。最速のモデルは1.0、最速でないモデルは0.0を取得します。最近のデータがないモデルはデフォルトで1.0です。",
+        "llm": "AIモデルを使用してリクエストのセマンティックコンテンツに基づいて候補をスコアします。モデルごとのルーティングガイダンスプロンプトをサポートし、制限が構成されている場合は予算のヘッドルームを考慮します。",
+        "capability": "ハードフィルター: リクエストに必要な機能(ビジョン、関数呼び出し、JSONモード)を明示的に欠けているモデルに0を割り当てます。明示的な機能宣言がないモデルには罰則は与えられません。",
+        "rate-limit": "プロバイダーレート制限(HTTP 429)に達するリスクを軽減するために、最近の呼び出し頻度が高いモデルにペナルティを与えます。スコアを0に強制するカスタマイズ可能なハードしきい値をサポートします。",
+        "fairness": "最近成功した呼び出しを受けたモデルにペナルティを与えることでトラフィックを均等に分配します。負荷が単一のモデルに集中するのを防ぐためのソフトラウンドロビンとして機能します。",
+        "budget-remaining": "すべての構成済み制限全体の残りの予算ヘッドルームに基づいてモデルをスコアします。しきい値に達する前に残りの余裕が大きいモデルを優先し、消費を先回りして分散させます。",
+        "semantic-intent": "埋め込みを使用してセマンティックインテントによってリクエストを分類し、候補プールをそのインテントにマップされたモデルに限定します。確実なマッチはプールをハードフィルターします。曖昧なマッチはトップ2プールをマージします。未知のリクエストはすべての候補をパススルーします。",
+        "model-preference": "クライアントが特定のモデルをリクエストする場合(routerly/adaではない)、カスタマイズ可能なボーナススコアをそのモデルに授与します。設定が表現されていない場合、ポリシーは棄権します。リスト内の位置は、設定が他のポリシーに対してどの程度の重み付けをするかを制御します。"
+      },
+      "selectModel": "モデルを選択"
+    },
+    "securityRules": {
+      "applyTo": "に適用",
+      "streamingBufferSize": "ストリーミングバッファサイズ(文字)",
+      "entityTypes": "エンティティタイプ",
+      "target": "ターゲット",
+      "embeddingModel": "埋め込みモデル",
+      "judgeModel": "判定モデル",
+      "contentGuardrails": "コンテンツガードレール",
+      "piiPolicies": "PIIポリシー",
+      "addSecurityPolicyPlaceholder": "セキュリティポリシーを追加...",
+      "removePolicyTooltip": "ポリシーを削除",
+      "deleteRuleAriaLabel": "ルールを削除",
+      "embeddingModelPlaceholder": "埋め込みモデルを選択...",
+      "fallbackModelsLabel": "フォールバックモデル(オプション、順序で試行)",
+      "fallbackModelsPlaceholder": "フォールバックモデルがありません...",
+      "exampleTextsLabel": "ブロックするサンプルテキスト(1行に1つ)",
+      "exampleTextsPlaceholder": "ハッキング方法...\n...",
+      "similarityThresholdLabel": "類似度しきい値:",
+      "judgeModelPlaceholder": "判定モデルを選択...",
+      "allowedTopicsLabel": "許可されたトピック(自然言語)",
+      "allowedTopicsPlaceholder": "ソフトウェア製品のカスタマーサポート。テクニカルトラブルシューティング。請求に関する質問。",
+      "onTopicThresholdLabel": "トピック内スコアが以下の場合はブロック:",
+      "harmThresholdLabel": "危害スコアが以下の場合はブロック:",
+      "customInstructionsLabel": "カスタム指示",
+      "customInstructionsPlaceholder": "あなたはコンテンツセーフティ分類器です。次のテキストを有害なコンテンツについて評価してください。\nカテゴリ: ヘイトスピーチ、暴力、性的コンテンツ、自傷行為。\n0から1の間の数字を含む{\"score\": <数字>}という形式のJSONオブジェクトのみで応答してください",
+      "customInstructionsRequired": "カスタム指示は必須です。",
+      "enabledLabel": "有効",
+      "contentGuardrailsHint": "設定済みルールに対してリクエストとレスポンスを検査します。少なくとも1つのルールが設定されている場合にアクティブになります。",
+      "securityPoliciesHeading": "セキュリティポリシー",
+      "noSecurityPolicies": "セキュリティポリシーが構成されていません。",
+      "piiPoliciesHint": "個人データを検出して編集します。各ポリシーはリクエスト入力、モデルレスポンス、またはその両方をターゲットにし、独自のエンティティセットを制御します。",
+      "noPiiPolicies": "PIIポリシーが構成されていません。",
+      "addPolicyButton": "+ ポリシーを追加",
+      "injectionWarningTitle": "インジェクションによってリクエストペイロードが変更されました",
+      "injectionWarningBody": "1つ以上のルールが発信リクエストのシステムプロンプトに指示をインジェクトするため、プロバイダーに送信されるペイロードが変更されます。追加のモデル呼び出しは行われず、何もブロックされません。提供するモデルは指示を自己実行します。",
+      "streamingDisabledWarningTitle": "このルーターではストリーミングが無効化されています",
+      "streamingDisabledWarningBody": "1つ以上のルールがレスポンスをブロックするように構成されている場合(ターゲット: レスポンスまたは両方)。ブロッキング決定がなされる前に全レスポンスを検査する必要があるため、Routerlyはレスポンスを完全に保持してからクライアントに返します。レスポンスをブロックするルールが有効な間、ストリーミングは利用できません。クライアントは増分チャンクではなく、一度に完全なレスポンスを受け取ります。"
+    },
+    "connectionFields": {
+      "azureResourceName": "Azureリソース名",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAIリソース名(Azureポータルから)。",
+      "deploymentId": "デプロイメントID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI Studioで作成したデプロイメント名。",
+      "azureApiVersionLabel": "APIバージョン",
+      "azureApiVersionDefaultHint": "(デフォルト: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWSリージョン",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWSアクセスキーID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWSシークレットアクセスキー",
+      "awsSecretAccessKeyPlaceholderExisting": "既存の値を保持するには空白のままにしてください",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/...",
+      "awsSessionTokenLabel": "セッショントークン",
+      "awsSessionTokenOptionalHint": "(オプション、一時的な認証情報用)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz...",
+      "gcpRouterId": "GCPルーターID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "ロケーション",
+      "gcpLocationDefaultHint": "(デフォルト: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "サービスアカウントキー",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "エンドポイントURL",
+      "optional": "(オプション)",
+      "webProvider": {
+        "unofficialWarningTitle": "非公式プロバイダー — 自己責任で使用してください。",
+        "unofficialWarningBody": "この統合は予告なく変更またはBreakする可能性がある未公開の内部APIに依存しています。プロバイダーの利用規約に違反し、アカウント停止につながる可能性があります。",
+        "accessTokenLabel": "アクセストークン",
+        "sessionTokenLabel": "セッショントークン",
+        "accessTokenPlaceholder": "eyJ...",
+        "sessionTokenPlaceholder": "sessionKeyクッキー値をペースト(sk-ant-sid01-...)",
+        "openaiInstructions": "ChatGPTにログインしている間に、<code>https://chatgpt.com/api/auth/session</code>を新しいタブで開きます。<code>accessToken</code>フィールド(sk-ant-sid01-...で始まる)の値をコピーします。トークンは約24時間ごとに期限切れになります。信頼性の高いアクセスのために、下記の<strong>cf_clearance</strong>フィールドも入力してください。",
+        "anthropicInstructions": "<strong>セッションキーの取得方法:</strong>Claudeにログインしている間にDevTools(F12)→ Application → Cookies → <code>claude.ai</code>→ <code>sessionKey</code>クッキー(sk-ant-sid01-...で始まる)の値をコピーします。ログアウトするまでキーは有効です。"
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "サブスクリプションOAuthトークン",
+        "authFilePathLabel": "認証ファイルパス",
+        "oauthTokenPlaceholder": "sk-ant-oat01-...",
+        "authFilePathPlaceholder": "~/.codex/auth.json(デフォルト)",
+        "anthropicTitle": "Claude Pro/Maxサブスクリプションを使用してください。",
+        "anthropicRunCommandStep": "このコマンドを実行して、出力されたトークンをコピーしてください:",
+        "anthropicPasteTokenStep": "下記の<em>サブスクリプションOAuthトークン</em>フィールドにトークンをペーストしてください。",
+        "termsNote": "期限切れの場合は再生成してください。ゲートウェイ経由のサブスクリプション使用はプロバイダーの利用規約に違反する可能性があります。",
+        "openaiTitle": "Codexアプリを使用してChatGPT Plus/Proサブスクリプションを使用してください。",
+        "openaiLoginStep": "ChatGPT Plus/Proアカウントを使用してCodexデスクトップアプリにログインします。",
+        "openaiAutoRefreshStep": "Routerlyは<code>~/.codex/auth.json</code>からアクセストークンを読み取り、自動的に更新します。手動でコピー/ペーストする必要はありません。",
+        "openaiAuthFilePathStep": "<em>認証ファイルパス</em>フィールドを空白のままにしてデフォルトを使用するか、Codexアプリが認証を別の場所に保存する場合はカスタムパスを入力してください。",
+        "openaiTermsNote": "ゲートウェイ経由のサブスクリプション使用はプロバイダーの利用規約に違反する可能性があります。"
+      },
+      "copyCode": {
+        "copiedTooltip": "コピーしました!",
+        "copyTooltip": "クリップボードにコピー",
+        "copiedLabel": "コピーしました",
+        "copyLabel": "コピー"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "コピー",
+      "copiedLabel": "コピーしました!",
+      "copyErrorHint": "コピーに失敗しました、手動で選択してコピーしてください。"
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCPクライアント",
+      "hints": {
+        "claudeCode": "どこでも1回実行します。Claude Codeはサーバーを<code>~/.claude.json</code>に保存します。",
+        "claudeDesktop": "これを<code>~/Library/Application Support/Claude/claude_desktop_config.json</code>に入れてください(Windowsでは<code>%APPDATA%\\Claude\\claude_desktop_config.json</code>)。その後アプリを再起動します。CLIを起動するため、<code>routerly</code>がPATHにある必要があります。",
+        "codex": "これを<code>~/.codex/config.toml</code>に入れてください。Codexは環境からトークンを読み込むため、Codexを起動するシェルでそれをエクスポートしてください。",
+        "opencode": "これを<code>~/.config/opencode/opencode.json</code>に入れてください。",
+        "openclaw": "1回実行します。OpenClawはsseトランスポートをデフォルトにしており、Routerlyはそれを提供していないため、トランスポートが明示的に設定されます。",
+        "cursor": "これを<code>~/.cursor/mcp.json</code>またはプロジェクト単位で<code>.cursor/mcp.json</code>に入れてください。",
+        "cline": "これを<code>~/.cline/mcp.json</code>に入れるか、Clineパネルの「MCPサーバーを構成」に貼り付けてください。",
+        "zed": "これをZedの<code>settings.json</code>に入れてください。他のコンテキストサーバーと共に。"
+      }
+    },
+    "unsavedChanges": {
+      "title": "未保存の変更",
+      "message": "未保存の変更があります。今すぐ離れる場合、変更は失われます。",
+      "stay": "留まる",
+      "leaveAnyway": "とにかく離れる"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "ガードレール",
+        "pii": "PII",
+        "optimizers": "オプティマイザー",
+        "routerOverhead": "ルーターオーバーヘッド"
+      },
+      "policyType": {
+        "llm": "AIルーティング",
+        "rateLimit": "レート制限",
+        "budgetRemaining": "予算残高",
+        "semanticIntent": "セマンティックインテント",
+        "modelPreference": "モデル設定"
+      },
+      "rawDetails": "詳細(未処理)",
+      "technicalDetails": "技術的詳細",
+      "systemPrompt": "システムプロンプト",
+      "responseText": "レスポンステキスト",
+      "responseJson": "レスポンスJSON",
+      "cacheEmbeddingCall": "キャッシュ埋め込み呼び出し",
+      "fallbackAttempt": "フォールバック#{{attempt}}",
+      "embeddingModel": "埋め込みモデル",
+      "upstreamModel": "アップストリームモデル",
+      "provider": "プロバイダー",
+      "source": "ソース",
+      "endpoint": "エンドポイント",
+      "cacheHit": "キャッシュヒット",
+      "ttlExtended": "TTL拡張",
+      "model": "モデル",
+      "similarity": "類似度",
+      "embedding": "埋め込み",
+      "cacheMiss": "キャッシュミス",
+      "details": "詳細",
+      "excludedByLimits": "制限により除外",
+      "finalRanking": "最終ランキング",
+      "noRankingData": "ランキングデータなし(レコードが破損しているか、古いバージョンからの可能性があります)",
+      "policyScores": "ポリシースコア",
+      "weight": "重み{{value}}",
+      "allScores": "すべてのスコア",
+      "noPolicyData": "ポリシーデータなし(レコードが破損しているか、古いバージョンからの可能性があります)",
+      "requestGuardrailBlocked": "リクエストガードレールがブロック",
+      "requestGuardrailTriggered": "リクエストガードレールがトリガー",
+      "responseGuardrailBlocked": "レスポンスガードレールがブロック",
+      "responseGuardrailTriggered": "レスポンスガードレールがトリガー",
+      "rule": "ルール",
+      "action": "アクション",
+      "guardrailsEvaluated": "ガードレール評価({{target}})",
+      "ruleCount": "{{count}}ルール",
+      "ruleCount_other": "{{count}}ルール",
+      "promptInjection": "プロンプトインジェクション",
+      "injects": "インジェクト",
+      "judgeResponse": "判定レスポンス",
+      "piiScrubbed": "PII削除",
+      "piiScanned": "PIIスキャン({{target}})",
+      "policies": "ポリシー",
+      "entityTypes": "エンティティタイプ",
+      "customPatterns": "カスタムパターン",
+      "scanned": "スキャン",
+      "redacted": "編集",
+      "took": "実行時間",
+      "ms": "{{value}}ミリ秒",
+      "entityTypesScanned": "スキャンされたエンティティタイプ",
+      "guardrailInjection": "ガードレールインジェクション",
+      "rules": "ルール",
+      "chars": "文字",
+      "injectedText": "インジェクトされたテキスト",
+      "optimizer": "オプティマイザー{{id}}",
+      "tokens": "トークン",
+      "saved": "節約",
+      "tok": "{{value}}トークン",
+      "reason": "理由",
+      "budgetBlocked": "予算でブロック",
+      "budgetOk": "予算OK",
+      "egressSent": "エグレス送信",
+      "status": "ステータス",
+      "encoding": "エンコーディング",
+      "frames": "フレーム",
+      "bytes": "バイト"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "マイプロファイル",
+      "subtitle": "アカウント設定を管理"
+    },
+    "tabs": {
+      "profile": "プロファイル",
+      "notifications": "通知",
+      "mcp": "MCP",
+      "preferences": "設定"
+    },
+    "notifications": {
+      "close": "閉じる",
+      "refresh": "更新",
+      "clear": "削除",
+      "empty": "通知が見つかりません。",
+      "markAllRead": "すべて既読にする",
+      "allCaughtUp": "すべてチェック済み",
+      "unreadCount": "{{count}}未読",
+      "selectedCount": "{{count}}選択済み",
+      "severity": {
+        "all": "すべて",
+        "info": "情報",
+        "warning": "警告",
+        "critical": "重大"
+      },
+      "status": {
+        "read": "既読",
+        "unread": "未読"
+      },
+      "filters": {
+        "severity": "重大度",
+        "category": "カテゴリ",
+        "event": "イベント",
+        "date": "日付",
+        "period": "期間",
+        "status": "ステータス",
+        "all": "すべて",
+        "allCategories": "すべてのカテゴリ",
+        "allEvents": "すべてのイベント",
+        "unreadOnly": "未読のみ"
+      },
+      "actions": {
+        "markRead": "既読にする",
+        "markUnread": "未読にする",
+        "archive": "アーカイブ"
+      },
+      "table": {
+        "severity": "重大度",
+        "event": "イベント",
+        "date": "日付",
+        "status": "ステータス",
+        "selectAll": "すべてを選択",
+        "selectRow": "{{event}}を選択",
+        "eventCount": "{{count}}イベント"
+      },
+      "pagination": {
+        "previous": "← 前へ",
+        "next": "次へ →",
+        "page": "ページ{{page}}/{{totalPages}}",
+        "total": "(合計{{count}})"
+      },
+      "detail": {
+        "ariaLabel": "通知の詳細",
+        "details": "詳細",
+        "noDetails": "追加の詳細はありません。",
+        "eventsInIncident": "このインシデントのイベント"
+      }
+    },
+    "security": {
+      "roleLabel": "ロール:",
+      "password": {
+        "heading": "パスワード変更",
+        "currentLabel": "現在のパスワード",
+        "newLabel": "新しいパスワード",
+        "newPlaceholder": "最小8文字",
+        "confirmLabel": "新しいパスワード確認",
+        "success": "パスワードが正常に変更されました。",
+        "saving": "保存中...",
+        "submit": "パスワード変更",
+        "errors": {
+          "mismatch": "パスワードが一致しません。",
+          "tooShort": "新しいパスワードは最低8文字である必要があります。",
+          "updateFailed": "更新に失敗しました"
+        }
+      },
+      "tfa": {
+        "heading": "2要素認証",
+        "notEnabled": "2FAが有効になっていません。時間ベースのワンタイムパスワードでアカウントを保護します。",
+        "enableButton": "2要素認証を有効にする",
+        "scanInstructions": "認証アプリ(Google Authenticator、Authy等)でこのQRコードをスキャンし、6桁のコードを入力して確認します。",
+        "qrAlt": "2FAセットアップQRコード",
+        "addAccountInstructions": "認証アプリ(Google Authenticator、Authy、1Password等)を開き、新しいアカウントを追加します:",
+        "setup": {
+          "step1": "<strong>アカウント追加</strong>または<strong>+</strong>ボタンをタップ",
+          "step2": "<strong>セットアップキーを入力</strong>(またはモバイルではQRコードをスキャン)",
+          "step3": "以下に表示されるシークレットを入力"
+        },
+        "mobileLink": "モバイルをタップして認証アプリを開く",
+        "manualEntryLabel": "手動入力シークレット:",
+        "saveBackupCodes": "これらのバックアップコードを保存してください。認証アプリへのアクセスを失った場合、各コードを1回使用できます。",
+        "copyBackupCodes": "バックアップコードをコピー",
+        "confirmCodeLabel": "アプリからコードを入力して有効化",
+        "activate": "2FAを有効化",
+        "cancel": "キャンセル",
+        "enabledBadge": "2FAが有効です",
+        "newBackupCodesLabel": "新しいバックアップコード(今すぐ保存):",
+        "copy": "コピー",
+        "regenLabel": "バックアップコードを再生成するには認証アプリからコードを入力",
+        "regenerate": "再生成",
+        "regenerateBackupCodes": "バックアップコードを再生成",
+        "disableLabel": "2FAを無効化(認証アプリコードを入力)",
+        "disable": "2FAを無効化",
+        "errors": {
+          "setupFailed": "セットアップに失敗しました",
+          "confirmFailed": "確認に失敗しました",
+          "disableFailed": "無効化に失敗しました",
+          "regenFailed": "再生成に失敗しました"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCPサーフェスの読み込みに失敗しました",
+        "revokeFailed": "トークンの失効に失敗しました"
+      },
+      "revokeConfirm": "MCPトークン\"{{name}}\"を失効させますか?それを使用しているクライアントは即座に機能を停止します。",
+      "tokens": {
+        "heading": "MCPトークン",
+        "newToken": "新しいトークン",
+        "description": "各トークンはあなたとして機能します: ロールが許可するツールを正確に公開します。完全な値は1回だけ、作成ページで表示されます。",
+        "empty": "MCPトークンはまだありません。MCPクライアントを接続するには、トークンを作成してください。",
+        "created": "作成日時",
+        "lastUsed": "最後に使用された",
+        "expires": "有効期限",
+        "never": "無期限",
+        "revokeTitle": "トークンを失効させる"
+      },
+      "tools": {
+        "heading": "トークンが公開するツール",
+        "empty": "ロールがMCPツールを許可していません。必要な権限については管理者に依頼してください。",
+        "table": {
+          "name": "名前",
+          "scope": "スコープ",
+          "description": "説明",
+          "sourceModule": "ソースモジュール",
+          "permission": "権限"
+        }
+      },
+      "connect": {
+        "heading": "MCPクライアントを接続",
+        "descriptionPre": "配線しているクライアントを選び、",
+        "descriptionPost": "をいずれかのトークンと置き換えます。トークンを作成すると、値が既に入っているのと同じスニペットが表示されます。",
+        "otherClient": "その他のクライアント",
+        "httpInstructionsPre": "HTTPの場合、このエンドポイントをポイントして",
+        "httpInstructionsPost": "で認証します。JSON-RPC 2.0ストリーム可能HTTP上です。",
+        "stdioInstructionsPre": "stdioの場合、CLIがこれをブリッジしてトークンを通します。代わりにサービスを直接実行しますか?設定",
+        "stdioInstructionsAnd": "と",
+        "stdioInstructionsPost": "を自分で。"
+      },
+      "newToken": {
+        "backToMcp": "MCPに戻る",
+        "title": "新しいMCPトークン",
+        "subtitle": "トークンはあなたとして機能します: ロールが許可するツールを正確に公開します。",
+        "nameLabel": "名前",
+        "namePlaceholder": "ノートパソコン",
+        "nameHint": "このトークンが使用される場所(例えば\"laptop\"または\"claude-desktop\")。",
+        "expiryLabel": "有効期限",
+        "expiryHint": "オプション。空白のままにするとトークンは無期限に有効で、失効させるまで。",
+        "createButton": "トークン作成",
+        "creatingButton": "作成中...",
+        "cancelButton": "キャンセル",
+        "tokenSection": {
+          "title": "トークン",
+          "hint": "今すぐコピーしてください。二度と表示されず、失ったトークンは交換するしかできません。",
+          "copyButton": "コピー",
+          "copiedButton": "コピーしました!",
+          "copyTitle": "トークンをコピー",
+          "copiedTitle": "コピーしました!"
+        },
+        "connectSection": {
+          "title": "クライアントを接続",
+          "hint": "配線しているクライアントを選びます。スニペットには既にこのトークンが含まれています。"
+        },
+        "bridgeSection": {
+          "title": "またはローカルブリッジを使用",
+          "hint": "stdioのみでしゃべるクライアントの場合、CLIがブリッジしてトークンを通します。"
+        },
+        "doneButton": "完了",
+        "errors": {
+          "createFailed": "トークンの作成に失敗しました",
+          "copyFailed": "コピーに失敗しました。トークンを手動で選択してコピーしてください。"
+        }
+      }
+    },
+    "preferences": {
+      "heading": "言語",
+      "description": "ダッシュボードが表示される言語を選択します。",
+      "languageLabel": "言語",
+      "saved": "言語設定が保存されました。"
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "設定の読み込みに失敗しました",
+        "loadFailedPeriod": "設定の読み込みに失敗しました。",
+        "saveFailed": "保存に失敗しました",
+        "saveSettingsFailed": "設定の保存に失敗しました"
+      },
+      "savedSuccess": "設定が正常に保存されました。",
+      "saving": "保存中...",
+      "saveSettings": "設定を保存",
+      "serverInfo": {
+        "heading": "サーバー情報",
+        "readOnly": "読み取り専用。ホストとポートは環境または設定ファイルから来ており、ここからではありません。",
+        "reachableAt": "次のアドレスでアクセス可能",
+        "reachableAtAny": "これらのアドレスのいずれかでアクセス可能",
+        "thisMachine": "このマシン",
+        "network": "ネットワーク",
+        "copyAddress": "{{address}}をコピー",
+        "copied": "コピーしました!",
+        "copy": "コピー",
+        "hostAndPort": "ホストとポート",
+        "version": "バージョン",
+        "uptime": "稼働時間"
+      },
+      "runtime": {
+        "heading": "ランタイム設定",
+        "logLevel": "ログレベル",
+        "logLevelHint": "サービスログの詳細度を制御します。",
+        "publicUrl": "公開URL",
+        "publicUrlHint": "外部クライアントからサービスにアクセス可能な基本URL(例: <code>http://192.168.1.10:3000</code>)。各ルーターの<strong>接続方法</strong>セクションで使用されます。ダッシュボードがサービスとは異なるマシンまたはポートで実行されている場合に便利です。",
+        "usageRetention": "使用状況保持",
+        "noLimit": "制限なし",
+        "maxAgeDays": "最大経過日数(日)",
+        "maxSizeMb": "最大サイズ(MB)",
+        "retentionHint": "この日数より古いまたはこのサイズを超える使用/請求履歴は、アクティブなログから削除されます。両方を空白のままにすると、保持制限はありません。"
+      },
+      "internationalization": {
+        "heading": "国際化",
+        "defaultLanguage": "デフォルト言語",
+        "defaultLanguageHint": "まだ言語を選択していないユーザーのためのダッシュボード言語。ユーザーの個人的な選択を上書きしません。"
+      },
+      "telemetry": {
+        "heading": "匿名メトリクス",
+        "neverAutomatic": "Routerlyは自動的にデータを送信することはありません。",
+        "noChoice": "まだ選択をしていません。",
+        "enabledStatus": "匿名インストール指標が有効になっています。",
+        "disabledStatus": "匿名インストール指標が無効になっています。",
+        "explanation": "有効にすると、Routerlyは以下のみを送信します: イベントタイプ(インストール/アップグレード/アンインストール)、バージョン、プラットフォーム、ランダムID。個人データなし、使用データなし、IP保存なし。",
+        "whatIsSent": "何が送信されますか?",
+        "installId": "インストールID: {{id}}",
+        "saving": "保存中...",
+        "enable": "有効化",
+        "disable": "無効化"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "ダッシュボード(アプリ内受信トレイ)",
+          "description": "イベントをアプリ内通知受信トレイにルーティング"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "カスタムメールサーバー"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "OAuth2経由Gmail"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTPウェブフックコールバック"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams受信ウェブフック"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discordウェブフック"
+        }
+      },
+      "events": {
+        "providerError": "プロバイダー – エラー",
+        "providerDegraded": "プロバイダー – 劣化",
+        "providerRecovered": "プロバイダー – 復旧",
+        "providerRateLimited": "プロバイダー – レート制限",
+        "routingNoCandidates": "ルーティング – 候補なし",
+        "routingFallbackUsed": "ルーティング – フォールバック使用",
+        "authLoginFailed": "認証 – ログイン失敗",
+        "authTokenInvalid": "認証 – トークン無効",
+        "configModelAdded": "設定 – モデル追加",
+        "configModelDeleted": "設定 – モデル削除",
+        "configRouterCreated": "設定 – ルーター作成",
+        "configRouterDeleted": "設定 – ルーター削除",
+        "budgetThresholdReached": "予算 – しきい値到達",
+        "budgetExceeded": "予算 – 超過",
+        "budgetReset": "予算 – リセット",
+        "systemStartup": "システム – スタートアップ",
+        "systemShutdown": "システム – シャットダウン",
+        "systemUpdateAvailable": "システム – 更新利用可能"
+      },
+      "removeChannelTooltip": "チャネルを削除",
+      "removeChannelConfirm": "チャネルを削除しますか?",
+      "formUpdatedHint": "フォームが更新されました — 保存して適用してください。",
+      "hmacSigningKeyPlaceholder": "HMAC署名キー",
+      "perms": {
+        "routerRead": "ルーター – 読み取り",
+        "routerWrite": "ルーター – 書き込み",
+        "modelRead": "モデル – 読み取り",
+        "modelWrite": "モデル – 書き込み",
+        "userRead": "ユーザー – 読み取り",
+        "userWrite": "ユーザー – 書き込み",
+        "reportRead": "レポート – 読み取り",
+        "settingsRead": "設定 – 読み取り",
+        "settingsWrite": "設定 – 書き込み",
+        "notificationWrite": "通知 – 書き込み",
+        "tokenRead": "トークン – 読み取り",
+        "tokenWrite": "トークン – 書き込み",
+        "roleWrite": "ロール – 書き込み",
+        "auditRead": "監査ログ – 読み取り",
+        "modulesRead": "モジュール – 読み取り",
+        "modulesManage": "モジュール – 管理",
+        "connectionsRead": "接続 – 読み取り",
+        "connectionsManage": "接続 – 管理",
+        "resilienceRead": "レジリエンス – 読み取り",
+        "resilienceManage": "レジリエンス – 管理",
+        "profilesRead": "ルーティングプロファイル – 読み取り",
+        "profilesManage": "ルーティングプロファイル – 管理",
+        "optimizersRead": "オプティマイザー – 読み取り",
+        "optimizersManage": "オプティマイザー – 管理",
+        "experimentsRead": "実験 – 読み取り",
+        "experimentsManage": "実験 – 管理"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "このチャネルタイプの場合、ターゲットは配信を変更しません(エンドポイントは固定です)。受信者ごとに監査証跡に記録されるイベントをフィルターします。",
+        "dashboard": "ターゲットは受信トレイの可視性を制御します — マッチしたユーザーのみがこれらの通知をアプリ内受信トレイで見ることができます。",
+        "email": "ターゲットはこのメールを受け取るユーザーを決定します。すべてのユーザーに送信するには、すべて空白のままにしてください。"
+      },
+      "summary": {
+        "allEvents": "すべてのイベント",
+        "eventCount": "{{count}}イベント",
+        "eventCount_other": "{{count}}イベント",
+        "roleCount": "{{count}}ロール",
+        "roleCount_other": "{{count}}ロール",
+        "permCount": "{{count}}権限",
+        "permCount_other": "{{count}}権限",
+        "userCount": "{{count}}ユーザー",
+        "userCount_other": "{{count}}ユーザー",
+        "everyone": "全員"
+      },
+      "errors": {
+        "loadFailed": "読み込みに失敗しました"
+      },
+      "fields": {
+        "dashboardHint": "マッチングイベントをアプリ内通知受信トレイにルーティング。認証情報は不要です。",
+        "labels": {
+          "fromAddress": "差出人アドレス",
+          "fromName": "差出人名",
+          "host": "ホスト",
+          "port": "ポート",
+          "tls": "TLS/SSL",
+          "username": "ユーザー名",
+          "password": "パスワード",
+          "awsRegion": "AWSリージョン",
+          "accessKeyId": "アクセスキーID",
+          "secretAccessKey": "シークレットアクセスキー",
+          "apiKey": "APIキー",
+          "connectionString": "接続文字列",
+          "clientId": "クライアントID",
+          "clientSecret": "クライアントシークレット",
+          "refreshToken": "リフレッシュトークン",
+          "url": "URL",
+          "method": "メソッド",
+          "signingSecret": "署名シークレット",
+          "botToken": "ボットトークン",
+          "channelId": "チャネルID",
+          "webhookUrl": "ウェブフックURL",
+          "integrationKey": "統合キー"
+        },
+        "values": {
+          "enabled": "有効",
+          "disabled": "無効",
+          "configured": "構成済み",
+          "notSet": "未設定"
+        },
+        "optional": "(オプション)",
+        "keepCurrentPlaceholder": "現在の値を保持するには空白のままにしてください",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSLを使用",
+        "smtpTlsOnHint": "(ポート465 — 直接SSL)",
+        "smtpTlsOffHint": "(ポート587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAMインスタンスロールを使用するには認証情報を空白のままにしてください。",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC署名キー",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32文字ルーティングキー",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "イベント",
+          "eventsPlaceholder": "すべてのイベント(すべての場合は空白)",
+          "eventsHint": "すべてのイベントを受け取るには空白のままにしてください。特定のイベントを選択してフィルター。",
+          "routersHeading": "ルーター",
+          "routersPlaceholder": "すべてのルーター(すべての場合は空白)",
+          "routersHint": "すべてのルーターからイベントを受け取るには空白のままにしてください。",
+          "cooldownHeading": "クールダウン",
+          "cooldownSuffix": "秒(0 = クールダウンなし)",
+          "cooldownHint": "このチャネルが同じイベントに対して再度実行されるまでの最小間隔。"
+        },
+        "recipients": {
+          "heading": "受信者 / ターゲット",
+          "rolesLabel": "ロール",
+          "rolesPlaceholder": "すべてのロール(全員)",
+          "permissionsLabel": "権限",
+          "permissionsPlaceholder": "すべての権限(全員)",
+          "usersLabel": "個別ユーザー",
+          "usersPlaceholder": "すべてのユーザー(全員)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "接続",
+          "routing": "ルーティング",
+          "recipients": "受信者"
+        },
+        "sections": {
+          "channelSettings": "チャネル設定",
+          "eventsRouting": "イベントとルーティング",
+          "recipients": "受信者"
+        },
+        "nameLabel": "名前",
+        "namePlaceholder": "このチャネルのラベル",
+        "cancelButton": "キャンセル"
+      },
+      "list": {
+        "countLabel": "{{count}}チャネル",
+        "countLabel_other": "{{count}}チャネル",
+        "filteredLabel": "{{count}}チャネル中{{shown}}",
+        "filteredLabel_other": "{{count}}チャネル中{{shown}}",
+        "allTypes": "すべてのタイプ",
+        "searchPlaceholder": "チャネルをフィルター...",
+        "searchChannelsPlaceholder": "チャネルを検索...",
+        "addButton": "チャネルを追加",
+        "addSearchPlaceholder": "チャネルを検索...",
+        "noResults": "結果がありません",
+        "emptyTitle": "通知チャネルが未だ構成されていません。",
+        "noMatch": "アクティブなフィルターに一致するチャネルがありません。",
+        "nameInlinePlaceholder": "ラベル(オプション)",
+        "columns": {
+          "name": "名前",
+          "type": "タイプ",
+          "summary": "イベント / ターゲット"
+        },
+        "testTitle": "テスト送信",
+        "editTitle": "チャネルを編集",
+        "deleteTitle": "チャネルを削除",
+        "deleteConfirm": "チャネル\"{{name}}\"を削除しますか?これは取り消せません。",
+        "deleteConfirmButton": "削除",
+        "errors": {
+          "deleteFailed": "削除に失敗しました"
+        }
+      },
+      "edit": {
+        "backToList": "通知に戻る",
+        "back": "戻る",
+        "heading": "{{provider}}チャネルを編集",
+        "subtitle": "このチャネルの設定を更新します。",
+        "testSection": {
+          "title": "テスト送信",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "テスト送信",
+          "sendingButton": "送信中...",
+          "hintEmail": "空白にするとアカウントメールに送信します。テストは保存されたチャネル設定を使用します。",
+          "hintOther": "テストは保存されたチャネル設定を使用します。更新された設定をテストするには、最初に変更を保存してください。"
+        },
+        "saveButton": "変更を保存",
+        "savingButton": "保存中...",
+        "errors": {
+          "loadFailed": "読み込みに失敗しました",
+          "saveFailed": "保存に失敗しました"
+        }
+      },
+      "create": {
+        "backToList": "通知に戻る",
+        "changeType": "タイプを変更",
+        "pickerHeading": "チャネルタイプを選択",
+        "pickerSubtitle": "構成する通知プロバイダーを選択してください。",
+        "heading": "新しい{{provider}}チャネル",
+        "subtitle": "新しい通知チャネルを構成します。",
+        "createButton": "チャネル作成",
+        "creatingButton": "作成中...",
+        "errors": {
+          "createFailed": "作成に失敗しました"
+        }
+      },
+      "sendTest": "テスト送信",
+      "fromAddress": "差出人アドレス",
+      "individualUsers": "個別ユーザー",
+      "host": "ホスト",
+      "port": "ポート",
+      "apiKey": "APIキー",
+      "connectionString": "接続文字列",
+      "clientId": "クライアントID",
+      "clientSecret": "クライアントシークレット",
+      "refreshToken": "リフレッシュトークン",
+      "method": "メソッド",
+      "botToken": "ボットトークン",
+      "channelId": "チャネルID",
+      "webhookUrl": "ウェブフックURL",
+      "integrationKey": "統合キー"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "プル — /metricsを公開"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "プッシュ — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "プッシュ — メトリックスAPI"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "プッシュ — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "プッシュ — ラインプロトコル"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "プッシュ — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "リクエストトレースをエクスポート",
+        "description": "プロキシされた各リクエストの完全なトレースを送信: 各フェーズ、通信した各モジュール、およびオプトインしたプロジェクトのプロンプトと回答。",
+        "sampleRateLabel": "サンプルレート",
+        "sampleRateHint": "1はすべてのリクエストをエクスポート、0.1は10個に1つ。"
+      },
+      "optional": "(オプション)",
+      "headersHint": "(オプション、1行に1つ: キー: 値)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "ベアラートークン",
+          "placeholder": "オープンアクセスの場合は空白",
+          "description": "Prometheus テキスト形式で<code>/metrics</code>を公開します。ベアラー認証を要求する場合はトークンを設定します。"
+        },
+        "otel": {
+          "endpoint": "コレクターエンドポイント",
+          "description": "OTLPレシーバーのベースURL。Routerlyは<code>/v1/metrics</code>、トレースエクスポートがオンの場合は<code>/v1/traces</code>を追加します。デフォルトHTTPポートは4318、gRPCは4317です。",
+          "protocol": "プロトコル",
+          "headers": "ヘッダー"
+        },
+        "datadog": {
+          "apiKey": "APIキー",
+          "placeholder": "DatadogのAPIキー",
+          "description": "Datadogアカウントの<strong>組織設定 → APIキー</strong>の下に見つかります。",
+          "site": "サイト"
+        },
+        "grafana": {
+          "remoteWriteUrl": "リモート書き込みURL",
+          "description": "<strong>Grafana Cloud → 接続 → Prometheus → 詳細</strong>の\"リモート書き込みエンドポイント\"として見つかります。",
+          "username": "ユーザー名 / スタックID",
+          "usernameHint": "Prometheus接続詳細に表示される数字ID。",
+          "apiKey": "APIキー / トークン",
+          "apiKeyHint": "<strong>MetricsPublisher</strong>ロールを持つGrafana Cloudトークン。"
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2インスタンスURL。クラウド: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "トークン",
+          "tokenPlaceholder": "InfluxDB APIトークン",
+          "tokenHint": "バケットへの<strong>書き込み</strong>アクセスが必要です。",
+          "org": "組織",
+          "bucket": "バケット"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "シークレット",
+          "secretHint": "(オプション — HMAC-SHA256署名キー)",
+          "headers": "ヘッダー"
+        }
+      },
+      "errors": {
+        "loadFailed": "統合の読み込みに失敗しました",
+        "updateFailed": "統合の更新に失敗しました",
+        "saveFailed": "統合の保存に失敗しました",
+        "deleteFailed": "統合の削除に失敗しました"
+      },
+      "empty": "統合がまだ構成されていません。",
+      "enabled": "有効",
+      "testing": "テスト中...",
+      "test": "テスト",
+      "removeConfirm": "削除しますか?",
+      "remove": "削除",
+      "cancel": "キャンセル",
+      "removeTooltip": "統合を削除",
+      "saving": "保存中...",
+      "save": "保存",
+      "addButton": "統合を追加"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "設定の読み込みに失敗しました",
+        "duplicateUrl": "このURLは既にリストにあります。",
+        "unreachable": "このURLで有効なプロバイダーカタログに到達できませんでした。"
+      },
+      "saved": "保存しました。",
+      "refreshed": "更新しました。",
+      "heading": "プロバイダーカタログリポジトリ",
+      "refreshing": "更新中...",
+      "refresh": "更新",
+      "nextRefresh": "次へ: {{date}}",
+      "priorityHint": "行の順序は競合時の結合優先度を決定します — 行1が優先されます。矢印を使用して並び替えてください。",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "更新日時",
+        "lastCheck": "最終確認",
+        "status": "ステータス"
+      },
+      "empty": "リポジトリが構成されていません。デフォルトのRouterly公開カタログが使用されます。",
+      "status": {
+        "error": "エラー",
+        "active": "アクティブ",
+        "disabled": "無効"
+      },
+      "edit": "編集",
+      "removeTooltip": "削除",
+      "addRepository": "リポジトリを追加",
+      "checking": "確認中...",
+      "add": "追加",
+      "removeConfirm": "リポジトリ\"{{url}}\"を削除しますか?"
+    },
+    "about": {
+      "headings": {
+        "application": "アプリケーション",
+        "runtime": "ランタイム",
+        "storage": "ストレージ",
+        "softwareUpdate": "ソフトウェア更新"
+      },
+      "labels": {
+        "version": "バージョン",
+        "uptime": "稼働時間",
+        "nodeVersion": "Node.js",
+        "platform": "プラットフォーム",
+        "configDir": "設定ディレクトリ",
+        "dataDir": "データディレクトリ",
+        "currentVersion": "現在のバージョン",
+        "availableVersion": "利用可能なバージョン",
+        "upToDate": "最新です",
+        "lastChecked": "最後に確認"
+      },
+      "noCheckPerformed": "更新確認がまだ実行されていません。",
+      "checkForUpdates": "更新を確認",
+      "checking": "確認中...",
+      "updateTo": "v{{version}}に更新",
+      "updating": "更新中...",
+      "dockerHint": "Dockerで実行中 — 更新するには最新のイメージをプルしてください。",
+      "confirmUpdate": "これは最新バージョンをダウンロードしてインストールします。サービスは再起動されます。続行しますか?",
+      "updateComplete": "更新完了!再読み込み中...",
+      "serviceRestarting": "サービスが再起動しています。すぐにページを再読み込みしてください。",
+      "errors": {
+        "loadFailed": "読み込みに失敗しました",
+        "checkFailed": "確認に失敗しました",
+        "updateFailed": "更新に失敗しました"
+      },
+      "channel": "チャネル"
+    },
+    "security": {
+      "authentication": "認証",
+      "requireMfa": "すべてのユーザーに2要素認証を要求",
+      "requireMfaHint": "有効にすると、2FAをセットアップしていないユーザーはログイン後にセットアップのプロンプトが表示されます。ユーザーはプロファイルページで2FAを構成できます。",
+      "savedSuccess": "設定が正常に保存されました。",
+      "saving": "保存中...",
+      "saveSettings": "設定を保存",
+      "errors": {
+        "loadFailed": "設定の読み込みに失敗しました",
+        "saveFailed": "設定の保存に失敗しました"
+      }
+    },
+    "title": "設定",
+    "subtitle": "Routerlyの設定",
+    "tabs": {
+      "general": "一般",
+      "security": "セキュリティ",
+      "notifications": "通知",
+      "integrations": "統合",
+      "catalog": "プロバイダーカタログ",
+      "users": "ユーザー",
+      "roles": "ロール",
+      "audit": "監査ログ",
+      "about": "について"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "ルーター",
+      "subtitle": "Routerlyにアクセスするクライアントアプリケーション",
+      "count": "1ルーター",
+      "count_other": "{{count}}ルーター",
+      "newRouter": "新しいルーター",
+      "empty": "ルーターがまだありません。",
+      "emptyFiltered": "このタイプのルーターはありません。",
+      "columns": {
+        "name": "名前",
+        "tokens": "トークン",
+        "policies": "ポリシー",
+        "models": "モデル"
+      },
+      "tokenCount": "1トークン",
+      "tokenCount_other": "{{count}}トークン",
+      "editRouter": "ルーターを編集",
+      "deleteRouter": "ルーターを削除",
+      "deleteConfirm": "このルーターを削除しますか?",
+      "errors": {
+        "deleteFailed": "ルーター削除エラー"
+      },
+      "newOrchestrator": "新しいオーケストレーター",
+      "newPassthrough": "新しいパススルー"
+    },
+    "layout": {
+      "notFound": "ルーターが見つかりません",
+      "tabs": {
+        "dashboard": "ダッシュボード",
+        "general": "一般",
+        "orchestrator": "オーケストレーター",
+        "routing": "ルーティング",
+        "optimizer": "オプティマイザー",
+        "security": "セキュリティ",
+        "token": "トークン",
+        "users": "ユーザー",
+        "logs": "ログ"
+      },
+      "backToRouters": "ルーターに戻る",
+      "backToRoutersTitle": "ルーターに戻る",
+      "newRouter": "新しいルーター",
+      "loading": "読み込み中...",
+      "routerId": "ルーターID:",
+      "saveFirstHint": "このタブのロックを解除するにはまずルーターを保存してください",
+      "newKind": "新しい{{kind}}"
+    },
+    "dashboard": {
+      "period": "期間",
+      "noTraffic": "選択した期間でこのルーターのトラフィックがありません。",
+      "stats": {
+        "savings": "節約",
+        "vsPrefix": "vs",
+        "forEverything": "すべてについて",
+        "noTargetToCompare": "比較するターゲットモデルなし",
+        "cost": "コスト",
+        "callCount": "1呼び出し",
+        "callCount_other": "{{count}}呼び出し",
+        "latency": "遅延",
+        "medianP95": "中央値・p95 {{value}}",
+        "ttft": "最初のトークンまでの時間",
+        "notMeasured": "これらの呼び出しでは測定されていません",
+        "reliability": "信頼性",
+        "errorsAndBlocked": "{{errors}}エラー・{{blocked}}ブロック"
+      },
+      "tokens": {
+        "input": "入力トークン:",
+        "output": "出力トークン:",
+        "fromCache": "キャッシュから:",
+        "cacheSaved": "({{amount}}節約)"
+      },
+      "oneModel": {
+        "heading": "すべてが1つのモデルに行った場合",
+        "empty": "このルーターにターゲットモデルを追加して比較を見てください。",
+        "columns": {
+          "targetModel": "ターゲットモデル",
+          "wouldHaveCost": "コストだったであろう",
+          "saved": "節約"
+        },
+        "costsHint": "コストは観察されたトークンが各ターゲットの料金で再価格設定されたものです。"
+      },
+      "optimizers": {
+        "heading": "オプティマイザーが削除したもの",
+        "columns": {
+          "optimizer": "オプティマイザー",
+          "callsChanged": "変更された呼び出し",
+          "tokensSaved": "節約されたトークン",
+          "costSaved": "節約されたコスト",
+          "rolledBack": "ロールバック"
+        },
+        "hint": "呼び出し自体で測定され、各呼び出しを提供したモデルで価格設定されます。ロールバック実行とは、ステップの出力が安全でないとして却下され、プロンプトが復元されたことを意味します: 何も節約されず、高い数はしきい値が攻撃的すぎることを意味します。"
+      },
+      "traffic": {
+        "heading": "トラフィックがどこに行ったか",
+        "columns": {
+          "model": "モデル",
+          "calls": "呼び出し",
+          "share": "シェア",
+          "cost": "コスト",
+          "p95Latency": "p95遅延",
+          "errors": "エラー"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "ルーター保存エラー",
+        "copyFailed": "コピーに失敗しました — トークンを手動で選択してコピーしてください。"
+      },
+      "kind": {
+        "router": {
+          "label": "ルーター",
+          "description": "モデル候補全体でリクエストをルーティング。"
+        },
+        "orchestrator": {
+          "label": "オーケストレーター",
+          "description": "モデルではなく他のルーター全体でリクエストをルーティング。"
+        },
+        "passthrough": {
+          "label": "パススルー",
+          "description": "リクエストを変更されずに転送。"
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "このトークンを今保存してください。",
+        "saveNowHint": "二度と表示されません — この画面を離れるとトークンは回復不可能です。",
+        "copied": "コピーしました!",
+        "copy": "コピー",
+        "goToRouter": "ルーターに移動"
+      },
+      "connect": {
+        "heading": "接続方法",
+        "intro": "任意のOpenAIまたはAnthropicSDKをRouterlyにポイントし、<tokenLink>ルーター トークン</tokenLink>をAPIキーとして使用します。下記の<code>{{token}}</code>をあなたのトークンに置き換えてください。モデル<code>{{model}}</code>はRouterlyに選択を渡します。<modelsLink>Models</modelsLink>の任意のモデルIDも機能します。",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "ベースURL <code>{{baseUrl}}</code>、同じものは任意の\"OpenAI互換\"プロバイダーフィールドが取ります。",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "ベースURL <code>{{baseUrl}}</code>、<code>/v1</code>なし: SDKはそれを追加します。",
+        "curl": "curl",
+        "curlHint": "何もインストールせずに配線をチェックしてから、<usageLink>Usage</usageLink>で呼び出しを探します。"
+      },
+      "form": {
+        "kind": "種類",
+        "kindFixedHint": "ルーターが作成されると固定されます。",
+        "routerName": "ルーター名",
+        "routerNamePlaceholder": "マイアプリ",
+        "advancedSettings": "詳細設定",
+        "ttftTimeout": "TTFTタイムアウト(ms)",
+        "ttftTimeoutHint": "モデルがこの時間内に最初のレスポンスバイトを送信しない場合、Routerlyはそれを中止して次の候補を試します。総レスポンス時間を制限しません。0に設定するとプロバイダーが費やす時間までを待機します。",
+        "traceContent": "トレースコンテンツ",
+        "traceContentHint": "トレースは常にメタデータ(モデル、スコア、トークン、コスト、遅延)を記録します。これをオンにするとプロンプトとレスポンスも記録します。使用状況レコードと共に保存され、レポートを読む権限のある誰もが見ることができます。",
+        "capturePromptsAndAnswers": "プロンプトと回答をキャプチャ",
+        "saveChanges": "変更を保存",
+        "createRouter": "ルーター作成",
+        "passthroughPath": "パス",
+        "passthroughPathHint": "クライアントが呼び出すURLの一部になります: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "オーケストレーターを作成",
+        "createPassthrough": "パススルーを作成"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "このルーターはオーケストレーターではありません。",
+      "candidateRouters": "候補ルーター",
+      "candidateRoutersHint": "このオーケストレーターがリクエストを転送するルーター。重みは各候補がどのくらい頻繁に選択されるかに影響します。ここには名前、ID、重み、およびオプションの候補ごとの制限のみが表示されます。",
+      "routingPolicies": "ルーティングポリシー",
+      "routingPoliciesHint": "オーケストレーターは各候補ルーターを全体として採点するため、ここではヘルス、レート制限、および公平性ポリシーのみが適用されます。他のポリシータイプはルーター自体のモデルから選択しますが、オーケストレーターはこれらを持っていません。",
+      "router": "ルーター",
+      "selectRouter": "ルーターを選択",
+      "weight": "重み",
+      "removeCandidate": "候補を削除",
+      "usageLimits": "この候補の使用制限",
+      "limitCount": "{{count}}制限",
+      "limitCount_other": "{{count}}制限",
+      "usageLimitsHint": "このオーケストレーターがこの候補に転送するリクエストにのみ適用されるオプションの使用制限。",
+      "empty": "候補ルーターがまだありません。オーケストレーターがリクエストを転送する前に少なくとも1つが必要です。",
+      "addCandidate": "候補を追加",
+      "saved": "保存されました!",
+      "saveCandidates": "候補を保存",
+      "errors": {
+        "loadFailed": "ルーターの読み込みに失敗しました",
+        "saveFailed": "オーケストレーター候補保存エラー"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "ルーティングプロファイル割り当てに失敗しました",
+        "duplicateTargets": "ターゲットモデルは重複を含むことはできません。",
+        "saveFailed": "ルーター ルーティング保存エラー",
+        "noProfileAvailable": "使用可能なルーティングプロファイルがありません。プロファイルページから1つを作成してください。"
+      },
+      "form": {
+        "routing": "ルーティング",
+        "routingHint": "共有ルーティングプロファイルを使用するか、このルーターの独自のポリシーを定義します。ターゲットモデルはどちらの方法でも構成可能です。",
+        "profileMode": "プロファイル",
+        "customMode": "カスタム",
+        "routingProfile": "ルーティングプロファイル",
+        "builtinSuffix": "(ビルトイン)",
+        "profileHint": "ポリシーはプロファイルから来て、その変更に従います。プロファイルページで編集するか、カスタムに切り替えてコピーから開始します。",
+        "saved": "保存されました!",
+        "saveRoutingConfiguration": "ルーティング設定を保存"
+      },
+      "targetModels": {
+        "heading": "ターゲットモデル",
+        "hint": "ポリシーがフィルターと選択する対象のモデルプールを定義します。オプションのプロンプトはAIルーターに各モデルをいつ選択するかを指示します。",
+        "endpointModel": "エンドポイントモデル",
+        "selectModel": "モデルを選択",
+        "promptDefinition": "プロンプト定義",
+        "promptPlaceholder": "ルーターがこのモデルを選択すべき時と理由を正確に記述...",
+        "intents": "インテント",
+        "removeTarget": "ターゲットモデルを削除",
+        "empty": "ターゲットモデルが構成されていません。",
+        "addTarget": "ターゲットモデルを追加",
+        "passthroughLabel": "パススルー(生転送)",
+        "passthroughNotRemovable": "パススルーエントリは削除できません"
+      }
+    },
+    "optimizer": {
+      "title": "オプティマイザー",
+      "description": "オプティマイザーはリクエストがプロバイダーに到達する前にプロンプトトークンを削減します。上から下に順に実行されます。共有オプティマイザープロファイルを使用するか、このルーターの独自のパイプラインを定義します。",
+      "noPermission": "オプティマイザーを表示する権限がありません。",
+      "mode": {
+        "profile": "プロファイル",
+        "custom": "カスタム"
+      },
+      "profileSelect": {
+        "ariaLabel": "オプティマイザープロファイル",
+        "builtinLabel": "{{label}}(ビルトイン)",
+        "hint": "ステップはプロファイルから来て、その変更に従います。プロファイルページで編集するか、カスタムに切り替えてコピーから開始します。",
+        "disabledSuffix": "(無効)",
+        "thresholdSuffix": "、しきい値{{threshold}}"
+      },
+      "customHint": "ドラッグして並び替え、トグルして有効にします。一部のオプティマイザーはしきい値を使用してトリム方法を制御します。",
+      "saveButton": "オプティマイザーを保存",
+      "saving": "保存中...",
+      "saved": "保存されました",
+      "preview": {
+        "title": "トークン節約プレビュー",
+        "description": "現在の(未保存)パイプラインをプロンプトで実行して、各ステップが削除するものとコストを確認します。サンプル会話の1つを選択するか、独自のプロンプトを入力します。",
+        "promptLabel": "プロンプト",
+        "promptAriaLabel": "プレビュー用プロンプト",
+        "typePromptOption": "下記にプロンプトを入力",
+        "fixturesHint": "Routerlyに付属するサンプル会話。Routerlyは実際のプロンプトを記録しません。",
+        "modelLabel": "モデル",
+        "modelAriaLabel": "プレビュー対象モデル",
+        "modelWithContext": "{{id}}({{k}}kコンテキスト)",
+        "noModelOption": "モデルなし",
+        "modelHint": "コンテキストウィンドウにトリムするステップはどのウィンドウを知る必要があります。モデルなしでスキップされます、ちょうどRouterlyがウィンドウを持たないモデルを指定するリクエストのようです。",
+        "sampleAriaLabel": "サンプルプロンプト",
+        "samplePlaceholder": "サンプルユーザーメッセージをペースト...",
+        "runButton": "プレビュー実行",
+        "running": "実行中...",
+        "before": "前",
+        "after": "後",
+        "saved": "保存されました",
+        "columns": {
+          "optimizer": "オプティマイザー",
+          "before": "前",
+          "after": "後",
+          "saved": "節約"
+        },
+        "rolledBackNote": "ロールバック: このステップが生成した変更は安全でないものとして却下されました",
+        "skippedNote": "スキップ: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "このステップが生成した変更はロールバックされたため、プロンプトは次のステップに変更されずに到達しました。",
+          "skipped": "このステップは実行されませんでした: {{reason}}",
+          "unchanged": "このステップはプロンプトを変更されないままにしました。"
+        }
+      },
+      "errors": {
+        "assignFailed": "オプティマイザープロファイル割り当てに失敗しました",
+        "saveFailed": "オプティマイザー保存エラー",
+        "previewFailed": "プレビュー実行エラー",
+        "noProfileAvailable": "使用可能なオプティマイザープロファイルがありません。プロファイルページから1つを作成してください。"
+      }
+    },
+    "token": {
+      "newButton": "新しいトークン",
+      "empty": "APIトークンがまだありません。認証リクエストを開始するには1つを作成してください。",
+      "budgetOverrides": "予算オーバーライド",
+      "created": "作成日時",
+      "lastUsed": "最後に使用された",
+      "expires": "有効期限",
+      "never": "無期限",
+      "editTitle": "設定を編集",
+      "revokeTitle": "トークンを失効させる",
+      "revokeConfirm": "トークン\"{{snippet}}...\"を失効させますか?それを使用しているアプリは即座に機能を停止します。",
+      "labelInput": {
+        "placeholder": "ラベルを検索または作成...",
+        "createPrefix": "作成",
+        "noMatches": "マッチングラベルが見つかりません。"
+      },
+      "errors": {
+        "deleteFailed": "トークン削除エラー"
+      },
+      "create": {
+        "backToTokens": "トークンに戻る",
+        "title": "新しいAPIトークン",
+        "subtitle": "完全なトークンは作成後1回だけ表示されます — 安全に保存してください。",
+        "tokenCreated": "トークンが正常に作成されました。今すぐコピーしてください — 再び表示されません。",
+        "copied": "コピーしました!",
+        "copy": "コピー",
+        "done": "完了",
+        "optional": "オプション",
+        "labels": "ラベル",
+        "labelsHint": "このトークンにタグを付けてそれが使用される場所を識別します(例えば\"production\"、\"ci\")。",
+        "scopes": "スコープ",
+        "scopesHint": "このトークンに添付されたフリーフォームスコープ(例えば\"batch\"、\"internal\")、独自の記録管理用に保存されます。",
+        "tags": "タグ",
+        "tagsHint": "使用状況レコードに転送されるキーバリューメタデータ(例えば env=production)。",
+        "keyPlaceholder": "キー",
+        "valuePlaceholder": "値",
+        "createButton": "トークン作成",
+        "cancel": "キャンセル",
+        "copyFailed": "コピーに失敗しました — トークンを手動で選択してコピーしてください。",
+        "errors": {
+          "createFailed": "トークン作成エラー"
+        }
+      },
+      "edit": {
+        "title": "トークンを編集",
+        "subtitle": "このトークンのラベルと1モデルごとの制限オーバーライドを更新します。",
+        "token": "トークン",
+        "labels": "ラベル",
+        "perModelLimits": "モデルごとの制限",
+        "perModelLimitsHint": "このトークンを使用するリクエストのグローバルおよびルーターレベルの制限をオーバーライド。",
+        "noTargetModels": "ルーティングタブでまずターゲットモデルを追加してください。",
+        "noOverride": "オーバーライドなし",
+        "noLimits": "制限なし",
+        "noLimitsSet": "制限が設定されていません — 親から継承します。以下にオーバーライドする制限を追加してください。",
+        "metric": "メトリック",
+        "type": "タイプ",
+        "periodLabel": "期間",
+        "every": "毎",
+        "maxCost": "最大($)",
+        "maxCalls": "最大(n.)",
+        "maxTokens": "最大(トークン)",
+        "allCombosSet": "すべてのメトリック/期間の組み合わせが既に設定されています",
+        "addLimit": "制限を追加",
+        "windowType": {
+          "period": "期間",
+          "rolling": "ローリング"
+        },
+        "limitMetric": {
+          "cost": "コスト(USD)",
+          "calls": "リクエスト",
+          "input_tokens": "入力トークン",
+          "output_tokens": "出力トークン",
+          "total_tokens": "合計トークン"
+        },
+        "period": {
+          "hourly": "毎時間",
+          "daily": "毎日",
+          "weekly": "毎週",
+          "monthly": "毎月",
+          "yearly": "毎年"
+        },
+        "rollingUnit": {
+          "second": "秒",
+          "minute": "分",
+          "hour": "時間",
+          "day": "日",
+          "week": "週",
+          "month": "月"
+        },
+        "fmt": {
+          "requests": "{{value}}リクエスト",
+          "inputTokens": "{{value}}入力トークン",
+          "outputTokens": "{{value}}出力トークン",
+          "totalTokens": "{{value}}トークン",
+          "everyRolling": "{{metric}}/毎{{amount}}{{unit}}",
+          "perPeriod": "{{metric}}/毎{{period}}"
+        },
+        "errors": {
+          "saveFailed": "トークン保存エラー"
+        }
+      }
+    },
+    "users": {
+      "title": "ルーターメンバー",
+      "description": "このルーターにアクセス権を持つユーザーを管理します。",
+      "addButton": "メンバーを追加",
+      "addNewTitle": "新しいメンバーを追加",
+      "selectUserPlaceholder": "ユーザーを選択...",
+      "addConfirmButton": "追加",
+      "cancelButton": "キャンセル",
+      "empty": "メンバーが見つかりません。",
+      "removeConfirm": "このメンバーを削除してもよろしいですか?",
+      "saveTitle": "変更を保存",
+      "changeRoleTitle": "ロールを変更",
+      "removeTitle": "メンバーを削除",
+      "roles": {
+        "viewer": "閲覧者",
+        "editor": "編集者",
+        "admin": "管理者"
+      },
+      "columns": {
+        "user": "ユーザー",
+        "role": "ロール",
+        "actions": "アクション"
+      },
+      "errors": {
+        "loadFailed": "ユーザーの読み込みに失敗しました",
+        "addFailed": "メンバー追加エラー",
+        "updateFailed": "メンバー更新エラー",
+        "removeFailed": "メンバー削除エラー"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "オフ"
+      },
+      "autoRefreshOff": "自動更新が無効です",
+      "autoRefreshEvery": "毎{{interval}}自動更新",
+      "lastUpdated": "最後に更新: {{time}}",
+      "refresh": "更新",
+      "refreshNowTitle": "今すぐ更新",
+      "refreshNowButton": "↻ 今すぐ",
+      "filters": {
+        "period": "期間",
+        "model": "モデル",
+        "allModels": "すべてのモデル",
+        "type": "タイプ",
+        "all": "すべて",
+        "completion": "補完",
+        "router": "ルーター",
+        "status": "ステータス",
+        "success": "成功",
+        "blocked": "ブロック",
+        "error": "エラー",
+        "resetButton": "フィルターをリセット"
+      },
+      "stats": {
+        "totalCost": "総コスト",
+        "totalCalls": "総呼び出し",
+        "completionCalls": "補完呼び出し",
+        "routerCalls": "ルーター呼び出し",
+        "errors": "エラー"
+      },
+      "requestLogs": "リクエストログ",
+      "emptyNoRequests": "選択した期間でこのルーターのリクエストがありません。",
+      "emptyNoMatches": "アクティブなフィルターに一致するレコードがありません。",
+      "columns": {
+        "time": "時刻",
+        "model": "モデル",
+        "type": "タイプ",
+        "in": "入力",
+        "out": "出力",
+        "cost": "コスト",
+        "latency": "遅延",
+        "ttft": "TTFT",
+        "tokPerSec": "トークン/秒",
+        "status": "ステータス"
+      },
+      "typeRouter": "ルーター",
+      "typeCompletion": "補完",
+      "pagination": {
+        "previous": "← 前へ",
+        "next": "次へ →",
+        "pageOf": "ページ{{page}}/{{totalPages}}",
+        "totalRecords": "(合計{{count}}レコード)"
+      }
+    },
+    "security": {
+      "title": "セキュリティ",
+      "description": "共有セキュリティプロファイルを使用するか、このルーターの独自のガードレールとPIIポリシーを定義します。",
+      "mode": {
+        "profile": "プロファイル",
+        "custom": "カスタム"
+      },
+      "profileSelect": {
+        "ariaLabel": "セキュリティプロファイル",
+        "builtinLabel": "{{label}}(ビルトイン)",
+        "hint": "ガードレールとPIIポリシーはプロファイルから来て、その変更に従います。プロファイルページで編集するか、カスタムに切り替えてコピーから開始します。",
+        "blockingSuffix": "、ブロック中",
+        "disabledSuffix": "、無効",
+        "piiRedaction": "PII編集({{target}})"
+      },
+      "saveButton": "セキュリティ設定を保存",
+      "saved": "保存されました!",
+      "errors": {
+        "assignFailed": "セキュリティプロファイル割り当てに失敗しました",
+        "saveFailed": "セキュリティ設定保存エラー",
+        "noProfileAvailable": "使用可能なセキュリティプロファイルがありません。プロファイルページから1つを作成してください。"
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "あなたは役に立つAIアシスタントです。",
+      "errors": {
+        "unknown": "不明なエラーが発生しました",
+        "onlyImages": "現在、ビジョンモデルではイメージ添付ファイルのみがサポートされています。"
+      },
+      "title": "チャットをテスト",
+      "subtitle": "ルーティングゲートウェイを通すテストクエリを送信します。",
+      "routerToken": "ルーター トークン:",
+      "hideToken": "トークンを非表示",
+      "showToken": "トークンを表示",
+      "recognizedToken": "認識されたトークン",
+      "unrecognizedToken": "認識されないトークン",
+      "noMessages": "メッセージがまだありません。",
+      "enterTokenHint": "メッセージを送信するには、上記にルータートークンを入力してください。",
+      "typeMessageHint": "下記にメッセージを入力してテストを開始します。",
+      "reasoning": "推論",
+      "attachedAlt": "添付",
+      "attachmentAlt": "添付ファイル",
+      "attachImage": "画像を添付",
+      "typeMessagePlaceholder": "メッセージを入力...",
+      "stopGeneration": "生成を停止",
+      "sendEnter": "送信(Enter)",
+      "debugLog": "デバッグログ",
+      "clear": "削除",
+      "noRequestSent": "リクエストはまだ送信されていません。",
+      "turnTraceLog": "ターン#{{turn}}トレースログ・{{count}}イベント",
+      "turnTraceLog_other": "ターン#{{turn}}トレースログ・{{count}}イベント"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "接続",
+      "subtitle": "モデルインスタンスを実行するために使用されるプロバイダーアカウント",
+      "noPermission": "接続を表示する権限がありません。",
+      "count": "{{count}}接続",
+      "count_other": "{{count}}接続",
+      "addConnection": "接続を追加",
+      "empty": "接続がまだありません。開始するには1つを追加してください。",
+      "deleteConfirm": "接続\"{{label}}\"を削除しますか?それにバインドされたインスタンスは機能を停止します。",
+      "errors": {
+        "loadFailed": "接続の読み込みに失敗しました",
+        "deleteFailed": "接続の削除に失敗しました"
+      },
+      "columns": {
+        "label": "ラベル",
+        "provider": "プロバイダー",
+        "endpoint": "エンドポイント",
+        "status": "ステータス"
+      },
+      "status": {
+        "enabled": "有効",
+        "disabled": "無効"
+      },
+      "actions": {
+        "models": "モデル",
+        "edit": "編集",
+        "remove": "削除"
+      }
+    },
+    "form": {
+      "backToConnections": "接続に戻る",
+      "editTitle": "接続を編集",
+      "addTitle": "接続を追加",
+      "enabled": "有効",
+      "editSubtitle": "プロバイダーアカウント設定を更新",
+      "addSubtitle": "新しいプロバイダーアカウントを登録",
+      "sectionTitle": "接続詳細",
+      "sectionDesc": "リクエストを実行するために使用されるプロバイダーアカウント、認証情報、およびエンドポイント。",
+      "provider": "プロバイダー",
+      "groups": {
+        "directApi": "ダイレクトAPI",
+        "cloudPlatform": "クラウドプラットフォーム",
+        "subscription": "サブスクリプション",
+        "browserSession": "ブラウザセッション",
+        "selfHosted": "自己ホスト"
+      },
+      "upstreamProvider": {
+        "label": "プロバイダー",
+        "hintLabel": "(アップストリームプロバイダー名)",
+        "placeholder": "例えば deepseek、mistral、groq",
+        "description": "このエンドポイントが属するサービスに名前を付けます。このコネクション上のモデルはそれをID接頭辞として使用します(例えば <code>deepseek/deepseek-r1</code>)。"
+      },
+      "name": {
+        "label": "名前",
+        "hint": "参照されているすべての場所で これを識別するため、一意である必要があります。空白のままにして<code>{{suggested}}</code>を使用します。"
+      },
+      "credentialsBlankHint": "既存の値を保持するには認証情報フィールドを空白のままにしてください。",
+      "save": "保存",
+      "create": "作成",
+      "cancel": "キャンセル",
+      "oauth": {
+        "unknown": "不明",
+        "accountExpires": "アカウント: {{account}} — {{expires}}で期限切れ",
+        "unknownError": "不明なエラー"
+      },
+      "errors": {
+        "notFound": "接続が見つかりません",
+        "loadFailed": "接続の読み込みに失敗しました",
+        "updateFailed": "接続の更新に失敗しました",
+        "createFailed": "接続の作成に失敗しました"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "モデルに戻る",
+      "title": "モデル発見",
+      "subtitle": "利用可能なモデルを参照してルーティング設定に追加",
+      "count": "{{count}}モデル",
+      "filteredCount": "{{count}}中{{filtered}}",
+      "free": "無料",
+      "add": "追加",
+      "addAgain": "再度追加",
+      "loadFailed": "カタログの読み込みに失敗しました: {{error}}",
+      "filters": {
+        "search": "検索",
+        "searchPlaceholder": "モデルIDまたは名前...",
+        "provider": "プロバイダー",
+        "allProviders": "すべてのプロバイダー",
+        "context": "コンテキスト",
+        "ctxOptions": {
+          "all": "すべて",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "価格 / 1M",
+        "priceOptions": {
+          "all": "すべて",
+          "free": "無料",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "表示",
+        "configured": "構成済み",
+        "embedding": "埋め込み",
+        "resetFilters": "フィルターをリセット"
+      },
+      "empty": {
+        "noMatches": "フィルターに一致するモデルがありません。"
+      },
+      "columns": {
+        "model": "モデル",
+        "provider": "プロバイダー",
+        "context": "コンテキスト",
+        "input": "入力 / 1M",
+        "output": "出力 / 1M"
+      },
+      "badges": {
+        "configured": "構成済み",
+        "embedding": "埋め込み",
+        "runsLocally": "ローカルで実行"
+      },
+      "pagination": {
+        "prev": "前へ",
+        "next": "次へ",
+        "range": "{{count}}中{{start}}–{{end}}"
+      }
+    },
+    "form": {
+      "backToModels": "モデルに戻る",
+      "title": {
+        "add": "モデルを追加",
+        "edit": "モデルを編集",
+        "clone": "モデルをクローン"
+      },
+      "subtitle": {
+        "add": "新しいLLMプロバイダーモデルを登録",
+        "edit": "{{id}}の設定を変更",
+        "clone": "{{id}}からクローン — 保存する新しいIDを割り当てます"
+      },
+      "errors": {
+        "modelNotFound": "モデルが見つかりません",
+        "sourceModelNotFound": "ソースモデルが見つかりません",
+        "loadFailed": "モデル読み込みエラー",
+        "idRequired": "モデルIDが必須です",
+        "duplicateId": "モデル\"{{id}}\"は既に存在します — 異なるカスタムIDを設定します",
+        "selectConnection": "接続を選択",
+        "saveFailed": "エラー"
+      },
+      "badge": {
+        "yes": "はい",
+        "no": "いいえ",
+        "override": "オーバーライド",
+        "auto": "自動",
+        "default": "デフォルト: {{value}}",
+        "reset": "リセット"
+      },
+      "oauth": {
+        "unknownExpiry": "不明",
+        "accountOk": "アカウント: {{account}} — {{expires}}で期限切れ",
+        "unknownError": "不明なエラー"
+      },
+      "identification": {
+        "title": "モデル識別",
+        "description": "このモデル設定の一意の識別子とプロバイダー設定。",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(オプション — デフォルト:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Routerly APIコールでこのモデルを参照するときに使用される識別子。",
+        "provider": "プロバイダー",
+        "upstreamProviderHint": "(アップストリームプロバイダー名)",
+        "upstreamProviderPlaceholder": "例えば deepseek、mistral、groq",
+        "upstreamProviderDescPre": "Routerly ID(例えば の接頭辞として使用されます",
+        "upstreamProviderDescPost": ")。",
+        "model": "モデル",
+        "upstreamModelHint": "(アップストリームモデルID)",
+        "upstreamModelPlaceholder": "例えば deepseek-r1、mistral-large-latest",
+        "upstreamModelDesc": "アップストリームAPIエンドポイントに送信されるモデル識別子。",
+        "modelPreset": "モデルプリセット",
+        "customModelOption": "— カスタムモデル名 —",
+        "customModelPlaceholder": "例えば my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "接続詳細",
+        "description": "リクエストを実行するために必要なAPIエンドポイントと認証認証情報。",
+        "preconfigured": "事前構成済み",
+        "custom": "カスタム",
+        "connection": "接続",
+        "selectPlaceholder": "— 接続を選択 —",
+        "noneAvailable": "このプロバイダー用の事前構成済み接続がありません。カスタムに切り替えるか、接続ページで1つを作成してください。",
+        "editHint": "この接続を後で編集すると、それにバインドされたすべてのモデルが更新されます。"
+      },
+      "capabilities": {
+        "title": "機能",
+        "description": "このモデルのタイプと機能を指定します。",
+        "embeddingModel": "埋め込みモデル",
+        "embeddingModelHint": "このモデルはベクトル埋め込みを生成します(チャット補完ではなく)"
+      },
+      "pricing": {
+        "title": "価格とコンテキスト",
+        "description": "請求とルーティングに使用されるコストパラメータと処理制限。",
+        "inputPerMillion": "入力 $/1M",
+        "outputPerMillion": "出力 $/1M",
+        "cachePerMillion": "キャッシュ読み取り $/1M",
+        "cacheWritePerMillion": "キャッシュ書き込み $/1M",
+        "optional": "(オプション)",
+        "contextWindow": "コンテキストウィンドウ",
+        "contextWindowHint": "(トークン、オプション)"
+      },
+      "tiers": {
+        "title": "詳細 — 価格階層",
+        "description": "メトリックがしきい値を超えたときに価格をオーバーライド。例えば: \"200 000を超えるコンテキストトークン上で価格が変わります。\"",
+        "removeTier": "階層を削除",
+        "above": "上記",
+        "metric": "メトリック",
+        "metricContextTokens": "コンテキストトークン",
+        "overridePricing": "価格をオーバーライド",
+        "addTier": "価格階層を追加"
+      },
+      "limits": {
+        "title": "制限",
+        "description": "このモデルの使用制限。複数のルールを組み合わせることができます。",
+        "metric": "メトリック",
+        "type": "タイプ",
+        "addLimit": "制限を追加"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic(Pro/Maxサブスクリプション)",
+        "openaiOauth": "OpenAI(ChatGPT Plus/Proサブスクリプション)"
+      },
+      "saveChanges": "変更を保存",
+      "createClone": "クローンを作成",
+      "createModel": "モデル作成"
+    },
+    "page": {
+      "title": "モデル",
+      "subtitle": "Routerlyに登録されたLLMプロバイダー",
+      "tabs": {
+        "models": "モデル",
+        "health": "ヘルス"
+      },
+      "toolbar": {
+        "count": "{{count}}モデル",
+        "count_other": "{{count}}モデル",
+        "filteredCount": "{{count}}モデル中{{filtered}}",
+        "filteredCount_other": "{{count}}モデル中{{filtered}}"
+      },
+      "filters": {
+        "allProviders": "すべてのプロバイダー",
+        "allConnections": "すべての接続",
+        "searchPlaceholder": "モデルをフィルター..."
+      },
+      "discover": "発見",
+      "addModel": "モデルを追加",
+      "deleteConfirm": "モデル\"{{id}}\"を削除しますか?",
+      "empty": {
+        "noModels": "モデルがまだありません。開始するには1つを追加してください。",
+        "noMatches": "アクティブなフィルターに一致するモデルがありません。"
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "プロバイダー",
+        "endpoint": "エンドポイント",
+        "input": "入力 $/1M",
+        "output": "出力 $/1M",
+        "cache": "キャッシュ $/1M",
+        "context": "コンテキストサイズ"
+      },
+      "actions": {
+        "test": "テスト",
+        "clone": "クローン",
+        "edit": "編集",
+        "remove": "削除"
+      },
+      "pagination": {
+        "previous": "← 前へ",
+        "next": "次へ →",
+        "pageOf": "ページ{{page}}/{{totalPages}}",
+        "total": "({{count}}モデル)",
+        "total_other": "({{count}}モデル)"
+      },
+      "health": {
+        "emptyNoModels": "構成されたモデルがありません。",
+        "emptyNoMatches": "フィルターに一致するモデルがありません。",
+        "resetAll": "すべてをリセット",
+        "resetAllTitle": "すべてのサーキットブレーカー、クールダウン、ロックアウトをリセット",
+        "resetTitle": "サーキットブレーカーをリセット",
+        "confirmResetModel": "モデル\"{{id}}\"のサーキットブレーカーをリセットしますか?",
+        "confirmResetAll": "すべてのレジリエンス状態をリセットしますか?これはすべてのサーキットブレーカー、クールダウン、ロックアウトを削除します。",
+        "errors": {
+          "resetModelFailed": "サーキットブレーカーのリセットに失敗しました",
+          "resetAllFailed": "レジリエンス状態のリセットに失敗しました"
+        },
+        "columns": {
+          "model": "モデル",
+          "provider": "プロバイダー",
+          "status": "ステータス",
+          "circuit": "サーキット",
+          "errorRate": "エラー率(5m)",
+          "p95Latency": "P95遅延(1h)",
+          "requests": "リクエスト(1h)",
+          "lastSuccess": "最後の成功",
+          "cooldownLockout": "クールダウン / ロックアウト"
+        },
+        "status": {
+          "healthy": "健全",
+          "degraded": "劣化",
+          "unavailable": "利用不可",
+          "cooldown": "クールダウン",
+          "nodata": "データなし"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "回復中",
+          "tripped": "トリップ"
+        },
+        "time": {
+          "never": "無い",
+          "now": "今",
+          "secondsAgo": "{{count}}秒前",
+          "minutesAgo": "{{count}}分前",
+          "hoursAgo": "{{count}}時間前",
+          "daysAgo": "{{count}}日前",
+          "minSec": "{{min}}分{{sec}}秒",
+          "sec": "{{sec}}秒",
+          "cooldown": "クールダウン{{time}}",
+          "lockout": "ロックアウト{{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "実験",
+      "subtitle": "ルーター同士をA/Bテスト",
+      "noPermission": "実験を表示する権限がありません。",
+      "count": "{{count}}実験",
+      "count_other": "{{count}}実験",
+      "newExperiment": "新しい実験",
+      "empty": "実験がまだありません。ルーター同士を並べて比較する1つを作成します。",
+      "deleteConfirm": "実験\"{{name}}\"を削除しますか?これは取り消せません。",
+      "noToken": "トークンなし",
+      "noTokenTitle": "トークンがないと、クライアントはこの実験に到達できません",
+      "errors": {
+        "loadFailed": "実験の読み込みに失敗しました",
+        "deleteFailed": "実験の削除に失敗しました"
+      },
+      "columns": {
+        "name": "名前",
+        "variants": "バリアント",
+        "rotation": "ローテーション",
+        "created": "作成日時"
+      },
+      "actions": {
+        "edit": "実験を編集",
+        "remove": "削除"
+      }
+    },
+    "layout": {
+      "backToExperiments": "実験に戻る",
+      "newExperiment": "新しい実験",
+      "loading": "読み込み中...",
+      "experimentId": "実験ID:",
+      "disabledTabTitle": "このタブのロックを解除するにはまず実験を保存してください",
+      "errors": {
+        "notFound": "実験が見つかりません"
+      },
+      "tabs": {
+        "config": "設定",
+        "metrics": "メトリック",
+        "token": "トークン"
+      }
+    },
+    "config": {
+      "saved": "保存されました。",
+      "created": "実験が作成されました。クライアントをルータートークンではなくこのトークンにポイント。二度と表示されません。",
+      "copy": "コピー",
+      "copied": "コピーしました!",
+      "done": "完了",
+      "saving": "保存中...",
+      "create": "実験作成",
+      "save": "変更を保存",
+      "cancel": "キャンセル",
+      "trafficSplit": "トラフィック分割",
+      "errors": {
+        "loadRoutersFailed": "ルーターの読み込みに失敗しました",
+        "saveFailed": "実験の保存に失敗しました",
+        "copyFailed": "コピーに失敗しました: トークンを手動で選択してコピーしてください。"
+      },
+      "fields": {
+        "name": "名前",
+        "namePlaceholder": "安価 対 プレミアムルーティング",
+        "description": "説明",
+        "optional": "(オプション)",
+        "descriptionPlaceholder": "このテストが何を解決しようとしているか",
+        "minSamples": "バリアント1呼び出しの最小",
+        "minSamplesHint": "これより下では、メトリックスタブは比較がまだ決定的ではないとマークします。",
+        "rotation": "ローテーション",
+        "stickyOn": "スティッキー",
+        "stickyKey": "スティッキーキー"
+      },
+      "variants": {
+        "title": "バリアント",
+        "desc": "各バリアントは既存のルーター全体です: そのモデル、ルーティング、ガードレールすべてが適用されます。テストは少なくとも2つが必要です。",
+        "routerAriaLabel": "バリアント{{index}}ルーター",
+        "routerPlaceholder": "ルーターを選択",
+        "labelAriaLabel": "バリアント{{index}}ラベル",
+        "labelPlaceholder": "ラベル(オプション)",
+        "weightAriaLabel": "バリアント{{index}}重み",
+        "weightPlaceholder": "重み",
+        "removeTitle": "バリアント{{index}}を削除",
+        "add": "バリアントを追加"
+      },
+      "judge": {
+        "title": "判定者",
+        "desc": "オプション: モデルがサンプル抽出された各回答を読み取り、あなたの基準に対して0-10でスコアします。判定されたすべての呼び出しは追加のモデル呼び出しであり、他のように請求されます。",
+        "enable": "判定モデルでスコア回答",
+        "model": "判定モデル",
+        "modelPlaceholder": "モデルを選択",
+        "criteria": "基準",
+        "criteriaPlaceholder": "1行ごと、例えば\n質問された質問に答える\n事実を保持\nリクエストされた形式を保持",
+        "sampleRate": "判定される呼び出しのシェア(%)"
+      }
+    },
+    "metrics": {
+      "loading": "読み込み中...",
+      "callsMeasured": "{{count}}呼び出し測定",
+      "callsMeasured_other": "{{count}}呼び出し測定",
+      "empty": "このウィンドウではまだ呼び出しがありません。実験トークンをクライアントにポイントして比較を開始します。",
+      "notConclusive": "まだ決定的ではありません: すべてのバリアントは、このウィンドウで少なくとも{{minSamples}}呼び出しが必要です。",
+      "explanation": "各ペアの良い図が強調されます: 呼び出しごとの安価、より高速、より高い判定スコア。値の下のパーセンテージはベストアームからの距離です。判定スコアは実験全体の生涯にわたる実行平均なので、ウィンドウを狭めない1つの図です。",
+      "lowSample": "低いサンプル",
+      "lowSampleTitle": "このウィンドウでは{{minSamples}}呼び出し未満",
+      "judgedCallsTitle": "実験開始以来判定者によってスコアされた{{count}}回答",
+      "judgedCallsTitle_other": "実験開始以来判定者によってスコアされた{{count}}回答",
+      "errors": {
+        "loadFailed": "メトリックスの読み込みに失敗しました"
+      },
+      "columns": {
+        "variant": "バリアント",
+        "calls": "呼び出し",
+        "share": "シェア",
+        "errors": "エラー",
+        "tokens": "トークン 入力 / 出力",
+        "cost": "コスト",
+        "costPerCall": "コスト / 呼び出し",
+        "avgLatency": "平均遅延",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "判定スコア"
+      }
+    },
+    "token": {
+      "desc": "クライアントはルーターとまったく同じ実験を呼び出します: 同じベースURL、ルーター トークンではなくこのトークン。各リクエストは1つのバリアントに到達し、そのバリアントのルーターに請求されます。",
+      "baseUrlLabel": "OpenAIまたはAnthropicSDKのベースURL、実験トークンをAPIキーとして:",
+      "created": "トークンが作成されました。今すぐコピーしてください。二度と表示されません。",
+      "copy": "コピー",
+      "copied": "コピーしました!",
+      "newToken": "新しいトークン",
+      "empty": "この実験にはトークンがありません。クライアントが呼び出しできるように1つを作成します。",
+      "revokeConfirm": "トークン\"{{snippet}}...\"を失効させますか?それを使用しているクライアントは即座に機能を停止します。",
+      "revokeTitle": "トークンを失効させる",
+      "errors": {
+        "createFailed": "トークンの作成に失敗しました",
+        "revokeFailed": "トークンの失効に失敗しました",
+        "copyFailed": "コピーに失敗しました: トークンを手動で選択してコピーしてください。"
+      },
+      "columns": {
+        "created": "作成日時",
+        "lastUsed": "最後に使用された"
+      }
+    }
+  },
+  "overview": {
+    "title": "概要",
+    "subtitle": "使用状況サマリーとコスト内訳",
+    "noPermission": "使用データを表示する権限がありません。",
+    "costByModel": "モデルごとのコスト",
+    "noCostRecorded": "この期間に記録されたコストはありません。",
+    "callsByModel": "モデルごとの呼び出し",
+    "columns": {
+      "model": "モデル",
+      "calls": "呼び出し",
+      "errors": "エラー",
+      "cost": "コスト"
+    },
+    "stats": {
+      "totalCalls": "総呼び出し",
+      "callsBreakdown": "{{routing}}ルーティング・{{completion}}補完",
+      "successRate": "成功率",
+      "ofAllRequests": "すべてのリクエスト中",
+      "errors": "エラー",
+      "failedRequests": "失敗したリクエスト",
+      "models": "モデル",
+      "registered": "登録済み",
+      "routers": "ルーター",
+      "active": "アクティブ"
+    },
+    "connectCard": {
+      "title": "クライアントを接続",
+      "desc": "Claude Code、Codex、Cursor、および{{count}}その他をこのゲートウェイにポイント。"
+    }
+  },
+  "login": {
+    "emailLabel": "メール",
+    "passwordLabel": "パスワード",
+    "signIn": "サインイン",
+    "errors": {
+      "loginFailed": "ログインに失敗しました",
+      "totpFailed": "2FA確認に失敗しました"
+    },
+    "totp": {
+      "title": "2要素認証",
+      "backupPrompt": "バックアップコードを入力。",
+      "appPrompt": "認証アプリから6桁のコードを入力します。",
+      "backupCodeLabel": "バックアップコード",
+      "authenticatorCodeLabel": "認証アプリコード",
+      "verify": "確認",
+      "useAuthenticatorInstead": "代わりに認証アプリを使用",
+      "useBackupInstead": "代わりにバックアップコードを使用"
+    }
+  },
+  "setup": {
+    "welcome": "ようこそ!セットアップしましょう。",
+    "welcomeSubtitle": "最初の管理者アカウントを作成してRouterlyの管理を開始します。",
+    "betaBadge": "🚧 ベータ",
+    "betaNotice": "Routerlyは活発に進化しています。バグが発生する可能性があります。",
+    "betaFeedback": "フィードバックが何になるかを形成するのに役立ちます —",
+    "betaLink": "問題を報告または考えを共有",
+    "emailLabel": "管理者メール",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "パスワード",
+    "passwordPlaceholder": "最小8文字",
+    "confirmLabel": "パスワード確認",
+    "confirmPlaceholder": "パスワードを再入力",
+    "submit": "管理者アカウント作成",
+    "errors": {
+      "mismatch": "パスワードが一致しません",
+      "tooShort": "パスワードは最低8文字である必要があります",
+      "setupFailed": "セットアップに失敗しました"
+    }
+  },
+  "audit": {
+    "empty": "監査エントリが見つかりません。",
+    "errors": {
+      "loadFailed": "監査ログの読み込みに失敗しました"
+    },
+    "filters": {
+      "period": "期間",
+      "user": "ユーザー",
+      "userPlaceholder": "メールまたはユーザーID",
+      "action": "アクション",
+      "actionPlaceholder": "例えば model:create",
+      "result": "結果",
+      "results": {
+        "all": "すべて",
+        "success": "成功",
+        "forbidden": "禁止",
+        "error": "エラー"
+      },
+      "refresh": "更新"
+    },
+    "columns": {
+      "timestamp": "タイムスタンプ",
+      "user": "ユーザー",
+      "action": "アクション",
+      "endpoint": "エンドポイント",
+      "result": "結果",
+      "details": "詳細"
+    },
+    "pagination": {
+      "previous": "前へ",
+      "next": "次へ",
+      "page": "ページ{{page}}/{{totalPages}}",
+      "total": "(合計{{count}})"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "使用状況",
+      "live": "ライブ",
+      "subtitle": "詳細な呼び出しログとモデルごとの内訳",
+      "updatedAt": "・{{time}}に更新",
+      "poll": {
+        "off": "オフ",
+        "5s": "5秒",
+        "15s": "15秒",
+        "30s": "30秒",
+        "1m": "1分",
+        "5m": "5分"
+      },
+      "liveButton": "● ライブ",
+      "liveButtonTitle": {
+        "disable": "ライブモードを無効化",
+        "enable": "ライブモード(2秒ごとに更新)を有効化"
+      },
+      "refreshNow": "↻ 今すぐ",
+      "refreshNowTitle": "今すぐ更新",
+      "filters": {
+        "period": "期間",
+        "router": "ルーター",
+        "model": "モデル",
+        "token": "トークン",
+        "caller": "呼び出し元",
+        "type": "タイプ",
+        "status": "ステータス",
+        "allRouters": "すべてのルーター",
+        "allModels": "すべてのモデル",
+        "allTokens": "すべてのトークン",
+        "resetFilters": "フィルターをリセット",
+        "all": "すべて",
+        "success": "成功",
+        "blocked": "ブロック",
+        "error": "エラー"
+      },
+      "caller": {
+        "all": "すべて",
+        "completion": "補完",
+        "routing": "ルーター",
+        "guardrail": "ガードレール",
+        "judge": "判定者"
+      },
+      "callerBadge": {
+        "completion": "補完",
+        "routing": "ルーター",
+        "guardrail": "ガードレール",
+        "judge": "判定者"
+      },
+      "errors": {
+        "loadFailedPrefix": "使用データの読み込みに失敗しました:",
+        "retry": "再試行"
+      },
+      "stats": {
+        "totalCalls": "総呼び出し",
+        "completionCalls": "補完呼び出し",
+        "routerCalls": "ルーター呼び出し",
+        "guardrailCalls": "ガードレール呼び出し",
+        "blockedCalls": "ブロックされた呼び出し",
+        "errors": "エラー"
+      },
+      "table": {
+        "rank": "ランク",
+        "model": "モデル",
+        "provider": "プロバイダー",
+        "calls": "呼び出し",
+        "errors": "エラー",
+        "successRate": "成功率",
+        "avgLatency": "平均遅延",
+        "p95Latency": "P95遅延",
+        "inputTokens": "入力トークン",
+        "outputTokens": "出力トークン",
+        "costPer1k": "コスト / 1K",
+        "cost": "コスト(USD)",
+        "bestCostPerformance": "最高のコスト性能"
+      },
+      "showMoreModels": "{{count}}個の追加モデルを表示",
+      "showMoreModels_other": "{{count}}個の追加モデルを表示",
+      "showFewerModels": "少なく表示",
+      "recentCalls": {
+        "title": "最近の呼び出し",
+        "empty": "この期間の使用状況レコードがありません。",
+        "columns": {
+          "time": "時刻",
+          "router": "ルーター",
+          "model": "モデル",
+          "type": "タイプ",
+          "caller": "呼び出し元",
+          "in": "入力",
+          "out": "出力",
+          "cost": "コスト",
+          "latency": "遅延",
+          "ttft": "TTFT",
+          "tokensPerSec": "トークン/秒",
+          "status": "ステータス"
+        }
+      },
+      "pagination": {
+        "previous": "前へ",
+        "next": "次へ",
+        "pageOf": "ページ{{page}}/{{totalPages}}",
+        "totalRecords": "(合計{{count}}レコード)"
+      }
+    },
+    "record": {
+      "back": "戻る",
+      "title": "呼び出し詳細",
+      "notFoundTitle": "レコードが見つかりません",
+      "notFoundBody": "使用状況レコード{{id}}を読み込むことができませんでした。",
+      "errors": {
+        "loadFailed": "レコードの読み込みに失敗しました"
+      },
+      "sections": {
+        "identity": "ID",
+        "tokensAndCost": "トークン & コスト",
+        "performanceAndOutcome": "パフォーマンス & 結果",
+        "traceLog": "トレースログ"
+      },
+      "fields": {
+        "recordId": "レコードID",
+        "router": "ルーター",
+        "token": "トークン",
+        "model": "モデル",
+        "callType": "呼び出しタイプ",
+        "requestType": "リクエストタイプ",
+        "inputTokens": "入力トークン",
+        "outputTokens": "出力トークン",
+        "totalTokens": "合計トークン",
+        "costUsd": "コスト(USD)",
+        "costUnknown": "不明",
+        "latency": "遅延",
+        "ttft": "TTFT",
+        "tokensPerSec": "トークン/秒",
+        "outcome": "結果",
+        "timestamp": "タイムスタンプ",
+        "guardrailTriggered": "ガードレールがトリガー",
+        "blockedBy": "ブロック者",
+        "piiRedacted": "PII編集"
+      },
+      "errorMessage": "エラーメッセージ",
+      "eventCount": "{{count}}イベント",
+      "eventCount_other": "{{count}}イベント",
+      "noTrace": "トレースが利用できません。トレースデータは新しい呼び出しのみキャプチャされます。"
+    }
+  },
+  "playground": {
+    "title": "プレイグラウンド",
+    "subtitle": "モデルをテスト、レスポンスを比較、プロンプトプリセットを保存。",
+    "mode": {
+      "single": "単一",
+      "compare": "比較"
+    },
+    "token": {
+      "label": "トークン:",
+      "labelA": "トークン A",
+      "labelB": "トークン B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "Aと同じ",
+      "unknownToken": "不明なトークン"
+    },
+    "presets": {
+      "button": "プリセット",
+      "panelTitle": "プリセット",
+      "saveCurrent": "現在を保存",
+      "namePlaceholder": "プリセット名...",
+      "save": "保存",
+      "empty": "プリセットがまだありません。",
+      "delete": "プリセットを削除"
+    },
+    "streamingDisabled": {
+      "banner": "ストリーミングが利用できません",
+      "bannerBody": "このルーターにはレスポンスをブロックするガードレールが有効です。Routerlyは配信する前に完全なレスポンスを検査する必要があり、レスポンスは一度に到着します。",
+      "tooltip": "ストリーミングが利用できません: レスポンスをブロックするガードレールは配信する前に完全なレスポンスを検査する必要があります。",
+      "ariaLabel": "ストリーミング利用不可"
+    },
+    "systemPrompt": "システムプロンプト",
+    "model": "モデル",
+    "modelPlaceholder": "自動(ルーターデフォルト)",
+    "params": {
+      "temp": "温度",
+      "maxTokens": "最大トークン",
+      "topP": "Top-p"
+    },
+    "stream": "ストリーム",
+    "clear": "削除",
+    "empty": {
+      "noMessages": "メッセージがまだありません。",
+      "enterToken": "開始するには上記にルータートークンを入力します。"
+    },
+    "reasoning": "推論",
+    "blockedDefault": "このメッセージはガードレールによってブロックされました。",
+    "truncated": "切り詰め — 最大トークンでレスポンスが切り落とされました",
+    "bufferedNote": "セキュリティレビュー用に保持",
+    "errors": {
+      "onlyImages": "イメージ添付ファイルのみがサポートされています。"
+    },
+    "rawToggle": {
+      "rendered": "レンダリング",
+      "raw": "未処理"
+    },
+    "inputPlaceholder": "メッセージを入力...",
+    "attachImage": "画像を添付",
+    "attachedImageAlt": "添付",
+    "attachmentAlt": "添付ファイル",
+    "debug": {
+      "title": "デバッグ",
+      "clear": "削除",
+      "hide": "デバッグを非表示",
+      "show": "デバッグを表示",
+      "empty": "デバッグデータがまだありません。",
+      "emptyHint": "メッセージを送信してルーティング詳細を見ます。",
+      "turnTraceLog": "ターン#{{turn}}トレースログ"
+    },
+    "compare": {
+      "modelLabel": "モデル{{label}}:",
+      "modelSelectPlaceholder": "モデルを選択...",
+      "noMessages": "メッセージがまだありません。",
+      "debugTurns": "デバッグ({{count}}ターン)",
+      "debugTurns_other": "デバッグ({{count}}ターン)",
+      "guardrailTokensTitle": "ガードレール判定トークン",
+      "stop": "停止",
+      "inputPlaceholder": "同じメッセージを両方のモデルに送信..."
+    }
+  },
+  "help": {
+    "title": "ヘルプ & サポート",
+    "subtitle": "ここにいます — いつでも答えを見つけるか連絡します。",
+    "docs": {
+      "title": "ドキュメンテーション",
+      "subtitle": "ガイド、APIリファレンス、設定ドキュメント",
+      "body": "公式ドキュメントはすべてをカバーしています: 開始から高度なルーティングポリシー、プロバイダー設定、予算、完全なAPIリファレンスまで。",
+      "openLink": "ドキュメントを開く"
+    },
+    "issues": {
+      "title": "バグを報告または機能を提案",
+      "subtitle": "GitHubイシューを開く — 2分で済みます",
+      "body": "GitHubイシューはバグを報告または改善を提案する最善の方法です。物事を高速に修正するのに役立つために、以下を含めます: 何をしたか、何が起こると思ったか、実際に何が起こったか。",
+      "showTemplate": "イシューテンプレートを表示",
+      "reportBug": "バグを報告",
+      "requestFeature": "機能をリクエスト"
+    },
+    "issueTemplate": {
+      "whatHappened": "何が起こりましたか?",
+      "whatHappenedHint": "プレーンワードで問題を説明",
+      "stepsToReproduce": "再現するステップ",
+      "expectedBehaviour": "期待される動作",
+      "expectedBehaviourHint": "見ることが期待されたもの",
+      "version": "Routeryバージョン",
+      "versionHint": "`routerly --version`を実行または設定→ について確認"
+    },
+    "email": {
+      "title": "サポートに問い合わせ",
+      "subtitle": "すべてのメッセージを読み、できるだけ早く返信します",
+      "body": "GitHubイシューに適合しないもの — 請求質問、プライベートな懸念、または単に言いたいだけ — メッセージを送信します。"
+    },
+    "faq": {
+      "title": "よくある質問",
+      "subtitle": "最も一般的な質問への素早い答え",
+      "items": {
+        "connect": {
+          "q": "アプリをRouterlyに接続するにはどうすればよいですか?",
+          "a": "OpenAIまたはAnthropicSDKをRouterlyインスタンスにポイント。ベースURLを http://your-host:3000/v1(OpenAI互換)または http://your-host:3000/anthropic(Anthropic互換)に置き換え、ルータートークンをAPIキーとして使用します。以上です — 他の変更は不要です。"
+        },
+        "openaiCompat": {
+          "q": "Routerlyは OpenAI SDKを使用するツールと互換性がありますか?",
+          "a": "はい。Routerlyはドロップイン置換です: カスタムベースURLとAPIキーをサポートするツール(LangChain、LlamaIndex、Cursor、Continueなど)はすぐに機能します。Anthropic形式のクライアントの場合は、代わりに/anthropicエンドポイントを使用します。"
+        },
+        "routing": {
+          "q": "モデルルーティングはどのように機能しますか?",
+          "a": "各ルーターには、どのモデルがリクエストを受け取るかを決定するルーティングポリシーがあります。ポリシーには、ラウンドロビン、最低コスト、最速レスポンス、フォールバックチェーンなど が含まれます。ルーター→ ルーティングの下の各ルーターについて構成します。"
+        },
+        "addModel": {
+          "q": "新しいAIモデルを追加するにはどうすればよいですか?",
+          "a": "モデル→ モデルを追加に移動します。任意のOpenAI互換プロバイダー(Ollama、LM Studio、カスタムエンドポイント)またはネイティブAnthropicエンドポイントを追加できます。ベースURL、APIキー、モデルIDを入力 — Routerlyが残りを処理します。"
+        },
+        "dataStored": {
+          "q": "データが保存されていますか?プロンプトが記録されていますか?",
+          "a": "Routerlyは自己ホスト型で、データはマシンにのみ保存されます(デフォルトでは~/.routerly/)。プロンプトとレスポンスはRouterlyから送信されることはありません。リクエストログは ローカルに保存され、ルーターごとに有効化された場合のみです。"
+        },
+        "routerToken": {
+          "q": "ルータートークンとは何か、プロバイダーAPIキーとどう違いますか?",
+          "a": "ルータートークンは、アプリまたはチームメンバーにRouterlyで認証するために与える認証情報です。プロバイダーAPIキーとは別で、Routerlyはサーバーサイドで安全に保存します。アプリは実際のプロバイダーキーを見ることはありません。"
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}}ユーザー",
+    "countLabel_other": "{{count}}ユーザー",
+    "addButton": "ユーザーを追加",
+    "columns": {
+      "email": "メール",
+      "role": "ロール",
+      "routers": "ルーター"
+    },
+    "allRouters": "すべて",
+    "resetTwoFaTitle": "2FAをリセット",
+    "resetTwoFaConfirm": "{{email}}の2FAをリセットしますか?再登録する必要があります。",
+    "deleteConfirm": "このユーザーを削除しますか?",
+    "emptyTitle": "ユーザーがまだいません。",
+    "noPermission": "ユーザーを表示する権限がありません。",
+    "modal": {
+      "title": "ユーザーを追加",
+      "emailLabel": "メール",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "パスワード",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "ロール",
+      "roleAdmin": "管理者",
+      "roleViewer": "閲覧者",
+      "cancelButton": "キャンセル",
+      "submitButton": "ユーザーを追加"
+    },
+    "errors": {
+      "loadFailed": "ユーザーの読み込みに失敗しました",
+      "addFailed": "エラー"
+    }
+  },
+  "userEdit": {
+    "title": "ユーザーを編集",
+    "account": "アカウント",
+    "email": "メール",
+    "role": "ロール",
+    "changePassword": "パスワード変更",
+    "newPassword": "新しいパスワード",
+    "newPasswordHint": "(現在を保持するには空白のままにしてください)",
+    "save": "保存",
+    "saved": "保存されました!",
+    "errors": {
+      "loadFailed": "ユーザーの読み込みに失敗しました",
+      "saveFailed": "保存に失敗しました"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "ロールと権限を管理します。ビルトインロールは変更できません。",
+    "newRole": "新しいロール",
+    "builtin": "ビルトイン",
+    "edit": "編集",
+    "deleteConfirm": "このロールを削除しますか?このロールを持つユーザーが影響を受けます。",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "例えば オペレーター",
+      "name": "名前",
+      "namePlaceholder": "ロール名",
+      "permissions": "権限",
+      "create": "作成",
+      "save": "保存",
+      "cancel": "キャンセル"
+    },
+    "permissions": {
+      "routerRead": "ルーター – 読み取り",
+      "routerWrite": "ルーター – 書き込み",
+      "modelRead": "モデル – 読み取り",
+      "modelWrite": "モデル – 書き込み",
+      "userRead": "ユーザー – 読み取り",
+      "userWrite": "ユーザー – 書き込み",
+      "reportRead": "レポート – 読み取り",
+      "settingsRead": "設定 – 読み取り",
+      "settingsWrite": "設定 – 書き込み",
+      "notificationWrite": "通知 – 書き込み",
+      "tokenRead": "トークン – 読み取り",
+      "tokenWrite": "トークン – 書き込み",
+      "roleWrite": "ロール – 書き込み",
+      "auditRead": "監査ログ – 読み取り",
+      "modulesRead": "モジュール – 読み取り",
+      "modulesManage": "モジュール – 管理",
+      "connectionsRead": "接続 – 読み取り",
+      "connectionsManage": "接続 – 管理",
+      "resilienceRead": "レジリエンス – 読み取り",
+      "resilienceManage": "レジリエンス – 管理",
+      "profilesRead": "ルーティングプロファイル – 読み取り",
+      "profilesManage": "ルーティングプロファイル – 管理",
+      "optimizersRead": "オプティマイザー – 読み取り",
+      "optimizersManage": "オプティマイザー – 管理",
+      "experimentsRead": "実験 – 読み取り",
+      "experimentsManage": "実験 – 管理"
+    },
+    "errors": {
+      "loadFailed": "ロールの読み込みに失敗しました",
+      "updateFailed": "ロール更新に失敗しました",
+      "createFailed": "ロール作成に失敗しました",
+      "deleteFailed": "ロール削除に失敗しました"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "プロファイル",
+      "subtitle": "再利用可能なルーティング、オプティマイザー、セキュリティ設定",
+      "noPermission": "プロファイルを表示する権限がありません。",
+      "newProfile": "新しい{{kind}}プロファイル",
+      "empty": "{{kind}}プロファイルがまだありません。",
+      "builtin": "ビルトイン",
+      "custom": "カスタム",
+      "view": "表示",
+      "edit": "編集",
+      "clone": "クローン",
+      "delete": "削除",
+      "deleteConfirm": "プロファイル\"{{label}}\"を削除しますか?これは取り消せません。",
+      "kindDescriptions": {
+        "routing": "どのモデルがリクエストに答え、できない場合に何が起こるか",
+        "optimizer": "プロンプトが送信される前に何が削除されるか",
+        "security": "トラフィックに適用されるガードレールとPIIポリシー"
+      },
+      "columns": {
+        "label": "ラベル",
+        "type": "タイプ",
+        "configuration": "設定",
+        "version": "バージョン"
+      },
+      "errors": {
+        "loadFailed": "プロファイルの読み込みに失敗しました",
+        "deleteFailed": "プロファイル削除に失敗しました"
+      }
+    },
+    "form": {
+      "backToProfiles": "プロファイルに戻る",
+      "newProfileTitle": "新しい{{kind}}プロファイル",
+      "editProfileTitle": "{{label}}を編集",
+      "builtinHint": "ビルトインプロファイルは編集できません。1つをクローンしてカスタマイズします。",
+      "assignHint": "{{article}} {{kind}}プロファイルは任意の数のルーターに割り当てることができます。",
+      "noPermission": "プロファイルを表示する権限がありません。",
+      "label": "ラベル",
+      "optimizers": "オプティマイザー",
+      "optimizersHint": "ドラッグして並び替え、トグルして有効にします。上から下に順に実行されます。",
+      "createProfile": "プロファイル作成",
+      "saveProfile": "プロファイル保存",
+      "cancel": "キャンセル",
+      "copySuffix": "{{label}}コピー",
+      "labelPlaceholders": {
+        "routing": "例えば マイバランスルーティング",
+        "optimizer": "例えば マイプロンプトトリマー",
+        "security": "例えば マイストリクトガードレール"
+      },
+      "errors": {
+        "notFound": "プロファイルが見つかりません。",
+        "loadFailed": "プロファイルの読み込みに失敗しました",
+        "saveFailed": "プロファイル保存に失敗しました"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "接続に戻る",
+    "title": "接続",
+    "docs": "ドキュメント",
+    "notEnabledPrefix": "クライアント設定機が有効になっていません。管理者に",
+    "noClientPrefix": "という名前のクライアントがありません",
+    "errors": {
+      "loadFailed": "クライアントの読み込みに失敗しました: {{error}}"
+    },
+    "oneCommand": {
+      "title": "最速: 1つのコマンド",
+      "description": "{{client}}がインストールされているマシンで実行します。{{configPath}}を書き込み、変更を取り消すことができるバックアップを保持します。"
+    },
+    "byHand": {
+      "titleAlt": "またはそれを手動で設定",
+      "titleUi": "手動で設定",
+      "titleConfigFile": "設定ファイルを設定",
+      "setValuesIn": "{{configPath}}にこれらの値を設定します。",
+      "putThisIn": "これを入れる",
+      "replaceToken": "置き換え",
+      "withRouterToken": "ルータートークン付き:",
+      "createOne": "作成",
+      "onRoutersPage": "ルータページに。",
+      "modelLabel": "モデル:",
+      "modelHint": "選択をRouterlyに渡し、任意のモデルID",
+      "modelsLink": "モデル",
+      "worksToo": "も機能します。",
+      "openaiCompatHint": "同じベースURL、キー、モデルは\"OpenAI互換\"プロバイダーを提供するクライアントに適合します。"
+    },
+    "mcp": {
+      "title": "MCPサーバー",
+      "description": "上記のステップとは別: このステップにより{{client}}はRouterly ツールを呼び出すことができます。個人的なMCPトークンが必要です。",
+      "orFromYour": "または",
+      "profileLink": "プロファイル"
+    },
+    "checkItWorked": {
+      "title": "機能することを確認",
+      "restart": "{{client}}を再起動し、プロンプトを送信してから、",
+      "usageLink": "使用状況",
+      "cliReports": "同じマシンから、CLIは見つかったものを報告します:"
+    }
+  },
+  "connect": {
+    "title": "接続",
+    "subtitle": "AIコーディングクライアントをこのゲートウェイにポイント。セットアップステップの場合はクライアントを選択します。",
+    "llmLabel": "LLM",
+    "llmDescription": "クライアント モデルトラフィックをRouterlyを通してルーティング。",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Routerlyをツールサーバーとしてロード。",
+    "notEnabledPrefix": "クライアント設定機が有効になっていません。管理者に",
+    "errors": {
+      "loadFailed": "クライアントの読み込みに失敗しました: {{error}}"
+    },
+    "oneCommand": {
+      "title": "1つのコマンド",
+      "hint": "CLIはバックアップ付きでコンフィグファイルを書き込み、元に戻すことができます。"
+    },
+    "byHand": {
+      "title": "手動で",
+      "hint": "クライアントページからスニペットをコピーして設定に貼り付け、再起動します。"
+    },
+    "endpoint": {
+      "title": "任意のクライアントをここにポイント",
+      "description": "OpenAIまたはAnthropicSDKで構築されたもので、ベースURLとキーを変更してすべてが機能します。何も他は変わりません: リクエストとレスポンスはRouterlyとして機能します。",
+      "openaiBaseUrl": "OpenAI ベースURL",
+      "anthropicBaseUrl": "Anthropic ベースURL",
+      "apiKey": "APIキー",
+      "model": "モデル",
+      "apiKeyDescription": "ルータートークン、として送信",
+      "or": "または",
+      "createOne": "作成",
+      "onRoutersPage": "ルーターページに。",
+      "modelDescription": "Routerlyが選ぶことができます。からの任意のモデルID",
+      "modelsLink": "モデル",
+      "worksToo": "ページも機能します。"
+    }
+  }
+}

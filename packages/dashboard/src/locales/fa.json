@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "خودکار",
+      "dark": "تیره",
+      "light": "روشن"
+    },
+    "themeCycle": {
+      "title": "پوسته: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "بازکردن نوار کناری",
+      "collapse": "بستن نوار کناری"
+    },
+    "tagline": "یک درگاه. هر مدل هوش مصنوعی. کنترل کامل.",
+    "nav": {
+      "overview": "نمای کلی",
+      "providers": "ارائه‌دهندگان",
+      "models": "مدل‌ها",
+      "profiles": "پروفایل‌ها",
+      "routers": "روترها",
+      "experiments": "آزمایش‌ها",
+      "usage": "مصرف",
+      "playground": "محیط آزمایش",
+      "settings": "تنظیمات",
+      "connectApp": "اتصال برنامه",
+      "help": "راهنما",
+      "signOut": "خروج"
+    },
+    "banner": {
+      "permissionWarning": "برخی از فایل‌های پیکربندی دسترسی بیش از حد باز دارند ({{files}}). راه‌اندازی و درخواست‌ها همچنان کار می‌کنند، اما این را هر زمان که مناسب بود از سیستم فایل میزبان اصلاح کنید.",
+      "dismiss": "رد کردن",
+      "updateAvailable": "نسخه v{{latest}} روترلی در دسترس است. شما روی v{{current}} هستید.",
+      "updateLink": "به‌روزرسانی در تنظیمات",
+      "mfaRequired": "احراز هویت دو مرحله‌ای برای این نمونه الزامی است.",
+      "mfaLink": "راه‌اندازی 2FA در نمایه شما",
+      "mfaSuffix": "برای امن‌سازی حساب شما.",
+      "telemetryTitle": "روترلی هرگز به‌طور خودکار داده ارسال نمی‌کند.",
+      "telemetryBody": "آیا می‌خواهید با ارسال معیارهای ناشناس نصب کمک کنید؟ فقط نوع رویداد، نسخه، پلتفرم و یک شناسه تصادفی — بدون داده شخصی، بدون IP.",
+      "telemetryLink": "چه چیزی ارسال می‌شود؟",
+      "telemetryYes": "بله، کمک می‌کنم",
+      "telemetryNo": "نه، متشکرم"
+    },
+    "language": {
+      "label": "زبان"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} ثانیه پیش",
+      "secondsAgo_other": "{{count}} ثانیه پیش",
+      "minutesAgo": "{{count}} دقیقه پیش",
+      "minutesAgo_other": "{{count}} دقیقه پیش",
+      "hoursAgo": "{{count}} ساعت پیش",
+      "hoursAgo_other": "{{count}} ساعت پیش",
+      "daysAgo": "{{count}} روز پیش",
+      "daysAgo_other": "{{count}} روز پیش"
+    },
+    "confirm": "تأیید",
+    "cancel": "لغو",
+    "remove": "حذف",
+    "select": "انتخاب…",
+    "search": "جستجو…",
+    "noResults": "نتیجه‌ای یافت نشد",
+    "noRemainingOptions": "گزینه دیگری باقی نمانده است",
+    "apply": "اعمال",
+    "saved": "ذخیره شد",
+    "showLess": "نمایش کمتر",
+    "roles": "نقش‌ها",
+    "permissions": "مجوزها",
+    "notifications": {
+      "title": "اعلان‌ها",
+      "markAllRead": "علامت‌گذاری همه به‌عنوان خوانده‌شده",
+      "empty": "اعلانی وجود ندارد",
+      "viewAll": "مشاهده همه اعلان‌ها"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "انتخاب بازه زمانی",
+      "recent": "اخیر",
+      "ranges": "بازه‌ها",
+      "from": "از",
+      "to": "تا"
+    },
+    "permissionGuard": {
+      "fixFailed": "اصلاح مجوزها ناموفق بود",
+      "title": "مجوزهای ناامن فایل",
+      "defaultMessage": "برخی فایل‌ها مجوزهای ناامن دارند.",
+      "fixing": "در حال اصلاح…",
+      "fixNow": "اکنون اصلاح شود"
+    },
+    "limitRows": {
+      "noLimits": "هیچ محدودیتی تنظیم نشده است.",
+      "metricLabel": "معیار",
+      "typeLabel": "نوع",
+      "periodLabel": "دوره",
+      "everyLabel": "هر",
+      "maxCost": "حداکثر هزینه",
+      "maxCount": "حداکثر تعداد",
+      "maxTokens": "حداکثر توکن",
+      "allCombosSet": "همه ترکیب‌های معیار/دوره از قبل تنظیم شده‌اند",
+      "addLimit": "افزودن محدودیت",
+      "metric": {
+        "cost": "هزینه",
+        "calls": "تعداد فراخوانی",
+        "input_tokens": "توکن‌های ورودی",
+        "output_tokens": "توکن‌های خروجی",
+        "total_tokens": "کل توکن‌ها"
+      },
+      "period": {
+        "hourly": "ساعتی",
+        "daily": "روزانه",
+        "weekly": "هفتگی",
+        "monthly": "ماهانه",
+        "yearly": "سالانه"
+      },
+      "rollingUnit": {
+        "second": "ثانیه",
+        "minute": "دقیقه",
+        "hour": "ساعت",
+        "day": "روز",
+        "week": "هفته",
+        "month": "ماه"
+      },
+      "windowType": {
+        "period": "دوره",
+        "rolling": "متحرک"
+      },
+      "fmt": {
+        "requests": "{{value}} درخواست",
+        "inputTokens": "{{value}} توکن ورودی",
+        "outputTokens": "{{value}} توکن خروجی",
+        "totalTokens": "{{value}} توکن کل",
+        "everyRolling": "{{metric}} هر {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} در هر {{period}}"
+      }
+    },
+    "savings": {
+      "title": "چه چیزی مسیریابی صرفه‌جویی کرد",
+      "input": "ورودی",
+      "output": "خروجی",
+      "actual": "واقعی",
+      "clientCalls": "{{count}} فراخوانی کلاینت",
+      "clientCalls_other": "{{count}} فراخوانی کلاینت",
+      "comparedAgainst": "، در مقایسه با ارسال آن به هرکدام از",
+      "comparedAgainst_other": "، در مقایسه با ارسال همه آن‌ها به هرکدام از",
+      "paidModelsInPlay": "{{count}} مدل پولی در بازی",
+      "paidModelsInPlay_other": "{{count}} مدل پولی در بازی",
+      "metricCost": "هزینه",
+      "metricTokens": "توکن‌ها",
+      "totalCost": "هزینه کل",
+      "routed": "مسیریابی‌شده: {{value}}",
+      "saved": "صرفه‌جویی‌شده: {{value}}",
+      "usdThisPeriod": "دلار در این دوره",
+      "savedVsAlways": "{{value}} صرفه‌جویی ({{percent}}٪) در مقایسه با همیشه {{model}}",
+      "tokens": "توکن‌ها",
+      "in": "ورودی: {{value}}",
+      "out": "خروجی: {{value}}",
+      "tokenSubWithCache": "{{in}} ورودی · {{out}} خروجی · {{cached}} کش‌شده",
+      "tokenSub": "{{in}} ورودی · {{out}} خروجی",
+      "cutByOptimizers": "{{value}} توسط بهینه‌سازها حذف شد",
+      "fewerThanAlways": "{{value}} کمتر از همیشه {{model}}، تخمینی"
+    },
+    "optimizerSteps": {
+      "downloaded": "بارگیری‌شده",
+      "thisStepRunsOn": "این مرحله روی این اجرا می‌شود",
+      "defaultCheckpoint": "نقطه بازرسی پیش‌فرض"
+    },
+    "routingPolicies": {
+      "title": "سیاست‌های مسیریابی",
+      "subtitle": "سیاست‌ها نحوه مسیریابی درخواست‌ها را تعیین می‌کنند. آن‌ها به ترتیب از بالا به پایین اجرا می‌شوند.",
+      "removePolicy": "حذف سیاست",
+      "removeIntent": "حذف قصد",
+      "removeExample": "حذف نمونه",
+      "routingModels": "مدل‌های مسیریابی",
+      "embeddingModels": "مدل‌های امبدینگ",
+      "maxCompletionTokens": "حداکثر توکن‌های تکمیل",
+      "maxPromptChars": "حداکثر کاراکترهای پرامپت",
+      "similarityThreshold": "آستانه شباهت",
+      "previousMessages": "پیام‌های قبلی",
+      "intents": "قصدها",
+      "confidenceThreshold": "آستانه اطمینان",
+      "ambiguityMargin": "حاشیه ابهام",
+      "maxCallsPerWindow": "حداکثر فراخوانی در هر بازه",
+      "addFallbackModel": "افزودن مدل جایگزین",
+      "autoRoutingLabel": "مسیریابی خودکار",
+      "autoRoutingHint": "اگر فعال باشد، ترافیک بدون پرامپت‌های سفارشی توزیع می‌شود. اگر غیرفعال باشد، می‌توانید پرامپت‌های خاصی بنویسید که به هوش مصنوعی می‌گویند چه زمانی هر مدل هدف را انتخاب کند.",
+      "additionalPromptInfoLabel": "اطلاعات پرامپت اضافی",
+      "additionalPromptInfoPlaceholder": "دستورالعمل‌های اضافی برای درج در پرامپت مسیریابی…",
+      "addExamplePlaceholder": "افزودن نمونه و فشردن Enter…",
+      "addIntentPlaceholder": "افزودن قصد و فشردن Enter…",
+      "addPolicyPlaceholder": "افزودن یک سیاست…",
+      "labels": {
+        "llm": "سیاست مسیریابی هوش مصنوعی",
+        "rate-limit": "سیاست محدودیت نرخ",
+        "budget-remaining": "سیاست باقی‌مانده بودجه",
+        "semantic-intent": "سیاست قصد معنایی",
+        "health": "سیاست سلامت",
+        "context": "سیاست زمینه",
+        "capability": "سیاست قابلیت",
+        "performance": "سیاست عملکرد",
+        "fairness": "سیاست عدالت",
+        "cheapest": "سیاست ارزان‌ترین",
+        "model-preference": "سیاست ترجیح مدل"
+      },
+      "descriptions": {
+        "context": "مدل‌ها را بر اساس پنجره زمینه موجود امتیازدهی می‌کند. به مدل‌هایی که پنجره زمینه آن‌ها کوچک‌تر از طول تخمینی درخواست است، ۰ اختصاص می‌دهد تا از خطاهای برش جلوگیری شود.",
+        "cheapest": "مدل‌ها را معکوسِ هزینه توکن آن‌ها امتیازدهی می‌کند. ارزان‌ترین مدل ۱.۰ و گران‌ترین ۰.۰ می‌گیرد که به کاهش هزینه API در درخواست‌ها کمک می‌کند.",
+        "health": "مدل‌ها را بر اساس نرخ خطای اخیرشان با استفاده از افت نمایی امتیازدهی می‌کند (خطاهای اخیر وزن بیشتری دارند). یک قطع‌کننده مدار اعمال می‌کند که وقتی نرخ خطای وزن‌دار از آستانه بحرانی فراتر رود، امتیاز را به ۰ می‌رساند.",
+        "performance": "مدل‌ها را بر اساس تأخیر متوسط اخیرشان با استفاده از افت نمایی امتیازدهی می‌کند. سریع‌ترین مدل ۱.۰ و کندترین ۰.۰ می‌گیرد. مدل‌های بدون داده اخیر به‌طور پیش‌فرض ۱.۰ می‌گیرند.",
+        "llm": "از یک مدل هوش مصنوعی برای امتیازدهی گزینه‌ها بر اساس محتوای معنایی درخواست استفاده می‌کند. پرامپت‌های راهنمای مسیریابی را برای هر مدل پشتیبانی می‌کند و در صورت پیکربندی محدودیت‌ها، فضای باقی‌مانده بودجه را در نظر می‌گیرد.",
+        "capability": "فیلتر سخت: به مدل‌هایی که به‌صراحت فاقد یک ویژگی مورد نیاز درخواست هستند (بینایی، فراخوانی توابع، حالت JSON) امتیاز ۰ اختصاص می‌دهد. مدل‌های بدون اعلام صریح قابلیت مجازات نمی‌شوند.",
+        "rate-limit": "مدل‌هایی با فراوانی فراخوانی اخیر بالا را مجازات می‌کند تا خطر برخورد با محدودیت‌های نرخ ارائه‌دهنده (HTTP 429) کاهش یابد. از یک آستانه سخت قابل تنظیم پشتیبانی می‌کند که امتیاز را به ۰ می‌رساند.",
+        "fairness": "ترافیک را با مجازات مدل‌هایی که اخیراً فراخوانی‌های موفق بیشتری دریافت کرده‌اند، به‌طور یکنواخت توزیع می‌کند. مانند یک round-robin نرم عمل می‌کند تا از تمرکز بار روی یک مدل واحد جلوگیری شود.",
+        "budget-remaining": "مدل‌ها را بر اساس فضای باقی‌مانده بودجه در تمام محدودیت‌های پیکربندی‌شده امتیازدهی می‌کند. مدل‌هایی با فضای بیشتر پیش از رسیدن به آستانه‌شان را ترجیح می‌دهد و مصرف را به‌طور پیشگیرانه پخش می‌کند.",
+        "semantic-intent": "درخواست را بر اساس قصد معنایی با استفاده از امبدینگ‌ها طبقه‌بندی می‌کند، سپس مجموعه گزینه‌ها را به مدل‌های نگاشت‌شده به آن قصد محدود می‌کند. تطبیق‌های مطمئن مجموعه را به‌طور سخت فیلتر می‌کنند؛ تطبیق‌های مبهم دو مجموعه برتر را ادغام می‌کنند؛ درخواست‌های ناشناخته همه گزینه‌ها را عبور می‌دهند.",
+        "model-preference": "وقتی کلاینت مدل خاصی را درخواست می‌کند (نه routerly/ada)، امتیاز پاداش قابل تنظیمی به آن مدل می‌دهد. وقتی هیچ ترجیحی بیان نشود، سیاست خودداری می‌کند. موقعیت در فهرست کنترل می‌کند که این ترجیح چقدر در برابر سایر سیاست‌ها وزن دارد."
+      },
+      "selectModel": "انتخاب مدل"
+    },
+    "securityRules": {
+      "applyTo": "اعمال بر",
+      "streamingBufferSize": "اندازه بافر استریم (کاراکتر)",
+      "entityTypes": "انواع موجودیت",
+      "target": "هدف",
+      "embeddingModel": "مدل امبدینگ",
+      "judgeModel": "مدل داور",
+      "contentGuardrails": "محافظ‌های محتوا",
+      "piiPolicies": "سیاست‌های اطلاعات شخصی",
+      "addSecurityPolicyPlaceholder": "افزودن یک سیاست امنیتی…",
+      "removePolicyTooltip": "حذف سیاست",
+      "deleteRuleAriaLabel": "حذف قاعده",
+      "embeddingModelPlaceholder": "انتخاب مدل امبدینگ…",
+      "fallbackModelsLabel": "مدل‌های جایگزین (اختیاری، به ترتیب امتحان می‌شوند)",
+      "fallbackModelsPlaceholder": "مدل جایگزینی وجود ندارد…",
+      "exampleTextsLabel": "متن‌های نمونه برای مسدودسازی (هر خط یک مورد)",
+      "exampleTextsPlaceholder": "چگونه هک کنم…\n…",
+      "similarityThresholdLabel": "آستانه شباهت:",
+      "judgeModelPlaceholder": "انتخاب مدل داور…",
+      "allowedTopicsLabel": "موضوعات مجاز (زبان طبیعی)",
+      "allowedTopicsPlaceholder": "پشتیبانی مشتری برای محصولات نرم‌افزاری. عیب‌یابی فنی. سؤالات صورت‌حساب.",
+      "onTopicThresholdLabel": "مسدود شود اگر امتیاز مرتبط‌بودن کمتر از:",
+      "harmThresholdLabel": "مسدود شود اگر امتیاز آسیب بیشتر از:",
+      "customInstructionsLabel": "دستورالعمل‌های سفارشی",
+      "customInstructionsPlaceholder": "شما یک طبقه‌بندی‌کننده ایمنی محتوا هستید. متن زیر را از نظر محتوای مضر ارزیابی کنید.\nدسته‌ها: نفرت‌پراکنی، خشونت، محتوای جنسی، آسیب به خود.\nفقط با یک شیء JSON پاسخ دهید: {\"score\": <عددی بین ۰ و ۱>}",
+      "customInstructionsRequired": "دستورالعمل‌های سفارشی الزامی است.",
+      "enabledLabel": "فعال",
+      "contentGuardrailsHint": "درخواست‌ها و پاسخ‌ها را بر اساس قواعد پیکربندی‌شده بررسی می‌کند. زمانی فعال است که حداقل یک قاعده پیکربندی شده باشد.",
+      "securityPoliciesHeading": "سیاست‌های امنیتی",
+      "noSecurityPolicies": "هیچ سیاست امنیتی پیکربندی نشده است.",
+      "piiPoliciesHint": "داده‌های شخصی را شناسایی و پنهان می‌کند. هر سیاست ورودی درخواست، پاسخ مدل یا هر دو را هدف قرار می‌دهد و مجموعه موجودیت خود را کنترل می‌کند.",
+      "noPiiPolicies": "هیچ سیاست اطلاعات شخصی پیکربندی نشده است.",
+      "addPolicyButton": "+ افزودن سیاست",
+      "injectionWarningTitle": "بار درخواست توسط تزریق تغییر یافت",
+      "injectionWarningBody": "یک یا چند قاعده دستورالعمل خود را در پرامپت سیستمی درخواست خروجی تزریق می‌کنند، بنابراین بار ارسالی به ارائه‌دهنده تغییر می‌کند. هیچ فراخوانی مدل اضافی انجام نمی‌شود و چیزی مسدود نمی‌شود؛ مدل سرویس‌دهنده خود دستورالعمل را اجرا می‌کند.",
+      "streamingDisabledWarningTitle": "استریم برای این روتر غیرفعال است",
+      "streamingDisabledWarningBody": "یک یا چند قاعده برای مسدود کردن پاسخ‌ها پیکربندی شده‌اند (هدف: پاسخ یا هر دو). چون کل پاسخ باید پیش از تصمیم مسدودسازی بررسی شود، روترلی پاسخ را به‌طور کامل نگه می‌دارد پیش از بازگرداندن آن به کلاینت. استریم زمانی که یک قاعده مسدودکننده پاسخ فعال است در دسترس نیست؛ کلاینت‌ها به‌جای دریافت تدریجی، پاسخ کامل را یک‌جا دریافت می‌کنند."
+    },
+    "connectionFields": {
+      "azureResourceName": "نام منبع Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "نام منبع Azure OpenAI (از پورتال Azure).",
+      "deploymentId": "شناسه استقرار",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "نام استقراری که در Azure OpenAI Studio ایجاد کرده‌اید.",
+      "azureApiVersionLabel": "نسخه API",
+      "azureApiVersionDefaultHint": "(پیش‌فرض: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "منطقه AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "شناسه کلید دسترسی AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "کلید دسترسی مخفی AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "برای حفظ مقدار فعلی خالی بگذارید",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "توکن نشست",
+      "awsSessionTokenOptionalHint": "(اختیاری، برای اعتبارنامه‌های موقت)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "شناسه روتر GCP",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "موقعیت",
+      "gcpLocationDefaultHint": "(پیش‌فرض: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "کلید حساب سرویس",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "نشانی نقطه پایانی",
+      "optional": "(اختیاری)",
+      "webProvider": {
+        "unofficialWarningTitle": "ارائه‌دهنده غیررسمی — استفاده با مسئولیت خودتان.",
+        "unofficialWarningBody": "این یکپارچه‌سازی به یک API داخلی مستندنشده متکی است که ممکن است بدون اطلاع قبلی تغییر کند یا از کار بیفتد. ممکن است شرایط خدمات ارائه‌دهنده را نقض کند و منجر به تعلیق حساب شود.",
+        "accessTokenLabel": "توکن دسترسی",
+        "sessionTokenLabel": "توکن نشست",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "مقدار کوکی sessionKey را جای‌گذاری کنید (sk-ant-sid01-…)",
+        "openaiInstructions": "در حالی که وارد ChatGPT شده‌اید، <code>https://chatgpt.com/api/auth/session</code> را در یک زبانه جدید باز کنید. مقدار فیلد <code>accessToken</code> (که با <code>eyJ</code> شروع می‌شود) را کپی کنید. این توکن هر ~۲۴ ساعت منقضی می‌شود. برای دسترسی پایدار، فیلد <strong>cf_clearance</strong> در پایین را نیز پر کنید.",
+        "anthropicInstructions": "<strong>چگونه کلید نشست خود را دریافت کنید:</strong> در حالی که وارد Claude شده‌اید، DevTools (F12) ← Application ← Cookies ← <code>claude.ai</code> را باز کنید و مقدار کوکی <code>sessionKey</code> (که با <code>sk-ant-sid01-</code> شروع می‌شود) را کپی کنید. این کلید تا زمانی که خارج شوید معتبر می‌ماند."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "توکن OAuth اشتراک",
+        "authFilePathLabel": "مسیر فایل احراز هویت",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (پیش‌فرض)",
+        "anthropicTitle": "از اشتراک Claude Pro/Max خود استفاده کنید.",
+        "anthropicRunCommandStep": "این دستور را اجرا کنید و توکنی که چاپ می‌کند را کپی کنید:",
+        "anthropicPasteTokenStep": "توکن را در فیلد <em>توکن OAuth اشتراک</em> در پایین جای‌گذاری کنید.",
+        "termsNote": "هنگام انقضا دوباره تولید کنید. استفاده از اشتراک از طریق یک درگاه ممکن است خلاف شرایط ارائه‌دهنده باشد.",
+        "openaiTitle": "از اشتراک ChatGPT Plus/Pro خود از طریق برنامه Codex استفاده کنید.",
+        "openaiLoginStep": "با حساب ChatGPT Plus/Pro خود وارد برنامه دسکتاپ Codex شوید.",
+        "openaiAutoRefreshStep": "روترلی توکن دسترسی شما را از <code>~/.codex/auth.json</code> می‌خواند و به‌طور خودکار آن را تازه می‌کند. نیازی به کپی/جای‌گذاری دستی نیست.",
+        "openaiAuthFilePathStep": "فیلد <em>مسیر فایل احراز هویت</em> را خالی بگذارید تا از پیش‌فرض استفاده شود، یا اگر برنامه Codex شما احراز هویت را جای دیگری ذخیره می‌کند، مسیر سفارشی وارد کنید.",
+        "openaiTermsNote": "استفاده از اشتراک از طریق یک درگاه ممکن است خلاف شرایط ارائه‌دهنده باشد."
+      },
+      "copyCode": {
+        "copiedTooltip": "کپی شد!",
+        "copyTooltip": "کپی به کلیپ‌بورد",
+        "copiedLabel": "کپی شد",
+        "copyLabel": "کپی"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "کپی",
+      "copiedLabel": "کپی شد!",
+      "copyErrorHint": "کپی ناموفق بود، لطفاً انتخاب و کپی دستی کنید."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "کلاینت MCP",
+      "hints": {
+        "claudeCode": "این را یک‌بار، هر جا اجرا کنید. Claude Code سرور را در <code>~/.claude.json</code> ذخیره می‌کند.",
+        "claudeDesktop": "این را در <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (در ویندوز، <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>) قرار دهید، سپس برنامه را دوباره راه‌اندازی کنید. این CLI را اجرا می‌کند، بنابراین <code>routerly</code> باید در PATH شما باشد.",
+        "codex": "این را در <code>~/.codex/config.toml</code> قرار دهید. Codex توکن را از محیط می‌خواند، بنابراین آن را در شلی که Codex را از آن شروع می‌کنید صادر کنید.",
+        "opencode": "این را در <code>~/.config/opencode/opencode.json</code> قرار دهید.",
+        "openclaw": "این را یک‌بار اجرا کنید. OpenClaw به‌طور پیش‌فرض از انتقال sse استفاده می‌کند که روترلی آن را ارائه نمی‌دهد، بنابراین انتقال به‌صراحت تنظیم می‌شود.",
+        "cursor": "این را در <code>~/.cursor/mcp.json</code>، یا در <code>.cursor/mcp.json</code> برای محدود کردن به یک پروژه قرار دهید.",
+        "cline": "این را در <code>~/.cline/mcp.json</code> قرار دهید، یا آن را در Configure MCP Servers در پنل Cline جای‌گذاری کنید.",
+        "zed": "این را در <code>settings.json</code> زد خود، در کنار هر سرور زمینه دیگر قرار دهید."
+      }
+    },
+    "unsavedChanges": {
+      "title": "تغییرات ذخیره‌نشده",
+      "message": "تغییرات ذخیره‌نشده دارید. اگر اکنون خارج شوید، تغییرات شما از دست خواهد رفت.",
+      "stay": "بمانید",
+      "leaveAnyway": "به هر حال خارج شوید"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "محافظ‌ها",
+        "pii": "اطلاعات شخصی",
+        "optimizers": "بهینه‌سازها",
+        "routerOverhead": "سربار روتر"
+      },
+      "policyType": {
+        "llm": "مسیریابی هوش مصنوعی",
+        "rateLimit": "محدودیت نرخ",
+        "budgetRemaining": "باقی‌مانده بودجه",
+        "semanticIntent": "قصد معنایی",
+        "modelPreference": "ترجیح مدل"
+      },
+      "rawDetails": "جزئیات خام",
+      "technicalDetails": "جزئیات فنی",
+      "systemPrompt": "پرامپت سیستمی",
+      "responseText": "متن پاسخ",
+      "responseJson": "JSON پاسخ",
+      "cacheEmbeddingCall": "فراخوانی امبدینگ کش",
+      "fallbackAttempt": "تلاش جایگزین #{{attempt}}",
+      "embeddingModel": "مدل امبدینگ",
+      "upstreamModel": "مدل بالادستی",
+      "provider": "ارائه‌دهنده",
+      "source": "منبع",
+      "endpoint": "نقطه پایانی",
+      "cacheHit": "برخورد با کش",
+      "ttlExtended": "TTL تمدید شد",
+      "model": "مدل",
+      "similarity": "شباهت",
+      "embedding": "امبدینگ",
+      "cacheMiss": "عدم برخورد با کش",
+      "details": "جزئیات",
+      "excludedByLimits": "حذف‌شده توسط محدودیت‌ها",
+      "finalRanking": "رتبه‌بندی نهایی",
+      "noRankingData": "داده رتبه‌بندی موجود نیست (رکورد ممکن است خراب یا از نسخه قدیمی‌تر باشد)",
+      "policyScores": "امتیازهای سیاست",
+      "weight": "وزن {{value}}",
+      "allScores": "همه امتیازها",
+      "noPolicyData": "داده سیاست موجود نیست (رکورد ممکن است خراب یا از نسخه قدیمی‌تر باشد)",
+      "requestGuardrailBlocked": "محافظ درخواست مسدود کرد",
+      "requestGuardrailTriggered": "محافظ درخواست فعال شد",
+      "responseGuardrailBlocked": "محافظ پاسخ مسدود کرد",
+      "responseGuardrailTriggered": "محافظ پاسخ فعال شد",
+      "rule": "قاعده",
+      "action": "عمل",
+      "guardrailsEvaluated": "محافظ‌های ارزیابی‌شده ({{target}})",
+      "ruleCount": "{{count}} قاعده",
+      "ruleCount_other": "{{count}} قاعده",
+      "promptInjection": "تزریق پرامپت",
+      "injects": "تزریق می‌کند",
+      "judgeResponse": "پاسخ داور",
+      "piiScrubbed": "اطلاعات شخصی پاک شد",
+      "piiScanned": "اطلاعات شخصی اسکن شد ({{target}})",
+      "policies": "سیاست‌ها",
+      "entityTypes": "انواع موجودیت",
+      "customPatterns": "الگوهای سفارشی",
+      "scanned": "اسکن‌شده",
+      "redacted": "پنهان‌شده",
+      "took": "زمان صرف‌شده",
+      "ms": "{{value}} میلی‌ثانیه",
+      "entityTypesScanned": "انواع موجودیت اسکن‌شده",
+      "guardrailInjection": "تزریق محافظ",
+      "rules": "قواعد",
+      "chars": "کاراکتر",
+      "injectedText": "متن تزریق‌شده",
+      "optimizer": "بهینه‌ساز {{id}}",
+      "tokens": "توکن‌ها",
+      "saved": "صرفه‌جویی‌شده",
+      "tok": "{{value}} توکن",
+      "reason": "دلیل",
+      "budgetBlocked": "بودجه مسدود شد",
+      "budgetOk": "بودجه مناسب است",
+      "egressSent": "خروجی ارسال شد",
+      "status": "وضعیت",
+      "encoding": "رمزگذاری",
+      "frames": "فریم‌ها",
+      "bytes": "بایت"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "نمایه من",
+      "subtitle": "مدیریت تنظیمات حساب شما"
+    },
+    "tabs": {
+      "profile": "نمایه",
+      "notifications": "اعلان‌ها",
+      "mcp": "MCP",
+      "preferences": "ترجیحات"
+    },
+    "notifications": {
+      "close": "بستن",
+      "refresh": "بازخوانی",
+      "clear": "پاک‌سازی",
+      "empty": "اعلانی یافت نشد.",
+      "markAllRead": "علامت‌گذاری همه به‌عنوان خوانده‌شده",
+      "allCaughtUp": "همه چیز به‌روز است",
+      "unreadCount": "{{count}} خوانده‌نشده",
+      "selectedCount": "{{count}} انتخاب‌شده",
+      "severity": {
+        "all": "همه",
+        "info": "اطلاعات",
+        "warning": "هشدار",
+        "critical": "بحرانی"
+      },
+      "status": {
+        "read": "خوانده‌شده",
+        "unread": "خوانده‌نشده"
+      },
+      "filters": {
+        "severity": "شدت",
+        "category": "دسته‌بندی",
+        "event": "رویداد",
+        "date": "تاریخ",
+        "period": "دوره",
+        "status": "وضعیت",
+        "all": "همه",
+        "allCategories": "همه دسته‌بندی‌ها",
+        "allEvents": "همه رویدادها",
+        "unreadOnly": "فقط خوانده‌نشده"
+      },
+      "actions": {
+        "markRead": "علامت‌گذاری به‌عنوان خوانده‌شده",
+        "markUnread": "علامت‌گذاری به‌عنوان خوانده‌نشده",
+        "archive": "بایگانی"
+      },
+      "table": {
+        "severity": "شدت",
+        "event": "رویداد",
+        "date": "تاریخ",
+        "status": "وضعیت",
+        "selectAll": "انتخاب همه",
+        "selectRow": "انتخاب {{event}}",
+        "eventCount": "{{count}} رویداد"
+      },
+      "pagination": {
+        "previous": "← قبلی",
+        "next": "بعدی →",
+        "page": "صفحه {{page}} از {{totalPages}}",
+        "total": "({{count}} مورد)"
+      },
+      "detail": {
+        "ariaLabel": "جزئیات اعلان",
+        "details": "جزئیات",
+        "noDetails": "جزئیات بیشتری وجود ندارد.",
+        "eventsInIncident": "رویدادهای این حادثه"
+      }
+    },
+    "security": {
+      "roleLabel": "نقش:",
+      "password": {
+        "heading": "تغییر رمز عبور",
+        "currentLabel": "رمز عبور فعلی",
+        "newLabel": "رمز عبور جدید",
+        "newPlaceholder": "حداقل ۸ کاراکتر",
+        "confirmLabel": "تأیید رمز عبور جدید",
+        "success": "رمز عبور با موفقیت تغییر یافت.",
+        "saving": "در حال ذخیره…",
+        "submit": "تغییر رمز عبور",
+        "errors": {
+          "mismatch": "رمزهای عبور مطابقت ندارند.",
+          "tooShort": "رمز عبور جدید باید حداقل ۸ کاراکتر باشد.",
+          "updateFailed": "به‌روزرسانی ناموفق بود"
+        }
+      },
+      "tfa": {
+        "heading": "احراز هویت دو مرحله‌ای",
+        "notEnabled": "2FA فعال نیست. حساب خود را با یک رمز یک‌بارمصرف مبتنی بر زمان محافظت کنید.",
+        "enableButton": "فعال‌سازی احراز هویت دو مرحله‌ای",
+        "scanInstructions": "این کد QR را با برنامه احراز هویت خود (Google Authenticator، Authy و غیره) اسکن کنید، سپس کد ۶ رقمی را برای تأیید وارد کنید.",
+        "qrAlt": "کد QR راه‌اندازی 2FA",
+        "addAccountInstructions": "برنامه احراز هویت خود را باز کنید (Google Authenticator، Authy، 1Password و غیره) و یک حساب جدید اضافه کنید:",
+        "setup": {
+          "step1": "روی <strong>افزودن حساب</strong> یا دکمه <strong>+</strong> ضربه بزنید",
+          "step2": "<strong>وارد کردن کلید راه‌اندازی</strong> را انتخاب کنید (یا در موبایل کد QR را اسکن کنید)",
+          "step3": "کلید مخفی نشان‌داده‌شده در پایین را وارد کنید"
+        },
+        "mobileLink": "برای باز کردن برنامه احراز هویت در موبایل اینجا ضربه بزنید",
+        "manualEntryLabel": "کلید مخفی ورود دستی:",
+        "saveBackupCodes": "این کدهای پشتیبان را ذخیره کنید. هرکدام در صورت از دست دادن دسترسی به برنامه احراز هویت خود، یک‌بار قابل استفاده است.",
+        "copyBackupCodes": "کپی کدهای پشتیبان",
+        "confirmCodeLabel": "کد برنامه خود را برای فعال‌سازی وارد کنید",
+        "activate": "فعال‌سازی 2FA",
+        "cancel": "لغو",
+        "enabledBadge": "2FA فعال است",
+        "newBackupCodesLabel": "کدهای پشتیبان جدید (اکنون آن‌ها را ذخیره کنید):",
+        "copy": "کپی",
+        "regenLabel": "کد برنامه احراز هویت را برای بازتولید کدهای پشتیبان وارد کنید",
+        "regenerate": "بازتولید",
+        "regenerateBackupCodes": "بازتولید کدهای پشتیبان",
+        "disableLabel": "غیرفعال‌سازی 2FA (کد برنامه احراز هویت را وارد کنید)",
+        "disable": "غیرفعال‌سازی 2FA",
+        "errors": {
+          "setupFailed": "راه‌اندازی ناموفق بود",
+          "confirmFailed": "تأیید ناموفق بود",
+          "disableFailed": "غیرفعال‌سازی ناموفق بود",
+          "regenFailed": "بازتولید ناموفق بود"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "بارگذاری سطح MCP ناموفق بود",
+        "revokeFailed": "لغو توکن ناموفق بود"
+      },
+      "revokeConfirm": "توکن MCP «{{name}}» لغو شود؟ کلاینت‌های استفاده‌کننده از آن فوراً از کار می‌افتند.",
+      "tokens": {
+        "heading": "توکن‌های MCP",
+        "newToken": "توکن جدید",
+        "description": "هر توکن به‌جای شما عمل می‌کند: دقیقاً ابزارهایی که نقش شما اجازه می‌دهد را نمایش می‌دهد. مقدار کامل یک‌بار، در صفحه‌ای که آن را می‌سازد نشان داده می‌شود.",
+        "empty": "هنوز هیچ توکن MCP وجود ندارد. برای اتصال یک کلاینت MCP یکی بسازید.",
+        "created": "ایجادشده",
+        "lastUsed": "آخرین استفاده",
+        "expires": "تاریخ انقضا",
+        "never": "هرگز",
+        "revokeTitle": "لغو توکن"
+      },
+      "tools": {
+        "heading": "ابزارهایی که توکن‌های شما نمایش می‌دهند",
+        "empty": "نقش شما هیچ ابزار MCP اعطا نمی‌کند. از یک مدیر مجوزهای لازم را درخواست کنید.",
+        "table": {
+          "name": "نام",
+          "scope": "دامنه",
+          "description": "توضیح",
+          "sourceModule": "ماژول منبع",
+          "permission": "مجوز"
+        }
+      },
+      "connect": {
+        "heading": "اتصال یک کلاینت MCP",
+        "descriptionPre": "کلاینتی که در حال سیم‌کشی آن هستید را انتخاب کنید، سپس",
+        "descriptionPost": "را با یکی از توکن‌های خود جایگزین کنید. ایجاد یک توکن همان قطعه کد را با مقدار از پیش وارد‌شده نشان می‌دهد.",
+        "otherClient": "هر کلاینت دیگر",
+        "httpInstructionsPre": "از طریق HTTP، آن را به این نقطه پایانی اشاره دهید و با",
+        "httpInstructionsPost": "احراز هویت کنید. این JSON-RPC 2.0 روی Streamable HTTP است.",
+        "stdioInstructionsPre": "از طریق stdio، CLI آن را پل می‌زند و توکن شما را عبور می‌دهد. آیا سرویس را مستقیماً اجرا می‌کنید؟",
+        "stdioInstructionsAnd": "و",
+        "stdioInstructionsPost": "را خود تنظیم کنید."
+      },
+      "newToken": {
+        "backToMcp": "بازگشت به MCP",
+        "title": "توکن MCP جدید",
+        "subtitle": "توکن به‌جای شما عمل می‌کند: دقیقاً ابزارهایی که نقش شما اجازه می‌دهد را نمایش می‌دهد.",
+        "nameLabel": "نام",
+        "namePlaceholder": "لپ‌تاپ",
+        "nameHint": "این توکن کجا استفاده می‌شود، مثلاً «لپ‌تاپ» یا «claude-desktop».",
+        "expiryLabel": "تاریخ انقضا",
+        "expiryHint": "اختیاری. آن را خالی بگذارید تا توکن هرگز منقضی نشود، مگر آنکه آن را لغو کنید.",
+        "createButton": "ایجاد توکن",
+        "creatingButton": "در حال ایجاد…",
+        "cancelButton": "لغو",
+        "tokenSection": {
+          "title": "توکن شما",
+          "hint": "اکنون آن را کپی کنید. دوباره نشان داده نمی‌شود و توکن ازدست‌رفته فقط قابل جایگزینی است.",
+          "copyButton": "کپی",
+          "copiedButton": "کپی شد!",
+          "copyTitle": "کپی توکن",
+          "copiedTitle": "کپی شد!"
+        },
+        "connectSection": {
+          "title": "اتصال یک کلاینت",
+          "hint": "کلاینتی که در حال سیم‌کشی آن هستید را انتخاب کنید. قطعه کد از قبل این توکن را دارد."
+        },
+        "bridgeSection": {
+          "title": "یا از پل محلی استفاده کنید",
+          "hint": "برای کلاینتی که فقط stdio را می‌فهمد، CLI آن را پل می‌زند و توکن شما را عبور می‌دهد."
+        },
+        "doneButton": "پایان",
+        "errors": {
+          "createFailed": "ایجاد توکن ناموفق بود",
+          "copyFailed": "کپی ناموفق بود، لطفاً توکن را به‌صورت دستی انتخاب و کپی کنید."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "زبان",
+      "description": "زبانی که داشبورد در آن نمایش داده می‌شود را انتخاب کنید.",
+      "languageLabel": "زبان",
+      "saved": "ترجیح زبان ذخیره شد."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "بارگذاری تنظیمات ناموفق بود",
+        "loadFailedPeriod": "بارگذاری تنظیمات ناموفق بود.",
+        "saveFailed": "ذخیره ناموفق بود",
+        "saveSettingsFailed": "ذخیره تنظیمات ناموفق بود"
+      },
+      "savedSuccess": "تنظیمات با موفقیت ذخیره شد.",
+      "saving": "در حال ذخیره…",
+      "saveSettings": "ذخیره تنظیمات",
+      "serverInfo": {
+        "heading": "اطلاعات سرور",
+        "readOnly": "فقط‌خواندنی. میزبان و درگاه از محیط یا فایل تنظیمات می‌آیند، نه از اینجا.",
+        "reachableAt": "قابل دسترس در",
+        "reachableAtAny": "قابل دسترس در هرکدام از این نشانی‌ها",
+        "thisMachine": "این دستگاه",
+        "network": "شبکه",
+        "copyAddress": "کپی {{address}}",
+        "copied": "کپی شد!",
+        "copy": "کپی",
+        "hostAndPort": "میزبان و درگاه",
+        "version": "نسخه",
+        "uptime": "زمان فعالیت"
+      },
+      "runtime": {
+        "heading": "تنظیمات زمان اجرا",
+        "logLevel": "سطح گزارش",
+        "logLevelHint": "میزان جزئیات گزارش‌های سرویس را کنترل می‌کند.",
+        "publicUrl": "نشانی عمومی",
+        "publicUrlHint": "نشانی پایه‌ای که سرویس از طریق آن برای کلاینت‌های خارجی در دسترس است (مثلاً <code>http://192.168.1.10:3000</code>). در بخش <strong>نحوه اتصال</strong> هر روتر استفاده می‌شود. زمانی مفید است که داشبورد روی دستگاه یا درگاه دیگری نسبت به سرویس اجرا شود.",
+        "usageRetention": "نگهداری مصرف",
+        "noLimit": "بدون محدودیت",
+        "maxAgeDays": "حداکثر عمر (روز)",
+        "maxSizeMb": "حداکثر اندازه (مگابایت)",
+        "retentionHint": "تاریخچه مصرف/صورت‌حساب قدیمی‌تر از این تعداد روز، یا بیشتر از این اندازه، از گزارش فعال حذف می‌شود. برای عدم محدودیت نگهداری، هر دو را خالی بگذارید."
+      },
+      "internationalization": {
+        "heading": "بین‌المللی‌سازی",
+        "defaultLanguage": "زبان پیش‌فرض",
+        "defaultLanguageHint": "زبان داشبورد برای کاربرانی که هنوز زبان خود را انتخاب نکرده‌اند. انتخاب شخصی کاربر را لغو نمی‌کند."
+      },
+      "telemetry": {
+        "heading": "معیارهای ناشناس",
+        "neverAutomatic": "روترلی هرگز به‌طور خودکار داده ارسال نمی‌کند.",
+        "noChoice": "شما هنوز انتخابی نکرده‌اید.",
+        "enabledStatus": "معیارهای ناشناس نصب فعال هستند.",
+        "disabledStatus": "معیارهای ناشناس نصب غیرفعال هستند.",
+        "explanation": "وقتی فعال باشد، روترلی فقط این‌ها را ارسال می‌کند: نوع رویداد (نصب / ارتقا / حذف نصب)، نسخه، پلتفرم و یک شناسه تصادفی. هیچ داده شخصی، داده مصرف یا IP ذخیره نمی‌شود.",
+        "whatIsSent": "چه چیزی ارسال می‌شود؟",
+        "installId": "شناسه نصب: {{id}}",
+        "saving": "در حال ذخیره…",
+        "enable": "فعال‌سازی",
+        "disable": "غیرفعال‌سازی"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "داشبورد (صندوق درون‌برنامه‌ای)",
+          "description": "رویدادها را به صندوق درون‌برنامه‌ای هدایت می‌کند"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "سرور ایمیل سفارشی"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "سرویس ایمیل ساده AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "خدمات ارتباطی Azure"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail از طریق OAuth2"
+        },
+        "webhook": {
+          "label": "وب‌هوک",
+          "description": "بازتماس وب‌هوک HTTP"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "API بات Slack"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "وب‌هوک ورودی Teams"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "API رویدادهای PagerDuty نسخه ۲"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "وب‌هوک Discord"
+        }
+      },
+      "events": {
+        "providerError": "ارائه‌دهنده – خطا",
+        "providerDegraded": "ارائه‌دهنده – افت کیفیت",
+        "providerRecovered": "ارائه‌دهنده – بازیابی‌شده",
+        "providerRateLimited": "ارائه‌دهنده – محدودشده نرخ",
+        "routingNoCandidates": "مسیریابی – بدون گزینه",
+        "routingFallbackUsed": "مسیریابی – جایگزین استفاده شد",
+        "authLoginFailed": "احراز هویت – ورود ناموفق",
+        "authTokenInvalid": "احراز هویت – توکن نامعتبر",
+        "configModelAdded": "پیکربندی – مدل افزوده شد",
+        "configModelDeleted": "پیکربندی – مدل حذف شد",
+        "configRouterCreated": "پیکربندی – روتر ایجاد شد",
+        "configRouterDeleted": "پیکربندی – روتر حذف شد",
+        "budgetThresholdReached": "بودجه – آستانه رسید",
+        "budgetExceeded": "بودجه – فراتر رفت",
+        "budgetReset": "بودجه – بازنشانی شد",
+        "systemStartup": "سیستم – راه‌اندازی",
+        "systemShutdown": "سیستم – خاموش‌شدن",
+        "systemUpdateAvailable": "سیستم – به‌روزرسانی در دسترس"
+      },
+      "removeChannelTooltip": "حذف کانال",
+      "removeChannelConfirm": "کانال حذف شود؟",
+      "formUpdatedHint": "فرم به‌روزرسانی شد — برای اعمال ذخیره کنید.",
+      "hmacSigningKeyPlaceholder": "کلید امضای HMAC",
+      "perms": {
+        "routerRead": "روترها – خوانده",
+        "routerWrite": "روترها – نوشتن",
+        "modelRead": "مدل‌ها – خوانده",
+        "modelWrite": "مدل‌ها – نوشتن",
+        "userRead": "کاربران – خوانده",
+        "userWrite": "کاربران – نوشتن",
+        "reportRead": "گزارش‌ها – خوانده",
+        "settingsRead": "تنظیمات – خوانده",
+        "settingsWrite": "تنظیمات – نوشتن",
+        "notificationWrite": "اعلان‌ها – نوشتن",
+        "tokenRead": "توکن‌ها – خوانده",
+        "tokenWrite": "توکن‌ها – نوشتن",
+        "roleWrite": "نقش‌ها – نوشتن",
+        "auditRead": "گزارش رسیدگی – خوانده",
+        "modulesRead": "ماژول‌ها – خوانده",
+        "modulesManage": "ماژول‌ها – مدیریت",
+        "connectionsRead": "اتصالات – خوانده",
+        "connectionsManage": "اتصالات – مدیریت",
+        "resilienceRead": "تاب‌آوری – خوانده",
+        "resilienceManage": "تاب‌آوری – مدیریت",
+        "profilesRead": "پروفایل‌های مسیریابی – خوانده",
+        "profilesManage": "پروفایل‌های مسیریابی – مدیریت",
+        "optimizersRead": "بهینه‌سازها – خوانده",
+        "optimizersManage": "بهینه‌سازها – مدیریت",
+        "experimentsRead": "آزمایش‌ها – خوانده",
+        "experimentsManage": "آزمایش‌ها – مدیریت"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "برای این نوع کانال، هدف‌ها تحویل را تغییر نمی‌دهند (نقطه پایانی ثابت است). آن‌ها فقط تعیین می‌کنند کدام رویدادها در دنباله رسیدگی برای هر گیرنده ثبت شوند.",
+        "dashboard": "هدف‌ها دیدپذیری صندوق را کنترل می‌کنند — فقط کاربران منطبق این اعلان‌ها را در صندوق درون‌برنامه‌ای خود می‌بینند.",
+        "email": "هدف‌ها تعیین می‌کنند کدام کاربران این ایمیل را دریافت می‌کنند. برای ارسال به همه کاربران، همه را خالی بگذارید."
+      },
+      "summary": {
+        "allEvents": "همه رویدادها",
+        "eventCount": "{{count}} رویداد",
+        "eventCount_other": "{{count}} رویداد",
+        "roleCount": "{{count}} نقش",
+        "roleCount_other": "{{count}} نقش",
+        "permCount": "{{count}} مجوز",
+        "permCount_other": "{{count}} مجوز",
+        "userCount": "{{count}} کاربر",
+        "userCount_other": "{{count}} کاربر",
+        "everyone": "همه"
+      },
+      "errors": {
+        "loadFailed": "بارگذاری ناموفق بود"
+      },
+      "fields": {
+        "dashboardHint": "رویدادهای منطبق را به صندوق اعلان درون‌برنامه‌ای هدایت می‌کند. اعتبارنامه لازم نیست.",
+        "labels": {
+          "fromAddress": "نشانی فرستنده",
+          "fromName": "نام فرستنده",
+          "host": "میزبان",
+          "port": "درگاه",
+          "tls": "TLS/SSL",
+          "username": "نام کاربری",
+          "password": "رمز عبور",
+          "awsRegion": "منطقه AWS",
+          "accessKeyId": "شناسه کلید دسترسی",
+          "secretAccessKey": "کلید دسترسی مخفی",
+          "apiKey": "کلید API",
+          "connectionString": "رشته اتصال",
+          "clientId": "شناسه کلاینت",
+          "clientSecret": "راز کلاینت",
+          "refreshToken": "توکن تازه‌سازی",
+          "url": "نشانی",
+          "method": "روش",
+          "signingSecret": "راز امضا",
+          "botToken": "توکن بات",
+          "channelId": "شناسه کانال",
+          "webhookUrl": "نشانی وب‌هوک",
+          "integrationKey": "کلید یکپارچه‌سازی"
+        },
+        "values": {
+          "enabled": "فعال",
+          "disabled": "غیرفعال",
+          "configured": "پیکربندی‌شده",
+          "notSet": "تنظیم‌نشده"
+        },
+        "optional": "(اختیاری)",
+        "keepCurrentPlaceholder": "برای حفظ مقدار فعلی خالی بگذارید",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "استفاده از TLS / SSL",
+        "smtpTlsOnHint": "(درگاه ۴۶۵ — SSL مستقیم)",
+        "smtpTlsOffHint": "(درگاه ۵۸۷ — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "برای استفاده از نقش نمونه IAM، اعتبارنامه‌ها را خالی بگذارید.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "کلید امضای HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "کلید مسیریابی ۳۲ کاراکتری",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "رویدادها",
+          "eventsPlaceholder": "همه رویدادها (برای همه خالی بگذارید)",
+          "eventsHint": "برای دریافت همه رویدادها خالی بگذارید. برای فیلتر کردن، رویدادهای خاص را انتخاب کنید.",
+          "routersHeading": "روترها",
+          "routersPlaceholder": "همه روترها (برای همه خالی بگذارید)",
+          "routersHint": "برای دریافت رویدادها از همه روترها خالی بگذارید.",
+          "cooldownHeading": "دوره خاموشی",
+          "cooldownSuffix": "ثانیه (۰ = بدون دوره خاموشی)",
+          "cooldownHint": "حداقل فاصله پیش از آنکه این کانال دوباره برای همان رویداد فعال شود."
+        },
+        "recipients": {
+          "heading": "گیرندگان / هدف‌ها",
+          "rolesLabel": "نقش‌ها",
+          "rolesPlaceholder": "همه نقش‌ها (همه)",
+          "permissionsLabel": "مجوزها",
+          "permissionsPlaceholder": "همه مجوزها (همه)",
+          "usersLabel": "کاربران خاص",
+          "usersPlaceholder": "همه کاربران (همه)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "اتصال",
+          "routing": "مسیریابی",
+          "recipients": "گیرندگان"
+        },
+        "sections": {
+          "channelSettings": "تنظیمات کانال",
+          "eventsRouting": "رویدادها و مسیریابی",
+          "recipients": "گیرندگان"
+        },
+        "nameLabel": "نام",
+        "namePlaceholder": "برچسب این کانال",
+        "cancelButton": "لغو"
+      },
+      "list": {
+        "countLabel": "{{count}} کانال",
+        "countLabel_other": "{{count}} کانال",
+        "filteredLabel": "{{shown}} از {{count}} کانال",
+        "filteredLabel_other": "{{shown}} از {{count}} کانال",
+        "allTypes": "همه انواع",
+        "searchPlaceholder": "فیلتر کانال‌ها…",
+        "searchChannelsPlaceholder": "جستجوی کانال‌ها…",
+        "addButton": "افزودن کانال",
+        "addSearchPlaceholder": "جستجوی کانال‌ها…",
+        "noResults": "نتیجه‌ای یافت نشد",
+        "emptyTitle": "هنوز کانال اعلانی پیکربندی نشده است.",
+        "noMatch": "هیچ کانالی با فیلترهای فعال مطابقت ندارد.",
+        "nameInlinePlaceholder": "برچسب (اختیاری)",
+        "columns": {
+          "name": "نام",
+          "type": "نوع",
+          "summary": "رویدادها / هدف‌ها"
+        },
+        "testTitle": "ارسال آزمایشی",
+        "editTitle": "ویرایش کانال",
+        "deleteTitle": "حذف کانال",
+        "deleteConfirm": "کانال «{{name}}» حذف شود؟ این عمل قابل بازگشت نیست.",
+        "deleteConfirmButton": "حذف",
+        "errors": {
+          "deleteFailed": "حذف ناموفق بود"
+        }
+      },
+      "edit": {
+        "backToList": "بازگشت به اعلان‌ها",
+        "back": "بازگشت",
+        "heading": "ویرایش کانال {{provider}}",
+        "subtitle": "پیکربندی این کانال اعلان را به‌روزرسانی کنید.",
+        "testSection": {
+          "title": "ارسال آزمایشی",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "ارسال آزمایشی",
+          "sendingButton": "در حال ارسال…",
+          "hintEmail": "برای ارسال به ایمیل حساب خود خالی بگذارید. آزمایش از پیکربندی ذخیره‌شده کانال استفاده می‌کند.",
+          "hintOther": "آزمایش از پیکربندی ذخیره‌شده کانال استفاده می‌کند. برای آزمایش تنظیمات به‌روزشده، ابتدا تغییرات را ذخیره کنید."
+        },
+        "saveButton": "ذخیره تغییرات",
+        "savingButton": "در حال ذخیره…",
+        "errors": {
+          "loadFailed": "بارگذاری ناموفق بود",
+          "saveFailed": "ذخیره ناموفق بود"
+        }
+      },
+      "create": {
+        "backToList": "بازگشت به اعلان‌ها",
+        "changeType": "تغییر نوع",
+        "pickerHeading": "یک نوع کانال انتخاب کنید",
+        "pickerSubtitle": "ارائه‌دهنده اعلان برای پیکربندی را انتخاب کنید.",
+        "heading": "کانال جدید {{provider}}",
+        "subtitle": "یک کانال اعلان جدید پیکربندی کنید.",
+        "createButton": "ایجاد کانال",
+        "creatingButton": "در حال ایجاد…",
+        "errors": {
+          "createFailed": "ایجاد ناموفق بود"
+        }
+      },
+      "sendTest": "ارسال آزمایشی",
+      "fromAddress": "نشانی فرستنده",
+      "individualUsers": "کاربران خاص",
+      "host": "میزبان",
+      "port": "درگاه",
+      "apiKey": "کلید API",
+      "connectionString": "رشته اتصال",
+      "clientId": "شناسه کلاینت",
+      "clientSecret": "راز کلاینت",
+      "refreshToken": "توکن تازه‌سازی",
+      "method": "روش",
+      "botToken": "توکن بات",
+      "channelId": "شناسه کانال",
+      "webhookUrl": "نشانی وب‌هوک",
+      "integrationKey": "کلید یکپارچه‌سازی"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "دریافت — /metrics را نمایش می‌دهد"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "ارسال — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "ارسال — API معیارها"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "ارسال — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "ارسال — پروتکل خط"
+        },
+        "webhook": {
+          "label": "وب‌هوک",
+          "description": "ارسال — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "برون‌بری ردیابی درخواست‌ها",
+        "description": "ردیابی کامل هر درخواست پروکسی‌شده را ارسال می‌کند: هر مرحله، هر ماژولی که صحبت کرد، و پرامپت‌ها و پاسخ‌ها برای پروژه‌هایی که انتخاب کرده‌اند.",
+        "sampleRateLabel": "نرخ نمونه‌گیری",
+        "sampleRateHint": "۱ هر درخواست را برون‌بری می‌کند، ۰.۱ یکی از هر ده."
+      },
+      "optional": "(اختیاری)",
+      "headersHint": "(اختیاری، هر خط یک مورد: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "توکن Bearer",
+          "placeholder": "برای دسترسی باز خالی بگذارید",
+          "description": "<code>/metrics</code> را در قالب متن Prometheus نمایش می‌دهد. برای الزام احراز هویت Bearer یک توکن تنظیم کنید."
+        },
+        "otel": {
+          "endpoint": "نقطه پایانی گردآورنده",
+          "description": "نشانی پایه گیرنده OTLP شما. روترلی <code>/v1/metrics</code> و در صورت فعال بودن برون‌بری ردیابی، <code>/v1/traces</code> را می‌افزاید. درگاه پیش‌فرض HTTP ۴۳۱۸ و gRPC ۴۳۱۷ است.",
+          "protocol": "پروتکل",
+          "headers": "سرآیندها"
+        },
+        "datadog": {
+          "apiKey": "کلید API",
+          "placeholder": "کلید API شما در Datadog",
+          "description": "زیر <strong>Organization Settings → API Keys</strong> در حساب Datadog شما یافت می‌شود.",
+          "site": "سایت"
+        },
+        "grafana": {
+          "remoteWriteUrl": "نشانی Remote Write",
+          "description": "در <strong>Grafana Cloud → Connections → Prometheus → Details</strong> به‌عنوان «Remote Write Endpoint» یافت می‌شود.",
+          "username": "نام کاربری / شناسه Stack",
+          "usernameHint": "شناسه عددی نشان‌داده‌شده در جزئیات اتصال Prometheus.",
+          "apiKey": "کلید API / توکن",
+          "apiKeyHint": "توکن Grafana Cloud با نقش <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "نشانی",
+          "urlHint": "نشانی نمونه InfluxDB نسخه ۲. ابری: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "توکن",
+          "tokenPlaceholder": "توکن API InfluxDB شما",
+          "tokenHint": "باید دسترسی <strong>نوشتن</strong> به سطل داشته باشد.",
+          "org": "سازمان",
+          "bucket": "سطل"
+        },
+        "webhook": {
+          "url": "نشانی",
+          "secret": "راز",
+          "secretHint": "(اختیاری — کلید امضای HMAC-SHA256)",
+          "headers": "سرآیندها"
+        }
+      },
+      "errors": {
+        "loadFailed": "بارگذاری یکپارچه‌سازی‌ها ناموفق بود",
+        "updateFailed": "به‌روزرسانی یکپارچه‌سازی ناموفق بود",
+        "saveFailed": "ذخیره یکپارچه‌سازی ناموفق بود",
+        "deleteFailed": "حذف یکپارچه‌سازی ناموفق بود"
+      },
+      "empty": "هنوز یکپارچه‌سازی‌ای پیکربندی نشده است.",
+      "enabled": "فعال",
+      "testing": "در حال آزمایش…",
+      "test": "آزمایش",
+      "removeConfirm": "حذف شود؟",
+      "remove": "حذف",
+      "cancel": "لغو",
+      "removeTooltip": "حذف یکپارچه‌سازی",
+      "saving": "در حال ذخیره…",
+      "save": "ذخیره",
+      "addButton": "افزودن یکپارچه‌سازی"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "بارگذاری تنظیمات ناموفق بود",
+        "duplicateUrl": "این نشانی از قبل در فهرست وجود دارد.",
+        "unreachable": "نمی‌توان به یک کاتالوگ ارائه‌دهنده معتبر در این نشانی دسترسی یافت."
+      },
+      "saved": "ذخیره شد.",
+      "refreshed": "بازخوانی شد.",
+      "heading": "مخازن کاتالوگ ارائه‌دهنده",
+      "refreshing": "در حال بازخوانی…",
+      "refresh": "بازخوانی",
+      "nextRefresh": "بعدی: {{date}}",
+      "priorityHint": "ترتیب ردیف‌ها اولویت ادغام را تعیین می‌کند — ردیف ۱ در تضاد برنده می‌شود. برای تغییر ترتیب از فلش‌ها استفاده کنید.",
+      "columns": {
+        "priority": "#",
+        "url": "نشانی",
+        "updated": "به‌روزشده",
+        "lastCheck": "آخرین بررسی",
+        "status": "وضعیت"
+      },
+      "empty": "هیچ مخزنی پیکربندی نشده است. از کاتالوگ عمومی پیش‌فرض روترلی استفاده خواهد شد.",
+      "status": {
+        "error": "خطا",
+        "active": "فعال",
+        "disabled": "غیرفعال"
+      },
+      "edit": "ویرایش",
+      "removeTooltip": "حذف",
+      "addRepository": "افزودن مخزن",
+      "checking": "در حال بررسی…",
+      "add": "افزودن",
+      "removeConfirm": "مخزن «{{url}}» حذف شود؟"
+    },
+    "about": {
+      "headings": {
+        "application": "برنامه",
+        "runtime": "زمان اجرا",
+        "storage": "ذخیره‌سازی",
+        "softwareUpdate": "به‌روزرسانی نرم‌افزار"
+      },
+      "labels": {
+        "version": "نسخه",
+        "uptime": "زمان فعالیت",
+        "nodeVersion": "Node.js",
+        "platform": "پلتفرم",
+        "configDir": "دایرکتوری پیکربندی",
+        "dataDir": "دایرکتوری داده",
+        "currentVersion": "نسخه فعلی",
+        "availableVersion": "نسخه در دسترس",
+        "upToDate": "به‌روز است",
+        "lastChecked": "آخرین بررسی"
+      },
+      "noCheckPerformed": "هنوز بررسی به‌روزرسانی‌ای انجام نشده است.",
+      "checkForUpdates": "بررسی به‌روزرسانی",
+      "checking": "در حال بررسی…",
+      "updateTo": "به‌روزرسانی به v{{version}}",
+      "updating": "در حال به‌روزرسانی…",
+      "dockerHint": "در حال اجرا در Docker — برای به‌روزرسانی جدیدترین تصویر را دریافت کنید.",
+      "confirmUpdate": "این کار جدیدترین نسخه را دریافت و نصب می‌کند. سرویس دوباره راه‌اندازی خواهد شد. ادامه می‌دهید؟",
+      "updateComplete": "به‌روزرسانی کامل شد! در حال بارگذاری مجدد…",
+      "serviceRestarting": "سرویس در حال راه‌اندازی مجدد است. لطفاً چند لحظه دیگر صفحه را بارگذاری مجدد کنید.",
+      "errors": {
+        "loadFailed": "بارگذاری ناموفق بود",
+        "checkFailed": "بررسی ناموفق بود",
+        "updateFailed": "به‌روزرسانی ناموفق بود"
+      },
+      "channel": "کانال"
+    },
+    "security": {
+      "authentication": "احراز هویت",
+      "requireMfa": "الزام احراز هویت دو مرحله‌ای برای همه کاربران",
+      "requireMfaHint": "وقتی فعال باشد، کاربرانی که 2FA راه‌اندازی نکرده‌اند پس از ورود، درخواستی برای این کار می‌بینند. کاربران می‌توانند 2FA را در صفحه نمایه خود پیکربندی کنند.",
+      "savedSuccess": "تنظیمات با موفقیت ذخیره شد.",
+      "saving": "در حال ذخیره…",
+      "saveSettings": "ذخیره تنظیمات",
+      "errors": {
+        "loadFailed": "بارگذاری تنظیمات ناموفق بود",
+        "saveFailed": "ذخیره تنظیمات ناموفق بود"
+      }
+    },
+    "title": "تنظیمات",
+    "subtitle": "پیکربندی روترلی",
+    "tabs": {
+      "general": "عمومی",
+      "security": "امنیت",
+      "notifications": "اعلان‌ها",
+      "integrations": "یکپارچه‌سازی‌ها",
+      "catalog": "کاتالوگ ارائه‌دهنده",
+      "users": "کاربران",
+      "roles": "نقش‌ها",
+      "audit": "گزارش رسیدگی",
+      "about": "درباره"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "روترها",
+      "subtitle": "برنامه‌های کلاینتی که به روترلی دسترسی دارند",
+      "count": "۱ روتر",
+      "count_other": "{{count}} روتر",
+      "newRouter": "روتر جدید",
+      "empty": "هنوز روتری وجود ندارد.",
+      "emptyFiltered": "هیچ مسیریابی از این نوع وجود ندارد.",
+      "columns": {
+        "name": "نام",
+        "tokens": "توکن‌ها",
+        "policies": "سیاست‌ها",
+        "models": "مدل‌ها"
+      },
+      "tokenCount": "۱ توکن",
+      "tokenCount_other": "{{count}} توکن",
+      "editRouter": "ویرایش روتر",
+      "deleteRouter": "حذف روتر",
+      "deleteConfirm": "این روتر حذف شود؟",
+      "errors": {
+        "deleteFailed": "خطا در حذف روتر"
+      },
+      "newOrchestrator": "ارکستریتور جدید",
+      "newPassthrough": "Passthrough جدید"
+    },
+    "layout": {
+      "notFound": "روتر یافت نشد",
+      "tabs": {
+        "dashboard": "داشبورد",
+        "general": "عمومی",
+        "orchestrator": "ارکستریتور",
+        "routing": "مسیریابی",
+        "optimizer": "بهینه‌ساز",
+        "security": "امنیت",
+        "token": "توکن",
+        "users": "کاربران",
+        "logs": "گزارش‌ها"
+      },
+      "backToRouters": "بازگشت به روترها",
+      "backToRoutersTitle": "بازگشت به روترها",
+      "newRouter": "روتر جدید",
+      "loading": "در حال بارگذاری…",
+      "routerId": "شناسه روتر:",
+      "saveFirstHint": "ابتدا روتر را ذخیره کنید تا این زبانه باز شود",
+      "newKind": "{{kind}} جدید"
+    },
+    "dashboard": {
+      "period": "دوره",
+      "noTraffic": "هیچ ترافیکی برای این روتر در دوره انتخاب‌شده وجود ندارد.",
+      "stats": {
+        "savings": "صرفه‌جویی",
+        "vsPrefix": "در برابر",
+        "forEverything": "برای همه چیز",
+        "noTargetToCompare": "مدل هدفی برای مقایسه وجود ندارد",
+        "cost": "هزینه",
+        "callCount": "۱ فراخوانی",
+        "callCount_other": "{{count}} فراخوانی",
+        "latency": "تأخیر",
+        "medianP95": "میانه · p95 {{value}}",
+        "ttft": "زمان تا اولین توکن",
+        "notMeasured": "در این فراخوانی‌ها اندازه‌گیری نشده است",
+        "reliability": "قابلیت اطمینان",
+        "errorsAndBlocked": "{{errors}} خطا · {{blocked}} مسدود"
+      },
+      "tokens": {
+        "input": "توکن‌های ورودی:",
+        "output": "توکن‌های خروجی:",
+        "fromCache": "از کش:",
+        "cacheSaved": "({{amount}} صرفه‌جویی‌شده)"
+      },
+      "oneModel": {
+        "heading": "اگر همه چیز به یک مدل می‌رفت",
+        "empty": "برای مشاهده مقایسه، مدل‌های هدف را به این روتر اضافه کنید.",
+        "columns": {
+          "targetModel": "مدل هدف",
+          "wouldHaveCost": "هزینه می‌داشت",
+          "saved": "صرفه‌جویی‌شده"
+        },
+        "costsHint": "هزینه‌ها توکن‌های مشاهده‌شده هستند که با نرخ‌های هر هدف دوباره قیمت‌گذاری شده‌اند."
+      },
+      "optimizers": {
+        "heading": "چه چیزی را بهینه‌سازها حذف کردند",
+        "columns": {
+          "optimizer": "بهینه‌ساز",
+          "callsChanged": "فراخوانی‌های تغییریافته",
+          "tokensSaved": "توکن‌های صرفه‌جویی‌شده",
+          "costSaved": "هزینه صرفه‌جویی‌شده",
+          "rolledBack": "بازگردانده‌شده"
+        },
+        "hint": "روی خود فراخوانی‌ها، با قیمت‌گذاری مدلی که به هرکدام خدمت کرده، اندازه‌گیری شده است. اجرای بازگردانده‌شده به این معنی است که خروجی مرحله به‌عنوان ناامن رد شد و پرامپت بازگردانده شد: چیزی صرفه‌جویی نکرد، و تعداد بالا به این معنی است که آستانه بسیار تهاجمی است."
+      },
+      "traffic": {
+        "heading": "ترافیک به کجا رفت",
+        "columns": {
+          "model": "مدل",
+          "calls": "فراخوانی‌ها",
+          "share": "سهم",
+          "cost": "هزینه",
+          "p95Latency": "تأخیر p95",
+          "errors": "خطاها"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "خطا در ذخیره روتر",
+        "copyFailed": "کپی ناموفق بود — لطفاً توکن را به‌صورت دستی انتخاب و کپی کنید."
+      },
+      "kind": {
+        "router": {
+          "label": "روتر",
+          "description": "درخواست‌ها را در میان مدل‌های گزینه مسیریابی می‌کند."
+        },
+        "orchestrator": {
+          "label": "ارکستریتور",
+          "description": "درخواست‌ها را در میان روترهای دیگر به‌جای مدل‌ها مسیریابی می‌کند."
+        },
+        "passthrough": {
+          "label": "عبوری",
+          "description": "درخواست‌ها را بدون تغییر عبور می‌دهد."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "اکنون این توکن را ذخیره کنید.",
+        "saveNowHint": "دوباره نشان داده نمی‌شود — پس از ترک این صفحه قابل بازیابی نیست.",
+        "copied": "کپی شد!",
+        "copy": "کپی",
+        "goToRouter": "برو به روتر"
+      },
+      "connect": {
+        "heading": "نحوه اتصال",
+        "intro": "هر SDK OpenAI یا Anthropic را به روترلی اشاره دهید و یک <tokenLink>توکن روتر</tokenLink> را به‌عنوان کلید API استفاده کنید. <code>{{token}}</code> در پایین را با توکن خود جایگزین کنید. مدل <code>{{model}}</code> انتخاب را به روترلی می‌سپارد؛ هر شناسه مدل از <modelsLink>مدل‌ها</modelsLink> نیز کار می‌کند.",
+        "openaiSdk": "SDK OpenAI",
+        "openaiBaseUrlHint": "نشانی پایه <code>{{baseUrl}}</code>، همانی که هر فیلد «سازگار با OpenAI» می‌گیرد.",
+        "anthropicSdk": "SDK Anthropic",
+        "anthropicBaseUrlHint": "نشانی پایه <code>{{baseUrl}}</code>، بدون <code>/v1</code>: SDK آن را می‌افزاید.",
+        "curl": "curl",
+        "curlHint": "بدون نصب چیزی سیم‌کشی را بررسی کنید، سپس فراخوانی را در <usageLink>مصرف</usageLink> بیابید."
+      },
+      "form": {
+        "kind": "نوع",
+        "kindFixedHint": "پس از ایجاد روتر ثابت می‌شود.",
+        "routerName": "نام روتر",
+        "routerNamePlaceholder": "برنامه من",
+        "advancedSettings": "تنظیمات پیشرفته",
+        "ttftTimeout": "زمان‌سنج TTFT (میلی‌ثانیه)",
+        "ttftTimeoutHint": "اگر یک مدل بایت پاسخ اول را در این زمان ارسال نکند، روترلی آن را لغو می‌کند و گزینه بعدی را امتحان می‌کند. مدت کل پاسخ را محدود نمی‌کند. برای انتظار به هر مدتی که ارائه‌دهنده طول می‌کشد، آن را روی ۰ تنظیم کنید.",
+        "traceContent": "محتوای ردیابی",
+        "traceContentHint": "ردیابی‌ها همیشه فراداده (مدل‌ها، امتیازها، توکن‌ها، هزینه، تأخیر) را ثبت می‌کنند. این را فعال کنید تا پرامپت‌های ارسال‌شده و پاسخ‌های دریافت‌شده نیز ثبت شوند. آن‌ها با رکورد مصرف ذخیره می‌شوند و برای هرکسی که می‌تواند گزارش‌ها را بخواند قابل مشاهده هستند.",
+        "capturePromptsAndAnswers": "ثبت پرامپت‌ها و پاسخ‌ها",
+        "saveChanges": "ذخیره تغییرات",
+        "createRouter": "ایجاد روتر",
+        "passthroughPath": "مسیر",
+        "passthroughPathHint": "بخشی از URL شود که مشتریان فراخوانی می‌کنند: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ارکستریتور ایجاد کنید",
+        "createPassthrough": "Passthrough ایجاد کنید"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "این روتر یک ارکستریتور نیست.",
+      "candidateRouters": "روترهای گزینه",
+      "candidateRoutersHint": "روترهایی که این ارکستریتور درخواست‌ها را به آن‌ها ارسال می‌کند. وزن بر تعداد دفعات انتخاب هر گزینه اثر می‌گذارد؛ فقط نام، شناسه، وزن و محدودیت‌های اختیاری هر گزینه در اینجا نشان داده می‌شود.",
+      "routingPolicies": "سیاست های مسیریابی",
+      "routingPoliciesHint": "یک Orchestrator هر Router نامزد را به عنوان یک کل امتیاز دهی می کند، بنابراین تنها سیاست های سلامت، حد سرعت و انصاف در اینجا اعمال می شود. سایر انواع سیاست ها از میان مدل های خود Router انتخاب می کنند، که Orchestrator هیچ یک ندارد.",
+      "router": "روتر",
+      "selectRouter": "انتخاب روتر",
+      "weight": "وزن",
+      "removeCandidate": "حذف گزینه",
+      "usageLimits": "محدودیت‌های مصرف برای این گزینه",
+      "limitCount": "{{count}} محدودیت",
+      "limitCount_other": "{{count}} محدودیت",
+      "usageLimitsHint": "محدودیت‌های مصرف اختیاری که فقط بر درخواست‌هایی که این ارکستریتور به این گزینه ارسال می‌کند اعمال می‌شود.",
+      "empty": "هنوز روتر گزینه‌ای وجود ندارد. یک ارکستریتور پیش از ارسال درخواست‌ها به حداقل یکی نیاز دارد.",
+      "addCandidate": "افزودن گزینه",
+      "saved": "ذخیره شد!",
+      "saveCandidates": "ذخیره گزینه‌ها",
+      "errors": {
+        "loadFailed": "بارگذاری روترها ناموفق بود",
+        "saveFailed": "خطا در ذخیره گزینه‌های ارکستریتور"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "تخصیص پروفایل مسیریابی ناموفق بود",
+        "duplicateTargets": "مدل‌های هدف نمی‌توانند تکراری داشته باشند.",
+        "saveFailed": "خطا در ذخیره مسیریابی روتر",
+        "noProfileAvailable": "پروفایل مسیریابی موجود نیست. یکی از صفحه پروفایل‌ها بسازید."
+      },
+      "form": {
+        "routing": "مسیریابی",
+        "routingHint": "از یک پروفایل مسیریابی مشترک استفاده کنید، یا سیاست‌های خاص این روتر را تعریف کنید. مدل‌های هدف در هر دو حالت قابل پیکربندی می‌مانند.",
+        "profileMode": "پروفایل",
+        "customMode": "سفارشی",
+        "routingProfile": "پروفایل مسیریابی",
+        "builtinSuffix": "(داخلی)",
+        "profileHint": "سیاست‌ها از پروفایل می‌آیند و تغییرات آن را دنبال می‌کنند. آن‌ها را در صفحه پروفایل‌ها ویرایش کنید، یا برای شروع از یک کپی آن‌ها به سفارشی تغییر دهید.",
+        "saved": "ذخیره شد!",
+        "saveRoutingConfiguration": "ذخیره پیکربندی مسیریابی"
+      },
+      "targetModels": {
+        "heading": "مدل‌های هدف",
+        "hint": "مجموعه مدل‌هایی که سیاست‌ها از میان آن‌ها فیلتر و انتخاب خواهند کرد را تعریف کنید. پرامپت‌های اختیاری به روتر هوش مصنوعی می‌گویند چه زمانی هر مدل را انتخاب کند.",
+        "endpointModel": "مدل نقطه پایانی",
+        "selectModel": "انتخاب مدل",
+        "promptDefinition": "تعریف پرامپت",
+        "promptPlaceholder": "دقیقاً توصیف کنید که چه زمانی و چرا روتر باید این مدل را انتخاب کند…",
+        "intents": "قصدها",
+        "removeTarget": "حذف مدل هدف",
+        "empty": "هیچ مدل هدفی پیکربندی نشده است.",
+        "addTarget": "افزودن مدل هدف",
+        "passthroughLabel": "عبور مستقیم (ارسال خام)",
+        "passthroughNotRemovable": "ورودی عبور مستقیم قابل حذف نیست"
+      }
+    },
+    "optimizer": {
+      "title": "بهینه‌سازها",
+      "description": "بهینه‌سازها توکن‌های پرامپت را پیش از رسیدن درخواست‌ها به ارائه‌دهنده کاهش می‌دهند. آن‌ها به ترتیب از بالا به پایین اجرا می‌شوند. از یک پروفایل بهینه‌ساز مشترک استفاده کنید، یا خط لوله خاص این روتر را تعریف کنید.",
+      "noPermission": "شما اجازه مشاهده بهینه‌سازها را ندارید.",
+      "mode": {
+        "profile": "پروفایل",
+        "custom": "سفارشی"
+      },
+      "profileSelect": {
+        "ariaLabel": "پروفایل بهینه‌ساز",
+        "builtinLabel": "{{label}} (داخلی)",
+        "hint": "مراحل از پروفایل می‌آیند و تغییرات آن را دنبال می‌کنند. آن‌ها را در صفحه پروفایل‌ها ویرایش کنید، یا برای شروع از یک کپی آن‌ها به سفارشی تغییر دهید.",
+        "disabledSuffix": "(غیرفعال)",
+        "thresholdSuffix": "، آستانه {{threshold}}"
+      },
+      "customHint": "برای تغییر ترتیب بکشید، برای فعال‌سازی ضامن بزنید. برخی بهینه‌سازها از آستانه برای کنترل شدت کاهش استفاده می‌کنند.",
+      "saveButton": "ذخیره بهینه‌سازها",
+      "saving": "در حال ذخیره…",
+      "saved": "ذخیره شد",
+      "preview": {
+        "title": "پیش‌نمایش صرفه‌جویی توکن",
+        "description": "خط لوله فعلی (ذخیره‌نشده) را روی یک پرامپت اجرا کنید تا ببینید هر مرحله چه چیزی را حذف می‌کند و هزینه‌اش چقدر است. یکی از گفتگوهای نمونه را انتخاب کنید، یا پرامپت خود را تایپ کنید.",
+        "promptLabel": "پرامپت",
+        "promptAriaLabel": "پرامپت برای پیش‌نمایش",
+        "typePromptOption": "پرامپتی در پایین تایپ کنید",
+        "fixturesHint": "گفتگوهای نمونه همراه با روترلی ارسال می‌شوند. روترلی پرامپت‌های واقعی را ثبت نمی‌کند.",
+        "modelLabel": "مدل",
+        "modelAriaLabel": "مدل برای پیش‌نمایش در برابر آن",
+        "modelWithContext": "{{id}} (زمینه {{k}} هزار)",
+        "noModelOption": "بدون مدل",
+        "modelHint": "مراحلی که برای تناسب با پنجره زمینه کوتاه می‌کنند باید بدانند کدام پنجره. بدون مدل رد می‌شوند، دقیقاً همان‌طور که در یک درخواستی که مدلی را نام می‌برد که روترلی پنجره‌ای برای آن ندارد رد می‌شدند.",
+        "sampleAriaLabel": "پرامپت نمونه",
+        "samplePlaceholder": "یک پیام کاربر نمونه جای‌گذاری کنید…",
+        "runButton": "اجرای پیش‌نمایش",
+        "running": "در حال اجرا…",
+        "before": "قبل",
+        "after": "بعد",
+        "saved": "صرفه‌جویی‌شده",
+        "columns": {
+          "optimizer": "بهینه‌ساز",
+          "before": "قبل",
+          "after": "بعد",
+          "saved": "صرفه‌جویی‌شده"
+        },
+        "rolledBackNote": "بازگردانده‌شد: تغییر به‌عنوان ناامن رد شد",
+        "skippedNote": "رد شد: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "تغییری که این مرحله ایجاد کرد بازگردانده شد، بنابراین پرامپت بدون تغییر به مرحله بعد رسید.",
+          "skipped": "این مرحله اجرا نشد: {{reason}}",
+          "unchanged": "این مرحله پرامپت را بدون تغییر گذاشت."
+        }
+      },
+      "errors": {
+        "assignFailed": "تخصیص پروفایل بهینه‌ساز ناموفق بود",
+        "saveFailed": "خطا در ذخیره بهینه‌سازها",
+        "previewFailed": "خطا در اجرای پیش‌نمایش",
+        "noProfileAvailable": "پروفایل بهینه‌ساز موجود نیست. یکی از صفحه پروفایل‌ها بسازید."
+      }
+    },
+    "token": {
+      "newButton": "توکن جدید",
+      "empty": "هنوز توکن API وجود ندارد. برای شروع احراز هویت درخواست‌ها یکی بسازید.",
+      "budgetOverrides": "بازنویسی‌های بودجه",
+      "created": "ایجادشده",
+      "lastUsed": "آخرین استفاده",
+      "expires": "تاریخ انقضا",
+      "never": "هرگز",
+      "editTitle": "ویرایش پیکربندی",
+      "revokeTitle": "لغو توکن",
+      "revokeConfirm": "توکن «{{snippet}}…» لغو شود؟ برنامه‌های استفاده‌کننده از آن فوراً از کار می‌افتند.",
+      "labelInput": {
+        "placeholder": "جستجو یا ایجاد یک برچسب…",
+        "createPrefix": "ایجاد",
+        "noMatches": "برچسب منطبقی یافت نشد."
+      },
+      "errors": {
+        "deleteFailed": "خطا در حذف توکن"
+      },
+      "create": {
+        "backToTokens": "بازگشت به توکن‌ها",
+        "title": "توکن API جدید",
+        "subtitle": "توکن کامل فقط یک‌بار پس از ایجاد نشان داده می‌شود — آن را به‌صورت امن ذخیره کنید.",
+        "tokenCreated": "توکن با موفقیت ایجاد شد. اکنون آن را کپی کنید — دوباره نشان داده نمی‌شود.",
+        "copied": "کپی شد!",
+        "copy": "کپی",
+        "done": "پایان",
+        "optional": "اختیاری",
+        "labels": "برچسب‌ها",
+        "labelsHint": "این توکن را برچسب‌گذاری کنید تا محل استفاده آن شناسایی شود (مثلاً «تولید»، «CI»).",
+        "scopes": "دامنه‌ها",
+        "scopesHint": "دامنه‌های آزاد وابسته به این توکن (مثلاً «دسته‌ای»، «داخلی»)، برای بایگانی خودتان با توکن ذخیره می‌شود.",
+        "tags": "برچسب‌ها",
+        "tagsHint": "فراداده کلید-مقدار که به رکوردهای مصرف ارسال می‌شود (مثلاً env=production).",
+        "keyPlaceholder": "کلید",
+        "valuePlaceholder": "مقدار",
+        "createButton": "ایجاد توکن",
+        "cancel": "لغو",
+        "copyFailed": "کپی ناموفق بود — لطفاً توکن را به‌صورت دستی انتخاب و کپی کنید.",
+        "errors": {
+          "createFailed": "خطا در ایجاد توکن"
+        }
+      },
+      "edit": {
+        "title": "ویرایش توکن",
+        "subtitle": "برچسب‌ها و بازنویسی محدودیت هر مدل این توکن را به‌روزرسانی کنید.",
+        "token": "توکن",
+        "labels": "برچسب‌ها",
+        "perModelLimits": "محدودیت‌های هر مدل",
+        "perModelLimitsHint": "محدودیت‌های سراسری و سطح روتر را برای درخواست‌های استفاده‌کننده از این توکن بازنویسی کنید.",
+        "noTargetModels": "ابتدا مدل‌های هدف را در زبانه مسیریابی اضافه کنید.",
+        "noOverride": "بدون بازنویسی",
+        "noLimits": "بدون محدودیت",
+        "noLimitsSet": "هیچ محدودیتی تنظیم نشده — از والد به ارث می‌برد. برای بازنویسی، محدودیتی در پایین اضافه کنید.",
+        "metric": "معیار",
+        "type": "نوع",
+        "periodLabel": "دوره",
+        "every": "هر",
+        "maxCost": "حداکثر ($)",
+        "maxCalls": "حداکثر (تعداد)",
+        "maxTokens": "حداکثر (توکن)",
+        "allCombosSet": "همه ترکیب‌های معیار/دوره از قبل تنظیم شده‌اند",
+        "addLimit": "افزودن محدودیت",
+        "windowType": {
+          "period": "دوره",
+          "rolling": "متحرک"
+        },
+        "limitMetric": {
+          "cost": "هزینه (دلار)",
+          "calls": "درخواست‌ها",
+          "input_tokens": "توکن‌های ورودی",
+          "output_tokens": "توکن‌های خروجی",
+          "total_tokens": "کل توکن‌ها"
+        },
+        "period": {
+          "hourly": "ساعتی",
+          "daily": "روزانه",
+          "weekly": "هفتگی",
+          "monthly": "ماهانه",
+          "yearly": "سالانه"
+        },
+        "rollingUnit": {
+          "second": "ثانیه",
+          "minute": "دقیقه",
+          "hour": "ساعت",
+          "day": "روز",
+          "week": "هفته",
+          "month": "ماه"
+        },
+        "fmt": {
+          "requests": "{{value}} درخواست",
+          "inputTokens": "{{value}} توکن ورودی",
+          "outputTokens": "{{value}} توکن خروجی",
+          "totalTokens": "{{value}} توکن",
+          "everyRolling": "{{metric}} / هر {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "خطا در ذخیره توکن"
+        }
+      }
+    },
+    "users": {
+      "title": "اعضای روتر",
+      "description": "کاربرانی که به این روتر دسترسی دارند را مدیریت کنید.",
+      "addButton": "افزودن عضو",
+      "addNewTitle": "افزودن عضو جدید",
+      "selectUserPlaceholder": "یک کاربر انتخاب کنید…",
+      "addConfirmButton": "افزودن",
+      "cancelButton": "لغو",
+      "empty": "عضوی یافت نشد.",
+      "removeConfirm": "آیا مطمئن هستید که می‌خواهید این عضو را حذف کنید؟",
+      "saveTitle": "ذخیره تغییرات",
+      "changeRoleTitle": "تغییر نقش",
+      "removeTitle": "حذف عضو",
+      "roles": {
+        "viewer": "بیننده",
+        "editor": "ویرایشگر",
+        "admin": "مدیر"
+      },
+      "columns": {
+        "user": "کاربر",
+        "role": "نقش",
+        "actions": "عملیات"
+      },
+      "errors": {
+        "loadFailed": "بارگذاری کاربران ناموفق بود",
+        "addFailed": "خطا در افزودن عضو",
+        "updateFailed": "خطا در به‌روزرسانی عضو",
+        "removeFailed": "خطا در حذف عضو"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "خاموش"
+      },
+      "autoRefreshOff": "بازخوانی خودکار غیرفعال است",
+      "autoRefreshEvery": "بازخوانی خودکار هر {{interval}}",
+      "lastUpdated": "آخرین به‌روزرسانی: {{time}}",
+      "refresh": "بازخوانی",
+      "refreshNowTitle": "اکنون بازخوانی شود",
+      "refreshNowButton": "↻ اکنون",
+      "filters": {
+        "period": "دوره",
+        "model": "مدل",
+        "allModels": "همه مدل‌ها",
+        "type": "نوع",
+        "all": "همه",
+        "completion": "تکمیل",
+        "router": "روتر",
+        "status": "وضعیت",
+        "success": "موفق",
+        "blocked": "مسدود",
+        "error": "خطا",
+        "resetButton": "بازنشانی فیلترها"
+      },
+      "stats": {
+        "totalCost": "هزینه کل",
+        "totalCalls": "کل فراخوانی‌ها",
+        "completionCalls": "فراخوانی‌های تکمیل",
+        "routerCalls": "فراخوانی‌های روتر",
+        "errors": "خطاها"
+      },
+      "requestLogs": "گزارش درخواست‌ها",
+      "emptyNoRequests": "هیچ درخواستی برای این روتر در دوره انتخاب‌شده وجود ندارد.",
+      "emptyNoMatches": "هیچ رکوردی با فیلترهای فعال مطابقت ندارد.",
+      "columns": {
+        "time": "زمان",
+        "model": "مدل",
+        "type": "نوع",
+        "in": "ورودی",
+        "out": "خروجی",
+        "cost": "هزینه",
+        "latency": "تأخیر",
+        "ttft": "TTFT",
+        "tokPerSec": "توکن/ثانیه",
+        "status": "وضعیت"
+      },
+      "typeRouter": "روتر",
+      "typeCompletion": "تکمیل",
+      "pagination": {
+        "previous": "← قبلی",
+        "next": "بعدی →",
+        "pageOf": "صفحه {{page}} از {{totalPages}}",
+        "totalRecords": "({{count}} رکورد)"
+      }
+    },
+    "security": {
+      "title": "امنیت",
+      "description": "از یک پروفایل امنیتی مشترک استفاده کنید، یا محافظ‌ها و سیاست‌های اطلاعات شخصی خاص این روتر را تعریف کنید.",
+      "mode": {
+        "profile": "پروفایل",
+        "custom": "سفارشی"
+      },
+      "profileSelect": {
+        "ariaLabel": "پروفایل امنیتی",
+        "builtinLabel": "{{label}} (داخلی)",
+        "hint": "محافظ‌ها و سیاست‌های اطلاعات شخصی از پروفایل می‌آیند و تغییرات آن را دنبال می‌کنند. آن‌ها را در صفحه پروفایل‌ها ویرایش کنید، یا برای شروع از یک کپی آن‌ها به سفارشی تغییر دهید.",
+        "blockingSuffix": "، مسدودکننده",
+        "disabledSuffix": "، غیرفعال",
+        "piiRedaction": "پنهان‌سازی اطلاعات شخصی ({{target}})"
+      },
+      "saveButton": "ذخیره تنظیمات امنیتی",
+      "saved": "ذخیره شد!",
+      "errors": {
+        "assignFailed": "تخصیص پروفایل امنیتی ناموفق بود",
+        "saveFailed": "خطا در ذخیره تنظیمات امنیتی",
+        "noProfileAvailable": "پروفایل امنیتی موجود نیست. یکی از صفحه پروفایل‌ها بسازید."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "شما یک دستیار هوش مصنوعی مفید هستید.",
+      "errors": {
+        "unknown": "خطای ناشناخته رخ داد",
+        "onlyImages": "در حال حاضر فقط ضمیمه‌های تصویری برای مدل‌های بینایی پشتیبانی می‌شوند."
+      },
+      "title": "گفتگوی آزمایشی",
+      "subtitle": "پرسش‌های آزمایشی را از طریق درگاه مسیریابی ارسال کنید.",
+      "routerToken": "توکن روتر:",
+      "hideToken": "پنهان‌کردن توکن",
+      "showToken": "نمایش توکن",
+      "recognizedToken": "توکن شناسایی‌شده",
+      "unrecognizedToken": "توکن ناشناخته",
+      "noMessages": "هنوز پیامی وجود ندارد.",
+      "enterTokenHint": "لطفاً برای ارسال پیام، یک توکن روتر در بالا وارد کنید.",
+      "typeMessageHint": "برای شروع آزمایش، پیامی در پایین تایپ کنید.",
+      "reasoning": "استدلال",
+      "attachedAlt": "ضمیمه‌شده",
+      "attachmentAlt": "ضمیمه",
+      "attachImage": "ضمیمه تصویر",
+      "typeMessagePlaceholder": "پیامی تایپ کنید…",
+      "stopGeneration": "توقف تولید",
+      "sendEnter": "ارسال (Enter)",
+      "debugLog": "گزارش اشکال‌زدایی",
+      "clear": "پاک‌سازی",
+      "noRequestSent": "هنوز درخواستی ارسال نشده است.",
+      "turnTraceLog": "گزارش ردیابی نوبت #{{turn}} · {{count}} رویداد",
+      "turnTraceLog_other": "گزارش ردیابی نوبت #{{turn}} · {{count}} رویداد"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "اتصالات",
+      "subtitle": "حساب‌های ارائه‌دهنده برای اجرای نمونه‌های مدل",
+      "noPermission": "شما اجازه مشاهده اتصالات را ندارید.",
+      "count": "{{count}} اتصال",
+      "count_other": "{{count}} اتصال",
+      "addConnection": "افزودن اتصال",
+      "empty": "هنوز اتصالی وجود ندارد. برای شروع یکی اضافه کنید.",
+      "deleteConfirm": "اتصال «{{label}}» حذف شود؟ نمونه‌های وابسته به آن از کار خواهند افتاد.",
+      "errors": {
+        "loadFailed": "بارگذاری اتصالات ناموفق بود",
+        "deleteFailed": "حذف اتصال ناموفق بود"
+      },
+      "columns": {
+        "label": "برچسب",
+        "provider": "ارائه‌دهنده",
+        "endpoint": "نقطه پایانی",
+        "status": "وضعیت"
+      },
+      "status": {
+        "enabled": "فعال",
+        "disabled": "غیرفعال"
+      },
+      "actions": {
+        "models": "مدل‌ها",
+        "edit": "ویرایش",
+        "remove": "حذف"
+      }
+    },
+    "form": {
+      "backToConnections": "بازگشت به اتصالات",
+      "editTitle": "ویرایش اتصال",
+      "addTitle": "افزودن اتصال",
+      "enabled": "فعال",
+      "editSubtitle": "تنظیمات حساب ارائه‌دهنده را به‌روزرسانی کنید",
+      "addSubtitle": "یک حساب ارائه‌دهنده جدید ثبت کنید",
+      "sectionTitle": "جزئیات اتصال",
+      "sectionDesc": "حساب ارائه‌دهنده، اعتبارنامه‌ها و نقطه پایانی برای انجام درخواست‌ها.",
+      "provider": "ارائه‌دهنده",
+      "groups": {
+        "directApi": "API مستقیم",
+        "cloudPlatform": "پلتفرم ابری",
+        "subscription": "اشتراک",
+        "browserSession": "نشست مرورگر",
+        "selfHosted": "میزبانی‌شده خودتان"
+      },
+      "upstreamProvider": {
+        "label": "ارائه‌دهنده",
+        "hintLabel": "(نام ارائه‌دهنده بالادستی)",
+        "placeholder": "مثلاً deepseek، mistral، groq",
+        "description": "سرویسی که این نقطه پایانی به آن تعلق دارد را نام می‌برد. مدل‌های این اتصال از آن به‌عنوان پیشوند شناسه خود استفاده می‌کنند (مثلاً <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "نام",
+        "hint": "این اتصال را هر جا که ارجاع داده می‌شود شناسایی می‌کند، پس باید یکتا باشد. برای استفاده از <code>{{suggested}}</code> خالی بگذارید."
+      },
+      "credentialsBlankHint": "برای حفظ مقادیر فعلی، فیلدهای اعتبارنامه را خالی بگذارید.",
+      "save": "ذخیره",
+      "create": "ایجاد",
+      "cancel": "لغو",
+      "oauth": {
+        "unknown": "ناشناخته",
+        "accountExpires": "حساب: {{account}} — انقضا {{expires}}",
+        "unknownError": "خطای ناشناخته"
+      },
+      "errors": {
+        "notFound": "اتصال یافت نشد",
+        "loadFailed": "بارگذاری اتصال ناموفق بود",
+        "updateFailed": "به‌روزرسانی اتصال ناموفق بود",
+        "createFailed": "ایجاد اتصال ناموفق بود"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "بازگشت به مدل‌ها",
+      "title": "کشف مدل",
+      "subtitle": "مدل‌های موجود را مرور کنید و آن‌ها را به پیکربندی مسیریابی خود اضافه کنید",
+      "count": "{{count}} مدل",
+      "filteredCount": "{{filtered}} از {{count}}",
+      "free": "رایگان",
+      "add": "افزودن",
+      "addAgain": "دوباره افزودن",
+      "loadFailed": "بارگذاری کاتالوگ ناموفق بود: {{error}}",
+      "filters": {
+        "search": "جستجو",
+        "searchPlaceholder": "شناسه یا نام مدل…",
+        "provider": "ارائه‌دهنده",
+        "allProviders": "همه ارائه‌دهندگان",
+        "context": "زمینه",
+        "ctxOptions": {
+          "all": "همه",
+          "small": "< ۳۲ هزار",
+          "medium": "۳۲ هزار–۲۰۰ هزار",
+          "large": "۲۰۰ هزار–۱ میلیون",
+          "xl": "> ۱ میلیون"
+        },
+        "pricePer1M": "قیمت / ۱ میلیون",
+        "priceOptions": {
+          "all": "همه",
+          "free": "رایگان",
+          "low": "< ۱$",
+          "mid": "۱$–۵$",
+          "high": "> ۵$"
+        },
+        "show": "نمایش",
+        "configured": "پیکربندی‌شده",
+        "embedding": "امبدینگ",
+        "resetFilters": "بازنشانی فیلترها"
+      },
+      "empty": {
+        "noMatches": "هیچ مدلی با فیلترهای شما مطابقت ندارد."
+      },
+      "columns": {
+        "model": "مدل",
+        "provider": "ارائه‌دهنده",
+        "context": "زمینه",
+        "input": "ورودی / ۱ میلیون",
+        "output": "خروجی / ۱ میلیون"
+      },
+      "badges": {
+        "configured": "پیکربندی‌شده",
+        "embedding": "امبدینگ",
+        "runsLocally": "اجرای محلی"
+      },
+      "pagination": {
+        "prev": "قبلی",
+        "next": "بعدی",
+        "range": "{{start}}–{{end}} از {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "بازگشت به مدل‌ها",
+      "title": {
+        "add": "افزودن مدل",
+        "edit": "ویرایش مدل",
+        "clone": "کلون کردن مدل"
+      },
+      "subtitle": {
+        "add": "ثبت یک مدل ارائه‌دهنده LLM جدید",
+        "edit": "در حال تغییر پیکربندی برای {{id}}",
+        "clone": "کلون از {{id}} — برای ذخیره یک شناسه جدید تعیین کنید"
+      },
+      "errors": {
+        "modelNotFound": "مدل یافت نشد",
+        "sourceModelNotFound": "مدل منبع یافت نشد",
+        "loadFailed": "خطا در بارگذاری مدل‌ها",
+        "idRequired": "شناسه مدل الزامی است",
+        "duplicateId": "مدل «{{id}}» از قبل وجود دارد — یک شناسه سفارشی متفاوت تنظیم کنید",
+        "selectConnection": "یک اتصال انتخاب کنید",
+        "saveFailed": "خطا"
+      },
+      "badge": {
+        "yes": "بله",
+        "no": "خیر",
+        "override": "بازنویسی",
+        "auto": "خودکار",
+        "default": "پیش‌فرض: {{value}}",
+        "reset": "بازنشانی"
+      },
+      "oauth": {
+        "unknownExpiry": "ناشناخته",
+        "accountOk": "حساب: {{account}} — انقضا {{expires}}",
+        "unknownError": "خطای ناشناخته"
+      },
+      "identification": {
+        "title": "شناسایی مدل",
+        "description": "شناسه یکتا و تنظیمات ارائه‌دهنده برای این پیکربندی مدل.",
+        "routerlyId": "شناسه روترلی",
+        "routerlyIdHintPre": "(اختیاری — پیش‌فرض:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "شناسه‌ای که هنگام ارجاع به این مدل در فراخوانی‌های API روترلی استفاده می‌شود.",
+        "provider": "ارائه‌دهنده",
+        "upstreamProviderHint": "(نام ارائه‌دهنده بالادستی)",
+        "upstreamProviderPlaceholder": "مثلاً deepseek، mistral، groq",
+        "upstreamProviderDescPre": "به‌عنوان پیشوند برای شناسه روترلی استفاده می‌شود (مثلاً",
+        "upstreamProviderDescPost": ").",
+        "model": "مدل",
+        "upstreamModelHint": "(شناسه مدل بالادستی)",
+        "upstreamModelPlaceholder": "مثلاً deepseek-r1، mistral-large-latest",
+        "upstreamModelDesc": "شناسه مدلی که به نقطه پایانی API بالادستی ارسال می‌شود.",
+        "modelPreset": "پیش‌تنظیم مدل",
+        "customModelOption": "— نام مدل سفارشی —",
+        "customModelPlaceholder": "مثلاً my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "جزئیات اتصال",
+        "description": "نقطه پایانی API و اعتبارنامه‌های احراز هویت لازم برای انجام درخواست‌ها.",
+        "preconfigured": "از پیش پیکربندی‌شده",
+        "custom": "سفارشی",
+        "connection": "اتصال",
+        "selectPlaceholder": "— یک اتصال انتخاب کنید —",
+        "noneAvailable": "اتصال از پیش پیکربندی‌شده‌ای برای این ارائه‌دهنده وجود ندارد. به سفارشی تغییر دهید، یا در صفحه اتصالات یکی بسازید.",
+        "editHint": "ویرایش این اتصال بعداً هر مدل وابسته به آن را به‌روزرسانی می‌کند."
+      },
+      "capabilities": {
+        "title": "قابلیت‌ها",
+        "description": "نوع و قابلیت‌های این مدل را تعیین کنید.",
+        "embeddingModel": "مدل امبدینگ",
+        "embeddingModelHint": "این مدل بردارهای امبدینگ تولید می‌کند (نه تکمیل‌های گفتگو)"
+      },
+      "pricing": {
+        "title": "قیمت‌گذاری و زمینه",
+        "description": "پارامترهای هزینه و محدودیت‌های پردازش برای صورت‌حساب و مسیریابی.",
+        "inputPerMillion": "ورودی $/۱ میلیون",
+        "outputPerMillion": "خروجی $/۱ میلیون",
+        "cachePerMillion": "خوانش کش $/۱ میلیون",
+        "cacheWritePerMillion": "نوشتن کش $/۱ میلیون",
+        "optional": "(اختیاری)",
+        "contextWindow": "پنجره زمینه",
+        "contextWindowHint": "(توکن، اختیاری)"
+      },
+      "tiers": {
+        "title": "پیشرفته — سطوح قیمت‌گذاری",
+        "description": "قیمت‌گذاری را وقتی یک معیار از یک آستانه فراتر رود بازنویسی کنید. مثلاً: «بالای ۲۰۰٬۰۰۰ توکن زمینه، قیمت‌ها تغییر می‌کنند.»",
+        "removeTier": "حذف سطح",
+        "above": "بالای",
+        "metric": "معیار",
+        "metricContextTokens": "توکن‌های زمینه",
+        "overridePricing": "بازنویسی قیمت‌گذاری",
+        "addTier": "افزودن سطح قیمت‌گذاری"
+      },
+      "limits": {
+        "title": "محدودیت‌ها",
+        "description": "محدودیت‌های مصرف برای این مدل. چند قاعده می‌توانند ترکیب شوند.",
+        "metric": "معیار",
+        "type": "نوع",
+        "addLimit": "افزودن محدودیت"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (اشتراک Pro/Max)",
+        "openaiOauth": "OpenAI (اشتراک ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "ذخیره تغییرات",
+      "createClone": "ایجاد کلون",
+      "createModel": "ایجاد مدل"
+    },
+    "page": {
+      "title": "مدل‌ها",
+      "subtitle": "ارائه‌دهندگان LLM ثبت‌شده در روترلی",
+      "tabs": {
+        "models": "مدل‌ها",
+        "health": "سلامت"
+      },
+      "toolbar": {
+        "count": "{{count}} مدل",
+        "count_other": "{{count}} مدل",
+        "filteredCount": "{{filtered}} از {{count}} مدل",
+        "filteredCount_other": "{{filtered}} از {{count}} مدل"
+      },
+      "filters": {
+        "allProviders": "همه ارائه‌دهندگان",
+        "allConnections": "همه اتصالات",
+        "searchPlaceholder": "فیلتر مدل‌ها…"
+      },
+      "discover": "کشف",
+      "addModel": "افزودن مدل",
+      "deleteConfirm": "مدل «{{id}}» حذف شود؟",
+      "empty": {
+        "noModels": "هنوز مدلی وجود ندارد. برای شروع یکی اضافه کنید.",
+        "noMatches": "هیچ مدلی با فیلترهای فعال مطابقت ندارد."
+      },
+      "columns": {
+        "id": "شناسه",
+        "provider": "ارائه‌دهنده",
+        "endpoint": "نقطه پایانی",
+        "input": "ورودی $/۱ میلیون",
+        "output": "خروجی $/۱ میلیون",
+        "cache": "کش $/۱ میلیون",
+        "context": "اندازه زمینه"
+      },
+      "actions": {
+        "test": "آزمایش",
+        "clone": "کلون",
+        "edit": "ویرایش",
+        "remove": "حذف"
+      },
+      "pagination": {
+        "previous": "← قبلی",
+        "next": "بعدی →",
+        "pageOf": "صفحه {{page}} از {{totalPages}}",
+        "total": "({{count}} مدل)",
+        "total_other": "({{count}} مدل)"
+      },
+      "health": {
+        "emptyNoModels": "هیچ مدلی پیکربندی نشده است.",
+        "emptyNoMatches": "هیچ مدلی با فیلتر مطابقت ندارد.",
+        "resetAll": "بازنشانی همه",
+        "resetAllTitle": "بازنشانی هر قطع‌کننده مدار، دوره خاموشی و قفل",
+        "resetTitle": "بازنشانی قطع‌کننده مدار",
+        "confirmResetModel": "قطع‌کننده مدار برای مدل «{{id}}» بازنشانی شود؟",
+        "confirmResetAll": "همه وضعیت تاب‌آوری بازنشانی شود؟ این کار هر قطع‌کننده مدار، دوره خاموشی و قفل را پاک می‌کند.",
+        "errors": {
+          "resetModelFailed": "بازنشانی قطع‌کننده مدار ناموفق بود",
+          "resetAllFailed": "بازنشانی وضعیت تاب‌آوری ناموفق بود"
+        },
+        "columns": {
+          "model": "مدل",
+          "provider": "ارائه‌دهنده",
+          "status": "وضعیت",
+          "circuit": "مدار",
+          "errorRate": "نرخ خطا (۵ دقیقه)",
+          "p95Latency": "تأخیر P95 (۱ ساعت)",
+          "requests": "درخواست‌ها (۱ ساعت)",
+          "lastSuccess": "آخرین موفقیت",
+          "cooldownLockout": "دوره خاموشی / قفل"
+        },
+        "status": {
+          "healthy": "سالم",
+          "degraded": "افت‌کیفیت",
+          "unavailable": "در دسترس نیست",
+          "cooldown": "دوره خاموشی",
+          "nodata": "بدون داده"
+        },
+        "circuit": {
+          "ok": "سالم",
+          "recovering": "در حال بازیابی",
+          "tripped": "قطع‌شده"
+        },
+        "time": {
+          "never": "هرگز",
+          "now": "اکنون",
+          "secondsAgo": "{{count}} ثانیه پیش",
+          "minutesAgo": "{{count}} دقیقه پیش",
+          "hoursAgo": "{{count}} ساعت پیش",
+          "daysAgo": "{{count}} روز پیش",
+          "minSec": "{{min}} دقیقه {{sec}} ثانیه",
+          "sec": "{{sec}} ثانیه",
+          "cooldown": "دوره خاموشی {{time}}",
+          "lockout": "قفل {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "آزمایش‌ها",
+      "subtitle": "روترها را در آزمایش A/B مقابل یکدیگر قرار دهید",
+      "noPermission": "شما اجازه مشاهده آزمایش‌ها را ندارید.",
+      "count": "{{count}} آزمایش",
+      "count_other": "{{count}} آزمایش",
+      "newExperiment": "آزمایش جدید",
+      "empty": "هنوز آزمایشی وجود ندارد. برای مقایسه روترها با یکدیگر یکی بسازید.",
+      "deleteConfirm": "آزمایش «{{name}}» حذف شود؟ این عمل قابل بازگشت نیست.",
+      "noToken": "بدون توکن",
+      "noTokenTitle": "بدون توکن هیچ کلاینتی نمی‌تواند به این آزمایش دسترسی یابد",
+      "errors": {
+        "loadFailed": "بارگذاری آزمایش‌ها ناموفق بود",
+        "deleteFailed": "حذف آزمایش ناموفق بود"
+      },
+      "columns": {
+        "name": "نام",
+        "variants": "نسخه‌ها",
+        "rotation": "چرخش",
+        "created": "ایجادشده"
+      },
+      "actions": {
+        "edit": "ویرایش آزمایش",
+        "remove": "حذف"
+      }
+    },
+    "layout": {
+      "backToExperiments": "بازگشت به آزمایش‌ها",
+      "newExperiment": "آزمایش جدید",
+      "loading": "در حال بارگذاری…",
+      "experimentId": "شناسه آزمایش:",
+      "disabledTabTitle": "ابتدا آزمایش را ذخیره کنید تا این زبانه باز شود",
+      "errors": {
+        "notFound": "آزمایش یافت نشد"
+      },
+      "tabs": {
+        "config": "پیکربندی",
+        "metrics": "معیارها",
+        "token": "توکن"
+      }
+    },
+    "config": {
+      "saved": "ذخیره شد.",
+      "created": "آزمایش ایجاد شد. کلاینت خود را به این توکن به‌جای توکن روتر اشاره دهید. دوباره نشان داده نمی‌شود.",
+      "copy": "کپی",
+      "copied": "کپی شد!",
+      "done": "پایان",
+      "saving": "در حال ذخیره…",
+      "create": "ایجاد آزمایش",
+      "save": "ذخیره تغییرات",
+      "cancel": "لغو",
+      "trafficSplit": "تقسیم ترافیک",
+      "errors": {
+        "loadRoutersFailed": "بارگذاری روترها ناموفق بود",
+        "saveFailed": "ذخیره آزمایش ناموفق بود",
+        "copyFailed": "کپی ناموفق بود: توکن را به‌صورت دستی انتخاب و کپی کنید."
+      },
+      "fields": {
+        "name": "نام",
+        "namePlaceholder": "مسیریابی ارزان در برابر ممتاز",
+        "description": "توضیح",
+        "optional": "(اختیاری)",
+        "descriptionPlaceholder": "این آزمایش قصد دارد چه چیزی را حل کند",
+        "minSamples": "حداقل فراخوانی برای هر نسخه",
+        "minSamplesHint": "پایین‌تر از این، زبانه معیارها مقایسه را هنوز غیرقطعی علامت‌گذاری می‌کند.",
+        "rotation": "چرخش",
+        "stickyOn": "چسبنده روی",
+        "stickyKey": "کلید چسبنده"
+      },
+      "variants": {
+        "title": "نسخه‌ها",
+        "desc": "هر نسخه یک روتر موجود است که به‌طور کامل گرفته شده: مدل‌ها، مسیریابی و محافظ‌های آن همه اعمال می‌شوند. یک آزمایش حداقل به دو نیاز دارد.",
+        "routerAriaLabel": "روتر نسخه {{index}}",
+        "routerPlaceholder": "یک روتر انتخاب کنید",
+        "labelAriaLabel": "برچسب نسخه {{index}}",
+        "labelPlaceholder": "برچسب (اختیاری)",
+        "weightAriaLabel": "وزن نسخه {{index}}",
+        "weightPlaceholder": "وزن",
+        "removeTitle": "حذف نسخه {{index}}",
+        "add": "افزودن نسخه"
+      },
+      "judge": {
+        "title": "داور",
+        "desc": "اختیاری: یک مدل هر پاسخ نمونه‌برداری‌شده را می‌خواند و از ۰ تا ۱۰ در برابر معیارهای شما امتیاز می‌دهد. هر فراخوانی داوری‌شده یک فراخوانی مدل اضافی است که مانند هر فراخوانی دیگر صورت‌حساب می‌شود.",
+        "enable": "امتیازدهی پاسخ‌ها با مدل داور",
+        "model": "مدل داور",
+        "modelPlaceholder": "یک مدل انتخاب کنید",
+        "criteria": "معیارها",
+        "criteriaPlaceholder": "هر خط یک مورد، مثلاً\nبه سؤال پرسیده‌شده پاسخ می‌دهد\nمبتنی بر واقعیت می‌ماند\nقالب درخواست‌شده را رعایت می‌کند",
+        "sampleRate": "سهم فراخوانی‌های داوری‌شده (٪)"
+      }
+    },
+    "metrics": {
+      "loading": "در حال بارگذاری…",
+      "callsMeasured": "{{count}} فراخوانی اندازه‌گیری‌شده",
+      "callsMeasured_other": "{{count}} فراخوانی اندازه‌گیری‌شده",
+      "empty": "هنوز فراخوانی‌ای در این بازه وجود ندارد. کلاینتی را به توکن آزمایش اشاره دهید تا مقایسه شروع شود.",
+      "notConclusive": "هنوز غیرقطعی: هر نسخه به حداقل {{minSamples}} فراخوانی در این بازه نیاز دارد. ",
+      "explanation": "عدد بهتر هر جفت مشخص شده است: ارزان‌تر در هر فراخوانی، سریع‌تر، امتیاز داور بالاتر. درصد زیر یک مقدار فاصله آن از بهترین گزینه است. امتیاز داور یک میانگین جاری در کل عمر آزمایش است، پس تنها عددی است که بازه آن را محدود نمی‌کند.",
+      "lowSample": "نمونه کم",
+      "lowSampleTitle": "کمتر از {{minSamples}} فراخوانی در این بازه",
+      "judgedCallsTitle": "{{count}} پاسخ توسط داور از ابتدای آزمایش امتیازدهی شده است",
+      "judgedCallsTitle_other": "{{count}} پاسخ توسط داور از ابتدای آزمایش امتیازدهی شده است",
+      "errors": {
+        "loadFailed": "بارگذاری معیارها ناموفق بود"
+      },
+      "columns": {
+        "variant": "نسخه",
+        "calls": "فراخوانی‌ها",
+        "share": "سهم",
+        "errors": "خطاها",
+        "tokens": "توکن ورودی / خروجی",
+        "cost": "هزینه",
+        "costPerCall": "هزینه / فراخوانی",
+        "avgLatency": "تأخیر متوسط",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "امتیاز داور"
+      }
+    },
+    "token": {
+      "desc": "یک کلاینت دقیقاً مانند یک روتر با آزمایش تماس می‌گیرد: همان نشانی پایه، این توکن به‌جای توکن روتر. هر درخواست روی یک نسخه فرود می‌آید و به روتر آن نسخه صورت‌حساب می‌شود.",
+      "baseUrlLabel": "نشانی پایه برای SDK OpenAI یا Anthropic، با توکن آزمایش به‌عنوان کلید API:",
+      "created": "توکن ایجاد شد. اکنون آن را کپی کنید، دوباره نشان داده نمی‌شود.",
+      "copy": "کپی",
+      "copied": "کپی شد!",
+      "newToken": "توکن جدید",
+      "empty": "هیچ توکنی در این آزمایش وجود ندارد. برای فراخوانی توسط کلاینت‌ها یکی بسازید.",
+      "revokeConfirm": "توکن «{{snippet}}…» لغو شود؟ کلاینت‌های استفاده‌کننده از آن فوراً از کار می‌افتند.",
+      "revokeTitle": "لغو توکن",
+      "errors": {
+        "createFailed": "ایجاد توکن ناموفق بود",
+        "revokeFailed": "لغو توکن ناموفق بود",
+        "copyFailed": "کپی ناموفق بود: توکن را به‌صورت دستی انتخاب و کپی کنید."
+      },
+      "columns": {
+        "created": "ایجادشده",
+        "lastUsed": "آخرین استفاده"
+      }
+    }
+  },
+  "overview": {
+    "title": "نمای کلی",
+    "subtitle": "خلاصه مصرف و تفکیک هزینه",
+    "noPermission": "اجازه مشاهده داده‌های مصرف وجود ندارد.",
+    "costByModel": "هزینه بر اساس مدل",
+    "noCostRecorded": "در این دوره هزینه‌ای ثبت نشده است.",
+    "callsByModel": "فراخوانی‌ها بر اساس مدل",
+    "columns": {
+      "model": "مدل",
+      "calls": "فراخوانی‌ها",
+      "errors": "خطاها",
+      "cost": "هزینه"
+    },
+    "stats": {
+      "totalCalls": "کل فراخوانی‌ها",
+      "callsBreakdown": "{{routing}} مسیریابی · {{completion}} تکمیل",
+      "successRate": "نرخ موفقیت",
+      "ofAllRequests": "از همه درخواست‌ها",
+      "errors": "خطاها",
+      "failedRequests": "درخواست‌های ناموفق",
+      "models": "مدل‌ها",
+      "registered": "ثبت‌شده",
+      "routers": "روترها",
+      "active": "فعال"
+    },
+    "connectCard": {
+      "title": "اتصال یک کلاینت",
+      "desc": "Claude Code، Codex، Cursor و {{count}} مورد دیگر را به این درگاه اشاره دهید."
+    }
+  },
+  "login": {
+    "emailLabel": "ایمیل",
+    "passwordLabel": "رمز عبور",
+    "signIn": "ورود",
+    "errors": {
+      "loginFailed": "ورود ناموفق بود",
+      "totpFailed": "تأیید 2FA ناموفق بود"
+    },
+    "totp": {
+      "title": "احراز هویت دو مرحله‌ای",
+      "backupPrompt": "یک کد پشتیبان وارد کنید.",
+      "appPrompt": "کد ۶ رقمی از برنامه احراز هویت خود را وارد کنید.",
+      "backupCodeLabel": "کد پشتیبان",
+      "authenticatorCodeLabel": "کد احراز هویت",
+      "verify": "تأیید",
+      "useAuthenticatorInstead": "به‌جای آن از برنامه احراز هویت استفاده کنید",
+      "useBackupInstead": "به‌جای آن از کد پشتیبان استفاده کنید"
+    }
+  },
+  "setup": {
+    "welcome": "خوش آمدید! بیایید شما را راه‌اندازی کنیم.",
+    "welcomeSubtitle": "برای شروع مدیریت روترلی، حساب مدیر اول را ایجاد کنید.",
+    "betaBadge": "🚧 بتا",
+    "betaNotice": "روترلی به‌طور فعال در حال تحول است. ممکن است اشکالاتی رخ دهد.",
+    "betaFeedback": "بازخورد شما به شکل‌دهی آنچه می‌شود کمک می‌کند —",
+    "betaLink": "مشکلات را گزارش دهید یا ایده‌ها را به اشتراک بگذارید",
+    "emailLabel": "ایمیل مدیر",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "رمز عبور",
+    "passwordPlaceholder": "حداقل ۸ کاراکتر",
+    "confirmLabel": "تأیید رمز عبور",
+    "confirmPlaceholder": "رمز عبور را دوباره وارد کنید",
+    "submit": "ایجاد حساب مدیر",
+    "errors": {
+      "mismatch": "رمزهای عبور مطابقت ندارند",
+      "tooShort": "رمز عبور باید حداقل ۸ کاراکتر باشد",
+      "setupFailed": "راه‌اندازی ناموفق بود"
+    }
+  },
+  "audit": {
+    "empty": "هیچ ورودی رسیدگی یافت نشد.",
+    "errors": {
+      "loadFailed": "بارگذاری گزارش رسیدگی ناموفق بود"
+    },
+    "filters": {
+      "period": "دوره",
+      "user": "کاربر",
+      "userPlaceholder": "ایمیل یا شناسه کاربر",
+      "action": "عملیات",
+      "actionPlaceholder": "مثلاً model:create",
+      "result": "نتیجه",
+      "results": {
+        "all": "همه",
+        "success": "موفق",
+        "forbidden": "ممنوع",
+        "error": "خطا"
+      },
+      "refresh": "بازخوانی"
+    },
+    "columns": {
+      "timestamp": "زمان",
+      "user": "کاربر",
+      "action": "عملیات",
+      "endpoint": "نقطه پایانی",
+      "result": "نتیجه",
+      "details": "جزئیات"
+    },
+    "pagination": {
+      "previous": "قبلی",
+      "next": "بعدی",
+      "page": "صفحه {{page}} از {{totalPages}}",
+      "total": "({{count}} مورد)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "مصرف",
+      "live": "زنده",
+      "subtitle": "گزارش‌های دقیق فراخوانی و تفکیک هر مدل",
+      "updatedAt": "· به‌روزرسانی در {{time}}",
+      "poll": {
+        "off": "خاموش",
+        "5s": "۵ ثانیه",
+        "15s": "۱۵ ثانیه",
+        "30s": "۳۰ ثانیه",
+        "1m": "۱ دقیقه",
+        "5m": "۵ دقیقه"
+      },
+      "liveButton": "● زنده",
+      "liveButtonTitle": {
+        "disable": "غیرفعال‌سازی حالت زنده",
+        "enable": "فعال‌سازی حالت زنده (بازخوانی هر ۲ ثانیه)"
+      },
+      "refreshNow": "↻ اکنون",
+      "refreshNowTitle": "اکنون بازخوانی شود",
+      "filters": {
+        "period": "دوره",
+        "router": "روتر",
+        "model": "مدل",
+        "token": "توکن",
+        "caller": "فراخوان",
+        "type": "نوع",
+        "status": "وضعیت",
+        "allRouters": "همه روترها",
+        "allModels": "همه مدل‌ها",
+        "allTokens": "همه توکن‌ها",
+        "resetFilters": "بازنشانی فیلترها",
+        "all": "همه",
+        "success": "موفق",
+        "blocked": "مسدود",
+        "error": "خطا"
+      },
+      "caller": {
+        "all": "همه",
+        "completion": "تکمیل",
+        "routing": "روتر",
+        "guardrail": "محافظ",
+        "judge": "داور"
+      },
+      "callerBadge": {
+        "completion": "تکمیل",
+        "routing": "روتر",
+        "guardrail": "محافظ",
+        "judge": "داور"
+      },
+      "errors": {
+        "loadFailedPrefix": "بارگذاری داده‌های مصرف ناموفق بود:",
+        "retry": "تلاش دوباره"
+      },
+      "stats": {
+        "totalCalls": "کل فراخوانی‌ها",
+        "completionCalls": "فراخوانی‌های تکمیل",
+        "routerCalls": "فراخوانی‌های روتر",
+        "guardrailCalls": "فراخوانی‌های محافظ",
+        "blockedCalls": "فراخوانی‌های مسدود",
+        "errors": "خطاها"
+      },
+      "table": {
+        "rank": "رتبه",
+        "model": "مدل",
+        "provider": "ارائه‌دهنده",
+        "calls": "فراخوانی‌ها",
+        "errors": "خطاها",
+        "successRate": "نرخ موفقیت",
+        "avgLatency": "تأخیر متوسط",
+        "p95Latency": "تأخیر P95",
+        "inputTokens": "توکن‌های ورودی",
+        "outputTokens": "توکن‌های خروجی",
+        "costPer1k": "هزینه / ۱ هزار",
+        "cost": "هزینه (دلار)",
+        "bestCostPerformance": "بهترین نسبت هزینه به عملکرد"
+      },
+      "showMoreModels": "نمایش {{count}} مدل بیشتر",
+      "showMoreModels_other": "نمایش {{count}} مدل بیشتر",
+      "showFewerModels": "نمایش مدل‌های کمتر",
+      "recentCalls": {
+        "title": "فراخوانی‌های اخیر",
+        "empty": "رکورد مصرفی برای این دوره وجود ندارد.",
+        "columns": {
+          "time": "زمان",
+          "router": "روتر",
+          "model": "مدل",
+          "type": "نوع",
+          "caller": "فراخوان",
+          "in": "ورودی",
+          "out": "خروجی",
+          "cost": "هزینه",
+          "latency": "تأخیر",
+          "ttft": "TTFT",
+          "tokensPerSec": "توکن/ثانیه",
+          "status": "وضعیت"
+        }
+      },
+      "pagination": {
+        "previous": "قبلی",
+        "next": "بعدی",
+        "pageOf": "صفحه {{page}} از {{totalPages}}",
+        "totalRecords": "({{count}} رکورد)"
+      }
+    },
+    "record": {
+      "back": "بازگشت",
+      "title": "جزئیات فراخوانی",
+      "notFoundTitle": "رکورد یافت نشد",
+      "notFoundBody": "رکورد مصرف {{id}} قابل بارگذاری نبود.",
+      "errors": {
+        "loadFailed": "بارگذاری رکورد ناموفق بود"
+      },
+      "sections": {
+        "identity": "هویت",
+        "tokensAndCost": "توکن‌ها و هزینه",
+        "performanceAndOutcome": "عملکرد و نتیجه",
+        "traceLog": "گزارش ردیابی"
+      },
+      "fields": {
+        "recordId": "شناسه رکورد",
+        "router": "روتر",
+        "token": "توکن",
+        "model": "مدل",
+        "callType": "نوع فراخوانی",
+        "requestType": "نوع درخواست",
+        "inputTokens": "توکن‌های ورودی",
+        "outputTokens": "توکن‌های خروجی",
+        "totalTokens": "کل توکن‌ها",
+        "costUsd": "هزینه (دلار)",
+        "costUnknown": "ناشناخته",
+        "latency": "تأخیر",
+        "ttft": "TTFT",
+        "tokensPerSec": "توکن/ثانیه",
+        "outcome": "نتیجه",
+        "timestamp": "زمان",
+        "guardrailTriggered": "محافظ فعال شد",
+        "blockedBy": "مسدودشده توسط",
+        "piiRedacted": "اطلاعات شخصی پنهان شد"
+      },
+      "errorMessage": "پیام خطا",
+      "eventCount": "{{count}} رویداد",
+      "eventCount_other": "{{count}} رویداد",
+      "noTrace": "ردیابی‌ای در دسترس نیست. داده ردیابی فقط برای فراخوانی‌های جدید ثبت می‌شود."
+    }
+  },
+  "playground": {
+    "title": "محیط آزمایش",
+    "subtitle": "مدل‌ها را آزمایش کنید، پاسخ‌ها را مقایسه کنید و پیش‌تنظیم‌های پرامپت را ذخیره کنید.",
+    "mode": {
+      "single": "تکی",
+      "compare": "مقایسه"
+    },
+    "token": {
+      "label": "توکن:",
+      "labelA": "توکن A",
+      "labelB": "توکن B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "مانند A",
+      "unknownToken": "توکن ناشناخته"
+    },
+    "presets": {
+      "button": "پیش‌تنظیم‌ها",
+      "panelTitle": "پیش‌تنظیم‌ها",
+      "saveCurrent": "ذخیره فعلی",
+      "namePlaceholder": "نام پیش‌تنظیم…",
+      "save": "ذخیره",
+      "empty": "هنوز پیش‌تنظیمی وجود ندارد.",
+      "delete": "حذف پیش‌تنظیم"
+    },
+    "streamingDisabled": {
+      "banner": "استریم در دسترس نیست",
+      "bannerBody": "این روتر یک محافظ مسدودکننده پاسخ فعال دارد. روترلی باید کل پاسخ را پیش از تحویل بررسی کند، پس پاسخ‌ها یک‌جا می‌رسند.",
+      "tooltip": "استریم در دسترس نیست: یک محافظ مسدودکننده پاسخ نیاز دارد که کل پاسخ پیش از تحویل بررسی شود.",
+      "ariaLabel": "استریم در دسترس نیست"
+    },
+    "systemPrompt": "پرامپت سیستمی",
+    "model": "مدل",
+    "modelPlaceholder": "خودکار (پیش‌فرض روتر)",
+    "params": {
+      "temp": "دما",
+      "maxTokens": "حداکثر توکن",
+      "topP": "Top-p"
+    },
+    "stream": "استریم",
+    "clear": "پاک‌سازی",
+    "empty": {
+      "noMessages": "هنوز پیامی وجود ندارد.",
+      "enterToken": "برای شروع، یک توکن روتر در بالا وارد کنید."
+    },
+    "reasoning": "استدلال",
+    "blockedDefault": "این پیام توسط یک محافظ مسدود شد.",
+    "truncated": "بریده‌شده — پاسخ توسط حداکثر توکن قطع شد",
+    "bufferedNote": "برای بازبینی امنیتی نگه‌داشته شد",
+    "errors": {
+      "onlyImages": "فقط ضمیمه‌های تصویری پشتیبانی می‌شوند."
+    },
+    "rawToggle": {
+      "rendered": "رندرشده",
+      "raw": "خام"
+    },
+    "inputPlaceholder": "پیامی تایپ کنید…",
+    "attachImage": "ضمیمه تصویر",
+    "attachedImageAlt": "ضمیمه‌شده",
+    "attachmentAlt": "ضمیمه",
+    "debug": {
+      "title": "اشکال‌زدایی",
+      "clear": "پاک‌سازی",
+      "hide": "پنهان‌کردن اشکال‌زدایی",
+      "show": "نمایش اشکال‌زدایی",
+      "empty": "هنوز داده اشکال‌زدایی‌ای وجود ندارد.",
+      "emptyHint": "برای مشاهده جزئیات مسیریابی، پیامی ارسال کنید.",
+      "turnTraceLog": "گزارش ردیابی نوبت #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "مدل {{label}}:",
+      "modelSelectPlaceholder": "انتخاب مدل…",
+      "noMessages": "هنوز پیامی وجود ندارد.",
+      "debugTurns": "اشکال‌زدایی ({{count}} نوبت)",
+      "debugTurns_other": "اشکال‌زدایی ({{count}} نوبت)",
+      "guardrailTokensTitle": "توکن‌های داور محافظ",
+      "stop": "توقف",
+      "inputPlaceholder": "همان پیام را به هر دو مدل ارسال کنید…"
+    }
+  },
+  "help": {
+    "title": "راهنما و پشتیبانی",
+    "subtitle": "ما اینجا هستیم تا کمک کنیم — پاسخ‌ها را بیابید یا هر زمان با ما در ارتباط باشید.",
+    "docs": {
+      "title": "مستندات",
+      "subtitle": "راهنماها، مرجع API و اسناد پیکربندی",
+      "body": "مستندات رسمی همه چیز را از شروع کار تا سیاست‌های مسیریابی پیشرفته، راه‌اندازی ارائه‌دهنده، بودجه‌ها و مرجع کامل API پوشش می‌دهد.",
+      "openLink": "باز کردن مستندات"
+    },
+    "issues": {
+      "title": "گزارش اشکال یا پیشنهاد ویژگی",
+      "subtitle": "یک مسئله GitHub باز کنید — فقط ۲ دقیقه طول می‌کشد",
+      "body": "مسائل GitHub بهترین راه برای گزارش اشکالات یا پیشنهاد بهبودها هستند. برای کمک به رفع سریع‌تر مشکلات، این‌ها را شامل کنید: چه کاری انجام دادید، چه انتظاری داشتید و در واقع چه اتفاقی افتاد.",
+      "showTemplate": "نمایش قالب مسئله",
+      "reportBug": "گزارش اشکال",
+      "requestFeature": "درخواست ویژگی"
+    },
+    "issueTemplate": {
+      "whatHappened": "چه اتفاقی افتاد؟",
+      "whatHappenedHint": "مشکل را با کلمات ساده توصیف کنید",
+      "stepsToReproduce": "مراحل بازتولید",
+      "expectedBehaviour": "رفتار مورد انتظار",
+      "expectedBehaviourHint": "چه چیزی را انتظار داشتید ببینید",
+      "version": "نسخه روترلی",
+      "versionHint": "دستور `routerly --version` را اجرا کنید یا تنظیمات ← درباره را بررسی کنید"
+    },
+    "email": {
+      "title": "تماس با پشتیبانی",
+      "subtitle": "ما هر پیام را می‌خوانیم و در اسرع وقت پاسخ می‌دهیم",
+      "body": "برای هر چیزی که در یک مسئله GitHub جای نمی‌گیرد — سؤالات صورت‌حساب، نگرانی‌های خصوصی، یا اگر فقط می‌خواهید سلام کنید — برای ما پیام بگذارید."
+    },
+    "faq": {
+      "title": "سؤالات متداول",
+      "subtitle": "پاسخ‌های سریع به رایج‌ترین سؤالات",
+      "items": {
+        "connect": {
+          "q": "چگونه برنامه‌ام را به روترلی وصل کنم؟",
+          "a": "SDK OpenAI یا Anthropic خود را به نمونه روترلی خود اشاره دهید. نشانی پایه را با http://your-host:3000/v1 (سازگار با OpenAI) یا http://your-host:3000/anthropic (سازگار با Anthropic) جایگزین کنید، سپس یک توکن روتر را به‌عنوان کلید API استفاده کنید. همین — هیچ تغییر دیگری لازم نیست."
+        },
+        "openaiCompat": {
+          "q": "آیا روترلی با ابزارهایی که از SDK OpenAI استفاده می‌کنند سازگار است؟",
+          "a": "بله. روترلی یک جایگزین آماده است: هر ابزاری که از یک نشانی پایه و کلید API سفارشی پشتیبانی می‌کند (LangChain، LlamaIndex، Cursor، Continue و غیره) بدون تغییر کار می‌کند. برای کلاینت‌های با قالب Anthropic، از نقطه پایانی /anthropic استفاده کنید."
+        },
+        "routing": {
+          "q": "مسیریابی مدل چگونه کار می‌کند؟",
+          "a": "هر روتر یک سیاست مسیریابی دارد که تعیین می‌کند کدام مدل یک درخواست را دریافت می‌کند. سیاست‌ها شامل round-robin، کمترین هزینه، سریع‌ترین پاسخ، زنجیره‌های جایگزین و موارد دیگر هستند. آن‌ها را برای هر روتر زیر روترها ← مسیریابی پیکربندی می‌کنید."
+        },
+        "addModel": {
+          "q": "چگونه یک مدل هوش مصنوعی جدید اضافه کنم؟",
+          "a": "به مدل‌ها ← افزودن مدل بروید. می‌توانید هر ارائه‌دهنده سازگار با OpenAI (Ollama، LM Studio، نقاط پایانی سفارشی) یا یک نقطه پایانی بومی Anthropic اضافه کنید. نشانی پایه، کلید API و شناسه مدل را وارد کنید — روترلی بقیه کار را انجام می‌دهد."
+        },
+        "dataStored": {
+          "q": "آیا داده‌های من ذخیره می‌شود؟ آیا پرامپت‌های من ثبت می‌شوند؟",
+          "a": "روترلی خودمیزبان است و داده‌ها را فقط روی دستگاه شما ذخیره می‌کند (به‌طور پیش‌فرض در ~/.routerly/). پرامپت‌ها و پاسخ‌ها هرگز توسط روترلی به جایی ارسال نمی‌شوند. گزارش‌های درخواست به‌صورت محلی و فقط در صورت فعال‌سازی برای هر روتر ذخیره می‌شوند."
+        },
+        "routerToken": {
+          "q": "توکن روتر چیست و چه تفاوتی با کلید API ارائه‌دهنده دارد؟",
+          "a": "توکن روتر یک اعتبارنامه است که به برنامه یا اعضای تیم خود می‌دهید تا با روترلی احراز هویت شوند. این جدا از کلیدهای API ارائه‌دهنده شما است که روترلی آن‌ها را به‌صورت امن در سمت سرور ذخیره می‌کند. برنامه‌های شما هرگز کلیدهای واقعی ارائه‌دهنده را نمی‌بینند."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} کاربر",
+    "countLabel_other": "{{count}} کاربر",
+    "addButton": "افزودن کاربر",
+    "columns": {
+      "email": "ایمیل",
+      "role": "نقش",
+      "routers": "روترها"
+    },
+    "allRouters": "همه",
+    "resetTwoFaTitle": "بازنشانی 2FA",
+    "resetTwoFaConfirm": "2FA برای {{email}} بازنشانی شود؟ آن‌ها باید دوباره ثبت‌نام کنند.",
+    "deleteConfirm": "این کاربر حذف شود؟",
+    "emptyTitle": "هنوز کاربری وجود ندارد.",
+    "noPermission": "شما اجازه مشاهده کاربران را ندارید.",
+    "modal": {
+      "title": "افزودن کاربر",
+      "emailLabel": "ایمیل",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "رمز عبور",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "نقش",
+      "roleAdmin": "مدیر",
+      "roleViewer": "بیننده",
+      "cancelButton": "لغو",
+      "submitButton": "افزودن کاربر"
+    },
+    "errors": {
+      "loadFailed": "بارگذاری کاربران ناموفق بود",
+      "addFailed": "خطا"
+    }
+  },
+  "userEdit": {
+    "title": "ویرایش کاربر",
+    "account": "حساب",
+    "email": "ایمیل",
+    "role": "نقش",
+    "changePassword": "تغییر رمز عبور",
+    "newPassword": "رمز عبور جدید",
+    "newPasswordHint": "(برای حفظ فعلی خالی بگذارید)",
+    "save": "ذخیره",
+    "saved": "ذخیره شد!",
+    "errors": {
+      "loadFailed": "بارگذاری کاربر ناموفق بود",
+      "saveFailed": "ذخیره ناموفق بود"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "نقش‌ها و مجوزها را مدیریت کنید. نقش‌های داخلی نمی‌توانند تغییر کنند.",
+    "newRole": "نقش جدید",
+    "builtin": "داخلی",
+    "edit": "ویرایش",
+    "deleteConfirm": "این نقش حذف شود؟ کاربران با این نقش تحت تأثیر قرار خواهند گرفت.",
+    "form": {
+      "id": "شناسه",
+      "idPlaceholder": "مثلاً operator",
+      "name": "نام",
+      "namePlaceholder": "نام نقش",
+      "permissions": "مجوزها",
+      "create": "ایجاد",
+      "save": "ذخیره",
+      "cancel": "لغو"
+    },
+    "permissions": {
+      "routerRead": "روترها – خوانده",
+      "routerWrite": "روترها – نوشتن",
+      "modelRead": "مدل‌ها – خوانده",
+      "modelWrite": "مدل‌ها – نوشتن",
+      "userRead": "کاربران – خوانده",
+      "userWrite": "کاربران – نوشتن",
+      "reportRead": "گزارش‌ها – خوانده",
+      "settingsRead": "تنظیمات – خوانده",
+      "settingsWrite": "تنظیمات – نوشتن",
+      "notificationWrite": "اعلان‌ها – نوشتن",
+      "tokenRead": "توکن‌ها – خوانده",
+      "tokenWrite": "توکن‌ها – نوشتن",
+      "roleWrite": "نقش‌ها – نوشتن",
+      "auditRead": "گزارش رسیدگی – خوانده",
+      "modulesRead": "ماژول‌ها – خوانده",
+      "modulesManage": "ماژول‌ها – مدیریت",
+      "connectionsRead": "اتصالات – خوانده",
+      "connectionsManage": "اتصالات – مدیریت",
+      "resilienceRead": "تاب‌آوری – خوانده",
+      "resilienceManage": "تاب‌آوری – مدیریت",
+      "profilesRead": "پروفایل‌های مسیریابی – خوانده",
+      "profilesManage": "پروفایل‌های مسیریابی – مدیریت",
+      "optimizersRead": "بهینه‌سازها – خوانده",
+      "optimizersManage": "بهینه‌سازها – مدیریت",
+      "experimentsRead": "آزمایش‌ها – خوانده",
+      "experimentsManage": "آزمایش‌ها – مدیریت"
+    },
+    "errors": {
+      "loadFailed": "بارگذاری نقش‌ها ناموفق بود",
+      "updateFailed": "به‌روزرسانی نقش ناموفق بود",
+      "createFailed": "ایجاد نقش ناموفق بود",
+      "deleteFailed": "حذف نقش ناموفق بود"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "پروفایل‌ها",
+      "subtitle": "پیکربندی‌های قابل استفاده مجدد مسیریابی، بهینه‌ساز و امنیت",
+      "noPermission": "شما اجازه مشاهده پروفایل‌ها را ندارید.",
+      "newProfile": "پروفایل {{kind}} جدید",
+      "empty": "هنوز پروفایل {{kind}} وجود ندارد.",
+      "builtin": "داخلی",
+      "custom": "سفارشی",
+      "view": "نمایش",
+      "edit": "ویرایش",
+      "clone": "کلون",
+      "delete": "حذف",
+      "deleteConfirm": "پروفایل «{{label}}» حذف شود؟ این عمل قابل بازگشت نیست.",
+      "kindDescriptions": {
+        "routing": "کدام مدل به یک درخواست پاسخ می‌دهد و وقتی نمی‌تواند چه اتفاقی می‌افتد",
+        "optimizer": "چه چیزی پیش از ارسال از یک پرامپت حذف می‌شود",
+        "security": "محافظ‌ها و سیاست‌های اطلاعات شخصی اعمال‌شده بر ترافیک"
+      },
+      "columns": {
+        "label": "برچسب",
+        "type": "نوع",
+        "configuration": "پیکربندی",
+        "version": "نسخه"
+      },
+      "errors": {
+        "loadFailed": "بارگذاری پروفایل‌ها ناموفق بود",
+        "deleteFailed": "حذف پروفایل ناموفق بود"
+      }
+    },
+    "form": {
+      "backToProfiles": "بازگشت به پروفایل‌ها",
+      "newProfileTitle": "پروفایل {{kind}} جدید",
+      "editProfileTitle": "ویرایش {{label}}",
+      "builtinHint": "پروفایل‌های داخلی نمی‌توانند ویرایش شوند. برای شخصی‌سازی یکی را کلون کنید.",
+      "assignHint": "{{article}} پروفایل {{kind}} می‌تواند به هر تعداد روتر تخصیص یابد.",
+      "noPermission": "شما اجازه مشاهده پروفایل‌ها را ندارید.",
+      "label": "برچسب",
+      "optimizers": "بهینه‌سازها",
+      "optimizersHint": "برای تغییر ترتیب بکشید، برای فعال‌سازی ضامن بزنید. آن‌ها به ترتیب از بالا به پایین اجرا می‌شوند.",
+      "createProfile": "ایجاد پروفایل",
+      "saveProfile": "ذخیره پروفایل",
+      "cancel": "لغو",
+      "copySuffix": "کپی {{label}}",
+      "labelPlaceholders": {
+        "routing": "مثلاً مسیریابی متوازن من",
+        "optimizer": "مثلاً کوتاه‌کننده پرامپت من",
+        "security": "مثلاً محافظ‌های سخت‌گیرانه من"
+      },
+      "errors": {
+        "notFound": "پروفایل یافت نشد.",
+        "loadFailed": "بارگذاری پروفایل ناموفق بود",
+        "saveFailed": "ذخیره پروفایل ناموفق بود"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "بازگشت به اتصال",
+    "title": "اتصال",
+    "docs": "مستندات",
+    "notEnabledPrefix": "پیکربندی‌کننده کلاینت فعال نیست. از یک مدیر بخواهید آن را با",
+    "noClientPrefix": "کلاینتی با نام",
+    "errors": {
+      "loadFailed": "بارگذاری کلاینت‌ها ناموفق بود: {{error}}"
+    },
+    "oneCommand": {
+      "title": "سریع‌ترین راه: یک دستور",
+      "description": "آن را روی دستگاهی که {{client}} نصب شده اجرا کنید. این کار {{configPath}} را می‌نویسد و یک نسخه پشتیبان قابل بازگشت نگه می‌دارد."
+    },
+    "byHand": {
+      "titleAlt": "یا آن را دستی راه‌اندازی کنید",
+      "titleUi": "آن را دستی راه‌اندازی کنید",
+      "titleConfigFile": "فایل پیکربندی را راه‌اندازی کنید",
+      "setValuesIn": "این مقادیر را در {{configPath}} تنظیم کنید.",
+      "putThisIn": "این را در",
+      "replaceToken": "جایگزین کنید",
+      "withRouterToken": "با یک توکن روتر:",
+      "createOne": "یکی بسازید",
+      "onRoutersPage": "در صفحه روترها.",
+      "modelLabel": "مدل:",
+      "modelHint": "انتخاب را به روترلی می‌سپارد، هر شناسه مدل از",
+      "modelsLink": "مدل‌ها",
+      "worksToo": "نیز کار می‌کند.",
+      "openaiCompatHint": "همان نشانی پایه، کلید و مدل با هر کلاینتی که ارائه‌دهنده «سازگار با OpenAI» ارائه می‌دهد سازگار است."
+    },
+    "mcp": {
+      "title": "سرور MCP",
+      "description": "جدا از مراحل بالا: این یکی به {{client}} اجازه می‌دهد ابزارهای روترلی را فراخوانی کند. به یک توکن MCP شخصی نیاز دارد که با",
+      "orFromYour": "یا از",
+      "profileLink": "نمایه شما"
+    },
+    "checkItWorked": {
+      "title": "بررسی کنید که کار کرد",
+      "restart": "{{client}} را دوباره راه‌اندازی کنید، پرامپتی ارسال کنید، سپس فراخوانی را در",
+      "usageLink": "مصرف",
+      "cliReports": "بیابید. از همان دستگاه، CLI آنچه می‌یابد را گزارش می‌دهد:"
+    }
+  },
+  "connect": {
+    "title": "اتصال",
+    "subtitle": "یک کلاینت کدنویسی هوش مصنوعی را به این درگاه اشاره دهید. برای مراحل راه‌اندازی یک کلاینت انتخاب کنید.",
+    "llmLabel": "LLM",
+    "llmDescription": "ترافیک مدل آن کلاینت را از طریق روترلی مسیریابی می‌کند.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "روترلی را به‌عنوان یک سرور ابزار درون آن بار می‌کند.",
+    "notEnabledPrefix": "پیکربندی‌کننده کلاینت فعال نیست. از یک مدیر بخواهید آن را با",
+    "errors": {
+      "loadFailed": "بارگذاری کلاینت‌ها ناموفق بود: {{error}}"
+    },
+    "oneCommand": {
+      "title": "یک دستور",
+      "hint": "CLI فایل پیکربندی را برای شما می‌نویسد، با یک نسخه پشتیبان قابل بازگشت."
+    },
+    "byHand": {
+      "title": "دستی",
+      "hint": "قطعه کد را از صفحه کلاینت به تنظیمات آن کپی کنید، سپس آن را دوباره راه‌اندازی کنید."
+    },
+    "endpoint": {
+      "title": "هر کلاینتی را اینجا اشاره دهید",
+      "description": "هر چیزی که بر پایه SDK OpenAI یا Anthropic ساخته شده باشد با تغییر نشانی پایه و کلید کار می‌کند. هیچ چیز دیگری تغییر نمی‌کند: درخواست‌ها و پاسخ‌ها همان‌طور که هستند از روترلی می‌گذرند.",
+      "openaiBaseUrl": "نشانی پایه OpenAI",
+      "anthropicBaseUrl": "نشانی پایه Anthropic",
+      "apiKey": "کلید API",
+      "model": "مدل",
+      "apiKeyDescription": "یک توکن روتر، ارسال‌شده به‌عنوان",
+      "or": "یا",
+      "createOne": "یکی بسازید",
+      "onRoutersPage": "در صفحه روترها.",
+      "modelDescription": "به روترلی اجازه انتخاب می‌دهد. هر شناسه مدل از صفحه",
+      "modelsLink": "مدل‌ها",
+      "worksToo": "نیز کار می‌کند."
+    }
+  }
+}

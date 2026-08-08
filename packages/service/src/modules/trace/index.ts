@@ -39,10 +39,10 @@ function makeIngress(events: EventBus): Processor<ProxyContext> {
       // free of trace concerns: they only build the context.
       const correlationId = correlationIdFrom(ctx.req?.headers ?? {})
       if (correlationId) ctx.correlationId = correlationId
-      // Prompts and answers are captured only where the project asked for it.
-      ctx.captureContent = ctx.project?.traceContent === true
+      // Prompts and answers are captured only where the router asked for it.
+      ctx.captureContent = ctx.router?.traceContent === true
       openTrace(ctx.traceId, {
-        projectId: ctx.projectId,
+        routerId: ctx.routerId,
         ...(correlationId ? { correlationId } : {}),
       })
       ctx.emit = (entry) => publishTrace(events, ctx, entry)
@@ -74,7 +74,7 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
       const completed: TraceCompletedEvent = {
         traceId: ctx.traceId,
         entries,
-        ...(ctx.projectId ? { projectId: ctx.projectId } : {}),
+        ...(ctx.routerId ? { routerId: ctx.routerId } : {}),
         ...(ctx.correlationId ? { correlationId: ctx.correlationId } : {}),
       }
       // Closed only after the announcement: subscribers read the buffer, and

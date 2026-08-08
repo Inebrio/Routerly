@@ -1,6 +1,6 @@
 import type { McpAuthContext } from '@routerly/shared'
 import {
-  accessibleProjects,
+  accessibleRouters,
   resolveUserByMcpToken,
   resolveUserPermissions,
   touchMcpToken,
@@ -25,9 +25,9 @@ export async function buildAuthContext(
     return { error: 'MCP token expired.' }
   }
 
-  const [permissions, projects] = await Promise.all([
+  const [permissions, routers] = await Promise.all([
     resolveUserPermissions(user),
-    accessibleProjects(user),
+    accessibleRouters(user),
   ])
   void touchMcpToken(user.id, token.id).catch(() => {
     /* non-fatal */
@@ -37,7 +37,7 @@ export async function buildAuthContext(
     context: {
       user: { id: user.id, email: user.email, roleId: user.roleId },
       permissions,
-      projects,
+      routers,
       token,
     },
   }

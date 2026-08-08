@@ -3,31 +3,31 @@
  * Used by Create, Edit, and Detail pages so the field list is defined once.
  */
 import React, { useEffect, useState } from 'react';
+import type { TFunction } from 'i18next';
 import { Bell, Users, FolderOpen } from 'lucide-react';
 import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
-import { ALL_PERMISSIONS, getProjects } from '../api';
-import type { Permission, Project } from '../api';
+import { ALL_PERMISSIONS, getRouters } from '../api';
+import type { Permission, Router } from '../api';
 import type { Role, User } from '../api';
 
 export type ChannelProvider =
   | 'smtp' | 'ses' | 'sendgrid' | 'azure' | 'google'
   | 'webhook' | 'slack' | 'teams' | 'pagerduty' | 'discord' | 'dashboard';
 
-export const CHANNEL_PROVIDER_META: Array<{ key: ChannelProvider; label: string; description: string }> = [
-  { key: 'dashboard',  label: 'Dashboard (in-app inbox)', description: 'Routes events to the in-app inbox' },
-  { key: 'smtp',       label: 'SMTP',                     description: 'Custom mail server' },
-  { key: 'ses',        label: 'Amazon SES',               description: 'AWS Simple Email Service' },
-  { key: 'sendgrid',   label: 'SendGrid',                 description: 'Twilio SendGrid' },
-  { key: 'azure',      label: 'Azure Communication',      description: 'Azure Communication Services' },
-  { key: 'google',     label: 'Google / Gmail',           description: 'Gmail via OAuth2' },
-  { key: 'webhook',    label: 'Webhook',                  description: 'HTTP webhook callback' },
-  { key: 'slack',      label: 'Slack',                    description: 'Slack Bot API' },
-  { key: 'teams',      label: 'Microsoft Teams',          description: 'Teams Incoming Webhook' },
-  { key: 'pagerduty',  label: 'PagerDuty',                description: 'PagerDuty Events API v2' },
-  { key: 'discord',    label: 'Discord',                  description: 'Discord Webhook' },
+const CHANNEL_PROVIDER_KEYS: ChannelProvider[] = [
+  'dashboard', 'smtp', 'ses', 'sendgrid', 'azure', 'google',
+  'webhook', 'slack', 'teams', 'pagerduty', 'discord',
 ];
+
+export function getChannelProviderMeta(t: TFunction): Array<{ key: ChannelProvider; label: string; description: string }> {
+  return CHANNEL_PROVIDER_KEYS.map(key => ({
+    key,
+    label: t(`settings.notifications.providers.${key}.label`),
+    description: t(`settings.notifications.providers.${key}.description`),
+  }));
+}
 
 const REDACT_MARKER = '********';
 
@@ -41,87 +41,97 @@ export function isMasked(value: unknown): boolean {
   return value === REDACT_MARKER;
 }
 
-// ── Readable labels for the canonical events ──────────────────────────────────
-const EVENT_LABELS: Record<string, string> = {
-  'provider.error':            'Provider – Error',
-  'provider.degraded':         'Provider – Degraded',
-  'provider.recovered':        'Provider – Recovered',
-  'provider.rate_limited':     'Provider – Rate Limited',
-  'routing.no_candidates':     'Routing – No Candidates',
-  'routing.fallback_used':     'Routing – Fallback Used',
-  'auth.login_failed':         'Auth – Login Failed',
-  'auth.token_invalid':        'Auth – Token Invalid',
-  'config.model_added':        'Config – Model Added',
-  'config.model_deleted':      'Config – Model Deleted',
-  'config.project_created':    'Config – Project Created',
-  'config.project_deleted':    'Config – Project Deleted',
-  'budget.threshold_reached':  'Budget – Threshold Reached',
-  'budget.exceeded':           'Budget – Exceeded',
-  'budget.reset':              'Budget – Reset',
-  'system.startup':            'System – Startup',
-  'system.shutdown':           'System – Shutdown',
-  'system.update_available':   'System – Update Available',
+// ── i18n key suffixes for the canonical events (see settings.notifications.events) ──
+const EVENT_KEYS: Record<string, string> = {
+  'provider.error':            'providerError',
+  'provider.degraded':         'providerDegraded',
+  'provider.recovered':        'providerRecovered',
+  'provider.rate_limited':     'providerRateLimited',
+  'routing.no_candidates':     'routingNoCandidates',
+  'routing.fallback_used':     'routingFallbackUsed',
+  'auth.login_failed':         'authLoginFailed',
+  'auth.token_invalid':        'authTokenInvalid',
+  'config.model_added':        'configModelAdded',
+  'config.model_deleted':      'configModelDeleted',
+  'config.router_created':     'configRouterCreated',
+  'config.router_deleted':     'configRouterDeleted',
+  'budget.threshold_reached':  'budgetThresholdReached',
+  'budget.exceeded':           'budgetExceeded',
+  'budget.reset':              'budgetReset',
+  'system.startup':            'systemStartup',
+  'system.shutdown':           'systemShutdown',
+  'system.update_available':   'systemUpdateAvailable',
 };
 
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
 /* v8 ignore next */
-export const EVENT_OPTIONS = NOTIFICATION_EVENTS.map(e => ({ value: e, label: EVENT_LABELS[e] ?? e }));
+export function getEventOptions(t: TFunction): Array<{ value: string; label: string }> {
+  return NOTIFICATION_EVENTS.map(e => ({
+    value: e,
+    label: EVENT_KEYS[e] ? t(`settings.notifications.events.${EVENT_KEYS[e]}`) : e,
+  }));
+}
 
-const PERM_LABELS_LOCAL: Record<Permission, string> = {
-  'project:read':       'Projects – Read',
-  'project:write':      'Projects – Write',
-  'model:read':         'Models – Read',
-  'model:write':        'Models – Write',
-  'user:read':          'Users – Read',
-  'user:write':         'Users – Write',
-  'report:read':        'Reports – Read',
-  'settings:read':      'Settings – Read',
-  'settings:write':     'Settings – Write',
-  'notification:write': 'Notifications – Write',
-  'token:read':         'Tokens – Read',
-  'token:write':        'Tokens – Write',
-  'role:write':         'Roles – Write',
-  'audit:read':         'Audit Log – Read',
-  'modules:read':       'Modules – Read',
-  'modules:manage':     'Modules – Manage',
-  'connections:read':   'Connections – Read',
-  'connections:manage': 'Connections – Manage',
-  'resilience:read':    'Resilience – Read',
-  'resilience:manage':  'Resilience – Manage',
-  'profiles:read':      'Routing Profiles – Read',
-  'profiles:manage':    'Routing Profiles – Manage',
-  'optimizers:read':    'Optimizers – Read',
-  'optimizers:manage':  'Optimizers – Manage',
-  'experiments:read':   'Experiments – Read',
-  'experiments:manage': 'Experiments – Manage',
+// ── i18n key suffixes for permissions (see settings.notifications.perms) ──
+const PERM_KEYS: Record<Permission, string> = {
+  'router:read':       'routerRead',
+  'router:write':      'routerWrite',
+  'model:read':        'modelRead',
+  'model:write':       'modelWrite',
+  'user:read':         'userRead',
+  'user:write':        'userWrite',
+  'report:read':       'reportRead',
+  'settings:read':     'settingsRead',
+  'settings:write':    'settingsWrite',
+  'notification:write': 'notificationWrite',
+  'token:read':        'tokenRead',
+  'token:write':       'tokenWrite',
+  'role:write':        'roleWrite',
+  'audit:read':        'auditRead',
+  'modules:read':      'modulesRead',
+  'modules:manage':    'modulesManage',
+  'connections:read':  'connectionsRead',
+  'connections:manage': 'connectionsManage',
+  'resilience:read':   'resilienceRead',
+  'resilience:manage': 'resilienceManage',
+  'profiles:read':     'profilesRead',
+  'profiles:manage':   'profilesManage',
+  'optimizers:read':   'optimizersRead',
+  'optimizers:manage': 'optimizersManage',
+  'experiments:read':  'experimentsRead',
+  'experiments:manage': 'experimentsManage',
 };
 /* v8 ignore next */
-export const PERM_OPTIONS = ALL_PERMISSIONS.map(p => ({ value: p, label: PERM_LABELS_LOCAL[p] ?? p }));
+export function getPermOptions(t: TFunction): Array<{ value: Permission; label: string }> {
+  return ALL_PERMISSIONS.map(p => ({ value: p, label: t(`settings.notifications.perms.${PERM_KEYS[p]}`) }));
+}
 
 const FIXED_ENDPOINT_PROVIDERS: ChannelProvider[] = ['webhook', 'slack', 'teams', 'pagerduty', 'discord'];
 
-export function targetsHint(provider: ChannelProvider): string | null {
+export function targetsHint(provider: ChannelProvider, t: TFunction): string | null {
   if (FIXED_ENDPOINT_PROVIDERS.includes(provider)) {
-    return 'For this channel type, targets do not change delivery (the endpoint is fixed). They filter which events are logged in the audit trail per recipient.';
+    return t('settings.notifications.targetsHint.fixedEndpoint');
   }
   if (provider === 'dashboard') {
-    return 'Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox.';
+    return t('settings.notifications.targetsHint.dashboard');
   }
-  return 'Targets determine which users receive this email. Leave all empty to send to all users.';
+  return t('settings.notifications.targetsHint.email');
 }
 
 /** Summarise events + targets for list view. */
-export function summariseChannel(ch: Record<string, unknown>): string {
+export function summariseChannel(ch: Record<string, unknown>, t: TFunction): string {
   const parts: string[] = [];
   const events = ch['events'] as string[] | undefined;
   const evCount = events?.length ?? 0;
-  parts.push(evCount === 0 ? 'All events' : `${evCount} event${evCount > 1 ? 's' : ''}`);
-  const t = ch['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined;
+  parts.push(evCount === 0
+    ? t('settings.notifications.summary.allEvents')
+    : t('settings.notifications.summary.eventCount', { count: evCount }));
+  const targets = ch['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined;
   const targetParts: string[] = [];
-  if (t?.roles?.length) targetParts.push(`${t.roles.length} role${t.roles.length > 1 ? 's' : ''}`);
-  if (t?.permissions?.length) targetParts.push(`${t.permissions.length} perm${t.permissions.length > 1 ? 's' : ''}`);
-  if (t?.users?.length) targetParts.push(`${t.users.length} user${t.users.length > 1 ? 's' : ''}`);
-  parts.push(targetParts.length ? targetParts.join(', ') : 'Everyone');
+  if (targets?.roles?.length) targetParts.push(t('settings.notifications.summary.roleCount', { count: targets.roles.length }));
+  if (targets?.permissions?.length) targetParts.push(t('settings.notifications.summary.permCount', { count: targets.permissions.length }));
+  if (targets?.users?.length) targetParts.push(t('settings.notifications.summary.userCount', { count: targets.users.length }));
+  parts.push(targetParts.length ? targetParts.join(', ') : t('settings.notifications.summary.everyone'));
   return parts.join(' · ');
 }
 
@@ -165,7 +175,11 @@ function SecretDetailField({ label, value }: { label: string; value: unknown }) 
   );
 }
 
-/** Read-only view of provider-specific fields. Secrets shown as "Configured" / "Not set". */
+/**
+ * Read-only view of provider-specific fields. Secrets shown as "Configured" / "Not set".
+ * Not currently rendered by any page (kept for parity with the edit/create field sets and
+ * covered by its own tests); out of scope for i18n until a page renders it.
+ */
 export function ChannelDetailFields({ channel }: { channel: Record<string, unknown> }) {
   const provider = channel['provider'] as ChannelProvider;
   switch (provider) {
@@ -257,17 +271,18 @@ interface EditFieldsProps {
   onChange: (field: string, value: unknown) => void;
   /** When true, secret fields start empty with "Leave blank to keep current" placeholder. */
   isEdit: boolean;
+  t: TFunction;
 }
 
 function EditInput({
-  label, fieldKey, form, onChange, type = 'text', placeholder, required,
+  label, fieldKey, form, onChange, type = 'text', placeholder, required, t,
 }: {
   label: string; fieldKey: string; form: Record<string, unknown>; onChange: (k: string, v: unknown) => void;
-  type?: string; placeholder?: string; required?: boolean;
+  type?: string; placeholder?: string; required?: boolean; t: TFunction;
 }) {
   return (
     <div className="form-group">
-      <label className="form-label">{label}{!required && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> (optional)</span>}</label>
+      <label className="form-label">{label}{!required && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> {t('settings.notifications.fields.optional')}</span>}</label>
       <input
         className="form-input"
         type={type}
@@ -281,12 +296,12 @@ function EditInput({
 }
 
 function SecretEditInput({
-  label, fieldKey, form, onChange, isEdit, placeholder: customPlaceholder,
+  label, fieldKey, form, onChange, isEdit, placeholder: customPlaceholder, t,
 }: {
   label: string; fieldKey: string; form: Record<string, unknown>; onChange: (k: string, v: unknown) => void;
-  isEdit: boolean; placeholder?: string;
+  isEdit: boolean; placeholder?: string; t: TFunction;
 }) {
-  const placeholder = isEdit ? 'Leave blank to keep current' : (customPlaceholder ?? '');
+  const placeholder = isEdit ? t('settings.notifications.fields.keepCurrentPlaceholder') : (customPlaceholder ?? '');
   /* v8 ignore next */
   const secretValue = typeof form[fieldKey] === 'string' ? (form[fieldKey] as string) : '';
   return (
@@ -304,7 +319,7 @@ function SecretEditInput({
   );
 }
 
-function EmailBaseFields({ form, onChange, isEdit }: EditFieldsProps) {
+function EmailBaseFields({ form, onChange, t }: EditFieldsProps) {
   const provider = form['provider'] as ChannelProvider;
   /* v8 ignore next */
   if (provider === 'webhook' || provider === 'dashboard') return null;
@@ -313,16 +328,16 @@ function EmailBaseFields({ form, onChange, isEdit }: EditFieldsProps) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
       <div className="form-group" style={{ margin: 0 }}>
-        <label className="form-label">From Address</label>
+        <label className="form-label">{t('settings.notifications.fields.labels.fromAddress')}</label>
         <input className="form-input" type="email"
           value={fromAddress}
-          onChange={e => onChange('fromAddress', e.target.value)} placeholder="noreply@example.com" required />
+          onChange={e => onChange('fromAddress', e.target.value)} placeholder={t('settings.notifications.fields.emailFromAddressPlaceholder')} required />
       </div>
       <div className="form-group" style={{ margin: 0 }}>
-        <label className="form-label">From Name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+        <label className="form-label">{t('settings.notifications.fields.labels.fromName')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.notifications.fields.optional')}</span></label>
         <input className="form-input"
           value={typeof form['fromName'] === 'string' ? form['fromName'] : ''}
-          onChange={e => onChange('fromName', e.target.value || undefined)} placeholder="Routerly" />
+          onChange={e => onChange('fromName', e.target.value || undefined)} placeholder={t('settings.notifications.fields.emailFromNamePlaceholder')} />
       </div>
     </div>
   );
@@ -333,48 +348,49 @@ type TargetsProps = {
   onChange: (field: string, value: unknown) => void;
   roles: Role[];
   users: User[];
+  t: TFunction;
 };
 
-/** Events + Projects + Cooldown section (Routing tab). */
+/** Events + Routers + Cooldown section (Routing tab). */
 export function RoutingEditFields({
-  form, onChange,
-}: Pick<TargetsProps, 'form' | 'onChange'>) {
+  form, onChange, t,
+}: Pick<TargetsProps, 'form' | 'onChange' | 't'>) {
   const events = (form['events'] as string[] | undefined) ?? [];
   const cooldownSeconds = typeof form['cooldownSeconds'] === 'number' ? form['cooldownSeconds'] : 0;
-  const selectedProjects = (form['projects'] as string[] | undefined) ?? [];
+  const selectedRouters = (form['routers'] as string[] | undefined) ?? [];
 
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
-  useEffect(() => { getProjects().then(setAllProjects).catch(/* v8 ignore next */ () => {}); }, []);
-  const projectOptions = allProjects.map(p => ({ value: p.id, label: p.name }));
+  const [allRouters, setAllRouters] = useState<Router[]>([]);
+  useEffect(() => { getRouters().then(setAllRouters).catch(/* v8 ignore next */ () => {}); }, []);
+  const routerOptions = allRouters.map(p => ({ value: p.id, label: p.name }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
-        <div style={sectionLabel}><Bell size={11} /> Events</div>
+        <div style={sectionLabel}><Bell size={11} /> {t('settings.notifications.fields.routing.eventsHeading')}</div>
         <MultiSelect
-          options={EVENT_OPTIONS}
+          options={getEventOptions(t)}
           value={events}
           onChange={v => onChange('events', v.length ? v : undefined)}
-          placeholder="All events (leave empty for all)"
+          placeholder={t('settings.notifications.fields.routing.eventsPlaceholder')}
         />
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-          Leave empty to receive all events. Select specific events to filter.
+          {t('settings.notifications.fields.routing.eventsHint')}
         </p>
       </div>
       <div>
-        <div style={sectionLabel}><FolderOpen size={11} /> Projects</div>
+        <div style={sectionLabel}><FolderOpen size={11} /> {t('settings.notifications.fields.routing.routersHeading')}</div>
         <MultiSelect
-          options={projectOptions}
-          value={selectedProjects}
-          onChange={v => onChange('projects', v.length ? v : undefined)}
-          placeholder="All projects (leave empty for all)"
+          options={routerOptions}
+          value={selectedRouters}
+          onChange={v => onChange('routers', v.length ? v : undefined)}
+          placeholder={t('settings.notifications.fields.routing.routersPlaceholder')}
         />
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-          Leave empty to receive events from all projects.
+          {t('settings.notifications.fields.routing.routersHint')}
         </p>
       </div>
       <div>
-        <div style={sectionLabel}>Cooldown</div>
+        <div style={sectionLabel}>{t('settings.notifications.fields.routing.cooldownHeading')}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             className="form-input"
@@ -388,10 +404,10 @@ export function RoutingEditFields({
             }}
             placeholder="0"
           />
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>seconds (0 = no cooldown)</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.notifications.fields.routing.cooldownSuffix')}</span>
         </div>
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-          Minimum interval before this channel can fire again for the same event.
+          {t('settings.notifications.fields.routing.cooldownHint')}
         </p>
       </div>
     </div>
@@ -400,42 +416,42 @@ export function RoutingEditFields({
 
 /** Targets (roles/permissions/users) section (Recipients tab). */
 export function RecipientsEditFields({
-  form, onChange, roles, users,
+  form, onChange, roles, users, t,
 }: TargetsProps) {
   const provider = form['provider'] as ChannelProvider;
   const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
   const userOptions = users.map(u => ({ value: u.id, label: u.email }));
-  const hint = targetsHint(provider);
+  const hint = targetsHint(provider, t);
   const targets = (form['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined) ?? {};
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={sectionLabel}><Users size={11} /> Recipients / Targets</div>
+      <div style={sectionLabel}><Users size={11} /> {t('settings.notifications.fields.recipients.heading')}</div>
       <div>
-        <label className="form-label" style={{ fontSize: '0.78rem' }}>Roles</label>
+        <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('settings.notifications.fields.recipients.rolesLabel')}</label>
         <MultiSelect
           options={roleOptions}
           value={targets.roles ?? []}
           onChange={v => onChange('targets', { ...targets, roles: v.length ? v : undefined })}
-          placeholder="All roles (everyone)"
+          placeholder={t('settings.notifications.fields.recipients.rolesPlaceholder')}
         />
       </div>
       <div>
-        <label className="form-label" style={{ fontSize: '0.78rem' }}>Permissions</label>
+        <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('settings.notifications.fields.recipients.permissionsLabel')}</label>
         <MultiSelect
-          options={PERM_OPTIONS}
+          options={getPermOptions(t)}
           value={(targets.permissions ?? []) as string[]}
           onChange={v => onChange('targets', { ...targets, permissions: v.length ? (v as Permission[]) : undefined })}
-          placeholder="All permissions (everyone)"
+          placeholder={t('settings.notifications.fields.recipients.permissionsPlaceholder')}
         />
       </div>
       <div>
-        <label className="form-label" style={{ fontSize: '0.78rem' }}>Individual users</label>
+        <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('settings.notifications.fields.recipients.usersLabel')}</label>
         <MultiSelect
           options={userOptions}
           value={targets.users ?? []}
           onChange={v => onChange('targets', { ...targets, users: v.length ? v : undefined })}
-          placeholder="All users (everyone)"
+          placeholder={t('settings.notifications.fields.recipients.usersPlaceholder')}
         />
       </div>
       {hint && (
@@ -448,32 +464,34 @@ export function RecipientsEditFields({
 }
 
 /** Combined events+targets block (kept for backward compat; not used by tabbed pages). */
-export function EventsAndTargetsEditFields({ form, onChange, roles, users }: TargetsProps) {
+export function EventsAndTargetsEditFields({ form, onChange, roles, users, t }: TargetsProps) {
   return (
     <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <RoutingEditFields form={form} onChange={onChange} />
-      <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} />
+      <RoutingEditFields form={form} onChange={onChange} t={t} />
+      <RecipientsEditFields form={form} onChange={onChange} roles={roles} users={users} t={t} />
     </div>
   );
 }
 
 /** Provider-specific form fields (excluding events/targets which are always shown). */
-export function ChannelEditFields({ form, onChange, isEdit }: EditFieldsProps) {
+export function ChannelEditFields({ form, onChange, isEdit, t }: EditFieldsProps) {
   const provider = form['provider'] as ChannelProvider;
+  const F = 'settings.notifications.fields';
+  const L = (key: string) => t(`${F}.labels.${key}`);
   switch (provider) {
     case 'dashboard':
       return (
         <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
-          Routes matching events to the in-app notification inbox. No credentials required.
+          {t(`${F}.dashboardHint`)}
         </p>
       );
     case 'smtp':
       return (
         <>
-          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} />
+          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} t={t} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12 }}>
-            <EditInput label="Host" fieldKey="host" form={form} onChange={onChange} placeholder="smtp.example.com" required />
-            <EditInput label="Port" fieldKey="port" form={{ ...form, port: String(form['port'] ?? '587') }} onChange={(k, v) => onChange(k, v ? Number(v) : undefined)} type="number" required />
+            <EditInput label={L('host')} fieldKey="host" form={form} onChange={onChange} placeholder={t(`${F}.smtpHostPlaceholder`)} required t={t} />
+            <EditInput label={L('port')} fieldKey="port" form={{ ...form, port: String(form['port'] ?? '587') }} onChange={(k, v) => onChange(k, v ? Number(v) : undefined)} type="number" required t={t} />
           </div>
           <div className="form-group">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -481,89 +499,91 @@ export function ChannelEditFields({ form, onChange, isEdit }: EditFieldsProps) {
                 checked={!!form['secure']}
                 onChange={e => onChange('secure', e.target.checked)}
                 style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }} />
-              <label htmlFor="smtp-tls" style={{ cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-primary)' }}>Use TLS / SSL</label>
+              <label htmlFor="smtp-tls" style={{ cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-primary)' }}>{t(`${F}.smtpTlsLabel`)}</label>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {form['secure'] ? '(port 465 — direct SSL)' : '(port 587 — STARTTLS)'}
+                {form['secure'] ? t(`${F}.smtpTlsOnHint`) : t(`${F}.smtpTlsOffHint`)}
               </span>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <EditInput label="Username" fieldKey="username" form={form} onChange={onChange} />
-            <SecretEditInput label="Password" fieldKey="password" form={form} onChange={onChange} isEdit={isEdit} />
+            <EditInput label={L('username')} fieldKey="username" form={form} onChange={onChange} t={t} />
+            <SecretEditInput label={L('password')} fieldKey="password" form={form} onChange={onChange} isEdit={isEdit} t={t} />
           </div>
         </>
       );
     case 'ses':
       return (
         <>
-          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} />
-          <EditInput label="AWS Region" fieldKey="region" form={form} onChange={onChange} placeholder="us-east-1" required />
+          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} t={t} />
+          <EditInput label={L('awsRegion')} fieldKey="region" form={form} onChange={onChange} placeholder={t(`${F}.sesRegionPlaceholder`)} required t={t} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <EditInput label="Access Key ID" fieldKey="accessKeyId" form={form} onChange={onChange} />
-            <SecretEditInput label="Secret Access Key" fieldKey="secretAccessKey" form={form} onChange={onChange} isEdit={isEdit} />
+            <EditInput label={L('accessKeyId')} fieldKey="accessKeyId" form={form} onChange={onChange} t={t} />
+            <SecretEditInput label={L('secretAccessKey')} fieldKey="secretAccessKey" form={form} onChange={onChange} isEdit={isEdit} t={t} />
           </div>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Leave credentials blank to use the IAM instance role.</p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{t(`${F}.sesIamHint`)}</p>
         </>
       );
     case 'sendgrid':
       return (
         <>
-          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} />
-          <SecretEditInput label="API Key" fieldKey="apiKey" form={form} onChange={onChange} isEdit={isEdit} placeholder="SG.…" />
+          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} t={t} />
+          <SecretEditInput label={L('apiKey')} fieldKey="apiKey" form={form} onChange={onChange} isEdit={isEdit} placeholder={t(`${F}.sendgridApiKeyPlaceholder`)} t={t} />
         </>
       );
     case 'azure':
       return (
         <>
-          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} />
-          <SecretEditInput label="Connection String" fieldKey="connectionString" form={form} onChange={onChange} isEdit={isEdit} />
+          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} t={t} />
+          <SecretEditInput label={L('connectionString')} fieldKey="connectionString" form={form} onChange={onChange} isEdit={isEdit} t={t} />
         </>
       );
     case 'google':
       return (
         <>
-          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} />
-          <EditInput label="Client ID" fieldKey="clientId" form={form} onChange={onChange} required />
-          <SecretEditInput label="Client Secret" fieldKey="clientSecret" form={form} onChange={onChange} isEdit={isEdit} />
-          <SecretEditInput label="Refresh Token" fieldKey="refreshToken" form={form} onChange={onChange} isEdit={isEdit} />
+          <EmailBaseFields form={form} onChange={onChange} isEdit={isEdit} t={t} />
+          <EditInput label={L('clientId')} fieldKey="clientId" form={form} onChange={onChange} required t={t} />
+          <SecretEditInput label={L('clientSecret')} fieldKey="clientSecret" form={form} onChange={onChange} isEdit={isEdit} t={t} />
+          <SecretEditInput label={L('refreshToken')} fieldKey="refreshToken" form={form} onChange={onChange} isEdit={isEdit} t={t} />
         </>
       );
     case 'webhook':
       return (
         <>
-          <EditInput label="URL" fieldKey="url" form={form} onChange={onChange} type="url" placeholder="https://example.com/webhook" required />
+          <EditInput label={L('url')} fieldKey="url" form={form} onChange={onChange} type="url" placeholder={t(`${F}.webhookUrlPlaceholder`)} required t={t} />
           <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12 }}>
             <div className="form-group">
-              <label className="form-label">Method</label>
+              <label className="form-label">{L('method')}</label>
               <SearchableSelect
                 options={[{ value: 'POST', label: 'POST' }, { value: 'GET', label: 'GET' }]}
                 value={String(form['method'] ?? 'POST')}
                 onChange={v => onChange('method', v)}
               />
             </div>
-            <SecretEditInput label="Signing Secret" fieldKey="secret" form={form} onChange={onChange} isEdit={isEdit} placeholder="HMAC signing key" />
+            <SecretEditInput label={L('signingSecret')} fieldKey="secret" form={form} onChange={onChange} isEdit={isEdit} placeholder={t(`${F}.webhookSecretPlaceholder`)} t={t} />
           </div>
         </>
       );
     case 'slack':
       return (
         <>
-          <SecretEditInput label="Bot Token" fieldKey="botToken" form={form} onChange={onChange} isEdit={isEdit} placeholder="xoxb-…" />
-          <EditInput label="Channel ID" fieldKey="channelId" form={form} onChange={onChange} placeholder="C1234567890" required />
+          <SecretEditInput label={L('botToken')} fieldKey="botToken" form={form} onChange={onChange} isEdit={isEdit} placeholder={t(`${F}.slackBotTokenPlaceholder`)} t={t} />
+          <EditInput label={L('channelId')} fieldKey="channelId" form={form} onChange={onChange} placeholder={t(`${F}.slackChannelIdPlaceholder`)} required t={t} />
         </>
       );
     case 'teams':
-      return <SecretEditInput label="Webhook URL" fieldKey="webhookUrl" form={form} onChange={onChange} isEdit={isEdit} placeholder="https://outlook.office.com/webhook/…" />;
+      return <SecretEditInput label={L('webhookUrl')} fieldKey="webhookUrl" form={form} onChange={onChange} isEdit={isEdit} placeholder={t(`${F}.teamsWebhookPlaceholder`)} t={t} />;
     case 'pagerduty':
-      return <SecretEditInput label="Integration Key" fieldKey="integrationKey" form={form} onChange={onChange} isEdit={isEdit} placeholder="32-character routing key" />;
+      return <SecretEditInput label={L('integrationKey')} fieldKey="integrationKey" form={form} onChange={onChange} isEdit={isEdit} placeholder={t(`${F}.pagerdutyKeyPlaceholder`)} t={t} />;
     case 'discord':
-      return <SecretEditInput label="Webhook URL" fieldKey="webhookUrl" form={form} onChange={onChange} isEdit={isEdit} placeholder="https://discord.com/api/webhooks/…" />;
+      return <SecretEditInput label={L('webhookUrl')} fieldKey="webhookUrl" form={form} onChange={onChange} isEdit={isEdit} placeholder={t(`${F}.discordWebhookPlaceholder`)} t={t} />;
     default:
       return null;
   }
 }
 
 /** Provider label by key */
-export function providerLabel(provider: string): string {
-  return CHANNEL_PROVIDER_META.find(p => p.key === provider)?.label ?? provider;
+export function providerLabel(provider: string, t: TFunction): string {
+  return CHANNEL_PROVIDER_KEYS.includes(provider as ChannelProvider)
+    ? t(`settings.notifications.providers.${provider}.label`)
+    : provider;
 }

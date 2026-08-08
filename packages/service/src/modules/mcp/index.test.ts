@@ -92,8 +92,8 @@ describe('mcp module', () => {
         'get_usage_summary',
         'get_budget_status',
         'get_metrics_snapshot',
-        'list_projects',
-        'create_project_token',
+        'list_routers',
+        'create_router_token',
         'toggle_model',
       ].sort(),
     )
@@ -116,7 +116,7 @@ describe('mcp module', () => {
 
   it('migrate() strips the retired mcp permissions from stored custom roles', async () => {
     mockReadConfig.mockResolvedValue([
-      { id: 'custom', name: 'Custom', permissions: ['project:read', 'mcp:read', 'mcp:manage'] },
+      { id: 'custom', name: 'Custom', permissions: ['router:read', 'mcp:read', 'mcp:manage'] },
       { id: 'other', name: 'Other', permissions: ['report:read'] },
     ] as never)
     mockWriteConfig.mockResolvedValue(undefined as never)
@@ -127,14 +127,14 @@ describe('mcp module', () => {
     const [key, written] = mockWriteConfig.mock.calls[0]!
     expect(key).toBe('roles')
     expect(written).toEqual([
-      { id: 'custom', name: 'Custom', permissions: ['project:read'] },
+      { id: 'custom', name: 'Custom', permissions: ['router:read'] },
       { id: 'other', name: 'Other', permissions: ['report:read'] },
     ])
   })
 
   it('migrate() writes nothing when no stored role carries them', async () => {
     mockReadConfig.mockResolvedValue([
-      { id: 'custom', name: 'Custom', permissions: ['project:read'] },
+      { id: 'custom', name: 'Custom', permissions: ['router:read'] },
     ] as never)
 
     await mcpModule.migrate?.()

@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "自动",
+      "dark": "深色",
+      "light": "浅色"
+    },
+    "themeCycle": {
+      "title": "主题: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "展开侧栏",
+      "collapse": "折叠侧栏"
+    },
+    "tagline": "一个网关。任何AI模型。完全控制。",
+    "nav": {
+      "overview": "概览",
+      "providers": "提供商",
+      "models": "模型",
+      "profiles": "配置文件",
+      "routers": "路由器",
+      "experiments": "实验",
+      "usage": "使用",
+      "playground": "测试台",
+      "settings": "设置",
+      "connectApp": "连接应用",
+      "help": "帮助",
+      "signOut": "登出"
+    },
+    "banner": {
+      "permissionWarning": "某些配置文件权限过开放({{files}})。启动和请求仍可正常工作，但请在方便时从主机文件系统修复此问题。",
+      "dismiss": "关闭",
+      "updateAvailable": "Routerly v{{latest}} 已发布。您当前使用的是 v{{current}}。",
+      "updateLink": "在设置中更新",
+      "mfaRequired": "此实例需要双因素认证。",
+      "mfaLink": "在您的配置文件中设置双因素认证",
+      "mfaSuffix": "以保护您的账户。",
+      "telemetryTitle": "Routerly 从不自动发送数据。",
+      "telemetryBody": "您想通过发送匿名安装指标来帮助我们吗？仅包括事件类型、版本、平台和随机ID - 无个人数据、无IP。",
+      "telemetryLink": "发送了什么？",
+      "telemetryYes": "是的，帮助我们",
+      "telemetryNo": "不，谢谢"
+    },
+    "language": {
+      "label": "语言"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} 秒前",
+      "secondsAgo_other": "{{count}} 秒前",
+      "minutesAgo": "{{count}} 分钟前",
+      "minutesAgo_other": "{{count}} 分钟前",
+      "hoursAgo": "{{count}} 小时前",
+      "hoursAgo_other": "{{count}} 小时前",
+      "daysAgo": "{{count}} 天前",
+      "daysAgo_other": "{{count}} 天前"
+    },
+    "confirm": "确认",
+    "cancel": "取消",
+    "remove": "删除",
+    "select": "选择...",
+    "search": "搜索...",
+    "noResults": "无结果",
+    "noRemainingOptions": "无剩余选项",
+    "apply": "应用",
+    "saved": "已保存",
+    "showLess": "显示更少",
+    "roles": "角色",
+    "permissions": "权限",
+    "notifications": {
+      "title": "通知",
+      "markAllRead": "标记全部已读",
+      "empty": "无通知",
+      "viewAll": "查看所有通知"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "选择时期",
+      "recent": "最近",
+      "ranges": "范围",
+      "from": "从",
+      "to": "到"
+    },
+    "permissionGuard": {
+      "fixFailed": "修复权限失败",
+      "title": "不安全的文件权限",
+      "defaultMessage": "某些文件的权限不安全。",
+      "fixing": "修复中...",
+      "fixNow": "立即修复"
+    },
+    "limitRows": {
+      "noLimits": "未设置限制。",
+      "metricLabel": "指标",
+      "typeLabel": "类型",
+      "periodLabel": "周期",
+      "everyLabel": "每",
+      "maxCost": "最大成本",
+      "maxCount": "最大次数",
+      "maxTokens": "最大令牌",
+      "allCombosSet": "所有指标/周期组合已设置",
+      "addLimit": "添加限制",
+      "metric": {
+        "cost": "成本",
+        "calls": "调用",
+        "input_tokens": "输入令牌",
+        "output_tokens": "输出令牌",
+        "total_tokens": "总令牌"
+      },
+      "period": {
+        "hourly": "每小时",
+        "daily": "每天",
+        "weekly": "每周",
+        "monthly": "每月",
+        "yearly": "每年"
+      },
+      "rollingUnit": {
+        "second": "秒",
+        "minute": "分钟",
+        "hour": "小时",
+        "day": "天",
+        "week": "周",
+        "month": "月"
+      },
+      "windowType": {
+        "period": "周期",
+        "rolling": "滚动"
+      },
+      "fmt": {
+        "requests": "{{value}} 请求",
+        "inputTokens": "{{value}} 输入令牌",
+        "outputTokens": "{{value}} 输出令牌",
+        "totalTokens": "{{value}} 总令牌",
+        "everyRolling": "{{metric}} 每 {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} 每 {{period}}"
+      }
+    },
+    "savings": {
+      "title": "路由节省了什么",
+      "input": "输入",
+      "output": "输出",
+      "actual": "实际",
+      "clientCalls": "{{count}} 个客户端调用",
+      "clientCalls_other": "{{count}} 个客户端调用",
+      "comparedAgainst": ", 与将其发送到",
+      "comparedAgainst_other": ", 与将它们全部发送到",
+      "paidModelsInPlay": "{{count}} 个付费模型",
+      "paidModelsInPlay_other": "{{count}} 个付费模型",
+      "metricCost": "成本",
+      "metricTokens": "令牌",
+      "totalCost": "总成本",
+      "routed": "路由: {{value}}",
+      "saved": "节省: {{value}}",
+      "usdThisPeriod": "美元本期",
+      "savedVsAlways": "{{value}} 节省 ({{percent}}%) vs 始终 {{model}}",
+      "tokens": "令牌",
+      "in": "进: {{value}}",
+      "out": "出: {{value}}",
+      "tokenSubWithCache": "{{in}} 进 · {{out}} 出 · {{cached}} 缓存",
+      "tokenSub": "{{in}} 进 · {{out}} 出",
+      "cutByOptimizers": "{{value}} 被优化器删除",
+      "fewerThanAlways": "{{value}} 少于始终 {{model}}, 估计"
+    },
+    "optimizerSteps": {
+      "downloaded": "已下载",
+      "thisStepRunsOn": "此步骤运行于",
+      "defaultCheckpoint": "默认检查点"
+    },
+    "routingPolicies": {
+      "title": "路由策略",
+      "subtitle": "策略决定了如何路由请求。它们按从上到下的顺序执行。",
+      "removePolicy": "删除策略",
+      "removeIntent": "删除意图",
+      "removeExample": "删除示例",
+      "routingModels": "路由模型",
+      "embeddingModels": "嵌入模型",
+      "maxCompletionTokens": "最大完成令牌",
+      "maxPromptChars": "最大提示字符",
+      "similarityThreshold": "相似度阈值",
+      "previousMessages": "前面的消息",
+      "intents": "意图",
+      "confidenceThreshold": "置信度阈值",
+      "ambiguityMargin": "模糊度边界",
+      "maxCallsPerWindow": "每窗口最大调用",
+      "addFallbackModel": "添加备用模型",
+      "autoRoutingLabel": "自动路由",
+      "autoRoutingHint": "如果启用，流量会在没有自定义提示的情况下分配。如果禁用，您可以编写特定的提示来指导AI何时选择每个目标模型。",
+      "additionalPromptInfoLabel": "额外提示信息",
+      "additionalPromptInfoPlaceholder": "要包含在路由提示中的额外指令...",
+      "addExamplePlaceholder": "添加示例并按回车...",
+      "addIntentPlaceholder": "添加意图并按回车...",
+      "addPolicyPlaceholder": "添加策略...",
+      "labels": {
+        "llm": "AI路由策略",
+        "rate-limit": "速率限制策略",
+        "budget-remaining": "预算剩余策略",
+        "semantic-intent": "语义意图策略",
+        "health": "健康策略",
+        "context": "上下文策略",
+        "capability": "能力策略",
+        "performance": "性能策略",
+        "fairness": "公平性策略",
+        "cheapest": "最便宜策略",
+        "model-preference": "模型偏好策略"
+      },
+      "descriptions": {
+        "context": "根据可用的上下文窗口对模型进行评分。为上下文窗口小于估计请求长度的模型分配0，防止截断错误。",
+        "cheapest": "根据令牌成本与模型成反比进行评分。最便宜的模型得到1.0，最昂贵的模型得到0.0，有助于降低跨请求的API支出。",
+        "health": "根据最近的错误率使用指数衰减对模型进行评分(最近的错误权重更大)。应用断路器，当加权错误率超过临界阈值时将分数设置为0。",
+        "performance": "根据最近的平均延迟使用指数衰减对模型进行评分。最快的模型得到1.0，最慢的模型得到0.0。没有最近数据的模型默认为1.0。",
+        "llm": "使用AI模型根据请求的语义内容对候选模型进行评分。支持每个模型的路由指导提示，并在配置限制时考虑预算余量。",
+        "capability": "硬过滤: 为明确缺少请求所需功能的模型(视觉、函数调用、JSON模式)分配0。未明确声明功能的模型不会受到惩罚。",
+        "rate-limit": "惩罚最近调用频率高的模型，以降低命中提供商速率限制(HTTP 429)的风险。支持可配置的硬阈值，强制分数为0。",
+        "fairness": "通过惩罚最近成功调用较多的模型来均匀分配流量。充当软轮转以防止负载集中在单个模型上。",
+        "budget-remaining": "根据所有配置限制中的剩余预算余量对模型进行评分。优先选择在达到阈值前有更多空间的模型，主动分散消耗。",
+        "semantic-intent": "使用嵌入对请求进行语义意图分类，然后将候选池限制为映射到该意图的模型。置信度高的匹配对池进行硬过滤；模糊匹配合并前2个池；未知请求通过所有候选。",
+        "model-preference": "当客户端请求特定模型(而非routerly/ada)时，为该模型授予可配置的奖励分数。当未表达偏好时，该策略弃权。列表中的位置控制偏好对其他策略的权重。"
+      },
+      "selectModel": "选择模型"
+    },
+    "securityRules": {
+      "applyTo": "应用于",
+      "streamingBufferSize": "流媒体缓冲区大小(字符)",
+      "entityTypes": "实体类型",
+      "target": "目标",
+      "embeddingModel": "嵌入模型",
+      "judgeModel": "判断模型",
+      "contentGuardrails": "内容防护栏",
+      "piiPolicies": "个人身份信息策略",
+      "addSecurityPolicyPlaceholder": "添加安全策略...",
+      "removePolicyTooltip": "删除策略",
+      "deleteRuleAriaLabel": "删除规则",
+      "embeddingModelPlaceholder": "选择嵌入模型...",
+      "fallbackModelsLabel": "备用模型(可选，按顺序尝试)",
+      "fallbackModelsPlaceholder": "无备用模型...",
+      "exampleTextsLabel": "要阻止的示例文本(每行一个)",
+      "exampleTextsPlaceholder": "我如何攻击...\n...",
+      "similarityThresholdLabel": "相似度阈值:",
+      "judgeModelPlaceholder": "选择判断模型...",
+      "allowedTopicsLabel": "允许的主题(自然语言)",
+      "allowedTopicsPlaceholder": "软件产品客户支持。技术故障排除。计费问题。",
+      "onTopicThresholdLabel": "如果主题相关得分低于以下值则阻止:",
+      "harmThresholdLabel": "如果伤害得分高于以下值则阻止:",
+      "customInstructionsLabel": "自定义说明",
+      "customInstructionsPlaceholder": "您是一个内容安全分类器。评估以下文本中是否存在有害内容。\n类别: 仇恨言论、暴力、性内容、自伤。\n仅以JSON对象响应: {\"score\": <0到1之间的数字>}",
+      "customInstructionsRequired": "需要自定义说明。",
+      "enabledLabel": "启用",
+      "contentGuardrailsHint": "根据配置的规则检查请求和响应。在至少配置一条规则时处于活跃状态。",
+      "securityPoliciesHeading": "安全策略",
+      "noSecurityPolicies": "未配置安全策略。",
+      "piiPoliciesHint": "检测和编辑个人数据。每个策略针对请求输入、模型响应或两者，并控制其自己的实体集。",
+      "noPiiPolicies": "未配置个人身份信息策略。",
+      "addPolicyButton": "+ 添加策略",
+      "injectionWarningTitle": "请求负载被注入修改",
+      "injectionWarningBody": "一个或多个规则将其指令注入到传出请求的系统提示中，因此发送给提供商的有效负载被修改。不进行额外的模型调用，也不会阻止任何内容；提供模型自我强制执行指令。",
+      "streamingDisabledWarningTitle": "此路由器的流禁用",
+      "streamingDisabledWarningBody": "一个或多个规则配置为阻止响应(目标: 响应或两者)。因为必须在做出阻止决定之前检查整个响应，Routerly在返回给客户端之前完整保持响应。响应阻止规则处于活跃状态时流媒体不可用；客户端将立即收到完整响应而不是增量块。"
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure资源名称",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI资源名称(来自Azure门户)。",
+      "deploymentId": "部署ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "您在Azure OpenAI Studio中创建的部署名称。",
+      "azureApiVersionLabel": "API版本",
+      "azureApiVersionDefaultHint": "(默认: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS区域",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS访问密钥ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS秘密访问密钥",
+      "awsSecretAccessKeyPlaceholderExisting": "留空以保持现有",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/...",
+      "awsSessionTokenLabel": "会话令牌",
+      "awsSessionTokenOptionalHint": "(可选，用于临时凭证)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz...",
+      "gcpRouterId": "GCP路由器ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "位置",
+      "gcpLocationDefaultHint": "(默认: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "服务账户密钥",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "端点URL",
+      "optional": "(可选)",
+      "webProvider": {
+        "unofficialWarningTitle": "非官方提供商 - 自行使用。",
+        "unofficialWarningBody": "此集成依赖于可能随时更改或破坏的未文档化内部API。它可能违反提供商的服务条款，可能导致账户暂停。",
+        "accessTokenLabel": "访问令牌",
+        "sessionTokenLabel": "会话令牌",
+        "accessTokenPlaceholder": "eyJ...",
+        "sessionTokenPlaceholder": "粘贴sessionKey cookie值(sk-ant-sid01-...)",
+        "openaiInstructions": "登录ChatGPT时，在新标签页中打开 <code>https://chatgpt.com/api/auth/session</code>。复制 <code>accessToken</code> 字段的值(以 <code>eyJ</code> 开头)。令牌每 ~24 小时过期一次。为了可靠访问，还应填充下面的 <strong>cf_clearance</strong> 字段。",
+        "anthropicInstructions": "<strong>如何获取您的会话密钥:</strong> 登录Claude时，打开DevTools (F12) → Application → Cookies → <code>claude.ai</code> → 复制 <code>sessionKey</code> cookie的值(以 <code>sk-ant-sid01-</code> 开头)。密钥在您登出前一直有效。"
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "订阅OAuth令牌",
+        "authFilePathLabel": "认证文件路径",
+        "oauthTokenPlaceholder": "sk-ant-oat01-...",
+        "authFilePathPlaceholder": "~/.codex/auth.json (默认)",
+        "anthropicTitle": "使用您的Claude Pro/Max订阅。",
+        "anthropicRunCommandStep": "运行此命令并复制它打印的令牌:",
+        "anthropicPasteTokenStep": "将令牌粘贴到下面的 <em>订阅OAuth令牌</em> 字段。",
+        "termsNote": "当过期时重新生成。通过网关使用订阅可能违反提供商的服务条款。",
+        "openaiTitle": "通过Codex应用使用您的ChatGPT Plus/Pro订阅。",
+        "openaiLoginStep": "使用您的ChatGPT Plus/Pro账户登录Codex桌面应用。",
+        "openaiAutoRefreshStep": "Routerly从 <code>~/.codex/auth.json</code> 读取您的访问令牌并自动刷新。无需手动复制/粘贴。",
+        "openaiAuthFilePathStep": "将 <em>认证文件路径</em> 字段留空以使用默认值，或输入自定义路径(如果您的Codex应用在其他地方存储认证)。",
+        "openaiTermsNote": "通过网关使用订阅可能违反提供商的服务条款。"
+      },
+      "copyCode": {
+        "copiedTooltip": "已复制!",
+        "copyTooltip": "复制到剪贴板",
+        "copiedLabel": "已复制",
+        "copyLabel": "复制"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "复制",
+      "copiedLabel": "已复制!",
+      "copyErrorHint": "复制失败，请手动选择并复制。"
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP客户端",
+      "hints": {
+        "claudeCode": "在任何地方运行一次。Claude Code将服务器存储在 <code>~/.claude.json</code> 中。",
+        "claudeDesktop": "放在 <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (Windows上为 <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>)，然后重启应用。它生成CLI，所以 <code>routerly</code> 必须在您的PATH中。",
+        "codex": "放在 <code>~/.codex/config.toml</code> 中。Codex从环境读取令牌，所以在启动Codex的shell中导出它。",
+        "opencode": "放在 <code>~/.config/opencode/opencode.json</code> 中。",
+        "openclaw": "运行一次。OpenClaw默认为sse传输，Routerly不提供该传输，所以传输已显式设置。",
+        "cursor": "放在 <code>~/.cursor/mcp.json</code> 中，或在 <code>.cursor/mcp.json</code> 中将其限制到一个项目。",
+        "cline": "放在 <code>~/.cline/mcp.json</code> 中，或将其粘贴到Cline面板中的配置MCP服务器。",
+        "zed": "放在您的Zed <code>settings.json</code> 中，与任何其他上下文服务器一起。"
+      }
+    },
+    "unsavedChanges": {
+      "title": "未保存的更改",
+      "message": "您有未保存的更改。如果现在离开，您的更改将丢失。",
+      "stay": "保留",
+      "leaveAnyway": "仍然离开"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "防护栏",
+        "pii": "个人身份信息",
+        "optimizers": "优化器",
+        "routerOverhead": "路由器开销"
+      },
+      "policyType": {
+        "llm": "AI路由",
+        "rateLimit": "速率限制",
+        "budgetRemaining": "预算剩余",
+        "semanticIntent": "语义意图",
+        "modelPreference": "模型偏好"
+      },
+      "rawDetails": "原始详情",
+      "technicalDetails": "技术详情",
+      "systemPrompt": "系统提示",
+      "responseText": "响应文本",
+      "responseJson": "响应JSON",
+      "cacheEmbeddingCall": "缓存嵌入调用",
+      "fallbackAttempt": "备用#{{attempt}}",
+      "embeddingModel": "嵌入模型",
+      "upstreamModel": "上游模型",
+      "provider": "提供商",
+      "source": "来源",
+      "endpoint": "端点",
+      "cacheHit": "缓存命中",
+      "ttlExtended": "TTL延长",
+      "model": "模型",
+      "similarity": "相似性",
+      "embedding": "嵌入",
+      "cacheMiss": "缓存未命中",
+      "details": "详情",
+      "excludedByLimits": "被限制排除",
+      "finalRanking": "最终排名",
+      "noRankingData": "无排名数据(记录可能损坏或来自较早版本)",
+      "policyScores": "策略分数",
+      "weight": "权重 {{value}}",
+      "allScores": "所有分数",
+      "noPolicyData": "无策略数据(记录可能损坏或来自较早版本)",
+      "requestGuardrailBlocked": "请求防护栏已阻止",
+      "requestGuardrailTriggered": "请求防护栏已触发",
+      "responseGuardrailBlocked": "响应防护栏已阻止",
+      "responseGuardrailTriggered": "响应防护栏已触发",
+      "rule": "规则",
+      "action": "操作",
+      "guardrailsEvaluated": "已评估防护栏({{target}})",
+      "ruleCount": "{{count}} 条规则",
+      "ruleCount_other": "{{count}} 条规则",
+      "promptInjection": "提示注入",
+      "injects": "注入",
+      "judgeResponse": "判断响应",
+      "piiScrubbed": "个人身份信息已编辑",
+      "piiScanned": "已扫描个人身份信息({{target}})",
+      "policies": "策略",
+      "entityTypes": "实体类型",
+      "customPatterns": "自定义模式",
+      "scanned": "扫描",
+      "redacted": "编辑",
+      "took": "耗时",
+      "ms": "{{value}} 毫秒",
+      "entityTypesScanned": "扫描的实体类型",
+      "guardrailInjection": "防护栏注入",
+      "rules": "规则",
+      "chars": "字符",
+      "injectedText": "注入的文本",
+      "optimizer": "优化器 {{id}}",
+      "tokens": "令牌",
+      "saved": "已保存",
+      "tok": "{{value}} 令牌",
+      "reason": "原因",
+      "budgetBlocked": "预算已阻止",
+      "budgetOk": "预算正常",
+      "egressSent": "传出已发送",
+      "status": "状态",
+      "encoding": "编码",
+      "frames": "帧",
+      "bytes": "字节"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "我的配置文件",
+      "subtitle": "管理您的账户设置"
+    },
+    "tabs": {
+      "profile": "配置文件",
+      "notifications": "通知",
+      "mcp": "MCP",
+      "preferences": "偏好"
+    },
+    "notifications": {
+      "close": "关闭",
+      "refresh": "刷新",
+      "clear": "清除",
+      "empty": "未找到通知。",
+      "markAllRead": "标记全部已读",
+      "allCaughtUp": "全部追上",
+      "unreadCount": "{{count}} 未读",
+      "selectedCount": "{{count}} 已选",
+      "severity": {
+        "all": "全部",
+        "info": "信息",
+        "warning": "警告",
+        "critical": "严重"
+      },
+      "status": {
+        "read": "已读",
+        "unread": "未读"
+      },
+      "filters": {
+        "severity": "严重程度",
+        "category": "类别",
+        "event": "事件",
+        "date": "日期",
+        "period": "周期",
+        "status": "状态",
+        "all": "全部",
+        "allCategories": "所有类别",
+        "allEvents": "所有事件",
+        "unreadOnly": "仅未读"
+      },
+      "actions": {
+        "markRead": "标记为已读",
+        "markUnread": "标记为未读",
+        "archive": "存档"
+      },
+      "table": {
+        "severity": "严重程度",
+        "event": "事件",
+        "date": "日期",
+        "status": "状态",
+        "selectAll": "全选",
+        "selectRow": "选择 {{event}}",
+        "eventCount": "{{count}} 个事件"
+      },
+      "pagination": {
+        "previous": "← 前一个",
+        "next": "下一个 →",
+        "page": "第 {{page}} / {{totalPages}} 页",
+        "total": "({{count}} 总计)"
+      },
+      "detail": {
+        "ariaLabel": "通知详情",
+        "details": "详情",
+        "noDetails": "无其他详情。",
+        "eventsInIncident": "此事件中的事件"
+      }
+    },
+    "security": {
+      "roleLabel": "角色:",
+      "password": {
+        "heading": "更改密码",
+        "currentLabel": "当前密码",
+        "newLabel": "新密码",
+        "newPlaceholder": "最少8个字符",
+        "confirmLabel": "确认新密码",
+        "success": "密码已成功更改。",
+        "saving": "保存中...",
+        "submit": "更改密码",
+        "errors": {
+          "mismatch": "密码不匹配。",
+          "tooShort": "新密码必须至少8个字符。",
+          "updateFailed": "更新失败"
+        }
+      },
+      "tfa": {
+        "heading": "双因素认证",
+        "notEnabled": "未启用双因素认证。使用基于时间的一次性密码保护您的账户。",
+        "enableButton": "启用双因素认证",
+        "scanInstructions": "使用您的身份验证器应用(Google Authenticator、Authy等)扫描此二维码，然后输入6位数代码以确认。",
+        "qrAlt": "双因素认证设置二维码",
+        "addAccountInstructions": "打开您的身份验证器应用(Google Authenticator、Authy、1Password等)并添加新账户:",
+        "setup": {
+          "step1": "点击 <strong>添加账户</strong> 或 <strong>+</strong> 按钮",
+          "step2": "选择 <strong>输入设置密钥</strong> (或在手机上扫描二维码)",
+          "step3": "输入下面显示的秘密"
+        },
+        "mobileLink": "在手机上点击此处打开身份验证器",
+        "manualEntryLabel": "手动输入秘密:",
+        "saveBackupCodes": "保存这些备用代码。如果您无法访问身份验证器，每个代码可使用一次。",
+        "copyBackupCodes": "复制备用代码",
+        "confirmCodeLabel": "输入您的应用中的代码以激活",
+        "activate": "激活双因素认证",
+        "cancel": "取消",
+        "enabledBadge": "已启用双因素认证",
+        "newBackupCodesLabel": "新备用代码(立即保存):",
+        "copy": "复制",
+        "regenLabel": "输入身份验证器代码以重新生成备用代码",
+        "regenerate": "重新生成",
+        "regenerateBackupCodes": "重新生成备用代码",
+        "disableLabel": "禁用双因素认证(输入身份验证器代码)",
+        "disable": "禁用双因素认证",
+        "errors": {
+          "setupFailed": "设置失败",
+          "confirmFailed": "确认失败",
+          "disableFailed": "禁用失败",
+          "regenFailed": "重新生成失败"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "未能加载MCP表面",
+        "revokeFailed": "未能撤销令牌"
+      },
+      "revokeConfirm": "撤销MCP令牌\"{{name}}\"？使用它的客户端将立即停止工作。",
+      "tokens": {
+        "heading": "MCP令牌",
+        "newToken": "新令牌",
+        "description": "每个令牌都充当您: 它公开您的角色允许的工具。完整值显示一次，在创建它的页面上。",
+        "empty": "还没有MCP令牌。创建一个以连接MCP客户端。",
+        "created": "已创建",
+        "lastUsed": "最后使用",
+        "expires": "过期",
+        "never": "永不",
+        "revokeTitle": "撤销令牌"
+      },
+      "tools": {
+        "heading": "您的令牌公开的工具",
+        "empty": "您的角色不允许任何MCP工具。请向管理员请求您需要的权限。",
+        "table": {
+          "name": "名称",
+          "scope": "范围",
+          "description": "描述",
+          "sourceModule": "源模块",
+          "permission": "权限"
+        }
+      },
+      "connect": {
+        "heading": "连接MCP客户端",
+        "descriptionPre": "选择您正在连接的客户端，然后替换",
+        "descriptionPost": "使用您的一个令牌。创建令牌时显示相同的代码段，并已填入值。",
+        "otherClient": "任何其他客户端",
+        "httpInstructionsPre": "通过HTTP，将其指向此端点并使用身份验证",
+        "httpInstructionsPost": "。这是JSON-RPC 2.0通过可流式HTTP。",
+        "stdioInstructionsPre": "通过stdio，CLI桥接它并传递您的令牌。运行服务直接？设置",
+        "stdioInstructionsAnd": "和",
+        "stdioInstructionsPost": "您自己。"
+      },
+      "newToken": {
+        "backToMcp": "返回MCP",
+        "title": "新MCP令牌",
+        "subtitle": "令牌充当您: 它公开您的角色允许的工具。",
+        "nameLabel": "名称",
+        "namePlaceholder": "laptop",
+        "nameHint": "此令牌的使用位置，例如\"laptop\"或\"claude-desktop\"。",
+        "expiryLabel": "过期时间",
+        "expiryHint": "可选。留空，令牌永不过期，直到您撤销它。",
+        "createButton": "创建令牌",
+        "creatingButton": "创建中...",
+        "cancelButton": "取消",
+        "tokenSection": {
+          "title": "您的令牌",
+          "hint": "现在复制它。它不会再显示，失去的令牌只能被替换。",
+          "copyButton": "复制",
+          "copiedButton": "已复制!",
+          "copyTitle": "复制令牌",
+          "copiedTitle": "已复制!"
+        },
+        "connectSection": {
+          "title": "连接客户端",
+          "hint": "选择您正在连接的客户端。代码段已包含此令牌。"
+        },
+        "bridgeSection": {
+          "title": "或使用本地桥接",
+          "hint": "对于仅支持stdio的客户端，CLI桥接它并传递您的令牌。"
+        },
+        "doneButton": "完成",
+        "errors": {
+          "createFailed": "未能创建令牌",
+          "copyFailed": "复制失败，请手动选择并复制令牌。"
+        }
+      }
+    },
+    "preferences": {
+      "heading": "语言",
+      "description": "选择显示仪表板的语言。",
+      "languageLabel": "语言",
+      "saved": "语言偏好已保存。"
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "未能加载设置",
+        "loadFailedPeriod": "未能加载设置。",
+        "saveFailed": "未能保存",
+        "saveSettingsFailed": "未能保存设置"
+      },
+      "savedSuccess": "设置已成功保存。",
+      "saving": "保存中...",
+      "saveSettings": "保存设置",
+      "serverInfo": {
+        "heading": "服务器信息",
+        "readOnly": "只读。主机和端口来自环境或设置文件，不来自此处。",
+        "reachableAt": "可访问于",
+        "reachableAtAny": "可访问于这些地址中的任何一个",
+        "thisMachine": "此计算机",
+        "network": "网络",
+        "copyAddress": "复制 {{address}}",
+        "copied": "已复制!",
+        "copy": "复制",
+        "hostAndPort": "主机和端口",
+        "version": "版本",
+        "uptime": "运行时间"
+      },
+      "runtime": {
+        "heading": "运行时设置",
+        "logLevel": "日志级别",
+        "logLevelHint": "控制服务日志的详细程度。",
+        "publicUrl": "公共URL",
+        "publicUrlHint": "外部客户端可以访问服务的基础URL(例如 <code>http://192.168.1.10:3000</code>)。在每个路由器的 <strong>如何连接</strong> 部分中使用。当仪表板运行在与服务不同的计算机或端口上时很有用。",
+        "usageRetention": "使用保留",
+        "noLimit": "无限制",
+        "maxAgeDays": "最大年龄(天)",
+        "maxSizeMb": "最大大小(MB)",
+        "retentionHint": "早于此天数或超过此大小的使用/计费历史从活动日志中删除。两个都留空以不限制。"
+      },
+      "internationalization": {
+        "heading": "国际化",
+        "defaultLanguage": "默认语言",
+        "defaultLanguageHint": "针对尚未选择自己语言的用户的仪表板语言。不会覆盖用户的个人选择。"
+      },
+      "telemetry": {
+        "heading": "匿名指标",
+        "neverAutomatic": "Routerly 从不自动发送数据。",
+        "noChoice": "您还没有做出选择。",
+        "enabledStatus": "已启用匿名安装指标。",
+        "disabledStatus": "已禁用匿名安装指标。",
+        "explanation": "启用时，Routerly仅发送: 事件类型(安装/升级/卸载)、版本、平台和随机ID。无个人数据、无使用数据、无IP存储。",
+        "whatIsSent": "发送了什么？",
+        "installId": "安装ID: {{id}}",
+        "saving": "保存中...",
+        "enable": "启用",
+        "disable": "禁用"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "仪表板(应用内收件箱)",
+          "description": "将事件路由到应用内收件箱"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "自定义邮件服务器"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS简单电子邮件服务"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure通信",
+          "description": "Azure通信服务"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "通过OAuth2的Gmail"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook回调"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams传入Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty事件API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "提供商 - 错误",
+        "providerDegraded": "提供商 - 降级",
+        "providerRecovered": "提供商 - 已恢复",
+        "providerRateLimited": "提供商 - 速率限制",
+        "routingNoCandidates": "路由 - 无候选",
+        "routingFallbackUsed": "路由 - 已使用备用",
+        "authLoginFailed": "认证 - 登录失败",
+        "authTokenInvalid": "认证 - 令牌无效",
+        "configModelAdded": "配置 - 模型已添加",
+        "configModelDeleted": "配置 - 模型已删除",
+        "configRouterCreated": "配置 - 路由器已创建",
+        "configRouterDeleted": "配置 - 路由器已删除",
+        "budgetThresholdReached": "预算 - 已达到阈值",
+        "budgetExceeded": "预算 - 已超出",
+        "budgetReset": "预算 - 已重置",
+        "systemStartup": "系统 - 启动",
+        "systemShutdown": "系统 - 关闭",
+        "systemUpdateAvailable": "系统 - 更新可用"
+      },
+      "removeChannelTooltip": "删除频道",
+      "removeChannelConfirm": "删除频道？",
+      "formUpdatedHint": "表单已更新 - 保存以应用。",
+      "hmacSigningKeyPlaceholder": "HMAC签名密钥",
+      "perms": {
+        "routerRead": "路由器 - 读",
+        "routerWrite": "路由器 - 写",
+        "modelRead": "模型 - 读",
+        "modelWrite": "模型 - 写",
+        "userRead": "用户 - 读",
+        "userWrite": "用户 - 写",
+        "reportRead": "报告 - 读",
+        "settingsRead": "设置 - 读",
+        "settingsWrite": "设置 - 写",
+        "notificationWrite": "通知 - 写",
+        "tokenRead": "令牌 - 读",
+        "tokenWrite": "令牌 - 写",
+        "roleWrite": "角色 - 写",
+        "auditRead": "审计日志 - 读",
+        "modulesRead": "模块 - 读",
+        "modulesManage": "模块 - 管理",
+        "connectionsRead": "连接 - 读",
+        "connectionsManage": "连接 - 管理",
+        "resilienceRead": "恢复能力 - 读",
+        "resilienceManage": "恢复能力 - 管理",
+        "profilesRead": "路由配置文件 - 读",
+        "profilesManage": "路由配置文件 - 管理",
+        "optimizersRead": "优化器 - 读",
+        "optimizersManage": "优化器 - 管理",
+        "experimentsRead": "实验 - 读",
+        "experimentsManage": "实验 - 管理"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "对于此频道类型，目标不改变传递(端点是固定的)。它们按接收者过滤在审计跟踪中记录的事件。",
+        "dashboard": "目标控制收件箱可见性 - 只有匹配的用户会在应用内收件箱中看到这些通知。",
+        "email": "目标确定哪些用户接收此电子邮件。留空表示发送给所有用户。"
+      },
+      "summary": {
+        "allEvents": "所有事件",
+        "eventCount": "{{count}} 个事件",
+        "eventCount_other": "{{count}} 个事件",
+        "roleCount": "{{count}} 个角色",
+        "roleCount_other": "{{count}} 个角色",
+        "permCount": "{{count}} 个权限",
+        "permCount_other": "{{count}} 个权限",
+        "userCount": "{{count}} 个用户",
+        "userCount_other": "{{count}} 个用户",
+        "everyone": "所有人"
+      },
+      "errors": {
+        "loadFailed": "未能加载"
+      },
+      "fields": {
+        "dashboardHint": "将匹配的事件路由到应用内通知收件箱。不需要凭证。",
+        "labels": {
+          "fromAddress": "发件人地址",
+          "fromName": "发件人名称",
+          "host": "主机",
+          "port": "端口",
+          "tls": "TLS/SSL",
+          "username": "用户名",
+          "password": "密码",
+          "awsRegion": "AWS区域",
+          "accessKeyId": "访问密钥ID",
+          "secretAccessKey": "秘密访问密钥",
+          "apiKey": "API密钥",
+          "connectionString": "连接字符串",
+          "clientId": "客户端ID",
+          "clientSecret": "客户端密码",
+          "refreshToken": "刷新令牌",
+          "url": "URL",
+          "method": "方法",
+          "signingSecret": "签名密钥",
+          "botToken": "Bot令牌",
+          "channelId": "频道ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "集成密钥"
+        },
+        "values": {
+          "enabled": "已启用",
+          "disabled": "已禁用",
+          "configured": "已配置",
+          "notSet": "未设置"
+        },
+        "optional": "(可选)",
+        "keepCurrentPlaceholder": "留空以保持当前",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "使用TLS / SSL",
+        "smtpTlsOnHint": "(端口465 - 直接SSL)",
+        "smtpTlsOffHint": "(端口587 - STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "将凭证留空以使用IAM实例角色。",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC签名密钥",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32字符路由密钥",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "事件",
+          "eventsPlaceholder": "所有事件(留空以接收所有)",
+          "eventsHint": "留空以接收所有事件。选择特定事件进行过滤。",
+          "routersHeading": "路由器",
+          "routersPlaceholder": "所有路由器(留空以接收所有)",
+          "routersHint": "留空以接收所有路由器的事件。",
+          "cooldownHeading": "冷却",
+          "cooldownSuffix": "秒(0 = 无冷却)",
+          "cooldownHint": "此频道再次触发相同事件前的最小间隔。"
+        },
+        "recipients": {
+          "heading": "收件人 / 目标",
+          "rolesLabel": "角色",
+          "rolesPlaceholder": "所有角色(所有人)",
+          "permissionsLabel": "权限",
+          "permissionsPlaceholder": "所有权限(所有人)",
+          "usersLabel": "个别用户",
+          "usersPlaceholder": "所有用户(所有人)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "connection",
+          "routing": "routing",
+          "recipients": "recipients"
+        },
+        "sections": {
+          "channelSettings": "频道设置",
+          "eventsRouting": "事件和路由",
+          "recipients": "收件人"
+        },
+        "nameLabel": "名称",
+        "namePlaceholder": "此频道的标签",
+        "cancelButton": "取消"
+      },
+      "list": {
+        "countLabel": "{{count}} 个频道",
+        "countLabel_other": "{{count}} 个频道",
+        "filteredLabel": "{{shown}} / {{count}} 个频道",
+        "filteredLabel_other": "{{shown}} / {{count}} 个频道",
+        "allTypes": "所有类型",
+        "searchPlaceholder": "过滤频道...",
+        "searchChannelsPlaceholder": "搜索频道...",
+        "addButton": "添加频道",
+        "addSearchPlaceholder": "搜索频道...",
+        "noResults": "无结果",
+        "emptyTitle": "尚未配置任何通知频道。",
+        "noMatch": "没有频道与活跃过滤器匹配。",
+        "nameInlinePlaceholder": "标签(可选)",
+        "columns": {
+          "name": "名称",
+          "type": "类型",
+          "summary": "事件 / 目标"
+        },
+        "testTitle": "发送测试",
+        "editTitle": "编辑频道",
+        "deleteTitle": "删除频道",
+        "deleteConfirm": "删除频道\"{{name}}\"？这无法撤销。",
+        "deleteConfirmButton": "删除",
+        "errors": {
+          "deleteFailed": "未能删除"
+        }
+      },
+      "edit": {
+        "backToList": "返回通知",
+        "back": "返回",
+        "heading": "编辑 {{provider}} 频道",
+        "subtitle": "更新此通知频道的配置。",
+        "testSection": {
+          "title": "发送测试",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "发送测试",
+          "sendingButton": "发送中...",
+          "hintEmail": "留空以发送到您的账户电子邮件。测试使用保存的频道配置。",
+          "hintOther": "测试使用保存的频道配置。先保存更改以测试更新的设置。"
+        },
+        "saveButton": "保存更改",
+        "savingButton": "保存中...",
+        "errors": {
+          "loadFailed": "未能加载",
+          "saveFailed": "未能保存"
+        }
+      },
+      "create": {
+        "backToList": "返回通知",
+        "changeType": "更改类型",
+        "pickerHeading": "选择频道类型",
+        "pickerSubtitle": "选择要配置的通知提供商。",
+        "heading": "新建 {{provider}} 频道",
+        "subtitle": "配置新通知频道。",
+        "createButton": "创建频道",
+        "creatingButton": "创建中...",
+        "errors": {
+          "createFailed": "未能创建"
+        }
+      },
+      "sendTest": "发送测试",
+      "fromAddress": "发件人地址",
+      "individualUsers": "个别用户",
+      "host": "主机",
+      "port": "端口",
+      "apiKey": "API密钥",
+      "connectionString": "连接字符串",
+      "clientId": "客户端ID",
+      "clientSecret": "客户端密码",
+      "refreshToken": "刷新令牌",
+      "method": "方法",
+      "botToken": "Bot令牌",
+      "channelId": "频道ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "集成密钥"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull - 暴露 /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push - OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push - 指标API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push - remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push - 行协议"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push - HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "导出请求跟踪",
+        "description": "船舶每个代理请求的完整跟踪: 每个阶段、每个说话的模块，以及选择加入项目的提示和答案。",
+        "sampleRateLabel": "采样率",
+        "sampleRateHint": "1导出每个请求，0.1导出十分之一。"
+      },
+      "optional": "(可选)",
+      "headersHint": "(可选，每行一个: 密钥: 值)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer令牌",
+          "placeholder": "留空表示开放访问",
+          "description": "以Prometheus文本格式暴露 <code>/metrics</code>。设置令牌以要求Bearer身份验证。"
+        },
+        "otel": {
+          "endpoint": "收集器端点",
+          "description": "您的OTLP接收器的基础URL。Routerly附加 <code>/v1/metrics</code>，当跟踪导出打开时 <code>/v1/traces</code>。默认HTTP端口为4318，gRPC为4317。",
+          "protocol": "协议",
+          "headers": "标头"
+        },
+        "datadog": {
+          "apiKey": "API密钥",
+          "placeholder": "您的Datadog API密钥",
+          "description": "在您的Datadog账户中的 <strong>组织设置 → API密钥</strong> 下找到。",
+          "site": "站点"
+        },
+        "grafana": {
+          "remoteWriteUrl": "远程写入URL",
+          "description": "在 <strong>Grafana Cloud → 连接 → Prometheus → 详情</strong> 中作为\"远程写入端点\"找到。",
+          "username": "用户名 / 堆栈ID",
+          "usernameHint": "在Prometheus连接详情中显示的数字ID。",
+          "apiKey": "API密钥 / 令牌",
+          "apiKeyHint": "Grafana Cloud令牌，带 <strong>MetricsPublisher</strong> 角色。"
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2实例URL。Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "令牌",
+          "tokenPlaceholder": "您的InfluxDB API令牌",
+          "tokenHint": "必须具有对存储桶的 <strong>写</strong> 访问权限。",
+          "org": "组织",
+          "bucket": "存储桶"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "密钥",
+          "secretHint": "(可选 - HMAC-SHA256签名密钥)",
+          "headers": "标头"
+        }
+      },
+      "errors": {
+        "loadFailed": "未能加载集成",
+        "updateFailed": "未能更新集成",
+        "saveFailed": "未能保存集成",
+        "deleteFailed": "未能删除集成"
+      },
+      "empty": "尚未配置任何集成。",
+      "enabled": "已启用",
+      "testing": "测试中...",
+      "test": "测试",
+      "removeConfirm": "删除？",
+      "remove": "删除",
+      "cancel": "取消",
+      "removeTooltip": "删除集成",
+      "saving": "保存中...",
+      "save": "保存",
+      "addButton": "添加集成"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "未能加载设置",
+        "duplicateUrl": "此URL已在列表中。",
+        "unreachable": "无法在此URL到达有效的提供商目录。"
+      },
+      "saved": "已保存。",
+      "refreshed": "已刷新。",
+      "heading": "提供商目录存储库",
+      "refreshing": "刷新中...",
+      "refresh": "刷新",
+      "nextRefresh": "下一个: {{date}}",
+      "priorityHint": "行顺序确定合并优先级 - 第1行在冲突时获胜。使用箭头重新排序。",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "已更新",
+        "lastCheck": "最后检查",
+        "status": "状态"
+      },
+      "empty": "未配置任何存储库。将使用默认Routerly公共目录。",
+      "status": {
+        "error": "错误",
+        "active": "活跃",
+        "disabled": "已禁用"
+      },
+      "edit": "编辑",
+      "removeTooltip": "删除",
+      "addRepository": "添加存储库",
+      "checking": "检查中...",
+      "add": "添加",
+      "removeConfirm": "删除存储库\"{{url}}\"？"
+    },
+    "about": {
+      "headings": {
+        "application": "应用",
+        "runtime": "运行时",
+        "storage": "存储",
+        "softwareUpdate": "软件更新"
+      },
+      "labels": {
+        "version": "版本",
+        "uptime": "运行时间",
+        "nodeVersion": "Node.js",
+        "platform": "平台",
+        "configDir": "配置目录",
+        "dataDir": "数据目录",
+        "currentVersion": "当前版本",
+        "availableVersion": "可用版本",
+        "upToDate": "已是最新版本",
+        "lastChecked": "最后检查"
+      },
+      "noCheckPerformed": "尚未执行更新检查。",
+      "checkForUpdates": "检查更新",
+      "checking": "检查中...",
+      "updateTo": "更新到 v{{version}}",
+      "updating": "更新中...",
+      "dockerHint": "在Docker中运行 - 拉取最新镜像以更新。",
+      "confirmUpdate": "这将下载并安装最新版本。服务将重启。继续？",
+      "updateComplete": "更新完成！重新加载中...",
+      "serviceRestarting": "服务正在重启。请稍后重新加载页面。",
+      "errors": {
+        "loadFailed": "未能加载",
+        "checkFailed": "检查失败",
+        "updateFailed": "更新失败"
+      },
+      "channel": "频道"
+    },
+    "security": {
+      "authentication": "认证",
+      "requireMfa": "为所有用户要求双因素认证",
+      "requireMfaHint": "启用后，未设置双因素认证的用户在登录后会看到设置提示。用户可以在他们的配置文件页面中配置双因素认证。",
+      "savedSuccess": "设置已成功保存。",
+      "saving": "保存中...",
+      "saveSettings": "保存设置",
+      "errors": {
+        "loadFailed": "未能加载设置",
+        "saveFailed": "未能保存设置"
+      }
+    },
+    "title": "设置",
+    "subtitle": "Routerly的配置",
+    "tabs": {
+      "general": "常规",
+      "security": "安全",
+      "notifications": "通知",
+      "integrations": "集成",
+      "catalog": "提供商目录",
+      "users": "用户",
+      "roles": "角色",
+      "audit": "审计日志",
+      "about": "关于"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "路由器",
+      "subtitle": "访问Routerly的客户端应用",
+      "count": "1个路由器",
+      "count_other": "{{count}} 个路由器",
+      "newRouter": "新建路由器",
+      "empty": "还没有路由器。",
+      "emptyFiltered": "没有此类型的路由器。",
+      "columns": {
+        "name": "名称",
+        "tokens": "令牌",
+        "policies": "策略",
+        "models": "模型"
+      },
+      "tokenCount": "1个令牌",
+      "tokenCount_other": "{{count}} 个令牌",
+      "editRouter": "编辑路由器",
+      "deleteRouter": "删除路由器",
+      "deleteConfirm": "删除此路由器？",
+      "errors": {
+        "deleteFailed": "删除路由器出错"
+      },
+      "newOrchestrator": "新的编排器",
+      "newPassthrough": "新的直通"
+    },
+    "layout": {
+      "notFound": "未找到路由器",
+      "tabs": {
+        "dashboard": "仪表板",
+        "general": "常规",
+        "orchestrator": "协调器",
+        "routing": "路由",
+        "optimizer": "优化器",
+        "security": "安全",
+        "token": "令牌",
+        "users": "用户",
+        "logs": "日志"
+      },
+      "backToRouters": "返回路由器",
+      "backToRoutersTitle": "返回路由器",
+      "newRouter": "新建路由器",
+      "loading": "加载中...",
+      "routerId": "路由器ID:",
+      "saveFirstHint": "先保存路由器以解锁此标签页",
+      "newKind": "新的{{kind}}"
+    },
+    "dashboard": {
+      "period": "周期",
+      "noTraffic": "所选周期内此路由器无流量。",
+      "stats": {
+        "savings": "节省",
+        "vsPrefix": "vs",
+        "forEverything": "一切",
+        "noTargetToCompare": "无目标模型进行比较",
+        "cost": "成本",
+        "callCount": "1个调用",
+        "callCount_other": "{{count}} 个调用",
+        "latency": "延迟",
+        "medianP95": "中位数 · p95 {{value}}",
+        "ttft": "首次令牌时间",
+        "notMeasured": "未在这些调用中测量",
+        "reliability": "可靠性",
+        "errorsAndBlocked": "{{errors}} 个错误 · {{blocked}} 个已阻止"
+      },
+      "tokens": {
+        "input": "输入令牌:",
+        "output": "输出令牌:",
+        "fromCache": "来自缓存:",
+        "cacheSaved": "({{amount}} 已保存)"
+      },
+      "oneModel": {
+        "heading": "如果全部转到一个模型",
+        "empty": "将目标模型添加到此路由器以查看比较。",
+        "columns": {
+          "targetModel": "目标模型",
+          "wouldHaveCost": "成本将为",
+          "saved": "已保存"
+        },
+        "costsHint": "成本是观察到的令牌以每个目标的费率重新定价。"
+      },
+      "optimizers": {
+        "heading": "优化器删除了什么",
+        "columns": {
+          "optimizer": "优化器",
+          "callsChanged": "调用已更改",
+          "tokensSaved": "令牌已保存",
+          "costSaved": "成本已保存",
+          "rolledBack": "已回滚"
+        },
+        "hint": "在调用本身上测量，以服务每个调用的模型价格。回滚运行意味着步骤的输出被拒绝为不安全，提示被恢复: 它没有保存任何东西，高计数意味着阈值太激进。"
+      },
+      "traffic": {
+        "heading": "流量去向",
+        "columns": {
+          "model": "模型",
+          "calls": "调用",
+          "share": "份额",
+          "cost": "成本",
+          "p95Latency": "p95延迟",
+          "errors": "错误"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "保存路由器出错",
+        "copyFailed": "复制失败 - 请手动选择并复制令牌。"
+      },
+      "kind": {
+        "router": {
+          "label": "路由器",
+          "description": "在模型候选中路由请求。"
+        },
+        "orchestrator": {
+          "label": "协调器",
+          "description": "在其他路由器而不是模型中路由请求。"
+        },
+        "passthrough": {
+          "label": "通过",
+          "description": "不加修改地转发请求。"
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "立即保存此令牌。",
+        "saveNowHint": "它不会再显示 - 一旦离开此屏幕就无法恢复。",
+        "copied": "已复制!",
+        "copy": "复制",
+        "goToRouter": "转到路由器"
+      },
+      "connect": {
+        "heading": "如何连接",
+        "intro": "将任何OpenAI或Anthropic SDK指向Routerly，并使用 <tokenLink>路由器令牌</tokenLink> 作为API密钥。用您的替换下面的 <code>{{token}}</code>。模型 <code>{{model}}</code> 将选择权交给Routerly；任何来自 <modelsLink>模型</modelsLink> 的模型ID也适用。",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "基础URL <code>{{baseUrl}}</code>，与任何\"OpenAI兼容\"提供商字段相同。",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "基础URL <code>{{baseUrl}}</code>，不包括 <code>/v1</code>: SDK会添加它。",
+        "curl": "curl",
+        "curlHint": "在不安装任何东西的情况下检查接线，然后在 <usageLink>使用</usageLink> 中查找调用。"
+      },
+      "form": {
+        "kind": "类型",
+        "kindFixedHint": "路由器创建后固定。",
+        "routerName": "路由器名称",
+        "routerNamePlaceholder": "我的应用",
+        "advancedSettings": "高级设置",
+        "ttftTimeout": "TTFT超时(毫秒)",
+        "ttftTimeoutHint": "如果模型在此时间内未发送第一个响应字节，Routerly会中止它并尝试下一个候选。不限制总响应持续时间。设置为0以等待提供商需要的时间。",
+        "traceContent": "跟踪内容",
+        "traceContentHint": "跟踪总是记录元数据(模型、分数、令牌、成本、延迟)。启用此选项也可以记录发送的提示和接收的答案。它们与使用记录一起存储，对任何可以读取报告的人可见。",
+        "capturePromptsAndAnswers": "捕获提示和答案",
+        "saveChanges": "保存更改",
+        "createRouter": "创建路由器",
+        "passthroughPath": "路径",
+        "passthroughPathHint": "成为客户端调用的 URL 的一部分: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "创建编排器",
+        "createPassthrough": "创建直通"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "此路由器不是协调器。",
+      "candidateRouters": "候选路由器",
+      "candidateRoutersHint": "此协调器转发请求的路由器。权重影响每个候选被选择的频率；这里只显示其名称、ID、权重和可选的每候选限制。",
+      "routingPolicies": "路由策略",
+      "routingPoliciesHint": "Orchestrator 将每个候选路由器作为一个整体进行评分，因此这里只适用健康、速率限制和公平性策略。其他策略类型从路由器自己的模型中选择，这些模型 Orchestrator 没有。",
+      "router": "路由器",
+      "selectRouter": "选择路由器",
+      "weight": "权重",
+      "removeCandidate": "删除候选",
+      "usageLimits": "此候选的使用限制",
+      "limitCount": "{{count}} 个限制",
+      "limitCount_other": "{{count}} 个限制",
+      "usageLimitsHint": "仅适用于此协调器转发到此候选的请求的可选使用限制。",
+      "empty": "还没有候选路由器。协调器在能够转发请求之前需要至少一个。",
+      "addCandidate": "添加候选",
+      "saved": "已保存!",
+      "saveCandidates": "保存候选",
+      "errors": {
+        "loadFailed": "未能加载路由器",
+        "saveFailed": "保存协调器候选出错"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "未能分配路由配置文件",
+        "duplicateTargets": "目标模型不能包含重复。",
+        "saveFailed": "保存路由器路由出错",
+        "noProfileAvailable": "无可用的路由配置文件。从配置文件页面创建一个。"
+      },
+      "form": {
+        "routing": "路由",
+        "routingHint": "使用共享的路由配置文件或定义此路由器自己的策略。无论哪种方式，目标模型都可配置。",
+        "profileMode": "配置文件",
+        "customMode": "自定义",
+        "routingProfile": "路由配置文件",
+        "builtinSuffix": "(内置)",
+        "profileHint": "策略来自配置文件并跟随其更改。在配置文件页面上编辑它们，或切换到自定义以开始使用它们的副本。",
+        "saved": "已保存!",
+        "saveRoutingConfiguration": "保存路由配置"
+      },
+      "targetModels": {
+        "heading": "目标模型",
+        "hint": "定义策略将过滤和选择的模型池。可选提示指导AI路由器何时选择每个模型。",
+        "endpointModel": "端点模型",
+        "selectModel": "选择模型",
+        "promptDefinition": "提示定义",
+        "promptPlaceholder": "准确描述路由器何时以及为什么应该选择此模型...",
+        "intents": "意图",
+        "removeTarget": "删除目标模型",
+        "empty": "未配置目标模型。",
+        "addTarget": "添加目标模型",
+        "passthroughLabel": "直通(原始转发)",
+        "passthroughNotRemovable": "直通条目无法删除"
+      }
+    },
+    "optimizer": {
+      "title": "优化器",
+      "description": "优化器在请求到达提供商之前减少提示令牌。它们从上到下按顺序运行。使用共享优化器配置文件或定义此路由器自己的管道。",
+      "noPermission": "您没有权限查看优化器。",
+      "mode": {
+        "profile": "配置文件",
+        "custom": "自定义"
+      },
+      "profileSelect": {
+        "ariaLabel": "优化器配置文件",
+        "builtinLabel": "{{label}} (内置)",
+        "hint": "步骤来自配置文件并跟随其更改。在配置文件页面上编辑它们，或切换到自定义以开始使用它们的副本。",
+        "disabledSuffix": "(已禁用)",
+        "thresholdSuffix": ", 阈值 {{threshold}}"
+      },
+      "customHint": "拖动以重新排序，切换以启用。某些优化器使用阈值来控制它们修剪的激进程度。",
+      "saveButton": "保存优化器",
+      "saving": "保存中...",
+      "saved": "已保存",
+      "preview": {
+        "title": "预览令牌节省",
+        "description": "在提示上运行当前(未保存)管道，查看每个步骤删除的内容及其成本。选择其中一个示例对话或键入您自己的提示。",
+        "promptLabel": "提示",
+        "promptAriaLabel": "要预览的提示",
+        "typePromptOption": "在下面键入提示",
+        "fixturesHint": "随Routerly发货的示例对话。Routerly不会记录真实提示。",
+        "modelLabel": "模型",
+        "modelAriaLabel": "要预览的模型",
+        "modelWithContext": "{{id}} ({{k}}k上下文)",
+        "noModelOption": "无模型",
+        "modelHint": "修剪以适应上下文窗口的步骤需要知道哪个窗口。没有模型，它们会被跳过，就像它们在命名Routerly没有窗口的模型的请求上一样。",
+        "sampleAriaLabel": "示例提示",
+        "samplePlaceholder": "粘贴示例用户消息...",
+        "runButton": "运行预览",
+        "running": "运行中...",
+        "before": "之前",
+        "after": "之后",
+        "saved": "已保存",
+        "columns": {
+          "optimizer": "优化器",
+          "before": "之前",
+          "after": "之后",
+          "saved": "已保存"
+        },
+        "rolledBackNote": "已回滚: 此步骤生成的更改因不安全而被拒绝",
+        "skippedNote": "已跳过: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "此步骤生成的更改被回滚，所以提示未修改地到达下一步。",
+          "skipped": "此步骤没有运行: {{reason}}",
+          "unchanged": "此步骤使提示保持不变。"
+        }
+      },
+      "errors": {
+        "assignFailed": "未能分配优化器配置文件",
+        "saveFailed": "保存优化器出错",
+        "previewFailed": "运行预览出错",
+        "noProfileAvailable": "无可用的优化器配置文件。从配置文件页面创建一个。"
+      }
+    },
+    "token": {
+      "newButton": "新建令牌",
+      "empty": "还没有API令牌。创建一个以开始对请求进行身份验证。",
+      "budgetOverrides": "预算覆盖",
+      "created": "已创建",
+      "lastUsed": "最后使用",
+      "expires": "过期",
+      "never": "永不",
+      "editTitle": "编辑配置",
+      "revokeTitle": "撤销令牌",
+      "revokeConfirm": "撤销令牌\"{{snippet}}...\"？使用它的应用将立即停止工作。",
+      "labelInput": {
+        "placeholder": "搜索或创建标签…",
+        "createPrefix": "创建",
+        "noMatches": "未找到匹配的标签。"
+      },
+      "errors": {
+        "deleteFailed": "删除令牌出错"
+      },
+      "create": {
+        "backToTokens": "返回令牌",
+        "title": "新API令牌",
+        "subtitle": "完整令牌仅在创建后显示一次 - 安全地存储它。",
+        "tokenCreated": "令牌已成功创建。立即复制 - 它不会再显示。",
+        "copied": "已复制!",
+        "copy": "复制",
+        "done": "完成",
+        "optional": "可选",
+        "labels": "标签",
+        "labelsHint": "标记此令牌以标识其使用位置(例如\"生产\"、\"ci\")。",
+        "scopes": "范围",
+        "scopesHint": "附加到此令牌的自由格式范围(例如\"batch\"、\"internal\")，为您自己的记录而存储。",
+        "tags": "标签",
+        "tagsHint": "转发到使用记录的键值元数据(例如env=production)。",
+        "keyPlaceholder": "密钥",
+        "valuePlaceholder": "值",
+        "createButton": "创建令牌",
+        "cancel": "取消",
+        "copyFailed": "复制失败 - 请手动选择并复制令牌。",
+        "errors": {
+          "createFailed": "创建令牌出错"
+        }
+      },
+      "edit": {
+        "title": "编辑令牌",
+        "subtitle": "更新标签和此令牌的每模型限制覆盖。",
+        "token": "令牌",
+        "labels": "标签",
+        "perModelLimits": "每模型限制",
+        "perModelLimitsHint": "覆盖使用此令牌的请求的全局和路由器级别限制。",
+        "noTargetModels": "先在路由标签页添加目标模型。",
+        "noOverride": "无覆盖",
+        "noLimits": "无限制",
+        "noLimitsSet": "未设置限制 - 从父级继承。在下面添加限制以覆盖。",
+        "metric": "指标",
+        "type": "类型",
+        "periodLabel": "周期",
+        "every": "每",
+        "maxCost": "最大(美元)",
+        "maxCalls": "最大(数)",
+        "maxTokens": "最大(令牌)",
+        "allCombosSet": "所有指标/周期组合已设置",
+        "addLimit": "添加限制",
+        "windowType": {
+          "period": "周期",
+          "rolling": "滚动"
+        },
+        "limitMetric": {
+          "cost": "成本(美元)",
+          "calls": "请求",
+          "input_tokens": "输入令牌",
+          "output_tokens": "输出令牌",
+          "total_tokens": "总令牌"
+        },
+        "period": {
+          "hourly": "每小时",
+          "daily": "每天",
+          "weekly": "每周",
+          "monthly": "每月",
+          "yearly": "每年"
+        },
+        "rollingUnit": {
+          "second": "秒",
+          "minute": "分钟",
+          "hour": "小时",
+          "day": "天",
+          "week": "周",
+          "month": "月"
+        },
+        "fmt": {
+          "requests": "{{value}} 请求",
+          "inputTokens": "{{value}} 输入令牌",
+          "outputTokens": "{{value}} 输出令牌",
+          "totalTokens": "{{value}} 令牌",
+          "everyRolling": "{{metric}} / 每 {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "保存令牌出错"
+        }
+      }
+    },
+    "users": {
+      "title": "路由器成员",
+      "description": "管理有权访问此路由器的用户。",
+      "addButton": "添加成员",
+      "addNewTitle": "添加新成员",
+      "selectUserPlaceholder": "选择用户...",
+      "addConfirmButton": "添加",
+      "cancelButton": "取消",
+      "empty": "未找到成员。",
+      "removeConfirm": "您确定要删除此成员吗？",
+      "saveTitle": "保存更改",
+      "changeRoleTitle": "更改角色",
+      "removeTitle": "删除成员",
+      "roles": {
+        "viewer": "查看者",
+        "editor": "编辑者",
+        "admin": "管理员"
+      },
+      "columns": {
+        "user": "用户",
+        "role": "角色",
+        "actions": "操作"
+      },
+      "errors": {
+        "loadFailed": "未能加载用户",
+        "addFailed": "添加成员出错",
+        "updateFailed": "更新成员出错",
+        "removeFailed": "删除成员出错"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "关闭"
+      },
+      "autoRefreshOff": "自动刷新已禁用",
+      "autoRefreshEvery": "自动刷新每 {{interval}}",
+      "lastUpdated": "最后更新: {{time}}",
+      "refresh": "刷新",
+      "refreshNowTitle": "立即刷新",
+      "refreshNowButton": "↻ 现在",
+      "filters": {
+        "period": "周期",
+        "model": "模型",
+        "allModels": "所有模型",
+        "type": "类型",
+        "all": "全部",
+        "completion": "完成",
+        "router": "路由器",
+        "status": "状态",
+        "success": "成功",
+        "blocked": "已阻止",
+        "error": "错误",
+        "resetButton": "重置过滤器"
+      },
+      "stats": {
+        "totalCost": "总成本",
+        "totalCalls": "总调用",
+        "completionCalls": "完成调用",
+        "routerCalls": "路由器调用",
+        "errors": "错误"
+      },
+      "requestLogs": "请求日志",
+      "emptyNoRequests": "所选周期内此路由器无请求。",
+      "emptyNoMatches": "没有记录与活跃过滤器匹配。",
+      "columns": {
+        "time": "时间",
+        "model": "模型",
+        "type": "类型",
+        "in": "进",
+        "out": "出",
+        "cost": "成本",
+        "latency": "延迟",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "状态"
+      },
+      "typeRouter": "路由器",
+      "typeCompletion": "完成",
+      "pagination": {
+        "previous": "← 前一个",
+        "next": "下一个 →",
+        "pageOf": "第 {{page}} / {{totalPages}} 页",
+        "totalRecords": "({{count}} 总记录)"
+      }
+    },
+    "security": {
+      "title": "安全",
+      "description": "使用共享安全配置文件或定义此路由器自己的防护栏和个人身份信息策略。",
+      "mode": {
+        "profile": "配置文件",
+        "custom": "自定义"
+      },
+      "profileSelect": {
+        "ariaLabel": "安全配置文件",
+        "builtinLabel": "{{label}} (内置)",
+        "hint": "防护栏和个人身份信息策略来自配置文件并跟随其更改。在配置文件页面上编辑它们，或切换到自定义以开始使用它们的副本。",
+        "blockingSuffix": ", 阻止",
+        "disabledSuffix": ", 已禁用",
+        "piiRedaction": "个人身份信息编辑({{target}})"
+      },
+      "saveButton": "保存安全设置",
+      "saved": "已保存!",
+      "errors": {
+        "assignFailed": "未能分配安全配置文件",
+        "saveFailed": "保存安全设置出错",
+        "noProfileAvailable": "无可用的安全配置文件。从配置文件页面创建一个。"
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "您是一个有用的AI助手。",
+      "errors": {
+        "unknown": "发生未知错误",
+        "onlyImages": "目前仅视觉模型支持图像附件。"
+      },
+      "title": "测试聊天",
+      "subtitle": "通过路由网关发送测试查询。",
+      "routerToken": "路由器令牌:",
+      "hideToken": "隐藏令牌",
+      "showToken": "显示令牌",
+      "recognizedToken": "识别的令牌",
+      "unrecognizedToken": "无法识别的令牌",
+      "noMessages": "还没有消息。",
+      "enterTokenHint": "请在上面输入路由器令牌以发送消息。",
+      "typeMessageHint": "在下面键入消息以开始测试。",
+      "reasoning": "推理",
+      "attachedAlt": "已附加",
+      "attachmentAlt": "附件",
+      "attachImage": "附加图像",
+      "typeMessagePlaceholder": "键入消息...",
+      "stopGeneration": "停止生成",
+      "sendEnter": "发送(回车)",
+      "debugLog": "调试日志",
+      "clear": "清除",
+      "noRequestSent": "还没有发送请求。",
+      "turnTraceLog": "轮 #{{turn}} 跟踪日志 · {{count}} 个事件",
+      "turnTraceLog_other": "轮 #{{turn}} 跟踪日志 · {{count}} 个事件"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "连接",
+      "subtitle": "用于运行模型实例的提供商账户",
+      "noPermission": "您没有权限查看连接。",
+      "count": "{{count}} 个连接",
+      "count_other": "{{count}} 个连接",
+      "addConnection": "添加连接",
+      "empty": "还没有连接。添加一个以开始。",
+      "deleteConfirm": "删除连接\"{{label}}\"？绑定到它的实例将停止工作。",
+      "errors": {
+        "loadFailed": "未能加载连接",
+        "deleteFailed": "未能删除连接"
+      },
+      "columns": {
+        "label": "标签",
+        "provider": "提供商",
+        "endpoint": "端点",
+        "status": "状态"
+      },
+      "status": {
+        "enabled": "已启用",
+        "disabled": "已禁用"
+      },
+      "actions": {
+        "models": "模型",
+        "edit": "编辑",
+        "remove": "删除"
+      }
+    },
+    "form": {
+      "backToConnections": "返回连接",
+      "editTitle": "编辑连接",
+      "addTitle": "添加连接",
+      "enabled": "已启用",
+      "editSubtitle": "更新提供商账户设置",
+      "addSubtitle": "注册新提供商账户",
+      "sectionTitle": "连接详情",
+      "sectionDesc": "提供商账户、凭证和用于执行请求的端点。",
+      "provider": "提供商",
+      "groups": {
+        "directApi": "直接API",
+        "cloudPlatform": "云平台",
+        "subscription": "订阅",
+        "browserSession": "浏览器会话",
+        "selfHosted": "自托管"
+      },
+      "upstreamProvider": {
+        "label": "提供商",
+        "hintLabel": "(上游提供商名称)",
+        "placeholder": "例如deepseek、mistral、groq",
+        "description": "命名此端点所属的服务。此连接上的模型使用它作为ID前缀(例如 <code>deepseek/deepseek-r1</code>)。"
+      },
+      "name": {
+        "label": "名称",
+        "hint": "在引用它的地方标识此连接，所以它必须是唯一的。留空以使用 <code>{{suggested}}</code>。"
+      },
+      "credentialsBlankHint": "将凭证字段留空以保持现有值。",
+      "save": "保存",
+      "create": "创建",
+      "cancel": "取消",
+      "oauth": {
+        "unknown": "未知",
+        "accountExpires": "账户: {{account}} - 过期 {{expires}}",
+        "unknownError": "未知错误"
+      },
+      "errors": {
+        "notFound": "未找到连接",
+        "loadFailed": "未能加载连接",
+        "updateFailed": "未能更新连接",
+        "createFailed": "未能创建连接"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "返回模型",
+      "title": "模型发现",
+      "subtitle": "浏览可用模型并将其添加到您的路由配置",
+      "count": "{{count}} 个模型",
+      "filteredCount": "{{filtered}} / {{count}}",
+      "free": "免费",
+      "add": "添加",
+      "addAgain": "再次添加",
+      "loadFailed": "未能加载目录: {{error}}",
+      "filters": {
+        "search": "搜索",
+        "searchPlaceholder": "模型ID或名称...",
+        "provider": "提供商",
+        "allProviders": "所有提供商",
+        "context": "上下文",
+        "ctxOptions": {
+          "all": "全部",
+          "small": "< 32k",
+          "medium": "32k-200k",
+          "large": "200k-1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "价格 / 1M",
+        "priceOptions": {
+          "all": "全部",
+          "free": "免费",
+          "low": "< $1",
+          "mid": "$1-$5",
+          "high": "> $5"
+        },
+        "show": "显示",
+        "configured": "已配置",
+        "embedding": "嵌入",
+        "resetFilters": "重置过滤器"
+      },
+      "empty": {
+        "noMatches": "没有模型与您的过滤器匹配。"
+      },
+      "columns": {
+        "model": "模型",
+        "provider": "提供商",
+        "context": "上下文",
+        "input": "输入 / 1M",
+        "output": "输出 / 1M"
+      },
+      "badges": {
+        "configured": "已配置",
+        "embedding": "嵌入",
+        "runsLocally": "本地运行"
+      },
+      "pagination": {
+        "prev": "前一个",
+        "next": "下一个",
+        "range": "{{start}}-{{end}} / {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "返回模型",
+      "title": {
+        "add": "添加模型",
+        "edit": "编辑模型",
+        "clone": "克隆模型"
+      },
+      "subtitle": {
+        "add": "注册新LLM提供商模型",
+        "edit": "修改 {{id}} 的配置",
+        "clone": "从 {{id}} 克隆 - 分配新ID以保存"
+      },
+      "errors": {
+        "modelNotFound": "未找到模型",
+        "sourceModelNotFound": "未找到源模型",
+        "loadFailed": "加载模型出错",
+        "idRequired": "需要模型ID",
+        "duplicateId": "模型\"{{id}}\"已存在 - 设置不同的自定义ID",
+        "selectConnection": "选择连接",
+        "saveFailed": "错误"
+      },
+      "badge": {
+        "yes": "是",
+        "no": "否",
+        "override": "覆盖",
+        "auto": "自动",
+        "default": "默认: {{value}}",
+        "reset": "重置"
+      },
+      "oauth": {
+        "unknownExpiry": "未知",
+        "accountOk": "账户: {{account}} - 过期 {{expires}}",
+        "unknownError": "未知错误"
+      },
+      "identification": {
+        "title": "模型标识",
+        "description": "此模型配置的唯一标识符和提供商设置。",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(可选 - 默认:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "在Routerly API调用中引用此模型时使用的标识符。",
+        "provider": "提供商",
+        "upstreamProviderHint": "(上游提供商名称)",
+        "upstreamProviderPlaceholder": "例如deepseek、mistral、groq",
+        "upstreamProviderDescPre": "用作Routerly ID的前缀(例如",
+        "upstreamProviderDescPost": ")。",
+        "model": "模型",
+        "upstreamModelHint": "(上游模型ID)",
+        "upstreamModelPlaceholder": "例如deepseek-r1、mistral-large-latest",
+        "upstreamModelDesc": "发送到上游API端点的模型标识符。",
+        "modelPreset": "模型预设",
+        "customModelOption": "- 自定义模型名称 -",
+        "customModelPlaceholder": "例如my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "连接详情",
+        "description": "执行请求所需的API端点和身份验证凭证。",
+        "preconfigured": "预配置",
+        "custom": "自定义",
+        "connection": "连接",
+        "selectPlaceholder": "- 选择连接 -",
+        "noneAvailable": "没有此提供商的预配置连接。切换到自定义或在连接页面上创建一个。",
+        "editHint": "稍后编辑此连接会更新绑定到它的每个模型。"
+      },
+      "capabilities": {
+        "title": "能力",
+        "description": "指定此模型的类型和能力。",
+        "embeddingModel": "嵌入模型",
+        "embeddingModelHint": "此模型生成向量嵌入(不是聊天完成)"
+      },
+      "pricing": {
+        "title": "定价和上下文",
+        "description": "用于计费和路由的成本参数和处理限制。",
+        "inputPerMillion": "输入 $/1M",
+        "outputPerMillion": "输出 $/1M",
+        "cachePerMillion": "缓存读取 $/1M",
+        "cacheWritePerMillion": "缓存写入 $/1M",
+        "optional": "(选项)",
+        "contextWindow": "上下文窗口",
+        "contextWindowHint": "(令牌，可选)"
+      },
+      "tiers": {
+        "title": "高级 - 定价等级",
+        "description": "当指标超过阈值时覆盖定价。例如: \"超过200 000个上下文令牌时，价格改变。\"",
+        "removeTier": "删除等级",
+        "above": "超过",
+        "metric": "指标",
+        "metricContextTokens": "上下文令牌",
+        "overridePricing": "覆盖定价",
+        "addTier": "添加定价等级"
+      },
+      "limits": {
+        "title": "限制",
+        "description": "此模型的使用限制。多个规则可以合并。",
+        "metric": "指标",
+        "type": "类型",
+        "addLimit": "添加限制"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic(Pro/Max订阅)",
+        "openaiOauth": "OpenAI(ChatGPT Plus/Pro订阅)"
+      },
+      "saveChanges": "保存更改",
+      "createClone": "创建克隆",
+      "createModel": "创建模型"
+    },
+    "page": {
+      "title": "模型",
+      "subtitle": "注册到Routerly的LLM提供商",
+      "tabs": {
+        "models": "模型",
+        "health": "健康"
+      },
+      "toolbar": {
+        "count": "{{count}} 个模型",
+        "count_other": "{{count}} 个模型",
+        "filteredCount": "{{filtered}} / {{count}} 个模型",
+        "filteredCount_other": "{{filtered}} / {{count}} 个模型"
+      },
+      "filters": {
+        "allProviders": "所有提供商",
+        "allConnections": "所有连接",
+        "searchPlaceholder": "过滤模型..."
+      },
+      "discover": "发现",
+      "addModel": "添加模型",
+      "deleteConfirm": "删除模型\"{{id}}\"？",
+      "empty": {
+        "noModels": "还没有模型。添加一个以开始。",
+        "noMatches": "没有模型与活跃过滤器匹配。"
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "提供商",
+        "endpoint": "端点",
+        "input": "输入 $/1M",
+        "output": "输出 $/1M",
+        "cache": "缓存 $/1M",
+        "context": "上下文大小"
+      },
+      "actions": {
+        "test": "测试",
+        "clone": "克隆",
+        "edit": "编辑",
+        "remove": "删除"
+      },
+      "pagination": {
+        "previous": "← 前一个",
+        "next": "下一个 →",
+        "pageOf": "第 {{page}} / {{totalPages}} 页",
+        "total": "({{count}} 个模型)",
+        "total_other": "({{count}} 个模型)"
+      },
+      "health": {
+        "emptyNoModels": "未配置模型。",
+        "emptyNoMatches": "没有模型与过滤器匹配。",
+        "resetAll": "全部重置",
+        "resetAllTitle": "重置每个断路器、冷却和锁定",
+        "resetTitle": "重置断路器",
+        "confirmResetModel": "重置模型\"{{id}}\"的断路器？",
+        "confirmResetAll": "重置所有恢复能力状态？这清除每个断路器、冷却和锁定。",
+        "errors": {
+          "resetModelFailed": "未能重置断路器",
+          "resetAllFailed": "未能重置恢复能力状态"
+        },
+        "columns": {
+          "model": "模型",
+          "provider": "提供商",
+          "status": "状态",
+          "circuit": "电路",
+          "errorRate": "错误率(5分钟)",
+          "p95Latency": "P95延迟(1小时)",
+          "requests": "请求(1小时)",
+          "lastSuccess": "最后成功",
+          "cooldownLockout": "冷却 / 锁定"
+        },
+        "status": {
+          "healthy": "健康",
+          "degraded": "降级",
+          "unavailable": "不可用",
+          "cooldown": "冷却",
+          "nodata": "无数据"
+        },
+        "circuit": {
+          "ok": "正常",
+          "recovering": "恢复中",
+          "tripped": "跳闸"
+        },
+        "time": {
+          "never": "从不",
+          "now": "现在",
+          "secondsAgo": "{{count}}秒前",
+          "minutesAgo": "{{count}}分钟前",
+          "hoursAgo": "{{count}}小时前",
+          "daysAgo": "{{count}}天前",
+          "minSec": "{{min}}分 {{sec}}秒",
+          "sec": "{{sec}}秒",
+          "cooldown": "冷却 {{time}}",
+          "lockout": "锁定 {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "实验",
+      "subtitle": "A/B测试彼此对抗的路由器",
+      "noPermission": "您没有权限查看实验。",
+      "count": "{{count}} 个实验",
+      "count_other": "{{count}} 个实验",
+      "newExperiment": "新建实验",
+      "empty": "还没有实验。创建一个以头对头比较路由器。",
+      "deleteConfirm": "删除实验\"{{name}}\"？这无法撤销。",
+      "noToken": "无令牌",
+      "noTokenTitle": "没有令牌，没有客户端可以到达此实验",
+      "errors": {
+        "loadFailed": "未能加载实验",
+        "deleteFailed": "未能删除实验"
+      },
+      "columns": {
+        "name": "名称",
+        "variants": "变体",
+        "rotation": "轮转",
+        "created": "已创建"
+      },
+      "actions": {
+        "edit": "编辑实验",
+        "remove": "删除"
+      }
+    },
+    "layout": {
+      "backToExperiments": "返回实验",
+      "newExperiment": "新建实验",
+      "loading": "加载中...",
+      "experimentId": "实验ID:",
+      "disabledTabTitle": "先保存实验以解锁此标签页",
+      "errors": {
+        "notFound": "未找到实验"
+      },
+      "tabs": {
+        "config": "配置",
+        "metrics": "指标",
+        "token": "令牌"
+      }
+    },
+    "config": {
+      "saved": "已保存。",
+      "created": "实验已创建。将您的客户端指向此令牌而不是路由器令牌。它不会再显示。",
+      "copy": "复制",
+      "copied": "已复制!",
+      "done": "完成",
+      "saving": "保存中...",
+      "create": "创建实验",
+      "save": "保存更改",
+      "cancel": "取消",
+      "trafficSplit": "流量分割",
+      "errors": {
+        "loadRoutersFailed": "未能加载路由器",
+        "saveFailed": "未能保存实验",
+        "copyFailed": "复制失败: 手动选择并复制令牌。"
+      },
+      "fields": {
+        "name": "名称",
+        "namePlaceholder": "便宜 vs 高级路由",
+        "description": "描述",
+        "optional": "(可选)",
+        "descriptionPlaceholder": "此测试试图解决什么",
+        "minSamples": "每个变体的最小调用",
+        "minSamplesHint": "低于此值，指标标签页将比较标记为尚未结论。",
+        "rotation": "轮转",
+        "stickyOn": "粘性于",
+        "stickyKey": "粘性密钥"
+      },
+      "variants": {
+        "title": "变体",
+        "desc": "每个变体是现有的路由器，整体: 其模型、路由和防护栏全部适用。测试需要至少两个。",
+        "routerAriaLabel": "变体 {{index}} 路由器",
+        "routerPlaceholder": "选择路由器",
+        "labelAriaLabel": "变体 {{index}} 标签",
+        "labelPlaceholder": "标签(可选)",
+        "weightAriaLabel": "变体 {{index}} 权重",
+        "weightPlaceholder": "权重",
+        "removeTitle": "删除变体 {{index}}",
+        "add": "添加变体"
+      },
+      "judge": {
+        "title": "判断",
+        "desc": "可选: 模型读取每个采样答案并根据您的标准对其评分0-10。每个判断的调用是额外的模型调用，像任何其他一样计费。",
+        "enable": "使用判断模型为答案评分",
+        "model": "判断模型",
+        "modelPlaceholder": "选择模型",
+        "criteria": "标准",
+        "criteriaPlaceholder": "每行一个，例如\n回答所问问题\n保持事实\n坚持请求的格式",
+        "sampleRate": "判断调用的份额(%)"
+      }
+    },
+    "metrics": {
+      "loading": "加载中...",
+      "callsMeasured": "{{count}} 个调用已测量",
+      "callsMeasured_other": "{{count}} 个调用已测量",
+      "empty": "此窗口中还没有调用。将客户端指向实验令牌以开始比较。",
+      "notConclusive": "尚未结论: 每个变体在此窗口中需要至少 {{minSamples}} 个调用。",
+      "explanation": "每对的更好数字突出显示: 每调用更便宜、更快、判断得分更高。值下方的百分比是其与最佳arm的距离。判断得分是实验整个生命周期的运行平均值，所以它是窗口不缩小的唯一数字。",
+      "lowSample": "低样本",
+      "lowSampleTitle": "此窗口中低于 {{minSamples}} 个调用",
+      "judgedCallsTitle": "{{count}} 个答案由自实验开始以来的判断评分",
+      "judgedCallsTitle_other": "{{count}} 个答案由自实验开始以来的判断评分",
+      "errors": {
+        "loadFailed": "未能加载指标"
+      },
+      "columns": {
+        "variant": "变体",
+        "calls": "调用",
+        "share": "份额",
+        "errors": "错误",
+        "tokens": "令牌进 / 出",
+        "cost": "成本",
+        "costPerCall": "成本 / 调用",
+        "avgLatency": "平均延迟",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "判断得分"
+      }
+    },
+    "token": {
+      "desc": "客户端调用实验就像调用路由器: 相同的基础URL，此令牌而不是路由器令牌。每个请求登陆一个变体并计费到该变体的路由器。",
+      "baseUrlLabel": "OpenAI或Anthropic SDK的基础URL，使用实验令牌作为API密钥:",
+      "created": "令牌已创建。立即复制，它不会再显示。",
+      "copy": "复制",
+      "copied": "已复制!",
+      "newToken": "新令牌",
+      "empty": "此实验上没有令牌。创建一个以便客户端调用它。",
+      "revokeConfirm": "撤销令牌\"{{snippet}}...\"？使用它的客户端立即停止工作。",
+      "revokeTitle": "撤销令牌",
+      "errors": {
+        "createFailed": "未能创建令牌",
+        "revokeFailed": "未能撤销令牌",
+        "copyFailed": "复制失败: 手动选择并复制令牌。"
+      },
+      "columns": {
+        "created": "已创建",
+        "lastUsed": "最后使用"
+      }
+    }
+  },
+  "overview": {
+    "title": "概览",
+    "subtitle": "使用摘要和成本明细",
+    "noPermission": "无权查看使用数据。",
+    "costByModel": "按模型的成本",
+    "noCostRecorded": "此周期未记录成本。",
+    "callsByModel": "按模型的调用",
+    "columns": {
+      "model": "模型",
+      "calls": "调用",
+      "errors": "错误",
+      "cost": "成本"
+    },
+    "stats": {
+      "totalCalls": "总调用",
+      "callsBreakdown": "{{routing}} 路由 · {{completion}} 完成",
+      "successRate": "成功率",
+      "ofAllRequests": "的所有请求",
+      "errors": "错误",
+      "failedRequests": "失败的请求",
+      "models": "模型",
+      "registered": "已注册",
+      "routers": "路由器",
+      "active": "活跃"
+    },
+    "connectCard": {
+      "title": "连接客户端",
+      "desc": "将Claude Code、Codex、Cursor和 {{count}} 个更多指向此网关。"
+    }
+  },
+  "login": {
+    "emailLabel": "电子邮件",
+    "passwordLabel": "密码",
+    "signIn": "登录",
+    "errors": {
+      "loginFailed": "登录失败",
+      "totpFailed": "双因素认证失败"
+    },
+    "totp": {
+      "title": "双因素认证",
+      "backupPrompt": "输入备用代码。",
+      "appPrompt": "从您的身份验证器应用输入6位数代码。",
+      "backupCodeLabel": "备用代码",
+      "authenticatorCodeLabel": "身份验证器代码",
+      "verify": "验证",
+      "useAuthenticatorInstead": "改用身份验证器应用",
+      "useBackupInstead": "改用备用代码"
+    }
+  },
+  "setup": {
+    "welcome": "欢迎！让我们设置您。",
+    "welcomeSubtitle": "创建第一个管理账户以开始管理Routerly。",
+    "betaBadge": "🚧 测试版",
+    "betaNotice": "Routerly正在积极发展。可能出现错误。",
+    "betaFeedback": "您的反馈有助于塑造它 -",
+    "betaLink": "报告问题或分享想法",
+    "emailLabel": "管理员电子邮件",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "密码",
+    "passwordPlaceholder": "最少8个字符",
+    "confirmLabel": "确认密码",
+    "confirmPlaceholder": "重新输入密码",
+    "submit": "创建管理员账户",
+    "errors": {
+      "mismatch": "密码不匹配",
+      "tooShort": "密码必须至少8个字符",
+      "setupFailed": "设置失败"
+    }
+  },
+  "audit": {
+    "empty": "未找到审计条目。",
+    "errors": {
+      "loadFailed": "未能加载审计日志"
+    },
+    "filters": {
+      "period": "周期",
+      "user": "用户",
+      "userPlaceholder": "电子邮件或用户ID",
+      "action": "操作",
+      "actionPlaceholder": "例如model:create",
+      "result": "结果",
+      "results": {
+        "all": "全部",
+        "success": "成功",
+        "forbidden": "禁止",
+        "error": "错误"
+      },
+      "refresh": "刷新"
+    },
+    "columns": {
+      "timestamp": "时间戳",
+      "user": "用户",
+      "action": "操作",
+      "endpoint": "端点",
+      "result": "结果",
+      "details": "详情"
+    },
+    "pagination": {
+      "previous": "前一个",
+      "next": "下一个",
+      "page": "第 {{page}} / {{totalPages}} 页",
+      "total": "({{count}} 总计)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "使用",
+      "live": "实时",
+      "subtitle": "详细的调用日志和按模型的明细",
+      "updatedAt": "· 更新于 {{time}}",
+      "poll": {
+        "off": "关闭",
+        "5s": "5秒",
+        "15s": "15秒",
+        "30s": "30秒",
+        "1m": "1分钟",
+        "5m": "5分钟"
+      },
+      "liveButton": "● 实时",
+      "liveButtonTitle": {
+        "disable": "禁用实时模式",
+        "enable": "启用实时模式(每2秒刷新)"
+      },
+      "refreshNow": "↻ 现在",
+      "refreshNowTitle": "立即刷新",
+      "filters": {
+        "period": "周期",
+        "router": "路由器",
+        "model": "模型",
+        "token": "令牌",
+        "caller": "调用者",
+        "type": "类型",
+        "status": "状态",
+        "allRouters": "所有路由器",
+        "allModels": "所有模型",
+        "allTokens": "所有令牌",
+        "resetFilters": "重置过滤器",
+        "all": "全部",
+        "success": "成功",
+        "blocked": "已阻止",
+        "error": "错误"
+      },
+      "caller": {
+        "all": "全部",
+        "completion": "完成",
+        "routing": "路由器",
+        "guardrail": "防护栏",
+        "judge": "判断"
+      },
+      "callerBadge": {
+        "completion": "完成",
+        "routing": "路由器",
+        "guardrail": "防护栏",
+        "judge": "判断"
+      },
+      "errors": {
+        "loadFailedPrefix": "未能加载使用数据:",
+        "retry": "重试"
+      },
+      "stats": {
+        "totalCalls": "总调用",
+        "completionCalls": "完成调用",
+        "routerCalls": "路由器调用",
+        "guardrailCalls": "防护栏调用",
+        "blockedCalls": "已阻止调用",
+        "errors": "错误"
+      },
+      "table": {
+        "rank": "排名",
+        "model": "模型",
+        "provider": "提供商",
+        "calls": "调用",
+        "errors": "错误",
+        "successRate": "成功率",
+        "avgLatency": "平均延迟",
+        "p95Latency": "P95延迟",
+        "inputTokens": "输入令牌",
+        "outputTokens": "输出令牌",
+        "costPer1k": "成本 / 1K",
+        "cost": "成本(美元)",
+        "bestCostPerformance": "最佳成本效益"
+      },
+      "showMoreModels": "显示 {{count}} 个更多模型",
+      "showMoreModels_other": "显示 {{count}} 个更多模型",
+      "showFewerModels": "显示更少模型",
+      "recentCalls": {
+        "title": "最近调用",
+        "empty": "此周期无使用记录。",
+        "columns": {
+          "time": "时间",
+          "router": "路由器",
+          "model": "模型",
+          "type": "类型",
+          "caller": "调用者",
+          "in": "进",
+          "out": "出",
+          "cost": "成本",
+          "latency": "延迟",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "状态"
+        }
+      },
+      "pagination": {
+        "previous": "前一个",
+        "next": "下一个",
+        "pageOf": "第 {{page}} / {{totalPages}} 页",
+        "totalRecords": "({{count}} 总记录)"
+      }
+    },
+    "record": {
+      "back": "返回",
+      "title": "调用详情",
+      "notFoundTitle": "未找到记录",
+      "notFoundBody": "无法加载使用记录 {{id}}。",
+      "errors": {
+        "loadFailed": "未能加载记录"
+      },
+      "sections": {
+        "identity": "标识",
+        "tokensAndCost": "令牌和成本",
+        "performanceAndOutcome": "性能和结果",
+        "traceLog": "跟踪日志"
+      },
+      "fields": {
+        "recordId": "记录ID",
+        "router": "路由器",
+        "token": "令牌",
+        "model": "模型",
+        "callType": "调用类型",
+        "requestType": "请求类型",
+        "inputTokens": "输入令牌",
+        "outputTokens": "输出令牌",
+        "totalTokens": "总令牌",
+        "costUsd": "成本(美元)",
+        "costUnknown": "未知",
+        "latency": "延迟",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "结果",
+        "timestamp": "时间戳",
+        "guardrailTriggered": "防护栏已触发",
+        "blockedBy": "被...阻止",
+        "piiRedacted": "个人身份信息已编辑"
+      },
+      "errorMessage": "错误消息",
+      "eventCount": "{{count}} 个事件",
+      "eventCount_other": "{{count}} 个事件",
+      "noTrace": "无可用跟踪。跟踪数据仅为新调用捕获。"
+    }
+  },
+  "playground": {
+    "title": "测试台",
+    "subtitle": "测试模型、比较响应和保存提示预设。",
+    "mode": {
+      "single": "单个",
+      "compare": "比较"
+    },
+    "token": {
+      "label": "令牌:",
+      "labelA": "令牌A",
+      "labelB": "令牌B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "与A相同",
+      "unknownToken": "未知令牌"
+    },
+    "presets": {
+      "button": "预设",
+      "panelTitle": "预设",
+      "saveCurrent": "保存当前",
+      "namePlaceholder": "预设名称...",
+      "save": "保存",
+      "empty": "还没有预设。",
+      "delete": "删除预设"
+    },
+    "streamingDisabled": {
+      "banner": "流媒体不可用",
+      "bannerBody": "此路由器具有活跃的响应阻止防护栏。Routerly必须在传递前检查完整响应，所以响应立即全部到达。",
+      "tooltip": "流媒体不可用: 响应阻止防护栏需要在传递前检查完整响应。",
+      "ariaLabel": "流媒体不可用"
+    },
+    "systemPrompt": "系统提示",
+    "model": "模型",
+    "modelPlaceholder": "自动(路由器默认)",
+    "params": {
+      "temp": "温度",
+      "maxTokens": "最大令牌",
+      "topP": "Top-p"
+    },
+    "stream": "流",
+    "clear": "清除",
+    "empty": {
+      "noMessages": "还没有消息。",
+      "enterToken": "在上面输入路由器令牌以开始。"
+    },
+    "reasoning": "推理",
+    "blockedDefault": "此消息被防护栏阻止。",
+    "truncated": "截断 - 响应被最大令牌截断",
+    "bufferedNote": "正在安全审查中",
+    "errors": {
+      "onlyImages": "仅支持图像附件。"
+    },
+    "rawToggle": {
+      "rendered": "渲染的",
+      "raw": "原始"
+    },
+    "inputPlaceholder": "键入消息...",
+    "attachImage": "附加图像",
+    "attachedImageAlt": "已附加",
+    "attachmentAlt": "附件",
+    "debug": {
+      "title": "调试",
+      "clear": "清除",
+      "hide": "隐藏调试",
+      "show": "显示调试",
+      "empty": "还没有调试数据。",
+      "emptyHint": "发送消息以查看路由详情。",
+      "turnTraceLog": "轮 #{{turn}} 跟踪日志"
+    },
+    "compare": {
+      "modelLabel": "模型 {{label}}:",
+      "modelSelectPlaceholder": "选择模型...",
+      "noMessages": "还没有消息。",
+      "debugTurns": "调试({{count}} 轮)",
+      "debugTurns_other": "调试({{count}} 轮)",
+      "guardrailTokensTitle": "防护栏判断令牌",
+      "stop": "停止",
+      "inputPlaceholder": "向两个模型发送相同的消息..."
+    }
+  },
+  "help": {
+    "title": "帮助和支持",
+    "subtitle": "我们在这里帮助您 - 随时查找答案或与我们联系。",
+    "docs": {
+      "title": "文档",
+      "subtitle": "指南、API参考和配置文档",
+      "body": "官方文档涵盖了从入门到高级路由策略、提供商设置、预算和完整API参考的所有内容。",
+      "openLink": "打开文档"
+    },
+    "issues": {
+      "title": "报告错误或建议功能",
+      "subtitle": "打开GitHub问题 - 需要2分钟",
+      "body": "GitHub问题是报告错误或提议改进的最佳方式。为了帮助我们更快地修复，请包括: 您所做的事情、您期望发生的事情以及实际发生的事情。",
+      "showTemplate": "显示问题模板",
+      "reportBug": "报告错误",
+      "requestFeature": "请求功能"
+    },
+    "issueTemplate": {
+      "whatHappened": "发生了什么？",
+      "whatHappenedHint": "用简单的词描述问题",
+      "stepsToReproduce": "重现步骤",
+      "expectedBehaviour": "预期行为",
+      "expectedBehaviourHint": "您期望看到什么",
+      "version": "Routerly版本",
+      "versionHint": "运行 `routerly --version` 或检查设置 → 关于"
+    },
+    "email": {
+      "title": "联系支持",
+      "subtitle": "我们阅读每条消息并尽快回复",
+      "body": "对于不适合GitHub问题的任何事情 - 计费问题、私人问题或如果您只想说声 \"你好\" - 给我们一行。"
+    },
+    "faq": {
+      "title": "常见问题",
+      "subtitle": "对最常见问题的快速回答",
+      "items": {
+        "connect": {
+          "q": "我如何将我的应用连接到Routerly？",
+          "a": "将您的OpenAI或Anthropic SDK指向您的Routerly实例。用http://your-host:3000/v1 (OpenAI兼容)或http://your-host:3000/anthropic (Anthropic兼容)替换基础URL，然后使用路由器令牌作为API密钥。就这样 - 不需要其他更改。"
+        },
+        "openaiCompat": {
+          "q": "Routerly与使用OpenAI SDK的工具兼容吗？",
+          "a": "是的。Routerly是一个替代品: 任何支持自定义基础URL和API密钥的工具(LangChain、LlamaIndex、Cursor、Continue等)开箱即用。对于Anthropic格式的客户端，改用/anthropic端点。"
+        },
+        "routing": {
+          "q": "模型路由如何工作？",
+          "a": "每个路由器都有一个路由策略，决定哪个模型接收请求。策略包括轮转、最低成本、最快响应、备用链等。您在路由器 → 路由下按路由器配置它们。"
+        },
+        "addModel": {
+          "q": "我如何添加新的AI模型？",
+          "a": "转到模型 → 添加模型。您可以添加任何OpenAI兼容的提供商(Ollama、LM Studio、自定义端点)或本地Anthropic端点。填入基础URL、API密钥和模型ID - Routerly处理其余的。"
+        },
+        "dataStored": {
+          "q": "我的数据被存储了吗？我的提示被记录了吗？",
+          "a": "Routerly是自托管的，仅在您的计算机上存储数据(默认在~/.routerly/中)。Routerly永远不会将提示和响应发送到任何地方。请求日志在本地存储，仅当您按路由器启用它们时。"
+        },
+        "routerToken": {
+          "q": "什么是路由器令牌，它与提供商API密钥有何不同？",
+          "a": "路由器令牌是您为您的应用或团队成员提供的凭证以使用Routerly进行身份验证。它与您的提供商API密钥分开，Routerly在服务器端安全地存储这些密钥。您的应用永远看不到真实的提供商密钥。"
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} 个用户",
+    "countLabel_other": "{{count}} 个用户",
+    "addButton": "添加用户",
+    "columns": {
+      "email": "电子邮件",
+      "role": "角色",
+      "routers": "路由器"
+    },
+    "allRouters": "全部",
+    "resetTwoFaTitle": "重置双因素认证",
+    "resetTwoFaConfirm": "为 {{email}} 重置双因素认证？他们需要重新注册。",
+    "deleteConfirm": "删除此用户？",
+    "emptyTitle": "还没有用户。",
+    "noPermission": "您没有权限查看用户。",
+    "modal": {
+      "title": "添加用户",
+      "emailLabel": "电子邮件",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "角色",
+      "roleAdmin": "管理员",
+      "roleViewer": "查看者",
+      "cancelButton": "取消",
+      "submitButton": "添加用户"
+    },
+    "errors": {
+      "loadFailed": "未能加载用户",
+      "addFailed": "错误"
+    }
+  },
+  "userEdit": {
+    "title": "编辑用户",
+    "account": "账户",
+    "email": "电子邮件",
+    "role": "角色",
+    "changePassword": "更改密码",
+    "newPassword": "新密码",
+    "newPasswordHint": "(留空以保持当前)",
+    "save": "保存",
+    "saved": "已保存!",
+    "errors": {
+      "loadFailed": "未能加载用户",
+      "saveFailed": "未能保存"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "管理角色和权限。内置角色无法修改。",
+    "newRole": "新建角色",
+    "builtin": "内置",
+    "edit": "编辑",
+    "deleteConfirm": "删除此角色？具有此角色的用户将受到影响。",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "例如operator",
+      "name": "名称",
+      "namePlaceholder": "角色名称",
+      "permissions": "权限",
+      "create": "创建",
+      "save": "保存",
+      "cancel": "取消"
+    },
+    "permissions": {
+      "routerRead": "路由器 - 读",
+      "routerWrite": "路由器 - 写",
+      "modelRead": "模型 - 读",
+      "modelWrite": "模型 - 写",
+      "userRead": "用户 - 读",
+      "userWrite": "用户 - 写",
+      "reportRead": "报告 - 读",
+      "settingsRead": "设置 - 读",
+      "settingsWrite": "设置 - 写",
+      "notificationWrite": "通知 - 写",
+      "tokenRead": "令牌 - 读",
+      "tokenWrite": "令牌 - 写",
+      "roleWrite": "角色 - 写",
+      "auditRead": "审计日志 - 读",
+      "modulesRead": "模块 - 读",
+      "modulesManage": "模块 - 管理",
+      "connectionsRead": "连接 - 读",
+      "connectionsManage": "连接 - 管理",
+      "resilienceRead": "恢复能力 - 读",
+      "resilienceManage": "恢复能力 - 管理",
+      "profilesRead": "路由配置文件 - 读",
+      "profilesManage": "路由配置文件 - 管理",
+      "optimizersRead": "优化器 - 读",
+      "optimizersManage": "优化器 - 管理",
+      "experimentsRead": "实验 - 读",
+      "experimentsManage": "实验 - 管理"
+    },
+    "errors": {
+      "loadFailed": "未能加载角色",
+      "updateFailed": "未能更新角色",
+      "createFailed": "未能创建角色",
+      "deleteFailed": "未能删除角色"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "配置文件",
+      "subtitle": "可重用的路由、优化器和安全配置",
+      "noPermission": "您没有权限查看配置文件。",
+      "newProfile": "新建 {{kind}} 配置文件",
+      "empty": "还没有 {{kind}} 配置文件。",
+      "builtin": "内置",
+      "custom": "自定义",
+      "view": "查看",
+      "edit": "编辑",
+      "clone": "克隆",
+      "delete": "删除",
+      "deleteConfirm": "删除配置文件\"{{label}}\"？这无法撤销。",
+      "kindDescriptions": {
+        "routing": "哪个模型回答请求，当它不能时会发生什么",
+        "optimizer": "在发送提示之前从它删除什么",
+        "security": "应用于流量的防护栏和个人身份信息策略"
+      },
+      "columns": {
+        "label": "标签",
+        "type": "类型",
+        "configuration": "配置",
+        "version": "版本"
+      },
+      "errors": {
+        "loadFailed": "未能加载配置文件",
+        "deleteFailed": "未能删除配置文件"
+      }
+    },
+    "form": {
+      "backToProfiles": "返回配置文件",
+      "newProfileTitle": "新建 {{kind}} 配置文件",
+      "editProfileTitle": "编辑 {{label}}",
+      "builtinHint": "内置配置文件无法编辑。克隆一个以定制它。",
+      "assignHint": "A {{kind}} 配置文件可以分配到任何数量的路由器。",
+      "noPermission": "您没有权限查看配置文件。",
+      "label": "标签",
+      "optimizers": "优化器",
+      "optimizersHint": "拖动以重新排序，切换以启用。它们从上到下按顺序运行。",
+      "createProfile": "创建配置文件",
+      "saveProfile": "保存配置文件",
+      "cancel": "取消",
+      "copySuffix": "{{label}} 副本",
+      "labelPlaceholders": {
+        "routing": "例如我的平衡路由",
+        "optimizer": "例如我的提示修剪器",
+        "security": "例如我的严格防护栏"
+      },
+      "errors": {
+        "notFound": "未找到配置文件。",
+        "loadFailed": "未能加载配置文件",
+        "saveFailed": "未能保存配置文件"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "返回连接",
+    "title": "连接",
+    "docs": "文档",
+    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
+    "noClientPrefix": "没有名为以下的客户端",
+    "errors": {
+      "loadFailed": "未能加载客户端: {{error}}"
+    },
+    "oneCommand": {
+      "title": "最快: 一条命令",
+      "description": "在安装 {{client}} 的机器上运行它。它写入 {{configPath}}，保留您可以撤销的备份。"
+    },
+    "byHand": {
+      "titleAlt": "或手动设置",
+      "titleUi": "手动设置",
+      "titleConfigFile": "设置配置文件",
+      "setValuesIn": "在 {{configPath}} 中设置这些值。",
+      "putThisIn": "放这个在",
+      "replaceToken": "替换",
+      "withRouterToken": "使用路由器令牌:",
+      "createOne": "创建一个",
+      "onRoutersPage": "在路由器页面上。",
+      "modelLabel": "模型:",
+      "modelHint": "将选择权交给Routerly，任何来自的模型ID",
+      "modelsLink": "模型",
+      "worksToo": "也有效。",
+      "openaiCompatHint": "相同的基础URL、密钥和模型适配任何提供\"OpenAI兼容\"提供商的客户端。"
+    },
+    "mcp": {
+      "title": "MCP服务器",
+      "description": "独立于上面的步骤: 这个让 {{client}} 调用Routerly工具。它需要个人MCP令牌，使用以下方式铸造",
+      "orFromYour": "或来自您的",
+      "profileLink": "配置文件"
+    },
+    "checkItWorked": {
+      "title": "检查它是否有效",
+      "restart": "重启 {{client}}，向它发送提示，然后寻找调用在",
+      "usageLink": "使用",
+      "cliReports": "从同一机器，CLI报告它发现的内容:"
+    }
+  },
+  "connect": {
+    "title": "连接",
+    "subtitle": "将AI编码客户端指向此网关。为其设置步骤选择一个客户端。",
+    "llmLabel": "LLM",
+    "llmDescription": "路由该客户端模型流量通过Routerly。",
+    "mcpLabel": "MCP",
+    "mcpDescription": "将Routerly加载为其内的工具服务器。",
+    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
+    "errors": {
+      "loadFailed": "未能加载客户端: {{error}}"
+    },
+    "oneCommand": {
+      "title": "一条命令",
+      "hint": "CLI为您写配置文件，使用可撤销的备份。"
+    },
+    "byHand": {
+      "title": "手动",
+      "hint": "从客户端页面复制代码片段到其设置，然后重启它。"
+    },
+    "endpoint": {
+      "title": "将任何客户端指向此处",
+      "description": "任何基于OpenAI或Anthropic SDK的内容都通过更改基础URL和密钥而有效。不改变其他任何东西: 请求和响应通过Routerly按原样。",
+      "openaiBaseUrl": "OpenAI基础URL",
+      "anthropicBaseUrl": "Anthropic基础URL",
+      "apiKey": "API密钥",
+      "model": "模型",
+      "apiKeyDescription": "路由器令牌，发送为",
+      "or": "或",
+      "createOne": "创建一个",
+      "onRoutersPage": "在路由器页面上。",
+      "modelDescription": "让Routerly选择。任何来自的模型ID",
+      "modelsLink": "模型",
+      "worksToo": "页面也有效。"
+    }
+  }
+}

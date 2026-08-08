@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Auto",
+      "dark": "Dark",
+      "light": "Light"
+    },
+    "themeCycle": {
+      "title": "Theme: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Expand sidebar",
+      "collapse": "Collapse sidebar"
+    },
+    "tagline": "One gateway. Any AI model. Total control.",
+    "nav": {
+      "overview": "Overview",
+      "providers": "Providers",
+      "models": "Models",
+      "profiles": "Profiles",
+      "routers": "Routers",
+      "experiments": "Experiments",
+      "usage": "Usage",
+      "playground": "Playground",
+      "settings": "Settings",
+      "connectApp": "Connect app",
+      "help": "Help",
+      "signOut": "Sign Out"
+    },
+    "banner": {
+      "permissionWarning": "Some configuration files have permissive access ({{files}}). Startup and requests still work, but fix this from the host filesystem when convenient.",
+      "dismiss": "Dismiss",
+      "updateAvailable": "Routerly v{{latest}} is available. You are on v{{current}}.",
+      "updateLink": "Update in Settings",
+      "mfaRequired": "Two-factor authentication is required for this instance.",
+      "mfaLink": "Set up 2FA in your Profile",
+      "mfaSuffix": "to secure your account.",
+      "telemetryTitle": "Routerly never sends data automatically.",
+      "telemetryBody": "Would you like to help by sending anonymous install metrics? Only event type, version, platform, and a random ID — no personal data, no IP.",
+      "telemetryLink": "What is sent?",
+      "telemetryYes": "Yes, help out",
+      "telemetryNo": "No thanks"
+    },
+    "language": {
+      "label": "भाषा"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} second ago",
+      "secondsAgo_other": "{{count}} seconds ago",
+      "minutesAgo": "{{count}} minute ago",
+      "minutesAgo_other": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hour ago",
+      "hoursAgo_other": "{{count}} hours ago",
+      "daysAgo": "{{count}} day ago",
+      "daysAgo_other": "{{count}} days ago"
+    },
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "select": "Select...",
+    "search": "Search...",
+    "noResults": "No results",
+    "noRemainingOptions": "No remaining options",
+    "apply": "Apply",
+    "saved": "Saved",
+    "showLess": "Show less",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "notifications": {
+      "title": "Notifications",
+      "markAllRead": "Mark all read",
+      "empty": "No notifications",
+      "viewAll": "View all notifications"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Select period",
+      "recent": "Recent",
+      "ranges": "Ranges",
+      "from": "From",
+      "to": "To"
+    },
+    "permissionGuard": {
+      "fixFailed": "Failed to fix permissions",
+      "title": "Unsafe file permissions",
+      "defaultMessage": "Some files have unsafe permissions.",
+      "fixing": "Fixing…",
+      "fixNow": "Fix now"
+    },
+    "limitRows": {
+      "noLimits": "No limits set.",
+      "metricLabel": "Metric",
+      "typeLabel": "Type",
+      "periodLabel": "Period",
+      "everyLabel": "Every",
+      "maxCost": "Max cost",
+      "maxCount": "Max count",
+      "maxTokens": "Max tokens",
+      "allCombosSet": "All metric/period combinations are already set",
+      "addLimit": "Add limit",
+      "metric": {
+        "cost": "Cost",
+        "calls": "Calls",
+        "input_tokens": "Input tokens",
+        "output_tokens": "Output tokens",
+        "total_tokens": "Total tokens"
+      },
+      "period": {
+        "hourly": "Hourly",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "rollingUnit": {
+        "second": "second",
+        "minute": "minute",
+        "hour": "hour",
+        "day": "day",
+        "week": "week",
+        "month": "month"
+      },
+      "windowType": {
+        "period": "Period",
+        "rolling": "Rolling"
+      },
+      "fmt": {
+        "requests": "{{value}} requests",
+        "inputTokens": "{{value}} input tokens",
+        "outputTokens": "{{value}} output tokens",
+        "totalTokens": "{{value}} total tokens",
+        "everyRolling": "{{metric}} every {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "What routing saved",
+      "input": "Input",
+      "output": "Output",
+      "actual": "Actual",
+      "clientCalls": "{{count}} client call",
+      "clientCalls_other": "{{count}} client calls",
+      "comparedAgainst": ", compared against sending it to each of the",
+      "comparedAgainst_other": ", compared against sending them all to each of the",
+      "paidModelsInPlay": "{{count}} paid model in play",
+      "paidModelsInPlay_other": "{{count}} paid models in play",
+      "metricCost": "Cost",
+      "metricTokens": "Tokens",
+      "totalCost": "Total Cost",
+      "routed": "Routed: {{value}}",
+      "saved": "Saved: {{value}}",
+      "usdThisPeriod": "USD this period",
+      "savedVsAlways": "{{value}} saved ({{percent}}%) vs always {{model}}",
+      "tokens": "Tokens",
+      "in": "In: {{value}}",
+      "out": "Out: {{value}}",
+      "tokenSubWithCache": "{{in}} in · {{out}} out · {{cached}} cached",
+      "tokenSub": "{{in}} in · {{out}} out",
+      "cutByOptimizers": "{{value}} cut by optimizers",
+      "fewerThanAlways": "{{value}} fewer than always {{model}}, estimated"
+    },
+    "optimizerSteps": {
+      "downloaded": "Downloaded",
+      "thisStepRunsOn": "This step runs on",
+      "defaultCheckpoint": "Default checkpoint"
+    },
+    "routingPolicies": {
+      "title": "Routing Policies",
+      "subtitle": "Policies determine how requests are routed. They are executed in order from top to bottom.",
+      "removePolicy": "Remove policy",
+      "removeIntent": "Remove intent",
+      "removeExample": "Remove example",
+      "routingModels": "Routing Models",
+      "embeddingModels": "Embedding Models",
+      "maxCompletionTokens": "Max completion tokens",
+      "maxPromptChars": "Max prompt chars",
+      "similarityThreshold": "Similarity threshold",
+      "previousMessages": "Previous messages",
+      "intents": "Intents",
+      "confidenceThreshold": "Confidence threshold",
+      "ambiguityMargin": "Ambiguity margin",
+      "maxCallsPerWindow": "Max calls per window",
+      "addFallbackModel": "Add Fallback Model",
+      "autoRoutingLabel": "Auto Routing",
+      "autoRoutingHint": "If enabled, traffic is distributed without custom prompts. If disabled, you can write specific prompts instructing the AI when to select each target model.",
+      "additionalPromptInfoLabel": "Additional Prompt Info",
+      "additionalPromptInfoPlaceholder": "Extra instructions to include in the routing prompt...",
+      "addExamplePlaceholder": "Add example and press Enter…",
+      "addIntentPlaceholder": "Add intent and press Enter…",
+      "addPolicyPlaceholder": "Add a policy...",
+      "labels": {
+        "llm": "AI Routing Policy",
+        "rate-limit": "Rate Limit Policy",
+        "budget-remaining": "Budget Remaining Policy",
+        "semantic-intent": "Semantic Intent Policy",
+        "health": "Health Policy",
+        "context": "Context Policy",
+        "capability": "Capability Policy",
+        "performance": "Performance Policy",
+        "fairness": "Fairness Policy",
+        "cheapest": "Cheapest Policy",
+        "model-preference": "Model Preference Policy"
+      },
+      "descriptions": {
+        "context": "Scores models based on available context window. Assigns 0 to models whose context window is smaller than the estimated request length, preventing truncation errors.",
+        "cheapest": "Scores models inversely proportional to their token cost. The cheapest model gets 1.0, the most expensive gets 0.0, helping reduce API spend across requests.",
+        "health": "Scores models based on their recent error rate using exponential decay (recent errors weigh more). Applies a circuit breaker that sets the score to 0 when the weighted error rate exceeds a critical threshold.",
+        "performance": "Scores models based on their recent average latency using exponential decay. The fastest model gets 1.0, the slowest gets 0.0. Models without recent data default to 1.0.",
+        "llm": "Uses an AI model to score candidates based on the semantic content of the request. Supports routing guidance prompts per model and considers budget headroom when limits are configured.",
+        "capability": "Hard filter: assigns 0 to models that explicitly lack a feature required by the request (vision, function calling, JSON mode). Models without explicit capability declarations are not penalized.",
+        "rate-limit": "Penalizes models with a high recent call frequency to reduce the risk of hitting provider rate limits (HTTP 429). Supports a configurable hard threshold that forces the score to 0.",
+        "fairness": "Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.",
+        "budget-remaining": "Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.",
+        "semantic-intent": "Classifies the request by semantic intent using embeddings, then restricts the candidate pool to the models mapped to that intent. Confident matches hard-filter the pool; ambiguous matches merge top-2 pools; unknown requests pass all candidates through.",
+        "model-preference": "When the client requests a specific model (not routerly/ada), awards a configurable bonus score to that model. When no preference is expressed, the policy abstains. Position in the list controls how much the preference weighs against other policies."
+      },
+      "selectModel": "Select model"
+    },
+    "securityRules": {
+      "applyTo": "Apply to",
+      "streamingBufferSize": "Streaming buffer size (characters)",
+      "entityTypes": "Entity types",
+      "target": "Target",
+      "embeddingModel": "Embedding model",
+      "judgeModel": "Judge model",
+      "contentGuardrails": "Content Guardrails",
+      "piiPolicies": "PII Policies",
+      "addSecurityPolicyPlaceholder": "Add a security policy...",
+      "removePolicyTooltip": "Remove policy",
+      "deleteRuleAriaLabel": "Delete rule",
+      "embeddingModelPlaceholder": "Select embedding model...",
+      "fallbackModelsLabel": "Fallback models (optional, tried in order)",
+      "fallbackModelsPlaceholder": "No fallback models...",
+      "exampleTextsLabel": "Example texts to block (one per line)",
+      "exampleTextsPlaceholder": "How do I hack...\n...",
+      "similarityThresholdLabel": "Similarity threshold:",
+      "judgeModelPlaceholder": "Select judge model...",
+      "allowedTopicsLabel": "Allowed topics (natural language)",
+      "allowedTopicsPlaceholder": "Customer support for software products. Technical troubleshooting. Billing questions.",
+      "onTopicThresholdLabel": "Block if on-topic score below:",
+      "harmThresholdLabel": "Block if harm score above:",
+      "customInstructionsLabel": "Custom instructions",
+      "customInstructionsPlaceholder": "You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\nRespond ONLY with a JSON object: {\"score\": <number between 0 and 1>}",
+      "customInstructionsRequired": "Custom instructions are required.",
+      "enabledLabel": "Enabled",
+      "contentGuardrailsHint": "Inspect requests and responses against configured rules. Active when at least one rule is configured.",
+      "securityPoliciesHeading": "Security Policies",
+      "noSecurityPolicies": "No security policies configured.",
+      "piiPoliciesHint": "Detect and redact personal data. Each policy targets request input, model response, or both, and controls its own entity set.",
+      "noPiiPolicies": "No PII policies configured.",
+      "addPolicyButton": "+ Add Policy",
+      "injectionWarningTitle": "Request payload modified by injection",
+      "injectionWarningBody": "One or more rules inject their instruction into the outgoing request's system prompt, so the payload sent to the provider is modified. No additional model call is made and nothing is blocked; the serving model self-enforces the instruction.",
+      "streamingDisabledWarningTitle": "Streaming disabled for this router",
+      "streamingDisabledWarningBody": "One or more rules are configured to block responses (target: response or both). Because the entire response must be inspected before a blocking decision can be made, Routerly holds the response in full before returning it to the client. Streaming is not available while a response-blocking rule is active; clients will receive the complete response at once instead of in incremental chunks."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure Resource Name",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "The Azure OpenAI resource name (from the Azure portal).",
+      "deploymentId": "Deployment ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "The deployment name you created in Azure OpenAI Studio.",
+      "azureApiVersionLabel": "API Version",
+      "azureApiVersionDefaultHint": "(default: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS Region",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Leave blank to keep existing",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Session Token",
+      "awsSessionTokenOptionalHint": "(optional, for temporary credentials)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Router ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Location",
+      "gcpLocationDefaultHint": "(default: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Service Account Key",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Endpoint URL",
+      "optional": "(optional)",
+      "webProvider": {
+        "unofficialWarningTitle": "Unofficial provider — use at your own risk.",
+        "unofficialWarningBody": "This integration relies on an undocumented internal API that may change or break without notice. It may violate the provider's Terms of Service and could result in account suspension.",
+        "accessTokenLabel": "Access Token",
+        "sessionTokenLabel": "Session Token",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Paste sessionKey cookie value (sk-ant-sid01-…)",
+        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token expires every ~24 hours. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
+        "anthropicInstructions": "<strong>How to get your session key:</strong> While logged in to Claude, open DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copy the value of the <code>sessionKey</code> cookie (starts with <code>sk-ant-sid01-</code>). The key stays valid until you log out."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Subscription OAuth Token",
+        "authFilePathLabel": "Auth file path",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (default)",
+        "anthropicTitle": "Use your Claude Pro/Max subscription.",
+        "anthropicRunCommandStep": "Run this command and copy the token it prints:",
+        "anthropicPasteTokenStep": "Paste the token into the <em>Subscription OAuth Token</em> field below.",
+        "termsNote": "Regenerate when it expires. Subscription use via a gateway may be against the provider's Terms.",
+        "openaiTitle": "Use your ChatGPT Plus/Pro subscription via the Codex app.",
+        "openaiLoginStep": "Log in to the Codex desktop app with your ChatGPT Plus/Pro account.",
+        "openaiAutoRefreshStep": "Routerly reads your access token from <code>~/.codex/auth.json</code> and refreshes it automatically. No manual copy/paste needed.",
+        "openaiAuthFilePathStep": "Leave the <em>Auth file path</em> field blank to use the default, or enter a custom path if your Codex app stores auth elsewhere.",
+        "openaiTermsNote": "Subscription use via a gateway may be against the provider's Terms."
+      },
+      "copyCode": {
+        "copiedTooltip": "Copied!",
+        "copyTooltip": "Copy to clipboard",
+        "copiedLabel": "Copied",
+        "copyLabel": "Copy"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Copy",
+      "copiedLabel": "Copied!",
+      "copyErrorHint": "Copy failed, select and copy manually."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP client",
+      "hints": {
+        "claudeCode": "Run this once, anywhere. Claude Code stores the server in <code>~/.claude.json</code>.",
+        "claudeDesktop": "Put this in <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (on Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), then restart the app. It spawns the CLI, so <code>routerly</code> must be on your PATH.",
+        "codex": "Put this in <code>~/.codex/config.toml</code>. Codex reads the token from the environment, so export it in the shell you start Codex from.",
+        "opencode": "Put this in <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Run this once. OpenClaw defaults to the sse transport, which Routerly does not serve, so the transport is set explicitly.",
+        "cursor": "Put this in <code>~/.cursor/mcp.json</code>, or in <code>.cursor/mcp.json</code> to scope it to one project.",
+        "cline": "Put this in <code>~/.cline/mcp.json</code>, or paste it into Configure MCP Servers in the Cline panel.",
+        "zed": "Put this in your Zed <code>settings.json</code>, alongside any other context server."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Unsaved Changes",
+      "message": "You have unsaved changes. If you leave now, your changes will be lost.",
+      "stay": "Stay",
+      "leaveAnyway": "Leave anyway"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Guardrails",
+        "pii": "PII",
+        "optimizers": "Optimizers",
+        "routerOverhead": "Router overhead"
+      },
+      "policyType": {
+        "llm": "AI Routing",
+        "rateLimit": "Rate Limit",
+        "budgetRemaining": "Budget Remaining",
+        "semanticIntent": "Semantic Intent",
+        "modelPreference": "Model Preference"
+      },
+      "rawDetails": "raw details",
+      "technicalDetails": "technical details",
+      "systemPrompt": "system prompt",
+      "responseText": "response text",
+      "responseJson": "response JSON",
+      "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Embedding Model",
+      "upstreamModel": "Upstream Model",
+      "provider": "Provider",
+      "source": "Source",
+      "endpoint": "Endpoint",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL extended",
+      "model": "Model",
+      "similarity": "Similarity",
+      "embedding": "Embedding",
+      "cacheMiss": "CACHE MISS",
+      "details": "details",
+      "excludedByLimits": "EXCLUDED BY LIMITS",
+      "finalRanking": "FINAL RANKING",
+      "noRankingData": "No ranking data (record may be corrupted or from older version)",
+      "policyScores": "POLICY SCORES",
+      "weight": "weight {{value}}",
+      "allScores": "all scores",
+      "noPolicyData": "No policy data (record may be corrupted or from older version)",
+      "requestGuardrailBlocked": "REQUEST GUARDRAIL BLOCKED",
+      "requestGuardrailTriggered": "REQUEST GUARDRAIL TRIGGERED",
+      "responseGuardrailBlocked": "RESPONSE GUARDRAIL BLOCKED",
+      "responseGuardrailTriggered": "RESPONSE GUARDRAIL TRIGGERED",
+      "rule": "Rule",
+      "action": "Action",
+      "guardrailsEvaluated": "GUARDRAILS EVALUATED ({{target}})",
+      "ruleCount": "{{count}} rule",
+      "ruleCount_other": "{{count}} rules",
+      "promptInjection": "Prompt injection",
+      "injects": "injects",
+      "judgeResponse": "Judge response",
+      "piiScrubbed": "PII SCRUBBED",
+      "piiScanned": "PII SCANNED ({{target}})",
+      "policies": "policies",
+      "entityTypes": "entity types",
+      "customPatterns": "custom patterns",
+      "scanned": "scanned",
+      "redacted": "redacted",
+      "took": "took",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "entity types scanned",
+      "guardrailInjection": "GUARDRAIL INJECTION",
+      "rules": "rules",
+      "chars": "chars",
+      "injectedText": "injected text",
+      "optimizer": "OPTIMIZER {{id}}",
+      "tokens": "tokens",
+      "saved": "saved",
+      "tok": "{{value}} tok",
+      "reason": "reason",
+      "budgetBlocked": "BUDGET BLOCKED",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "EGRESS SENT",
+      "status": "status",
+      "encoding": "encoding",
+      "frames": "frames",
+      "bytes": "bytes"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "My Profile",
+      "subtitle": "Manage your account settings"
+    },
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "mcp": "MCP",
+      "preferences": "Preferences"
+    },
+    "notifications": {
+      "close": "Close",
+      "refresh": "Refresh",
+      "clear": "Clear",
+      "empty": "No notifications found.",
+      "markAllRead": "Mark all read",
+      "allCaughtUp": "All caught up",
+      "unreadCount": "{{count}} unread",
+      "selectedCount": "{{count}} selected",
+      "severity": {
+        "all": "All",
+        "info": "Info",
+        "warning": "Warning",
+        "critical": "Critical"
+      },
+      "status": {
+        "read": "Read",
+        "unread": "Unread"
+      },
+      "filters": {
+        "severity": "Severity",
+        "category": "Category",
+        "event": "Event",
+        "date": "Date",
+        "period": "Period",
+        "status": "Status",
+        "all": "All",
+        "allCategories": "All categories",
+        "allEvents": "All events",
+        "unreadOnly": "Unread only"
+      },
+      "actions": {
+        "markRead": "Mark as read",
+        "markUnread": "Mark as unread",
+        "archive": "Archive"
+      },
+      "table": {
+        "severity": "Severity",
+        "event": "Event",
+        "date": "Date",
+        "status": "Status",
+        "selectAll": "Select all",
+        "selectRow": "Select {{event}}",
+        "eventCount": "{{count}} events"
+      },
+      "pagination": {
+        "previous": "← Previous",
+        "next": "Next →",
+        "page": "Page {{page}} of {{totalPages}}",
+        "total": "({{count}} total)"
+      },
+      "detail": {
+        "ariaLabel": "Notification detail",
+        "details": "Details",
+        "noDetails": "No additional details.",
+        "eventsInIncident": "Events in this incident"
+      }
+    },
+    "security": {
+      "roleLabel": "Role:",
+      "password": {
+        "heading": "Change Password",
+        "currentLabel": "Current Password",
+        "newLabel": "New Password",
+        "newPlaceholder": "Minimum 8 characters",
+        "confirmLabel": "Confirm New Password",
+        "success": "Password changed successfully.",
+        "saving": "Saving...",
+        "submit": "Change Password",
+        "errors": {
+          "mismatch": "Passwords do not match.",
+          "tooShort": "New password must be at least 8 characters.",
+          "updateFailed": "Update failed"
+        }
+      },
+      "tfa": {
+        "heading": "Two-Factor Authentication",
+        "notEnabled": "2FA is not enabled. Protect your account with a time-based one-time password.",
+        "enableButton": "Enable Two-Factor Authentication",
+        "scanInstructions": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.",
+        "qrAlt": "2FA setup QR code",
+        "addAccountInstructions": "Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:",
+        "setup": {
+          "step1": "Tap <strong>Add account</strong> or the <strong>+</strong> button",
+          "step2": "Choose <strong>Enter setup key</strong> (or scan QR code if on mobile)",
+          "step3": "Enter the secret shown below"
+        },
+        "mobileLink": "Tap here on mobile to open authenticator",
+        "manualEntryLabel": "Manual entry secret:",
+        "saveBackupCodes": "Save these backup codes. Each can be used once if you lose access to your authenticator.",
+        "copyBackupCodes": "Copy backup codes",
+        "confirmCodeLabel": "Enter code from your app to activate",
+        "activate": "Activate 2FA",
+        "cancel": "Cancel",
+        "enabledBadge": "2FA is enabled",
+        "newBackupCodesLabel": "New backup codes (save these now):",
+        "copy": "Copy",
+        "regenLabel": "Enter authenticator code to regenerate backup codes",
+        "regenerate": "Regenerate",
+        "regenerateBackupCodes": "Regenerate backup codes",
+        "disableLabel": "Disable 2FA (enter authenticator code)",
+        "disable": "Disable 2FA",
+        "errors": {
+          "setupFailed": "Setup failed",
+          "confirmFailed": "Confirmation failed",
+          "disableFailed": "Disable failed",
+          "regenFailed": "Regeneration failed"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Failed to load the MCP surface",
+        "revokeFailed": "Failed to revoke the token"
+      },
+      "revokeConfirm": "Revoke MCP token \"{{name}}\"? Clients using it stop working immediately.",
+      "tokens": {
+        "heading": "MCP Tokens",
+        "newToken": "New Token",
+        "description": "Each token acts as you: it exposes exactly the tools your role permits. The full value is shown once, on the page that creates it.",
+        "empty": "No MCP tokens yet. Create one to connect an MCP client.",
+        "created": "Created",
+        "lastUsed": "Last used",
+        "expires": "Expires",
+        "never": "Never",
+        "revokeTitle": "Revoke token"
+      },
+      "tools": {
+        "heading": "Tools Your Tokens Expose",
+        "empty": "Your role grants no MCP tool. Ask an administrator for the permissions you need.",
+        "table": {
+          "name": "Name",
+          "scope": "Scope",
+          "description": "Description",
+          "sourceModule": "Source module",
+          "permission": "Permission"
+        }
+      },
+      "connect": {
+        "heading": "Connect an MCP Client",
+        "descriptionPre": "Pick the client you are wiring up, then replace",
+        "descriptionPost": "with one of your tokens. Creating a token shows the same snippet with the value already in it.",
+        "otherClient": "Any other client",
+        "httpInstructionsPre": "Over HTTP, point it at this endpoint and authenticate with",
+        "httpInstructionsPost": ". It is JSON-RPC 2.0 over Streamable HTTP.",
+        "stdioInstructionsPre": "Over stdio, the CLI bridges it and passes your token through. Running the service directly instead? Set",
+        "stdioInstructionsAnd": "and",
+        "stdioInstructionsPost": "yourself."
+      },
+      "newToken": {
+        "backToMcp": "Back to MCP",
+        "title": "New MCP Token",
+        "subtitle": "The token acts as you: it exposes exactly the tools your role permits.",
+        "nameLabel": "Name",
+        "namePlaceholder": "laptop",
+        "nameHint": "Where this token is used, for example \"laptop\" or \"claude-desktop\".",
+        "expiryLabel": "Expires on",
+        "expiryHint": "Optional. Leave it empty and the token never expires, until you revoke it.",
+        "createButton": "Create token",
+        "creatingButton": "Creating…",
+        "cancelButton": "Cancel",
+        "tokenSection": {
+          "title": "Your token",
+          "hint": "Copy it now. It is not shown again, and a lost token can only be replaced.",
+          "copyButton": "Copy",
+          "copiedButton": "Copied!",
+          "copyTitle": "Copy token",
+          "copiedTitle": "Copied!"
+        },
+        "connectSection": {
+          "title": "Connect a client",
+          "hint": "Pick the client you are wiring up. The snippet already carries this token."
+        },
+        "bridgeSection": {
+          "title": "Or use the local bridge",
+          "hint": "For a client that only speaks stdio, the CLI bridges it and passes your token through."
+        },
+        "doneButton": "Done",
+        "errors": {
+          "createFailed": "Failed to create the token",
+          "copyFailed": "Copy failed, select and copy the token manually."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Language",
+      "description": "Choose the language the dashboard is displayed in.",
+      "languageLabel": "Language",
+      "saved": "Language preference saved."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Failed to load settings",
+        "loadFailedPeriod": "Failed to load settings.",
+        "saveFailed": "Failed to save",
+        "saveSettingsFailed": "Failed to save settings"
+      },
+      "savedSuccess": "Settings saved successfully.",
+      "saving": "Saving…",
+      "saveSettings": "Save Settings",
+      "serverInfo": {
+        "heading": "Server Info",
+        "readOnly": "Read-only. Host and port come from the environment or the settings file, not from here.",
+        "reachableAt": "Reachable at",
+        "reachableAtAny": "Reachable at any of these addresses",
+        "thisMachine": "This machine",
+        "network": "Network",
+        "copyAddress": "Copy {{address}}",
+        "copied": "Copied!",
+        "copy": "Copy",
+        "hostAndPort": "Host and port",
+        "version": "Version",
+        "uptime": "Uptime"
+      },
+      "runtime": {
+        "heading": "Runtime Settings",
+        "logLevel": "Log Level",
+        "logLevelHint": "Controls the verbosity of service logs.",
+        "publicUrl": "Public URL",
+        "publicUrlHint": "Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>). Used in the <strong>How to connect</strong> section of each router. Useful when the dashboard runs on a different machine or port than the service.",
+        "usageRetention": "Usage Retention",
+        "noLimit": "No limit",
+        "maxAgeDays": "Max age (days)",
+        "maxSizeMb": "Max size (MB)",
+        "retentionHint": "Usage/billing history older than this many days, or exceeding this size, is dropped from the active log. Leave both empty for no retention limit."
+      },
+      "internationalization": {
+        "heading": "आंतरराष्ट्रीयकरण",
+        "defaultLanguage": "डिफॉल्ट भाषा",
+        "defaultLanguageHint": "ज्या वापरकर्त्यांनी अजून त्यांची स्वतःची भाषा निवडली नाही त्यांच्यासाठी डॅशबोर्डची भाषा. वापरकर्त्याची वैयक्तिक पसंद ओव्हरराइड करत नाही."
+      },
+      "telemetry": {
+        "heading": "Anonymous Metrics",
+        "neverAutomatic": "Routerly never sends data automatically.",
+        "noChoice": "You have not made a choice yet.",
+        "enabledStatus": "Anonymous install metrics are enabled.",
+        "disabledStatus": "Anonymous install metrics are disabled.",
+        "explanation": "When enabled, Routerly sends only: event type (install / upgrade / uninstall), version, platform, and a random ID. No personal data, no usage data, no IP stored.",
+        "whatIsSent": "What is sent?",
+        "installId": "Install ID: {{id}}",
+        "saving": "Saving…",
+        "enable": "Enable",
+        "disable": "Disable"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Dashboard (in-app inbox)",
+          "description": "Routes events to the in-app inbox"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Custom mail server"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook callback"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Provider – Error",
+        "providerDegraded": "Provider – Degraded",
+        "providerRecovered": "Provider – Recovered",
+        "providerRateLimited": "Provider – Rate Limited",
+        "routingNoCandidates": "Routing – No Candidates",
+        "routingFallbackUsed": "Routing – Fallback Used",
+        "authLoginFailed": "Auth – Login Failed",
+        "authTokenInvalid": "Auth – Token Invalid",
+        "configModelAdded": "Config – Model Added",
+        "configModelDeleted": "Config – Model Deleted",
+        "configRouterCreated": "Config – Router Created",
+        "configRouterDeleted": "Config – Router Deleted",
+        "budgetThresholdReached": "Budget – Threshold Reached",
+        "budgetExceeded": "Budget – Exceeded",
+        "budgetReset": "Budget – Reset",
+        "systemStartup": "System – Startup",
+        "systemShutdown": "System – Shutdown",
+        "systemUpdateAvailable": "System – Update Available"
+      },
+      "removeChannelTooltip": "Remove channel",
+      "removeChannelConfirm": "Remove channel?",
+      "formUpdatedHint": "Form updated — save to apply.",
+      "hmacSigningKeyPlaceholder": "HMAC signing key",
+      "perms": {
+        "routerRead": "Routers – Read",
+        "routerWrite": "Routers – Write",
+        "modelRead": "Models – Read",
+        "modelWrite": "Models – Write",
+        "userRead": "Users – Read",
+        "userWrite": "Users – Write",
+        "reportRead": "Reports – Read",
+        "settingsRead": "Settings – Read",
+        "settingsWrite": "Settings – Write",
+        "notificationWrite": "Notifications – Write",
+        "tokenRead": "Tokens – Read",
+        "tokenWrite": "Tokens – Write",
+        "roleWrite": "Roles – Write",
+        "auditRead": "Audit Log – Read",
+        "modulesRead": "Modules – Read",
+        "modulesManage": "Modules – Manage",
+        "connectionsRead": "Connections – Read",
+        "connectionsManage": "Connections – Manage",
+        "resilienceRead": "Resilience – Read",
+        "resilienceManage": "Resilience – Manage",
+        "profilesRead": "Routing Profiles – Read",
+        "profilesManage": "Routing Profiles – Manage",
+        "optimizersRead": "Optimizers – Read",
+        "optimizersManage": "Optimizers – Manage",
+        "experimentsRead": "Experiments – Read",
+        "experimentsManage": "Experiments – Manage"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "For this channel type, targets do not change delivery (the endpoint is fixed). They filter which events are logged in the audit trail per recipient.",
+        "dashboard": "Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox.",
+        "email": "Targets determine which users receive this email. Leave all empty to send to all users."
+      },
+      "summary": {
+        "allEvents": "All events",
+        "eventCount": "{{count}} event",
+        "eventCount_other": "{{count}} events",
+        "roleCount": "{{count}} role",
+        "roleCount_other": "{{count}} roles",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} user",
+        "userCount_other": "{{count}} users",
+        "everyone": "Everyone"
+      },
+      "errors": {
+        "loadFailed": "Failed to load"
+      },
+      "fields": {
+        "dashboardHint": "Routes matching events to the in-app notification inbox. No credentials required.",
+        "labels": {
+          "fromAddress": "From Address",
+          "fromName": "From Name",
+          "host": "Host",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Username",
+          "password": "Password",
+          "awsRegion": "AWS Region",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API Key",
+          "connectionString": "Connection String",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "Method",
+          "signingSecret": "Signing Secret",
+          "botToken": "Bot Token",
+          "channelId": "Channel ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "Integration Key"
+        },
+        "values": {
+          "enabled": "Enabled",
+          "disabled": "Disabled",
+          "configured": "Configured",
+          "notSet": "Not set"
+        },
+        "optional": "(optional)",
+        "keepCurrentPlaceholder": "Leave blank to keep current",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Use TLS / SSL",
+        "smtpTlsOnHint": "(port 465 — direct SSL)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Leave credentials blank to use the IAM instance role.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC signing key",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-character routing key",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Events",
+          "eventsPlaceholder": "All events (leave empty for all)",
+          "eventsHint": "Leave empty to receive all events. Select specific events to filter.",
+          "routersHeading": "Routers",
+          "routersPlaceholder": "All routers (leave empty for all)",
+          "routersHint": "Leave empty to receive events from all routers.",
+          "cooldownHeading": "Cooldown",
+          "cooldownSuffix": "seconds (0 = no cooldown)",
+          "cooldownHint": "Minimum interval before this channel can fire again for the same event."
+        },
+        "recipients": {
+          "heading": "Recipients / Targets",
+          "rolesLabel": "Roles",
+          "rolesPlaceholder": "All roles (everyone)",
+          "permissionsLabel": "Permissions",
+          "permissionsPlaceholder": "All permissions (everyone)",
+          "usersLabel": "Individual users",
+          "usersPlaceholder": "All users (everyone)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "connection",
+          "routing": "routing",
+          "recipients": "recipients"
+        },
+        "sections": {
+          "channelSettings": "Channel settings",
+          "eventsRouting": "Events and routing",
+          "recipients": "Recipients"
+        },
+        "nameLabel": "Name",
+        "namePlaceholder": "Label for this channel",
+        "cancelButton": "Cancel"
+      },
+      "list": {
+        "countLabel": "{{count}} channel",
+        "countLabel_other": "{{count}} channels",
+        "filteredLabel": "{{shown}} of {{count}} channel",
+        "filteredLabel_other": "{{shown}} of {{count}} channels",
+        "allTypes": "All types",
+        "searchPlaceholder": "Filter channels…",
+        "searchChannelsPlaceholder": "Search channels…",
+        "addButton": "Add Channel",
+        "addSearchPlaceholder": "Search channels…",
+        "noResults": "No results",
+        "emptyTitle": "No notification channels configured yet.",
+        "noMatch": "No channels match the active filters.",
+        "nameInlinePlaceholder": "Label (optional)",
+        "columns": {
+          "name": "Name",
+          "type": "Type",
+          "summary": "Events / Targets"
+        },
+        "testTitle": "Send test",
+        "editTitle": "Edit channel",
+        "deleteTitle": "Delete channel",
+        "deleteConfirm": "Remove channel \"{{name}}\"? This cannot be undone.",
+        "deleteConfirmButton": "Delete",
+        "errors": {
+          "deleteFailed": "Failed to delete"
+        }
+      },
+      "edit": {
+        "backToList": "Back to Notifications",
+        "back": "Back",
+        "heading": "Edit {{provider}} channel",
+        "subtitle": "Update configuration for this notification channel.",
+        "testSection": {
+          "title": "Send test",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Send Test",
+          "sendingButton": "Sending…",
+          "hintEmail": "Leave empty to send to your account email. Test uses the saved channel configuration.",
+          "hintOther": "Test uses the saved channel configuration. Save changes first to test updated settings."
+        },
+        "saveButton": "Save Changes",
+        "savingButton": "Saving…",
+        "errors": {
+          "loadFailed": "Failed to load",
+          "saveFailed": "Failed to save"
+        }
+      },
+      "create": {
+        "backToList": "Back to Notifications",
+        "changeType": "Change type",
+        "pickerHeading": "Choose a channel type",
+        "pickerSubtitle": "Select the notification provider to configure.",
+        "heading": "New {{provider}} channel",
+        "subtitle": "Configure a new notification channel.",
+        "createButton": "Create Channel",
+        "creatingButton": "Creating…",
+        "errors": {
+          "createFailed": "Failed to create"
+        }
+      },
+      "sendTest": "Send test",
+      "fromAddress": "From Address",
+      "individualUsers": "Individual users",
+      "host": "Host",
+      "port": "Port",
+      "apiKey": "API Key",
+      "connectionString": "Connection String",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Method",
+      "botToken": "Bot Token",
+      "channelId": "Channel ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "Integration Key"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — exposes /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — metrics API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Export request traces",
+        "description": "Ships the full trace of each proxied request: every phase, every module that spoke, and prompts and answers for the projects that opted in.",
+        "sampleRateLabel": "Sample rate",
+        "sampleRateHint": "1 exports every request, 0.1 one in ten."
+      },
+      "optional": "(optional)",
+      "headersHint": "(optional, one per line: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Leave empty for open access",
+          "description": "Exposes <code>/metrics</code> in Prometheus text format. Set a token to require Bearer auth."
+        },
+        "otel": {
+          "endpoint": "Collector endpoint",
+          "description": "Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>, and <code>/v1/traces</code> when trace export is on. Default HTTP port is 4318, gRPC is 4317.",
+          "protocol": "Protocol",
+          "headers": "Headers"
+        },
+        "datadog": {
+          "apiKey": "API Key",
+          "placeholder": "Your Datadog API key",
+          "description": "Found under <strong>Organization Settings → API Keys</strong> in your Datadog account.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "Found in <strong>Grafana Cloud → Connections → Prometheus → Details</strong> as \"Remote Write Endpoint\".",
+          "username": "Username / Stack ID",
+          "usernameHint": "Numeric ID shown in the Prometheus connection details.",
+          "apiKey": "API Key / Token",
+          "apiKeyHint": "Grafana Cloud token with <strong>MetricsPublisher</strong> role."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 instance URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Your InfluxDB API token",
+          "tokenHint": "Must have <strong>write</strong> access to the bucket.",
+          "org": "Organization",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Secret",
+          "secretHint": "(optional — HMAC-SHA256 signing key)",
+          "headers": "Headers"
+        }
+      },
+      "errors": {
+        "loadFailed": "Failed to load integrations",
+        "updateFailed": "Failed to update integration",
+        "saveFailed": "Failed to save integration",
+        "deleteFailed": "Failed to delete integration"
+      },
+      "empty": "No integrations configured yet.",
+      "enabled": "Enabled",
+      "testing": "Testing…",
+      "test": "Test",
+      "removeConfirm": "Remove?",
+      "remove": "Remove",
+      "cancel": "Cancel",
+      "removeTooltip": "Remove integration",
+      "saving": "Saving…",
+      "save": "Save",
+      "addButton": "Add Integration"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Failed to load settings",
+        "duplicateUrl": "This URL is already in the list.",
+        "unreachable": "Could not reach a valid provider catalog at this URL."
+      },
+      "saved": "Saved.",
+      "refreshed": "Refreshed.",
+      "heading": "Provider Catalog Repositories",
+      "refreshing": "Refreshing…",
+      "refresh": "Refresh",
+      "nextRefresh": "Next: {{date}}",
+      "priorityHint": "Row order determines merge priority — row 1 wins on conflict. Use the arrows to reorder.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Updated",
+        "lastCheck": "Last Check",
+        "status": "Status"
+      },
+      "empty": "No repositories configured. The default Routerly public catalog will be used.",
+      "status": {
+        "error": "Error",
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "edit": "Edit",
+      "removeTooltip": "Remove",
+      "addRepository": "Add Repository",
+      "checking": "Checking…",
+      "add": "Add",
+      "removeConfirm": "Remove repository \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Application",
+        "runtime": "Runtime",
+        "storage": "Storage",
+        "softwareUpdate": "Software Update"
+      },
+      "labels": {
+        "version": "Version",
+        "uptime": "Uptime",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Config directory",
+        "dataDir": "Data directory",
+        "currentVersion": "Current version",
+        "availableVersion": "Available version",
+        "upToDate": "Up to date",
+        "lastChecked": "Last checked"
+      },
+      "noCheckPerformed": "No update check performed yet.",
+      "checkForUpdates": "Check for updates",
+      "checking": "Checking…",
+      "updateTo": "Update to v{{version}}",
+      "updating": "Updating…",
+      "dockerHint": "Running in Docker — pull the latest image to update.",
+      "confirmUpdate": "This will download and install the latest version. The service will restart. Continue?",
+      "updateComplete": "Update complete! Reloading…",
+      "serviceRestarting": "Service is restarting. Please reload the page in a moment.",
+      "errors": {
+        "loadFailed": "Failed to load",
+        "checkFailed": "Check failed",
+        "updateFailed": "Update failed"
+      },
+      "channel": "Channel"
+    },
+    "security": {
+      "authentication": "Authentication",
+      "requireMfa": "Require Two-Factor Authentication for all users",
+      "requireMfaHint": "When enabled, users who have not set up 2FA will see a prompt to do so after logging in. Users can configure 2FA in their Profile page.",
+      "savedSuccess": "Settings saved successfully.",
+      "saving": "Saving…",
+      "saveSettings": "Save Settings",
+      "errors": {
+        "loadFailed": "Failed to load settings",
+        "saveFailed": "Failed to save settings"
+      }
+    },
+    "title": "Settings",
+    "subtitle": "Configuration for Routerly",
+    "tabs": {
+      "general": "General",
+      "security": "Security",
+      "notifications": "Notifications",
+      "integrations": "Integrations",
+      "catalog": "Provider Catalog",
+      "users": "Users",
+      "roles": "Roles",
+      "audit": "Audit Log",
+      "about": "About"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Routers",
+      "subtitle": "Client applications that access Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} routers",
+      "newRouter": "New Router",
+      "empty": "No routers yet.",
+      "emptyFiltered": "या प्रकारचे कोणतेही राउटर नाही.",
+      "columns": {
+        "name": "Name",
+        "tokens": "Tokens",
+        "policies": "Policies",
+        "models": "Models"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokens",
+      "editRouter": "Edit router",
+      "deleteRouter": "Delete router",
+      "deleteConfirm": "Delete this router?",
+      "errors": {
+        "deleteFailed": "Error deleting router"
+      },
+      "newOrchestrator": "नवीन ऑर्केस्ट्रेटर",
+      "newPassthrough": "नवीन पास-थ्रू"
+    },
+    "layout": {
+      "notFound": "Router not found",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "general": "General",
+        "orchestrator": "Orchestrator",
+        "routing": "Routing",
+        "optimizer": "Optimizer",
+        "security": "Security",
+        "token": "Token",
+        "users": "Users",
+        "logs": "Logs"
+      },
+      "backToRouters": "Back to Routers",
+      "backToRoutersTitle": "Back to routers",
+      "newRouter": "New Router",
+      "loading": "Loading...",
+      "routerId": "Router ID:",
+      "saveFirstHint": "Save the router first to unlock this tab",
+      "newKind": "नवीन {{kind}}"
+    },
+    "dashboard": {
+      "period": "Period",
+      "noTraffic": "No traffic for this router in the selected period.",
+      "stats": {
+        "savings": "Savings",
+        "vsPrefix": "vs",
+        "forEverything": "for everything",
+        "noTargetToCompare": "no target model to compare against",
+        "cost": "Cost",
+        "callCount": "1 call",
+        "callCount_other": "{{count}} calls",
+        "latency": "Latency",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Time to first token",
+        "notMeasured": "not measured on these calls",
+        "reliability": "Reliability",
+        "errorsAndBlocked": "{{errors}} errors · {{blocked}} blocked"
+      },
+      "tokens": {
+        "input": "Input tokens:",
+        "output": "Output tokens:",
+        "fromCache": "From cache:",
+        "cacheSaved": "({{amount}} saved)"
+      },
+      "oneModel": {
+        "heading": "If everything had gone to one model",
+        "empty": "Add target models to this router to see the comparison.",
+        "columns": {
+          "targetModel": "Target model",
+          "wouldHaveCost": "Would have cost",
+          "saved": "Saved"
+        },
+        "costsHint": "Costs are the observed tokens repriced at each target's rates."
+      },
+      "optimizers": {
+        "heading": "What the optimizers removed",
+        "columns": {
+          "optimizer": "Optimizer",
+          "callsChanged": "Calls changed",
+          "tokensSaved": "Tokens saved",
+          "costSaved": "Cost saved",
+          "rolledBack": "Rolled back"
+        },
+        "hint": "Measured on the calls themselves, priced at the model that served each one. A rolled-back run means the step's output was rejected as unsafe and the prompt was restored: it saved nothing, and a high count means the threshold is too aggressive."
+      },
+      "traffic": {
+        "heading": "Where the traffic went",
+        "columns": {
+          "model": "Model",
+          "calls": "Calls",
+          "share": "Share",
+          "cost": "Cost",
+          "p95Latency": "p95 latency",
+          "errors": "Errors"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Error saving router",
+        "copyFailed": "Copy failed — please select and copy the token manually."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Routes requests across model candidates."
+        },
+        "orchestrator": {
+          "label": "Orchestrator",
+          "description": "Routes requests across other routers instead of models."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Forwards requests unmodified."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Save this token now.",
+        "saveNowHint": "It won't be shown again — once you leave this screen it cannot be recovered.",
+        "copied": "Copied!",
+        "copy": "Copy",
+        "goToRouter": "Go to router"
+      },
+      "connect": {
+        "heading": "How to connect",
+        "intro": "Point any OpenAI or Anthropic SDK at Routerly and use a <tokenLink>router token</tokenLink> as the API key. Replace <code>{{token}}</code> below with yours. Model <code>{{model}}</code> hands the choice to Routerly; any model id from <modelsLink>Models</modelsLink> works too.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, the same one any \"OpenAI compatible\" provider field takes.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, without the <code>/v1</code>: the SDK adds it.",
+        "curl": "curl",
+        "curlHint": "Check the wiring without installing anything, then look for the call in <usageLink>Usage</usageLink>."
+      },
+      "form": {
+        "kind": "Kind",
+        "kindFixedHint": "Fixed once the router is created.",
+        "routerName": "Router Name",
+        "routerNamePlaceholder": "My App",
+        "advancedSettings": "Advanced settings",
+        "ttftTimeout": "TTFT Timeout (ms)",
+        "ttftTimeoutHint": "If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration. Set it to 0 to wait as long as the provider takes.",
+        "traceContent": "Trace content",
+        "traceContentHint": "Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also record the prompts sent and the answers received. They are stored with the usage record and visible to anyone who can read reports.",
+        "capturePromptsAndAnswers": "Capture prompts and answers",
+        "saveChanges": "Save Changes",
+        "createRouter": "Create Router",
+        "passthroughPath": "मार्ग",
+        "passthroughPathHint": "क्लायंटद्वारे कॉल केलेल्या URL चा भाग बनते: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ऑर्केस्ट्रेटर तयार करा",
+        "createPassthrough": "पास-थ्रू तयार करा"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "This router is not an Orchestrator.",
+      "candidateRouters": "Candidate Routers",
+      "candidateRoutersHint": "The routers this Orchestrator forwards requests to. Weight influences how often each candidate is picked; only its name, id, weight and optional per-candidate limits are shown here.",
+      "routingPolicies": "रूटिंग धोरणा",
+      "routingPoliciesHint": "एक ऑर्केस्ट्रेटर प्रत्येक उमेदवार राउटरला संपूर्ण म्हणून स्कोर करतो, त्यामुळे येथे केवळ आरोग्य, दर मर्यादा आणि न्याय धोरणा लागू होतात. इतर नीती प्रकार राउटरचे स्वतःचे मॉडेल निवडतात, जे ऑर्केस्ट्रेटरकडे नाहीत.",
+      "router": "Router",
+      "selectRouter": "Select router",
+      "weight": "Weight",
+      "removeCandidate": "Remove candidate",
+      "usageLimits": "Usage limits for this candidate",
+      "limitCount": "{{count}} limit",
+      "limitCount_other": "{{count}} limits",
+      "usageLimitsHint": "Optional usage limits applied only to requests this Orchestrator forwards to this candidate.",
+      "empty": "No candidate routers yet. An Orchestrator needs at least one before it can forward requests.",
+      "addCandidate": "Add Candidate",
+      "saved": "Saved!",
+      "saveCandidates": "Save Candidates",
+      "errors": {
+        "loadFailed": "Failed to load routers",
+        "saveFailed": "Error saving orchestrator candidates"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Failed to assign routing profile",
+        "duplicateTargets": "Target models cannot contain duplicates.",
+        "saveFailed": "Error saving router routing",
+        "noProfileAvailable": "No routing profile available. Create one from the Profiles page."
+      },
+      "form": {
+        "routing": "Routing",
+        "routingHint": "Use a shared routing profile, or define this router's own policies. Target models stay configurable either way.",
+        "profileMode": "Profile",
+        "customMode": "Custom",
+        "routingProfile": "Routing Profile",
+        "builtinSuffix": "(built-in)",
+        "profileHint": "Policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "saved": "Saved!",
+        "saveRoutingConfiguration": "Save Routing Configuration"
+      },
+      "targetModels": {
+        "heading": "Target Models",
+        "hint": "Define the pool of models that the Policies will filter and select from. Optional prompts instruct the AI Router on when to pick each model.",
+        "endpointModel": "Endpoint Model",
+        "selectModel": "Select model",
+        "promptDefinition": "Prompt Definition",
+        "promptPlaceholder": "Describe exactly when and why the router should pick this model...",
+        "intents": "Intents",
+        "removeTarget": "Remove target model",
+        "empty": "No target models configured.",
+        "addTarget": "Add Target Model",
+        "passthroughLabel": "पास-थ्रू (कच्चे फॉरवर्ड)",
+        "passthroughNotRemovable": "पास-थ्रू नोंद काढली जाऊ शकत नाही"
+      }
+    },
+    "optimizer": {
+      "title": "Optimizers",
+      "description": "Optimizers reduce prompt tokens before requests reach the provider. They run in order from top to bottom. Use a shared optimizer profile, or define this router's own pipeline.",
+      "noPermission": "You don't have permission to view optimizers.",
+      "mode": {
+        "profile": "Profile",
+        "custom": "Custom"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimizer Profile",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Steps come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "disabledSuffix": "(disabled)",
+        "thresholdSuffix": ", threshold {{threshold}}"
+      },
+      "customHint": "Drag to reorder, toggle to enable. Some optimizers use a threshold to control how aggressively they trim.",
+      "saveButton": "Save Optimizers",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "preview": {
+        "title": "Preview token savings",
+        "description": "Run the current (unsaved) pipeline over a prompt to see what each step removes and what it costs. Pick one of the sample conversations, or type your own prompt.",
+        "promptLabel": "Prompt",
+        "promptAriaLabel": "Prompt to preview",
+        "typePromptOption": "Type a prompt below",
+        "fixturesHint": "Sample conversations shipped with Routerly. Routerly does not record real prompts.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model to preview against",
+        "modelWithContext": "{{id}} ({{k}}k context)",
+        "noModelOption": "No model",
+        "modelHint": "Steps that trim to fit a context window need to know which window. Without a model they are skipped, exactly as they would be on a request that names a model Routerly has no window for.",
+        "sampleAriaLabel": "Sample prompt",
+        "samplePlaceholder": "Paste a sample user message...",
+        "runButton": "Run Preview",
+        "running": "Running...",
+        "before": "Before",
+        "after": "After",
+        "saved": "Saved",
+        "columns": {
+          "optimizer": "Optimizer",
+          "before": "Before",
+          "after": "After",
+          "saved": "Saved"
+        },
+        "rolledBackNote": "rolled back: the change was rejected as unsafe",
+        "skippedNote": "skipped: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "The change this step produced was rolled back, so the prompt reached the next step untouched.",
+          "skipped": "This step did not run: {{reason}}",
+          "unchanged": "This step left the prompt unchanged."
+        }
+      },
+      "errors": {
+        "assignFailed": "Failed to assign optimizer profile",
+        "saveFailed": "Error saving optimizers",
+        "previewFailed": "Error running preview",
+        "noProfileAvailable": "No optimizer profile available. Create one from the Profiles page."
+      }
+    },
+    "token": {
+      "newButton": "New Token",
+      "empty": "No API tokens yet. Create one to start authenticating requests.",
+      "budgetOverrides": "Budget Overrides",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "never": "Never",
+      "editTitle": "Edit Configuration",
+      "revokeTitle": "Revoke Token",
+      "revokeConfirm": "Revoke token \"{{snippet}}...\"? Apps using it will stop working immediately.",
+      "labelInput": {
+        "placeholder": "Search or create a label…",
+        "createPrefix": "Create",
+        "noMatches": "No matching labels found."
+      },
+      "errors": {
+        "deleteFailed": "Error deleting token"
+      },
+      "create": {
+        "backToTokens": "Back to tokens",
+        "title": "New API Token",
+        "subtitle": "The full token is shown only once after creation — store it securely.",
+        "tokenCreated": "Token created successfully. Copy it now — it won't be shown again.",
+        "copied": "Copied!",
+        "copy": "Copy",
+        "done": "Done",
+        "optional": "optional",
+        "labels": "Labels",
+        "labelsHint": "Tag this token to identify where it's used (e.g. \"production\", \"ci\").",
+        "scopes": "Scopes",
+        "scopesHint": "Free-form scopes attached to this token (e.g. \"batch\", \"internal\"), stored with the token for your own bookkeeping.",
+        "tags": "Tags",
+        "tagsHint": "Key-value metadata forwarded to usage records (e.g. env=production).",
+        "keyPlaceholder": "key",
+        "valuePlaceholder": "value",
+        "createButton": "Create Token",
+        "cancel": "Cancel",
+        "copyFailed": "Copy failed — please select and copy the token manually.",
+        "errors": {
+          "createFailed": "Error creating token"
+        }
+      },
+      "edit": {
+        "title": "Edit Token",
+        "subtitle": "Update labels and per-model limit overrides for this token.",
+        "token": "Token",
+        "labels": "Labels",
+        "perModelLimits": "Per-model limits",
+        "perModelLimitsHint": "Override global and router-level limits for requests using this token.",
+        "noTargetModels": "Add target models in the Routing tab first.",
+        "noOverride": "no override",
+        "noLimits": "No limits",
+        "noLimitsSet": "No limits set — inheriting from parent. Add a limit below to override.",
+        "metric": "Metric",
+        "type": "Type",
+        "periodLabel": "Period",
+        "every": "Every",
+        "maxCost": "Max ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (tokens)",
+        "allCombosSet": "All metric/period combinations are already set",
+        "addLimit": "Add limit",
+        "windowType": {
+          "period": "Period",
+          "rolling": "Rolling"
+        },
+        "limitMetric": {
+          "cost": "Cost (USD)",
+          "calls": "Requests",
+          "input_tokens": "Input tokens",
+          "output_tokens": "Output tokens",
+          "total_tokens": "Total tokens"
+        },
+        "period": {
+          "hourly": "Hourly",
+          "daily": "Daily",
+          "weekly": "Weekly",
+          "monthly": "Monthly",
+          "yearly": "Yearly"
+        },
+        "rollingUnit": {
+          "second": "seconds",
+          "minute": "minutes",
+          "hour": "hours",
+          "day": "days",
+          "week": "weeks",
+          "month": "months"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / every {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Error saving token"
+        }
+      }
+    },
+    "users": {
+      "title": "Router Members",
+      "description": "Manage users who have access to this router.",
+      "addButton": "Add Member",
+      "addNewTitle": "Add New Member",
+      "selectUserPlaceholder": "Select a user...",
+      "addConfirmButton": "Add",
+      "cancelButton": "Cancel",
+      "empty": "No members found.",
+      "removeConfirm": "Are you sure you want to remove this member?",
+      "saveTitle": "Save changes",
+      "changeRoleTitle": "Change Role",
+      "removeTitle": "Remove Member",
+      "roles": {
+        "viewer": "Viewer",
+        "editor": "Editor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "actions": "Actions"
+      },
+      "errors": {
+        "loadFailed": "Failed to load users",
+        "addFailed": "Error adding member",
+        "updateFailed": "Error updating member",
+        "removeFailed": "Error removing member"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Off"
+      },
+      "autoRefreshOff": "Auto-refresh disabled",
+      "autoRefreshEvery": "Auto-refresh every {{interval}}",
+      "lastUpdated": "last updated: {{time}}",
+      "refresh": "Refresh",
+      "refreshNowTitle": "Refresh now",
+      "refreshNowButton": "↻ Now",
+      "filters": {
+        "period": "Period",
+        "model": "Model",
+        "allModels": "All Models",
+        "type": "Type",
+        "all": "All",
+        "completion": "Completion",
+        "router": "Router",
+        "status": "Status",
+        "success": "Success",
+        "blocked": "Blocked",
+        "error": "Error",
+        "resetButton": "Reset filters"
+      },
+      "stats": {
+        "totalCost": "Total Cost",
+        "totalCalls": "Total Calls",
+        "completionCalls": "Completion Calls",
+        "routerCalls": "Router Calls",
+        "errors": "Errors"
+      },
+      "requestLogs": "Request Logs",
+      "emptyNoRequests": "No requests for this router in the selected period.",
+      "emptyNoMatches": "No records match the active filters.",
+      "columns": {
+        "time": "Time",
+        "model": "Model",
+        "type": "Type",
+        "in": "In",
+        "out": "Out",
+        "cost": "Cost",
+        "latency": "Latency",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Status"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "completion",
+      "pagination": {
+        "previous": "← Previous",
+        "next": "Next →",
+        "pageOf": "Page {{page}} of {{totalPages}}",
+        "totalRecords": "({{count}} total records)"
+      }
+    },
+    "security": {
+      "title": "Security",
+      "description": "Use a shared security profile, or define this router's own guardrails and PII policies.",
+      "mode": {
+        "profile": "Profile",
+        "custom": "Custom"
+      },
+      "profileSelect": {
+        "ariaLabel": "Security Profile",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "blockingSuffix": ", blocking",
+        "disabledSuffix": ", disabled",
+        "piiRedaction": "PII redaction ({{target}})"
+      },
+      "saveButton": "Save Security Settings",
+      "saved": "Saved!",
+      "errors": {
+        "assignFailed": "Failed to assign security profile",
+        "saveFailed": "Error saving security settings",
+        "noProfileAvailable": "No security profile available. Create one from the Profiles page."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "You are a helpful AI assistant.",
+      "errors": {
+        "unknown": "Unknown error occurred",
+        "onlyImages": "Only image attachments are supported for vision models currently."
+      },
+      "title": "Test Chat",
+      "subtitle": "Send test queries through the routing gateway.",
+      "routerToken": "Router Token:",
+      "hideToken": "Hide Token",
+      "showToken": "Show Token",
+      "recognizedToken": "Recognized Token",
+      "unrecognizedToken": "Unrecognized Token",
+      "noMessages": "No messages yet.",
+      "enterTokenHint": "Please enter a Router Token above to send a message.",
+      "typeMessageHint": "Type a message below to start testing.",
+      "reasoning": "Reasoning",
+      "attachedAlt": "Attached",
+      "attachmentAlt": "Attachment",
+      "attachImage": "Attach image",
+      "typeMessagePlaceholder": "Type a message...",
+      "stopGeneration": "Stop generation",
+      "sendEnter": "Send (Enter)",
+      "debugLog": "Debug Log",
+      "clear": "Clear",
+      "noRequestSent": "No request sent yet.",
+      "turnTraceLog": "Turn #{{turn}} trace log · {{count}} event",
+      "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} events"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Connections",
+      "subtitle": "Provider accounts used to run model instances",
+      "noPermission": "You don't have permission to view connections.",
+      "count": "{{count}} connection",
+      "count_other": "{{count}} connections",
+      "addConnection": "Add Connection",
+      "empty": "No connections yet. Add one to get started.",
+      "deleteConfirm": "Remove connection \"{{label}}\"? Instances bound to it will stop working.",
+      "errors": {
+        "loadFailed": "Failed to load connections",
+        "deleteFailed": "Failed to delete connection"
+      },
+      "columns": {
+        "label": "Label",
+        "provider": "Provider",
+        "endpoint": "Endpoint",
+        "status": "Status"
+      },
+      "status": {
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "actions": {
+        "models": "Models",
+        "edit": "Edit",
+        "remove": "Remove"
+      }
+    },
+    "form": {
+      "backToConnections": "Back to Connections",
+      "editTitle": "Edit Connection",
+      "addTitle": "Add Connection",
+      "enabled": "Enabled",
+      "editSubtitle": "Update the provider account settings",
+      "addSubtitle": "Register a new provider account",
+      "sectionTitle": "Connection details",
+      "sectionDesc": "Provider account, credentials, and endpoint used to perform requests.",
+      "provider": "Provider",
+      "groups": {
+        "directApi": "Direct API",
+        "cloudPlatform": "Cloud platform",
+        "subscription": "Subscription",
+        "browserSession": "Browser session",
+        "selfHosted": "Self-hosted"
+      },
+      "upstreamProvider": {
+        "label": "Provider",
+        "hintLabel": "(upstream provider name)",
+        "placeholder": "e.g. deepseek, mistral, groq",
+        "description": "Names the service this endpoint belongs to. Models on this connection use it as their ID prefix (e.g. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Name",
+        "hint": "Identifies this connection everywhere it is referenced, so it has to be unique. Leave it blank to use <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Leave credential fields blank to keep existing values.",
+      "save": "Save",
+      "create": "Create",
+      "cancel": "Cancel",
+      "oauth": {
+        "unknown": "unknown",
+        "accountExpires": "Account: {{account}} — expires {{expires}}",
+        "unknownError": "Unknown error"
+      },
+      "errors": {
+        "notFound": "Connection not found",
+        "loadFailed": "Failed to load connection",
+        "updateFailed": "Failed to update connection",
+        "createFailed": "Failed to create connection"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Back to Models",
+      "title": "Model Discovery",
+      "subtitle": "Browse available models and add them to your routing configuration",
+      "count": "{{count}} models",
+      "filteredCount": "{{filtered}} of {{count}}",
+      "free": "free",
+      "add": "Add",
+      "addAgain": "Add again",
+      "loadFailed": "Failed to load catalog: {{error}}",
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Model ID or name…",
+        "provider": "Provider",
+        "allProviders": "All providers",
+        "context": "Context",
+        "ctxOptions": {
+          "all": "All",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Price / 1M",
+        "priceOptions": {
+          "all": "All",
+          "free": "Free",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Show",
+        "configured": "Configured",
+        "embedding": "Embedding",
+        "resetFilters": "Reset filters"
+      },
+      "empty": {
+        "noMatches": "No models match your filters."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Provider",
+        "context": "Context",
+        "input": "Input / 1M",
+        "output": "Output / 1M"
+      },
+      "badges": {
+        "configured": "Configured",
+        "embedding": "embedding",
+        "runsLocally": "Runs locally"
+      },
+      "pagination": {
+        "prev": "Prev",
+        "next": "Next",
+        "range": "{{start}}–{{end}} of {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Back to Models",
+      "title": {
+        "add": "Add Model",
+        "edit": "Edit Model",
+        "clone": "Clone Model"
+      },
+      "subtitle": {
+        "add": "Register a new LLM provider model",
+        "edit": "Modifying configuration for {{id}}",
+        "clone": "Cloning from {{id}} — assign a new ID to save"
+      },
+      "errors": {
+        "modelNotFound": "Model not found",
+        "sourceModelNotFound": "Source model not found",
+        "loadFailed": "Error loading models",
+        "idRequired": "Model ID required",
+        "duplicateId": "Model \"{{id}}\" already exists — set a different Custom ID",
+        "selectConnection": "Select a connection",
+        "saveFailed": "Error"
+      },
+      "badge": {
+        "yes": "yes",
+        "no": "no",
+        "override": "Override",
+        "auto": "Auto",
+        "default": "Default: {{value}}",
+        "reset": "Reset"
+      },
+      "oauth": {
+        "unknownExpiry": "unknown",
+        "accountOk": "Account: {{account}} — expires {{expires}}",
+        "unknownError": "Unknown error"
+      },
+      "identification": {
+        "title": "Model Identification",
+        "description": "Unique identifier and provider settings for this model configuration.",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(optional — default:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "The identifier used when referencing this model in Routerly API calls.",
+        "provider": "Provider",
+        "upstreamProviderHint": "(upstream provider name)",
+        "upstreamProviderPlaceholder": "e.g. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Used as prefix for the Routerly ID (e.g.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(upstream model ID)",
+        "upstreamModelPlaceholder": "e.g. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "The model identifier sent to the upstream API endpoint.",
+        "modelPreset": "Model Preset",
+        "customModelOption": "— custom model name —",
+        "customModelPlaceholder": "e.g. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Connection details",
+        "description": "API endpoint and authentication credentials required to perform requests.",
+        "preconfigured": "Preconfigured",
+        "custom": "Custom",
+        "connection": "Connection",
+        "selectPlaceholder": "— select a connection —",
+        "noneAvailable": "No preconfigured connections for this provider. Switch to Custom, or create one on the Connections page.",
+        "editHint": "Editing this connection later updates every model bound to it."
+      },
+      "capabilities": {
+        "title": "Capabilities",
+        "description": "Specify the type and capabilities of this model.",
+        "embeddingModel": "Embedding model",
+        "embeddingModelHint": "This model generates vector embeddings (not chat completions)"
+      },
+      "pricing": {
+        "title": "Pricing & context",
+        "description": "Cost parameters and processing limits used for billing and routing.",
+        "inputPerMillion": "Input $/1M",
+        "outputPerMillion": "Output $/1M",
+        "cachePerMillion": "Cache read $/1M",
+        "cacheWritePerMillion": "Cache write $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "Context Window",
+        "contextWindowHint": "(tokens, optional)"
+      },
+      "tiers": {
+        "title": "Advanced — Pricing tiers",
+        "description": "Override pricing when a metric exceeds a threshold. For example: \"Above 200 000 context tokens, prices change.\"",
+        "removeTier": "Remove tier",
+        "above": "Above",
+        "metric": "Metric",
+        "metricContextTokens": "Context tokens",
+        "overridePricing": "Override pricing",
+        "addTier": "Add pricing tier"
+      },
+      "limits": {
+        "title": "Limits",
+        "description": "Usage limits for this model. Multiple rules can be combined.",
+        "metric": "Metric",
+        "type": "Type",
+        "addLimit": "Add limit"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max subscription)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro subscription)"
+      },
+      "saveChanges": "Save Changes",
+      "createClone": "Create Clone",
+      "createModel": "Create Model"
+    },
+    "page": {
+      "title": "Models",
+      "subtitle": "LLM providers registered with Routerly",
+      "tabs": {
+        "models": "Models",
+        "health": "Health"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} models",
+        "filteredCount": "{{filtered}} of {{count}} model",
+        "filteredCount_other": "{{filtered}} of {{count}} models"
+      },
+      "filters": {
+        "allProviders": "All providers",
+        "allConnections": "All connections",
+        "searchPlaceholder": "Filter models…"
+      },
+      "discover": "Discover",
+      "addModel": "Add Model",
+      "deleteConfirm": "Remove model \"{{id}}\"?",
+      "empty": {
+        "noModels": "No models yet. Add one to get started.",
+        "noMatches": "No models match the active filters."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Provider",
+        "endpoint": "Endpoint",
+        "input": "Input $/1M",
+        "output": "Output $/1M",
+        "cache": "Cache $/1M",
+        "context": "Context Size"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Clone",
+        "edit": "Edit",
+        "remove": "Remove"
+      },
+      "pagination": {
+        "previous": "← Previous",
+        "next": "Next →",
+        "pageOf": "Page {{page}} of {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} models)"
+      },
+      "health": {
+        "emptyNoModels": "No models configured.",
+        "emptyNoMatches": "No models match the filter.",
+        "resetAll": "Reset all",
+        "resetAllTitle": "Reset every circuit breaker, cooldown, and lockout",
+        "resetTitle": "Reset circuit breaker",
+        "confirmResetModel": "Reset the circuit breaker for model \"{{id}}\"?",
+        "confirmResetAll": "Reset all resilience state? This clears every circuit breaker, cooldown, and lockout.",
+        "errors": {
+          "resetModelFailed": "Failed to reset circuit breaker",
+          "resetAllFailed": "Failed to reset resilience state"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Provider",
+          "status": "Status",
+          "circuit": "Circuit",
+          "errorRate": "Error rate (5m)",
+          "p95Latency": "P95 latency (1h)",
+          "requests": "Requests (1h)",
+          "lastSuccess": "Last success",
+          "cooldownLockout": "Cooldown / lockout"
+        },
+        "status": {
+          "healthy": "Healthy",
+          "degraded": "Degraded",
+          "unavailable": "Unavailable",
+          "cooldown": "Cooldown",
+          "nodata": "No data"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Recovering",
+          "tripped": "Tripped"
+        },
+        "time": {
+          "never": "never",
+          "now": "now",
+          "secondsAgo": "{{count}}s ago",
+          "minutesAgo": "{{count}}m ago",
+          "hoursAgo": "{{count}}h ago",
+          "daysAgo": "{{count}}d ago",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "cooldown {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Experiments",
+      "subtitle": "A/B test routers against each other",
+      "noPermission": "You don't have permission to view experiments.",
+      "count": "{{count}} experiment",
+      "count_other": "{{count}} experiments",
+      "newExperiment": "New Experiment",
+      "empty": "No experiments yet. Create one to compare routers head to head.",
+      "deleteConfirm": "Delete experiment \"{{name}}\"? This cannot be undone.",
+      "noToken": "No token",
+      "noTokenTitle": "Without a token no client can reach this experiment",
+      "errors": {
+        "loadFailed": "Failed to load experiments",
+        "deleteFailed": "Failed to delete experiment"
+      },
+      "columns": {
+        "name": "Name",
+        "variants": "Variants",
+        "rotation": "Rotation",
+        "created": "Created"
+      },
+      "actions": {
+        "edit": "Edit experiment",
+        "remove": "Delete"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Back to experiments",
+      "newExperiment": "New Experiment",
+      "loading": "Loading...",
+      "experimentId": "Experiment ID:",
+      "disabledTabTitle": "Save the experiment first to unlock this tab",
+      "errors": {
+        "notFound": "Experiment not found"
+      },
+      "tabs": {
+        "config": "Configuration",
+        "metrics": "Metrics",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Saved.",
+      "created": "Experiment created. Point your client at this token instead of a router token. It won't be shown again.",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "done": "Done",
+      "saving": "Saving...",
+      "create": "Create Experiment",
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "trafficSplit": "Traffic split",
+      "errors": {
+        "loadRoutersFailed": "Failed to load routers",
+        "saveFailed": "Failed to save the experiment",
+        "copyFailed": "Copy failed: select and copy the token manually."
+      },
+      "fields": {
+        "name": "Name",
+        "namePlaceholder": "Cheap vs premium routing",
+        "description": "Description",
+        "optional": "(optional)",
+        "descriptionPlaceholder": "What this test is trying to settle",
+        "minSamples": "Minimum calls per variant",
+        "minSamplesHint": "Below this, the Metrics tab marks the comparison as not yet conclusive.",
+        "rotation": "Rotation",
+        "stickyOn": "Sticky on",
+        "stickyKey": "Sticky key"
+      },
+      "variants": {
+        "title": "Variants",
+        "desc": "Each variant is an existing router, taken whole: its models, routing and guardrails all apply. A test needs at least two.",
+        "routerAriaLabel": "Variant {{index}} router",
+        "routerPlaceholder": "Select a router",
+        "labelAriaLabel": "Variant {{index}} label",
+        "labelPlaceholder": "Label (optional)",
+        "weightAriaLabel": "Variant {{index}} weight",
+        "weightPlaceholder": "Weight",
+        "removeTitle": "Remove variant {{index}}",
+        "add": "Add variant"
+      },
+      "judge": {
+        "title": "Judge",
+        "desc": "Optional: a model reads each sampled answer and scores it 0-10 against your criteria. Every judged call is an extra model call, billed like any other.",
+        "enable": "Score answers with a judge model",
+        "model": "Judge model",
+        "modelPlaceholder": "Select a model",
+        "criteria": "Criteria",
+        "criteriaPlaceholder": "One per line, e.g.\nAnswers the question asked\nStays factual\nKeeps to the requested format",
+        "sampleRate": "Share of calls judged (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Loading...",
+      "callsMeasured": "{{count}} call measured",
+      "callsMeasured_other": "{{count}} calls measured",
+      "empty": "No calls in this window yet. Point a client at the experiment token to start the comparison.",
+      "notConclusive": "Not conclusive yet: every variant needs at least {{minSamples}} calls in this window. ",
+      "explanation": "The better figure of each pair is highlighted: cheaper per call, faster, higher judge score. The percentage under a value is its distance from the best arm. The judge score is a running average over the whole life of the experiment, so it is the one figure the window does not narrow.",
+      "lowSample": "Low sample",
+      "lowSampleTitle": "Under {{minSamples}} calls in this window",
+      "judgedCallsTitle": "{{count}} answer scored by the judge since the experiment started",
+      "judgedCallsTitle_other": "{{count}} answers scored by the judge since the experiment started",
+      "errors": {
+        "loadFailed": "Failed to load metrics"
+      },
+      "columns": {
+        "variant": "Variant",
+        "calls": "Calls",
+        "share": "Share",
+        "errors": "Errors",
+        "tokens": "Tokens in / out",
+        "cost": "Cost",
+        "costPerCall": "Cost / call",
+        "avgLatency": "Avg latency",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Judge score"
+      }
+    },
+    "token": {
+      "desc": "A client calls the experiment exactly like a router: same base URL, this token instead of a router token. Each request lands on one variant and is billed to that variant's router.",
+      "baseUrlLabel": "Base URL for the OpenAI or Anthropic SDK, with an experiment token as the API key:",
+      "created": "Token created. Copy it now, it won't be shown again.",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "newToken": "New Token",
+      "empty": "No tokens on this experiment. Create one so clients can call it.",
+      "revokeConfirm": "Revoke token \"{{snippet}}...\"? Clients using it stop working immediately.",
+      "revokeTitle": "Revoke Token",
+      "errors": {
+        "createFailed": "Failed to create the token",
+        "revokeFailed": "Failed to revoke the token",
+        "copyFailed": "Copy failed: select and copy the token manually."
+      },
+      "columns": {
+        "created": "Created",
+        "lastUsed": "Last used"
+      }
+    }
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "Usage summary and cost breakdown",
+    "noPermission": "No permission to view usage data.",
+    "costByModel": "Cost by Model",
+    "noCostRecorded": "No cost recorded this period.",
+    "callsByModel": "Calls by Model",
+    "columns": {
+      "model": "Model",
+      "calls": "Calls",
+      "errors": "Errors",
+      "cost": "Cost"
+    },
+    "stats": {
+      "totalCalls": "Total Calls",
+      "callsBreakdown": "{{routing}} routing · {{completion}} completion",
+      "successRate": "Success Rate",
+      "ofAllRequests": "of all requests",
+      "errors": "Errors",
+      "failedRequests": "failed requests",
+      "models": "Models",
+      "registered": "registered",
+      "routers": "Routers",
+      "active": "active"
+    },
+    "connectCard": {
+      "title": "Connect a client",
+      "desc": "Point Claude Code, Codex, Cursor and {{count}} more at this gateway."
+    }
+  },
+  "login": {
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "signIn": "Sign In",
+    "errors": {
+      "loginFailed": "Login failed",
+      "totpFailed": "2FA verification failed"
+    },
+    "totp": {
+      "title": "Two-Factor Authentication",
+      "backupPrompt": "Enter a backup code.",
+      "appPrompt": "Enter the 6-digit code from your authenticator app.",
+      "backupCodeLabel": "Backup Code",
+      "authenticatorCodeLabel": "Authenticator Code",
+      "verify": "Verify",
+      "useAuthenticatorInstead": "Use authenticator app instead",
+      "useBackupInstead": "Use a backup code instead"
+    }
+  },
+  "setup": {
+    "welcome": "Welcome! Let's get you set up.",
+    "welcomeSubtitle": "Create the first admin account to start managing Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly is actively evolving. Bugs may occur.",
+    "betaFeedback": "Your feedback helps shape what it becomes —",
+    "betaLink": "report issues or share ideas",
+    "emailLabel": "Admin Email",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Minimum 8 characters",
+    "confirmLabel": "Confirm Password",
+    "confirmPlaceholder": "Re-enter password",
+    "submit": "Create Admin Account",
+    "errors": {
+      "mismatch": "Passwords do not match",
+      "tooShort": "Password must be at least 8 characters",
+      "setupFailed": "Setup failed"
+    }
+  },
+  "audit": {
+    "empty": "No audit entries found.",
+    "errors": {
+      "loadFailed": "Failed to load audit log"
+    },
+    "filters": {
+      "period": "Period",
+      "user": "User",
+      "userPlaceholder": "Email or user ID",
+      "action": "Action",
+      "actionPlaceholder": "e.g. model:create",
+      "result": "Result",
+      "results": {
+        "all": "All",
+        "success": "Success",
+        "forbidden": "Forbidden",
+        "error": "Error"
+      },
+      "refresh": "Refresh"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "action": "Action",
+      "endpoint": "Endpoint",
+      "result": "Result",
+      "details": "Details"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} of {{totalPages}}",
+      "total": "({{count}} total)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Usage",
+      "live": "LIVE",
+      "subtitle": "Detailed call logs and per-model breakdown",
+      "updatedAt": "· updated at {{time}}",
+      "poll": {
+        "off": "Off",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Disable live mode",
+        "enable": "Enable live mode (refresh every 2s)"
+      },
+      "refreshNow": "↻ Now",
+      "refreshNowTitle": "Refresh now",
+      "filters": {
+        "period": "Period",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Caller",
+        "type": "Type",
+        "status": "Status",
+        "allRouters": "All Routers",
+        "allModels": "All Models",
+        "allTokens": "All Tokens",
+        "resetFilters": "Reset filters",
+        "all": "All",
+        "success": "Success",
+        "blocked": "Blocked",
+        "error": "Error"
+      },
+      "caller": {
+        "all": "All",
+        "completion": "Completion",
+        "routing": "Router",
+        "guardrail": "Guardrail",
+        "judge": "Judge"
+      },
+      "callerBadge": {
+        "completion": "completion",
+        "routing": "router",
+        "guardrail": "guardrail",
+        "judge": "judge"
+      },
+      "errors": {
+        "loadFailedPrefix": "Failed to load usage data:",
+        "retry": "Retry"
+      },
+      "stats": {
+        "totalCalls": "Total Calls",
+        "completionCalls": "Completion Calls",
+        "routerCalls": "Router Calls",
+        "guardrailCalls": "Guardrail Calls",
+        "blockedCalls": "Blocked Calls",
+        "errors": "Errors"
+      },
+      "table": {
+        "rank": "Rank",
+        "model": "Model",
+        "provider": "Provider",
+        "calls": "Calls",
+        "errors": "Errors",
+        "successRate": "Success rate",
+        "avgLatency": "Avg latency",
+        "p95Latency": "P95 latency",
+        "inputTokens": "Input tokens",
+        "outputTokens": "Output tokens",
+        "costPer1k": "Cost / 1K",
+        "cost": "Cost (USD)",
+        "bestCostPerformance": "Best cost-performance"
+      },
+      "showMoreModels": "Show {{count}} more model",
+      "showMoreModels_other": "Show {{count}} more models",
+      "showFewerModels": "Show fewer models",
+      "recentCalls": {
+        "title": "Recent Calls",
+        "empty": "No usage records for this period.",
+        "columns": {
+          "time": "Time",
+          "router": "Router",
+          "model": "Model",
+          "type": "Type",
+          "caller": "Caller",
+          "in": "In",
+          "out": "Out",
+          "cost": "Cost",
+          "latency": "Latency",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Status"
+        }
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageOf": "Page {{page}} of {{totalPages}}",
+        "totalRecords": "({{count}} total records)"
+      }
+    },
+    "record": {
+      "back": "Back",
+      "title": "Call Detail",
+      "notFoundTitle": "Record Not Found",
+      "notFoundBody": "Usage record {{id}} could not be loaded.",
+      "errors": {
+        "loadFailed": "Failed to load record"
+      },
+      "sections": {
+        "identity": "Identity",
+        "tokensAndCost": "Tokens & Cost",
+        "performanceAndOutcome": "Performance & Outcome",
+        "traceLog": "Trace Log"
+      },
+      "fields": {
+        "recordId": "Record ID",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Call Type",
+        "requestType": "Request Type",
+        "inputTokens": "Input Tokens",
+        "outputTokens": "Output Tokens",
+        "totalTokens": "Total Tokens",
+        "costUsd": "Cost (USD)",
+        "costUnknown": "Unknown",
+        "latency": "Latency",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Outcome",
+        "timestamp": "Timestamp",
+        "guardrailTriggered": "Guardrail Triggered",
+        "blockedBy": "Blocked By",
+        "piiRedacted": "PII Redacted"
+      },
+      "errorMessage": "Error Message",
+      "eventCount": "{{count}} event",
+      "eventCount_other": "{{count}} events",
+      "noTrace": "No trace available. Trace data is captured for new calls only."
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "subtitle": "Test models, compare responses, and save prompt presets.",
+    "mode": {
+      "single": "Single",
+      "compare": "Compare"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "same as A",
+      "unknownToken": "Unknown token"
+    },
+    "presets": {
+      "button": "Presets",
+      "panelTitle": "Presets",
+      "saveCurrent": "Save current",
+      "namePlaceholder": "Preset name...",
+      "save": "Save",
+      "empty": "No presets yet.",
+      "delete": "Delete preset"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming not available",
+      "bannerBody": "this router has a response-blocking guardrail active. Routerly must inspect the full response before delivery, so responses arrive all at once.",
+      "tooltip": "Streaming is not available: a response-blocking guardrail requires the full response to be inspected before delivery.",
+      "ariaLabel": "Streaming unavailable"
+    },
+    "systemPrompt": "System prompt",
+    "model": "Model",
+    "modelPlaceholder": "Auto (router default)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Max tokens",
+      "topP": "Top-p"
+    },
+    "stream": "Stream",
+    "clear": "Clear",
+    "empty": {
+      "noMessages": "No messages yet.",
+      "enterToken": "Enter a Router Token above to start."
+    },
+    "reasoning": "Reasoning",
+    "blockedDefault": "This message was blocked by a guardrail.",
+    "truncated": "Truncated — response cut off by max tokens",
+    "bufferedNote": "Held for security review",
+    "errors": {
+      "onlyImages": "Only image attachments are supported."
+    },
+    "rawToggle": {
+      "rendered": "rendered",
+      "raw": "raw"
+    },
+    "inputPlaceholder": "Type a message...",
+    "attachImage": "Attach image",
+    "attachedImageAlt": "Attached",
+    "attachmentAlt": "Attachment",
+    "debug": {
+      "title": "Debug",
+      "clear": "Clear",
+      "hide": "Hide debug",
+      "show": "Show debug",
+      "empty": "No debug data yet.",
+      "emptyHint": "Send a message to see routing details.",
+      "turnTraceLog": "Turn #{{turn}} trace log"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Select model...",
+      "noMessages": "No messages yet.",
+      "debugTurns": "Debug ({{count}} turn)",
+      "debugTurns_other": "Debug ({{count}} turns)",
+      "guardrailTokensTitle": "Guardrail judge tokens",
+      "stop": "Stop",
+      "inputPlaceholder": "Send the same message to both models..."
+    }
+  },
+  "help": {
+    "title": "Help & Support",
+    "subtitle": "We're here to help — find answers or reach out anytime.",
+    "docs": {
+      "title": "Documentation",
+      "subtitle": "Guides, API reference, and configuration docs",
+      "body": "The official docs cover everything from getting started to advanced routing policies, provider setup, budgets, and the full API reference.",
+      "openLink": "Open documentation"
+    },
+    "issues": {
+      "title": "Report a bug or suggest a feature",
+      "subtitle": "Open a GitHub issue — it takes 2 minutes",
+      "body": "GitHub issues are the best way to report bugs or propose improvements. To help us fix things faster, include: what you did, what you expected to happen, and what actually happened.",
+      "showTemplate": "Show issue template",
+      "reportBug": "Report a bug",
+      "requestFeature": "Request a feature"
+    },
+    "issueTemplate": {
+      "whatHappened": "What happened?",
+      "whatHappenedHint": "Describe the problem in plain words",
+      "stepsToReproduce": "Steps to reproduce",
+      "expectedBehaviour": "Expected behaviour",
+      "expectedBehaviourHint": "What you expected to see",
+      "version": "Routerly version",
+      "versionHint": "Run `routerly --version` or check Settings → About"
+    },
+    "email": {
+      "title": "Contact support",
+      "subtitle": "We read every message and reply as soon as we can",
+      "body": "For anything that doesn't fit a GitHub issue — billing questions, private concerns, or if you just want to say hi — drop us a line."
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "subtitle": "Quick answers to the most common questions",
+      "items": {
+        "connect": {
+          "q": "How do I connect my app to Routerly?",
+          "a": "Point your OpenAI or Anthropic SDK to your Routerly instance. Replace the base URL with http://your-host:3000/v1 (OpenAI-compatible) or http://your-host:3000/anthropic (Anthropic-compatible), then use a router token as the API key. That's it — no other changes needed."
+        },
+        "openaiCompat": {
+          "q": "Is Routerly compatible with tools that use the OpenAI SDK?",
+          "a": "Yes. Routerly is a drop-in replacement: any tool that supports a custom base URL and API key (LangChain, LlamaIndex, Cursor, Continue, etc.) works out of the box. For Anthropic-format clients, use the /anthropic endpoint instead."
+        },
+        "routing": {
+          "q": "How does model routing work?",
+          "a": "Each router has a routing policy that decides which model receives a request. Policies include round-robin, lowest cost, fastest response, fallback chains, and more. You configure them per router under Routers → Routing."
+        },
+        "addModel": {
+          "q": "How do I add a new AI model?",
+          "a": "Go to Models → Add model. You can add any OpenAI-compatible provider (Ollama, LM Studio, custom endpoints) or a native Anthropic endpoint. Fill in the base URL, API key, and model ID — Routerly will handle the rest."
+        },
+        "dataStored": {
+          "q": "Is my data stored? Are my prompts logged?",
+          "a": "Routerly is self-hosted and stores data only on your machine (in ~/.routerly/ by default). Prompts and responses are never sent anywhere by Routerly. Request logs are stored locally and only if you enable them per-router."
+        },
+        "routerToken": {
+          "q": "What's a router token and how is it different from a provider API key?",
+          "a": "A router token is a credential you give to your app or team members to authenticate with Routerly. It's separate from your provider API keys, which Routerly stores securely on the server side. Your apps never see the real provider keys."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} user",
+    "countLabel_other": "{{count}} users",
+    "addButton": "Add User",
+    "columns": {
+      "email": "Email",
+      "role": "Role",
+      "routers": "Routers"
+    },
+    "allRouters": "All",
+    "resetTwoFaTitle": "Reset 2FA",
+    "resetTwoFaConfirm": "Reset 2FA for {{email}}? They will need to re-enroll.",
+    "deleteConfirm": "Delete this user?",
+    "emptyTitle": "No users yet.",
+    "noPermission": "You don't have permission to view users.",
+    "modal": {
+      "title": "Add User",
+      "emailLabel": "Email",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Role",
+      "roleAdmin": "Admin",
+      "roleViewer": "Viewer",
+      "cancelButton": "Cancel",
+      "submitButton": "Add User"
+    },
+    "errors": {
+      "loadFailed": "Failed to load users",
+      "addFailed": "Error"
+    }
+  },
+  "userEdit": {
+    "title": "Edit User",
+    "account": "Account",
+    "email": "Email",
+    "role": "Role",
+    "changePassword": "Change Password",
+    "newPassword": "New Password",
+    "newPasswordHint": "(leave blank to keep current)",
+    "save": "Save",
+    "saved": "Saved!",
+    "errors": {
+      "loadFailed": "Failed to load user",
+      "saveFailed": "Failed to save"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Manage roles and permissions. Built-in roles cannot be modified.",
+    "newRole": "New Role",
+    "builtin": "built-in",
+    "edit": "Edit",
+    "deleteConfirm": "Delete this role? Users with this role will be affected.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "e.g. operator",
+      "name": "Name",
+      "namePlaceholder": "Role name",
+      "permissions": "Permissions",
+      "create": "Create",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "permissions": {
+      "routerRead": "Routers – Read",
+      "routerWrite": "Routers – Write",
+      "modelRead": "Models – Read",
+      "modelWrite": "Models – Write",
+      "userRead": "Users – Read",
+      "userWrite": "Users – Write",
+      "reportRead": "Reports – Read",
+      "settingsRead": "Settings – Read",
+      "settingsWrite": "Settings – Write",
+      "notificationWrite": "Notifications – Write",
+      "tokenRead": "Tokens – Read",
+      "tokenWrite": "Tokens – Write",
+      "roleWrite": "Roles – Write",
+      "auditRead": "Audit Log – Read",
+      "modulesRead": "Modules – Read",
+      "modulesManage": "Modules – Manage",
+      "connectionsRead": "Connections – Read",
+      "connectionsManage": "Connections – Manage",
+      "resilienceRead": "Resilience – Read",
+      "resilienceManage": "Resilience – Manage",
+      "profilesRead": "Routing Profiles – Read",
+      "profilesManage": "Routing Profiles – Manage",
+      "optimizersRead": "Optimizers – Read",
+      "optimizersManage": "Optimizers – Manage",
+      "experimentsRead": "Experiments – Read",
+      "experimentsManage": "Experiments – Manage"
+    },
+    "errors": {
+      "loadFailed": "Failed to load roles",
+      "updateFailed": "Failed to update role",
+      "createFailed": "Failed to create role",
+      "deleteFailed": "Failed to delete role"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profiles",
+      "subtitle": "Reusable routing, optimizer and security configurations",
+      "noPermission": "You don't have permission to view profiles.",
+      "newProfile": "New {{kind}} Profile",
+      "empty": "No {{kind}} profiles yet.",
+      "builtin": "Built-in",
+      "custom": "Custom",
+      "view": "View",
+      "edit": "Edit",
+      "clone": "Clone",
+      "delete": "Delete",
+      "deleteConfirm": "Delete profile \"{{label}}\"? This cannot be undone.",
+      "kindDescriptions": {
+        "routing": "Which model answers a request, and what happens when it cannot",
+        "optimizer": "What is stripped from a prompt before it is sent",
+        "security": "Guardrails and PII policies applied to traffic"
+      },
+      "columns": {
+        "label": "Label",
+        "type": "Type",
+        "configuration": "Configuration",
+        "version": "Version"
+      },
+      "errors": {
+        "loadFailed": "Failed to load profiles",
+        "deleteFailed": "Failed to delete profile"
+      }
+    },
+    "form": {
+      "backToProfiles": "Back to Profiles",
+      "newProfileTitle": "New {{kind}} Profile",
+      "editProfileTitle": "Edit {{label}}",
+      "builtinHint": "Built-in profiles cannot be edited. Clone one to customize it.",
+      "assignHint": "{{article}} {{kind}} profile can be assigned to any number of routers.",
+      "noPermission": "You don't have permission to view profiles.",
+      "label": "Label",
+      "optimizers": "Optimizers",
+      "optimizersHint": "Drag to reorder, toggle to enable. They run in order from top to bottom.",
+      "createProfile": "Create Profile",
+      "saveProfile": "Save Profile",
+      "cancel": "Cancel",
+      "copySuffix": "{{label}} copy",
+      "labelPlaceholders": {
+        "routing": "e.g. My Balanced Routing",
+        "optimizer": "e.g. My Prompt Trimmer",
+        "security": "e.g. My Strict Guardrails"
+      },
+      "errors": {
+        "notFound": "Profile not found.",
+        "loadFailed": "Failed to load profile",
+        "saveFailed": "Failed to save profile"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Back to Connect",
+    "title": "Connect",
+    "docs": "Docs",
+    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
+    "noClientPrefix": "No client named",
+    "errors": {
+      "loadFailed": "Failed to load clients: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Fastest: one command",
+      "description": "Run it on the machine where {{client}} is installed. It writes {{configPath}}, keeping a backup you can undo."
+    },
+    "byHand": {
+      "titleAlt": "Or set it up by hand",
+      "titleUi": "Set it up by hand",
+      "titleConfigFile": "Set up the config file",
+      "setValuesIn": "Set these values in {{configPath}}.",
+      "putThisIn": "Put this in",
+      "replaceToken": "Replace",
+      "withRouterToken": "with a router token:",
+      "createOne": "create one",
+      "onRoutersPage": "on the Routers page.",
+      "modelLabel": "Model:",
+      "modelHint": "hands the choice to Routerly, any model id from",
+      "modelsLink": "Models",
+      "worksToo": "works too.",
+      "openaiCompatHint": "The same base URL, key and model fit any client that offers an \"OpenAI compatible\" provider."
+    },
+    "mcp": {
+      "title": "MCP server",
+      "description": "Separate from the steps above: this one lets {{client}} call the Routerly tools. It needs a personal MCP token, minted with",
+      "orFromYour": "or from your",
+      "profileLink": "profile"
+    },
+    "checkItWorked": {
+      "title": "Check it worked",
+      "restart": "Restart {{client}}, send it a prompt, then look for the call in",
+      "usageLink": "Usage",
+      "cliReports": "From the same machine, the CLI reports what it finds:"
+    }
+  },
+  "connect": {
+    "title": "Connect",
+    "subtitle": "Point an AI coding client at this gateway. Pick a client for its setup steps.",
+    "llmLabel": "LLM",
+    "llmDescription": "routes that client model traffic through Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "loads Routerly as a tool server inside it.",
+    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
+    "errors": {
+      "loadFailed": "Failed to load clients: {{error}}"
+    },
+    "oneCommand": {
+      "title": "One command",
+      "hint": "The CLI writes the config file for you, with a backup you can undo."
+    },
+    "byHand": {
+      "title": "By hand",
+      "hint": "Copy the snippet from the client page into its settings, then restart it."
+    },
+    "endpoint": {
+      "title": "Point any client here",
+      "description": "Anything built on the OpenAI or Anthropic SDK works by changing the base URL and the key. Nothing else changes: requests and responses cross Routerly as they are.",
+      "openaiBaseUrl": "OpenAI base URL",
+      "anthropicBaseUrl": "Anthropic base URL",
+      "apiKey": "API key",
+      "model": "Model",
+      "apiKeyDescription": "A router token, sent as",
+      "or": "or",
+      "createOne": "Create one",
+      "onRoutersPage": "on the Routers page.",
+      "modelDescription": "lets Routerly pick. Any model id from the",
+      "modelsLink": "Models",
+      "worksToo": "page works too."
+    }
+  }
+}

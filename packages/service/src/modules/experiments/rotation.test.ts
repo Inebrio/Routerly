@@ -8,8 +8,8 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
     name: 'Prompt A vs B',
     rotation: 'weighted',
     variants: [
-      { id: 'v-a', projectId: 'proj-a' },
-      { id: 'v-b', projectId: 'proj-b' },
+      { id: 'v-a', routerId: 'proj-a' },
+      { id: 'v-b', routerId: 'proj-b' },
     ],
     tokens: [],
     createdAt: '2026-08-01T00:00:00.000Z',
@@ -26,7 +26,7 @@ describe('pickVariant', () => {
   });
 
   it('always returns the only variant, whatever the rotation', () => {
-    const single = [{ id: 'v-a', projectId: 'proj-a' }];
+    const single = [{ id: 'v-a', routerId: 'proj-a' }];
     for (const rotation of ['sticky', 'weighted', 'round-robin'] as const) {
       expect(pickVariant(experiment({ rotation, variants: single }), {})!.id).toBe('v-a');
     }
@@ -50,8 +50,8 @@ describe('pickVariant', () => {
     const exp = experiment({
       rotation: 'weighted',
       variants: [
-        { id: 'v-a', projectId: 'proj-a', weight: 90 },
-        { id: 'v-b', projectId: 'proj-b', weight: 10 },
+        { id: 'v-a', routerId: 'proj-a', weight: 90 },
+        { id: 'v-b', routerId: 'proj-b', weight: 10 },
       ],
     });
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
@@ -74,7 +74,7 @@ describe('pickVariant', () => {
     expect(pickVariant(exp, { endUserId: 'alice' })!.id).toBe('v-b');
     const shrunk = experiment({
       rotation: 'sticky',
-      variants: [{ id: 'v-a', projectId: 'proj-a' }, { id: 'v-c', projectId: 'proj-c' }],
+      variants: [{ id: 'v-a', routerId: 'proj-a' }, { id: 'v-c', routerId: 'proj-c' }],
     });
     expect(pickVariant(shrunk, { endUserId: 'alice' })!.id).toBe('v-c');
   });

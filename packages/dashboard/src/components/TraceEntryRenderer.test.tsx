@@ -341,7 +341,7 @@ describe('TraceEntryRenderer — guardrail:injected', () => {
     expect(screen.queryByText('[object Object]')).toBeNull();
   });
 
-  it('omits the injected text when the project did not opt into content capture', () => {
+  it('omits the injected text when the router did not opt into content capture', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'guardrail:injected',
@@ -654,7 +654,7 @@ describe('TraceEntryRenderer — router:intake', () => {
         details: {
           model: 'openai/gpt-4o',
           messageCount: 3,
-          projectId: 'proj-1',
+          routerId: 'proj-1',
           excludedByLimits: [],
         },
       }} />
@@ -669,7 +669,7 @@ describe('TraceEntryRenderer — router:intake', () => {
         details: {
           model: 'openai/gpt-4o',
           messageCount: 1,
-          projectId: 'proj-1',
+          routerId: 'proj-1',
           excludedByLimits: [
             {
               model: 'anthropic/claude-3',
@@ -694,7 +694,7 @@ describe('TraceEntryRenderer — router:intake', () => {
         details: {
           model: 'openai/gpt-4o',
           messageCount: 1,
-          projectId: 'proj-1',
+          routerId: 'proj-1',
           excludedByLimits: [
             { model: 'anthropic/claude-3', violated: [] },
           ],
@@ -1012,7 +1012,7 @@ describe('TraceEntryRenderer — other entry types', () => {
     render(
       <TraceEntryRenderer entry={{
         message: 'router:intake',
-        details: { model: 'gpt-4', messageCount: 1, projectId: 'p1' },
+        details: { model: 'gpt-4', messageCount: 1, routerId: 'p1' },
       }} />
     );
     // excludedByLimits absent → ?? [] → length 0 → no EXCLUDED section
@@ -1024,7 +1024,7 @@ describe('TraceEntryRenderer — other entry types', () => {
       <TraceEntryRenderer entry={{
         message: 'router:intake',
         details: {
-          model: 'gpt-4', messageCount: 1, projectId: 'p1',
+          model: 'gpt-4', messageCount: 1, routerId: 'p1',
           excludedByLimits: [{ model: 'anthropic/claude-3' }], // violated absent
         },
       }} />

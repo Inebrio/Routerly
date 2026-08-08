@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { Link, NavLink, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { User, Lock, ShieldCheck, ShieldOff, CheckCheck, Circle, RefreshCw, X, Archive } from 'lucide-react';
@@ -11,6 +12,7 @@ import { useAuth } from '../AuthContext';
 import { severityIcon, timeAgo } from '../components/NotificationBell';
 import { useFilterState } from '../hooks/useFilterState';
 import { ProfileMcpTab } from './ProfileMcpTab';
+import { ProfilePreferencesTab } from './ProfilePreferencesTab';
 import { DateRangePicker, parseStoredRange, type DateRange } from '../components/DateRangePicker';
 import { SearchableSelect } from '../components/SearchableSelect';
 
@@ -20,8 +22,8 @@ const PAGE_SIZE = 20;
 
 type SeverityFilter = 'all' | 'info' | 'warning' | 'critical';
 
-function severityLabel(sev: InboxItem['severity']): string {
-  return sev.charAt(0).toUpperCase() + sev.slice(1);
+function severityLabel(sev: InboxItem['severity'], t: (k: string) => string): string {
+  return t(`profile.notifications.severity.${sev}`);
 }
 
 /** Absolute, locale-formatted timestamp (the inbox table shows full date, not "ago"). */
@@ -46,24 +48,28 @@ function EventSlug({ event }: { event: string }) {
   );
 }
 
-const CATEGORY_OPTIONS = [
-  { value: 'all', label: 'All categories' },
-  ...NOTIFICATION_CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
-];
+function useCategoryOptions(t: (k: string) => string) {
+  return [
+    { value: 'all', label: t('profile.notifications.filters.allCategories') },
+    ...NOTIFICATION_CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
+  ];
+}
 
 /** Every catalogued event, labelled by title and searchable by slug. */
-const EVENT_OPTIONS = [
-  { value: '', label: 'All events' },
-  ...Object.entries(NOTIFICATION_EVENT_CATALOG)
-    .map(([event, meta]) => ({ value: event, label: `${meta.title} (${event})` }))
-    .sort((a, b) => a.label.localeCompare(b.label)),
-];
+function useEventOptions(t: (k: string) => string) {
+  return [
+    { value: '', label: t('profile.notifications.filters.allEvents') },
+    ...Object.entries(NOTIFICATION_EVENT_CATALOG)
+      .map(([event, meta]) => ({ value: event, label: `${meta.title} (${event})` }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+}
 
 /** Where a detail value points, when it points anywhere. */
 function detailLink(key: string, value: unknown): string | null {
   if (typeof value !== 'string' || !value) return null;
   const id = encodeURIComponent(value);
-  if (key === 'projectId') return `/dashboard/projects/${id}`;
+  if (key === 'routerId') return `/dashboard/routers/${id}`;
   // Model ids contain slashes and colons (openai/gpt-4o), hence the encoding.
   // `primaryModelId` and `fallbackModelId` come from routing.fallback_used.
   if (key === 'modelId' || key.endsWith('ModelId')) return `/dashboard/models/${id}`;
@@ -102,6 +108,7 @@ function NotificationDetailDrawer({
   onMarkUnread: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const detailEntries = Object.entries(item.details ?? {});
   const cause = notificationCause(item.event, item.details ?? {});
   const sequence = item.events ?? [];
@@ -121,7 +128,7 @@ function NotificationDetailDrawer({
       />
       <div
         role="dialog"
-        aria-label="Notification detail"
+        aria-label={t('profile.notifications.detail.ariaLabel')}
         style={{
           position: 'fixed', top: 0, right: 0, bottom: 0, width: 420, maxWidth: '90vw',
           background: 'var(--bg-elevated)', borderLeft: '1px solid var(--border)',
@@ -140,7 +147,7 @@ function NotificationDetailDrawer({
           </span>
           <button
             onClick={onClose}
-            title="Close"
+            title={t('profile.notifications.close')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
           >
             <X size={18} />
@@ -154,11 +161,11 @@ function NotificationDetailDrawer({
 
           <div style={{ display: 'flex', gap: 32 }}>
             <div>
-              <FilterLabel>Event</FilterLabel>
+              <FilterLabel>{t('profile.notifications.filters.event')}</FilterLabel>
               <div style={{ marginTop: 4 }}><EventSlug event={item.event} /></div>
             </div>
             <div>
-              <FilterLabel>Category</FilterLabel>
+              <FilterLabel>{t('profile.notifications.filters.category')}</FilterLabel>
               <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'capitalize' }}>
                 {notificationCategory(item.event)}
               </div>
@@ -167,31 +174,31 @@ function NotificationDetailDrawer({
 
           <div style={{ display: 'flex', gap: 32 }}>
             <div>
-              <FilterLabel>Severity</FilterLabel>
+              <FilterLabel>{t('profile.notifications.filters.severity')}</FilterLabel>
               <div style={{ marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                {severityIcon(item.severity)} {severityLabel(item.severity)}
+                {severityIcon(item.severity)} {severityLabel(item.severity, t)}
               </div>
             </div>
             <div>
-              <FilterLabel>Status</FilterLabel>
+              <FilterLabel>{t('profile.notifications.filters.status')}</FilterLabel>
               <div style={{ marginTop: 4, fontSize: '0.85rem', color: item.read ? 'var(--text-muted)' : 'var(--accent)', fontWeight: item.read ? 400 : 600 }}>
-                {item.read ? 'Read' : 'Unread'}
+                {item.read ? t('profile.notifications.status.read') : t('profile.notifications.status.unread')}
               </div>
             </div>
           </div>
 
           <div>
-            <FilterLabel>Date</FilterLabel>
+            <FilterLabel>{t('profile.notifications.filters.date')}</FilterLabel>
             <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
               {fmtDate(item.timestamp)}
-              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({timeAgo(item.timestamp)})</span>
+              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({timeAgo(item.timestamp, t)})</span>
             </div>
           </div>
 
           <div>
-            <FilterLabel>Details</FilterLabel>
+            <FilterLabel>{t('profile.notifications.detail.details')}</FilterLabel>
             {detailEntries.length === 0 ? (
-              <div style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>No additional details.</div>
+              <div style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)' }}>{t('profile.notifications.detail.noDetails')}</div>
             ) : (
               <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
                 {detailEntries.map(([k, v], i) => (
@@ -203,7 +210,7 @@ function NotificationDetailDrawer({
 
           {sequence.length > 1 && (
             <div>
-              <FilterLabel>Events in this incident</FilterLabel>
+              <FilterLabel>{t('profile.notifications.detail.eventsInIncident')}</FilterLabel>
               <div style={{ marginTop: 6, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
                 {sequence.map((e, i) => (
                   <div key={`${e.event}-${e.timestamp}-${i}`} style={{
@@ -228,15 +235,15 @@ function NotificationDetailDrawer({
         <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
           {item.read ? (
             <button className="btn btn-secondary" onClick={() => onMarkUnread(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Circle size={14} /> Mark as unread
+              <Circle size={14} /> {t('profile.notifications.actions.markUnread')}
             </button>
           ) : (
             <button className="btn btn-secondary" onClick={() => onMarkRead(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <CheckCheck size={14} /> Mark as read
+              <CheckCheck size={14} /> {t('profile.notifications.actions.markRead')}
             </button>
           )}
           <button className="btn btn-secondary" onClick={() => onDelete(item.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Archive size={14} /> Archive
+            <Archive size={14} /> {t('profile.notifications.actions.archive')}
           </button>
         </div>
       </div>
@@ -245,6 +252,9 @@ function NotificationDetailDrawer({
 }
 
 export function ProfileNotificationsTab() {
+  const { t } = useTranslation();
+  const CATEGORY_OPTIONS = useCategoryOptions(t);
+  const EVENT_OPTIONS = useEventOptions(t);
   const [searchParams] = useSearchParams();
   const [items, setItems] = useState<InboxItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -403,7 +413,7 @@ export function ProfileNotificationsTab() {
       <div className="card" style={{ padding: '14px 18px', marginBottom: 20 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Severity</FilterLabel>
+            <FilterLabel>{t('profile.notifications.filters.severity')}</FilterLabel>
             <div style={{ display: 'flex', gap: 4 }}>
               {(['all', 'info', 'warning', 'critical'] as const).map(s => (
                 <button
@@ -411,16 +421,16 @@ export function ProfileNotificationsTab() {
                   className={`btn btn-sm ${severity === s ? 'btn-primary' : 'btn-secondary'}`}
                   onClick={() => setSeverity(s)}
                 >
-                  {s === 'all' ? 'All' : severityLabel(s)}
+                  {s === 'all' ? t('profile.notifications.severity.all') : severityLabel(s, t)}
                 </button>
               ))}
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
-            <FilterLabel>Category</FilterLabel>
+            <FilterLabel>{t('profile.notifications.filters.category')}</FilterLabel>
             <SearchableSelect
-              ariaLabel="Category"
+              ariaLabel={t('profile.notifications.filters.category')}
               options={CATEGORY_OPTIONS}
               value={category}
               onChange={setCategory}
@@ -428,47 +438,47 @@ export function ProfileNotificationsTab() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 260 }}>
-            <FilterLabel>Event</FilterLabel>
+            <FilterLabel>{t('profile.notifications.filters.event')}</FilterLabel>
             <SearchableSelect
-              ariaLabel="Event"
+              ariaLabel={t('profile.notifications.filters.event')}
               options={EVENT_OPTIONS}
               value={eventFilter}
               onChange={setEventFilter}
-              placeholder="All events"
+              placeholder={t('profile.notifications.filters.allEvents')}
             />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Period</FilterLabel>
+            <FilterLabel>{t('profile.notifications.filters.period')}</FilterLabel>
             <DateRangePicker value={dateRange} onChange={setDateRange} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <FilterLabel>Status</FilterLabel>
+            <FilterLabel>{t('profile.notifications.filters.status')}</FilterLabel>
             <button
               className={`btn btn-sm ${unreadOnly ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setUnreadOnly(!unreadOnly)}
             >
-              {unreadOnly ? 'Unread only' : 'All'}
+              {unreadOnly ? t('profile.notifications.filters.unreadOnly') : t('profile.notifications.filters.all')}
             </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <FilterLabel>&nbsp;</FilterLabel>
             <button className="btn btn-sm btn-secondary" onClick={() => void load(page)} disabled={loading}>
-              <RefreshCw size={13} /> Refresh
+              <RefreshCw size={13} /> {t('profile.notifications.refresh')}
             </button>
           </div>
 
           <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end' }}>
-            <FilterLabel>{unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}</FilterLabel>
+            <FilterLabel>{unreadCount > 0 ? t('profile.notifications.unreadCount', { count: unreadCount }) : t('profile.notifications.allCaughtUp')}</FilterLabel>
             {unreadCount > 0 && (
               <button
                 className="btn btn-sm btn-secondary"
                 onClick={markAll}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
               >
-                <CheckCheck size={14} /> Mark all read
+                <CheckCheck size={14} /> {t('profile.notifications.markAllRead')}
               </button>
             )}
           </div>
@@ -478,18 +488,18 @@ export function ProfileNotificationsTab() {
       {/* Bulk action bar */}
       {checkedIds.size > 0 && (
         <div className="card" style={{ padding: '10px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{checkedIds.size} selected</span>
+          <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{t('profile.notifications.selectedCount', { count: checkedIds.size })}</span>
           <button className="btn btn-sm btn-secondary" onClick={bulkMarkRead} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <CheckCheck size={14} /> Mark as read
+            <CheckCheck size={14} /> {t('profile.notifications.actions.markRead')}
           </button>
           <button className="btn btn-sm btn-secondary" onClick={bulkMarkUnread} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Circle size={14} /> Mark as unread
+            <Circle size={14} /> {t('profile.notifications.actions.markUnread')}
           </button>
           <button className="btn btn-sm btn-secondary" onClick={bulkDelete} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Archive size={14} /> Archive
+            <Archive size={14} /> {t('profile.notifications.actions.archive')}
           </button>
           <button className="btn btn-sm btn-secondary" onClick={() => setCheckedIds(new Set())} style={{ marginLeft: 'auto' }}>
-            Clear
+            {t('profile.notifications.clear')}
           </button>
         </div>
       )}
@@ -498,7 +508,7 @@ export function ProfileNotificationsTab() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : items.length === 0 ? (
         <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0' }}>
-          No notifications found.
+          {t('profile.notifications.empty')}
         </div>
       ) : (
         <>
@@ -510,14 +520,14 @@ export function ProfileNotificationsTab() {
                     <th style={{ padding: '10px 12px', width: 40 }}>
                       <input
                         type="checkbox"
-                        aria-label="Select all"
+                        aria-label={t('profile.notifications.table.selectAll')}
                         checked={items.length > 0 && checkedIds.size === items.length}
                         ref={el => { if (el) el.indeterminate = checkedIds.size > 0 && checkedIds.size < items.length; }}
                         onChange={toggleAll}
                         style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer', verticalAlign: 'middle' }}
                       />
                     </th>
-                    {['Severity', 'Event', 'Date', 'Status'].map(h => (
+                    {[t('profile.notifications.table.severity'), t('profile.notifications.table.event'), t('profile.notifications.table.date'), t('profile.notifications.table.status')].map(h => (
                       <th key={h} style={{
                         padding: '10px 12px', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap',
                         fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)',
@@ -539,7 +549,7 @@ export function ProfileNotificationsTab() {
                       <td style={{ padding: '9px 12px', borderLeft: `3px solid ${n.read ? 'transparent' : 'var(--accent)'}` }} onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
-                          aria-label={`Select ${n.event}`}
+                          aria-label={t('profile.notifications.table.selectRow', { event: n.event })}
                           checked={checkedIds.has(n.id)}
                           onChange={() => toggleOne(n.id)}
                           style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer', verticalAlign: 'middle' }}
@@ -547,7 +557,7 @@ export function ProfileNotificationsTab() {
                       </td>
                       <td style={{ padding: '9px 12px', whiteSpace: 'nowrap' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          {severityIcon(n.severity)} {severityLabel(n.severity)}
+                          {severityIcon(n.severity)} {severityLabel(n.severity, t)}
                         </span>
                       </td>
                       <td style={{ padding: '9px 12px', color: 'var(--text-primary)' }}>
@@ -555,7 +565,7 @@ export function ProfileNotificationsTab() {
                           {notificationTitle(n.event)}
                           {(n.eventCount ?? 1) > 1 && (
                             <span style={{ marginLeft: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                              {n.eventCount} events
+                              {t('profile.notifications.table.eventCount', { count: n.eventCount })}
                             </span>
                           )}
                         </span>
@@ -564,8 +574,8 @@ export function ProfileNotificationsTab() {
                       <td style={{ padding: '9px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>{fmtDate(n.timestamp)}</td>
                       <td style={{ padding: '9px 12px' }}>
                         {n.read
-                          ? <span style={{ color: 'var(--text-muted)' }}>Read</span>
-                          : <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Unread</span>}
+                          ? <span style={{ color: 'var(--text-muted)' }}>{t('profile.notifications.status.read')}</span>
+                          : <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{t('profile.notifications.status.unread')}</span>}
                       </td>
                     </tr>
                   ))}
@@ -577,14 +587,14 @@ export function ProfileNotificationsTab() {
           {/* Pagination */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16, padding: '10px 0' }}>
             <button className="btn btn-sm btn-secondary" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
-              ← Previous
+              {t('profile.notifications.pagination.previous')}
             </button>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Page {pagination.page} of {pagination.totalPages}
-              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>({pagination.totalRecords} total)</span>
+              {t('profile.notifications.pagination.page', { page: pagination.page, totalPages: pagination.totalPages })}
+              <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>{t('profile.notifications.pagination.total', { count: pagination.totalRecords })}</span>
             </span>
             <button className="btn btn-sm btn-secondary" disabled={page >= pagination.totalPages} onClick={() => setPage(p => p + 1)}>
-              Next →
+              {t('profile.notifications.pagination.next')}
             </button>
           </div>
         </>
@@ -606,6 +616,7 @@ export function ProfileNotificationsTab() {
 // ─── Profile (security) tab content ──────────────────────────────────────────
 
 function ProfileSecurityTab() {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuth();
 
   // ── Change password ─────────────────────────────────────────────────────────
@@ -623,11 +634,11 @@ function ProfileSecurityTab() {
     setPwError('');
     setPwSaved(false);
     if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwError('Passwords do not match.');
+      setPwError(t('profile.security.password.errors.mismatch'));
       return;
     }
     if (pwForm.newPassword.length < 8) {
-      setPwError('New password must be at least 8 characters.');
+      setPwError(t('profile.security.password.errors.tooShort'));
       return;
     }
     setPwSaving(true);
@@ -640,7 +651,7 @@ function ProfileSecurityTab() {
       setPwSaved(true);
       setTimeout(() => setPwSaved(false), 3000);
     } catch (e) {
-      setPwError(e instanceof Error ? e.message : 'Update failed');
+      setPwError(e instanceof Error ? e.message : t('profile.security.password.errors.updateFailed'));
     } finally {
       setPwSaving(false);
     }
@@ -679,7 +690,7 @@ function ProfileSecurityTab() {
       setTfaBackupCodes(res.backupCodes);
       setTfaStep('setup');
     } catch (e) {
-      setTfaError(e instanceof Error ? e.message : 'Setup failed');
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.setupFailed'));
     } finally {
       setTfaBusy(false);
     }
@@ -696,7 +707,7 @@ function ProfileSecurityTab() {
       setTfaEnabled(true);
       updateUser({ totpEnabled: true });
     } catch (e) {
-      setTfaError(e instanceof Error ? e.message : 'Confirmation failed');
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.confirmFailed'));
     } finally {
       setTfaBusy(false);
     }
@@ -713,7 +724,7 @@ function ProfileSecurityTab() {
       setTfaStep('idle');
       updateUser({ totpEnabled: false });
     } catch (e) {
-      setTfaError(e instanceof Error ? e.message : 'Disable failed');
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.disableFailed'));
     } finally {
       setTfaBusy(false);
     }
@@ -729,7 +740,7 @@ function ProfileSecurityTab() {
       setRegenCode('');
       setBackupVisible(false);
     } catch (e) {
-      setTfaError(e instanceof Error ? e.message : 'Regeneration failed');
+      setTfaError(e instanceof Error ? e.message : t('profile.security.tfa.errors.regenFailed'));
     } finally {
       setTfaBusy(false);
     }
@@ -759,7 +770,7 @@ function ProfileSecurityTab() {
             {user?.email}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-            Role: <span style={{ color: 'var(--text-secondary)' }}>{user?.role}</span>
+            {t('profile.security.roleLabel')} <span style={{ color: 'var(--text-secondary)' }}>{user?.role}</span>
           </div>
         </div>
       </div>
@@ -767,11 +778,11 @@ function ProfileSecurityTab() {
       {/* ── Change password ────────────────────────────────────────────────── */}
       <section>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
-          Change Password
+          {t('profile.security.password.heading')}
         </h3>
         <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" htmlFor="p-cur-pw">Current Password</label>
+            <label className="form-label" htmlFor="p-cur-pw">{t('profile.security.password.currentLabel')}</label>
             <input
               id="p-cur-pw"
               type="password"
@@ -782,19 +793,19 @@ function ProfileSecurityTab() {
             />
           </div>
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" htmlFor="p-new-pw">New Password</label>
+            <label className="form-label" htmlFor="p-new-pw">{t('profile.security.password.newLabel')}</label>
             <input
               id="p-new-pw"
               type="password"
               className="form-input"
               value={pwForm.newPassword}
               onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
-              placeholder="Minimum 8 characters"
+              placeholder={t('profile.security.password.newPlaceholder')}
               required
             />
           </div>
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" htmlFor="p-conf-pw">Confirm New Password</label>
+            <label className="form-label" htmlFor="p-conf-pw">{t('profile.security.password.confirmLabel')}</label>
             <input
               id="p-conf-pw"
               type="password"
@@ -805,12 +816,12 @@ function ProfileSecurityTab() {
             />
           </div>
           {pwError && <div className="form-error">{pwError}</div>}
-          {pwSaved && <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>Password changed successfully.</div>}
+          {pwSaved && <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>{t('profile.security.password.success')}</div>}
           <div>
             <button type="submit" className="btn btn-primary" disabled={pwSaving}>
               {pwSaving
-                ? <><div className="spinner" style={{ width: 14, height: 14 }} /> Saving...</>
-                : <><Lock size={14} /> Change Password</>}
+                ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('profile.security.password.saving')}</>
+                : <><Lock size={14} /> {t('profile.security.password.submit')}</>}
             </button>
           </div>
         </form>
@@ -819,7 +830,7 @@ function ProfileSecurityTab() {
       {/* ── Two-Factor Authentication ──────────────────────────────────────── */}
       <section>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 14 }}>
-          Two-Factor Authentication
+          {t('profile.security.tfa.heading')}
         </h3>
 
         {tfaError && <div className="form-error" style={{ marginBottom: 12 }}>{tfaError}</div>}
@@ -827,11 +838,11 @@ function ProfileSecurityTab() {
         {tfaStep === 'idle' && !tfaEnabled && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-              2FA is not enabled. Protect your account with a time-based one-time password.
+              {t('profile.security.tfa.notEnabled')}
             </p>
             <div>
               <button className="btn btn-primary" onClick={handleSetup2fa} disabled={tfaBusy}>
-                <ShieldCheck size={14} /> Enable Two-Factor Authentication
+                <ShieldCheck size={14} /> {t('profile.security.tfa.enableButton')}
               </button>
             </div>
           </div>
@@ -840,35 +851,35 @@ function ProfileSecurityTab() {
         {tfaStep === 'setup' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
+              {t('profile.security.tfa.scanInstructions')}
             </p>
             {tfaQrImage && (
               /* ponytail: white padding so QR scans in dark mode */
               <div style={{ alignSelf: 'flex-start', background: '#fff', padding: 8, borderRadius: 8, lineHeight: 0 }}>
-                <img src={tfaQrImage} alt="2FA setup QR code" width={180} height={180} />
+                <img src={tfaQrImage} alt={t('profile.security.tfa.qrAlt')} width={180} height={180} />
               </div>
             )}
             <div style={{ padding: '14px 16px', background: 'var(--surface-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
-                Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:
+                {t('profile.security.tfa.addAccountInstructions')}
               </p>
               <ol style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-                <li>Tap <strong>Add account</strong> or the <strong>+</strong> button</li>
-                <li>Choose <strong>Enter setup key</strong> (or scan QR code if on mobile)</li>
-                <li>Enter the secret shown below</li>
+                <li><Trans i18nKey="profile.security.tfa.setup.step1" components={{ strong: <strong /> }} /></li>
+                <li><Trans i18nKey="profile.security.tfa.setup.step2" components={{ strong: <strong /> }} /></li>
+                <li>{t('profile.security.tfa.setup.step3')}</li>
               </ol>
               {tfaQrUrl && (
                 <a
                   href={tfaQrUrl}
                   style={{ display: 'block', marginTop: 10, fontSize: '0.72rem', color: 'var(--accent)', wordBreak: 'break-all' }}
                 >
-                  Tap here on mobile to open authenticator
+                  {t('profile.security.tfa.mobileLink')}
                 </a>
               )}
             </div>
             <div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-                Manual entry secret:
+                {t('profile.security.tfa.manualEntryLabel')}
               </p>
               <code style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4, letterSpacing: '0.1em' }}>
                 {tfaSecret}
@@ -876,7 +887,7 @@ function ProfileSecurityTab() {
             </div>
             <div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
-                Save these backup codes. Each can be used once if you lose access to your authenticator.
+                {t('profile.security.tfa.saveBackupCodes')}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
                 {tfaBackupCodes.map(c => (
@@ -889,12 +900,12 @@ function ProfileSecurityTab() {
                 style={{ fontSize: '0.8rem' }}
                 onClick={() => navigator.clipboard.writeText(tfaBackupCodes.join('\n'))}
               >
-                Copy backup codes
+                {t('profile.security.tfa.copyBackupCodes')}
               </button>
             </div>
             <form onSubmit={handleConfirm2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" htmlFor="tfa-confirm-code">Enter code from your app to activate</label>
+                <label className="form-label" htmlFor="tfa-confirm-code">{t('profile.security.tfa.confirmCodeLabel')}</label>
                 <input
                   id="tfa-confirm-code"
                   type="text"
@@ -909,10 +920,10 @@ function ProfileSecurityTab() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
-                  {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Activate 2FA'}
+                  {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : t('profile.security.tfa.activate')}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={() => { setTfaStep('idle'); setTfaError(''); }}>
-                  Cancel
+                  {t('profile.security.tfa.cancel')}
                 </button>
               </div>
             </form>
@@ -927,12 +938,12 @@ function ProfileSecurityTab() {
               background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
             }}>
               <ShieldCheck size={16} color="#22c55e" />
-              <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 600 }}>2FA is enabled</span>
+              <span style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 600 }}>{t('profile.security.tfa.enabledBadge')}</span>
             </div>
 
             {newBackupCodes.length > 0 ? (
               <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>New backup codes (save these now):</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>{t('profile.security.tfa.newBackupCodesLabel')}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 }}>
                   {newBackupCodes.map(c => (
                     <code key={c} style={{ fontSize: '0.8rem', background: 'var(--surface-2)', padding: '4px 8px', borderRadius: 4 }}>{c}</code>
@@ -944,13 +955,13 @@ function ProfileSecurityTab() {
                   style={{ fontSize: '0.8rem' }}
                   onClick={() => navigator.clipboard.writeText(newBackupCodes.join('\n'))}
                 >
-                  Copy
+                  {t('profile.security.tfa.copy')}
                 </button>
               </div>
             ) : backupVisible ? (
               <form onSubmit={handleRegenerateBackupCodes} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" htmlFor="regen-code">Enter authenticator code to regenerate backup codes</label>
+                  <label className="form-label" htmlFor="regen-code">{t('profile.security.tfa.regenLabel')}</label>
                   <input
                     id="regen-code"
                     type="text"
@@ -965,20 +976,20 @@ function ProfileSecurityTab() {
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button type="submit" className="btn btn-primary" disabled={tfaBusy}>
-                    {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Regenerate'}
+                    {tfaBusy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : t('profile.security.tfa.regenerate')}
                   </button>
-                  <button type="button" className="btn btn-ghost" onClick={() => { setBackupVisible(false); setTfaError(''); }}>Cancel</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setBackupVisible(false); setTfaError(''); }}>{t('profile.security.tfa.cancel')}</button>
                 </div>
               </form>
             ) : (
               <button type="button" className="btn btn-ghost" onClick={() => setBackupVisible(true)}>
-                Regenerate backup codes
+                {t('profile.security.tfa.regenerateBackupCodes')}
               </button>
             )}
 
             <form onSubmit={handleDisable2fa} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" htmlFor="disable-code">Disable 2FA (enter authenticator code)</label>
+                <label className="form-label" htmlFor="disable-code">{t('profile.security.tfa.disableLabel')}</label>
                 <input
                   id="disable-code"
                   type="text"
@@ -993,7 +1004,7 @@ function ProfileSecurityTab() {
               </div>
               <div>
                 <button type="submit" className="btn" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }} disabled={tfaBusy}>
-                  <ShieldOff size={14} /> Disable 2FA
+                  <ShieldOff size={14} /> {t('profile.security.tfa.disable')}
                 </button>
               </div>
             </form>
@@ -1004,19 +1015,24 @@ function ProfileSecurityTab() {
   );
 }
 
-// ─── Tab bar (reuses ProjectLayout pattern) ───────────────────────────────────
+// ─── Tab bar (reuses RouterLayout pattern) ───────────────────────────────────
 
-const TABS = [
-  { id: 'profile', label: 'Profile', to: '/dashboard/profile' },
-  { id: 'notifications', label: 'Notifications', to: '/dashboard/profile/notifications' },
-  { id: 'mcp', label: 'MCP', to: '/dashboard/profile/mcp' },
-] as const;
+function useTabs(t: (k: string) => string) {
+  return [
+    { id: 'profile', label: t('profile.tabs.profile'), to: '/dashboard/profile' },
+    { id: 'notifications', label: t('profile.tabs.notifications'), to: '/dashboard/profile/notifications' },
+    { id: 'mcp', label: t('profile.tabs.mcp'), to: '/dashboard/profile/mcp' },
+    { id: 'preferences', label: t('profile.tabs.preferences'), to: '/dashboard/profile/preferences' },
+  ] as const;
+}
 
-type TabId = typeof TABS[number]['id'];
+type TabId = ReturnType<typeof useTabs>[number]['id'];
 
 // ─── ProfilePage ──────────────────────────────────────────────────────────────
 
 export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) {
+  const { t } = useTranslation();
+  const TABS = useTabs(t);
   // In-app notifications are opt-in: the tab is shown only when the service
   // reports a `dashboard` channel exists. Undefined while loading.
   const [notifEnabled, setNotifEnabled] = useState<boolean | undefined>(undefined);
@@ -1029,7 +1045,7 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
 
   // Hide the notifications tab when disabled; fall back to the profile tab if the
   // route was hit directly (do not render the disabled notifications view).
-  const tabs = notifEnabled ? TABS : TABS.filter(t => t.id !== 'notifications');
+  const tabs = notifEnabled ? TABS : TABS.filter(tab => tab.id !== 'notifications');
   const requestedTab = initialTab === 'notifications' && !notifEnabled ? 'profile' : initialTab;
   // Avoid a flash of the profile tab before the enabled flag resolves.
   const activeTab: TabId = initialTab === 'notifications' && notifEnabled === undefined
@@ -1040,13 +1056,13 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
     <>
       <div className="page-header" style={{ paddingBottom: 0 }}>
         <div style={{ paddingBottom: 24 }}>
-          <h1 style={{ margin: 0 }}>My Profile</h1>
+          <h1 style={{ margin: 0 }}>{t('profile.header.title')}</h1>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Manage your account settings
+            {t('profile.header.subtitle')}
           </p>
         </div>
 
-        {/* Tab navigation - same pattern as ProjectLayout */}
+        {/* Tab navigation - same pattern as RouterLayout */}
         <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)' }}>
           {tabs.map(tab => {
             const isActive = activeTab === tab.id;
@@ -1075,6 +1091,7 @@ export function ProfilePage({ initialTab = 'profile' }: { initialTab?: TabId }) 
       <div className="page-body" style={{ paddingTop: 32 }}>
         {activeTab === 'notifications' && <ProfileNotificationsTab />}
         {activeTab === 'mcp' && <ProfileMcpTab />}
+        {activeTab === 'preferences' && <ProfilePreferencesTab />}
         {activeTab === 'profile' && <ProfileSecurityTab />}
       </div>
     </>

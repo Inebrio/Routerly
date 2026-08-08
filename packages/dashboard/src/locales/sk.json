@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automaticky",
+      "dark": "Tmavá",
+      "light": "Svetlá"
+    },
+    "themeCycle": {
+      "title": "Motív: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Rozšíriť bočný panel",
+      "collapse": "Zbaliť bočný panel"
+    },
+    "tagline": "Jedna brána. Akýkoľvek AI model. Úplná kontrola.",
+    "nav": {
+      "overview": "Prehľad",
+      "providers": "Poskytovatelia",
+      "models": "Modely",
+      "profiles": "Profily",
+      "routers": "Smerovacie moduly",
+      "experiments": "Experimenty",
+      "usage": "Používanie",
+      "playground": "Hracie ihrisko",
+      "settings": "Nastavenia",
+      "connectApp": "Pripojiť aplikáciu",
+      "help": "Pomoc",
+      "signOut": "Odhlásiť sa"
+    },
+    "banner": {
+      "permissionWarning": "Niektoré konfiguračné súbory majú permisívny prístup ({{files}}). Spustenie a požiadavky stále fungujú, ale opravte to zo súborového systému hostiteľa, keď je čas vhodný.",
+      "dismiss": "Zavrieť",
+      "updateAvailable": "Routerly v{{latest}} je dostupná. Používate v{{current}}.",
+      "updateLink": "Aktualizovať v Nastaveniach",
+      "mfaRequired": "Dvojfaktorová autentifikácia je povinná pre túto inštanciu.",
+      "mfaLink": "Nastaviť 2FA v Profile",
+      "mfaSuffix": "na zabezpečenie účtu.",
+      "telemetryTitle": "Routerly nikdy automaticky neposielala údaje.",
+      "telemetryBody": "Chcete pomôcť zaslaním anonymných metrík inštalácie? Len typ udalosti, verzia, platforma a náhodné ID — žiadne osobné údaje, žiadne IP.",
+      "telemetryLink": "Čo sa posiela?",
+      "telemetryYes": "Áno, pomôcť",
+      "telemetryNo": "Nie, ďakujem"
+    },
+    "language": {
+      "label": "Jazyk"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "pred {{count}} sekundou",
+      "secondsAgo_other": "pred {{count}} sekundami",
+      "minutesAgo": "pred {{count}} minútou",
+      "minutesAgo_other": "pred {{count}} minútami",
+      "hoursAgo": "pred {{count}} hodinou",
+      "hoursAgo_other": "pred {{count}} hodinami",
+      "daysAgo": "pred {{count}} dňom",
+      "daysAgo_other": "pred {{count}} dňami"
+    },
+    "confirm": "Potvrdiť",
+    "cancel": "Zrušiť",
+    "remove": "Odstrániť",
+    "select": "Vybrať...",
+    "search": "Hľadať...",
+    "noResults": "Žiadne výsledky",
+    "noRemainingOptions": "Žiadne zostávajúce možnosti",
+    "apply": "Použiť",
+    "saved": "Uložené",
+    "showLess": "Zobraziť menej",
+    "roles": "Role",
+    "permissions": "Oprávnenia",
+    "notifications": {
+      "title": "Notifikácie",
+      "markAllRead": "Označiť všetko ako prečítané",
+      "empty": "Žiadne notifikácie",
+      "viewAll": "Zobraziť všetky notifikácie"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Vybrať časový rozsah",
+      "recent": "Nedávno",
+      "ranges": "Rozsahy",
+      "from": "Od",
+      "to": "Do"
+    },
+    "permissionGuard": {
+      "fixFailed": "Nepodarilo sa opraviť oprávnenia",
+      "title": "Nezabezpečené oprávnenia súboru",
+      "defaultMessage": "Niektoré súbory majú nezabezpečené oprávnenia.",
+      "fixing": "Opravuje sa…",
+      "fixNow": "Opraviť teraz"
+    },
+    "limitRows": {
+      "noLimits": "Žiadne limity nenastavené.",
+      "metricLabel": "Metrika",
+      "typeLabel": "Typ",
+      "periodLabel": "Perioda",
+      "everyLabel": "Každý",
+      "maxCost": "Maximálne náklady",
+      "maxCount": "Maximálny počet",
+      "maxTokens": "Maximálne tokeny",
+      "allCombosSet": "Všetky kombinácií metriky/periódy sú už nastavené",
+      "addLimit": "Pridať limit",
+      "metric": {
+        "cost": "Náklady",
+        "calls": "Volania",
+        "input_tokens": "Vstupné tokeny",
+        "output_tokens": "Výstupné tokeny",
+        "total_tokens": "Celkové tokeny"
+      },
+      "period": {
+        "hourly": "Hodinové",
+        "daily": "Denné",
+        "weekly": "Týždenné",
+        "monthly": "Mesačné",
+        "yearly": "Ročné"
+      },
+      "rollingUnit": {
+        "second": "sekunda",
+        "minute": "minúta",
+        "hour": "hodina",
+        "day": "deň",
+        "week": "týždeň",
+        "month": "mesiac"
+      },
+      "windowType": {
+        "period": "Perioda",
+        "rolling": "Posúvavé"
+      },
+      "fmt": {
+        "requests": "{{value}} požiadaviek",
+        "inputTokens": "{{value}} vstupných tokenov",
+        "outputTokens": "{{value}} výstupných tokenov",
+        "totalTokens": "{{value}} celkových tokenov",
+        "everyRolling": "{{metric}} každých {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} za {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Čo smerovanie ušetrilo",
+      "input": "Vstup",
+      "output": "Výstup",
+      "actual": "Skutočný",
+      "clientCalls": "{{count}} volanie klienta",
+      "clientCalls_other": "{{count}} volaní klienta",
+      "comparedAgainst": ", v porovnaní s jeho odoslaním každému z",
+      "comparedAgainst_other": ", v porovnaní s ich odoslaním každému z",
+      "paidModelsInPlay": "{{count}} platený model v hre",
+      "paidModelsInPlay_other": "{{count}} platených modelov v hre",
+      "metricCost": "Náklady",
+      "metricTokens": "Tokeny",
+      "totalCost": "Celkové náklady",
+      "routed": "Smerované: {{value}}",
+      "saved": "Ušetrené: {{value}}",
+      "usdThisPeriod": "USD v tomto období",
+      "savedVsAlways": "{{value}} ušetrené ({{percent}}%) vs vždy {{model}}",
+      "tokens": "Tokeny",
+      "in": "Vstup: {{value}}",
+      "out": "Výstup: {{value}}",
+      "tokenSubWithCache": "{{in}} vstup · {{out}} výstup · {{cached}} v cache",
+      "tokenSub": "{{in}} vstup · {{out}} výstup",
+      "cutByOptimizers": "{{value}} znížené optimalizátormi",
+      "fewerThanAlways": "{{value}} menej ako vždy {{model}}, odhadované"
+    },
+    "optimizerSteps": {
+      "downloaded": "Stiahnuté",
+      "thisStepRunsOn": "Tento krok beží na",
+      "defaultCheckpoint": "Predvolený kontrolný bod"
+    },
+    "routingPolicies": {
+      "title": "Politiky smerovaniia",
+      "subtitle": "Politiky určujú, ako sa požiadavky smerujú. Vykonávajú sa v poradí zhora nadol.",
+      "removePolicy": "Odstrániť politiku",
+      "removeIntent": "Odstrániť zámery",
+      "removeExample": "Odstrániť príklad",
+      "routingModels": "Smerovacie modely",
+      "embeddingModels": "Modely vkladania",
+      "maxCompletionTokens": "Maximálne tokeny doplnenia",
+      "maxPromptChars": "Maximálne znaky výzvy",
+      "similarityThreshold": "Prah podobnosti",
+      "previousMessages": "Predchádzajúce správy",
+      "intents": "Zámery",
+      "confidenceThreshold": "Prah istoty",
+      "ambiguityMargin": "Marža neistoty",
+      "maxCallsPerWindow": "Maximálny počet volaní na okno",
+      "addFallbackModel": "Pridať záložný model",
+      "autoRoutingLabel": "Automatické smerovanie",
+      "autoRoutingHint": "Ak je povolené, provoz sa distribuuje bez vlastných výziev. Ak je zakázané, môžete napísať konkrétne výzvy pokynúvajúce AI, kedy vybrať každý cieľový model.",
+      "additionalPromptInfoLabel": "Ďalšie informácie o výzve",
+      "additionalPromptInfoPlaceholder": "Extra pokyny, ktoré sa majú zahrnúť do výzvy smerovaniia...",
+      "addExamplePlaceholder": "Pridať príklad a stlačiť Enter…",
+      "addIntentPlaceholder": "Pridať zámer a stlačiť Enter…",
+      "addPolicyPlaceholder": "Pridať politiku...",
+      "labels": {
+        "llm": "Politika smerovaniia AI",
+        "rate-limit": "Politika limitovania rýchlosti",
+        "budget-remaining": "Politika zvyšného rozpočtu",
+        "semantic-intent": "Politika sémantického zámeru",
+        "health": "Politika zdravia",
+        "context": "Politika kontextu",
+        "capability": "Politika schopností",
+        "performance": "Politika výkonu",
+        "fairness": "Politika spravodlivosti",
+        "cheapest": "Politika najnižšej ceny",
+        "model-preference": "Politika uprednostňovania modelu"
+      },
+      "descriptions": {
+        "context": "Boduje modely na základe dostupného kontextového okna. Prideľuje 0 modelom, ktorých kontextové okno je menšie ako odhadovaná dĺžka požiadavky, čím sa zabráni chybám skracovania.",
+        "cheapest": "Boduje modely nepriamo úmerné ich nákladom na token. Najlacnejší model dostane 1,0, najdrahší dostane 0,0, čo pomáha znížiť výdavky API medzi požiadavkami.",
+        "health": "Boduje modely na základe ich nedávnej chybovosti pomocou exponenciálneho rozpadu (nedávne chyby majú väčšiu váhu). Používa prerušovač obvodu, ktorý nastaví skóre na 0, keď vážená chybovosť presiahnú kritický prah.",
+        "performance": "Boduje modely na základe ich nedávnej priemernej latencie pomocou exponenciálneho rozpadu. Najrýchlejší model dostane 1,0, najpomalší dostane 0,0. Modely bez nedávnych údajov sú predvolene 1,0.",
+        "llm": "Používa AI model na bodovanie kandidátov na základe sémantického obsahu požiadavky. Podporuje smerovacie pokyny na model a zvažuje zvyšok rozpočtu, keď sú limity nakonfigurované.",
+        "capability": "Tvrdý filter: prideľuje 0 modelom, ktorým explicitne chýba funkcia vyžadovaná požiadavkou (videnie, volanie funkcií, režim JSON). Modely bez explicitných deklarácií schopnosti nie sú penalizované.",
+        "rate-limit": "Penalizuje modely s vysokou nedávnou frekvenciou volaní, aby sa znížilo riziko zasiahnutia limitov poskytovania rýchlosti (HTTP 429). Podporuje nastavovateľný tvrdý prah, ktorý nastaví skóre na 0.",
+        "fairness": "Distribuuje provoz rovnomerne tým, že penalizuje modely, ktoré nedávno dostali viac úspešných volaní. Pôsobí ako mäkký round-robin na zabránenie sústredeniu záťaže na jeden model.",
+        "budget-remaining": "Boduje modely na základe zvyšného rozpočtového priestoru vo všetkých nakonfigurovaných limitoch. Uprednostňuje modely s viac miesta pred ich prahmi, proaktívne šíri spotrebu.",
+        "semantic-intent": "Klasifikuje požiadavku podľa sémantického zámeru pomocou vkladania, potom obmedzuje pool kandidátov na modely mapované na ten zámer. Istý zhody tvrdý filter pool; neisté zhody spájajú najlepšie 2 poolya; neznáme požiadavky prechádzajú všetci kandidáti.",
+        "model-preference": "Keď klient požaduje konkrétny model (nie routerly/ada), udeľuje nastavovateľný bonusový skóre tomuto modelu. Keď nie je vyjadrená žiadna preferencia, politika sa zdržiava. Pozícia v zozname určuje, koľko preferencia váži oproti iným politikám."
+      },
+      "selectModel": "Vybrať model"
+    },
+    "securityRules": {
+      "applyTo": "Použiť pre",
+      "streamingBufferSize": "Veľkosť vyrovnávacej pamäte streamovania (znaky)",
+      "entityTypes": "Typy entít",
+      "target": "Cieľ",
+      "embeddingModel": "Model vkladania",
+      "judgeModel": "Model rozhodcu",
+      "contentGuardrails": "Chránidlá obsahu",
+      "piiPolicies": "Politiky PII",
+      "addSecurityPolicyPlaceholder": "Pridať politiku zabezpečenia...",
+      "removePolicyTooltip": "Odstrániť politiku",
+      "deleteRuleAriaLabel": "Odstrániť pravidlo",
+      "embeddingModelPlaceholder": "Vybrať model vkladania...",
+      "fallbackModelsLabel": "Záložné modely (voliteľne, skúšané v poradí)",
+      "fallbackModelsPlaceholder": "Žiadne záložné modely...",
+      "exampleTextsLabel": "Príklady textov na zablokovaní (jeden na riadok)",
+      "exampleTextsPlaceholder": "Ako sa hackem...\n...",
+      "similarityThresholdLabel": "Prah podobnosti:",
+      "judgeModelPlaceholder": "Vybrať model rozhodcu...",
+      "allowedTopicsLabel": "Povolené témy (prirodzený jazyk)",
+      "allowedTopicsPlaceholder": "Podpora zákazníkov pre softvér. Technická riešenie problémov. Otázky o fakturácií.",
+      "onTopicThresholdLabel": "Zablokovaní, ak je skóre teapykúca pod:",
+      "harmThresholdLabel": "Zablokovaní, ak je skóre škody nad:",
+      "customInstructionsLabel": "Vlastné pokyny",
+      "customInstructionsPlaceholder": "Ste klasifikátorom bezpečnosti obsahu. Vyhodnoťte nasledujúci text na škodlivý obsah.\nKategórie: vulgárny jazyk, násilie, sexuálny obsah, sebapoškodenie.\nOdpovedzte LEN s objektom JSON: {\"score\": <číslo medzi 0 a 1>}",
+      "customInstructionsRequired": "Vlastné pokyny sú povinné.",
+      "enabledLabel": "Povolené",
+      "contentGuardrailsHint": "Skontrolovať požiadavky a odpovede proti nakonfigurovaným pravidlám. Aktívne, ak je nakonfigurované aspoň jedno pravidlo.",
+      "securityPoliciesHeading": "Politiky zabezpečenia",
+      "noSecurityPolicies": "Žiadne politiky zabezpečenia nie sú nakonfigurované.",
+      "piiPoliciesHint": "Detekuje a redakuje osobné údaje. Každá politika sa zameriava na vstup požiadavky, odpoveď modelu alebo oboje, a ovláda svoju vlastnú sadu entít.",
+      "noPiiPolicies": "Žiadne politiky PII nie sú nakonfigurované.",
+      "addPolicyButton": "+ Pridať politiku",
+      "injectionWarningTitle": "Tovar požiadavky upravený vstrieknutím",
+      "injectionWarningBody": "Jedno alebo viac pravidiel vstrieknu svoju inštrukciu do systémovej výzvy odchádzajúcej požiadavky, takže tovar odoslaný poskytovateľovi je upravený. Neuskutočňuje sa žiadne ďalšie volanie modelu a nič sa nezablokuje; podávajúci model sám si vynucuje inštrukciu.",
+      "streamingDisabledWarningTitle": "Streamovanie je zakázané pre tento smerovací modul",
+      "streamingDisabledWarningBody": "Jedno alebo viac pravidiel je nakonfigurované na zablokovaní odpovedí (cieľ: odpoveď alebo oboje). Pretože musí byť celá odpoveď skontrolovaná pred rozhodnutím o blokovani, Routerly zadržiava odpoveď v plnom rozsahu pred vrátením klientovi. Streamovanie nie je dostupné, pokiaľ je aktívne pravidlo blokujúce odpoveď; klienti budú namiesto inkrementálnych kúskov dostávať úplnú odpoveď naraz."
+    },
+    "connectionFields": {
+      "azureResourceName": "Názov zdroja Azure",
+      "azureResourceNamePlaceholder": "mojzdroj",
+      "azureResourceNameHint": "Názov zdroja Azure OpenAI (z portálu Azure).",
+      "deploymentId": "ID nasadenia",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Názov nasadenia, ktorý ste vytvorili v Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Verzia API",
+      "azureApiVersionDefaultHint": "(predvolené: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Región AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID prístupového kľúča AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Tajný prístupový kľúč AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Nechajte prázdne, aby ste zachovali existujúce",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Token relácií",
+      "awsSessionTokenOptionalHint": "(voliteľne, pre dočasné poverenia)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID smerovaciho modulu GCP",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Umiestnenie",
+      "gcpLocationDefaultHint": "(predvolené: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Kľúč účtu služby",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Adresa URL koncového bodu",
+      "optional": "(voliteľne)",
+      "webProvider": {
+        "unofficialWarningTitle": "Neoficiálny poskytovateľ — používajte na vlastné riziko.",
+        "unofficialWarningBody": "Táto integrácia sa spolieha na nedokumentované interné API, ktoré sa môže zmeniť alebo prerušiť bez upozornenia. Môže porušovať Podmienky poskytovania služby poskytovania a mohlo by to viesť k suspenzií účtu.",
+        "accessTokenLabel": "Prístupový token",
+        "sessionTokenLabel": "Token relácií",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Vložiť hodnotu cookie sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Keď ste prihlásení do ChatGPT, otvorte <code>https://chatgpt.com/api/auth/session</code> v novej karte. Skopírujte hodnotu poľa <code>accessToken</code> (začína sa <code>eyJ</code>). Token vyprší každých ~24 hodín. Pre spoľahlivý prístup vyplňte aj pole <strong>cf_clearance</strong> nižšie.",
+        "anthropicInstructions": "<strong>Ako získať váš kľúč relácií:</strong> Keď ste prihlásení do Claude, otvorte DevTools (F12) → Application → Cookies → <code>claude.ai</code> → skopírujte hodnotu cookie <code>sessionKey</code> (začína sa <code>sk-ant-sid01-</code>). Kľúč zostáva platný, kým sa odhlásite."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth predplatného",
+        "authFilePathLabel": "Cesta k súboru overenia",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (predvolené)",
+        "anthropicTitle": "Použite vaše Claude Pro/Max predplatné.",
+        "anthropicRunCommandStep": "Spustite tento príkaz a skopírujte token, ktorý vytlačí:",
+        "anthropicPasteTokenStep": "Vložte token do poľa <em>Token OAuth predplatného</em> nižšie.",
+        "termsNote": "Regenerujte, keď vyprší. Použitie predplatného cez bránu môže byť proti Podmienkam poskytovania služby poskytovania.",
+        "openaiTitle": "Použite vaše ChatGPT Plus/Pro predplatné cez aplikáciu Codex.",
+        "openaiLoginStep": "Prihláste sa do desktopovej aplikácie Codex pomocou svojho účtu ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly čita váš prístupový token z <code>~/.codex/auth.json</code> a automaticky ho osviežuje. Nie je potrebné manuálne kopírovanie/vkladanie.",
+        "openaiAuthFilePathStep": "Nechajte pole <em>Cesta k súboru overenia</em> prázdne, aby ste použili predvolené, alebo zadajte vlastnú cestu, ak vaša aplikácia Codex ukladá autentifikáciu inde.",
+        "openaiTermsNote": "Použitie predplatného cez bránu môže byť proti Podmienkam poskytovania služby poskytovania."
+      },
+      "copyCode": {
+        "copiedTooltip": "Skopírované!",
+        "copyTooltip": "Skopírovať do schránky",
+        "copiedLabel": "Skopírované",
+        "copyLabel": "Kopírovať"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopírovať",
+      "copiedLabel": "Skopírované!",
+      "copyErrorHint": "Kopírovanie zlyhalo, vyberte a skopírujte manuálne."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP klient",
+      "hints": {
+        "claudeCode": "Spustite raz, kdekoľvek. Claude Code ukladá server v <code>~/.claude.json</code>.",
+        "claudeDesktop": "Umiestnite to do <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (na Windows <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), potom aplikáciu reštartujte. Spúšťa CLI, takže <code>routerly</code> musí byť na vašej PATH.",
+        "codex": "Umiestnite to do <code>~/.codex/config.toml</code>. Codex čita token z prostredia, takže ho exportujte v shell, kde spúšťate Codex.",
+        "opencode": "Umiestnite to do <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Spustite raz. OpenClaw sa predvolene používa transport sse, ktorý Routerly neponúka, takže je explicitne nastavený transport.",
+        "cursor": "Umiestnite to do <code>~/.cursor/mcp.json</code>, alebo do <code>.cursor/mcp.json</code>, aby ste ho vymedrili na jeden projekt.",
+        "cline": "Umiestnite to do <code>~/.cline/mcp.json</code>, alebo ho vložte do Configure MCP Servers v paneli Cline.",
+        "zed": "Umiestnite to do svojich Zed <code>settings.json</code>, popri akýchkoľvek iných kontextových serveroch."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Neuložené zmeny",
+      "message": "Máte neuložené zmeny. Ak teraz odídete, vaše zmeny sa stratia.",
+      "stay": "Zostať",
+      "leaveAnyway": "Odísť aj tak"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Chránidlá",
+        "pii": "PII",
+        "optimizers": "Optimalizátory",
+        "routerOverhead": "Režie smerovaciho modulu"
+      },
+      "policyType": {
+        "llm": "Smerovanie AI",
+        "rateLimit": "Limit rýchlosti",
+        "budgetRemaining": "Zvyšný rozpočet",
+        "semanticIntent": "Sémantický zámer",
+        "modelPreference": "Uprednostňovanie modelu"
+      },
+      "rawDetails": "surové podrobnosti",
+      "technicalDetails": "technické podrobnosti",
+      "systemPrompt": "systémová výzva",
+      "responseText": "text odpovede",
+      "responseJson": "JSON odpovede",
+      "cacheEmbeddingCall": "VOLANIE VKLADANIA CACHE",
+      "fallbackAttempt": "fallback #{{attempt}}",
+      "embeddingModel": "Model vkladania",
+      "upstreamModel": "Upstream model",
+      "provider": "Poskytovateľ",
+      "source": "Zdroj",
+      "endpoint": "Koncový bod",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL rozšírené",
+      "model": "Model",
+      "similarity": "Podobnosť",
+      "embedding": "Vkladanie",
+      "cacheMiss": "CACHE MISS",
+      "details": "podrobnosti",
+      "excludedByLimits": "VYLÚČENÉ LIMITMI",
+      "finalRanking": "FINÁLNE PORADIE",
+      "noRankingData": "Žiadne údaje o poradí (záznam môže byť poškodený alebo zo staršej verzie)",
+      "policyScores": "SKÓRE POLITIKY",
+      "weight": "váha {{value}}",
+      "allScores": "všetky skóre",
+      "noPolicyData": "Žiadne údaje o politike (záznam môže byť poškodený alebo zo staršej verzie)",
+      "requestGuardrailBlocked": "CHRÁNIDLO POŽIADAVKY ZABLOKOVANÉ",
+      "requestGuardrailTriggered": "CHRÁNIDLO POŽIADAVKY SPUSTENÉ",
+      "responseGuardrailBlocked": "CHRÁNIDLO ODPOVEDE ZABLOKOVANÉ",
+      "responseGuardrailTriggered": "CHRÁNIDLO ODPOVEDE SPUSTENÉ",
+      "rule": "Pravidlo",
+      "action": "Akcia",
+      "guardrailsEvaluated": "CHRÁNIDLÁ VYHODNOTENÉ ({{target}})",
+      "ruleCount": "{{count}} pravidlo",
+      "ruleCount_other": "{{count}} pravidiel",
+      "promptInjection": "Vstrieknutie výzvy",
+      "injects": "vstriekne",
+      "judgeResponse": "Odpoveď rozhodcu",
+      "piiScrubbed": "PII OČISTENÉ",
+      "piiScanned": "PII SKENOVANÉ ({{target}})",
+      "policies": "politiky",
+      "entityTypes": "typy entít",
+      "customPatterns": "vlastné vzory",
+      "scanned": "skenované",
+      "redacted": "redakované",
+      "took": "trvalo",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "typy entít skenované",
+      "guardrailInjection": "VSTRIEKNUTIE CHRÁNIDLA",
+      "rules": "pravidlá",
+      "chars": "znaky",
+      "injectedText": "vstrieknutý text",
+      "optimizer": "OPTIMALIZÁTOR {{id}}",
+      "tokens": "tokeny",
+      "saved": "uložené",
+      "tok": "{{value}} tok",
+      "reason": "dôvod",
+      "budgetBlocked": "ROZPOČET ZABLOKOVANÝ",
+      "budgetOk": "ROZPOČET OK",
+      "egressSent": "EGRES POSLANÝ",
+      "status": "stav",
+      "encoding": "kódovanie",
+      "frames": "rámce",
+      "bytes": "bajty"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Môj profil",
+      "subtitle": "Spravovať nastavenia účtu"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Notifikácie",
+      "mcp": "MCP",
+      "preferences": "Preferencie"
+    },
+    "notifications": {
+      "close": "Zavrieť",
+      "refresh": "Osviežiť",
+      "clear": "Vyčistiť",
+      "empty": "Žiadne notifikácie nenájdené.",
+      "markAllRead": "Označiť všetko ako prečítané",
+      "allCaughtUp": "Všetko vyriešené",
+      "unreadCount": "{{count}} neprečítané",
+      "selectedCount": "{{count}} vybrané",
+      "severity": {
+        "all": "Všetky",
+        "info": "Informácia",
+        "warning": "Varovanie",
+        "critical": "Kritické"
+      },
+      "status": {
+        "read": "Prečítané",
+        "unread": "Neprečítané"
+      },
+      "filters": {
+        "severity": "Závažnosť",
+        "category": "Kategória",
+        "event": "Udalosť",
+        "date": "Dátum",
+        "period": "Perioda",
+        "status": "Stav",
+        "all": "Všetky",
+        "allCategories": "Všetky kategórie",
+        "allEvents": "Všetky udalosti",
+        "unreadOnly": "Len neprečítané"
+      },
+      "actions": {
+        "markRead": "Označiť ako prečítané",
+        "markUnread": "Označiť ako neprečítané",
+        "archive": "Archivovať"
+      },
+      "table": {
+        "severity": "Závažnosť",
+        "event": "Udalosť",
+        "date": "Dátum",
+        "status": "Stav",
+        "selectAll": "Vybrať všetko",
+        "selectRow": "Vybrať {{event}}",
+        "eventCount": "{{count}} udalostí"
+      },
+      "pagination": {
+        "previous": "← Predchádzajúce",
+        "next": "Ďalší →",
+        "page": "Strana {{page}} z {{totalPages}}",
+        "total": "({{count}} celkovo)"
+      },
+      "detail": {
+        "ariaLabel": "Detail notifikácie",
+        "details": "Podrobnosti",
+        "noDetails": "Žiadne ďalšie podrobnosti.",
+        "eventsInIncident": "Udalosti v tomto incidente"
+      }
+    },
+    "security": {
+      "roleLabel": "Rola:",
+      "password": {
+        "heading": "Zmeniť heslo",
+        "currentLabel": "Aktuálne heslo",
+        "newLabel": "Nové heslo",
+        "newPlaceholder": "Minimálne 8 znakov",
+        "confirmLabel": "Potvrďte nové heslo",
+        "success": "Heslo bolo zmené úspešne.",
+        "saving": "Ukladá sa...",
+        "submit": "Zmeniť heslo",
+        "errors": {
+          "mismatch": "Heslá sa nezhodujú.",
+          "tooShort": "Nové heslo musí mať aspoň 8 znakov.",
+          "updateFailed": "Aktualizácia zlyhala"
+        }
+      },
+      "tfa": {
+        "heading": "Dvojfaktorová autentifikácia",
+        "notEnabled": "2FA nie je povolená. Chráňte svoj účet jednorazovým heslom na základe času.",
+        "enableButton": "Povoliť dvojfaktorovú autentifikáciu",
+        "scanInstructions": "Skenhujte tento QR kód svojou aplikáciou autentifikátora (Google Authenticator, Authy, atď.), potom zadajte 6-miestny kód na potvrdenie.",
+        "qrAlt": "QR kód nastavenia 2FA",
+        "addAccountInstructions": "Otvorte aplikáciu autentifikátora (Google Authenticator, Authy, 1Password, atď.) a pridajte nový účet:",
+        "setup": {
+          "step1": "Klepnite na <strong>Pridať účet</strong> alebo tlačidlo <strong>+</strong>",
+          "step2": "Vyberte <strong>Zadajte kľúč nastavenia</strong> (alebo skenhujte QR kód, ak ste na mobile)",
+          "step3": "Zadajte tajomstvo zobrazené nižšie"
+        },
+        "mobileLink": "Klepnite tu na mobile, aby ste otvorili autentifikátor",
+        "manualEntryLabel": "Tajomstvo manuálneho vstupu:",
+        "saveBackupCodes": "Uložte si tieto záložné kódy. Každý je možné použiť raz, ak stratíte prístup k vášmu autentifikátoru.",
+        "copyBackupCodes": "Skopírovať záložné kódy",
+        "confirmCodeLabel": "Zadajte kód z aplikácie na aktiváciu",
+        "activate": "Aktivovať 2FA",
+        "cancel": "Zrušiť",
+        "enabledBadge": "2FA je povolená",
+        "newBackupCodesLabel": "Nové záložné kódy (uložte si ich teraz):",
+        "copy": "Kopírovať",
+        "regenLabel": "Zadajte kód autentifikátora na regeneráciu záložných kódov",
+        "regenerate": "Regenerovať",
+        "regenerateBackupCodes": "Regenerovať záložné kódy",
+        "disableLabel": "Zakázať 2FA (zadajte kód autentifikátora)",
+        "disable": "Zakázať 2FA",
+        "errors": {
+          "setupFailed": "Nastavenie zlyhalo",
+          "confirmFailed": "Potvrdenie zlyhalo",
+          "disableFailed": "Zákaz zlyhal",
+          "regenFailed": "Regenerácia zlyhala"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať MCP povrch",
+        "revokeFailed": "Nepodarilo sa odvolať token"
+      },
+      "revokeConfirm": "Odvolať MCP token \"{{name}}\"? Klienti, ktorí ho používajú, prestanú pracovať okamžite.",
+      "tokens": {
+        "heading": "MCP tokeny",
+        "newToken": "Nový token",
+        "description": "Každý token pôsobí ako vy: vystavuje presne nástroje, ktoré vaša rola dovoľuje. Úplná hodnota sa zobrazí raz, na stránke, ktorá ju vytvorí.",
+        "empty": "Žiadne MCP tokeny. Vytvorte jeden na pripojenie MCP klienta.",
+        "created": "Vytvorené",
+        "lastUsed": "Naposledy použité",
+        "expires": "Vyprší",
+        "never": "Nikdy",
+        "revokeTitle": "Odvolať token"
+      },
+      "tools": {
+        "heading": "Nástroje, ktoré vaše tokeny vystavujú",
+        "empty": "Vaša rola nepovoľuje žiadny MCP nástroj. Požiadajte správcu o oprávnenia, ktoré potrebujete.",
+        "table": {
+          "name": "Názov",
+          "scope": "Rozsah",
+          "description": "Popis",
+          "sourceModule": "Zdrojový modul",
+          "permission": "Oprávnenie"
+        }
+      },
+      "connect": {
+        "heading": "Pripojite MCP klienta",
+        "descriptionPre": "Vyberte klienta, ktorého drôtujete, potom nahraďte",
+        "descriptionPost": "jedným z vašich tokenov. Vytvorenie tokenu zobrazí ten istý fragment s již existujúcou hodnotou.",
+        "otherClient": "Akýkoľvek iný klient",
+        "httpInstructionsPre": "Cez HTTP ho nasmerujte na tento koncový bod a overte si",
+        "httpInstructionsPost": ". Je to JSON-RPC 2.0 cez streamovateľný HTTP.",
+        "stdioInstructionsPre": "Cez stdio, CLI ho premostí a provedie váš token cez. Spúšťate službu priamo? Nastavte",
+        "stdioInstructionsAnd": "a",
+        "stdioInstructionsPost": "sami."
+      },
+      "newToken": {
+        "backToMcp": "Späť na MCP",
+        "title": "Nový MCP token",
+        "subtitle": "Token pôsobí ako vy: vystavuje presne nástroje, ktoré vaša rola dovoľuje.",
+        "nameLabel": "Názov",
+        "namePlaceholder": "laptop",
+        "nameHint": "Kde sa tento token používa, napríklad \"laptop\" alebo \"claude-desktop\".",
+        "expiryLabel": "Vyprší",
+        "expiryHint": "Voliteľne. Nechajte prázdne a token nikdy nevyprší, kým ho neodvoláte.",
+        "createButton": "Vytvoriť token",
+        "creatingButton": "Vytvára sa…",
+        "cancelButton": "Zrušiť",
+        "tokenSection": {
+          "title": "Váš token",
+          "hint": "Skopírujte ho teraz. Neobjevuje sa znova a stratený token je možné len nahradiť.",
+          "copyButton": "Kopírovať",
+          "copiedButton": "Skopírované!",
+          "copyTitle": "Kopírovať token",
+          "copiedTitle": "Skopírované!"
+        },
+        "connectSection": {
+          "title": "Pripojit klienta",
+          "hint": "Vyberte klienta, ktorého drôtujete. Fragment už má tento token."
+        },
+        "bridgeSection": {
+          "title": "Alebo použite lokálny most",
+          "hint": "Pre klienta, ktorý hovorí len stdio, CLI ho premostí a provedie váš token."
+        },
+        "doneButton": "Hotovo",
+        "errors": {
+          "createFailed": "Nepodarilo sa vytvoriť token",
+          "copyFailed": "Kopírovanie zlyhalo, skopírujte token manuálne."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Jazyk",
+      "description": "Vyberte jazyk, v ktorom sa dashboard zobrazuje.",
+      "languageLabel": "Jazyk",
+      "saved": "Preferencie jazyka uložené."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať nastavenia",
+        "loadFailedPeriod": "Nepodarilo sa načítať nastavenia.",
+        "saveFailed": "Nepodarilo sa uložiť",
+        "saveSettingsFailed": "Nepodarilo sa uložiť nastavenia"
+      },
+      "savedSuccess": "Nastavenia boli uložené úspešne.",
+      "saving": "Ukladá sa…",
+      "saveSettings": "Uložiť nastavenia",
+      "serverInfo": {
+        "heading": "Informácie o serveri",
+        "readOnly": "Len na čítanie. Hostiteľ a port pochádzajú z prostredia alebo konfiguračného súboru, nie z tohto.",
+        "reachableAt": "Dostupné na",
+        "reachableAtAny": "Dostupné na ktorejkoľvek z týchto adries",
+        "thisMachine": "Tento počítač",
+        "network": "Sieť",
+        "copyAddress": "Skopírovať {{address}}",
+        "copied": "Skopírované!",
+        "copy": "Kopírovať",
+        "hostAndPort": "Hostiteľ a port",
+        "version": "Verzia",
+        "uptime": "Doba prevádzky"
+      },
+      "runtime": {
+        "heading": "Nastavenia bežasu",
+        "logLevel": "Úroveň záznamov",
+        "logLevelHint": "Kontroluje podrobnosť záznamov služby.",
+        "publicUrl": "Verejná adresa URL",
+        "publicUrlHint": "Základná adresa URL, na ktorej je služba dostupná z externých klientov (napr. <code>http://192.168.1.10:3000</code>). Používa sa v sekcií \"Ako sa pripojiť\" každého smerovaciho modulu. Užitočné, ak sa dashboard spúšťa na inom počítači alebo porte ako služba.",
+        "usageRetention": "Uchovávanie spôsobilosti",
+        "noLimit": "Bez limitu",
+        "maxAgeDays": "Maximálny vek (dni)",
+        "maxSizeMb": "Maximálna veľkosť (MB)",
+        "retentionHint": "História používania/fakturácie staršia ako tento počet dní alebo presahujúca túto veľkosť sa vypúšťa z aktívneho záznam. Nechajte obe prázdne bez limitu uchovania."
+      },
+      "internationalization": {
+        "heading": "Internacionalizácia",
+        "defaultLanguage": "Predvolený Jazyk",
+        "defaultLanguageHint": "Jazyk dashboardu pre používateľov, ktorí si ešte nevybrali svoj vlastný jazyk. Nepotláča osobnú voľbu používateľa."
+      },
+      "telemetry": {
+        "heading": "Anonymné metriky",
+        "neverAutomatic": "Routerly nikdy automaticky neposielala údaje.",
+        "noChoice": "Zatiaľ ste neurobili výber.",
+        "enabledStatus": "Anonymné metriky inštalácie sú povolené.",
+        "disabledStatus": "Anonymné metriky inštalácie sú zakázané.",
+        "explanation": "Keď je povolená, Routerly posiela len: typ udalosti (inštalácia / upgrade / odinštalovanie), verzia, platforma a náhodné ID. Žiadne osobné údaje, žiadne údaje o používaní, žiadne IP uložené.",
+        "whatIsSent": "Čo sa posiela?",
+        "installId": "ID inštalácie: {{id}}",
+        "saving": "Ukladá sa…",
+        "enable": "Povoliť",
+        "disable": "Zakázať"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Dashboard (inbox v aplikácií)",
+          "description": "Smeruje udalosti do inbox v aplikácií"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Vlastný poštový server"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail cez OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook callback"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Poskytovateľ – Chyba",
+        "providerDegraded": "Poskytovateľ – Zhoršená",
+        "providerRecovered": "Poskytovateľ – Obnovená",
+        "providerRateLimited": "Poskytovateľ – Limit rýchlosti",
+        "routingNoCandidates": "Smerovanie – Žiadni kandidáti",
+        "routingFallbackUsed": "Smerovanie – Záložná možnosť použitá",
+        "authLoginFailed": "Autentifikácia – Prihlásenie zlyhalo",
+        "authTokenInvalid": "Autentifikácia – Token neplatný",
+        "configModelAdded": "Konfigurácia – Model pridaný",
+        "configModelDeleted": "Konfigurácia – Model vymazaný",
+        "configRouterCreated": "Konfigurácia – Smerovací modul vytvorený",
+        "configRouterDeleted": "Konfigurácia – Smerovací modul vymazaný",
+        "budgetThresholdReached": "Rozpočet – Prah dosiahnutý",
+        "budgetExceeded": "Rozpočet – Prekročený",
+        "budgetReset": "Rozpočet – Resetovaný",
+        "systemStartup": "Systém – Spustenie",
+        "systemShutdown": "Systém – Vypnutie",
+        "systemUpdateAvailable": "Systém – Aktualizácia dostupná"
+      },
+      "removeChannelTooltip": "Odstrániť kanál",
+      "removeChannelConfirm": "Odstrániť kanál?",
+      "formUpdatedHint": "Formulár aktualizovaný — uložiť na aplikovanie.",
+      "hmacSigningKeyPlaceholder": "Kľúč podpisu HMAC",
+      "perms": {
+        "routerRead": "Smerovacie moduly – Čítanie",
+        "routerWrite": "Smerovacie moduly – Zápis",
+        "modelRead": "Modely – Čítanie",
+        "modelWrite": "Modely – Zápis",
+        "userRead": "Používatelia – Čítanie",
+        "userWrite": "Používatelia – Zápis",
+        "reportRead": "Správy – Čítanie",
+        "settingsRead": "Nastavenia – Čítanie",
+        "settingsWrite": "Nastavenia – Zápis",
+        "notificationWrite": "Notifikácie – Zápis",
+        "tokenRead": "Tokeny – Čítanie",
+        "tokenWrite": "Tokeny – Zápis",
+        "roleWrite": "Role – Zápis",
+        "auditRead": "Auditný záznam – Čítanie",
+        "modulesRead": "Moduly – Čítanie",
+        "modulesManage": "Moduly – Spravovať",
+        "connectionsRead": "Pripojenia – Čítanie",
+        "connectionsManage": "Pripojenia – Spravovať",
+        "resilienceRead": "Odolnosť – Čítanie",
+        "resilienceManage": "Odolnosť – Spravovať",
+        "profilesRead": "Profily smerovaniia – Čítanie",
+        "profilesManage": "Profily smerovaniia – Spravovať",
+        "optimizersRead": "Optimalizátory – Čítanie",
+        "optimizersManage": "Optimalizátory – Spravovať",
+        "experimentsRead": "Experimenty – Čítanie",
+        "experimentsManage": "Experimenty – Spravovať"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Pre tento typ kanála sa ciele nezmenia na doručovanie (koncový bod je pevný). Filtrujú, ktoré udalosti sú zaznamenané v auditnom zázname na príjemcu.",
+        "dashboard": "Ciele kontrolujú viditeľnosť inboxu — iba zodpovedajúci používatelia budú vidieť tieto notifikácie v inboxe svojej aplikácie.",
+        "email": "Ciele určujú, ktorí používatelia dostanú tento e-mail. Nechajte všetko prázdne, aby ste poslali všetkým používateľom."
+      },
+      "summary": {
+        "allEvents": "Všetky udalosti",
+        "eventCount": "{{count}} udalosť",
+        "eventCount_other": "{{count}} udalostí",
+        "roleCount": "{{count}} rola",
+        "roleCount_other": "{{count}} rolí",
+        "permCount": "{{count}} oprav",
+        "permCount_other": "{{count}} oprav",
+        "userCount": "{{count}} používateľ",
+        "userCount_other": "{{count}} používateľov",
+        "everyone": "Všetci"
+      },
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať"
+      },
+      "fields": {
+        "dashboardHint": "Smeruje zodpovedajúce udalosti do inboxu notifikácií v aplikácií. Nie sú potrebné žiadne poverenia.",
+        "labels": {
+          "fromAddress": "Adresa Od",
+          "fromName": "Meno Od",
+          "host": "Hostiteľ",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Používateľské meno",
+          "password": "Heslo",
+          "awsRegion": "Región AWS",
+          "accessKeyId": "ID prístupového kľúča",
+          "secretAccessKey": "Tajný prístupový kľúč",
+          "apiKey": "Kľúč API",
+          "connectionString": "Reťazec pripojenia",
+          "clientId": "ID klienta",
+          "clientSecret": "Tajomstvo klienta",
+          "refreshToken": "Obnovit token",
+          "url": "Adresa URL",
+          "method": "Metóda",
+          "signingSecret": "Podpisovanie tajomstva",
+          "botToken": "Bot Token",
+          "channelId": "ID kanála",
+          "webhookUrl": "Adresa URL webhooku",
+          "integrationKey": "Kľúč integrácie"
+        },
+        "values": {
+          "enabled": "Povolené",
+          "disabled": "Zakázané",
+          "configured": "Nakonfigurované",
+          "notSet": "Nenastavené"
+        },
+        "optional": "(voliteľne)",
+        "keepCurrentPlaceholder": "Nechajte prázdne, aby ste zachovali súčasný",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Použiť TLS / SSL",
+        "smtpTlsOnHint": "(port 465 — priamy SSL)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Nechajte poverenia prázdne, aby ste použili rolu inštancie IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Kľúč podpisu HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-znakový smerovací kľúč",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Udalosti",
+          "eventsPlaceholder": "Všetky udalosti (nechajte prázdne pre všetky)",
+          "eventsHint": "Nechajte prázdne, aby ste dostali všetky udalosti. Vyberte konkrétne udalosti na filter.",
+          "routersHeading": "Smerovacie moduly",
+          "routersPlaceholder": "Všetky smerovacie moduly (nechajte prázdne pre všetky)",
+          "routersHint": "Nechajte prázdne, aby ste dostali udalosti zo všetkých smerovacie modulov.",
+          "cooldownHeading": "Čakajúci čas",
+          "cooldownSuffix": "sekúnd (0 = bez čakajúcich čas)",
+          "cooldownHint": "Minimálny interval predtým, ako sa tento kanál môže znova aktivovať pre tú istú udalosť."
+        },
+        "recipients": {
+          "heading": "Príjemcovia / Ciele",
+          "rolesLabel": "Role",
+          "rolesPlaceholder": "Všetky role (všetci)",
+          "permissionsLabel": "Oprávnenia",
+          "permissionsPlaceholder": "Všetky oprávnenia (všetci)",
+          "usersLabel": "Jednotliví používatelia",
+          "usersPlaceholder": "Všetci používatelia (všetci)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "Pripojenie",
+          "routing": "Smerovanie",
+          "recipients": "Príjemcovia"
+        },
+        "sections": {
+          "channelSettings": "Nastavenia kanála",
+          "eventsRouting": "Udalosti a smerovanie",
+          "recipients": "Príjemcovia"
+        },
+        "nameLabel": "Názov",
+        "namePlaceholder": "Štítok pre tento kanál",
+        "cancelButton": "Zrušiť"
+      },
+      "list": {
+        "countLabel": "{{count}} kanál",
+        "countLabel_other": "{{count}} kanálov",
+        "filteredLabel": "{{shown}} z {{count}} kanál",
+        "filteredLabel_other": "{{shown}} z {{count}} kanálov",
+        "allTypes": "Všetky typy",
+        "searchPlaceholder": "Filtrovať kanály…",
+        "searchChannelsPlaceholder": "Hľadať kanály…",
+        "addButton": "Pridať kanál",
+        "addSearchPlaceholder": "Hľadať kanály…",
+        "noResults": "Žiadne výsledky",
+        "emptyTitle": "Ešte nie sú nakonfigurované žiadne kanály notifikácií.",
+        "noMatch": "Žiadne kanály sa nezhodujú s aktívnymi filtrami.",
+        "nameInlinePlaceholder": "Štítok (voliteľne)",
+        "columns": {
+          "name": "Názov",
+          "type": "Typ",
+          "summary": "Udalosti / Ciele"
+        },
+        "testTitle": "Poslať test",
+        "editTitle": "Upraviť kanál",
+        "deleteTitle": "Odstrániť kanál",
+        "deleteConfirm": "Odstrániť kanál \"{{name}}\"? Toto sa nedá vrátiť.",
+        "deleteConfirmButton": "Odstrániť",
+        "errors": {
+          "deleteFailed": "Nepodarilo sa odstrániť"
+        }
+      },
+      "edit": {
+        "backToList": "Späť na Notifikácie",
+        "back": "Späť",
+        "heading": "Upraviť kanál {{provider}}",
+        "subtitle": "Aktualizovať konfiguráciu pre tento kanál notifikácií.",
+        "testSection": {
+          "title": "Poslať test",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Poslať test",
+          "sendingButton": "Posielanie…",
+          "hintEmail": "Nechajte prázdne na poslanie na e-mail vášho účtu. Test používa uloženú konfiguráciu kanála.",
+          "hintOther": "Test používa uloženú konfiguráciu kanála. Uložte zmeny najskôr na testovanie aktualizovaných nastavení."
+        },
+        "saveButton": "Uložiť zmeny",
+        "savingButton": "Ukladá sa…",
+        "errors": {
+          "loadFailed": "Nepodarilo sa načítať",
+          "saveFailed": "Nepodarilo sa uložiť"
+        }
+      },
+      "create": {
+        "backToList": "Späť na Notifikácie",
+        "changeType": "Zmeniť typ",
+        "pickerHeading": "Zvolte typ kanála",
+        "pickerSubtitle": "Vyberte poskytovateľa notifikácií na konfiguráciu.",
+        "heading": "Nový kanál {{provider}}",
+        "subtitle": "Konfigurovať nový kanál notifikácií.",
+        "createButton": "Vytvoriť kanál",
+        "creatingButton": "Vytvára sa…",
+        "errors": {
+          "createFailed": "Nepodarilo sa vytvoriť"
+        }
+      },
+      "sendTest": "Poslať test",
+      "fromAddress": "Adresa Od",
+      "individualUsers": "Jednotliví používatelia",
+      "host": "Hostiteľ",
+      "port": "Port",
+      "apiKey": "Kľúč API",
+      "connectionString": "Reťazec pripojenia",
+      "clientId": "ID klienta",
+      "clientSecret": "Tajomstvo klienta",
+      "refreshToken": "Obnovit token",
+      "method": "Metóda",
+      "botToken": "Bot Token",
+      "channelId": "ID kanála",
+      "webhookUrl": "Adresa URL webhooku",
+      "integrationKey": "Kľúč integrácie"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "Pull — vystavuje /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "Push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "Push — API metriky"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "Push — Remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "Push — Line protokol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Export request traces",
+        "description": "Posiela úplnú stopu každej smerovanej požiadavky: každú fázu, každý modul, ktorý hovoril, a výzvy a odpovede pre projekty, ktoré sa prihlásili.",
+        "sampleRateLabel": "Vzorkovacia sadzba",
+        "sampleRateHint": "1 vývoz každú požiadavku, 0,1 jeden z desať."
+      },
+      "optional": "(voliteľne)",
+      "headersHint": "(voliteľne, jeden na riadok: Kľúč: Hodnota)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer Token",
+          "placeholder": "Nechajte prázdne na otvorený prístup",
+          "description": "Vystavuje <code>/metrics</code> v Prometheus textovom formáte. Nastavte token, aby ste vyžadovali Bearer auth."
+        },
+        "otel": {
+          "endpoint": "Koncový bod kolektora",
+          "description": "Základná adresa URL vášho OTLP prijímača. Routerly pripojí <code>/v1/metrics</code> a <code>/v1/traces</code> ak je export trasy zapnutý. Predvolený HTTP port je 4318, gRPC je 4317.",
+          "protocol": "Protokol",
+          "headers": "Záhlavie"
+        },
+        "datadog": {
+          "apiKey": "Kľúč API",
+          "placeholder": "Váš kľúč API Datadog",
+          "description": "Nájdené v <strong>Organization Settings → API Keys</strong> vo vašom účte Datadog.",
+          "site": "Stránka"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write URL",
+          "description": "Nájdené v <strong>Grafana Cloud → Connections → Prometheus → Details</strong> ako \"Remote Write Endpoint\".",
+          "username": "Používateľské meno / Stack ID",
+          "usernameHint": "Číslo ID zobrazené v podrobnostiach pripojenia Prometheus.",
+          "apiKey": "Kľúč API / Token",
+          "apiKeyHint": "Grafana Cloud token s rolou <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "Adresa URL",
+          "urlHint": "InfluxDB v2 Instance URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Váš API token InfluxDB",
+          "tokenHint": "Musí mať <strong>write</strong> prístup k vedru.",
+          "org": "Organizácia",
+          "bucket": "Vedro"
+        },
+        "webhook": {
+          "url": "Adresa URL",
+          "secret": "Tajomstvo",
+          "secretHint": "(voliteľne — kľúč podpisu HMAC-SHA256)",
+          "headers": "Záhlavie"
+        }
+      },
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať integrácie",
+        "updateFailed": "Nepodarilo sa aktualizovať integráciu",
+        "saveFailed": "Nepodarilo sa uložiť integráciu",
+        "deleteFailed": "Nepodarilo sa odstrániť integráciu"
+      },
+      "empty": "Ešte nie sú nakonfigurované žiadne integrácie.",
+      "enabled": "Povolené",
+      "testing": "Testovanie…",
+      "test": "Test",
+      "removeConfirm": "Odstrániť?",
+      "remove": "Odstrániť",
+      "cancel": "Zrušiť",
+      "removeTooltip": "Odstrániť integráciu",
+      "saving": "Ukladá sa…",
+      "save": "Uložiť",
+      "addButton": "Pridať integráciu"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať nastavenia",
+        "duplicateUrl": "Táto adresa URL je už v zozname.",
+        "unreachable": "Nepodarilo sa dosiahnuť platný katalóg poskytovania tejto adresy URL."
+      },
+      "saved": "Uložené.",
+      "refreshed": "Osviežené.",
+      "heading": "Úložiská katalógu poskytovania",
+      "refreshing": "Osviežuje sa…",
+      "refresh": "Osviežiť",
+      "nextRefresh": "Ďalej: {{date}}",
+      "priorityHint": "Poradie riadkov určuje prioritu zlúčenia — riadok 1 vyhráva v konflikte. Použite šípky na zmenu poradia.",
+      "columns": {
+        "priority": "#",
+        "url": "Adresa URL",
+        "updated": "Aktualizované",
+        "lastCheck": "Posledná kontrola",
+        "status": "Stav"
+      },
+      "empty": "Žiadne úložiská nie sú nakonfigurované. Bude sa používať predvolený Routerly verejný katalóg.",
+      "status": {
+        "error": "Chyba",
+        "active": "Aktívne",
+        "disabled": "Zakázané"
+      },
+      "edit": "Upraviť",
+      "removeTooltip": "Odstrániť",
+      "addRepository": "Pridať úložisko",
+      "checking": "Kontrola…",
+      "add": "Pridať",
+      "removeConfirm": "Odstrániť úložisko \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Aplikácia",
+        "runtime": "Bežasu",
+        "storage": "Úložisko",
+        "softwareUpdate": "Aktualizácia softvéru"
+      },
+      "labels": {
+        "version": "Verzia",
+        "uptime": "Doba prevádzky",
+        "nodeVersion": "Node.js",
+        "platform": "Platforma",
+        "configDir": "Adresár konfigurácie",
+        "dataDir": "Adresár údajov",
+        "currentVersion": "Aktuálna verzia",
+        "availableVersion": "Dostupná verzia",
+        "upToDate": "Aktuálne",
+        "lastChecked": "Naposledy skontrolované"
+      },
+      "noCheckPerformed": "Kontrola aktualizácie ešte nebola vykonaná.",
+      "checkForUpdates": "Skontrolovať aktualizácie",
+      "checking": "Kontrola…",
+      "updateTo": "Aktualizovať na v{{version}}",
+      "updating": "Aktualizuje sa…",
+      "dockerHint": "Spúšťa sa v Docker — ťahnite najnovšiu snímku na aktualizáciu.",
+      "confirmUpdate": "Toto si stiahne a nainštaluje najnovšiu verziu. Služba sa restartuje. Pokračovať?",
+      "updateComplete": "Aktualizácia dokončená! Opätovné načítavanie…",
+      "serviceRestarting": "Služba sa reštartuje. Prosím, znovu načítajte stránku za chvíľu.",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať",
+        "checkFailed": "Kontrola zlyhala",
+        "updateFailed": "Aktualizácia zlyhala"
+      },
+      "channel": "Kanál"
+    },
+    "security": {
+      "authentication": "Autentifikácia",
+      "requireMfa": "Vyžadovať dvojfaktorovú autentifikáciu pre všetkých používateľov",
+      "requireMfaHint": "Keď je povolené, používatelia, ktorí nenastavili 2FA, budú vidieť výzvu, aby to urobili po prihlásení. Používatelia si môžu nakonfigurovať 2FA na svojej stránke Profile.",
+      "savedSuccess": "Nastavenia boli uložené úspešne.",
+      "saving": "Ukladá sa…",
+      "saveSettings": "Uložiť nastavenia",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať nastavenia",
+        "saveFailed": "Nepodarilo sa uložiť nastavenia"
+      }
+    },
+    "title": "Nastavenia",
+    "subtitle": "Konfigurácia pre Routerly",
+    "tabs": {
+      "general": "Všeobecné",
+      "security": "Bezpečnosť",
+      "notifications": "Notifikácie",
+      "integrations": "Integrácie",
+      "catalog": "Katalóg poskytovania",
+      "users": "Používatelia",
+      "roles": "Role",
+      "audit": "Auditný záznam",
+      "about": "Informácie"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Smerovacie moduly",
+      "subtitle": "Klientské aplikácie, ktoré pristupujú k Routerly",
+      "count": "1 smerovací modul",
+      "count_other": "{{count}} smerovacie moduly",
+      "newRouter": "Nový smerovací modul",
+      "empty": "Zatiaľ nie sú žiadne smerovacie moduly.",
+      "emptyFiltered": "Žiadne smerovače tohto typu.",
+      "columns": {
+        "name": "Názov",
+        "tokens": "Tokeny",
+        "policies": "Politiky",
+        "models": "Modely"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokenov",
+      "editRouter": "Upraviť smerovací modul",
+      "deleteRouter": "Odstrániť smerovací modul",
+      "deleteConfirm": "Odstrániť tento smerovací modul?",
+      "errors": {
+        "deleteFailed": "Chyba pri odstraňovaní smerovaciho modulu"
+      },
+      "newOrchestrator": "Nový Orchestrator",
+      "newPassthrough": "Nový Passthrough"
+    },
+    "layout": {
+      "notFound": "Smerovací modul sa nenašiel",
+      "tabs": {
+        "dashboard": "Dashboard",
+        "general": "Všeobecné",
+        "orchestrator": "Orchestrátor",
+        "routing": "Smerovanie",
+        "optimizer": "Optimalizátor",
+        "security": "Bezpečnosť",
+        "token": "Token",
+        "users": "Používatelia",
+        "logs": "Záznam"
+      },
+      "backToRouters": "Späť na Smerovacie moduly",
+      "backToRoutersTitle": "Späť na smerovacie moduly",
+      "newRouter": "Nový smerovací modul",
+      "loading": "Načítavanie...",
+      "routerId": "ID smerovaciho modulu:",
+      "saveFirstHint": "Najskôr uložte smerovací modul, aby ste odomkli túto kartu",
+      "newKind": "Nový {{kind}}"
+    },
+    "dashboard": {
+      "period": "Perioda",
+      "noTraffic": "Žiadny provoz pre tento smerovací modul v zvolenom období.",
+      "stats": {
+        "savings": "Úspory",
+        "vsPrefix": "vs",
+        "forEverything": "za všetko",
+        "noTargetToCompare": "žiadny cieľový model na porovnanie",
+        "cost": "Náklady",
+        "callCount": "1 volanie",
+        "callCount_other": "{{count}} volaní",
+        "latency": "Latencie",
+        "medianP95": "medián · p95 {{value}}",
+        "ttft": "Čas do prvého tokenu",
+        "notMeasured": "nemeraný na týchto volaniach",
+        "reliability": "Spoľahlivosť",
+        "errorsAndBlocked": "{{errors}} chýb · {{blocked}} zablokovaných"
+      },
+      "tokens": {
+        "input": "Vstupné tokeny:",
+        "output": "Výstupné tokeny:",
+        "fromCache": "Z cache:",
+        "cacheSaved": "({{amount}} ušetrené)"
+      },
+      "oneModel": {
+        "heading": "Ak by všetko išlo na jeden model",
+        "empty": "Pridajte cieľové modely do tohto smerovaciho modulu, aby ste videli porovnanie.",
+        "columns": {
+          "targetModel": "Cieľový model",
+          "wouldHaveCost": "Náklady by boli",
+          "saved": "Ušetrené"
+        },
+        "costsHint": "Náklady sú pozorované tokeny preceňované sadzbami každého cieľa."
+      },
+      "optimizers": {
+        "heading": "Čo optimalizátory odstránili",
+        "columns": {
+          "optimizer": "Optimalizátor",
+          "callsChanged": "Zmenené volania",
+          "tokensSaved": "Ušetrené tokeny",
+          "costSaved": "Ušetrené náklady",
+          "rolledBack": "Vrátené späť"
+        },
+        "hint": "Merané na samotných volaniach, oceňované modelom, ktorý slúžil každému. Vrátené spustenie znamená, že výstup kroku bol odmietnuty ako nezabezpečený a výzva bola obnovená: neuložilo nič a vysoký počet znamená, že prah je príliš agresívny."
+      },
+      "traffic": {
+        "heading": "Kam šiel provoz",
+        "columns": {
+          "model": "Model",
+          "calls": "Volania",
+          "share": "Podiel",
+          "cost": "Náklady",
+          "p95Latency": "p95 latencie",
+          "errors": "Chyby"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Chyba pri ukladaní smerovaciho modulu",
+        "copyFailed": "Kopírovanie zlyhalo — prosím vyberte a skopírujte token manuálne."
+      },
+      "kind": {
+        "router": {
+          "label": "Smerovací modul",
+          "description": "Smeruje požiadavky medzi kandidátmi modelov."
+        },
+        "orchestrator": {
+          "label": "Orchestrátor",
+          "description": "Smeruje požiadavky medzi inými smerovacie modulmi namiesto modelov."
+        },
+        "passthrough": {
+          "label": "Priechod",
+          "description": "Presúva požiadavky bez zmeny."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Uložte tento token teraz.",
+        "saveNowHint": "Neobjevuje sa znova — keď odídete z tejto obrazovky, nedá sa obnoviť.",
+        "copied": "Skopírované!",
+        "copy": "Kopírovať",
+        "goToRouter": "Prejsť na smerovací modul"
+      },
+      "connect": {
+        "heading": "Ako sa pripojiť",
+        "intro": "Nasmerujte akékoľvek OpenAI alebo Anthropic SDK na Routerly a použite <tokenLink>token smerovaciho modulu</tokenLink> ako kľúč API. Nahraďte <code>{{token}}</code> nižšie vaším. Model <code>{{model}}</code> dáva výber Routerly; funguje aj akékoľvek ID modelu z <modelsLink>Modelov</modelsLink>.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Základná adresa URL <code>{{baseUrl}}</code>, tá istá, ktorú berie akékoľvek pole \"OpenAI kompatibilné\" poskytovania.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Základná adresa URL <code>{{baseUrl}}</code>, bez <code>/v1</code>: SDK to pridá.",
+        "curl": "curl",
+        "curlHint": "Skontrolovať drôtovanie bez inštalácie čohokoľvek, potom vyhľadajte volanie v <usageLink>Používaní</usageLink>."
+      },
+      "form": {
+        "kind": "Druh",
+        "kindFixedHint": "Fixné po vytvorení smerovaciho modulu.",
+        "routerName": "Názov smerovaciho modulu",
+        "routerNamePlaceholder": "Moja aplikácia",
+        "advancedSettings": "Pokročilé nastavenia",
+        "ttftTimeout": "TTFT Timeout (ms)",
+        "ttftTimeoutHint": "Ak model neposielá prvý bajt odpovede v tomto čase, Routerly ho zruší a skúsi ďalšieho kandidáta. Neobmedzuje trvanie celkovej odpovede. Nastavte na 0, aby ste čakali tak dlho, ako to poskytovateľ trvá.",
+        "traceContent": "Obsah stopy",
+        "traceContentHint": "Stopy vždy zaznamenávajú metaúdaje (modely, skóre, tokeny, náklady, latencie). Zapnite to aj na zaznamenávanie odoslaných výziev a prijatých odpovedí. Sú uložené so záznamom používania a viditeľné pre kohokoľvek, kto môže čítať správy.",
+        "capturePromptsAndAnswers": "Zachytávať výzvy a odpovede",
+        "saveChanges": "Uložiť zmeny",
+        "createRouter": "Vytvoriť smerovací modul",
+        "passthroughPath": "Cesta",
+        "passthroughPathHint": "Stáva sa súčasťou URL adresy, ktorú volajú klienti: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Vytvoriť Orchestrator",
+        "createPassthrough": "Vytvoriť Passthrough"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Tento smerovací modul nie je Orchestrátor.",
+      "candidateRouters": "Kandidátni smerovacie moduly",
+      "candidateRoutersHint": "Smerovacie moduly, na ktoré tento Orchestrátor presúva požiadavky. Váha vplýva na to, ako často je každý kandidát vybraný; iba jeho názov, ID, váha a voliteľné limity na kandidáta sú tu zobrazené.",
+      "routingPolicies": "Politiky smerovania",
+      "routingPoliciesHint": "Orchestrator hodnotí každý Router kandidáta ako celok, takže tu platia iba politiky zdravia, limitu sadzby a spravodlivosti. Ostatné typy politík volia z vlastných modelov smernika, ktoré orchestrator nemá.",
+      "router": "Smerovací modul",
+      "selectRouter": "Vybrať smerovací modul",
+      "weight": "Váha",
+      "removeCandidate": "Odstrániť kandidáta",
+      "usageLimits": "Limity používania pre tohto kandidáta",
+      "limitCount": "{{count}} limit",
+      "limitCount_other": "{{count}} limitov",
+      "usageLimitsHint": "Voliteľné limity používania aplikované len na požiadavky, ktoré Orchestrátor presúva na tohto kandidáta.",
+      "empty": "Žiadni kandidátni smerovacie moduly. Orchestrátor potrebuje aspoň jedného pred tým, ako môže presúvať požiadavky.",
+      "addCandidate": "Pridať kandidáta",
+      "saved": "Uložené!",
+      "saveCandidates": "Uložiť kandidáty",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať smerovacie moduly",
+        "saveFailed": "Chyba pri ukladaní kandidátov orchestrátora"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Nepodarilo sa priradiť profil smerovaniia",
+        "duplicateTargets": "Cieľové modely nemôžu obsahovať duplikáty.",
+        "saveFailed": "Chyba pri ukladaní smerovaniia smerovaciho modulu",
+        "noProfileAvailable": "Žiadny profil smerovaniia k dispozícií. Vytvorte jeden zo stránky Profily."
+      },
+      "form": {
+        "routing": "Smerovanie",
+        "routingHint": "Použite zdieľaný profil smerovaniia alebo definujte vlastné politiky tohto smerovaciho modulu. Cieľové modely zostávajú konfigurovateľné v oboch prípadoch.",
+        "profileMode": "Profil",
+        "customMode": "Vlastný",
+        "routingProfile": "Profil smerovaniia",
+        "builtinSuffix": "(zabudované)",
+        "profileHint": "Politiky pochádzajú z profilu a nasledujú jeho zmeny. Upravte ich na stránke Profily alebo prepnite na Vlastný, aby ste začali od ich kópie.",
+        "saved": "Uložené!",
+        "saveRoutingConfiguration": "Uložiť konfiguráciu smerovaniia"
+      },
+      "targetModels": {
+        "heading": "Cieľové modely",
+        "hint": "Definujte pool modelov, ktoré Politiky budú filtrovať a vyberať. Voliteľné výzvy pokynujú AI Smerováciemu modulu, kedy vybrať každý model.",
+        "endpointModel": "Model koncového bodu",
+        "selectModel": "Vybrať model",
+        "promptDefinition": "Definícia výzvy",
+        "promptPlaceholder": "Popíšte presne, kedy a prečo by smerovací modul mal vybrať tento model...",
+        "intents": "Zámery",
+        "removeTarget": "Odstrániť cieľový model",
+        "empty": "Žiadne cieľové modely nie sú nakonfigurované.",
+        "addTarget": "Pridať cieľový model",
+        "passthroughLabel": "Priechod (nespracované predanie)",
+        "passthroughNotRemovable": "Položku priechodu nemožno odstrániť"
+      }
+    },
+    "optimizer": {
+      "title": "Optimalizátory",
+      "description": "Optimalizátory znižujú tokeny výzvy pred tým, ako požiadavky dosiahnu poskytovateľa. Bežia v poradí zhora nadol. Použite zdieľaný profil optimalizátora alebo definujte vlastný pipeline tohto smerovaciho modulu.",
+      "noPermission": "Nemáte oprávnenie na zobrazenie optimalizátorov.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Vlastný"
+      },
+      "profileSelect": {
+        "ariaLabel": "Profil optimalizátora",
+        "builtinLabel": "{{label}} (zabudované)",
+        "hint": "Kroky pochádzajú z profilu a nasledujú jeho zmeny. Upravte ich na stránke Profily alebo prepnite na Vlastný, aby ste začali od ich kópie.",
+        "disabledSuffix": "(zakázané)",
+        "thresholdSuffix": ", prah {{threshold}}"
+      },
+      "customHint": "Ťahajte na zmenu poradia, prepnite na povolenie. Niektorí optimalizátory používajú prah na kontrolu, ako agresívne skrátia.",
+      "saveButton": "Uložiť optimalizátorov",
+      "saving": "Ukladá sa...",
+      "saved": "Uložené",
+      "preview": {
+        "title": "Náhľad úspory tokenov",
+        "description": "Spustite aktuálny (neuložený) pipeline cez výzvu, aby ste videli, čo každý krok odstráni a čo stojí. Vyberte jeden zo vzorových rozhovorov alebo zadajte vlastnú výzvu.",
+        "promptLabel": "Výzva",
+        "promptAriaLabel": "Výzva na náhľad",
+        "typePromptOption": "Nižšie napíšte výzvu",
+        "fixturesHint": "Vzorové rozhovory dodané s Routerly. Routerly nezaznamenáva skutočné výzvy.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model na náhľad",
+        "modelWithContext": "{{id}} ({{k}}k context)",
+        "noModelOption": "Bez modelu",
+        "modelHint": "Kroky, ktoré odrážajú, aby sa zmestili do kontextového okna, potrebujú vedieť, ktoré okno. Bez modelu sú preskočené, presne ako by boli na požiadavke, ktorá pomenúva model Routerly, nemá okno.",
+        "sampleAriaLabel": "Vzorová výzva",
+        "samplePlaceholder": "Vložiť vzorku správy používateľa...",
+        "runButton": "Spustiť náhľad",
+        "running": "Spúšťa sa...",
+        "before": "Pred",
+        "after": "Po",
+        "saved": "Uložené",
+        "columns": {
+          "optimizer": "Optimalizátor",
+          "before": "Pred",
+          "after": "Po",
+          "saved": "Ušetrené"
+        },
+        "rolledBackNote": "Vrátené späť: zmena vyrobená týmto krokom bola odmietnuta ako nezabezpečená",
+        "skippedNote": "Preskočené: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Zmena, ktorú tento krok vyrobil, bola vrátená späť, takže výzva dosiahla ďalší krok bez zmeny.",
+          "skipped": "Tento krok nebeží: {{reason}}",
+          "unchanged": "Tento krok nechal výzvu bez zmeny."
+        }
+      },
+      "errors": {
+        "assignFailed": "Nepodarilo sa priradiť profil optimalizátora",
+        "saveFailed": "Chyba pri ukladaní optimalizátorov",
+        "previewFailed": "Chyba pri spúšťaní náhľadu",
+        "noProfileAvailable": "Žiadny profil optimalizátora k dispozícií. Vytvorte jeden zo stránky Profily."
+      }
+    },
+    "token": {
+      "newButton": "Nový token",
+      "empty": "Zatiaľ nie sú žiadne API tokeny. Vytvorte jeden, aby ste mohli spustiť požiadavky autentifikácie.",
+      "budgetOverrides": "Preťažovanie rozpočtu",
+      "created": "Vytvorené",
+      "lastUsed": "Naposledy použité",
+      "expires": "Vyprší",
+      "never": "Nikdy",
+      "editTitle": "Upraviť konfiguráciu",
+      "revokeTitle": "Odvolať token",
+      "revokeConfirm": "Odvolať token \"{{snippet}}...\"? Aplikácie, ktoré ho používajú, prestanú pracovať okamžite.",
+      "labelInput": {
+        "placeholder": "Hľadať alebo vytvoriť štítok…",
+        "createPrefix": "Vytvoriť",
+        "noMatches": "Nenašli sa žiadne zodpovedajúce štítky."
+      },
+      "errors": {
+        "deleteFailed": "Chyba pri odstraňovaní tokenu"
+      },
+      "create": {
+        "backToTokens": "Späť na tokeny",
+        "title": "Nový API token",
+        "subtitle": "Úplný token sa zobrazí iba raz po vytvorení — uložte si ho bezpečne.",
+        "tokenCreated": "Token bol úspešne vytvorený. Skopírujte ho teraz — neobjevuje sa znova.",
+        "copied": "Skopírované!",
+        "copy": "Kopírovať",
+        "done": "Hotovo",
+        "optional": "voliteľne",
+        "labels": "Štítky",
+        "labelsHint": "Označte tento token, aby ste identifikovali, kde sa používa (napr. \"production\", \"ci\").",
+        "scopes": "Rozsahy",
+        "scopesHint": "Rozsahy bez obmedzenia pripojené k tomuto tokenu (napr. \"batch\", \"internal\"), uložené s tokenom na vašu potrebu.",
+        "tags": "Značky",
+        "tagsHint": "Metaúdaje kľúč-hodnota preposlaní v záznamoch používania (napr. env=production).",
+        "keyPlaceholder": "kľúč",
+        "valuePlaceholder": "hodnota",
+        "createButton": "Vytvoriť token",
+        "cancel": "Zrušiť",
+        "copyFailed": "Kopírovanie zlyhalo — prosím vyberte a skopírujte token manuálne.",
+        "errors": {
+          "createFailed": "Chyba pri vytváraní tokenu"
+        }
+      },
+      "edit": {
+        "title": "Upraviť token",
+        "subtitle": "Aktualizovať štítky a preťažovania limitov jednotlivých modelov pre tento token.",
+        "token": "Token",
+        "labels": "Štítky",
+        "perModelLimits": "Limity jednotlivých modelov",
+        "perModelLimitsHint": "Preťažovanie globálnych a limitov na úrovni smerovaciho modulu pre požiadavky pomocou tohto tokenu.",
+        "noTargetModels": "Najskôr pridajte cieľové modely do karty Smerovanie.",
+        "noOverride": "žiadne preťažovanie",
+        "noLimits": "Žiadne limity",
+        "noLimitsSet": "Žiadne limity nenastavené — dedením od rodiča. Pridajte limit nižšie na preťažovanie.",
+        "metric": "Metrika",
+        "type": "Typ",
+        "periodLabel": "Perioda",
+        "every": "Každý",
+        "maxCost": "Max ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (tokeny)",
+        "allCombosSet": "Všetky kombinácií metriky/periódy sú už nastavené",
+        "addLimit": "Pridať limit",
+        "windowType": {
+          "period": "Perioda",
+          "rolling": "Posúvavé"
+        },
+        "limitMetric": {
+          "cost": "Náklady (USD)",
+          "calls": "Požiadavky",
+          "input_tokens": "Vstupné tokeny",
+          "output_tokens": "Výstupné tokeny",
+          "total_tokens": "Celkové tokeny"
+        },
+        "period": {
+          "hourly": "Hodinové",
+          "daily": "Denné",
+          "weekly": "Týždenné",
+          "monthly": "Mesačné",
+          "yearly": "Ročné"
+        },
+        "rollingUnit": {
+          "second": "sekúnd",
+          "minute": "minút",
+          "hour": "hodín",
+          "day": "dni",
+          "week": "týždňov",
+          "month": "mesiacov"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / každých {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Chyba pri ukladaní tokenu"
+        }
+      }
+    },
+    "users": {
+      "title": "Člcovia smerovaciho modulu",
+      "description": "Správa používateľov, ktorí majú prístup k tomuto smerovaciemu modulu.",
+      "addButton": "Pridať člena",
+      "addNewTitle": "Pridať nového člena",
+      "selectUserPlaceholder": "Vybrať používateľa...",
+      "addConfirmButton": "Pridať",
+      "cancelButton": "Zrušiť",
+      "empty": "Žiadni členovia sa nenašli.",
+      "removeConfirm": "Ste si istý, že chcete odstrániť tohto člena?",
+      "saveTitle": "Uložiť zmeny",
+      "changeRoleTitle": "Zmeniť rolu",
+      "removeTitle": "Odstrániť člena",
+      "roles": {
+        "viewer": "Divák",
+        "editor": "Editor",
+        "admin": "Správca"
+      },
+      "columns": {
+        "user": "Používateľ",
+        "role": "Rola",
+        "actions": "Akcie"
+      },
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať používateľov",
+        "addFailed": "Chyba pri pridávaní člena",
+        "updateFailed": "Chyba pri aktualizácií člena",
+        "removeFailed": "Chyba pri odstraňovaní člena"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Vypnuté"
+      },
+      "autoRefreshOff": "Automatické osviežovanie zakázané",
+      "autoRefreshEvery": "Automatické osviežovanie každých {{interval}}",
+      "lastUpdated": "naposledy aktualizované: {{time}}",
+      "refresh": "Osviežiť",
+      "refreshNowTitle": "Osviežiť teraz",
+      "refreshNowButton": "↻ Teraz",
+      "filters": {
+        "period": "Perioda",
+        "model": "Model",
+        "allModels": "Všetky modely",
+        "type": "Typ",
+        "all": "Všetky",
+        "completion": "Doplnenie",
+        "router": "Smerovací modul",
+        "status": "Stav",
+        "success": "Úspech",
+        "blocked": "Zablokované",
+        "error": "Chyba",
+        "resetButton": "Resetovať filtre"
+      },
+      "stats": {
+        "totalCost": "Celkové náklady",
+        "totalCalls": "Celkovo volaní",
+        "completionCalls": "Volania na doplnenie",
+        "routerCalls": "Volania smerovaciho modulu",
+        "errors": "Chyby"
+      },
+      "requestLogs": "Záznamy požiadaviek",
+      "emptyNoRequests": "Žiadne požiadavky pre tento smerovací modul v zvolenom období.",
+      "emptyNoMatches": "Žiadne záznamy sa nezhodujú s aktívnymi filtrami.",
+      "columns": {
+        "time": "Čas",
+        "model": "Model",
+        "type": "Typ",
+        "in": "Vstup",
+        "out": "Výstup",
+        "cost": "Náklady",
+        "latency": "Latencie",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Stav"
+      },
+      "typeRouter": "smerovací modul",
+      "typeCompletion": "doplnenie",
+      "pagination": {
+        "previous": "← Predchádzajúce",
+        "next": "Ďalší →",
+        "pageOf": "Strana {{page}} z {{totalPages}}",
+        "totalRecords": "({{count}} celkovo záznamov)"
+      }
+    },
+    "security": {
+      "title": "Bezpečnosť",
+      "description": "Použite zdieľaný profil bezpečnosti alebo definujte vlastné chránidlá a politiky PII tohto smerovaciho modulu.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Vlastný"
+      },
+      "profileSelect": {
+        "ariaLabel": "Profil bezpečnosti",
+        "builtinLabel": "{{label}} (zabudované)",
+        "hint": "Chránidlá a politiky PII pochádzajú z profilu a nasledujú jeho zmeny. Upravte ich na stránke Profily alebo prepnite na Vlastný, aby ste začali od ich kópie.",
+        "blockingSuffix": ", blokuje",
+        "disabledSuffix": ", zakázané",
+        "piiRedaction": "Redakcia PII ({{target}})"
+      },
+      "saveButton": "Uložiť nastavenia bezpečnosti",
+      "saved": "Uložené!",
+      "errors": {
+        "assignFailed": "Nepodarilo sa priradiť profil bezpečnosti",
+        "saveFailed": "Chyba pri ukladaní nastavení bezpečnosti",
+        "noProfileAvailable": "Žiadny profil bezpečnosti k dispozícií. Vytvorte jeden zo stránky Profily."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Ste užitočný AI asistent.",
+      "errors": {
+        "unknown": "Vyskytla sa neznáma chyba",
+        "onlyImages": "Momentálne sú pre videné modely podporované len prílohy obrázkov."
+      },
+      "title": "Test Chat",
+      "subtitle": "Poslať testovacie požiadavky cez bránu smerovaniia.",
+      "routerToken": "Token smerovaciho modulu:",
+      "hideToken": "Skryť token",
+      "showToken": "Zobraziť token",
+      "recognizedToken": "Rozpoznaný token",
+      "unrecognizedToken": "Nerozpoznaný token",
+      "noMessages": "Zatiaľ žiadne správy.",
+      "enterTokenHint": "Prosím zadajte token smerovaciho modulu vyššie na odoslanie správy.",
+      "typeMessageHint": "Nižšie napíšte správu, aby ste začali testovanie.",
+      "reasoning": "Úvahy",
+      "attachedAlt": "Pripojené",
+      "attachmentAlt": "Príloha",
+      "attachImage": "Pripojit obrázok",
+      "typeMessagePlaceholder": "Napíšte správu...",
+      "stopGeneration": "Zastaviť generovanie",
+      "sendEnter": "Poslať (Enter)",
+      "debugLog": "Debug Log",
+      "clear": "Vyčistiť",
+      "noRequestSent": "Zatiaľ nebola odoslaná žiadna požiadavka.",
+      "turnTraceLog": "Turn #{{turn}} trace log · {{count}} udalosť",
+      "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} udalostí"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Pripojenia",
+      "subtitle": "Účty poskytovania používané na spustenie inštancií modelov",
+      "noPermission": "Nemáte oprávnenie na zobrazenie pripojení.",
+      "count": "{{count}} pripojenie",
+      "count_other": "{{count}} pripojení",
+      "addConnection": "Pridať pripojenie",
+      "empty": "Zatiaľ nie sú žiadne pripojenia. Pridajte jedno, aby ste začali.",
+      "deleteConfirm": "Odstrániť pripojenie \"{{label}}\"? Inštancie viazané naň prestanú pracovať.",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať pripojenia",
+        "deleteFailed": "Nepodarilo sa odstrániť pripojenie"
+      },
+      "columns": {
+        "label": "Štítok",
+        "provider": "Poskytovateľ",
+        "endpoint": "Koncový bod",
+        "status": "Stav"
+      },
+      "status": {
+        "enabled": "Povolené",
+        "disabled": "Zakázané"
+      },
+      "actions": {
+        "models": "Modely",
+        "edit": "Upraviť",
+        "remove": "Odstrániť"
+      }
+    },
+    "form": {
+      "backToConnections": "Späť na Pripojenia",
+      "editTitle": "Upraviť pripojenie",
+      "addTitle": "Pridať pripojenie",
+      "enabled": "Povolené",
+      "editSubtitle": "Aktualizovať nastavenia účtu poskytovania",
+      "addSubtitle": "Zaregistrovať nový účet poskytovania",
+      "sectionTitle": "Podrobnosti pripojenia",
+      "sectionDesc": "Účet poskytovania, poverenia a koncový bod použitý na vykonávanie požiadaviek.",
+      "provider": "Poskytovateľ",
+      "groups": {
+        "directApi": "Priame API",
+        "cloudPlatform": "Cloudová platforma",
+        "subscription": "Predplatné",
+        "browserSession": "Relácií v prehliadači",
+        "selfHosted": "Vlastne hostované"
+      },
+      "upstreamProvider": {
+        "label": "Poskytovateľ",
+        "hintLabel": "(názov poskytovania proti prúdu)",
+        "placeholder": "napr. deepseek, mistral, groq",
+        "description": "Pomenúva službu, do ktorej tento koncový bod patrí. Modely v tomto pripojení používajú ho ako predponu ID (napr. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Názov",
+        "hint": "Identifikuje toto pripojenie všade, kde je odkazované, takže musí byť jedinečné. Nechajte prázdne, aby ste použili <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Nechajte polia poverenia prázdne na zachovanie existujúcich hodnôt.",
+      "save": "Uložiť",
+      "create": "Vytvoriť",
+      "cancel": "Zrušiť",
+      "oauth": {
+        "unknown": "neznámy",
+        "accountExpires": "Účet: {{account}} — vyprší {{expires}}",
+        "unknownError": "Neznáma chyba"
+      },
+      "errors": {
+        "notFound": "Pripojenie sa nenašlo",
+        "loadFailed": "Nepodarilo sa načítať pripojenie",
+        "updateFailed": "Nepodarilo sa aktualizovať pripojenie",
+        "createFailed": "Nepodarilo sa vytvoriť pripojenie"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Späť na Modely",
+      "title": "Objav modelov",
+      "subtitle": "Prehliadajte dostupné modely a pridajte ich do konfigurácie smerovaniia",
+      "count": "{{count}} modelov",
+      "filteredCount": "{{filtered}} z {{count}}",
+      "free": "bezplatné",
+      "add": "Pridať",
+      "addAgain": "Pridať znova",
+      "loadFailed": "Nepodarilo sa načítať katalóg: {{error}}",
+      "filters": {
+        "search": "Hľadať",
+        "searchPlaceholder": "ID modelu alebo názov…",
+        "provider": "Poskytovateľ",
+        "allProviders": "Všetci poskytovatelia",
+        "context": "Kontext",
+        "ctxOptions": {
+          "all": "Všetky",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Cena / 1M",
+        "priceOptions": {
+          "all": "Všetky",
+          "free": "Bezplatné",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Zobraziť",
+        "configured": "Nakonfigurované",
+        "embedding": "Vkladanie",
+        "resetFilters": "Resetovať filtre"
+      },
+      "empty": {
+        "noMatches": "Žiadne modely sa zhodujú s vašimi filtrami."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Poskytovateľ",
+        "context": "Kontext",
+        "input": "Vstup / 1M",
+        "output": "Výstup / 1M"
+      },
+      "badges": {
+        "configured": "Nakonfigurované",
+        "embedding": "vkladanie",
+        "runsLocally": "Beží lokálne"
+      },
+      "pagination": {
+        "prev": "Predch",
+        "next": "Ďalší",
+        "range": "{{start}}–{{end}} z {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Späť na Modely",
+      "title": {
+        "add": "Pridať model",
+        "edit": "Upraviť model",
+        "clone": "Klonovať model"
+      },
+      "subtitle": {
+        "add": "Zaregistrovať nový model poskytovateľa LLM",
+        "edit": "Úprava konfigurácie pre {{id}}",
+        "clone": "Klonovaní z {{id}} — priraďte nové ID na uloženie"
+      },
+      "errors": {
+        "modelNotFound": "Model sa nenašiel",
+        "sourceModelNotFound": "Zdrojový model sa nenašiel",
+        "loadFailed": "Chyba pri načítaní modelov",
+        "idRequired": "ID modelu je povinné",
+        "duplicateId": "Model \"{{id}}\" už existuje — nastavte iné vlastné ID",
+        "selectConnection": "Vybrať pripojenie",
+        "saveFailed": "Chyba"
+      },
+      "badge": {
+        "yes": "áno",
+        "no": "nie",
+        "override": "Preťažovanie",
+        "auto": "Automaticky",
+        "default": "Predvolené: {{value}}",
+        "reset": "Resetovať"
+      },
+      "oauth": {
+        "unknownExpiry": "neznámy",
+        "accountOk": "Účet: {{account}} — vyprší {{expires}}",
+        "unknownError": "Neznáma chyba"
+      },
+      "identification": {
+        "title": "Identifikácia modelu",
+        "description": "Jedinečný identifikátor a nastavenia poskytovania pre túto konfiguráciu modelu.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(voliteľne — predvolené:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Identifikátor používaný pri odkazovaní na tento model v hovoroch API Routerly.",
+        "provider": "Poskytovateľ",
+        "upstreamProviderHint": "(názov poskytovania proti prúdu)",
+        "upstreamProviderPlaceholder": "napr. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Používa sa ako predpona ID Routerly (napr.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(ID modelu proti prúdu)",
+        "upstreamModelPlaceholder": "napr. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Identifikátor modelu odoslaný do koncového bodu API proti prúdu.",
+        "modelPreset": "Predvolba modelu",
+        "customModelOption": "— názov vlastného modelu —",
+        "customModelPlaceholder": "napr. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Podrobnosti pripojenia",
+        "description": "Koncový bod API a poverenia autentifikácie potrebné na vykonávanie požiadaviek.",
+        "preconfigured": "Vopred nakonfigurované",
+        "custom": "Vlastný",
+        "connection": "Pripojenie",
+        "selectPlaceholder": "— vybrať pripojenie —",
+        "noneAvailable": "Žiadne vopred nakonfigurované pripojenia pre tohto poskytovania. Prepnite na Vlastný alebo vytvorte jedno na stránke Pripojenia.",
+        "editHint": "Úprava tohto pripojenia neskôr aktualizuje každý model viazaný naň."
+      },
+      "capabilities": {
+        "title": "Schopnosti",
+        "description": "Zadajte typ a schopnosti tohto modelu.",
+        "embeddingModel": "Model vkladania",
+        "embeddingModelHint": "Tento model generuje vektorové vloženia (nie doplnenie chatu)"
+      },
+      "pricing": {
+        "title": "Ceny a kontext",
+        "description": "Parametre nákladov a limity spracovaniia používané na fakturáciu a smerovanie.",
+        "inputPerMillion": "Vstup $/1M",
+        "outputPerMillion": "Výstup $/1M",
+        "cachePerMillion": "Čítanie cache $/1M",
+        "cacheWritePerMillion": "Zápis cache $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "Kontextové okno",
+        "contextWindowHint": "(tokeny, voliteľne)"
+      },
+      "tiers": {
+        "title": "Pokročilé — Cenové stupne",
+        "description": "Preťažovanie cien, keď metrika presiahnne prah. Napríklad: \"nad 200 000 tokenmi kontextu sa ceny menia.\"",
+        "removeTier": "Odstrániť stupeň",
+        "above": "Vyššie",
+        "metric": "Metrika",
+        "metricContextTokens": "Kontextové tokeny",
+        "overridePricing": "Preťažovanie ceny",
+        "addTier": "Pridať cenový stupeň"
+      },
+      "limits": {
+        "title": "Limity",
+        "description": "Limity používania pre tento model. Viacero pravidiel je možné kombinovať.",
+        "metric": "Metrika",
+        "type": "Typ",
+        "addLimit": "Pridať limit"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max predplatné)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro predplatné)"
+      },
+      "saveChanges": "Uložiť zmeny",
+      "createClone": "Vytvoriť klon",
+      "createModel": "Vytvoriť model"
+    },
+    "page": {
+      "title": "Modely",
+      "subtitle": "Modely poskytovania LLM registrovaní s Routerly",
+      "tabs": {
+        "models": "Modely",
+        "health": "Zdravie"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} modelov",
+        "filteredCount": "{{filtered}} z {{count}} model",
+        "filteredCount_other": "{{filtered}} z {{count}} modelov"
+      },
+      "filters": {
+        "allProviders": "Všetci poskytovatelia",
+        "allConnections": "Všetky pripojenia",
+        "searchPlaceholder": "Filtrovať modely…"
+      },
+      "discover": "Objav",
+      "addModel": "Pridať model",
+      "deleteConfirm": "Odstrániť model \"{{id}}\"?",
+      "empty": {
+        "noModels": "Zatiaľ nie sú žiadne modely. Pridajte jeden, aby ste začali.",
+        "noMatches": "Žiadne modely sa nezhodujú s aktívnymi filtrami."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Poskytovateľ",
+        "endpoint": "Koncový bod",
+        "input": "Vstup $/1M",
+        "output": "Výstup $/1M",
+        "cache": "Cache $/1M",
+        "context": "Veľkosť kontextu"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Klonovať",
+        "edit": "Upraviť",
+        "remove": "Odstrániť"
+      },
+      "pagination": {
+        "previous": "← Predchádzajúce",
+        "next": "Ďalší →",
+        "pageOf": "Strana {{page}} z {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} modelov)"
+      },
+      "health": {
+        "emptyNoModels": "Žiadne modely nie sú nakonfigurované.",
+        "emptyNoMatches": "Žiadne modely sa nezhodujú s filtrom.",
+        "resetAll": "Resetovať všetko",
+        "resetAllTitle": "Resetovať každý prerušovač obvodu, čakajúci čas a blokádu",
+        "resetTitle": "Resetovať prerušovač obvodu",
+        "confirmResetModel": "Resetovať prerušovač obvodu pre model \"{{id}}\"?",
+        "confirmResetAll": "Resetovať všetky odolnosti stavu? Toto jasne všetky prerušovače obvodu, čakajúci čas a blokády.",
+        "errors": {
+          "resetModelFailed": "Nepodarilo sa resetovať prerušovač obvodu",
+          "resetAllFailed": "Nepodarilo sa resetovať stav odolnosti"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Poskytovateľ",
+          "status": "Stav",
+          "circuit": "Obvod",
+          "errorRate": "Chybovosť (5m)",
+          "p95Latency": "P95 latencie (1h)",
+          "requests": "Požiadavky (1h)",
+          "lastSuccess": "Posledný úspech",
+          "cooldownLockout": "Čakajúci čas / blokáda"
+        },
+        "status": {
+          "healthy": "Zdravý",
+          "degraded": "Zhoršená",
+          "unavailable": "Nedostupná",
+          "cooldown": "Čakajúci čas",
+          "nodata": "Bez údajov"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Obnovuje sa",
+          "tripped": "Aktivovaná"
+        },
+        "time": {
+          "never": "nikdy",
+          "now": "teraz",
+          "secondsAgo": "{{count}}s dozadu",
+          "minutesAgo": "{{count}}m dozadu",
+          "hoursAgo": "{{count}}h dozadu",
+          "daysAgo": "{{count}}d dozadu",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "čakajúci čas {{time}}",
+          "lockout": "blokáda {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Experimenty",
+      "subtitle": "Test A/B smerovacie moduly proti sebe",
+      "noPermission": "Nemáte oprávnenie na zobrazenie experimentov.",
+      "count": "{{count}} experiment",
+      "count_other": "{{count}} experimentov",
+      "newExperiment": "Nový experiment",
+      "empty": "Zatiaľ nie sú žiadne experimenty. Vytvorte jeden na porovnanie smerovacie módulom vedľa seba.",
+      "deleteConfirm": "Odstrániť experiment \"{{name}}\"? Toto sa nedá vrátiť.",
+      "noToken": "Bez tokenu",
+      "noTokenTitle": "Bez tokenu žiadny klient nemôže dosiahnuť tento experiment",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať experimenty",
+        "deleteFailed": "Nepodarilo sa odstrániť experiment"
+      },
+      "columns": {
+        "name": "Názov",
+        "variants": "Varianty",
+        "rotation": "Rotácia",
+        "created": "Vytvorené"
+      },
+      "actions": {
+        "edit": "Upraviť experiment",
+        "remove": "Odstrániť"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Späť na experimenty",
+      "newExperiment": "Nový experiment",
+      "loading": "Načítavanie...",
+      "experimentId": "ID experimentu:",
+      "disabledTabTitle": "Najskôr uložte experiment, aby ste odomkli túto kartu",
+      "errors": {
+        "notFound": "Experiment sa nenašiel"
+      },
+      "tabs": {
+        "config": "Konfigurácia",
+        "metrics": "Metriky",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Uložené.",
+      "created": "Experiment vytvorený. Nasmerujte svojho klienta na tento token namiesto tokenu smerovaciho modulu. Neobjavuje sa znova.",
+      "copy": "Kopírovať",
+      "copied": "Skopírované!",
+      "done": "Hotovo",
+      "saving": "Ukladá sa...",
+      "create": "Vytvoriť experiment",
+      "save": "Uložiť zmeny",
+      "cancel": "Zrušiť",
+      "trafficSplit": "Rozdelenie prevádzky",
+      "errors": {
+        "loadRoutersFailed": "Nepodarilo sa načítať smerovacie moduly",
+        "saveFailed": "Nepodarilo sa uložiť experiment",
+        "copyFailed": "Kopírovanie zlyhalo: vyberte a skopírujte token manuálne."
+      },
+      "fields": {
+        "name": "Názov",
+        "namePlaceholder": "Lacné vs prémium smerovaniie",
+        "description": "Popis",
+        "optional": "(voliteľne)",
+        "descriptionPlaceholder": "Čo sa tento test pokúša vyriešiť",
+        "minSamples": "Minimálny počet volaní na variantu",
+        "minSamplesHint": "Pod týmto by Metrics karta označila porovnanie ako ešte nie záverečný.",
+        "rotation": "Rotácia",
+        "stickyOn": "Lepkavé na",
+        "stickyKey": "Lepkavý kľúč"
+      },
+      "variants": {
+        "title": "Varianty",
+        "desc": "Každá varianta je existujúci smerovací modul, vzatý ako celok: jeho modely, smerovaniie a všetky chránidlá platia. Test potrebuje aspoň dva.",
+        "routerAriaLabel": "Varianta {{index}} smerovací modul",
+        "routerPlaceholder": "Vybrať smerovací modul",
+        "labelAriaLabel": "Varianta {{index}} štítok",
+        "labelPlaceholder": "Štítok (voliteľne)",
+        "weightAriaLabel": "Varianta {{index}} váha",
+        "weightPlaceholder": "Váha",
+        "removeTitle": "Odstrániť variantu {{index}}",
+        "add": "Pridať variantu"
+      },
+      "judge": {
+        "title": "Rozhodca",
+        "desc": "Voliteľne: model čita každú vzorkovanú odpoveď a boduje ju 0-10 voči vašim kritériám. Každé rozhodované volanie je ďalšie volanie modelu, zúčtované ako každé iné.",
+        "enable": "Bodovať odpovede s modelom rozhodcu",
+        "model": "Model rozhodcu",
+        "modelPlaceholder": "Vybrať model",
+        "criteria": "Kritériá",
+        "criteriaPlaceholder": "Jeden na riadok, napr.\nOdpovedá na položenú otázku\nZostáva faktický\nDržať sa požadovaného formátu",
+        "sampleRate": "Podiel volaní posúdených (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Načítavanie...",
+      "callsMeasured": "{{count}} volanie merané",
+      "callsMeasured_other": "{{count}} volaní meraných",
+      "empty": "Zatiaľ žiadne volania v tomto okne. Nasmerujte klienta na token experimentu, aby ste začali porovnanie.",
+      "notConclusive": "Zatiaľ nie je záverečný: každá varianta potrebuje aspoň {{minSamples}} volaní v tomto okne. ",
+      "explanation": "Lepší údaj z každej páru je zvýraznený: lacnejšie za volanie, rýchlejšie, vyššie skóre rozhodcu. Percento pod hodnotou je jej vzdialenosť od najlepšieho ramena. Skóre rozhodcu je spustená priemerná trvání celého života experimentu, takže je to jediná postava, ktorú okno neomezuje.",
+      "lowSample": "Nízka vzorka",
+      "lowSampleTitle": "Pod {{minSamples}} volaniami v tomto okne",
+      "judgedCallsTitle": "{{count}} odpoveď bodovaná sudcom od začiatku experimentu",
+      "judgedCallsTitle_other": "{{count}} odpovedí bodovaných sudcom od začiatku experimentu",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať metriky"
+      },
+      "columns": {
+        "variant": "Varianta",
+        "calls": "Volania",
+        "share": "Podiel",
+        "errors": "Chyby",
+        "tokens": "Tokeny vstup / výstup",
+        "cost": "Náklady",
+        "costPerCall": "Náklady / volanie",
+        "avgLatency": "Priemerná latencie",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Skóre rozhodcu"
+      }
+    },
+    "token": {
+      "desc": "Klient volá experiment presne ako smerovací modul: rovnaká základná adresa URL, tento token namiesto tokenu smerovaciho modulu. Každá požiadavka pristane na jednej variante a je zúčtená na smerovaciho modulu varianty.",
+      "baseUrlLabel": "Základná adresa URL pre OpenAI alebo Anthropic SDK, s tokenimín experimentu ako kľúčom API:",
+      "created": "Token vytvorený. Skopírujte ho teraz, neobjavuje sa znova.",
+      "copy": "Kopírovať",
+      "copied": "Skopírované!",
+      "newToken": "Nový token",
+      "empty": "Žiadne tokeny na tomto experimente. Vytvorte jeden, aby klienti mohli volať.",
+      "revokeConfirm": "Odvolať token \"{{snippet}}...\"? Klienti, ktorí ho používajú, prestanú pracovať okamžite.",
+      "revokeTitle": "Odvolať token",
+      "errors": {
+        "createFailed": "Nepodarilo sa vytvoriť token",
+        "revokeFailed": "Nepodarilo sa odvolať token",
+        "copyFailed": "Kopírovanie zlyhalo: vyberte a skopírujte token manuálne."
+      },
+      "columns": {
+        "created": "Vytvorené",
+        "lastUsed": "Naposledy použité"
+      }
+    }
+  },
+  "overview": {
+    "title": "Prehľad",
+    "subtitle": "Zhrnutie používania a rozdelenie nákladov",
+    "noPermission": "Nemáte oprávnenie na zobrazenie údajov o používaní.",
+    "costByModel": "Náklady podľa modelu",
+    "noCostRecorded": "V tomto období neboli zaznamenané žiadne náklady.",
+    "callsByModel": "Volania podľa modelu",
+    "columns": {
+      "model": "Model",
+      "calls": "Volania",
+      "errors": "Chyby",
+      "cost": "Náklady"
+    },
+    "stats": {
+      "totalCalls": "Celkovo volaní",
+      "callsBreakdown": "{{routing}} smerovaniia · {{completion}} doplnenie",
+      "successRate": "Miera úspešnosti",
+      "ofAllRequests": "všetkých požiadaviek",
+      "errors": "Chyby",
+      "failedRequests": "neúspešných požiadaviek",
+      "models": "Modely",
+      "registered": "registrovaný",
+      "routers": "Smerovacie moduly",
+      "active": "aktívny"
+    },
+    "connectCard": {
+      "title": "Pripojiť klienta",
+      "desc": "Nasmerujte Claude Code, Codex, Cursor a {{count}} ďalších na túto bránu."
+    }
+  },
+  "login": {
+    "emailLabel": "E-mail",
+    "passwordLabel": "Heslo",
+    "signIn": "Prihlásiť sa",
+    "errors": {
+      "loginFailed": "Prihlásenie zlyhalo",
+      "totpFailed": "Overovanie 2FA zlyhalo"
+    },
+    "totp": {
+      "title": "Dvojfaktorová autentifikácia",
+      "backupPrompt": "Zadajte záložný kód.",
+      "appPrompt": "Zadajte 6-miestny kód z aplikácie autentifikátora.",
+      "backupCodeLabel": "Záložný kód",
+      "authenticatorCodeLabel": "Kód autentifikátora",
+      "verify": "Overiť",
+      "useAuthenticatorInstead": "Miesto toho použite aplikáciu autentifikátora",
+      "useBackupInstead": "Miesto toho použite záložný kód"
+    }
+  },
+  "setup": {
+    "welcome": "Vitajte! Poďme vás nastaviť.",
+    "welcomeSubtitle": "Vytvorte prvý účet správcu na spustenie Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly sa aktívne vyvíja. Chyby sa môžu vyskytovať.",
+    "betaFeedback": "Vaša spätná väzba pomáha utvárať to, čím sa stáva —",
+    "betaLink": "Hlasitť problémy alebo zdieľať nápady",
+    "emailLabel": "E-mail správcu",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Heslo",
+    "passwordPlaceholder": "Minimálne 8 znakov",
+    "confirmLabel": "Potvrďte heslo",
+    "confirmPlaceholder": "Znova zadajte heslo",
+    "submit": "Vytvoriť účet správcu",
+    "errors": {
+      "mismatch": "Heslá sa nezhodujú",
+      "tooShort": "Heslo musí mať aspoň 8 znakov",
+      "setupFailed": "Nastavenie zlyhalo"
+    }
+  },
+  "audit": {
+    "empty": "Žiadne záznamy auditu sa nenašli.",
+    "errors": {
+      "loadFailed": "Nepodarilo sa načítať auditný záznam"
+    },
+    "filters": {
+      "period": "Perioda",
+      "user": "Používateľ",
+      "userPlaceholder": "E-mail alebo ID používateľa",
+      "action": "Akcia",
+      "actionPlaceholder": "napr. model:create",
+      "result": "Výsledok",
+      "results": {
+        "all": "Všetky",
+        "success": "Úspech",
+        "forbidden": "Zakázané",
+        "error": "Chyba"
+      },
+      "refresh": "Osviežiť"
+    },
+    "columns": {
+      "timestamp": "Časová pečiatka",
+      "user": "Používateľ",
+      "action": "Akcia",
+      "endpoint": "Koncový bod",
+      "result": "Výsledok",
+      "details": "Podrobnosti"
+    },
+    "pagination": {
+      "previous": "Predchádzajúce",
+      "next": "Ďalší",
+      "page": "Strana {{page}} z {{totalPages}}",
+      "total": "({{count}} celkovo)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Používanie",
+      "live": "ŽIVÝ",
+      "subtitle": "Podrobné záznamy volaní a rozdelenie jednotlivých modelov",
+      "updatedAt": "· aktualizované {{time}}",
+      "poll": {
+        "off": "Vypnuté",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Živý",
+      "liveButtonTitle": {
+        "disable": "Zakázať živý režim",
+        "enable": "Povoliť živý režim (osviežovať každých 2s)"
+      },
+      "refreshNow": "↻ Teraz",
+      "refreshNowTitle": "Osviežiť teraz",
+      "filters": {
+        "period": "Perioda",
+        "router": "Smerovací modul",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Volajúci",
+        "type": "Typ",
+        "status": "Stav",
+        "allRouters": "Všetky smerovacie moduly",
+        "allModels": "Všetky modely",
+        "allTokens": "Všetky tokeny",
+        "resetFilters": "Resetovať filtre",
+        "all": "Všetky",
+        "success": "Úspech",
+        "blocked": "Zablokované",
+        "error": "Chyba"
+      },
+      "caller": {
+        "all": "Všetky",
+        "completion": "Doplnenie",
+        "routing": "Smerovací modul",
+        "guardrail": "Chránidlo",
+        "judge": "Rozhodca"
+      },
+      "callerBadge": {
+        "completion": "doplnenie",
+        "routing": "smerovací modul",
+        "guardrail": "chránidlo",
+        "judge": "rozhodca"
+      },
+      "errors": {
+        "loadFailedPrefix": "Nepodarilo sa načítať údaje o používaní:",
+        "retry": "Skúsiť znova"
+      },
+      "stats": {
+        "totalCalls": "Celkovo volaní",
+        "completionCalls": "Volania na doplnenie",
+        "routerCalls": "Volania smerovaciho modulu",
+        "guardrailCalls": "Volania chránidla",
+        "blockedCalls": "Zablokované volania",
+        "errors": "Chyby"
+      },
+      "table": {
+        "rank": "Poradie",
+        "model": "Model",
+        "provider": "Poskytovateľ",
+        "calls": "Volania",
+        "errors": "Chyby",
+        "successRate": "Miera úspešnosti",
+        "avgLatency": "Priemerná latencie",
+        "p95Latency": "P95 latencie",
+        "inputTokens": "Vstupné tokeny",
+        "outputTokens": "Výstupné tokeny",
+        "costPer1k": "Náklady / 1K",
+        "cost": "Náklady (USD)",
+        "bestCostPerformance": "Najlepšia cena výkonu"
+      },
+      "showMoreModels": "Zobraziť {{count}} viac modelov",
+      "showMoreModels_other": "Zobraziť {{count}} viac modelov",
+      "showFewerModels": "Zobraziť menej modelov",
+      "recentCalls": {
+        "title": "Nedávne volania",
+        "empty": "Žiadne záznamy používania pre túto dobu.",
+        "columns": {
+          "time": "Čas",
+          "router": "Smerovací modul",
+          "model": "Model",
+          "type": "Typ",
+          "caller": "Volajúci",
+          "in": "Vstup",
+          "out": "Výstup",
+          "cost": "Náklady",
+          "latency": "Latencie",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Stav"
+        }
+      },
+      "pagination": {
+        "previous": "Predchádzajúce",
+        "next": "Ďalší",
+        "pageOf": "Strana {{page}} z {{totalPages}}",
+        "totalRecords": "({{count}} celkovo záznamov)"
+      }
+    },
+    "record": {
+      "back": "Späť",
+      "title": "Podrobnosti volaniia",
+      "notFoundTitle": "Záznam sa nenašiel",
+      "notFoundBody": "Záznam používaniia {{id}} sa nedal načítať.",
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať záznam"
+      },
+      "sections": {
+        "identity": "Identita",
+        "tokensAndCost": "Tokeny a náklady",
+        "performanceAndOutcome": "Výkon a výsledok",
+        "traceLog": "Stopa záznam"
+      },
+      "fields": {
+        "recordId": "ID záznamu",
+        "router": "Smerovací modul",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Typ volania",
+        "requestType": "Typ požiadavky",
+        "inputTokens": "Vstupné tokeny",
+        "outputTokens": "Výstupné tokeny",
+        "totalTokens": "Celkové tokeny",
+        "costUsd": "Náklady (USD)",
+        "costUnknown": "Neznáme",
+        "latency": "Latencie",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Výsledok",
+        "timestamp": "Časová pečiatka",
+        "guardrailTriggered": "Chránidlo spustené",
+        "blockedBy": "Zablokované",
+        "piiRedacted": "PII redakované"
+      },
+      "errorMessage": "Chybová správa",
+      "eventCount": "{{count}} udalosť",
+      "eventCount_other": "{{count}} udalostí",
+      "noTrace": "Žiadna stopa nie je dostupná. Údaje stopy sú zachytené len pre nové volania."
+    }
+  },
+  "playground": {
+    "title": "Hracie ihrisko",
+    "subtitle": "Testovať modely, porovnávať odpovede a ukladať predvolby výziev.",
+    "mode": {
+      "single": "Jednoduchý",
+      "compare": "Porovnať"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "ako A",
+      "unknownToken": "Neznámy token"
+    },
+    "presets": {
+      "button": "Predvolby",
+      "panelTitle": "Predvolby",
+      "saveCurrent": "Uložiť aktuálny",
+      "namePlaceholder": "Názov predvolby...",
+      "save": "Uložiť",
+      "empty": "Zatiaľ nie sú žiadne predvolby.",
+      "delete": "Odstrániť predvolbu"
+    },
+    "streamingDisabled": {
+      "banner": "Streamovanie nie je dostupné",
+      "bannerBody": "tento smerovací modul má aktívne chránidlo blokujúce odpovede. Routerly musí skontrolovať úplnú odpoveď pred doručením, takže odpovede prídu naraz.",
+      "tooltip": "Streamovanie nie je dostupné: chránidlo blokujúce odpovede vyžaduje kontrolu úplnej odpovede pred doručením.",
+      "ariaLabel": "Streamovanie nedostupné"
+    },
+    "systemPrompt": "Systémová výzva",
+    "model": "Model",
+    "modelPlaceholder": "Automaticky (predvolené smerovaciho modulu)",
+    "params": {
+      "temp": "Teplota",
+      "maxTokens": "Max tokeny",
+      "topP": "Top-p"
+    },
+    "stream": "Tok",
+    "clear": "Vyčistiť",
+    "empty": {
+      "noMessages": "Zatiaľ žiadne správy.",
+      "enterToken": "Zadajte token smerovaciho modulu vyššie, aby ste začali."
+    },
+    "reasoning": "Úvahy",
+    "blockedDefault": "Táto správa bola zablokovaná chránidlom.",
+    "truncated": "Skrátené — odpoveď bola odseknutá maximálnymi tokenmi",
+    "bufferedNote": "Held pre bezpečnostný prehliadok",
+    "errors": {
+      "onlyImages": "Podporované sú iba prílohy obrázkov."
+    },
+    "rawToggle": {
+      "rendered": "renderované",
+      "raw": "surové"
+    },
+    "inputPlaceholder": "Napíšte správu...",
+    "attachImage": "Pripojit obrázok",
+    "attachedImageAlt": "Pripojené",
+    "attachmentAlt": "Príloha",
+    "debug": {
+      "title": "Debug",
+      "clear": "Vyčistiť",
+      "hide": "Skryť debug",
+      "show": "Zobraziť debug",
+      "empty": "Zatiaľ žiadne debug údaje.",
+      "emptyHint": "Poslajte správu, aby ste videli podrobnosti smerovaniia.",
+      "turnTraceLog": "Turn #{{turn}} trace log"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Vybrať model...",
+      "noMessages": "Zatiaľ žiadne správy.",
+      "debugTurns": "Debug ({{count}} turn)",
+      "debugTurns_other": "Debug ({{count}} turnov)",
+      "guardrailTokensTitle": "Tokeny chránidla rozhodcu",
+      "stop": "Zastaviť",
+      "inputPlaceholder": "Poslať rovnakú správu obom modelom..."
+    }
+  },
+  "help": {
+    "title": "Pomoc a podpora",
+    "subtitle": "Tu sme, aby sme vám pomohli — nájdite odpovede alebo sa kontaktujte kedykoľvek.",
+    "docs": {
+      "title": "Dokumentácia",
+      "subtitle": "Príručky, API referencia a konfiguračná dokumentácia",
+      "body": "Oficiálna dokumentácia pokrýva všetko od začiatku s pokročilými politikami smerovaniia, nastavením poskytovania, rozpočtami a úplnou referenciou API.",
+      "openLink": "Otvoriť dokumentáciu"
+    },
+    "issues": {
+      "title": "Hlasitť chybu alebo navrhnúť funkciu",
+      "subtitle": "Otvoriť problém GitHub — trvá 2 minúty",
+      "body": "Problémy GitHub sú najlepší spôsob, ako hlásať chyby alebo navrhnúť vylepšenia. Aby sme veci opravili rýchlejšie, zahrňte: čo ste urobili, čo ste očakávali, že sa stane, a čo sa naozaj stalo.",
+      "showTemplate": "Zobraziť šablónu problému",
+      "reportBug": "Hlasitť chybu",
+      "requestFeature": "Požiadavka o funkciu"
+    },
+    "issueTemplate": {
+      "whatHappened": "Čo sa stalo?",
+      "whatHappenedHint": "Popíšte problém v jednoduchých slovách",
+      "stepsToReproduce": "Kroky na reprodukovanie",
+      "expectedBehaviour": "Očakávané správanie",
+      "expectedBehaviourHint": "Čo ste očakávali, že uvidíte",
+      "version": "Verzia Routerly",
+      "versionHint": "Spustiť `routerly --version` alebo skontrolovať Settings → About"
+    },
+    "email": {
+      "title": "Kontaktovať podporu",
+      "subtitle": "Čítame každú správu a odpovedáme čo najskôr",
+      "body": "Za čokoľvek, čo sa nehodí do problému GitHub — otázky o fakturácií, súkromné obavy, alebo ak chcete len povedať ahoj — nám napíšte."
+    },
+    "faq": {
+      "title": "Často kladené otázky",
+      "subtitle": "Rýchle odpovede na najčastejšie otázky",
+      "items": {
+        "connect": {
+          "q": "Ako pripojím svoju aplikáciu k Routerly?",
+          "a": "Nasmerujte OpenAI alebo Anthropic SDK na vašu inštanciu Routerly. Nahraďte základnú adresu URL adresou http://your-host:3000/v1 (kompatibilné s OpenAI) alebo http://your-host:3000/anthropic (kompatibilné s Anthropic), potom ako kľúč API použite token smerovaciho modulu. To je všetko — žiadne ďalšie zmeny nie sú potrebné."
+        },
+        "openaiCompat": {
+          "q": "Je Routerly kompatibilná s nástrojmi, ktoré používajú SDK OpenAI?",
+          "a": "Áno. Routerly je náhrada plug-and-play: akýkoľvek nástroj, ktorý podporuje vlastnú základnú adresu URL a kľúč API (LangChain, LlamaIndex, Cursor, Continue, atď.) funguje mimo krabice. Pre klientov formátu Anthropic použite namiesto toho koncový bod /anthropic."
+        },
+        "routing": {
+          "q": "Ako funguje smerovanie modelov?",
+          "a": "Každý smerovací modul má politiku smerovaniia, ktorá rozhoduje, ktorý model dostane požiadavku. Politiky zahŕňajú round-robin, najnižšiu cenu, najrýchlejšiu odpoveď, reťazce fallback a ďalšie. Nakonfigurujete ich jednotlivých smerovacie moduly v Smerovacie moduly → Smerovaniie."
+        },
+        "addModel": {
+          "q": "Ako pridám nový model AI?",
+          "a": "Prejdite na Modely → Pridať model. Môžete pridať akéhokoľvek poskytovania kompatibilného s OpenAI (Ollama, LM Studio, vlastné koncové body) alebo koncový bod natívneho Anthropic. Vyplňte základnú adresu URL, kľúč API a ID modelu — Routerly sa o zvyšok postará."
+        },
+        "dataStored": {
+          "q": "Sú moje údaje uložené? Sú moje výzvy zaznamenané?",
+          "a": "Routerly je vlastne hostovaná a ukladá údaje iba na vašom počítači (v ~/.routerly/ štandardne). Výzvy a odpovede nikdy neposielame nikam Routerly. Záznamy požiadaviek sú uložené lokálne a iba ak je ich zapnúť jednotlivých smerovacie moduly."
+        },
+        "routerToken": {
+          "q": "Čo je token smerovaciho modulu a ako sa líši od kľúča API poskytovania?",
+          "a": "Token smerovaciho modulu je poverenie, ktoré dávate svojej aplikácií alebo členom tímu na autentifikáciu s Routerly. Líši sa od kľúčov API poskytovania, ktoré Routerly bezpečne ukladá na strane servera. Vaše aplikácie nikdy neuvidíte skutočné kľúče poskytovania."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} používateľ",
+    "countLabel_other": "{{count}} používateľov",
+    "addButton": "Pridať používateľa",
+    "columns": {
+      "email": "E-mail",
+      "role": "Rola",
+      "routers": "Smerovacie moduly"
+    },
+    "allRouters": "Všetky",
+    "resetTwoFaTitle": "Resetovať 2FA",
+    "resetTwoFaConfirm": "Resetovať 2FA za {{email}}? Budú musieť znova zaregistrovať.",
+    "deleteConfirm": "Odstrániť tohto používateľa?",
+    "emptyTitle": "Zatiaľ nie sú žiadni používatelia.",
+    "noPermission": "Nemáte oprávnenie na zobrazenie používateľov.",
+    "modal": {
+      "title": "Pridať používateľa",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Heslo",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rola",
+      "roleAdmin": "Správca",
+      "roleViewer": "Divák",
+      "cancelButton": "Zrušiť",
+      "submitButton": "Pridať používateľa"
+    },
+    "errors": {
+      "loadFailed": "Nepodarilo sa načítať používateľov",
+      "addFailed": "Chyba"
+    }
+  },
+  "userEdit": {
+    "title": "Upraviť používateľa",
+    "account": "Účet",
+    "email": "E-mail",
+    "role": "Rola",
+    "changePassword": "Zmeniť heslo",
+    "newPassword": "Nové heslo",
+    "newPasswordHint": "(nechajte prázdne na zachovanie aktuálneho)",
+    "save": "Uložiť",
+    "saved": "Uložené!",
+    "errors": {
+      "loadFailed": "Nepodarilo sa načítať používateľa",
+      "saveFailed": "Nepodarilo sa uložiť"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Spravovať role a oprávnenia. Zabudované role nie je možné upravovať.",
+    "newRole": "Nová rola",
+    "builtin": "zabudované",
+    "edit": "Upraviť",
+    "deleteConfirm": "Odstrániť túto rolu? Používatelia s touto rolou budú ovplyvnení.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "napr. operátor",
+      "name": "Názov",
+      "namePlaceholder": "Názov roly",
+      "permissions": "Oprávnenia",
+      "create": "Vytvoriť",
+      "save": "Uložiť",
+      "cancel": "Zrušiť"
+    },
+    "permissions": {
+      "routerRead": "Smerovacie moduly – Čítanie",
+      "routerWrite": "Smerovacie moduly – Zápis",
+      "modelRead": "Modely – Čítanie",
+      "modelWrite": "Modely – Zápis",
+      "userRead": "Používatelia – Čítanie",
+      "userWrite": "Používatelia – Zápis",
+      "reportRead": "Správy – Čítanie",
+      "settingsRead": "Nastavenia – Čítanie",
+      "settingsWrite": "Nastavenia – Zápis",
+      "notificationWrite": "Notifikácie – Zápis",
+      "tokenRead": "Tokeny – Čítanie",
+      "tokenWrite": "Tokeny – Zápis",
+      "roleWrite": "Role – Zápis",
+      "auditRead": "Auditný záznam – Čítanie",
+      "modulesRead": "Moduly – Čítanie",
+      "modulesManage": "Moduly – Spravovať",
+      "connectionsRead": "Pripojenia – Čítanie",
+      "connectionsManage": "Pripojenia – Spravovať",
+      "resilienceRead": "Odolnosť – Čítanie",
+      "resilienceManage": "Odolnosť – Spravovať",
+      "profilesRead": "Profily smerovaniia – Čítanie",
+      "profilesManage": "Profily smerovaniia – Spravovať",
+      "optimizersRead": "Optimalizátory – Čítanie",
+      "optimizersManage": "Optimalizátory – Spravovať",
+      "experimentsRead": "Experimenty – Čítanie",
+      "experimentsManage": "Experimenty – Spravovať"
+    },
+    "errors": {
+      "loadFailed": "Nepodarilo sa načítať role",
+      "updateFailed": "Nepodarilo sa aktualizovať rolu",
+      "createFailed": "Nepodarilo sa vytvoriť rolu",
+      "deleteFailed": "Nepodarilo sa odstrániť rolu"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profily",
+      "subtitle": "Opätovne použiteľné konfigurácie smerovaniia, optimalizátora a bezpečnosti",
+      "noPermission": "Nemáte oprávnenie na zobrazenie profilov.",
+      "newProfile": "Nový {{kind}} profil",
+      "empty": "Zatiaľ nie sú žiadne {{kind}} profily.",
+      "builtin": "Zabudované",
+      "custom": "Vlastný",
+      "view": "Pozrieť",
+      "edit": "Upraviť",
+      "clone": "Klonovať",
+      "delete": "Odstrániť",
+      "deleteConfirm": "Odstrániť profil \"{{label}}\"? Toto sa nedá vrátiť.",
+      "kindDescriptions": {
+        "routing": "Ktorý model odpovedá na požiadavku a čo sa stane, keď to nemôže",
+        "optimizer": "Čo sa odstráni z výzvy pred tým, ako sa pošle",
+        "security": "Chránidlá a politiky PII aplikované na provoz"
+      },
+      "columns": {
+        "label": "Štítok",
+        "type": "Typ",
+        "configuration": "Konfigurácia",
+        "version": "Verzia"
+      },
+      "errors": {
+        "loadFailed": "Nepodarilo sa načítať profily",
+        "deleteFailed": "Nepodarilo sa odstrániť profil"
+      }
+    },
+    "form": {
+      "backToProfiles": "Späť na Profily",
+      "newProfileTitle": "Nový {{kind}} profil",
+      "editProfileTitle": "Upraviť {{label}}",
+      "builtinHint": "Zabudované profily nie je možné upravovať. Klonovať jedno na prispôsobenie.",
+      "assignHint": "{{article}} {{kind}} profil je možné priradiť ľubovoľnému počtu smerovacie modulov.",
+      "noPermission": "Nemáte oprávnenie na zobrazenie profilov.",
+      "label": "Štítok",
+      "optimizers": "Optimalizátory",
+      "optimizersHint": "Ťahajte na zmenu poradia, prepnite na povolenie. Bežia v poradí zhora nadol.",
+      "createProfile": "Vytvoriť profil",
+      "saveProfile": "Uložiť profil",
+      "cancel": "Zrušiť",
+      "copySuffix": "{{label}} kópia",
+      "labelPlaceholders": {
+        "routing": "napr. Moje vyvážené smerovaniie",
+        "optimizer": "napr. Môj trimmer výzvy",
+        "security": "napr. Moje prísne chránidlá"
+      },
+      "errors": {
+        "notFound": "Profil sa nenašiel.",
+        "loadFailed": "Nepodarilo sa načítať profil",
+        "saveFailed": "Nepodarilo sa uložiť profil"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Späť na Pripojiť",
+    "title": "Pripojiť",
+    "docs": "Dokumentácia",
+    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
+    "noClientPrefix": "Žiadny klient s menom",
+    "errors": {
+      "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Najrýchlejší: jeden príkaz",
+      "description": "Spustite ho na počítači, kde je {{client}} nainštalovaný. Píše {{configPath}}, kedy si ponechá zálohu, ktorú môžete vrátiť."
+    },
+    "byHand": {
+      "titleAlt": "Alebo ho nastavte ručne",
+      "titleUi": "Nastavte ho ručne",
+      "titleConfigFile": "Nastavte konfiguračný súbor",
+      "setValuesIn": "Nastavte tieto hodnoty v {{configPath}}.",
+      "putThisIn": "Vložte to do",
+      "replaceToken": "Nahradiť",
+      "withRouterToken": "s tokenimín smerovaciho modulu:",
+      "createOne": "vytvoriť jedno",
+      "onRoutersPage": "na stránke Smerovacie moduly.",
+      "modelLabel": "Model:",
+      "modelHint": "dáva voľbu Routerly, akékoľvek ID modelu z",
+      "modelsLink": "Modely",
+      "worksToo": "funguje tiež.",
+      "openaiCompatHint": "Rovnaká základná adresa URL, kľúč a model vyhovujú akémukoľvek klientovi, ktorý ponúka \"OpenAI kompatibilného\" poskytovania."
+    },
+    "mcp": {
+      "title": "MCP server",
+      "description": "Oddelené od vyššie uvedených krokov: toto umožňuje {{client}} volať nástroje Routerly. Potrebuje osobný token MCP, razítko s",
+      "orFromYour": "alebo z vašej",
+      "profileLink": "profilu"
+    },
+    "checkItWorked": {
+      "title": "Skontrolovať, či to fungovalo",
+      "restart": "Reštartujte {{client}}, pošlite mu výzvu, potom vyhľadajte volanie v",
+      "usageLink": "Používaní",
+      "cliReports": "Z rovnaného počítača CLI hlási, čo nájde:"
+    }
+  },
+  "connect": {
+    "title": "Pripojiť",
+    "subtitle": "Nasmerujte AI kódovací klient na túto bránu. Vyberte klienta pre jeho nastavovací kroky.",
+    "llmLabel": "LLM",
+    "llmDescription": "Smeruje prevádzku modelu tohto klienta cez Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Načítava Routerly ako server nástrojov vo vnútri.",
+    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
+    "errors": {
+      "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Jeden príkaz",
+      "hint": "CLI píše konfiguračný súbor za vás, s zálohou, ktorú môžete vrátiť."
+    },
+    "byHand": {
+      "title": "Ručne",
+      "hint": "Skopírujte úryvok zo stránky klienta do jeho nastavení, potom ho reštartujte."
+    },
+    "endpoint": {
+      "title": "Nasmerujte akéhokoľvek klienta sem",
+      "description": "Čokoľvek postavené na OpenAI alebo Anthropic SDK funguje zmenou základnej adresy URL a kľúča. Nič iného sa nezmení: požiadavky a odpovede prejdú Routerly, ako sú.",
+      "openaiBaseUrl": "OpenAI základná adresa URL",
+      "anthropicBaseUrl": "Anthropic základná adresa URL",
+      "apiKey": "Kľúč API",
+      "model": "Model",
+      "apiKeyDescription": "Token smerovaciho modulu, odoslaný ako",
+      "or": "alebo",
+      "createOne": "Vytvoriť jedno",
+      "onRoutersPage": "na stránke Smerovacie moduly.",
+      "modelDescription": "Nechá Routerly vybrať. Akékoľvek ID modelu z",
+      "modelsLink": "Modely",
+      "worksToo": "stránka funguje tiež."
+    }
+  }
+}

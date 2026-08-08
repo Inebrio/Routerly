@@ -1,0 +1,6 @@
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+CLAUDE_CODE_AUTO_COMPACT_WINDOW = "200000"
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"

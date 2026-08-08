@@ -6,7 +6,7 @@
  * `routerly ... 2>errors.log` and the usual shell plumbing work on a trace the
  * way they work on any other program output. Docker and systemd capture both.
  *
- * Prompts and answers (`entry.content`) are never printed: they are a per-project
+ * Prompts and answers (`entry.content`) are never printed: they are a per-router
  * opt-in for the trace UI, and logs are a different destination with a different
  * lifetime. The line says whether content was captured, not what it said.
  */

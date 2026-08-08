@@ -12,20 +12,24 @@ import {
   RoutingEditFields,
   RecipientsEditFields,
   EventsAndTargetsEditFields,
-  EVENT_OPTIONS,
-  PERM_OPTIONS,
-  CHANNEL_PROVIDER_META,
+  getEventOptions,
+  getPermOptions,
+  getChannelProviderMeta,
 } from './notificationChannelFields';
 import type { ChannelProvider } from './notificationChannelFields';
-import { getProjects } from '../api';
+import { getRouters } from '../api';
+import i18n from '../i18n';
 
-const mockGetProjects = vi.mocked(getProjects as (...args: unknown[]) => Promise<unknown>);
+// Real i18n singleton (English resources) so assertions against literal text still hold.
+const t = i18n.t.bind(i18n);
+
+const mockGetRouters = vi.mocked(getRouters as (...args: unknown[]) => Promise<unknown>);
 
 // Mock api and MultiSelect so we don't need a full auth context
 vi.mock('../api', () => ({
-  getProjects: vi.fn().mockResolvedValue([]),
+  getRouters: vi.fn().mockResolvedValue([]),
   ALL_PERMISSIONS: [
-    'project:read', 'project:write', 'model:read', 'model:write',
+    'router:read', 'router:write', 'model:read', 'model:write',
     'user:read', 'user:write', 'report:read', 'settings:read',
     'settings:write', 'notification:write', 'token:read', 'token:write',
     'role:write', 'audit:read',
@@ -107,83 +111,83 @@ describe('isMasked', () => {
 
 describe('targetsHint', () => {
   it('returns fixed-endpoint hint for webhook', () => {
-    expect(targetsHint('webhook')).toContain('endpoint is fixed');
+    expect(targetsHint('webhook', t)).toContain('endpoint is fixed');
   });
 
   it('returns fixed-endpoint hint for slack', () => {
-    expect(targetsHint('slack')).toContain('endpoint is fixed');
+    expect(targetsHint('slack', t)).toContain('endpoint is fixed');
   });
 
   it('returns fixed-endpoint hint for teams', () => {
-    expect(targetsHint('teams')).toContain('endpoint is fixed');
+    expect(targetsHint('teams', t)).toContain('endpoint is fixed');
   });
 
   it('returns fixed-endpoint hint for pagerduty', () => {
-    expect(targetsHint('pagerduty')).toContain('endpoint is fixed');
+    expect(targetsHint('pagerduty', t)).toContain('endpoint is fixed');
   });
 
   it('returns fixed-endpoint hint for discord', () => {
-    expect(targetsHint('discord')).toContain('endpoint is fixed');
+    expect(targetsHint('discord', t)).toContain('endpoint is fixed');
   });
 
   it('returns dashboard inbox hint for dashboard', () => {
-    expect(targetsHint('dashboard')).toContain('inbox visibility');
+    expect(targetsHint('dashboard', t)).toContain('inbox visibility');
   });
 
   it('returns email hint for email providers', () => {
-    expect(targetsHint('smtp')).toContain('email');
-    expect(targetsHint('ses')).toContain('email');
-    expect(targetsHint('sendgrid')).toContain('email');
+    expect(targetsHint('smtp', t)).toContain('email');
+    expect(targetsHint('ses', t)).toContain('email');
+    expect(targetsHint('sendgrid', t)).toContain('email');
   });
 });
 
 describe('summariseChannel', () => {
   it('shows "All events" when events is undefined', () => {
-    expect(summariseChannel({})).toContain('All events');
+    expect(summariseChannel({}, t)).toContain('All events');
   });
 
   it('shows "All events" when events is empty', () => {
-    expect(summariseChannel({ events: [] })).toContain('All events');
+    expect(summariseChannel({ events: [] }, t)).toContain('All events');
   });
 
   it('shows "1 event" for a single event', () => {
-    expect(summariseChannel({ events: ['provider.error'] })).toContain('1 event');
+    expect(summariseChannel({ events: ['provider.error'] }, t)).toContain('1 event');
   });
 
   it('shows "2 events" for two events', () => {
-    expect(summariseChannel({ events: ['a', 'b'] })).toContain('2 events');
+    expect(summariseChannel({ events: ['a', 'b'] }, t)).toContain('2 events');
   });
 
   it('shows "Everyone" when no targets', () => {
-    expect(summariseChannel({})).toContain('Everyone');
+    expect(summariseChannel({}, t)).toContain('Everyone');
   });
 
   it('shows role count in targets', () => {
-    expect(summariseChannel({ targets: { roles: ['admin'] } })).toContain('1 role');
+    expect(summariseChannel({ targets: { roles: ['admin'] } }, t)).toContain('1 role');
   });
 
   it('shows plural roles', () => {
-    expect(summariseChannel({ targets: { roles: ['admin', 'editor'] } })).toContain('2 roles');
+    expect(summariseChannel({ targets: { roles: ['admin', 'editor'] } }, t)).toContain('2 roles');
   });
 
   it('shows permission count in targets', () => {
-    expect(summariseChannel({ targets: { permissions: ['user:read'] } })).toContain('1 perm');
+    expect(summariseChannel({ targets: { permissions: ['user:read'] } }, t)).toContain('1 perm');
   });
 
   it('shows plural permissions', () => {
-    expect(summariseChannel({ targets: { permissions: ['user:read', 'model:read'] } })).toContain('2 perms');
+    expect(summariseChannel({ targets: { permissions: ['user:read', 'model:read'] } }, t)).toContain('2 perms');
   });
 
   it('shows user count in targets', () => {
-    expect(summariseChannel({ targets: { users: ['u1'] } })).toContain('1 user');
+    expect(summariseChannel({ targets: { users: ['u1'] } }, t)).toContain('1 user');
   });
 
   it('shows plural users', () => {
-    expect(summariseChannel({ targets: { users: ['u1', 'u2'] } })).toContain('2 users');
+    expect(summariseChannel({ targets: { users: ['u1', 'u2'] } }, t)).toContain('2 users');
   });
 
   it('combines roles + users', () => {
-    const s = summariseChannel({ targets: { roles: ['admin'], users: ['u1', 'u2'] } });
+    const s = summariseChannel({ targets: { roles: ['admin'], users: ['u1', 'u2'] } }, t);
     expect(s).toContain('1 role');
     expect(s).toContain('2 users');
   });
@@ -191,27 +195,27 @@ describe('summariseChannel', () => {
 
 describe('providerLabel', () => {
   it('returns label for known provider', () => {
-    expect(providerLabel('smtp')).toBe('SMTP');
-    expect(providerLabel('dashboard')).toBe('Dashboard (in-app inbox)');
+    expect(providerLabel('smtp', t)).toBe('SMTP');
+    expect(providerLabel('dashboard', t)).toBe('Dashboard (in-app inbox)');
   });
 
   it('returns the key itself for unknown provider', () => {
-    expect(providerLabel('unknown-provider')).toBe('unknown-provider');
+    expect(providerLabel('unknown-provider', t)).toBe('unknown-provider');
   });
 });
 
 describe('EVENT_OPTIONS and PERM_OPTIONS', () => {
   it('EVENT_OPTIONS entries have value and label', () => {
-    expect(EVENT_OPTIONS.length).toBeGreaterThan(0);
-    for (const opt of EVENT_OPTIONS) {
+    expect(getEventOptions(t).length).toBeGreaterThan(0);
+    for (const opt of getEventOptions(t)) {
       expect(typeof opt.value).toBe('string');
       expect(typeof opt.label).toBe('string');
     }
   });
 
   it('PERM_OPTIONS entries have value and label', () => {
-    expect(PERM_OPTIONS.length).toBeGreaterThan(0);
-    for (const opt of PERM_OPTIONS) {
+    expect(getPermOptions(t).length).toBeGreaterThan(0);
+    for (const opt of getPermOptions(t)) {
       expect(typeof opt.value).toBe('string');
       expect(typeof opt.label).toBe('string');
     }
@@ -220,7 +224,7 @@ describe('EVENT_OPTIONS and PERM_OPTIONS', () => {
 
 describe('CHANNEL_PROVIDER_META', () => {
   it('contains all 11 providers', () => {
-    expect(CHANNEL_PROVIDER_META.length).toBe(11);
+    expect(getChannelProviderMeta(t).length).toBe(11);
   });
 });
 
@@ -394,7 +398,8 @@ describe('ChannelDetailFields — default (unknown provider)', () => {
 function renderEditFields(provider: ChannelProvider, extraForm: Record<string, unknown> = {}, isEdit = false) {
   const onChange = vi.fn();
   const form: Record<string, unknown> = { provider, ...extraForm };
-  render(<ChannelEditFields form={form} onChange={onChange} isEdit={isEdit} />);
+  render(<ChannelEditFields form={form} onChange={onChange} isEdit={isEdit}
+      t={t} />);
   return onChange;
 }
 
@@ -420,7 +425,8 @@ describe('ChannelEditFields — smtp (lines 448-472)', () => {
 
   it('onChange fires on TLS checkbox toggle', async () => {
     const onChange = vi.fn();
-    render(<ChannelEditFields form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false }} onChange={onChange} isEdit={false} />);
+    render(<ChannelEditFields form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false }} onChange={onChange} isEdit={false}
+      t={t} />);
     const tlsCheckbox = document.getElementById('smtp-tls') as HTMLInputElement;
     await userEvent.click(tlsCheckbox);
     expect(onChange).toHaveBeenCalledWith('secure', true);
@@ -428,7 +434,8 @@ describe('ChannelEditFields — smtp (lines 448-472)', () => {
 
   it('onChange fires on host input change', async () => {
     const onChange = vi.fn();
-    render(<ChannelEditFields form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false }} onChange={onChange} isEdit={false} />);
+    render(<ChannelEditFields form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false }} onChange={onChange} isEdit={false}
+      t={t} />);
     const hostInput = screen.getByPlaceholderText('smtp.example.com');
     await userEvent.type(hostInput, 'm');
     expect(onChange).toHaveBeenCalled();
@@ -483,7 +490,8 @@ describe('ChannelEditFields — webhook (lines 509-523)', () => {
 
   it('onChange fires when method select changes', async () => {
     const onChange = vi.fn();
-    render(<ChannelEditFields form={{ provider: 'webhook' }} onChange={onChange} isEdit={false} />);
+    render(<ChannelEditFields form={{ provider: 'webhook' }} onChange={onChange} isEdit={false}
+      t={t} />);
     const methodSelect = screen.getByDisplayValue('POST');
     await userEvent.selectOptions(methodSelect, 'GET');
     expect(onChange).toHaveBeenCalledWith('method', 'GET');
@@ -528,7 +536,8 @@ describe('ChannelEditFields — discord (line 536)', () => {
 describe('ChannelEditFields — default (unknown provider)', () => {
   it('renders null for unknown provider', () => {
     const { container } = render(
-      <ChannelEditFields form={{ provider: 'unknown' as ChannelProvider }} onChange={vi.fn()} isEdit={false} />
+      <ChannelEditFields form={{ provider: 'unknown' as ChannelProvider }} onChange={vi.fn()} isEdit={false}
+      t={t} />
     );
     expect(container.textContent).toBe('');
   });
@@ -557,6 +566,7 @@ describe('ChannelEditFields — EditInput optional field clears to undefined', (
       form={{ provider: 'smtp', fromAddress: 'a@b.com', fromName: 'Routerly', secure: false }}
       onChange={onChange}
       isEdit={false}
+      t={t}
     />);
     const fromNameInput = screen.getByPlaceholderText('Routerly');
     await userEvent.clear(fromNameInput);
@@ -569,22 +579,24 @@ describe('ChannelEditFields — EditInput optional field clears to undefined', (
 
 describe('RoutingEditFields', () => {
   beforeEach(() => {
-    mockGetProjects.mockResolvedValue([
-      { id: 'p1', name: 'Project 1' },
-      { id: 'p2', name: 'Project 2' },
+    mockGetRouters.mockResolvedValue([
+      { id: 'p1', name: 'Router 1' },
+      { id: 'p2', name: 'Router 2' },
     ]);
   });
 
-  it('renders events, projects, and cooldown sections', async () => {
-    render(<RoutingEditFields form={{ events: [], cooldownSeconds: 0 }} onChange={vi.fn()} />);
+  it('renders events, routers, and cooldown sections', async () => {
+    render(<RoutingEditFields form={{ events: [], cooldownSeconds: 0 }} onChange={vi.fn()}
+      t={t} />);
     expect(screen.getByText('Events')).toBeTruthy();
-    expect(screen.getByText('Projects')).toBeTruthy();
+    expect(screen.getByText('Routers')).toBeTruthy();
     expect(screen.getByText('Cooldown')).toBeTruthy();
   });
 
   it('onChange fires when events MultiSelect changes', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [] }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ events: [] }} onChange={onChange}
+      t={t} />);
     const evSelect = screen.getByTestId('multiselect-All events (leave empty for all)') as HTMLSelectElement;
     await userEvent.selectOptions(evSelect, ['provider.error']);
     expect(onChange).toHaveBeenCalledWith('events', ['provider.error']);
@@ -592,7 +604,8 @@ describe('RoutingEditFields', () => {
 
   it('onChange passes undefined when events cleared', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: ['provider.error'] }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ events: ['provider.error'] }} onChange={onChange}
+      t={t} />);
     const evSelect = screen.getByTestId('multiselect-All events (leave empty for all)') as HTMLSelectElement;
     // Deselect all by selecting nothing
     await userEvent.deselectOptions(evSelect, ['provider.error']);
@@ -601,7 +614,8 @@ describe('RoutingEditFields', () => {
 
   it('cooldown onChange fires and sets undefined when <= 0', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ cooldownSeconds: 60 }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ cooldownSeconds: 60 }} onChange={onChange}
+      t={t} />);
     const numInput = screen.getByPlaceholderText('0');
     await userEvent.clear(numInput);
     await userEvent.type(numInput, '0');
@@ -610,17 +624,19 @@ describe('RoutingEditFields', () => {
 
   it('cooldown onChange sets value when > 0', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ cooldownSeconds: 0 }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ cooldownSeconds: 0 }} onChange={onChange}
+      t={t} />);
     const numInput = screen.getByPlaceholderText('0');
     await userEvent.clear(numInput);
     await userEvent.type(numInput, '3');
     expect(onChange).toHaveBeenCalledWith('cooldownSeconds', 3);
   });
 
-  it('shows loaded projects in multiselect', async () => {
-    render(<RoutingEditFields form={{ events: [], projects: [] }} onChange={vi.fn()} />);
+  it('shows loaded routers in multiselect', async () => {
+    render(<RoutingEditFields form={{ events: [], routers: [] }} onChange={vi.fn()}
+      t={t} />);
     await waitFor(() => {
-      const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+      const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
       expect(projSelect.options.length).toBeGreaterThan(0);
     });
   });
@@ -638,6 +654,7 @@ describe('RecipientsEditFields', () => {
       onChange={vi.fn()}
       roles={roles}
       users={users}
+      t={t}
     />);
     expect(screen.getByText('Recipients / Targets')).toBeTruthy();
     expect(screen.getByText('Roles')).toBeTruthy();
@@ -651,6 +668,7 @@ describe('RecipientsEditFields', () => {
       onChange={vi.fn()}
       roles={[]}
       users={[]}
+      t={t}
     />);
     expect(screen.getByText(/email/)).toBeTruthy();
   });
@@ -661,6 +679,7 @@ describe('RecipientsEditFields', () => {
       onChange={vi.fn()}
       roles={[]}
       users={[]}
+      t={t}
     />);
     expect(screen.getByText(/inbox visibility/)).toBeTruthy();
   });
@@ -671,6 +690,7 @@ describe('RecipientsEditFields', () => {
       onChange={vi.fn()}
       roles={[]}
       users={[]}
+      t={t}
     />);
     expect(screen.getByText(/endpoint is fixed/)).toBeTruthy();
   });
@@ -682,6 +702,7 @@ describe('RecipientsEditFields', () => {
       onChange={onChange}
       roles={roles}
       users={[]}
+      t={t}
     />);
     const roleSelect = screen.getByTestId('multiselect-All roles (everyone)') as HTMLSelectElement;
     await userEvent.selectOptions(roleSelect, ['r1']);
@@ -695,6 +716,7 @@ describe('RecipientsEditFields', () => {
       onChange={onChange}
       roles={roles}
       users={[]}
+      t={t}
     />);
     const roleSelect = screen.getByTestId('multiselect-All roles (everyone)') as HTMLSelectElement;
     await userEvent.deselectOptions(roleSelect, ['r1']);
@@ -708,6 +730,7 @@ describe('RecipientsEditFields', () => {
       onChange={onChange}
       roles={[]}
       users={users}
+      t={t}
     />);
     const userSelect = screen.getByTestId('multiselect-All users (everyone)') as HTMLSelectElement;
     await userEvent.selectOptions(userSelect, ['u1']);
@@ -724,6 +747,7 @@ describe('EventsAndTargetsEditFields', () => {
       onChange={vi.fn()}
       roles={[]}
       users={[]}
+      t={t}
     />);
     expect(screen.getByText('Events')).toBeTruthy();
     expect(screen.getByText('Recipients / Targets')).toBeTruthy();
@@ -739,6 +763,7 @@ describe('ChannelEditFields — SecretEditInput onChange fires', () => {
       form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false }}
       onChange={onChange}
       isEdit={false}
+      t={t}
     />);
     const pwInput = document.querySelector('input[type="password"]') as HTMLInputElement;
     await userEvent.type(pwInput, 'secret');
@@ -755,6 +780,7 @@ describe('ChannelEditFields — EmailBaseFields fromAddress onChange fires', () 
       form={{ provider: 'smtp', fromAddress: '', secure: false }}
       onChange={onChange}
       isEdit={false}
+      t={t}
     />);
     const fromInput = screen.getByPlaceholderText('noreply@example.com') as HTMLInputElement;
     await userEvent.type(fromInput, 'test@example.com');
@@ -762,37 +788,39 @@ describe('ChannelEditFields — EmailBaseFields fromAddress onChange fires', () 
   });
 });
 
-// ── RoutingEditFields projects onChange (line 347) ───────────────────────────
+// ── RoutingEditFields routers onChange (line 347) ───────────────────────────
 
-describe('RoutingEditFields — projects MultiSelect onChange fires', () => {
+describe('RoutingEditFields — routers MultiSelect onChange fires', () => {
   beforeEach(() => {
-    mockGetProjects.mockResolvedValue([
-      { id: 'p1', name: 'Project 1' },
+    mockGetRouters.mockResolvedValue([
+      { id: 'p1', name: 'Router 1' },
     ]);
   });
 
-  it('selecting a project fires onChange with project id', async () => {
+  it('selecting a router fires onChange with router id', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [], projects: [] }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ events: [], routers: [] }} onChange={onChange}
+      t={t} />);
     await waitFor(() => {
-      const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+      const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
       expect(projSelect.options.length).toBeGreaterThan(0);
     });
-    const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+    const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
     await userEvent.selectOptions(projSelect, ['p1']);
-    expect(onChange).toHaveBeenCalledWith('projects', ['p1']);
+    expect(onChange).toHaveBeenCalledWith('routers', ['p1']);
   });
 
-  it('deselecting all projects fires onChange with undefined', async () => {
+  it('deselecting all routers fires onChange with undefined', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [], projects: ['p1'] }} onChange={onChange} />);
+    render(<RoutingEditFields form={{ events: [], routers: ['p1'] }} onChange={onChange}
+      t={t} />);
     await waitFor(() => {
-      const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+      const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
       expect(projSelect.options.length).toBeGreaterThan(0);
     });
-    const projSelect = screen.getByTestId('multiselect-All projects (leave empty for all)') as HTMLSelectElement;
+    const projSelect = screen.getByTestId('multiselect-All routers (leave empty for all)') as HTMLSelectElement;
     await userEvent.deselectOptions(projSelect, ['p1']);
-    expect(onChange).toHaveBeenCalledWith('projects', undefined);
+    expect(onChange).toHaveBeenCalledWith('routers', undefined);
   });
 });
 
@@ -806,22 +834,24 @@ describe('RecipientsEditFields — permissions MultiSelect onChange fires', () =
       onChange={onChange}
       roles={[]}
       users={[]}
+      t={t}
     />);
     const permSelect = screen.getByTestId('multiselect-All permissions (everyone)') as HTMLSelectElement;
-    await userEvent.selectOptions(permSelect, ['project:read']);
-    expect(onChange).toHaveBeenCalledWith('targets', expect.objectContaining({ permissions: ['project:read'] }));
+    await userEvent.selectOptions(permSelect, ['router:read']);
+    expect(onChange).toHaveBeenCalledWith('targets', expect.objectContaining({ permissions: ['router:read'] }));
   });
 
   it('clearing permissions fires onChange with undefined', async () => {
     const onChange = vi.fn();
     render(<RecipientsEditFields
-      form={{ provider: 'smtp', targets: { permissions: ['project:read'] } }}
+      form={{ provider: 'smtp', targets: { permissions: ['router:read'] } }}
       onChange={onChange}
       roles={[]}
       users={[]}
+      t={t}
     />);
     const permSelect = screen.getByTestId('multiselect-All permissions (everyone)') as HTMLSelectElement;
-    await userEvent.deselectOptions(permSelect, ['project:read']);
+    await userEvent.deselectOptions(permSelect, ['router:read']);
     expect(onChange).toHaveBeenCalledWith('targets', expect.objectContaining({ permissions: undefined }));
   });
 });
@@ -835,6 +865,7 @@ describe('ChannelEditFields — smtp port field onChange fires', () => {
       form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false, port: 587 }}
       onChange={onChange}
       isEdit={false}
+      t={t}
     />);
     // Port input: type="number", value derived from form.port
     const portInput = document.querySelector('input[type="number"]') as HTMLInputElement;
@@ -913,6 +944,7 @@ describe('RecipientsEditFields — targets undefined', () => {
       onChange={vi.fn()}
       roles={[]}
       users={[{ id: 'u1', email: 'a@b.com' }] as unknown as import('../api').User[]}
+      t={t}
     />);
     expect(screen.getByText('Recipients / Targets')).toBeTruthy();
   });
@@ -923,6 +955,7 @@ describe('RecipientsEditFields — targets undefined', () => {
       onChange={vi.fn()}
       roles={[{ id: 'r1', name: 'Admin' }] as unknown as import('../api').Role[]}
       users={[{ id: 'u1', email: 'a@b.com' }] as unknown as import('../api').User[]}
+      t={t}
     />);
     expect(screen.getByText('Individual users')).toBeTruthy();
   });
@@ -937,6 +970,7 @@ describe('ChannelEditFields — EditInput clears optional field to undefined', (
       form={{ provider: 'smtp', fromAddress: 'a@b.com', secure: false, username: 'admin' }}
       onChange={onChange}
       isEdit={false}
+      t={t}
     />);
     // Username is optional EditInput — clearing it to empty string triggers required=false path
     const usernameInput = screen.getByDisplayValue('admin') as HTMLInputElement;
@@ -955,6 +989,7 @@ describe('RecipientsEditFields — deselect all users fires onChange with undefi
       onChange={onChange}
       roles={[]}
       users={[{ id: 'u1', email: 'alice@example.com' }] as unknown as import('../api').User[]}
+      t={t}
     />);
     const userSelect = screen.getByTestId('multiselect-All users (everyone)') as HTMLSelectElement;
     await userEvent.deselectOptions(userSelect, ['u1']);

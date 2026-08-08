@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X, Copy, Check } from 'lucide-react';
 import {
-  createExperiment, updateExperiment, getProjects, getModels,
+  createExperiment, updateExperiment, getRouters, getModels,
   type CreateExperimentBody, type ExperimentRotation, type ExperimentStickyKey,
-  type ExperimentVariant, type Model, type Project,
+  type ExperimentVariant, type Model, type Router,
 } from '../../api';
 import {
   EXPERIMENT_ROTATIONS, ROTATION_CATALOG, STICKY_KEYS, STICKY_KEY_CATALOG,
@@ -18,18 +19,19 @@ import { useExperiment } from './ExperimentLayout';
 /** Local row: the weight stays a string so the field can be emptied while typing. */
 interface VariantRow {
   id?: string;
-  projectId: string;
+  routerId: string;
   name: string;
   weight: string;
 }
 
 function toRow(v: ExperimentVariant): VariantRow {
-  return { ...(v.id ? { id: v.id } : {}), projectId: v.projectId, name: v.name ?? '', weight: v.weight !== undefined ? String(v.weight) : '' };
+  return { ...(v.id ? { id: v.id } : {}), routerId: v.routerId, name: v.name ?? '', weight: v.weight !== undefined ? String(v.weight) : '' };
 }
 
-const EMPTY_ROW: VariantRow = { projectId: '', name: '', weight: '' };
+const EMPTY_ROW: VariantRow = { routerId: '', name: '', weight: '' };
 
 export function ExperimentConfigTab() {
+  const { t } = useTranslation();
   const { experiment, setExperiment } = useExperiment();
   const navigate = useNavigate();
   const { can } = useAuth();
@@ -53,7 +55,7 @@ export function ExperimentConfigTab() {
     experiment?.judge ? String(Math.round(experiment.judge.sampleRate * 100)) : '100',
   );
 
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -64,9 +66,9 @@ export function ExperimentConfigTab() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    Promise.all([getProjects(), getModels()])
-      .then(([ps, ms]) => { setProjects(ps); setModels(ms); })
-      .catch(e => setErr(e instanceof Error ? e.message : 'Failed to load projects'));
+    Promise.all([getRouters(), getModels()])
+      .then(([ps, ms]) => { setRouters(ps); setModels(ms); })
+      .catch(e => setErr(e instanceof Error ? e.message : t('experiments.config.errors.loadRoutersFailed')));
   }, []);
 
   function setVariant(index: number, patch: Partial<VariantRow>) {
@@ -82,10 +84,10 @@ export function ExperimentConfigTab() {
       rotation,
       ...(rotation === 'sticky' ? { stickyKey } : {}),
       variants: variants
-        .filter(v => v.projectId)
+        .filter(v => v.routerId)
         .map(v => ({
           ...(v.id ? { id: v.id } : {}),
-          projectId: v.projectId,
+          routerId: v.routerId,
           ...(v.name.trim() ? { name: v.name.trim() } : {}),
           ...(rotation === 'weighted' && v.weight.trim() ? { weight: Number(v.weight) } : {}),
         })),
@@ -109,7 +111,7 @@ export function ExperimentConfigTab() {
         setSaved(true);
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to save the experiment');
+      setErr(e instanceof Error ? e.message : t('experiments.config.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -121,7 +123,7 @@ export function ExperimentConfigTab() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setErr('Copy failed: select and copy the token manually.');
+      setErr(t('experiments.config.errors.copyFailed'));
     }
   }
 
@@ -130,62 +132,62 @@ export function ExperimentConfigTab() {
       <div style={{ maxWidth: 620 }}>
         <div style={{ padding: 16, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, marginBottom: 24 }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-            Experiment created. Point your client at this token instead of a project token. It won't be shown again.
+            {t('experiments.config.created')}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="token-box" style={{ flex: 1, margin: 0, wordBreak: 'break-all', fontSize: '0.82rem' }}>{created.token}</div>
             <button className="btn btn-secondary" onClick={() => copyToken(created.token)} style={{ flexShrink: 0 }}>
-              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Copied!' : 'Copy'}
+              {copied ? <Check size={15} /> : <Copy size={15} />} {copied ? t('experiments.config.copied') : t('experiments.config.copy')}
             </button>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate(`/dashboard/experiments/${created.id}/config`)}>Done</button>
+        <button className="btn btn-primary" onClick={() => navigate(`/dashboard/experiments/${created.id}/config`)}>{t('experiments.config.done')}</button>
       </div>
     );
   }
 
   const shares = rotation === 'weighted'
-    ? variantShares(variants.map(v => ({ id: '', projectId: v.projectId, ...(v.weight.trim() ? { weight: Number(v.weight) } : {}) })))
+    ? variantShares(variants.map(v => ({ id: '', routerId: v.routerId, ...(v.weight.trim() ? { weight: Number(v.weight) } : {}) })))
     : [];
-  const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
+  const routerOptions = routers.map(p => ({ value: p.id, label: p.name }));
   const readOnly = !canManage;
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
       {saved && (
-        <div style={{ marginBottom: 16, fontSize: '0.85rem', color: 'var(--success, #059669)' }}>Saved.</div>
+        <div style={{ marginBottom: 16, fontSize: '0.85rem', color: 'var(--success, #059669)' }}>{t('experiments.config.saved')}</div>
       )}
 
       <div className="form-section">
         <div className="form-group">
-          <label className="form-label" htmlFor="exp-name">Name</label>
+          <label className="form-label" htmlFor="exp-name">{t('experiments.config.fields.name')}</label>
           <input id="exp-name" className="form-input" value={name} disabled={readOnly}
-            onChange={e => setName(e.target.value)} placeholder="Cheap vs premium routing" required />
+            onChange={e => setName(e.target.value)} placeholder={t('experiments.config.fields.namePlaceholder')} required />
         </div>
         <div className="form-group">
-          <label className="form-label" htmlFor="exp-description">Description <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+          <label className="form-label" htmlFor="exp-description">{t('experiments.config.fields.description')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('experiments.config.fields.optional')}</span></label>
           {/* A textarea: the list shows this in full, so it must be readable while typing it. */}
           <textarea id="exp-description" className="form-input" rows={2} value={description} disabled={readOnly}
             style={{ resize: 'vertical' }}
-            onChange={e => setDescription(e.target.value)} placeholder="What this test is trying to settle" />
+            onChange={e => setDescription(e.target.value)} placeholder={t('experiments.config.fields.descriptionPlaceholder')} />
         </div>
         <div className="form-group">
-          <label className="form-label" htmlFor="exp-min-samples">Minimum calls per variant</label>
+          <label className="form-label" htmlFor="exp-min-samples">{t('experiments.config.fields.minSamples')}</label>
           <input id="exp-min-samples" className="form-input" type="number" min={1} value={minSamples} disabled={readOnly}
             onChange={e => setMinSamples(e.target.value)} placeholder={String(DEFAULT_MIN_SAMPLES_PER_VARIANT)} />
           <p className="section-desc" style={{ margin: '8px 0 0' }}>
-            Below this, the Metrics tab marks the comparison as not yet conclusive.
+            {t('experiments.config.fields.minSamplesHint')}
           </p>
         </div>
       </div>
 
       <div className="form-section">
-        <div className="section-title">Traffic split</div>
+        <div className="section-title">{t('experiments.config.trafficSplit')}</div>
         <div className="form-group">
-          <label className="form-label">Rotation</label>
+          <label className="form-label">{t('experiments.config.fields.rotation')}</label>
           <SearchableSelect
-            ariaLabel="Rotation"
+            ariaLabel={t('experiments.config.fields.rotation')}
             value={rotation}
             disabled={readOnly}
             onChange={v => setRotation(v as ExperimentRotation)}
@@ -198,9 +200,9 @@ export function ExperimentConfigTab() {
 
         {rotation === 'sticky' && (
           <div className="form-group">
-            <label className="form-label">Sticky on</label>
+            <label className="form-label">{t('experiments.config.fields.stickyOn')}</label>
             <SearchableSelect
-              ariaLabel="Sticky key"
+              ariaLabel={t('experiments.config.fields.stickyKey')}
               value={stickyKey}
               disabled={readOnly}
               onChange={v => setStickyKey(v as ExperimentStickyKey)}
@@ -214,32 +216,32 @@ export function ExperimentConfigTab() {
       </div>
 
       <div className="form-section">
-        <div className="section-title">Variants</div>
+        <div className="section-title">{t('experiments.config.variants.title')}</div>
         <p className="section-desc">
-          Each variant is an existing project, taken whole: its models, routing and guardrails all apply. A test needs at least two.
+          {t('experiments.config.variants.desc')}
         </p>
         {variants.map((v, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
             <div style={{ flex: 2 }}>
               <SearchableSelect
-                ariaLabel={`Variant ${i + 1} project`}
-                placeholder="Select a project"
-                value={v.projectId}
+                ariaLabel={t('experiments.config.variants.routerAriaLabel', { index: i + 1 })}
+                placeholder={t('experiments.config.variants.routerPlaceholder')}
+                value={v.routerId}
                 disabled={readOnly}
-                onChange={val => setVariant(i, { projectId: val })}
-                options={projectOptions}
+                onChange={val => setVariant(i, { routerId: val })}
+                options={routerOptions}
               />
             </div>
             <input
               className="form-input" style={{ flex: 1 }} value={v.name} disabled={readOnly}
-              aria-label={`Variant ${i + 1} label`} placeholder="Label (optional)"
+              aria-label={t('experiments.config.variants.labelAriaLabel', { index: i + 1 })} placeholder={t('experiments.config.variants.labelPlaceholder')}
               onChange={e => setVariant(i, { name: e.target.value })}
             />
             {rotation === 'weighted' && (
               <div style={{ width: 120 }}>
                 <input
                   className="form-input" type="number" min={0} step="any" value={v.weight} disabled={readOnly}
-                  aria-label={`Variant ${i + 1} weight`} placeholder="Weight"
+                  aria-label={t('experiments.config.variants.weightAriaLabel', { index: i + 1 })} placeholder={t('experiments.config.variants.weightPlaceholder')}
                   onChange={e => setVariant(i, { weight: e.target.value })}
                 />
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4, textAlign: 'right' }}>
@@ -248,7 +250,7 @@ export function ExperimentConfigTab() {
               </div>
             )}
             {!readOnly && (
-              <button type="button" className="btn-icon danger" title={`Remove variant ${i + 1}`}
+              <button type="button" className="btn-icon danger" title={t('experiments.config.variants.removeTitle', { index: i + 1 })}
                 onClick={() => setVariants(rows => rows.filter((_, j) => j !== i))}>
                 <X size={15} />
               </button>
@@ -257,31 +259,30 @@ export function ExperimentConfigTab() {
         ))}
         {!readOnly && (
           <button type="button" className="btn btn-secondary" onClick={() => setVariants(rows => [...rows, { ...EMPTY_ROW }])}>
-            <Plus size={15} /> Add variant
+            <Plus size={15} /> {t('experiments.config.variants.add')}
           </button>
         )}
       </div>
 
       <div className="form-section">
-        <div className="section-title">Judge</div>
+        <div className="section-title">{t('experiments.config.judge.title')}</div>
         <p className="section-desc">
-          Optional: a model reads each sampled answer and scores it 0-10 against your criteria. Every judged call is an
-          extra model call, billed like any other.
+          {t('experiments.config.judge.desc')}
         </p>
         <div className="form-group">
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
             <input type="checkbox" checked={judgeEnabled} disabled={readOnly}
               onChange={e => setJudgeEnabled(e.target.checked)} />
-            Score answers with a judge model
+            {t('experiments.config.judge.enable')}
           </label>
         </div>
         {judgeEnabled && (
           <>
             <div className="form-group">
-              <label className="form-label">Judge model</label>
+              <label className="form-label">{t('experiments.config.judge.model')}</label>
               <SearchableSelect
-                ariaLabel="Judge model"
-                placeholder="Select a model"
+                ariaLabel={t('experiments.config.judge.model')}
+                placeholder={t('experiments.config.judge.modelPlaceholder')}
                 value={judgeModelId}
                 disabled={readOnly}
                 onChange={setJudgeModelId}
@@ -289,13 +290,13 @@ export function ExperimentConfigTab() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="exp-criteria">Criteria</label>
+              <label className="form-label" htmlFor="exp-criteria">{t('experiments.config.judge.criteria')}</label>
               <textarea id="exp-criteria" className="form-input" rows={4} value={judgeCriteria} disabled={readOnly}
                 onChange={e => setJudgeCriteria(e.target.value)}
-                placeholder={'One per line, e.g.\nAnswers the question asked\nStays factual\nKeeps to the requested format'} />
+                placeholder={t('experiments.config.judge.criteriaPlaceholder')} />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="exp-sample-rate">Share of calls judged (%)</label>
+              <label className="form-label" htmlFor="exp-sample-rate">{t('experiments.config.judge.sampleRate')}</label>
               <input id="exp-sample-rate" className="form-input" type="number" min={0} max={100} value={judgeSampleRate}
                 disabled={readOnly} onChange={e => setJudgeSampleRate(e.target.value)} />
             </div>
@@ -306,9 +307,9 @@ export function ExperimentConfigTab() {
       {canManage && (
         <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>
           <button className="btn btn-primary" type="submit" disabled={saving || !name.trim()}>
-            {saving ? 'Saving...' : isNew ? 'Create Experiment' : 'Save Changes'}
+            {saving ? t('experiments.config.saving') : isNew ? t('experiments.config.create') : t('experiments.config.save')}
           </button>
-          <button className="btn btn-secondary" type="button" onClick={() => navigate('/dashboard/experiments')}>Cancel</button>
+          <button className="btn btn-secondary" type="button" onClick={() => navigate('/dashboard/experiments')}>{t('experiments.config.cancel')}</button>
         </div>
       )}
     </form>

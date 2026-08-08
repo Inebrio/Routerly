@@ -68,5 +68,5 @@ After setup is complete, additional admin users can be created from **Users** in
 If you lose access to the admin account, stop the service and delete `~/.routerly/config/users.json`. On the next start, the setup page will be available again.
 
 :::warning
-Deleting `users.json` removes all dashboard users. API keys and project tokens are not affected.
+Deleting `users.json` removes all dashboard users. API keys and router tokens are not affected.
 :::

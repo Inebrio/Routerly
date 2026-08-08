@@ -21,15 +21,15 @@ this file for you.
 With the [CLI](../../cli/commands.md#routerly-clients) installed and logged in:
 
 ```bash
-routerly clients configure codex --project <your-project>
+routerly clients configure codex --router <your-router>
 ```
 
-This mints a project token (or reuses one you pass with `--token`), backs
+This mints a router token (or reuses one you pass with `--token`), backs
 up your existing `~/.codex/config.toml`, and adds the block below. Any
 other provider or setting already in the file is left untouched.
 
-Minting a new token requires `project:write` permission on the target
-project (use `--token <existing-token>` to skip this).
+Minting a new token requires `router:write` permission on the target
+router (use `--token <existing-token>` to skip this).
 
 ## Manual configuration
 
@@ -42,12 +42,12 @@ model_provider = "routerly"
 name = "Routerly"
 base_url = "http://localhost:3000/v1"
 wire_api = "responses"
-experimental_bearer_token = "sk-rt-YOUR_PROJECT_TOKEN"
+experimental_bearer_token = "sk-rt-YOUR_ROUTER_TOKEN"
 ```
 
 `base_url` includes the `/v1` suffix. Replace `http://localhost:3000/v1`
-with your Routerly instance's URL and `sk-rt-YOUR_PROJECT_TOKEN` with a
-project token (create one on the [Projects](../../dashboard/projects.md)
+with your Routerly instance's URL and `sk-rt-YOUR_ROUTER_TOKEN` with a
+router token (create one on the [Routers](../../dashboard/routers.md)
 page, or let `clients configure` mint one for you).
 
 ## Undo

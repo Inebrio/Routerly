@@ -34,13 +34,16 @@ export interface ProviderConnection {
  * Shared so the dashboard can show the exact name the server would generate, instead of a
  * vague hint, and so the CLI and the API agree on what "already taken" means.
  */
+function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 export function suggestConnectionLabel(
   providerId: string,
   providerName: string | undefined,
   taken: readonly string[],
 ): string {
-  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  const base = slug(providerName ?? '') || slug(providerId) || 'connection';
+  const base = slugify(providerName ?? '') || slugify(providerId) || 'connection';
   const used = new Set(taken.map(l => l.trim().toLowerCase()));
   if (!used.has(base)) return base;
   // Bounded by the number of existing names: one of the first `taken.length + 1` is free.
@@ -54,6 +57,22 @@ export function suggestConnectionLabel(
 export function isConnectionLabelTaken(label: string, taken: readonly string[]): boolean {
   const wanted = label.trim().toLowerCase();
   return taken.some(l => l.trim().toLowerCase() === wanted);
+}
+
+/**
+ * Slug a passthrough router's `name` into its permanent `/passthrough/<slug>/...` path
+ * segment, computed once at creation and never touched again (see `RouterConfig.slug`).
+ * Same base+numeric-suffix disambiguation as `suggestConnectionLabel`, scoped to the slugs
+ * of existing passthrough routers only.
+ */
+export function suggestRouterSlug(name: string, taken: readonly string[]): string {
+  const base = slugify(name) || 'router';
+  const used = new Set(taken.map(s => s.trim().toLowerCase()));
+  if (!used.has(base)) return base;
+  for (let n = 2; ; n++) {
+    const candidate = `${base}-${n}`;
+    if (!used.has(candidate)) return candidate;
+  }
 }
 
 export interface ModelInstance {
@@ -228,18 +247,53 @@ export interface ModelConfig {
 /** Effective model computed from ModelInstance + ProviderConnection. Carries connectionId so resilience keys can target the real connection. */
 export type EffectiveModel = ModelConfig & { connectionId: string };
 
-export interface ProjectModelRef {
+/**
+ * The three-way distinction an entity's `kind` picks between. A plain
+ * `'router'` routes to models (today's behaviour, and the implicit default
+ * when `kind` is absent — every router stored before this field existed).
+ * An `'orchestrator'` routes to other routers instead of models (RTR-02).
+ * `'passthrough'` carries no `candidates`, but always carries exactly one
+ * `models[]` entry with `modelId === PASSTHROUGH_MODEL_ID` (the pinned
+ * pass-through entry), plus zero or more real target models alongside it.
+ */
+export type RouterKind = 'router' | 'orchestrator' | 'passthrough';
+
+/**
+ * Reserved `RouterModelRef.modelId` value representing "forward the call
+ * unmodified" on a passthrough-kind router. Not a real model id — real model
+ * ids are always `provider/modelId`-shaped, so this bare double-underscore
+ * token can never collide with one. Stored inline in `RouterConfig.models[]`
+ * like any other `RouterModelRef`; `prompt` is never set/read for it.
+ * `toRouterResponse` passes `models` through unchanged, so no read-path
+ * handling is needed here — see `packages/service/src/modules/api/api.ts`'s
+ * `toRouterResponse`.
+ */
+export const PASSTHROUGH_MODEL_ID = '__passthrough__';
+
+/**
+ * One candidate Router an Orchestrator may forward to. Points at a Router id
+ * instead of a model id — an Orchestrator's candidate pool is other Routers,
+ * not models. Priority comes from position in `OrchestratorConfig.candidates[]`
+ * (index 0 = highest priority) — no numeric field on this type.
+ */
+export interface OrchestratorCandidateRef {
+  routerId: string;
+  /** Per-candidate usage limit overrides, scored the same way as a model's `limits`. */
+  limits?: Limit[];
+}
+
+export interface RouterModelRef {
   modelId: string;
   prompt?: string;
   /**
-   * Whether this model ref is active for the project. Persisted, but not yet
+   * Whether this model ref is active for the router. Persisted, but not yet
    * consumed by the routing engine (a later plan will wire routing to honor it);
    * toggled today via the MCP `toggle_model` write tool.
    */
   enabled?: boolean;
   /** How these limits interact with the global model limits */
   limitsMode?: LimitsMode;
-  /** Per-project usage limit overrides (take priority over global) */
+  /** Per-router usage limit overrides (take priority over global) */
   limits?: Limit[];
   /** @deprecated use limits instead */
   thresholds?: BudgetThresholds;
@@ -260,7 +314,7 @@ export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheap
 export type FallbackStrategyType = 'next-best' | 'retry-after-cooldown' | 'abort';
 
 /**
- * The three independent kinds of reusable project preset. A project picks a
+ * The three independent kinds of reusable router preset. A router picks a
  * profile or goes custom for each kind separately: routing, optimizers and
  * security are unrelated concerns and share nothing but the envelope.
  */
@@ -291,7 +345,7 @@ export interface OptimizerProfile extends ProfileBase {
 
 /**
  * Guardrails and PII travel together: they are the two halves of what the
- * dashboard already presents as a project's Security tab, and splitting them
+ * dashboard already presents as a router's Security tab, and splitting them
  * into two profile kinds would make the user pick twice for one decision.
  */
 export interface SecurityProfile extends ProfileBase {
@@ -309,7 +363,7 @@ export type ProfileOfKind<K extends ProfileKind> = Extract<Profile, { kind: K }>
 export interface IntentDefinition {
   /** Representative utterances used to compute the intent embedding (centroid). */
   examples: string[];
-  /** Model IDs from the project's candidate pool to route to when this intent is matched. */
+  /** Model IDs from the router's candidate pool to route to when this intent is matched. */
   candidate_models: string[];
 }
 
@@ -374,7 +428,7 @@ export interface RegexGuardConfig {
 }
 
 export interface SemanticGuardConfig {
-  /** Model ID from project's configured models — must be an embedding model. */
+  /** Model ID from router's configured models — must be an embedding model. */
   embeddingModelId: string;
   /** Ordered fallback embedding model IDs, tried in order if the primary fails (not-found or call error). */
   fallbackModelIds?: string[];
@@ -385,7 +439,7 @@ export interface SemanticGuardConfig {
 }
 
 export interface TopicGuardConfig {
-  /** Judge model ID from project's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
+  /** Judge model ID from router's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
   modelId?: string;
   /** Ordered fallback judge model IDs, tried in order if the primary fails. */
   fallbackModelIds?: string[];
@@ -396,7 +450,7 @@ export interface TopicGuardConfig {
 }
 
 export interface ModerationGuardConfig {
-  /** Judge model ID from project's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
+  /** Judge model ID from router's configured models (any LLM provider). Optional only when enforcement is 'inject' (no judge call). */
   modelId?: string;
   /** Ordered fallback judge model IDs, tried in order if the primary fails. */
   fallbackModelIds?: string[];
@@ -439,7 +493,7 @@ export interface GuardrailRule {
   inject?: boolean;
 }
 
-/** Content guardrail configuration for a project (#77). Presence of this config activates guardrails — no separate enabled flag. Each rule carries its own block/log action. */
+/** Content guardrail configuration for a router (#77). Presence of this config activates guardrails — no separate enabled flag. Each rule carries its own block/log action. */
 export interface GuardrailConfig {
   /** When true, run built-in prompt-injection detection on every request (top-level, not a rule). A hit blocks and is logged. */
   detectInjection?: boolean;
@@ -471,7 +525,7 @@ export interface PiiPolicy {
 }
 
 /**
- * PII detection and scrubbing configuration for a project (#76). Just a list of
+ * PII detection and scrubbing configuration for a router (#76). Just a list of
  * policies; the presence of at least one enabled policy activates
  * scrubbing. Each policy controls its own entity set, patterns, and direction.
  */
@@ -480,16 +534,16 @@ export interface PiiConfig {
   policies: PiiPolicy[];
 }
 
-export type ProjectRole = 'viewer' | 'editor' | 'admin';
+export type RouterRole = 'viewer' | 'editor' | 'admin';
 
-export interface ProjectMember {
+export interface RouterMember {
   userId: string;
-  role: ProjectRole;
+  role: RouterRole;
 }
 
 export interface TokenModelRef {
   modelId: string;
-  /** How these limits interact with the project/global limits */
+  /** How these limits interact with the router/global limits */
   limitsMode?: LimitsMode;
   /** Per-token usage limit overrides for this model */
   limits?: Limit[];
@@ -497,9 +551,9 @@ export interface TokenModelRef {
   thresholds?: BudgetThresholds;
 }
 
-export interface ProjectToken {
+export interface RouterToken {
   id: string;
-  /** Project token (stored in plaintext; file permissions protect it) */
+  /** Router token (stored in plaintext; file permissions protect it) */
   token: string;
   /** First 10 characters of the token, for display purposes */
   tokenSnippet?: string;
@@ -527,18 +581,22 @@ export interface PlaygroundPreset {
 }
 
 
-/** Default TTFT timeout per model attempt (ms) for a new project. Low on purpose:
+/** Default TTFT timeout per model attempt (ms) for a new router. Low on purpose:
  *  it is time-to-first-byte, not total duration, so a provider that has not started
  *  answering within two seconds is better replaced by the next candidate. */
-export const DEFAULT_PROJECT_TIMEOUT_MS = 2000;
+export const DEFAULT_ROUTER_TIMEOUT_MS = 2000;
 
-export interface ProjectConfig {
+export interface RouterConfig {
   id: string;
   name: string;
   slug?: string;
   description?: string;
-  tokens: ProjectToken[];
-  members: ProjectMember[];
+  /** Absent means 'router' — every router stored before this field existed. */
+  kind?: RouterKind;
+  /** Meaningful only when `kind === 'orchestrator'`; absent/ignored for 'router'. */
+  candidates?: OrchestratorCandidateRef[];
+  tokens: RouterToken[];
+  members: RouterMember[];
   /** ID of the ModelConfig to use for routing decisions (deprecated, use policies instead) */
   routingModelId?: string;
   /** Whether auto-routing via prompt is enabled. If false, typical load-balancing/fallback logic may apply instead. (deprecated) */
@@ -548,44 +606,44 @@ export interface ProjectConfig {
 
   /** Ordered list of routing policies applied to requests */
   policies?: RoutingPolicy[];
-  models: ProjectModelRef[];
+  models: RouterModelRef[];
   /** TTFT timeout per model attempt (ms). If the first response byte hasn't arrived
    *  within this time, the attempt is aborted and the next candidate is tried.
    *  Does not limit total response duration. `0` disables the timeout: the attempt
-   *  waits as long as the provider takes. Default: DEFAULT_PROJECT_TIMEOUT_MS. */
+   *  waits as long as the provider takes. Default: DEFAULT_ROUTER_TIMEOUT_MS. */
   timeoutMs?: number;
   /** Content guardrails: input blocklist + prompt-injection detection (#77) */
   guardrails?: GuardrailConfig;
   /** PII detection and scrubbing before requests reach the model (#76) */
   pii?: PiiConfig;
-  /** Per-project notification override: channel IDs to dispatch this project's events to (#91) */
+  /** Per-router notification override: channel IDs to dispatch this router's events to (#91) */
   notifications?: { channels: string[] };
   /** Named saved prompts for the playground (#99) */
   playgroundPresets?: PlaygroundPreset[];
   /**
-   * Active routing profile id. Absent means custom: the project's own
+   * Active routing profile id. Absent means custom: the router's own
    * `policies` are used. Same contract for the two ids below.
    */
   routingProfileId?: string;
-  /** Active optimizer profile id. Absent means custom: the project's own `optimizers` are used. */
+  /** Active optimizer profile id. Absent means custom: the router's own `optimizers` are used. */
   optimizerProfileId?: string;
-  /** Active security profile id. Absent means custom: the project's own `guardrails`/`pii` are used. */
+  /** Active security profile id. Absent means custom: the router's own `guardrails`/`pii` are used. */
   securityProfileId?: string;
   /** @deprecated renamed to routingProfileId; migrated at startup. */
   profileId?: string;
   /** Prompt/context optimizer pipeline. Presence activates the subsystem; step order = execution order */
   optimizers?: OptimizerConfig;
   /**
-   * Capture prompts and model answers in this project's traces. Off by default:
+   * Capture prompts and model answers in this router's traces. Off by default:
    * a trace carries metadata only (models, scores, tokens, cost, latency).
    */
   traceContent?: boolean;
 }
 
 /**
- * A named MCP token owned by a user. Unlike ProjectToken (plaintext on disk,
+ * A named MCP token owned by a user. Unlike RouterToken (plaintext on disk,
  * because the proxy must compare it against an incoming Authorization header of
- * unknown project), an MCP token identifies a single user, so it is stored as a
+ * unknown router), an MCP token identifies a single user, so it is stored as a
  * SHA-256 hash and the raw value is shown once, at creation.
  */
 export interface McpToken {
@@ -609,7 +667,7 @@ export interface UserConfig {
   /** bcrypt hash */
   passwordHash: string;
   roleId: string;
-  projectIds: string[];
+  routerIds: string[];
   /** MCP tokens minted by this user. Each grants exactly this user's permissions. */
   mcpTokens?: McpToken[];
   /** SHA-256 hash of the CLI refresh token. Absent means no refresh token issued. */
@@ -619,6 +677,8 @@ export interface UserConfig {
   totpEnabled?: boolean;
   /** SHA-256 hashed one-time backup codes */
   backupCodes?: string[];
+  /** Dashboard display-language preference. Absent means "never chosen". Dashboard-owned list. */
+  language?: string;
 }
 
 export interface RoleConfig {
@@ -634,8 +694,8 @@ export interface ModuleRecord {
 }
 
 export type Permission =
-  | 'project:read'
-  | 'project:write'
+  | 'router:read'
+  | 'router:write'
   | 'model:read'
   | 'model:write'
   | 'user:read'
@@ -840,10 +900,22 @@ export interface Settings {
   telemetry?: TelemetryConfig;
   /** When true, all users must enroll in and pass 2FA before accessing the API */
   requireMfa?: boolean;
+  /** Instance-wide default dashboard language for users who haven't picked their own yet. Dashboard-owned code list; absent means English. */
+  defaultLanguage?: string;
   /** Configured integrations (metrics exporters, webhooks, etc.) */
   integrations?: Integration[];
   /** Provider catalog repos. Fetched at runtime via HTTP. First repo takes precedence on conflict. */
   providerRepos?: ProviderRepo[];
+  /** Usage/billing history retention policy. Absent = no policy configured (unbounded). */
+  usageRetention?: UsageRetentionConfig;
+}
+
+/** Retention/rotation policy for the usage history (RTR-06). Both knobs optional and independent. */
+export interface UsageRetentionConfig {
+  /** Drop records older than this many days. Omitted = no age-based limit. */
+  maxAgeDays?: number;
+  /** Keep the file under this size in MB, dropping the oldest records first. Omitted = no size limit. */
+  maxSizeMb?: number;
 }
 
 // ─── Update info ─────────────────────────────────────────────────────────────
@@ -901,8 +973,8 @@ interface ChannelBase {
   events?: string[];
   /** Per-channel minimum interval between dispatches in seconds (0 or absent = no cooldown) */
   cooldownSeconds?: number;
-  /** Project IDs this channel applies to; empty/absent = all projects */
-  projects?: string[];
+  /** Router IDs this channel applies to; empty/absent = all routers */
+  routerIds?: string[];
   /** Recipient targeting (U5). Undefined or all-empty = everyone. */
   targets?: ChannelTargets;
 }
@@ -1036,8 +1108,8 @@ export const NOTIFICATION_EVENTS = [
   'auth.token_invalid',
   'config.model_added',
   'config.model_deleted',
-  'config.project_created',
-  'config.project_deleted',
+  'config.router_created',
+  'config.router_deleted',
   'budget.threshold_reached',
   'budget.exceeded',
   'budget.reset',
@@ -1143,7 +1215,7 @@ export function isCompletionCall(callType?: CallType): boolean {
 export interface UsageRecord {
   id: string;
   timestamp: string; // ISO 8601
-  projectId: string;
+  routerId: string;
   modelId: string;
   inputTokens: number;
   outputTokens: number;
@@ -1151,8 +1223,8 @@ export interface UsageRecord {
   cachedInputTokens?: number;
   /** Input tokens written to prompt cache (Anthropic only; charged at cacheWritePerMillion rate) */
   cacheCreationInputTokens?: number;
-  /** Cost in USD */
-  cost: number;
+  /** Cost in USD. Null when no ModelConfig was resolved to price against (e.g. Passthrough traffic). */
+  cost: number | null;
   /** Latency in ms (from forwarding start to last byte received) */
   latencyMs: number;
   /** Time to first token in ms (streaming only) */
@@ -1180,8 +1252,8 @@ export interface UsageRecord {
   /** End-user identifier from the OpenAI `user` field — for per-user cost attribution (#96) */
   endUserId?: string;
   /**
-   * Project token the call authenticated with. A project usually hands out one
-   * token per client, so this narrows a project's traffic down to the caller
+   * Router token the call authenticated with. A router usually hands out one
+   * token per client, so this narrows a router's traffic down to the caller
    * without asking the client for anything: it is read from the bearer token
    * that was presented, never from the payload.
    */
@@ -1205,6 +1277,12 @@ export interface UsageRecord {
   experimentId?: string;
   /** Variant of that experiment the rotation picked. Always set together with `experimentId`. */
   experimentVariantId?: string;
+  /**
+   * Set when this call was forwarded through an Orchestrator (RTR-02).
+   * `routerId`/`modelId` on this same record always identify the Router
+   * (and model) that actually executed the call — never the Orchestrator.
+   */
+  orchestratorId?: string;
 }
 
 /** Per-model aggregate row in the GET /api/usage response (`byModel`). */
@@ -1222,3 +1300,12 @@ export interface UsageByModelEntry {
   /** 95th-percentile latencyMs (0 when none). */
   p95LatencyMs: number;
 }
+
+/** Result of GET /api/system/permissions — the config-directory permission check (RTR-04). */
+export type PermissionCheckStatus = {
+  /** True iff any `unsafe` entry has severity 'secret'. Blocks every /api/* route except the exempt ones. */
+  blocked: boolean;
+  /** True when ROUTERLY_SKIP_PERMISSION_CHECK is set; forces blocked: false and unsafe: []. */
+  bypassActive: boolean;
+  unsafe: Array<{ file: string; path: string; mode: string; severity: 'secret' | 'general' }>;
+};

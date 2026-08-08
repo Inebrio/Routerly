@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback, type CSSProperties } from 're
 import { createPortal } from 'react-dom';
 import { Bell, AlertTriangle, AlertCircle, Info, CheckCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { notificationTitle } from '@routerly/shared';
 import { getNotificationInbox, markNotificationsRead, type InboxItem } from '../api';
 
@@ -13,15 +15,15 @@ export function severityIcon(sev: InboxItem['severity']) {
   return <Info size={15} style={{ color: 'var(--text-muted)' }} />;
 }
 
-export function timeAgo(iso: string): string {
+export function timeAgo(iso: string, t: TFunction): string {
   const diff = Date.now() - Date.parse(iso);
   const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s ago`;
+  if (s < 60) return t('common.time.secondsAgo', { count: s });
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return t('common.time.minutesAgo', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  if (h < 24) return t('common.time.hoursAgo', { count: h });
+  return t('common.time.daysAgo', { count: Math.floor(h / 24) });
 }
 
 /** Compact popup showing latest 5 notifications, anchored to the profile row. */
@@ -40,6 +42,7 @@ export function NotificationDropdown({
   unread: number;
   onMarkAll: () => void;
 }) {
+  const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({});
 
@@ -90,7 +93,7 @@ export function NotificationDropdown({
         padding: '10px 12px', borderBottom: '1px solid var(--border)',
         fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)',
       }}>
-        <span>Notifications</span>
+        <span>{t('common.notifications.title')}</span>
         {unread > 0 && (
           <button
             onClick={onMarkAll}
@@ -100,7 +103,7 @@ export function NotificationDropdown({
               color: 'var(--accent)', fontSize: '0.72rem',
             }}
           >
-            <CheckCheck size={13} /> Mark all read
+            <CheckCheck size={13} /> {t('common.notifications.markAllRead')}
           </button>
         )}
       </div>
@@ -108,7 +111,7 @@ export function NotificationDropdown({
       {/* Items */}
       {preview.length === 0 ? (
         <div style={{ padding: '18px 12px', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          No notifications
+          {t('common.notifications.empty')}
         </div>
       ) : (
         preview.map(n => (
@@ -129,7 +132,7 @@ export function NotificationDropdown({
                 {notificationTitle(n.event)}
               </span>
               <span style={{ display: 'block', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                {timeAgo(n.timestamp)}
+                {timeAgo(n.timestamp, t)}
               </span>
             </span>
           </Link>
@@ -143,7 +146,7 @@ export function NotificationDropdown({
           onClick={onClose}
           style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none' }}
         >
-          View all notifications
+          {t('common.notifications.viewAll')}
         </Link>
       </div>
     </div>,
@@ -153,6 +156,7 @@ export function NotificationDropdown({
 
 /** Profile-row inline badge + dropdown. Manages its own polling. */
 export function ProfileNotificationBadge({ anchorRef }: { anchorRef: React.RefObject<HTMLElement | null> }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<InboxItem[]>([]);
   const [unread, setUnread] = useState(0);
@@ -202,7 +206,7 @@ export function ProfileNotificationBadge({ anchorRef }: { anchorRef: React.RefOb
     <>
       <button
         onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(o => !o); }}
-        title="Notifications"
+        title={t('common.notifications.title')}
         style={{
           position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',

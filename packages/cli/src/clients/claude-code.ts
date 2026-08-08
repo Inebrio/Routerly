@@ -12,8 +12,8 @@
  * - Auth: `ANTHROPIC_AUTH_TOKEN` (sends `Authorization: Bearer <token>`), not
  *   `ANTHROPIC_API_KEY` (sends `X-Api-Key`). Routerly's inbound auth
  *   (`packages/service/src/modules/api-reverse-proxy/anthropic.ts`,
- *   `extractProjectToken`) checks `Authorization: Bearer` first, and
- *   Routerly project tokens are bearer tokens, so `ANTHROPIC_AUTH_TOKEN` is the
+ *   `extractRouterToken`) checks `Authorization: Bearer` first, and
+ *   Routerly router tokens are bearer tokens, so `ANTHROPIC_AUTH_TOKEN` is the
  *   correct key, matching `docs/guides/claude-subscription.md`.
  */
 import { readFile, mkdir, access } from 'node:fs/promises';

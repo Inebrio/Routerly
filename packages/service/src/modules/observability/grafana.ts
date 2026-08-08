@@ -2,7 +2,7 @@ import type { GrafanaIntegration } from '@routerly/shared';
 import type { getMetricsSnapshot } from './metrics-snapshot.js';
 import {
   percentile,
-  projectBudgetRatio,
+  routerBudgetRatio,
   renderMetric,
   type Metric,
   type Sample,
@@ -11,7 +11,7 @@ import {
 type Snapshot = Awaited<ReturnType<typeof getMetricsSnapshot>>;
 
 export async function pushGrafana(integration: GrafanaIntegration, snapshot: Snapshot): Promise<void> {
-  const { agg, projects, models } = snapshot;
+  const { agg, routers, models } = snapshot;
 
   const p50Samples: Sample[] = [];
   const p95Samples: Sample[] = [];
@@ -22,9 +22,9 @@ export async function pushGrafana(integration: GrafanaIntegration, snapshot: Sna
   }
 
   const budgetSamples: Sample[] = [];
-  for (const project of projects) {
-    const ratio = await projectBudgetRatio(project, models);
-    budgetSamples.push({ labels: { project: project.name }, value: +ratio.toFixed(6) });
+  for (const router of routers) {
+    const ratio = await routerBudgetRatio(router, models);
+    budgetSamples.push({ labels: { router: router.name }, value: +ratio.toFixed(6) });
   }
 
   const metrics: Metric[] = [
@@ -33,7 +33,7 @@ export async function pushGrafana(integration: GrafanaIntegration, snapshot: Sna
     { name: 'routerly_cost_usd_total', help: 'Total cost in USD', type: 'counter', samples: [...agg.cost.values()].map((e) => ({ labels: e.labels, value: +e.value.toFixed(6) })) },
     { name: 'routerly_request_duration_p50_ms', help: 'Request duration p50 in ms (last 100 records)', type: 'gauge', samples: p50Samples },
     { name: 'routerly_request_duration_p95_ms', help: 'Request duration p95 in ms (last 100 records)', type: 'gauge', samples: p95Samples },
-    { name: 'routerly_budget_used_ratio', help: 'Budget used ratio per project (0-1)', type: 'gauge', samples: budgetSamples },
+    { name: 'routerly_budget_used_ratio', help: 'Budget used ratio per router (0-1)', type: 'gauge', samples: budgetSamples },
   ];
 
   const body = metrics.map(renderMetric).join('\n\n').concat('\n');

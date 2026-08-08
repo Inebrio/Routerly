@@ -1,4 +1,4 @@
-import type { Profile, ProjectConfig } from '@routerly/shared';
+import type { Profile, RouterConfig } from '@routerly/shared';
 import { readConfig, writeConfig } from '../../config/loader.js';
 
 /**
@@ -6,7 +6,7 @@ import { readConfig, writeConfig } from '../../config/loader.js';
  *
  * Two rewrites, both shape-detecting so they converge from any older version
  * and are a no-op once done:
- *  - projects: `profileId` -> `routingProfileId`, since a project now binds one
+ *  - routers: `profileId` -> `routingProfileId`, since a router now binds one
  *    profile per kind and an unqualified name would be ambiguous.
  *  - profiles: overlays written before profiles had kinds were all routing
  *    overlays, so they get `kind: 'routing'`.
@@ -16,23 +16,23 @@ import { readConfig, writeConfig } from '../../config/loader.js';
  * retired preset id is left alone and stays resolvable as a legacy built-in.
  *
  * The two security presets are the exception: they were deleted outright, not
- * retired, so a project still pointing at one has the dangling id stripped. The
- * project then runs with no guardrails and no PII policy, which is what "no
+ * retired, so a router still pointing at one has the dangling id stripped. The
+ * router then runs with no guardrails and no PII policy, which is what "no
  * security profile" has always meant everywhere else.
  */
 
 const RENAMED_PRESETS: Record<string, string> = { balanced: 'auto' };
 
-/** Security presets that no longer exist. A project pointing at one is cleared. */
+/** Security presets that no longer exist. A router pointing at one is cleared. */
 const DELETED_SECURITY_PRESETS = new Set(['security-standard', 'security-strict']);
 
-/** Returns how many records were rewritten, projects and overlays together. */
+/** Returns how many records were rewritten, routers and overlays together. */
 export async function migrateProfiles(): Promise<number> {
   let changed = 0;
 
-  const projects = await readConfig('projects');
-  const migratedProjects = projects.map((project: ProjectConfig) => {
-    let next = project;
+  const routers = await readConfig('routers');
+  const migratedRouters = routers.map((router: RouterConfig) => {
+    let next = router;
 
     if (next.securityProfileId !== undefined && DELETED_SECURITY_PRESETS.has(next.securityProfileId)) {
       changed++;
@@ -49,7 +49,7 @@ export async function migrateProfiles(): Promise<number> {
     // write, which is by definition the intended one.
     return { ...rest, routingProfileId: rest.routingProfileId ?? target };
   });
-  if (changed > 0) await writeConfig('projects', migratedProjects);
+  if (changed > 0) await writeConfig('routers', migratedRouters);
 
   const profilesBefore = changed;
   // Read as the pre-kind shape: on disk an overlay written by an older version

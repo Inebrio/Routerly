@@ -14,7 +14,7 @@ const user: UserConfig = {
   email: 'dev@routerly.ai',
   passwordHash: '$2b$12$hash',
   roleId: 'admin',
-  projectIds: [],
+  routerIds: [],
   mcpTokens: [mcpToken],
 };
 

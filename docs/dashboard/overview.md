@@ -5,7 +5,7 @@ sidebar_position: 2
 
 # Overview
 
-The Overview page is the dashboard home screen. It shows a snapshot of activity across all projects for the selected time period.
+The Overview page is the dashboard home screen. It shows a snapshot of activity across all routers for the selected time period.
 
 ![Overview page showing summary cards, cost chart, and per-model call breakdown](../assets/screenshot-overview.png)
 
@@ -35,7 +35,7 @@ The top row shows aggregate numbers for the selected period:
 | **Success Rate** | Percentage of requests that returned a successful response | [Usage](usage.md) |
 | **Errors** | Number of failed requests (provider errors, budget exceeded, and so on) | [Usage](usage.md) |
 | **Models** | Number of registered models | [Models](models.md) |
-| **Projects** | Number of projects | [Projects](projects.md) |
+| **Routers** | Number of routers | [Routers](routers.md) |
 | **Time saved** | The same comparison in wall time over the whole period | — |
 | **Tokens saved** | What the [optimizers](../concepts/optimizers.md) really removed, plus the tokenizer estimate as a second line | — |
 
@@ -65,7 +65,7 @@ A single card compares the traffic that actually happened with the same traffic 
 
 A baseline is a single-model policy the operator could really have run instead of routing, so the comparison only covers the paid models **in play** in the selected period:
 
-- every enabled target model of the projects that produced traffic in the period,
+- every enabled target model of the routers that produced traffic in the period,
 - plus every model that actually served a client call in it.
 
 Free models are left out because they make the cost comparison meaningless, and embedding models are left out because they cannot answer a completion call. A model that only served the gateway's own routing or guardrail calls is not a baseline either.
@@ -125,7 +125,7 @@ Rows are sorted by call count descending.
 
 ## Navigating to Details
 
-- Click any summary card to open the section that explains it: [Usage](usage.md), [Models](models.md) or [Projects](projects.md).
+- Click any summary card to open the section that explains it: [Usage](usage.md), [Models](models.md) or [Routers](routers.md).
 - The paid-model count in **What Routing Saved** links to [Models](models.md), where prices and targets are configured.
-- Use the **Usage** item in the sidebar for the full analytics page with filtering and drill-down by project, model, or date range.
-- Click a project name in the sidebar to go directly to that project's configuration.
+- Use the **Usage** item in the sidebar for the full analytics page with filtering and drill-down by router, model, or date range.
+- Click a router name in the sidebar to go directly to that router's configuration.

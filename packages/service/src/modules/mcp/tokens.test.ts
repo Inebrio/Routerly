@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { ProjectConfig, UserConfig } from '@routerly/shared'
+import type { RouterConfig, UserConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -9,7 +9,7 @@ vi.mock('../config/loader.js', () => ({
 import { readConfig, writeConfig } from '../config/loader.js'
 import {
   MCP_TOKEN_PREFIX,
-  accessibleProjects,
+  accessibleRouters,
   hashMcpToken,
   mintMcpToken,
   resolveUserByMcpToken,
@@ -29,7 +29,7 @@ function user(overrides: Partial<UserConfig> = {}): UserConfig {
     email: 'u@example.com',
     passwordHash: 'x',
     roleId: 'viewer',
-    projectIds: [],
+    routerIds: [],
     mcpTokens: [
       {
         id: 'tok-1',
@@ -43,15 +43,15 @@ function user(overrides: Partial<UserConfig> = {}): UserConfig {
   } as UserConfig
 }
 
-const PROJECTS = [
+const ROUTERS = [
   { id: 'proj-1', name: 'Alpha', models: [] },
   { id: 'proj-2', name: 'Beta', models: [], members: [{ userId: 'u-member', role: 'member' }] },
-] as unknown as ProjectConfig[]
+] as unknown as RouterConfig[]
 
-function mockConfig(users: UserConfig[], projects: ProjectConfig[] = PROJECTS) {
+function mockConfig(users: UserConfig[], routers: RouterConfig[] = ROUTERS) {
   mockReadConfig.mockImplementation(async (key: string) => {
     if (key === 'users') return users as never
-    if (key === 'projects') return projects as never
+    if (key === 'routers') return routers as never
     return [] as never
   })
 }
@@ -104,7 +104,7 @@ describe('resolveUserByMcpToken', () => {
   it('never reads the users config for a non-MCP token', async () => {
     mockConfig([user()])
 
-    expect(await resolveUserByMcpToken('sk-rt-project-token')).toBeNull()
+    expect(await resolveUserByMcpToken('sk-rt-router-token')).toBeNull()
     expect(mockReadConfig).not.toHaveBeenCalled()
   })
 })
@@ -131,7 +131,7 @@ describe('touchMcpToken', () => {
 describe('resolveUserPermissions', () => {
   it('resolves a built-in role', async () => {
     mockConfig([user()])
-    expect(await resolveUserPermissions(user())).toContain('project:read')
+    expect(await resolveUserPermissions(user())).toContain('router:read')
   })
 
   it('resolves a custom role from the roles config', async () => {
@@ -148,43 +148,43 @@ describe('resolveUserPermissions', () => {
   })
 })
 
-describe('accessibleProjects', () => {
-  it('returns the projects listed in projectIds', async () => {
+describe('accessibleRouters', () => {
+  it('returns the routers listed in routerIds', async () => {
     mockConfig([user()])
 
-    const projects = await accessibleProjects(user({ projectIds: ['proj-1'] }))
+    const routers = await accessibleRouters(user({ routerIds: ['proj-1'] }))
 
-    expect(projects.map(p => p.id)).toEqual(['proj-1'])
+    expect(routers.map(p => p.id)).toEqual(['proj-1'])
   })
 
-  it('includes projects the user is a member of', async () => {
+  it('includes routers the user is a member of', async () => {
     mockConfig([user()])
 
-    const projects = await accessibleProjects(user({ id: 'u-member', projectIds: [] }))
+    const routers = await accessibleRouters(user({ id: 'u-member', routerIds: [] }))
 
-    expect(projects.map(p => p.id)).toEqual(['proj-2'])
+    expect(routers.map(p => p.id)).toEqual(['proj-2'])
   })
 
-  it('falls back to every project for an unscoped user, as the dashboard does', async () => {
+  it('falls back to every router for an unscoped user, as the dashboard does', async () => {
     mockConfig([user()])
 
-    const projects = await accessibleProjects(user({ id: 'u9', projectIds: [] }))
+    const routers = await accessibleRouters(user({ id: 'u9', routerIds: [] }))
 
-    expect(projects.map(p => p.id)).toEqual(['proj-1', 'proj-2'])
+    expect(routers.map(p => p.id)).toEqual(['proj-1', 'proj-2'])
   })
 })
 
 describe('buildAuthContext', () => {
   it('builds the context a tool runs with and records the use', async () => {
-    mockConfig([user({ projectIds: ['proj-1'] })])
+    mockConfig([user({ routerIds: ['proj-1'] })])
 
     const resolved = await buildAuthContext(RAW)
 
     expect('error' in resolved).toBe(false)
     if ('error' in resolved) return
     expect(resolved.context.user).toEqual({ id: 'u1', email: 'u@example.com', roleId: 'viewer' })
-    expect(resolved.context.permissions).toContain('project:read')
-    expect(resolved.context.projects.map(p => p.id)).toEqual(['proj-1'])
+    expect(resolved.context.permissions).toContain('router:read')
+    expect(resolved.context.routers.map(p => p.id)).toEqual(['proj-1'])
     expect(resolved.context.token.id).toBe('tok-1')
     // The hash never leaves the service through the context's own consumers, but
     // it is the token record itself; what matters is the raw value is not in it.

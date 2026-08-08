@@ -28,7 +28,7 @@ Both `routerly clients configure cline` and `routerly clients launch cline`
 error out on purpose, pointing back to this page:
 
 ```bash
-routerly clients configure cline --project <your-project>
+routerly clients configure cline --router <your-router>
 ```
 ```
 Error: Cline is not auto-configurable: it is configured through the extension's settings UI (gear icon panel: Base URL / API Key / Model ID), not a standalone file this CLI can safely edit. See docs: integrations/clients/cline
@@ -44,12 +44,12 @@ it is currently pointed at Routerly (there's no file to read).
 2. Set **API Provider** to `OpenAI Compatible`.
 3. Fill in:
    - **Base URL** → `http://localhost:3000/v1`
-   - **API Key** → `sk-rt-YOUR_PROJECT_TOKEN`
-   - **Model** → any model registered in your Routerly project
+   - **API Key** → `sk-rt-YOUR_ROUTER_TOKEN`
+   - **Model** → any model registered in your Routerly router
 
 Replace `http://localhost:3000/v1` with your Routerly instance's URL and
-`sk-rt-YOUR_PROJECT_TOKEN` with a project token (create one on the
-[Projects](../../dashboard/projects.md) page).
+`sk-rt-YOUR_ROUTER_TOKEN` with a router token (create one on the
+[Routers](../../dashboard/routers.md) page).
 
 See [Integrations: Cline](../cline.md) for the Anthropic-mode variant and
 usage notes, and [CLI: `routerly clients`](../../cli/commands.md#routerly-clients)

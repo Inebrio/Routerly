@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ExperimentConfig, ProjectConfig } from '@routerly/shared';
+import type { ExperimentConfig, RouterConfig } from '@routerly/shared';
 
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
@@ -13,7 +13,7 @@ import { readConfig, writeConfig } from '../config/loader.js';
 const mockReadConfig = vi.mocked(readConfig);
 const mockWriteConfig = vi.mocked(writeConfig);
 
-const projects: ProjectConfig[] = [
+const routers: RouterConfig[] = [
   { id: 'proj-a', name: 'A', tokens: [], members: [], models: [] },
   { id: 'proj-b', name: 'B', tokens: [], members: [], models: [] },
 ];
@@ -24,8 +24,8 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
     name: 'Prompt A vs B',
     rotation: 'round-robin',
     variants: [
-      { id: 'v-a', projectId: 'proj-a' },
-      { id: 'v-b', projectId: 'proj-b' },
+      { id: 'v-a', routerId: 'proj-a' },
+      { id: 'v-b', routerId: 'proj-b' },
     ],
     tokens: [{ id: 'tok-1', token: 'sk-rt-exp', createdAt: '2026-08-01T00:00:00.000Z' }],
     createdAt: '2026-08-01T00:00:00.000Z',
@@ -33,9 +33,9 @@ function experiment(over: Partial<ExperimentConfig> = {}): ExperimentConfig {
   };
 }
 
-function stub(experiments: ExperimentConfig[], allProjects: ProjectConfig[] = projects): void {
+function stub(experiments: ExperimentConfig[], allRouters: RouterConfig[] = routers): void {
   mockReadConfig.mockImplementation(((key: string) =>
-    Promise.resolve(key === 'experiments' ? experiments : allProjects)) as never);
+    Promise.resolve(key === 'experiments' ? experiments : allRouters)) as never);
 }
 
 beforeEach(() => {
@@ -63,13 +63,13 @@ describe('resolveExperimentRequest', () => {
     expect(await resolveExperimentRequest('sk-rt-other', {})).toBeNull();
   });
 
-  it('picks a variant and its project on a running experiment', async () => {
+  it('picks a variant and its router on a running experiment', async () => {
     stub([experiment()]);
     const res = await resolveExperimentRequest('sk-rt-exp', {});
     expect(res).toMatchObject({ status: 'ok' });
     if (res?.status !== 'ok') throw new Error('unreachable');
     expect(res.variant.id).toBe('v-a');
-    expect(res.project.id).toBe('proj-a');
+    expect(res.router.id).toBe('proj-a');
     expect(res.experiment.id).toBe('exp-1');
   });
 
@@ -78,13 +78,13 @@ describe('resolveExperimentRequest', () => {
     expect(await resolveExperimentRequest('sk-rt-exp', {})).toMatchObject({ status: 'expired' });
   });
 
-  it('reports misconfigured when no variant points at an existing project', async () => {
+  it('reports misconfigured when no variant points at an existing router', async () => {
     stub([experiment()], []);
     expect(await resolveExperimentRequest('sk-rt-exp', {})).toMatchObject({ status: 'misconfigured' });
   });
 
-  it('skips a variant whose project was deleted instead of failing the call', async () => {
-    stub([experiment()], [projects[1]!]);
+  it('skips a variant whose router was deleted instead of failing the call', async () => {
+    stub([experiment()], [routers[1]!]);
     const res = await resolveExperimentRequest('sk-rt-exp', {});
     if (res?.status !== 'ok') throw new Error('expected ok');
     expect(res.variant.id).toBe('v-b');

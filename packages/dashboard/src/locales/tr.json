@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Otomatik",
+      "dark": "Koyu",
+      "light": "Açık"
+    },
+    "themeCycle": {
+      "title": "Tema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Kenar çubuğunu genişlet",
+      "collapse": "Kenar çubuğunu daralt"
+    },
+    "tagline": "Bir ağ geçidi. Herhangi bir AI modeli. Tam kontrol.",
+    "nav": {
+      "overview": "Genel Bakış",
+      "providers": "Sağlayıcılar",
+      "models": "Modeller",
+      "profiles": "Profiller",
+      "routers": "Yönlendiriciler",
+      "experiments": "Deneyler",
+      "usage": "Kullanım",
+      "playground": "Oyun Alanı",
+      "settings": "Ayarlar",
+      "connectApp": "Uygulamayı Bağla",
+      "help": "Yardım",
+      "signOut": "Çıkış Yap"
+    },
+    "banner": {
+      "permissionWarning": "Bazı yapılandırma dosyaları izin verici erişime sahiptir ({{files}}). Başlangıç ve istekler yine de çalışır, ancak uygun bir zaman diliminde ana bilgisayar dosya sisteminden bu sorunu giderin.",
+      "dismiss": "Kapat",
+      "updateAvailable": "Routerly v{{latest}} kullanılabilir. Siz v{{current}} üzerindeysiniz.",
+      "updateLink": "Ayarlar'da Güncelle",
+      "mfaRequired": "Bu örnek için iki faktörlü kimlik doğrulaması gereklidir.",
+      "mfaLink": "Profilinizde 2FA Kurulumu Yapın",
+      "mfaSuffix": "hesabınızı güvenceye almak için.",
+      "telemetryTitle": "Routerly hiçbir zaman otomatik olarak veri göndermez.",
+      "telemetryBody": "Anonim kurulum metriklerini göndererek yardımcı olmak ister misiniz? Yalnızca olay türü, sürüm, platform ve rastgele bir kimlik - kişisel veri yok, IP yok.",
+      "telemetryLink": "Ne gönderiliyor?",
+      "telemetryYes": "Evet, yardımcı ol",
+      "telemetryNo": "Hayır, teşekkürler"
+    },
+    "language": {
+      "label": "Dil"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} saniye önce",
+      "secondsAgo_other": "{{count}} saniye önce",
+      "minutesAgo": "{{count}} dakika önce",
+      "minutesAgo_other": "{{count}} dakika önce",
+      "hoursAgo": "{{count}} saat önce",
+      "hoursAgo_other": "{{count}} saat önce",
+      "daysAgo": "{{count}} gün önce",
+      "daysAgo_other": "{{count}} gün önce"
+    },
+    "confirm": "Onayla",
+    "cancel": "İptal",
+    "remove": "Kaldır",
+    "select": "Seç...",
+    "search": "Ara...",
+    "noResults": "Sonuç yok",
+    "noRemainingOptions": "Kalan seçenek yok",
+    "apply": "Uygula",
+    "saved": "Kaydedildi",
+    "showLess": "Daha az göster",
+    "roles": "Roller",
+    "permissions": "İzinler",
+    "notifications": {
+      "title": "Bildirimler",
+      "markAllRead": "Tümünü okundu olarak işaretle",
+      "empty": "Bildirim yok",
+      "viewAll": "Tüm bildirimleri görüntüle"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Dönem seç",
+      "recent": "Son",
+      "ranges": "Aralıklar",
+      "from": "Gönderen",
+      "to": "Kime"
+    },
+    "permissionGuard": {
+      "fixFailed": "İzinleri düzeltmek başarısız oldu",
+      "title": "Güvenli olmayan dosya izinleri",
+      "defaultMessage": "Bazı dosyalar güvenli olmayan izinlere sahiptir.",
+      "fixing": "Düzeltiliyor...",
+      "fixNow": "Şimdi düzelt"
+    },
+    "limitRows": {
+      "noLimits": "Hiçbir limit ayarlanmadı.",
+      "metricLabel": "Metrik",
+      "typeLabel": "Tip",
+      "periodLabel": "Dönem",
+      "everyLabel": "Her",
+      "maxCost": "Maksimum maliyet",
+      "maxCount": "Maksimum sayı",
+      "maxTokens": "Maksimum jetonu",
+      "allCombosSet": "Tüm metrik/dönem kombinasyonları zaten ayarlanmıştır",
+      "addLimit": "Limit ekle",
+      "metric": {
+        "cost": "Maliyet",
+        "calls": "Çağrılar",
+        "input_tokens": "Giriş jetonları",
+        "output_tokens": "Çıkış jetonları",
+        "total_tokens": "Toplam jetonlar"
+      },
+      "period": {
+        "hourly": "Saatlik",
+        "daily": "Günlük",
+        "weekly": "Haftalık",
+        "monthly": "Aylık",
+        "yearly": "Yıllık"
+      },
+      "rollingUnit": {
+        "second": "saniye",
+        "minute": "dakika",
+        "hour": "saat",
+        "day": "gün",
+        "week": "hafta",
+        "month": "ay"
+      },
+      "windowType": {
+        "period": "Dönem",
+        "rolling": "Kayan"
+      },
+      "fmt": {
+        "requests": "{{value}} istek",
+        "inputTokens": "{{value}} giriş jetonu",
+        "outputTokens": "{{value}} çıkış jetonu",
+        "totalTokens": "{{value}} toplam jeton",
+        "everyRolling": "{{metric}} her {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Ne routing tasarruf ettirdi",
+      "input": "Giriş",
+      "output": "Çıkış",
+      "actual": "Gerçek",
+      "clientCalls": "{{count}} istemci çağrısı",
+      "clientCalls_other": "{{count}} istemci çağrısı",
+      "comparedAgainst": ", bunu her birine gönderme ile karşılaştırıldığında",
+      "comparedAgainst_other": ", bunu hepsini her birine gönderme ile karşılaştırıldığında",
+      "paidModelsInPlay": "{{count}} ödenen model oyunda",
+      "paidModelsInPlay_other": "{{count}} ödenen model oyunda",
+      "metricCost": "Maliyet",
+      "metricTokens": "Jetonlar",
+      "totalCost": "Toplam Maliyet",
+      "routed": "Yönlendirildi: {{value}}",
+      "saved": "Kaydedildi: {{value}}",
+      "usdThisPeriod": "Bu dönem USD",
+      "savedVsAlways": "{{value}} kaydedildi ({{percent}}%) her zaman {{model}}'ye karşı",
+      "tokens": "Jetonlar",
+      "in": "Giriş: {{value}}",
+      "out": "Çıkış: {{value}}",
+      "tokenSubWithCache": "{{in}} giriş · {{out}} çıkış · {{cached}} önbellek",
+      "tokenSub": "{{in}} giriş · {{out}} çıkış",
+      "cutByOptimizers": "{{value}} iyileştiriciler tarafından kesildi",
+      "fewerThanAlways": "Her zaman {{model}} olduğundan {{value}} daha az, tahmini"
+    },
+    "optimizerSteps": {
+      "downloaded": "İndirildi",
+      "thisStepRunsOn": "Bu adım şu üzerinde çalışır",
+      "defaultCheckpoint": "Varsayılan kontrol noktası"
+    },
+    "routingPolicies": {
+      "title": "Yönlendirme İlkeleri",
+      "subtitle": "İlkeler isteklerin nasıl yönlendirildiğini belirler. Bunlar yukarıdan aşağıya doğru yürütülür.",
+      "removePolicy": "İlkeyi kaldır",
+      "removeIntent": "Niyeti kaldır",
+      "removeExample": "Örneği kaldır",
+      "routingModels": "Yönlendirme Modelleri",
+      "embeddingModels": "Gömme Modelleri",
+      "maxCompletionTokens": "Maksimum tamamlama jetonları",
+      "maxPromptChars": "Maksimum istem karakterleri",
+      "similarityThreshold": "Benzerlik eşiği",
+      "previousMessages": "Önceki mesajlar",
+      "intents": "Niyetler",
+      "confidenceThreshold": "Güven eşiği",
+      "ambiguityMargin": "Belirsizlik marjı",
+      "maxCallsPerWindow": "Pencere başına maksimum çağrılar",
+      "addFallbackModel": "Yedek Model Ekle",
+      "autoRoutingLabel": "Otomatik Yönlendirme",
+      "autoRoutingHint": "Etkinleştirilirse, trafik özel istemler olmadan dağıtılır. Devre dışı bırakılırsa, her hedef modeli seçmek için ne zaman gereken özel istemler yazabilirsiniz.",
+      "additionalPromptInfoLabel": "Ek İstem Bilgisi",
+      "additionalPromptInfoPlaceholder": "Yönlendirme istemine eklenecek ek talimatlar...",
+      "addExamplePlaceholder": "Örnek ekle ve Enter tuşuna basın...",
+      "addIntentPlaceholder": "Niyet ekle ve Enter tuşuna basın...",
+      "addPolicyPlaceholder": "İlke ekle...",
+      "labels": {
+        "llm": "AI Yönlendirme İlkesi",
+        "rate-limit": "Hız Sınırı İlkesi",
+        "budget-remaining": "Kalan Bütçe İlkesi",
+        "semantic-intent": "Anlamsal Niyet İlkesi",
+        "health": "Sağlık İlkesi",
+        "context": "Bağlam İlkesi",
+        "capability": "Yetenek İlkesi",
+        "performance": "Performans İlkesi",
+        "fairness": "Adillik İlkesi",
+        "cheapest": "En Ucuz İlkesi",
+        "model-preference": "Model Tercihi İlkesi"
+      },
+      "descriptions": {
+        "context": "Modelleri mevcut bağlam penceresine göre puanlar. Bağlam penceresi tahmini istek uzunluğundan daha küçük olan modellere 0 atar, kesme hatalarını önler.",
+        "cheapest": "Modelleri jeton maliyetlerine ters orantılı olarak puanlar. En ucuz model 1.0 alır, en pahalı 0.0 alır ve istekler arasında API harcamalarını azaltmaya yardımcı olur.",
+        "health": "Son hata oranını üstel bozunma kullanarak modelleri puanlar (son hatalar daha ağırlıklı). Ağırlıklı hata oranı kritik eşiği aşarsa puanı 0 olarak ayarlayan bir devre kesici uygular.",
+        "performance": "Son ortalama gecikmesini üstel bozunma kullanarak modelleri puanlar. En hızlı model 1.0 alır, en yavaş 0.0 alır. Son verileri olmayan modeller varsayılan olarak 1.0'a sahiptir.",
+        "llm": "İsteğin anlamsal içeriğini temel alan adayları puanlamak için bir AI modeli kullanır. Model başına yönlendirme rehberi istemlerini destekler ve limitler yapılandırıldığında bütçe boşluğunu göz önünde bulundurur.",
+        "capability": "Sabit filtre: açıkça istek tarafından gerekli olan özelliği (görüş, işlev çağrısı, JSON modu) eksik olan modellere 0 atar. Açık yetenek bildirimlerine sahip olmayan modeller cezalandırılmaz.",
+        "rate-limit": "Sağlayıcı hız sınırına (HTTP 429) çarpma riskini azaltmak için son çağrı sıklığı yüksek olan modelleri cezalandırır. Puanı 0 olarak zorlayan yapılandırılabilir bir sabit eşiği destekler.",
+        "fairness": "Son başarılı çağrıları daha fazla alan modelleri cezalandırarak trafiği eşit olarak dağıtır. Soft round-robin olarak hareket ederek yükün tek bir modele konsantre olmasını önler.",
+        "budget-remaining": "Tüm yapılandırılan limitler arasında kalan bütçe boşluğuna göre modelleri puanlar. Eşik değerlerine vurulmadan önce daha fazla oda olan modelleri tercih eder, tüketimi proaktif olarak yaymak.",
+        "semantic-intent": "İstemi anlamsal niyete göre gömme kullanılarak sınıflandırır, ardından aday havuzunu bu niyete eşlenen modellerle sınırlar. Güvenli eşleşmeler havuzu sabit filtreler; belirsiz eşleşmeler en iyi 2 havuzu birleştirir; bilinmeyen istekler tüm adayları geçirir.",
+        "model-preference": "İstemci belirli bir model talep ettiğinde (routerly/ada değil), bu modele yapılandırılabilir bir bonus puan verir. Tercih ifade edilmediğinde, ilke uyuşmazlıktan kaçınır. Listedeki konum, tercihsel ağırlığını diğer ilkeler karşısında kontrol eder."
+      },
+      "selectModel": "Model seç"
+    },
+    "securityRules": {
+      "applyTo": "Buna uygula",
+      "streamingBufferSize": "Akış arabelleği boyutu (karakterler)",
+      "entityTypes": "Varlık türleri",
+      "target": "Hedef",
+      "embeddingModel": "Gömme modeli",
+      "judgeModel": "Hakim modeli",
+      "contentGuardrails": "İçerik Güvenlik Rayları",
+      "piiPolicies": "KKB İlkeleri",
+      "addSecurityPolicyPlaceholder": "Güvenlik ilkesi ekle...",
+      "removePolicyTooltip": "İlkeyi kaldır",
+      "deleteRuleAriaLabel": "Kuralı sil",
+      "embeddingModelPlaceholder": "Gömme modeli seç...",
+      "fallbackModelsLabel": "Yedek modeller (isteğe bağlı, sırada denenir)",
+      "fallbackModelsPlaceholder": "Yedek model yok...",
+      "exampleTextsLabel": "Bloklama örnek metinleri (satır başına bir)",
+      "exampleTextsPlaceholder": "Nasıl hack yapılır...\n...",
+      "similarityThresholdLabel": "Benzerlik eşiği:",
+      "judgeModelPlaceholder": "Hakim modeli seç...",
+      "allowedTopicsLabel": "İzin verilen konular (doğal dil)",
+      "allowedTopicsPlaceholder": "Yazılım ürünleri için müşteri desteği. Teknik sorun giderme. Faturalandırma soruları.",
+      "onTopicThresholdLabel": "Konuya uygundur puanı aşağıda ise engelle:",
+      "harmThresholdLabel": "Hasar puanı üstünde ise engelle:",
+      "customInstructionsLabel": "Özel talimatlar",
+      "customInstructionsPlaceholder": "Siz bir içerik güvenliği sınıflandırıcısısınız. Aşağıdaki metni zararlı içerik için değerlendirin.\nKategoriler: nefret söylemi, şiddet, cinsel içerik, kendi kendine zarar.\nYALNIZCA bir JSON nesnesi ile yanıtla: {\"score\": <0 ile 1 arasında sayı>}",
+      "customInstructionsRequired": "Özel talimatlar gereklidir.",
+      "enabledLabel": "Etkin",
+      "contentGuardrailsHint": "İstekleri ve yanıtları yapılandırılmış kurallara karşı denetleyin. En az bir kural yapılandırıldığında etkin.",
+      "securityPoliciesHeading": "Güvenlik İlkeleri",
+      "noSecurityPolicies": "Hiçbir güvenlik ilkesi yapılandırılmadı.",
+      "piiPoliciesHint": "Kişisel verileri algıla ve düzenle. Her ilke istek girdisini, model yanıtını veya her ikisini hedefler ve kendi varlık setini kontrol eder.",
+      "noPiiPolicies": "Hiçbir KKB ilkesi yapılandırılmadı.",
+      "addPolicyButton": "+ İlke Ekle",
+      "injectionWarningTitle": "İstek yükü enjeksiyon tarafından değiştirildi",
+      "injectionWarningBody": "Bir veya daha fazla kural, talimatlı giden isteğin sistem istemine enjekte eder, bu nedenle sağlayıcıya gönderilen yük değiştirilir. Ek model çağrısı yapılmaz ve hiçbir şey engellenmez; servis modeli talimatı kendi uygular.",
+      "streamingDisabledWarningTitle": "Bu yönlendirici için akış devre dışı bırakıldı",
+      "streamingDisabledWarningBody": "Bir veya daha fazla kural yanıtları bloklayacak şekilde yapılandırılmıştır (hedef: yanıt veya her ikisi). Tüm yanıtın engelleme kararından önce denetlenmesi gerektiğinden, Routerly, istemciye döndürmeden önce yanıtı tam olarak tutar. Yanıt bloklayan bir kural etkin olsa da akış kullanılamaz; istemciler tam yanıtı tek seferde almak yerine artımlı parçalar halinde alırlar."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure Kaynak Adı",
+      "azureResourceNamePlaceholder": "kaynağım",
+      "azureResourceNameHint": "Azure OpenAI kaynak adı (Azure portalından).",
+      "deploymentId": "Dağıtım Kimliği",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI Studio'da oluşturduğunuz dağıtım adı.",
+      "azureApiVersionLabel": "API Sürümü",
+      "azureApiVersionDefaultHint": "(varsayılan: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS Bölgesi",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Erişim Anahtarı Kimliği",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Gizli Erişim Anahtarı",
+      "awsSecretAccessKeyPlaceholderExisting": "Mevcut olanı tutmak için boş bırakın",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Oturum Jetonu",
+      "awsSessionTokenOptionalHint": "(isteğe bağlı, geçici kimlik bilgileri için)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP Yönlendirici Kimliği",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Konum",
+      "gcpLocationDefaultHint": "(varsayılan: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Hizmet Hesabı Anahtarı",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Uç Nokta URL'si",
+      "optional": "(isteğe bağlı)",
+      "webProvider": {
+        "unofficialWarningTitle": "Resmi olmayan sağlayıcı - kendi riskinizle kullanın.",
+        "unofficialWarningBody": "Bu entegrasyon, belirtilmemiş bir dahili API'ye dayanır ve bildirim yapılmaksızın değişebilir veya kırılabilir. Sağlayıcının Hizmet Koşullarını ihlal edebilir ve hesap askısı ile sonuçlanabilir.",
+        "accessTokenLabel": "Erişim Jetonu",
+        "sessionTokenLabel": "Oturum Jetonu",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Sessionkey cookie değerini yapıştırın (sk-ant-sid01-…)",
+        "openaiInstructions": "ChatGPT'de oturum açmış durumdayken, <code>https://chatgpt.com/api/auth/session</code> adresini yeni bir sekmede açın. <code>accessToken</code> alanının değerini kopyalayın (<code>eyJ</code> ile başlar). Jeton yaklaşık 24 saatlik süre için geçersiz hale gelir. Güvenilir erişim için, aşağıda <strong>cf_clearance</strong> alanını da doldurun.",
+        "anthropicInstructions": "<strong>Oturum anahtarınızı nasıl alacağınız:</strong> Claude'da oturum açmış durumdayken, DevTools (F12) → Uygulama → Çerezler → <code>claude.ai</code> → <code>sessionKey</code> çerezinin değerini kopyalayın (<code>sk-ant-sid01-</code> ile başlar). Anahtar, oturumu kapatana kadar geçerli kalır."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Abonelik OAuth Jetonu",
+        "authFilePathLabel": "Kimlik doğrulama dosyası yolu",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (varsayılan)",
+        "anthropicTitle": "Claude Pro/Max aboneliğinizi kullanın.",
+        "anthropicRunCommandStep": "Bu komutu çalıştırın ve yazdırdığı jetonu kopyalayın:",
+        "anthropicPasteTokenStep": "Jetonu aşağıdaki <em>Abonelik OAuth Jetonu</em> alanına yapıştırın.",
+        "termsNote": "Süre dolduğunda yeniden oluşturun. Bir ağ geçidi üzerinden abonelik kullanımı, sağlayıcının Hizmet Koşullarına karşı olabilir.",
+        "openaiTitle": "ChatGPT Plus/Pro aboneliğinizi Codex uygulaması aracılığıyla kullanın.",
+        "openaiLoginStep": "Codex masaüstü uygulamasında ChatGPT Plus/Pro hesabınızla oturum açın.",
+        "openaiAutoRefreshStep": "Routerly, <code>~/.codex/auth.json</code> adresinden erişim jetonunuzu okur ve otomatik olarak yeniler. Manuel kopya/yapıştırmaya gerek yoktur.",
+        "openaiAuthFilePathStep": "Varsayılanı kullanmak için <em>Kimlik Doğrulama Dosyası Yolu</em> alanını boş bırakın veya Codex uygulaması kimlik doğrulamayı başka bir yerde depolıyorsa özel bir yol girin.",
+        "openaiTermsNote": "Bir ağ geçidi üzerinden abonelik kullanımı, sağlayıcının Hizmet Koşullarına karşı olabilir."
+      },
+      "copyCode": {
+        "copiedTooltip": "Kopyalandı!",
+        "copyTooltip": "Panoya kopyala",
+        "copiedLabel": "Kopyalandı",
+        "copyLabel": "Kopyala"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopyala",
+      "copiedLabel": "Kopyalandı!",
+      "copyErrorHint": "Kopyalamak başarısız oldu, manuel olarak seçin ve kopyalayın."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP istemcisi",
+      "hints": {
+        "claudeCode": "Bunu bir kez, herhangi bir yerde çalıştırın. Claude Code, sunucuyu <code>~/.claude.json</code> adresinde depolar.",
+        "claudeDesktop": "Bunu <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> adresine koyun (Windows'ta, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), ardından uygulamayı yeniden başlatın. CLI'yi oluşturur, bu nedenle <code>routerly</code> PATH'inizde olmalıdır.",
+        "codex": "Bunu <code>~/.codex/config.toml</code> adresine koyun. Codex, jetonu ortamdan okur, bu nedenle Codex'i başlattığınız kabuğunuza aktarın.",
+        "opencode": "Bunu <code>~/.config/opencode/opencode.json</code> adresine koyun.",
+        "openclaw": "Bunu bir kez çalıştırın. OpenClaw, Routerly'nin sunmadığı sse taşımasını varsayılan olarak ayarlar, bu nedenle taşıma açıkça ayarlanır.",
+        "cursor": "Bunu <code>~/.cursor/mcp.json</code> adresine koyun veya bir projeyi kapsamak için <code>.cursor/mcp.json</code> adresine koyun.",
+        "cline": "Bunu <code>~/.cline/mcp.json</code> adresine koyun veya Cline panelinde MCP Sunucularını Yapılandır'a yapıştırın.",
+        "zed": "Bunu Zed <code>settings.json</code> adresine diğer bağlam sunucusu ile birlikte koyun."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Kaydedilmemiş Değişiklikler",
+      "message": "Kaydedilmemiş değişiklikleriniz var. Şimdi ayrılırsanız, değişiklikleriniz kaybolacaktır.",
+      "stay": "Kal",
+      "leaveAnyway": "Yine de ayrıl"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Güvenlik Rayları",
+        "pii": "KKB",
+        "optimizers": "İyileştiriciler",
+        "routerOverhead": "Yönlendirici ek yükü"
+      },
+      "policyType": {
+        "llm": "AI Yönlendirme",
+        "rateLimit": "Hız Sınırı",
+        "budgetRemaining": "Kalan Bütçe",
+        "semanticIntent": "Anlamsal Niyet",
+        "modelPreference": "Model Tercihi"
+      },
+      "rawDetails": "ham detaylar",
+      "technicalDetails": "teknik detaylar",
+      "systemPrompt": "sistem istemi",
+      "responseText": "yanıt metni",
+      "responseJson": "yanıt JSON",
+      "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
+      "fallbackAttempt": "yedek #{{attempt}}",
+      "embeddingModel": "Gömme Modeli",
+      "upstreamModel": "Yukarı Akış Modeli",
+      "provider": "Sağlayıcı",
+      "source": "Kaynak",
+      "endpoint": "Uç Nokta",
+      "cacheHit": "CACHE HIT",
+      "ttlExtended": "TTL uzatıldı",
+      "model": "Model",
+      "similarity": "Benzerlik",
+      "embedding": "Gömme",
+      "cacheMiss": "CACHE MISS",
+      "details": "detaylar",
+      "excludedByLimits": "LIMITS TARAFINDA HARIC TUTULDU",
+      "finalRanking": "FINAL RANKING",
+      "noRankingData": "Sıralama verisi yok (kayıt bozulmuş veya eski sürümden olabilir)",
+      "policyScores": "POLICY SCORES",
+      "weight": "ağırlık {{value}}",
+      "allScores": "tüm puanlar",
+      "noPolicyData": "İlke verisi yok (kayıt bozulmuş veya eski sürümden olabilir)",
+      "requestGuardrailBlocked": "ISTEK GUARDRAIL BLOCKED",
+      "requestGuardrailTriggered": "ISTEK GUARDRAIL TRIGGERED",
+      "responseGuardrailBlocked": "YANIT GUARDRAIL BLOCKED",
+      "responseGuardrailTriggered": "YANIT GUARDRAIL TRIGGERED",
+      "rule": "Kural",
+      "action": "İşlem",
+      "guardrailsEvaluated": "GUARDRAILS EVALUATED ({{target}})",
+      "ruleCount": "{{count}} kural",
+      "ruleCount_other": "{{count}} kurallar",
+      "promptInjection": "Prompt enjeksiyonu",
+      "injects": "enjekte eder",
+      "judgeResponse": "Hakim yanıtı",
+      "piiScrubbed": "KKB TEMIZLENDI",
+      "piiScanned": "KKB SCANNED ({{target}})",
+      "policies": "ilkeler",
+      "entityTypes": "varlık türleri",
+      "customPatterns": "özel desenleri",
+      "scanned": "tarandı",
+      "redacted": "reddedildi",
+      "took": "aldı",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "taranmış varlık türleri",
+      "guardrailInjection": "GUARDRAIL INJECTION",
+      "rules": "kurallar",
+      "chars": "karakterler",
+      "injectedText": "enjekte metni",
+      "optimizer": "OPTIMIZER {{id}}",
+      "tokens": "jetonlar",
+      "saved": "kaydedildi",
+      "tok": "{{value}} tok",
+      "reason": "neden",
+      "budgetBlocked": "BUDGET BLOCKED",
+      "budgetOk": "BUDGET OK",
+      "egressSent": "EGRESS SENT",
+      "status": "durum",
+      "encoding": "kodlama",
+      "frames": "çerçeveler",
+      "bytes": "baytlar"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Benim Profilim",
+      "subtitle": "Hesap ayarlarınızı yönetin"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Bildirimler",
+      "mcp": "MCP",
+      "preferences": "Tercihler"
+    },
+    "notifications": {
+      "close": "Kapat",
+      "refresh": "Yenile",
+      "clear": "Temizle",
+      "empty": "Hiçbir bildirim bulunamadı.",
+      "markAllRead": "Tümünü okundu olarak işaretle",
+      "allCaughtUp": "Hepsi yakalandı",
+      "unreadCount": "{{count}} okunmamış",
+      "selectedCount": "{{count}} seçilen",
+      "severity": {
+        "all": "Tümü",
+        "info": "Bilgi",
+        "warning": "Uyarı",
+        "critical": "Kritik"
+      },
+      "status": {
+        "read": "Okundu",
+        "unread": "Okunmadı"
+      },
+      "filters": {
+        "severity": "Önem",
+        "category": "Kategori",
+        "event": "Olay",
+        "date": "Tarih",
+        "period": "Dönem",
+        "status": "Durum",
+        "all": "Tümü",
+        "allCategories": "Tüm kategoriler",
+        "allEvents": "Tüm olaylar",
+        "unreadOnly": "Yalnızca okunmamış"
+      },
+      "actions": {
+        "markRead": "Okundu olarak işaretle",
+        "markUnread": "Okunmamış olarak işaretle",
+        "archive": "Arşivle"
+      },
+      "table": {
+        "severity": "Önem",
+        "event": "Olay",
+        "date": "Tarih",
+        "status": "Durum",
+        "selectAll": "Tümünü seç",
+        "selectRow": "{{event}} seç",
+        "eventCount": "{{count}} olaylar"
+      },
+      "pagination": {
+        "previous": "← Önceki",
+        "next": "Sonraki →",
+        "page": "Sayfa {{page}} / {{totalPages}}",
+        "total": "({{count}} toplam)"
+      },
+      "detail": {
+        "ariaLabel": "Bildirim detayı",
+        "details": "Detaylar",
+        "noDetails": "Ek detay yok.",
+        "eventsInIncident": "Bu olayda olanlar"
+      }
+    },
+    "security": {
+      "roleLabel": "Rol:",
+      "password": {
+        "heading": "Parolayı Değiştir",
+        "currentLabel": "Mevcut Parola",
+        "newLabel": "Yeni Parola",
+        "newPlaceholder": "En az 8 karakter",
+        "confirmLabel": "Yeni Parolayı Doğrula",
+        "success": "Parola başarıyla değiştirildi.",
+        "saving": "Kaydediliyor...",
+        "submit": "Parolayı Değiştir",
+        "errors": {
+          "mismatch": "Parolalar eşleşmiyor.",
+          "tooShort": "Yeni parola en az 8 karakter olmalıdır.",
+          "updateFailed": "Güncelleme başarısız oldu"
+        }
+      },
+      "tfa": {
+        "heading": "İki Faktörlü Kimlik Doğrulaması",
+        "notEnabled": "2FA etkin değildir. Hesabınızı zaman tabanlı bir kerelik parola ile koruyun.",
+        "enableButton": "İki Faktörlü Kimlik Doğrulamayı Etkinleştir",
+        "scanInstructions": "Bu QR kodunu kimlik doğrulamacı uygulamanızla tarayın (Google Authenticator, Authy, vb.) ve ardından 6 haneli kodu onaylamak için girin.",
+        "qrAlt": "2FA kurulum QR kodu",
+        "addAccountInstructions": "Kimlik doğrulayıcı uygulamanızı açın (Google Authenticator, Authy, 1Password, vb.) ve yeni bir hesap ekleyin:",
+        "setup": {
+          "step1": "<strong>Hesap ekle</strong> veya <strong>+</strong> düğmesine dokunun",
+          "step2": "<strong>Kurulum anahtarını gir</strong>'i seçin (mobil'de ise QR kodunu tarayın)",
+          "step3": "Aşağıda gösterilen gizli dizi girin"
+        },
+        "mobileLink": "Kimlik doğrulayıcıyı açmak için mobilde buraya dokunun",
+        "manualEntryLabel": "Manuel giriş gizli dizi:",
+        "saveBackupCodes": "Bu yedek kodları kaydedin. Kimlik doğrulayıcınıza erişimi kaybederseniz her biri bir kez kullanılabilir.",
+        "copyBackupCodes": "Yedek kodları kopyala",
+        "confirmCodeLabel": "Etkinleştirmek için uygulamadan kodu girin",
+        "activate": "2FA'yı Etkinleştir",
+        "cancel": "İptal",
+        "enabledBadge": "2FA etkin",
+        "newBackupCodesLabel": "Yeni yedek kodlar (şimdi kaydedin):",
+        "copy": "Kopyala",
+        "regenLabel": "Yedek kodları yeniden oluşturmak için kimlik doğrulayıcı kodunu girin",
+        "regenerate": "Yeniden Oluştur",
+        "regenerateBackupCodes": "Yedek Kodları Yeniden Oluştur",
+        "disableLabel": "2FA'yı Devre Dışı Bırak (kimlik doğrulayıcı kodunu girin)",
+        "disable": "2FA'yı Devre Dışı Bırak",
+        "errors": {
+          "setupFailed": "Kurulum başarısız oldu",
+          "confirmFailed": "Onaylama başarısız oldu",
+          "disableFailed": "Devre dışı bırakma başarısız oldu",
+          "regenFailed": "Yeniden oluşturma başarısız oldu"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP yüzeyini yüklemek başarısız oldu",
+        "revokeFailed": "Jetonu iptal etmek başarısız oldu"
+      },
+      "revokeConfirm": "MCP jetonu \"{{name}}\" iptal et? Bunu kullanan istemciler hemen çalışmayı durdurur.",
+      "tokens": {
+        "heading": "MCP Jetonları",
+        "newToken": "Yeni Jeton",
+        "description": "Her jeton siz olarak hareket eder: rolünüzün izin verdiği araçları tam olarak ortaya koymaktadır. Tam değer, onu oluşturan sayfada bir kez gösterilir.",
+        "empty": "Henüz MCP jetonu yok. Bir MCP istemcisini bağlamak için bir tane oluşturun.",
+        "created": "Oluşturuldu",
+        "lastUsed": "Son kullanım",
+        "expires": "Süresi doluyor",
+        "never": "Asla",
+        "revokeTitle": "Jetonu iptal et"
+      },
+      "tools": {
+        "heading": "Jetonlarınızın Ortaya Koyduğu Araçlar",
+        "empty": "Rolünüz MCP aracı vermez. Gereksinim duyduğunuz izinler için bir yöneticiye sorun.",
+        "table": {
+          "name": "Ad",
+          "scope": "Kapsam",
+          "description": "Açıklama",
+          "sourceModule": "Kaynak modülü",
+          "permission": "İzin"
+        }
+      },
+      "connect": {
+        "heading": "Bir MCP İstemcisini Bağla",
+        "descriptionPre": "Yüklemekte olduğunuz istemciyi seçin, ardından değiştirin",
+        "descriptionPost": "jetonlarınızdan biriyle. Bir jeton oluşturmak zaten içinde değer taşıyan aynı snippet'i gösterir.",
+        "otherClient": "Herhangi bir başka istemci",
+        "httpInstructionsPre": "HTTP üzerinden, bu uç noktaya işaret edin ve şu ile kimlik doğrulaması yapın:",
+        "httpInstructionsPost": ". Streamable HTTP üzerinde JSON-RPC 2.0'dır.",
+        "stdioInstructionsPre": "Stdio üzerinden, CLI onu köprüler ve jetonunuzu geçirir. Bunun yerine hizmeti doğrudan çalıştırıyor musunuz? Ayarla",
+        "stdioInstructionsAnd": "ve",
+        "stdioInstructionsPost": "kendiniz."
+      },
+      "newToken": {
+        "backToMcp": "MCP'ye geri dön",
+        "title": "Yeni MCP Jetonu",
+        "subtitle": "Jeton siz olarak hareket eder: rolünüzün izin verdiği araçları tam olarak ortaya koymaktadır.",
+        "nameLabel": "Ad",
+        "namePlaceholder": "dizüstü",
+        "nameHint": "Bu jetonun kullanıldığı yer, örneğin \"dizüstü\" veya \"claude-desktop\".",
+        "expiryLabel": "Süresi doluyor",
+        "expiryHint": "İsteğe bağlı. Boş bırakın ve jeton asla dolmaz, siz iptal edene kadar.",
+        "createButton": "Jeton oluştur",
+        "creatingButton": "Oluşturuluyor…",
+        "cancelButton": "İptal",
+        "tokenSection": {
+          "title": "Sizin jetonunuz",
+          "hint": "Şimdi kopyalayın. Bir daha gösterilmeyecek ve kayıp bir jeton yalnızca değiştirilebilir.",
+          "copyButton": "Kopyala",
+          "copiedButton": "Kopyalandı!",
+          "copyTitle": "Jetonu kopyala",
+          "copiedTitle": "Kopyalandı!"
+        },
+        "connectSection": {
+          "title": "İstemciyi bağla",
+          "hint": "Yüklemekte olduğunuz istemciyi seçin. Snippet zaten bu jetonu taşır."
+        },
+        "bridgeSection": {
+          "title": "Veya yerel köprüyü kullan",
+          "hint": "Yalnızca stdio konuşan bir istemci için, CLI onu köprüler ve jetonunuzu geçirir."
+        },
+        "doneButton": "Bitti",
+        "errors": {
+          "createFailed": "Jeton oluşturmak başarısız oldu",
+          "copyFailed": "Kopyalamak başarısız oldu, jetonu manuel olarak seçin ve kopyalayın."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Dil",
+      "description": "Panonun görüntüleneceği dili seçin.",
+      "languageLabel": "Dil",
+      "saved": "Dil tercihi kaydedildi."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Ayarları yüklemek başarısız oldu",
+        "loadFailedPeriod": "Ayarları yüklemek başarısız oldu.",
+        "saveFailed": "Kaydetmek başarısız oldu",
+        "saveSettingsFailed": "Ayarları kaydetmek başarısız oldu"
+      },
+      "savedSuccess": "Ayarlar başarıyla kaydedildi.",
+      "saving": "Kaydediliyor…",
+      "saveSettings": "Ayarları Kaydet",
+      "serverInfo": {
+        "heading": "Sunucu Bilgisi",
+        "readOnly": "Salt okunur. Ana bilgisayar ve bağlantı noktası buradan değil, ortamdan veya ayarlar dosyasından gelir.",
+        "reachableAt": "Şu adresle ulaşılabilir",
+        "reachableAtAny": "Bu adreslerden herhangi biriyle ulaşılabilir",
+        "thisMachine": "Bu makine",
+        "network": "Ağ",
+        "copyAddress": "{{address}} kopyala",
+        "copied": "Kopyalandı!",
+        "copy": "Kopyala",
+        "hostAndPort": "Ana bilgisayar ve bağlantı noktası",
+        "version": "Sürüm",
+        "uptime": "Çalışma süresi"
+      },
+      "runtime": {
+        "heading": "Çalışma Zamanı Ayarları",
+        "logLevel": "Günlük Seviyesi",
+        "logLevelHint": "Hizmet günlüklerinin ayrıntılılığını kontrol eder.",
+        "publicUrl": "Genel URL",
+        "publicUrlHint": "Hizmetin harici istemcilerden ulaşılabilir olduğu temel URL'si (örn. <code>http://192.168.1.10:3000</code>). Her yönlendiricinin <strong>Nasıl Bağlanacak</strong> bölümünde kullanılır. Pano hizmetten farklı bir makine veya bağlantı noktasında çalıştığında yararlıdır.",
+        "usageRetention": "Kullanım Saklama",
+        "noLimit": "Sınır yok",
+        "maxAgeDays": "Maksimum yaş (gün)",
+        "maxSizeMb": "Maksimum boyut (MB)",
+        "retentionHint": "Bu kadar gün eski olan veya bu boyutu aşan kullanım/faturalandırma geçmişi etkin günlükten bırakılır. Her ikisini de boş bırakmak için saklama sınırı yok."
+      },
+      "internationalization": {
+        "heading": "Uluslararasılaştırma",
+        "defaultLanguage": "Varsayılan Dil",
+        "defaultLanguageHint": "Henüz kendi dillerini seçmemiş kullanıcılar için pano dili. Kullanıcının kişisel seçimini geçersiz kılmaz."
+      },
+      "telemetry": {
+        "heading": "Anonim Metrikler",
+        "neverAutomatic": "Routerly hiçbir zaman otomatik olarak veri göndermez.",
+        "noChoice": "Henüz bir seçim yapmadınız.",
+        "enabledStatus": "Anonim kurulum metrikleri etkinleştirilmiştir.",
+        "disabledStatus": "Anonim kurulum metrikleri devre dışı bırakılmıştır.",
+        "explanation": "Etkinleştirildiğinde, Routerly yalnızca gönderir: olay türü (yükleme/yükseltme/kaldırma), sürüm, platform ve rastgele kimlik. Kişisel veri yok, kullanım verileri yok, IP depolanmıyor.",
+        "whatIsSent": "Ne gönderiliyor?",
+        "installId": "Yükleme Kimliği: {{id}}",
+        "saving": "Kaydediliyor…",
+        "enable": "Etkinleştir",
+        "disable": "Devre Dışı Bırak"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Pano (uygulama içi gelen kutusu)",
+          "description": "Olayları uygulama içi bildirim gelen kutusuna yönlendirir"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Özel posta sunucusu"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Basit E-posta Hizmeti"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure İletişim",
+          "description": "Azure İletişim Hizmetleri"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook geri araması"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Gelen Web Kancası"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Olayları API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Sağlayıcı – Hata",
+        "providerDegraded": "Sağlayıcı – Bozulmuş",
+        "providerRecovered": "Sağlayıcı – Kurtarıldı",
+        "providerRateLimited": "Sağlayıcı – Oran Sınırı",
+        "routingNoCandidates": "Yönlendirme – Aday Yok",
+        "routingFallbackUsed": "Yönlendirme – Yedek Kullanıldı",
+        "authLoginFailed": "Kimlik Doğrulama – Oturum Açma Başarısız",
+        "authTokenInvalid": "Kimlik Doğrulama – Jeton Geçersiz",
+        "configModelAdded": "Yapılandırma – Model Eklendi",
+        "configModelDeleted": "Yapılandırma – Model Silindi",
+        "configRouterCreated": "Yapılandırma – Yönlendirici Oluşturuldu",
+        "configRouterDeleted": "Yapılandırma – Yönlendirici Silindi",
+        "budgetThresholdReached": "Bütçe – Eşik Ulaşıldı",
+        "budgetExceeded": "Bütçe – Aşıldı",
+        "budgetReset": "Bütçe – Sıfırlandı",
+        "systemStartup": "Sistem – Başlangıç",
+        "systemShutdown": "Sistem – Kapatma",
+        "systemUpdateAvailable": "Sistem – Güncelleme Mevcut"
+      },
+      "removeChannelTooltip": "Kanalı kaldır",
+      "removeChannelConfirm": "Kanalı kaldır?",
+      "formUpdatedHint": "Form güncellendi — uygulamak için kaydedin.",
+      "hmacSigningKeyPlaceholder": "HMAC imza anahtarı",
+      "perms": {
+        "routerRead": "Yönlendiriciler – Oku",
+        "routerWrite": "Yönlendiriciler – Yaz",
+        "modelRead": "Modeller – Oku",
+        "modelWrite": "Modeller – Yaz",
+        "userRead": "Kullanıcılar – Oku",
+        "userWrite": "Kullanıcılar – Yaz",
+        "reportRead": "Raporlar – Oku",
+        "settingsRead": "Ayarlar – Oku",
+        "settingsWrite": "Ayarlar – Yaz",
+        "notificationWrite": "Bildirimler – Yaz",
+        "tokenRead": "Jetonlar – Oku",
+        "tokenWrite": "Jetonlar – Yaz",
+        "roleWrite": "Roller – Yaz",
+        "auditRead": "Denetim Günlüğü – Oku",
+        "modulesRead": "Modüller – Oku",
+        "modulesManage": "Modüller – Yönet",
+        "connectionsRead": "Bağlantılar – Oku",
+        "connectionsManage": "Bağlantılar – Yönet",
+        "resilienceRead": "Dayanıklılık – Oku",
+        "resilienceManage": "Dayanıklılık – Yönet",
+        "profilesRead": "Yönlendirme Profilleri – Oku",
+        "profilesManage": "Yönlendirme Profilleri – Yönet",
+        "optimizersRead": "İyileştiriciler – Oku",
+        "optimizersManage": "İyileştiriciler – Yönet",
+        "experimentsRead": "Deneyler – Oku",
+        "experimentsManage": "Deneyler – Yönet"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Bu kanal türü için, hedefler teslimatı değiştirmez (uç nokta sabitlenmiştir). Bunlar, denetim izini başına alıcı başına yapılan olayları filtreler.",
+        "dashboard": "Hedefler gelen kutusu görünürlüğünü denetler. Yalnızca eşleşen kullanıcılar bu bildirimleri uygulama içi gelen kutusunda görecektir.",
+        "email": "Hedefler bu e-postayı hangi kullanıcıların aldığını belirler. Tüm kullanıcılara göndermek için tümünü boş bırakın."
+      },
+      "summary": {
+        "allEvents": "Tüm olaylar",
+        "eventCount": "{{count}} olay",
+        "eventCount_other": "{{count}} olaylar",
+        "roleCount": "{{count}} rol",
+        "roleCount_other": "{{count}} roller",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} kullanıcı",
+        "userCount_other": "{{count}} kullanıcılar",
+        "everyone": "Herkes"
+      },
+      "errors": {
+        "loadFailed": "Yüklemek başarısız oldu"
+      },
+      "fields": {
+        "dashboardHint": "Eşleşen olayları uygulama içi bildirim gelen kutusuna yönlendirir. Kimlik bilgileri gerekli değildir.",
+        "labels": {
+          "fromAddress": "Adresinden",
+          "fromName": "Adı İtibaren",
+          "host": "Ana Bilgisayar",
+          "port": "Bağlantı Noktası",
+          "tls": "TLS/SSL",
+          "username": "Kullanıcı Adı",
+          "password": "Parola",
+          "awsRegion": "AWS Bölgesi",
+          "accessKeyId": "Erişim Anahtarı Kimliği",
+          "secretAccessKey": "Gizli Erişim Anahtarı",
+          "apiKey": "API Anahtarı",
+          "connectionString": "Bağlantı Dizesi",
+          "clientId": "İstemci Kimliği",
+          "clientSecret": "İstemci Gizli Dizi",
+          "refreshToken": "Jetonı Yenile",
+          "url": "URL",
+          "method": "Yöntem",
+          "signingSecret": "İmza Gizli Dizi",
+          "botToken": "Bot Jetonu",
+          "channelId": "Kanal Kimliği",
+          "webhookUrl": "Webhook URL'si",
+          "integrationKey": "Entegrasyon Anahtarı"
+        },
+        "values": {
+          "enabled": "Etkin",
+          "disabled": "Devre Dışı",
+          "configured": "Yapılandırılmış",
+          "notSet": "Ayarlanmadı"
+        },
+        "optional": "(isteğe bağlı)",
+        "keepCurrentPlaceholder": "Mevcut olanı tutmak için boş bırakın",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSL Kullanın",
+        "smtpTlsOnHint": "(bağlantı noktası 465 — doğrudan SSL)",
+        "smtpTlsOffHint": "(bağlantı noktası 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAM örnek rolünü kullanmak için kimlik bilgilerini boş bırakın.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC imza anahtarı",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32 karakterli yönlendirme anahtarı",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Olaylar",
+          "eventsPlaceholder": "Tüm olaylar (tümü için boş bırakın)",
+          "eventsHint": "Tüm olayları almak için boş bırakın. Spesifik olayları seçmek için filtrelemek.",
+          "routersHeading": "Yönlendiriciler",
+          "routersPlaceholder": "Tüm yönlendiriciler (tümü için boş bırakın)",
+          "routersHint": "Tüm yönlendiricilerden olaylar almak için boş bırakın.",
+          "cooldownHeading": "Dinlenme Süresi",
+          "cooldownSuffix": "saniye (0 = dinlenme süresi yok)",
+          "cooldownHint": "Bu kanal aynı olay için yeniden ateşlenmeden önce en az aralık."
+        },
+        "recipients": {
+          "heading": "Alıcılar / Hedefler",
+          "rolesLabel": "Roller",
+          "rolesPlaceholder": "Tüm roller (herkes)",
+          "permissionsLabel": "İzinler",
+          "permissionsPlaceholder": "Tüm izinler (herkes)",
+          "usersLabel": "Bireysel kullanıcılar",
+          "usersPlaceholder": "Tüm kullanıcılar (herkes)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "bağlantı",
+          "routing": "yönlendirme",
+          "recipients": "alıcılar"
+        },
+        "sections": {
+          "channelSettings": "Kanal ayarları",
+          "eventsRouting": "Olaylar ve yönlendirme",
+          "recipients": "Alıcılar"
+        },
+        "nameLabel": "Ad",
+        "namePlaceholder": "Bu kanal için etiket",
+        "cancelButton": "İptal"
+      },
+      "list": {
+        "countLabel": "{{count}} kanal",
+        "countLabel_other": "{{count}} kanallar",
+        "filteredLabel": "{{count}} {{shown}} kanal",
+        "filteredLabel_other": "{{count}} {{shown}} kanallar",
+        "allTypes": "Tüm türler",
+        "searchPlaceholder": "Kanalları filtrele…",
+        "searchChannelsPlaceholder": "Kanalları ara…",
+        "addButton": "Kanal Ekle",
+        "addSearchPlaceholder": "Kanalları ara…",
+        "noResults": "Sonuç yok",
+        "emptyTitle": "Henüz hiçbir bildirim kanalı yapılandırılmadı.",
+        "noMatch": "Hiçbir kanal etkin filtreleri eşleştirmez.",
+        "nameInlinePlaceholder": "Etiket (isteğe bağlı)",
+        "columns": {
+          "name": "Ad",
+          "type": "Tip",
+          "summary": "Olaylar / Hedefler"
+        },
+        "testTitle": "Test gönder",
+        "editTitle": "Kanalı düzenle",
+        "deleteTitle": "Kanalı sil",
+        "deleteConfirm": "\"{{name}}\" kanalını kaldır? Bu geri alınamaz.",
+        "deleteConfirmButton": "Sil",
+        "errors": {
+          "deleteFailed": "Silmek başarısız oldu"
+        }
+      },
+      "edit": {
+        "backToList": "Bildirimlere Geri Dön",
+        "back": "Geri",
+        "heading": "{{provider}} kanalını düzenle",
+        "subtitle": "Bu bildirim kanalı için yapılandırmayı güncelleyin.",
+        "testSection": {
+          "title": "Test gönder",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Test Gönder",
+          "sendingButton": "Gönderiliyor…",
+          "hintEmail": "Hesap e-postanıza göndermek için boş bırakın. Test, kaydedilen kanal yapılandırmasını kullanır.",
+          "hintOther": "Test, kaydedilen kanal yapılandırmasını kullanır. Güncelleştirilen ayarları test etmek için önce değişiklikleri kaydedin."
+        },
+        "saveButton": "Değişiklikleri Kaydet",
+        "savingButton": "Kaydediliyor…",
+        "errors": {
+          "loadFailed": "Yüklemek başarısız oldu",
+          "saveFailed": "Kaydetmek başarısız oldu"
+        }
+      },
+      "create": {
+        "backToList": "Bildirimlere Geri Dön",
+        "changeType": "Türü değiştir",
+        "pickerHeading": "Bir kanal türü seçin",
+        "pickerSubtitle": "Yapılandırılacak bildirim sağlayıcısını seçin.",
+        "heading": "Yeni {{provider}} kanalı",
+        "subtitle": "Yeni bir bildirim kanalı yapılandırın.",
+        "createButton": "Kanal Oluştur",
+        "creatingButton": "Oluşturuluyor…",
+        "errors": {
+          "createFailed": "Oluşturmak başarısız oldu"
+        }
+      },
+      "sendTest": "Test gönder",
+      "fromAddress": "Adresinden",
+      "individualUsers": "Bireysel kullanıcılar",
+      "host": "Ana Bilgisayar",
+      "port": "Bağlantı Noktası",
+      "apiKey": "API Anahtarı",
+      "connectionString": "Bağlantı Dizesi",
+      "clientId": "İstemci Kimliği",
+      "clientSecret": "İstemci Gizli Dizi",
+      "refreshToken": "Jetonı Yenile",
+      "method": "Yöntem",
+      "botToken": "Bot Jetonu",
+      "channelId": "Kanal Kimliği",
+      "webhookUrl": "Webhook URL'si",
+      "integrationKey": "Entegrasyon Anahtarı"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "çek — /metrics ortaya koyar"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "iten — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "iten — metrikler API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "iten — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "iten — satır protokolü"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "iten — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "İstek izleri dışa aktarın",
+        "description": "Her proxy alınan istek: her aşama, konuşan her modül ve projeler tercih etmedikleri için istemi ve yanıtları tam olarak gemi.",
+        "sampleRateLabel": "Örnek oranı",
+        "sampleRateHint": "1 her isteği dışa aktarır, 0.1 onuncu."
+      },
+      "optional": "(isteğe bağlı)",
+      "headersHint": "(isteğe bağlı, satır başına bir: Anahtar: Değer)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Taşıyıcı Jetonu",
+          "placeholder": "Açık erişim için boş bırakın",
+          "description": "Prometheus metin formatında <code>/metrics</code> ortaya koyar. Taşıyıcı auth gerektirmek için bir jeton ayarlayın."
+        },
+        "otel": {
+          "endpoint": "Toplayıcı uç noktası",
+          "description": "OTLP alıcınızın temel URL'si. Routerly <code>/v1/metrics</code> ve <code>/v1/traces</code>'i ekler iz dışa aktarma açık olduğunda. Varsayılan HTTP bağlantı noktası 4318, gRPC 4317.",
+          "protocol": "Protokol",
+          "headers": "Başlıklar"
+        },
+        "datadog": {
+          "apiKey": "API Anahtarı",
+          "placeholder": "Datadog API anahtarınız",
+          "description": "<strong>Örgüt Ayarları → API Anahtarları</strong>'nın altında Datadog hesabınızda bulunur.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Uzaktan Yazma URL'si",
+          "description": "<strong>Grafana Cloud → Bağlantılar → Prometheus → Ayrıntılar</strong>'ında \"Uzaktan Yazma Uç Noktası\" olarak bulunur.",
+          "username": "Kullanıcı Adı / Yığın Kimliği",
+          "usernameHint": "Prometheus bağlantı ayrıntılarında gösterilen sayısal kimlik.",
+          "apiKey": "API Anahtarı / Jeton",
+          "apiKeyHint": "<strong>MetricsPublisher</strong> rolü olan Grafana Cloud jetonu."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 örneği URL'si. Bulut: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Jeton",
+          "tokenPlaceholder": "InfluxDB API jetonunuz",
+          "tokenHint": "Kova için <strong>yazma</strong> erişimine sahip olmalı.",
+          "org": "Örgüt",
+          "bucket": "Kova"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Gizli",
+          "secretHint": "(isteğe bağlı — HMAC-SHA256 imza anahtarı)",
+          "headers": "Başlıklar"
+        }
+      },
+      "errors": {
+        "loadFailed": "Entegrasyonları yüklemek başarısız oldu",
+        "updateFailed": "Entegrasyonu güncellemek başarısız oldu",
+        "saveFailed": "Entegrasyonu kaydetmek başarısız oldu",
+        "deleteFailed": "Entegrasyonu silmek başarısız oldu"
+      },
+      "empty": "Henüz hiçbir entegrasyon yapılandırılmadı.",
+      "enabled": "Etkin",
+      "testing": "Test edilmekte…",
+      "test": "Test",
+      "removeConfirm": "Kaldır?",
+      "remove": "Kaldır",
+      "cancel": "İptal",
+      "removeTooltip": "Entegrasyonu kaldır",
+      "saving": "Kaydediliyor…",
+      "save": "Kaydet",
+      "addButton": "Entegrasyon Ekle"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Ayarları yüklemek başarısız oldu",
+        "duplicateUrl": "Bu URL zaten listede.",
+        "unreachable": "Bu URL'de geçerli bir sağlayıcı kataloğu ulaşılmadı."
+      },
+      "saved": "Kaydedildi.",
+      "refreshed": "Yenilendi.",
+      "heading": "Sağlayıcı Katalog Depoları",
+      "refreshing": "Yenileniyor…",
+      "refresh": "Yenile",
+      "nextRefresh": "Sonraki: {{date}}",
+      "priorityHint": "Satır sırası birleştirme önceliğini belirler. Satır 1 çatışmada kazanır. Sıralamak için okları kullanın.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Güncellendi",
+        "lastCheck": "Son Kontrol",
+        "status": "Durum"
+      },
+      "empty": "Hiçbir depo yapılandırılmadı. Varsayılan Routerly genel kataloğu kullanılacaktır.",
+      "status": {
+        "error": "Hata",
+        "active": "Etkin",
+        "disabled": "Devre Dışı"
+      },
+      "edit": "Düzenle",
+      "removeTooltip": "Kaldır",
+      "addRepository": "Depo Ekle",
+      "checking": "Denetleniyor…",
+      "add": "Ekle",
+      "removeConfirm": "\"{{url}}\" deposunu kaldır?"
+    },
+    "about": {
+      "headings": {
+        "application": "Uygulama",
+        "runtime": "Çalışma Zamanı",
+        "storage": "Depolama",
+        "softwareUpdate": "Yazılım Güncellemesi"
+      },
+      "labels": {
+        "version": "Sürüm",
+        "uptime": "Çalışma Süresi",
+        "nodeVersion": "Node.js",
+        "platform": "Platform",
+        "configDir": "Yapılandırma dizini",
+        "dataDir": "Veri dizini",
+        "currentVersion": "Mevcut sürüm",
+        "availableVersion": "Mevcut sürüm",
+        "upToDate": "Güncel",
+        "lastChecked": "Son kontrol"
+      },
+      "noCheckPerformed": "Henüz hiçbir güncelleme kontrolü yapılmadı.",
+      "checkForUpdates": "Güncellemeleri denetle",
+      "checking": "Denetleniyor…",
+      "updateTo": "v{{version}} olarak güncelle",
+      "updating": "Güncelleniyor…",
+      "dockerHint": "Docker'da çalışmaktadır. Güncellemek için en son görüntüyü çekin.",
+      "confirmUpdate": "Bu, en son sürümü indirecek ve yükleyecektir. Hizmet yeniden başlatılacaktır. Devam et?",
+      "updateComplete": "Güncelleme tamamlandı! Yeniden yükleniyor…",
+      "serviceRestarting": "Hizmet yeniden başlatılıyor. Lütfen bir anda sayfayı yeniden yükleyin.",
+      "errors": {
+        "loadFailed": "Yüklemek başarısız oldu",
+        "checkFailed": "Kontrol başarısız oldu",
+        "updateFailed": "Güncelleme başarısız oldu"
+      },
+      "channel": "Kanal"
+    },
+    "security": {
+      "authentication": "Kimlik Doğrulaması",
+      "requireMfa": "Tüm kullanıcılar için İki Faktörlü Kimlik Doğrulaması Gerekli",
+      "requireMfaHint": "Etkinleştirildiğinde, 2FA'yı kurmamış kullanıcılar oturum açtıktan sonra kurulum istemini görecektir. Kullanıcılar Profil sayfasında 2FA'yı yapılandırabilirler.",
+      "savedSuccess": "Ayarlar başarıyla kaydedildi.",
+      "saving": "Kaydediliyor…",
+      "saveSettings": "Ayarları Kaydet",
+      "errors": {
+        "loadFailed": "Ayarları yüklemek başarısız oldu",
+        "saveFailed": "Ayarları kaydetmek başarısız oldu"
+      }
+    },
+    "title": "Ayarlar",
+    "subtitle": "Routerly için yapılandırma",
+    "tabs": {
+      "general": "Genel",
+      "security": "Güvenlik",
+      "notifications": "Bildirimler",
+      "integrations": "Entegrasyonlar",
+      "catalog": "Sağlayıcı Katalog",
+      "users": "Kullanıcılar",
+      "roles": "Roller",
+      "audit": "Denetim Günlüğü",
+      "about": "Hakkında"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Yönlendiriciler",
+      "subtitle": "Routerly'ye erişen istemci uygulamaları",
+      "count": "1 yönlendirici",
+      "count_other": "{{count}} yönlendiriciler",
+      "newRouter": "Yeni Yönlendirici",
+      "empty": "Henüz yönlendirici yok.",
+      "emptyFiltered": "Bu türde yönlendirici yok.",
+      "columns": {
+        "name": "Ad",
+        "tokens": "Jetonlar",
+        "policies": "İlkeler",
+        "models": "Modeller"
+      },
+      "tokenCount": "1 jeton",
+      "tokenCount_other": "{{count}} jetonlar",
+      "editRouter": "Yönlendiricyi düzenle",
+      "deleteRouter": "Yönlendiricyi sil",
+      "deleteConfirm": "Bu yönlendiricyi sil?",
+      "errors": {
+        "deleteFailed": "Yönlendiriciyi silme hatası"
+      },
+      "newOrchestrator": "Yeni Orkestratör",
+      "newPassthrough": "Yeni Passthrough"
+    },
+    "layout": {
+      "notFound": "Yönlendirici bulunamadı",
+      "tabs": {
+        "dashboard": "Pano",
+        "general": "Genel",
+        "orchestrator": "Orkestratör",
+        "routing": "Yönlendirme",
+        "optimizer": "İyileştirici",
+        "security": "Güvenlik",
+        "token": "Jeton",
+        "users": "Kullanıcılar",
+        "logs": "Günlükler"
+      },
+      "backToRouters": "Yönlendiricilere Geri Dön",
+      "backToRoutersTitle": "Yönlendiricilere geri dön",
+      "newRouter": "Yeni Yönlendirici",
+      "loading": "Yükleniyor...",
+      "routerId": "Yönlendirici Kimliği:",
+      "saveFirstHint": "Yönlendiricyi ilk kaydedin bu sekmeyi açmak için",
+      "newKind": "Yeni {{kind}}"
+    },
+    "dashboard": {
+      "period": "Dönem",
+      "noTraffic": "Seçilen dönem için bu yönlendirici için trafik yok.",
+      "stats": {
+        "savings": "Tasarruf",
+        "vsPrefix": "vs",
+        "forEverything": "her şey için",
+        "noTargetToCompare": "karşılaştırılacak hedef modeli yok",
+        "cost": "Maliyet",
+        "callCount": "1 çağrı",
+        "callCount_other": "{{count}} çağrılar",
+        "latency": "Gecikme",
+        "medianP95": "medyan · p95 {{value}}",
+        "ttft": "İlk jetona kadar zaman",
+        "notMeasured": "bu çağrılarda ölçülmedi",
+        "reliability": "Güvenilirlik",
+        "errorsAndBlocked": "{{errors}} hatalar · {{blocked}} engellendi"
+      },
+      "tokens": {
+        "input": "Giriş jetonları:",
+        "output": "Çıkış jetonları:",
+        "fromCache": "Önbellekten:",
+        "cacheSaved": "({{amount}} kaydedildi)"
+      },
+      "oneModel": {
+        "heading": "Her şey bir modele gitseydi",
+        "empty": "Bu yönlendiriciye hedef modelleri ekleyin karşılaştırmayı görmek için.",
+        "columns": {
+          "targetModel": "Hedef model",
+          "wouldHaveCost": "Maliyeti olurdu",
+          "saved": "Kaydedildi"
+        },
+        "costsHint": "Maliyetler gözlenen jetonlar her hedefin oranlarında yeniden fiyatlandırıldı."
+      },
+      "optimizers": {
+        "heading": "İyileştiriciler ne kaldırdı",
+        "columns": {
+          "optimizer": "İyileştirici",
+          "callsChanged": "Çağrılar değişti",
+          "tokensSaved": "Jetonlar kaydedildi",
+          "costSaved": "Maliyet kaydedildi",
+          "rolledBack": "Geri alındı"
+        },
+        "hint": "Çağrılardan ölçüldü, her birini çalıştıran modelde fiyatlandırıldı. Geri alınan çalıştırma, adımın çıktısı güvenli olmayan olarak reddedildi ve istemi geri yüklendi anlamına gelir: hiçbir şey kaydedilmedi ve yüksek sayı eşik çok agresif anlamına gelir."
+      },
+      "traffic": {
+        "heading": "Trafik nereye gitti",
+        "columns": {
+          "model": "Model",
+          "calls": "Çağrılar",
+          "share": "Payı",
+          "cost": "Maliyet",
+          "p95Latency": "p95 gecikme",
+          "errors": "Hatalar"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Yönlendiricyi kaydetme hatası",
+        "copyFailed": "Kopyalamak başarısız oldu - lütfen jetonu manuel olarak seçin ve kopyalayın."
+      },
+      "kind": {
+        "router": {
+          "label": "Yönlendirici",
+          "description": "İstekleri model adayları arasında yönlendirir."
+        },
+        "orchestrator": {
+          "label": "Orkestratör",
+          "description": "İstekleri modeller yerine diğer yönlendiriciler arasında yönlendirir."
+        },
+        "passthrough": {
+          "label": "Geçiş",
+          "description": "İstekleri değiştirilmemiş olarak iletir."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Bu jetonu şimdi kaydedin.",
+        "saveNowHint": "Tekrar gösterilmeyecek - bu ekrandan ayrıldıktan sonra kurtarılamaz.",
+        "copied": "Kopyalandı!",
+        "copy": "Kopyala",
+        "goToRouter": "Yönlendiriciye git"
+      },
+      "connect": {
+        "heading": "Nasıl bağlanır",
+        "intro": "Herhangi bir OpenAI veya Anthropic SDK'yı Routerly'ye işaret edin ve bir <tokenLink>yönlendirici jetonu</tokenLink>nı API anahtarı olarak kullanın. <code>{{token}}</code> aşağıda sizinkle değiştirin. <code>{{model}}</code> modeli seçimi Routerly'ye verir; <modelsLink>Modeller</modelsLink>'den herhangi bir model kimliği de çalışır.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Temel URL <code>{{baseUrl}}</code>, herhangi bir \"OpenAI uyumlu\" sağlayıcı alanının aldığı ile aynı.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Temel URL <code>{{baseUrl}}</code>, <code>/v1</code> olmadan: SDK ekler.",
+        "curl": "curl",
+        "curlHint": "Hiçbir şey yüklemeden bağlantıyı kontrol edin, ardından çağrıyı <usageLink>Kullanım</usageLink>'da arayın."
+      },
+      "form": {
+        "kind": "Tür",
+        "kindFixedHint": "Yönlendirici oluşturulduktan sonra sabitlenmiş.",
+        "routerName": "Yönlendirici Adı",
+        "routerNamePlaceholder": "Benim Uygulamam",
+        "advancedSettings": "Gelişmiş ayarlar",
+        "ttftTimeout": "TTFT Zaman Aşımı (ms)",
+        "ttftTimeoutHint": "Bir model bu süre içinde ilk yanıt baytını göndermezse, Routerly onu durdurur ve sonraki adayı dener. Toplam yanıt süresini sınırlamaz. Sağlayıcının aldığı kadar uzun beklemek için 0'a ayarlayın.",
+        "traceContent": "Içeriği izle",
+        "traceContentHint": "İzlemeler her zaman meta verileri (modeller, puanlar, jetonlar, maliyet, gecikme) kaydeder. Gönderilen istem ve alınan yanıtları da kaydetmek için bunu açın. Kullanım kaydı ile depolanır ve raporları okuyabilen herkes tarafından görülebilir.",
+        "capturePromptsAndAnswers": "İstemi ve cevapları yakala",
+        "saveChanges": "Değişiklikleri Kaydet",
+        "createRouter": "Yönlendirici Oluştur",
+        "passthroughPath": "Yol",
+        "passthroughPathHint": "İstemcilerin çağırdığı URL'nin bir parçası haline gelir: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Orkestratör Oluştur",
+        "createPassthrough": "Passthrough Oluştur"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Bu yönlendirici bir Orkestratör değildir.",
+      "candidateRouters": "Aday Yönlendiriciler",
+      "candidateRoutersHint": "Bu Orkestratörün istekleri ileten yönlendiriciler. Ağırlık, her adayın seçilme sıklığını etkiler; yalnızca adı, kimliği, ağırlığı ve isteğe bağlı adaya özgü limitler gösterilir.",
+      "routingPolicies": "Yönlendirme İlkeleri",
+      "routingPoliciesHint": "Bir Orkestratör, her aday Router'ı bütün olarak puanlar, bu nedenle burada yalnızca sağlık, hız sınırı ve adalet ilkeleri geçerlidir. Diğer ilke türleri, bir yönlendiricinin kendi modellerinden seçim yapar, ancak bir Orkestratörün bunları yoktur.",
+      "router": "Yönlendirici",
+      "selectRouter": "Yönlendirici seç",
+      "weight": "Ağırlık",
+      "removeCandidate": "Adayı kaldır",
+      "usageLimits": "Bu aday için kullanım limitleri",
+      "limitCount": "{{count}} limit",
+      "limitCount_other": "{{count}} limitler",
+      "usageLimitsHint": "İsteğe bağlı kullanım limitleri yalnızca bu Orkestratör bu adaya ileten isteklere uygulanır.",
+      "empty": "Henüz aday yönlendirici yok. Bir Orkestratör istekleri ileteceğinden önce en az birinin olması gerekir.",
+      "addCandidate": "Aday Ekle",
+      "saved": "Kaydedildi!",
+      "saveCandidates": "Adayları Kaydet",
+      "errors": {
+        "loadFailed": "Yönlendiricileri yüklemek başarısız oldu",
+        "saveFailed": "Orkestratör adaylarını kaydetme hatası"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Yönlendirme profilini atama başarısız oldu",
+        "duplicateTargets": "Hedef modeller çoğaltmalar içeremez.",
+        "saveFailed": "Yönlendirici yönlendirmesini kaydetme hatası",
+        "noProfileAvailable": "Hiçbir yönlendirme profili kullanılamaz. Profiller sayfasından bir tane oluşturun."
+      },
+      "form": {
+        "routing": "Yönlendirme",
+        "routingHint": "Paylaşılan yönlendirme profilini kullanın veya bu yönlendiricinin kendi ilkelerini tanımlayın. Hedef modeller her iki şekilde de yapılandırılabilir kalır.",
+        "profileMode": "Profil",
+        "customMode": "Özel",
+        "routingProfile": "Yönlendirme Profili",
+        "builtinSuffix": "(yerleşik)",
+        "profileHint": "İlkeler profil gelir ve değişikliklerini izler. Profiller sayfasında bunları düzenleyin veya bunların bir kopyasından başlamak için Özel'e geçin.",
+        "saved": "Kaydedildi!",
+        "saveRoutingConfiguration": "Yönlendirme Yapılandırmasını Kaydet"
+      },
+      "targetModels": {
+        "heading": "Hedef Modeller",
+        "hint": "İlkelerin filtreleceği ve seçeceği model havuzunu tanımlayın. İsteğe bağlı istemler, AI Yönlendiricinizi her modeli seçmek için ne zaman talimat verir.",
+        "endpointModel": "Uç Nokta Modeli",
+        "selectModel": "Model seç",
+        "promptDefinition": "İstem Tanımı",
+        "promptPlaceholder": "Yönlendiricinin bu modeli seçmesi için tam olarak ne zaman ve neden olması gerektiğini açıkla...",
+        "intents": "Niyetler",
+        "removeTarget": "Hedef modeli kaldır",
+        "empty": "Hiçbir hedef model yapılandırılmadı.",
+        "addTarget": "Hedef Model Ekle",
+        "passthroughLabel": "Doğrudan geçiş (ham iletim)",
+        "passthroughNotRemovable": "Doğrudan geçiş girdisi kaldırılamaz"
+      }
+    },
+    "optimizer": {
+      "title": "İyileştiriciler",
+      "description": "İyileştiriciler, istekler sağlayıcıya ulaşmadan önce istemi jetonlarını azaltır. Yukarıdan aşağıya sırada çalışırlar. Paylaşılan iyileştirici profili kullanın veya bu yönlendiricinin kendi işlem hattını tanımlayın.",
+      "noPermission": "İyileştiricileri görüntülemek için izniniz yok.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Özel"
+      },
+      "profileSelect": {
+        "ariaLabel": "İyileştirici Profili",
+        "builtinLabel": "{{label}} (yerleşik)",
+        "hint": "Adımlar profil gelir ve değişikliklerini izler. Profiller sayfasında bunları düzenleyin veya bunların bir kopyasından başlamak için Özel'e geçin.",
+        "disabledSuffix": "(devre dışı)",
+        "thresholdSuffix": ", eşik {{threshold}}"
+      },
+      "customHint": "Sıralamak için sürükleyin, etkinleştirmek için geçiş yapın. Bazı iyileştiriciler saldırganlığı kontrol etmek için eşik kullanır.",
+      "saveButton": "İyileştiricileri Kaydet",
+      "saving": "Kaydediliyor...",
+      "saved": "Kaydedildi",
+      "preview": {
+        "title": "İstem tasarruflarını önizle",
+        "description": "Geçerli (kaydedilmemiş) işlem hattını her adımın ne kaldırdığını ve ne mal olduğunu görmek için bir isteme çalıştırın. Örnek konuşmalardan birini seçin veya kendi isteminizi yazın.",
+        "promptLabel": "İstem",
+        "promptAriaLabel": "Önizlemek için istem",
+        "typePromptOption": "Aşağıda bir istem yazın",
+        "fixturesHint": "Routerly ile gönderilen örnek konuşmalar. Routerly gerçek istemi kaydetmez.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Karşı önizlemek için model",
+        "modelWithContext": "{{id}} ({{k}}k bağlam)",
+        "noModelOption": "Model yok",
+        "modelHint": "Bir bağlam penceresine sığdırmak için adımları, hangi pencereyi bilmeleri gerekir. Bir model olmadan Routerly penceresi olmadığını atlanırlar, talep olan modeller gibi.",
+        "sampleAriaLabel": "Örnek istem",
+        "samplePlaceholder": "Örnek kullanıcı mesajı yapıştırın...",
+        "runButton": "Önizlemeyi Çalıştır",
+        "running": "Çalıştırılıyor...",
+        "before": "Önce",
+        "after": "Sonra",
+        "saved": "Kaydedildi",
+        "columns": {
+          "optimizer": "İyileştirici",
+          "before": "Önce",
+          "after": "Sonra",
+          "saved": "Kaydedildi"
+        },
+        "rolledBackNote": "geri alındı: değişiklik güvenli olmayan olarak reddedildi",
+        "skippedNote": "atlandı: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Bu adımın ürettiği değişiklik geri alındı, bu yüzden istem sonraki adıma dokunulmamış ulaştı.",
+          "skipped": "Bu adım çalışmadı: {{reason}}",
+          "unchanged": "Bu adım istemi değiştirilmemiş bıraktı."
+        }
+      },
+      "errors": {
+        "assignFailed": "İyileştirici profilini atama başarısız oldu",
+        "saveFailed": "İyileştiricileri kaydetme hatası",
+        "previewFailed": "Önizlemeyi çalıştırma hatası",
+        "noProfileAvailable": "Hiçbir iyileştirici profili kullanılamaz. Profiller sayfasından bir tane oluşturun."
+      }
+    },
+    "token": {
+      "newButton": "Yeni Jeton",
+      "empty": "Henüz API jetonu yok. İsteklerin kimlik doğrulamasını yapmak için bir tane oluşturun.",
+      "budgetOverrides": "Bütçe Geçersiz Kılmaları",
+      "created": "Oluşturuldu",
+      "lastUsed": "Son kullanım",
+      "expires": "Süresi doluyor",
+      "never": "Asla",
+      "editTitle": "Yapılandırmayı Düzenle",
+      "revokeTitle": "Jetonu İptal Et",
+      "revokeConfirm": "\"{{snippet}}...\" jetonu iptal et? Bunu kullanan uygulamalar hemen çalışmayı durdurur.",
+      "labelInput": {
+        "placeholder": "Etiket ara veya oluştur…",
+        "createPrefix": "Oluştur",
+        "noMatches": "Eşleşen etiket bulunamadı."
+      },
+      "errors": {
+        "deleteFailed": "Jetonu silme hatası"
+      },
+      "create": {
+        "backToTokens": "Jetona geri dön",
+        "title": "Yeni API Jetonu",
+        "subtitle": "Tam jeton yalnızca oluşturulduktan sonra bir kez gösterilir — güvenli bir şekilde saklayın.",
+        "tokenCreated": "Jeton başarıyla oluşturuldu. Şimdi kopyalayın - bir daha gösterilmeyecek.",
+        "copied": "Kopyalandı!",
+        "copy": "Kopyala",
+        "done": "Bitti",
+        "optional": "isteğe bağlı",
+        "labels": "Etiketler",
+        "labelsHint": "Kullanıldığı yeri belirlemek için bu jetonu etiketleyin (örn. \"production\", \"ci\").",
+        "scopes": "Kapsamlar",
+        "scopesHint": "Bu jetonun iliştirilmiş serbest biçimli kapsamlar (örn. \"batch\", \"internal\"), kendi defter tutmanız için jetonla depolanır.",
+        "tags": "Etiketler",
+        "tagsHint": "Kullanım kayıtlarına iletilen anahtar-değer meta verileri (örn. env=production).",
+        "keyPlaceholder": "anahtar",
+        "valuePlaceholder": "değer",
+        "createButton": "Jeton Oluştur",
+        "cancel": "İptal",
+        "copyFailed": "Kopyalamak başarısız oldu - lütfen jetonu manuel olarak seçin ve kopyalayın.",
+        "errors": {
+          "createFailed": "Jeton oluşturma hatası"
+        }
+      },
+      "edit": {
+        "title": "Jetonu Düzenle",
+        "subtitle": "Bu jeton için etiketleri ve modele özgü limit geçersiz kılmalarını güncelleyin.",
+        "token": "Jeton",
+        "labels": "Etiketler",
+        "perModelLimits": "Model başına limitler",
+        "perModelLimitsHint": "Bu jetonu kullanan istekleri global ve yönlendirici seviyesi limitlerini geçersiz kılın.",
+        "noTargetModels": "Önce Yönlendirme sekmesine hedef modelleri ekleyin.",
+        "noOverride": "geçersiz kılma yok",
+        "noLimits": "Sınırları Yok",
+        "noLimitsSet": "Limitler ayarlanmadı - ebeveynden devralınıyor. Geçersiz kılmak için aşağıya bir limit ekleyin.",
+        "metric": "Metrik",
+        "type": "Tip",
+        "periodLabel": "Dönem",
+        "every": "Her",
+        "maxCost": "Maksimum ($)",
+        "maxCalls": "Maksimum (n.)",
+        "maxTokens": "Maksimum (jetonlar)",
+        "allCombosSet": "Tüm metrik/dönem kombinasyonları zaten ayarlanmıştır",
+        "addLimit": "Limit ekle",
+        "windowType": {
+          "period": "Dönem",
+          "rolling": "Kayan"
+        },
+        "limitMetric": {
+          "cost": "Maliyet (USD)",
+          "calls": "İstekler",
+          "input_tokens": "Giriş jetonları",
+          "output_tokens": "Çıkış jetonları",
+          "total_tokens": "Toplam jetonlar"
+        },
+        "period": {
+          "hourly": "Saatlik",
+          "daily": "Günlük",
+          "weekly": "Haftalık",
+          "monthly": "Aylık",
+          "yearly": "Yıllık"
+        },
+        "rollingUnit": {
+          "second": "saniye",
+          "minute": "dakika",
+          "hour": "saat",
+          "day": "gün",
+          "week": "hafta",
+          "month": "ay"
+        },
+        "fmt": {
+          "requests": "{{value}} istek",
+          "inputTokens": "{{value}} giriş-jeton",
+          "outputTokens": "{{value}} çıkış-jeton",
+          "totalTokens": "{{value}} jeton",
+          "everyRolling": "{{metric}} / her {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Jetonu kaydetme hatası"
+        }
+      }
+    },
+    "users": {
+      "title": "Yönlendirici Üyeleri",
+      "description": "Bu yönlendiriciye erişimi olan kullanıcıları yönetin.",
+      "addButton": "Üye Ekle",
+      "addNewTitle": "Yeni Üye Ekle",
+      "selectUserPlaceholder": "Kullanıcı seç...",
+      "addConfirmButton": "Ekle",
+      "cancelButton": "İptal",
+      "empty": "Hiçbir üye bulunamadı.",
+      "removeConfirm": "Bu üyeyi kaldırmak istediğinizden emin misiniz?",
+      "saveTitle": "Değişiklikleri kaydet",
+      "changeRoleTitle": "Rolü Değiştir",
+      "removeTitle": "Üyeyi Kaldır",
+      "roles": {
+        "viewer": "Görüntüleyici",
+        "editor": "Editör",
+        "admin": "Yönetici"
+      },
+      "columns": {
+        "user": "Kullanıcı",
+        "role": "Rol",
+        "actions": "İşlemler"
+      },
+      "errors": {
+        "loadFailed": "Kullanıcıları yüklemek başarısız oldu",
+        "addFailed": "Üyeyi ekleme hatası",
+        "updateFailed": "Üyeyi güncelleme hatası",
+        "removeFailed": "Üyeyi kaldırma hatası"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Kapalı"
+      },
+      "autoRefreshOff": "Otomatik yenileme devre dışı",
+      "autoRefreshEvery": "Otomatik yenileme her {{interval}}",
+      "lastUpdated": "son güncelleme: {{time}}",
+      "refresh": "Yenile",
+      "refreshNowTitle": "Şimdi yenile",
+      "refreshNowButton": "↻ Şimdi",
+      "filters": {
+        "period": "Dönem",
+        "model": "Model",
+        "allModels": "Tüm Modeller",
+        "type": "Tip",
+        "all": "Tümü",
+        "completion": "Tamamlama",
+        "router": "Yönlendirici",
+        "status": "Durum",
+        "success": "Başarı",
+        "blocked": "Engellendi",
+        "error": "Hata",
+        "resetButton": "Filtreleri Sıfırla"
+      },
+      "stats": {
+        "totalCost": "Toplam Maliyet",
+        "totalCalls": "Toplam Çağrılar",
+        "completionCalls": "Tamamlama Çağrıları",
+        "routerCalls": "Yönlendirici Çağrıları",
+        "errors": "Hatalar"
+      },
+      "requestLogs": "İstek Günlükleri",
+      "emptyNoRequests": "Seçilen dönem için bu yönlendirici için istekler yok.",
+      "emptyNoMatches": "Etkin filtreleri eşleşen kayıtlar yok.",
+      "columns": {
+        "time": "Zaman",
+        "model": "Model",
+        "type": "Tip",
+        "in": "Giriş",
+        "out": "Çıkış",
+        "cost": "Maliyet",
+        "latency": "Gecikme",
+        "ttft": "TTFT",
+        "tokPerSec": "Jeton/sn",
+        "status": "Durum"
+      },
+      "typeRouter": "yönlendirici",
+      "typeCompletion": "tamamlama",
+      "pagination": {
+        "previous": "← Önceki",
+        "next": "Sonraki →",
+        "pageOf": "Sayfa {{page}} / {{totalPages}}",
+        "totalRecords": "({{count}} toplam kayıtlar)"
+      }
+    },
+    "security": {
+      "title": "Güvenlik",
+      "description": "Paylaşılan güvenlik profili kullanın veya bu yönlendiricinin kendi güvenlik rayları ve KKB ilkelerini tanımlayın.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Özel"
+      },
+      "profileSelect": {
+        "ariaLabel": "Güvenlik Profili",
+        "builtinLabel": "{{label}} (yerleşik)",
+        "hint": "Güvenlik rayları ve KKB ilkeleri profil gelir ve değişikliklerini izler. Profiller sayfasında bunları düzenleyin veya bunların bir kopyasından başlamak için Özel'e geçin.",
+        "blockingSuffix": ", engelleme",
+        "disabledSuffix": ", devre dışı",
+        "piiRedaction": "KKB redaksiyonu ({{target}})"
+      },
+      "saveButton": "Güvenlik Ayarlarını Kaydet",
+      "saved": "Kaydedildi!",
+      "errors": {
+        "assignFailed": "Güvenlik profilini atama başarısız oldu",
+        "saveFailed": "Güvenlik ayarlarını kaydetme hatası",
+        "noProfileAvailable": "Hiçbir güvenlik profili kullanılamaz. Profiller sayfasından bir tane oluşturun."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Siz yararlı bir AI asistanısınız.",
+      "errors": {
+        "unknown": "Bilinmeyen bir hata oluştu",
+        "onlyImages": "Şu anda yalnızca görüntü ekleri vizyon modelleri için desteklenmektedir."
+      },
+      "title": "Test Sohbeti",
+      "subtitle": "Test sorgularını yönlendirme ağ geçidi aracılığıyla gönderin.",
+      "routerToken": "Yönlendirici Jetonu:",
+      "hideToken": "Jetonu Gizle",
+      "showToken": "Jetonu Göster",
+      "recognizedToken": "Tanınan Jeton",
+      "unrecognizedToken": "Tanınmayan Jeton",
+      "noMessages": "Henüz mesaj yok.",
+      "enterTokenHint": "Mesaj göndermek için lütfen yukarıda Yönlendirici Jetonu girin.",
+      "typeMessageHint": "Testi başlatmak için aşağıya bir mesaj yazın.",
+      "reasoning": "Akıl Yürütme",
+      "attachedAlt": "Bağlı",
+      "attachmentAlt": "Ek",
+      "attachImage": "Görüntü Ekle",
+      "typeMessagePlaceholder": "Mesaj yazın...",
+      "stopGeneration": "Oluşturmayı Durdur",
+      "sendEnter": "Gönder (Enter)",
+      "debugLog": "Hata Ayıklama Günlüğü",
+      "clear": "Temizle",
+      "noRequestSent": "Henüz istek gönderilmedi.",
+      "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü · {{count}} olay",
+      "turnTraceLog_other": "Dönemek #{{turn}} izleme günlüğü · {{count}} olaylar"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Bağlantılar",
+      "subtitle": "Model örneklerini çalıştırmak için kullanılan sağlayıcı hesapları",
+      "noPermission": "Bağlantıları görüntülemek için izniniz yok.",
+      "count": "{{count}} bağlantı",
+      "count_other": "{{count}} bağlantılar",
+      "addConnection": "Bağlantı Ekle",
+      "empty": "Henüz bağlantı yok. Başlamak için bir tane ekleyin.",
+      "deleteConfirm": "\"{{label}}\" bağlantısını kaldır? Ona bağlı örnekler çalışmayı durdurur.",
+      "errors": {
+        "loadFailed": "Bağlantıları yüklemek başarısız oldu",
+        "deleteFailed": "Bağlantıyı silmek başarısız oldu"
+      },
+      "columns": {
+        "label": "Etiket",
+        "provider": "Sağlayıcı",
+        "endpoint": "Uç Nokta",
+        "status": "Durum"
+      },
+      "status": {
+        "enabled": "Etkin",
+        "disabled": "Devre Dışı"
+      },
+      "actions": {
+        "models": "Modeller",
+        "edit": "Düzenle",
+        "remove": "Kaldır"
+      }
+    },
+    "form": {
+      "backToConnections": "Bağlantılara Geri Dön",
+      "editTitle": "Bağlantıyı Düzenle",
+      "addTitle": "Bağlantı Ekle",
+      "enabled": "Etkin",
+      "editSubtitle": "Sağlayıcı hesabı ayarlarını güncelleyin",
+      "addSubtitle": "Yeni bir sağlayıcı hesabı kaydedin",
+      "sectionTitle": "Bağlantı ayrıntıları",
+      "sectionDesc": "İstekleri gerçekleştirmek için kullanılan sağlayıcı hesabı, kimlik bilgileri ve uç nokta.",
+      "provider": "Sağlayıcı",
+      "groups": {
+        "directApi": "Doğrudan API",
+        "cloudPlatform": "Bulut platformu",
+        "subscription": "Abonelik",
+        "browserSession": "Tarayıcı oturumu",
+        "selfHosted": "Kendi barındırılı"
+      },
+      "upstreamProvider": {
+        "label": "Sağlayıcı",
+        "hintLabel": "(yukarı akış sağlayıcı adı)",
+        "placeholder": "örn. deepseek, mistral, groq",
+        "description": "Bu uç noktanın ait olduğu hizmeti adlandırır. Bu bağlantıdaki modeller kimliği ön eki olarak kullanır (örn. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Ad",
+        "hint": "Bu bağlantının referans alındığı yerde kimliğini belirler, bu nedenle benzersiz olması gerekir. <code>{{suggested}}</code>'i kullanmak için boş bırakın."
+      },
+      "credentialsBlankHint": "Mevcut değerleri tutmak için kimlik bilgisi alanlarını boş bırakın.",
+      "save": "Kaydet",
+      "create": "Oluştur",
+      "cancel": "İptal",
+      "oauth": {
+        "unknown": "bilinmeyen",
+        "accountExpires": "Hesap: {{account}} — süresi doluyor {{expires}}",
+        "unknownError": "Bilinmeyen hata"
+      },
+      "errors": {
+        "notFound": "Bağlantı bulunamadı",
+        "loadFailed": "Bağlantıyı yüklemek başarısız oldu",
+        "updateFailed": "Bağlantıyı güncelleme başarısız oldu",
+        "createFailed": "Bağlantı oluşturma başarısız oldu"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Modellere Geri Dön",
+      "title": "Model Keşfi",
+      "subtitle": "Mevcut modellere göz atın ve yönlendirme yapılandırmanıza ekleyin",
+      "count": "{{count}} modeller",
+      "filteredCount": "{{filtered}} / {{count}}",
+      "free": "ücretsiz",
+      "add": "Ekle",
+      "addAgain": "Yeniden Ekle",
+      "loadFailed": "Kataloğu yüklemek başarısız oldu: {{error}}",
+      "filters": {
+        "search": "Ara",
+        "searchPlaceholder": "Model Kimliği veya adı…",
+        "provider": "Sağlayıcı",
+        "allProviders": "Tüm sağlayıcılar",
+        "context": "Bağlam",
+        "ctxOptions": {
+          "all": "Tümü",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Fiyat / 1M",
+        "priceOptions": {
+          "all": "Tümü",
+          "free": "Ücretsiz",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Göster",
+        "configured": "Yapılandırılmış",
+        "embedding": "Gömme",
+        "resetFilters": "Filtreleri Sıfırla"
+      },
+      "empty": {
+        "noMatches": "Hiçbir model filtreleri eşleştirmez."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Sağlayıcı",
+        "context": "Bağlam",
+        "input": "Giriş / 1M",
+        "output": "Çıkış / 1M"
+      },
+      "badges": {
+        "configured": "Yapılandırılmış",
+        "embedding": "gömme",
+        "runsLocally": "Yerel olarak çalışır"
+      },
+      "pagination": {
+        "prev": "Önceki",
+        "next": "Sonraki",
+        "range": "{{start}}–{{end}} / {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Modellere Geri Dön",
+      "title": {
+        "add": "Model Ekle",
+        "edit": "Modeli Düzenle",
+        "clone": "Modeli Klonla"
+      },
+      "subtitle": {
+        "add": "Yeni LLM sağlayıcı modelini kaydedin",
+        "edit": "{{id}} için yapılandırmayı değiştirme",
+        "clone": "{{id}} klonlama — kaydetmek için yeni bir kimlik ata"
+      },
+      "errors": {
+        "modelNotFound": "Model bulunamadı",
+        "sourceModelNotFound": "Kaynak modeli bulunamadı",
+        "loadFailed": "Modelleri yüklemede hata",
+        "idRequired": "Model Kimliği gereklidir",
+        "duplicateId": "\"{{id}}\" modeli zaten mevcut - farklı Özel Kimlik ayarlayın",
+        "selectConnection": "Bağlantı seç",
+        "saveFailed": "Hata"
+      },
+      "badge": {
+        "yes": "evet",
+        "no": "hayır",
+        "override": "Geçersiz Kıl",
+        "auto": "Otomatik",
+        "default": "Varsayılan: {{value}}",
+        "reset": "Sıfırla"
+      },
+      "oauth": {
+        "unknownExpiry": "bilinmeyen",
+        "accountOk": "Hesap: {{account}} — süresi doluyor {{expires}}",
+        "unknownError": "Bilinmeyen hata"
+      },
+      "identification": {
+        "title": "Model Tanımlama",
+        "description": "Bu model yapılandırması için benzersiz tanımlayıcı ve sağlayıcı ayarları.",
+        "routerlyId": "Routerly Kimliği",
+        "routerlyIdHintPre": "(isteğe bağlı — varsayılan:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Routerly API çağrılarında bu modele referans verilen tanımlayıcı.",
+        "provider": "Sağlayıcı",
+        "upstreamProviderHint": "(yukarı akış sağlayıcı adı)",
+        "upstreamProviderPlaceholder": "örn. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly Kimliği ön eki için kullanılır (örn.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(yukarı akış modeli kimliği)",
+        "upstreamModelPlaceholder": "örn. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Yukarı akış API uç noktasına gönderilen model tanımlayıcı.",
+        "modelPreset": "Model Ön Ayarı",
+        "customModelOption": "— özel model adı —",
+        "customModelPlaceholder": "örn. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Bağlantı ayrıntıları",
+        "description": "İstekleri gerçekleştirmek için gerekli API uç noktası ve kimlik doğrulama kimlik bilgileri.",
+        "preconfigured": "Önceden Yapılandırılmış",
+        "custom": "Özel",
+        "connection": "Bağlantı",
+        "selectPlaceholder": "— bağlantı seç —",
+        "noneAvailable": "Bu sağlayıcı için önceden yapılandırılmış bağlantı yok. Özel'e geçin veya Bağlantılar sayfasında bir tane oluşturun.",
+        "editHint": "Bu bağlantıyı daha sonra düzenlemek buna bağlı her modeli günceller."
+      },
+      "capabilities": {
+        "title": "Yetenekler",
+        "description": "Bu modelin türünü ve yeteneklerini belirtin.",
+        "embeddingModel": "Gömme modeli",
+        "embeddingModelHint": "Bu model vektör gömmeleri oluşturur (sohbet tamamlamaları değil)"
+      },
+      "pricing": {
+        "title": "Fiyatlandırma ve Bağlam",
+        "description": "Faturalandırma ve yönlendirme için kullanılan maliyet parametreleri ve işleme limitleri.",
+        "inputPerMillion": "Giriş $/1M",
+        "outputPerMillion": "Çıkış $/1M",
+        "cachePerMillion": "Önbellek oku $/1M",
+        "cacheWritePerMillion": "Önbellek yazma $/1M",
+        "optional": "(isteğe bağlı)",
+        "contextWindow": "Bağlam Penceresi",
+        "contextWindowHint": "(jetonlar, isteğe bağlı)"
+      },
+      "tiers": {
+        "title": "Gelişmiş — Fiyatlandırma katmanları",
+        "description": "Bir metrik eşiği aştığında fiyatlandırmayı geçersiz kılın. Örneğin: \"200 000 bağlam jetonu üzerinde fiyatlar değişir.\"",
+        "removeTier": "Katmanı kaldır",
+        "above": "Yukarıda",
+        "metric": "Metrik",
+        "metricContextTokens": "Bağlam jetonları",
+        "overridePricing": "Fiyatlandırmayı Geçersiz Kıl",
+        "addTier": "Fiyatlandırma katmanı ekle"
+      },
+      "limits": {
+        "title": "Limitler",
+        "description": "Bu modelin kullanım limitleri. Birden çok kural birleştirilebilir.",
+        "metric": "Metrik",
+        "type": "Tip",
+        "addLimit": "Limit ekle"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max aboneliği)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro aboneliği)"
+      },
+      "saveChanges": "Değişiklikleri Kaydet",
+      "createClone": "Klon Oluştur",
+      "createModel": "Model Oluştur"
+    },
+    "page": {
+      "title": "Modeller",
+      "subtitle": "Routerly ile kayıtlı LLM sağlayıcıları",
+      "tabs": {
+        "models": "Modeller",
+        "health": "Sağlık"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} modeller",
+        "filteredCount": "{{filtered}} / {{count}} model",
+        "filteredCount_other": "{{filtered}} / {{count}} modeller"
+      },
+      "filters": {
+        "allProviders": "Tüm sağlayıcılar",
+        "allConnections": "Tüm bağlantılar",
+        "searchPlaceholder": "Modelleri filtrele…"
+      },
+      "discover": "Keşfet",
+      "addModel": "Model Ekle",
+      "deleteConfirm": "\"{{id}}\" modelini kaldır?",
+      "empty": {
+        "noModels": "Henüz model yok. Başlamak için bir tane ekleyin.",
+        "noMatches": "Etkin filtreleri eşleşen modeller yok."
+      },
+      "columns": {
+        "id": "Kimlik",
+        "provider": "Sağlayıcı",
+        "endpoint": "Uç Nokta",
+        "input": "Giriş $/1M",
+        "output": "Çıkış $/1M",
+        "cache": "Önbellek $/1M",
+        "context": "Bağlam Boyutu"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Klonla",
+        "edit": "Düzenle",
+        "remove": "Kaldır"
+      },
+      "pagination": {
+        "previous": "← Önceki",
+        "next": "Sonraki →",
+        "pageOf": "Sayfa {{page}} / {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} modeller)"
+      },
+      "health": {
+        "emptyNoModels": "Hiçbir model yapılandırılmadı.",
+        "emptyNoMatches": "Hiçbir model filtreyi eşleştirmez.",
+        "resetAll": "Tümünü Sıfırla",
+        "resetAllTitle": "Her devre kesiciyi, dinlenme süresini ve kilidi sıfırla",
+        "resetTitle": "Devre kesiciyi sıfırla",
+        "confirmResetModel": "\"{{id}}\" modeli için devre kesiciyi sıfırla?",
+        "confirmResetAll": "Tüm dayanıklılık durumunu sıfırla? Bu her devre kesiciyi, dinlenme süresini ve kilidi temizler.",
+        "errors": {
+          "resetModelFailed": "Devre kesiciyi sıfırlamak başarısız oldu",
+          "resetAllFailed": "Dayanıklılık durumunu sıfırlamak başarısız oldu"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Sağlayıcı",
+          "status": "Durum",
+          "circuit": "Devre",
+          "errorRate": "Hata oranı (5d)",
+          "p95Latency": "P95 gecikme (1s)",
+          "requests": "İstekler (1s)",
+          "lastSuccess": "Son başarı",
+          "cooldownLockout": "Dinlenme Süresi / Kilit"
+        },
+        "status": {
+          "healthy": "Sağlıklı",
+          "degraded": "Bozulmuş",
+          "unavailable": "Kullanılamaz",
+          "cooldown": "Dinlenme Süresi",
+          "nodata": "Veri yok"
+        },
+        "circuit": {
+          "ok": "Tamam",
+          "recovering": "Kurtarılıyor",
+          "tripped": "Tetiklendi"
+        },
+        "time": {
+          "never": "asla",
+          "now": "şimdi",
+          "secondsAgo": "{{count}}sn önce",
+          "minutesAgo": "{{count}}dk önce",
+          "hoursAgo": "{{count}}s önce",
+          "daysAgo": "{{count}}g önce",
+          "minSec": "{{min}}dk {{sec}}sn",
+          "sec": "{{sec}}sn",
+          "cooldown": "dinlenme {{time}}",
+          "lockout": "kilit {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Deneyler",
+      "subtitle": "Yönlendiricileri birbirleriyle A/B test et",
+      "noPermission": "Deneyleri görüntülemek için izniniz yok.",
+      "count": "{{count}} deney",
+      "count_other": "{{count}} deneyler",
+      "newExperiment": "Yeni Deney",
+      "empty": "Henüz deney yok. Yönlendiricileri kafalar karşılaştırmak için bir tane oluşturun.",
+      "deleteConfirm": "\"{{name}}\" deneyini sil? Bu geri alınamaz.",
+      "noToken": "Jeton yok",
+      "noTokenTitle": "Jeton olmadan istemci bu deneye ulaşamaz",
+      "errors": {
+        "loadFailed": "Deneyleri yüklemek başarısız oldu",
+        "deleteFailed": "Deney silmek başarısız oldu"
+      },
+      "columns": {
+        "name": "Ad",
+        "variants": "Varyantlar",
+        "rotation": "Döndürme",
+        "created": "Oluşturuldu"
+      },
+      "actions": {
+        "edit": "Deney Düzenle",
+        "remove": "Sil"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Deneylere geri dön",
+      "newExperiment": "Yeni Deney",
+      "loading": "Yükleniyor...",
+      "experimentId": "Deney Kimliği:",
+      "disabledTabTitle": "Deney ilk kaydedin bu sekmeyi açmak için",
+      "errors": {
+        "notFound": "Deney bulunamadı"
+      },
+      "tabs": {
+        "config": "Yapılandırma",
+        "metrics": "Metrikler",
+        "token": "Jeton"
+      }
+    },
+    "config": {
+      "saved": "Kaydedildi.",
+      "created": "Deney oluşturuldu. İstemcinizi yönlendirici jetonu yerine bu jetonla işaret edin. Bir daha gösterilmeyecek.",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı!",
+      "done": "Bitti",
+      "saving": "Kaydediliyor...",
+      "create": "Deney Oluştur",
+      "save": "Değişiklikleri Kaydet",
+      "cancel": "İptal",
+      "trafficSplit": "Trafik bölünmesi",
+      "errors": {
+        "loadRoutersFailed": "Yönlendiricileri yüklemek başarısız oldu",
+        "saveFailed": "Deneyyi kaydetmek başarısız oldu",
+        "copyFailed": "Kopyalamak başarısız oldu: jetonu manuel olarak seçin ve kopyalayın."
+      },
+      "fields": {
+        "name": "Ad",
+        "namePlaceholder": "Ucuz vs premium yönlendirme",
+        "description": "Açıklama",
+        "optional": "(isteğe bağlı)",
+        "descriptionPlaceholder": "Bu test neyi karar vermeye çalışıyor",
+        "minSamples": "Varyant başına minimum çağrılar",
+        "minSamplesHint": "Bunun altında, Metrikler sekmesi karşılaştırmayı henüz sonuç verilmemiş olarak işaretler.",
+        "rotation": "Döndürme",
+        "stickyOn": "Yapışkan",
+        "stickyKey": "Yapışkan anahtar"
+      },
+      "variants": {
+        "title": "Varyantlar",
+        "desc": "Her varyant mevcut bir yönlendiriciye tüm: modelleri, yönlendirmesi ve güvenlik rayları tüm uygulanır. Testin en az iki olması gerekir.",
+        "routerAriaLabel": "Varyant {{index}} yönlendirici",
+        "routerPlaceholder": "Yönlendirici seç",
+        "labelAriaLabel": "Varyant {{index}} etiketi",
+        "labelPlaceholder": "Etiket (isteğe bağlı)",
+        "weightAriaLabel": "Varyant {{index}} ağırlığı",
+        "weightPlaceholder": "Ağırlık",
+        "removeTitle": "Varyant {{index}} kaldır",
+        "add": "Varyant Ekle"
+      },
+      "judge": {
+        "title": "Hakim",
+        "desc": "İsteğe bağlı: bir model her alınan yanıtı okur ve ölçütlerinize göre 0-10 puan verir. Her değerlendirilmiş çağrı, diğer gibi faturalandırılan ek bir model çağrısıdır.",
+        "enable": "Bir hakim model ile cevapları puan",
+        "model": "Hakim modeli",
+        "modelPlaceholder": "Model seç",
+        "criteria": "Kriterler",
+        "criteriaPlaceholder": "Satır başına bir, örn.\nSorulan soruyu yanıtlar\nFakta sadık kalır\nİstenen biçime geri tutar",
+        "sampleRate": "Yargılanan çağrılar payı (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Yükleniyor...",
+      "callsMeasured": "{{count}} çağrı ölçüldü",
+      "callsMeasured_other": "{{count}} çağrılar ölçüldü",
+      "empty": "Bu pencerenin hiç çağrısı yok. Karşılaştırmaya başlamak için istemciyi deney jetonuyla işaret edin.",
+      "notConclusive": "Henüz sonuç verilmemiş: her varyantın bu pencerede en az {{minSamples}} çağrısı olması gerekir.",
+      "explanation": "Her çiftin daha iyi rakamı vurgulanan: çağrı başına daha ucuz, daha hızlı, daha yüksek hakim puan. Değerin altında yüzde en iyi koldan uzaklık. Hakim puanı deneyimin tamamı üzerinde çalışan bir ortalamadır, bu nedenle pencere daraltmayan tek rakam.",
+      "lowSample": "Düşük örnek",
+      "lowSampleTitle": "Bu pencerede {{minSamples}} çağrının altında",
+      "judgedCallsTitle": "Hakim tarafından deneyden beri puanlandırılan {{count}} yanıt",
+      "judgedCallsTitle_other": "Hakim tarafından deneyden beri puanlandırılan {{count}} yanıtlar",
+      "errors": {
+        "loadFailed": "Metrikler yüklemek başarısız oldu"
+      },
+      "columns": {
+        "variant": "Varyant",
+        "calls": "Çağrılar",
+        "share": "Payı",
+        "errors": "Hatalar",
+        "tokens": "Jetonlar giriş / çıkış",
+        "cost": "Maliyet",
+        "costPerCall": "Maliyet / çağrı",
+        "avgLatency": "Ort. gecikme",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Hakim puanı"
+      }
+    },
+    "token": {
+      "desc": "Bir istemci deneydeyi tam olarak bir yönlendirici gibi çağırır: aynı temel URL, yönlendirici jetonu yerine bu jeton. Her istek bir varyanta iner ve bu varyantın yönlendiricisine faturalandırılır.",
+      "baseUrlLabel": "OpenAI veya Anthropic SDK, deney jetonu ile API anahtarı olarak temel URL:",
+      "created": "Jeton oluşturuldu. Şimdi kopyalayın, bir daha gösterilmeyecek.",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı!",
+      "newToken": "Yeni Jeton",
+      "empty": "Bu deney üzerinde hiçbir jeton yok. İstemcilerin bunu çağırabilmesi için bir tane oluşturun.",
+      "revokeConfirm": "\"{{snippet}}...\" jetonu iptal et? Bunu kullanan istemciler hemen çalışmayı durdurur.",
+      "revokeTitle": "Jetonu İptal Et",
+      "errors": {
+        "createFailed": "Jetonu oluşturmak başarısız oldu",
+        "revokeFailed": "Jetonu iptal etmek başarısız oldu",
+        "copyFailed": "Kopyalamak başarısız oldu: jetonu manuel olarak seçin ve kopyalayın."
+      },
+      "columns": {
+        "created": "Oluşturuldu",
+        "lastUsed": "Son kullanım"
+      }
+    }
+  },
+  "overview": {
+    "title": "Genel Bakış",
+    "subtitle": "Kullanım özeti ve maliyet dağılımı",
+    "noPermission": "Kullanım verilerini görüntülemek için izniniz yok.",
+    "costByModel": "Model Başına Maliyet",
+    "noCostRecorded": "Bu dönemde hiçbir maliyet kaydedilmedi.",
+    "callsByModel": "Model Başına Çağrılar",
+    "columns": {
+      "model": "Model",
+      "calls": "Çağrılar",
+      "errors": "Hatalar",
+      "cost": "Maliyet"
+    },
+    "stats": {
+      "totalCalls": "Toplam Çağrılar",
+      "callsBreakdown": "{{routing}} yönlendirme · {{completion}} tamamlama",
+      "successRate": "Başarı Oranı",
+      "ofAllRequests": "tüm isteklerin",
+      "errors": "Hatalar",
+      "failedRequests": "başarısız istekler",
+      "models": "Modeller",
+      "registered": "kayıtlı",
+      "routers": "Yönlendiriciler",
+      "active": "aktif"
+    },
+    "connectCard": {
+      "title": "İstemciyi Bağla",
+      "desc": "Claude Code, Codex, Cursor ve {{count}} daha fazla istemciyi bu ağ geçidine işaret edin."
+    }
+  },
+  "login": {
+    "emailLabel": "E-posta",
+    "passwordLabel": "Parola",
+    "signIn": "Oturum Aç",
+    "errors": {
+      "loginFailed": "Oturum açma başarısız",
+      "totpFailed": "2FA doğrulama başarısız oldu"
+    },
+    "totp": {
+      "title": "İki Faktörlü Kimlik Doğrulaması",
+      "backupPrompt": "Yedek kodu girin.",
+      "appPrompt": "Kimlik doğrulamacı uygulamanızdan 6 haneli kodu girin.",
+      "backupCodeLabel": "Yedek Kodu",
+      "authenticatorCodeLabel": "Kimlik Doğrulayıcı Kodu",
+      "verify": "Doğrula",
+      "useAuthenticatorInstead": "Bunun yerine kimlik doğrulayıcı uygulaması kullan",
+      "useBackupInstead": "Bunun yerine yedek kodu kullan"
+    }
+  },
+  "setup": {
+    "welcome": "Hoşgeldiniz! Sizi ayarlayalım.",
+    "welcomeSubtitle": "Routerly yönetmeye başlamak için ilk yönetici hesabını oluşturun.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly aktif olarak gelişmektedir. Hatalar oluşabilir.",
+    "betaFeedback": "Geri bildiriminiz bunun ne haline geleceğini şekillendir —",
+    "betaLink": "sorunları bildir veya fikir paylaş",
+    "emailLabel": "Yönetici E-postası",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Parola",
+    "passwordPlaceholder": "En az 8 karakter",
+    "confirmLabel": "Parolayı Doğrula",
+    "confirmPlaceholder": "Parolayı yeniden girin",
+    "submit": "Yönetici Hesabı Oluştur",
+    "errors": {
+      "mismatch": "Parolalar eşleşmiyor",
+      "tooShort": "Parola en az 8 karakter olmalıdır",
+      "setupFailed": "Kurulum başarısız oldu"
+    }
+  },
+  "audit": {
+    "empty": "Hiçbir denetim girişi bulunamadı.",
+    "errors": {
+      "loadFailed": "Denetim günlüğünü yüklemek başarısız oldu"
+    },
+    "filters": {
+      "period": "Dönem",
+      "user": "Kullanıcı",
+      "userPlaceholder": "E-posta veya kullanıcı kimliği",
+      "action": "İşlem",
+      "actionPlaceholder": "örn. model:create",
+      "result": "Sonuç",
+      "results": {
+        "all": "Tümü",
+        "success": "Başarı",
+        "forbidden": "Yasak",
+        "error": "Hata"
+      },
+      "refresh": "Yenile"
+    },
+    "columns": {
+      "timestamp": "Zaman Damgası",
+      "user": "Kullanıcı",
+      "action": "İşlem",
+      "endpoint": "Uç Nokta",
+      "result": "Sonuç",
+      "details": "Detaylar"
+    },
+    "pagination": {
+      "previous": "Önceki",
+      "next": "Sonraki",
+      "page": "Sayfa {{page}} / {{totalPages}}",
+      "total": "({{count}} toplam)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Kullanım",
+      "live": "CANLI",
+      "subtitle": "Ayrıntılı çağrı günlükleri ve modele özgü dağılım",
+      "updatedAt": "· {{time}} güncellenmiş",
+      "poll": {
+        "off": "Kapalı",
+        "5s": "5sn",
+        "15s": "15sn",
+        "30s": "30sn",
+        "1m": "1dk",
+        "5m": "5dk"
+      },
+      "liveButton": "● Canlı",
+      "liveButtonTitle": {
+        "disable": "Canlı modu devre dışı bırak",
+        "enable": "Canlı modu etkinleştir (her 2sn yenile)"
+      },
+      "refreshNow": "↻ Şimdi",
+      "refreshNowTitle": "Şimdi yenile",
+      "filters": {
+        "period": "Dönem",
+        "router": "Yönlendirici",
+        "model": "Model",
+        "token": "Jeton",
+        "caller": "Arayan",
+        "type": "Tip",
+        "status": "Durum",
+        "allRouters": "Tüm Yönlendiriciler",
+        "allModels": "Tüm Modeller",
+        "allTokens": "Tüm Jetonlar",
+        "resetFilters": "Filtreleri Sıfırla",
+        "all": "Tümü",
+        "success": "Başarı",
+        "blocked": "Engellendi",
+        "error": "Hata"
+      },
+      "caller": {
+        "all": "Tümü",
+        "completion": "Tamamlama",
+        "routing": "Yönlendirici",
+        "guardrail": "Güvenlik Rayı",
+        "judge": "Hakim"
+      },
+      "callerBadge": {
+        "completion": "tamamlama",
+        "routing": "yönlendirici",
+        "guardrail": "güvenlik rayı",
+        "judge": "hakim"
+      },
+      "errors": {
+        "loadFailedPrefix": "Kullanım verilerini yüklemek başarısız oldu:",
+        "retry": "Yeniden Dene"
+      },
+      "stats": {
+        "totalCalls": "Toplam Çağrılar",
+        "completionCalls": "Tamamlama Çağrıları",
+        "routerCalls": "Yönlendirici Çağrıları",
+        "guardrailCalls": "Güvenlik Rayı Çağrıları",
+        "blockedCalls": "Engellenen Çağrılar",
+        "errors": "Hatalar"
+      },
+      "table": {
+        "rank": "Sıra",
+        "model": "Model",
+        "provider": "Sağlayıcı",
+        "calls": "Çağrılar",
+        "errors": "Hatalar",
+        "successRate": "Başarı oranı",
+        "avgLatency": "Ort. gecikme",
+        "p95Latency": "P95 gecikme",
+        "inputTokens": "Giriş jetonları",
+        "outputTokens": "Çıkış jetonları",
+        "costPer1k": "Maliyet / 1K",
+        "cost": "Maliyet (USD)",
+        "bestCostPerformance": "En iyi maliyet-performans"
+      },
+      "showMoreModels": "{{count}} daha fazla model göster",
+      "showMoreModels_other": "{{count}} daha fazla modeller göster",
+      "showFewerModels": "Daha az model göster",
+      "recentCalls": {
+        "title": "Son Çağrılar",
+        "empty": "Bu dönem için kullanım kaydı yok.",
+        "columns": {
+          "time": "Zaman",
+          "router": "Yönlendirici",
+          "model": "Model",
+          "type": "Tip",
+          "caller": "Arayan",
+          "in": "Giriş",
+          "out": "Çıkış",
+          "cost": "Maliyet",
+          "latency": "Gecikme",
+          "ttft": "TTFT",
+          "tokensPerSec": "Jeton/sn",
+          "status": "Durum"
+        }
+      },
+      "pagination": {
+        "previous": "Önceki",
+        "next": "Sonraki",
+        "pageOf": "Sayfa {{page}} / {{totalPages}}",
+        "totalRecords": "({{count}} toplam kayıtlar)"
+      }
+    },
+    "record": {
+      "back": "Geri",
+      "title": "Çağrı Detayı",
+      "notFoundTitle": "Kayıt Bulunamadı",
+      "notFoundBody": "Kullanım kaydı {{id}} yüklenemiyor.",
+      "errors": {
+        "loadFailed": "Kaydı yüklemek başarısız oldu"
+      },
+      "sections": {
+        "identity": "Kimlik",
+        "tokensAndCost": "Jetonlar ve Maliyet",
+        "performanceAndOutcome": "Performans ve Sonuç",
+        "traceLog": "İzleme Günlüğü"
+      },
+      "fields": {
+        "recordId": "Kayıt Kimliği",
+        "router": "Yönlendirici",
+        "token": "Jeton",
+        "model": "Model",
+        "callType": "Çağrı Türü",
+        "requestType": "İstek Türü",
+        "inputTokens": "Giriş Jetonları",
+        "outputTokens": "Çıkış Jetonları",
+        "totalTokens": "Toplam Jetonlar",
+        "costUsd": "Maliyet (USD)",
+        "costUnknown": "Bilinmeyen",
+        "latency": "Gecikme",
+        "ttft": "TTFT",
+        "tokensPerSec": "Jeton/sn",
+        "outcome": "Sonuç",
+        "timestamp": "Zaman Damgası",
+        "guardrailTriggered": "Güvenlik Rayı Tetiklendi",
+        "blockedBy": "Tarafından Engellendi",
+        "piiRedacted": "KKB Reddedildi"
+      },
+      "errorMessage": "Hata Mesajı",
+      "eventCount": "{{count}} olay",
+      "eventCount_other": "{{count}} olaylar",
+      "noTrace": "İzleme kullanılamaz. İzleme verileri yeni çağrılar için yakalanır."
+    }
+  },
+  "playground": {
+    "title": "Oyun Alanı",
+    "subtitle": "Modelleri test edin, yanıtları karşılaştırın ve istem ön ayarlarını kaydedin.",
+    "mode": {
+      "single": "Tek",
+      "compare": "Karşılaştır"
+    },
+    "token": {
+      "label": "Jeton:",
+      "labelA": "Jeton A",
+      "labelB": "Jeton B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "A ile aynı",
+      "unknownToken": "Bilinmeyen jeton"
+    },
+    "presets": {
+      "button": "Ön Ayarlar",
+      "panelTitle": "Ön Ayarlar",
+      "saveCurrent": "Mevcut olanı kaydet",
+      "namePlaceholder": "Ön ayar adı...",
+      "save": "Kaydet",
+      "empty": "Henüz ön ayar yok.",
+      "delete": "Ön ayarı sil"
+    },
+    "streamingDisabled": {
+      "banner": "Akış kullanılamaz",
+      "bannerBody": "bu yönlendiricinin yanıt engelleme güvenlik rayı etkin. Routerly, teslimat için tam yanıtı denetlemelidir, bu yüzden yanıtlar aynı anda ulaşır.",
+      "tooltip": "Akış kullanılamaz: yanıt engelleme güvenlik rayı, teslimat için tam yanıtın denetlenmesini gerektirir.",
+      "ariaLabel": "Akış Kullanılamaz"
+    },
+    "systemPrompt": "Sistem istemi",
+    "model": "Model",
+    "modelPlaceholder": "Otomatik (yönlendirici varsayılan)",
+    "params": {
+      "temp": "Sıcaklık",
+      "maxTokens": "Maksimum jetonlar",
+      "topP": "Top-p"
+    },
+    "stream": "Akış",
+    "clear": "Temizle",
+    "empty": {
+      "noMessages": "Henüz mesaj yok.",
+      "enterToken": "Başlamak için yukarıya Yönlendirici Jetonu girin."
+    },
+    "reasoning": "Akıl Yürütme",
+    "blockedDefault": "Bu mesaj bir güvenlik rayı tarafından engellendi.",
+    "truncated": "Kesilmiş — yanıt maksimum jetonlarla kesildi",
+    "bufferedNote": "Güvenlik incelemesi için tutuldu",
+    "errors": {
+      "onlyImages": "Yalnızca görüntü ekleri desteklenmektedir."
+    },
+    "rawToggle": {
+      "rendered": "oluşturulmuş",
+      "raw": "ham"
+    },
+    "inputPlaceholder": "Mesaj yazın...",
+    "attachImage": "Görüntü Ekle",
+    "attachedImageAlt": "Bağlı",
+    "attachmentAlt": "Ek",
+    "debug": {
+      "title": "Hata Ayıklama",
+      "clear": "Temizle",
+      "hide": "Hata ayıklamayı gizle",
+      "show": "Hata ayıklamayı göster",
+      "empty": "Henüz hata ayıklama verisi yok.",
+      "emptyHint": "Yönlendirme detaylarını görmek için mesaj gönderin.",
+      "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Model seç...",
+      "noMessages": "Henüz mesaj yok.",
+      "debugTurns": "Hata Ayıklama ({{count}} dönem)",
+      "debugTurns_other": "Hata Ayıklama ({{count}} dönemler)",
+      "guardrailTokensTitle": "Güvenlik Rayı Hakim Jetonları",
+      "stop": "Durdur",
+      "inputPlaceholder": "Aynı mesajı her iki modele de gönderin..."
+    }
+  },
+  "help": {
+    "title": "Yardım ve Destek",
+    "subtitle": "Biz yardımcıyız — herhangi bir zaman yanıtlar bulun veya bize ulaşın.",
+    "docs": {
+      "title": "Belgeler",
+      "subtitle": "Kılavuzlar, API referansı ve yapılandırma belgeleri",
+      "body": "Resmi belgeler başlamaktan başlayıp ileri yönlendirme ilkeleri, sağlayıcı kurulumu, bütçeler ve tam API referansına kadar her şeyi kapsar.",
+      "openLink": "Belgeleri Aç"
+    },
+    "issues": {
+      "title": "Bir hata bildir veya özellik önerin",
+      "subtitle": "GitHub sorunu açın - 2 dakika sürer",
+      "body": "GitHub sorunları, hataları bildirmek veya iyileştirmeler önermenin en iyi yoludur. Şeyleri daha hızlı düzeltmemize yardımcı olmak için: ne yaptığınız, ne olmasını beklediğiniz ve gerçekten ne oldu.",
+      "showTemplate": "Sorun şablonunu göster",
+      "reportBug": "Hata Bildir",
+      "requestFeature": "Özellik İste"
+    },
+    "issueTemplate": {
+      "whatHappened": "Ne oldu?",
+      "whatHappenedHint": "Sorunu düz sözcüklerle açıklayın",
+      "stepsToReproduce": "Yeniden Üretme Adımları",
+      "expectedBehaviour": "Beklenen davranış",
+      "expectedBehaviourHint": "Görmeyi beklediğiniz şey",
+      "version": "Routerly sürümü",
+      "versionHint": "`routerly --version` çalıştırın veya Ayarlar → Hakkında kontrol edin"
+    },
+    "email": {
+      "title": "Desteğe Başvur",
+      "subtitle": "Her mesajı okuyoruz ve mümkün olan en kısa sürede yanıtlarız",
+      "body": "GitHub sorunu uygun olmayan her şey için - faturalandırma soruları, özel endişeler veya sadece merhaba demek istiyorsanız - bize bir mesaj gönderin."
+    },
+    "faq": {
+      "title": "Sık Sorulan Sorular",
+      "subtitle": "En yaygın soruların hızlı yanıtları",
+      "items": {
+        "connect": {
+          "q": "Uygulamama Routerly nasıl bağlanırım?",
+          "a": "OpenAI veya Anthropic SDK'nızı Routerly örneğinize işaret edin. Temel URL'yi http://your-host:3000/v1 (OpenAI-uyumlu) veya http://your-host:3000/anthropic (Anthropic-uyumlu) ile değiştirin, ardından API anahtarı olarak yönlendirici jetonu kullanın. Hepsi bu - başka değişiklik gerekmez."
+        },
+        "openaiCompat": {
+          "q": "Routerly OpenAI SDK kullanan araçlarla uyumlu mu?",
+          "a": "Evet. Routerly, drop-in değiştirmesidir: özel temel URL ve API anahtarı destekleyen herhangi bir araç (LangChain, LlamaIndex, Cursor, Continue, vb.) kutunun dışında çalışır. Anthropic-biçimli istemciler için, bunun yerine /anthropic uç noktasını kullanın."
+        },
+        "routing": {
+          "q": "Model yönlendirmesi nasıl çalışır?",
+          "a": "Her yönlendiricinin bir isteğin hangi modeli aldığını belirleyen bir yönlendirme ilkesi vardır. İlkeler round-robin, en düşük maliyet, en hızlı yanıt, yedek zincirler ve daha fazlasını içerir. Bunları Yönlendiriciler → Yönlendirme altında yönlendirici başına yapılandırırsınız."
+        },
+        "addModel": {
+          "q": "Nasıl yeni AI modeli eklerim?",
+          "a": "Modeller → Model Ekle'ye gidin. Herhangi bir OpenAI-uyumlu sağlayıcı (Ollama, LM Studio, özel uç noktalar) veya yerel Anthropic uç noktası ekleyebilirsiniz. Temel URL, API anahtarı ve model kimliğini doldurun - Routerly geri kalanını işler."
+        },
+        "dataStored": {
+          "q": "Verilerim depolanıyor mu? İstemlerim kaydediliyor mu?",
+          "a": "Routerly kendi barındırılıyor ve veri yalnızca makinenizde (~/.routerly/ varsayılan olarak) depolanır. İstem ve yanıtlar hiçbir zaman Routerly tarafından herhangi bir yere gönderilmez. İstek günlükleri yerel olarak depolanır ve yalnızca yönlendirici başına etkinleştirirseniz."
+        },
+        "routerToken": {
+          "q": "Yönlendirici jetonu nedir ve sağlayıcı API anahtarından nasıl farklı?",
+          "a": "Yönlendirici jetonu, uygulamanıza veya takım üyelerinize Routerly ile kimlik doğrulaması yapmaları için verdiğiniz kimlik bilgisidir. Sağlayıcı API anahtarlarınızdan ayrıdır, Routerly sunucu tarafında güvenli bir şekilde depolar. Uygulamalarınız gerçek sağlayıcı anahtarlarını asla görmez."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} kullanıcı",
+    "countLabel_other": "{{count}} kullanıcılar",
+    "addButton": "Kullanıcı Ekle",
+    "columns": {
+      "email": "E-posta",
+      "role": "Rol",
+      "routers": "Yönlendiriciler"
+    },
+    "allRouters": "Tümü",
+    "resetTwoFaTitle": "2FA Sıfırla",
+    "resetTwoFaConfirm": "{{email}} için 2FA sıfırla? Yeniden kaydolmaları gerekecek.",
+    "deleteConfirm": "Bu kullanıcıyı sil?",
+    "emptyTitle": "Henüz kullanıcı yok.",
+    "noPermission": "Kullanıcıları görüntülemek için izniniz yok.",
+    "modal": {
+      "title": "Kullanıcı Ekle",
+      "emailLabel": "E-posta",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Parola",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rol",
+      "roleAdmin": "Yönetici",
+      "roleViewer": "Görüntüleyici",
+      "cancelButton": "İptal",
+      "submitButton": "Kullanıcı Ekle"
+    },
+    "errors": {
+      "loadFailed": "Kullanıcıları yüklemek başarısız oldu",
+      "addFailed": "Hata"
+    }
+  },
+  "userEdit": {
+    "title": "Kullanıcıyı Düzenle",
+    "account": "Hesap",
+    "email": "E-posta",
+    "role": "Rol",
+    "changePassword": "Parolayı Değiştir",
+    "newPassword": "Yeni Parola",
+    "newPasswordHint": "(mevcut olanı tutmak için boş bırakın)",
+    "save": "Kaydet",
+    "saved": "Kaydedildi!",
+    "errors": {
+      "loadFailed": "Kullanıcıyı yüklemek başarısız oldu",
+      "saveFailed": "Kaydetmek başarısız oldu"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Rolleri ve izinleri yönetin. Yerleşik roller değiştirilemez.",
+    "newRole": "Yeni Rol",
+    "builtin": "yerleşik",
+    "edit": "Düzenle",
+    "deleteConfirm": "Bu rolü sil? Bu rolle olan kullanıcılar etkilenecektir.",
+    "form": {
+      "id": "Kimlik",
+      "idPlaceholder": "örn. operatör",
+      "name": "Ad",
+      "namePlaceholder": "Rol adı",
+      "permissions": "İzinler",
+      "create": "Oluştur",
+      "save": "Kaydet",
+      "cancel": "İptal"
+    },
+    "permissions": {
+      "routerRead": "Yönlendiriciler – Oku",
+      "routerWrite": "Yönlendiriciler – Yaz",
+      "modelRead": "Modeller – Oku",
+      "modelWrite": "Modeller – Yaz",
+      "userRead": "Kullanıcılar – Oku",
+      "userWrite": "Kullanıcılar – Yaz",
+      "reportRead": "Raporlar – Oku",
+      "settingsRead": "Ayarlar – Oku",
+      "settingsWrite": "Ayarlar – Yaz",
+      "notificationWrite": "Bildirimler – Yaz",
+      "tokenRead": "Jetonlar – Oku",
+      "tokenWrite": "Jetonlar – Yaz",
+      "roleWrite": "Roller – Yaz",
+      "auditRead": "Denetim Günlüğü – Oku",
+      "modulesRead": "Modüller – Oku",
+      "modulesManage": "Modüller – Yönet",
+      "connectionsRead": "Bağlantılar – Oku",
+      "connectionsManage": "Bağlantılar – Yönet",
+      "resilienceRead": "Dayanıklılık – Oku",
+      "resilienceManage": "Dayanıklılık – Yönet",
+      "profilesRead": "Yönlendirme Profilleri – Oku",
+      "profilesManage": "Yönlendirme Profilleri – Yönet",
+      "optimizersRead": "İyileştiriciler – Oku",
+      "optimizersManage": "İyileştiriciler – Yönet",
+      "experimentsRead": "Deneyler – Oku",
+      "experimentsManage": "Deneyler – Yönet"
+    },
+    "errors": {
+      "loadFailed": "Rolleri yüklemek başarısız oldu",
+      "updateFailed": "Rolü güncelleme başarısız oldu",
+      "createFailed": "Rol oluşturma başarısız oldu",
+      "deleteFailed": "Rolü silme başarısız oldu"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profiller",
+      "subtitle": "Tekrar kullanılabilir yönlendirme, iyileştirici ve güvenlik yapılandırmaları",
+      "noPermission": "Profilleri görüntülemek için izniniz yok.",
+      "newProfile": "Yeni {{kind}} Profili",
+      "empty": "Henüz {{kind}} profili yok.",
+      "builtin": "Yerleşik",
+      "custom": "Özel",
+      "view": "Görüntüle",
+      "edit": "Düzenle",
+      "clone": "Klonla",
+      "delete": "Sil",
+      "deleteConfirm": "\"{{label}}\" profilini sil? Bu geri alınamaz.",
+      "kindDescriptions": {
+        "routing": "Hangi modelin bir isteği yanıtlar ve olamaz ise ne olur",
+        "optimizer": "Bir isteme gönderilmeden önce ne soyulur",
+        "security": "Trafiğe uygulanan güvenlik rayları ve KKB ilkeleri"
+      },
+      "columns": {
+        "label": "Etiket",
+        "type": "Tip",
+        "configuration": "Yapılandırma",
+        "version": "Sürüm"
+      },
+      "errors": {
+        "loadFailed": "Profilleri yüklemek başarısız oldu",
+        "deleteFailed": "Profili silmek başarısız oldu"
+      }
+    },
+    "form": {
+      "backToProfiles": "Profillere Geri Dön",
+      "newProfileTitle": "Yeni {{kind}} Profili",
+      "editProfileTitle": "{{label}} Düzenle",
+      "builtinHint": "Yerleşik profiller düzenlenemez. Özelleştirmek için bir tane klonlayın.",
+      "assignHint": "{{article}} {{kind}} profili herhangi bir yönlendirici sayısına atanabilir.",
+      "noPermission": "Profilleri görüntülemek için izniniz yok.",
+      "label": "Etiket",
+      "optimizers": "İyileştiriciler",
+      "optimizersHint": "Sıralamak için sürükleyin, etkinleştirmek için geçiş yapın. Yukarıdan aşağıya sırada çalışırlar.",
+      "createProfile": "Profil Oluştur",
+      "saveProfile": "Profili Kaydet",
+      "cancel": "İptal",
+      "copySuffix": "{{label}} kopyası",
+      "labelPlaceholders": {
+        "routing": "örn. Benim Dengeli Yönlendirmem",
+        "optimizer": "örn. Benim İstem Kırpıcım",
+        "security": "örn. Benim Sıkı Güvenlik Raylarım"
+      },
+      "errors": {
+        "notFound": "Profil bulunamadı.",
+        "loadFailed": "Profili yüklemek başarısız oldu",
+        "saveFailed": "Profili kaydetmek başarısız oldu"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Bağlantıya Geri Dön",
+    "title": "Bağlan",
+    "docs": "Belgeler",
+    "notEnabledPrefix": "İstemci yapılandırıcı etkin değildir. Yöneticiden etkinleştirmesini isteyin",
+    "noClientPrefix": "Adlı istemci yok",
+    "errors": {
+      "loadFailed": "İstemcileri yüklemek başarısız oldu: {{error}}"
+    },
+    "oneCommand": {
+      "title": "En Hızlı: Bir komut",
+      "description": "{{client}} yüklendiği makineyi çalıştırın. {{configPath}} yazar, geri alabilirsiniz bir yedek tutar."
+    },
+    "byHand": {
+      "titleAlt": "Veya elle ayarlayın",
+      "titleUi": "Elle Ayarla",
+      "titleConfigFile": "Yapılandırma Dosyasını Ayarla",
+      "setValuesIn": "{{configPath}}'de bu değerleri ayarlayın.",
+      "putThisIn": "Bunu {{configPath}} içine koy",
+      "replaceToken": "Değiştir",
+      "withRouterToken": "yönlendirici jetonu ile:",
+      "createOne": "bir tane oluştur",
+      "onRoutersPage": "Yönlendiriciler sayfasında.",
+      "modelLabel": "Model:",
+      "modelHint": "seçimi Routerly'ye verir, herhangi bir model kimliği",
+      "modelsLink": "Modeller",
+      "worksToo": "de çalışır.",
+      "openaiCompatHint": "Aynı temel URL, anahtar ve model \"OpenAI uyumlu\" sağlayıcı sunan herhangi bir istemciye uyar."
+    },
+    "mcp": {
+      "title": "MCP sunucusu",
+      "description": "Yukarıdaki adımlardan ayrı: bu, {{client}}'ın Routerly araçlarını çağırmasını sağlar. Kişisel bir MCP jetonu gerektirir,",
+      "orFromYour": "veya sizin",
+      "profileLink": "profilinizden"
+    },
+    "checkItWorked": {
+      "title": "İşe yaradığını kontrol et",
+      "restart": "{{client}}'ı yeniden başlat, ona bir istemi gönder, ardından çağrıyı {{bulunluğunda arayın}}",
+      "usageLink": "Kullanım",
+      "cliReports": "Aynı makineden CLI bulduğu şeyi bildir:"
+    }
+  },
+  "connect": {
+    "title": "Bağlan",
+    "subtitle": "Bir AI kodlama istemcisini bu ağ geçidine işaret edin. Kurulum adımları için istemci seçin.",
+    "llmLabel": "LLM",
+    "llmDescription": "bu istemci modeli trafiğini Routerly üzerinden yönlendirir.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Routerly'yi bir araç sunucusu olarak içine yükler.",
+    "notEnabledPrefix": "İstemci yapılandırıcı etkin değildir. Yöneticiden etkinleştirmesini isteyin",
+    "errors": {
+      "loadFailed": "İstemcileri yüklemek başarısız oldu: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Bir komut",
+      "hint": "CLI yapılandırma dosyasını sizin için yazar, geri alabileceğiniz bir yedek tutar."
+    },
+    "byHand": {
+      "title": "Elle",
+      "hint": "İstemci sayfasından parçacığı ayarlarına kopyalayın, ardından yeniden başlatın."
+    },
+    "endpoint": {
+      "title": "Herhangi bir istemciyi burada işaret edin",
+      "description": "OpenAI veya Anthropic SDK üzerine inşa edilen her şey, temel URL ve anahtarı değiştirerek çalışır. Başka hiçbir şey değişmez: istekler ve yanıtlar Routerly'de olduğu gibi geçer.",
+      "openaiBaseUrl": "OpenAI temel URL'si",
+      "anthropicBaseUrl": "Anthropic temel URL'si",
+      "apiKey": "API anahtarı",
+      "model": "Model",
+      "apiKeyDescription": "yönlendirici jetonu olarak gönderilen",
+      "or": "veya",
+      "createOne": "bir tane oluştur",
+      "onRoutersPage": "Yönlendiriciler sayfasında.",
+      "modelDescription": "Routerly seçmesini sağlar. Herhangi bir model kimliği",
+      "modelsLink": "Modeller",
+      "worksToo": "sayfasından de çalışır."
+    }
+  }
+}

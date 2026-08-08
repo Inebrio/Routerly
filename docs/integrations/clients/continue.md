@@ -26,15 +26,15 @@ this file for you.
 With the [CLI](../../cli/commands.md#routerly-clients) installed and logged in:
 
 ```bash
-routerly clients configure continue --project <your-project>
+routerly clients configure continue --router <your-router>
 ```
 
-This mints a project token (or reuses one you pass with `--token`), backs
+This mints a router token (or reuses one you pass with `--token`), backs
 up your existing `~/.continue/config.yaml`, and appends a model entry to the
 `models:` array. Any other entry already in the file is left untouched.
 
-Minting a new token requires `project:write` permission on the target
-project (use `--token <existing-token>` to skip this).
+Minting a new token requires `router:write` permission on the target
+router (use `--token <existing-token>` to skip this).
 
 ## Manual configuration
 
@@ -50,14 +50,14 @@ models:
     provider: openai
     model: routerly/ada
     apiBase: http://localhost:3000/v1
-    apiKey: sk-rt-YOUR_PROJECT_TOKEN
+    apiKey: sk-rt-YOUR_ROUTER_TOKEN
 ```
 
 `apiBase` includes the `/v1` suffix. `model: routerly/ada` is the
 auto-routing sentinel: selecting it in Continue lets Routerly pick the
 actual upstream model per request. Replace `http://localhost:3000/v1` with
-your Routerly instance's URL and `sk-rt-YOUR_PROJECT_TOKEN` with a project
-token (create one on the [Projects](../../dashboard/projects.md) page, or
+your Routerly instance's URL and `sk-rt-YOUR_ROUTER_TOKEN` with a router
+token (create one on the [Routers](../../dashboard/routers.md) page, or
 let `clients configure` mint one for you).
 
 ## Undo

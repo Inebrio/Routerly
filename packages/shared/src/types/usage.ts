@@ -152,7 +152,7 @@ export interface UsageSeries {
 
 /**
  * Savings layer over a filtered set of usage records (T61). Shared by the
- * project dashboard, the CLI report and the overview: it is computed once,
+ * router dashboard, the CLI report and the overview: it is computed once,
  * server side, from whatever record set the usage filters produced.
  */
 export interface SavingsSummary {

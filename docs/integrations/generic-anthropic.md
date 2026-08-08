@@ -20,10 +20,10 @@ returns the provider's response unaltered.
 ## Print the steps
 
 ```bash
-routerly clients configure generic-anthropic --project my-api
+routerly clients configure generic-anthropic --router my-api
 ```
 
-Prints the two variables with a real project token, mints one if you do not
+Prints the two variables with a real router token, mints one if you do not
 pass `--token`, and writes nothing. The dashboard shows the same pair under
 **Connect → Any Anthropic SDK app**.
 
@@ -31,7 +31,7 @@ pass `--token`, and writes nothing. The dashboard shows the same pair under
 
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:3000
-export ANTHROPIC_AUTH_TOKEN=sk-rt-YOUR_PROJECT_TOKEN
+export ANTHROPIC_AUTH_TOKEN=sk-rt-YOUR_ROUTER_TOKEN
 ```
 
 No `/v1` here: the Anthropic SDK appends its own `/v1/messages`.
@@ -40,7 +40,7 @@ No `/v1` here: the Anthropic SDK appends its own `/v1/messages`.
 sends `x-api-key`. Routerly accepts both and gives Bearer precedence when
 the two are set at once.
 
-Create a project token on the [Projects](../dashboard/projects.md) page.
+Create a router token on the [Routers](../dashboard/routers.md) page.
 
 ## In code
 
@@ -49,7 +49,7 @@ from anthropic import Anthropic
 
 client = Anthropic(
     base_url="http://localhost:3000",
-    api_key="sk-rt-YOUR_PROJECT_TOKEN",
+    api_key="sk-rt-YOUR_ROUTER_TOKEN",
 )
 
 message = client.messages.create(
@@ -64,7 +64,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   baseURL: 'http://localhost:3000',
-  apiKey: 'sk-rt-YOUR_PROJECT_TOKEN',
+  apiKey: 'sk-rt-YOUR_ROUTER_TOKEN',
 });
 
 const message = await client.messages.create({
@@ -75,7 +75,7 @@ const message = await client.messages.create({
 ```
 
 `routerly/ada` asks Routerly to pick the model per request, following the
-project's routing profile. Pass a registered model id instead to address
+router's routing profile. Pass a registered model id instead to address
 one model directly.
 
 ## Check the connection

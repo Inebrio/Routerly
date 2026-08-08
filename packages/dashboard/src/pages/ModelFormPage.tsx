@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { Plus, X, ChevronDown, ArrowLeft, FlaskConical } from 'lucide-react';
 import { getModels, createModel, updateModel, testOpenAIOAuth, testModel, getProviders, getConnections, type Model, type ModelCapabilities, type PricingTier, type Limit, type LimitMetric, type LimitPeriod, type RollingUnit, type CatalogEntry, type ProviderCatalog, type Connection } from '../api';
@@ -25,13 +26,15 @@ type ProviderModel = {
 };
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const PROVIDER_LABELS: Partial<Record<string, string>> = {
-  'anthropic-oauth': 'Anthropic (Pro/Max subscription)',
-  'openai-oauth': 'OpenAI (ChatGPT Plus/Pro subscription)',
+// Label keys (translated at render time via t()) — reuses the identical option
+// sets already defined under routers.token.edit.* for limit metric/period/unit.
+const PROVIDER_LABEL_KEYS: Partial<Record<string, string>> = {
+  'anthropic-oauth': 'models.form.providerLabels.anthropicOauth',
+  'openai-oauth': 'models.form.providerLabels.openaiOauth',
 };
 
-const METRIC_OPTIONS = [
-  { value: 'context_tokens', label: 'Context tokens' },
+const METRIC_OPTION_KEYS = [
+  { value: 'context_tokens', labelKey: 'models.form.tiers.metricContextTokens' },
 ];
 
 // ── Limit types ────────────────────────────────────────────────────────────────
@@ -44,29 +47,29 @@ type LimitRow = {
   value: string;
 };
 
-const LIMIT_METRIC_OPTIONS: { value: LimitMetric; label: string }[] = [
-  { value: 'cost',          label: 'Cost (USD)'      },
-  { value: 'calls',         label: 'Requests'        },
-  { value: 'input_tokens',  label: 'Input tokens'    },
-  { value: 'output_tokens', label: 'Output tokens'   },
-  { value: 'total_tokens',  label: 'Total tokens'    },
+const LIMIT_METRIC_OPTION_KEYS: { value: LimitMetric; labelKey: string }[] = [
+  { value: 'cost',          labelKey: 'routers.token.edit.limitMetric.cost'         },
+  { value: 'calls',         labelKey: 'routers.token.edit.limitMetric.calls'        },
+  { value: 'input_tokens',  labelKey: 'routers.token.edit.limitMetric.input_tokens' },
+  { value: 'output_tokens', labelKey: 'routers.token.edit.limitMetric.output_tokens'},
+  { value: 'total_tokens',  labelKey: 'routers.token.edit.limitMetric.total_tokens' },
 ];
 
-const PERIOD_OPTIONS: { value: LimitPeriod; label: string }[] = [
-  { value: 'hourly',   label: 'Hourly'   },
-  { value: 'daily',    label: 'Daily'    },
-  { value: 'weekly',   label: 'Weekly'   },
-  { value: 'monthly',  label: 'Monthly'  },
-  { value: 'yearly',   label: 'Yearly'   },
+const PERIOD_OPTION_KEYS: { value: LimitPeriod; labelKey: string }[] = [
+  { value: 'hourly',   labelKey: 'routers.token.edit.period.hourly'  },
+  { value: 'daily',    labelKey: 'routers.token.edit.period.daily'   },
+  { value: 'weekly',   labelKey: 'routers.token.edit.period.weekly'  },
+  { value: 'monthly',  labelKey: 'routers.token.edit.period.monthly' },
+  { value: 'yearly',   labelKey: 'routers.token.edit.period.yearly'  },
 ];
 
-const ROLLING_UNIT_OPTIONS: { value: RollingUnit; label: string }[] = [
-  { value: 'second', label: 'seconds' },
-  { value: 'minute', label: 'minutes' },
-  { value: 'hour',   label: 'hours'   },
-  { value: 'day',    label: 'days'    },
-  { value: 'week',   label: 'weeks'   },
-  { value: 'month',  label: 'months'  },
+const ROLLING_UNIT_OPTION_KEYS: { value: RollingUnit; labelKey: string }[] = [
+  { value: 'second', labelKey: 'routers.token.edit.rollingUnit.second' },
+  { value: 'minute', labelKey: 'routers.token.edit.rollingUnit.minute' },
+  { value: 'hour',   labelKey: 'routers.token.edit.rollingUnit.hour'   },
+  { value: 'day',    labelKey: 'routers.token.edit.rollingUnit.day'    },
+  { value: 'week',   labelKey: 'routers.token.edit.rollingUnit.week'  },
+  { value: 'month',  labelKey: 'routers.token.edit.rollingUnit.month' },
 ];
 
 const EMPTY_LIMIT_ROW: LimitRow = {
@@ -135,7 +138,7 @@ const EMPTY_FORM = {
   awsSecretAccessKey: '',
   awsSessionToken: '',
   // Google Vertex AI
-  vertexProjectId: '',
+  VERTEXROUTERIDPLACEHOLDER: '',
   vertexLocation: '',
   vertexServiceAccountKey: '',
 };
@@ -152,6 +155,7 @@ function generateId(provider: string, modelId: string, existingIds: string[]): s
 
 // ── Component ──────────────────────────────────────────────────────────────────
 export function ModelFormPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
@@ -216,7 +220,7 @@ export function ModelFormPage() {
           if (model) {
             editModel(model, catModels);
           } else {
-            setErr('Model not found');
+            setErr(t('models.form.errors.modelNotFound'));
           }
         } else if (isCloning && cloneSourceId) {
           const source = allModels.find(m => m.id === cloneSourceId);
@@ -228,7 +232,7 @@ export function ModelFormPage() {
             setConnMode('custom');
             setConnectionId('');
           } else {
-            setErr('Source model not found');
+            setErr(t('models.form.errors.sourceModelNotFound'));
           }
         } else {
           // Initialize new — honour ?provider=&modelId= from discovery, fall back to openai default
@@ -276,7 +280,7 @@ export function ModelFormPage() {
           }
         }
       } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Error loading models');
+        setErr(e instanceof Error ? e.message : t('models.form.errors.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -301,7 +305,7 @@ export function ModelFormPage() {
 
     const fmtDefault = () => {
       if (typeof defVal === 'number') return String(defVal);
-      /* v8 ignore next */ if (typeof defVal === 'boolean') return defVal ? 'yes' : 'no';
+      /* v8 ignore next */ if (typeof defVal === 'boolean') return defVal ? t('models.form.badge.yes') : t('models.form.badge.no');
       /* v8 ignore else */ if (typeof defVal === 'object') return JSON.stringify(defVal);
       /* v8 ignore next */ return String(defVal);
     };
@@ -310,16 +314,16 @@ export function ModelFormPage() {
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
         {overridden ? (
           <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 9999, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontWeight: 600 }}>
-            Override
+            {t('models.form.badge.override')}
           </span>
         ) : (
           <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: 9999, background: 'rgba(34,197,94,0.12)', color: '#22c55e', fontWeight: 600 }}>
-            Auto
+            {t('models.form.badge.auto')}
           </span>
         )}
         {hasCatalog && (
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            Default: {fmtDefault()}
+            {t('models.form.badge.default', { value: fmtDefault() })}
           </span>
         )}
         {overridden && hasCatalog && (
@@ -348,7 +352,7 @@ export function ModelFormPage() {
             }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.72rem', padding: 0, textDecoration: 'underline' }}
           >
-            Reset
+            {t('models.form.badge.reset')}
           </button>
         )}
       </span>
@@ -475,7 +479,7 @@ export function ModelFormPage() {
     const m = model as Model & {
       azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
       awsRegion?: string; awsAccessKeyId?: string; awsSessionToken?: string;
-      vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
+      VERTEXROUTERIDPLACEHOLDER?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
     };
 
     setForm(f => ({
@@ -499,7 +503,7 @@ export function ModelFormPage() {
       awsAccessKeyId: m.awsAccessKeyId ?? '',
       awsSecretAccessKey: '',
       awsSessionToken: m.awsSessionToken ?? '',
-      vertexProjectId: m.vertexProjectId ?? '',
+      VERTEXROUTERIDPLACEHOLDER: m.VERTEXROUTERIDPLACEHOLDER ?? '',
       vertexLocation: m.vertexLocation ?? '',
       vertexServiceAccountKey: '',
     }));
@@ -560,10 +564,10 @@ export function ModelFormPage() {
     try {
       const res = await testOpenAIOAuth(form.apiKey || undefined);
       if (res.ok) {
-        const expStr = res.expiresAt ? new Date(res.expiresAt).toLocaleString() : 'unknown';
-        setOauthTest({ status: 'ok', msg: `Account: ${res.accountId} — expires ${expStr}` });
+        const expStr = res.expiresAt ? new Date(res.expiresAt).toLocaleString() : t('models.form.oauth.unknownExpiry');
+        setOauthTest({ status: 'ok', msg: t('models.form.oauth.accountOk', { account: res.accountId, expires: expStr }) });
       } else {
-        setOauthTest({ status: 'error', msg: res.error ?? 'Unknown error' });
+        setOauthTest({ status: 'error', msg: res.error ?? t('models.form.oauth.unknownError') });
       }
     } catch (e) {
       setOauthTest({ status: 'error', msg: e instanceof Error ? e.message : String(e) });
@@ -577,9 +581,9 @@ export function ModelFormPage() {
       ? form.customProviderName.trim()
       : form.provider;
     const finalId = form.customId.trim() || generateId(idPrefix, form.id, models.filter(m => m.id !== editingModelId).map(m => m.id));
-    if (!finalId) { setErr('Model ID required'); setSaving(false); return; }
-    if (isCloning && models.some(m => m.id === finalId)) { setErr(`Model "${finalId}" already exists — set a different Custom ID`); setSaving(false); return; }
-    if (connMode === 'preconfigured' && !connectionId) { setErr('Select a connection'); setSaving(false); return; }
+    if (!finalId) { setErr(t('models.form.errors.idRequired')); setSaving(false); return; }
+    if (isCloning && models.some(m => m.id === finalId)) { setErr(t('models.form.errors.duplicateId', { id: finalId })); setSaving(false); return; }
+    if (connMode === 'preconfigured' && !connectionId) { setErr(t('models.form.errors.selectConnection')); setSaving(false); return; }
 
     const pricingTiersPayload: PricingTier[] = tierRows
       .filter(t => t.above && t.input && t.output)
@@ -612,7 +616,7 @@ export function ModelFormPage() {
               ...(form.awsSecretAccessKey ? { awsSecretAccessKey: form.awsSecretAccessKey } : {}),
               ...(form.awsSessionToken   ? { awsSessionToken: form.awsSessionToken }     : {}),
               // Google Vertex AI
-              ...(form.vertexProjectId   ? { vertexProjectId: form.vertexProjectId }     : {}),
+              ...(form.VERTEXROUTERIDPLACEHOLDER   ? { VERTEXROUTERIDPLACEHOLDER: form.VERTEXROUTERIDPLACEHOLDER }     : {}),
               ...(form.vertexLocation    ? { vertexLocation: form.vertexLocation }       : {}),
               ...(form.vertexServiceAccountKey ? { vertexServiceAccountKey: form.vertexServiceAccountKey } : {}),
             }),
@@ -638,7 +642,7 @@ export function ModelFormPage() {
       }
       navigate('/dashboard/models');
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Error');
+      setErr(e instanceof Error ? e.message : t('models.form.errors.saveFailed'));
       setSaving(false);
     }
   }
@@ -664,10 +668,10 @@ export function ModelFormPage() {
     <>
       <div className="page-header">
         <button className="btn-icon" onClick={goBack} style={{ marginBottom: 16, display: 'inline-flex', padding: 4, width: 'fit-content' }}>
-          <ArrowLeft size={16} /><span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>Back to Models</span>
+          <ArrowLeft size={16} /><span style={{ marginLeft: 6, fontSize: '0.8rem', fontWeight: 500 }}>{t('models.form.backToModels')}</span>
         </button>
-        <h1>{editingModelId ? 'Edit Model' : isCloning ? 'Clone Model' : 'Add Model'}</h1>
-        <p>{editingModelId ? `Modifying configuration for ${editingModelId}` : isCloning ? `Cloning from ${cloneSourceId} — assign a new ID to save` : 'Register a new LLM provider model'}</p>
+        <h1>{editingModelId ? t('models.form.title.edit') : isCloning ? t('models.form.title.clone') : t('models.form.title.add')}</h1>
+        <p>{editingModelId ? t('models.form.subtitle.edit', { id: editingModelId }) : isCloning ? t('models.form.subtitle.clone', { id: cloneSourceId }) : t('models.form.subtitle.add')}</p>
       </div>
 
       <div className="page-body">
@@ -676,22 +680,22 @@ export function ModelFormPage() {
 
           {/* ── Section: Model Information ────────────────────── */}
           <div className="form-section">
-            <h3 className="section-title">Model Identification</h3>
-            <p className="section-desc">Unique identifier and provider settings for this model configuration.</p>
+            <h3 className="section-title">{t('models.form.identification.title')}</h3>
+            <p className="section-desc">{t('models.form.identification.description')}</p>
             <div className="form-group">
               <label className="form-label">
-                Routerly ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional — default: <code style={{ fontSize: '0.78rem' }}>{autoId || `${autoIdPrefix}/model`}</code>)</span>
+                {t('models.form.identification.routerlyId')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.identification.routerlyIdHintPre')} <code style={{ fontSize: '0.78rem' }}>{autoId || `${autoIdPrefix}/model`}</code>{t('models.form.identification.routerlyIdHintPost')}</span>
               </label>
               <input className="form-input" value={form.customId} name="modelId" autoComplete="off"
                 onChange={e => setForm(f => ({ ...f, customId: e.target.value }))}
                 placeholder={autoId || `${autoIdPrefix}/model`} />
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The identifier used when referencing this model in Routerly API calls.</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('models.form.identification.routerlyIdDesc')}</div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Provider</label>
+              <label className="form-label">{t('models.form.identification.provider')}</label>
               <SearchableSelect
-                options={PROVIDERS.map(p => ({ value: p, label: PROVIDER_LABELS[p] ?? p }))}
+                options={PROVIDERS.map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
                 value={form.provider}
                 onChange={v => handleProviderChange(v as Provider)}
               />
@@ -700,30 +704,30 @@ export function ModelFormPage() {
             {form.provider === 'custom' ? (
               <>
                 <div className="form-group">
-                  <label className="form-label">Provider <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(upstream provider name)</span></label>
+                  <label className="form-label">{t('models.form.identification.provider')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.identification.upstreamProviderHint')}</span></label>
                   <input className="form-input"
                     value={form.customProviderName}
                     onChange={e => setForm(f => ({ ...f, customProviderName: e.target.value }))}
-                    placeholder="e.g. deepseek, mistral, groq"
+                    placeholder={t('models.form.identification.upstreamProviderPlaceholder')}
                     required />
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Used as prefix for the Routerly ID (e.g. <code style={{ fontSize: '0.72rem' }}>deepseek/deepseek-r1</code>).</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('models.form.identification.upstreamProviderDescPre')} <code style={{ fontSize: '0.72rem' }}>deepseek/deepseek-r1</code>{t('models.form.identification.upstreamProviderDescPost')}</div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Model <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(upstream model ID)</span></label>
+                  <label className="form-label">{t('models.form.identification.model')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.identification.upstreamModelHint')}</span></label>
                   <input className="form-input"
                     value={form.id}
                     onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                    placeholder="e.g. deepseek-r1, mistral-large-latest"
+                    placeholder={t('models.form.identification.upstreamModelPlaceholder')}
                     required />
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>The model identifier sent to the upstream API endpoint.</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('models.form.identification.upstreamModelDesc')}</div>
                 </div>
               </>
             ) : (
               <div className="form-group">
-                <label className="form-label">Model Preset</label>
+                <label className="form-label">{t('models.form.identification.modelPreset')}</label>
                 {providerModels.length > 0 ? (
                   <SearchableSelect
-                    options={[...providerModels.map(m => ({ value: m.id, label: m.id })), { value: '__custom__', label: '— custom model name —' }]}
+                    options={[...providerModels.map(m => ({ value: m.id, label: m.id })), { value: '__custom__', label: t('models.form.identification.customModelOption') }]}
                     value={isCustomModel ? '__custom__' : form.id}
                     onChange={handleModelChange}
                   />
@@ -731,7 +735,7 @@ export function ModelFormPage() {
                 {(isCustomModel || providerModels.length === 0) && (
                   <input className="form-input" style={{ marginTop: providerModels.length > 0 ? 6 : 0 }}
                     value={form.id} onChange={e => setForm(f => ({ ...f, id: e.target.value }))}
-                    placeholder="e.g. my-fine-tuned-model" required autoFocus />
+                    placeholder={t('models.form.identification.customModelPlaceholder')} required autoFocus />
                 )}
                 {!isCustomModel && selectedPreset?.notes && (
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>{selectedPreset.notes}</div>
@@ -742,23 +746,23 @@ export function ModelFormPage() {
 
           {/* ── Section: Connection ───────────────────────────── */}
           <div className="form-section">
-            <h3 className="section-title">Connection details</h3>
-            <p className="section-desc">API endpoint and authentication credentials required to perform requests.</p>
+            <h3 className="section-title">{t('models.form.connection.title')}</h3>
+            <p className="section-desc">{t('models.form.connection.description')}</p>
 
             <div style={{ marginBottom: 16, display: 'inline-flex', alignItems: 'center', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 3, gap: 2 }}>
               <button type="button" className={`theme-btn${connMode === 'preconfigured' ? ' active' : ''}`}
                 onClick={() => setConnMode('preconfigured')}>
-                Preconfigured
+                {t('models.form.connection.preconfigured')}
               </button>
               <button type="button" className={`theme-btn${connMode === 'custom' ? ' active' : ''}`}
                 onClick={() => setConnMode('custom')}>
-                Custom
+                {t('models.form.connection.custom')}
               </button>
             </div>
 
             {connMode === 'preconfigured' ? (
               <div className="form-group">
-                <label className="form-label">Connection</label>
+                <label className="form-label">{t('models.form.connection.connection')}</label>
                 {connections.filter(c => c.providerId === form.provider).length > 0 ? (
                   <SearchableSelect
                     options={connections.filter(c => c.providerId === form.provider).map(c => ({
@@ -775,15 +779,15 @@ export function ModelFormPage() {
                       const upstream = connections.find(c => c.id === cid)?.providerName;
                       if (upstream) setForm(f => ({ ...f, customProviderName: upstream }));
                     }}
-                    placeholder="— select a connection —"
+                    placeholder={t('models.form.connection.selectPlaceholder')}
                   />
                 ) : (
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                    No preconfigured connections for this provider. Switch to Custom, or create one on the Connections page.
+                    {t('models.form.connection.noneAvailable')}
                   </div>
                 )}
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  Editing this connection later updates every model bound to it.
+                  {t('models.form.connection.editHint')}
                 </div>
               </div>
             ) : (
@@ -793,7 +797,7 @@ export function ModelFormPage() {
                   endpoint: form.endpoint, apiKey: form.apiKey, cfClearance: form.cfClearance,
                   azureResourceName: form.azureResourceName, azureDeploymentId: form.azureDeploymentId, azureApiVersion: form.azureApiVersion,
                   awsRegion: form.awsRegion, awsAccessKeyId: form.awsAccessKeyId, awsSecretAccessKey: form.awsSecretAccessKey, awsSessionToken: form.awsSessionToken,
-                  vertexProjectId: form.vertexProjectId, vertexLocation: form.vertexLocation, vertexServiceAccountKey: form.vertexServiceAccountKey,
+                  VERTEXROUTERIDPLACEHOLDER: form.VERTEXROUTERIDPLACEHOLDER, vertexLocation: form.vertexLocation, vertexServiceAccountKey: form.vertexServiceAccountKey,
                 }}
                 onChange={patch => {
                   setForm(f => ({ ...f, ...patch }));
@@ -811,8 +815,8 @@ export function ModelFormPage() {
 
           {/* ── Section: Capabilities ─────────────────────────── */}
           <div className="form-section">
-            <h3 className="section-title">Capabilities</h3>
-            <p className="section-desc">Specify the type and capabilities of this model.</p>
+            <h3 className="section-title">{t('models.form.capabilities.title')}</h3>
+            <p className="section-desc">{t('models.form.capabilities.description')}</p>
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <input
                 type="checkbox"
@@ -822,8 +826,8 @@ export function ModelFormPage() {
                 style={{ width: 16, height: 16, cursor: 'pointer' }}
               />
               <label htmlFor="cap-embedding" style={{ cursor: 'pointer', marginBottom: 0 }}>
-                Embedding model
-                <span style={{ marginLeft: 8, fontSize: '0.75rem', color: 'var(--text-muted)' }}>This model generates vector embeddings (not chat completions)</span>
+                {t('models.form.capabilities.embeddingModel')}
+                <span style={{ marginLeft: 8, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('models.form.capabilities.embeddingModelHint')}</span>
                 <FieldBadge field="capabilities" />
               </label>
             </div>
@@ -831,22 +835,22 @@ export function ModelFormPage() {
 
           {/* ── Section: Pricing ─────────────────────────────── */}
           <div className="form-section">
-            <h3 className="section-title">Pricing & context</h3>
-            <p className="section-desc">Cost parameters and processing limits used for billing and routing.</p>
+            <h3 className="section-title">{t('models.form.pricing.title')}</h3>
+            <p className="section-desc">{t('models.form.pricing.description')}</p>
 
             <div className="grid-3">
               <div className="form-group">
-                <label className="form-label">Input $/1M<FieldBadge field="inputPerMillion" /></label>
+                <label className="form-label">{t('models.form.pricing.inputPerMillion')}<FieldBadge field="inputPerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.inputPerMillion}
                   onChange={e => { setForm(f => ({ ...f, inputPerMillion: e.target.value })); setOverride('inputPerMillion', true); }} placeholder="5.00" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Output $/1M<FieldBadge field="outputPerMillion" /></label>
+                <label className="form-label">{t('models.form.pricing.outputPerMillion')}<FieldBadge field="outputPerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.outputPerMillion}
                   onChange={e => { setForm(f => ({ ...f, outputPerMillion: e.target.value })); setOverride('outputPerMillion', true); }} placeholder="15.00" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Cache read $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span><FieldBadge field="cachePerMillion" /></label>
+                <label className="form-label">{t('models.form.pricing.cachePerMillion')} <span style={{ color: 'var(--text-muted)' }}>{t('models.form.pricing.optional')}</span><FieldBadge field="cachePerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.cachePerMillion}
                   onChange={e => { setForm(f => ({ ...f, cachePerMillion: e.target.value })); setOverride('cachePerMillion', true); }} placeholder="—" />
               </div>
@@ -854,14 +858,14 @@ export function ModelFormPage() {
 
             <div className="grid-3">
               <div className="form-group">
-                <label className="form-label">Cache write $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span><FieldBadge field="cacheWritePerMillion" /></label>
+                <label className="form-label">{t('models.form.pricing.cacheWritePerMillion')} <span style={{ color: 'var(--text-muted)' }}>{t('models.form.pricing.optional')}</span><FieldBadge field="cacheWritePerMillion" /></label>
                 <input className="form-input" type="number" step="any" value={form.cacheWritePerMillion}
                   onChange={e => { setForm(f => ({ ...f, cacheWritePerMillion: e.target.value })); setOverride('cacheWritePerMillion', true); }} placeholder="—" />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Context Window <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(tokens, optional)</span><FieldBadge field="contextWindow" /></label>
+              <label className="form-label">{t('models.form.pricing.contextWindow')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.pricing.contextWindowHint')}</span><FieldBadge field="contextWindow" /></label>
               <input className="form-input" type="number" step="1000" value={form.contextWindow}
                 onChange={e => { setForm(f => ({ ...f, contextWindow: e.target.value })); setOverride('contextWindow', true); }} placeholder="128000" />
             </div>
@@ -872,14 +876,14 @@ export function ModelFormPage() {
             <button type="button" onClick={() => setShowAdvanced(v => !v)}
               style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500, padding: '4px 0', userSelect: 'none' }}>
               <ChevronDown size={18} style={{ transform: showAdvanced ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
-              Advanced — Pricing tiers
+              {t('models.form.tiers.title')}
               {tierRows.length > 0 && (
                 <span style={{ marginLeft: 6, background: 'var(--accent)', color: '#fff', fontSize: '0.75rem', borderRadius: 12, padding: '2px 8px' }}>{tierRows.length}</span>
               )}
               <FieldBadge field="pricingTiers" />
             </button>
             <p className="section-desc" style={{ marginTop: 8 }}>
-              Override pricing when a metric exceeds a threshold. For example: "Above 200 000 context tokens, prices change."
+              {t('models.form.tiers.description')}
             </p>
 
             {showAdvanced && (
@@ -887,7 +891,7 @@ export function ModelFormPage() {
 
                 {tierRows.map((tier, idx) => (
                   <div key={idx} style={{ background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--border)', borderRadius: 8, padding: '16px', marginBottom: 12, position: 'relative' }}>
-                    <button type="button" onClick={() => removeTier(idx)} title="Remove tier"
+                    <button type="button" onClick={() => removeTier(idx)} title={t('models.form.tiers.removeTier')}
                       style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 6 }}>
                       <X size={16} />
                     </button>
@@ -895,34 +899,34 @@ export function ModelFormPage() {
                     {/* Condition: Above X [metric] */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, paddingRight: 24 }}>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Above</label>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.tiers.above')}</label>
                         <input className="form-input" type="number" step="1" value={tier.above}
                           onChange={e => updateTier(idx, 'above', e.target.value)}
                           placeholder="200000" />
                       </div>
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Metric</label>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.tiers.metric')}</label>
                         <select className="form-input" value={tier.metric}
                           onChange={e => updateTier(idx, 'metric', e.target.value)}>
-                          {METRIC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          {METRIC_OPTION_KEYS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
                         </select>
                       </div>
                     </div>
 
                     {/* Tier pricing */}
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Override pricing</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t('models.form.tiers.overridePricing')}</div>
                     <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Input $/1M</label>
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.pricing.inputPerMillion')}</label>
                       <input className="form-input" type="number" step="any" value={tier.input}
                         onChange={e => updateTier(idx, 'input', e.target.value)} placeholder="10.00" />
                     </div>
                     <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Output $/1M</label>
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.pricing.outputPerMillion')}</label>
                       <input className="form-input" type="number" step="any" value={tier.output}
                         onChange={e => updateTier(idx, 'output', e.target.value)} placeholder="37.50" />
                     </div>
                     <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Cache $/1M <span style={{ color: 'var(--text-muted)' }}>(opt.)</span></label>
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.pricing.cachePerMillion')} <span style={{ color: 'var(--text-muted)' }}>{t('models.form.pricing.optional')}</span></label>
                       <input className="form-input" type="number" step="any" value={tier.cache}
                         onChange={e => updateTier(idx, 'cache', e.target.value)} placeholder="—" />
                     </div>
@@ -933,7 +937,7 @@ export function ModelFormPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1.5px dashed var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '10px 16px', width: '100%', justifyContent: 'center', transition: 'all 0.15s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(74, 144, 226, 0.05)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}>
-                  <Plus size={16} /> Add pricing tier
+                  <Plus size={16} /> {t('models.form.tiers.addTier')}
                 </button>
               </div>
             )}
@@ -944,14 +948,14 @@ export function ModelFormPage() {
             <button type="button" onClick={() => setShowLimits(v => !v)}
               style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 500, padding: '4px 0', userSelect: 'none' }}>
               <ChevronDown size={18} style={{ transform: showLimits ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
-              Limits
+              {t('models.form.limits.title')}
               {limitRows.filter(l => l.value !== '').length > 0 && (
                 <span style={{ marginLeft: 6, background: 'var(--accent)', color: '#fff', fontSize: '0.75rem', borderRadius: 12, padding: '2px 8px' }}>
                   {limitRows.filter(l => l.value !== '').length}
                 </span>
               )}
             </button>
-            <p className="section-desc" style={{ marginTop: 8 }}>Usage limits for this model. Multiple rules can be combined.</p>
+            <p className="section-desc" style={{ marginTop: 8 }}>{t('models.form.limits.description')}</p>
 
             {showLimits && (
               <div style={{ marginTop: 16 }}>
@@ -962,40 +966,40 @@ export function ModelFormPage() {
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '130px 110px 1fr 100px auto', gap: 10, alignItems: 'flex-end', marginBottom: 12, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px' }}>
                       {/* Metric */}
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Metric</label>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.limits.metric')}</label>
                         <select className="form-input" value={lim.metric}
                           onChange={e => upd({ metric: e.target.value as LimitMetric })}>
-                          {LIMIT_METRIC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          {LIMIT_METRIC_OPTION_KEYS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
                         </select>
                       </div>
                       {/* Window type */}
                       <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.75rem' }}>Type</label>
+                        <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('models.form.limits.type')}</label>
                         <select className="form-input" value={lim.windowType}
                           onChange={e => upd({ windowType: e.target.value as 'period' | 'rolling' })}>
-                          <option value="period">Period</option>
-                          <option value="rolling">Rolling</option>
+                          <option value="period">{t('routers.token.edit.windowType.period')}</option>
+                          <option value="rolling">{t('routers.token.edit.windowType.rolling')}</option>
                         </select>
                       </div>
                       {/* Period selector OR rolling amount+unit */}
                       {lim.windowType === 'period' ? (
                         <div className="form-group" style={{ margin: 0 }}>
-                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Period</label>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('routers.token.edit.periodLabel')}</label>
                           <select className="form-input" value={lim.period}
                             onChange={e => upd({ period: e.target.value as LimitPeriod })}>
-                            {PERIOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                            {PERIOD_OPTION_KEYS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
                           </select>
                         </div>
                       ) : (
                         <div className="form-group" style={{ margin: 0 }}>
-                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Every</label>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('routers.token.edit.every')}</label>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <input className="form-input" type="number" min="1" step="1" value={lim.rollingAmount}
                               onChange={e => upd({ rollingAmount: e.target.value })}
                               style={{ width: 64 }} placeholder="24" />
                             <select className="form-input" value={lim.rollingUnit}
                               onChange={e => upd({ rollingUnit: e.target.value as RollingUnit })}>
-                              {ROLLING_UNIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                              {ROLLING_UNIT_OPTION_KEYS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
                             </select>
                           </div>
                         </div>
@@ -1003,7 +1007,7 @@ export function ModelFormPage() {
                       {/* Max value */}
                       <div className="form-group" style={{ margin: 0 }}>
                         <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                        {lim.metric === 'cost' ? 'Max ($)' : lim.metric === 'calls' ? 'Max (n.)' : 'Max (tokens)'}
+                        {lim.metric === 'cost' ? t('routers.token.edit.maxCost') : lim.metric === 'calls' ? t('routers.token.edit.maxCalls') : t('routers.token.edit.maxTokens')}
                         </label>
                         <input className="form-input" type="number" step="any" min="0" value={lim.value}
                           onChange={e => upd({ value: e.target.value })}
@@ -1022,16 +1026,16 @@ export function ModelFormPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1.5px dashed var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '10px 16px', width: '100%', justifyContent: 'center', transition: 'all 0.15s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(74, 144, 226, 0.05)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}>
-                  <Plus size={16} /> Add limit
+                  <Plus size={16} /> {t('models.form.limits.addLimit')}
                 </button>
               </div>
             )}
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 32, paddingTop: 16, borderTop: '1px solid var(--border)', alignItems: 'center' }}>
-            <button type="button" className="btn btn-secondary" onClick={goBack} disabled={saving}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={goBack} disabled={saving}>{t('common.cancel')}</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? <span className="spinner" /> : (editingModelId ? 'Save Changes' : isCloning ? 'Create Clone' : 'Create Model')}
+              {saving ? <span className="spinner" /> : (editingModelId ? t('models.form.saveChanges') : isCloning ? t('models.form.createClone') : t('models.form.createModel'))}
             </button>
             {editingModelId && (
               <button type="button" className="btn btn-secondary" disabled={testState === 'loading'}

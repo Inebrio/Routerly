@@ -88,18 +88,18 @@ beforeEach(() => {
 
 describe('buildMcpServer tools/list', () => {
   it('hides tools whose permission the token owner lacks', async () => {
-    const res = await request(['project:read'], 'tools/list')
+    const res = await request(['router:read'], 'tools/list')
     const names = res.result.tools.map((t: any) => t.name)
-    expect(names).toContain('list_projects')
-    expect(names).not.toContain('create_project_token')
+    expect(names).toContain('list_routers')
+    expect(names).not.toContain('create_router_token')
     expect(names).not.toContain('toggle_model')
     expect(names).not.toContain('list_models')
   })
 
   it('exposes the write tools once their permissions are held', async () => {
-    const res = await request(['token:write', 'project:write'], 'tools/list')
+    const res = await request(['token:write', 'router:write'], 'tools/list')
     const names = res.result.tools.map((t: any) => t.name)
-    expect(names).toContain('create_project_token')
+    expect(names).toContain('create_router_token')
     expect(names).toContain('toggle_model')
   })
 
@@ -111,24 +111,24 @@ describe('buildMcpServer tools/list', () => {
 
 describe('buildMcpServer tools/call', () => {
   it('rejects a tool the caller has no permission for and performs no write', async () => {
-    const res = await request(['project:read'], 'tools/call', {
+    const res = await request(['router:read'], 'tools/call', {
       name: 'toggle_model',
       arguments: { modelId: 'openai/gpt-4o' },
     })
     expect(res.result.isError).toBe(true)
-    expect(res.result.content[0].text).toContain('project:write')
+    expect(res.result.content[0].text).toContain('router:write')
     expect(mockWriteConfig).not.toHaveBeenCalled()
     expect(mockReadConfig).not.toHaveBeenCalled()
   })
 
   it('returns an isError result for an unknown tool, not a thrown rejection', async () => {
-    const res = await request(['project:read'], 'tools/call', { name: 'no_such_tool', arguments: {} })
+    const res = await request(['router:read'], 'tools/call', { name: 'no_such_tool', arguments: {} })
     expect(res.result.isError).toBe(true)
     expect(res.result.content[0].text).toContain('no_such_tool')
   })
 
   it('round-trips a read tool through the transport', async () => {
-    const res = await request(['project:read'], 'tools/call', { name: 'list_projects', arguments: {} })
+    const res = await request(['router:read'], 'tools/call', { name: 'list_routers', arguments: {} })
     expect(res.result.isError).toBeUndefined()
     expect(res.result.content[0].type).toBe('text')
     expect(res.result.content[0].text).toContain('Alpha')

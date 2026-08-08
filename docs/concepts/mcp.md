@@ -23,14 +23,14 @@ To wire a specific client to it, see
 
 ## MCP is personal
 
-An MCP token belongs to a **user**, not to a project. Connecting a client to
+An MCP token belongs to a **user**, not to a router. Connecting a client to
 Routerly is the same act as logging into the dashboard: the client acts as
 you, and it can do exactly what your role lets you do, no more.
 
 | | |
 |---|---|
 | **Owner** | The user who created it. Each user manages their own tokens. |
-| **Prefix** | `sk-rt-mcp-…`, distinct from the `sk-rt-…` project tokens used by the LLM Proxy. |
+| **Prefix** | `sk-rt-mcp-…`, distinct from the `sk-rt-…` router tokens used by the LLM Proxy. |
 | **Storage** | SHA-256 hash only, on the owner's user record. The raw value is shown once at creation and is never retrievable afterwards. |
 | **Grants** | Every permission of the owner's role, resolved at call time. Change the role, and every token of that user changes with it. |
 | **Expiry** | Optional. An expired token is rejected with `401`, it is not deleted. |
@@ -41,12 +41,12 @@ Create and revoke tokens from the dashboard's
 [`routerly mcp token`](../cli/commands.md#routerly-mcp-token).
 
 :::note Upgrading from an earlier version
-Before 0.4.0, `/mcp` was authenticated by a **project token** carrying the
+Before 0.4.0, `/mcp` was authenticated by a **router token** carrying the
 `mcp` and `mcp:write` scopes, and the tool browser was a gateway-wide page
 gated by the `mcp:read` permission. Those scopes and the `mcp:read` /
 `mcp:manage` permissions no longer exist: they are dropped from roles and
 tokens automatically on first start after the upgrade. A client still
-authenticating with a project token gets `401` and must be re-pointed at a
+authenticating with a router token gets `401` and must be re-pointed at a
 personal MCP token.
 :::
 
@@ -92,13 +92,13 @@ An admin sees all 9 tools; a viewer sees only the read tools its role covers.
 See [Dashboard: Users & Roles](../dashboard/users-and-roles.md) for the
 permission catalogue.
 
-### Project scope
+### Router scope
 
-Project-scoped tools take an optional `projectId` (id or name) and resolve it
-against the projects the owner can reach: the user's assigned projects, plus
-any project they are a member of, or every project when the user is scoped to
-none. When exactly one project is reachable, `projectId` may be omitted. A
-project outside that set is reported as not found, so it is
+Router-scoped tools take an optional `routerId` (id or name) and resolve it
+against the routers the owner can reach: the user's assigned routers, plus
+any router they are a member of, or every router when the user is scoped to
+none. When exactly one router is reachable, `routerId` may be omitted. A
+router outside that set is reported as not found, so it is
 indistinguishable from one that does not exist.
 
 ---
@@ -116,18 +116,18 @@ on that instance.
 |------|------------|------|
 | `list_models` | `model:read` | Lists the models configured on the gateway (id, provider, context window). No secrets. |
 | `get_model` | `model:read` | Gets one configured model by id. No secrets. |
-| `route_preview` | `project:read` | Previews which model(s) a project would route a request to (ordered candidates + trace), no upstream call. |
-| `get_usage_summary` | `report:read` | Summarizes a project's usage over a trailing window (default 24h): call count, cost, tokens. |
-| `get_budget_status` | `report:read` | Reports current budget/limit usage per model for a project. |
-| `get_metrics_snapshot` | `report:read` | Aggregate request/token/cost/latency metrics for one project. Other projects' data is never returned. |
-| `list_projects` | `project:read` | Lists the projects the token owner can reach (id, name, model count). |
+| `route_preview` | `router:read` | Previews which model(s) a router would route a request to (ordered candidates + trace), no upstream call. |
+| `get_usage_summary` | `report:read` | Summarizes a router's usage over a trailing window (default 24h): call count, cost, tokens. |
+| `get_budget_status` | `report:read` | Reports current budget/limit usage per model for a router. |
+| `get_metrics_snapshot` | `report:read` | Aggregate request/token/cost/latency metrics for one router. Other routers' data is never returned. |
+| `list_routers` | `router:read` | Lists the routers the token owner can reach (id, name, model count). |
 
 ### Write tools
 
 | Tool | Permission | Does |
 |------|------------|------|
-| `create_project_token` | `token:write` | Mints a new API token on a project. Returns only `id`/`tokenSnippet`/`createdAt`/`scopes`; the raw token is never returned to the MCP client. |
-| `toggle_model` | `project:write` | Flips the `enabled` flag on one of a project's model refs. The flag is persisted but not yet honored by the routing engine. |
+| `create_router_token` | `token:write` | Mints a new API token on a router. Returns only `id`/`tokenSnippet`/`createdAt`/`scopes`; the raw token is never returned to the MCP client. |
+| `toggle_model` | `router:write` | Flips the `enabled` flag on one of a router's model refs. The flag is persisted but not yet honored by the routing engine. |
 
 ---
 
@@ -136,7 +136,7 @@ on that instance.
 | Where | Condition | Result |
 |-------|-----------|--------|
 | HTTP | No `Authorization` header | `401` `Missing or invalid Authorization header. Expected: Bearer <mcp-token>` |
-| HTTP | Unknown token, or a project token used by mistake | `401` `Invalid MCP token.` |
+| HTTP | Unknown token, or a router token used by mistake | `401` `Invalid MCP token.` |
 | HTTP | Token past its expiry | `401` `MCP token expired.` |
 | stdio | `ROUTERLY_MCP_TOKEN` missing or rejected | The process fails to start, with the same message on stderr |
 | Tool call | Caller lacks the tool's permission | `200` with `isError: true` in the JSON-RPC result |

@@ -27,7 +27,7 @@ export interface Surface {
   readonly kind: SurfaceKind
   /**
    * Mount hint interpreted by the host for this `kind`:
-   * dashboard -> route path (e.g. '/projects/:id/guardrails');
+   * dashboard -> route path (e.g. '/routers/:id/guardrails');
    * cli       -> command path (e.g. 'guardrails list');
    * api       -> route path (e.g. '/api/guardrails').
    */

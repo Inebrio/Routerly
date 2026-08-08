@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
-import type { ProjectConfig } from '@routerly/shared'
+import type { RouterConfig } from '@routerly/shared'
 
 vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
@@ -27,17 +27,17 @@ const testModel: any = {
   cost: { inputPerMillion: 5, outputPerMillion: 15 },
 }
 
-const testProject: ProjectConfig = {
+const testRouter: RouterConfig = {
   id: 'proj-1', name: 'Test', tokens: [], members: [],
   models: [{ modelId: 'openai/gpt-4o' }],
 }
 
-async function buildApp(project = testProject) {
+async function buildApp(router = testRouter) {
   const app = Fastify({ logger: false })
-  app.decorateRequest('project', null as any)
+  app.decorateRequest('router', null as any)
   app.decorateRequest('token', null as any)
   app.addHook('preHandler', async (req: any) => {
-    req.project = project
+    req.router = router
     req.token = undefined
   })
   await app.register(openaiRoutes)
@@ -51,7 +51,7 @@ async function buildApp(project = testProject) {
 // (guardrails/pii/budget/routing). GET /v1/models* are untouched by the flip and
 // keep their route-level tests here.
 describe('GET /v1/models', () => {
-  it('returns project model list with ada placeholder', async () => {
+  it('returns router model list with ada placeholder', async () => {
     mockModels([testModel])
 
     const app = await buildApp()
@@ -80,21 +80,21 @@ describe('GET /v1/models/:model', () => {
     expect(body.object).toBe('model')
   })
 
-  it('returns 404 for model not in project', async () => {
+  it('returns 404 for model not in router', async () => {
     mockModels([testModel])
 
     const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/v1/models/not-in-project' })
+    const res = await app.inject({ method: 'GET', url: '/v1/models/not-in-router' })
     await app.close()
 
     expect(res.statusCode).toBe(404)
   })
 
-  it('returns 404 when model is in project but not in allModels', async () => {
-    const projectWithMissing: ProjectConfig = { ...testProject, models: [{ modelId: 'missing-model' }] }
+  it('returns 404 when model is in router but not in allModels', async () => {
+    const routerWithMissing: RouterConfig = { ...testRouter, models: [{ modelId: 'missing-model' }] }
     mockModels([]) // no models in allModels
 
-    const app = await buildApp(projectWithMissing)
+    const app = await buildApp(routerWithMissing)
     const res = await app.inject({ method: 'GET', url: '/v1/models/missing-model' })
     await app.close()
 

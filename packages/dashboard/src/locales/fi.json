@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automaattinen",
+      "dark": "Tumma",
+      "light": "Vaalea"
+    },
+    "themeCycle": {
+      "title": "Teema: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Laajenna sivupalkki",
+      "collapse": "Pienennä sivupalkki"
+    },
+    "tagline": "Yksi yhdyskäytävä. Mikä tahansa AI-malli. Täysi hallinta.",
+    "nav": {
+      "overview": "Yleiskatsaus",
+      "providers": "Palveluntarjoajat",
+      "models": "Mallit",
+      "profiles": "Profiilit",
+      "routers": "Reitittimet",
+      "experiments": "Kokeilut",
+      "usage": "Käyttö",
+      "playground": "Testiympäristö",
+      "settings": "Asetukset",
+      "connectApp": "Yhdistä sovellus",
+      "help": "Ohje",
+      "signOut": "Kirjaudu ulos"
+    },
+    "banner": {
+      "permissionWarning": "Joillakin asetustiedostoilla on liian sallivat käyttöoikeudet ({{files}}). Käynnistys ja pyynnöt toimivat edelleen, mutta korjaa tämä isäntäjärjestelmästä sopivalla hetkellä.",
+      "dismiss": "Hylkää",
+      "updateAvailable": "Routerly v{{latest}} on saatavilla. Käytössäsi on v{{current}}.",
+      "updateLink": "Päivitä asetuksista",
+      "mfaRequired": "Kaksivaiheinen tunnistautuminen on pakollinen tälle instanssille.",
+      "mfaLink": "Ota 2FA käyttöön profiilissasi",
+      "mfaSuffix": "suojataksesi tilisi.",
+      "telemetryTitle": "Routerly ei koskaan lähetä tietoja automaattisesti.",
+      "telemetryBody": "Haluaisitko auttaa lähettämällä anonyymejä asennusmittareita? Vain tapahtumatyyppi, versio, alusta ja satunnainen tunniste — ei henkilötietoja, ei IP-osoitetta.",
+      "telemetryLink": "Mitä lähetetään?",
+      "telemetryYes": "Kyllä, autan",
+      "telemetryNo": "Ei kiitos"
+    },
+    "language": {
+      "label": "Kieli"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} sekunti sitten",
+      "secondsAgo_other": "{{count}} sekuntia sitten",
+      "minutesAgo": "{{count}} minuutti sitten",
+      "minutesAgo_other": "{{count}} minuuttia sitten",
+      "hoursAgo": "{{count}} tunti sitten",
+      "hoursAgo_other": "{{count}} tuntia sitten",
+      "daysAgo": "{{count}} päivä sitten",
+      "daysAgo_other": "{{count}} päivää sitten"
+    },
+    "confirm": "Vahvista",
+    "cancel": "Peruuta",
+    "remove": "Poista",
+    "select": "Valitse...",
+    "search": "Hae...",
+    "noResults": "Ei tuloksia",
+    "noRemainingOptions": "Ei jäljellä olevia vaihtoehtoja",
+    "apply": "Käytä",
+    "saved": "Tallennettu",
+    "showLess": "Näytä vähemmän",
+    "roles": "Roolit",
+    "permissions": "Käyttöoikeudet",
+    "notifications": {
+      "title": "Ilmoitukset",
+      "markAllRead": "Merkitse kaikki luetuiksi",
+      "empty": "Ei ilmoituksia",
+      "viewAll": "Näytä kaikki ilmoitukset"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Valitse ajanjakso",
+      "recent": "Viimeisimmät",
+      "ranges": "Aikavälit",
+      "from": "Alkaen",
+      "to": "Päättyen"
+    },
+    "permissionGuard": {
+      "fixFailed": "Käyttöoikeuksien korjaaminen epäonnistui",
+      "title": "Turvattomat tiedosto-oikeudet",
+      "defaultMessage": "Joillakin tiedostoilla on turvattomat käyttöoikeudet.",
+      "fixing": "Korjataan…",
+      "fixNow": "Korjaa nyt"
+    },
+    "limitRows": {
+      "noLimits": "Rajoja ei ole asetettu.",
+      "metricLabel": "Mittari",
+      "typeLabel": "Tyyppi",
+      "periodLabel": "Jakso",
+      "everyLabel": "Väli",
+      "maxCost": "Enimmäiskustannus",
+      "maxCount": "Enimmäismäärä",
+      "maxTokens": "Enimmäistokenit",
+      "allCombosSet": "Kaikki mittari/jakso-yhdistelmät on jo asetettu",
+      "addLimit": "Lisää raja",
+      "metric": {
+        "cost": "Kustannus",
+        "calls": "Kutsut",
+        "input_tokens": "Syötetokenit",
+        "output_tokens": "Tulostetokenit",
+        "total_tokens": "Tokenit yhteensä"
+      },
+      "period": {
+        "hourly": "Tunneittain",
+        "daily": "Päivittäin",
+        "weekly": "Viikoittain",
+        "monthly": "Kuukausittain",
+        "yearly": "Vuosittain"
+      },
+      "rollingUnit": {
+        "second": "sekunti",
+        "minute": "minuutti",
+        "hour": "tunti",
+        "day": "päivä",
+        "week": "viikko",
+        "month": "kuukausi"
+      },
+      "windowType": {
+        "period": "Jakso",
+        "rolling": "Liukuva"
+      },
+      "fmt": {
+        "requests": "{{value}} pyyntöä",
+        "inputTokens": "{{value}} syötetokenia",
+        "outputTokens": "{{value}} tulostetokenia",
+        "totalTokens": "{{value}} tokenia yhteensä",
+        "everyRolling": "{{metric}} joka {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} / {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Reitityksen säästöt",
+      "input": "Syöte",
+      "output": "Tuloste",
+      "actual": "Toteutunut",
+      "clientCalls": "{{count}} asiakaskutsu",
+      "clientCalls_other": "{{count}} asiakaskutsua",
+      "comparedAgainst": ", verrattuna siihen, että kaikki lähetettäisiin jokaiselle",
+      "comparedAgainst_other": ", verrattuna siihen, että kaikki lähetettäisiin jokaiselle",
+      "paidModelsInPlay": "{{count}} maksullinen malli mukana",
+      "paidModelsInPlay_other": "{{count}} maksullista mallia mukana",
+      "metricCost": "Kustannus",
+      "metricTokens": "Tokenit",
+      "totalCost": "Kokonaiskustannus",
+      "routed": "Reititetty: {{value}}",
+      "saved": "Säästetty: {{value}}",
+      "usdThisPeriod": "USD tällä jaksolla",
+      "savedVsAlways": "{{value}} säästetty ({{percent}} %) vs. aina {{model}}",
+      "tokens": "Tokenit",
+      "in": "Sisään: {{value}}",
+      "out": "Ulos: {{value}}",
+      "tokenSubWithCache": "{{in}} sisään · {{out}} ulos · {{cached}} välimuistista",
+      "tokenSub": "{{in}} sisään · {{out}} ulos",
+      "cutByOptimizers": "{{value}} vähennetty optimoijilla",
+      "fewerThanAlways": "{{value}} vähemmän kuin aina {{model}}, arvioitu"
+    },
+    "optimizerSteps": {
+      "downloaded": "Latautunut",
+      "thisStepRunsOn": "Tämä vaihe suoritetaan",
+      "defaultCheckpoint": "Oletustarkistuspiste"
+    },
+    "routingPolicies": {
+      "title": "Reitityskäytännöt",
+      "subtitle": "Käytännöt määrittävät, miten pyynnöt reititetään. Ne suoritetaan järjestyksessä ylhäältä alas.",
+      "removePolicy": "Poista käytäntö",
+      "removeIntent": "Poista aikomus",
+      "removeExample": "Poista esimerkki",
+      "routingModels": "Reititysmallit",
+      "embeddingModels": "Upotusmallit",
+      "maxCompletionTokens": "Enimmäismäärä täydennystokeneita",
+      "maxPromptChars": "Enimmäismäärä kehotteen merkkejä",
+      "similarityThreshold": "Samankaltaisuuskynnys",
+      "previousMessages": "Aiemmat viestit",
+      "intents": "Aikomukset",
+      "confidenceThreshold": "Luottamuskynnys",
+      "ambiguityMargin": "Epäselvyysmarginaali",
+      "maxCallsPerWindow": "Enimmäismäärä kutsuja per ikkuna",
+      "addFallbackModel": "Lisää varamalli",
+      "autoRoutingLabel": "Automaattinen reititys",
+      "autoRoutingHint": "Käytössä liikenne jaetaan ilman mukautettuja kehotteita. Poissa käytöstä voit kirjoittaa tarkkoja kehotteita, jotka ohjaavat AI:ta valitsemaan kunkin kohdemallin.",
+      "additionalPromptInfoLabel": "Lisätiedot kehotteeseen",
+      "additionalPromptInfoPlaceholder": "Lisäohjeet sisällytettäväksi reitityskehotteeseen...",
+      "addExamplePlaceholder": "Lisää esimerkki ja paina Enter…",
+      "addIntentPlaceholder": "Lisää aikomus ja paina Enter…",
+      "addPolicyPlaceholder": "Lisää käytäntö...",
+      "labels": {
+        "llm": "AI-reitityskäytäntö",
+        "rate-limit": "Nopeusrajoituskäytäntö",
+        "budget-remaining": "Jäljellä olevan budjetin käytäntö",
+        "semantic-intent": "Semanttisen aikomuksen käytäntö",
+        "health": "Kuntokäytäntö",
+        "context": "Kontekstikäytäntö",
+        "capability": "Ominaisuuskäytäntö",
+        "performance": "Suorituskykykäytäntö",
+        "fairness": "Reiluuskäytäntö",
+        "cheapest": "Halvin-käytäntö",
+        "model-preference": "Mallimieltymyskäytäntö"
+      },
+      "descriptions": {
+        "context": "Pisteyttää mallit käytettävissä olevan kontekstiikkunan perusteella. Antaa pisteen 0 malleille, joiden kontekstiikkuna on pienempi kuin arvioitu pyynnön pituus, mikä estää katkeamisvirheet.",
+        "cheapest": "Pisteyttää mallit käänteisesti niiden tokenikustannuksen mukaan. Halvin malli saa pisteet 1.0, kallein 0.0, mikä auttaa vähentämään API-kuluja pyyntöjen yli.",
+        "health": "Pisteyttää mallit niiden viimeaikaisen virhesuhteen perusteella eksponentiaalisella vaimennuksella (viimeisimmät virheet painavat enemmän). Käyttää sulkukatkaisijaa, joka asettaa pisteen 0:ksi, kun painotettu virhesuhde ylittää kriittisen kynnyksen.",
+        "performance": "Pisteyttää mallit niiden viimeaikaisen keskimääräisen vasteajan perusteella eksponentiaalisella vaimennuksella. Nopein malli saa pisteet 1.0, hitain 0.0. Mallit, joilla ei ole viimeaikaista dataa, saavat oletuksena 1.0.",
+        "llm": "Käyttää AI-mallia pisteyttämään ehdokkaat pyynnön semanttisen sisällön perusteella. Tukee mallikohtaisia reititysohjekehotteita ja huomioi budjettivaraa, kun rajat on määritetty.",
+        "capability": "Kova suodatin: antaa pisteen 0 malleille, joilta puuttuu nimenomaisesti pyynnön vaatima ominaisuus (näkö, funktiokutsut, JSON-tila). Malleja, joilla ei ole nimenomaisia ominaisuusilmoituksia, ei rangaista.",
+        "rate-limit": "Rankaisee malleja, joiden viimeaikainen kutsutiheys on korkea, vähentääkseen palveluntarjoajan nopeusrajojen (HTTP 429) osumisen riskiä. Tukee säädettävää kovaa kynnystä, joka pakottaa pisteen 0:ksi.",
+        "fairness": "Jakaa liikenteen tasaisesti rankaisemalla malleja, jotka ovat saaneet viimeksi enemmän onnistuneita kutsuja. Toimii pehmeänä vuorotteluna estääkseen kuormaa keskittymästä yhteen malliin.",
+        "budget-remaining": "Pisteyttää mallit jäljellä olevan budjettivaran perusteella kaikkien määritettyjen rajojen osalta. Suosii malleja, joilla on enemmän varaa ennen kynnysten täyttymistä, jakaen kulutusta ennakoivasti.",
+        "semantic-intent": "Luokittelee pyynnön semanttisen aikomuksen perusteella upotuksia käyttäen ja rajoittaa ehdokasjoukon tähän aikomukseen kartoitettuihin malleihin. Varmat osumat suodattavat joukon kovin; epäselvät osumat yhdistävät kaksi parasta joukkoa; tuntemattomat pyynnöt läpäisevät kaikki ehdokkaat.",
+        "model-preference": "Kun asiakas pyytää tiettyä mallia (ei routerly/ada), myöntää sille säädettävän lisäpisteen. Kun mieltymystä ei ilmaista, käytäntö pidättyy. Sijainti listassa määrittää, kuinka paljon mieltymys painaa muihin käytäntöihin verrattuna."
+      },
+      "selectModel": "Valitse malli"
+    },
+    "securityRules": {
+      "applyTo": "Kohdistetaan",
+      "streamingBufferSize": "Suoratoiston puskurikoko (merkkiä)",
+      "entityTypes": "Entiteettityypit",
+      "target": "Kohde",
+      "embeddingModel": "Upotusmalli",
+      "judgeModel": "Arviointimalli",
+      "contentGuardrails": "Sisällön suojakaiteet",
+      "piiPolicies": "PII-käytännöt",
+      "addSecurityPolicyPlaceholder": "Lisää turvallisuuskäytäntö...",
+      "removePolicyTooltip": "Poista käytäntö",
+      "deleteRuleAriaLabel": "Poista sääntö",
+      "embeddingModelPlaceholder": "Valitse upotusmalli...",
+      "fallbackModelsLabel": "Varamallit (valinnainen, kokeillaan järjestyksessä)",
+      "fallbackModelsPlaceholder": "Ei varamalleja...",
+      "exampleTextsLabel": "Esimerkkitekstejä estettäväksi (yksi per rivi)",
+      "exampleTextsPlaceholder": "Kuinka hakkeroin...\n...",
+      "similarityThresholdLabel": "Samankaltaisuuskynnys:",
+      "judgeModelPlaceholder": "Valitse arviointimalli...",
+      "allowedTopicsLabel": "Sallitut aiheet (luonnollinen kieli)",
+      "allowedTopicsPlaceholder": "Ohjelmistotuotteiden asiakastuki. Tekninen vianmääritys. Laskutuskysymykset.",
+      "onTopicThresholdLabel": "Estä, jos aiheenmukaisuuspiste alle:",
+      "harmThresholdLabel": "Estä, jos haitallisuuspiste yli:",
+      "customInstructionsLabel": "Mukautetut ohjeet",
+      "customInstructionsPlaceholder": "Olet sisällön turvallisuusluokittelija. Arvioi seuraava teksti haitallisen sisällön varalta.\nKategoriat: vihapuhe, väkivalta, seksuaalinen sisältö, itsetuho.\nVastaa VAIN JSON-objektilla: {\"score\": <numero väliltä 0 ja 1>}",
+      "customInstructionsRequired": "Mukautetut ohjeet ovat pakollisia.",
+      "enabledLabel": "Käytössä",
+      "contentGuardrailsHint": "Tarkastaa pyynnöt ja vastaukset määritettyjä sääntöjä vastaan. Aktiivinen, kun vähintään yksi sääntö on määritetty.",
+      "securityPoliciesHeading": "Turvallisuuskäytännöt",
+      "noSecurityPolicies": "Turvallisuuskäytäntöjä ei ole määritetty.",
+      "piiPoliciesHint": "Havaitsee ja peittää henkilötiedot. Kukin käytäntö kohdistuu pyynnön syötteeseen, mallin vastaukseen tai molempiin, ja hallitsee omaa entiteettijoukkoaan.",
+      "noPiiPolicies": "PII-käytäntöjä ei ole määritetty.",
+      "addPolicyButton": "+ Lisää käytäntö",
+      "injectionWarningTitle": "Pyyntösisältöä muokattu injektiolla",
+      "injectionWarningBody": "Yksi tai useampi sääntö lisää oman ohjeensa lähtevän pyynnön järjestelmäkehotteeseen, joten palveluntarjoajalle lähetettävä sisältö muuttuu. Ylimääräisiä mallikutsuja ei tehdä eikä mitään estetä; palveleva malli noudattaa ohjetta itse.",
+      "streamingDisabledWarningTitle": "Suoratoisto pois käytöstä tälle reitittimelle",
+      "streamingDisabledWarningBody": "Yksi tai useampi sääntö on määritetty estämään vastauksia (kohde: response tai both). Koska koko vastaus on tarkastettava ennen estopäätöksen tekemistä, Routerly pidättää vastauksen kokonaisuudessaan ennen sen palauttamista asiakkaalle. Suoratoisto ei ole käytettävissä, kun vastausta estävä sääntö on aktiivinen; asiakkaat saavat koko vastauksen kerralla eikä osissa."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure-resurssin nimi",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI -resurssin nimi (Azure-portaalista).",
+      "deploymentId": "Käyttöönotto-ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI Studiossa luomasi käyttöönoton nimi.",
+      "azureApiVersionLabel": "API-versio",
+      "azureApiVersionDefaultHint": "(oletus: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS-alue",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKeyPlaceholderExisting": "Jätä tyhjäksi säilyttääksesi nykyisen",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Istuntotoken",
+      "awsSessionTokenOptionalHint": "(valinnainen, väliaikaisille tunnuksille)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP-reitittimen ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Sijainti",
+      "gcpLocationDefaultHint": "(oletus: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Palvelutilin avain",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Päätepisteen URL",
+      "optional": "(valinnainen)",
+      "webProvider": {
+        "unofficialWarningTitle": "Epävirallinen palveluntarjoaja — käytä omalla vastuulla.",
+        "unofficialWarningBody": "Tämä integraatio nojaa dokumentoimattomaan sisäiseen API:in, joka voi muuttua tai rikkoutua ilman varoitusta. Se voi rikkoa palveluntarjoajan käyttöehtoja ja johtaa tilin sulkemiseen.",
+        "accessTokenLabel": "Käyttöoikeustoken",
+        "sessionTokenLabel": "Istuntotoken",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Liitä sessionKey-evästeen arvo (sk-ant-sid01-…)",
+        "openaiInstructions": "Kun olet kirjautuneena ChatGPT:hen, avaa <code>https://chatgpt.com/api/auth/session</code> uuteen välilehteen. Kopioi <code>accessToken</code>-kentän arvo (alkaa <code>eyJ</code>). Token vanhenee noin 24 tunnin välein. Luotettavampaa käyttöä varten täytä myös alla oleva <strong>cf_clearance</strong>-kenttä.",
+        "anthropicInstructions": "<strong>Näin saat istuntoavaimesi:</strong> Kirjaudu Claudeen ja avaa DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopioi <code>sessionKey</code>-evästeen arvo (alkaa <code>sk-ant-sid01-</code>). Avain pysyy voimassa, kunnes kirjaudut ulos."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Tilauksen OAuth-token",
+        "authFilePathLabel": "Tunnistetiedoston polku",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (oletus)",
+        "anthropicTitle": "Käytä Claude Pro/Max-tilaustasi.",
+        "anthropicRunCommandStep": "Suorita tämä komento ja kopioi sen tulostama token:",
+        "anthropicPasteTokenStep": "Liitä token alla olevaan <em>Tilauksen OAuth-token</em> -kenttään.",
+        "termsNote": "Uusi, kun se vanhenee. Tilauksen käyttö yhdyskäytävän kautta voi rikkoa palveluntarjoajan käyttöehtoja.",
+        "openaiTitle": "Käytä ChatGPT Plus/Pro -tilaustasi Codex-sovelluksen kautta.",
+        "openaiLoginStep": "Kirjaudu Codex-työpöytäsovellukseen ChatGPT Plus/Pro -tilillä.",
+        "openaiAutoRefreshStep": "Routerly lukee käyttöoikeustokenisi tiedostosta <code>~/.codex/auth.json</code> ja päivittää sen automaattisesti. Manuaalista kopiointia ei tarvita.",
+        "openaiAuthFilePathStep": "Jätä <em>Tunnistetiedoston polku</em> -kenttä tyhjäksi käyttääksesi oletusta, tai anna mukautettu polku, jos Codex-sovelluksesi tallentaa tunnistetiedot muualle.",
+        "openaiTermsNote": "Tilauksen käyttö yhdyskäytävän kautta voi rikkoa palveluntarjoajan käyttöehtoja."
+      },
+      "copyCode": {
+        "copiedTooltip": "Kopioitu!",
+        "copyTooltip": "Kopioi leikepöydälle",
+        "copiedLabel": "Kopioitu",
+        "copyLabel": "Kopioi"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Kopioi",
+      "copiedLabel": "Kopioitu!",
+      "copyErrorHint": "Kopiointi epäonnistui, valitse ja kopioi manuaalisesti."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP-asiakas",
+      "hints": {
+        "claudeCode": "Suorita tämä kerran, missä tahansa. Claude Code tallentaa palvelimen tiedostoon <code>~/.claude.json</code>.",
+        "claudeDesktop": "Lisää tämä tiedostoon <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (Windowsissa <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>) ja käynnistä sovellus uudelleen. Se käynnistää CLI:n, joten <code>routerly</code>-komennon on oltava PATH-muuttujassa.",
+        "codex": "Lisää tämä tiedostoon <code>~/.codex/config.toml</code>. Codex lukee tokenin ympäristöstä, vie se siis kuoressa, jossa käynnistät Codexin.",
+        "opencode": "Lisää tämä tiedostoon <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Suorita tämä kerran. OpenClaw käyttää oletuksena sse-siirtoa, jota Routerly ei tarjoa, joten siirtotapa asetetaan erikseen.",
+        "cursor": "Lisää tämä tiedostoon <code>~/.cursor/mcp.json</code>, tai tiedostoon <code>.cursor/mcp.json</code> rajataksesi sen yhteen projektiin.",
+        "cline": "Lisää tämä tiedostoon <code>~/.cline/mcp.json</code>, tai liitä se Cline-paneelin Configure MCP Servers -osioon.",
+        "zed": "Lisää tämä Zedin <code>settings.json</code>-tiedostoon, muiden kontekstipalvelimien joukkoon."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Tallentamattomat muutokset",
+      "message": "Sinulla on tallentamattomia muutoksia. Jos poistut nyt, muutokset menetetään.",
+      "stay": "Jää",
+      "leaveAnyway": "Poistu joka tapauksessa"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Suojakaiteet",
+        "pii": "PII",
+        "optimizers": "Optimoijat",
+        "routerOverhead": "Reitittimen lisäkuormitus"
+      },
+      "policyType": {
+        "llm": "AI-reititys",
+        "rateLimit": "Nopeusrajoitus",
+        "budgetRemaining": "Jäljellä oleva budjetti",
+        "semanticIntent": "Semanttinen aikomus",
+        "modelPreference": "Mallimieltymys"
+      },
+      "rawDetails": "raakatiedot",
+      "technicalDetails": "tekniset tiedot",
+      "systemPrompt": "järjestelmäkehote",
+      "responseText": "vastausteksti",
+      "responseJson": "vastaus-JSON",
+      "cacheEmbeddingCall": "VÄLIMUISTIN UPOTUSKUTSU",
+      "fallbackAttempt": "varayritys #{{attempt}}",
+      "embeddingModel": "Upotusmalli",
+      "upstreamModel": "Kohdemalli",
+      "provider": "Palveluntarjoaja",
+      "source": "Lähde",
+      "endpoint": "Päätepiste",
+      "cacheHit": "VÄLIMUISTIOSUMA",
+      "ttlExtended": "TTL pidennetty",
+      "model": "Malli",
+      "similarity": "Samankaltaisuus",
+      "embedding": "Upotus",
+      "cacheMiss": "VÄLIMUISTIHUTI",
+      "details": "tiedot",
+      "excludedByLimits": "SULJETTU POIS RAJOJEN VUOKSI",
+      "finalRanking": "LOPULLINEN SIJOITUS",
+      "noRankingData": "Ei sijoitustietoja (tallenne voi olla vioittunut tai vanhemmasta versiosta)",
+      "policyScores": "KÄYTÄNTÖPISTEET",
+      "weight": "paino {{value}}",
+      "allScores": "kaikki pisteet",
+      "noPolicyData": "Ei käytäntötietoja (tallenne voi olla vioittunut tai vanhemmasta versiosta)",
+      "requestGuardrailBlocked": "PYYNNÖN SUOJAKAIDE ESTI",
+      "requestGuardrailTriggered": "PYYNNÖN SUOJAKAIDE LAUKESI",
+      "responseGuardrailBlocked": "VASTAUKSEN SUOJAKAIDE ESTI",
+      "responseGuardrailTriggered": "VASTAUKSEN SUOJAKAIDE LAUKESI",
+      "rule": "Sääntö",
+      "action": "Toiminto",
+      "guardrailsEvaluated": "SUOJAKAITEET ARVIOITU ({{target}})",
+      "ruleCount": "{{count}} sääntö",
+      "ruleCount_other": "{{count}} sääntöä",
+      "promptInjection": "Kehoteinjektio",
+      "injects": "lisää",
+      "judgeResponse": "Arviointimallin vastaus",
+      "piiScrubbed": "PII PEITETTY",
+      "piiScanned": "PII SKANNATTU ({{target}})",
+      "policies": "käytännöt",
+      "entityTypes": "entiteettityypit",
+      "customPatterns": "mukautetut kuviot",
+      "scanned": "skannattu",
+      "redacted": "peitetty",
+      "took": "kesti",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "skannatut entiteettityypit",
+      "guardrailInjection": "SUOJAKAITEEN INJEKTIO",
+      "rules": "säännöt",
+      "chars": "merkkiä",
+      "injectedText": "lisätty teksti",
+      "optimizer": "OPTIMOIJA {{id}}",
+      "tokens": "tokenit",
+      "saved": "säästetty",
+      "tok": "{{value}} tok",
+      "reason": "syy",
+      "budgetBlocked": "BUDJETTI ESTI",
+      "budgetOk": "BUDJETTI OK",
+      "egressSent": "LÄHTEVÄ LÄHETETTY",
+      "status": "tila",
+      "encoding": "koodaus",
+      "frames": "kehykset",
+      "bytes": "tavut"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Oma profiili",
+      "subtitle": "Hallitse tilisi asetuksia"
+    },
+    "tabs": {
+      "profile": "Profiili",
+      "notifications": "Ilmoitukset",
+      "mcp": "MCP",
+      "preferences": "Asetukset"
+    },
+    "notifications": {
+      "close": "Sulje",
+      "refresh": "Päivitä",
+      "clear": "Tyhjennä",
+      "empty": "Ilmoituksia ei löytynyt.",
+      "markAllRead": "Merkitse kaikki luetuiksi",
+      "allCaughtUp": "Kaikki on ajan tasalla",
+      "unreadCount": "{{count}} lukematta",
+      "selectedCount": "{{count}} valittu",
+      "severity": {
+        "all": "Kaikki",
+        "info": "Tiedoksi",
+        "warning": "Varoitus",
+        "critical": "Kriittinen"
+      },
+      "status": {
+        "read": "Luettu",
+        "unread": "Lukematta"
+      },
+      "filters": {
+        "severity": "Vakavuus",
+        "category": "Kategoria",
+        "event": "Tapahtuma",
+        "date": "Päivämäärä",
+        "period": "Ajanjakso",
+        "status": "Tila",
+        "all": "Kaikki",
+        "allCategories": "Kaikki kategoriat",
+        "allEvents": "Kaikki tapahtumat",
+        "unreadOnly": "Vain lukemattomat"
+      },
+      "actions": {
+        "markRead": "Merkitse luetuksi",
+        "markUnread": "Merkitse lukemattomaksi",
+        "archive": "Arkistoi"
+      },
+      "table": {
+        "severity": "Vakavuus",
+        "event": "Tapahtuma",
+        "date": "Päivämäärä",
+        "status": "Tila",
+        "selectAll": "Valitse kaikki",
+        "selectRow": "Valitse {{event}}",
+        "eventCount": "{{count}} tapahtumaa"
+      },
+      "pagination": {
+        "previous": "← Edellinen",
+        "next": "Seuraava →",
+        "page": "Sivu {{page}} / {{totalPages}}",
+        "total": "(yhteensä {{count}})"
+      },
+      "detail": {
+        "ariaLabel": "Ilmoituksen tiedot",
+        "details": "Tiedot",
+        "noDetails": "Ei lisätietoja.",
+        "eventsInIncident": "Tähän tapaukseen liittyvät tapahtumat"
+      }
+    },
+    "security": {
+      "roleLabel": "Rooli:",
+      "password": {
+        "heading": "Vaihda salasana",
+        "currentLabel": "Nykyinen salasana",
+        "newLabel": "Uusi salasana",
+        "newPlaceholder": "Vähintään 8 merkkiä",
+        "confirmLabel": "Vahvista uusi salasana",
+        "success": "Salasana vaihdettu onnistuneesti.",
+        "saving": "Tallennetaan...",
+        "submit": "Vaihda salasana",
+        "errors": {
+          "mismatch": "Salasanat eivät täsmää.",
+          "tooShort": "Uuden salasanan on oltava vähintään 8 merkkiä.",
+          "updateFailed": "Päivitys epäonnistui"
+        }
+      },
+      "tfa": {
+        "heading": "Kaksivaiheinen tunnistautuminen",
+        "notEnabled": "2FA ei ole käytössä. Suojaa tilisi aikaperustaisella kertakäyttösalasanalla.",
+        "enableButton": "Ota kaksivaiheinen tunnistautuminen käyttöön",
+        "scanInstructions": "Skannaa tämä QR-koodi tunnistautumissovelluksella (Google Authenticator, Authy tms.) ja syötä 6-numeroinen koodi vahvistaaksesi.",
+        "qrAlt": "2FA-käyttöönoton QR-koodi",
+        "addAccountInstructions": "Avaa tunnistautumissovellus (Google Authenticator, Authy, 1Password tms.) ja lisää uusi tili:",
+        "setup": {
+          "step1": "Napauta <strong>Lisää tili</strong> tai <strong>+</strong>-painiketta",
+          "step2": "Valitse <strong>Syötä asetusavain</strong> (tai skannaa QR-koodi mobiilissa)",
+          "step3": "Syötä alla näkyvä salaisuus"
+        },
+        "mobileLink": "Napauta tästä mobiilissa avataksesi tunnistautumissovelluksen",
+        "manualEntryLabel": "Manuaalisen syötön salaisuus:",
+        "saveBackupCodes": "Tallenna nämä varakoodit. Kutakin voi käyttää kerran, jos menetät pääsyn tunnistautumissovellukseen.",
+        "copyBackupCodes": "Kopioi varakoodit",
+        "confirmCodeLabel": "Syötä sovelluksen koodi aktivoidaksesi",
+        "activate": "Aktivoi 2FA",
+        "cancel": "Peruuta",
+        "enabledBadge": "2FA on käytössä",
+        "newBackupCodesLabel": "Uudet varakoodit (tallenna nyt):",
+        "copy": "Kopioi",
+        "regenLabel": "Syötä tunnistautumissovelluksen koodi luodaksesi varakoodit uudelleen",
+        "regenerate": "Luo uudelleen",
+        "regenerateBackupCodes": "Luo varakoodit uudelleen",
+        "disableLabel": "Poista 2FA käytöstä (syötä tunnistautumissovelluksen koodi)",
+        "disable": "Poista 2FA käytöstä",
+        "errors": {
+          "setupFailed": "Käyttöönotto epäonnistui",
+          "confirmFailed": "Vahvistus epäonnistui",
+          "disableFailed": "Käytöstä poistaminen epäonnistui",
+          "regenFailed": "Uudelleenluonti epäonnistui"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP-pinnan lataaminen epäonnistui",
+        "revokeFailed": "Tokenin peruuttaminen epäonnistui"
+      },
+      "revokeConfirm": "Peruutetaanko MCP-token \"{{name}}\"? Sitä käyttävät asiakkaat lakkaavat toimimasta välittömästi.",
+      "tokens": {
+        "heading": "MCP-tokenit",
+        "newToken": "Uusi token",
+        "description": "Kukin token toimii sinuna: se paljastaa juuri ne työkalut, jotka roolisi sallii. Koko arvo näytetään kerran, sivulla, jolla se luodaan.",
+        "empty": "MCP-tokeneita ei ole vielä. Luo yksi yhdistääksesi MCP-asiakkaan.",
+        "created": "Luotu",
+        "lastUsed": "Viimeksi käytetty",
+        "expires": "Vanhenee",
+        "never": "Ei koskaan",
+        "revokeTitle": "Peruuta token"
+      },
+      "tools": {
+        "heading": "Tokeneiden paljastamat työkalut",
+        "empty": "Roolisi ei myönnä yhtään MCP-työkalua. Pyydä ylläpitäjää lisäämään tarvitsemasi käyttöoikeudet.",
+        "table": {
+          "name": "Nimi",
+          "scope": "Laajuus",
+          "description": "Kuvaus",
+          "sourceModule": "Lähdemoduuli",
+          "permission": "Käyttöoikeus"
+        }
+      },
+      "connect": {
+        "heading": "Yhdistä MCP-asiakas",
+        "descriptionPre": "Valitse yhdistettävä asiakas ja korvaa",
+        "descriptionPost": "yhdellä tokeneistasi. Tokenin luominen näyttää samaisen katkelman valmiiksi täytetyllä arvolla.",
+        "otherClient": "Mikä tahansa muu asiakas",
+        "httpInstructionsPre": "HTTP:n yli osoita se tähän päätepisteeseen ja tunnistaudu",
+        "httpInstructionsPost": ":llä. Se on JSON-RPC 2.0 Streamable HTTP:n yli.",
+        "stdioInstructionsPre": "stdio:n yli CLI toimii välittäjänä ja välittää tokenisi läpi. Suoritatko palvelua itse suoraan? Aseta",
+        "stdioInstructionsAnd": "ja",
+        "stdioInstructionsPost": "itse."
+      },
+      "newToken": {
+        "backToMcp": "Takaisin MCP:hen",
+        "title": "Uusi MCP-token",
+        "subtitle": "Token toimii sinuna: se paljastaa juuri ne työkalut, jotka roolisi sallii.",
+        "nameLabel": "Nimi",
+        "namePlaceholder": "kannettava",
+        "nameHint": "Missä tätä tokenia käytetään, esim. \"kannettava\" tai \"claude-desktop\".",
+        "expiryLabel": "Vanhenee",
+        "expiryHint": "Valinnainen. Jätä tyhjäksi, ja token ei vanhene ennen kuin peruutat sen.",
+        "createButton": "Luo token",
+        "creatingButton": "Luodaan…",
+        "cancelButton": "Peruuta",
+        "tokenSection": {
+          "title": "Tokenisi",
+          "hint": "Kopioi se nyt. Sitä ei näytetä enää, ja kadonneen tokenin voi ainoastaan korvata uudella.",
+          "copyButton": "Kopioi",
+          "copiedButton": "Kopioitu!",
+          "copyTitle": "Kopioi token",
+          "copiedTitle": "Kopioitu!"
+        },
+        "connectSection": {
+          "title": "Yhdistä asiakas",
+          "hint": "Valitse yhdistettävä asiakas. Katkelmassa on jo tämä token."
+        },
+        "bridgeSection": {
+          "title": "Tai käytä paikallista siltaa",
+          "hint": "Asiakkaalle, joka tukee vain stdio:ta, CLI toimii siltana ja välittää tokenisi läpi."
+        },
+        "doneButton": "Valmis",
+        "errors": {
+          "createFailed": "Tokenin luominen epäonnistui",
+          "copyFailed": "Kopiointi epäonnistui, valitse ja kopioi token manuaalisesti."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Kieli",
+      "description": "Valitse kieli, jolla hallintapaneeli näytetään.",
+      "languageLabel": "Kieli",
+      "saved": "Kieliasetus tallennettu."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Asetusten lataaminen epäonnistui",
+        "loadFailedPeriod": "Asetusten lataaminen epäonnistui.",
+        "saveFailed": "Tallennus epäonnistui",
+        "saveSettingsFailed": "Asetusten tallentaminen epäonnistui"
+      },
+      "savedSuccess": "Asetukset tallennettu onnistuneesti.",
+      "saving": "Tallennetaan…",
+      "saveSettings": "Tallenna asetukset",
+      "serverInfo": {
+        "heading": "Palvelimen tiedot",
+        "readOnly": "Vain luku. Isäntä ja portti tulevat ympäristöstä tai asetustiedostosta, ei tästä.",
+        "reachableAt": "Tavoitettavissa osoitteessa",
+        "reachableAtAny": "Tavoitettavissa jossakin näistä osoitteista",
+        "thisMachine": "Tämä kone",
+        "network": "Verkko",
+        "copyAddress": "Kopioi {{address}}",
+        "copied": "Kopioitu!",
+        "copy": "Kopioi",
+        "hostAndPort": "Isäntä ja portti",
+        "version": "Versio",
+        "uptime": "Käyntiaika"
+      },
+      "runtime": {
+        "heading": "Ajonaikaiset asetukset",
+        "logLevel": "Lokitaso",
+        "logLevelHint": "Hallitsee palvelun lokien yksityiskohtaisuutta.",
+        "publicUrl": "Julkinen URL",
+        "publicUrlHint": "Perus-URL, josta palvelu on tavoitettavissa ulkoisille asiakkaille (esim. <code>http://192.168.1.10:3000</code>). Käytetään kunkin reitittimen <strong>Yhdistämisohje</strong>-osiossa. Hyödyllinen, kun hallintapaneeli toimii eri koneella tai portissa kuin palvelu.",
+        "usageRetention": "Käyttötietojen säilytys",
+        "noLimit": "Ei rajaa",
+        "maxAgeDays": "Enimmäisikä (päivää)",
+        "maxSizeMb": "Enimmäiskoko (MB)",
+        "retentionHint": "Tätä päivämäärää vanhempi tai tämän koon ylittävä käyttö-/laskutushistoria poistetaan aktiivisesta lokista. Jätä molemmat tyhjäksi, jos säilytysrajaa ei haluta."
+      },
+      "internationalization": {
+        "heading": "Kansainvälistäminen",
+        "defaultLanguage": "Oletuskieli",
+        "defaultLanguageHint": "Koontinäytön kieli käyttäjille, jotka eivät ole vielä valinneet omaa kieltään. Ei ohita käyttäjän henkilökohtaista valintaa."
+      },
+      "telemetry": {
+        "heading": "Anonyymit mittarit",
+        "neverAutomatic": "Routerly ei koskaan lähetä tietoja automaattisesti.",
+        "noChoice": "Et ole tehnyt valintaa vielä.",
+        "enabledStatus": "Anonyymit asennusmittarit ovat käytössä.",
+        "disabledStatus": "Anonyymit asennusmittarit ovat pois käytöstä.",
+        "explanation": "Kun käytössä, Routerly lähettää vain: tapahtumatyypin (asennus / päivitys / poisto), version, alustan ja satunnaisen tunnisteen. Ei henkilötietoja, ei käyttötietoja, ei IP-osoitteen tallennusta.",
+        "whatIsSent": "Mitä lähetetään?",
+        "installId": "Asennustunniste: {{id}}",
+        "saving": "Tallennetaan…",
+        "enable": "Ota käyttöön",
+        "disable": "Poista käytöstä"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Hallintapaneeli (sovelluksen sisäinen saapuneet-kansio)",
+          "description": "Ohjaa tapahtumat sovelluksen sisäiseen saapuneet-kansioon"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Mukautettu sähköpostipalvelin"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail OAuth2:n kautta"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP-webhook-kutsu"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Palveluntarjoaja – Virhe",
+        "providerDegraded": "Palveluntarjoaja – Heikentynyt",
+        "providerRecovered": "Palveluntarjoaja – Palautunut",
+        "providerRateLimited": "Palveluntarjoaja – Nopeusrajoitettu",
+        "routingNoCandidates": "Reititys – Ei ehdokkaita",
+        "routingFallbackUsed": "Reititys – Varamalli käytössä",
+        "authLoginFailed": "Tunnistautuminen – Kirjautuminen epäonnistui",
+        "authTokenInvalid": "Tunnistautuminen – Token virheellinen",
+        "configModelAdded": "Asetukset – Malli lisätty",
+        "configModelDeleted": "Asetukset – Malli poistettu",
+        "configRouterCreated": "Asetukset – Reititin luotu",
+        "configRouterDeleted": "Asetukset – Reititin poistettu",
+        "budgetThresholdReached": "Budjetti – Kynnys saavutettu",
+        "budgetExceeded": "Budjetti – Ylitetty",
+        "budgetReset": "Budjetti – Nollattu",
+        "systemStartup": "Järjestelmä – Käynnistys",
+        "systemShutdown": "Järjestelmä – Sammutus",
+        "systemUpdateAvailable": "Järjestelmä – Päivitys saatavilla"
+      },
+      "removeChannelTooltip": "Poista kanava",
+      "removeChannelConfirm": "Poistetaanko kanava?",
+      "formUpdatedHint": "Lomake päivitetty — tallenna ottaaksesi käyttöön.",
+      "hmacSigningKeyPlaceholder": "HMAC-allekirjoitusavain",
+      "perms": {
+        "routerRead": "Reitittimet – Luku",
+        "routerWrite": "Reitittimet – Kirjoitus",
+        "modelRead": "Mallit – Luku",
+        "modelWrite": "Mallit – Kirjoitus",
+        "userRead": "Käyttäjät – Luku",
+        "userWrite": "Käyttäjät – Kirjoitus",
+        "reportRead": "Raportit – Luku",
+        "settingsRead": "Asetukset – Luku",
+        "settingsWrite": "Asetukset – Kirjoitus",
+        "notificationWrite": "Ilmoitukset – Kirjoitus",
+        "tokenRead": "Tokenit – Luku",
+        "tokenWrite": "Tokenit – Kirjoitus",
+        "roleWrite": "Roolit – Kirjoitus",
+        "auditRead": "Auditointiloki – Luku",
+        "modulesRead": "Moduulit – Luku",
+        "modulesManage": "Moduulit – Hallinta",
+        "connectionsRead": "Yhteydet – Luku",
+        "connectionsManage": "Yhteydet – Hallinta",
+        "resilienceRead": "Sietokyky – Luku",
+        "resilienceManage": "Sietokyky – Hallinta",
+        "profilesRead": "Reitityksen profiilit – Luku",
+        "profilesManage": "Reitityksen profiilit – Hallinta",
+        "optimizersRead": "Optimoijat – Luku",
+        "optimizersManage": "Optimoijat – Hallinta",
+        "experimentsRead": "Kokeilut – Luku",
+        "experimentsManage": "Kokeilut – Hallinta"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Tälle kanavatyypille kohteet eivät vaikuta toimitukseen (päätepiste on kiinteä). Ne suodattavat, mitkä tapahtumat kirjataan auditointilokiin per vastaanottaja.",
+        "dashboard": "Kohteet hallitsevat saapuneet-kansion näkyvyyttä — vain vastaavat käyttäjät näkevät nämä ilmoitukset sovelluksen sisäisessä saapuneet-kansiossaan.",
+        "email": "Kohteet määrittävät, ketkä käyttäjät saavat tämän sähköpostin. Jätä kaikki tyhjäksi lähettääksesi kaikille käyttäjille."
+      },
+      "summary": {
+        "allEvents": "Kaikki tapahtumat",
+        "eventCount": "{{count}} tapahtuma",
+        "eventCount_other": "{{count}} tapahtumaa",
+        "roleCount": "{{count}} rooli",
+        "roleCount_other": "{{count}} roolia",
+        "permCount": "{{count}} oikeus",
+        "permCount_other": "{{count}} oikeutta",
+        "userCount": "{{count}} käyttäjä",
+        "userCount_other": "{{count}} käyttäjää",
+        "everyone": "Kaikki"
+      },
+      "errors": {
+        "loadFailed": "Lataaminen epäonnistui"
+      },
+      "fields": {
+        "dashboardHint": "Ohjaa vastaavat tapahtumat sovelluksen sisäiseen ilmoitussaapuneisiin. Ei vaadi tunnistetietoja.",
+        "labels": {
+          "fromAddress": "Lähettäjän osoite",
+          "fromName": "Lähettäjän nimi",
+          "host": "Isäntä",
+          "port": "Portti",
+          "tls": "TLS/SSL",
+          "username": "Käyttäjätunnus",
+          "password": "Salasana",
+          "awsRegion": "AWS-alue",
+          "accessKeyId": "Access Key ID",
+          "secretAccessKey": "Secret Access Key",
+          "apiKey": "API-avain",
+          "connectionString": "Yhteysmerkkijono",
+          "clientId": "Client ID",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "url": "URL",
+          "method": "Menetelmä",
+          "signingSecret": "Allekirjoitussalaisuus",
+          "botToken": "Bot Token",
+          "channelId": "Kanavan ID",
+          "webhookUrl": "Webhookin URL",
+          "integrationKey": "Integraatioavain"
+        },
+        "values": {
+          "enabled": "Käytössä",
+          "disabled": "Pois käytöstä",
+          "configured": "Määritetty",
+          "notSet": "Ei asetettu"
+        },
+        "optional": "(valinnainen)",
+        "keepCurrentPlaceholder": "Jätä tyhjäksi säilyttääksesi nykyisen",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Käytä TLS / SSL",
+        "smtpTlsOnHint": "(portti 465 — suora SSL)",
+        "smtpTlsOffHint": "(portti 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Jätä tunnistetiedot tyhjäksi käyttääksesi IAM-instanssiroolia.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC-allekirjoitusavain",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-merkkinen reititysavain",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Tapahtumat",
+          "eventsPlaceholder": "Kaikki tapahtumat (jätä tyhjäksi kaikille)",
+          "eventsHint": "Jätä tyhjäksi vastaanottaaksesi kaikki tapahtumat. Valitse tietyt tapahtumat suodattaaksesi.",
+          "routersHeading": "Reitittimet",
+          "routersPlaceholder": "Kaikki reitittimet (jätä tyhjäksi kaikille)",
+          "routersHint": "Jätä tyhjäksi vastaanottaaksesi tapahtumat kaikilta reitittimiltä.",
+          "cooldownHeading": "Jäähdytysaika",
+          "cooldownSuffix": "sekuntia (0 = ei jäähdytysaikaa)",
+          "cooldownHint": "Vähimmäisväli, ennen kuin tämä kanava voi laukaista uudelleen samalle tapahtumalle."
+        },
+        "recipients": {
+          "heading": "Vastaanottajat / kohteet",
+          "rolesLabel": "Roolit",
+          "rolesPlaceholder": "Kaikki roolit (kaikki)",
+          "permissionsLabel": "Käyttöoikeudet",
+          "permissionsPlaceholder": "Kaikki käyttöoikeudet (kaikki)",
+          "usersLabel": "Yksittäiset käyttäjät",
+          "usersPlaceholder": "Kaikki käyttäjät (kaikki)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "yhteys",
+          "routing": "reititys",
+          "recipients": "vastaanottajat"
+        },
+        "sections": {
+          "channelSettings": "Kanavan asetukset",
+          "eventsRouting": "Tapahtumat ja reititys",
+          "recipients": "Vastaanottajat"
+        },
+        "nameLabel": "Nimi",
+        "namePlaceholder": "Tämän kanavan nimike",
+        "cancelButton": "Peruuta"
+      },
+      "list": {
+        "countLabel": "{{count}} kanava",
+        "countLabel_other": "{{count}} kanavaa",
+        "filteredLabel": "{{shown}} / {{count}} kanava",
+        "filteredLabel_other": "{{shown}} / {{count}} kanavaa",
+        "allTypes": "Kaikki tyypit",
+        "searchPlaceholder": "Suodata kanavia…",
+        "searchChannelsPlaceholder": "Hae kanavia…",
+        "addButton": "Lisää kanava",
+        "addSearchPlaceholder": "Hae kanavia…",
+        "noResults": "Ei tuloksia",
+        "emptyTitle": "Ilmoituskanavia ei ole vielä määritetty.",
+        "noMatch": "Mikään kanava ei vastaa aktiivisia suodattimia.",
+        "nameInlinePlaceholder": "Nimike (valinnainen)",
+        "columns": {
+          "name": "Nimi",
+          "type": "Tyyppi",
+          "summary": "Tapahtumat / kohteet"
+        },
+        "testTitle": "Lähetä testi",
+        "editTitle": "Muokkaa kanavaa",
+        "deleteTitle": "Poista kanava",
+        "deleteConfirm": "Poistetaanko kanava \"{{name}}\"? Tätä ei voi kumota.",
+        "deleteConfirmButton": "Poista",
+        "errors": {
+          "deleteFailed": "Poistaminen epäonnistui"
+        }
+      },
+      "edit": {
+        "backToList": "Takaisin ilmoituksiin",
+        "back": "Takaisin",
+        "heading": "Muokkaa {{provider}}-kanavaa",
+        "subtitle": "Päivitä tämän ilmoituskanavan asetukset.",
+        "testSection": {
+          "title": "Lähetä testi",
+          "recipientPlaceholder": "vastaanottaja@example.com",
+          "sendButton": "Lähetä testi",
+          "sendingButton": "Lähetetään…",
+          "hintEmail": "Jätä tyhjäksi lähettääksesi tilisi sähköpostiin. Testi käyttää tallennettua kanava-asetusta.",
+          "hintOther": "Testi käyttää tallennettua kanava-asetusta. Tallenna muutokset ensin testataksesi päivitettyjä asetuksia."
+        },
+        "saveButton": "Tallenna muutokset",
+        "savingButton": "Tallennetaan…",
+        "errors": {
+          "loadFailed": "Lataaminen epäonnistui",
+          "saveFailed": "Tallennus epäonnistui"
+        }
+      },
+      "create": {
+        "backToList": "Takaisin ilmoituksiin",
+        "changeType": "Vaihda tyyppi",
+        "pickerHeading": "Valitse kanavatyyppi",
+        "pickerSubtitle": "Valitse määritettävä ilmoituspalveluntarjoaja.",
+        "heading": "Uusi {{provider}}-kanava",
+        "subtitle": "Määritä uusi ilmoituskanava.",
+        "createButton": "Luo kanava",
+        "creatingButton": "Luodaan…",
+        "errors": {
+          "createFailed": "Luominen epäonnistui"
+        }
+      },
+      "sendTest": "Lähetä testi",
+      "fromAddress": "Lähettäjän osoite",
+      "individualUsers": "Yksittäiset käyttäjät",
+      "host": "Isäntä",
+      "port": "Portti",
+      "apiKey": "API-avain",
+      "connectionString": "Yhteysmerkkijono",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "refreshToken": "Refresh Token",
+      "method": "Menetelmä",
+      "botToken": "Bot Token",
+      "channelId": "Kanavan ID",
+      "webhookUrl": "Webhookin URL",
+      "integrationKey": "Integraatioavain"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "veto — paljastaa /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "työntö — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "työntö — metriikka-API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "työntö — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "työntö — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "työntö — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Vie pyyntöjäljitykset",
+        "description": "Toimittaa täyden jäljityksen kustakin välitetystä pyynnöstä: kaikki vaiheet, kaikki moduulit, jotka olivat mukana, sekä kehotteet ja vastaukset niille projekteille, jotka ovat sen sallineet.",
+        "sampleRateLabel": "Näytteenottotaajuus",
+        "sampleRateHint": "1 vie joka pyynnön, 0.1 joka kymmenennen."
+      },
+      "optional": "(valinnainen)",
+      "headersHint": "(valinnainen, yksi per rivi: Avain: Arvo)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Bearer-token",
+          "placeholder": "Jätä tyhjäksi avoimeen pääsyyn",
+          "description": "Paljastaa <code>/metrics</code>-osoitteen Prometheus-tekstimuodossa. Aseta token vaatiaksesi Bearer-tunnistautumisen."
+        },
+        "otel": {
+          "endpoint": "Kerääjän päätepiste",
+          "description": "OTLP-vastaanottajasi peruspiste. Routerly lisää perään <code>/v1/metrics</code>, ja <code>/v1/traces</code>, kun jäljitysvienti on käytössä. Oletus-HTTP-portti on 4318, gRPC on 4317.",
+          "protocol": "Protokolla",
+          "headers": "Otsikot"
+        },
+        "datadog": {
+          "apiKey": "API-avain",
+          "placeholder": "Datadog-API-avaimesi",
+          "description": "Löytyy Datadog-tilisi kohdasta <strong>Organization Settings → API Keys</strong>.",
+          "site": "Sivusto"
+        },
+        "grafana": {
+          "remoteWriteUrl": "Remote Write -URL",
+          "description": "Löytyy kohdasta <strong>Grafana Cloud → Connections → Prometheus → Details</strong> nimellä \"Remote Write Endpoint\".",
+          "username": "Käyttäjätunnus / Stack ID",
+          "usernameHint": "Numeerinen tunniste, joka näkyy Prometheus-yhteystiedoissa.",
+          "apiKey": "API-avain / Token",
+          "apiKeyHint": "Grafana Cloud -token, jolla on <strong>MetricsPublisher</strong>-rooli."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 -instanssin URL. Pilvi: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "InfluxDB-API-tokenisi",
+          "tokenHint": "Vaatii <strong>kirjoitus</strong>oikeuden ämpäriin.",
+          "org": "Organisaatio",
+          "bucket": "Ämpäri"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Salaisuus",
+          "secretHint": "(valinnainen — HMAC-SHA256-allekirjoitusavain)",
+          "headers": "Otsikot"
+        }
+      },
+      "errors": {
+        "loadFailed": "Integraatioiden lataaminen epäonnistui",
+        "updateFailed": "Integraation päivitys epäonnistui",
+        "saveFailed": "Integraation tallennus epäonnistui",
+        "deleteFailed": "Integraation poisto epäonnistui"
+      },
+      "empty": "Integraatioita ei ole vielä määritetty.",
+      "enabled": "Käytössä",
+      "testing": "Testataan…",
+      "test": "Testaa",
+      "removeConfirm": "Poistetaanko?",
+      "remove": "Poista",
+      "cancel": "Peruuta",
+      "removeTooltip": "Poista integraatio",
+      "saving": "Tallennetaan…",
+      "save": "Tallenna",
+      "addButton": "Lisää integraatio"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Asetusten lataaminen epäonnistui",
+        "duplicateUrl": "Tämä URL on jo listassa.",
+        "unreachable": "Kelvollista mallikatalogia ei löytynyt tästä URL-osoitteesta."
+      },
+      "saved": "Tallennettu.",
+      "refreshed": "Päivitetty.",
+      "heading": "Palveluntarjoajakatalogin repositoriot",
+      "refreshing": "Päivitetään…",
+      "refresh": "Päivitä",
+      "nextRefresh": "Seuraava: {{date}}",
+      "priorityHint": "Rivin järjestys määrittää yhdistämisprioriteetin — rivi 1 voittaa ristiriidassa. Käytä nuolia järjestyksen muuttamiseen.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Päivitetty",
+        "lastCheck": "Viimeisin tarkistus",
+        "status": "Tila"
+      },
+      "empty": "Repositorioita ei ole määritetty. Routerlyn julkista oletuskatalogia käytetään.",
+      "status": {
+        "error": "Virhe",
+        "active": "Aktiivinen",
+        "disabled": "Pois käytöstä"
+      },
+      "edit": "Muokkaa",
+      "removeTooltip": "Poista",
+      "addRepository": "Lisää repositorio",
+      "checking": "Tarkistetaan…",
+      "add": "Lisää",
+      "removeConfirm": "Poistetaanko repositorio \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Sovellus",
+        "runtime": "Ajonaikainen ympäristö",
+        "storage": "Tallennustila",
+        "softwareUpdate": "Ohjelmistopäivitys"
+      },
+      "labels": {
+        "version": "Versio",
+        "uptime": "Käyntiaika",
+        "nodeVersion": "Node.js",
+        "platform": "Alusta",
+        "configDir": "Asetushakemisto",
+        "dataDir": "Datahakemisto",
+        "currentVersion": "Nykyinen versio",
+        "availableVersion": "Saatavilla oleva versio",
+        "upToDate": "Ajan tasalla",
+        "lastChecked": "Viimeksi tarkistettu"
+      },
+      "noCheckPerformed": "Päivitystä ei ole vielä tarkistettu.",
+      "checkForUpdates": "Tarkista päivitykset",
+      "checking": "Tarkistetaan…",
+      "updateTo": "Päivitä versioon v{{version}}",
+      "updating": "Päivitetään…",
+      "dockerHint": "Käytössä Dockerissa — hae uusin image päivittääksesi.",
+      "confirmUpdate": "Tämä lataa ja asentaa uusimman version. Palvelu käynnistyy uudelleen. Jatketaanko?",
+      "updateComplete": "Päivitys valmis! Latautuu uudelleen…",
+      "serviceRestarting": "Palvelu käynnistyy uudelleen. Lataa sivu uudelleen hetken kuluttua.",
+      "errors": {
+        "loadFailed": "Lataaminen epäonnistui",
+        "checkFailed": "Tarkistus epäonnistui",
+        "updateFailed": "Päivitys epäonnistui"
+      },
+      "channel": "Kanava"
+    },
+    "security": {
+      "authentication": "Tunnistautuminen",
+      "requireMfa": "Vaadi kaksivaiheinen tunnistautuminen kaikilta käyttäjiltä",
+      "requireMfaHint": "Käytössä, käyttäjät, jotka eivät ole ottaneet 2FA:ta käyttöön, näkevät kehotteen tehdä niin kirjautumisen jälkeen. Käyttäjät voivat määrittää 2FA:n profiilisivullaan.",
+      "savedSuccess": "Asetukset tallennettu onnistuneesti.",
+      "saving": "Tallennetaan…",
+      "saveSettings": "Tallenna asetukset",
+      "errors": {
+        "loadFailed": "Asetusten lataaminen epäonnistui",
+        "saveFailed": "Asetusten tallentaminen epäonnistui"
+      }
+    },
+    "title": "Asetukset",
+    "subtitle": "Routerlyn asetukset",
+    "tabs": {
+      "general": "Yleiset",
+      "security": "Turvallisuus",
+      "notifications": "Ilmoitukset",
+      "integrations": "Integraatiot",
+      "catalog": "Palveluntarjoajakatalogi",
+      "users": "Käyttäjät",
+      "roles": "Roolit",
+      "audit": "Auditointiloki",
+      "about": "Tietoja"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Reitittimet",
+      "subtitle": "Asiakassovellukset, joilla on pääsy Routerlyyn",
+      "count": "1 reititin",
+      "count_other": "{{count}} reititintä",
+      "newRouter": "Uusi reititin",
+      "empty": "Reitittimiä ei ole vielä.",
+      "emptyFiltered": "Ei reitittimiä tästä tyypistä.",
+      "columns": {
+        "name": "Nimi",
+        "tokens": "Tokenit",
+        "policies": "Käytännöt",
+        "models": "Mallit"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokenia",
+      "editRouter": "Muokkaa reititintä",
+      "deleteRouter": "Poista reititin",
+      "deleteConfirm": "Poistetaanko tämä reititin?",
+      "errors": {
+        "deleteFailed": "Virhe poistettaessa reititintä"
+      },
+      "newOrchestrator": "Uusi Orkestroija",
+      "newPassthrough": "Uusi Passthrough"
+    },
+    "layout": {
+      "notFound": "Reititintä ei löytynyt",
+      "tabs": {
+        "dashboard": "Hallintapaneeli",
+        "general": "Yleiset",
+        "orchestrator": "Orkestraattori",
+        "routing": "Reititys",
+        "optimizer": "Optimoija",
+        "security": "Turvallisuus",
+        "token": "Token",
+        "users": "Käyttäjät",
+        "logs": "Lokit"
+      },
+      "backToRouters": "Takaisin reitittimiin",
+      "backToRoutersTitle": "Takaisin reitittimiin",
+      "newRouter": "Uusi reititin",
+      "loading": "Latautuu...",
+      "routerId": "Reitittimen ID:",
+      "saveFirstHint": "Tallenna reititin ensin avataksesi tämän välilehden",
+      "newKind": "Uusi {{kind}}"
+    },
+    "dashboard": {
+      "period": "Ajanjakso",
+      "noTraffic": "Ei liikennettä tälle reitittimelle valitulla ajanjaksolla.",
+      "stats": {
+        "savings": "Säästöt",
+        "vsPrefix": "vs",
+        "forEverything": "kaikelle",
+        "noTargetToCompare": "ei kohdemallia vertailtavaksi",
+        "cost": "Kustannus",
+        "callCount": "1 kutsu",
+        "callCount_other": "{{count}} kutsua",
+        "latency": "Vasteaika",
+        "medianP95": "mediaani · p95 {{value}}",
+        "ttft": "Aika ensimmäiseen tokeniin",
+        "notMeasured": "ei mitattu näissä kutsuissa",
+        "reliability": "Luotettavuus",
+        "errorsAndBlocked": "{{errors}} virhettä · {{blocked}} estettyä"
+      },
+      "tokens": {
+        "input": "Syötetokenit:",
+        "output": "Tulostetokenit:",
+        "fromCache": "Välimuistista:",
+        "cacheSaved": "({{amount}} säästetty)"
+      },
+      "oneModel": {
+        "heading": "Jos kaikki olisi mennyt yhdelle mallille",
+        "empty": "Lisää kohdemalleja tälle reitittimelle nähdäksesi vertailun.",
+        "columns": {
+          "targetModel": "Kohdemalli",
+          "wouldHaveCost": "Olisi maksanut",
+          "saved": "Säästetty"
+        },
+        "costsHint": "Kustannukset ovat havaitut tokenit hinnoiteltuna uudelleen kunkin kohteen hintojen mukaan."
+      },
+      "optimizers": {
+        "heading": "Mitä optimoijat poistivat",
+        "columns": {
+          "optimizer": "Optimoija",
+          "callsChanged": "Muutettuja kutsuja",
+          "tokensSaved": "Säästetyt tokenit",
+          "costSaved": "Säästetty kustannus",
+          "rolledBack": "Peruttu"
+        },
+        "hint": "Mitattu itse kutsuista, hinnoiteltuna sen mallin mukaan, joka kunkin palveli. Peruttu ajo tarkoittaa, että vaiheen tuloste hylättiin turvattomana ja kehote palautettiin: se ei säästänyt mitään, ja korkea määrä kertoo, että kynnys on liian aggressiivinen."
+      },
+      "traffic": {
+        "heading": "Mihin liikenne meni",
+        "columns": {
+          "model": "Malli",
+          "calls": "Kutsut",
+          "share": "Osuus",
+          "cost": "Kustannus",
+          "p95Latency": "p95-vasteaika",
+          "errors": "Virheet"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Virhe tallennettaessa reititintä",
+        "copyFailed": "Kopiointi epäonnistui — valitse ja kopioi token manuaalisesti."
+      },
+      "kind": {
+        "router": {
+          "label": "Reititin",
+          "description": "Reitittää pyyntöjä mallien ehdokkaiden kesken."
+        },
+        "orchestrator": {
+          "label": "Orkestraattori",
+          "description": "Reitittää pyyntöjä muiden reitittimien kesken mallien sijaan."
+        },
+        "passthrough": {
+          "label": "Läpivienti",
+          "description": "Välittää pyynnöt sellaisinaan."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Tallenna tämä token nyt.",
+        "saveNowHint": "Sitä ei näytetä enää — kun poistut tältä näytöltä, sitä ei voi palauttaa.",
+        "copied": "Kopioitu!",
+        "copy": "Kopioi",
+        "goToRouter": "Siirry reitittimeen"
+      },
+      "connect": {
+        "heading": "Yhdistämisohje",
+        "intro": "Osoita mikä tahansa OpenAI- tai Anthropic-SDK Routerlyyn ja käytä <tokenLink>reitittimen tokenia</tokenLink> API-avaimena. Korvaa alla oleva <code>{{token}}</code> omallasi. Malli <code>{{model}}</code> antaa valinnan Routerlylle; mikä tahansa mallitunnus <modelsLink>Mallit</modelsLink>-sivulta toimii myös.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Perus-URL <code>{{baseUrl}}</code>, sama, jota mikä tahansa \"OpenAI-yhteensopiva\" palveluntarjoajakenttä käyttää.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Perus-URL <code>{{baseUrl}}</code>, ilman <code>/v1</code>:ää: SDK lisää sen.",
+        "curl": "curl",
+        "curlHint": "Tarkista kytkennät asentamatta mitään, ja katso sitten kutsua <usageLink>Käyttö</usageLink>-sivulta."
+      },
+      "form": {
+        "kind": "Tyyppi",
+        "kindFixedHint": "Kiinteä, kun reititin on luotu.",
+        "routerName": "Reitittimen nimi",
+        "routerNamePlaceholder": "Sovellukseni",
+        "advancedSettings": "Lisäasetukset",
+        "ttftTimeout": "TTFT-aikakatkaisu (ms)",
+        "ttftTimeoutHint": "Jos malli ei lähetä ensimmäistä vastaustavua tässä ajassa, Routerly keskeyttää sen ja kokeilee seuraavaa ehdokasta. Ei rajoita vastauksen kokonaiskestoa. Aseta 0, jos haluat odottaa niin kauan kuin palveluntarjoaja tarvitsee.",
+        "traceContent": "Jäljitä sisältö",
+        "traceContentHint": "Jäljitykset tallentavat aina metatiedot (mallit, pisteet, tokenit, kustannus, vasteaika). Ota tämä käyttöön tallentaaksesi myös lähetetyt kehotteet ja saadut vastaukset. Ne tallennetaan käyttötietueen mukana ja näkyvät kaikille, joilla on lukuoikeus raportteihin.",
+        "capturePromptsAndAnswers": "Tallenna kehotteet ja vastaukset",
+        "saveChanges": "Tallenna muutokset",
+        "createRouter": "Luo reititin",
+        "passthroughPath": "Polku",
+        "passthroughPathHint": "Tulee osaksi URL-osoitetta, jota asiakkaat kutsuvat: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Luo Orkestroija",
+        "createPassthrough": "Luo Passthrough"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Tämä reititin ei ole orkestraattori.",
+      "candidateRouters": "Ehdokasreitittimet",
+      "candidateRoutersHint": "Reitittimet, joille tämä orkestraattori välittää pyynnöt. Paino vaikuttaa siihen, kuinka usein kukin ehdokas valitaan; tässä näkyy vain sen nimi, tunniste, paino ja valinnaiset ehdokaskohtaiset rajat.",
+      "routingPolicies": "Reitityskäytännöt",
+      "routingPoliciesHint": "Orkestroija pisteyttää jokaisen ehdokas-Routerin kokonaisuutena, joten vain terveys-, korko- ja oikeudenmukaisuuskäytännöt pätevät tässä. Muut käytäntötyypit valitsevat Routerin omista malleista, joita Orkestroijalla ei ole.",
+      "router": "Reititin",
+      "selectRouter": "Valitse reititin",
+      "weight": "Paino",
+      "removeCandidate": "Poista ehdokas",
+      "usageLimits": "Käyttörajat tälle ehdokkaalle",
+      "limitCount": "{{count}} raja",
+      "limitCount_other": "{{count}} rajaa",
+      "usageLimitsHint": "Valinnaiset käyttörajat, joita sovelletaan vain pyyntöihin, jotka tämä orkestraattori välittää tälle ehdokkaalle.",
+      "empty": "Ehdokasreitittimiä ei ole vielä. Orkestraattori tarvitsee vähintään yhden voidakseen välittää pyyntöjä.",
+      "addCandidate": "Lisää ehdokas",
+      "saved": "Tallennettu!",
+      "saveCandidates": "Tallenna ehdokkaat",
+      "errors": {
+        "loadFailed": "Reitittimien lataaminen epäonnistui",
+        "saveFailed": "Virhe tallennettaessa orkestraattorin ehdokkaita"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Reititysprofiilin liittäminen epäonnistui",
+        "duplicateTargets": "Kohdemalleissa ei voi olla kaksoiskappaleita.",
+        "saveFailed": "Virhe tallennettaessa reitittimen reititystä",
+        "noProfileAvailable": "Reititysprofiilia ei ole saatavilla. Luo yksi Profiilit-sivulla."
+      },
+      "form": {
+        "routing": "Reititys",
+        "routingHint": "Käytä jaettua reititysprofiilia, tai määritä tämän reitittimen omat käytännöt. Kohdemallit ovat säädettävissä joka tapauksessa.",
+        "profileMode": "Profiili",
+        "customMode": "Mukautettu",
+        "routingProfile": "Reititysprofiili",
+        "builtinSuffix": "(sisäänrakennettu)",
+        "profileHint": "Käytännöt tulevat profiilista ja seuraavat sen muutoksia. Muokkaa niitä Profiilit-sivulla, tai vaihda Mukautettu-tilaan aloittaaksesi niiden kopiosta.",
+        "saved": "Tallennettu!",
+        "saveRoutingConfiguration": "Tallenna reititysasetukset"
+      },
+      "targetModels": {
+        "heading": "Kohdemallit",
+        "hint": "Määritä mallijoukko, jota käytännöt suodattavat ja valitsevat. Valinnaiset kehotteet ohjaavat AI-reitittimen valitsemaan kunkin mallin.",
+        "endpointModel": "Päätepisteen malli",
+        "selectModel": "Valitse malli",
+        "promptDefinition": "Kehotteen määritys",
+        "promptPlaceholder": "Kuvaa tarkalleen milloin ja miksi reitittimen tulisi valita tämä malli...",
+        "intents": "Aikomukset",
+        "removeTarget": "Poista kohdemalli",
+        "empty": "Kohdemalleja ei ole määritetty.",
+        "addTarget": "Lisää kohdemalli",
+        "passthroughLabel": "Läpivienti (raakavälitys)",
+        "passthroughNotRemovable": "Läpivientimerkintää ei voi poistaa"
+      }
+    },
+    "optimizer": {
+      "title": "Optimoijat",
+      "description": "Optimoijat vähentävät kehotteen tokeneita ennen kuin pyynnöt saapuvat palveluntarjoajalle. Ne suoritetaan järjestyksessä ylhäältä alas. Käytä jaettua optimointiprofiilia, tai määritä tämän reitittimen oma putki.",
+      "noPermission": "Sinulla ei ole oikeutta tarkastella optimoijia.",
+      "mode": {
+        "profile": "Profiili",
+        "custom": "Mukautettu"
+      },
+      "profileSelect": {
+        "ariaLabel": "Optimointiprofiili",
+        "builtinLabel": "{{label}} (sisäänrakennettu)",
+        "hint": "Vaiheet tulevat profiilista ja seuraavat sen muutoksia. Muokkaa niitä Profiilit-sivulla, tai vaihda Mukautettu-tilaan aloittaaksesi niiden kopiosta.",
+        "disabledSuffix": "(pois käytöstä)",
+        "thresholdSuffix": ", kynnys {{threshold}}"
+      },
+      "customHint": "Vedä muuttaaksesi järjestystä, kytke ottaaksesi käyttöön. Osa optimoijista käyttää kynnysarvoa hallitakseen leikkauksen voimakkuutta.",
+      "saveButton": "Tallenna optimoijat",
+      "saving": "Tallennetaan...",
+      "saved": "Tallennettu",
+      "preview": {
+        "title": "Esikatsele tokenisäästöjä",
+        "description": "Suorita nykyinen (tallentamaton) putki kehotteelle nähdäksesi mitä kukin vaihe poistaa ja mitä se maksaa. Valitse jokin esimerkkikeskusteluista, tai kirjoita omasi.",
+        "promptLabel": "Kehote",
+        "promptAriaLabel": "Esikatseltava kehote",
+        "typePromptOption": "Kirjoita kehote alle",
+        "fixturesHint": "Routerlyn mukana tulevat esimerkkikeskustelut. Routerly ei tallenna todellisia kehotteita.",
+        "modelLabel": "Malli",
+        "modelAriaLabel": "Malli, jota vasten esikatsellaan",
+        "modelWithContext": "{{id}} ({{k}}k kontekstia)",
+        "noModelOption": "Ei mallia",
+        "modelHint": "Vaiheet, jotka leikkaavat sopiakseen kontekstiikkunaan, tarvitsevat tiedon ikkunasta. Ilman mallia ne ohitetaan, aivan kuten pyynnössä, joka nimeää mallin, jolle Routerlylla ei ole ikkunaa.",
+        "sampleAriaLabel": "Esimerkkikehote",
+        "samplePlaceholder": "Liitä esimerkki käyttäjän viestistä...",
+        "runButton": "Suorita esikatselu",
+        "running": "Suoritetaan...",
+        "before": "Ennen",
+        "after": "Jälkeen",
+        "saved": "Säästetty",
+        "columns": {
+          "optimizer": "Optimoija",
+          "before": "Ennen",
+          "after": "Jälkeen",
+          "saved": "Säästetty"
+        },
+        "rolledBackNote": "peruttu: muutos hylättiin turvattomana",
+        "skippedNote": "ohitettu: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Tämän vaiheen tuottama muutos peruttiin, joten kehote saapui seuraavaan vaiheeseen koskemattomana.",
+          "skipped": "Tämä vaihe ei suoritettu: {{reason}}",
+          "unchanged": "Tämä vaihe jätti kehotteen muuttumattomaksi."
+        }
+      },
+      "errors": {
+        "assignFailed": "Optimointiprofiilin liittäminen epäonnistui",
+        "saveFailed": "Virhe tallennettaessa optimoijia",
+        "previewFailed": "Virhe suoritettaessa esikatselua",
+        "noProfileAvailable": "Optimointiprofiilia ei ole saatavilla. Luo yksi Profiilit-sivulla."
+      }
+    },
+    "token": {
+      "newButton": "Uusi token",
+      "empty": "API-tokeneita ei ole vielä. Luo yksi aloittaaksesi pyyntöjen tunnistautumisen.",
+      "budgetOverrides": "Budjettien ylikirjoitukset",
+      "created": "Luotu",
+      "lastUsed": "Viimeksi käytetty",
+      "expires": "Vanhenee",
+      "never": "Ei koskaan",
+      "editTitle": "Muokkaa asetuksia",
+      "revokeTitle": "Peruuta token",
+      "revokeConfirm": "Peruutetaanko token \"{{snippet}}...\"? Sitä käyttävät sovellukset lakkaavat toimimasta välittömästi.",
+      "labelInput": {
+        "placeholder": "Hae tai luo nimike…",
+        "createPrefix": "Luo",
+        "noMatches": "Vastaavia nimikkeitä ei löytynyt."
+      },
+      "errors": {
+        "deleteFailed": "Virhe poistettaessa tokenia"
+      },
+      "create": {
+        "backToTokens": "Takaisin tokeneihin",
+        "title": "Uusi API-token",
+        "subtitle": "Koko token näytetään vain kerran luonnin jälkeen — säilytä se turvallisesti.",
+        "tokenCreated": "Token luotu onnistuneesti. Kopioi se nyt — sitä ei näytetä enää.",
+        "copied": "Kopioitu!",
+        "copy": "Kopioi",
+        "done": "Valmis",
+        "optional": "valinnainen",
+        "labels": "Nimikkeet",
+        "labelsHint": "Merkitse tämä token tunnistamaan, missä sitä käytetään (esim. \"tuotanto\", \"ci\").",
+        "scopes": "Laajuudet",
+        "scopesHint": "Tähän tokeniin liitetyt vapaamuotoiset laajuudet (esim. \"batch\", \"internal\"), tallennettuna tokenin mukana omaa kirjanpitoasi varten.",
+        "tags": "Tagit",
+        "tagsHint": "Avain-arvo-metatiedot, jotka välitetään käyttötietueisiin (esim. env=production).",
+        "keyPlaceholder": "avain",
+        "valuePlaceholder": "arvo",
+        "createButton": "Luo token",
+        "cancel": "Peruuta",
+        "copyFailed": "Kopiointi epäonnistui — valitse ja kopioi token manuaalisesti.",
+        "errors": {
+          "createFailed": "Virhe luotaessa tokenia"
+        }
+      },
+      "edit": {
+        "title": "Muokkaa tokenia",
+        "subtitle": "Päivitä tämän tokenin nimikkeet ja mallikohtaiset rajaylikirjoitukset.",
+        "token": "Token",
+        "labels": "Nimikkeet",
+        "perModelLimits": "Mallikohtaiset rajat",
+        "perModelLimitsHint": "Ylikirjoita globaalit ja reitittimen tason rajat tätä tokenia käyttäville pyynnöille.",
+        "noTargetModels": "Lisää kohdemalleja Reititys-välilehdellä ensin.",
+        "noOverride": "ei ylikirjoitusta",
+        "noLimits": "Ei rajoja",
+        "noLimitsSet": "Rajoja ei ole asetettu — perii vanhemmalta. Lisää raja alle ylikirjoittaaksesi.",
+        "metric": "Mittari",
+        "type": "Tyyppi",
+        "periodLabel": "Jakso",
+        "every": "Väli",
+        "maxCost": "Enimmäis ($)",
+        "maxCalls": "Enimmäis (kpl)",
+        "maxTokens": "Enimmäis (tokenit)",
+        "allCombosSet": "Kaikki mittari/jakso-yhdistelmät on jo asetettu",
+        "addLimit": "Lisää raja",
+        "windowType": {
+          "period": "Jakso",
+          "rolling": "Liukuva"
+        },
+        "limitMetric": {
+          "cost": "Kustannus (USD)",
+          "calls": "Pyynnöt",
+          "input_tokens": "Syötetokenit",
+          "output_tokens": "Tulostetokenit",
+          "total_tokens": "Tokenit yhteensä"
+        },
+        "period": {
+          "hourly": "Tunneittain",
+          "daily": "Päivittäin",
+          "weekly": "Viikoittain",
+          "monthly": "Kuukausittain",
+          "yearly": "Vuosittain"
+        },
+        "rollingUnit": {
+          "second": "sekuntia",
+          "minute": "minuuttia",
+          "hour": "tuntia",
+          "day": "päivää",
+          "week": "viikkoa",
+          "month": "kuukautta"
+        },
+        "fmt": {
+          "requests": "{{value}} pyyntöä",
+          "inputTokens": "{{value}} syötetok.",
+          "outputTokens": "{{value}} tulostetok.",
+          "totalTokens": "{{value}} tok.",
+          "everyRolling": "{{metric}} / joka {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Virhe tallennettaessa tokenia"
+        }
+      }
+    },
+    "users": {
+      "title": "Reitittimen jäsenet",
+      "description": "Hallitse käyttäjiä, joilla on pääsy tähän reitittimeen.",
+      "addButton": "Lisää jäsen",
+      "addNewTitle": "Lisää uusi jäsen",
+      "selectUserPlaceholder": "Valitse käyttäjä...",
+      "addConfirmButton": "Lisää",
+      "cancelButton": "Peruuta",
+      "empty": "Jäseniä ei löytynyt.",
+      "removeConfirm": "Haluatko varmasti poistaa tämän jäsenen?",
+      "saveTitle": "Tallenna muutokset",
+      "changeRoleTitle": "Vaihda rooli",
+      "removeTitle": "Poista jäsen",
+      "roles": {
+        "viewer": "Katsoja",
+        "editor": "Muokkaaja",
+        "admin": "Ylläpitäjä"
+      },
+      "columns": {
+        "user": "Käyttäjä",
+        "role": "Rooli",
+        "actions": "Toiminnot"
+      },
+      "errors": {
+        "loadFailed": "Käyttäjien lataaminen epäonnistui",
+        "addFailed": "Virhe lisättäessä jäsentä",
+        "updateFailed": "Virhe päivitettäessä jäsentä",
+        "removeFailed": "Virhe poistettaessa jäsentä"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Pois"
+      },
+      "autoRefreshOff": "Automaattinen päivitys pois käytöstä",
+      "autoRefreshEvery": "Automaattinen päivitys välein {{interval}}",
+      "lastUpdated": "viimeksi päivitetty: {{time}}",
+      "refresh": "Päivitä",
+      "refreshNowTitle": "Päivitä nyt",
+      "refreshNowButton": "↻ Nyt",
+      "filters": {
+        "period": "Ajanjakso",
+        "model": "Malli",
+        "allModels": "Kaikki mallit",
+        "type": "Tyyppi",
+        "all": "Kaikki",
+        "completion": "Täydennys",
+        "router": "Reititin",
+        "status": "Tila",
+        "success": "Onnistui",
+        "blocked": "Estetty",
+        "error": "Virhe",
+        "resetButton": "Nollaa suodattimet"
+      },
+      "stats": {
+        "totalCost": "Kokonaiskustannus",
+        "totalCalls": "Kutsuja yhteensä",
+        "completionCalls": "Täydennyskutsut",
+        "routerCalls": "Reitityskutsut",
+        "errors": "Virheet"
+      },
+      "requestLogs": "Pyyntöloki",
+      "emptyNoRequests": "Ei pyyntöjä tälle reitittimelle valitulla ajanjaksolla.",
+      "emptyNoMatches": "Mikään tietue ei vastaa aktiivisia suodattimia.",
+      "columns": {
+        "time": "Aika",
+        "model": "Malli",
+        "type": "Tyyppi",
+        "in": "Sisään",
+        "out": "Ulos",
+        "cost": "Kustannus",
+        "latency": "Vasteaika",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "Tila"
+      },
+      "typeRouter": "reititin",
+      "typeCompletion": "täydennys",
+      "pagination": {
+        "previous": "← Edellinen",
+        "next": "Seuraava →",
+        "pageOf": "Sivu {{page}} / {{totalPages}}",
+        "totalRecords": "(yhteensä {{count}} tietuetta)"
+      }
+    },
+    "security": {
+      "title": "Turvallisuus",
+      "description": "Käytä jaettua turvallisuusprofiilia, tai määritä tämän reitittimen omat suojakaiteet ja PII-käytännöt.",
+      "mode": {
+        "profile": "Profiili",
+        "custom": "Mukautettu"
+      },
+      "profileSelect": {
+        "ariaLabel": "Turvallisuusprofiili",
+        "builtinLabel": "{{label}} (sisäänrakennettu)",
+        "hint": "Suojakaiteet ja PII-käytännöt tulevat profiilista ja seuraavat sen muutoksia. Muokkaa niitä Profiilit-sivulla, tai vaihda Mukautettu-tilaan aloittaaksesi niiden kopiosta.",
+        "blockingSuffix": ", estävä",
+        "disabledSuffix": ", pois käytöstä",
+        "piiRedaction": "PII-peittäminen ({{target}})"
+      },
+      "saveButton": "Tallenna turvallisuusasetukset",
+      "saved": "Tallennettu!",
+      "errors": {
+        "assignFailed": "Turvallisuusprofiilin liittäminen epäonnistui",
+        "saveFailed": "Virhe tallennettaessa turvallisuusasetuksia",
+        "noProfileAvailable": "Turvallisuusprofiilia ei ole saatavilla. Luo yksi Profiilit-sivulla."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Olet avulias AI-avustaja.",
+      "errors": {
+        "unknown": "Tapahtui tuntematon virhe",
+        "onlyImages": "Vain kuvaliitteet ovat tällä hetkellä tuettuja näkömalleille."
+      },
+      "title": "Testikeskustelu",
+      "subtitle": "Lähetä testikyselyitä reititysyhdyskäytävän läpi.",
+      "routerToken": "Reitittimen token:",
+      "hideToken": "Piilota token",
+      "showToken": "Näytä token",
+      "recognizedToken": "Tunnistettu token",
+      "unrecognizedToken": "Tunnistamaton token",
+      "noMessages": "Ei viestejä vielä.",
+      "enterTokenHint": "Syötä reitittimen token yllä lähettääksesi viestin.",
+      "typeMessageHint": "Kirjoita viesti alle aloittaaksesi testauksen.",
+      "reasoning": "Päättely",
+      "attachedAlt": "Liitetty",
+      "attachmentAlt": "Liite",
+      "attachImage": "Liitä kuva",
+      "typeMessagePlaceholder": "Kirjoita viesti...",
+      "stopGeneration": "Pysäytä generointi",
+      "sendEnter": "Lähetä (Enter)",
+      "debugLog": "Vianjäljitysloki",
+      "clear": "Tyhjennä",
+      "noRequestSent": "Pyyntöä ei ole vielä lähetetty.",
+      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki · {{count}} tapahtuma",
+      "turnTraceLog_other": "Vuoron #{{turn}} jäljitysloki · {{count}} tapahtumaa"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Yhteydet",
+      "subtitle": "Palveluntarjoajatilit, joita käytetään mallien instanssien suorittamiseen",
+      "noPermission": "Sinulla ei ole oikeutta tarkastella yhteyksiä.",
+      "count": "{{count}} yhteys",
+      "count_other": "{{count}} yhteyttä",
+      "addConnection": "Lisää yhteys",
+      "empty": "Yhteyksiä ei ole vielä. Lisää yksi aloittaaksesi.",
+      "deleteConfirm": "Poistetaanko yhteys \"{{label}}\"? Siihen sidotut instanssit lakkaavat toimimasta.",
+      "errors": {
+        "loadFailed": "Yhteyksien lataaminen epäonnistui",
+        "deleteFailed": "Yhteyden poistaminen epäonnistui"
+      },
+      "columns": {
+        "label": "Nimike",
+        "provider": "Palveluntarjoaja",
+        "endpoint": "Päätepiste",
+        "status": "Tila"
+      },
+      "status": {
+        "enabled": "Käytössä",
+        "disabled": "Pois käytöstä"
+      },
+      "actions": {
+        "models": "Mallit",
+        "edit": "Muokkaa",
+        "remove": "Poista"
+      }
+    },
+    "form": {
+      "backToConnections": "Takaisin yhteyksiin",
+      "editTitle": "Muokkaa yhteyttä",
+      "addTitle": "Lisää yhteys",
+      "enabled": "Käytössä",
+      "editSubtitle": "Päivitä palveluntarjoajatilin asetukset",
+      "addSubtitle": "Rekisteröi uusi palveluntarjoajatili",
+      "sectionTitle": "Yhteyden tiedot",
+      "sectionDesc": "Palveluntarjoajatili, tunnistetiedot ja päätepiste, joita käytetään pyyntöjen suorittamiseen.",
+      "provider": "Palveluntarjoaja",
+      "groups": {
+        "directApi": "Suora API",
+        "cloudPlatform": "Pilvialusta",
+        "subscription": "Tilaus",
+        "browserSession": "Selainistunto",
+        "selfHosted": "Itse ylläpidetty"
+      },
+      "upstreamProvider": {
+        "label": "Palveluntarjoaja",
+        "hintLabel": "(kohdepalveluntarjoajan nimi)",
+        "placeholder": "esim. deepseek, mistral, groq",
+        "description": "Nimeää palvelun, jolle tämä päätepiste kuuluu. Tämän yhteyden mallit käyttävät sitä ID-etuliitteenä (esim. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Nimi",
+        "hint": "Tunnistaa tämän yhteyden kaikkialla, missä sitä käytetään, joten sen on oltava yksilöllinen. Jätä tyhjäksi käyttääksesi <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Jätä tunnistekentät tyhjäksi säilyttääksesi nykyiset arvot.",
+      "save": "Tallenna",
+      "create": "Luo",
+      "cancel": "Peruuta",
+      "oauth": {
+        "unknown": "tuntematon",
+        "accountExpires": "Tili: {{account}} — vanhenee {{expires}}",
+        "unknownError": "Tuntematon virhe"
+      },
+      "errors": {
+        "notFound": "Yhteyttä ei löytynyt",
+        "loadFailed": "Yhteyden lataaminen epäonnistui",
+        "updateFailed": "Yhteyden päivittäminen epäonnistui",
+        "createFailed": "Yhteyden luominen epäonnistui"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Takaisin malleihin",
+      "title": "Mallien selaus",
+      "subtitle": "Selaa saatavilla olevia malleja ja lisää niitä reititysasetuksiisi",
+      "count": "{{count}} mallia",
+      "filteredCount": "{{filtered}} / {{count}}",
+      "free": "ilmainen",
+      "add": "Lisää",
+      "addAgain": "Lisää uudelleen",
+      "loadFailed": "Katalogin lataaminen epäonnistui: {{error}}",
+      "filters": {
+        "search": "Hae",
+        "searchPlaceholder": "Mallin ID tai nimi…",
+        "provider": "Palveluntarjoaja",
+        "allProviders": "Kaikki palveluntarjoajat",
+        "context": "Konteksti",
+        "ctxOptions": {
+          "all": "Kaikki",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Hinta / 1M",
+        "priceOptions": {
+          "all": "Kaikki",
+          "free": "Ilmainen",
+          "low": "< 1 $",
+          "mid": "1–5 $",
+          "high": "> 5 $"
+        },
+        "show": "Näytä",
+        "configured": "Määritetty",
+        "embedding": "Upotus",
+        "resetFilters": "Nollaa suodattimet"
+      },
+      "empty": {
+        "noMatches": "Mikään malli ei vastaa suodattimiaan."
+      },
+      "columns": {
+        "model": "Malli",
+        "provider": "Palveluntarjoaja",
+        "context": "Konteksti",
+        "input": "Syöte / 1M",
+        "output": "Tuloste / 1M"
+      },
+      "badges": {
+        "configured": "Määritetty",
+        "embedding": "upotus",
+        "runsLocally": "Toimii paikallisesti"
+      },
+      "pagination": {
+        "prev": "Edell.",
+        "next": "Seur.",
+        "range": "{{start}}–{{end}} / {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Takaisin malleihin",
+      "title": {
+        "add": "Lisää malli",
+        "edit": "Muokkaa mallia",
+        "clone": "Kloonaa malli"
+      },
+      "subtitle": {
+        "add": "Rekisteröi uusi LLM-palveluntarjoajan malli",
+        "edit": "Muokataan mallin {{id}} asetuksia",
+        "clone": "Kloonataan mallista {{id}} — aseta uusi ID tallentaaksesi"
+      },
+      "errors": {
+        "modelNotFound": "Mallia ei löytynyt",
+        "sourceModelNotFound": "Lähdemallia ei löytynyt",
+        "loadFailed": "Virhe ladattaessa malleja",
+        "idRequired": "Mallin ID vaaditaan",
+        "duplicateId": "Malli \"{{id}}\" on jo olemassa — aseta eri mukautettu ID",
+        "selectConnection": "Valitse yhteys",
+        "saveFailed": "Virhe"
+      },
+      "badge": {
+        "yes": "kyllä",
+        "no": "ei",
+        "override": "Ylikirjoitus",
+        "auto": "Automaattinen",
+        "default": "Oletus: {{value}}",
+        "reset": "Nollaa"
+      },
+      "oauth": {
+        "unknownExpiry": "tuntematon",
+        "accountOk": "Tili: {{account}} — vanhenee {{expires}}",
+        "unknownError": "Tuntematon virhe"
+      },
+      "identification": {
+        "title": "Mallin tunnistetiedot",
+        "description": "Yksilöllinen tunniste ja palveluntarjoaja-asetukset tälle mallikonfiguraatiolle.",
+        "routerlyId": "Routerly-ID",
+        "routerlyIdHintPre": "(valinnainen — oletus:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Tunniste, jota käytetään viitattaessa tähän malliin Routerly-API-kutsuissa.",
+        "provider": "Palveluntarjoaja",
+        "upstreamProviderHint": "(kohdepalveluntarjoajan nimi)",
+        "upstreamProviderPlaceholder": "esim. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Käytetään Routerly-ID:n etuliitteenä (esim.",
+        "upstreamProviderDescPost": ").",
+        "model": "Malli",
+        "upstreamModelHint": "(kohdemallin ID)",
+        "upstreamModelPlaceholder": "esim. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Kohde-API-päätepisteelle lähetettävä mallitunniste.",
+        "modelPreset": "Malliesiasetus",
+        "customModelOption": "— mukautettu mallin nimi —",
+        "customModelPlaceholder": "esim. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Yhteyden tiedot",
+        "description": "Pyyntöjen suorittamiseen tarvittava API-päätepiste ja tunnistetiedot.",
+        "preconfigured": "Esimääritetty",
+        "custom": "Mukautettu",
+        "connection": "Yhteys",
+        "selectPlaceholder": "— valitse yhteys —",
+        "noneAvailable": "Ei esimääritettyjä yhteyksiä tälle palveluntarjoajalle. Vaihda Mukautettu-tilaan, tai luo yksi Yhteydet-sivulla.",
+        "editHint": "Tämän yhteyden muokkaaminen myöhemmin päivittää kaikki siihen sidotut mallit."
+      },
+      "capabilities": {
+        "title": "Ominaisuudet",
+        "description": "Määritä tämän mallin tyyppi ja ominaisuudet.",
+        "embeddingModel": "Upotusmalli",
+        "embeddingModelHint": "Tämä malli tuottaa vektoriupotuksia (ei keskustelutäydennyksiä)"
+      },
+      "pricing": {
+        "title": "Hinnoittelu ja konteksti",
+        "description": "Laskutuksessa ja reitityksessä käytetyt kustannusparametrit ja käsittelyrajat.",
+        "inputPerMillion": "Syöte $/1M",
+        "outputPerMillion": "Tuloste $/1M",
+        "cachePerMillion": "Välimuistiluku $/1M",
+        "cacheWritePerMillion": "Välimuistikirjoitus $/1M",
+        "optional": "(valinn.)",
+        "contextWindow": "Kontekstiikkuna",
+        "contextWindowHint": "(tokenia, valinnainen)"
+      },
+      "tiers": {
+        "title": "Lisäasetukset — Hinnoitteluportaat",
+        "description": "Ylikirjoita hinnoittelu, kun mittari ylittää kynnyksen. Esimerkiksi: \"Yli 200 000 kontekstitokenin jälkeen hinnat muuttuvat.\"",
+        "removeTier": "Poista porras",
+        "above": "Yli",
+        "metric": "Mittari",
+        "metricContextTokens": "Kontekstitokenit",
+        "overridePricing": "Ylikirjoita hinnoittelu",
+        "addTier": "Lisää hinnoitteluporras"
+      },
+      "limits": {
+        "title": "Rajat",
+        "description": "Käyttörajat tälle mallille. Useita sääntöjä voidaan yhdistää.",
+        "metric": "Mittari",
+        "type": "Tyyppi",
+        "addLimit": "Lisää raja"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max-tilaus)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro -tilaus)"
+      },
+      "saveChanges": "Tallenna muutokset",
+      "createClone": "Luo klooni",
+      "createModel": "Luo malli"
+    },
+    "page": {
+      "title": "Mallit",
+      "subtitle": "Routerlyyn rekisteröidyt LLM-palveluntarjoajat",
+      "tabs": {
+        "models": "Mallit",
+        "health": "Kunto"
+      },
+      "toolbar": {
+        "count": "{{count}} malli",
+        "count_other": "{{count}} mallia",
+        "filteredCount": "{{filtered}} / {{count}} malli",
+        "filteredCount_other": "{{filtered}} / {{count}} mallia"
+      },
+      "filters": {
+        "allProviders": "Kaikki palveluntarjoajat",
+        "allConnections": "Kaikki yhteydet",
+        "searchPlaceholder": "Suodata malleja…"
+      },
+      "discover": "Selaa",
+      "addModel": "Lisää malli",
+      "deleteConfirm": "Poistetaanko malli \"{{id}}\"?",
+      "empty": {
+        "noModels": "Malleja ei ole vielä. Lisää yksi aloittaaksesi.",
+        "noMatches": "Mikään malli ei vastaa aktiivisia suodattimia."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Palveluntarjoaja",
+        "endpoint": "Päätepiste",
+        "input": "Syöte $/1M",
+        "output": "Tuloste $/1M",
+        "cache": "Välimuisti $/1M",
+        "context": "Kontekstin koko"
+      },
+      "actions": {
+        "test": "Testaa",
+        "clone": "Kloonaa",
+        "edit": "Muokkaa",
+        "remove": "Poista"
+      },
+      "pagination": {
+        "previous": "← Edellinen",
+        "next": "Seuraava →",
+        "pageOf": "Sivu {{page}} / {{totalPages}}",
+        "total": "({{count}} malli)",
+        "total_other": "({{count}} mallia)"
+      },
+      "health": {
+        "emptyNoModels": "Malleja ei ole määritetty.",
+        "emptyNoMatches": "Mikään malli ei vastaa suodatinta.",
+        "resetAll": "Nollaa kaikki",
+        "resetAllTitle": "Nollaa kaikki sulkukatkaisijat, jäähdytysajat ja lukot",
+        "resetTitle": "Nollaa sulkukatkaisija",
+        "confirmResetModel": "Nollataanko sulkukatkaisija mallille \"{{id}}\"?",
+        "confirmResetAll": "Nollataanko kaikki sietokykytilat? Tämä tyhjentää kaikki sulkukatkaisijat, jäähdytysajat ja lukot.",
+        "errors": {
+          "resetModelFailed": "Sulkukatkaisijan nollaaminen epäonnistui",
+          "resetAllFailed": "Sietokykytilan nollaaminen epäonnistui"
+        },
+        "columns": {
+          "model": "Malli",
+          "provider": "Palveluntarjoaja",
+          "status": "Tila",
+          "circuit": "Katkaisija",
+          "errorRate": "Virhesuhde (5 min)",
+          "p95Latency": "P95-vasteaika (1 h)",
+          "requests": "Pyynnöt (1 h)",
+          "lastSuccess": "Viimeisin onnistuminen",
+          "cooldownLockout": "Jäähdytys / lukko"
+        },
+        "status": {
+          "healthy": "Terve",
+          "degraded": "Heikentynyt",
+          "unavailable": "Ei saatavilla",
+          "cooldown": "Jäähdytys",
+          "nodata": "Ei tietoja"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Palautuu",
+          "tripped": "Lauennut"
+        },
+        "time": {
+          "never": "ei koskaan",
+          "now": "nyt",
+          "secondsAgo": "{{count}} s sitten",
+          "minutesAgo": "{{count}} min sitten",
+          "hoursAgo": "{{count}} h sitten",
+          "daysAgo": "{{count}} pv sitten",
+          "minSec": "{{min}} min {{sec}} s",
+          "sec": "{{sec}} s",
+          "cooldown": "jäähdytys {{time}}",
+          "lockout": "lukko {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Kokeilut",
+      "subtitle": "A/B-testaa reitittimiä toisiaan vastaan",
+      "noPermission": "Sinulla ei ole oikeutta tarkastella kokeiluja.",
+      "count": "{{count}} kokeilu",
+      "count_other": "{{count}} kokeilua",
+      "newExperiment": "Uusi kokeilu",
+      "empty": "Kokeiluja ei ole vielä. Luo yksi vertaillaksesi reitittimiä keskenään.",
+      "deleteConfirm": "Poistetaanko kokeilu \"{{name}}\"? Tätä ei voi kumota.",
+      "noToken": "Ei tokenia",
+      "noTokenTitle": "Ilman tokenia mikään asiakas ei voi tavoittaa tätä kokeilua",
+      "errors": {
+        "loadFailed": "Kokeilujen lataaminen epäonnistui",
+        "deleteFailed": "Kokeilun poistaminen epäonnistui"
+      },
+      "columns": {
+        "name": "Nimi",
+        "variants": "Variantit",
+        "rotation": "Kierto",
+        "created": "Luotu"
+      },
+      "actions": {
+        "edit": "Muokkaa kokeilua",
+        "remove": "Poista"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Takaisin kokeiluihin",
+      "newExperiment": "Uusi kokeilu",
+      "loading": "Latautuu...",
+      "experimentId": "Kokeilun ID:",
+      "disabledTabTitle": "Tallenna kokeilu ensin avataksesi tämän välilehden",
+      "errors": {
+        "notFound": "Kokeilua ei löytynyt"
+      },
+      "tabs": {
+        "config": "Asetukset",
+        "metrics": "Mittarit",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Tallennettu.",
+      "created": "Kokeilu luotu. Osoita asiakkaasi tähän tokeniin reitittimen tokenin sijaan. Sitä ei näytetä enää.",
+      "copy": "Kopioi",
+      "copied": "Kopioitu!",
+      "done": "Valmis",
+      "saving": "Tallennetaan...",
+      "create": "Luo kokeilu",
+      "save": "Tallenna muutokset",
+      "cancel": "Peruuta",
+      "trafficSplit": "Liikenteen jako",
+      "errors": {
+        "loadRoutersFailed": "Reitittimien lataaminen epäonnistui",
+        "saveFailed": "Kokeilun tallentaminen epäonnistui",
+        "copyFailed": "Kopiointi epäonnistui: valitse ja kopioi token manuaalisesti."
+      },
+      "fields": {
+        "name": "Nimi",
+        "namePlaceholder": "Halpa vs. premium-reititys",
+        "description": "Kuvaus",
+        "optional": "(valinnainen)",
+        "descriptionPlaceholder": "Mitä tämä testi pyrkii ratkaisemaan",
+        "minSamples": "Vähimmäiskutsumäärä per variantti",
+        "minSamplesHint": "Tämän alle Mittarit-välilehti merkitsee vertailun ei-vielä-lopulliseksi.",
+        "rotation": "Kierto",
+        "stickyOn": "Tahmea kohdistus",
+        "stickyKey": "Tahmea avain"
+      },
+      "variants": {
+        "title": "Variantit",
+        "desc": "Kukin variantti on olemassa oleva reititin, sellaisenaan: sen mallit, reititys ja suojakaiteet pätevät kaikki. Testi tarvitsee vähintään kaksi.",
+        "routerAriaLabel": "Variantin {{index}} reititin",
+        "routerPlaceholder": "Valitse reititin",
+        "labelAriaLabel": "Variantin {{index}} nimike",
+        "labelPlaceholder": "Nimike (valinnainen)",
+        "weightAriaLabel": "Variantin {{index}} paino",
+        "weightPlaceholder": "Paino",
+        "removeTitle": "Poista variantti {{index}}",
+        "add": "Lisää variantti"
+      },
+      "judge": {
+        "title": "Arvioija",
+        "desc": "Valinnainen: malli lukee kunkin näytteistetyn vastauksen ja pisteyttää sen 0-10 kriteereitäsi vastaan. Kukin arvioitu kutsu on ylimääräinen mallikutsu, laskutettu kuten mikä tahansa muu.",
+        "enable": "Pisteytä vastaukset arviointimallilla",
+        "model": "Arviointimalli",
+        "modelPlaceholder": "Valitse malli",
+        "criteria": "Kriteerit",
+        "criteriaPlaceholder": "Yksi per rivi, esim.\nVastaa kysyttyyn kysymykseen\nPysyy asiatietoisena\nNoudattaa pyydettyä muotoa",
+        "sampleRate": "Arvioitujen kutsujen osuus (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Latautuu...",
+      "callsMeasured": "{{count}} kutsu mitattu",
+      "callsMeasured_other": "{{count}} kutsua mitattu",
+      "empty": "Ei kutsuja tässä ikkunassa vielä. Osoita asiakas kokeilun tokeniin aloittaaksesi vertailun.",
+      "notConclusive": "Ei vielä lopullinen: joka variantti tarvitsee vähintään {{minSamples}} kutsua tässä ikkunassa. ",
+      "explanation": "Kunkin parin paremmasta luvusta korostetaan: halvempi per kutsu, nopeampi, korkeampi arviointipiste. Prosentti arvon alla on sen etäisyys parhaasta vaihtoehdosta. Arviointipiste on liukuva keskiarvo kokeilun koko elinkaaren ajalta, se on se yksi luku, jota ikkuna ei rajaa.",
+      "lowSample": "Vähäinen näyte",
+      "lowSampleTitle": "Alle {{minSamples}} kutsua tässä ikkunassa",
+      "judgedCallsTitle": "{{count}} vastaus pisteytetty arvioijan toimesta kokeilun alusta lähtien",
+      "judgedCallsTitle_other": "{{count}} vastausta pisteytetty arvioijan toimesta kokeilun alusta lähtien",
+      "errors": {
+        "loadFailed": "Mittareiden lataaminen epäonnistui"
+      },
+      "columns": {
+        "variant": "Variantti",
+        "calls": "Kutsut",
+        "share": "Osuus",
+        "errors": "Virheet",
+        "tokens": "Tokenit sisään / ulos",
+        "cost": "Kustannus",
+        "costPerCall": "Kustannus / kutsu",
+        "avgLatency": "Keskim. vasteaika",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Arviointipiste"
+      }
+    },
+    "token": {
+      "desc": "Asiakas kutsuu kokeilua aivan kuten reititintä: samaan perus-URL:iin, tämä token reitittimen tokenin sijaan. Kukin pyyntö osuu yhteen varianttiin ja laskutetaan kyseisen variantin reitittimelle.",
+      "baseUrlLabel": "Perus-URL OpenAI- tai Anthropic-SDK:lle, kokeilun tokenilla API-avaimena:",
+      "created": "Token luotu. Kopioi se nyt, sitä ei näytetä enää.",
+      "copy": "Kopioi",
+      "copied": "Kopioitu!",
+      "newToken": "Uusi token",
+      "empty": "Tällä kokeilulla ei ole tokeneita. Luo yksi, jotta asiakkaat voivat kutsua sitä.",
+      "revokeConfirm": "Peruutetaanko token \"{{snippet}}...\"? Sitä käyttävät asiakkaat lakkaavat toimimasta välittömästi.",
+      "revokeTitle": "Peruuta token",
+      "errors": {
+        "createFailed": "Tokenin luominen epäonnistui",
+        "revokeFailed": "Tokenin peruuttaminen epäonnistui",
+        "copyFailed": "Kopiointi epäonnistui: valitse ja kopioi token manuaalisesti."
+      },
+      "columns": {
+        "created": "Luotu",
+        "lastUsed": "Viimeksi käytetty"
+      }
+    }
+  },
+  "overview": {
+    "title": "Yleiskatsaus",
+    "subtitle": "Käyttöyhteenveto ja kustannuserittely",
+    "noPermission": "Ei oikeutta tarkastella käyttötietoja.",
+    "costByModel": "Kustannus mallin mukaan",
+    "noCostRecorded": "Ei kustannuksia kirjattuna tällä jaksolla.",
+    "callsByModel": "Kutsut mallin mukaan",
+    "columns": {
+      "model": "Malli",
+      "calls": "Kutsut",
+      "errors": "Virheet",
+      "cost": "Kustannus"
+    },
+    "stats": {
+      "totalCalls": "Kutsuja yhteensä",
+      "callsBreakdown": "{{routing}} reititys · {{completion}} täydennys",
+      "successRate": "Onnistumisprosentti",
+      "ofAllRequests": "kaikista pyynnöistä",
+      "errors": "Virheet",
+      "failedRequests": "epäonnistuneet pyynnöt",
+      "models": "Mallit",
+      "registered": "rekisteröity",
+      "routers": "Reitittimet",
+      "active": "aktiivinen"
+    },
+    "connectCard": {
+      "title": "Yhdistä asiakas",
+      "desc": "Osoita Claude Code, Codex, Cursor ja {{count}} muuta tähän yhdyskäytävään."
+    }
+  },
+  "login": {
+    "emailLabel": "Sähköposti",
+    "passwordLabel": "Salasana",
+    "signIn": "Kirjaudu sisään",
+    "errors": {
+      "loginFailed": "Kirjautuminen epäonnistui",
+      "totpFailed": "2FA-vahvistus epäonnistui"
+    },
+    "totp": {
+      "title": "Kaksivaiheinen tunnistautuminen",
+      "backupPrompt": "Syötä varakoodi.",
+      "appPrompt": "Syötä tunnistautumissovelluksen 6-numeroinen koodi.",
+      "backupCodeLabel": "Varakoodi",
+      "authenticatorCodeLabel": "Tunnistautumissovelluksen koodi",
+      "verify": "Vahvista",
+      "useAuthenticatorInstead": "Käytä tunnistautumissovellusta sen sijaan",
+      "useBackupInstead": "Käytä varakoodia sen sijaan"
+    }
+  },
+  "setup": {
+    "welcome": "Tervetuloa! Tehdään käyttöönotto valmiiksi.",
+    "welcomeSubtitle": "Luo ensimmäinen ylläpitäjätili aloittaaksesi Routerlyn hallinnan.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly kehittyy aktiivisesti. Bugeja voi ilmetä.",
+    "betaFeedback": "Palautteesi auttaa muotoilemaan siitä tulevaa —",
+    "betaLink": "ilmoita ongelmista tai jaa ideoita",
+    "emailLabel": "Ylläpitäjän sähköposti",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Salasana",
+    "passwordPlaceholder": "Vähintään 8 merkkiä",
+    "confirmLabel": "Vahvista salasana",
+    "confirmPlaceholder": "Syötä salasana uudelleen",
+    "submit": "Luo ylläpitäjätili",
+    "errors": {
+      "mismatch": "Salasanat eivät täsmää",
+      "tooShort": "Salasanan on oltava vähintään 8 merkkiä",
+      "setupFailed": "Käyttöönotto epäonnistui"
+    }
+  },
+  "audit": {
+    "empty": "Auditointimerkintöjä ei löytynyt.",
+    "errors": {
+      "loadFailed": "Auditointilokin lataaminen epäonnistui"
+    },
+    "filters": {
+      "period": "Ajanjakso",
+      "user": "Käyttäjä",
+      "userPlaceholder": "Sähköposti tai käyttäjätunnus",
+      "action": "Toiminto",
+      "actionPlaceholder": "esim. model:create",
+      "result": "Tulos",
+      "results": {
+        "all": "Kaikki",
+        "success": "Onnistui",
+        "forbidden": "Kielletty",
+        "error": "Virhe"
+      },
+      "refresh": "Päivitä"
+    },
+    "columns": {
+      "timestamp": "Aikaleima",
+      "user": "Käyttäjä",
+      "action": "Toiminto",
+      "endpoint": "Päätepiste",
+      "result": "Tulos",
+      "details": "Tiedot"
+    },
+    "pagination": {
+      "previous": "Edellinen",
+      "next": "Seuraava",
+      "page": "Sivu {{page}} / {{totalPages}}",
+      "total": "(yhteensä {{count}})"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Käyttö",
+      "live": "LIVE",
+      "subtitle": "Yksityiskohtaiset kutsulokit ja mallikohtainen erittely",
+      "updatedAt": "· päivitetty {{time}}",
+      "poll": {
+        "off": "Pois",
+        "5s": "5 s",
+        "15s": "15 s",
+        "30s": "30 s",
+        "1m": "1 min",
+        "5m": "5 min"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Poista live-tila käytöstä",
+        "enable": "Ota live-tila käyttöön (päivitys 2 s välein)"
+      },
+      "refreshNow": "↻ Nyt",
+      "refreshNowTitle": "Päivitä nyt",
+      "filters": {
+        "period": "Ajanjakso",
+        "router": "Reititin",
+        "model": "Malli",
+        "token": "Token",
+        "caller": "Kutsuja",
+        "type": "Tyyppi",
+        "status": "Tila",
+        "allRouters": "Kaikki reitittimet",
+        "allModels": "Kaikki mallit",
+        "allTokens": "Kaikki tokenit",
+        "resetFilters": "Nollaa suodattimet",
+        "all": "Kaikki",
+        "success": "Onnistui",
+        "blocked": "Estetty",
+        "error": "Virhe"
+      },
+      "caller": {
+        "all": "Kaikki",
+        "completion": "Täydennys",
+        "routing": "Reititin",
+        "guardrail": "Suojakaide",
+        "judge": "Arvioija"
+      },
+      "callerBadge": {
+        "completion": "täydennys",
+        "routing": "reititin",
+        "guardrail": "suojakaide",
+        "judge": "arvioija"
+      },
+      "errors": {
+        "loadFailedPrefix": "Käyttötietojen lataaminen epäonnistui:",
+        "retry": "Yritä uudelleen"
+      },
+      "stats": {
+        "totalCalls": "Kutsuja yhteensä",
+        "completionCalls": "Täydennyskutsut",
+        "routerCalls": "Reitityskutsut",
+        "guardrailCalls": "Suojakaidekutsut",
+        "blockedCalls": "Estetyt kutsut",
+        "errors": "Virheet"
+      },
+      "table": {
+        "rank": "Sija",
+        "model": "Malli",
+        "provider": "Palveluntarjoaja",
+        "calls": "Kutsut",
+        "errors": "Virheet",
+        "successRate": "Onnistumisprosentti",
+        "avgLatency": "Keskim. vasteaika",
+        "p95Latency": "P95-vasteaika",
+        "inputTokens": "Syötetokenit",
+        "outputTokens": "Tulostetokenit",
+        "costPer1k": "Kustannus / 1K",
+        "cost": "Kustannus (USD)",
+        "bestCostPerformance": "Paras hinta-suorituskyky"
+      },
+      "showMoreModels": "Näytä {{count}} lisää malli",
+      "showMoreModels_other": "Näytä {{count}} lisää mallia",
+      "showFewerModels": "Näytä vähemmän malleja",
+      "recentCalls": {
+        "title": "Viimeisimmät kutsut",
+        "empty": "Ei käyttötietueita tälle jaksolle.",
+        "columns": {
+          "time": "Aika",
+          "router": "Reititin",
+          "model": "Malli",
+          "type": "Tyyppi",
+          "caller": "Kutsuja",
+          "in": "Sisään",
+          "out": "Ulos",
+          "cost": "Kustannus",
+          "latency": "Vasteaika",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "Tila"
+        }
+      },
+      "pagination": {
+        "previous": "Edellinen",
+        "next": "Seuraava",
+        "pageOf": "Sivu {{page}} / {{totalPages}}",
+        "totalRecords": "(yhteensä {{count}} tietuetta)"
+      }
+    },
+    "record": {
+      "back": "Takaisin",
+      "title": "Kutsun tiedot",
+      "notFoundTitle": "Tietuetta ei löytynyt",
+      "notFoundBody": "Käyttötietuetta {{id}} ei voitu latata.",
+      "errors": {
+        "loadFailed": "Tietueen lataaminen epäonnistui"
+      },
+      "sections": {
+        "identity": "Tunnistetiedot",
+        "tokensAndCost": "Tokenit ja kustannus",
+        "performanceAndOutcome": "Suorituskyky ja tulos",
+        "traceLog": "Jäljitysloki"
+      },
+      "fields": {
+        "recordId": "Tietueen ID",
+        "router": "Reititin",
+        "token": "Token",
+        "model": "Malli",
+        "callType": "Kutsun tyyppi",
+        "requestType": "Pyynnön tyyppi",
+        "inputTokens": "Syötetokenit",
+        "outputTokens": "Tulostetokenit",
+        "totalTokens": "Tokenit yhteensä",
+        "costUsd": "Kustannus (USD)",
+        "costUnknown": "Tuntematon",
+        "latency": "Vasteaika",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "Tulos",
+        "timestamp": "Aikaleima",
+        "guardrailTriggered": "Suojakaide laukesi",
+        "blockedBy": "Esti",
+        "piiRedacted": "PII peitetty"
+      },
+      "errorMessage": "Virheviesti",
+      "eventCount": "{{count}} tapahtuma",
+      "eventCount_other": "{{count}} tapahtumaa",
+      "noTrace": "Jäljitystä ei ole saatavilla. Jäljitystiedot tallennetaan vain uusille kutsuille."
+    }
+  },
+  "playground": {
+    "title": "Testiympäristö",
+    "subtitle": "Testaa malleja, vertaile vastauksia ja tallenna kehote-esiasetuksia.",
+    "mode": {
+      "single": "Yksittäinen",
+      "compare": "Vertaa"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "sama kuin A",
+      "unknownToken": "Tuntematon token"
+    },
+    "presets": {
+      "button": "Esiasetukset",
+      "panelTitle": "Esiasetukset",
+      "saveCurrent": "Tallenna nykyinen",
+      "namePlaceholder": "Esiasetuksen nimi...",
+      "save": "Tallenna",
+      "empty": "Esiasetuksia ei ole vielä.",
+      "delete": "Poista esiasetus"
+    },
+    "streamingDisabled": {
+      "banner": "Suoratoisto ei ole käytettävissä",
+      "bannerBody": "tällä reitittimellä on aktiivinen vastausta estävä suojakaide. Routerlyn on tarkastettava koko vastaus ennen toimitusta, joten vastaukset saapuvat kerralla.",
+      "tooltip": "Suoratoisto ei ole käytettävissä: vastausta estävä suojakaide vaatii koko vastauksen tarkastamisen ennen toimitusta.",
+      "ariaLabel": "Suoratoisto ei käytettävissä"
+    },
+    "systemPrompt": "Järjestelmäkehote",
+    "model": "Malli",
+    "modelPlaceholder": "Automaattinen (reitittimen oletus)",
+    "params": {
+      "temp": "Lämpötila",
+      "maxTokens": "Enimmäistokenit",
+      "topP": "Top-p"
+    },
+    "stream": "Suoratoista",
+    "clear": "Tyhjennä",
+    "empty": {
+      "noMessages": "Ei viestejä vielä.",
+      "enterToken": "Syötä reitittimen token yllä aloittaaksesi."
+    },
+    "reasoning": "Päättely",
+    "blockedDefault": "Tämän viestin esti suojakaide.",
+    "truncated": "Katkaistu — vastaus katkesi enimmäistokenirajaan",
+    "bufferedNote": "Pidätetty turvatarkastukseen",
+    "errors": {
+      "onlyImages": "Vain kuvaliitteet ovat tuettuja."
+    },
+    "rawToggle": {
+      "rendered": "renderöity",
+      "raw": "raaka"
+    },
+    "inputPlaceholder": "Kirjoita viesti...",
+    "attachImage": "Liitä kuva",
+    "attachedImageAlt": "Liitetty",
+    "attachmentAlt": "Liite",
+    "debug": {
+      "title": "Vianjäljitys",
+      "clear": "Tyhjennä",
+      "hide": "Piilota vianjäljitys",
+      "show": "Näytä vianjäljitys",
+      "empty": "Ei vianjäljitystietoja vielä.",
+      "emptyHint": "Lähetä viesti nähdäksesi reititystiedot.",
+      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki"
+    },
+    "compare": {
+      "modelLabel": "Malli {{label}}:",
+      "modelSelectPlaceholder": "Valitse malli...",
+      "noMessages": "Ei viestejä vielä.",
+      "debugTurns": "Vianjäljitys ({{count}} vuoro)",
+      "debugTurns_other": "Vianjäljitys ({{count}} vuoroa)",
+      "guardrailTokensTitle": "Suojakaiteen arviointimallin tokenit",
+      "stop": "Pysäytä",
+      "inputPlaceholder": "Lähetä samat viestit molemmille malleille..."
+    }
+  },
+  "help": {
+    "title": "Ohje ja tuki",
+    "subtitle": "Olemme tässä auttaaksemme — löydä vastauksia tai ota yhteyttä milloin tahansa.",
+    "docs": {
+      "title": "Dokumentaatio",
+      "subtitle": "Oppaat, API-viite ja asetusdokumentaatio",
+      "body": "Viralliset ohjeet kattavat kaiken aloittamisesta edistyneisiin reitityskäytäntöihin, palveluntarjoajan asetuksiin, budjetteihin ja täydelliseen API-viitteeseen.",
+      "openLink": "Avaa dokumentaatio"
+    },
+    "issues": {
+      "title": "Ilmoita virheestä tai ehdota ominaisuutta",
+      "subtitle": "Avaa GitHub-issue — kestää 2 minuuttia",
+      "body": "GitHub-issuet ovat paras tapa ilmoittaa virheistä tai ehdottaa parannuksia. Auttaaksesi korjaamaan asioita nopeammin, kerro: mitä teit, mitä odotit tapahtuvan, ja mitä todella tapahtui.",
+      "showTemplate": "Näytä issue-pohja",
+      "reportBug": "Ilmoita virheestä",
+      "requestFeature": "Pyydä ominaisuutta"
+    },
+    "issueTemplate": {
+      "whatHappened": "Mitä tapahtui?",
+      "whatHappenedHint": "Kuvaa ongelma selkeästi",
+      "stepsToReproduce": "Toistamisen vaiheet",
+      "expectedBehaviour": "Odotettu toiminta",
+      "expectedBehaviourHint": "Mitä odotit näkevän",
+      "version": "Routerly-versio",
+      "versionHint": "Suorita `routerly --version` tai tarkista Asetukset → Tietoja"
+    },
+    "email": {
+      "title": "Ota yhteyttä tukeen",
+      "subtitle": "Luemme jokaisen viestin ja vastaamme mahdollisimman pian",
+      "body": "Kaikkeen, mikä ei sovi GitHub-issueen — laskutuskysymyksiin, yksityisiin huoliin, tai jos haluat vain tervehtiä — laita meille viesti."
+    },
+    "faq": {
+      "title": "Usein kysytyt kysymykset",
+      "subtitle": "Nopeat vastaukset yleisimpiin kysymyksiin",
+      "items": {
+        "connect": {
+          "q": "Miten yhdistän sovellukseni Routerlyyn?",
+          "a": "Osoita OpenAI- tai Anthropic-SDK:si Routerly-instanssiisi. Korvaa perus-URL osoitteella http://your-host:3000/v1 (OpenAI-yhteensopiva) tai http://your-host:3000/anthropic (Anthropic-yhteensopiva), ja käytä sitten reitittimen tokenia API-avaimena. Siinä kaikki — muita muutoksia ei tarvita."
+        },
+        "openaiCompat": {
+          "q": "Onko Routerly yhteensopiva OpenAI-SDK:ta käyttävien työkalujen kanssa?",
+          "a": "Kyllä. Routerly on suora korvaaja: mikä tahansa työkalu, joka tukee mukautettua perus-URL:ia ja API-avainta (LangChain, LlamaIndex, Cursor, Continue jne.), toimii suoraan käyttöönotosta. Anthropic-muotoisille asiakkaille käytä /anthropic-päätepistettä."
+        },
+        "routing": {
+          "q": "Miten mallien reititys toimii?",
+          "a": "Kullakin reitittimellä on reitityskäytäntö, joka päättää, mikä malli vastaanottaa pyynnön. Käytäntöihin kuuluu vuorottelu, halvin kustannus, nopein vaste, varaketjut ja muita. Voit määrittää niitä reitittimittäin kohdassa Reitittimet → Reititys."
+        },
+        "addModel": {
+          "q": "Miten lisään uuden AI-mallin?",
+          "a": "Siirry kohtaan Mallit → Lisää malli. Voit lisätä minkä tahansa OpenAI-yhteensopivan palveluntarjoajan (Ollama, LM Studio, mukautetut päätepisteet) tai alkuperäisen Anthropic-päätepisteen. Täytä perus-URL, API-avain ja mallitunniste — Routerly hoitaa lopun."
+        },
+        "dataStored": {
+          "q": "Tallennetaanko dataani? Kirjataanko kehotteitani?",
+          "a": "Routerly on itse ylläpidetty ja tallentaa dataa vain omalle koneellesi (oletuksena ~/.routerly/-hakemistoon). Kehotteita ja vastauksia ei koskaan lähetetä minnekään Routerlyn toimesta. Pyyntölokit tallennetaan paikallisesti ja vain, jos otat ne käyttöön reitittimittäin."
+        },
+        "routerToken": {
+          "q": "Mikä on reitittimen token ja miten se eroaa palveluntarjoajan API-avaimesta?",
+          "a": "Reitittimen token on tunniste, jonka annat sovelluksellesi tai tiimin jäsenille tunnistautumaan Routerlyyn. Se on erillinen palveluntarjoajan API-avaimista, jotka Routerly tallentaa turvallisesti palvelinpuolella. Sovelluksesi eivät koskaan näe todellisia palveluntarjoaja-avaimia."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} käyttäjä",
+    "countLabel_other": "{{count}} käyttäjää",
+    "addButton": "Lisää käyttäjä",
+    "columns": {
+      "email": "Sähköposti",
+      "role": "Rooli",
+      "routers": "Reitittimet"
+    },
+    "allRouters": "Kaikki",
+    "resetTwoFaTitle": "Nollaa 2FA",
+    "resetTwoFaConfirm": "Nollataanko 2FA käyttäjälle {{email}}? Hänen on liityttävä uudelleen.",
+    "deleteConfirm": "Poistetaanko tämä käyttäjä?",
+    "emptyTitle": "Käyttäjiä ei ole vielä.",
+    "noPermission": "Sinulla ei ole oikeutta tarkastella käyttäjiä.",
+    "modal": {
+      "title": "Lisää käyttäjä",
+      "emailLabel": "Sähköposti",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Salasana",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rooli",
+      "roleAdmin": "Ylläpitäjä",
+      "roleViewer": "Katsoja",
+      "cancelButton": "Peruuta",
+      "submitButton": "Lisää käyttäjä"
+    },
+    "errors": {
+      "loadFailed": "Käyttäjien lataaminen epäonnistui",
+      "addFailed": "Virhe"
+    }
+  },
+  "userEdit": {
+    "title": "Muokkaa käyttäjää",
+    "account": "Tili",
+    "email": "Sähköposti",
+    "role": "Rooli",
+    "changePassword": "Vaihda salasana",
+    "newPassword": "Uusi salasana",
+    "newPasswordHint": "(jätä tyhjäksi säilyttääksesi nykyisen)",
+    "save": "Tallenna",
+    "saved": "Tallennettu!",
+    "errors": {
+      "loadFailed": "Käyttäjän lataaminen epäonnistui",
+      "saveFailed": "Tallennus epäonnistui"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Hallitse rooleja ja käyttöoikeuksia. Sisäänrakennettuja rooleja ei voi muokata.",
+    "newRole": "Uusi rooli",
+    "builtin": "sisäänrakennettu",
+    "edit": "Muokkaa",
+    "deleteConfirm": "Poistetaanko tämä rooli? Tätä roolia käyttäviin käyttäjiin vaikutetaan.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "esim. operator",
+      "name": "Nimi",
+      "namePlaceholder": "Roolin nimi",
+      "permissions": "Käyttöoikeudet",
+      "create": "Luo",
+      "save": "Tallenna",
+      "cancel": "Peruuta"
+    },
+    "permissions": {
+      "routerRead": "Reitittimet – Luku",
+      "routerWrite": "Reitittimet – Kirjoitus",
+      "modelRead": "Mallit – Luku",
+      "modelWrite": "Mallit – Kirjoitus",
+      "userRead": "Käyttäjät – Luku",
+      "userWrite": "Käyttäjät – Kirjoitus",
+      "reportRead": "Raportit – Luku",
+      "settingsRead": "Asetukset – Luku",
+      "settingsWrite": "Asetukset – Kirjoitus",
+      "notificationWrite": "Ilmoitukset – Kirjoitus",
+      "tokenRead": "Tokenit – Luku",
+      "tokenWrite": "Tokenit – Kirjoitus",
+      "roleWrite": "Roolit – Kirjoitus",
+      "auditRead": "Auditointiloki – Luku",
+      "modulesRead": "Moduulit – Luku",
+      "modulesManage": "Moduulit – Hallinta",
+      "connectionsRead": "Yhteydet – Luku",
+      "connectionsManage": "Yhteydet – Hallinta",
+      "resilienceRead": "Sietokyky – Luku",
+      "resilienceManage": "Sietokyky – Hallinta",
+      "profilesRead": "Reitityksen profiilit – Luku",
+      "profilesManage": "Reitityksen profiilit – Hallinta",
+      "optimizersRead": "Optimoijat – Luku",
+      "optimizersManage": "Optimoijat – Hallinta",
+      "experimentsRead": "Kokeilut – Luku",
+      "experimentsManage": "Kokeilut – Hallinta"
+    },
+    "errors": {
+      "loadFailed": "Roolien lataaminen epäonnistui",
+      "updateFailed": "Roolin päivittäminen epäonnistui",
+      "createFailed": "Roolin luominen epäonnistui",
+      "deleteFailed": "Roolin poistaminen epäonnistui"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profiilit",
+      "subtitle": "Uudelleenkäytettävät reititys-, optimointi- ja turvallisuusasetukset",
+      "noPermission": "Sinulla ei ole oikeutta tarkastella profiileja.",
+      "newProfile": "Uusi {{kind}}-profiili",
+      "empty": "{{kind}}-profiileja ei ole vielä.",
+      "builtin": "Sisäänrakennettu",
+      "custom": "Mukautettu",
+      "view": "Näytä",
+      "edit": "Muokkaa",
+      "clone": "Kloonaa",
+      "delete": "Poista",
+      "deleteConfirm": "Poistetaanko profiili \"{{label}}\"? Tätä ei voi kumota.",
+      "kindDescriptions": {
+        "routing": "Mikä malli vastaa pyyntöön, ja mitä tapahtuu, kun se ei voi",
+        "optimizer": "Mitä kehotteesta poistetaan ennen lähettämistä",
+        "security": "Liikenteeseen sovelletut suojakaiteet ja PII-käytännöt"
+      },
+      "columns": {
+        "label": "Nimike",
+        "type": "Tyyppi",
+        "configuration": "Asetukset",
+        "version": "Versio"
+      },
+      "errors": {
+        "loadFailed": "Profiilien lataaminen epäonnistui",
+        "deleteFailed": "Profiilin poistaminen epäonnistui"
+      }
+    },
+    "form": {
+      "backToProfiles": "Takaisin profiileihin",
+      "newProfileTitle": "Uusi {{kind}}-profiili",
+      "editProfileTitle": "Muokkaa {{label}}",
+      "builtinHint": "Sisäänrakennettuja profiileja ei voi muokata. Kloonaa yksi mukauttaaksesi sitä.",
+      "assignHint": "{{article}} {{kind}}-profiili voidaan liittää mihin tahansa määrään reitittimiä.",
+      "noPermission": "Sinulla ei ole oikeutta tarkastella profiileja.",
+      "label": "Nimike",
+      "optimizers": "Optimoijat",
+      "optimizersHint": "Vedä muuttaaksesi järjestystä, kytke ottaaksesi käyttöön. Ne suoritetaan järjestyksessä ylhäältä alas.",
+      "createProfile": "Luo profiili",
+      "saveProfile": "Tallenna profiili",
+      "cancel": "Peruuta",
+      "copySuffix": "{{label}} kopio",
+      "labelPlaceholders": {
+        "routing": "esim. Oma tasapainotettu reititys",
+        "optimizer": "esim. Oma kehotteen leikkaaja",
+        "security": "esim. Omat tiukat suojakaiteet"
+      },
+      "errors": {
+        "notFound": "Profiilia ei löytynyt.",
+        "loadFailed": "Profiilin lataaminen epäonnistui",
+        "saveFailed": "Profiilin tallentaminen epäonnistui"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Takaisin yhdistämiseen",
+    "title": "Yhdistä",
+    "docs": "Dokumentaatio",
+    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
+    "noClientPrefix": "Ei asiakasta nimellä",
+    "errors": {
+      "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Nopein: yksi komento",
+      "description": "Suorita se koneella, jossa {{client}} on asennettuna. Se kirjoittaa tiedostoon {{configPath}}, säilyttäen varmuuskopion, jonka voit kumota."
+    },
+    "byHand": {
+      "titleAlt": "Tai määritä käsin",
+      "titleUi": "Määritä käsin",
+      "titleConfigFile": "Määritä asetustiedosto",
+      "setValuesIn": "Aseta nämä arvot tiedostoon {{configPath}}.",
+      "putThisIn": "Lisää tämä",
+      "replaceToken": "Korvaa",
+      "withRouterToken": "reitittimen tokenilla:",
+      "createOne": "luo yksi",
+      "onRoutersPage": "Reitittimet-sivulla.",
+      "modelLabel": "Malli:",
+      "modelHint": "antaa valinnan Routerlylle, mikä tahansa mallitunnus kohdasta",
+      "modelsLink": "Mallit",
+      "worksToo": "toimii myös.",
+      "openaiCompatHint": "Sama perus-URL, avain ja malli sopivat mihin tahansa asiakkaaseen, joka tarjoaa \"OpenAI-yhteensopivan\" palveluntarjoajan."
+    },
+    "mcp": {
+      "title": "MCP-palvelin",
+      "description": "Erillinen yllä olevista vaiheista: tämä antaa {{client}}:lle mahdollisuuden kutsua Routerlyn työkaluja. Se tarvitsee henkilökohtaisen MCP-tokenin, joka luodaan",
+      "orFromYour": "tai omasta",
+      "profileLink": "profiilistasi"
+    },
+    "checkItWorked": {
+      "title": "Tarkista, että se toimi",
+      "restart": "Käynnistä {{client}} uudelleen, lähetä sille kehote, ja katso sitten kutsua kohdasta",
+      "usageLink": "Käyttö",
+      "cliReports": "Samalta koneelta CLI ilmoittaa löytämänsä:"
+    }
+  },
+  "connect": {
+    "title": "Yhdistä",
+    "subtitle": "Osoita AI-koodausasiakas tähän yhdyskäytävään. Valitse asiakas nähdäksesi sen käyttöönottovaiheet.",
+    "llmLabel": "LLM",
+    "llmDescription": "reitittää sen asiakasmalliliikenteen Routerlyn läpi.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "lataa Routerlyn työkalupalvelimeksi sen sisään.",
+    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
+    "errors": {
+      "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Yksi komento",
+      "hint": "CLI kirjoittaa asetustiedoston puolestasi, varmuuskopion kanssa, jonka voit kumota."
+    },
+    "byHand": {
+      "title": "Käsin",
+      "hint": "Kopioi katkelma asiakassivulta sen asetuksiin ja käynnistä se uudelleen."
+    },
+    "endpoint": {
+      "title": "Osoita mikä tahansa asiakas tähän",
+      "description": "Kaikki OpenAI- tai Anthropic-SDK:hon perustuva toimii vaihtamalla perus-URL:in ja avaimen. Mikään muu ei muutu: pyynnöt ja vastaukset kulkevat Routerlyn läpi sellaisinaan.",
+      "openaiBaseUrl": "OpenAI-perus-URL",
+      "anthropicBaseUrl": "Anthropic-perus-URL",
+      "apiKey": "API-avain",
+      "model": "Malli",
+      "apiKeyDescription": "Reitittimen token, lähetettynä",
+      "or": "tai",
+      "createOne": "Luo yksi",
+      "onRoutersPage": "Reitittimet-sivulla.",
+      "modelDescription": "antaa Routerlyn valita. Mikä tahansa mallitunnus",
+      "modelsLink": "Mallit",
+      "worksToo": "-sivulta toimii myös."
+    }
+  }
+}

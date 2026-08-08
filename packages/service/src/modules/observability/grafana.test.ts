@@ -7,7 +7,7 @@ const { mockFetch, mockBudgetRatio } = vi.hoisted(() => ({
 vi.stubGlobal('fetch', mockFetch);
 vi.mock('./metrics-snapshot.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./metrics-snapshot.js')>();
-  return { ...actual, projectBudgetRatio: mockBudgetRatio };
+  return { ...actual, routerBudgetRatio: mockBudgetRatio };
 });
 
 import { pushGrafana } from './grafana.js';
@@ -23,14 +23,14 @@ const integration = {
 
 const snapshot = {
   agg: {
-    requests: new Map([['k', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 2 }]]),
+    requests: new Map([['k', { labels: { router: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 2 }]]),
     tokens: new Map(),
     cost: new Map(),
     durations: new Map(),
   },
-  projectName: (id: string) => id,
+  routerName: (id: string) => id,
   modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
-  projects: [],
+  routers: [],
   models: [],
 };
 
@@ -60,20 +60,20 @@ describe('pushGrafana', () => {
     await expect(pushGrafana(integration, snapshot)).rejects.toThrow('grafana down');
   });
 
-  it('includes token, cost, duration and budget lines when maps/projects are non-empty', async () => {
+  it('includes token, cost, duration and budget lines when maps/routers are non-empty', async () => {
     mockFetch.mockResolvedValue({ ok: true });
     mockBudgetRatio.mockResolvedValue(0.5);
 
     const richSnapshot = {
       agg: {
-        requests: new Map([['r', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 2 }]]),
-        tokens: new Map([['t', { labels: { project: 'P', model: 'M', provider: 'openai', type: 'input' }, value: 100 }]]),
-        cost: new Map([['c', { labels: { project: 'P', model: 'M', provider: 'openai' }, value: 0.005 }]]),
-        durations: new Map([['d', { labels: { project: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
+        requests: new Map([['r', { labels: { router: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 2 }]]),
+        tokens: new Map([['t', { labels: { router: 'P', model: 'M', provider: 'openai', type: 'input' }, value: 100 }]]),
+        cost: new Map([['c', { labels: { router: 'P', model: 'M', provider: 'openai' }, value: 0.005 }]]),
+        durations: new Map([['d', { labels: { router: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
       },
-      projectName: (id: string) => id,
+      routerName: (id: string) => id,
       modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
-      projects: [{ id: 'proj1', name: 'Project One', models: [] } as unknown as import('@routerly/shared').ProjectConfig],
+      routers: [{ id: 'proj1', name: 'Router One', models: [] } as unknown as import('@routerly/shared').RouterConfig],
       models: [],
     };
 

@@ -22,7 +22,7 @@ import { llmPolicy } from './policies/llm.js'
 import { fairnessPolicy } from './policies/fairness.js'
 import { InMemoryResilienceStore } from '../resilience/store.js'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
-import type { ModelConfig, ProjectConfig } from '@routerly/shared'
+import { PASSTHROUGH_MODEL_ID, type ModelConfig, type RouterConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
 
@@ -51,7 +51,7 @@ function makeModel(id: string, provider: ModelConfig['provider'] = 'openai'): Mo
   }
 }
 
-function makeProject(modelIds: string[], policies: any[] = []): ProjectConfig {
+function makeRouter(modelIds: string[], policies: any[] = []): RouterConfig {
   return {
     id: 'proj-1', name: 'Test', tokens: [], members: [],
     models: modelIds.map(id => ({ modelId: id })),
@@ -62,21 +62,21 @@ function makeProject(modelIds: string[], policies: any[] = []): ProjectConfig {
 const request: any = { model: 'auto', messages: [{ role: 'user', content: 'Hi' }] }
 
 describe('routeRequest', () => {
-  it('throws when project has no models', async () => {
+  it('throws when router has no models', async () => {
     mockModels([makeModel('gpt-4')])
-    await expect(routeRequest(request, makeProject([]))).rejects.toThrow('no_models_available')
+    await expect(routeRequest(request, makeRouter([]))).rejects.toThrow('no_models_available')
   })
 
   it('throws when referenced models not found in registry', async () => {
     mockModels([]) // no models in registry
-    await expect(routeRequest(request, makeProject(['nonexistent']))).rejects.toThrow('no_models_available')
+    await expect(routeRequest(request, makeRouter(['nonexistent']))).rejects.toThrow('no_models_available')
   })
 
   it('throws when all models exceed budget limits', async () => {
     mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(false)
     mockGetViolatedLimits.mockResolvedValue([])
-    await expect(routeRequest(request, makeProject(['m1', 'm2']))).rejects.toThrow('all_models_limits_exceeded')
+    await expect(routeRequest(request, makeRouter(['m1', 'm2']))).rejects.toThrow('all_models_limits_exceeded')
   })
 
   it('bypasses policies when only one valid model exists', async () => {
@@ -86,7 +86,7 @@ describe('routeRequest', () => {
       .mockResolvedValueOnce(true)  // m2 valid
     mockGetViolatedLimits.mockResolvedValue([])
 
-    const result = await routeRequest(request, makeProject(['m1', 'm2']))
+    const result = await routeRequest(request, makeRouter(['m1', 'm2']))
     expect(result.models).toHaveLength(1)
     expect(result.models[0]!.model).toBe('m2')
     expect(result.models[0]!.weight).toBe(1)
@@ -102,8 +102,8 @@ describe('routeRequest', () => {
       ],
     })
 
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    const result = await routeRequest(request, project)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const result = await routeRequest(request, router)
     expect(result.models).toHaveLength(2)
     expect(result.models[0]!.model).toBe('m1')
     expect(result.models[0]!.weight).toBeGreaterThan(result.models[1]!.weight)
@@ -117,10 +117,10 @@ describe('routeRequest', () => {
       excludes: ['no-vision'],
     })
 
-    const project = makeProject(['no-vision', 'has-vision'], [
+    const router = makeRouter(['no-vision', 'has-vision'], [
       { type: 'capability', enabled: true },
     ])
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models.map(m => m.model)).not.toContain('no-vision')
     expect(result.models.map(m => m.model)).toContain('has-vision')
   })
@@ -133,18 +133,18 @@ describe('routeRequest', () => {
       excludes: ['m1', 'm2'],
     })
 
-    const project = makeProject(['m1', 'm2'], [{ type: 'capability', enabled: true }])
-    await expect(routeRequest(request, project)).rejects.toThrow('all_models_excluded_by_policies')
+    const router = makeRouter(['m1', 'm2'], [{ type: 'capability', enabled: true }])
+    await expect(routeRequest(request, router)).rejects.toThrow('all_models_excluded_by_policies')
   })
 
   it('skips disabled policies', async () => {
     mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
 
-    const project = makeProject(['m1', 'm2'], [
+    const router = makeRouter(['m1', 'm2'], [
       { type: 'cheapest', enabled: false },
     ])
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     // No active policy → random selection among both models
     expect(result.models).toHaveLength(2)
   })
@@ -153,10 +153,10 @@ describe('routeRequest', () => {
     mockModels([makeModel('m1'), makeModel('m2')])
     mockIsAllowed.mockResolvedValue(true)
 
-    const project = makeProject(['m1', 'm2'], [
+    const router = makeRouter(['m1', 'm2'], [
       { type: 'unknown-policy-xyz', enabled: true },
     ])
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models).toHaveLength(2)
   })
 
@@ -168,21 +168,21 @@ describe('routeRequest', () => {
     })
 
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, undefined, emit)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, undefined, emit)
     expect(emit).toHaveBeenCalled()
     const messages = emit.mock.calls.map((c: any) => c[0].message)
     expect(messages).toContain('router:intake')
     expect(messages).toContain('router:result')
   })
 
-  it('logs warning when project references missing model IDs', async () => {
+  it('logs warning when router references missing model IDs', async () => {
     mockModels([makeModel('m1')]) // m2 missing
     mockIsAllowed.mockResolvedValue(true)
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    const project = makeProject(['m1', 'missing-m2'])
-    await routeRequest(request, project, log)
+    const router = makeRouter(['m1', 'missing-m2'])
+    await routeRequest(request, router, log)
     expect(log.warn).toHaveBeenCalledWith(
       expect.objectContaining({ missingModelIds: ['missing-m2'] }),
       expect.any(String),
@@ -197,12 +197,12 @@ describe('routeRequest', () => {
       routing: [{ model: 'm1', point: 0.7 }, { model: 'm2', point: 0.3 }],
     })
 
-    const project = makeProject(['m1', 'm2'], [
+    const router = makeRouter(['m1', 'm2'], [
       { type: 'llm', enabled: true, config: {} },
       { type: 'cheapest', enabled: true },
     ])
     // Should not throw — failed policies are logged and skipped
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models).toHaveLength(2)
   })
 
@@ -216,12 +216,12 @@ describe('routeRequest', () => {
       routing: [{ model: 'cheap', point: 0.5 }, { model: 'expensive', point: 0.5 }],
     })
 
-    const project = makeProject(['cheap', 'expensive'], [
+    const router = makeRouter(['cheap', 'expensive'], [
       { type: 'cheapest', enabled: true },   // weight 2 (first of 2)
       { type: 'fairness', enabled: true },   // weight 1 (second of 2, all equal → abstain)
     ])
 
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models[0]!.model).toBe('cheap')
   })
 
@@ -232,8 +232,8 @@ describe('routeRequest', () => {
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
     })
 
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    const result = await routeRequest(request, project)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const result = await routeRequest(request, router)
     expect(result.trace).toBeDefined()
     expect(result.trace.length).toBeGreaterThan(0)
   })
@@ -245,7 +245,7 @@ describe('routeRequest', () => {
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
     })
 
-    const project = makeProject(['m1', 'm2'], [
+    const router = makeRouter(['m1', 'm2'], [
       {
         type: 'cheapest', enabled: true,
         config: {
@@ -256,7 +256,7 @@ describe('routeRequest', () => {
       },
     ])
     const emit = vi.fn()
-    await routeRequest(request, project, undefined, emit)
+    await routeRequest(request, router, undefined, emit)
     const policiesEntry = emit.mock.calls.find((c: any) => c[0].message === 'router:policies')
     expect(policiesEntry).toBeDefined()
     const config = policiesEntry![0].details.policies[0].config
@@ -273,8 +273,8 @@ describe('routeRequest', () => {
     })
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, log)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, log)
     expect(log.info).toHaveBeenCalledWith(
       expect.objectContaining({ final: expect.any(Array) }),
       'routing: result',
@@ -287,8 +287,8 @@ describe('routeRequest', () => {
 
     // argmaxSelector's allAbstained branch: idx = floor(rng() * n). rng=0.9, n=2 -> idx=1 -> m2 picked first.
     const spy = vi.spyOn(Math, 'random').mockReturnValue(0.9)
-    const project = makeProject(['m1', 'm2'], [])
-    const result = await routeRequest(request, project)
+    const router = makeRouter(['m1', 'm2'], [])
+    const result = await routeRequest(request, router)
 
     expect(result.models).toHaveLength(2)
     expect(result.models[0]!.model).toBe('m2')
@@ -305,8 +305,8 @@ describe('routeRequest', () => {
     })
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    const project = makeProject(['no-vision', 'has-vision'], [{ type: 'capability', enabled: true }])
-    const result = await routeRequest(request, project, log)
+    const router = makeRouter(['no-vision', 'has-vision'], [{ type: 'capability', enabled: true }])
+    const result = await routeRequest(request, router, log)
     expect(result.models.map(m => m.model)).toContain('has-vision')
     // policyExcludes.size > 0 path exercised
     const resultCall = log.info.mock.calls.find((c: any) => c[1] === 'routing: result')
@@ -315,18 +315,18 @@ describe('routeRequest', () => {
 
   // ── New tests targeting uncovered branches ─────────────────────────────────
 
-  it('line 56: handles project with undefined policies field (uses ?? [])', async () => {
-    // ProjectConfig.policies is undefined → falls back to []
+  it('line 56: handles router with undefined policies field (uses ?? [])', async () => {
+    // RouterConfig.policies is undefined → falls back to []
     mockModels([makeModel('m1')])
     mockIsAllowed.mockResolvedValue(true)
 
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [{ modelId: 'm1' }],
       // policies omitted / undefined
     } as any
 
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models).toHaveLength(1)
     expect(result.models[0]!.model).toBe('m1')
   })
@@ -338,7 +338,7 @@ describe('routeRequest', () => {
       routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.1 }],
     })
 
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [
         { modelId: 'm1', prompt: 'You are helpful.', thresholds: { daily: 10, monthly: 100 } },
@@ -347,7 +347,7 @@ describe('routeRequest', () => {
       policies: [{ type: 'cheapest', enabled: true }],
     }
 
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models).toHaveLength(2)
     expect(result.models[0]!.model).toBe('m1')
   })
@@ -360,7 +360,7 @@ describe('routeRequest', () => {
     const emit = vi.fn()
 
     // single model → bypass path, intake entry is emitted
-    await routeRequest(requestNoMessages, makeProject(['m1']), undefined, emit)
+    await routeRequest(requestNoMessages, makeRouter(['m1']), undefined, emit)
 
     const intakeCall = emit.mock.calls.find((c: any) => c[0].message === 'router:intake')
     expect(intakeCall).toBeDefined()
@@ -375,7 +375,7 @@ describe('routeRequest', () => {
       .mockResolvedValueOnce(true)  // m2 allowed
     mockGetViolatedLimits.mockResolvedValue([])
 
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [
         { modelId: 'm1' },
@@ -384,7 +384,7 @@ describe('routeRequest', () => {
       policies: [],
     }
 
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models).toHaveLength(1)
     expect(result.models[0]!.model).toBe('m2')
     expect(result.models[0]!.prompt).toBe('Be concise.')
@@ -400,9 +400,9 @@ describe('routeRequest', () => {
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     const emit = vi.fn()
     const token: any = { id: 'tok-1', name: 'Test Token' }
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
 
-    await routeRequest(request, project, log, emit, token, 'trace-abc', 'conv-xyz')
+    await routeRequest(request, router, log, emit, token, 'trace-abc', 'conv-xyz')
 
     // Policy should have been called with token, traceId, conversationId spread in
     expect(mockCheapestPolicy).toHaveBeenCalledWith(
@@ -423,10 +423,10 @@ describe('routeRequest', () => {
     mockCheapestPolicy.mockRejectedValue('plain string error')
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
 
     // Should not throw — failed policy is logged and skipped
-    const result = await routeRequest(request, project, log)
+    const result = await routeRequest(request, router, log)
     expect(result.models).toHaveLength(2)
     // The non-Error branch logs the string via String()
     expect(log.info).toHaveBeenCalledWith(
@@ -447,8 +447,8 @@ describe('routeRequest', () => {
     })
 
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, undefined, emit)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, undefined, emit)
 
     // Find the policy:result emit entry for cheapest
     const policyResultCall = emit.mock.calls.find(
@@ -470,8 +470,8 @@ describe('routeRequest', () => {
     })
 
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, undefined, emit)
+    const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, undefined, emit)
 
     const policyResultCall = emit.mock.calls.find(
       (c: any) => c[0].message === 'policy:result:cheapest',
@@ -492,8 +492,8 @@ describe('routeRequest', () => {
       ],
     })
 
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    const result = await routeRequest(request, project)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const result = await routeRequest(request, router)
     // m1 gets effective 0.5, m2 gets 0.0 → m1 should win
     expect(result.models[0]!.model).toBe('m1')
   })
@@ -510,8 +510,8 @@ describe('routeRequest', () => {
       // m3 not in routing → no accumulation → defaults to 0
     })
 
-    const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
-    const result = await routeRequest(request, project)
+    const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+    const result = await routeRequest(request, router)
     // m1 (score 0.9) ranks first, m3 (missing → 0.5 fallback) ranks second, m2 (0.1) ranks last.
     // Post-selector weight is rank-based (n - idx), not the raw score.
     expect(result.models).toHaveLength(3)
@@ -533,8 +533,8 @@ describe('routeRequest', () => {
     })
 
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, undefined, emit)
+    const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, undefined, emit)
 
     const recapCall = emit.mock.calls.find((c: any) => c[0].message === 'router:recap')
     expect(recapCall).toBeDefined()
@@ -564,7 +564,7 @@ describe('routeRequest', () => {
       routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.1 }],
     })
 
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [
         { modelId: 'm1', prompt: 'You are a coder.' },
@@ -573,7 +573,7 @@ describe('routeRequest', () => {
       policies: [{ type: 'cheapest', enabled: true }],
     }
 
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     expect(result.models[0]!.model).toBe('m1')
     expect(result.models[0]!.prompt).toBe('You are a coder.')
     expect(result.models[1]!.prompt).toBeUndefined()
@@ -591,8 +591,8 @@ describe('routeRequest', () => {
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    const result = await routeRequest(request, project, log, emit)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const result = await routeRequest(request, router, log, emit)
     spy.mockRestore()
 
     // log.info for 'routing: result' should include tied
@@ -631,11 +631,11 @@ describe('routeRequest', () => {
     })
 
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2', 'm3'], [
+    const router = makeRouter(['m1', 'm2', 'm3'], [
       { type: 'cheapest', enabled: true },
       { type: 'capability', enabled: true },
     ])
-    await routeRequest(request, project, undefined, emit)
+    await routeRequest(request, router, undefined, emit)
 
     const recapCall = emit.mock.calls.find((c: any) => c[0].message === 'router:recap')
     expect(recapCall).toBeDefined()
@@ -661,9 +661,9 @@ describe('routeRequest', () => {
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+    const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
 
-    await routeRequest(request, project, log, emit)
+    await routeRequest(request, router, log, emit)
 
     // log.info should have been called for the excluded model
     const excludedInfoCall = log.info.mock.calls.find(
@@ -686,8 +686,8 @@ describe('routeRequest', () => {
     mockCheapestPolicy.mockRejectedValue(new Error('policy crash'))
 
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, undefined, emit)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, undefined, emit)
 
     const errorEmit = emit.mock.calls.find((c: any) => c[0].message === 'policy:error:cheapest')
     expect(errorEmit).toBeDefined()
@@ -704,8 +704,8 @@ describe('routeRequest', () => {
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, log, emit)
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, log, emit)
 
     // emit should include router:abstained
     const abstainedEmit = emit.mock.calls.find((c: any) => c[0].message === 'router:abstained')
@@ -730,8 +730,8 @@ describe('routeRequest', () => {
 
     const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
     const emit = vi.fn()
-    const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
-    await routeRequest(request, project, log, emit)
+    const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+    await routeRequest(request, router, log, emit)
 
     const excludesEmit = emit.mock.calls.find((c: any) => c[0].message === 'router:excludes')
     expect(excludesEmit).toBeDefined()
@@ -751,7 +751,7 @@ describe('routeRequest', () => {
     })
 
     const longPrompt = 'A'.repeat(130)
-    const project: ProjectConfig = {
+    const router: RouterConfig = {
       id: 'proj-1', name: 'Test', tokens: [], members: [],
       models: [
         { modelId: 'm1', prompt: longPrompt },
@@ -761,7 +761,7 @@ describe('routeRequest', () => {
     }
 
     const emit = vi.fn()
-    await routeRequest(request, project, undefined, emit)
+    await routeRequest(request, router, undefined, emit)
 
     const resultCalls = emit.mock.calls.filter((c: any) => c[0].message === 'router:result')
     const finalResultCall = resultCalls[resultCalls.length - 1]
@@ -780,12 +780,12 @@ describe('routeRequest', () => {
       routing: [{ model: 'm1', point: 0.8 }, { model: 'm2', point: 0.4 }],
     })
 
-    const project = makeProject(['m1', 'm2'], [
+    const router = makeRouter(['m1', 'm2'], [
       { type: 'cheapest', enabled: true, config: null },
     ])
     const emit = vi.fn()
     // Should not throw even with null config
-    await expect(routeRequest(request, project, undefined, emit)).resolves.toBeDefined()
+    await expect(routeRequest(request, router, undefined, emit)).resolves.toBeDefined()
   })
 
   it('same model excluded by two policies → excludeReasons has(id) already (line 237 if branch=1)', async () => {
@@ -795,11 +795,11 @@ describe('routeRequest', () => {
     mockCheapestPolicy.mockResolvedValue({ routing: [], excludes: ['m1'] })
     mockCapabilityPolicy.mockResolvedValue({ routing: [], excludes: ['m1'] })
 
-    const project = makeProject(['m1', 'm2'], [
+    const router = makeRouter(['m1', 'm2'], [
       { type: 'cheapest', enabled: true },
       { type: 'capability', enabled: true },
     ])
-    const result = await routeRequest(request, project)
+    const result = await routeRequest(request, router)
     // m1 excluded, m2 is only candidate
     expect(result.models[0]!.model).toBe('m2')
   })
@@ -816,9 +816,9 @@ describe('routeRequest', () => {
       excludes: ['m1'],
     })
 
-    const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+    const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
     const emit = vi.fn()
-    const result = await routeRequest(request, project, undefined, emit)
+    const result = await routeRequest(request, router, undefined, emit)
 
     // m1 excluded, m2 is the only scoring candidate
     // Policy routing was only for m1 (excluded) → eligible=[]] → abstain
@@ -838,8 +838,8 @@ describe('routeRequest', () => {
       const store = new InMemoryResilienceStore()
       for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
 
-      const project = makeProject(['m1', 'm2'])
-      const result = await routeRequest(request, project, undefined, undefined, undefined, undefined, undefined, store)
+      const router = makeRouter(['m1', 'm2'])
+      const result = await routeRequest(request, router, undefined, undefined, undefined, undefined, undefined, store)
 
       expect(result.models.map(m => m.model)).not.toContain('m1')
       expect(result.models.map(m => m.model)).toContain('m2')
@@ -853,8 +853,8 @@ describe('routeRequest', () => {
       for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
 
       const emit = vi.fn()
-      const project = makeProject(['m1', 'm2'])
-      const result = await routeRequest(request, project, undefined, emit, undefined, undefined, undefined, store)
+      const router = makeRouter(['m1', 'm2'])
+      const result = await routeRequest(request, router, undefined, emit, undefined, undefined, undefined, store)
 
       const emittedEntry = emit.mock.calls.map((c: any) => c[0]).find((e: any) => e.message === 'resilience:excluded')
       expect(emittedEntry).toBeDefined()
@@ -871,8 +871,8 @@ describe('routeRequest', () => {
       mockIsAllowed.mockResolvedValue(true)
 
       const emit = vi.fn()
-      const project = makeProject(['m1', 'm2'])
-      const result = await routeRequest(request, project, undefined, emit)
+      const router = makeRouter(['m1', 'm2'])
+      const result = await routeRequest(request, router, undefined, emit)
 
       expect(result.models.map(m => m.model)).toContain('m1')
       expect(emit.mock.calls.map((c: any) => c[0].message)).not.toContain('resilience:excluded')
@@ -886,8 +886,8 @@ describe('routeRequest', () => {
       for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
       for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'anthropic' }, { category: 'server' })
 
-      const project = makeProject(['m1', 'm2'])
-      const result = await routeRequest(request, project, undefined, undefined, undefined, undefined, undefined, store)
+      const router = makeRouter(['m1', 'm2'])
+      const result = await routeRequest(request, router, undefined, undefined, undefined, undefined, undefined, store)
 
       expect(result.models).toHaveLength(1)
     })
@@ -901,8 +901,8 @@ describe('routeRequest', () => {
 
       const store = new InMemoryResilienceStore() // no faults recorded — everything available
       const emit = vi.fn()
-      const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-      const result = await routeRequest(request, project, undefined, emit, undefined, undefined, undefined, store)
+      const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, router, undefined, emit, undefined, undefined, undefined, store)
 
       expect(result.models.map(m => m.model).sort()).toEqual(['m1', 'm2'])
       expect(emit.mock.calls.map((c: any) => c[0].message)).not.toContain('resilience:excluded')
@@ -918,8 +918,8 @@ describe('routeRequest', () => {
       const store = new InMemoryResilienceStore()
       for (let i = 0; i < 5; i++) store.record({ level: 'provider', id: 'openai' }, { category: 'server' })
 
-      const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
-      const result = await routeRequest(request, project, undefined, undefined, undefined, undefined, undefined, store)
+      const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, router, undefined, undefined, undefined, undefined, undefined, store)
 
       // m1 excluded by resilience, m2/m3 remain → full policy-scoring path (2+ candidates), not the bypass.
       expect(result.models.map(m => m.model).sort()).toEqual(['m2', 'm3'])
@@ -939,8 +939,8 @@ describe('routeRequest', () => {
         ],
       })
 
-      const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
-      const result = await routeRequest(request, project)
+      const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, router)
 
       // Default profile has no profileId set → ephemeral default (selector: 'argmax'), ordering by score desc.
       expect(result.models.map(m => m.model)).toEqual(['m1', 'm2', 'm3'])
@@ -956,8 +956,8 @@ describe('routeRequest', () => {
 
       // argmaxSelector's allAbstained branch: idx = floor(rng() * n). rng=0.5, n=3 -> idx=1 -> m2 picked first.
       const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
-      const project = makeProject(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: false }])
-      const result = await routeRequest(request, project)
+      const router = makeRouter(['m1', 'm2', 'm3'], [{ type: 'cheapest', enabled: false }])
+      const result = await routeRequest(request, router)
       spy.mockRestore()
 
       expect(result.models).toHaveLength(3)
@@ -969,8 +969,8 @@ describe('routeRequest', () => {
       mockIsAllowed.mockResolvedValue(true)
 
       const emit = vi.fn()
-      const project = makeProject(['m1'])
-      const result = await routeRequest(request, project, undefined, emit)
+      const router = makeRouter(['m1'])
+      const result = await routeRequest(request, router, undefined, emit)
 
       expect(result.models).toEqual([{ model: 'm1', weight: 1 }])
       const messages = emit.mock.calls.map((c: any) => c[0].message)
@@ -985,8 +985,8 @@ describe('routeRequest', () => {
       })
 
       const emit = vi.fn()
-      const project = makeProject(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
-      const result = await routeRequest(request, project, undefined, emit)
+      const router = makeRouter(['m1', 'm2'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, router, undefined, emit)
 
       const profileCall = emit.mock.calls.find((c: any) => c[0].message === 'router:profile')
       expect(profileCall).toBeDefined()
@@ -997,6 +997,50 @@ describe('routeRequest', () => {
       })
       // Also present in the returned trace array (not just via emit).
       expect(result.trace.find(e => e.message === 'router:profile')).toBeDefined()
+    })
+  })
+
+  describe('passthrough sentinel exclusion (PR-E, AC8)', () => {
+    it('never reaches a policy\'s candidates on a mixed sentinel+real-model list', async () => {
+      mockModels([makeModel('m1'), makeModel('m2')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({
+        routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.3 }],
+      })
+
+      const router = makeRouter([PASSTHROUGH_MODEL_ID, 'm1', 'm2'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, router)
+
+      const call = mockCheapestPolicy.mock.calls[0]![0] as { candidates: { model: ModelConfig }[] }
+      expect(call.candidates.map(c => c.model.id)).toEqual(['m1', 'm2'])
+      expect(call.candidates.map(c => c.model.id)).not.toContain(PASSTHROUGH_MODEL_ID)
+      expect(result.models.map(m => m.model)).not.toContain(PASSTHROUGH_MODEL_ID)
+    })
+
+    it('never counts the sentinel toward missingModelIds', async () => {
+      mockModels([makeModel('m1')])
+      mockIsAllowed.mockResolvedValue(true)
+      const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+
+      const router = makeRouter([PASSTHROUGH_MODEL_ID, 'm1'])
+      await routeRequest(request, router, log)
+
+      expect(log.warn).not.toHaveBeenCalled()
+    })
+
+    it('does not throw no_models_available when a sentinel-only list also has a real model', async () => {
+      mockModels([makeModel('m1')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const router = makeRouter([PASSTHROUGH_MODEL_ID, 'm1'])
+      const result = await routeRequest(request, router)
+
+      expect(result.models).toEqual([{ model: 'm1', weight: 1 }])
+      expect(mockIsAllowed).not.toHaveBeenCalledWith(
+        expect.objectContaining({ id: PASSTHROUGH_MODEL_ID }),
+        expect.anything(),
+        expect.anything(),
+      )
     })
   })
 })

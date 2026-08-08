@@ -13,9 +13,48 @@ the change itself — never reconstructed after the fact. See
 
 ### New features
 
+**Router, Orchestrator, and Passthrough kinds**
+Projects are now Routers throughout the management API, CLI, dashboard, configuration, and usage records. A Router can be a standard model router, an Orchestrator that selects among candidate Routers, ordered by priority, with optional per-candidate limits, or a Passthrough Router that forwards requests unchanged with the client's upstream credential.
+
+**Dashboard localization (41 languages)**
+The dashboard now ships with 41 language catalogs (English plus 40 more, including Arabic, Hebrew, and Urdu with RTL layout), selectable per-account from a quick-access selector in the sidebar or from Profile → Preferences, and persisted server-side. Administrators can set an instance-wide default language (Settings → General → Internationalization, `defaultLanguage` in the management API, `routerly service configure --default-language`) used for any user who hasn't picked their own yet — the resolution order is personal choice, then browser locale, then the instance default, then English. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
+
+**Routers list grouped by kind**
+The Routers list now has tabs (Router / Orchestrator / Passthrough) filtering by `RouterKind`. There is no "All" tab — an aggregate view added no filtering value once every router already belongs to exactly one kind.
+
+**Dedicated creation form per router kind**
+Creating a Router, Orchestrator, or Passthrough no longer goes through one shared form with a kind dropdown. Each non-"All" tab on the Routers list has its own "New <Kind>" button that opens a form dedicated to that kind — the kind is fixed by which button was clicked, never chosen from a selector. Editing an existing router's General tab shows its kind as a fixed, read-only label; `kind` is never sent on save. Orchestrator creation stays two steps: create with name and timeout, then add candidate routers on the Orchestrator tab.
+
+**`performance` and `budget-remaining` as Orchestrator routing policies**
+Orchestrators can now use the `performance` and `budget-remaining` policies alongside `health`/`rate-limit`/`fairness`, scored against candidate Routers instead of models. The shared decay/ratio scoring math these five policies and their Router-side equivalents both need was extracted into one internal module reused by both scoring paths — an internal refactor with no behavior change for existing policies.
+
+**Drag-to-reorder Orchestrator candidates**
+Orchestrator candidate Routers are now reordered by drag-and-drop instead of a numeric weight input; the candidate picker no longer shows the router's raw ID.
+
+**Real target models alongside a Passthrough router's pass-through entry**
+A Passthrough router's model list can now hold real target models alongside its fixed, non-deletable pass-through entry, in one ordered array — the pass-through entry is inserted automatically on creation and cannot be removed or duplicated, but real models can be added, removed, and reordered around it from the dashboard (`RouterRoutingTab`), the CLI (`router model add`/`remove`/`set-prompt`/new `router model reorder`), and the management API. Existing Passthrough routers are migrated automatically on first start to gain the pass-through entry. Execution wiring — actually routing to those real models — ships in a follow-up; this change is the config/CLI/dashboard surface only.
+
+**Execution wiring for a Passthrough router's real target models** (follow-up to the above)
+A Passthrough router's real target models now route, authenticate, and meter exactly like a normal router: same policy scoring, same budget/limit enforcement, same usage tracking. A Routerly bearer token is issued the moment the router has its first real model configured and revoked the moment the last one is removed; the pass-through entry itself keeps its existing unauthenticated, budget-exempt raw-forward behavior. The pass-through entry's position in the model list decides the router's default outcome: at index 0 (ahead of every real model), raw-forward always wins and real models are never scored; anywhere else, real models are scored and routed normally and the pass-through entry is used only as a last-resort fallback when none of them are eligible. On that fallback, Routerly forwards the client's own request headers unchanged rather than substituting a provider credential, so a client authenticating only with its Routerly token should expect the upstream provider to reject the fallback request with its own `401` unless it also sends a valid upstream credential.
+
 ### Bug fixes
 
+- Secret config files (`models.json`, `connections.json`, `routers.json`, `users.json`) no longer revert to unsafe file permissions on every write — `writeConfig()` now preserves the `0600` mode instead of recreating the file at the umask default, which previously re-tripped the startup permission guard on the very next write after a fix.
+- The same permission reversion could still happen through `updateConfig()` (the read-modify-write path most router/model CRUD routes use, including every add/remove/reorder on a router's model list) — `writeConfig()` was fixed but `updateConfig()` never got the matching fix, so a secret-tier file could regress to `0644` on the very next router edit. `updateConfig()` now applies the same `0600`-for-secrets / preserve-existing-mode logic `writeConfig()` uses.
+- Usage records no longer cause unbounded `usage.json` growth or an OOM kill under sustained traffic (#124) — usage is now appended to `usage.ndjson`, an append-only log with a retention sweep, instead of being rewritten in full on every request.
+- Dashboard: fixing unsafe config file permissions (from the blocking modal or from Settings → Security) now refreshes every permission-related UI on the page immediately — the top banner, the blocking modal, and the Settings section previously each polled independently and stayed stale until a manual reload.
+- Orchestrators now honor their own `health`/`rate-limit`/`fairness` routing policies (including `enabled: false` and custom windows) when scoring candidate routers, instead of always applying hardcoded defaults regardless of what was saved.
+- Creating or updating an Orchestrator now rejects (HTTP 400) any policy type outside the Orchestrator-compatible set (`health`, `rate-limit`, `fairness`, `performance`, `budget-remaining` — the ones that score a candidate Router as a whole). The other types (`cheapest`, `capability`, `context`, `llm`, `semantic-intent`, `model-preference`) pick among a pool of models, which an Orchestrator has none of; previously they were silently accepted and had no effect.
+- Dashboard: the Orchestrator's Routing tab now has a Routing Policies section (same layout as a plain Router's Routing tab, with the candidate-router list in place of target models), offering the Orchestrator-compatible policy types — the ones an Orchestrator could never configure before.
+- Passthrough routers no longer take a manual slug/path field. The `/passthrough/<slug>/...` path segment is now derived automatically from the router's name (disambiguated with a numeric suffix on collision), removing a step that duplicated the name and could conflict silently. `router create`/`router edit` drop `--slug`; the management API drops `slug` from the request body (still present, read-only, in the response).
+- Passthrough router names are now unique only among other Passthroughs, not across every router kind — a Passthrough can share its name with an existing Router or Orchestrator (it is reached by slug, never by name), while Router and Orchestrator names stay unique among themselves as before.
+- Dashboard: creating a Passthrough router now redirects straight to its General tab, instead of surfacing a spurious "Unsaved Changes" confirmation on the create form's own success redirect.
+- Dashboard: an Orchestrator's Routing tab no longer shows the "Target Models" section — that model picker had no `kind`-based guard and let a model be added to an Orchestrator, which only ever routes to candidate Routers (configured on its own Orchestrator tab), never to models directly.
+
 ### Breaking changes
+
+- The management surface uses `router` and `routers` instead of `project` and `projects`. API paths, CLI commands, dashboard routes, configuration fields, and usage fields have no backward aliases. Existing `projects.json` data migrates to `routers.json` automatically and idempotently on first start.
+- `router create --candidate`/`router edit --candidate` no longer accepts `<routerId>:<weight>` — use `--candidate <routerId>` (repeatable); order of repetition is now the priority order. The old syntax is rejected with an error naming the replacement, not silently reinterpreted.
 
 ---
 

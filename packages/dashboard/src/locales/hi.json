@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "स्वचालित",
+      "dark": "अंधकार",
+      "light": "प्रकाश"
+    },
+    "themeCycle": {
+      "title": "थीम: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "साइडबार को विस्तारित करें",
+      "collapse": "साइडबार को संकुचित करें"
+    },
+    "tagline": "एक गेटवे। कोई भी AI मॉडल। पूर्ण नियंत्रण।",
+    "nav": {
+      "overview": "अवलोकन",
+      "providers": "प्रदाता",
+      "models": "मॉडल",
+      "profiles": "प्रोफाइल",
+      "routers": "राउटर",
+      "experiments": "प्रयोग",
+      "usage": "उपयोग",
+      "playground": "परीक्षण क्षेत्र",
+      "settings": "सेटिंग्स",
+      "connectApp": "ऐप को कनेक्ट करें",
+      "help": "मदद",
+      "signOut": "साइन आउट"
+    },
+    "banner": {
+      "permissionWarning": "कुछ कॉन्फ़िगरेशन फ़ाइलों में अनुमत पहुंच है ({{files}})। स्टार्टअप और अनुरोध अभी भी काम करते हैं, लेकिन होस्ट फ़ाइल सिस्टम से इसे ठीक करें जब सुविधाजनक हो।",
+      "dismiss": "खारिज करें",
+      "updateAvailable": "Routerly v{{latest}} उपलब्ध है। आप v{{current}} पर हैं।",
+      "updateLink": "सेटिंग्स में अपडेट करें",
+      "mfaRequired": "इस उदाहरण के लिए दो-कारक प्रमाणीकरण आवश्यक है।",
+      "mfaLink": "अपनी प्रोफाइल में 2FA सेट अप करें",
+      "mfaSuffix": "अपने खाते को सुरक्षित करने के लिए।",
+      "telemetryTitle": "Routerly कभी स्वचालित रूप से डेटा नहीं भेजता।",
+      "telemetryBody": "क्या आप गुमनाम इंस्टॉल मेट्रिक्स भेजकर मदद करना चाहेंगे? केवल इवेंट प्रकार, संस्करण, प्लेटफॉर्म, और एक यादृच्छिक आईडी — कोई व्यक्तिगत डेटा नहीं, कोई आईपी नहीं।",
+      "telemetryLink": "क्या भेजा जा रहा है?",
+      "telemetryYes": "हां, मदद करें",
+      "telemetryNo": "नहीं धन्यवाद"
+    },
+    "language": {
+      "label": "भाषा"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} सेकंड पहले",
+      "secondsAgo_other": "{{count}} सेकंड पहले",
+      "minutesAgo": "{{count}} मिनट पहले",
+      "minutesAgo_other": "{{count}} मिनट पहले",
+      "hoursAgo": "{{count}} घंटा पहले",
+      "hoursAgo_other": "{{count}} घंटे पहले",
+      "daysAgo": "{{count}} दिन पहले",
+      "daysAgo_other": "{{count}} दिन पहले"
+    },
+    "confirm": "पुष्टि करें",
+    "cancel": "रद्द करें",
+    "remove": "हटाएं",
+    "select": "चुनें...",
+    "search": "खोजें...",
+    "noResults": "कोई परिणाम नहीं",
+    "noRemainingOptions": "कोई शेष विकल्प नहीं",
+    "apply": "लागू करें",
+    "saved": "सहेजा गया",
+    "showLess": "कम दिखाएं",
+    "roles": "भूमिकाएं",
+    "permissions": "अनुमतियां",
+    "notifications": {
+      "title": "सूचनाएं",
+      "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+      "empty": "कोई सूचना नहीं",
+      "viewAll": "सभी सूचनाएं देखें"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "अवधि चुनें",
+      "recent": "हाल ही में",
+      "ranges": "श्रेणियां",
+      "from": "से",
+      "to": "तक"
+    },
+    "permissionGuard": {
+      "fixFailed": "अनुमतियों को ठीक करने में विफल",
+      "title": "असुरक्षित फ़ाइल अनुमतियां",
+      "defaultMessage": "कुछ फ़ाइलों में असुरक्षित अनुमतियां हैं।",
+      "fixing": "ठीक हो रहा है...",
+      "fixNow": "अभी ठीक करें"
+    },
+    "limitRows": {
+      "noLimits": "कोई सीमा निर्धारित नहीं है।",
+      "metricLabel": "मीट्रिक",
+      "typeLabel": "प्रकार",
+      "periodLabel": "अवधि",
+      "everyLabel": "हर",
+      "maxCost": "अधिकतम लागत",
+      "maxCount": "अधिकतम गणना",
+      "maxTokens": "अधिकतम टोकन",
+      "allCombosSet": "सभी मीट्रिक/अवधि संयोजन पहले से सेट हैं",
+      "addLimit": "सीमा जोड़ें",
+      "metric": {
+        "cost": "लागत",
+        "calls": "कॉल",
+        "input_tokens": "इनपुट टोकन",
+        "output_tokens": "आउटपुट टोकन",
+        "total_tokens": "कुल टोकन"
+      },
+      "period": {
+        "hourly": "प्रति घंटा",
+        "daily": "दैनिक",
+        "weekly": "साप्ताहिक",
+        "monthly": "मासिक",
+        "yearly": "वार्षिक"
+      },
+      "rollingUnit": {
+        "second": "सेकंड",
+        "minute": "मिनट",
+        "hour": "घंटा",
+        "day": "दिन",
+        "week": "सप्ताह",
+        "month": "महीना"
+      },
+      "windowType": {
+        "period": "अवधि",
+        "rolling": "रोलिंग"
+      },
+      "fmt": {
+        "requests": "{{value}} अनुरोध",
+        "inputTokens": "{{value}} इनपुट टोकन",
+        "outputTokens": "{{value}} आउटपुट टोकन",
+        "totalTokens": "{{value}} कुल टोकन",
+        "everyRolling": "{{metric}} हर {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} प्रति {{period}}"
+      }
+    },
+    "savings": {
+      "title": "क्या राउटिंग ने बचाया",
+      "input": "इनपुट",
+      "output": "आउटपुट",
+      "actual": "वास्तविक",
+      "clientCalls": "{{count}} क्लाइंट कॉल",
+      "clientCalls_other": "{{count}} क्लाइंट कॉल",
+      "comparedAgainst": ", इसे प्रत्येक की तुलना में भेजने के विरुद्ध",
+      "comparedAgainst_other": ", उन सभी को प्रत्येक की तुलना में भेजने के विरुद्ध",
+      "paidModelsInPlay": "{{count}} भुगतान किया गया मॉडल खेल में है",
+      "paidModelsInPlay_other": "{{count}} भुगतान किए गए मॉडल खेल में हैं",
+      "metricCost": "लागत",
+      "metricTokens": "टोकन",
+      "totalCost": "कुल लागत",
+      "routed": "राउट किया गया: {{value}}",
+      "saved": "बचाया गया: {{value}}",
+      "usdThisPeriod": "इस अवधि में USD",
+      "savedVsAlways": "{{value}} बचाया गया ({{percent}}%) बनाम हमेशा {{model}}",
+      "tokens": "टोकन",
+      "in": "में: {{value}}",
+      "out": "आउट: {{value}}",
+      "tokenSubWithCache": "{{in}} में · {{out}} आउट · {{cached}} कैश किया गया",
+      "tokenSub": "{{in}} में · {{out}} आउट",
+      "cutByOptimizers": "ऑप्टिमाइज़र द्वारा {{value}} काट दिया गया",
+      "fewerThanAlways": "हमेशा {{model}}, अनुमानित से {{value}} कम"
+    },
+    "optimizerSteps": {
+      "downloaded": "डाउनलोड किया गया",
+      "thisStepRunsOn": "यह चरण चलता है",
+      "defaultCheckpoint": "डिफ़ॉल्ट चेकपॉइंट"
+    },
+    "routingPolicies": {
+      "title": "राउटिंग नीतियां",
+      "subtitle": "नीतियां निर्धारित करती हैं कि अनुरोध कैसे राउट किए जाते हैं। उन्हें ऊपर से नीचे तक क्रम में निष्पादित किया जाता है।",
+      "removePolicy": "नीति हटाएं",
+      "removeIntent": "इरादा हटाएं",
+      "removeExample": "उदाहरण हटाएं",
+      "routingModels": "राउटिंग मॉडल",
+      "embeddingModels": "एम्बेडिंग मॉडल",
+      "maxCompletionTokens": "अधिकतम पूर्णता टोकन",
+      "maxPromptChars": "अधिकतम प्रॉम्प्ट वर्ण",
+      "similarityThreshold": "समानता थ्रेशोल्ड",
+      "previousMessages": "पिछले संदेश",
+      "intents": "इरादे",
+      "confidenceThreshold": "आत्मविश्वास थ्रेशोल्ड",
+      "ambiguityMargin": "अस्पष्टता मार्जिन",
+      "maxCallsPerWindow": "प्रति विंडो अधिकतम कॉल",
+      "addFallbackModel": "फॉलबैक मॉडल जोड़ें",
+      "autoRoutingLabel": "स्वचालित राउटिंग",
+      "autoRoutingHint": "यदि सक्षम है, तो ट्रैफ़िक कस्टम प्रॉम्प्ट के बिना वितरित किया जाता है। यदि अक्षम है, तो आप विशिष्ट प्रॉम्प्ट लिख सकते हैं जो AI को निर्देश देते हैं कि प्रत्येक लक्ष्य मॉडल को कब चुनें।",
+      "additionalPromptInfoLabel": "अतिरिक्त प्रॉम्प्ट जानकारी",
+      "additionalPromptInfoPlaceholder": "राउटिंग प्रॉम्प्ट में शामिल करने के लिए अतिरिक्त निर्देश...",
+      "addExamplePlaceholder": "उदाहरण जोड़ें और एंटर दबाएं...",
+      "addIntentPlaceholder": "इरादा जोड़ें और एंटर दबाएं...",
+      "addPolicyPlaceholder": "एक नीति जोड़ें...",
+      "labels": {
+        "llm": "AI राउटिंग नीति",
+        "rate-limit": "दर सीमा नीति",
+        "budget-remaining": "बजट शेष नीति",
+        "semantic-intent": "सिमेंटिक इरादा नीति",
+        "health": "स्वास्थ्य नीति",
+        "context": "संदर्भ नीति",
+        "capability": "क्षमता नीति",
+        "performance": "प्रदर्शन नीति",
+        "fairness": "निष्पक्षता नीति",
+        "cheapest": "सबसे सस्ता नीति",
+        "model-preference": "मॉडल प्राथमिकता नीति"
+      },
+      "descriptions": {
+        "context": "उपलब्ध संदर्भ विंडो के आधार पर मॉडल को स्कोर करता है। अनुमानित अनुरोध लंबाई से छोटी संदर्भ विंडो वाले मॉडल को 0 असाइन करता है, ट्रंकेशन त्रुटियों को रोकता है।",
+        "cheapest": "मॉडल को उनके टोकन लागत के विपरीत स्कोर करता है। सबसे सस्ता मॉडल 1.0 प्राप्त करता है, सबसे महंगा 0.0 प्राप्त करता है, API व्यय को कम करने में मदद करता है।",
+        "health": "हाल की त्रुटि दर का उपयोग करके मॉडल को स्कोर करता है घातीय क्षय (हाल की त्रुटियों का अधिक वजन)। एक सर्किट ब्रेकर लागू करता है जो भारित त्रुटि दर एक महत्वपूर्ण थ्रेशोल्ड को पार करने पर स्कोर को 0 पर सेट करता है।",
+        "performance": "उनकी हाल की औसत विलंबता के आधार पर मॉडल को स्कोर करता है घातीय क्षय। सबसे तेज़ मॉडल 1.0 प्राप्त करता है, सबसे धीमा 0.0 प्राप्त करता है। हाल के डेटा के बिना मॉडल 1.0 पर डिफ़ॉल्ट होते हैं।",
+        "llm": "अनुरोध की सिमेंटिक सामग्री के आधार पर उम्मीदवारों को स्कोर करने के लिए एक AI मॉडल का उपयोग करता है। प्रति-मॉडल राउटिंग मार्गदर्शन प्रॉम्प्ट का समर्थन करता है और सीमाएं कॉन्फ़िगर होने पर बजट शेष पर विचार करता है।",
+        "capability": "कठोर फ़िल्टर: अनुरोध द्वारा आवश्यक सुविधा (दृष्टि, फ़ंक्शन कॉलिंग, JSON मोड) स्पष्ट रूप से कमी वाले मॉडल को 0 असाइन करता है। स्पष्ट क्षमता घोषणा के बिना मॉडल दंडित नहीं होते हैं।",
+        "rate-limit": "प्रदाता दर सीमा (HTTP 429) हिट करने के जोखिम को कम करने के लिए उच्च हाल की कॉल आवृत्ति वाले मॉडल को दंडित करता है। एक कॉन्फ़िगर करने योग्य कठोर थ्रेशोल्ड का समर्थन करता है जो स्कोर को 0 पर बल देता है।",
+        "fairness": "हाल ही में अधिक सफल कॉल प्राप्त करने वाले मॉडल को दंडित करके ट्रैफ़िक को समान रूप से वितरित करता है। लोड को एकल मॉडल पर केंद्रित होने से रोकने के लिए नरम राउंड-रॉबिन के रूप में कार्य करता है।",
+        "budget-remaining": "सभी कॉन्फ़िगर की गई सीमाओं में शेष बजट हेडरूम के आधार पर मॉडल को स्कोर करता है। उन मॉडलों को वरीयता देता है जिनके पास अपनी थ्रेशोल्ड से पहले अधिक कमरा है, खपत को सक्रिय रूप से फैलाता है।",
+        "semantic-intent": "एम्बेडिंग का उपयोग करके सिमेंटिक इरादे द्वारा अनुरोध को वर्गीकृत करता है, फिर उम्मीदवार पूल को उस इरादे से मैप किए गए मॉडल तक सीमित करता है। आत्मविश्वास मैच पूल को कठोरता से फ़िल्टर करते हैं; अस्पष्ट मैच शीर्ष-2 पूल को मर्ज करते हैं; अज्ञात अनुरोध सभी उम्मीदवारों को पारित करते हैं।",
+        "model-preference": "जब क्लाइंट एक विशिष्ट मॉडल का अनुरोध करता है (routerly/ada नहीं), तो उस मॉडल को एक कॉन्फ़िगर करने योग्य बोनस स्कोर प्रदान करता है। जब कोई प्राथमिकता व्यक्त नहीं की जाती है, तो नीति दूर हो जाती है। सूची में स्थिति नियंत्रित करती है कि प्राथमिकता अन्य नीतियों के विरुद्ध कितना वजन करती है।"
+      },
+      "selectModel": "मॉडल चुनें"
+    },
+    "securityRules": {
+      "applyTo": "लागू करें",
+      "streamingBufferSize": "स्ट्रीमिंग बफर आकार (वर्ण)",
+      "entityTypes": "इकाई प्रकार",
+      "target": "लक्ष्य",
+      "embeddingModel": "एम्बेडिंग मॉडल",
+      "judgeModel": "न्यायाधीश मॉडल",
+      "contentGuardrails": "सामग्री गार्डरेल",
+      "piiPolicies": "PII नीतियां",
+      "addSecurityPolicyPlaceholder": "एक सुरक्षा नीति जोड़ें...",
+      "removePolicyTooltip": "नीति हटाएं",
+      "deleteRuleAriaLabel": "नियम हटाएं",
+      "embeddingModelPlaceholder": "एम्बेडिंग मॉडल चुनें...",
+      "fallbackModelsLabel": "फॉलबैक मॉडल (वैकल्पिक, क्रम में आजमाए गए)",
+      "fallbackModelsPlaceholder": "कोई फॉलबैक मॉडल नहीं...",
+      "exampleTextsLabel": "ब्लॉक करने के लिए उदाहरण टेक्स्ट (एक प्रति पंक्ति)",
+      "exampleTextsPlaceholder": "मैं कैसे हैक कर सकता हूं...\n...",
+      "similarityThresholdLabel": "समानता थ्रेशोल्ड:",
+      "judgeModelPlaceholder": "न्यायाधीश मॉडल चुनें...",
+      "allowedTopicsLabel": "अनुमत विषय (प्राकृतिक भाषा)",
+      "allowedTopicsPlaceholder": "सॉफ़्टवेयर उत्पादों के लिए ग्राहक समर्थन। तकनीकी समस्या निवारण। बिलिंग प्रश्न।",
+      "onTopicThresholdLabel": "ब्लॉक करें यदि विषय पर स्कोर नीचे है:",
+      "harmThresholdLabel": "ब्लॉक करें यदि नुकसान का स्कोर ऊपर है:",
+      "customInstructionsLabel": "कस्टम निर्देश",
+      "customInstructionsPlaceholder": "आप एक सामग्री सुरक्षा वर्गीकरणकर्ता हैं। निम्नलिखित पाठ का हानिकारक सामग्री के लिए मूल्यांकन करें।\nश्रेणियां: नफरत भाषण, हिंसा, यौन सामग्री, आत्म-नुकसान।\nकेवल एक JSON ऑब्जेक्ट के साथ उत्तर दें: {\"score\": <0 और 1 के बीच एक संख्या>}",
+      "customInstructionsRequired": "कस्टम निर्देश आवश्यक हैं।",
+      "enabledLabel": "सक्षम",
+      "contentGuardrailsHint": "कॉन्फ़िगर की गई नियमों के विरुद्ध अनुरोध और प्रतिक्रियाओं का निरीक्षण करें। कम से कम एक नियम कॉन्फ़िगर होने पर सक्रिय।",
+      "securityPoliciesHeading": "सुरक्षा नीतियां",
+      "noSecurityPolicies": "कोई सुरक्षा नीतियां कॉन्फ़िगर नहीं हैं।",
+      "piiPoliciesHint": "व्यक्तिगत डेटा का पता लगाएं और संपादित करें। प्रत्येक नीति अनुरोध इनपुट, मॉडल प्रतिक्रिया, या दोनों को लक्षित करती है, और अपने स्वयं के इकाई सेट को नियंत्रित करती है।",
+      "noPiiPolicies": "कोई PII नीतियां कॉन्फ़िगर नहीं हैं।",
+      "addPolicyButton": "+ नीति जोड़ें",
+      "injectionWarningTitle": "इंजेक्शन द्वारा अनुरोध पेलोड संशोधित किया गया",
+      "injectionWarningBody": "एक या अधिक नियम आउटगोइंग अनुरोध के सिस्टम प्रॉम्प्ट में अपना निर्देश इंजेक्ट करते हैं, इसलिए प्रदाता को भेजा गया पेलोड संशोधित होता है। कोई अतिरिक्त मॉडल कॉल नहीं किया जाता है और कुछ भी अवरुद्ध नहीं है; सेवा प्रदान करने वाला मॉडल स्वयं निर्देश को लागू करता है।",
+      "streamingDisabledWarningTitle": "इस राउटर के लिए स्ट्रीमिंग अक्षम है",
+      "streamingDisabledWarningBody": "एक या अधिक नियम प्रतिक्रियाओं (लक्ष्य: प्रतिक्रिया या दोनों) को ब्लॉक करने के लिए कॉन्फ़िगर किए गए हैं। पूर्ण प्रतिक्रिया का निरीक्षण करने से पहले एक अवरोधन निर्णय किया जा सकता है, Routerly प्रतिक्रिया को पूर्ण रूप में रखता है इससे पहले कि इसे क्लाइंट को वापस करे। जब तक कोई प्रतिक्रिया-अवरोधन नियम सक्रिय है, स्ट्रीमिंग उपलब्ध नहीं है; क्लाइंट को पूर्ण प्रतिक्रिया बजाय वर्धमान चंक्स के बजाय एक बार में प्राप्त होगी।"
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure संसाधन नाम",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI संसाधन नाम (Azure पोर्टल से)।",
+      "deploymentId": "तैनाती आईडी",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI स्टूडियो में आपने बनाया तैनाती नाम।",
+      "azureApiVersionLabel": "API संस्करण",
+      "azureApiVersionDefaultHint": "(डिफ़ॉल्ट: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS क्षेत्र",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS एक्सेस की आईडी",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS गुप्त एक्सेस की",
+      "awsSecretAccessKeyPlaceholderExisting": "मौजूदा को रखने के लिए रिक्त छोड़ें",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/...",
+      "awsSessionTokenLabel": "सेशन टोकन",
+      "awsSessionTokenOptionalHint": "(वैकल्पिक, अस्थायी क्रेडेंशियल के लिए)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz...",
+      "gcpRouterId": "GCP राउटर आईडी",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "स्थान",
+      "gcpLocationDefaultHint": "(डिफ़ॉल्ट: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "सेवा खाता की",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "एंडपॉइंट URL",
+      "optional": "(वैकल्पिक)",
+      "webProvider": {
+        "unofficialWarningTitle": "अनौपचारिक प्रदाता - अपने जोखिम पर उपयोग करें।",
+        "unofficialWarningBody": "यह एकीकरण एक अनलेखित आंतरिक API पर निर्भर करता है जो बिना सूचना के परिवर्तित या टूट सकता है। यह प्रदाता की सेवा शर्तों का उल्लंघन कर सकता है और खाते की निलंबन का कारण बन सकता है।",
+        "accessTokenLabel": "एक्सेस टोकन",
+        "sessionTokenLabel": "सेशन टोकन",
+        "accessTokenPlaceholder": "eyJ...",
+        "sessionTokenPlaceholder": "sessionKey कुकी मान पेस्ट करें (sk-ant-sid01-...)",
+        "openaiInstructions": "ChatGPT में लॉगिन करते समय, एक नए टैब में <code>https://chatgpt.com/api/auth/session</code> खोलें। <code>accessToken</code> फ़ील्ड (जो <code>eyJ</code> से शुरू होता है) का मान कॉपी करें। टोकन हर ~24 घंटे में समाप्त हो जाता है। विश्वसनीय पहुंच के लिए, नीचे <strong>cf_clearance</strong> फ़ील्ड भी भरें।",
+        "anthropicInstructions": "<strong>अपनी सेशन की कैसे प्राप्त करें:</strong> Claude में लॉगिन करते समय, DevTools (F12) → Application → Cookies → <code>claude.ai</code> खोलें → <code>sessionKey</code> कुकी का मान कॉपी करें (<code>sk-ant-sid01-</code> से शुरू)। आपके लॉग आउट करने तक की मान्यता है।"
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "सदस्यता OAuth टोकन",
+        "authFilePathLabel": "Auth फ़ाइल पथ",
+        "oauthTokenPlaceholder": "sk-ant-oat01-...",
+        "authFilePathPlaceholder": "~/.codex/auth.json (डिफ़ॉल्ट)",
+        "anthropicTitle": "अपनी Claude Pro/Max सदस्यता का उपयोग करें।",
+        "anthropicRunCommandStep": "यह कमांड चलाएं और जो टोकन प्रिंट करता है उसे कॉपी करें:",
+        "anthropicPasteTokenStep": "नीचे <em>Subscription OAuth Token</em> फ़ील्ड में टोकन पेस्ट करें।",
+        "termsNote": "जब समाप्त हो तो पुनः जारी करें। प्रदाता के प्रयोजन हेतु गेटवे के माध्यम से सदस्यता आपके प्रदाता की सेवा शर्तों के विरुद्ध हो सकती है।",
+        "openaiTitle": "Codex ऐप के माध्यम से अपनी ChatGPT Plus/Pro सदस्यता का उपयोग करें।",
+        "openaiLoginStep": "Codex डेस्कटॉप ऐप में अपने ChatGPT Plus/Pro खाते से लॉगिन करें।",
+        "openaiAutoRefreshStep": "Routerly <code>~/.codex/auth.json</code> से आपका एक्सेस टोकन पढ़ता है और स्वचालित रूप से इसे ताज़ा करता है। कोई मैनुअल कॉपी/पेस्ट की आवश्यकता नहीं है।",
+        "openaiAuthFilePathStep": "डिफ़ॉल्ट का उपयोग करने के लिए <em>Auth फ़ाइल पथ</em> फ़ील्ड खाली छोड़ें, या यदि आपका Codex ऐप auth को कहीं और संग्रहीत करता है तो एक कस्टम पथ दर्ज करें।",
+        "openaiTermsNote": "प्रदाता के प्रयोजन हेतु गेटवे के माध्यम से सदस्यता आपके प्रदाता की सेवा शर्तों के विरुद्ध हो सकती है।"
+      },
+      "copyCode": {
+        "copiedTooltip": "कॉपी किया गया!",
+        "copyTooltip": "क्लिपबोर्ड में कॉपी करें",
+        "copiedLabel": "कॉपी किया गया",
+        "copyLabel": "कॉपी करें"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "कॉपी करें",
+      "copiedLabel": "कॉपी किया गया!",
+      "copyErrorHint": "कॉपी विफल, मैनुअली चुनें और कॉपी करें।"
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP क्लाइंट",
+      "hints": {
+        "claudeCode": "कहीं भी एक बार चलाएं। Claude Code सर्वर को <code>~/.claude.json</code> में संग्रहीत करता है।",
+        "claudeDesktop": "इसे <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> में डालें (Windows पर, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), फिर ऐप को पुनरारंभ करें। यह CLI को पुन: उत्पन्न करता है, इसलिए <code>routerly</code> आपके PATH पर होना चाहिए।",
+        "codex": "इसे <code>~/.codex/config.toml</code> में डालें। Codex पर्यावरण से टोकन पढ़ता है, इसलिए इसे शेल में निर्यात करें जहां आप Codex शुरू करते हैं।",
+        "opencode": "इसे <code>~/.config/opencode/opencode.json</code> में डालें।",
+        "openclaw": "एक बार चलाएं। OpenClaw डिफ़ॉल्ट रूप से sse परिवहन के लिए, जो Routerly परोसता नहीं है, इसलिए परिवहन स्पष्ट रूप से सेट किया गया है।",
+        "cursor": "इसे <code>~/.cursor/mcp.json</code> में डालें, या इसे एक परियोजना के लिए <code>.cursor/mcp.json</code> में स्कोप करें।",
+        "cline": "इसे <code>~/.cline/mcp.json</code> में डालें, या इसे Cline पैनल में MCP सर्वर कॉन्फ़िगर करने में पेस्ट करें।",
+        "zed": "इसे अपनी Zed <code>settings.json</code> में डालें, किसी अन्य संदर्भ सर्वर के साथ।"
+      }
+    },
+    "unsavedChanges": {
+      "title": "अप्रस्तुत परिवर्तन",
+      "message": "आपके पास अप्रस्तुत परिवर्तन हैं। यदि आप अभी छोड़ते हैं, तो आपके परिवर्तन खो जाएंगे।",
+      "stay": "रहें",
+      "leaveAnyway": "वैसे भी छोड़ दें"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "गार्डरेल",
+        "pii": "PII",
+        "optimizers": "ऑप्टिमाइज़र",
+        "routerOverhead": "राउटर ओवरहेड"
+      },
+      "policyType": {
+        "llm": "AI राउटिंग",
+        "rateLimit": "दर सीमा",
+        "budgetRemaining": "बजट शेष",
+        "semanticIntent": "सिमेंटिक इरादा",
+        "modelPreference": "मॉडल प्राथमिकता"
+      },
+      "rawDetails": "कच्चे विवरण",
+      "technicalDetails": "तकनीकी विवरण",
+      "systemPrompt": "सिस्टम प्रॉम्प्ट",
+      "responseText": "प्रतिक्रिया पाठ",
+      "responseJson": "प्रतिक्रिया JSON",
+      "cacheEmbeddingCall": "कैश एम्बेडिंग कॉल",
+      "fallbackAttempt": "फॉलबैक #{{attempt}}",
+      "embeddingModel": "एम्बेडिंग मॉडल",
+      "upstreamModel": "अपस्ट्रीम मॉडल",
+      "provider": "प्रदाता",
+      "source": "स्रोत",
+      "endpoint": "एंडपॉइंट",
+      "cacheHit": "कैश हिट",
+      "ttlExtended": "TTL विस्तारित",
+      "model": "मॉडल",
+      "similarity": "समानता",
+      "embedding": "एम्बेडिंग",
+      "cacheMiss": "कैश मिस",
+      "details": "विवरण",
+      "excludedByLimits": "सीमाओं द्वारा बहिष्कृत",
+      "finalRanking": "अंतिम रैंकिंग",
+      "noRankingData": "कोई रैंकिंग डेटा नहीं (रिकॉर्ड भ्रष्ट हो सकता है या पुराने संस्करण से हो सकता है)",
+      "policyScores": "नीति स्कोर",
+      "weight": "वजन {{value}}",
+      "allScores": "सभी स्कोर",
+      "noPolicyData": "कोई नीति डेटा नहीं (रिकॉर्ड भ्रष्ट हो सकता है या पुराने संस्करण से हो सकता है)",
+      "requestGuardrailBlocked": "अनुरोध गार्डरेल अवरुद्ध",
+      "requestGuardrailTriggered": "अनुरोध गार्डरेल ट्रिगर किया गया",
+      "responseGuardrailBlocked": "प्रतिक्रिया गार्डरेल अवरुद्ध",
+      "responseGuardrailTriggered": "प्रतिक्रिया गार्डरेल ट्रिगर किया गया",
+      "rule": "नियम",
+      "action": "कार्य",
+      "guardrailsEvaluated": "गार्डरेल मूल्यांकन किए गए ({{target}})",
+      "ruleCount": "{{count}} नियम",
+      "ruleCount_other": "{{count}} नियम",
+      "promptInjection": "प्रॉम्प्ट इंजेक्शन",
+      "injects": "इंजेक्ट करता है",
+      "judgeResponse": "न्यायाधीश प्रतिक्रिया",
+      "piiScrubbed": "PII रगड़ा गया",
+      "piiScanned": "PII स्कैन किया गया ({{target}})",
+      "policies": "नीतियां",
+      "entityTypes": "इकाई प्रकार",
+      "customPatterns": "कस्टम पैटर्न",
+      "scanned": "स्कैन किया गया",
+      "redacted": "संपादित",
+      "took": "ले लिया",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "इकाई प्रकार स्कैन किए गए",
+      "guardrailInjection": "गार्डरेल इंजेक्शन",
+      "rules": "नियम",
+      "chars": "वर्ण",
+      "injectedText": "इंजेक्ट किया गया पाठ",
+      "optimizer": "ऑप्टिमाइज़र {{id}}",
+      "tokens": "टोकन",
+      "saved": "बचाया गया",
+      "tok": "{{value}} tok",
+      "reason": "कारण",
+      "budgetBlocked": "बजट अवरुद्ध",
+      "budgetOk": "बजट ठीक है",
+      "egressSent": "एग्रेस भेजा गया",
+      "status": "स्थिति",
+      "encoding": "एन्कोडिंग",
+      "frames": "फ्रेम",
+      "bytes": "बाइट"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "मेरी प्रोफाइल",
+      "subtitle": "अपनी खाता सेटिंग्स प्रबंधित करें"
+    },
+    "tabs": {
+      "profile": "प्रोफाइल",
+      "notifications": "सूचनाएं",
+      "mcp": "MCP",
+      "preferences": "प्राथमिकताएं"
+    },
+    "notifications": {
+      "close": "बंद करें",
+      "refresh": "ताज़ा करें",
+      "clear": "साफ़ करें",
+      "empty": "कोई सूचना नहीं मिली।",
+      "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+      "allCaughtUp": "सब कुछ पकड़ा गया",
+      "unreadCount": "{{count}} अपठित",
+      "selectedCount": "{{count}} चुना गया",
+      "severity": {
+        "all": "सभी",
+        "info": "जानकारी",
+        "warning": "चेतावनी",
+        "critical": "आलोचनात्मक"
+      },
+      "status": {
+        "read": "पढ़ें",
+        "unread": "अपठित"
+      },
+      "filters": {
+        "severity": "गंभीरता",
+        "category": "श्रेणी",
+        "event": "इवेंट",
+        "date": "तारीख",
+        "period": "अवधि",
+        "status": "स्थिति",
+        "all": "सभी",
+        "allCategories": "सभी श्रेणियां",
+        "allEvents": "सभी इवेंट",
+        "unreadOnly": "केवल अपठित"
+      },
+      "actions": {
+        "markRead": "पढ़ा हुआ चिह्नित करें",
+        "markUnread": "अपठित चिह्नित करें",
+        "archive": "संग्रह"
+      },
+      "table": {
+        "severity": "गंभीरता",
+        "event": "इवेंट",
+        "date": "तारीख",
+        "status": "स्थिति",
+        "selectAll": "सभी चुनें",
+        "selectRow": "{{event}} चुनें",
+        "eventCount": "{{count}} इवेंट"
+      },
+      "pagination": {
+        "previous": "← पिछला",
+        "next": "अगला →",
+        "page": "पृष्ठ {{page}} का {{totalPages}}",
+        "total": "({{count}} कुल)"
+      },
+      "detail": {
+        "ariaLabel": "सूचना विवरण",
+        "details": "विवरण",
+        "noDetails": "कोई अतिरिक्त विवरण नहीं।",
+        "eventsInIncident": "इस घटना में इवेंट"
+      }
+    },
+    "security": {
+      "roleLabel": "भूमिका:",
+      "password": {
+        "heading": "पासवर्ड बदलें",
+        "currentLabel": "वर्तमान पासवर्ड",
+        "newLabel": "नया पासवर्ड",
+        "newPlaceholder": "न्यूनतम 8 वर्ण",
+        "confirmLabel": "नए पासवर्ड की पुष्टि करें",
+        "success": "पासवर्ड सफलतापूर्वक बदल गया।",
+        "saving": "बचत हो रही है...",
+        "submit": "पासवर्ड बदलें",
+        "errors": {
+          "mismatch": "पासवर्ड मेल नहीं खाते।",
+          "tooShort": "नया पासवर्ड कम से कम 8 वर्ण लंबा होना चाहिए।",
+          "updateFailed": "अपडेट विफल"
+        }
+      },
+      "tfa": {
+        "heading": "दो-कारक प्रमाणीकरण",
+        "notEnabled": "2FA सक्षम नहीं है। समय-आधारित एक-बार पासवर्ड के साथ अपने खाते की सुरक्षा करें।",
+        "enableButton": "दो-कारक प्रमाणीकरण सक्षम करें",
+        "scanInstructions": "इस QR कोड को अपने प्रमाणकर्ता ऐप (Google प्रमाणकर्ता, Authy, आदि) से स्कैन करें, फिर सत्यापित करने के लिए 6-अंकीय कोड दर्ज करें।",
+        "qrAlt": "2FA सेटअप QR कोड",
+        "addAccountInstructions": "अपने प्रमाणकर्ता ऐप (Google प्रमाणकर्ता, Authy, 1Password, आदि) खोलें और एक नया खाता जोड़ें:",
+        "setup": {
+          "step1": "<strong>खाता जोड़ें</strong> या <strong>+</strong> बटन टैप करें",
+          "step2": "<strong>सेटअप की दर्ज करें</strong> चुनें (या मोबाइल पर QR कोड स्कैन करें)",
+          "step3": "नीचे दिखाई गई गुप्त दर्ज करें"
+        },
+        "mobileLink": "प्रमाणकर्ता खोलने के लिए मोबाइल पर यहां टैप करें",
+        "manualEntryLabel": "मैनुअल एंट्री गुप्त:",
+        "saveBackupCodes": "इन बैकअप कोड को सहेजें। यदि आप अपने प्रमाणकर्ता तक पहुंच खो देते हैं तो प्रत्येक का एक बार उपयोग किया जा सकता है।",
+        "copyBackupCodes": "बैकअप कोड कॉपी करें",
+        "confirmCodeLabel": "सक्रिय करने के लिए अपने ऐप से कोड दर्ज करें",
+        "activate": "2FA सक्रिय करें",
+        "cancel": "रद्द करें",
+        "enabledBadge": "2FA सक्षम है",
+        "newBackupCodesLabel": "नए बैकअप कोड (अभी सहेजें):",
+        "copy": "कॉपी करें",
+        "regenLabel": "बैकअप कोड पुन: उत्पन्न करने के लिए प्रमाणकर्ता कोड दर्ज करें",
+        "regenerate": "पुन: उत्पन्न करें",
+        "regenerateBackupCodes": "बैकअप कोड पुन: उत्पन्न करें",
+        "disableLabel": "2FA अक्षम करें (प्रमाणकर्ता कोड दर्ज करें)",
+        "disable": "2FA अक्षम करें",
+        "errors": {
+          "setupFailed": "सेटअप विफल",
+          "confirmFailed": "पुष्टि विफल",
+          "disableFailed": "अक्षम विफल",
+          "regenFailed": "पुन: उत्पन्न विफल"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP सतह को लोड करने में विफल",
+        "revokeFailed": "टोकन को रद्द करने में विफल"
+      },
+      "revokeConfirm": "MCP टोकन \"{{name}}\" को रद्द करें? इसका उपयोग करने वाले क्लाइंट तुरंत काम करना बंद कर देते हैं।",
+      "tokens": {
+        "heading": "MCP टोकन",
+        "newToken": "नया टोकन",
+        "description": "प्रत्येक टोकन आपके रूप में कार्य करता है: यह आपकी भूमिका को अनुमति देता है वैसे ही उपकरणों को उजागर करता है। पूर्ण मान एक बार दिखाया जाता है, उस पृष्ठ पर जो इसे बनाता है।",
+        "empty": "अभी कोई MCP टोकन नहीं हैं। एक MCP क्लाइंट को कनेक्ट करने के लिए एक बनाएं।",
+        "created": "बनाया गया",
+        "lastUsed": "अंतिम उपयोग",
+        "expires": "समाप्त हो जाता है",
+        "never": "कभी नहीं",
+        "revokeTitle": "टोकन रद्द करें"
+      },
+      "tools": {
+        "heading": "आपके टोकन उजागर करने वाले उपकरण",
+        "empty": "आपकी भूमिका कोई MCP उपकरण प्रदान नहीं करता है। आपको आवश्यक अनुमतियों के लिए प्रशासक से पूछें।",
+        "table": {
+          "name": "नाम",
+          "scope": "कार्यक्षेत्र",
+          "description": "विवरण",
+          "sourceModule": "स्रोत मॉड्यूल",
+          "permission": "अनुमति"
+        }
+      },
+      "connect": {
+        "heading": "एक MCP क्लाइंट कनेक्ट करें",
+        "descriptionPre": "वह क्लाइंट चुनें जिसे आप वायर कर रहे हैं, फिर प्रतिस्थापन करें",
+        "descriptionPost": "अपने टोकन में से एक के साथ। एक टोकन बनाने से पहले से मान के साथ एक ही स्निपेट दिखता है।",
+        "otherClient": "कोई अन्य क्लाइंट",
+        "httpInstructionsPre": "HTTP पर, इसे इस एंडपॉइंट पर इंगित करें और निम्न के साथ प्रमाणित करें",
+        "httpInstructionsPost": "। यह JSON-RPC 2.0 स्ट्रीमेबल HTTP पर है।",
+        "stdioInstructionsPre": "Stdio पर, CLI इसे पुल करता है और आपका टोकन पास करता है। सीधे सेवा चला रहे हैं? सेट करें",
+        "stdioInstructionsAnd": "और",
+        "stdioInstructionsPost": "अपने आप।"
+      },
+      "newToken": {
+        "backToMcp": "MCP पर वापस जाएं",
+        "title": "नया MCP टोकन",
+        "subtitle": "टोकन आपके रूप में कार्य करता है: यह आपकी भूमिका को अनुमति देता है वैसे ही उपकरणों को उजागर करता है।",
+        "nameLabel": "नाम",
+        "namePlaceholder": "लैपटॉप",
+        "nameHint": "जहां इस टोकन का उपयोग किया जाता है, उदाहरण के लिए \"लैपटॉप\" या \"claude-desktop\"।",
+        "expiryLabel": "समाप्त होता है",
+        "expiryHint": "वैकल्पिक। इसे खाली छोड़ें और टोकन कभी समाप्त नहीं होता, जब तक आप इसे रद्द नहीं करते।",
+        "createButton": "टोकन बनाएं",
+        "creatingButton": "बना रहे हैं...",
+        "cancelButton": "रद्द करें",
+        "tokenSection": {
+          "title": "आपका टोकन",
+          "hint": "अभी कॉपी करें। यह फिर से नहीं दिखाया जाएगा, और एक खोया हुआ टोकन केवल प्रतिस्थापित हो सकता है।",
+          "copyButton": "कॉपी करें",
+          "copiedButton": "कॉपी किया गया!",
+          "copyTitle": "टोकन कॉपी करें",
+          "copiedTitle": "कॉपी किया गया!"
+        },
+        "connectSection": {
+          "title": "एक क्लाइंट कनेक्ट करें",
+          "hint": "वह क्लाइंट चुनें जिसे आप वायर कर रहे हैं। स्निपेट पहले से इस टोकन को ले जाता है।"
+        },
+        "bridgeSection": {
+          "title": "या स्थानीय पुल का उपयोग करें",
+          "hint": "केवल stdio बोलने वाले क्लाइंट के लिए, CLI इसे पुल करता है और आपका टोकन पास करता है।"
+        },
+        "doneButton": "किया",
+        "errors": {
+          "createFailed": "टोकन बनाने में विफल",
+          "copyFailed": "कॉपी विफल, टोकन को मैनुअली चुनें और कॉपी करें।"
+        }
+      }
+    },
+    "preferences": {
+      "heading": "भाषा",
+      "description": "डैशबोर्ड को जिस भाषा में प्रदर्शित किया जाएगा उसे चुनें।",
+      "languageLabel": "भाषा",
+      "saved": "भाषा पसंद सहेजी गई।"
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "सेटिंग्स लोड करने में विफल",
+        "loadFailedPeriod": "सेटिंग्स लोड करने में विफल।",
+        "saveFailed": "सहेजने में विफल",
+        "saveSettingsFailed": "सेटिंग्स सहेजने में विफल"
+      },
+      "savedSuccess": "सेटिंग्स सफलतापूर्वक सहेजी गईं।",
+      "saving": "बचत हो रही है...",
+      "saveSettings": "सेटिंग्स सहेजें",
+      "serverInfo": {
+        "heading": "सर्वर जानकारी",
+        "readOnly": "केवल पढ़ने योग्य। होस्ट और पोर्ट पर्यावरण या सेटिंग्स फ़ाइल से आते हैं, यहां नहीं।",
+        "reachableAt": "में पहुंचा जा सकता है",
+        "reachableAtAny": "इन पतों में से किसी में पहुंचा जा सकता है",
+        "thisMachine": "यह मशीन",
+        "network": "नेटवर्क",
+        "copyAddress": "{{address}} कॉपी करें",
+        "copied": "कॉपी किया गया!",
+        "copy": "कॉपी करें",
+        "hostAndPort": "होस्ट और पोर्ट",
+        "version": "संस्करण",
+        "uptime": "अपटाइम"
+      },
+      "runtime": {
+        "heading": "रनटाइम सेटिंग्स",
+        "logLevel": "लॉग स्तर",
+        "logLevelHint": "सेवा लॉग की शब्दबहुलता को नियंत्रित करता है।",
+        "publicUrl": "सार्वजनिक URL",
+        "publicUrlHint": "आधार URL जिस पर सेवा बाहरी क्लाइंट से पहुंचा जा सकता है (जैसे <code>http://192.168.1.10:3000</code>)। प्रत्येक राउटर के <strong>कनेक्ट करने के तरीके</strong> खंड में उपयोग किया जाता है। उपयोगी जब डैशबोर्ड सेवा से भिन्न मशीन या पोर्ट पर चलता है।",
+        "usageRetention": "उपयोग प्रतिधारण",
+        "noLimit": "कोई सीमा नहीं",
+        "maxAgeDays": "अधिकतम आयु (दिन)",
+        "maxSizeMb": "अधिकतम आकार (MB)",
+        "retentionHint": "उपयोग/बिलिंग इतिहास इतने दिन पुराना, या इस आकार से अधिक, सक्रिय लॉग से बाहर निकाला जाता है। दोनों को खाली छोड़ें प्रतिधारण सीमा के लिए।"
+      },
+      "internationalization": {
+        "heading": "अंतर्राष्ट्रीयकरण",
+        "defaultLanguage": "डिफ़ॉल्ट भाषा",
+        "defaultLanguageHint": "उन उपयोगकर्ताओं के लिए डैशबोर्ड भाषा जिन्होंने अभी तक अपनी भाषा नहीं चुनी है। उपयोगकर्ता की व्यक्तिगत पसंद को ओवरराइड नहीं करता है।"
+      },
+      "telemetry": {
+        "heading": "गुमनाम मेट्रिक्स",
+        "neverAutomatic": "Routerly कभी स्वचालित रूप से डेटा नहीं भेजता।",
+        "noChoice": "आपने अभी तक कोई विकल्प नहीं बनाया है।",
+        "enabledStatus": "गुमनाम इंस्टॉल मेट्रिक्स सक्षम हैं।",
+        "disabledStatus": "गुमनाम इंस्टॉल मेट्रिक्स अक्षम हैं।",
+        "explanation": "जब सक्षम किया जाता है, तो Routerly केवल भेजता है: इवेंट प्रकार (इंस्टॉल / अपग्रेड / अनइंस्टॉल), संस्करण, प्लेटफॉर्म, और एक यादृच्छिक आईडी। कोई व्यक्तिगत डेटा नहीं, कोई उपयोग डेटा नहीं, कोई IP संग्रहीत नहीं।",
+        "whatIsSent": "क्या भेजा जा रहा है?",
+        "installId": "स्थापन आईडी: {{id}}",
+        "saving": "बचत हो रही है...",
+        "enable": "सक्षम करें",
+        "disable": "अक्षम करें"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "डैशबोर्ड (इन-ऐप इनबॉक्स)",
+          "description": "इवेंट को इन-ऐप सूचना इनबॉक्स में भेजता है"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "कस्टम मेल सर्वर"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS सिंपल ईमेल सर्विस"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure संचार",
+          "description": "Azure संचार सेवाएं"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "OAuth2 के माध्यम से Gmail"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook कॉलबैक"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack बॉट API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams आने वाले Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty इवेंट API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "प्रदाता — त्रुटि",
+        "providerDegraded": "प्रदाता — गिरावट",
+        "providerRecovered": "प्रदाता — पुनरावृत्त",
+        "providerRateLimited": "प्रदाता — दर सीमित",
+        "routingNoCandidates": "राउटिंग — कोई उम्मीदवार नहीं",
+        "routingFallbackUsed": "राउटिंग — फॉलबैक का उपयोग किया गया",
+        "authLoginFailed": "प्रमाणीकरण — लॉगिन विफल",
+        "authTokenInvalid": "प्रमाणीकरण — टोकन अमान्य",
+        "configModelAdded": "कॉन्फ़िग — मॉडल जोड़ा गया",
+        "configModelDeleted": "कॉन्फ़िग — मॉडल हटाया गया",
+        "configRouterCreated": "कॉन्फ़िग — राउटर बनाया गया",
+        "configRouterDeleted": "कॉन्फ़िग — राउटर हटाया गया",
+        "budgetThresholdReached": "बजट — थ्रेशोल्ड पहुंचा",
+        "budgetExceeded": "बजट — अधिक",
+        "budgetReset": "बजट — रीसेट",
+        "systemStartup": "सिस्टम — स्टार्टअप",
+        "systemShutdown": "सिस्टम — शटडाउन",
+        "systemUpdateAvailable": "सिस्टम — अपडेट उपलब्ध"
+      },
+      "removeChannelTooltip": "चैनल हटाएं",
+      "removeChannelConfirm": "चैनल हटाएं?",
+      "formUpdatedHint": "फॉर्म अपडेट किया गया — लागू करने के लिए सहेजें।",
+      "hmacSigningKeyPlaceholder": "HMAC हस्ताक्षर की",
+      "perms": {
+        "routerRead": "राउटर — पढ़ें",
+        "routerWrite": "राउटर — लिखें",
+        "modelRead": "मॉडल — पढ़ें",
+        "modelWrite": "मॉडल — लिखें",
+        "userRead": "उपयोगकर्ता — पढ़ें",
+        "userWrite": "उपयोगकर्ता — लिखें",
+        "reportRead": "रिपोर्ट — पढ़ें",
+        "settingsRead": "सेटिंग्स — पढ़ें",
+        "settingsWrite": "सेटिंग्स — लिखें",
+        "notificationWrite": "सूचनाएं — लिखें",
+        "tokenRead": "टोकन — पढ़ें",
+        "tokenWrite": "टोकन — लिखें",
+        "roleWrite": "भूमिकाएं — लिखें",
+        "auditRead": "ऑडिट लॉग — पढ़ें",
+        "modulesRead": "मॉड्यूल — पढ़ें",
+        "modulesManage": "मॉड्यूल — प्रबंधन",
+        "connectionsRead": "कनेक्शन — पढ़ें",
+        "connectionsManage": "कनेक्शन — प्रबंधन",
+        "resilienceRead": "लचीलापन — पढ़ें",
+        "resilienceManage": "लचीलापन — प्रबंधन",
+        "profilesRead": "राउटिंग प्रोफाइल — पढ़ें",
+        "profilesManage": "राउटिंग प्रोफाइल — प्रबंधन",
+        "optimizersRead": "ऑप्टिमाइज़र — पढ़ें",
+        "optimizersManage": "ऑप्टिमाइज़र — प्रबंधन",
+        "experimentsRead": "प्रयोग — पढ़ें",
+        "experimentsManage": "प्रयोग — प्रबंधन"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "इस चैनल प्रकार के लिए, लक्ष्य डिलीवरी को नहीं बदलते (एंडपॉइंट तय है)। वे प्रति प्राप्तकर्ता ऑडिट ट्रेल में कौन से इवेंट लॉग किए जाते हैं यह फ़िल्टर करते हैं।",
+        "dashboard": "लक्ष्य इनबॉक्स दृश्यमानता को नियंत्रित करते हैं — केवल मिलान किए गए उपयोगकर्ता इन सूचनाओं को अपने इन-ऐप इनबॉक्स में देखेंगे।",
+        "email": "लक्ष्य यह निर्धारित करते हैं कि कौन से उपयोगकर्ता यह ईमेल प्राप्त करते हैं। सभी उपयोगकर्ताओं को भेजने के लिए सभी को खाली छोड़ें।"
+      },
+      "summary": {
+        "allEvents": "सभी इवेंट",
+        "eventCount": "{{count}} इवेंट",
+        "eventCount_other": "{{count}} इवेंट",
+        "roleCount": "{{count}} भूमिका",
+        "roleCount_other": "{{count}} भूमिकाएं",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} उपयोगकर्ता",
+        "userCount_other": "{{count}} उपयोगकर्ता",
+        "everyone": "सभी"
+      },
+      "errors": {
+        "loadFailed": "लोड करने में विफल"
+      },
+      "fields": {
+        "dashboardHint": "मिलान किए गए इवेंट को इन-ऐप सूचना इनबॉक्स में भेजता है। कोई क्रेडेंशियल की आवश्यकता नहीं है।",
+        "labels": {
+          "fromAddress": "पता से",
+          "fromName": "नाम से",
+          "host": "होस्ट",
+          "port": "पोर्ट",
+          "tls": "TLS/SSL",
+          "username": "यूजर नाम",
+          "password": "पासवर्ड",
+          "awsRegion": "AWS क्षेत्र",
+          "accessKeyId": "एक्सेस की आईडी",
+          "secretAccessKey": "गुप्त एक्सेस की",
+          "apiKey": "API की",
+          "connectionString": "कनेक्शन स्ट्रिंग",
+          "clientId": "क्लाइंट आईडी",
+          "clientSecret": "क्लाइंट गुप्त",
+          "refreshToken": "टोकन ताज़ा करें",
+          "url": "URL",
+          "method": "विधि",
+          "signingSecret": "हस्ताक्षर गुप्त",
+          "botToken": "बॉट टोकन",
+          "channelId": "चैनल आईडी",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "एकीकरण की"
+        },
+        "values": {
+          "enabled": "सक्षम",
+          "disabled": "अक्षम",
+          "configured": "कॉन्फ़िगर किया गया",
+          "notSet": "सेट नहीं"
+        },
+        "optional": "(वैकल्पिक)",
+        "keepCurrentPlaceholder": "मौजूदा को रखने के लिए रिक्त छोड़ें",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSL का उपयोग करें",
+        "smtpTlsOnHint": "(पोर्ट 465 — सीधा SSL)",
+        "smtpTlsOffHint": "(पोर्ट 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAM उदाहरण भूमिका का उपयोग करने के लिए क्रेडेंशियल खाली छोड़ें।",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC हस्ताक्षर की",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-वर्ण राउटिंग की",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "इवेंट",
+          "eventsPlaceholder": "सभी इवेंट (सभी के लिए खाली छोड़ें)",
+          "eventsHint": "सभी इवेंट प्राप्त करने के लिए खाली छोड़ें। विशिष्ट इवेंट चुनें फ़िल्टर करने के लिए।",
+          "routersHeading": "राउटर",
+          "routersPlaceholder": "सभी राउटर (सभी के लिए खाली छोड़ें)",
+          "routersHint": "सभी राउटर से इवेंट प्राप्त करने के लिए खाली छोड़ें।",
+          "cooldownHeading": "कूलडाउन",
+          "cooldownSuffix": "सेकंड (0 = कूलडाउन नहीं)",
+          "cooldownHint": "इस चैनल को एक ही इवेंट के लिए फिर से फायर करने से पहले न्यूनतम अंतराल।"
+        },
+        "recipients": {
+          "heading": "प्राप्तकर्ता / लक्ष्य",
+          "rolesLabel": "भूमिकाएं",
+          "rolesPlaceholder": "सभी भूमिकाएं (सभी)",
+          "permissionsLabel": "अनुमतियां",
+          "permissionsPlaceholder": "सभी अनुमतियां (सभी)",
+          "usersLabel": "व्यक्तिगत उपयोगकर्ता",
+          "usersPlaceholder": "सभी उपयोगकर्ता (सभी)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "कनेक्शन",
+          "routing": "राउटिंग",
+          "recipients": "प्राप्तकर्ता"
+        },
+        "sections": {
+          "channelSettings": "चैनल सेटिंग्स",
+          "eventsRouting": "इवेंट और राउटिंग",
+          "recipients": "प्राप्तकर्ता"
+        },
+        "nameLabel": "नाम",
+        "namePlaceholder": "इस चैनल के लिए लेबल",
+        "cancelButton": "रद्द करें"
+      },
+      "list": {
+        "countLabel": "{{count}} चैनल",
+        "countLabel_other": "{{count}} चैनल",
+        "filteredLabel": "{{count}} का {{shown}} चैनल",
+        "filteredLabel_other": "{{count}} का {{shown}} चैनल",
+        "allTypes": "सभी प्रकार",
+        "searchPlaceholder": "चैनल फ़िल्टर करें...",
+        "searchChannelsPlaceholder": "चैनल खोजें...",
+        "addButton": "चैनल जोड़ें",
+        "addSearchPlaceholder": "चैनल खोजें...",
+        "noResults": "कोई परिणाम नहीं",
+        "emptyTitle": "कोई सूचना चैनल अभी तक कॉन्फ़िगर नहीं किए गए।",
+        "noMatch": "कोई चैनल सक्रिय फ़िल्टर से मेल नहीं खाते।",
+        "nameInlinePlaceholder": "लेबल (वैकल्पिक)",
+        "columns": {
+          "name": "नाम",
+          "type": "प्रकार",
+          "summary": "इवेंट / लक्ष्य"
+        },
+        "testTitle": "परीक्षण भेजें",
+        "editTitle": "चैनल संपादित करें",
+        "deleteTitle": "चैनल हटाएं",
+        "deleteConfirm": "चैनल \"{{name}}\" हटाएं? इसे वापस नहीं किया जा सकता।",
+        "deleteConfirmButton": "हटाएं",
+        "errors": {
+          "deleteFailed": "हटाने में विफल"
+        }
+      },
+      "edit": {
+        "backToList": "सूचनाओं पर वापस जाएं",
+        "back": "वापस",
+        "heading": "{{provider}} चैनल संपादित करें",
+        "subtitle": "इस सूचना चैनल के लिए कॉन्फ़िगरेशन अपडेट करें।",
+        "testSection": {
+          "title": "परीक्षण भेजें",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "परीक्षण भेजें",
+          "sendingButton": "भेज रहे हैं...",
+          "hintEmail": "आपके खाते ईमेल को भेजने के लिए खाली छोड़ें। परीक्षण बचाए गए चैनल कॉन्फ़िगरेशन का उपयोग करता है।",
+          "hintOther": "परीक्षण बचाए गए चैनल कॉन्फ़िगरेशन का उपयोग करता है। अपडेट की गई सेटिंग्स परीक्षण करने के लिए पहले परिवर्तन सहेजें।"
+        },
+        "saveButton": "परिवर्तन सहेजें",
+        "savingButton": "बचत हो रही है...",
+        "errors": {
+          "loadFailed": "लोड करने में विफल",
+          "saveFailed": "सहेजने में विफल"
+        }
+      },
+      "create": {
+        "backToList": "सूचनाओं पर वापस जाएं",
+        "changeType": "प्रकार बदलें",
+        "pickerHeading": "एक चैनल प्रकार चुनें",
+        "pickerSubtitle": "कॉन्फ़िगर करने के लिए सूचना प्रदाता चुनें।",
+        "heading": "नया {{provider}} चैनल",
+        "subtitle": "एक नया सूचना चैनल कॉन्फ़िगर करें।",
+        "createButton": "चैनल बनाएं",
+        "creatingButton": "बना रहे हैं...",
+        "errors": {
+          "createFailed": "बनाने में विफल"
+        }
+      },
+      "sendTest": "परीक्षण भेजें",
+      "fromAddress": "पता से",
+      "individualUsers": "व्यक्तिगत उपयोगकर्ता",
+      "host": "होस्ट",
+      "port": "पोर्ट",
+      "apiKey": "API की",
+      "connectionString": "कनेक्शन स्ट्रिंग",
+      "clientId": "क्लाइंट आईडी",
+      "clientSecret": "क्लाइंट गुप्त",
+      "refreshToken": "टोकन ताज़ा करें",
+      "method": "विधि",
+      "botToken": "बॉट टोकन",
+      "channelId": "चैनल आईडी",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "एकीकरण की"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — /metrics को उजागर करता है"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — मेट्रिक्स API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — लाइन प्रोटोकॉल"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "अनुरोध ट्रेस निर्यात करें",
+        "description": "प्रॉक्सी किए गए अनुरोध का पूर्ण ट्रेस शिप करता है: हर चरण, हर मॉड्यूल जो बोली गई, और जिन परियोजनाओं ने सहमति दी उनके लिए प्रॉम्प्ट और उत्तर।",
+        "sampleRateLabel": "नमूना दर",
+        "sampleRateHint": "1 हर अनुरोध निर्यात करता है, 0.1 दस में से एक।"
+      },
+      "optional": "(वैकल्पिक)",
+      "headersHint": "(वैकल्पिक, एक प्रति पंक्ति: Key: Value)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "वाहक टोकन",
+          "placeholder": "खुली पहुंच के लिए खाली छोड़ें",
+          "description": "<code>/metrics</code> को Prometheus पाठ प्रारूप में उजागर करता है। Bearer auth की आवश्यकता के लिए एक टोकन सेट करें।"
+        },
+        "otel": {
+          "endpoint": "कलेक्टर एंडपॉइंट",
+          "description": "आपके OTLP रिसीवर का आधार URL। Routerly <code>/v1/metrics</code>, और जब ट्रेस निर्यात चालू होता है <code>/v1/traces</code> को जोड़ता है। डिफ़ॉल्ट HTTP पोर्ट 4318, gRPC 4317 है।",
+          "protocol": "प्रोटोकॉल",
+          "headers": "हेडर"
+        },
+        "datadog": {
+          "apiKey": "API की",
+          "placeholder": "आपकी Datadog API की",
+          "description": "आपके Datadog खाते में <strong>संगठन सेटिंग → API कुंजी</strong> के अंतर्गत पाया गया।",
+          "site": "साइट"
+        },
+        "grafana": {
+          "remoteWriteUrl": "दूरस्थ लिखें URL",
+          "description": "<strong>Grafana Cloud → कनेक्शन → Prometheus → विवरण</strong> में \"दूरस्थ लिखें एंडपॉइंट\" के रूप में पाया गया।",
+          "username": "यूजर नाम / स्टैक आईडी",
+          "usernameHint": "Prometheus कनेक्शन विवरण में दिखाई गई संख्यात्मक आईडी।",
+          "apiKey": "API की / टोकन",
+          "apiKeyHint": "<strong>MetricsPublisher</strong> भूमिका के साथ Grafana Cloud टोकन।"
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 उदाहरण URL। क्लाउड: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "टोकन",
+          "tokenPlaceholder": "आपकी InfluxDB API की",
+          "tokenHint": "बाल्टी में <strong>लिखने</strong> के लिए पहुंच होनी चाहिए।",
+          "org": "संगठन",
+          "bucket": "बाल्टी"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "गुप्त",
+          "secretHint": "(वैकल्पिक — HMAC-SHA256 हस्ताक्षर की)",
+          "headers": "हेडर"
+        }
+      },
+      "errors": {
+        "loadFailed": "एकीकरण लोड करने में विफल",
+        "updateFailed": "एकीकरण अपडेट करने में विफल",
+        "saveFailed": "एकीकरण सहेजने में विफल",
+        "deleteFailed": "एकीकरण हटाने में विफल"
+      },
+      "empty": "अभी कोई एकीकरण कॉन्फ़िगर नहीं किया गया है।",
+      "enabled": "सक्षम",
+      "testing": "परीक्षण हो रहा है...",
+      "test": "परीक्षण",
+      "removeConfirm": "हटाएं?",
+      "remove": "हटाएं",
+      "cancel": "रद्द करें",
+      "removeTooltip": "एकीकरण हटाएं",
+      "saving": "बचत हो रही है...",
+      "save": "सहेजें",
+      "addButton": "एकीकरण जोड़ें"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "सेटिंग्स लोड करने में विफल",
+        "duplicateUrl": "यह URL पहले से सूची में है।",
+        "unreachable": "इस URL पर एक वैध प्रदाता कैटलॉग तक पहुंचा नहीं जा सका।"
+      },
+      "saved": "सहेजा गया।",
+      "refreshed": "ताज़ा किया गया।",
+      "heading": "प्रदाता कैटलॉग भंडार",
+      "refreshing": "ताज़ा हो रहा है...",
+      "refresh": "ताज़ा करें",
+      "nextRefresh": "अगला: {{date}}",
+      "priorityHint": "पंक्ति क्रम विलय प्राथमिकता निर्धारित करता है — पंक्ति 1 संघर्ष पर जीत जाती है। पुनः क्रम करने के लिए तीरों का उपयोग करें।",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "अपडेट किया गया",
+        "lastCheck": "अंतिम जांच",
+        "status": "स्थिति"
+      },
+      "empty": "कोई भंडार कॉन्फ़िगर नहीं किए गए। डिफ़ॉल्ट Routerly सार्वजनिक कैटलॉग का उपयोग किया जाएगा।",
+      "status": {
+        "error": "त्रुटि",
+        "active": "सक्रिय",
+        "disabled": "अक्षम"
+      },
+      "edit": "संपादित करें",
+      "removeTooltip": "हटाएं",
+      "addRepository": "भंडार जोड़ें",
+      "checking": "जांच हो रही है...",
+      "add": "जोड़ें",
+      "removeConfirm": "भंडार \"{{url}}\" हटाएं?"
+    },
+    "about": {
+      "headings": {
+        "application": "अनुप्रयोग",
+        "runtime": "रनटाइम",
+        "storage": "भंडारण",
+        "softwareUpdate": "सॉफ़्टवेयर अपडेट"
+      },
+      "labels": {
+        "version": "संस्करण",
+        "uptime": "अपटाइम",
+        "nodeVersion": "Node.js",
+        "platform": "प्लेटफॉर्म",
+        "configDir": "कॉन्फ़िग निर्देशिका",
+        "dataDir": "डेटा निर्देशिका",
+        "currentVersion": "वर्तमान संस्करण",
+        "availableVersion": "उपलब्ध संस्करण",
+        "upToDate": "अपडेट है",
+        "lastChecked": "अंतिम जांच"
+      },
+      "noCheckPerformed": "अभी तक कोई अपडेट जांच नहीं की गई।",
+      "checkForUpdates": "अपडेट के लिए जांचें",
+      "checking": "जांच हो रही है...",
+      "updateTo": "v{{version}} को अपडेट करें",
+      "updating": "अपडेट हो रहा है...",
+      "dockerHint": "Docker में चल रहा है — अपडेट करने के लिए नवीनतम छवि खींचें।",
+      "confirmUpdate": "यह नवीनतम संस्करण को डाउनलोड और स्थापित करेगा। सेवा पुनरारंभ होगी। जारी रखें?",
+      "updateComplete": "अपडेट पूर्ण! पुनः लोड हो रहा है...",
+      "serviceRestarting": "सेवा पुनरारंभ हो रही है। कृपया पल में पृष्ठ को पुनः लोड करें।",
+      "errors": {
+        "loadFailed": "लोड करने में विफल",
+        "checkFailed": "जांच विफल",
+        "updateFailed": "अपडेट विफल"
+      },
+      "channel": "चैनल"
+    },
+    "security": {
+      "authentication": "प्रमाणीकरण",
+      "requireMfa": "सभी उपयोगकर्ताओं के लिए दो-कारक प्रमाणीकरण की आवश्यकता है",
+      "requireMfaHint": "सक्षम होने पर, उपयोगकर्ता जिन्होंने 2FA सेट अप नहीं किया है उन्हें लॉगिन के बाद एक प्रॉम्प्ट देखेंगे। उपयोगकर्ता अपनी प्रोफाइल पृष्ठ पर 2FA कॉन्फ़िगर कर सकते हैं।",
+      "savedSuccess": "सेटिंग्स सफलतापूर्वक सहेजी गईं।",
+      "saving": "बचत हो रही है...",
+      "saveSettings": "सेटिंग्स सहेजें",
+      "errors": {
+        "loadFailed": "सेटिंग्स लोड करने में विफल",
+        "saveFailed": "सेटिंग्स सहेजने में विफल"
+      }
+    },
+    "title": "सेटिंग्स",
+    "subtitle": "Routerly के लिए कॉन्फ़िगरेशन",
+    "tabs": {
+      "general": "सामान्य",
+      "security": "सुरक्षा",
+      "notifications": "सूचनाएं",
+      "integrations": "एकीकरण",
+      "catalog": "प्रदाता कैटलॉग",
+      "users": "उपयोगकर्ता",
+      "roles": "भूमिकाएं",
+      "audit": "ऑडिट लॉग",
+      "about": "के बारे में"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "राउटर",
+      "subtitle": "क्लाइंट अनुप्रयोग जो Routerly एक्सेस करते हैं",
+      "count": "1 राउटर",
+      "count_other": "{{count}} राउटर",
+      "newRouter": "नया राउटर",
+      "empty": "अभी कोई राउटर नहीं।",
+      "emptyFiltered": "इस प्रकार का कोई राउटर नहीं।",
+      "columns": {
+        "name": "नाम",
+        "tokens": "टोकन",
+        "policies": "नीतियां",
+        "models": "मॉडल"
+      },
+      "tokenCount": "1 टोकन",
+      "tokenCount_other": "{{count}} टोकन",
+      "editRouter": "राउटर संपादित करें",
+      "deleteRouter": "राउटर हटाएं",
+      "deleteConfirm": "इस राउटर को हटाएं?",
+      "errors": {
+        "deleteFailed": "राउटर हटाने में त्रुटि"
+      },
+      "newOrchestrator": "नया ऑर्केस्ट्रेटर",
+      "newPassthrough": "नया पास-थ्रू"
+    },
+    "layout": {
+      "notFound": "राउटर नहीं मिला",
+      "tabs": {
+        "dashboard": "डैशबोर्ड",
+        "general": "सामान्य",
+        "orchestrator": "ऑर्केस्ट्रेटर",
+        "routing": "राउटिंग",
+        "optimizer": "ऑप्टिमाइज़र",
+        "security": "सुरक्षा",
+        "token": "टोकन",
+        "users": "उपयोगकर्ता",
+        "logs": "लॉग"
+      },
+      "backToRouters": "राउटर पर वापस जाएं",
+      "backToRoutersTitle": "राउटर पर वापस",
+      "newRouter": "नया राउटर",
+      "loading": "लोड हो रहा है...",
+      "routerId": "राउटर आईडी:",
+      "saveFirstHint": "इस टैब को अनलॉक करने के लिए पहले राउटर सहेजें",
+      "newKind": "नया {{kind}}"
+    },
+    "dashboard": {
+      "period": "अवधि",
+      "noTraffic": "चुनी गई अवधि में इस राउटर के लिए कोई ट्रैफ़िक नहीं।",
+      "stats": {
+        "savings": "बचत",
+        "vsPrefix": "बनाम",
+        "forEverything": "सब कुछ के लिए",
+        "noTargetToCompare": "तुलना करने के लिए कोई लक्ष्य मॉडल नहीं",
+        "cost": "लागत",
+        "callCount": "1 कॉल",
+        "callCount_other": "{{count}} कॉल",
+        "latency": "विलंबता",
+        "medianP95": "माध्यिका · p95 {{value}}",
+        "ttft": "पहले टोकन में समय",
+        "notMeasured": "इन कॉल पर मापा नहीं गया",
+        "reliability": "विश्वसनीयता",
+        "errorsAndBlocked": "{{errors}} त्रुटियां · {{blocked}} अवरुद्ध"
+      },
+      "tokens": {
+        "input": "इनपुट टोकन:",
+        "output": "आउटपुट टोकन:",
+        "fromCache": "कैश से:",
+        "cacheSaved": "({{amount}} बचाया गया)"
+      },
+      "oneModel": {
+        "heading": "यदि सब कुछ एक मॉडल को चला होता",
+        "empty": "तुलना देखने के लिए इस राउटर को लक्ष्य मॉडल जोड़ें।",
+        "columns": {
+          "targetModel": "लक्ष्य मॉडल",
+          "wouldHaveCost": "की लागत होती",
+          "saved": "बचाया गया"
+        },
+        "costsHint": "लागत अवलोकन किए गए टोकन प्रत्येक लक्ष्य की दरों पर repriced है।"
+      },
+      "optimizers": {
+        "heading": "ऑप्टिमाइज़र क्या हटाए",
+        "columns": {
+          "optimizer": "ऑप्टिमाइज़र",
+          "callsChanged": "कॉल बदल गए",
+          "tokensSaved": "टोकन बचाए गए",
+          "costSaved": "लागत बचाई गई",
+          "rolledBack": "रोल बैक किया गया"
+        },
+        "hint": "कॉल पर ही मापा जाता है, प्रत्येक को सेवा करने वाले मॉडल पर मूल्य निर्धारित। एक रोल-बैक रन का मतलब है कि चरण का आउटपुट असुरक्षित के रूप में अस्वीकार कर दिया गया: इसने कुछ नहीं बचाया, और एक उच्च गणना का अर्थ है थ्रेशोल्ड बहुत आक्रामक है।"
+      },
+      "traffic": {
+        "heading": "ट्रैफ़िक कहां गया",
+        "columns": {
+          "model": "मॉडल",
+          "calls": "कॉल",
+          "share": "साझा",
+          "cost": "लागत",
+          "p95Latency": "p95 विलंबता",
+          "errors": "त्रुटियां"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "राउटर सहेजने में त्रुटि",
+        "copyFailed": "कॉपी विफल — कृपया टोकन को मैनुअली चुनें और कॉपी करें।"
+      },
+      "kind": {
+        "router": {
+          "label": "राउटर",
+          "description": "मॉडल उम्मीदवारों में अनुरोध राउट करता है।"
+        },
+        "orchestrator": {
+          "label": "ऑर्केस्ट्रेटर",
+          "description": "मॉडल की बजाय अन्य राउटर में अनुरोध राउट करता है।"
+        },
+        "passthrough": {
+          "label": "पास थ्रू",
+          "description": "अनुरोध को अपरिवर्तित आगे भेजता है।"
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "इस टोकन को अभी सहेजें।",
+        "saveNowHint": "इसे फिर से नहीं दिखाया जाएगा — एक बार जब आप इस स्क्रीन को छोड़ते हैं तो इसे पुनः प्राप्त नहीं किया जा सकता।",
+        "copied": "कॉपी किया गया!",
+        "copy": "कॉपी करें",
+        "goToRouter": "राउटर पर जाएं"
+      },
+      "connect": {
+        "heading": "कैसे कनेक्ट करें",
+        "intro": "किसी भी OpenAI या Anthropic SDK को Routerly पर इंगित करें और एक <tokenLink>राउटर टोकन</tokenLink> को API कुंजी के रूप में उपयोग करें। नीचे {{token}} को अपने के साथ प्रतिस्थापित करें। मॉडल <code>{{model}}</code> पसंद को Routerly को सौंपता है; <modelsLink>मॉडल</modelsLink> से कोई भी मॉडल id भी काम करता है।",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "आधार URL <code>{{baseUrl}}</code>, वही एक कोई \"OpenAI संगत\" प्रदाता क्षेत्र लेता है।",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "आधार URL <code>{{baseUrl}}</code>, <code>/v1</code> के बिना: SDK इसे जोड़ता है।",
+        "curl": "curl",
+        "curlHint": "कुछ भी स्थापित किए बिना वायरिंग की जांच करें, फिर <usageLink>उपयोग</usageLink> में कॉल खोजें।"
+      },
+      "form": {
+        "kind": "प्रकार",
+        "kindFixedHint": "राउटर बनाने के बाद तय।",
+        "routerName": "राउटर नाम",
+        "routerNamePlaceholder": "मेरा ऐप",
+        "advancedSettings": "उन्नत सेटिंग्स",
+        "ttftTimeout": "TTFT टाइमआउट (ms)",
+        "ttftTimeoutHint": "यदि कोई मॉडल इस समय के भीतर पहली प्रतिक्रिया बाइट नहीं भेजता, तो Routerly इसे त्याग देता है और अगले उम्मीदवार को कोशिश करता है। कुल प्रतिक्रिया अवधि को सीमित नहीं करता। इसे 0 पर सेट करें जब तक प्रदाता चाहे प्रतीक्षा करने के लिए।",
+        "traceContent": "ट्रेस सामग्री",
+        "traceContentHint": "ट्रेस हमेशा मेटाडेटा (मॉडल, स्कोर, टोकन, लागत, विलंबता) रिकॉर्ड करते हैं। भेजे गए प्रॉम्प्ट और प्राप्त उत्तर भी रिकॉर्ड करने के लिए इसे चालू करें। उन्हें उपयोग रिकॉर्ड के साथ संग्रहीत किया जाता है और जो भी रिपोर्ट पढ़ सकते हैं उन्हें दृश्य।",
+        "capturePromptsAndAnswers": "प्रॉम्प्ट और उत्तर कैप्चर करें",
+        "saveChanges": "परिवर्तन सहेजें",
+        "createRouter": "राउटर बनाएं",
+        "passthroughPath": "पाथ",
+        "passthroughPathHint": "उन क्लाइंट्स द्वारा बुलाए जाने वाले URL का हिस्सा बन जाता है: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ऑर्केस्ट्रेटर बनाएं",
+        "createPassthrough": "पास-थ्रू बनाएं"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "यह राउटर एक ऑर्केस्ट्रेटर नहीं है।",
+      "candidateRouters": "उम्मीदवार राउटर",
+      "candidateRoutersHint": "वह राउटर जो यह ऑर्केस्ट्रेटर अनुरोध को आगे करता है। वजन प्रभावित करता है कि कितनी बार प्रत्येक उम्मीदवार चुना जाता है; केवल इसका नाम, id, वजन और वैकल्पिक प्रति-उम्मीदवार सीमाएं यहां दिखाई जाती हैं।",
+      "routingPolicies": "राउटिंग नीतियाँ",
+      "routingPoliciesHint": "एक ऑर्केस्ट्रेटर प्रत्येक उम्मीदवार राउटर को एक पूरे के रूप में स्कोर करता है, इसलिए यहां केवल स्वास्थ्य, दर सीमा और निष्पक्षता नीतियां लागू होती हैं। अन्य नीति प्रकार एक राउटर के अपने मॉडल से चुनते हैं, जो एक ऑर्केस्ट्रेटर के पास नहीं है।",
+      "router": "राउटर",
+      "selectRouter": "राउटर चुनें",
+      "weight": "वजन",
+      "removeCandidate": "उम्मीदवार हटाएं",
+      "usageLimits": "इस उम्मीदवार के लिए उपयोग सीमा",
+      "limitCount": "{{count}} सीमा",
+      "limitCount_other": "{{count}} सीमा",
+      "usageLimitsHint": "वैकल्पिक उपयोग सीमा केवल अनुरोध पर लागू इस ऑर्केस्ट्रेटर इस उम्मीदवार को आगे करता है।",
+      "empty": "अभी कोई उम्मीदवार राउटर नहीं। एक ऑर्केस्ट्रेटर को अनुरोध आगे करने से पहले कम से कम एक की आवश्यकता है।",
+      "addCandidate": "उम्मीदवार जोड़ें",
+      "saved": "सहेजा गया!",
+      "saveCandidates": "उम्मीदवार सहेजें",
+      "errors": {
+        "loadFailed": "राउटर लोड करने में विफल",
+        "saveFailed": "ऑर्केस्ट्रेटर उम्मीदवार सहेजने में त्रुटि"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "राउटिंग प्रोफाइल असाइन करने में विफल",
+        "duplicateTargets": "लक्ष्य मॉडल में डुप्लिकेट नहीं हो सकते।",
+        "saveFailed": "राउटर राउटिंग सहेजने में त्रुटि",
+        "noProfileAvailable": "कोई राउटिंग प्रोफाइल उपलब्ध नहीं। प्रोफाइल पृष्ठ से एक बनाएं।"
+      },
+      "form": {
+        "routing": "राउटिंग",
+        "routingHint": "एक साझा राउटिंग प्रोफाइल का उपयोग करें, या इस राउटर की अपनी नीतियों को परिभाषित करें। लक्ष्य मॉडल किसी भी तरह से कॉन्फ़िगर करने योग्य रहते हैं।",
+        "profileMode": "प्रोफाइल",
+        "customMode": "कस्टम",
+        "routingProfile": "राउटिंग प्रोफाइल",
+        "builtinSuffix": "(बिल्ट-इन)",
+        "profileHint": "नीतियां प्रोफाइल से आती हैं और इसके परिवर्तन का पालन करती हैं। उन्हें प्रोफाइल पृष्ठ पर संपादित करें, या कस्टम पर स्विच करने के लिए एक कॉपी से शुरू करें।",
+        "saved": "सहेजा गया!",
+        "saveRoutingConfiguration": "राउटिंग कॉन्फ़िगरेशन सहेजें"
+      },
+      "targetModels": {
+        "heading": "लक्ष्य मॉडल",
+        "hint": "मॉडल का पूल परिभाषित करें जो नीतियां फ़िल्टर और चुनेंगी। वैकल्पिक प्रॉम्प्ट AI राउटर को निर्देश देते हैं कि प्रत्येक मॉडल को कब चुनें।",
+        "endpointModel": "एंडपॉइंट मॉडल",
+        "selectModel": "मॉडल चुनें",
+        "promptDefinition": "प्रॉम्प्ट परिभाषा",
+        "promptPlaceholder": "बिल्कुल वर्णन करें कि राउटर को इस मॉडल को कब और क्यों चुनना चाहिए...",
+        "intents": "इरादे",
+        "removeTarget": "लक्ष्य मॉडल हटाएं",
+        "empty": "कोई लक्ष्य मॉडल कॉन्फ़िगर नहीं किए गए।",
+        "addTarget": "लक्ष्य मॉडल जोड़ें",
+        "passthroughLabel": "पास-थ्रू (कच्चा फ़ॉरवर्ड)",
+        "passthroughNotRemovable": "पास-थ्रू प्रविष्टि हटाई नहीं जा सकती"
+      }
+    },
+    "optimizer": {
+      "title": "ऑप्टिमाइज़र",
+      "description": "ऑप्टिमाइज़र अनुरोध से पहले प्रॉम्प्ट टोकन को कम करते हैं। वे ऊपर से नीचे तक क्रम में चलते हैं। एक साझा ऑप्टिमाइज़र प्रोफाइल का उपयोग करें, या इस राउटर की अपनी पाइपलाइन को परिभाषित करें।",
+      "noPermission": "आपके पास ऑप्टिमाइज़र को देखने की अनुमति नहीं है।",
+      "mode": {
+        "profile": "प्रोफाइल",
+        "custom": "कस्टम"
+      },
+      "profileSelect": {
+        "ariaLabel": "ऑप्टिमाइज़र प्रोफाइल",
+        "builtinLabel": "{{label}} (बिल्ट-इन)",
+        "hint": "चरण प्रोफाइल से आते हैं और इसके परिवर्तन का पालन करते हैं। उन्हें प्रोफाइल पृष्ठ पर संपादित करें, या कस्टम पर स्विच करने के लिए एक कॉपी से शुरू करें।",
+        "disabledSuffix": "(अक्षम)",
+        "thresholdSuffix": ", थ्रेशोल्ड {{threshold}}"
+      },
+      "customHint": "पुनः क्रम करने के लिए खींचें, सक्षम करने के लिए टॉगल करें। कुछ ऑप्टिमाइज़र कितनी आक्रामक से काटते हैं इसे नियंत्रित करने के लिए एक थ्रेशोल्ड का उपयोग करते हैं।",
+      "saveButton": "ऑप्टिमाइज़र सहेजें",
+      "saving": "बचत हो रही है...",
+      "saved": "सहेजा गया",
+      "preview": {
+        "title": "टोकन बचत पूर्वावलोकन",
+        "description": "पूर्वावलोकन के लिए मौजूदा (अप्रस्तुत) पाइपलाइन को एक प्रॉम्प्ट पर चलाएं देखने के लिए कि प्रत्येक चरण क्या हटाता है और इसकी लागत क्या है। नमूना बातचीत में से एक चुनें, या अपना स्वयं का प्रॉम्प्ट टाइप करें।",
+        "promptLabel": "प्रॉम्प्ट",
+        "promptAriaLabel": "पूर्वावलोकन करने के लिए प्रॉम्प्ट",
+        "typePromptOption": "नीचे एक प्रॉम्प्ट टाइप करें",
+        "fixturesHint": "Routerly के साथ भेजी गई नमूना बातचीत। Routerly वास्तविक प्रॉम्प्ट रिकॉर्ड नहीं करता।",
+        "modelLabel": "मॉडल",
+        "modelAriaLabel": "पूर्वावलोकन के विरुद्ध मॉडल",
+        "modelWithContext": "{{id}} ({{k}}k संदर्भ)",
+        "noModelOption": "कोई मॉडल नहीं",
+        "modelHint": "जो चरण संदर्भ विंडो में फिट होने के लिए काटते हैं उन्हें पता होना चाहिए कि कौन सी विंडो। एक मॉडल के बिना उन्हें छोड़ दिया जाता है, जैसे वे एक अनुरोध पर होंगे जो एक ऐसा मॉडल नाम करता है जो Routerly को खिड़की नहीं है।",
+        "sampleAriaLabel": "नमूना प्रॉम्प्ट",
+        "samplePlaceholder": "एक नमूना उपयोगकर्ता संदेश पेस्ट करें...",
+        "runButton": "पूर्वावलोकन चलाएं",
+        "running": "चल रहा है...",
+        "before": "पहले",
+        "after": "बाद में",
+        "saved": "सहेजा गया",
+        "columns": {
+          "optimizer": "ऑप्टिमाइज़र",
+          "before": "पहले",
+          "after": "बाद में",
+          "saved": "बचाया गया"
+        },
+        "rolledBackNote": "रोल बैक: परिवर्तन असुरक्षित के रूप में खारिज कर दिया गया",
+        "skippedNote": "छोड़ दिया गया: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "इस चरण द्वारा उत्पादित परिवर्तन रोल बैक किया गया, इसलिए प्रॉम्प्ट अगले चरण तक अप्रभावित पहुंचा।",
+          "skipped": "यह चरण नहीं चला: {{reason}}",
+          "unchanged": "इस चरण ने प्रॉम्प्ट को अपरिवर्तित छोड़ दिया।"
+        }
+      },
+      "errors": {
+        "assignFailed": "ऑप्टिमाइज़र प्रोफाइल असाइन करने में विफल",
+        "saveFailed": "ऑप्टिमाइज़र सहेजने में त्रुटि",
+        "previewFailed": "पूर्वावलोकन चलाने में त्रुटि",
+        "noProfileAvailable": "कोई ऑप्टिमाइज़र प्रोफाइल उपलब्ध नहीं। प्रोफाइल पृष्ठ से एक बनाएं।"
+      }
+    },
+    "token": {
+      "newButton": "नया टोकन",
+      "empty": "अभी कोई API टोकन नहीं। अनुरोध प्रमाणित करना शुरू करने के लिए एक बनाएं।",
+      "budgetOverrides": "बजट ओवरराइड",
+      "created": "बनाया गया",
+      "lastUsed": "अंतिम उपयोग",
+      "expires": "समाप्त हो जाता है",
+      "never": "कभी नहीं",
+      "editTitle": "कॉन्फ़िगरेशन संपादित करें",
+      "revokeTitle": "टोकन रद्द करें",
+      "revokeConfirm": "टोकन \"{{snippet}}...\" रद्द करें? इसका उपयोग करने वाले ऐप्स तुरंत काम करना बंद कर देंगे।",
+      "labelInput": {
+        "placeholder": "लेबल खोजें या बनाएं...",
+        "createPrefix": "बनाएं",
+        "noMatches": "कोई मिलान लेबल नहीं मिले।"
+      },
+      "errors": {
+        "deleteFailed": "टोकन हटाने में त्रुटि"
+      },
+      "create": {
+        "backToTokens": "टोकन पर वापस जाएं",
+        "title": "नया API टोकन",
+        "subtitle": "पूर्ण टोकन केवल निर्माण के बाद एक बार दिखाया जाता है — इसे सुरक्षित रूप से संग्रहीत करें।",
+        "tokenCreated": "टोकन सफलतापूर्वक बनाया गया। अभी कॉपी करें — इसे फिर से नहीं दिखाया जाएगा।",
+        "copied": "कॉपी किया गया!",
+        "copy": "कॉपी करें",
+        "done": "किया",
+        "optional": "वैकल्पिक",
+        "labels": "लेबल",
+        "labelsHint": "इस टोकन को टैग करें यह पहचानने के लिए कि यह कहां उपयोग होता है (जैसे \"उत्पादन\", \"ci\")।",
+        "scopes": "स्कोप",
+        "scopesHint": "इस टोकन से जुड़े मुक्त-फॉर्म स्कोप (जैसे \"बैच\", \"आंतरिक\"), आपके स्वयं के रिकॉर्डकीपिंग के लिए संग्रहीत।",
+        "tags": "टैग",
+        "tagsHint": "उपयोग रिकॉर्ड को आगे बढ़ाए गए कुंजी-मूल्य मेटाडेटा (जैसे env=production)।",
+        "keyPlaceholder": "key",
+        "valuePlaceholder": "value",
+        "createButton": "टोकन बनाएं",
+        "cancel": "रद्द करें",
+        "copyFailed": "कॉपी विफल — कृपया टोकन को मैनुअली चुनें और कॉपी करें।",
+        "errors": {
+          "createFailed": "टोकन बनाने में त्रुटि"
+        }
+      },
+      "edit": {
+        "title": "टोकन संपादित करें",
+        "subtitle": "इस टोकन के लिए लेबल और प्रति-मॉडल सीमा ओवरराइड अपडेट करें।",
+        "token": "टोकन",
+        "labels": "लेबल",
+        "perModelLimits": "प्रति-मॉडल सीमा",
+        "perModelLimitsHint": "इस टोकन का उपयोग करने वाले अनुरोध के लिए वैश्विक और राउटर-स्तरीय सीमा को ओवरराइड करें।",
+        "noTargetModels": "पहले राउटिंग टैब में लक्ष्य मॉडल जोड़ें।",
+        "noOverride": "कोई ओवरराइड नहीं",
+        "noLimits": "कोई सीमा नहीं",
+        "noLimitsSet": "कोई सीमा सेट नहीं — माता-पिता से विरासत में मिल रहा है। ओवरराइड करने के लिए नीचे एक सीमा जोड़ें।",
+        "metric": "मीट्रिक",
+        "type": "प्रकार",
+        "periodLabel": "अवधि",
+        "every": "हर",
+        "maxCost": "अधिकतम ($)",
+        "maxCalls": "अधिकतम (n.)",
+        "maxTokens": "अधिकतम (टोकन)",
+        "allCombosSet": "सभी मीट्रिक/अवधि संयोजन पहले से सेट हैं",
+        "addLimit": "सीमा जोड़ें",
+        "windowType": {
+          "period": "अवधि",
+          "rolling": "रोलिंग"
+        },
+        "limitMetric": {
+          "cost": "लागत (USD)",
+          "calls": "अनुरोध",
+          "input_tokens": "इनपुट टोकन",
+          "output_tokens": "आउटपुट टोकन",
+          "total_tokens": "कुल टोकन"
+        },
+        "period": {
+          "hourly": "प्रति घंटा",
+          "daily": "दैनिक",
+          "weekly": "साप्ताहिक",
+          "monthly": "मासिक",
+          "yearly": "वार्षिक"
+        },
+        "rollingUnit": {
+          "second": "सेकंड",
+          "minute": "मिनट",
+          "hour": "घंटे",
+          "day": "दिन",
+          "week": "सप्ताह",
+          "month": "महीने"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / हर {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "टोकन सहेजने में त्रुटि"
+        }
+      }
+    },
+    "users": {
+      "title": "राउटर सदस्य",
+      "description": "उन उपयोगकर्ताओं को प्रबंधित करें जिनके पास इस राउटर तक पहुंच है।",
+      "addButton": "सदस्य जोड़ें",
+      "addNewTitle": "नया सदस्य जोड़ें",
+      "selectUserPlaceholder": "उपयोगकर्ता चुनें...",
+      "addConfirmButton": "जोड़ें",
+      "cancelButton": "रद्द करें",
+      "empty": "कोई सदस्य नहीं मिले।",
+      "removeConfirm": "क्या आप वाकई इस सदस्य को हटाना चाहते हैं?",
+      "saveTitle": "परिवर्तन सहेजें",
+      "changeRoleTitle": "भूमिका बदलें",
+      "removeTitle": "सदस्य हटाएं",
+      "roles": {
+        "viewer": "दर्शक",
+        "editor": "संपादक",
+        "admin": "प्रशासक"
+      },
+      "columns": {
+        "user": "उपयोगकर्ता",
+        "role": "भूमिका",
+        "actions": "कार्य"
+      },
+      "errors": {
+        "loadFailed": "उपयोगकर्ता लोड करने में विफल",
+        "addFailed": "सदस्य जोड़ने में त्रुटि",
+        "updateFailed": "सदस्य अपडेट करने में त्रुटि",
+        "removeFailed": "सदस्य हटाने में त्रुटि"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "बंद"
+      },
+      "autoRefreshOff": "ऑटो-रीफ्रेश अक्षम",
+      "autoRefreshEvery": "हर {{interval}} ऑटो-रीफ्रेश करें",
+      "lastUpdated": "अंतिम अपडेट: {{time}}",
+      "refresh": "ताज़ा करें",
+      "refreshNowTitle": "अभी ताज़ा करें",
+      "refreshNowButton": "↻ अभी",
+      "filters": {
+        "period": "अवधि",
+        "model": "मॉडल",
+        "allModels": "सभी मॉडल",
+        "type": "प्रकार",
+        "all": "सभी",
+        "completion": "पूर्णता",
+        "router": "राउटर",
+        "status": "स्थिति",
+        "success": "सफलता",
+        "blocked": "अवरुद्ध",
+        "error": "त्रुटि",
+        "resetButton": "फ़िल्टर रीसेट करें"
+      },
+      "stats": {
+        "totalCost": "कुल लागत",
+        "totalCalls": "कुल कॉल",
+        "completionCalls": "पूर्णता कॉल",
+        "routerCalls": "राउटर कॉल",
+        "errors": "त्रुटियां"
+      },
+      "requestLogs": "अनुरोध लॉग",
+      "emptyNoRequests": "चुनी गई अवधि में इस राउटर के लिए कोई अनुरोध नहीं।",
+      "emptyNoMatches": "कोई रिकॉर्ड सक्रिय फ़िल्टर से मेल नहीं खाते।",
+      "columns": {
+        "time": "समय",
+        "model": "मॉडल",
+        "type": "प्रकार",
+        "in": "में",
+        "out": "आउट",
+        "cost": "लागत",
+        "latency": "विलंबता",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "स्थिति"
+      },
+      "typeRouter": "राउटर",
+      "typeCompletion": "पूर्णता",
+      "pagination": {
+        "previous": "← पिछला",
+        "next": "अगला →",
+        "pageOf": "पृष्ठ {{page}} का {{totalPages}}",
+        "totalRecords": "({{count}} कुल रिकॉर्ड)"
+      }
+    },
+    "security": {
+      "title": "सुरक्षा",
+      "description": "एक साझा सुरक्षा प्रोफाइल का उपयोग करें, या इस राउटर की अपनी गार्डरेल और PII नीतियों को परिभाषित करें।",
+      "mode": {
+        "profile": "प्रोफाइल",
+        "custom": "कस्टम"
+      },
+      "profileSelect": {
+        "ariaLabel": "सुरक्षा प्रोफाइल",
+        "builtinLabel": "{{label}} (बिल्ट-इन)",
+        "hint": "गार्डरेल और PII नीतियां प्रोफाइल से आती हैं और इसके परिवर्तन का पालन करती हैं। उन्हें प्रोफाइल पृष्ठ पर संपादित करें, या कस्टम पर स्विच करने के लिए एक कॉपी से शुरू करें।",
+        "blockingSuffix": ", अवरोधन",
+        "disabledSuffix": ", अक्षम",
+        "piiRedaction": "PII संपादन ({{target}})"
+      },
+      "saveButton": "सुरक्षा सेटिंग्स सहेजें",
+      "saved": "सहेजा गया!",
+      "errors": {
+        "assignFailed": "सुरक्षा प्रोफाइल असाइन करने में विफल",
+        "saveFailed": "सुरक्षा सेटिंग्स सहेजने में त्रुटि",
+        "noProfileAvailable": "कोई सुरक्षा प्रोफाइल उपलब्ध नहीं। प्रोफाइल पृष्ठ से एक बनाएं।"
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "आप एक सहायक AI सहायक हैं।",
+      "errors": {
+        "unknown": "अज्ञात त्रुटि हुई",
+        "onlyImages": "केवल छवि संलग्नक वर्तमान में दृष्टि मॉडल के लिए समर्थित हैं।"
+      },
+      "title": "परीक्षण चैट",
+      "subtitle": "राउटिंग गेटवे के माध्यम से परीक्षण प्रश्न भेजें।",
+      "routerToken": "राउटर टोकन:",
+      "hideToken": "टोकन छिपाएं",
+      "showToken": "टोकन दिखाएं",
+      "recognizedToken": "स्वीकृत टोकन",
+      "unrecognizedToken": "अस्वीकृत टोकन",
+      "noMessages": "अभी कोई संदेश नहीं।",
+      "enterTokenHint": "एक संदेश भेजने के लिए कृपया ऊपर एक राउटर टोकन दर्ज करें।",
+      "typeMessageHint": "परीक्षण शुरू करने के लिए नीचे एक संदेश टाइप करें।",
+      "reasoning": "तर्क",
+      "attachedAlt": "संलग्न",
+      "attachmentAlt": "संलग्नक",
+      "attachImage": "छवि संलग्न करें",
+      "typeMessagePlaceholder": "एक संदेश टाइप करें...",
+      "stopGeneration": "पीढ़ी रोकें",
+      "sendEnter": "भेजें (Enter)",
+      "debugLog": "डीबग लॉग",
+      "clear": "साफ़ करें",
+      "noRequestSent": "अभी तक कोई अनुरोध नहीं भेजा गया।",
+      "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग · {{count}} इवेंट",
+      "turnTraceLog_other": "बारी #{{turn}} ट्रेस लॉग · {{count}} इवेंट"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "कनेक्शन",
+      "subtitle": "मॉडल उदाहरण चलाने के लिए उपयोग किए जाने वाले प्रदाता खाते",
+      "noPermission": "आपके पास कनेक्शन को देखने की अनुमति नहीं है।",
+      "count": "{{count}} कनेक्शन",
+      "count_other": "{{count}} कनेक्शन",
+      "addConnection": "कनेक्शन जोड़ें",
+      "empty": "अभी कोई कनेक्शन नहीं। शुरू करने के लिए एक जोड़ें।",
+      "deleteConfirm": "कनेक्शन \"{{label}}\" हटाएं? इससे बाध्य उदाहरण काम करना बंद कर देंगे।",
+      "errors": {
+        "loadFailed": "कनेक्शन लोड करने में विफल",
+        "deleteFailed": "कनेक्शन हटाने में विफल"
+      },
+      "columns": {
+        "label": "लेबल",
+        "provider": "प्रदाता",
+        "endpoint": "एंडपॉइंट",
+        "status": "स्थिति"
+      },
+      "status": {
+        "enabled": "सक्षम",
+        "disabled": "अक्षम"
+      },
+      "actions": {
+        "models": "मॉडल",
+        "edit": "संपादित करें",
+        "remove": "हटाएं"
+      }
+    },
+    "form": {
+      "backToConnections": "कनेक्शन पर वापस जाएं",
+      "editTitle": "कनेक्शन संपादित करें",
+      "addTitle": "कनेक्शन जोड़ें",
+      "enabled": "सक्षम",
+      "editSubtitle": "प्रदाता खाता सेटिंग्स अपडेट करें",
+      "addSubtitle": "एक नया प्रदाता खाता पंजीकृत करें",
+      "sectionTitle": "कनेक्शन विवरण",
+      "sectionDesc": "प्रदाता खाता, क्रेडेंशियल, और अनुरोध निष्पादित करने के लिए उपयोग किया गया एंडपॉइंट।",
+      "provider": "प्रदाता",
+      "groups": {
+        "directApi": "प्रत्यक्ष API",
+        "cloudPlatform": "क्लाउड प्लेटफॉर्म",
+        "subscription": "सदस्यता",
+        "browserSession": "ब्राउजर सेशन",
+        "selfHosted": "स्व-होस्ट किया गया"
+      },
+      "upstreamProvider": {
+        "label": "प्रदाता",
+        "hintLabel": "(अपस्ट्रीम प्रदाता नाम)",
+        "placeholder": "उदाहरण deepseek, mistral, groq",
+        "description": "सेवा को नाम देता है यह एंडपॉइंट जिससे संबंधित है। इस कनेक्शन पर मॉडल इसे अपनी ID प्रीफिक्स के रूप में उपयोग करते हैं (जैसे <code>deepseek/deepseek-r1</code>)।"
+      },
+      "name": {
+        "label": "नाम",
+        "hint": "इसे हर जगह पहचानता है जहां इसका संदर्भ है, इसलिए यह अद्वितीय होना चाहिए। इसे खाली छोड़ें <code>{{suggested}}</code> का उपयोग करने के लिए।"
+      },
+      "credentialsBlankHint": "मौजूदा मूल्य रखने के लिए क्रेडेंशियल फ़ील्ड खाली छोड़ें।",
+      "save": "सहेजें",
+      "create": "बनाएं",
+      "cancel": "रद्द करें",
+      "oauth": {
+        "unknown": "अज्ञात",
+        "accountExpires": "खाता: {{account}} — समाप्त {{expires}}",
+        "unknownError": "अज्ञात त्रुटि"
+      },
+      "errors": {
+        "notFound": "कनेक्शन नहीं मिला",
+        "loadFailed": "कनेक्शन लोड करने में विफल",
+        "updateFailed": "कनेक्शन अपडेट करने में विफल",
+        "createFailed": "कनेक्शन बनाने में विफल"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "मॉडल पर वापस जाएं",
+      "title": "मॉडल खोज",
+      "subtitle": "उपलब्ध मॉडल ब्राउज़ करें और अपने राउटिंग कॉन्फ़िगरेशन में जोड़ें",
+      "count": "{{count}} मॉडल",
+      "filteredCount": "{{count}} का {{filtered}}",
+      "free": "मुक्त",
+      "add": "जोड़ें",
+      "addAgain": "फिर से जोड़ें",
+      "loadFailed": "कैटलॉग लोड करने में विफल: {{error}}",
+      "filters": {
+        "search": "खोजें",
+        "searchPlaceholder": "मॉडल ID या नाम...",
+        "provider": "प्रदाता",
+        "allProviders": "सभी प्रदाता",
+        "context": "संदर्भ",
+        "ctxOptions": {
+          "all": "सभी",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "मूल्य / 1M",
+        "priceOptions": {
+          "all": "सभी",
+          "free": "मुक्त",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "दिखाएं",
+        "configured": "कॉन्फ़िगर किया गया",
+        "embedding": "एम्बेडिंग",
+        "resetFilters": "फ़िल्टर रीसेट करें"
+      },
+      "empty": {
+        "noMatches": "कोई मॉडल आपके फ़िल्टर से मेल नहीं खाते।"
+      },
+      "columns": {
+        "model": "मॉडल",
+        "provider": "प्रदाता",
+        "context": "संदर्भ",
+        "input": "इनपुट / 1M",
+        "output": "आउटपुट / 1M"
+      },
+      "badges": {
+        "configured": "कॉन्फ़िगर किया गया",
+        "embedding": "एम्बेडिंग",
+        "runsLocally": "स्थानीय रूप से चलता है"
+      },
+      "pagination": {
+        "prev": "पिछला",
+        "next": "अगला",
+        "range": "{{count}} का {{start}}–{{end}}"
+      }
+    },
+    "form": {
+      "backToModels": "मॉडल पर वापस जाएं",
+      "title": {
+        "add": "मॉडल जोड़ें",
+        "edit": "मॉडल संपादित करें",
+        "clone": "मॉडल क्लोन करें"
+      },
+      "subtitle": {
+        "add": "एक नया LLM प्रदाता मॉडल पंजीकृत करें",
+        "edit": "{{id}} के लिए कॉन्फ़िगरेशन संशोधित करना",
+        "clone": "{{id}} से क्लोन करना — सहेजने के लिए एक नई ID असाइन करें"
+      },
+      "errors": {
+        "modelNotFound": "मॉडल नहीं मिला",
+        "sourceModelNotFound": "स्रोत मॉडल नहीं मिला",
+        "loadFailed": "मॉडल लोड करने में त्रुटि",
+        "idRequired": "मॉडल ID आवश्यक है",
+        "duplicateId": "मॉडल \"{{id}}\" पहले से मौजूद है — एक अलग कस्टम ID सेट करें",
+        "selectConnection": "कनेक्शन चुनें",
+        "saveFailed": "त्रुटि"
+      },
+      "badge": {
+        "yes": "हां",
+        "no": "नहीं",
+        "override": "ओवरराइड",
+        "auto": "ऑटो",
+        "default": "डिफ़ॉल्ट: {{value}}",
+        "reset": "रीसेट"
+      },
+      "oauth": {
+        "unknownExpiry": "अज्ञात",
+        "accountOk": "खाता: {{account}} — समाप्त {{expires}}",
+        "unknownError": "अज्ञात त्रुटि"
+      },
+      "identification": {
+        "title": "मॉडल पहचान",
+        "description": "इस मॉडल कॉन्फ़िगरेशन के लिए अद्वितीय पहचान और प्रदाता सेटिंग्स।",
+        "routerlyId": "Routerly ID",
+        "routerlyIdHintPre": "(वैकल्पिक — डिफ़ॉल्ट:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Routerly API कॉल में इस मॉडल का संदर्भ देते समय उपयोग की गई पहचान।",
+        "provider": "प्रदाता",
+        "upstreamProviderHint": "(अपस्ट्रीम प्रदाता नाम)",
+        "upstreamProviderPlaceholder": "जैसे deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly ID के लिए प्रीफिक्स के रूप में उपयोग किया जाता है (जैसे",
+        "upstreamProviderDescPost": ")।",
+        "model": "मॉडल",
+        "upstreamModelHint": "(अपस्ट्रीम मॉडल ID)",
+        "upstreamModelPlaceholder": "जैसे deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "अपस्ट्रीम API एंडपॉइंट को भेजी गई मॉडल पहचान।",
+        "modelPreset": "मॉडल प्रीसेट",
+        "customModelOption": "— कस्टम मॉडल नाम —",
+        "customModelPlaceholder": "जैसे my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "कनेक्शन विवरण",
+        "description": "अनुरोध निष्पादित करने के लिए आवश्यक API एंडपॉइंट और प्रमाणीकरण क्रेडेंशियल।",
+        "preconfigured": "पूर्व-कॉन्फ़िगर किया गया",
+        "custom": "कस्टम",
+        "connection": "कनेक्शन",
+        "selectPlaceholder": "— एक कनेक्शन चुनें —",
+        "noneAvailable": "इस प्रदाता के लिए कोई पूर्व-कॉन्फ़िगर कनेक्शन नहीं। कस्टम पर स्विच करें, या कनेक्शन पृष्ठ पर एक बनाएं।",
+        "editHint": "बाद में इस कनेक्शन को संपादित करना इससे बाध्य हर मॉडल को अपडेट करता है।"
+      },
+      "capabilities": {
+        "title": "क्षमताएं",
+        "description": "इस मॉडल की प्रकार और क्षमताएं निर्दिष्ट करें।",
+        "embeddingModel": "एम्बेडिंग मॉडल",
+        "embeddingModelHint": "यह मॉडल वेक्टर एम्बेडिंग उत्पन्न करता है (चैट पूर्णता नहीं)"
+      },
+      "pricing": {
+        "title": "मूल्य निर्धारण और संदर्भ",
+        "description": "मूल्य निर्धारण मापदंड और बिलिंग और राउटिंग के लिए उपयोग की गई सीमा।",
+        "inputPerMillion": "इनपुट $/1M",
+        "outputPerMillion": "आउटपुट $/1M",
+        "cachePerMillion": "कैश पढ़ें $/1M",
+        "cacheWritePerMillion": "कैश लिखें $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "संदर्भ विंडो",
+        "contextWindowHint": "(टोकन, वैकल्पिक)"
+      },
+      "tiers": {
+        "title": "उन्नत — मूल्य निर्धारण स्तर",
+        "description": "जब कोई मीट्रिक एक थ्रेशोल्ड से अधिक हो जाता है तो मूल्य निर्धारण को ओवरराइड करें। उदाहरण के लिए: \"200 000 संदर्भ टोकन से ऊपर, कीमतें बदलती हैं।\"",
+        "removeTier": "स्तर हटाएं",
+        "above": "उपरोक्त",
+        "metric": "मीट्रिक",
+        "metricContextTokens": "संदर्भ टोकन",
+        "overridePricing": "मूल्य निर्धारण को ओवरराइड करें",
+        "addTier": "मूल्य निर्धारण स्तर जोड़ें"
+      },
+      "limits": {
+        "title": "सीमाएं",
+        "description": "इस मॉडल के लिए उपयोग सीमाएं। कई नियमों को जोड़ा जा सकता है।",
+        "metric": "मीट्रिक",
+        "type": "प्रकार",
+        "addLimit": "सीमा जोड़ें"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max सदस्यता)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro सदस्यता)"
+      },
+      "saveChanges": "परिवर्तन सहेजें",
+      "createClone": "क्लोन बनाएं",
+      "createModel": "मॉडल बनाएं"
+    },
+    "page": {
+      "title": "मॉडल",
+      "subtitle": "Routerly के साथ पंजीकृत LLM प्रदाता",
+      "tabs": {
+        "models": "मॉडल",
+        "health": "स्वास्थ्य"
+      },
+      "toolbar": {
+        "count": "{{count}} मॉडल",
+        "count_other": "{{count}} मॉडल",
+        "filteredCount": "{{count}} मॉडल का {{filtered}}",
+        "filteredCount_other": "{{count}} मॉडल का {{filtered}}"
+      },
+      "filters": {
+        "allProviders": "सभी प्रदाता",
+        "allConnections": "सभी कनेक्शन",
+        "searchPlaceholder": "मॉडल फ़िल्टर करें..."
+      },
+      "discover": "खोजें",
+      "addModel": "मॉडल जोड़ें",
+      "deleteConfirm": "मॉडल \"{{id}}\" हटाएं?",
+      "empty": {
+        "noModels": "अभी कोई मॉडल नहीं। शुरू करने के लिए एक जोड़ें।",
+        "noMatches": "कोई मॉडल सक्रिय फ़िल्टर से मेल नहीं खाते।"
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "प्रदाता",
+        "endpoint": "एंडपॉइंट",
+        "input": "इनपुट $/1M",
+        "output": "आउटपुट $/1M",
+        "cache": "कैश $/1M",
+        "context": "संदर्भ आकार"
+      },
+      "actions": {
+        "test": "परीक्षण",
+        "clone": "क्लोन",
+        "edit": "संपादित करें",
+        "remove": "हटाएं"
+      },
+      "pagination": {
+        "previous": "← पिछला",
+        "next": "अगला →",
+        "pageOf": "पृष्ठ {{page}} का {{totalPages}}",
+        "total": "({{count}} मॉडल)",
+        "total_other": "({{count}} मॉडल)"
+      },
+      "health": {
+        "emptyNoModels": "कोई मॉडल कॉन्फ़िगर नहीं किए गए।",
+        "emptyNoMatches": "कोई मॉडल फ़िल्टर से मेल नहीं खाते।",
+        "resetAll": "सभी रीसेट करें",
+        "resetAllTitle": "हर सर्किट ब्रेकर, कूलडाउन और लॉकआउट रीसेट करें",
+        "resetTitle": "सर्किट ब्रेकर रीसेट करें",
+        "confirmResetModel": "मॉडल \"{{id}}\" के लिए सर्किट ब्रेकर रीसेट करें?",
+        "confirmResetAll": "सभी लचीलापन स्थिति रीसेट करें? यह हर सर्किट ब्रेकर, कूलडाउन और लॉकआउट को साफ़ करता है।",
+        "errors": {
+          "resetModelFailed": "सर्किट ब्रेकर रीसेट करने में विफल",
+          "resetAllFailed": "लचीलापन स्थिति रीसेट करने में विफल"
+        },
+        "columns": {
+          "model": "मॉडल",
+          "provider": "प्रदाता",
+          "status": "स्थिति",
+          "circuit": "सर्किट",
+          "errorRate": "त्रुटि दर (5m)",
+          "p95Latency": "P95 विलंबता (1h)",
+          "requests": "अनुरोध (1h)",
+          "lastSuccess": "अंतिम सफलता",
+          "cooldownLockout": "कूलडाउन / लॉकआउट"
+        },
+        "status": {
+          "healthy": "स्वस्थ",
+          "degraded": "गिरावट",
+          "unavailable": "अनुपलब्ध",
+          "cooldown": "कूलडाउन",
+          "nodata": "कोई डेटा नहीं"
+        },
+        "circuit": {
+          "ok": "ठीक है",
+          "recovering": "पुनर्प्राप्त हो रहा है",
+          "tripped": "ट्रिप किया गया"
+        },
+        "time": {
+          "never": "कभी नहीं",
+          "now": "अभी",
+          "secondsAgo": "{{count}}s पहले",
+          "minutesAgo": "{{count}}m पहले",
+          "hoursAgo": "{{count}}h पहले",
+          "daysAgo": "{{count}}d पहले",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "कूलडाउन {{time}}",
+          "lockout": "लॉकआउट {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "प्रयोग",
+      "subtitle": "A/B परीक्षण राउटर एक दूसरे के विरुद्ध",
+      "noPermission": "आपके पास प्रयोग को देखने की अनुमति नहीं है।",
+      "count": "{{count}} प्रयोग",
+      "count_other": "{{count}} प्रयोग",
+      "newExperiment": "नया प्रयोग",
+      "empty": "अभी कोई प्रयोग नहीं। राउटर की तुलना करने के लिए एक बनाएं।",
+      "deleteConfirm": "प्रयोग \"{{name}}\" हटाएं? इसे वापस नहीं किया जा सकता।",
+      "noToken": "कोई टोकन नहीं",
+      "noTokenTitle": "बिना टोकन के कोई क्लाइंट इस प्रयोग तक नहीं पहुंच सकता",
+      "errors": {
+        "loadFailed": "प्रयोग लोड करने में विफल",
+        "deleteFailed": "प्रयोग हटाने में विफल"
+      },
+      "columns": {
+        "name": "नाम",
+        "variants": "वेरिएंट",
+        "rotation": "घूर्णन",
+        "created": "बनाया गया"
+      },
+      "actions": {
+        "edit": "प्रयोग संपादित करें",
+        "remove": "हटाएं"
+      }
+    },
+    "layout": {
+      "backToExperiments": "प्रयोग पर वापस जाएं",
+      "newExperiment": "नया प्रयोग",
+      "loading": "लोड हो रहा है...",
+      "experimentId": "प्रयोग ID:",
+      "disabledTabTitle": "इस टैब को अनलॉक करने के लिए पहले प्रयोग सहेजें",
+      "errors": {
+        "notFound": "प्रयोग नहीं मिला"
+      },
+      "tabs": {
+        "config": "कॉन्फ़िगरेशन",
+        "metrics": "मेट्रिक्स",
+        "token": "टोकन"
+      }
+    },
+    "config": {
+      "saved": "सहेजा गया।",
+      "created": "प्रयोग बनाया गया। अपने क्लाइंट को इस टोकन पर इंगित करें एक राउटर टोकन की बजाय। इसे फिर से नहीं दिखाया जाएगा।",
+      "copy": "कॉपी करें",
+      "copied": "कॉपी किया गया!",
+      "done": "किया",
+      "saving": "बचत हो रही है...",
+      "create": "प्रयोग बनाएं",
+      "save": "परिवर्तन सहेजें",
+      "cancel": "रद्द करें",
+      "trafficSplit": "ट्रैफ़िक विभाजन",
+      "errors": {
+        "loadRoutersFailed": "राउटर लोड करने में विफल",
+        "saveFailed": "प्रयोग सहेजने में विफल",
+        "copyFailed": "कॉपी विफल: टोकन को मैनुअली चुनें और कॉपी करें।"
+      },
+      "fields": {
+        "name": "नाम",
+        "namePlaceholder": "सस्ता बनाम प्रीमियम राउटिंग",
+        "description": "विवरण",
+        "optional": "(वैकल्पिक)",
+        "descriptionPlaceholder": "यह परीक्षण क्या तय करने की कोशिश कर रहा है",
+        "minSamples": "प्रति वेरिएंट न्यूनतम कॉल",
+        "minSamplesHint": "इसके नीचे, मेट्रिक्स टैब तुलना को अभी तक निर्णायक नहीं चिह्नित करता है।",
+        "rotation": "घूर्णन",
+        "stickyOn": "चिपचिपा",
+        "stickyKey": "चिपचिपा की"
+      },
+      "variants": {
+        "title": "वेरिएंट",
+        "desc": "प्रत्येक वेरिएंट एक मौजूदा राउटर है, पूरा: इसके मॉडल, राउटिंग और गार्डरेल सभी लागू होते हैं। एक परीक्षण को कम से कम दो की आवश्यकता है।",
+        "routerAriaLabel": "वेरिएंट {{index}} राउटर",
+        "routerPlaceholder": "एक राउटर चुनें",
+        "labelAriaLabel": "वेरिएंट {{index}} लेबल",
+        "labelPlaceholder": "लेबल (वैकल्पिक)",
+        "weightAriaLabel": "वेरिएंट {{index}} वजन",
+        "weightPlaceholder": "वजन",
+        "removeTitle": "वेरिएंट {{index}} हटाएं",
+        "add": "वेरिएंट जोड़ें"
+      },
+      "judge": {
+        "title": "न्यायाधीश",
+        "desc": "वैकल्पिक: एक मॉडल प्रत्येक नमूना किए गए उत्तर को पढ़ता है और आपके मानदंड के विरुद्ध 0-10 को स्कोर करता है। प्रत्येक न्यायाधीश कॉल एक अतिरिक्त मॉडल कॉल है, किसी अन्य की तरह बिल किया गया।",
+        "enable": "न्यायाधीश मॉडल के साथ उत्तरों को स्कोर करें",
+        "model": "न्यायाधीश मॉडल",
+        "modelPlaceholder": "एक मॉडल चुनें",
+        "criteria": "मानदंड",
+        "criteriaPlaceholder": "एक प्रति पंक्ति, जैसे\nपूछा गया प्रश्न का उत्तर देता है\nतथ्यपूर्ण रहता है\nअनुरोधित प्रारूप के लिए रहता है",
+        "sampleRate": "कॉल का साझा न्यायाधीश (%)"
+      }
+    },
+    "metrics": {
+      "loading": "लोड हो रहा है...",
+      "callsMeasured": "{{count}} कॉल मापा गया",
+      "callsMeasured_other": "{{count}} कॉल मापे गए",
+      "empty": "इस विंडो में अभी तक कोई कॉल नहीं। प्रयोग टोकन पर एक क्लाइंट इंगित करें तुलना शुरू करने के लिए।",
+      "notConclusive": "अभी तक निर्णायक नहीं: हर वेरिएंट को इस विंडो में कम से कम {{minSamples}} कॉल की आवश्यकता है।",
+      "explanation": "प्रत्येक जोड़ी का बेहतर आंकड़ा हाइलाइट किया गया है: कॉल के लिए सस्ता, तेज़, उच्च न्यायाधीश स्कोर। एक मान के नीचे प्रतिशत सर्वश्रेष्ठ भुजा से इसकी दूरी है। न्यायाधीश स्कोर प्रयोग के पूरे जीवन पर एक चलती औसत है, इसलिए यह एक आंकड़ा है खिड़की को संकीर्ण नहीं करता।",
+      "lowSample": "कम नमूना",
+      "lowSampleTitle": "इस विंडो में {{minSamples}} कॉल के नीचे",
+      "judgedCallsTitle": "{{count}} उत्तर प्रयोग शुरू होने के बाद से न्यायाधीश द्वारा स्कोर किया गया",
+      "judgedCallsTitle_other": "{{count}} उत्तर प्रयोग शुरू होने के बाद से न्यायाधीश द्वारा स्कोर किए गए",
+      "errors": {
+        "loadFailed": "मेट्रिक्स लोड करने में विफल"
+      },
+      "columns": {
+        "variant": "वेरिएंट",
+        "calls": "कॉल",
+        "share": "साझा",
+        "errors": "त्रुटियां",
+        "tokens": "टोकन में / बाहर",
+        "cost": "लागत",
+        "costPerCall": "लागत / कॉल",
+        "avgLatency": "औसत विलंबता",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "न्यायाधीश स्कोर"
+      }
+    },
+    "token": {
+      "desc": "एक क्लाइंट प्रयोग को ठीक वैसे ही कहता है जैसे राउटर: एक ही आधार URL, इस टोकन एक राउटर टोकन की बजाय। प्रत्येक अनुरोध एक वेरिएंट पर उतरता है और उस वेरिएंट के राउटर को बिल किया जाता है।",
+      "baseUrlLabel": "OpenAI या Anthropic SDK के लिए आधार URL, प्रयोग टोकन के साथ API कुंजी के रूप में:",
+      "created": "टोकन बनाया गया। अभी कॉपी करें, इसे फिर से नहीं दिखाया जाएगा।",
+      "copy": "कॉपी करें",
+      "copied": "कॉपी किया गया!",
+      "newToken": "नया टोकन",
+      "empty": "इस प्रयोग पर कोई टोकन नहीं। क्लाइंट इसे कॉल कर सकें इसके लिए एक बनाएं।",
+      "revokeConfirm": "टोकन \"{{snippet}}...\" रद्द करें? इसका उपयोग करने वाले क्लाइंट तुरंत काम करना बंद कर देंगे।",
+      "revokeTitle": "टोकन रद्द करें",
+      "errors": {
+        "createFailed": "टोकन बनाने में विफल",
+        "revokeFailed": "टोकन रद्द करने में विफल",
+        "copyFailed": "कॉपी विफल: टोकन को मैनुअली चुनें और कॉपी करें।"
+      },
+      "columns": {
+        "created": "बनाया गया",
+        "lastUsed": "अंतिम उपयोग"
+      }
+    }
+  },
+  "overview": {
+    "title": "अवलोकन",
+    "subtitle": "उपयोग सारांश और लागत टूटना",
+    "noPermission": "उपयोग डेटा देखने की अनुमति नहीं है।",
+    "costByModel": "मॉडल द्वारा लागत",
+    "noCostRecorded": "इस अवधि में कोई लागत दर्ज नहीं।",
+    "callsByModel": "मॉडल द्वारा कॉल",
+    "columns": {
+      "model": "मॉडल",
+      "calls": "कॉल",
+      "errors": "त्रुटियां",
+      "cost": "लागत"
+    },
+    "stats": {
+      "totalCalls": "कुल कॉल",
+      "callsBreakdown": "{{routing}} राउटिंग · {{completion}} पूर्णता",
+      "successRate": "सफलता दर",
+      "ofAllRequests": "सभी अनुरोधों का",
+      "errors": "त्रुटियां",
+      "failedRequests": "विफल अनुरोध",
+      "models": "मॉडल",
+      "registered": "पंजीकृत",
+      "routers": "राउटर",
+      "active": "सक्रिय"
+    },
+    "connectCard": {
+      "title": "एक क्लाइंट कनेक्ट करें",
+      "desc": "Claude Code, Codex, Cursor और {{count}} अधिक को इस गेटवे पर इंगित करें।"
+    }
+  },
+  "login": {
+    "emailLabel": "ईमेल",
+    "passwordLabel": "पासवर्ड",
+    "signIn": "साइन इन करें",
+    "errors": {
+      "loginFailed": "लॉगिन विफल",
+      "totpFailed": "2FA सत्यापन विफल"
+    },
+    "totp": {
+      "title": "दो-कारक प्रमाणीकरण",
+      "backupPrompt": "एक बैकअप कोड दर्ज करें।",
+      "appPrompt": "अपनी प्रमाणकर्ता ऐप से 6-अंकीय कोड दर्ज करें।",
+      "backupCodeLabel": "बैकअप कोड",
+      "authenticatorCodeLabel": "प्रमाणकर्ता कोड",
+      "verify": "सत्यापित करें",
+      "useAuthenticatorInstead": "इसके बजाय प्रमाणकर्ता ऐप का उपयोग करें",
+      "useBackupInstead": "इसके बजाय एक बैकअप कोड का उपयोग करें"
+    }
+  },
+  "setup": {
+    "welcome": "स्वागत है! आइए आपको सेट अप करें।",
+    "welcomeSubtitle": "Routerly प्रबंधित करना शुरू करने के लिए पहला प्रशासक खाता बनाएं।",
+    "betaBadge": "🚧 बीटा",
+    "betaNotice": "Routerly सक्रिय रूप से विकसित हो रहा है। बग हो सकते हैं।",
+    "betaFeedback": "आपकी प्रतिक्रिया यह आकार देने में मदद करती है —",
+    "betaLink": "समस्याओं की रिपोर्ट करें या विचार साझा करें",
+    "emailLabel": "प्रशासक ईमेल",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "पासवर्ड",
+    "passwordPlaceholder": "न्यूनतम 8 वर्ण",
+    "confirmLabel": "पासवर्ड की पुष्टि करें",
+    "confirmPlaceholder": "पासवर्ड फिर से दर्ज करें",
+    "submit": "प्रशासक खाता बनाएं",
+    "errors": {
+      "mismatch": "पासवर्ड मेल नहीं खाते",
+      "tooShort": "पासवर्ड कम से कम 8 वर्ण होना चाहिए",
+      "setupFailed": "सेटअप विफल"
+    }
+  },
+  "audit": {
+    "empty": "कोई ऑडिट प्रविष्टि नहीं मिलीं।",
+    "errors": {
+      "loadFailed": "ऑडिट लॉग लोड करने में विफल"
+    },
+    "filters": {
+      "period": "अवधि",
+      "user": "उपयोगकर्ता",
+      "userPlaceholder": "ईमेल या उपयोगकर्ता ID",
+      "action": "कार्य",
+      "actionPlaceholder": "जैसे model:create",
+      "result": "परिणाम",
+      "results": {
+        "all": "सभी",
+        "success": "सफलता",
+        "forbidden": "निषिद्ध",
+        "error": "त्रुटि"
+      },
+      "refresh": "ताज़ा करें"
+    },
+    "columns": {
+      "timestamp": "समय मुद्रा",
+      "user": "उपयोगकर्ता",
+      "action": "कार्य",
+      "endpoint": "एंडपॉइंट",
+      "result": "परिणाम",
+      "details": "विवरण"
+    },
+    "pagination": {
+      "previous": "पिछला",
+      "next": "अगला",
+      "page": "पृष्ठ {{page}} का {{totalPages}}",
+      "total": "({{count}} कुल)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "उपयोग",
+      "live": "सजीव",
+      "subtitle": "विस्तृत कॉल लॉग और प्रति-मॉडल टूटना",
+      "updatedAt": "· {{time}} पर अपडेट किया गया",
+      "poll": {
+        "off": "बंद",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● सजीव",
+      "liveButtonTitle": {
+        "disable": "सजीव मोड अक्षम करें",
+        "enable": "सजीव मोड सक्षम करें (हर 2s ताज़ा करें)"
+      },
+      "refreshNow": "↻ अभी",
+      "refreshNowTitle": "अभी ताज़ा करें",
+      "filters": {
+        "period": "अवधि",
+        "router": "राउटर",
+        "model": "मॉडल",
+        "token": "टोकन",
+        "caller": "कॉलर",
+        "type": "प्रकार",
+        "status": "स्थिति",
+        "allRouters": "सभी राउटर",
+        "allModels": "सभी मॉडल",
+        "allTokens": "सभी टोकन",
+        "resetFilters": "फ़िल्टर रीसेट करें",
+        "all": "सभी",
+        "success": "सफलता",
+        "blocked": "अवरुद्ध",
+        "error": "त्रुटि"
+      },
+      "caller": {
+        "all": "सभी",
+        "completion": "पूर्णता",
+        "routing": "राउटर",
+        "guardrail": "गार्डरेल",
+        "judge": "न्यायाधीश"
+      },
+      "callerBadge": {
+        "completion": "पूर्णता",
+        "routing": "राउटर",
+        "guardrail": "गार्डरेल",
+        "judge": "न्यायाधीश"
+      },
+      "errors": {
+        "loadFailedPrefix": "उपयोग डेटा लोड करने में विफल:",
+        "retry": "पुनः प्रयास करें"
+      },
+      "stats": {
+        "totalCalls": "कुल कॉल",
+        "completionCalls": "पूर्णता कॉल",
+        "routerCalls": "राउटर कॉल",
+        "guardrailCalls": "गार्डरेल कॉल",
+        "blockedCalls": "अवरुद्ध कॉल",
+        "errors": "त्रुटियां"
+      },
+      "table": {
+        "rank": "रैंक",
+        "model": "मॉडल",
+        "provider": "प्रदाता",
+        "calls": "कॉल",
+        "errors": "त्रुटियां",
+        "successRate": "सफलता दर",
+        "avgLatency": "औसत विलंबता",
+        "p95Latency": "P95 विलंबता",
+        "inputTokens": "इनपुट टोकन",
+        "outputTokens": "आउटपुट टोकन",
+        "costPer1k": "लागत / 1K",
+        "cost": "लागत (USD)",
+        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन"
+      },
+      "showMoreModels": "{{count}} और मॉडल दिखाएं",
+      "showMoreModels_other": "{{count}} और मॉडल दिखाएं",
+      "showFewerModels": "कम मॉडल दिखाएं",
+      "recentCalls": {
+        "title": "हाल के कॉल",
+        "empty": "इस अवधि के लिए कोई उपयोग रिकॉर्ड नहीं।",
+        "columns": {
+          "time": "समय",
+          "router": "राउटर",
+          "model": "मॉडल",
+          "type": "प्रकार",
+          "caller": "कॉलर",
+          "in": "में",
+          "out": "आउट",
+          "cost": "लागत",
+          "latency": "विलंबता",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "स्थिति"
+        }
+      },
+      "pagination": {
+        "previous": "पिछला",
+        "next": "अगला",
+        "pageOf": "पृष्ठ {{page}} का {{totalPages}}",
+        "totalRecords": "({{count}} कुल रिकॉर्ड)"
+      }
+    },
+    "record": {
+      "back": "वापस",
+      "title": "कॉल विवरण",
+      "notFoundTitle": "रिकॉर्ड नहीं मिला",
+      "notFoundBody": "उपयोग रिकॉर्ड {{id}} लोड नहीं किया जा सका।",
+      "errors": {
+        "loadFailed": "रिकॉर्ड लोड करने में विफल"
+      },
+      "sections": {
+        "identity": "पहचान",
+        "tokensAndCost": "टोकन और लागत",
+        "performanceAndOutcome": "प्रदर्शन और परिणाम",
+        "traceLog": "ट्रेस लॉग"
+      },
+      "fields": {
+        "recordId": "रिकॉर्ड ID",
+        "router": "राउटर",
+        "token": "टोकन",
+        "model": "मॉडल",
+        "callType": "कॉल प्रकार",
+        "requestType": "अनुरोध प्रकार",
+        "inputTokens": "इनपुट टोकन",
+        "outputTokens": "आउटपुट टोकन",
+        "totalTokens": "कुल टोकन",
+        "costUsd": "लागत (USD)",
+        "costUnknown": "अज्ञात",
+        "latency": "विलंबता",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "परिणाम",
+        "timestamp": "समय मुद्रा",
+        "guardrailTriggered": "गार्डरेल ट्रिगर किया गया",
+        "blockedBy": "द्वारा अवरुद्ध",
+        "piiRedacted": "PII संपादित"
+      },
+      "errorMessage": "त्रुटि संदेश",
+      "eventCount": "{{count}} इवेंट",
+      "eventCount_other": "{{count}} इवेंट",
+      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा नए कॉल के लिए कैप्चर किया जाता है।"
+    }
+  },
+  "playground": {
+    "title": "परीक्षण क्षेत्र",
+    "subtitle": "मॉडल परीक्षण करें, प्रतिक्रियाओं की तुलना करें, और प्रॉम्प्ट प्रीसेट सहेजें।",
+    "mode": {
+      "single": "एकल",
+      "compare": "तुलना"
+    },
+    "token": {
+      "label": "टोकन:",
+      "labelA": "टोकन A",
+      "labelB": "टोकन B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "A जैसा ही",
+      "unknownToken": "अज्ञात टोकन"
+    },
+    "presets": {
+      "button": "प्रीसेट",
+      "panelTitle": "प्रीसेट",
+      "saveCurrent": "वर्तमान सहेजें",
+      "namePlaceholder": "प्रीसेट नाम...",
+      "save": "सहेजें",
+      "empty": "अभी कोई प्रीसेट नहीं।",
+      "delete": "प्रीसेट हटाएं"
+    },
+    "streamingDisabled": {
+      "banner": "स्ट्रीमिंग उपलब्ध नहीं",
+      "bannerBody": "इस राउटर के पास एक प्रतिक्रिया-अवरोधन गार्डरेल सक्रिय है। Routerly को डिलीवरी से पहले पूर्ण प्रतिक्रिया का निरीक्षण करना चाहिए, इसलिए प्रतिक्रियाएं एक बार में आती हैं।",
+      "tooltip": "स्ट्रीमिंग उपलब्ध नहीं: एक प्रतिक्रिया-अवरोधन गार्डरेल को डिलीवरी से पहले पूर्ण प्रतिक्रिया का निरीक्षण करने की आवश्यकता है।",
+      "ariaLabel": "स्ट्रीमिंग अनुपलब्ध"
+    },
+    "systemPrompt": "सिस्टम प्रॉम्प्ट",
+    "model": "मॉडल",
+    "modelPlaceholder": "ऑटो (राउटर डिफ़ॉल्ट)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "अधिकतम टोकन",
+      "topP": "Top-p"
+    },
+    "stream": "स्ट्रीम",
+    "clear": "साफ़ करें",
+    "empty": {
+      "noMessages": "अभी कोई संदेश नहीं।",
+      "enterToken": "शुरू करने के लिए ऊपर एक राउटर टोकन दर्ज करें।"
+    },
+    "reasoning": "तर्क",
+    "blockedDefault": "यह संदेश एक गार्डरेल द्वारा अवरुद्ध किया गया था।",
+    "truncated": "ट्रंकेट किया गया — प्रतिक्रिया अधिकतम टोकन द्वारा काट दी गई",
+    "bufferedNote": "सुरक्षा समीक्षा के लिए आयोजित",
+    "errors": {
+      "onlyImages": "केवल छवि संलग्नक समर्थित हैं।"
+    },
+    "rawToggle": {
+      "rendered": "प्रस्तुत",
+      "raw": "कच्चा"
+    },
+    "inputPlaceholder": "एक संदेश टाइप करें...",
+    "attachImage": "छवि संलग्न करें",
+    "attachedImageAlt": "संलग्न",
+    "attachmentAlt": "संलग्नक",
+    "debug": {
+      "title": "डीबग",
+      "clear": "साफ़ करें",
+      "hide": "डीबग छिपाएं",
+      "show": "डीबग दिखाएं",
+      "empty": "अभी कोई डीबग डेटा नहीं।",
+      "emptyHint": "राउटिंग विवरण देखने के लिए एक संदेश भेजें।",
+      "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग"
+    },
+    "compare": {
+      "modelLabel": "मॉडल {{label}}:",
+      "modelSelectPlaceholder": "मॉडल चुनें...",
+      "noMessages": "अभी कोई संदेश नहीं।",
+      "debugTurns": "डीबग ({{count}} बारी)",
+      "debugTurns_other": "डीबग ({{count}} बारी)",
+      "guardrailTokensTitle": "गार्डरेल न्यायाधीश टोकन",
+      "stop": "रोकें",
+      "inputPlaceholder": "दोनों मॉडल को एक ही संदेश भेजें..."
+    }
+  },
+  "help": {
+    "title": "मदद और सहायता",
+    "subtitle": "हम मदद के लिए यहां हैं — किसी भी समय उत्तर खोजें या संपर्क करें।",
+    "docs": {
+      "title": "प्रलेखन",
+      "subtitle": "गाइड, API संदर्भ, और कॉन्फ़िगरेशन डॉक्स",
+      "body": "आधिकारिक दस्तावेज़ शुरुआत से उन्नत राउटिंग नीतियों, प्रदाता सेटअप, बजट, और पूर्ण API संदर्भ तक सब कुछ कवर करते हैं।",
+      "openLink": "प्रलेखन खोलें"
+    },
+    "issues": {
+      "title": "एक बग की रिपोर्ट करें या एक सुविधा का सुझाव दें",
+      "subtitle": "एक GitHub समस्या खोलें — इसमें 2 मिनट लगते हैं",
+      "body": "GitHub समस्याएं बग की रिपोर्ट करने या सुधार का प्रस्ताव करने का सर्वश्रेष्ठ तरीका हैं। चीजों को तेजी से ठीक करने में मदद करने के लिए, शामिल करें: आपने क्या किया, आप क्या होने की अपेक्षा करते हैं, और वास्तव में क्या हुआ।",
+      "showTemplate": "समस्या टेम्पलेट दिखाएं",
+      "reportBug": "एक बग की रिपोर्ट करें",
+      "requestFeature": "एक सुविधा का अनुरोध करें"
+    },
+    "issueTemplate": {
+      "whatHappened": "क्या हुआ?",
+      "whatHappenedHint": "समस्या को सादे शब्दों में वर्णन करें",
+      "stepsToReproduce": "पुनरुत्पादन के चरण",
+      "expectedBehaviour": "अपेक्षित व्यवहार",
+      "expectedBehaviourHint": "आप क्या देखने की अपेक्षा करते हैं",
+      "version": "Routerly संस्करण",
+      "versionHint": "`routerly --version` चलाएं या सेटिंग्स → के बारे में देखें"
+    },
+    "email": {
+      "title": "समर्थन से संपर्क करें",
+      "subtitle": "हम हर संदेश को पढ़ते हैं और जितनी जल्दी हो सकें जवाब देते हैं",
+      "body": "कुछ भी जो GitHub समस्या में फिट नहीं है — बिलिंग प्रश्न, निजी चिंताएं, या यदि आप बस नमस्ते कहना चाहते हैं — हमें एक पंक्ति ड्रॉप करें।"
+    },
+    "faq": {
+      "title": "अक्सर पूछे जाने वाले प्रश्न",
+      "subtitle": "सबसे सामान्य प्रश्नों के त्वरित उत्तर",
+      "items": {
+        "connect": {
+          "q": "मैं अपने ऐप को Routerly से कैसे कनेक्ट करूं?",
+          "a": "अपने OpenAI या Anthropic SDK को अपने Routerly उदाहरण पर इंगित करें। आधार URL को http://your-host:3000/v1 (OpenAI-संगत) या http://your-host:3000/anthropic (Anthropic-संगत) से बदलें, फिर एक राउटर टोकन को API कुंजी के रूप में उपयोग करें। बस इतना ही — और कोई परिवर्तन की आवश्यकता नहीं है।"
+        },
+        "openaiCompat": {
+          "q": "क्या Routerly उन उपकरणों के साथ संगत है जो OpenAI SDK का उपयोग करते हैं?",
+          "a": "हां। Routerly ड्रॉप-इन प्रतिस्थापन है: कोई भी उपकरण जो कस्टम आधार URL और API कुंजी (LangChain, LlamaIndex, Cursor, Continue, आदि) का समर्थन करता है, बॉक्स से बाहर काम करता है। Anthropic-प्रारूप क्लाइंट के लिए, इसके बजाय /anthropic एंडपॉइंट का उपयोग करें।"
+        },
+        "routing": {
+          "q": "मॉडल राउटिंग कैसे काम करती है?",
+          "a": "प्रत्येक राउटर के पास एक राउटिंग नीति होती है जो तय करती है कि कौन सा मॉडल एक अनुरोध प्राप्त करता है। नीतियों में राउंड-रॉबिन, सबसे कम लागत, तेजी से प्रतिक्रिया, फॉलबैक चेन, और बहुत कुछ शामिल हैं। आप राउटर → राउटिंग के तहत प्रति राउटर कॉन्फ़िगर करते हैं।"
+        },
+        "addModel": {
+          "q": "मैं एक नया AI मॉडल कैसे जोड़ूं?",
+          "a": "मॉडल → मॉडल जोड़ें पर जाएं। आप कोई OpenAI-संगत प्रदाता (Ollama, LM Studio, कस्टम एंडपॉइंट) या एक देशी Anthropic एंडपॉइंट जोड़ सकते हैं। आधार URL, API कुंजी, और मॉडल ID भरें — Routerly बाकी को संभालेगा।"
+        },
+        "dataStored": {
+          "q": "क्या मेरा डेटा संग्रहीत है? क्या मेरे प्रॉम्प्ट लॉग किए गए हैं?",
+          "a": "Routerly स्व-होस्ट किया गया है और डेटा केवल आपकी मशीन पर संग्रहीत करता है (डिफ़ॉल्ट रूप से ~/.routerly/ में)। प्रॉम्प्ट और प्रतिक्रियाएं कभी भी Routerly द्वारा कहीं भी नहीं भेजी जाती हैं। अनुरोध लॉग स्थानीय रूप से संग्रहीत होते हैं और केवल यदि आप प्रति-राउटर उन्हें सक्षम करते हैं।"
+        },
+        "routerToken": {
+          "q": "राउटर टोकन क्या है और यह प्रदाता API कुंजी से कैसे भिन्न है?",
+          "a": "राउटर टोकन एक क्रेडेंशियल है जो आप Routerly से प्रमाणित करने के लिए अपने ऐप या टीम सदस्यों को देते हैं। यह आपकी प्रदाता API कुंजियों से अलग है, जिसे Routerly सर्वर पर सुरक्षित रूप से संग्रहीत करता है। आपके ऐप्स कभी भी असली प्रदाता कुंजी नहीं देखते हैं।"
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} उपयोगकर्ता",
+    "countLabel_other": "{{count}} उपयोगकर्ता",
+    "addButton": "उपयोगकर्ता जोड़ें",
+    "columns": {
+      "email": "ईमेल",
+      "role": "भूमिका",
+      "routers": "राउटर"
+    },
+    "allRouters": "सभी",
+    "resetTwoFaTitle": "2FA रीसेट करें",
+    "resetTwoFaConfirm": "{{email}} के लिए 2FA रीसेट करें? उन्हें फिर से नामांकन करने की आवश्यकता होगी।",
+    "deleteConfirm": "यह उपयोगकर्ता हटाएं?",
+    "emptyTitle": "अभी कोई उपयोगकर्ता नहीं।",
+    "noPermission": "आपके पास उपयोगकर्ता को देखने की अनुमति नहीं है।",
+    "modal": {
+      "title": "उपयोगकर्ता जोड़ें",
+      "emailLabel": "ईमेल",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "पासवर्ड",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "भूमिका",
+      "roleAdmin": "प्रशासक",
+      "roleViewer": "दर्शक",
+      "cancelButton": "रद्द करें",
+      "submitButton": "उपयोगकर्ता जोड़ें"
+    },
+    "errors": {
+      "loadFailed": "उपयोगकर्ता लोड करने में विफल",
+      "addFailed": "त्रुटि"
+    }
+  },
+  "userEdit": {
+    "title": "उपयोगकर्ता संपादित करें",
+    "account": "खाता",
+    "email": "ईमेल",
+    "role": "भूमिका",
+    "changePassword": "पासवर्ड बदलें",
+    "newPassword": "नया पासवर्ड",
+    "newPasswordHint": "(मौजूदा को रखने के लिए खाली छोड़ें)",
+    "save": "सहेजें",
+    "saved": "सहेजा गया!",
+    "errors": {
+      "loadFailed": "उपयोगकर्ता लोड करने में विफल",
+      "saveFailed": "सहेजने में विफल"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "भूमिकाओं और अनुमतियों को प्रबंधित करें। बिल्ट-इन भूमिकाओं को संशोधित नहीं किया जा सकता।",
+    "newRole": "नई भूमिका",
+    "builtin": "बिल्ट-इन",
+    "edit": "संपादित करें",
+    "deleteConfirm": "यह भूमिका हटाएं? इस भूमिका वाले उपयोगकर्ता प्रभावित होंगे।",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "जैसे ऑपरेटर",
+      "name": "नाम",
+      "namePlaceholder": "भूमिका नाम",
+      "permissions": "अनुमतियां",
+      "create": "बनाएं",
+      "save": "सहेजें",
+      "cancel": "रद्द करें"
+    },
+    "permissions": {
+      "routerRead": "राउटर — पढ़ें",
+      "routerWrite": "राउटर — लिखें",
+      "modelRead": "मॉडल — पढ़ें",
+      "modelWrite": "मॉडल — लिखें",
+      "userRead": "उपयोगकर्ता — पढ़ें",
+      "userWrite": "उपयोगकर्ता — लिखें",
+      "reportRead": "रिपोर्ट — पढ़ें",
+      "settingsRead": "सेटिंग्स — पढ़ें",
+      "settingsWrite": "सेटिंग्स — लिखें",
+      "notificationWrite": "सूचनाएं — लिखें",
+      "tokenRead": "टोकन — पढ़ें",
+      "tokenWrite": "टोकन — लिखें",
+      "roleWrite": "भूमिकाएं — लिखें",
+      "auditRead": "ऑडिट लॉग — पढ़ें",
+      "modulesRead": "मॉड्यूल — पढ़ें",
+      "modulesManage": "मॉड्यूल — प्रबंधन",
+      "connectionsRead": "कनेक्शन — पढ़ें",
+      "connectionsManage": "कनेक्शन — प्रबंधन",
+      "resilienceRead": "लचीलापन — पढ़ें",
+      "resilienceManage": "लचीलापन — प्रबंधन",
+      "profilesRead": "राउटिंग प्रोफाइल — पढ़ें",
+      "profilesManage": "राउटिंग प्रोफाइल — प्रबंधन",
+      "optimizersRead": "ऑप्टिमाइज़र — पढ़ें",
+      "optimizersManage": "ऑप्टिमाइज़र — प्रबंधन",
+      "experimentsRead": "प्रयोग — पढ़ें",
+      "experimentsManage": "प्रयोग — प्रबंधन"
+    },
+    "errors": {
+      "loadFailed": "भूमिकाएं लोड करने में विफल",
+      "updateFailed": "भूमिका अपडेट करने में विफल",
+      "createFailed": "भूमिका बनाने में विफल",
+      "deleteFailed": "भूमिका हटाने में विफल"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "प्रोफाइल",
+      "subtitle": "पुनः प्रयोग करने योग्य राउटिंग, ऑप्टिमाइज़र और सुरक्षा कॉन्फ़िगरेशन",
+      "noPermission": "आपके पास प्रोफाइल को देखने की अनुमति नहीं है।",
+      "newProfile": "नई {{kind}} प्रोफाइल",
+      "empty": "अभी कोई {{kind}} प्रोफाइल नहीं।",
+      "builtin": "बिल्ट-इन",
+      "custom": "कस्टम",
+      "view": "देखें",
+      "edit": "संपादित करें",
+      "clone": "क्लोन",
+      "delete": "हटाएं",
+      "deleteConfirm": "प्रोफाइल \"{{label}}\" हटाएं? इसे वापस नहीं किया जा सकता।",
+      "kindDescriptions": {
+        "routing": "कौन सा मॉडल एक अनुरोध का उत्तर देता है, और यदि यह नहीं कर सकता तो क्या होता है",
+        "optimizer": "एक अनुरोध भेजने से पहले प्रॉम्प्ट से क्या छीन लिया जाता है",
+        "security": "ट्रैफ़िक के लिए लागू गार्डरेल और PII नीतियां"
+      },
+      "columns": {
+        "label": "लेबल",
+        "type": "प्रकार",
+        "configuration": "कॉन्फ़िगरेशन",
+        "version": "संस्करण"
+      },
+      "errors": {
+        "loadFailed": "प्रोफाइल लोड करने में विफल",
+        "deleteFailed": "प्रोफाइल हटाने में विफल"
+      }
+    },
+    "form": {
+      "backToProfiles": "प्रोफाइल पर वापस जाएं",
+      "newProfileTitle": "नई {{kind}} प्रोफाइल",
+      "editProfileTitle": "{{label}} संपादित करें",
+      "builtinHint": "बिल्ट-इन प्रोफाइल संपादित नहीं किए जा सकते। एक को अनुकूलित करने के लिए क्लोन करें।",
+      "assignHint": "{{article}} {{kind}} प्रोफाइल को किसी भी संख्या में राउटर को असाइन किया जा सकता है।",
+      "noPermission": "आपके पास प्रोफाइल को देखने की अनुमति नहीं है।",
+      "label": "लेबल",
+      "optimizers": "ऑप्टिमाइज़र",
+      "optimizersHint": "पुनः क्रम करने के लिए खींचें, सक्षम करने के लिए टॉगल करें। वे ऊपर से नीचे तक क्रम में चलते हैं।",
+      "createProfile": "प्रोफाइल बनाएं",
+      "saveProfile": "प्रोफाइल सहेजें",
+      "cancel": "रद्द करें",
+      "copySuffix": "{{label}} कॉपी",
+      "labelPlaceholders": {
+        "routing": "जैसे मेरी संतुलित राउटिंग",
+        "optimizer": "जैसे मेरा प्रॉम्प्ट ट्रिमर",
+        "security": "जैसे मेरी सख्त गार्डरेल"
+      },
+      "errors": {
+        "notFound": "प्रोफाइल नहीं मिला।",
+        "loadFailed": "प्रोफाइल लोड करने में विफल",
+        "saveFailed": "प्रोफाइल सहेजने में विफल"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "कनेक्ट पर वापस जाएं",
+    "title": "कनेक्ट",
+    "docs": "डॉक्स",
+    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगर करने वाला सक्षम नहीं है। एक प्रशासक को इसके साथ सक्षम करने के लिए कहें",
+    "noClientPrefix": "कोई क्लाइंट नहीं नाम दिया गया",
+    "errors": {
+      "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
+    },
+    "oneCommand": {
+      "title": "सबसे तेज़: एक कमांड",
+      "description": "जहां {{client}} स्थापित है वहां इसे चलाएं। यह {{configPath}} लिखता है, एक बैकअप रखता है जो आप पूर्ववत कर सकते हैं।"
+    },
+    "byHand": {
+      "titleAlt": "या इसे हाथ से सेट अप करें",
+      "titleUi": "इसे हाथ से सेट अप करें",
+      "titleConfigFile": "कॉन्फ़िगरेशन फ़ाइल सेट अप करें",
+      "setValuesIn": "{{configPath}} में ये मान सेट करें।",
+      "putThisIn": "इसे में डालें",
+      "replaceToken": "प्रतिस्थापित करें",
+      "withRouterToken": "एक राउटर टोकन के साथ:",
+      "createOne": "एक बनाएं",
+      "onRoutersPage": "राउटर पृष्ठ पर।",
+      "modelLabel": "मॉडल:",
+      "modelHint": "पसंद को Routerly को सौंपता है, कोई भी मॉडल id",
+      "modelsLink": "मॉडल",
+      "worksToo": "भी काम करता है।",
+      "openaiCompatHint": "एक ही आधार URL, की और मॉडल किसी भी क्लाइंट के साथ फिट होते हैं जो \"OpenAI संगत\" प्रदाता प्रदान करता है।"
+    },
+    "mcp": {
+      "title": "MCP सर्वर",
+      "description": "ऊपर के चरणों से अलग: यह एक को {{client}} कॉल Routerly उपकरणों करने देता है। इसे एक व्यक्तिगत MCP टोकन की आवश्यकता है, साथ मिंटेड",
+      "orFromYour": "या अपने से",
+      "profileLink": "प्रोफाइल"
+    },
+    "checkItWorked": {
+      "title": "यह काम करता है की जांच करें",
+      "restart": "{{client}} को पुनरारंभ करें, इसे एक प्रॉम्प्ट भेजें, फिर में कॉल खोजें",
+      "usageLink": "उपयोग",
+      "cliReports": "एक ही मशीन से, CLI जो रिपोर्ट करता है वह खोजता है:"
+    }
+  },
+  "connect": {
+    "title": "कनेक्ट",
+    "subtitle": "एक AI कोडिंग क्लाइंट को इस गेटवे पर इंगित करें। सेटअप चरणों के लिए एक क्लाइंट चुनें।",
+    "llmLabel": "LLM",
+    "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से राउट करता है।",
+    "mcpLabel": "MCP",
+    "mcpDescription": "Routerly को इसके अंदर एक उपकरण सर्वर के रूप में लोड करता है।",
+    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगर करने वाला सक्षम नहीं है। एक प्रशासक को इसके साथ सक्षम करने के लिए कहें",
+    "errors": {
+      "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
+    },
+    "oneCommand": {
+      "title": "एक कमांड",
+      "hint": "CLI कॉन्फ़िगरेशन फ़ाइल को आपके लिए लिखता है, एक बैकअप के साथ जो आप पूर्ववत कर सकते हैं।"
+    },
+    "byHand": {
+      "title": "हाथ से",
+      "hint": "क्लाइंट पृष्ठ से स्निपेट को इसकी सेटिंग में कॉपी करें, फिर इसे पुनरारंभ करें।"
+    },
+    "endpoint": {
+      "title": "किसी भी क्लाइंट को यहां इंगित करें",
+      "description": "OpenAI या Anthropic SDK पर बनाया गया कुछ भी आधार URL और कुंजी बदलकर काम करता है। कुछ और नहीं बदलता है: अनुरोध और प्रतिक्रियाएं Routerly को पार करती हैं जैसे वे हैं।",
+      "openaiBaseUrl": "OpenAI आधार URL",
+      "anthropicBaseUrl": "Anthropic आधार URL",
+      "apiKey": "API की",
+      "model": "मॉडल",
+      "apiKeyDescription": "एक राउटर टोकन, के रूप में भेजा गया",
+      "or": "या",
+      "createOne": "एक बनाएं",
+      "onRoutersPage": "राउटर पृष्ठ पर।",
+      "modelDescription": "Routerly को चुनने देता है। कोई भी मॉडल id",
+      "modelsLink": "मॉडल",
+      "worksToo": "पृष्ठ भी काम करता है।"
+    }
+  }
+}

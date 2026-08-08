@@ -7,7 +7,7 @@ import { INTEGRATIONS, acquireToken } from '../clients/index.js';
 import type { ClientIntegration } from '../clients/index.js';
 import { restoreBackup, listBackups } from '../lib/safe-file.js';
 import { AUTO_MODEL, CLIENT_REGISTRY, buildSnippet, buildMcpSnippet } from '@routerly/shared';
-import type { ClientMeta, ProjectConfig, SupportState } from '@routerly/shared';
+import type { ClientMeta, RouterConfig, SupportState } from '@routerly/shared';
 
 const MCP_TOKEN_PLACEHOLDER = '<YOUR_MCP_TOKEN>';
 
@@ -35,28 +35,28 @@ function resolveIntegration(id: string): ClientIntegration {
   return integration;
 }
 
-async function resolveProjectForConfigure(explicit: string | undefined): Promise<ProjectConfig> {
-  const projects = await api<ProjectConfig[]>('GET', '/api/projects');
+async function resolveRouterForConfigure(explicit: string | undefined): Promise<RouterConfig> {
+  const routers = await api<RouterConfig[]>('GET', '/api/routers');
   if (explicit) {
-    const project = projects.find(p => p.id === explicit || p.name === explicit);
-    if (!project) {
-      console.error(chalk.red(`Project "${explicit}" not found. Run \`routerly project list\` to see available projects.`));
+    const router = routers.find(p => p.id === explicit || p.name === explicit);
+    if (!router) {
+      console.error(chalk.red(`Router "${explicit}" not found. Run \`routerly router list\` to see available routers.`));
       process.exit(1);
     }
-    return project;
+    return router;
   }
-  if (projects.length === 0) {
-    console.error(chalk.red('No projects found. Create one first: routerly project create --name <name>'));
+  if (routers.length === 0) {
+    console.error(chalk.red('No routers found. Create one first: routerly router create --name <name>'));
     process.exit(1);
   }
   const { default: inquirer } = await import('inquirer');
-  const { projectId } = await inquirer.prompt([{
+  const { routerId } = await inquirer.prompt([{
     type: 'list',
-    name: 'projectId',
-    message: 'Select a project to configure:',
-    choices: projects.map(p => ({ name: p.name, value: p.id })),
-  }]) as { projectId: string };
-  return projects.find(p => p.id === projectId)!;
+    name: 'routerId',
+    message: 'Select a router to configure:',
+    choices: routers.map(p => ({ name: p.name, value: p.id })),
+  }]) as { routerId: string };
+  return routers.find(p => p.id === routerId)!;
 }
 
 /** Registry order, so every surface lists the clients the same way. */
@@ -138,7 +138,7 @@ Examples:
         console.log(chalk.bold('\nPoint any client here'));
         console.log(chalk.gray('  OpenAI base URL:     ') + endpoints.openaiBaseUrl);
         console.log(chalk.gray('  Anthropic base URL:  ') + endpoints.anthropicBaseUrl);
-        console.log(chalk.gray('  API key:             ') + 'a project token, as Authorization: Bearer or x-api-key');
+        console.log(chalk.gray('  API key:             ') + 'a router token, as Authorization: Bearer or x-api-key');
         console.log(chalk.gray('  Model:               ') + `${AUTO_MODEL} (Routerly picks), or any model id`);
         if (endpoints.advertisedAddresses.length > 0) {
           console.log(chalk.gray('  From other machines: ') + endpoints.advertisedAddresses.join(', '));
@@ -196,23 +196,23 @@ Examples:
   // ── clients configure ────────────────────────────────────────────────────────
   cmd.command('configure <id>')
     .description('Write Routerly connection settings into a client config file')
-    .option('--project <id>', 'Project name or ID to use for the token (prompts if omitted)')
+    .option('--router <id>', 'Router name or ID to use for the token (prompts if omitted)')
     .option('--token <token>', 'Use this token instead of minting a new one')
     .option('--yes', 'Skip the token-mint consent prompt')
     .option('--json', 'Output the plan/apply/validate result as JSON')
     .addHelpText('after', `
 Examples:
-  routerly clients configure claude-code --project my-api
-  routerly clients configure codex --project my-api --token sk-rt-...
-  routerly clients configure opencode --project my-api --yes
-  routerly clients configure zed --project my-api --yes      # prints manual steps
+  routerly clients configure claude-code --router my-api
+  routerly clients configure codex --router my-api --token sk-rt-...
+  routerly clients configure opencode --router my-api --yes
+  routerly clients configure zed --router my-api --yes      # prints manual steps
   routerly clients configure claude-desktop                  # prints the MCP wiring
 `)
-    .action(async (id: string, opts: { project?: string; token?: string; yes?: boolean; json?: boolean }) => {
+    .action(async (id: string, opts: { router?: string; token?: string; yes?: boolean; json?: boolean }) => {
       const integration = resolveIntegration(id);
       const meta = CLIENT_REGISTRY.find(c => c.id === id)!;
       try {
-        // MCP-only client: no chat traffic to route, so no project token to
+        // MCP-only client: no chat traffic to route, so no router token to
         // mint. Print the MCP wiring with a placeholder instead.
         if (!meta.modes.includes('llm')) {
           const steps = buildMcpSnippet(meta, (await requireAccount()).serverUrl, MCP_TOKEN_PLACEHOLDER);
@@ -225,7 +225,7 @@ Examples:
           return;
         }
 
-        const project = await resolveProjectForConfigure(opts.project);
+        const router = await resolveRouterForConfigure(opts.router);
         const account = await requireAccount();
 
         if (!opts.token && !opts.yes) {
@@ -233,7 +233,7 @@ Examples:
           const { proceed } = await inquirer.prompt([{
             type: 'confirm',
             name: 'proceed',
-            message: `Mint a new Routerly token for project "${project.name}" to configure ${integration.label}?`,
+            message: `Mint a new Routerly token for router "${router.name}" to configure ${integration.label}?`,
             default: true,
           }]) as { proceed: boolean };
           if (!proceed) {
@@ -242,7 +242,7 @@ Examples:
           }
         }
 
-        const token = await acquireToken({ projectId: project.id, ...(opts.token ? { explicitToken: opts.token } : {}) });
+        const token = await acquireToken({ routerId: router.id, ...(opts.token ? { explicitToken: opts.token } : {}) });
 
         // Documented client: no file this CLI can back up, write and roll
         // back. The token is still minted, the user needs it for the steps.

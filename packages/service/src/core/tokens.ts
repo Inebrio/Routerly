@@ -8,8 +8,8 @@ import type { OptimizerRegistry } from '../modules/optimizers/registry.js';
 import type { McpToolRegistry } from '../modules/mcp/registry.js';
 import type {
   ModelConfig,
-  ProjectConfig,
-  ProjectToken,
+  RouterConfig,
+  RouterToken,
   ChatCompletionRequest,
   ProviderRepo,
   UpdateInfo,
@@ -56,8 +56,8 @@ export const AUTH = token<{
   verifyToken: typeof import('../modules/auth/jwt.js').verifyToken;
   createSessionToken: typeof import('../modules/auth/jwt.js').createSessionToken;
   generateRawToken: typeof import('../modules/auth/jwt.js').generateRawToken;
-  extractProjectToken: typeof import('../modules/auth/auth.js').extractProjectToken;
-  resolveProjectByToken: typeof import('../modules/auth/auth.js').resolveProjectByToken;
+  extractRouterToken: typeof import('../modules/auth/auth.js').extractRouterToken;
+  resolveRouterByToken: typeof import('../modules/auth/auth.js').resolveRouterByToken;
   getEffectiveRoles: typeof import('../modules/auth/roles.js').getEffectiveRoles;
 }>('auth.registry');
 
@@ -77,10 +77,10 @@ export const OBSERVABILITY = token<{
 export const ROUTER = token<{
   routeRequest(
     request: ChatCompletionRequest,
-    project: ProjectConfig,
+    router: RouterConfig,
     log?: unknown,
     emit?: unknown,
-    token?: ProjectToken,
+    token?: RouterToken,
     traceId?: string,
     conversationId?: string,
   ): Promise<RouteResult>;
@@ -116,6 +116,7 @@ export const API_REVERSE_PROXY = token<{
   openaiRoutes: typeof import('../modules/api-reverse-proxy/openai.js').openaiRoutes;
   anthropicRoutes: typeof import('../modules/api-reverse-proxy/anthropic.js').anthropicRoutes;
   passthroughHandler: typeof import('../modules/api-reverse-proxy/passthrough.js').passthroughHandler;
+  routerPassthroughRoutes: typeof import('../modules/api-reverse-proxy/router-passthrough.js').routerPassthroughRoutes;
 }>('api-reverse-proxy.registry');
 
 export const API_ROUTES = token<AlterableRegistry<RouteContribution>>('api.routes');

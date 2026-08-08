@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Авто",
+      "dark": "Тёмная",
+      "light": "Светлая"
+    },
+    "themeCycle": {
+      "title": "Тема: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Развернуть боковую панель",
+      "collapse": "Свернуть боковую панель"
+    },
+    "tagline": "Один шлюз. Любая модель ИИ. Полный контроль.",
+    "nav": {
+      "overview": "Обзор",
+      "providers": "Провайдеры",
+      "models": "Модели",
+      "profiles": "Профили",
+      "routers": "Маршрутизаторы",
+      "experiments": "Эксперименты",
+      "usage": "Использование",
+      "playground": "Песочница",
+      "settings": "Параметры",
+      "connectApp": "Подключить приложение",
+      "help": "Справка",
+      "signOut": "Выход"
+    },
+    "banner": {
+      "permissionWarning": "Некоторые файлы конфигурации имеют открытый доступ ({{files}}). Запуск и запросы по-прежнему работают, но исправьте это из файловой системы хоста, когда это будет удобно.",
+      "dismiss": "Закрыть",
+      "updateAvailable": "Доступна Routerly v{{latest}}. Вы используете v{{current}}.",
+      "updateLink": "Обновить в параметрах",
+      "mfaRequired": "Двухфакторная аутентификация требуется для этого экземпляра.",
+      "mfaLink": "Настроить двухфакторную аутентификацию в профиле",
+      "mfaSuffix": "для защиты вашего аккаунта.",
+      "telemetryTitle": "Routerly никогда не отправляет данные автоматически.",
+      "telemetryBody": "Вы хотели бы помочь, отправив анонимные метрики установки? Только тип события, версия, платформа и случайный ID — никаких личных данных, никакого IP.",
+      "telemetryLink": "Что отправляется?",
+      "telemetryYes": "Да, помогу",
+      "telemetryNo": "Нет, спасибо"
+    },
+    "language": {
+      "label": "Язык"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} секунду назад",
+      "secondsAgo_other": "{{count}} секунд назад",
+      "minutesAgo": "{{count}} минуту назад",
+      "minutesAgo_other": "{{count}} минут назад",
+      "hoursAgo": "{{count}} час назад",
+      "hoursAgo_other": "{{count}} часов назад",
+      "daysAgo": "{{count}} день назад",
+      "daysAgo_other": "{{count}} дней назад"
+    },
+    "confirm": "Подтвердить",
+    "cancel": "Отмена",
+    "remove": "Удалить",
+    "select": "Выбрать...",
+    "search": "Поиск...",
+    "noResults": "Нет результатов",
+    "noRemainingOptions": "Нет оставшихся вариантов",
+    "apply": "Применить",
+    "saved": "Сохранено",
+    "showLess": "Показать меньше",
+    "roles": "Роли",
+    "permissions": "Разрешения",
+    "notifications": {
+      "title": "Уведомления",
+      "markAllRead": "Отметить все как прочитанные",
+      "empty": "Нет уведомлений",
+      "viewAll": "Просмотреть все уведомления"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Выбрать период",
+      "recent": "Недавно",
+      "ranges": "Диапазоны",
+      "from": "От",
+      "to": "До"
+    },
+    "permissionGuard": {
+      "fixFailed": "Не удалось исправить разрешения",
+      "title": "Небезопасные разрешения файлов",
+      "defaultMessage": "Некоторые файлы имеют небезопасные разрешения.",
+      "fixing": "Исправление…",
+      "fixNow": "Исправить сейчас"
+    },
+    "limitRows": {
+      "noLimits": "Ограничения не установлены.",
+      "metricLabel": "Метрика",
+      "typeLabel": "Тип",
+      "periodLabel": "Период",
+      "everyLabel": "Каждый",
+      "maxCost": "Макс. стоимость",
+      "maxCount": "Макс. количество",
+      "maxTokens": "Макс. токены",
+      "allCombosSet": "Все комбинации метрика/период уже установлены",
+      "addLimit": "Добавить ограничение",
+      "metric": {
+        "cost": "Стоимость",
+        "calls": "Вызовы",
+        "input_tokens": "Входные токены",
+        "output_tokens": "Выходные токены",
+        "total_tokens": "Всего токенов"
+      },
+      "period": {
+        "hourly": "Ежечасно",
+        "daily": "Ежедневно",
+        "weekly": "Еженедельно",
+        "monthly": "Ежемесячно",
+        "yearly": "Ежегодно"
+      },
+      "rollingUnit": {
+        "second": "секунда",
+        "minute": "минута",
+        "hour": "час",
+        "day": "день",
+        "week": "неделя",
+        "month": "месяц"
+      },
+      "windowType": {
+        "period": "Период",
+        "rolling": "Скользящий"
+      },
+      "fmt": {
+        "requests": "{{value}} запросов",
+        "inputTokens": "{{value}} входных токенов",
+        "outputTokens": "{{value}} выходных токенов",
+        "totalTokens": "{{value}} всего токенов",
+        "everyRolling": "{{metric}} каждый {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} в {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Что сэкономила маршрутизация",
+      "input": "Входящие",
+      "output": "Исходящие",
+      "actual": "Фактические",
+      "clientCalls": "{{count}} вызов клиента",
+      "clientCalls_other": "{{count}} вызовов клиента",
+      "comparedAgainst": ", в сравнении с отправкой на каждую из",
+      "comparedAgainst_other": ", в сравнении с отправкой на каждую из",
+      "paidModelsInPlay": "{{count}} платная модель задействована",
+      "paidModelsInPlay_other": "{{count}} платных моделей задействовано",
+      "metricCost": "Стоимость",
+      "metricTokens": "Токены",
+      "totalCost": "Общая стоимость",
+      "routed": "Маршрутизировано: {{value}}",
+      "saved": "Сэкономлено: {{value}}",
+      "usdThisPeriod": "USD за этот период",
+      "savedVsAlways": "{{value}} сэкономлено ({{percent}}%) vs всегда {{model}}",
+      "tokens": "Токены",
+      "in": "Вход: {{value}}",
+      "out": "Выход: {{value}}",
+      "tokenSubWithCache": "{{in}} вход · {{out}} выход · {{cached}} кэшировано",
+      "tokenSub": "{{in}} вход · {{out}} выход",
+      "cutByOptimizers": "{{value}} обрезано оптимайзерами",
+      "fewerThanAlways": "{{value}} меньше, чем всегда {{model}}, ориентировочно"
+    },
+    "optimizerSteps": {
+      "downloaded": "Загружено",
+      "thisStepRunsOn": "Этот шаг выполняется на",
+      "defaultCheckpoint": "Контрольная точка по умолчанию"
+    },
+    "routingPolicies": {
+      "title": "Политики маршрутизации",
+      "subtitle": "Политики определяют, как маршрутизируются запросы. Они выполняются по порядку сверху вниз.",
+      "removePolicy": "Удалить политику",
+      "removeIntent": "Удалить намерение",
+      "removeExample": "Удалить пример",
+      "routingModels": "Модели маршрутизации",
+      "embeddingModels": "Модели внедрений",
+      "maxCompletionTokens": "Макс. токены завершения",
+      "maxPromptChars": "Макс. символов подсказки",
+      "similarityThreshold": "Порог сходства",
+      "previousMessages": "Предыдущие сообщения",
+      "intents": "Намерения",
+      "confidenceThreshold": "Порог уверенности",
+      "ambiguityMargin": "Запас неоднозначности",
+      "maxCallsPerWindow": "Макс. вызовов за окно",
+      "addFallbackModel": "Добавить модель отката",
+      "autoRoutingLabel": "Автоматическая маршрутизация",
+      "autoRoutingHint": "Если включено, трафик распределяется без пользовательских подсказок. Если отключено, вы можете писать определённые подсказки, инструктирующие ИИ, когда выбрать каждую целевую модель.",
+      "additionalPromptInfoLabel": "Дополнительная информация подсказки",
+      "additionalPromptInfoPlaceholder": "Дополнительные инструкции для включения в подсказку маршрутизации...",
+      "addExamplePlaceholder": "Добавить пример и нажать Enter…",
+      "addIntentPlaceholder": "Добавить намерение и нажать Enter…",
+      "addPolicyPlaceholder": "Добавить политику...",
+      "labels": {
+        "llm": "Политика маршрутизации ИИ",
+        "rate-limit": "Политика ограничения скорости",
+        "budget-remaining": "Политика оставшегося бюджета",
+        "semantic-intent": "Политика семантического намерения",
+        "health": "Политика здоровья",
+        "context": "Политика контекста",
+        "capability": "Политика возможности",
+        "performance": "Политика производительности",
+        "fairness": "Политика справедливости",
+        "cheapest": "Политика самой дешёвой",
+        "model-preference": "Политика предпочтения модели"
+      },
+      "descriptions": {
+        "context": "Оценивает модели на основе доступного окна контекста. Присваивает 0 моделям, у которых окно контекста меньше расчётной длины запроса, предотвращая ошибки усечения.",
+        "cheapest": "Оценивает модели обратно пропорционально стоимости их токена. Самая дешёвая модель получает 1.0, самая дорогая получает 0.0, помогая снизить расходы API по запросам.",
+        "health": "Оценивает модели на основе недавней частоты ошибок с использованием экспоненциального затухания (недавние ошибки имеют больший вес). Применяет автоматический выключатель, который устанавливает оценку на 0, когда взвешенный процент ошибок превышает критический порог.",
+        "performance": "Оценивает модели на основе недавней средней задержки с использованием экспоненциального затухания. Самая быстрая модель получает 1.0, самая медленная получает 0.0. Модели без недавних данных получают оценку по умолчанию 1.0.",
+        "llm": "Использует модель ИИ для оценки кандидатов на основе семантического содержания запроса. Поддерживает подсказки руководства маршрутизации для каждой модели и учитывает запас бюджета при настройке ограничений.",
+        "capability": "Жёсткий фильтр: присваивает 0 моделям, которые явно не имеют требуемой функции запроса (видение, вызов функций, режим JSON). Модели без явного объявления возможностей не штрафуются.",
+        "rate-limit": "Штрафует модели с высокой недавней частотой вызовов, чтобы снизить риск превышения лимитов провайдера (HTTP 429). Поддерживает настраиваемый жёсткий порог, который устанавливает оценку на 0.",
+        "fairness": "Распределяет трафик равномерно, штрафуя модели, которые недавно получили больше успешных вызовов. Действует как мягкий round-robin, предотвращая концентрацию нагрузки на одну модель.",
+        "budget-remaining": "Оценивает модели на основе оставшегося запаса бюджета по всем настроенным лимитам. Предпочитает модели с большим запасом перед тем, как их пороги будут достигнуты, заранее распределяя потребление.",
+        "semantic-intent": "Классифицирует запрос по семантическому намерению с использованием внедрений, а затем ограничивает пул кандидатов моделями, сопоставленными с этим намерением. Уверенные совпадения жёстко фильтруют пул; неоднозначные совпадения объединяют лучшие 2 пула; неизвестные запросы пропускают всех кандидатов.",
+        "model-preference": "Когда клиент запрашивает определённую модель (не routerly/ada), присваивает настраиваемый бонус к этой модели. Когда предпочтение не выражено, политика воздерживается. Позиция в списке контролирует, насколько предпочтение имеет вес против других политик."
+      },
+      "selectModel": "Выбрать модель"
+    },
+    "securityRules": {
+      "applyTo": "Применить к",
+      "streamingBufferSize": "Размер буфера потока (символы)",
+      "entityTypes": "Типы сущностей",
+      "target": "Цель",
+      "embeddingModel": "Модель внедрения",
+      "judgeModel": "Модель судьи",
+      "contentGuardrails": "Защита контента",
+      "piiPolicies": "Политики PII",
+      "addSecurityPolicyPlaceholder": "Добавить политику безопасности...",
+      "removePolicyTooltip": "Удалить политику",
+      "deleteRuleAriaLabel": "Удалить правило",
+      "embeddingModelPlaceholder": "Выбрать модель внедрения...",
+      "fallbackModelsLabel": "Модели отката (опционально, пробуются по порядку)",
+      "fallbackModelsPlaceholder": "Нет моделей отката...",
+      "exampleTextsLabel": "Примеры текстов для блокировки (по одному в строке)",
+      "exampleTextsPlaceholder": "Как мне взломать...\n...",
+      "similarityThresholdLabel": "Порог сходства:",
+      "judgeModelPlaceholder": "Выбрать модель судьи...",
+      "allowedTopicsLabel": "Разрешённые темы (естественный язык)",
+      "allowedTopicsPlaceholder": "Поддержка клиентов для программных продуктов. Техническое устранение неполадок. Вопросы по выставлению счётов.",
+      "onTopicThresholdLabel": "Блокировать, если оценка по теме ниже:",
+      "harmThresholdLabel": "Блокировать, если оценка вреда выше:",
+      "customInstructionsLabel": "Пользовательские инструкции",
+      "customInstructionsPlaceholder": "Вы классификатор безопасности контента. Оцените следующий текст на опасное содержание.\nКатегории: ненавистнические высказывания, насилие, сексуальное содержание, членовредительство.\nОтветьте ТОЛЬКО объектом JSON: {\"score\": <число от 0 до 1>}",
+      "customInstructionsRequired": "Пользовательские инструкции обязательны.",
+      "enabledLabel": "Включено",
+      "contentGuardrailsHint": "Проверьте запросы и ответы для настроенных правил. Активно, когда настроено хотя бы одно правило.",
+      "securityPoliciesHeading": "Политики безопасности",
+      "noSecurityPolicies": "Политики безопасности не настроены.",
+      "piiPoliciesHint": "Обнаружение и редактирование личных данных. Каждая политика ориентируется на ввод запроса, ответ модели или оба, и контролирует свой набор сущностей.",
+      "noPiiPolicies": "Политики PII не настроены.",
+      "addPolicyButton": "+ Добавить политику",
+      "injectionWarningTitle": "Полезная нагрузка запроса изменена путём инъекции",
+      "injectionWarningBody": "Одно или несколько правил вводят свою инструкцию в системную подсказку исходящего запроса, поэтому полезная нагрузка, отправляемая провайдеру, изменяется. Не производится дополнительный вызов модели, и ничего не блокируется; обслуживающая модель самостоятельно применяет инструкцию.",
+      "streamingDisabledWarningTitle": "Потоковая передача отключена для этого маршрутизатора",
+      "streamingDisabledWarningBody": "Одно или несколько правила настроены на блокирование ответов (цель: ответ или оба). Поскольку весь ответ должен быть проверен перед принятием решения о блокировке, Routerly удерживает ответ полностью перед его возвратом клиенту. Потоковая передача недоступна при активном правиле блокировки ответов; клиенты получат полный ответ сразу, а не постепенно."
+    },
+    "connectionFields": {
+      "azureResourceName": "Имя ресурса Azure",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Имя ресурса Azure OpenAI (из портала Azure).",
+      "deploymentId": "ID развёртывания",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Имя развёртывания, созданное в Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Версия API",
+      "azureApiVersionDefaultHint": "(по умолчанию: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Регион AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID ключа доступа AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Секретный ключ доступа AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Оставьте пустым, чтобы сохранить существующий",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Токен сеанса",
+      "awsSessionTokenOptionalHint": "(опционально, для временных учётных данных)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID маршрутизатора GCP",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "Местоположение",
+      "gcpLocationDefaultHint": "(по умолчанию: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Ключ учётной записи обслуживания",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL конечной точки",
+      "optional": "(опционально)",
+      "webProvider": {
+        "unofficialWarningTitle": "Неофициальный провайдер — используйте на свой риск.",
+        "unofficialWarningBody": "Эта интеграция использует недокументированный внутренний API, который может измениться или сломаться без уведомления. Это может нарушить Условия использования провайдера и привести к приостановке аккаунта.",
+        "accessTokenLabel": "Токен доступа",
+        "sessionTokenLabel": "Токен сеанса",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Вставьте значение cookies sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Будучи авторизованным в ChatGPT, откройте <code>https://chatgpt.com/api/auth/session</code> в новой вкладке. Скопируйте значение поля <code>accessToken</code> (начинается с <code>eyJ</code>). Токен истекает каждые ~24 часа. Для надёжного доступа также заполните поле <strong>cf_clearance</strong> ниже.",
+        "anthropicInstructions": "<strong>Как получить свой ключ сеанса:</strong> Будучи авторизованным в Claude, откройте DevTools (F12) → Application → Cookies → <code>claude.ai</code> → скопируйте значение cookies <code>sessionKey</code> (начинается с <code>sk-ant-sid01-</code>). Ключ остаётся действительным, пока вы не выйдете."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Токен OAuth подписки",
+        "authFilePathLabel": "Путь к файлу аутентификации",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (по умолчанию)",
+        "anthropicTitle": "Используйте вашу подписку Claude Pro/Max.",
+        "anthropicRunCommandStep": "Выполните эту команду и скопируйте выводимый токен:",
+        "anthropicPasteTokenStep": "Вставьте токен в поле <em>Токен OAuth подписки</em> ниже.",
+        "termsNote": "Регенерируйте при истечении. Использование подписки через шлюз может нарушить Условия использования провайдера.",
+        "openaiTitle": "Используйте вашу подписку ChatGPT Plus/Pro через приложение Codex.",
+        "openaiLoginStep": "Авторизуйтесь в приложении Codex с помощью вашего аккаунта ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly читает ваш токен доступа из <code>~/.codex/auth.json</code> и автоматически его обновляет. Копирование/вставка не требуется.",
+        "openaiAuthFilePathStep": "Оставьте поле <em>Путь к файлу аутентификации</em> пустым для использования по умолчанию, или введите пользовательский путь, если ваше приложение Codex хранит аутентификацию в другом месте.",
+        "openaiTermsNote": "Использование подписки через шлюз может нарушить Условия использования провайдера."
+      },
+      "copyCode": {
+        "copiedTooltip": "Скопировано!",
+        "copyTooltip": "Копировать в буфер обмена",
+        "copiedLabel": "Скопировано",
+        "copyLabel": "Копировать"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Копировать",
+      "copiedLabel": "Скопировано!",
+      "copyErrorHint": "Копирование не удалось, выберите и скопируйте вручную."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP клиент",
+      "hints": {
+        "claudeCode": "Запустите один раз, в любом месте. Claude Code сохраняет сервер в <code>~/.claude.json</code>.",
+        "claudeDesktop": "Поместите в <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (на Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), затем перезагрузите приложение. Он запускает CLI, поэтому <code>routerly</code> должен быть в вашем PATH.",
+        "codex": "Поместите в <code>~/.codex/config.toml</code>. Codex читает токен из окружения, поэтому экспортируйте его в оболочке, из которой вы запускаете Codex.",
+        "opencode": "Поместите в <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Запустите один раз. OpenClaw по умолчанию использует транспорт sse, который Routerly не обслуживает, поэтому транспорт установлен явно.",
+        "cursor": "Поместите в <code>~/.cursor/mcp.json</code>, или в <code>.cursor/mcp.json</code>, чтобы ограничить его одним проектом.",
+        "cline": "Поместите в <code>~/.cline/mcp.json</code>, или вставьте его в Configure MCP Servers на панели Cline.",
+        "zed": "Поместите в ваш Zed <code>settings.json</code>, вместе с любыми другими серверами контекста."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Несохранённые изменения",
+      "message": "У вас есть несохранённые изменения. Если вы оставите сейчас, ваши изменения будут потеряны.",
+      "stay": "Остаться",
+      "leaveAnyway": "Всё равно уйти"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Защита",
+        "pii": "PII",
+        "optimizers": "Оптимайзеры",
+        "routerOverhead": "Накладные расходы маршрутизатора"
+      },
+      "policyType": {
+        "llm": "Маршрутизация ИИ",
+        "rateLimit": "Ограничение скорости",
+        "budgetRemaining": "Оставшийся бюджет",
+        "semanticIntent": "Семантическое намерение",
+        "modelPreference": "Предпочтение модели"
+      },
+      "rawDetails": "необработанные детали",
+      "technicalDetails": "технические детали",
+      "systemPrompt": "системная подсказка",
+      "responseText": "текст ответа",
+      "responseJson": "JSON ответа",
+      "cacheEmbeddingCall": "ВЫЗОВ КЭША ВНЕДРЕНИЯ",
+      "fallbackAttempt": "попытка отката #{{attempt}}",
+      "embeddingModel": "Модель внедрения",
+      "upstreamModel": "Модель нижестоящего уровня",
+      "provider": "Провайдер",
+      "source": "Источник",
+      "endpoint": "Конечная точка",
+      "cacheHit": "ПОПАДАНИЕ В КЭШ",
+      "ttlExtended": "TTL продлён",
+      "model": "Модель",
+      "similarity": "Сходство",
+      "embedding": "Внедрение",
+      "cacheMiss": "ПРОМАХ КЭША",
+      "details": "детали",
+      "excludedByLimits": "ИСКЛЮЧЕНО ПО ОГРАНИЧЕНИЯМ",
+      "finalRanking": "ФИНАЛЬНЫЙ РЕЙТИНГ",
+      "noRankingData": "Нет данных рейтинга (запись может быть повреждена или из более старой версии)",
+      "policyScores": "ОЦЕНКИ ПОЛИТИКИ",
+      "weight": "вес {{value}}",
+      "allScores": "все оценки",
+      "noPolicyData": "Нет данных политики (запись может быть повреждена или из более старой версии)",
+      "requestGuardrailBlocked": "БЛОКИРОВКА ЗАЩИТЫ ЗАПРОСА",
+      "requestGuardrailTriggered": "ТРИГГЕР ЗАЩИТЫ ЗАПРОСА",
+      "responseGuardrailBlocked": "БЛОКИРОВКА ЗАЩИТЫ ОТВЕТА",
+      "responseGuardrailTriggered": "ТРИГГЕР ЗАЩИТЫ ОТВЕТА",
+      "rule": "Правило",
+      "action": "Действие",
+      "guardrailsEvaluated": "ОЦЕНЕНЫ ЗАЩИТЫ ({{target}})",
+      "ruleCount": "{{count}} правило",
+      "ruleCount_other": "{{count}} правил",
+      "promptInjection": "Инъекция подсказки",
+      "injects": "вводит",
+      "judgeResponse": "Ответ судьи",
+      "piiScrubbed": "PII ОЧИЩЕНО",
+      "piiScanned": "PII СКАНИРОВАНО ({{target}})",
+      "policies": "политики",
+      "entityTypes": "типы сущностей",
+      "customPatterns": "пользовательские шаблоны",
+      "scanned": "отсканировано",
+      "redacted": "отредактировано",
+      "took": "заняло",
+      "ms": "{{value}} мс",
+      "entityTypesScanned": "отсканировано типов сущностей",
+      "guardrailInjection": "ИНЪЕКЦИЯ ЗАЩИТЫ",
+      "rules": "правила",
+      "chars": "символы",
+      "injectedText": "введённый текст",
+      "optimizer": "ОПТИМАЙЗЕР {{id}}",
+      "tokens": "токены",
+      "saved": "сэкономлено",
+      "tok": "{{value}} тек",
+      "reason": "причина",
+      "budgetBlocked": "БЮДЖЕТ ЗАБЛОКИРОВАН",
+      "budgetOk": "БЮДЖЕТ ОК",
+      "egressSent": "ИСХОДЯЩИЕ ОТПРАВЛЕНЫ",
+      "status": "статус",
+      "encoding": "кодировка",
+      "frames": "фреймы",
+      "bytes": "байты"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Мой профиль",
+      "subtitle": "Управление параметрами вашего аккаунта"
+    },
+    "tabs": {
+      "profile": "Профиль",
+      "notifications": "Уведомления",
+      "mcp": "MCP",
+      "preferences": "Предпочтения"
+    },
+    "notifications": {
+      "close": "Закрыть",
+      "refresh": "Обновить",
+      "clear": "Очистить",
+      "empty": "Уведомления не найдены.",
+      "markAllRead": "Отметить все как прочитанные",
+      "allCaughtUp": "Всё в порядке",
+      "unreadCount": "{{count}} непрочитанное",
+      "selectedCount": "{{count}} выбрано",
+      "severity": {
+        "all": "Все",
+        "info": "Информация",
+        "warning": "Предупреждение",
+        "critical": "Критическое"
+      },
+      "status": {
+        "read": "Прочитано",
+        "unread": "Непрочитано"
+      },
+      "filters": {
+        "severity": "Серьёзность",
+        "category": "Категория",
+        "event": "Событие",
+        "date": "Дата",
+        "period": "Период",
+        "status": "Статус",
+        "all": "Все",
+        "allCategories": "Все категории",
+        "allEvents": "Все события",
+        "unreadOnly": "Только непрочитанные"
+      },
+      "actions": {
+        "markRead": "Отметить как прочитанное",
+        "markUnread": "Отметить как непрочитанное",
+        "archive": "Архивировать"
+      },
+      "table": {
+        "severity": "Серьёзность",
+        "event": "Событие",
+        "date": "Дата",
+        "status": "Статус",
+        "selectAll": "Выбрать все",
+        "selectRow": "Выбрать {{event}}",
+        "eventCount": "{{count}} события"
+      },
+      "pagination": {
+        "previous": "← Предыдущая",
+        "next": "Следующая →",
+        "page": "Страница {{page}} из {{totalPages}}",
+        "total": "({{count}} всего)"
+      },
+      "detail": {
+        "ariaLabel": "Деталь уведомления",
+        "details": "Детали",
+        "noDetails": "Нет дополнительных деталей.",
+        "eventsInIncident": "События в этом инциденте"
+      }
+    },
+    "security": {
+      "roleLabel": "Роль:",
+      "password": {
+        "heading": "Изменить пароль",
+        "currentLabel": "Текущий пароль",
+        "newLabel": "Новый пароль",
+        "newPlaceholder": "Минимум 8 символов",
+        "confirmLabel": "Подтвердите новый пароль",
+        "success": "Пароль успешно изменён.",
+        "saving": "Сохранение...",
+        "submit": "Изменить пароль",
+        "errors": {
+          "mismatch": "Пароли не совпадают.",
+          "tooShort": "Новый пароль должен быть не менее 8 символов.",
+          "updateFailed": "Обновление не удалось"
+        }
+      },
+      "tfa": {
+        "heading": "Двухфакторная аутентификация",
+        "notEnabled": "2FA не включена. Защитите свой аккаунт одноразовым паролем на основе времени.",
+        "enableButton": "Включить двухфакторную аутентификацию",
+        "scanInstructions": "Отсканируйте этот QR-код с помощью приложения аутентификатора (Google Authenticator, Authy и т. д.), затем введите 6-значный код для подтверждения.",
+        "qrAlt": "QR-код настройки 2FA",
+        "addAccountInstructions": "Откройте приложение аутентификатора (Google Authenticator, Authy, 1Password и т. д.) и добавьте новый аккаунт:",
+        "setup": {
+          "step1": "Нажмите <strong>Добавить аккаунт</strong> или кнопку <strong>+</strong>",
+          "step2": "Выберите <strong>Введите ключ настройки</strong> (или отсканируйте QR-код на мобильном)",
+          "step3": "Введите показанный ниже секрет"
+        },
+        "mobileLink": "Нажмите здесь на мобильном, чтобы открыть аутентификатор",
+        "manualEntryLabel": "Секрет ручного ввода:",
+        "saveBackupCodes": "Сохраните эти резервные коды. Каждый можно использовать один раз, если вы потеряете доступ к вашему аутентификатору.",
+        "copyBackupCodes": "Копировать резервные коды",
+        "confirmCodeLabel": "Введите код из вашего приложения для активации",
+        "activate": "Активировать 2FA",
+        "cancel": "Отмена",
+        "enabledBadge": "2FA включена",
+        "newBackupCodesLabel": "Новые резервные коды (сохраните сейчас):",
+        "copy": "Копировать",
+        "regenLabel": "Введите код аутентификатора для регенерации резервных кодов",
+        "regenerate": "Регенерировать",
+        "regenerateBackupCodes": "Регенерировать резервные коды",
+        "disableLabel": "Отключить 2FA (введите код аутентификатора)",
+        "disable": "Отключить 2FA",
+        "errors": {
+          "setupFailed": "Настройка не удалась",
+          "confirmFailed": "Подтверждение не удалось",
+          "disableFailed": "Отключение не удалось",
+          "regenFailed": "Регенерация не удалась"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Не удалось загрузить поверхность MCP",
+        "revokeFailed": "Не удалось отозвать токен"
+      },
+      "revokeConfirm": "Отозвать токен MCP \"{{name}}\"? Клиенты, использующие его, перестанут работать немедленно.",
+      "tokens": {
+        "heading": "Токены MCP",
+        "newToken": "Новый токен",
+        "description": "Каждый токен действует как вы: он предоставляет ровно те инструменты, которые разрешает ваша роль. Полное значение показано один раз на странице, которая его создаёт.",
+        "empty": "Ещё нет токенов MCP. Создайте один, чтобы подключить MCP клиента.",
+        "created": "Создано",
+        "lastUsed": "Последний раз использовано",
+        "expires": "Истекает",
+        "never": "Никогда",
+        "revokeTitle": "Отозвать токен"
+      },
+      "tools": {
+        "heading": "Инструменты, которые открывают ваши токены",
+        "empty": "Ваша роль не предоставляет инструмент MCP. Попросите администратора разрешения, которые вам нужны.",
+        "table": {
+          "name": "Имя",
+          "scope": "Область видимости",
+          "description": "Описание",
+          "sourceModule": "Исходный модуль",
+          "permission": "Разрешение"
+        }
+      },
+      "connect": {
+        "heading": "Подключить MCP клиента",
+        "descriptionPre": "Выберите клиента, который вы подключаете, затем замените",
+        "descriptionPost": "одним из ваших токенов. Создание токена показывает тот же фрагмент с уже введённым значением.",
+        "otherClient": "Любой другой клиент",
+        "httpInstructionsPre": "По HTTP, направьте его на эту конечную точку и аутентифицируйте с помощью",
+        "httpInstructionsPost": ". Это JSON-RPC 2.0 по потоковому HTTP.",
+        "stdioInstructionsPre": "По stdio, CLI его соединяет и передаёт ваш токен. Запускаете сервис напрямую вместо этого? Установите",
+        "stdioInstructionsAnd": "и",
+        "stdioInstructionsPost": "сами."
+      },
+      "newToken": {
+        "backToMcp": "Вернуться к MCP",
+        "title": "Новый токен MCP",
+        "subtitle": "Токен действует как вы: он предоставляет ровно те инструменты, которые разрешает ваша роль.",
+        "nameLabel": "Имя",
+        "namePlaceholder": "ноутбук",
+        "nameHint": "Где используется этот токен, например \"ноутбук\" или \"claude-desktop\".",
+        "expiryLabel": "Истекает",
+        "expiryHint": "Опционально. Оставьте пустым, и токен никогда не истечёт, пока вы его не отозовёте.",
+        "createButton": "Создать токен",
+        "creatingButton": "Создание…",
+        "cancelButton": "Отмена",
+        "tokenSection": {
+          "title": "Ваш токен",
+          "hint": "Скопируйте его сейчас. Он больше не будет показан, и потерянный токен можно только заменить.",
+          "copyButton": "Копировать",
+          "copiedButton": "Скопировано!",
+          "copyTitle": "Копировать токен",
+          "copiedTitle": "Скопировано!"
+        },
+        "connectSection": {
+          "title": "Подключить клиента",
+          "hint": "Выберите клиента, который вы подключаете. Фрагмент уже содержит этот токен."
+        },
+        "bridgeSection": {
+          "title": "Или используйте локальный мост",
+          "hint": "Для клиента, который говорит только stdio, CLI его соединяет и передаёт ваш токен."
+        },
+        "doneButton": "Готово",
+        "errors": {
+          "createFailed": "Не удалось создать токен",
+          "copyFailed": "Копирование не удалось, выберите и скопируйте токен вручную."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Язык",
+      "description": "Выберите язык отображения панели инструментов.",
+      "languageLabel": "Язык",
+      "saved": "Предпочтение языка сохранено."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Не удалось загрузить параметры",
+        "loadFailedPeriod": "Не удалось загрузить параметры.",
+        "saveFailed": "Не удалось сохранить",
+        "saveSettingsFailed": "Не удалось сохранить параметры"
+      },
+      "savedSuccess": "Параметры успешно сохранены.",
+      "saving": "Сохранение…",
+      "saveSettings": "Сохранить параметры",
+      "serverInfo": {
+        "heading": "Информация о сервере",
+        "readOnly": "Только для чтения. Хост и порт поступают из окружения или файла параметров, а не отсюда.",
+        "reachableAt": "Доступен по адресу",
+        "reachableAtAny": "Доступен по адресам",
+        "thisMachine": "Этот компьютер",
+        "network": "Сеть",
+        "copyAddress": "Копировать {{address}}",
+        "copied": "Скопировано!",
+        "copy": "Копировать",
+        "hostAndPort": "Хост и порт",
+        "version": "Версия",
+        "uptime": "Время безотказной работы"
+      },
+      "runtime": {
+        "heading": "Параметры времени выполнения",
+        "logLevel": "Уровень логирования",
+        "logLevelHint": "Управляет многословностью логов сервиса.",
+        "publicUrl": "Общественный URL",
+        "publicUrlHint": "Базовый URL, по которому сервис доступен из внешних клиентов (например <code>http://192.168.1.10:3000</code>). Используется в разделе <strong>Как подключить</strong> каждого маршрутизатора. Полезно, когда панель инструментов запущена на другом компьютере или порту, чем сервис.",
+        "usageRetention": "Удержание использования",
+        "noLimit": "Нет предела",
+        "maxAgeDays": "Макс. возраст (дни)",
+        "maxSizeMb": "Макс. размер (МБ)",
+        "retentionHint": "История использования/выставления счётов старше этого количества дней или превышающая этот размер, удаляется из активного журнала. Оставьте оба пустыми для неограниченного удержания."
+      },
+      "internationalization": {
+        "heading": "Интернационализация",
+        "defaultLanguage": "Язык по Умолчанию",
+        "defaultLanguageHint": "Язык панели для пользователей, которые еще не выбрали собственный язык. Не переопределяет личный выбор пользователя."
+      },
+      "telemetry": {
+        "heading": "Анонимные метрики",
+        "neverAutomatic": "Routerly никогда не отправляет данные автоматически.",
+        "noChoice": "Вы ещё не сделали выбор.",
+        "enabledStatus": "Анонимные метрики установки включены.",
+        "disabledStatus": "Анонимные метрики установки отключены.",
+        "explanation": "Если включено, Routerly отправляет только: тип события (установка / обновление / удаление), версию, платформу и случайный ID. Никаких личных данных, никаких данных об использовании, IP не хранится.",
+        "whatIsSent": "Что отправляется?",
+        "installId": "ID установки: {{id}}",
+        "saving": "Сохранение…",
+        "enable": "Включить",
+        "disable": "Отключить"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Панель инструментов (почтовый ящик в приложении)",
+          "description": "Маршруты событий в почтовый ящик в приложении"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Пользовательский почтовый сервер"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS Simple Email Service"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Сервисы Azure Communication Services"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail через OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP обратный вызов webhook"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Провайдер – Ошибка",
+        "providerDegraded": "Провайдер – Деградация",
+        "providerRecovered": "Провайдер – Восстановление",
+        "providerRateLimited": "Провайдер – Ограничение скорости",
+        "routingNoCandidates": "Маршрутизация – Нет кандидатов",
+        "routingFallbackUsed": "Маршрутизация – Использован откат",
+        "authLoginFailed": "Аутентификация – Ошибка входа",
+        "authTokenInvalid": "Аутентификация – Токен недействителен",
+        "configModelAdded": "Конфиг – Модель добавлена",
+        "configModelDeleted": "Конфиг – Модель удалена",
+        "configRouterCreated": "Конфиг – Маршрутизатор создан",
+        "configRouterDeleted": "Конфиг – Маршрутизатор удалён",
+        "budgetThresholdReached": "Бюджет – Достигнут порог",
+        "budgetExceeded": "Бюджет – Превышен",
+        "budgetReset": "Бюджет – Сброс",
+        "systemStartup": "Система – Запуск",
+        "systemShutdown": "Система – Выключение",
+        "systemUpdateAvailable": "Система – Обновление доступно"
+      },
+      "removeChannelTooltip": "Удалить канал",
+      "removeChannelConfirm": "Удалить канал?",
+      "formUpdatedHint": "Форма обновлена — сохраните для применения.",
+      "hmacSigningKeyPlaceholder": "Ключ подписи HMAC",
+      "perms": {
+        "routerRead": "Маршрутизаторы – Чтение",
+        "routerWrite": "Маршрутизаторы – Запись",
+        "modelRead": "Модели – Чтение",
+        "modelWrite": "Модели – Запись",
+        "userRead": "Пользователи – Чтение",
+        "userWrite": "Пользователи – Запись",
+        "reportRead": "Отчёты – Чтение",
+        "settingsRead": "Параметры – Чтение",
+        "settingsWrite": "Параметры – Запись",
+        "notificationWrite": "Уведомления – Запись",
+        "tokenRead": "Токены – Чтение",
+        "tokenWrite": "Токены – Запись",
+        "roleWrite": "Роли – Запись",
+        "auditRead": "Журнал аудита – Чтение",
+        "modulesRead": "Модули – Чтение",
+        "modulesManage": "Модули – Управление",
+        "connectionsRead": "Соединения – Чтение",
+        "connectionsManage": "Соединения – Управление",
+        "resilienceRead": "Устойчивость – Чтение",
+        "resilienceManage": "Устойчивость – Управление",
+        "profilesRead": "Профили маршрутизации – Чтение",
+        "profilesManage": "Профили маршрутизации – Управление",
+        "optimizersRead": "Оптимайзеры – Чтение",
+        "optimizersManage": "Оптимайзеры – Управление",
+        "experimentsRead": "Эксперименты – Чтение",
+        "experimentsManage": "Эксперименты – Управление"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Для этого типа канала цели не влияют на доставку (конечная точка фиксирована). Они фильтруют, какие события регистрируются в журнале аудита для каждого получателя.",
+        "dashboard": "Цели контролируют видимость входящих — только сопоставленные пользователи будут видеть эти уведомления в своем входящем в приложении.",
+        "email": "Цели определяют, какие пользователи получают это письмо. Оставьте все пустыми для отправки всем пользователям."
+      },
+      "summary": {
+        "allEvents": "Все события",
+        "eventCount": "{{count}} событие",
+        "eventCount_other": "{{count}} событий",
+        "roleCount": "{{count}} роль",
+        "roleCount_other": "{{count}} ролей",
+        "permCount": "{{count}} разрешение",
+        "permCount_other": "{{count}} разрешений",
+        "userCount": "{{count}} пользователь",
+        "userCount_other": "{{count}} пользователей",
+        "everyone": "Все"
+      },
+      "errors": {
+        "loadFailed": "Не удалось загрузить"
+      },
+      "fields": {
+        "dashboardHint": "Маршруты сопоставления событий в почтовый ящик уведомлений в приложении. Учётные данные не требуются.",
+        "labels": {
+          "fromAddress": "Адрес отправителя",
+          "fromName": "Имя отправителя",
+          "host": "Хост",
+          "port": "Порт",
+          "tls": "TLS/SSL",
+          "username": "Имя пользователя",
+          "password": "Пароль",
+          "awsRegion": "Регион AWS",
+          "accessKeyId": "ID ключа доступа",
+          "secretAccessKey": "Секретный ключ доступа",
+          "apiKey": "Ключ API",
+          "connectionString": "Строка подключения",
+          "clientId": "ID клиента",
+          "clientSecret": "Секрет клиента",
+          "refreshToken": "Маркер обновления",
+          "url": "URL",
+          "method": "Метод",
+          "signingSecret": "Секрет подписи",
+          "botToken": "Токен бота",
+          "channelId": "ID канала",
+          "webhookUrl": "URL webhook",
+          "integrationKey": "Ключ интеграции"
+        },
+        "values": {
+          "enabled": "Включено",
+          "disabled": "Отключено",
+          "configured": "Настроено",
+          "notSet": "Не установлено"
+        },
+        "optional": "(опционально)",
+        "keepCurrentPlaceholder": "Оставьте пустым, чтобы сохранить текущий",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Использовать TLS / SSL",
+        "smtpTlsOnHint": "(порт 465 — прямое SSL)",
+        "smtpTlsOffHint": "(порт 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Оставьте учётные данные пустыми для использования роли IAM экземпляра.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Ключ подписи HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-символьный ключ маршрутизации",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "События",
+          "eventsPlaceholder": "Все события (оставьте пустым для всех)",
+          "eventsHint": "Оставьте пустым для получения всех событий. Выберите определённые события для фильтрации.",
+          "routersHeading": "Маршрутизаторы",
+          "routersPlaceholder": "Все маршрутизаторы (оставьте пустым для всех)",
+          "routersHint": "Оставьте пустым для получения событий от всех маршрутизаторов.",
+          "cooldownHeading": "Охлаждение",
+          "cooldownSuffix": "секунд (0 = без охлаждения)",
+          "cooldownHint": "Минимальный интервал перед тем, как этот канал сможет снова срабатывать для одного и того же события."
+        },
+        "recipients": {
+          "heading": "Получатели / цели",
+          "rolesLabel": "Роли",
+          "rolesPlaceholder": "Все роли (все)",
+          "permissionsLabel": "Разрешения",
+          "permissionsPlaceholder": "Все разрешения (все)",
+          "usersLabel": "Отдельные пользователи",
+          "usersPlaceholder": "Все пользователи (все)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "соединение",
+          "routing": "маршрутизация",
+          "recipients": "получатели"
+        },
+        "sections": {
+          "channelSettings": "Параметры канала",
+          "eventsRouting": "События и маршрутизация",
+          "recipients": "Получатели"
+        },
+        "nameLabel": "Имя",
+        "namePlaceholder": "Метка для этого канала",
+        "cancelButton": "Отмена"
+      },
+      "list": {
+        "countLabel": "{{count}} канал",
+        "countLabel_other": "{{count}} каналов",
+        "filteredLabel": "{{shown}} из {{count}} канала",
+        "filteredLabel_other": "{{shown}} из {{count}} каналов",
+        "allTypes": "Все типы",
+        "searchPlaceholder": "Фильтр каналов…",
+        "searchChannelsPlaceholder": "Поиск каналов…",
+        "addButton": "Добавить канал",
+        "addSearchPlaceholder": "Поиск каналов…",
+        "noResults": "Нет результатов",
+        "emptyTitle": "Ещё не настроены каналы уведомлений.",
+        "noMatch": "Ни один канал не соответствует активным фильтрам.",
+        "nameInlinePlaceholder": "Метка (опционально)",
+        "columns": {
+          "name": "Имя",
+          "type": "Тип",
+          "summary": "События / цели"
+        },
+        "testTitle": "Отправить тест",
+        "editTitle": "Редактировать канал",
+        "deleteTitle": "Удалить канал",
+        "deleteConfirm": "Удалить канал \"{{name}}\"? Это не может быть отменено.",
+        "deleteConfirmButton": "Удалить",
+        "errors": {
+          "deleteFailed": "Не удалось удалить"
+        }
+      },
+      "edit": {
+        "backToList": "Вернуться к уведомлениям",
+        "back": "Назад",
+        "heading": "Редактировать канал {{provider}}",
+        "subtitle": "Обновите конфигурацию этого канала уведомлений.",
+        "testSection": {
+          "title": "Отправить тест",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Отправить тест",
+          "sendingButton": "Отправка…",
+          "hintEmail": "Оставьте пустым для отправки на адрес вашего аккаунта. В тесте используется сохранённая конфигурация канала.",
+          "hintOther": "В тесте используется сохранённая конфигурация канала. Сначала сохраните изменения для тестирования обновлённых параметров."
+        },
+        "saveButton": "Сохранить изменения",
+        "savingButton": "Сохранение…",
+        "errors": {
+          "loadFailed": "Не удалось загрузить",
+          "saveFailed": "Не удалось сохранить"
+        }
+      },
+      "create": {
+        "backToList": "Вернуться к уведомлениям",
+        "changeType": "Изменить тип",
+        "pickerHeading": "Выберите тип канала",
+        "pickerSubtitle": "Выберите провайдера уведомлений для настройки.",
+        "heading": "Новый канал {{provider}}",
+        "subtitle": "Настройте новый канал уведомлений.",
+        "createButton": "Создать канал",
+        "creatingButton": "Создание…",
+        "errors": {
+          "createFailed": "Не удалось создать"
+        }
+      },
+      "sendTest": "Отправить тест",
+      "fromAddress": "Адрес отправителя",
+      "individualUsers": "Отдельные пользователи",
+      "host": "Хост",
+      "port": "Порт",
+      "apiKey": "Ключ API",
+      "connectionString": "Строка подключения",
+      "clientId": "ID клиента",
+      "clientSecret": "Секрет клиента",
+      "refreshToken": "Маркер обновления",
+      "method": "Метод",
+      "botToken": "Токен бота",
+      "channelId": "ID канала",
+      "webhookUrl": "URL webhook",
+      "integrationKey": "Ключ интеграции"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — открывает /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — metrics API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — line protocol"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Экспортировать трассировку запроса",
+        "description": "Отправляет полную трассировку каждого проксированного запроса: каждый этап, каждый модуль, который говорил, и подсказки и ответы для проектов, которые выбрали.",
+        "sampleRateLabel": "Частота выборки",
+        "sampleRateHint": "1 экспортирует каждый запрос, 0.1 один из десяти."
+      },
+      "optional": "(опционально)",
+      "headersHint": "(опционально, по одному в строке: ключ: значение)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Токен носителя",
+          "placeholder": "Оставьте пустым для открытого доступа",
+          "description": "Открывает <code>/metrics</code> в формате текста Prometheus. Установите токен для требования аутентификации Bearer."
+        },
+        "otel": {
+          "endpoint": "Конечная точка сборщика",
+          "description": "Базовый URL вашего приёмника OTLP. Routerly добавляет <code>/v1/metrics</code> и <code>/v1/traces</code> при включении экспорта трассировки. Порт HTTP по умолчанию — 4318, gRPC — 4317.",
+          "protocol": "Протокол",
+          "headers": "Заголовки"
+        },
+        "datadog": {
+          "apiKey": "Ключ API",
+          "placeholder": "Ваш ключ API Datadog",
+          "description": "Находится в <strong>Organization Settings → API Keys</strong> в вашем аккаунте Datadog.",
+          "site": "Сайт"
+        },
+        "grafana": {
+          "remoteWriteUrl": "URL удалённой записи",
+          "description": "Находится в <strong>Grafana Cloud → Connections → Prometheus → Details</strong> как \"Remote Write Endpoint\".",
+          "username": "Имя пользователя / ID стека",
+          "usernameHint": "Числовой ID, показанный в деталях подключения Prometheus.",
+          "apiKey": "Ключ API / Токен",
+          "apiKeyHint": "Токен Grafana Cloud с ролью <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL экземпляра InfluxDB v2. Облако: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Токен",
+          "tokenPlaceholder": "Ваш токен API InfluxDB",
+          "tokenHint": "Должен иметь <strong>доступ на запись</strong> в bucket.",
+          "org": "Организация",
+          "bucket": "Bucket"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Секрет",
+          "secretHint": "(опционально — ключ подписи HMAC-SHA256)",
+          "headers": "Заголовки"
+        }
+      },
+      "errors": {
+        "loadFailed": "Не удалось загрузить интеграции",
+        "updateFailed": "Не удалось обновить интеграцию",
+        "saveFailed": "Не удалось сохранить интеграцию",
+        "deleteFailed": "Не удалось удалить интеграцию"
+      },
+      "empty": "Ещё не настроены интеграции.",
+      "enabled": "Включено",
+      "testing": "Тестирование…",
+      "test": "Тест",
+      "removeConfirm": "Удалить?",
+      "remove": "Удалить",
+      "cancel": "Отмена",
+      "removeTooltip": "Удалить интеграцию",
+      "saving": "Сохранение…",
+      "save": "Сохранить",
+      "addButton": "Добавить интеграцию"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Не удалось загрузить параметры",
+        "duplicateUrl": "Этот URL уже в списке.",
+        "unreachable": "Не удалось достичь действительный каталог провайдера по этому URL."
+      },
+      "saved": "Сохранено.",
+      "refreshed": "Обновлено.",
+      "heading": "Репозитории каталога провайдера",
+      "refreshing": "Обновление…",
+      "refresh": "Обновить",
+      "nextRefresh": "Далее: {{date}}",
+      "priorityHint": "Порядок строк определяет приоритет слияния — строка 1 выигрывает при конфликте. Используйте стрелки для переупорядочивания.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Обновлено",
+        "lastCheck": "Последняя проверка",
+        "status": "Статус"
+      },
+      "empty": "Не настроены репозитории. Будет использоваться каталог Routerly по умолчанию.",
+      "status": {
+        "error": "Ошибка",
+        "active": "Активно",
+        "disabled": "Отключено"
+      },
+      "edit": "Редактировать",
+      "removeTooltip": "Удалить",
+      "addRepository": "Добавить репозиторий",
+      "checking": "Проверка…",
+      "add": "Добавить",
+      "removeConfirm": "Удалить репозиторий \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Приложение",
+        "runtime": "Время выполнения",
+        "storage": "Хранилище",
+        "softwareUpdate": "Обновление программного обеспечения"
+      },
+      "labels": {
+        "version": "Версия",
+        "uptime": "Время безотказной работы",
+        "nodeVersion": "Node.js",
+        "platform": "Платформа",
+        "configDir": "Директория конфигурации",
+        "dataDir": "Директория данных",
+        "currentVersion": "Текущая версия",
+        "availableVersion": "Доступная версия",
+        "upToDate": "В актуальном состоянии",
+        "lastChecked": "Последняя проверка"
+      },
+      "noCheckPerformed": "Проверка обновлений не выполнялась.",
+      "checkForUpdates": "Проверить обновления",
+      "checking": "Проверка…",
+      "updateTo": "Обновить до v{{version}}",
+      "updating": "Обновление…",
+      "dockerHint": "Запуск в Docker — извлеките последний образ для обновления.",
+      "confirmUpdate": "Это загрузит и установит последнюю версию. Сервис перезагрузится. Продолжить?",
+      "updateComplete": "Обновление завершено! Перезагрузка…",
+      "serviceRestarting": "Сервис перезагружается. Пожалуйста, перезагрузите страницу через некоторое время.",
+      "errors": {
+        "loadFailed": "Не удалось загрузить",
+        "checkFailed": "Проверка не удалась",
+        "updateFailed": "Обновление не удалось"
+      },
+      "channel": "Канал"
+    },
+    "security": {
+      "authentication": "Аутентификация",
+      "requireMfa": "Требовать двухфакторную аутентификацию для всех пользователей",
+      "requireMfaHint": "Если включено, пользователи, которые не настроили 2FA, будут видеть запрос на это после входа. Пользователи могут настроить 2FA на странице своего профиля.",
+      "savedSuccess": "Параметры успешно сохранены.",
+      "saving": "Сохранение…",
+      "saveSettings": "Сохранить параметры",
+      "errors": {
+        "loadFailed": "Не удалось загрузить параметры",
+        "saveFailed": "Не удалось сохранить параметры"
+      }
+    },
+    "title": "Параметры",
+    "subtitle": "Конфигурация для Routerly",
+    "tabs": {
+      "general": "Общие",
+      "security": "Безопасность",
+      "notifications": "Уведомления",
+      "integrations": "Интеграции",
+      "catalog": "Каталог провайдера",
+      "users": "Пользователи",
+      "roles": "Роли",
+      "audit": "Журнал аудита",
+      "about": "О программе"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Маршрутизаторы",
+      "subtitle": "Клиентские приложения, которые обращаются к Routerly",
+      "count": "1 маршрутизатор",
+      "count_other": "{{count}} маршрутизаторов",
+      "newRouter": "Новый маршрутизатор",
+      "empty": "Маршрутизаторы ещё не созданы.",
+      "emptyFiltered": "Маршрутизаторы этого типа отсутствуют.",
+      "columns": {
+        "name": "Имя",
+        "tokens": "Токены",
+        "policies": "Политики",
+        "models": "Модели"
+      },
+      "tokenCount": "1 токен",
+      "tokenCount_other": "{{count}} токенов",
+      "editRouter": "Редактировать маршрутизатор",
+      "deleteRouter": "Удалить маршрутизатор",
+      "deleteConfirm": "Удалить этот маршрутизатор?",
+      "errors": {
+        "deleteFailed": "Ошибка удаления маршрутизатора"
+      },
+      "newOrchestrator": "Новый оркестратор",
+      "newPassthrough": "Новый passthrough"
+    },
+    "layout": {
+      "notFound": "Маршрутизатор не найден",
+      "tabs": {
+        "dashboard": "Панель",
+        "general": "Общие",
+        "orchestrator": "Оркестратор",
+        "routing": "Маршрутизация",
+        "optimizer": "Оптимайзер",
+        "security": "Безопасность",
+        "token": "Токен",
+        "users": "Пользователи",
+        "logs": "Логи"
+      },
+      "backToRouters": "Вернуться к маршрутизаторам",
+      "backToRoutersTitle": "Вернуться к маршрутизаторам",
+      "newRouter": "Новый маршрутизатор",
+      "loading": "Загрузка...",
+      "routerId": "ID маршрутизатора:",
+      "saveFirstHint": "Сначала сохраните маршрутизатор, чтобы разблокировать эту вкладку",
+      "newKind": "Новый {{kind}}"
+    },
+    "dashboard": {
+      "period": "Период",
+      "noTraffic": "Нет трафика для этого маршрутизатора в выбранном периоде.",
+      "stats": {
+        "savings": "Сбережения",
+        "vsPrefix": "vs",
+        "forEverything": "для всего",
+        "noTargetToCompare": "нет целевой модели для сравнения",
+        "cost": "Стоимость",
+        "callCount": "1 вызов",
+        "callCount_other": "{{count}} вызовов",
+        "latency": "Задержка",
+        "medianP95": "медиана · p95 {{value}}",
+        "ttft": "Время до первого токена",
+        "notMeasured": "не измеряется в этих вызовах",
+        "reliability": "Надёжность",
+        "errorsAndBlocked": "{{errors}} ошибок · {{blocked}} заблокировано"
+      },
+      "tokens": {
+        "input": "Входные токены:",
+        "output": "Выходные токены:",
+        "fromCache": "Из кэша:",
+        "cacheSaved": "({{amount}} сэкономлено)"
+      },
+      "oneModel": {
+        "heading": "Если бы всё пошло одной модели",
+        "empty": "Добавьте целевые модели этому маршрутизатору, чтобы увидеть сравнение.",
+        "columns": {
+          "targetModel": "Целевая модель",
+          "wouldHaveCost": "Бы стоило",
+          "saved": "Сэкономлено"
+        },
+        "costsHint": "Затраты — это наблюдаемые токены переоценены по ставкам каждой цели."
+      },
+      "optimizers": {
+        "heading": "Что удалили оптимайзеры",
+        "columns": {
+          "optimizer": "Оптимайзер",
+          "callsChanged": "Вызовы изменены",
+          "tokensSaved": "Токены сэкономлены",
+          "costSaved": "Стоимость сэкономлена",
+          "rolledBack": "Откачено"
+        },
+        "hint": "Измеряется в самих вызовах, оценены по модели, которая их обслуживала. Откачённый запуск означает, что выход шага был отклонён как небезопасный и подсказка была восстановлена: он ничего не сэкономил, и высокий счёт означает, что порог слишком агрессивен."
+      },
+      "traffic": {
+        "heading": "Куда пошёл трафик",
+        "columns": {
+          "model": "Модель",
+          "calls": "Вызовы",
+          "share": "Доля",
+          "cost": "Стоимость",
+          "p95Latency": "p95 задержка",
+          "errors": "Ошибки"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Ошибка сохранения маршрутизатора",
+        "copyFailed": "Копирование не удалось — пожалуйста, выберите и скопируйте токен вручную."
+      },
+      "kind": {
+        "router": {
+          "label": "Маршрутизатор",
+          "description": "Маршрутизирует запросы по кандидатам моделей."
+        },
+        "orchestrator": {
+          "label": "Оркестратор",
+          "description": "Маршрутизирует запросы по другим маршрутизаторам вместо моделей."
+        },
+        "passthrough": {
+          "label": "Сквозной",
+          "description": "Пробрасывает запросы без изменений."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Сохраните этот токен сейчас.",
+        "saveNowHint": "Он больше не будет показан — как только вы оставите этот экран, его нельзя будет восстановить.",
+        "copied": "Скопировано!",
+        "copy": "Копировать",
+        "goToRouter": "Перейти к маршрутизатору"
+      },
+      "connect": {
+        "heading": "Как подключить",
+        "intro": "Направьте любой OpenAI или Anthropic SDK на Routerly и используйте <tokenLink>токен маршрутизатора</tokenLink> как ключ API. Замените <code>{{token}}</code> ниже на свой. Модель <code>{{model}}</code> отдаёт выбор Routerly; любой ID модели из <modelsLink>моделей</modelsLink> тоже работает.",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "Базовый URL <code>{{baseUrl}}</code>, тот же, который берёт любое поле \"OpenAI compatible\" провайдера.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "Базовый URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK добавляет его.",
+        "curl": "curl",
+        "curlHint": "Проверьте подключение без установки чего-либо, затем ищите вызов в <usageLink>использовании</usageLink>."
+      },
+      "form": {
+        "kind": "Вид",
+        "kindFixedHint": "Зафиксировано после создания маршрутизатора.",
+        "routerName": "Имя маршрутизатора",
+        "routerNamePlaceholder": "Моё приложение",
+        "advancedSettings": "Дополнительные параметры",
+        "ttftTimeout": "Тайм-аут TTFT (мс)",
+        "ttftTimeoutHint": "Если модель не отправляет первый байт ответа в течение этого времени, Routerly прерывает его и пробует следующего кандидата. Не ограничивает общую длительность ответа. Установите на 0, чтобы ждать столько, сколько требует провайдер.",
+        "traceContent": "Содержание трассировки",
+        "traceContentHint": "Трассировки всегда записывают метаданные (модели, оценки, токены, стоимость, задержка). Включите это, чтобы также записывать отправленные подсказки и полученные ответы. Они хранятся с записью об использовании и видны всем, кто может читать отчёты.",
+        "capturePromptsAndAnswers": "Захватить подсказки и ответы",
+        "saveChanges": "Сохранить изменения",
+        "createRouter": "Создать маршрутизатор",
+        "passthroughPath": "Путь",
+        "passthroughPathHint": "Становится частью URL, который вызывают клиенты: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Создать оркестратор",
+        "createPassthrough": "Создать passthrough"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Этот маршрутизатор не является оркестратором.",
+      "candidateRouters": "Кандидатные маршрутизаторы",
+      "candidateRoutersHint": "Маршрутизаторы, на которые этот оркестратор пробрасывает запросы. Вес влияет на частоту выбора каждого кандидата; здесь показаны только его имя, id, вес и опциональные лимиты для каждого кандидата.",
+      "routingPolicies": "Политики маршрутизации",
+      "routingPoliciesHint": "Оркестратор оценивает каждый маршрутизатор-кандидат как целое, поэтому здесь применяются только политики здоровья, ограничения скорости и справедливости. Другие типы политик выбирают из собственных моделей маршрутизатора, которых у оркестратора нет.",
+      "router": "Маршрутизатор",
+      "selectRouter": "Выбрать маршрутизатор",
+      "weight": "Вес",
+      "removeCandidate": "Удалить кандидата",
+      "usageLimits": "Ограничения использования для этого кандидата",
+      "limitCount": "{{count}} лимит",
+      "limitCount_other": "{{count}} лимитов",
+      "usageLimitsHint": "Опциональные ограничения использования применяются только к запросам, которые этот оркестратор пробрасывает этому кандидату.",
+      "empty": "Ещё нет кандидатных маршрутизаторов. Оркестратору нужен хотя бы один перед тем, как он сможет пробрасывать запросы.",
+      "addCandidate": "Добавить кандидата",
+      "saved": "Сохранено!",
+      "saveCandidates": "Сохранить кандидатов",
+      "errors": {
+        "loadFailed": "Не удалось загрузить маршрутизаторы",
+        "saveFailed": "Ошибка сохранения кандидатов оркестратора"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Не удалось присвоить профиль маршрутизации",
+        "duplicateTargets": "Целевые модели не могут содержать дубликаты.",
+        "saveFailed": "Ошибка сохранения маршрутизации маршрутизатора",
+        "noProfileAvailable": "Нет доступного профиля маршрутизации. Создайте один на странице профилей."
+      },
+      "form": {
+        "routing": "Маршрутизация",
+        "routingHint": "Используйте общий профиль маршрутизации или определите собственные политики этого маршрутизатора. Целевые модели остаются настраиваемыми в любом случае.",
+        "profileMode": "Профиль",
+        "customMode": "Пользовательский",
+        "routingProfile": "Профиль маршрутизации",
+        "builtinSuffix": "(встроенный)",
+        "profileHint": "Политики поступают из профиля и следуют его изменениям. Редактируйте их на странице профилей, или переключитесь на пользовательский, чтобы начать с их копии.",
+        "saved": "Сохранено!",
+        "saveRoutingConfiguration": "Сохранить конфигурацию маршрутизации"
+      },
+      "targetModels": {
+        "heading": "Целевые модели",
+        "hint": "Определите пул моделей, которые политики будут фильтровать и выбирать из. Опциональные подсказки инструктируют маршрутизатор ИИ, когда выбрать каждую модель.",
+        "endpointModel": "Модель конечной точки",
+        "selectModel": "Выбрать модель",
+        "promptDefinition": "Определение подсказки",
+        "promptPlaceholder": "Опишите точно, когда и почему маршрутизатор должен выбрать эту модель...",
+        "intents": "Намерения",
+        "removeTarget": "Удалить целевую модель",
+        "empty": "Целевые модели не настроены.",
+        "addTarget": "Добавить целевую модель",
+        "passthroughLabel": "Сквозной проход (необработанная пересылка)",
+        "passthroughNotRemovable": "Запись сквозного прохода нельзя удалить"
+      }
+    },
+    "optimizer": {
+      "title": "Оптимайзеры",
+      "description": "Оптимайзеры уменьшают входные токены перед тем, как запросы достигают провайдера. Они выполняются по порядку сверху вниз. Используйте общий профиль оптимайзера или определите собственный конвейер этого маршрутизатора.",
+      "noPermission": "У вас нет разрешения просматривать оптимайзеры.",
+      "mode": {
+        "profile": "Профиль",
+        "custom": "Пользовательский"
+      },
+      "profileSelect": {
+        "ariaLabel": "Профиль оптимайзера",
+        "builtinLabel": "{{label}} (встроенный)",
+        "hint": "Шаги поступают из профиля и следуют его изменениям. Редактируйте их на странице профилей, или переключитесь на пользовательский, чтобы начать с их копии.",
+        "disabledSuffix": "(отключено)",
+        "thresholdSuffix": ", порог {{threshold}}"
+      },
+      "customHint": "Перетащите для переупорядочивания, переключайте для включения. Некоторые оптимайзеры используют порог для контроля того, как агрессивно они обрезают.",
+      "saveButton": "Сохранить оптимайзеры",
+      "saving": "Сохранение...",
+      "saved": "Сохранено",
+      "preview": {
+        "title": "Просмотр сбережений токенов",
+        "description": "Запустите текущий (несохранённый) конвейер над подсказкой, чтобы увидеть, что каждый шаг удаляет и что это стоит. Выберите один из примеров разговоров или введите свою подсказку.",
+        "promptLabel": "Подсказка",
+        "promptAriaLabel": "Подсказка для просмотра",
+        "typePromptOption": "Введите подсказку ниже",
+        "fixturesHint": "Примеры разговоров, поставляемые с Routerly. Routerly не записывает реальные подсказки.",
+        "modelLabel": "Модель",
+        "modelAriaLabel": "Модель для предварительного просмотра",
+        "modelWithContext": "{{id}} ({{k}}k контекст)",
+        "noModelOption": "Нет модели",
+        "modelHint": "Шаги, которые обрезают для окна контекста, нужно знать, какое окно. Без модели они пропускаются, ровно как и на запросе, который называет модель, для которой Routerly не имеет окна.",
+        "sampleAriaLabel": "Примеры подсказки",
+        "samplePlaceholder": "Вставьте образец пользовательского сообщения...",
+        "runButton": "Запустить просмотр",
+        "running": "Запуск...",
+        "before": "До",
+        "after": "После",
+        "saved": "Сохранено",
+        "columns": {
+          "optimizer": "Оптимайзер",
+          "before": "До",
+          "after": "После",
+          "saved": "Сохранено"
+        },
+        "rolledBackNote": "откачено: изменение было отклонено как небезопасное",
+        "skippedNote": "пропущено: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Изменение, которое произвёл этот шаг, было откачено, поэтому подсказка достигла следующего шага без изменений.",
+          "skipped": "Этот шаг не был запущен: {{reason}}",
+          "unchanged": "Этот шаг оставил подсказку без изменений."
+        }
+      },
+      "errors": {
+        "assignFailed": "Не удалось присвоить профиль оптимайзера",
+        "saveFailed": "Ошибка сохранения оптимайзеров",
+        "previewFailed": "Ошибка запуска просмотра",
+        "noProfileAvailable": "Нет доступного профиля оптимайзера. Создайте один на странице профилей."
+      }
+    },
+    "token": {
+      "newButton": "Новый токен",
+      "empty": "Ещё нет токенов API. Создайте один, чтобы начать аутентификацию запросов.",
+      "budgetOverrides": "Переопределения бюджета",
+      "created": "Создано",
+      "lastUsed": "Последний раз использовано",
+      "expires": "Истекает",
+      "never": "Никогда",
+      "editTitle": "Редактировать конфигурацию",
+      "revokeTitle": "Отозвать токен",
+      "revokeConfirm": "Отозвать токен \"{{snippet}}...\"? Приложения, использующие его, сразу же перестанут работать.",
+      "labelInput": {
+        "placeholder": "Поиск или создание метки…",
+        "createPrefix": "Создать",
+        "noMatches": "Совпадающих меток не найдено."
+      },
+      "errors": {
+        "deleteFailed": "Ошибка удаления токена"
+      },
+      "create": {
+        "backToTokens": "Вернуться к токенам",
+        "title": "Новый токен API",
+        "subtitle": "Полный токен показан только один раз после создания — сохраните его безопасно.",
+        "tokenCreated": "Токен успешно создан. Скопируйте его сейчас — он не будет показан снова.",
+        "copied": "Скопировано!",
+        "copy": "Копировать",
+        "done": "Готово",
+        "optional": "опционально",
+        "labels": "Метки",
+        "labelsHint": "Отметьте этот токен для идентификации того, где он используется (например, \"production\", \"ci\").",
+        "scopes": "Области видимости",
+        "scopesHint": "Области видимости произвольной формы, прикреплённые к этому токену (например, \"batch\", \"internal\"), сохранённые с токеном для вашей собственной бухгалтерии.",
+        "tags": "Теги",
+        "tagsHint": "Метаданные ключ-значение, переданные в записи об использовании (например, env=production).",
+        "keyPlaceholder": "ключ",
+        "valuePlaceholder": "значение",
+        "createButton": "Создать токен",
+        "cancel": "Отмена",
+        "copyFailed": "Копирование не удалось — пожалуйста, выберите и скопируйте токен вручную.",
+        "errors": {
+          "createFailed": "Ошибка создания токена"
+        }
+      },
+      "edit": {
+        "title": "Редактировать токен",
+        "subtitle": "Обновите метки и переопределения лимитов для каждой модели для этого токена.",
+        "token": "Токен",
+        "labels": "Метки",
+        "perModelLimits": "Лимиты для каждой модели",
+        "perModelLimitsHint": "Переопределите глобальные и лимиты на уровне маршрутизатора для запросов с использованием этого токена.",
+        "noTargetModels": "Сначала добавьте целевые модели на вкладку маршрутизации.",
+        "noOverride": "нет переопределения",
+        "noLimits": "Нет лимитов",
+        "noLimitsSet": "Лимиты не установлены — наследуются от родителя. Добавьте лимит ниже для переопределения.",
+        "metric": "Метрика",
+        "type": "Тип",
+        "periodLabel": "Период",
+        "every": "Каждый",
+        "maxCost": "Макс. ($)",
+        "maxCalls": "Макс. (кол-во)",
+        "maxTokens": "Макс. (токены)",
+        "allCombosSet": "Все комбинации метрика/период уже установлены",
+        "addLimit": "Добавить лимит",
+        "windowType": {
+          "period": "Период",
+          "rolling": "Скользящий"
+        },
+        "limitMetric": {
+          "cost": "Стоимость (USD)",
+          "calls": "Запросы",
+          "input_tokens": "Входные токены",
+          "output_tokens": "Выходные токены",
+          "total_tokens": "Всего токенов"
+        },
+        "period": {
+          "hourly": "Ежечасно",
+          "daily": "Ежедневно",
+          "weekly": "Еженедельно",
+          "monthly": "Ежемесячно",
+          "yearly": "Ежегодно"
+        },
+        "rollingUnit": {
+          "second": "секунды",
+          "minute": "минуты",
+          "hour": "часы",
+          "day": "дни",
+          "week": "недели",
+          "month": "месяцы"
+        },
+        "fmt": {
+          "requests": "{{value}} запр",
+          "inputTokens": "{{value}} вход-тек",
+          "outputTokens": "{{value}} выход-тек",
+          "totalTokens": "{{value}} тек",
+          "everyRolling": "{{metric}} / каждый {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Ошибка сохранения токена"
+        }
+      }
+    },
+    "users": {
+      "title": "Члены маршрутизатора",
+      "description": "Управляйте пользователями, у которых есть доступ к этому маршрутизатору.",
+      "addButton": "Добавить члена",
+      "addNewTitle": "Добавить нового члена",
+      "selectUserPlaceholder": "Выбрать пользователя...",
+      "addConfirmButton": "Добавить",
+      "cancelButton": "Отмена",
+      "empty": "Члены не найдены.",
+      "removeConfirm": "Вы уверены, что хотите удалить этого члена?",
+      "saveTitle": "Сохранить изменения",
+      "changeRoleTitle": "Изменить роль",
+      "removeTitle": "Удалить члена",
+      "roles": {
+        "viewer": "Зритель",
+        "editor": "Редактор",
+        "admin": "Администратор"
+      },
+      "columns": {
+        "user": "Пользователь",
+        "role": "Роль",
+        "actions": "Действия"
+      },
+      "errors": {
+        "loadFailed": "Не удалось загрузить пользователей",
+        "addFailed": "Ошибка добавления члена",
+        "updateFailed": "Ошибка обновления члена",
+        "removeFailed": "Ошибка удаления члена"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Выкл"
+      },
+      "autoRefreshOff": "Автоматическое обновление отключено",
+      "autoRefreshEvery": "Автоматическое обновление каждый {{interval}}",
+      "lastUpdated": "последний раз обновлено: {{time}}",
+      "refresh": "Обновить",
+      "refreshNowTitle": "Обновить сейчас",
+      "refreshNowButton": "↻ Сейчас",
+      "filters": {
+        "period": "Период",
+        "model": "Модель",
+        "allModels": "Все модели",
+        "type": "Тип",
+        "all": "Все",
+        "completion": "Завершение",
+        "router": "Маршрутизатор",
+        "status": "Статус",
+        "success": "Успех",
+        "blocked": "Заблокировано",
+        "error": "Ошибка",
+        "resetButton": "Сбросить фильтры"
+      },
+      "stats": {
+        "totalCost": "Общая стоимость",
+        "totalCalls": "Всего вызовов",
+        "completionCalls": "Вызовы завершения",
+        "routerCalls": "Вызовы маршрутизатора",
+        "errors": "Ошибки"
+      },
+      "requestLogs": "Логи запросов",
+      "emptyNoRequests": "Нет запросов для этого маршрутизатора в выбранном периоде.",
+      "emptyNoMatches": "Ни одна запись не соответствует активным фильтрам.",
+      "columns": {
+        "time": "Время",
+        "model": "Модель",
+        "type": "Тип",
+        "in": "Вход",
+        "out": "Выход",
+        "cost": "Стоимость",
+        "latency": "Задержка",
+        "ttft": "TTFT",
+        "tokPerSec": "Тек/с",
+        "status": "Статус"
+      },
+      "typeRouter": "маршрутизатор",
+      "typeCompletion": "завершение",
+      "pagination": {
+        "previous": "← Предыдущая",
+        "next": "Следующая →",
+        "pageOf": "Страница {{page}} из {{totalPages}}",
+        "totalRecords": "({{count}} всего записей)"
+      }
+    },
+    "security": {
+      "title": "Безопасность",
+      "description": "Используйте общий профиль безопасности или определите собственные защиты и политики PII этого маршрутизатора.",
+      "mode": {
+        "profile": "Профиль",
+        "custom": "Пользовательский"
+      },
+      "profileSelect": {
+        "ariaLabel": "Профиль безопасности",
+        "builtinLabel": "{{label}} (встроенный)",
+        "hint": "Защиты и политики PII поступают из профиля и следуют его изменениям. Редактируйте их на странице профилей, или переключитесь на пользовательский, чтобы начать с их копии.",
+        "blockingSuffix": ", блокирует",
+        "disabledSuffix": ", отключено",
+        "piiRedaction": "Редактирование PII ({{target}})"
+      },
+      "saveButton": "Сохранить параметры безопасности",
+      "saved": "Сохранено!",
+      "errors": {
+        "assignFailed": "Не удалось присвоить профиль безопасности",
+        "saveFailed": "Ошибка сохранения параметров безопасности",
+        "noProfileAvailable": "Нет доступного профиля безопасности. Создайте один на странице профилей."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Вы полезный ИИ помощник.",
+      "errors": {
+        "unknown": "Произошла неизвестная ошибка",
+        "onlyImages": "Только вложения изображений поддерживаются для моделей видения в настоящее время."
+      },
+      "title": "Тестовый чат",
+      "subtitle": "Отправляйте тестовые запросы через шлюз маршрутизации.",
+      "routerToken": "Токен маршрутизатора:",
+      "hideToken": "Скрыть токен",
+      "showToken": "Показать токен",
+      "recognizedToken": "Распознанный токен",
+      "unrecognizedToken": "Нераспознанный токен",
+      "noMessages": "Нет сообщений.",
+      "enterTokenHint": "Пожалуйста, введите токен маршрутизатора выше для отправки сообщения.",
+      "typeMessageHint": "Введите сообщение ниже, чтобы начать тестирование.",
+      "reasoning": "Рассуждение",
+      "attachedAlt": "Прикреплено",
+      "attachmentAlt": "Вложение",
+      "attachImage": "Прикрепить изображение",
+      "typeMessagePlaceholder": "Введите сообщение...",
+      "stopGeneration": "Остановить генерацию",
+      "sendEnter": "Отправить (Enter)",
+      "debugLog": "Лог отладки",
+      "clear": "Очистить",
+      "noRequestSent": "Запрос ещё не отправлен.",
+      "turnTraceLog": "Лог трассировки поворота #{{turn}} · {{count}} событие",
+      "turnTraceLog_other": "Лог трассировки поворота #{{turn}} · {{count}} событий"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Соединения",
+      "subtitle": "Аккаунты провайдеров, используемые для запуска экземпляров моделей",
+      "noPermission": "У вас нет разрешения просматривать соединения.",
+      "count": "{{count}} соединение",
+      "count_other": "{{count}} соединений",
+      "addConnection": "Добавить соединение",
+      "empty": "Соединения ещё не добавлены. Добавьте одно, чтобы начать.",
+      "deleteConfirm": "Удалить соединение \"{{label}}\"? Экземпляры, привязанные к нему, перестанут работать.",
+      "errors": {
+        "loadFailed": "Не удалось загрузить соединения",
+        "deleteFailed": "Не удалось удалить соединение"
+      },
+      "columns": {
+        "label": "Метка",
+        "provider": "Провайдер",
+        "endpoint": "Конечная точка",
+        "status": "Статус"
+      },
+      "status": {
+        "enabled": "Включено",
+        "disabled": "Отключено"
+      },
+      "actions": {
+        "models": "Модели",
+        "edit": "Редактировать",
+        "remove": "Удалить"
+      }
+    },
+    "form": {
+      "backToConnections": "Вернуться к соединениям",
+      "editTitle": "Редактировать соединение",
+      "addTitle": "Добавить соединение",
+      "enabled": "Включено",
+      "editSubtitle": "Обновите параметры аккаунта провайдера",
+      "addSubtitle": "Зарегистрируйте новый аккаунт провайдера",
+      "sectionTitle": "Детали соединения",
+      "sectionDesc": "Аккаунт провайдера, учётные данные и конечная точка, используемые для выполнения запросов.",
+      "provider": "Провайдер",
+      "groups": {
+        "directApi": "Прямой API",
+        "cloudPlatform": "Облачная платформа",
+        "subscription": "Подписка",
+        "browserSession": "Сеанс браузера",
+        "selfHosted": "Самохостируемый"
+      },
+      "upstreamProvider": {
+        "label": "Провайдер",
+        "hintLabel": "(имя провайдера нижестоящего уровня)",
+        "placeholder": "например deepseek, mistral, groq",
+        "description": "Называет сервис, к которому принадлежит эта конечная точка. Модели на этом соединении используют его как префикс своего ID (например, <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Имя",
+        "hint": "Идентифицирует это соединение везде, где на него ссылаются, поэтому оно должно быть уникальным. Оставьте пустым, чтобы использовать <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Оставьте поля учётных данных пустыми, чтобы сохранить существующие значения.",
+      "save": "Сохранить",
+      "create": "Создать",
+      "cancel": "Отмена",
+      "oauth": {
+        "unknown": "неизвестно",
+        "accountExpires": "Аккаунт: {{account}} — истекает {{expires}}",
+        "unknownError": "Неизвестная ошибка"
+      },
+      "errors": {
+        "notFound": "Соединение не найдено",
+        "loadFailed": "Не удалось загрузить соединение",
+        "updateFailed": "Не удалось обновить соединение",
+        "createFailed": "Не удалось создать соединение"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Вернуться к моделям",
+      "title": "Обнаружение моделей",
+      "subtitle": "Просмотрите доступные модели и добавьте их в вашу конфигурацию маршрутизации",
+      "count": "{{count}} моделей",
+      "filteredCount": "{{filtered}} из {{count}}",
+      "free": "бесплатно",
+      "add": "Добавить",
+      "addAgain": "Добавить снова",
+      "loadFailed": "Не удалось загрузить каталог: {{error}}",
+      "filters": {
+        "search": "Поиск",
+        "searchPlaceholder": "ID или имя модели…",
+        "provider": "Провайдер",
+        "allProviders": "Все провайдеры",
+        "context": "Контекст",
+        "ctxOptions": {
+          "all": "Все",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Цена / 1M",
+        "priceOptions": {
+          "all": "Все",
+          "free": "Бесплатно",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Показать",
+        "configured": "Настроено",
+        "embedding": "Внедрение",
+        "resetFilters": "Сбросить фильтры"
+      },
+      "empty": {
+        "noMatches": "Ни одна модель не соответствует вашим фильтрам."
+      },
+      "columns": {
+        "model": "Модель",
+        "provider": "Провайдер",
+        "context": "Контекст",
+        "input": "Вход / 1M",
+        "output": "Выход / 1M"
+      },
+      "badges": {
+        "configured": "Настроено",
+        "embedding": "внедрение",
+        "runsLocally": "Запускается локально"
+      },
+      "pagination": {
+        "prev": "Пред.",
+        "next": "Далее",
+        "range": "{{start}}–{{end}} из {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Вернуться к моделям",
+      "title": {
+        "add": "Добавить модель",
+        "edit": "Редактировать модель",
+        "clone": "Клонировать модель"
+      },
+      "subtitle": {
+        "add": "Зарегистрируйте новую модель провайдера LLM",
+        "edit": "Изменение конфигурации для {{id}}",
+        "clone": "Клонирование из {{id}} — присвойте новый ID для сохранения"
+      },
+      "errors": {
+        "modelNotFound": "Модель не найдена",
+        "sourceModelNotFound": "Исходная модель не найдена",
+        "loadFailed": "Ошибка загрузки моделей",
+        "idRequired": "ID модели обязателен",
+        "duplicateId": "Модель \"{{id}}\" уже существует — установите другой пользовательский ID",
+        "selectConnection": "Выберите соединение",
+        "saveFailed": "Ошибка"
+      },
+      "badge": {
+        "yes": "да",
+        "no": "нет",
+        "override": "Переопределить",
+        "auto": "Авто",
+        "default": "По умолчанию: {{value}}",
+        "reset": "Сброс"
+      },
+      "oauth": {
+        "unknownExpiry": "неизвестно",
+        "accountOk": "Аккаунт: {{account}} — истекает {{expires}}",
+        "unknownError": "Неизвестная ошибка"
+      },
+      "identification": {
+        "title": "Идентификация модели",
+        "description": "Уникальный идентификатор и параметры провайдера для этой конфигурации модели.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(опционально — по умолчанию:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Идентификатор, используемый при ссылке на эту модель в вызовах Routerly API.",
+        "provider": "Провайдер",
+        "upstreamProviderHint": "(имя провайдера нижестоящего уровня)",
+        "upstreamProviderPlaceholder": "например deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Используется как префикс для ID Routerly (например,",
+        "upstreamProviderDescPost": ").",
+        "model": "Модель",
+        "upstreamModelHint": "(ID модели нижестоящего уровня)",
+        "upstreamModelPlaceholder": "например deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Идентификатор модели, отправляемый в конечную точку API нижестоящего уровня.",
+        "modelPreset": "Предустановка модели",
+        "customModelOption": "— пользовательское имя модели —",
+        "customModelPlaceholder": "например my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "Детали соединения",
+        "description": "Конечная точка API и учётные данные аутентификации, необходимые для выполнения запросов.",
+        "preconfigured": "Предварительно настроено",
+        "custom": "Пользовательский",
+        "connection": "Соединение",
+        "selectPlaceholder": "— выберите соединение —",
+        "noneAvailable": "Нет предварительно настроенных соединений для этого провайдера. Переключитесь на пользовательский или создайте один на странице соединений.",
+        "editHint": "Редактирование этого соединения позже обновит каждую модель, привязанную к нему."
+      },
+      "capabilities": {
+        "title": "Возможности",
+        "description": "Укажите тип и возможности этой модели.",
+        "embeddingModel": "Модель внедрения",
+        "embeddingModelHint": "Эта модель генерирует векторные внедрения (не завершения чата)"
+      },
+      "pricing": {
+        "title": "Цены и контекст",
+        "description": "Параметры стоимости и ограничения обработки, используемые для выставления счётов и маршрутизации.",
+        "inputPerMillion": "Вход $/1M",
+        "outputPerMillion": "Выход $/1M",
+        "cachePerMillion": "Чтение кэша $/1M",
+        "cacheWritePerMillion": "Запись кэша $/1M",
+        "optional": "(опц.)",
+        "contextWindow": "Окно контекста",
+        "contextWindowHint": "(токены, опционально)"
+      },
+      "tiers": {
+        "title": "Дополнительно — Уровни цен",
+        "description": "Переопределите цены, когда метрика превышает порог. Например: \"При превышении 200 000 токенов контекста цены изменяются.\"",
+        "removeTier": "Удалить уровень",
+        "above": "Выше",
+        "metric": "Метрика",
+        "metricContextTokens": "Токены контекста",
+        "overridePricing": "Переопределить цены",
+        "addTier": "Добавить уровень цен"
+      },
+      "limits": {
+        "title": "Лимиты",
+        "description": "Ограничения использования для этой модели. Несколько правил могут быть объединены.",
+        "metric": "Метрика",
+        "type": "Тип",
+        "addLimit": "Добавить лимит"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max подписка)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro подписка)"
+      },
+      "saveChanges": "Сохранить изменения",
+      "createClone": "Создать клон",
+      "createModel": "Создать модель"
+    },
+    "page": {
+      "title": "Модели",
+      "subtitle": "Провайдеры LLM, зарегистрированные в Routerly",
+      "tabs": {
+        "models": "Модели",
+        "health": "Здоровье"
+      },
+      "toolbar": {
+        "count": "{{count}} модель",
+        "count_other": "{{count}} моделей",
+        "filteredCount": "{{filtered}} из {{count}} модели",
+        "filteredCount_other": "{{filtered}} из {{count}} моделей"
+      },
+      "filters": {
+        "allProviders": "Все провайдеры",
+        "allConnections": "Все соединения",
+        "searchPlaceholder": "Фильтр моделей…"
+      },
+      "discover": "Обнаружить",
+      "addModel": "Добавить модель",
+      "deleteConfirm": "Удалить модель \"{{id}}\"?",
+      "empty": {
+        "noModels": "Модели ещё не добавлены. Добавьте одну, чтобы начать.",
+        "noMatches": "Ни одна модель не соответствует активным фильтрам."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Провайдер",
+        "endpoint": "Конечная точка",
+        "input": "Вход $/1M",
+        "output": "Выход $/1M",
+        "cache": "Кэш $/1M",
+        "context": "Размер контекста"
+      },
+      "actions": {
+        "test": "Тест",
+        "clone": "Клон",
+        "edit": "Редактировать",
+        "remove": "Удалить"
+      },
+      "pagination": {
+        "previous": "← Предыдущая",
+        "next": "Следующая →",
+        "pageOf": "Страница {{page}} из {{totalPages}}",
+        "total": "({{count}} модель)",
+        "total_other": "({{count}} моделей)"
+      },
+      "health": {
+        "emptyNoModels": "Нет настроенных моделей.",
+        "emptyNoMatches": "Ни одна модель не соответствует фильтру.",
+        "resetAll": "Сбросить все",
+        "resetAllTitle": "Сбросить каждый автоматический выключатель, охлаждение и блокировку",
+        "resetTitle": "Сбросить автоматический выключатель",
+        "confirmResetModel": "Сбросить автоматический выключатель для модели \"{{id}}\"?",
+        "confirmResetAll": "Сбросить все состояние устойчивости? Это очищает каждый автоматический выключатель, охлаждение и блокировку.",
+        "errors": {
+          "resetModelFailed": "Не удалось сбросить автоматический выключатель",
+          "resetAllFailed": "Не удалось сбросить состояние устойчивости"
+        },
+        "columns": {
+          "model": "Модель",
+          "provider": "Провайдер",
+          "status": "Статус",
+          "circuit": "Цепь",
+          "errorRate": "Частота ошибок (5m)",
+          "p95Latency": "P95 задержка (1h)",
+          "requests": "Запросы (1h)",
+          "lastSuccess": "Последний успех",
+          "cooldownLockout": "Охлаждение / блокировка"
+        },
+        "status": {
+          "healthy": "Здоров",
+          "degraded": "Ухудшено",
+          "unavailable": "Недоступно",
+          "cooldown": "Охлаждение",
+          "nodata": "Нет данных"
+        },
+        "circuit": {
+          "ok": "ОК",
+          "recovering": "Восстановление",
+          "tripped": "Срабатывание"
+        },
+        "time": {
+          "never": "никогда",
+          "now": "сейчас",
+          "secondsAgo": "{{count}}s назад",
+          "minutesAgo": "{{count}}m назад",
+          "hoursAgo": "{{count}}h назад",
+          "daysAgo": "{{count}}d назад",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "охлаждение {{time}}",
+          "lockout": "блокировка {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Эксперименты",
+      "subtitle": "Тестирование маршрутизаторов A/B друг против друга",
+      "noPermission": "У вас нет разрешения просматривать эксперименты.",
+      "count": "{{count}} эксперимент",
+      "count_other": "{{count}} экспериментов",
+      "newExperiment": "Новый эксперимент",
+      "empty": "Эксперименты ещё не созданы. Создайте один, чтобы сравнить маршрутизаторы лицом к лицу.",
+      "deleteConfirm": "Удалить эксперимент \"{{name}}\"? Это не может быть отменено.",
+      "noToken": "Нет токена",
+      "noTokenTitle": "Без токена ни один клиент не сможет достичь этот эксперимент",
+      "errors": {
+        "loadFailed": "Не удалось загрузить эксперименты",
+        "deleteFailed": "Не удалось удалить эксперимент"
+      },
+      "columns": {
+        "name": "Имя",
+        "variants": "Варианты",
+        "rotation": "Ротация",
+        "created": "Создано"
+      },
+      "actions": {
+        "edit": "Редактировать эксперимент",
+        "remove": "Удалить"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Вернуться к экспериментам",
+      "newExperiment": "Новый эксперимент",
+      "loading": "Загрузка...",
+      "experimentId": "ID эксперимента:",
+      "disabledTabTitle": "Сначала сохраните эксперимент, чтобы разблокировать эту вкладку",
+      "errors": {
+        "notFound": "Эксперимент не найден"
+      },
+      "tabs": {
+        "config": "Конфигурация",
+        "metrics": "Метрики",
+        "token": "Токен"
+      }
+    },
+    "config": {
+      "saved": "Сохранено.",
+      "created": "Эксперимент создан. Направьте свой клиент на этот токен вместо токена маршрутизатора. Он не будет показан снова.",
+      "copy": "Копировать",
+      "copied": "Скопировано!",
+      "done": "Готово",
+      "saving": "Сохранение...",
+      "create": "Создать эксперимент",
+      "save": "Сохранить изменения",
+      "cancel": "Отмена",
+      "trafficSplit": "Разделение трафика",
+      "errors": {
+        "loadRoutersFailed": "Не удалось загрузить маршрутизаторы",
+        "saveFailed": "Не удалось сохранить эксперимент",
+        "copyFailed": "Копирование не удалось: выберите и скопируйте токен вручную."
+      },
+      "fields": {
+        "name": "Имя",
+        "namePlaceholder": "Дешёвая vs премиум маршрутизация",
+        "description": "Описание",
+        "optional": "(опционально)",
+        "descriptionPlaceholder": "Что этот тест пытается урегулировать",
+        "minSamples": "Минимум вызовов на вариант",
+        "minSamplesHint": "Ниже этого вкладка метрик отмечает сравнение как ещё не conclusive.",
+        "rotation": "Ротация",
+        "stickyOn": "Липкий на",
+        "stickyKey": "Липкий ключ"
+      },
+      "variants": {
+        "title": "Варианты",
+        "desc": "Каждый вариант — это существующий маршрутизатор, взятый целиком: все его модели, маршрутизация и защиты применяются. Тест нуждается как минимум в двух.",
+        "routerAriaLabel": "Маршрутизатор варианта {{index}}",
+        "routerPlaceholder": "Выбрать маршрутизатор",
+        "labelAriaLabel": "Метка варианта {{index}}",
+        "labelPlaceholder": "Метка (опционально)",
+        "weightAriaLabel": "Вес варианта {{index}}",
+        "weightPlaceholder": "Вес",
+        "removeTitle": "Удалить вариант {{index}}",
+        "add": "Добавить вариант"
+      },
+      "judge": {
+        "title": "Судья",
+        "desc": "Опционально: модель читает каждый образец ответа и оценивает его 0-10 против ваших критериев. Каждый оценённый вызов — это дополнительный вызов модели, счёт как и любой другой.",
+        "enable": "Оценить ответы с моделью судьи",
+        "model": "Модель судьи",
+        "modelPlaceholder": "Выбрать модель",
+        "criteria": "Критерии",
+        "criteriaPlaceholder": "По одному в строке, например\nОтвечает на заданный вопрос\nОстаётся фактическим\nСоответствует запрошенному формату",
+        "sampleRate": "Доля оцениваемых вызовов (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Загрузка...",
+      "callsMeasured": "{{count}} вызов измерен",
+      "callsMeasured_other": "{{count}} вызовов измерено",
+      "empty": "Нет вызовов в этом окне ещё. Направьте клиента на токен эксперимента, чтобы начать сравнение.",
+      "notConclusive": "Ещё не conclusive: каждый вариант нуждается как минимум в {{minSamples}} вызовах в этом окне. ",
+      "explanation": "Лучший рисунок каждой пары выделен: дешевле за вызов, быстрее, выше оценка судьи. Процент под значением — это его расстояние от лучшей руки. Оценка судьи — это скользящее среднее по всей жизни эксперимента, поэтому это единственный рисунок, который окно не сужает.",
+      "lowSample": "Низкий образец",
+      "lowSampleTitle": "Менее {{minSamples}} вызовов в этом окне",
+      "judgedCallsTitle": "{{count}} ответ оценён судьёй с начала эксперимента",
+      "judgedCallsTitle_other": "{{count}} ответов оценено судьёй с начала эксперимента",
+      "errors": {
+        "loadFailed": "Не удалось загрузить метрики"
+      },
+      "columns": {
+        "variant": "Вариант",
+        "calls": "Вызовы",
+        "share": "Доля",
+        "errors": "Ошибки",
+        "tokens": "Токены вход / выход",
+        "cost": "Стоимость",
+        "costPerCall": "Стоимость / вызов",
+        "avgLatency": "Средняя задержка",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Оценка судьи"
+      }
+    },
+    "token": {
+      "desc": "Клиент вызывает эксперимент точно как маршрутизатор: тот же базовый URL, этот токен вместо токена маршрутизатора. Каждый запрос приземляется на один вариант и счисляется этому маршрутизатору варианта.",
+      "baseUrlLabel": "Базовый URL для OpenAI или Anthropic SDK, с токеном эксперимента как ключ API:",
+      "created": "Токен создан. Скопируйте его сейчас, он не будет показан снова.",
+      "copy": "Копировать",
+      "copied": "Скопировано!",
+      "newToken": "Новый токен",
+      "empty": "Нет токенов для этого эксперимента. Создайте один, чтобы клиенты могли его вызывать.",
+      "revokeConfirm": "Отозвать токен \"{{snippet}}...\"? Клиенты, использующие его, сразу же перестанут работать.",
+      "revokeTitle": "Отозвать токен",
+      "errors": {
+        "createFailed": "Не удалось создать токен",
+        "revokeFailed": "Не удалось отозвать токен",
+        "copyFailed": "Копирование не удалось: выберите и скопируйте токен вручную."
+      },
+      "columns": {
+        "created": "Создано",
+        "lastUsed": "Последний раз использовано"
+      }
+    }
+  },
+  "overview": {
+    "title": "Обзор",
+    "subtitle": "Сводка использования и разбор затрат",
+    "noPermission": "Нет разрешения просматривать данные об использовании.",
+    "costByModel": "Стоимость по модели",
+    "noCostRecorded": "Нет затрат, записанных в этом периоде.",
+    "callsByModel": "Вызовы по модели",
+    "columns": {
+      "model": "Модель",
+      "calls": "Вызовы",
+      "errors": "Ошибки",
+      "cost": "Стоимость"
+    },
+    "stats": {
+      "totalCalls": "Всего вызовов",
+      "callsBreakdown": "{{routing}} маршрутизация · {{completion}} завершение",
+      "successRate": "Скорость успеха",
+      "ofAllRequests": "всех запросов",
+      "errors": "Ошибки",
+      "failedRequests": "ошибочных запросов",
+      "models": "Модели",
+      "registered": "зарегистрировано",
+      "routers": "Маршрутизаторы",
+      "active": "активно"
+    },
+    "connectCard": {
+      "title": "Подключить клиента",
+      "desc": "Направьте Claude Code, Codex, Cursor и {{count}} ещё на этот шлюз."
+    }
+  },
+  "login": {
+    "emailLabel": "Email",
+    "passwordLabel": "Пароль",
+    "signIn": "Вход",
+    "errors": {
+      "loginFailed": "Ошибка входа",
+      "totpFailed": "Ошибка верификации 2FA"
+    },
+    "totp": {
+      "title": "Двухфакторная аутентификация",
+      "backupPrompt": "Введите резервный код.",
+      "appPrompt": "Введите 6-значный код из приложения аутентификатора.",
+      "backupCodeLabel": "Резервный код",
+      "authenticatorCodeLabel": "Код аутентификатора",
+      "verify": "Проверить",
+      "useAuthenticatorInstead": "Используйте приложение аутентификатора вместо этого",
+      "useBackupInstead": "Используйте резервный код вместо этого"
+    }
+  },
+  "setup": {
+    "welcome": "Добро пожаловать! Давайте вас установим.",
+    "welcomeSubtitle": "Создайте первый аккаунт администратора для начала управления Routerly.",
+    "betaBadge": "🚧 Бета",
+    "betaNotice": "Routerly активно развивается. Могут возникнуть баги.",
+    "betaFeedback": "Ваше мнение помогает сформировать, чем оно станет —",
+    "betaLink": "сообщайте о проблемах или делитесь идеями",
+    "emailLabel": "Email администратора",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Пароль",
+    "passwordPlaceholder": "Минимум 8 символов",
+    "confirmLabel": "Подтвердите пароль",
+    "confirmPlaceholder": "Повторите пароль",
+    "submit": "Создать аккаунт администратора",
+    "errors": {
+      "mismatch": "Пароли не совпадают",
+      "tooShort": "Пароль должен быть не менее 8 символов",
+      "setupFailed": "Установка не удалась"
+    }
+  },
+  "audit": {
+    "empty": "Записи аудита не найдены.",
+    "errors": {
+      "loadFailed": "Не удалось загрузить журнал аудита"
+    },
+    "filters": {
+      "period": "Период",
+      "user": "Пользователь",
+      "userPlaceholder": "Email или ID пользователя",
+      "action": "Действие",
+      "actionPlaceholder": "например model:create",
+      "result": "Результат",
+      "results": {
+        "all": "Все",
+        "success": "Успех",
+        "forbidden": "Запрещено",
+        "error": "Ошибка"
+      },
+      "refresh": "Обновить"
+    },
+    "columns": {
+      "timestamp": "Временная метка",
+      "user": "Пользователь",
+      "action": "Действие",
+      "endpoint": "Конечная точка",
+      "result": "Результат",
+      "details": "Детали"
+    },
+    "pagination": {
+      "previous": "Предыдущая",
+      "next": "Следующая",
+      "page": "Страница {{page}} из {{totalPages}}",
+      "total": "({{count}} всего)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Использование",
+      "live": "ЖИВЬЁМ",
+      "subtitle": "Подробные логи вызовов и разбор по моделям",
+      "updatedAt": "· обновлено {{time}}",
+      "poll": {
+        "off": "Выкл",
+        "5s": "5с",
+        "15s": "15с",
+        "30s": "30с",
+        "1m": "1м",
+        "5m": "5м"
+      },
+      "liveButton": "● Живьём",
+      "liveButtonTitle": {
+        "disable": "Отключить живой режим",
+        "enable": "Включить живой режим (обновление каждые 2с)"
+      },
+      "refreshNow": "↻ Сейчас",
+      "refreshNowTitle": "Обновить сейчас",
+      "filters": {
+        "period": "Период",
+        "router": "Маршрутизатор",
+        "model": "Модель",
+        "token": "Токен",
+        "caller": "Вызывающая сторона",
+        "type": "Тип",
+        "status": "Статус",
+        "allRouters": "Все маршрутизаторы",
+        "allModels": "Все модели",
+        "allTokens": "Все токены",
+        "resetFilters": "Сбросить фильтры",
+        "all": "Все",
+        "success": "Успех",
+        "blocked": "Заблокировано",
+        "error": "Ошибка"
+      },
+      "caller": {
+        "all": "Все",
+        "completion": "Завершение",
+        "routing": "Маршрутизатор",
+        "guardrail": "Защита",
+        "judge": "Судья"
+      },
+      "callerBadge": {
+        "completion": "завершение",
+        "routing": "маршрутизатор",
+        "guardrail": "защита",
+        "judge": "судья"
+      },
+      "errors": {
+        "loadFailedPrefix": "Не удалось загрузить данные об использовании:",
+        "retry": "Повторить"
+      },
+      "stats": {
+        "totalCalls": "Всего вызовов",
+        "completionCalls": "Вызовы завершения",
+        "routerCalls": "Вызовы маршрутизатора",
+        "guardrailCalls": "Вызовы защиты",
+        "blockedCalls": "Заблокированные вызовы",
+        "errors": "Ошибки"
+      },
+      "table": {
+        "rank": "Ранг",
+        "model": "Модель",
+        "provider": "Провайдер",
+        "calls": "Вызовы",
+        "errors": "Ошибки",
+        "successRate": "Скорость успеха",
+        "avgLatency": "Средняя задержка",
+        "p95Latency": "P95 задержка",
+        "inputTokens": "Входные токены",
+        "outputTokens": "Выходные токены",
+        "costPer1k": "Стоимость / 1K",
+        "cost": "Стоимость (USD)",
+        "bestCostPerformance": "Лучшее соотношение цены и производительности"
+      },
+      "showMoreModels": "Показать {{count}} ещё модель",
+      "showMoreModels_other": "Показать {{count}} ещё моделей",
+      "showFewerModels": "Показать меньше моделей",
+      "recentCalls": {
+        "title": "Недавние вызовы",
+        "empty": "Нет записей об использовании за этот период.",
+        "columns": {
+          "time": "Время",
+          "router": "Маршрутизатор",
+          "model": "Модель",
+          "type": "Тип",
+          "caller": "Вызывающая сторона",
+          "in": "Вход",
+          "out": "Выход",
+          "cost": "Стоимость",
+          "latency": "Задержка",
+          "ttft": "TTFT",
+          "tokensPerSec": "Тек/с",
+          "status": "Статус"
+        }
+      },
+      "pagination": {
+        "previous": "Предыдущая",
+        "next": "Следующая",
+        "pageOf": "Страница {{page}} из {{totalPages}}",
+        "totalRecords": "({{count}} всего записей)"
+      }
+    },
+    "record": {
+      "back": "Назад",
+      "title": "Деталь вызова",
+      "notFoundTitle": "Запись не найдена",
+      "notFoundBody": "Запись об использовании {{id}} не удалось загрузить.",
+      "errors": {
+        "loadFailed": "Не удалось загрузить запись"
+      },
+      "sections": {
+        "identity": "Идентификация",
+        "tokensAndCost": "Токены и стоимость",
+        "performanceAndOutcome": "Производительность и результат",
+        "traceLog": "Лог трассировки"
+      },
+      "fields": {
+        "recordId": "ID записи",
+        "router": "Маршрутизатор",
+        "token": "Токен",
+        "model": "Модель",
+        "callType": "Тип вызова",
+        "requestType": "Тип запроса",
+        "inputTokens": "Входные токены",
+        "outputTokens": "Выходные токены",
+        "totalTokens": "Всего токенов",
+        "costUsd": "Стоимость (USD)",
+        "costUnknown": "Неизвестно",
+        "latency": "Задержка",
+        "ttft": "TTFT",
+        "tokensPerSec": "Тек/с",
+        "outcome": "Результат",
+        "timestamp": "Временная метка",
+        "guardrailTriggered": "Защита сработана",
+        "blockedBy": "Заблокировано",
+        "piiRedacted": "PII отредактировано"
+      },
+      "errorMessage": "Сообщение об ошибке",
+      "eventCount": "{{count}} событие",
+      "eventCount_other": "{{count}} событий",
+      "noTrace": "Трассировка недоступна. Данные трассировки захватываются только для новых вызовов."
+    }
+  },
+  "playground": {
+    "title": "Песочница",
+    "subtitle": "Тестируйте модели, сравнивайте ответы и сохраняйте предустановки подсказок.",
+    "mode": {
+      "single": "Одиночно",
+      "compare": "Сравнить"
+    },
+    "token": {
+      "label": "Токен:",
+      "labelA": "Токен A",
+      "labelB": "Токен B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "то же самое, что A",
+      "unknownToken": "Неизвестный токен"
+    },
+    "presets": {
+      "button": "Предустановки",
+      "panelTitle": "Предустановки",
+      "saveCurrent": "Сохранить текущий",
+      "namePlaceholder": "Имя предустановки...",
+      "save": "Сохранить",
+      "empty": "Нет предустановок ещё.",
+      "delete": "Удалить предустановку"
+    },
+    "streamingDisabled": {
+      "banner": "Потоковая передача недоступна",
+      "bannerBody": "этот маршрутизатор имеет активную защиту блокировки ответов. Routerly должен проверить полный ответ перед доставкой, поэтому ответы приходят все сразу.",
+      "tooltip": "Потоковая передача недоступна: защита блокировки ответов требует проверки полного ответа перед доставкой.",
+      "ariaLabel": "Потоковая передача недоступна"
+    },
+    "systemPrompt": "Системная подсказка",
+    "model": "Модель",
+    "modelPlaceholder": "Авто (по умолчанию маршрутизатора)",
+    "params": {
+      "temp": "Темп",
+      "maxTokens": "Макс токены",
+      "topP": "Top-p"
+    },
+    "stream": "Поток",
+    "clear": "Очистить",
+    "empty": {
+      "noMessages": "Нет сообщений ещё.",
+      "enterToken": "Введите токен маршрутизатора выше для начала."
+    },
+    "reasoning": "Рассуждение",
+    "blockedDefault": "Это сообщение было заблокировано защитой.",
+    "truncated": "Обрезано — ответ обрезан по макс токенам",
+    "bufferedNote": "Удерживается для проверки безопасности",
+    "errors": {
+      "onlyImages": "Поддерживаются только вложения изображений."
+    },
+    "rawToggle": {
+      "rendered": "отрендерено",
+      "raw": "необработанный"
+    },
+    "inputPlaceholder": "Введите сообщение...",
+    "attachImage": "Прикрепить изображение",
+    "attachedImageAlt": "Прикреплено",
+    "attachmentAlt": "Вложение",
+    "debug": {
+      "title": "Отладка",
+      "clear": "Очистить",
+      "hide": "Скрыть отладку",
+      "show": "Показать отладку",
+      "empty": "Нет данных отладки ещё.",
+      "emptyHint": "Отправьте сообщение, чтобы увидеть детали маршрутизации.",
+      "turnTraceLog": "Лог трассировки поворота #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "Модель {{label}}:",
+      "modelSelectPlaceholder": "Выбрать модель...",
+      "noMessages": "Нет сообщений ещё.",
+      "debugTurns": "Отладка ({{count}} поворот)",
+      "debugTurns_other": "Отладка ({{count}} поворотов)",
+      "guardrailTokensTitle": "Токены судьи защиты",
+      "stop": "Остановить",
+      "inputPlaceholder": "Отправьте одно и то же сообщение обеим моделям..."
+    }
+  },
+  "help": {
+    "title": "Справка и поддержка",
+    "subtitle": "Мы здесь, чтобы помочь — найдите ответы или свяжитесь в любое время.",
+    "docs": {
+      "title": "Документация",
+      "subtitle": "Руководства, справочник API и документы по конфигурации",
+      "body": "Официальная документация охватывает всё, начиная с начала работы и заканчивая расширенными политиками маршрутизации, настройкой провайдера, бюджетами и полным справочником API.",
+      "openLink": "Открыть документацию"
+    },
+    "issues": {
+      "title": "Сообщить об ошибке или предложить функцию",
+      "subtitle": "Откройте проблему GitHub — это займёт 2 минуты",
+      "body": "Проблемы GitHub — это лучший способ сообщить об ошибках или предложить улучшения. Чтобы помочь нам быстрее исправить вещи, включите: что вы делали, что вы ожидали, что произойдёт, и что произошло на самом деле.",
+      "showTemplate": "Показать шаблон проблемы",
+      "reportBug": "Сообщить об ошибке",
+      "requestFeature": "Запросить функцию"
+    },
+    "issueTemplate": {
+      "whatHappened": "Что произошло?",
+      "whatHappenedHint": "Опишите проблему простыми словами",
+      "stepsToReproduce": "Шаги для воспроизведения",
+      "expectedBehaviour": "Ожидаемое поведение",
+      "expectedBehaviourHint": "Что вы ожидали увидеть",
+      "version": "Версия Routerly",
+      "versionHint": "Выполните `routerly --version` или проверьте Settings → About"
+    },
+    "email": {
+      "title": "Связаться с поддержкой",
+      "subtitle": "Мы читаем каждое сообщение и отвечаем как можно скорее",
+      "body": "Для всего, что не подходит в проблему GitHub — вопросы по выставлению счётов, приватные проблемы или если вы просто хотите сказать привет — напишите нам."
+    },
+    "faq": {
+      "title": "Часто задаваемые вопросы",
+      "subtitle": "Быстрые ответы на самые распространённые вопросы",
+      "items": {
+        "connect": {
+          "q": "Как мне подключить своё приложение к Routerly?",
+          "a": "Направьте ваш OpenAI или Anthropic SDK на ваш экземпляр Routerly. Замените базовый URL на http://your-host:3000/v1 (OpenAI-совместимый) или http://your-host:3000/anthropic (Anthropic-совместимый), затем используйте токен маршрутизатора как ключ API. Вот и всё — никаких других изменений не требуется."
+        },
+        "openaiCompat": {
+          "q": "Совместима ли Routerly с инструментами, которые используют OpenAI SDK?",
+          "a": "Да. Routerly — это drop-in замена: любой инструмент, который поддерживает пользовательский базовый URL и ключ API (LangChain, LlamaIndex, Cursor, Continue и т. д.) работает прямо из коробки. Для клиентов формата Anthropic используйте конечную точку /anthropic вместо этого."
+        },
+        "routing": {
+          "q": "Как работает маршрутизация моделей?",
+          "a": "Каждый маршрутизатор имеет политику маршрутизации, которая решает, какая модель получает запрос. Политики включают round-robin, самую низкую стоимость, самый быстрый ответ, цепочки отката и другие. Вы настраиваете их на маршрутизатор в Routers → Routing."
+        },
+        "addModel": {
+          "q": "Как мне добавить новую модель ИИ?",
+          "a": "Перейдите в Models → Add model. Вы можете добавить любого провайдера, совместимого с OpenAI (Ollama, LM Studio, пользовательские конечные точки) или родную конечную точку Anthropic. Заполните базовый URL, ключ API и ID модели — Routerly займётся остальным."
+        },
+        "dataStored": {
+          "q": "Хранятся ли мои данные? Регистрируются ли мои подсказки?",
+          "a": "Routerly самохостируемый и хранит данные только на вашем компьютере (по умолчанию в ~/.routerly/). Подсказки и ответы никогда не отправляются куда-либо Routerly. Логи запросов хранятся локально и только если вы их включите по маршрутизатору."
+        },
+        "routerToken": {
+          "q": "Что такое токен маршрутизатора и чем он отличается от ключа API провайдера?",
+          "a": "Токен маршрутизатора — это учётные данные, которые вы даёте своему приложению или членам команды для аутентификации в Routerly. Это отличается от ваших ключей API провайдера, которые Routerly хранит безопасно на стороне сервера. Ваши приложения никогда не видят реальные ключи провайдера."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} пользователь",
+    "countLabel_other": "{{count}} пользователей",
+    "addButton": "Добавить пользователя",
+    "columns": {
+      "email": "Email",
+      "role": "Роль",
+      "routers": "Маршрутизаторы"
+    },
+    "allRouters": "Все",
+    "resetTwoFaTitle": "Сбросить 2FA",
+    "resetTwoFaConfirm": "Сбросить 2FA для {{email}}? Им нужно будет повторно зарегистрироваться.",
+    "deleteConfirm": "Удалить этого пользователя?",
+    "emptyTitle": "Пользователей ещё нет.",
+    "noPermission": "У вас нет разрешения просматривать пользователей.",
+    "modal": {
+      "title": "Добавить пользователя",
+      "emailLabel": "Email",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "Пароль",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Роль",
+      "roleAdmin": "Администратор",
+      "roleViewer": "Зритель",
+      "cancelButton": "Отмена",
+      "submitButton": "Добавить пользователя"
+    },
+    "errors": {
+      "loadFailed": "Не удалось загрузить пользователей",
+      "addFailed": "Ошибка"
+    }
+  },
+  "userEdit": {
+    "title": "Редактировать пользователя",
+    "account": "Аккаунт",
+    "email": "Email",
+    "role": "Роль",
+    "changePassword": "Изменить пароль",
+    "newPassword": "Новый пароль",
+    "newPasswordHint": "(оставьте пустым, чтобы сохранить текущий)",
+    "save": "Сохранить",
+    "saved": "Сохранено!",
+    "errors": {
+      "loadFailed": "Не удалось загрузить пользователя",
+      "saveFailed": "Не удалось сохранить"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Управляйте ролями и разрешениями. Встроенные роли не могут быть изменены.",
+    "newRole": "Новая роль",
+    "builtin": "встроенный",
+    "edit": "Редактировать",
+    "deleteConfirm": "Удалить эту роль? На пользователей с этой ролью это повлияет.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "например operator",
+      "name": "Имя",
+      "namePlaceholder": "Имя роли",
+      "permissions": "Разрешения",
+      "create": "Создать",
+      "save": "Сохранить",
+      "cancel": "Отмена"
+    },
+    "permissions": {
+      "routerRead": "Маршрутизаторы – Чтение",
+      "routerWrite": "Маршрутизаторы – Запись",
+      "modelRead": "Модели – Чтение",
+      "modelWrite": "Модели – Запись",
+      "userRead": "Пользователи – Чтение",
+      "userWrite": "Пользователи – Запись",
+      "reportRead": "Отчёты – Чтение",
+      "settingsRead": "Параметры – Чтение",
+      "settingsWrite": "Параметры – Запись",
+      "notificationWrite": "Уведомления – Запись",
+      "tokenRead": "Токены – Чтение",
+      "tokenWrite": "Токены – Запись",
+      "roleWrite": "Роли – Запись",
+      "auditRead": "Журнал аудита – Чтение",
+      "modulesRead": "Модули – Чтение",
+      "modulesManage": "Модули – Управление",
+      "connectionsRead": "Соединения – Чтение",
+      "connectionsManage": "Соединения – Управление",
+      "resilienceRead": "Устойчивость – Чтение",
+      "resilienceManage": "Устойчивость – Управление",
+      "profilesRead": "Профили маршрутизации – Чтение",
+      "profilesManage": "Профили маршрутизации – Управление",
+      "optimizersRead": "Оптимайзеры – Чтение",
+      "optimizersManage": "Оптимайзеры – Управление",
+      "experimentsRead": "Эксперименты – Чтение",
+      "experimentsManage": "Эксперименты – Управление"
+    },
+    "errors": {
+      "loadFailed": "Не удалось загрузить роли",
+      "updateFailed": "Не удалось обновить роль",
+      "createFailed": "Не удалось создать роль",
+      "deleteFailed": "Не удалось удалить роль"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Профили",
+      "subtitle": "Переиспользуемые конфигурации маршрутизации, оптимайзера и безопасности",
+      "noPermission": "У вас нет разрешения просматривать профили.",
+      "newProfile": "Новый {{kind}} профиль",
+      "empty": "{{kind}} профилей ещё не создано.",
+      "builtin": "Встроенный",
+      "custom": "Пользовательский",
+      "view": "Просмотр",
+      "edit": "Редактировать",
+      "clone": "Клон",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить профиль \"{{label}}\"? Это не может быть отменено.",
+      "kindDescriptions": {
+        "routing": "Какая модель отвечает на запрос и что происходит, когда она не может",
+        "optimizer": "Что удаляется из подсказки перед отправкой",
+        "security": "Защиты и политики PII, применяемые к трафику"
+      },
+      "columns": {
+        "label": "Метка",
+        "type": "Тип",
+        "configuration": "Конфигурация",
+        "version": "Версия"
+      },
+      "errors": {
+        "loadFailed": "Не удалось загрузить профили",
+        "deleteFailed": "Не удалось удалить профиль"
+      }
+    },
+    "form": {
+      "backToProfiles": "Вернуться к профилям",
+      "newProfileTitle": "Новый {{kind}} профиль",
+      "editProfileTitle": "Редактировать {{label}}",
+      "builtinHint": "Встроенные профили не могут быть отредактированы. Клонируйте один, чтобы настроить его.",
+      "assignHint": "{{article}} {{kind}} профиль может быть назначен любому количеству маршрутизаторов.",
+      "noPermission": "У вас нет разрешения просматривать профили.",
+      "label": "Метка",
+      "optimizers": "Оптимайзеры",
+      "optimizersHint": "Перетащите для переупорядочивания, переключайте для включения. Они выполняются по порядку сверху вниз.",
+      "createProfile": "Создать профиль",
+      "saveProfile": "Сохранить профиль",
+      "cancel": "Отмена",
+      "copySuffix": "{{label}} копия",
+      "labelPlaceholders": {
+        "routing": "например Моя сбалансированная маршрутизация",
+        "optimizer": "например Мой триммер подсказок",
+        "security": "например Мои строгие защиты"
+      },
+      "errors": {
+        "notFound": "Профиль не найден.",
+        "loadFailed": "Не удалось загрузить профиль",
+        "saveFailed": "Не удалось сохранить профиль"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Вернуться к подключению",
+    "title": "Подключение",
+    "docs": "Документы",
+    "notEnabledPrefix": "Конфигуратор клиента не включен. Попросите администратора включить его с помощью",
+    "noClientPrefix": "Нет клиента с именем",
+    "errors": {
+      "loadFailed": "Не удалось загрузить клиентов: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Самый быстрый: одна команда",
+      "description": "Запустите на машине, где установлен {{client}}. Он пишет {{configPath}}, сохраняя резервную копию, которую вы можете отменить."
+    },
+    "byHand": {
+      "titleAlt": "Или установите вручную",
+      "titleUi": "Установите вручную",
+      "titleConfigFile": "Установите файл конфигурации",
+      "setValuesIn": "Установите эти значения в {{configPath}}.",
+      "putThisIn": "Поместите это в",
+      "replaceToken": "Замените",
+      "withRouterToken": "с токеном маршрутизатора:",
+      "createOne": "создайте один",
+      "onRoutersPage": "на странице маршрутизаторов.",
+      "modelLabel": "Модель:",
+      "modelHint": "отдаёт выбор Routerly, любой ID модели из",
+      "modelsLink": "моделей",
+      "worksToo": "работает тоже.",
+      "openaiCompatHint": "Тот же базовый URL, ключ и модель подходят для любого клиента, который предлагает \"OpenAI совместимый\" провайдер."
+    },
+    "mcp": {
+      "title": "MCP сервер",
+      "description": "Отдельно от приведённых выше шагов: этот позволяет {{client}} вызывать инструменты Routerly. Ему нужен личный токен MCP, отчеканённый с помощью",
+      "orFromYour": "или из вашего",
+      "profileLink": "профиля"
+    },
+    "checkItWorked": {
+      "title": "Проверить, что это сработало",
+      "restart": "Перезагрузите {{client}}, отправьте ему подсказку, затем ищите вызов в",
+      "usageLink": "использовании",
+      "cliReports": "С того же компьютера CLI сообщает, что он находит:"
+    }
+  },
+  "connect": {
+    "title": "Подключение",
+    "subtitle": "Направьте клиента кодирования ИИ на этот шлюз. Выберите клиента для его шагов установки.",
+    "llmLabel": "LLM",
+    "llmDescription": "маршруты трафика модели этого клиента через Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "загружает Routerly как сервер инструментов внутри него.",
+    "notEnabledPrefix": "Конфигуратор клиента не включен. Попросите администратора включить его с помощью",
+    "errors": {
+      "loadFailed": "Не удалось загрузить клиентов: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Одна команда",
+      "hint": "CLI пишет файл конфигурации для вас, с резервной копией, которую вы можете отменить."
+    },
+    "byHand": {
+      "title": "Вручную",
+      "hint": "Скопируйте фрагмент со страницы клиента в его параметры, затем перезагрузите его."
+    },
+    "endpoint": {
+      "title": "Направьте любой клиент сюда",
+      "description": "Всё, что построено на OpenAI или Anthropic SDK, работает просто изменив базовый URL и ключ. Ничего больше не меняется: запросы и ответы пересекают Routerly как есть.",
+      "openaiBaseUrl": "Базовый URL OpenAI",
+      "anthropicBaseUrl": "Базовый URL Anthropic",
+      "apiKey": "Ключ API",
+      "model": "Модель",
+      "apiKeyDescription": "Токен маршрутизатора, отправляемый как",
+      "or": "или",
+      "createOne": "Создайте один",
+      "onRoutersPage": "на странице маршрутизаторов.",
+      "modelDescription": "позволяет Routerly выбрать. Любой ID модели из",
+      "modelsLink": "моделей",
+      "worksToo": "страница работает тоже."
+    }
+  }
+}
