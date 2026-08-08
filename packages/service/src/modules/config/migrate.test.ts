@@ -30,6 +30,7 @@ import {
   migrateUsageRouterId,
   migrateNotificationChannelScope,
   migrateUsageToNdjson,
+  migrateOrchestratorCandidateOrder,
 } from './migrate.js';
 import { readConfig, writeConfig } from './loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
@@ -929,5 +930,132 @@ describe('migrateUsageToNdjson', () => {
     await expect(migrateUsageToNdjson()).rejects.toThrow('line-count mismatch');
     expect(mockUnlink).toHaveBeenCalled();
     expect(mockRename).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migrateOrchestratorCandidateOrder (PR-C: candidate weight → array order) ──
+
+describe('migrateOrchestratorCandidateOrder', () => {
+  it('AC4: sorts candidates descending by legacy weight, strips weight from each', async () => {
+    mockReadConfig.mockResolvedValue([
+      {
+        id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [],
+        candidates: [
+          { routerId: 'r1', weight: 1 },
+          { routerId: 'r2', weight: 5 },
+          { routerId: 'r3', weight: 3 },
+        ],
+      },
+    ] as any);
+
+    const count = await migrateOrchestratorCandidateOrder();
+
+    expect(count).toBe(1);
+    const saved = (mockWriteConfig.mock.calls[0]![1] as any[])[0];
+    expect(saved.candidates.map((c: any) => c.routerId)).toEqual(['r2', 'r3', 'r1']);
+    expect(saved.candidates.every((c: any) => !('weight' in c))).toBe(true);
+  });
+
+  it('AC5: duplicate weights produce a stable, deterministic order (original array order preserved among ties)', async () => {
+    mockReadConfig.mockResolvedValue([
+      {
+        id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [],
+        candidates: [
+          { routerId: 'r1', weight: 2 },
+          { routerId: 'r2', weight: 2 },
+          { routerId: 'r3', weight: 4 },
+        ],
+      },
+    ] as any);
+
+    const first = await migrateOrchestratorCandidateOrder();
+    const firstOrder = (mockWriteConfig.mock.calls[0]![1] as any[])[0].candidates.map((c: any) => c.routerId);
+    expect(first).toBe(1);
+    expect(firstOrder).toEqual(['r3', 'r1', 'r2']);
+
+    // Running again on the already-stripped (idempotent) shape: no-op, same order untouched.
+    vi.clearAllMocks();
+    mockReadConfig.mockResolvedValue([
+      { id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [], candidates: [{ routerId: 'r3' }, { routerId: 'r1' }, { routerId: 'r2' }] },
+    ] as any);
+    const second = await migrateOrchestratorCandidateOrder();
+    expect(second).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('AC6: zero or missing weight lands last, no error', async () => {
+    mockReadConfig.mockResolvedValue([
+      {
+        id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [],
+        candidates: [
+          { routerId: 'r1', weight: 0 },
+          { routerId: 'r2' }, // missing weight entirely
+          { routerId: 'r3', weight: 3 },
+        ],
+      },
+    ] as any);
+
+    const count = await migrateOrchestratorCandidateOrder();
+
+    expect(count).toBe(1);
+    const saved = (mockWriteConfig.mock.calls[0]![1] as any[])[0];
+    // r3 (positive weight) first; r1 (weight 0) before r2 (missing → -Infinity)
+    expect(saved.candidates.map((c: any) => c.routerId)).toEqual(['r3', 'r1', 'r2']);
+  });
+
+  it('EC1: a single-candidate orchestrator is left unchanged, no sort/write', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [], candidates: [{ routerId: 'r1', weight: 5 }] },
+    ] as any);
+
+    const count = await migrateOrchestratorCandidateOrder();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('EC2: a zero-candidate orchestrator is a no-op', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [], candidates: [] },
+    ] as any);
+
+    const count = await migrateOrchestratorCandidateOrder();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('leaves non-orchestrator routers and already-migrated orchestrators untouched', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'r1', name: 'Plain', models: [], tokens: [], members: [] }, // kind defaults to 'router'
+      {
+        id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [],
+        candidates: [{ routerId: 'r1' }, { routerId: 'r2' }], // no legacy weight — already migrated
+      },
+    ] as any);
+
+    const count = await migrateOrchestratorCandidateOrder();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent: running twice on the same legacy input only writes once', async () => {
+    const legacy = [
+      {
+        id: 'o1', name: 'Orc', kind: 'orchestrator', models: [], tokens: [], members: [],
+        candidates: [{ routerId: 'r1', weight: 1 }, { routerId: 'r2', weight: 2 }],
+      },
+    ];
+    mockReadConfig.mockResolvedValueOnce(legacy as any);
+    const count1 = await migrateOrchestratorCandidateOrder();
+    expect(count1).toBe(1);
+    const migrated = (mockWriteConfig.mock.calls[0]![1] as any[]);
+
+    vi.clearAllMocks();
+    mockReadConfig.mockResolvedValueOnce(migrated as any);
+    const count2 = await migrateOrchestratorCandidateOrder();
+    expect(count2).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
   });
 });

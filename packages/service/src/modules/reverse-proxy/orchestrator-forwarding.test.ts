@@ -96,7 +96,7 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     const model = makeModel(`m-${randomUUID()}`)
     await seedModels([model])
     const router = makeRouter(`r-${randomUUID()}`, [model.id])
-    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [{ routerId: router.id, weight: 1 }])
+    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [{ routerId: router.id }])
     await writeConfig('routers', [orchestrator, router])
 
     const response = makeResponse(model.id)
@@ -113,7 +113,7 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     const model = makeModel(`m-${randomUUID()}`)
     await seedModels([model])
     const router = makeRouter(`r-${randomUUID()}`, [model.id])
-    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [{ routerId: router.id, weight: 1 }])
+    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [{ routerId: router.id }])
     await writeConfig('routers', [orchestrator, router])
 
     // Simulates the one side effect the mocked-away real llmChat would have performed
@@ -144,7 +144,7 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     await seedModels([model])
     const router = makeRouter(`r-${randomUUID()}`, [model.id])
     const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
-      { routerId: router.id, weight: 1, limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 1 }] },
+      { routerId: router.id, limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 1 }] },
     ])
     await writeConfig('routers', [orchestrator, router])
 
@@ -175,7 +175,7 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id])
     const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id])
     const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
-      { routerId: routerA.id, weight: 2 }, { routerId: routerB.id, weight: 1 },
+      { routerId: routerA.id }, { routerId: routerB.id },
     ])
     await writeConfig('routers', [orchestrator, routerA, routerB])
 
@@ -190,21 +190,21 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     expect(calledModelIds.every((id) => id === modelA.id || id === modelB.id)).toBe(true)
   })
 
-  it('B2: tries the quality-ranked candidate first, not the highest-weight one — the loop must not re-sort scoreOrchestratorCandidates\' order by raw weight', async () => {
+  it('B2: tries the quality-ranked candidate first, not the earlier-listed one — the loop must not re-sort scoreOrchestratorCandidates\' order by array position', async () => {
     buildPipeline()
     const modelA = makeModel(`m-${randomUUID()}`)
     const modelB = makeModel(`m-${randomUUID()}`)
     await seedModels([modelA, modelB])
-    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id]) // weight 70, but recently all errors
-    const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id]) // weight 30, no history (perfect score)
+    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id]) // listed first, but recently all errors
+    const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id]) // listed second, no history (perfect score)
     const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
-      { routerId: routerA.id, weight: 70 }, { routerId: routerB.id, weight: 30 },
+      { routerId: routerA.id }, { routerId: routerB.id },
     ])
     await writeConfig('routers', [orchestrator, routerA, routerB])
 
     // Recent error history crashes candidate A's health score to 0 (weighted error rate
     // over the circuit-breaker threshold) — a quality gap far above scoreOrchestratorCandidates'
-    // 0.0001 weight-tiebreak, so B must be tried first despite A's more-than-double weight.
+    // 0.0001 tiebreak threshold, so B must be tried first despite A being listed earlier.
     const now = Date.now()
     for (let i = 0; i < 5; i++) {
       await appendUsageRecord({
@@ -229,9 +229,9 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     await seedModels([survivorModel])
     const survivor = makeRouter(`r-${randomUUID()}`, [survivorModel.id])
     const deletedRouterId = `r-deleted-${randomUUID()}`
-    // Higher weight than the survivor, so it would be tried first if it still existed.
+    // Listed before the survivor, so it would be tried first if it still existed.
     const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
-      { routerId: deletedRouterId, weight: 5 }, { routerId: survivor.id, weight: 1 },
+      { routerId: deletedRouterId }, { routerId: survivor.id },
     ])
     // Only the survivor is written back — the other candidate's Router was deleted.
     await writeConfig('routers', [orchestrator, survivor])

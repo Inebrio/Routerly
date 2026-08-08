@@ -14,7 +14,7 @@ the change itself — never reconstructed after the fact. See
 ### New features
 
 **Router, Orchestrator, and Passthrough kinds**
-Projects are now Routers throughout the management API, CLI, dashboard, configuration, and usage records. A Router can be a standard model router, an Orchestrator that selects among candidate Routers with weights and optional per-candidate limits, or a Passthrough Router that forwards requests unchanged with the client's upstream credential.
+Projects are now Routers throughout the management API, CLI, dashboard, configuration, and usage records. A Router can be a standard model router, an Orchestrator that selects among candidate Routers, ordered by priority, with optional per-candidate limits, or a Passthrough Router that forwards requests unchanged with the client's upstream credential.
 
 **Dashboard localization (41 languages)**
 The dashboard now ships with 41 language catalogs (English plus 40 more, including Arabic, Hebrew, and Urdu with RTL layout), selectable per-account from a quick-access selector in the sidebar or from Profile → Preferences, and persisted server-side. Administrators can set an instance-wide default language (Settings → General → Internationalization, `defaultLanguage` in the management API, `routerly service configure --default-language`) used for any user who hasn't picked their own yet — the resolution order is personal choice, then browser locale, then the instance default, then English. Every visible label, button, and message across pages and shared components routes through the i18n catalog; CLI and service output remain English-only.
@@ -24,6 +24,9 @@ The Routers list now has tabs (Router / Orchestrator / Passthrough) filtering by
 
 **Dedicated creation form per router kind**
 Creating a Router, Orchestrator, or Passthrough no longer goes through one shared form with a kind dropdown. Each non-"All" tab on the Routers list has its own "New <Kind>" button that opens a form dedicated to that kind — the kind is fixed by which button was clicked, never chosen from a selector. Editing an existing router's General tab shows its kind as a fixed, read-only label; `kind` is never sent on save. Orchestrator creation stays two steps: create with name and timeout, then add candidate routers on the Orchestrator tab.
+
+**Drag-to-reorder Orchestrator candidates**
+Orchestrator candidate Routers are now reordered by drag-and-drop instead of a numeric weight input; the candidate picker no longer shows the router's raw ID.
 
 ### Bug fixes
 
@@ -40,6 +43,7 @@ Creating a Router, Orchestrator, or Passthrough no longer goes through one share
 ### Breaking changes
 
 - The management surface uses `router` and `routers` instead of `project` and `projects`. API paths, CLI commands, dashboard routes, configuration fields, and usage fields have no backward aliases. Existing `projects.json` data migrates to `routers.json` automatically and idempotently on first start.
+- `router create --candidate`/`router edit --candidate` no longer accepts `<routerId>:<weight>` — use `--candidate <routerId>` (repeatable); order of repetition is now the priority order. The old syntax is rejected with an error naming the replacement, not silently reinterpreted.
 
 ---
 

@@ -1408,10 +1408,10 @@ describe('GET /api/routers', () => {
     expect(body[0].tokens[0].token).toBeUndefined()
   })
 
-  it('resolves an orchestrator\'s candidates to {routerId,name,weight,limits}, stripping the target Router\'s own policy/model config, and reports kind for every router (AC7 wire-level)', async () => {
+  it('resolves an orchestrator\'s candidates to {routerId,name,limits}, stripping the target Router\'s own policy/model config, and reports kind for every router (AC7 wire-level)', async () => {
     setupAdminAuth()
     const candidateLimits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
-    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1, limits: candidateLimits }] }
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', limits: candidateLimits }] }
     const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [{ modelId: 'm1' }], policies: [{ type: 'cheapest', enabled: true }] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1428,9 +1428,10 @@ describe('GET /api/routers', () => {
     const orcResponse = body.find((r: any) => r.id === 'orc-1')
     const plainResponse = body.find((r: any) => r.id === 'r1')
     expect(orcResponse.kind).toBe('orchestrator')
-    // The Orchestrator's own per-candidate override data (weight, limits) is not the
+    // The Orchestrator's own per-candidate override data (limits) is not the
     // target Router's own config — AC7 only opacity-limits the latter (its policies/models).
-    expect(orcResponse.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1, limits: candidateLimits }])
+    // No numeric priority field is ever present — array order is the sole priority signal.
+    expect(orcResponse.candidates).toEqual([{ routerId: 'r1', name: 'Router One', limits: candidateLimits }])
     expect(orcResponse.candidates[0].policies).toBeUndefined()
     expect(orcResponse.candidates[0].models).toBeUndefined()
     expect(plainResponse.kind).toBe('router')
@@ -1663,7 +1664,7 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     expect(res.statusCode).toBe(201)
   })
 
-  it('creates a valid orchestrator: candidates opacity-limited to {routerId,name,weight}, raw token intact (AC1, AC7)', async () => {
+  it('creates a valid orchestrator: candidates opacity-limited to {routerId,name}, raw token intact (AC1, AC7)', async () => {
     setupAdminAuth()
     const candidateRouter = { id: 'r1', name: 'Plain Router', tokens: [], members: [], models: [], policies: [{ type: 'cheapest', enabled: true }] }
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1678,13 +1679,13 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 3 }] }),
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1' }] }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
     const body = res.json()
     expect(body.kind).toBe('orchestrator')
-    expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 3 }])
+    expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Plain Router' }])
     // No policy/budget/model field of the candidate router leaks through (AC7).
     expect(body.candidates[0].policies).toBeUndefined()
     expect(body.candidates[0].models).toBeUndefined()
@@ -1731,17 +1732,17 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1, limits }] }),
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', limits }] }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
     // The Orchestrator's own per-candidate limits are not the target Router's own
     // config (AC7 only opacity-limits the latter), so they round-trip on the wire.
-    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1, limits }])
+    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', limits }])
     const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
     const written = routersCall![1] as any[]
     const persisted = written.find(r => r.name === 'Orc')
-    expect(persisted.candidates).toEqual([{ routerId: 'r1', weight: 1, limits }])
+    expect(persisted.candidates).toEqual([{ routerId: 'r1', limits }])
   })
 
   it('resolves candidates against the single lock-held read, not a stale pre-check one (EC4/B2)', async () => {
@@ -1768,12 +1769,12 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/routers',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1 }] }),
+      payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', candidates: [{ routerId: 'r1' }] }),
     })
     await app.close()
     expect(routersCallCount).toBe(1)
     expect(res.statusCode).toBe(201)
-    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router', weight: 1 }])
+    expect(res.json().candidates).toEqual([{ routerId: 'r1', name: 'Plain Router' }])
   })
 })
 
@@ -2025,7 +2026,7 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'Orc', models: [], kind: 'orchestrator',
-        candidates: [{ routerId: 'r1', weight: 1 }, { routerId: 'r2', weight: 2 }],
+        candidates: [{ routerId: 'r1' }, { routerId: 'r2' }],
       }),
     })
     await app.close()
@@ -2033,14 +2034,14 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     const body = res.json()
     expect(body.kind).toBe('orchestrator')
     expect(body.candidates).toEqual([
-      { routerId: 'r1', name: 'Router One', weight: 1 },
-      { routerId: 'r2', name: 'Router Two', weight: 2 },
+      { routerId: 'r1', name: 'Router One' },
+      { routerId: 'r2', name: 'Router Two' },
     ])
   })
 
   it('kind is inherited from the stored router when omitted, and omitted candidates are preserved rather than wiped', async () => {
     setupAdminAuth()
-    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1', weight: 1 }] }
+    const orc = { id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [], candidates: [{ routerId: 'r1' }] }
     const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -2066,7 +2067,7 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     const body = res.json()
     expect(body.name).toBe('Renamed Orc')
     expect(body.kind).toBe('orchestrator')
-    expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Router One', weight: 1 }])
+    expect(body.candidates).toEqual([{ routerId: 'r1', name: 'Router One' }])
   })
 
   it('round-trips per-candidate limits through PUT: preserved when omitted, replaced when re-sent (B1)', async () => {
@@ -2074,7 +2075,7 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     const existingLimits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
     const orc = {
       id: 'orc-1', name: 'Orc', kind: 'orchestrator', tokens: [], members: [], models: [],
-      candidates: [{ routerId: 'r1', weight: 1, limits: existingLimits }],
+      candidates: [{ routerId: 'r1', limits: existingLimits }],
     }
     const r1 = { id: 'r1', name: 'Router One', tokens: [], members: [], models: [] }
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -2096,7 +2097,7 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     await appA.close()
     expect(resA.statusCode).toBe(200)
     const writtenA = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')![1] as any[]
-    expect(writtenA.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', weight: 1, limits: existingLimits }])
+    expect(writtenA.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', limits: existingLimits }])
 
     // 2. Re-sending candidates with a different limits array replaces it wholesale.
     mockWriteConfig.mockClear()
@@ -2105,12 +2106,12 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     const resB = await appB.inject({
       method: 'PUT', url: '/api/routers/orc-1',
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
-      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [{ routerId: 'r1', weight: 1, limits: newLimits }] }),
+      payload: JSON.stringify({ name: 'Orc', models: [], kind: 'orchestrator', candidates: [{ routerId: 'r1', limits: newLimits }] }),
     })
     await appB.close()
     expect(resB.statusCode).toBe(200)
     const writtenB = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')![1] as any[]
-    expect(writtenB.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', weight: 1, limits: newLimits }])
+    expect(writtenB.find(r => r.id === 'orc-1').candidates).toEqual([{ routerId: 'r1', limits: newLimits }])
   })
 
   it('a router update that neither sets nor inherits orchestrator kind is unaffected by candidate validation', async () => {

@@ -258,14 +258,13 @@ export type EffectiveModel = ModelConfig & { connectionId: string };
 export type RouterKind = 'router' | 'orchestrator' | 'passthrough';
 
 /**
- * One candidate Router an Orchestrator may forward to. Mirrors
- * `RouterModelRef`'s weight/limits shape, but points at a Router id instead
- * of a model id — an Orchestrator's candidate pool is other Routers, not
- * models.
+ * One candidate Router an Orchestrator may forward to. Points at a Router id
+ * instead of a model id — an Orchestrator's candidate pool is other Routers,
+ * not models. Priority comes from position in `OrchestratorConfig.candidates[]`
+ * (index 0 = highest priority) — no numeric field on this type.
  */
 export interface OrchestratorCandidateRef {
   routerId: string;
-  weight: number;
   /** Per-candidate usage limit overrides, scored the same way as a model's `limits`. */
   limits?: Limit[];
 }
