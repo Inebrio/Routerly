@@ -57,7 +57,7 @@ Shows the Router name, the TTFT timeout, and the connection snippet (base URL an
 
 ### Orchestrator
 
-Only shown on an `orchestrator`-kind Router: the weighted list of candidate Routers it forwards to. See [Concepts: Architecture](./architecture.md#router-orchestrator-passthrough).
+Only shown on an `orchestrator`-kind Router: the priority-ordered list of candidate Routers it forwards to (drag to reorder in the dashboard — the position determines tie-break priority, there is no separate weight). See [Concepts: Architecture](./architecture.md#router-orchestrator-passthrough).
 
 ### Routing
 

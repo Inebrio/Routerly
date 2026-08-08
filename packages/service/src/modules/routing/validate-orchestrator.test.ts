@@ -11,7 +11,7 @@ describe('validateOrchestratorCandidates', () => {
   it('is a no-op for kind !== orchestrator, even with garbage candidates', () => {
     expect(validateOrchestratorCandidates({
       kind: 'router',
-      candidates: [{ routerId: 'does-not-exist', weight: 1 }],
+      candidates: [{ routerId: 'does-not-exist' }],
       routers: [],
     })).toBeNull()
   })
@@ -39,7 +39,7 @@ describe('validateOrchestratorCandidates', () => {
     const routers = [router('orc-1', 'orchestrator'), router('r1')]
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator',
-      candidates: [{ routerId: 'orc-1', weight: 1 }],
+      candidates: [{ routerId: 'orc-1' }],
       routers,
       selfId: 'orc-1',
     })).toBe('An orchestrator cannot target itself')
@@ -49,7 +49,7 @@ describe('validateOrchestratorCandidates', () => {
     const routers = [router('r1')]
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator',
-      candidates: [{ routerId: 'r1', weight: 1 }],
+      candidates: [{ routerId: 'r1' }],
       routers,
     })).toBeNull()
   })
@@ -58,7 +58,7 @@ describe('validateOrchestratorCandidates', () => {
     const routers = [router('orc-2', 'orchestrator')]
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator',
-      candidates: [{ routerId: 'orc-2', weight: 1 }],
+      candidates: [{ routerId: 'orc-2' }],
       routers,
       selfId: 'orc-1',
     })).toBe('An orchestrator cannot target another orchestrator')
@@ -67,7 +67,7 @@ describe('validateOrchestratorCandidates', () => {
   it('rejects a candidate id that does not resolve to any router', () => {
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator',
-      candidates: [{ routerId: 'ghost', weight: 1 }],
+      candidates: [{ routerId: 'ghost' }],
       routers: [router('r1')],
     })).toBe('Unknown candidate router: ghost')
   })
@@ -93,7 +93,7 @@ describe('validateOrchestratorCandidates', () => {
     const routers = [router('r1'), router('r2')]
     expect(validateOrchestratorCandidates({
       kind: 'orchestrator',
-      candidates: [{ routerId: 'r1', weight: 1 }, { routerId: 'r2', weight: 2 }],
+      candidates: [{ routerId: 'r1' }, { routerId: 'r2' }],
       routers,
       selfId: 'orc-1',
     })).toBeNull()

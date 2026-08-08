@@ -8,6 +8,7 @@ import {
   migrateRolePermissions,
   migrateUsageRouterId,
   migrateNotificationChannelScope,
+  migrateOrchestratorCandidateOrder,
 } from './migrate.js'
 
 /**
@@ -61,6 +62,11 @@ export const configModule = defineModule({
     if (dropped.length > 0) {
       // eslint-disable-next-line no-console
       console.log(`[startup] dropped removed setting(s) from settings.json: ${dropped.join(', ')}`)
+    }
+    const orchestratorsMigrated = await migrateOrchestratorCandidateOrder()
+    if (orchestratorsMigrated > 0) {
+      // eslint-disable-next-line no-console
+      console.log(`[startup] migrated ${orchestratorsMigrated} orchestrator(s) candidate order from legacy weight`)
     }
     // migrateUsageToNdjson() deliberately does NOT run here: this migrate()
     // is wrapped by the kernel in a best-effort try/catch that logs and

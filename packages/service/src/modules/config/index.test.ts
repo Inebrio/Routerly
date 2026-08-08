@@ -9,6 +9,7 @@ vi.mock('./migrate.js', () => ({
   migrateRolePermissions: vi.fn(async () => 0),
   migrateUsageRouterId: vi.fn(async () => 0),
   migrateNotificationChannelScope: vi.fn(async () => 0),
+  migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
 }))
 vi.mock('./migrate-connections.js', () => ({
   migrateModelsToConnections: vi.fn(async () => ({ connections: 0, instances: 0 })),
