@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type Router, type RoutingProfile } from '../../api';
+import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
@@ -365,7 +366,9 @@ export function RouterRoutingTab() {
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {targetModels.map((item, idx) => (
+            {targetModels.map((item, idx) => {
+              const isPassthrough = item.modelId === PASSTHROUGH_MODEL_ID;
+              return (
               <div
                 key={item.internalId}
                 id={`target-row-${idx}`}
@@ -391,67 +394,75 @@ export function RouterRoutingTab() {
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.targetModels.endpointModel')}</label>
-                    <SearchableSelect
-                      value={item.modelId}
-                      onChange={v => updateTargetModel(idx, 'modelId', v)}
-                      placeholder={t('routers.routing.targetModels.selectModel')}
-                      options={availableModels
-                        .filter(m => !m.capabilities?.embedding && (m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id)))
-                        .sort((a, b) => a.id.localeCompare(b.id))
-                        .map(m => ({ value: m.id, label: m.id }))}
-                    />
-                  </div>
-
-                  {showPromptInput && (
-                    <div
-                      className="form-group"
-                      style={{ margin: 0 }}
-                      onMouseEnter={() => setPromptHoverIdx(idx)}
-                      onMouseLeave={() => setPromptHoverIdx(null)}
-                    >
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.targetModels.promptDefinition')}</label>
-                      <textarea
-                        className="form-input"
-                        value={item.prompt}
-                        onChange={e => updateTargetModel(idx, 'prompt', e.target.value)}
-                        placeholder={t('routers.routing.targetModels.promptPlaceholder')}
-                        rows={2}
-                        style={{ fontSize: '0.9rem', resize: 'vertical', minHeight: '60px' }}
-                      />
+                  {isPassthrough ? (
+                    <div style={{ display: 'flex', alignItems: 'center', paddingTop: 4 }}>
+                      <span className="badge badge-neutral">{t('routers.routing.targetModels.passthroughLabel')}</span>
                     </div>
-                  )}
-
-                  {isSemanticIntentEnabled && Object.keys(semanticIntents).length > 0 && (
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>{t('routers.routing.targetModels.intents')}</label>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {Object.keys(semanticIntents).map(intentKey => {
-                          const active = getIntentsForModel(item.modelId).has(intentKey);
-                          return (
-                            <button
-                              key={intentKey}
-                              type="button"
-                              onClick={() => toggleIntentForModel(item.modelId, intentKey)}
-                              style={{
-                                padding: '3px 10px',
-                                borderRadius: 12,
-                                border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                                background: active ? 'var(--primary)' : 'transparent',
-                                color: active ? '#fff' : 'var(--text-secondary)',
-                                fontSize: '0.72rem',
-                                cursor: 'pointer',
-                                fontFamily: 'monospace',
-                                transition: 'all 0.15s',
-                              }}
-                            >
-                              {intentKey}
-                            </button>
-                          );
-                        })}
+                  ) : (
+                    <>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.targetModels.endpointModel')}</label>
+                        <SearchableSelect
+                          value={item.modelId}
+                          onChange={v => updateTargetModel(idx, 'modelId', v)}
+                          placeholder={t('routers.routing.targetModels.selectModel')}
+                          options={availableModels
+                            .filter(m => !m.capabilities?.embedding && (m.id === item.modelId || !getUsedTargetModelIds(idx).has(m.id)))
+                            .sort((a, b) => a.id.localeCompare(b.id))
+                            .map(m => ({ value: m.id, label: m.id }))}
+                        />
                       </div>
-                    </div>
+
+                      {showPromptInput && (
+                        <div
+                          className="form-group"
+                          style={{ margin: 0 }}
+                          onMouseEnter={() => setPromptHoverIdx(idx)}
+                          onMouseLeave={() => setPromptHoverIdx(null)}
+                        >
+                          <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4, display: 'block' }}>{t('routers.routing.targetModels.promptDefinition')}</label>
+                          <textarea
+                            className="form-input"
+                            value={item.prompt}
+                            onChange={e => updateTargetModel(idx, 'prompt', e.target.value)}
+                            placeholder={t('routers.routing.targetModels.promptPlaceholder')}
+                            rows={2}
+                            style={{ fontSize: '0.9rem', resize: 'vertical', minHeight: '60px' }}
+                          />
+                        </div>
+                      )}
+
+                      {isSemanticIntentEnabled && Object.keys(semanticIntents).length > 0 && (
+                        <div className="form-group" style={{ margin: 0 }}>
+                          <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>{t('routers.routing.targetModels.intents')}</label>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {Object.keys(semanticIntents).map(intentKey => {
+                              const active = getIntentsForModel(item.modelId).has(intentKey);
+                              return (
+                                <button
+                                  key={intentKey}
+                                  type="button"
+                                  onClick={() => toggleIntentForModel(item.modelId, intentKey)}
+                                  style={{
+                                    padding: '3px 10px',
+                                    borderRadius: 12,
+                                    border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
+                                    background: active ? 'var(--primary)' : 'transparent',
+                                    color: active ? '#fff' : 'var(--text-secondary)',
+                                    fontSize: '0.72rem',
+                                    cursor: 'pointer',
+                                    fontFamily: 'monospace',
+                                    transition: 'all 0.15s',
+                                  }}
+                                >
+                                  {intentKey}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -460,13 +471,15 @@ export function RouterRoutingTab() {
                     type="button"
                     onClick={() => removeTargetModel(idx)}
                     className="btn-icon danger"
-                    title={t('routers.routing.targetModels.removeTarget')}
+                    disabled={isPassthrough}
+                    title={isPassthrough ? t('routers.routing.targetModels.passthroughNotRemovable') : t('routers.routing.targetModels.removeTarget')}
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {targetModels.length === 0 && (
               <div className="empty-state" style={{ padding: 24, fontSize: '0.9rem' }}>

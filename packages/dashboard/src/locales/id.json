@@ -1359,7 +1359,9 @@
         "intents": "Intent",
         "removeTarget": "Hapus model target",
         "empty": "Tidak ada model target yang dikonfigurasi.",
-        "addTarget": "Tambah Model Target"
+        "addTarget": "Tambah Model Target",
+        "passthroughLabel": "Pass-through (penerusan mentah)",
+        "passthroughNotRemovable": "Entri pass-through tidak dapat dihapus"
       }
     },
     "optimizer": {

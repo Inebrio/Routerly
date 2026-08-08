@@ -1107,6 +1107,61 @@ describe('RouterRoutingTab — target models', () => {
   });
 });
 
+// ── Pass-through sentinel row ───────────────────────────────────────────────────
+
+describe('RouterRoutingTab — pass-through sentinel row', () => {
+  const mockRouterPassthroughOnly = {
+    id: 'proj-pt',
+    name: 'TestPassthrough',
+    models: [{ modelId: '__passthrough__' }],
+    policies: [],
+  };
+
+  const mockRouterPassthroughMixed = {
+    id: 'proj-pt2',
+    name: 'TestPassthroughMixed',
+    models: [{ modelId: '__passthrough__' }, { modelId: 'openai/gpt-4o' }],
+    policies: [],
+  };
+
+  it('shows the pass-through badge with no action on a freshly loaded router', async () => {
+    renderTab(mockRouterPassthroughOnly);
+    await waitFor(() => screen.getByText('Pass-through (raw forward)'));
+  });
+
+  it('does not render a model picker for the pass-through row', async () => {
+    renderTab(mockRouterPassthroughOnly);
+    await waitFor(() => screen.getByText('Pass-through (raw forward)'));
+    expect(screen.queryByTestId('searchable-Select model')).toBeNull();
+  });
+
+  it('remove button is disabled for the pass-through row', async () => {
+    renderTab(mockRouterPassthroughOnly);
+    await waitFor(() => screen.getByTitle('The pass-through entry cannot be removed'));
+    const btn = screen.getByTitle('The pass-through entry cannot be removed') as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    await userEvent.click(btn);
+    // still present after the click attempt
+    await waitFor(() => screen.getByText('Pass-through (raw forward)'));
+  });
+
+  it('renders both the sentinel and a real target model in a mixed list', async () => {
+    renderTab(mockRouterPassthroughMixed);
+    await waitFor(() => screen.getByText('Pass-through (raw forward)'));
+    expect(screen.getByTestId('searchable-Select model')).not.toBeNull();
+    expect(screen.getByTitle('Remove target model')).not.toBeNull();
+  });
+
+  it('save resends the sentinel entry unchanged', async () => {
+    renderTab(mockRouterPassthroughOnly);
+    await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
+    await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as { models: { modelId: string }[] };
+    expect(payload.models).toEqual([{ modelId: '__passthrough__' }]);
+  });
+});
+
 // ── Save / Error handling ─────────────────────────────────────────────────────
 
 describe('RouterRoutingTab — save', () => {

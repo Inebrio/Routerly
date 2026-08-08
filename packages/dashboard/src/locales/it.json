@@ -1359,7 +1359,9 @@
         "intents": "Intent",
         "removeTarget": "Rimuovi modello di destinazione",
         "empty": "Nessun modello di destinazione configurato.",
-        "addTarget": "Aggiungi modello di destinazione"
+        "addTarget": "Aggiungi modello di destinazione",
+        "passthroughLabel": "Pass-through (inoltro grezzo)",
+        "passthroughNotRemovable": "La voce pass-through non può essere rimossa"
       }
     },
     "optimizer": {

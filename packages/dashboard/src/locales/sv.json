@@ -1359,7 +1359,9 @@
         "intents": "Avsikter",
         "removeTarget": "Ta bort målmodell",
         "empty": "Inga målmodeller konfigurerade.",
-        "addTarget": "Lägg till målmodell"
+        "addTarget": "Lägg till målmodell",
+        "passthroughLabel": "Genomströmning (rå vidarebefordran)",
+        "passthroughNotRemovable": "Genomströmningsposten kan inte tas bort"
       }
     },
     "optimizer": {

@@ -1359,7 +1359,9 @@
         "intents": "Szándékok",
         "removeTarget": "Célmodell eltávolítása",
         "empty": "Nincsenek konfigurált célmodellek.",
-        "addTarget": "Célmodell Hozzáadása"
+        "addTarget": "Célmodell Hozzáadása",
+        "passthroughLabel": "Áteresztés (nyers továbbítás)",
+        "passthroughNotRemovable": "Az áteresztő bejegyzés nem távolítható el"
       }
     },
     "optimizer": {

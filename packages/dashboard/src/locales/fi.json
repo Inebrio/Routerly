@@ -1359,7 +1359,9 @@
         "intents": "Aikomukset",
         "removeTarget": "Poista kohdemalli",
         "empty": "Kohdemalleja ei ole määritetty.",
-        "addTarget": "Lisää kohdemalli"
+        "addTarget": "Lisää kohdemalli",
+        "passthroughLabel": "Läpivienti (raakavälitys)",
+        "passthroughNotRemovable": "Läpivientimerkintää ei voi poistaa"
       }
     },
     "optimizer": {

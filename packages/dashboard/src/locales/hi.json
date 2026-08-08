@@ -1359,7 +1359,9 @@
         "intents": "इरादे",
         "removeTarget": "लक्ष्य मॉडल हटाएं",
         "empty": "कोई लक्ष्य मॉडल कॉन्फ़िगर नहीं किए गए।",
-        "addTarget": "लक्ष्य मॉडल जोड़ें"
+        "addTarget": "लक्ष्य मॉडल जोड़ें",
+        "passthroughLabel": "पास-थ्रू (कच्चा फ़ॉरवर्ड)",
+        "passthroughNotRemovable": "पास-थ्रू प्रविष्टि हटाई नहीं जा सकती"
       }
     },
     "optimizer": {
