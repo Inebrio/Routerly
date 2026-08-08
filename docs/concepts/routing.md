@@ -10,9 +10,10 @@ selects which model to use for each request by running a configurable stack
 of **routing policies**. Policies are applied in priority order; each policy
 can score, filter, or directly pick a model from the candidate set.
 
-An `orchestrator`-kind Router and a `passthrough`-kind Router do not use this
-policy layer at all — see [Orchestrators and Passthrough Routers](#orchestrators-and-passthrough-routers)
-below.
+A `passthrough`-kind Router does not use this policy layer at all. An
+`orchestrator`-kind Router uses a restricted subset of it, scored against its
+candidate Routers instead of models — see [Orchestrators and Passthrough
+Routers](#orchestrators-and-passthrough-routers) below.
 
 :::tip Benchmarks
 Reproducible routing benchmarks — latency overhead, cost savings, and failover behaviour — are published at **[github.com/Inebrio/routerly-benchmark](https://github.com/Inebrio/routerly-benchmark)**.
@@ -153,6 +154,15 @@ The management API only ever returns a candidate's resolved name and weight,
 never its internal model list or policies — an Orchestrator's candidates are
 opaque to the client the same way a `router`-kind Router's provider
 configuration is.
+
+An Orchestrator can also carry its own routing policies, scored against its
+candidate Routers rather than models. Only the policies whose scoring is
+Router-attribute-based, not model-attribute-based, are supported:
+[`health`](#health), [`rate-limit`](#rate-limit), [`fairness`](#fairness),
+[`performance`](#performance), and [`budget-remaining`](#budget-remaining).
+The other 6 (`cheapest`, `context`, `capability`, `llm`, `semantic-intent`,
+`model-preference`) pick among a Router's own models, which an Orchestrator
+has none of.
 
 ### Passthrough
 

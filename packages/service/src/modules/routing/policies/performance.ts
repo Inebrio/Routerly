@@ -1,5 +1,6 @@
 import type { PolicyFn } from './types.js';
 import { readUsageRecords } from '../../usage/usageStore.js';
+import { decayWeightedLatencyAverage, relativeLatencyScore } from './scoring.js';
 
 /**
  * Policy: performance
@@ -53,18 +54,7 @@ export const performancePolicy: PolicyFn = async ({ candidates, config }) => {
       return { modelId: c.model.id, avgLatencyMs: null as number | null, sampleCount: modelRecords.length };
     }
 
-    let weightedLatency = 0;
-    let weightedTotal   = 0;
-
-    for (const r of modelRecords) {
-      const weight = useDecay
-        ? Math.exp((-Math.LN2 * (now - new Date(r.timestamp).getTime())) / halfLifeMs)
-        : 1;
-      weightedLatency += r.latencyMs * weight;
-      weightedTotal   += weight;
-    }
-
-    const avgLatencyMs = weightedTotal > 0 ? weightedLatency / weightedTotal : null;
+    const avgLatencyMs = decayWeightedLatencyAverage(modelRecords, now, useDecay ? halfLifeMs : 0);
 
     return { modelId: c.model.id, avgLatencyMs, sampleCount: modelRecords.length };
   });
@@ -73,20 +63,14 @@ export const performancePolicy: PolicyFn = async ({ candidates, config }) => {
   // Se meno di 2 modelli hanno dati, il confronto è privo di significato
   // (auto-confronto su singolo punto → 1.0 garantito). In quel caso tutti
   // ricevono 1.0 per favorire l'esplorazione.
-  const withData = stats.filter(s => s.avgLatencyMs !== null);
-  const minLatency = withData.length >= 2
-    ? Math.min(...withData.map(s => s.avgLatencyMs!))
-    : null;
+  const latencyScores = relativeLatencyScore(stats.map(s => s.avgLatencyMs));
 
-  const routing = stats.map(s => {
-    const latencyScore =
-      s.avgLatencyMs === null || minLatency === null
-        ? 1.0  // nessun dato o confronto impossibile → favorito (esplorazione)
-        : minLatency / s.avgLatencyMs;
+  const routing = stats.map((s, i) => {
+    const latencyScore = latencyScores[i]!;
 
     return {
       model:         s.modelId,
-      point:         Math.max(0, Math.min(1, latencyScore)),
+      point:         latencyScore,
       sampleCount:   s.sampleCount,
       avgLatencyMs:  s.avgLatencyMs,
       latencyScore,

@@ -6,6 +6,7 @@ import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
+import { ORCHESTRATOR_POLICY_TYPES } from './RouterOrchestratorTab';
 
 type TargetModel = {
   internalId: string; // for React keys
@@ -343,6 +344,7 @@ export function RouterRoutingTab() {
                 policies={policies}
                 setPolicies={setPolicies}
                 availableModels={availableModels}
+                {...((router?.kind ?? 'router') === 'orchestrator' ? { allowedTypes: ORCHESTRATOR_POLICY_TYPES } : {})}
                 llmDefaults={{
                   ...(router?.routingModelId ? { routingModelId: router.routingModelId } : {}),
                   ...(router?.fallbackRoutingModelIds ? { fallbackModelIds: router.fallbackRoutingModelIds } : {}),
