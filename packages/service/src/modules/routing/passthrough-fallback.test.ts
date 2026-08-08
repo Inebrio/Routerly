@@ -14,7 +14,12 @@ vi.mock('../api-reverse-proxy/router-passthrough.js', () => ({
   forwardPassthroughRaw: (...args: unknown[]) => forwardPassthroughRawMock(...args),
 }))
 
+const trackUsageMock = vi.fn().mockResolvedValue(undefined)
+vi.mock('../usage/tracker.js', () => ({ trackUsage: (...args: unknown[]) => trackUsageMock(...args) }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn().mockResolvedValue([]), writeConfig: vi.fn() }))
+
 const { routingModule } = await import('./index.js')
+const { usageModule } = await import('../usage/index.js')
 
 function harness() {
   const container = new ServiceContainer()
@@ -129,5 +134,60 @@ describe('routing.prepare — passthrough branch (PR-E, AC9/AC10)', () => {
 
     await expect(proc.run(ctx)).rejects.toThrow('provider_unreachable')
     expect(forwardPassthroughRawMock).not.toHaveBeenCalled()
+  })
+})
+
+// PR-E — mandatory security-checklist item 5: forwardPassthroughRaw (mocked here,
+// proven to call trackUsage exactly once on its own in router-passthrough.test.ts)
+// already records usage for the fallback path. usage.finalize must contribute
+// nothing on top of that. Verified by actually running the real usage.finalize
+// processor against the ctx the fallback branch produces, not by reading its
+// source and assuming the `blockedBy` gate holds.
+describe('usage.finalize does not double-record usage on the fallback path (PR-E, finalize double-count)', () => {
+  async function getPrepareAndFinalize() {
+    const { container, events, pipeline } = harness()
+    await routingModule.register({ container, events })
+    await usageModule.register({ container, events })
+    return {
+      prepare: pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!,
+      finalize: pipeline.orderedFor('finalize').find((p) => p.id === 'usage.finalize')!,
+    }
+  }
+
+  it('sentinel-at-index-0 fallback: usage.finalize sees no blockedBy and never calls trackUsage', async () => {
+    const { prepare, finalize } = await getPrepareAndFinalize()
+    const ctx = baseCtx({
+      router: {
+        id: 'pt1', kind: 'passthrough', policies: [],
+        models: [{ modelId: PASSTHROUGH_MODEL_ID }, { modelId: 'gpt-4o' }],
+      } as any,
+    })
+
+    await prepare.run(ctx)
+    expect(ctx.result).toEqual({ kind: 'block' })
+    expect(ctx.blockedBy).toBeUndefined()
+
+    await finalize.run(ctx)
+
+    expect(trackUsageMock).not.toHaveBeenCalled()
+  })
+
+  it('error-triggered fallback: usage.finalize sees no blockedBy and never calls trackUsage', async () => {
+    routeRequestMock.mockRejectedValue(new Error('no_models_available: router has no resolvable models'))
+    const { prepare, finalize } = await getPrepareAndFinalize()
+    const ctx = baseCtx({
+      router: {
+        id: 'pt1', kind: 'passthrough', policies: [],
+        models: [{ modelId: 'gpt-4o' }, { modelId: PASSTHROUGH_MODEL_ID }],
+      } as any,
+    })
+
+    await prepare.run(ctx)
+    expect(forwardPassthroughRawMock).toHaveBeenCalledTimes(1)
+    expect(ctx.blockedBy).toBeUndefined()
+
+    await finalize.run(ctx)
+
+    expect(trackUsageMock).not.toHaveBeenCalled()
   })
 })
