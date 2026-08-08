@@ -777,8 +777,8 @@ describe('router show', () => {
     expect(out).toContain('(none');
   });
 
-  it('lists candidates with name, routerId and weight for an orchestrator', async () => {
-    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'r-1', name: 'r-1-name', weight: 2 }] };
+  it('lists candidates by name and order (priority), with no weight or raw id shown', async () => {
+    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'r-1', name: 'r-1-name' }, { routerId: 'r-2', name: 'r-2-name' }] };
     mockApi.mockResolvedValueOnce([orchestrator])
            .mockResolvedValueOnce([]);
     const lines: string[] = [];
@@ -787,8 +787,9 @@ describe('router show', () => {
     const out = lines.join('\n');
     expect(out).toContain('Candidates');
     expect(out).toContain('r-1-name');
-    expect(out).toContain('r-1');
-    expect(out).toContain('weight 2');
+    expect(out).toContain('r-2-name');
+    expect(out).not.toContain('weight');
+    expect(out).not.toContain('r-1)');
   });
 
   it('skips the Candidates section for a plain router', async () => {
@@ -802,14 +803,14 @@ describe('router show', () => {
   });
 
   it('--json round-trips kind and candidates', async () => {
-    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'r-1', name: 'r-1-name', weight: 2 }] };
+    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'r-1', name: 'r-1-name' }] };
     mockApi.mockResolvedValueOnce([orchestrator]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'router', 'show', 'my-api', '--json']);
     const parsed = JSON.parse(lines.join('\n'));
     expect(parsed.kind).toBe('orchestrator');
-    expect(parsed.candidates).toEqual([{ routerId: 'r-1', name: 'r-1-name', weight: 2 }]);
+    expect(parsed.candidates).toEqual([{ routerId: 'r-1', name: 'r-1-name' }]);
   });
 });
 
@@ -883,18 +884,18 @@ describe('router create', () => {
   });
 
   it('creates an orchestrator with --kind and a single --candidate', async () => {
-    mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator', candidates: [{ routerId: 'r-1', name: 'r-1-name', weight: 1 }] });
-    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:1']);
+    mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator', candidates: [{ routerId: 'r-1', name: 'r-1-name' }] });
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1']);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
-    expect(postCall![2]).toMatchObject({ kind: 'orchestrator', candidates: [{ routerId: 'r-1', weight: 1 }] });
+    expect(postCall![2]).toMatchObject({ kind: 'orchestrator', candidates: [{ routerId: 'r-1' }] });
   });
 
-  it('accumulates repeatable --candidate into multiple entries', async () => {
+  it('accumulates repeatable --candidate into multiple entries, order of repetition preserved (AC9)', async () => {
     mockApi.mockResolvedValueOnce({ ...baseRouter });
-    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:2', '--candidate', 'r-2:1']);
+    await makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-2', '--candidate', 'r-1']);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({
-      candidates: [{ routerId: 'r-1', weight: 2 }, { routerId: 'r-2', weight: 1 }],
+      candidates: [{ routerId: 'r-2' }, { routerId: 'r-1' }],
     });
   });
 
@@ -913,18 +914,23 @@ describe('router create', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--kind must be one of'));
   });
 
-  it('exits 1 on malformed --candidate spec with no colon', async () => {
+  it('exits 1 on legacy --candidate <routerId>:<weight> syntax, naming the replacement (AC8)', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:2'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid --candidate value'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--candidate <routerId>'));
   });
 
-  it('exits 1 on malformed --candidate spec with non-numeric weight', async () => {
+  it('exits 1 when old and new --candidate syntax are mixed in the same invocation (EC3)', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator', '--candidate', 'r-1:abc'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync([
+      'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
+      '--candidate', 'r-1', '--candidate', 'r-2:3',
+    ])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Weight must be a number'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--candidate <routerId>'));
+    // whole command fails — no partial parse, POST never sent
+    expect(mockApi.mock.calls.find(c => c[0] === 'POST')).toBeUndefined();
   });
 
   it('surfaces the server EC2 error on stderr when an orchestrator has no candidates', async () => {
@@ -940,14 +946,14 @@ describe('router create', () => {
     mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator' });
     await makeCmd().parseAsync([
       'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
-      '--candidate', 'r-1:2', '--candidate', 'r-2:1',
+      '--candidate', 'r-1', '--candidate', 'r-2',
       '--candidate-limit', 'r-1:cost:period:daily:50',
     ]);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({
       candidates: [
-        { routerId: 'r-1', weight: 2, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 50 }] },
-        { routerId: 'r-2', weight: 1 },
+        { routerId: 'r-1', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 50 }] },
+        { routerId: 'r-2' },
       ],
     });
   });
@@ -956,13 +962,13 @@ describe('router create', () => {
     mockApi.mockResolvedValueOnce({ ...baseRouter, kind: 'orchestrator' });
     await makeCmd().parseAsync([
       'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
-      '--candidate', 'r-1:1',
+      '--candidate', 'r-1',
       '--candidate-limit', 'r-1:calls:rolling:1:day:100',
     ]);
     const postCall = mockApi.mock.calls.find(c => c[0] === 'POST');
     expect(postCall![2]).toMatchObject({
       candidates: [
-        { routerId: 'r-1', weight: 1, limits: [{ metric: 'calls', windowType: 'rolling', rollingAmount: 1, rollingUnit: 'day', value: 100 }] },
+        { routerId: 'r-1', limits: [{ metric: 'calls', windowType: 'rolling', rollingAmount: 1, rollingUnit: 'day', value: 100 }] },
       ],
     });
   });
@@ -981,7 +987,7 @@ describe('router create', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync([
       'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
-      '--candidate', 'r-1:1', '--candidate-limit', 'r-2:cost:period:daily:50',
+      '--candidate', 'r-1', '--candidate-limit', 'r-2:cost:period:daily:50',
     ])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('references router ID "r-2"'));
@@ -991,7 +997,7 @@ describe('router create', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync([
       'node', 'router', 'create', '--name', 'my-api', '--kind', 'orchestrator',
-      '--candidate', 'r-1:1', '--candidate-limit', 'r-1:cost:bogus',
+      '--candidate', 'r-1', '--candidate-limit', 'r-1:cost:bogus',
     ])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid limit spec'));
@@ -1072,13 +1078,13 @@ describe('router edit', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('server error'));
   });
 
-  it('replaces the whole candidates array when --candidate is given', async () => {
-    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'old-1', name: 'old', weight: 5 }] };
+  it('replaces the whole candidates array when --candidate is given, order of repetition preserved (AC9)', async () => {
+    const orchestrator = { ...baseRouter, kind: 'orchestrator' as const, candidates: [{ routerId: 'old-1', name: 'old' }] };
     mockApi.mockResolvedValueOnce([orchestrator]).mockResolvedValueOnce(undefined);
-    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'new-1:3', '--candidate', 'new-2:1']);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'new-2', '--candidate', 'new-1']);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({
-      candidates: [{ routerId: 'new-1', weight: 3 }, { routerId: 'new-2', weight: 1 }],
+      candidates: [{ routerId: 'new-2' }, { routerId: 'new-1' }],
     });
   });
 
@@ -1089,26 +1095,37 @@ describe('router edit', () => {
     expect(putCall![2]).not.toHaveProperty('candidates');
   });
 
-  it('exits 1 on malformed --candidate spec', async () => {
+  it('exits 1 on legacy --candidate <routerId>:<weight> syntax, naming the replacement (AC8)', async () => {
     mockApi.mockResolvedValueOnce([baseRouter]);
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
-    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'no-colon-here'])).rejects.toThrow('exit');
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--candidate', 'r-1:5'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid --candidate value'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--candidate <routerId>'));
+  });
+
+  it('exits 1 when old and new --candidate syntax are mixed on edit (EC3)', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync([
+      'node', 'router', 'edit', 'my-api', '--candidate', 'r-1', '--candidate', 'r-2:3',
+    ])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('--candidate <routerId>'));
+    expect(mockApi.mock.calls.find(c => c[0] === 'PUT')).toBeUndefined();
   });
 
   it('attaches a limit to the matching --candidate via --candidate-limit', async () => {
     mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     await makeCmd().parseAsync([
       'node', 'router', 'edit', 'my-api',
-      '--candidate', 'new-1:3', '--candidate', 'new-2:1',
+      '--candidate', 'new-1', '--candidate', 'new-2',
       '--candidate-limit', 'new-1:cost:period:daily:50',
     ]);
     const putCall = mockApi.mock.calls.find(c => c[0] === 'PUT');
     expect(putCall![2]).toMatchObject({
       candidates: [
-        { routerId: 'new-1', weight: 3, limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 50 }] },
-        { routerId: 'new-2', weight: 1 },
+        { routerId: 'new-1', limits: [{ metric: 'cost', windowType: 'period', period: 'daily', value: 50 }] },
+        { routerId: 'new-2' },
       ],
     });
   });

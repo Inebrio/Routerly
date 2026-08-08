@@ -1202,6 +1202,7 @@ unchanged, send `null` to clear it, or send an object to replace it.
 | `name` | string | Router name |
 | `timeoutMs` | number | Upstream timeout for this router's requests |
 | `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
+| `candidates` | array | Only on `kind: "orchestrator"`. Request body: `{ routerId, limits? }[]`. Response also resolves each candidate's `name`: `{ routerId, name, limits? }[]`. Array order **is** the priority order (index 0 = highest) — there is no `weight` field. |
 
 ### Content Guardrails and PII (router fields)
 
