@@ -65,13 +65,14 @@ function budgetRemainingScore(snapshots: LimitSnapshot[]): number {
 }
 
 /**
- * Orders an Orchestrator's candidate Routers by a weight/health/rate-limit/fairness/
- * performance/budget-remaining blend, most-preferred first. Adapts the *shape* of the
- * plain-Router policy pipeline (`router.ts`'s `scoreCandidates`/`routeRequest`, and the
- * `health`/`rate-limit`/`fairness`/`performance`/`budget-remaining` policies it wires
- * in) to a candidate whose only signals are its own configured `weight` plus
- * usage-derived health/recent-call-rate/fairness-share/latency/budget-headroom — keyed
- * by `routerId` instead of `modelId`. Each of those five signals is driven by the
+ * Orders an Orchestrator's candidate Routers by a priority-position/health/rate-limit/
+ * fairness/performance/budget-remaining blend, most-preferred first. Adapts the
+ * *shape* of the plain-Router policy pipeline (`router.ts`'s
+ * `scoreCandidates`/`routeRequest`, and the `health`/`rate-limit`/`fairness`/
+ * `performance`/`budget-remaining` policies it wires in) to a candidate whose only
+ * signals are its own position in the input `candidates` array plus usage-derived
+ * health/recent-call-rate/fairness-share/latency/budget-headroom — keyed by
+ * `routerId` instead of `modelId`. Each of those five signals is driven by the
  * Orchestrator's own `policies` array exactly like a Router's own policies drive
  * `scoreCandidates` — same config keys, same defaults, and `enabled: false` drops that
  * signal from the blend entirely. Deliberately never invokes any policy that is
@@ -88,11 +89,11 @@ function budgetRemainingScore(snapshots: LimitSnapshot[]): number {
  * Returns every surviving candidate ordered most-preferred first — an empty array
  * when no candidate survives. The health/rate-limit/fairness/performance/
  * budget-remaining blend is the primary ranking signal; when two candidates tie on
- * that (e.g. no usage history yet, or every signal disabled), the configured
- * `weight` breaks the tie (higher first), and `routerId`
- * breaks any remaining tie, for a fully deterministic order (AC8). Task 3's
- * `forwardToRouter` consumes this array by trying candidates in order, falling back
- * down the list.
+ * that (e.g. no usage history yet, or every signal disabled), the candidate's index
+ * in the input array breaks the tie — earlier position (i.e. drag order) wins (AC3)
+ * — which is always unique across the filtered array, so no further tie-break is
+ * needed for a fully deterministic order (AC8). Task 3's `forwardToRouter` consumes
+ * this array by trying candidates in order, falling back down the list.
  */
 export async function scoreOrchestratorCandidates(
   orchestratorId: string,
@@ -145,22 +146,21 @@ export async function scoreOrchestratorCandidates(
     ? await Promise.all(valid.map(c => getOrchestratorCandidateLimitSnapshot(orchestratorId, c)))
     : [];
 
-  const scored = valid.map((candidate, i) => {
+  const scored = valid.map((candidate, index) => {
     const ownRecords = forThisOrchestrator.filter(r => r.routerId === candidate.routerId);
     const signals: number[] = [];
     if (healthEnabled) signals.push(healthScore(ownRecords, now, healthPolicy?.config));
     if (rateLimitEnabled) signals.push(ratioScore(callCounts.get(candidate.routerId) ?? 0, minCallCount));
     if (fairnessEnabled) signals.push(shareScore(successCounts.get(candidate.routerId) ?? 0, totalSuccessCalls));
-    if (performanceEnabled) signals.push(performanceScores[i]!);
-    if (budgetRemainingEnabled) signals.push(budgetRemainingScore(budgetSnapshots[i] ?? []));
+    if (performanceEnabled) signals.push(performanceScores[index]!);
+    if (budgetRemainingEnabled) signals.push(budgetRemainingScore(budgetSnapshots[index] ?? []));
     const quality = signals.length > 0 ? signals.reduce((a, b) => a + b, 0) / signals.length : 1.0;
-    return { candidate, quality };
+    return { candidate, quality, index };
   });
 
   scored.sort((a, b) => {
     if (Math.abs(a.quality - b.quality) >= 0.0001) return b.quality - a.quality;
-    if (a.candidate.weight !== b.candidate.weight) return b.candidate.weight - a.candidate.weight;
-    return a.candidate.routerId.localeCompare(b.candidate.routerId);
+    return a.index - b.index; // AC3: earlier position in the input array wins the tie, always unique
   });
 
   return scored.map(s => s.candidate);

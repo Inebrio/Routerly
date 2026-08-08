@@ -286,6 +286,52 @@ export async function migrateProjectConfigs(): Promise<number> {
   return count;
 }
 
+/**
+ * One-time migration: an Orchestrator's `candidates[]` used to carry an explicit
+ * numeric `weight` per candidate, used only to break scoring ties; array order now
+ * carries that same priority signal (index 0 = highest), same pattern as a Router's
+ * own `policies[]`. For each `kind: 'orchestrator'` router whose candidates still
+ * carry a `weight` property, stable-sorts its candidates descending by stored weight
+ * (AC5: order among equal weights is preserved from the stored array — deterministic,
+ * reproducible on a second run) and strips `weight` from each. Missing weight sorts
+ * as `-Infinity` for the comparison only; `weight: 0` sorts as literal `0` — both land
+ * below any positive weight, without error (AC6). Routers with 0 or 1 candidates are
+ * left unchanged (EC1/EC2 — nothing to order). Non-orchestrator routers and
+ * orchestrators with no legacy `weight` property are returned unchanged. Idempotent:
+ * after the one write-back, no candidate carries `weight`, so a second run detects
+ * nothing to do. Returns the number of orchestrator routers migrated.
+ */
+export async function migrateOrchestratorCandidateOrder(): Promise<number> {
+  const routers = await readConfig('routers') as RouterConfig[];
+  let count = 0;
+  const updated = routers.map((router) => {
+    const raw = router as unknown as Record<string, unknown>;
+    if (raw['kind'] !== 'orchestrator') return router;
+    const candidates = raw['candidates'] as Array<Record<string, unknown>> | undefined;
+    if (!candidates || candidates.length <= 1) return router;
+    const hasLegacyWeight = candidates.some((c) => 'weight' in c);
+    if (!hasLegacyWeight) return router;
+
+    const weightOf = (c: Record<string, unknown>): number =>
+      typeof c['weight'] === 'number' ? c['weight'] : -Infinity;
+    const reordered = candidates
+      .map((c, index) => ({ c, index }))
+      .sort((a, b) => weightOf(b.c) - weightOf(a.c) || a.index - b.index)
+      .map(({ c }) => {
+        const { weight: _weight, ...rest } = c;
+        return rest;
+      });
+
+    count++;
+    return { ...raw, candidates: reordered } as unknown as RouterConfig;
+  });
+
+  if (count > 0) {
+    await writeConfig('routers', updated);
+  }
+  return count;
+}
+
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {
   return err instanceof Error && 'code' in err;
 }

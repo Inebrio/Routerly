@@ -11,7 +11,11 @@
  * task 3).
  */
 export interface CandidateLoopItem {
-  weight: number;
+  // Optional: the Orchestrator's candidate loop (`orchestrate.ts`) always passes
+  // `presorted: true` and its items (`OrchestratorCandidateRef`) carry no `weight` —
+  // priority is array order there, not a stored number. Only the plain-Router model
+  // loop's unsorted path reads this field.
+  weight?: number;
 }
 
 export interface RunCandidateLoopOptions {
@@ -35,13 +39,14 @@ export interface RunCandidateLoopOptions {
  *   to fall back to the next candidate.
  * @param onExhausted Runs once, only when every candidate was tried and none produced a result.
  */
-export async function runCandidateLoop<T extends CandidateLoopItem>(
+export async function runCandidateLoop<T>(
   candidates: T[],
   attempt: (candidate: T) => Promise<boolean>,
   onExhausted: () => void,
   options?: RunCandidateLoopOptions,
 ): Promise<void> {
-  const ordered = options?.presorted ? candidates : [...candidates].sort((a, b) => b.weight - a.weight);
+  const weightOf = (item: T) => (item as CandidateLoopItem).weight ?? 0;
+  const ordered = options?.presorted ? candidates : [...candidates].sort((a, b) => weightOf(b) - weightOf(a));
   for (const candidate of ordered) {
     const produced = await attempt(candidate);
     if (produced) return;

@@ -10,7 +10,7 @@ import type { RouterConfig, RouterKind, RoutingPolicy, RoutingPolicyType, TokenM
  * `name` is resolved server-side, `limits`/other candidate-Router detail is
  * never included (AC7 opacity). Distinct from the stored `OrchestratorCandidateRef`.
  */
-type OrchestratorCandidateWire = { routerId: string; name: string; weight: number };
+type OrchestratorCandidateWire = { routerId: string; name: string };
 
 // ─── Helper: TTFT timeout display ────────────────────────────────────────────
 
@@ -39,20 +39,20 @@ function parseKindOption(raw: string): RouterKind {
   return raw as RouterKind;
 }
 
-/** Parses --candidate <routerId>:<weight>, rejecting a malformed spec before it reaches the API. */
-function parseCandidateSpec(spec: string): { routerId: string; weight: number } {
-  const idx = spec.lastIndexOf(':');
-  if (idx <= 0 || idx === spec.length - 1) {
-    console.error(chalk.red(`Invalid --candidate value "${spec}". Expected format: <routerId>:<weight>`));
+/**
+ * Parses --candidate <routerId>, rejecting the legacy `<routerId>:<weight>` syntax outright.
+ * Order of repetition on the command line is now the priority order (AC9) — there is no
+ * weight to parse any more.
+ */
+function parseCandidateSpec(spec: string): { routerId: string } {
+  if (spec.includes(':')) {
+    console.error(chalk.red(
+      `Invalid --candidate value "${spec}". The <routerId>:<weight> syntax has been removed. ` +
+      `Use --candidate <routerId> (repeatable) — the order you repeat --candidate on the command line is now the priority order.`
+    ));
     process.exit(1);
   }
-  const routerId = spec.slice(0, idx);
-  const weight = Number(spec.slice(idx + 1));
-  if (!Number.isFinite(weight)) {
-    console.error(chalk.red(`Invalid --candidate value "${spec}". Weight must be a number.`));
-    process.exit(1);
-  }
-  return { routerId, weight };
+  return { routerId: spec };
 }
 
 /**
@@ -61,14 +61,14 @@ function parseCandidateSpec(spec: string): { routerId: string; weight: number } 
  * candidate router ID instead of model ID.
  */
 function applyCandidateLimits(
-  candidates: { routerId: string; weight: number; limits?: Limit[] }[],
+  candidates: { routerId: string; limits?: Limit[] }[],
   specs: string[]
 ): void {
   for (const spec of specs) {
     const { id: routerId, limit } = parseLimitSpec(spec, 'router-id');
     const entry = candidates.find(c => c.routerId === routerId);
     if (!entry) {
-      console.error(chalk.red(`--candidate-limit references router ID "${routerId}", which is not in --candidate. Add it with --candidate ${routerId}:<weight> first.`));
+      console.error(chalk.red(`--candidate-limit references router ID "${routerId}", which is not in --candidate. Add it with --candidate ${routerId} first.`));
       process.exit(1);
     }
     if (!entry.limits) entry.limits = [];
@@ -1080,9 +1080,9 @@ Examples:
           if (candidates.length === 0) {
             console.log(chalk.gray('    (none)'));
           } else {
-            for (const c of candidates) {
-              console.log(`    • ${c.name} (${c.routerId}) — weight ${c.weight}`);
-            }
+            candidates.forEach((c, i) => {
+              console.log(`    ${i + 1}. ${c.name}`);
+            });
           }
         }
 
@@ -1138,12 +1138,12 @@ Examples:
   routerly router create --name "My OpenAI" --kind passthrough
   # Note: budgets/limits do not apply to a passthrough router (cost is unknown for that traffic)
 
-  # An orchestrator, routing to two candidate routers by weight
-  routerly router create --name "Global" --kind orchestrator --candidate <router-id-1>:2 --candidate <router-id-2>:1
+  # An orchestrator, routing to two candidate routers in priority order (first = highest priority)
+  routerly router create --name "Global" --kind orchestrator --candidate <router-id-1> --candidate <router-id-2>
 
   # An orchestrator candidate with a usage limit
   routerly router create --name "Global" --kind orchestrator \\
-    --candidate <router-id-1>:2 --candidate <router-id-2>:1 \\
+    --candidate <router-id-1> --candidate <router-id-2> \\
     --candidate-limit <router-id-1>:cost:period:daily:50
 
 Candidate limit spec format (repeatable, requires a matching --candidate):
@@ -1160,7 +1160,7 @@ Units:    second | minute | hour | day | week | month
     .option('--auto-routing', 'Enable auto-routing (default: true)')
     .option('--no-auto-routing', 'Disable auto-routing')
     .option('--kind <kind>', 'Router kind: router | orchestrator | passthrough (default: router). Budgets/limits do not apply to passthrough.')
-    .option('--candidate <routerId:weight>', 'Candidate router for an orchestrator (repeatable)', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .option('--candidate <routerId>', 'Candidate router for an orchestrator (repeatable); order of repetition sets priority', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .action(async (opts: { name: string; timeout?: string; routingModel?: string; autoRouting?: boolean; kind?: string; candidate: string[]; candidateLimit: string[] }) => {
       try {
@@ -1178,7 +1178,7 @@ Units:    second | minute | hour | day | week | month
             console.error(chalk.red('--candidate-limit requires at least one --candidate.'));
             process.exit(1);
           }
-          applyCandidateLimits(body.candidates as { routerId: string; weight: number; limits?: Limit[] }[], opts.candidateLimit);
+          applyCandidateLimits(body.candidates as { routerId: string; limits?: Limit[] }[], opts.candidateLimit);
         }
 
         const router = await api<RouterConfig & { token: string }>('POST', '/api/routers', body);
@@ -1193,7 +1193,7 @@ Units:    second | minute | hour | day | week | month
         }
         if (router.candidates?.length) {
           const candidates = router.candidates as unknown as OrchestratorCandidateWire[];
-          console.log(chalk.gray(`  Candidates: ${candidates.map(c => `${c.name} (${c.weight})`).join(', ')}`));
+          console.log(chalk.gray(`  Candidates (priority order): ${candidates.map(c => c.name).join(', ')}`));
         }
         if (router.token) {
           console.log(chalk.bold('\nRouter token (save this — shown only once):'));
@@ -1225,12 +1225,12 @@ Examples:
   routerly router edit my-api --trace-content
   routerly router edit my-api --no-trace-content
 
-  # Replace an orchestrator's candidates
-  routerly router edit my-api --candidate <router-id-1>:2 --candidate <router-id-2>:1
+  # Replace an orchestrator's candidates, in priority order (first = highest priority)
+  routerly router edit my-api --candidate <router-id-1> --candidate <router-id-2>
 
   # Replace candidates, one with a usage limit
   routerly router edit my-api \\
-    --candidate <router-id-1>:2 --candidate <router-id-2>:1 \\
+    --candidate <router-id-1> --candidate <router-id-2> \\
     --candidate-limit <router-id-1>:cost:period:daily:50
 
 Candidate limit spec format (repeatable, requires a matching --candidate):
@@ -1245,7 +1245,7 @@ Units:    second | minute | hour | day | week | month
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
-    .option('--candidate <routerId:weight>', "Candidate router for an orchestrator (repeatable); replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .option('--candidate <routerId>', "Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); requires --candidate; see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     // --trace-content declared before --no-trace-content, so an untouched flag stays
     // undefined and leaves the stored value alone.

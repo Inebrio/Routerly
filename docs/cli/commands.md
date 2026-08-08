@@ -499,6 +499,26 @@ routerly router create [options]
 | `--name <name>` | Router display name (required) |
 | `--timeout <ms>` | Time-to-first-token timeout per model attempt, in ms (default `2000`, `0` disables it) |
 | `--routing-model <id>` | Model ID used for routing decisions |
+| `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router. |
+| `--candidate <routerId>` | Candidate router for an orchestrator (repeatable). Order of repetition sets priority: the first `--candidate` given is highest priority. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period|rolling:...:<value>`. Requires a matching `--candidate`. |
+
+```bash
+# An orchestrator, routing to two candidate routers in priority order (first = highest priority)
+routerly router create --name "Global" --kind orchestrator --candidate <router-id-1> --candidate <router-id-2>
+
+# An orchestrator candidate with a usage limit
+routerly router create --name "Global" --kind orchestrator \
+  --candidate <router-id-1> --candidate <router-id-2> \
+  --candidate-limit <router-id-1>:cost:period:daily:50
+```
+
+Candidate limit spec format (repeatable, requires a matching `--candidate`):
+```
+<router-id>:<metric>:period:<period>:<value>
+<router-id>:<metric>:rolling:<amount>:<unit>:<value>
+```
+Metrics: `cost | calls | input_tokens | output_tokens | total_tokens` · Periods: `hourly | daily | weekly | monthly | yearly` · Units: `second | minute | hour | day | week | month`
 
 ### `routerly router edit`
 
@@ -512,6 +532,8 @@ routerly router edit <router> [options]
 | `--timeout <ms>` | New time-to-first-token timeout per model attempt, in ms (`0` disables it) |
 | `--trace-content` | Record prompts and answers in the router's traces |
 | `--no-trace-content` | Record metadata only: no prompts, no answers (default) |
+| `--candidate <routerId>` | Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period|rolling:...:<value>` |
 
 Traces always carry metadata (models, policies, guardrail outcomes, tokens,
 timings). Prompts and answers are recorded only with `--trace-content`, and the
@@ -523,6 +545,14 @@ as `Traces: metadata only` or `Traces: metadata + content`.
 ```bash
 routerly router edit my-api --trace-content
 routerly router edit my-api --no-trace-content
+
+# Replace an orchestrator's candidates, in priority order (first = highest priority)
+routerly router edit my-api --candidate <router-id-1> --candidate <router-id-2>
+
+# Replace candidates, one with a usage limit
+routerly router edit my-api \
+  --candidate <router-id-1> --candidate <router-id-2> \
+  --candidate-limit <router-id-1>:cost:period:daily:50
 ```
 
 ### `routerly router remove`

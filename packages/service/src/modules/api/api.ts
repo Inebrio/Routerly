@@ -232,18 +232,18 @@ function rejectInvalidTimeout(timeoutMs: number | undefined, reply: FastifyReply
 }
 
 /**
- * Resolves an Orchestrator's stored candidates (routerId/weight/limits) to
- * the wire shape `{routerId, name, weight}` — no other field of the
- * candidate Router is ever included (AC7).
+ * Resolves an Orchestrator's stored candidates (routerId/limits) to the wire
+ * shape `{routerId, name, limits?}` — no other field of the candidate Router
+ * is ever included (AC7). Array order is preserved and is the sole priority
+ * signal; no numeric field is added or returned.
  */
 function resolveCandidatesForResponse(
   candidates: OrchestratorCandidateRef[] | undefined,
   routers: RouterConfig[],
-): { routerId: string; name: string; weight: number; limits?: Limit[] }[] {
+): { routerId: string; name: string; limits?: Limit[] }[] {
   return (candidates ?? []).map(c => ({
     routerId: c.routerId,
     name: routers.find(r => r.id === c.routerId)?.name ?? c.routerId,
-    weight: c.weight,
     ...(c.limits !== undefined ? { limits: c.limits } : {}),
   }));
 }
@@ -1097,11 +1097,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // path also produces the story's exact error message.
   const orchestratorCandidatesSchema = z.array(z.object({
     routerId: z.string().min(1),
-    weight: z.number(),
     // Per-candidate usage limit overrides (AC6) — same shape as a model's/router's
     // `limits`, not further validated here (matches updateTokenBodySchema's
     // `limits: z.array(z.any())` convention elsewhere in this file).
     limits: z.array(z.any()).optional(),
+    // Not `.strict()`: an old client still sending `weight` (pre-order-based
+    // priority) has it silently ignored, not rejected — array order is now the
+    // only priority signal, `weight` is never read back.
   })).optional();
 
   fastify.get('/api/routers', async (_req, reply) => {

@@ -190,7 +190,7 @@ Array of Router configurations: routers, Orchestrators, and Passthrough Routers 
 | `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, in milliseconds. Default `2000`; `0` disables it |
 | `policies` | `RoutingPolicy[]` | Routing policies in priority order (each `{ type, ...params }`); see [Concepts: Routing](../concepts/routing.md) |
 | `models` | `array` | Target models: `{ modelId, prompt? }` |
-| `candidates` | `array` | Only on `kind: "orchestrator"`: `{ routerId, weight, limits? }` — other Routers this one forwards to |
+| `candidates` | `array` | Only on `kind: "orchestrator"`: `{ routerId, limits? }` — other Routers this one forwards to, in priority order (index 0 = highest); no `weight` field |
 | `slug` | `string` | Only on `kind: "passthrough"`: the URL path segment at `/passthrough/<slug>/*` |
 
 Budgets are not a top-level array on the Router: they live as `limits` on a model entry or on a token (see Token Fields below), not on the Router record itself.

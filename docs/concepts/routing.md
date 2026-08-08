@@ -145,15 +145,16 @@ for the full request-lifecycle detail.
 ### Orchestrator
 
 An `orchestrator`-kind Router targets **other Routers**, not models. Instead
-of a model list and policies, it carries a weighted list of candidate
-Routers (`--candidate <routerId>:<weight>`, repeatable), with optional
-per-candidate usage limits. A request to an Orchestrator is scored across
-its candidates by weight and forwarded to the picked Router, which then
-applies its own routing (or is itself a Passthrough or another Orchestrator).
-The management API only ever returns a candidate's resolved name and weight,
-never its internal model list or policies — an Orchestrator's candidates are
-opaque to the client the same way a `router`-kind Router's provider
-configuration is.
+of a model list and policies, it carries a priority-ordered list of candidate
+Routers (`--candidate <routerId>`, repeatable — order of repetition sets
+priority, first = highest), with optional per-candidate usage limits. A
+request to an Orchestrator is scored across its candidates and ties break by
+list position, then forwarded to the picked Router, which then applies its
+own routing (or is itself a Passthrough or another Orchestrator).
+The management API only ever returns a candidate's resolved name and its
+position in the list, never its internal model list or policies — an
+Orchestrator's candidates are opaque to the client the same way a
+`router`-kind Router's provider configuration is.
 
 An Orchestrator can also carry its own routing policies, scored against its
 candidate Routers rather than models. Only the policies whose scoring is
