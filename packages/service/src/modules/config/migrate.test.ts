@@ -30,7 +30,9 @@ import {
   migrateUsageRouterId,
   migrateNotificationChannelScope,
   migrateUsageToNdjson,
+  migratePassthroughPseudoModel,
 } from './migrate.js';
+import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { readFile, writeFile, rename, unlink, access } from 'node:fs/promises';
@@ -779,6 +781,75 @@ describe('migrateUsageRouterId', () => {
 
     expect(count).toBe(0);
     expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migratePassthroughPseudoModel (PR-D: pinned pass-through entry) ─────────
+
+describe('migratePassthroughPseudoModel', () => {
+  it('EC2: prepends the sentinel to a pre-existing empty-list passthrough router, writes back', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'p1', name: 'Legacy passthrough', kind: 'passthrough', models: [] },
+    ] as any);
+
+    const count = await migratePassthroughPseudoModel();
+
+    expect(count).toBe(1);
+    const saved = (mockWriteConfig.mock.calls[0]![1] as any[]);
+    expect(saved[0].models).toEqual([{ modelId: PASSTHROUGH_MODEL_ID }]);
+  });
+
+  it('is idempotent: a second run on the same (now-migrated) data is a no-op', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'p1', name: 'Migrated', kind: 'passthrough', models: [{ modelId: PASSTHROUGH_MODEL_ID }] },
+    ] as any);
+
+    const count = await migratePassthroughPseudoModel();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('leaves non-passthrough routers untouched', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'r1', name: 'Plain router', kind: 'router', models: [{ modelId: 'openai/gpt-4o' }] },
+      { id: 'r2', name: 'No kind (implicit router)', models: [{ modelId: 'openai/gpt-4o' }] },
+    ] as any);
+
+    const count = await migratePassthroughPseudoModel();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('a passthrough router that already has the sentinel plus real models is untouched', async () => {
+    mockReadConfig.mockResolvedValue([
+      {
+        id: 'p1', name: 'Mixed', kind: 'passthrough',
+        models: [{ modelId: PASSTHROUGH_MODEL_ID }, { modelId: 'openai/gpt-4o' }],
+      },
+    ] as any);
+
+    const count = await migratePassthroughPseudoModel();
+
+    expect(count).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+
+  it('mixed batch: only legacy empty-list passthrough routers are changed and written', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'p1', name: 'Legacy', kind: 'passthrough', models: [] },
+      { id: 'p2', name: 'Already migrated', kind: 'passthrough', models: [{ modelId: PASSTHROUGH_MODEL_ID }] },
+      { id: 'r1', name: 'Plain', kind: 'router', models: [{ modelId: 'openai/gpt-4o' }] },
+    ] as any);
+
+    const count = await migratePassthroughPseudoModel();
+
+    expect(count).toBe(1);
+    const saved = (mockWriteConfig.mock.calls[0]![1] as any[]);
+    expect(saved[0].models).toEqual([{ modelId: PASSTHROUGH_MODEL_ID }]);
+    expect(saved[1].models).toEqual([{ modelId: PASSTHROUGH_MODEL_ID }]);
+    expect(saved[2].models).toEqual([{ modelId: 'openai/gpt-4o' }]);
   });
 });
 

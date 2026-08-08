@@ -9,6 +9,7 @@ vi.mock('./migrate.js', () => ({
   migrateRolePermissions: vi.fn(async () => 0),
   migrateUsageRouterId: vi.fn(async () => 0),
   migrateNotificationChannelScope: vi.fn(async () => 0),
+  migratePassthroughPseudoModel: vi.fn(async () => 0),
 }))
 vi.mock('./migrate-connections.js', () => ({
   migrateModelsToConnections: vi.fn(async () => ({ connections: 0, instances: 0 })),
@@ -16,13 +17,14 @@ vi.mock('./migrate-connections.js', () => ({
 
 import { configModule } from './index.js'
 import { readConfig, writeConfig, appendUsageRecord } from './loader.js'
-import { migrateProjectConfigs, migrateSettings } from './migrate.js'
+import { migrateProjectConfigs, migrateSettings, migratePassthroughPseudoModel } from './migrate.js'
 import { migrateModelsToConnections } from './migrate-connections.js'
 import { PRODUCT_VERSION } from '../../core/version.js'
 
 const mockMigrateProjects = vi.mocked(migrateProjectConfigs)
 const mockMigrateConnections = vi.mocked(migrateModelsToConnections)
 const mockMigrateSettings = vi.mocked(migrateSettings)
+const mockMigratePassthrough = vi.mocked(migratePassthroughPseudoModel)
 
 describe('config module', () => {
   beforeEach(() => {
@@ -30,6 +32,7 @@ describe('config module', () => {
     mockMigrateProjects.mockResolvedValue(0)
     mockMigrateConnections.mockResolvedValue({ connections: 0, instances: 0 })
     mockMigrateSettings.mockResolvedValue([])
+    mockMigratePassthrough.mockResolvedValue(0)
   })
 
   it('registers CONFIG_STORE with the real loader functions', async () => {
@@ -56,6 +59,27 @@ describe('config module', () => {
     expect(mockMigrateConnections).toHaveBeenCalledTimes(1)
     expect(mockMigrateProjects).toHaveBeenCalledTimes(1)
     expect(mockMigrateSettings).toHaveBeenCalledTimes(1)
+    expect(mockMigratePassthrough).toHaveBeenCalledTimes(1)
+  })
+
+  it('logs the migrated passthrough router count when any router changed', async () => {
+    mockMigratePassthrough.mockResolvedValueOnce(2)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await configModule.migrate?.()
+
+    expect(logSpy).toHaveBeenCalledWith('[startup] migrated 2 passthrough router(s) with a pass-through entry')
+    logSpy.mockRestore()
+  })
+
+  it('does not log when no passthrough router needed the pass-through entry', async () => {
+    mockMigratePassthrough.mockResolvedValueOnce(0)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await configModule.migrate?.()
+
+    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('pass-through entry'))
+    logSpy.mockRestore()
   })
 
   it('logs the settings keys dropped from settings.json', async () => {

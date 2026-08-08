@@ -380,6 +380,7 @@ export function RouterRoutingTab() {
                 onDragOver={(e) => e.preventDefault()}
                 style={{
                   display: 'flex',
+                  alignItems: isPassthrough ? 'center' : 'stretch',
                   gap: 12,
                   background: 'var(--surface-active)',
                   padding: '12px 12px 12px 6px',
@@ -389,13 +390,13 @@ export function RouterRoutingTab() {
                   transition: 'opacity 0.2s'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', paddingTop: 6, color: 'var(--text-muted)' }}>
+                <div style={{ display: 'flex', alignItems: isPassthrough ? 'center' : 'flex-start', paddingTop: isPassthrough ? 0 : 6, color: 'var(--text-muted)' }}>
                   <GripVertical size={18} />
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {isPassthrough ? (
-                    <div style={{ display: 'flex', alignItems: 'center', paddingTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
                       <span className="badge badge-neutral">{t('routers.routing.targetModels.passthroughLabel')}</span>
                     </div>
                   ) : (
@@ -466,7 +467,7 @@ export function RouterRoutingTab() {
                   )}
                 </div>
 
-                <div style={{ paddingTop: 20 }}>
+                <div style={{ paddingTop: isPassthrough ? 0 : 20 }}>
                   <button
                     type="button"
                     onClick={() => removeTargetModel(idx)}
