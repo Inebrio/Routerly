@@ -8,6 +8,16 @@ export interface ValidateOrchestratorCandidatesParams {
   routers: RouterConfig[];
   /** The router's own id. Present on PUT (enables the self-reference check); absent on POST — the id doesn't exist yet. */
   selfId?: string;
+  /**
+   * Whether this write actually changes the candidate list, as judged by the
+   * caller comparing the request body to the stored value. Defaults to `true`
+   * so every existing caller (POST-create, and any PUT caller that doesn't
+   * pass it) keeps today's behavior. Only a PUT that leaves `candidates`
+   * untouched (omitted body field, or an explicit resubmission identical to
+   * what's stored) should pass `false` — that scopes the "needs at least one
+   * candidate" rule to saves that actually touch the candidate list (PR-B).
+   */
+  candidatesChanged?: boolean;
 }
 
 /**
@@ -21,7 +31,7 @@ export interface ValidateOrchestratorCandidatesParams {
  * existing orchestrator) still requires at least one candidate.
  */
 export function validateOrchestratorCandidates(params: ValidateOrchestratorCandidatesParams): string | null {
-  const { kind, candidates, routers, selfId } = params;
+  const { kind, candidates, routers, selfId, candidatesChanged = true } = params;
   if (kind !== 'orchestrator') return null;
 
   if (!candidates || candidates.length === 0) {
@@ -30,6 +40,11 @@ export function validateOrchestratorCandidates(params: ValidateOrchestratorCandi
     // 2-step flow creates it with name+timeout only and adds candidates afterward
     // via a PUT that does carry `selfId`, where this rule still applies.
     if (selfId === undefined) return null;
+    // A save that doesn't touch the candidate list at all (general-settings tab)
+    // must not be re-validated against a rule meant for the tab that manages
+    // candidates (PR-B). Only a write that actually changes the list — including
+    // an explicit empty-array submission that differs from what's stored — fires.
+    if (!candidatesChanged) return null;
     return 'An orchestrator needs at least one candidate router';
   }
 
