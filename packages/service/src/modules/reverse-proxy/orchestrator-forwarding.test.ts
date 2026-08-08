@@ -228,11 +228,11 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     const modelA = makeModel(`m-${randomUUID()}`)
     const modelB = makeModel(`m-${randomUUID()}`)
     await seedModels([modelA, modelB])
-    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id]) // budget-exhausted, but perfect health + higher weight
+    const routerA = makeRouter(`r-${randomUUID()}`, [modelA.id]) // budget-exhausted, but perfect health + higher priority
     const routerB = makeRouter(`r-${randomUUID()}`, [modelB.id]) // healthy budget, but tanked health score
     const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [
-      { routerId: routerA.id, weight: 2, limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 1 }] },
-      { routerId: routerB.id, weight: 1 },
+      { routerId: routerA.id, limits: [{ metric: 'calls', windowType: 'period', period: 'daily', value: 1 }] },
+      { routerId: routerB.id },
     ])
     // Only health + budget-remaining drive the blend, isolating the two signals under test.
     orchestrator.policies = [
