@@ -984,7 +984,9 @@
         "intents": "Intenciones",
         "removeTarget": "Eliminar modelo objetivo",
         "empty": "No hay modelos objetivo configurados.",
-        "addTarget": "Añadir modelo objetivo"
+        "addTarget": "Añadir modelo objetivo",
+        "passthroughLabel": "Paso directo (reenvío sin procesar)",
+        "passthroughNotRemovable": "No se puede eliminar la entrada de paso directo"
       }
     },
     "optimizer": {

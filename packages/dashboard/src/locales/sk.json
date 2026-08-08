@@ -1359,7 +1359,9 @@
         "intents": "Zámery",
         "removeTarget": "Odstrániť cieľový model",
         "empty": "Žiadne cieľové modely nie sú nakonfigurované.",
-        "addTarget": "Pridať cieľový model"
+        "addTarget": "Pridať cieľový model",
+        "passthroughLabel": "Priechod (nespracované predanie)",
+        "passthroughNotRemovable": "Položku priechodu nemožno odstrániť"
       }
     },
     "optimizer": {

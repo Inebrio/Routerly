@@ -1359,7 +1359,9 @@
         "intents": "Mujibu",
         "removeTarget": "Ondoa modeli ya lengwa",
         "empty": "Hakuna modeli za lengwa zilizosanidiwa.",
-        "addTarget": "Ongeza Modeli ya Lengwa"
+        "addTarget": "Ongeza Modeli ya Lengwa",
+        "passthroughLabel": "Pass-through (usambazaji ghafi)",
+        "passthroughNotRemovable": "Kipengee cha pass-through hakiwezi kuondolewa"
       }
     },
     "optimizer": {

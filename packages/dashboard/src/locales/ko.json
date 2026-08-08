@@ -1359,7 +1359,9 @@
         "intents": "의도",
         "removeTarget": "대상 모델 제거",
         "empty": "구성된 대상 모델이 없습니다.",
-        "addTarget": "대상 모델 추가"
+        "addTarget": "대상 모델 추가",
+        "passthroughLabel": "패스스루 (원시 전달)",
+        "passthroughNotRemovable": "패스스루 항목은 제거할 수 없습니다"
       }
     },
     "optimizer": {

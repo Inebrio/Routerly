@@ -1359,7 +1359,9 @@
         "intents": "Intents",
         "removeTarget": "Zielmodell entfernen",
         "empty": "Keine Zielmodelle konfiguriert.",
-        "addTarget": "Zielmodell hinzufügen"
+        "addTarget": "Zielmodell hinzufügen",
+        "passthroughLabel": "Durchleitung (unveränderte Weiterleitung)",
+        "passthroughNotRemovable": "Der Durchleitungseintrag kann nicht entfernt werden"
       }
     },
     "optimizer": {

@@ -1359,7 +1359,9 @@
         "intents": "Intenções",
         "removeTarget": "Remover modelo de destino",
         "empty": "Nenhum modelo de destino configurado.",
-        "addTarget": "Adicionar Modelo de Destino"
+        "addTarget": "Adicionar Modelo de Destino",
+        "passthroughLabel": "Passagem direta (encaminhamento bruto)",
+        "passthroughNotRemovable": "A entrada de passagem direta não pode ser removida"
       }
     },
     "optimizer": {

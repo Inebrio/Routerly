@@ -1359,7 +1359,9 @@
         "intents": "Ý định",
         "removeTarget": "Xóa mô hình mục tiêu",
         "empty": "Chưa cấu hình mô hình mục tiêu nào.",
-        "addTarget": "Thêm mô hình mục tiêu"
+        "addTarget": "Thêm mô hình mục tiêu",
+        "passthroughLabel": "Chuyển tiếp trực tiếp (chuyển tiếp thô)",
+        "passthroughNotRemovable": "Không thể xóa mục chuyển tiếp trực tiếp"
       }
     },
     "optimizer": {

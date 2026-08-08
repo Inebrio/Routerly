@@ -1359,7 +1359,9 @@
         "intents": "Intenties",
         "removeTarget": "Doelmodel verwijderen",
         "empty": "Geen doelmodellen geconfigureerd.",
-        "addTarget": "Doelmodel toevoegen"
+        "addTarget": "Doelmodel toevoegen",
+        "passthroughLabel": "Doorgeven (ruwe doorsturing)",
+        "passthroughNotRemovable": "De doorgeefinvoer kan niet worden verwijderd"
       }
     },
     "optimizer": {

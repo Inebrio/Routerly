@@ -1359,7 +1359,9 @@
         "intents": "Intenții",
         "removeTarget": "Elimină model țintă",
         "empty": "Niciun model țintă configurat.",
-        "addTarget": "Adaugă model țintă"
+        "addTarget": "Adaugă model țintă",
+        "passthroughLabel": "Transmitere directă (redirecționare brută)",
+        "passthroughNotRemovable": "Intrarea de transmitere directă nu poate fi eliminată"
       }
     },
     "optimizer": {

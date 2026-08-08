@@ -1359,7 +1359,9 @@
         "intents": "Intents",
         "removeTarget": "Remove target model",
         "empty": "No target models configured.",
-        "addTarget": "Add Target Model"
+        "addTarget": "Add Target Model",
+        "passthroughLabel": "पास-थ्रू (कच्चे फॉरवर्ड)",
+        "passthroughNotRemovable": "पास-थ्रू नोंद काढली जाऊ शकत नाही"
       }
     },
     "optimizer": {

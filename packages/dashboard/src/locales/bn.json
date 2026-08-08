@@ -1359,7 +1359,9 @@
         "intents": "অভিপ্রায়",
         "removeTarget": "লক্ষ্য মডেল সরান",
         "empty": "কোন লক্ষ্য মডেল কনফিগার করা হয়নি।",
-        "addTarget": "লক্ষ্য মডেল যোগ করুন"
+        "addTarget": "লক্ষ্য মডেল যোগ করুন",
+        "passthroughLabel": "পাস-থ্রু (কাঁচা ফরওয়ার্ড)",
+        "passthroughNotRemovable": "পাস-থ্রু এন্ট্রি সরানো যাবে না"
       }
     },
     "optimizer": {
