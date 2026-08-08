@@ -1637,10 +1637,10 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
-    expect(res.json().error).toBe('Orchestrators only support these policy types: health, rate-limit, fairness (got: cheapest)')
+    expect(res.json().error).toBe('Orchestrators only support these policy types: health, rate-limit, fairness, performance, budget-remaining (got: cheapest)')
   })
 
-  it('creates an orchestrator with health/rate-limit/fairness policies (compatible with a router as a whole)', async () => {
+  it('creates an orchestrator with health/rate-limit/fairness/performance/budget-remaining policies (compatible with a router as a whole)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
       if (t === 'users') return [adminUser]
@@ -1656,12 +1656,38 @@ describe('POST /api/routers — orchestrator kind (RTR-02)', () => {
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify({
         name: 'Orc', kind: 'orchestrator',
-        policies: [{ type: 'health', enabled: true }, { type: 'rate-limit', enabled: true }, { type: 'fairness', enabled: true }],
+        policies: [
+          { type: 'health', enabled: true }, { type: 'rate-limit', enabled: true }, { type: 'fairness', enabled: true },
+          { type: 'performance', enabled: true }, { type: 'budget-remaining', enabled: true },
+        ],
       }),
     })
     await app.close()
     expect(res.statusCode).toBe(201)
   })
+
+  it.each(['context', 'capability', 'llm', 'semantic-intent', 'model-preference'] as const)(
+    'returns 400 when an orchestrator is created with the model-attribute policy type %s (AC7)',
+    async (type) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'routers') return []
+        return []
+      })
+
+      const app = await buildApp()
+      const res = await app.inject({
+        method: 'POST', url: '/api/routers',
+        headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+        payload: JSON.stringify({ name: 'Orc', kind: 'orchestrator', policies: [{ type, enabled: true }] }),
+      })
+      await app.close()
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error).toBe(`Orchestrators only support these policy types: health, rate-limit, fairness, performance, budget-remaining (got: ${type})`)
+    },
+  )
 
   it('creates a valid orchestrator: candidates opacity-limited to {routerId,name,weight}, raw token intact (AC1, AC7)', async () => {
     setupAdminAuth()
@@ -1976,7 +2002,7 @@ describe('PUT /api/routers/:id — orchestrator kind (RTR-02)', () => {
     })
     await app.close()
     expect(res.statusCode).toBe(400)
-    expect(res.json().error).toBe('Orchestrators only support these policy types: health, rate-limit, fairness (got: semantic-intent)')
+    expect(res.json().error).toBe('Orchestrators only support these policy types: health, rate-limit, fairness, performance, budget-remaining (got: semantic-intent)')
   })
 
   it('leaves an orchestrator update unaffected when policies are omitted, even if the stored value is disallowed', async () => {

@@ -167,6 +167,50 @@ export interface LimitSnapshot {
 }
 
 /**
+ * Per-limit window/period arithmetic, shared by `getLimitUsageSnapshot` (model,
+ * token/router/global hierarchy) and `getOrchestratorCandidateLimitSnapshot`
+ * (Orchestrator candidate, no hierarchy). Pure: no I/O, records are pre-filtered
+ * by the caller to whatever scope applies.
+ */
+export function snapshotLimits(limits: Limit[], records: UsageRecord[], now: Date): LimitSnapshot[] {
+  return limits.map(lim => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const legacyWindow = (lim as any).window as string | undefined;
+
+    let start: Date;
+    let windowLabel: string;
+
+    if (lim.windowType === 'rolling') {
+      const amount = lim.rollingAmount ?? 1;
+      const unit   = lim.rollingUnit   ?? 'day';
+      start = new Date(now.getTime() - amount * (ROLLING_UNIT_MS[unit] ?? 86_400_000));
+      windowLabel = `rolling ${amount} ${unit}${amount !== 1 ? 's' : ''}`;
+    } else {
+      const period = lim.period ?? legacyWindowToPeriod(legacyWindow);
+      start = startOfPeriod(period, now);
+      windowLabel = period;
+    }
+
+    const windowRecords = records.filter(r => new Date(r.timestamp) >= start);
+
+    const current =
+      lim.metric === 'cost'          ? windowRecords.reduce((s, r) => s + (r.cost ?? 0), 0) :
+      lim.metric === 'calls'         ? windowRecords.length :
+      lim.metric === 'input_tokens'  ? windowRecords.reduce((s, r) => s + r.inputTokens, 0) :
+      lim.metric === 'output_tokens' ? windowRecords.reduce((s, r) => s + r.outputTokens, 0) :
+      /* total_tokens */               windowRecords.reduce((s, r) => s + r.inputTokens + r.outputTokens, 0);
+
+    return {
+      metric: lim.metric,
+      window: windowLabel,
+      value: lim.value,
+      current: +current.toFixed(6),
+      remaining: +(lim.value - current).toFixed(6),
+    };
+  });
+}
+
+/**
  * Restituisce lo snapshot dei consumi correnti per tutti i limiti effettivi
  * del modello, rispettando la gerarchia token > router > global.
  * Se non ci sono limiti configurati, restituisce [].
@@ -197,41 +241,7 @@ export async function getLimitUsageSnapshot(
     r => r.routerId === router.id && r.modelId === model.id && r.outcome === 'success',
   );
 
-  return limits.map(lim => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const legacyWindow = (lim as any).window as string | undefined;
-
-    let start: Date;
-    let windowLabel: string;
-
-    if (lim.windowType === 'rolling') {
-      const amount = lim.rollingAmount ?? 1;
-      const unit   = lim.rollingUnit   ?? 'day';
-      start = new Date(now.getTime() - amount * (ROLLING_UNIT_MS[unit] ?? 86_400_000));
-      windowLabel = `rolling ${amount} ${unit}${amount !== 1 ? 's' : ''}`;
-    } else {
-      const period = lim.period ?? legacyWindowToPeriod(legacyWindow);
-      start = startOfPeriod(period, now);
-      windowLabel = period;
-    }
-
-    const windowRecords = relevant.filter(r => new Date(r.timestamp) >= start);
-
-    const current =
-      lim.metric === 'cost'          ? windowRecords.reduce((s, r) => s + (r.cost ?? 0), 0) :
-      lim.metric === 'calls'         ? windowRecords.length :
-      lim.metric === 'input_tokens'  ? windowRecords.reduce((s, r) => s + r.inputTokens, 0) :
-      lim.metric === 'output_tokens' ? windowRecords.reduce((s, r) => s + r.outputTokens, 0) :
-      /* total_tokens */               windowRecords.reduce((s, r) => s + r.inputTokens + r.outputTokens, 0);
-
-    return {
-      metric: lim.metric,
-      window: windowLabel,
-      value: lim.value,
-      current: +current.toFixed(6),
-      remaining: +(lim.value - current).toFixed(6),
-    };
-  });
+  return snapshotLimits(limits, relevant, now);
 }
 
 /**
@@ -318,6 +328,31 @@ export async function isOrchestratorCandidateAllowed(
   );
 
   return checkLimits(limits, relevant, now);
+}
+
+/**
+ * Snapshot of the current headroom for an Orchestrator candidate's own configured
+ * limits — the soft-scoring counterpart to `isOrchestratorCandidateAllowed`'s hard
+ * gate, used by the `budget-remaining` Orchestrator signal. Same scoping as that
+ * gate (`orchestratorId` + `routerId`, `outcome === 'success'`); no `limits`
+ * configured on the candidate returns `[]`, same "no limit configured" contract
+ * as `getLimitUsageSnapshot`.
+ */
+export async function getOrchestratorCandidateLimitSnapshot(
+  orchestratorId: string,
+  candidate: OrchestratorCandidateRef,
+): Promise<LimitSnapshot[]> {
+  const limits = candidate.limits ?? [];
+  if (!limits.length) return [];
+
+  const records = await readUsageRecords();
+  const now = new Date();
+
+  const relevant = (records as UsageRecord[]).filter(
+    r => r.orchestratorId === orchestratorId && r.routerId === candidate.routerId && r.outcome === 'success',
+  );
+
+  return snapshotLimits(limits, relevant, now);
 }
 
 /**

@@ -9,11 +9,11 @@ import { LimitRowsEditor, limitsToRows, limitRowsToLimits, type LimitRow } from 
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
 
 // An Orchestrator scores a candidate Router as a whole (weight/health/rate-limit/
-// fairness) — it has no models of its own, so the model-attribute policy types
-// (cheapest, capability, context, performance, llm, semantic-intent,
-// model-preference, budget-remaining) are not offered here. Kept in sync with
+// fairness/performance/budget-remaining) — it has no models of its own, so the
+// remaining model-attribute policy types (cheapest, capability, context, llm,
+// semantic-intent, model-preference) are not offered here. Kept in sync with
 // ORCHESTRATOR_POLICY_TYPES in packages/service/src/modules/routing/validate-orchestrator-policies.ts.
-export const ORCHESTRATOR_POLICY_TYPES = ['health', 'rate-limit', 'fairness'] as const;
+export const ORCHESTRATOR_POLICY_TYPES = ['health', 'rate-limit', 'fairness', 'performance', 'budget-remaining'] as const;
 
 type CandidateRow = {
   internalId: string; // for React keys

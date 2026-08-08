@@ -1,5 +1,6 @@
 import type { PolicyFn } from './types.js';
 import { readUsageRecords } from '../../usage/usageStore.js';
+import { decayWeightedErrorScore } from './scoring.js';
 
 /**
  * Policy: health
@@ -38,38 +39,15 @@ export const healthPolicy: PolicyFn = async ({ candidates, config }) => {
     // dilute the error-rate denominator (consistent with the health endpoint, #77).
     const modelRecords = recent.filter(r => r.modelId === c.model.id && r.outcome !== 'blocked');
 
-    if (modelRecords.length === 0) {
-      return { model: c.model.id, point: 1.0, recentCalls: 0, weightedErrorRate: 0, errorScore: 1.0 };
-    }
-
-    let weightedErrors = 0;
-    let weightedTotal  = 0;
-
-    for (const r of modelRecords) {
-      // W(age) = 2^(-age / halfLife) — decadimento esponenziale
-      const ageMs  = now - new Date(r.timestamp).getTime();
-      const weight = Math.exp((-Math.LN2 * ageMs) / halfLifeMs);
-
-      const isError = r.outcome === 'error' || r.outcome === 'timeout';
-      weightedErrors += isError ? weight : 0;
-      weightedTotal  += weight;
-    }
-
-    const rawWeightedErrorRate = weightedErrors / weightedTotal;
-
-    // Smoothing Bayesiano: i pseudo-counts agiscono come prior di successo
-    const smoothedErrorRate = weightedErrors / (weightedTotal + pseudoCounts);
-
-    // Circuit breaker: tasso grezzo sopra soglia → score = 0
-    const errorScore = rawWeightedErrorRate >= circuitBreaker
-      ? 0.0
-      : 1 - smoothedErrorRate;
+    const { point, weightedErrorRate, errorScore } = decayWeightedErrorScore(
+      modelRecords, now, halfLifeMs, pseudoCounts, circuitBreaker,
+    );
 
     return {
       model:             c.model.id,
-      point:             Math.max(0, Math.min(1, errorScore)),
+      point,
       recentCalls:       modelRecords.length,
-      weightedErrorRate: rawWeightedErrorRate,
+      weightedErrorRate,
       errorScore,
     };
   });

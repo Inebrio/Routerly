@@ -1,5 +1,6 @@
 import type { PolicyFn } from './types.js';
 import { readUsageRecords } from '../../usage/usageStore.js';
+import { ratioScore } from './scoring.js';
 
 /**
  * Policy: rate-limit
@@ -71,14 +72,9 @@ export const rateLimitPolicy: PolicyFn = async ({ candidates, config }) => {
       return { model: modelId, point: 0.0, callCount, rateLimited: true };
     }
 
-    // Nessuna chiamata → massimo punteggio
-    const point = callCount === 0
-      ? 1.0
-      : minEligibleCount / callCount;
-
     return {
       model: modelId,
-      point: Math.max(0, Math.min(1, point)),
+      point: ratioScore(callCount, minEligibleCount),
       callCount,
       rateLimited: false,
     };
