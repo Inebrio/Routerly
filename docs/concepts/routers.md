@@ -65,7 +65,7 @@ Configure which models the Router can use and in what order. Drag routing polici
 
 ### Tokens
 
-Manage the Bearer tokens used to authenticate API calls. Each token can have per-token budget limits that stack on top of the Router-level limits. Not shown for a Passthrough Router, which has no Routerly-issued tokens.
+Manage the Bearer tokens used to authenticate API calls. Each token can have per-token budget limits that stack on top of the Router-level limits. Shown for a Passthrough Router once it has an issued token — which happens as soon as it has at least one real target model configured, alongside its fixed pass-through entry; absent for a sentinel-only Passthrough Router with no real models yet.
 
 **Creating a token:**
 
@@ -90,7 +90,7 @@ The log table auto-refreshes at a configurable interval (5 s / 15 s / 30 s / 1 m
 
 ## How a Request Reaches a Router
 
-There is one set of proxy paths, `/v1/...`, and no Router prefix in the URL. The Router is resolved from the Bearer token: a Router token belongs to exactly one Router, so the token alone says which routing configuration, budgets and guardrails apply. (A Passthrough Router is the exception: it is resolved from the `/passthrough/<slug>/...` URL path instead, and carries no Routerly-issued token.)
+There is one set of proxy paths, `/v1/...`, and no Router prefix in the URL. The Router is resolved from the Bearer token: a Router token belongs to exactly one Router, so the token alone says which routing configuration, budgets and guardrails apply. (A Passthrough Router's pass-through entry is the exception: it is resolved from the `/passthrough/<slug>/...` URL path instead, with no Routerly-issued token. A Passthrough Router that also has real target models configured is issued a token like any other Router — see [Concepts: Architecture](./architecture.md#passthrough-which-path-a-request-takes) — and requests to those models go through `/v1/...` with that token like any other Router's.)
 
 To send traffic to a different Router, use that Router's token.
 

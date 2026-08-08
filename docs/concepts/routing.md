@@ -175,19 +175,26 @@ flag or manual path field; the slug never changes afterward, even if the
 Router is renamed. Because a Passthrough is reached by slug and never by
 name, its name only needs to be unique among other Passthroughs — it can
 share a name with an existing Router or Orchestrator. Router and Orchestrator
-names remain unique among themselves. Two things a Passthrough does not
-require, unlike every other Router kind:
+names remain unique among themselves. Its `models` list always carries a
+fixed pass-through entry, and two things do not apply to a request that
+resolves to it, unlike every other Router kind:
 
 - **No Routerly authentication.** The path carries no Router token; the
   client's own `Authorization`/`x-api-key` header is forwarded unchanged to
   the real `api.openai.com` or `api.anthropic.com`.
 - **No budgets or usage limits.** Cost is unknown for traffic Routerly never
-  priced, so budget and limit configuration do not apply to a Passthrough
-  Router.
+  priced, so budget and limit configuration do not apply to this entry.
 
-Guardrails and PII policies configured on the Router still run, and a
-Passthrough Router cannot carry a `models` list — the API rejects one if
-sent.
+Guardrails and PII policies configured on the Router still run regardless.
+
+A Passthrough Router's `models` list can also carry real target models
+alongside the fixed pass-through entry. A request resolving to one of those
+is scored, authenticated with a Routerly-issued token, and budgeted/metered
+exactly like a `router`-kind Router's model — both exemptions above apply
+only to the pass-through entry itself. Which of the two a request gets by
+default depends on the pass-through entry's position in the list: see
+[Concepts: Architecture](./architecture.md#passthrough-which-path-a-request-takes)
+for the full ordering rule and the fallback's forwarded-credential caveat.
 
 ---
 

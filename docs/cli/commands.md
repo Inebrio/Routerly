@@ -499,7 +499,7 @@ routerly router create [options]
 | `--name <name>` | Router display name (required) |
 | `--timeout <ms>` | Time-to-first-token timeout per model attempt, in ms (default `2000`, `0` disables it) |
 | `--routing-model <id>` | Model ID used for routing decisions |
-| `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router. |
+| `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router's fixed pass-through entry, but do apply to any real target model added to it, exactly like on a `router`-kind router. |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable). Order of repetition sets priority: the first `--candidate` given is highest priority. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
 | `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period|rolling:...:<value>`. Requires a matching `--candidate`. |
 
@@ -672,6 +672,22 @@ routerly router model reorder my-api openai/gpt-5.2,anthropic/claude-opus-4-6
 # Move the pass-through entry to the front of a passthrough router's model list
 routerly router model reorder my-api __passthrough__,openai/gpt-5.2
 ```
+
+Moving the pass-through entry to the front, as in the example above, makes
+raw-forward the router's default outcome for every request reaching it
+through its token: real models are never scored, regardless of how many are
+configured. Anywhere else in the list, real models are scored and routed
+normally, and the pass-through entry is used only as a last-resort fallback
+when none of them turn out eligible. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-which-path-a-request-takes)
+for the full rule, including the fallback's forwarded-credential caveat.
+
+A passthrough-kind router is issued a Routerly bearer token
+(`router token list`) as soon as it has at least one real target model
+configured, whether added on `router create` or with `model add`; the token
+is revoked (all tokens removed) the moment the last real model is removed
+with `model remove`, leaving only the pass-through entry. A sentinel-only
+passthrough router, with no real models ever added, is never issued one.
 
 ---
 
