@@ -1162,9 +1162,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       optimizers = parsed.data as OptimizerConfig;
     }
 
-    // Passthrough routers authenticate with the caller's own upstream credential
-    // (RTR-03) — they never get a Routerly-issued token.
-    const rawToken = kind === 'passthrough' ? undefined : `sk-rt-${randomBytes(32).toString('hex')}`;
     const userId = req.dashUser!.id;
 
     // Normalize `models` for the resolved kind before it's used for both storage
@@ -1178,6 +1175,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ? submittedModels
         : [{ modelId: PASSTHROUGH_MODEL_ID }, ...submittedModels])
       : submittedModels.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+
+    // Passthrough routers authenticate with the caller's own upstream credential
+    // (RTR-03) — they never get a Routerly-issued token, unless a real model has
+    // been added to the list, in which case that model is scored/authenticated
+    // like any other router's model and needs a Routerly-issued token (PR-E AC1).
+    const hasRealModel = submittedModels.some(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+    const rawToken = (kind !== 'passthrough' || hasRealModel)
+      ? `sk-rt-${randomBytes(32).toString('hex')}`
+      : undefined;
 
     const router: RouterConfig = {
       id: uuidv4(),
@@ -1331,6 +1337,24 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         : req.body.models.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
       const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
+      // Token issuance/revocation for passthrough routers (PR-E AC1/EC1): a real
+      // model gets scored/authenticated like any other router's model and needs
+      // a Routerly-issued token; dropping the last real model revokes it. Other
+      // kinds' token flows are untouched here.
+      const hadToken = (routers[index]!.tokens ?? []).length > 0;
+      const willHaveRealModel = normalizedModels.some(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+      let tokensUpdate: { tokens?: RouterToken[] } = {};
+      if (kind === 'passthrough' && !hadToken && willHaveRealModel) {
+        const rawToken = `sk-rt-${randomBytes(32).toString('hex')}`;
+        tokensUpdate = { tokens: [{
+          id: uuidv4(),
+          token: rawToken,
+          tokenSnippet: rawToken.substring(0, 10),
+          createdAt: new Date().toISOString(),
+        }] };
+      } else if (kind === 'passthrough' && hadToken && !willHaveRealModel) {
+        tokensUpdate = { tokens: [] };
+      }
       // Guardrails/PII: undefined = leave unchanged, null = clear, object = validate & set.
       let guardrailsUpdate: { guardrails?: GuardrailConfig } = {};
       if (req.body.guardrails === null) {
@@ -1383,6 +1407,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...optimizersUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
+        ...tokensUpdate,
       };
       const next = [...routers];
       next[index] = updated;
