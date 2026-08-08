@@ -13,7 +13,7 @@ import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../compon
 // (cheapest, capability, context, performance, llm, semantic-intent,
 // model-preference, budget-remaining) are not offered here. Kept in sync with
 // ORCHESTRATOR_POLICY_TYPES in packages/service/src/modules/routing/validate-orchestrator-policies.ts.
-const ORCHESTRATOR_POLICY_TYPES = ['health', 'rate-limit', 'fairness'] as const;
+export const ORCHESTRATOR_POLICY_TYPES = ['health', 'rate-limit', 'fairness'] as const;
 
 type CandidateRow = {
   internalId: string; // for React keys
