@@ -12,7 +12,8 @@ feature level, parallelism across stories, integration, and the retrospective.
 
 ## Feature level — main session, main checkout
 
-1. **analyst** → analysis, task list, dependency graph. If its report starts with `NEEDS-INPUT`, put its questions to the user with `AskUserQuestion`: state the problem, the options with their consequences, and the recommendation. Send the answers back to the same agent and let it finish.
+0. **Request, first.** Before dispatching anything, write the user's original request verbatim to `.claude/specs/<feature>/request.md` — no summarizing, no reinterpreting. This is the one artifact every later phase can reread to check what it's drifted from.
+1. **analyst** → analysis, task list, dependency graph. Point it at `request.md` as the source of truth, not a paraphrase in the dispatch prompt. If its report starts with `NEEDS-INPUT`, put its questions to the user with `AskUserQuestion`: state the problem, the options with their consequences, and the recommendation. Send the answers back to the same agent and let it finish; append the resolved answers to `request.md` so the record stays complete.
 2. **story-writer** → one story file per story. No file, function or endpoint names in a story.
 3. **project-manager** → one blueprint per story, with every contact point frozen and the exact start command the validator will run. **At most six engineer tasks per story.** Every task is a fresh agent that reads the repository, the blueprint and the conventions from nothing, so a seventh task costs more in re-read context than the split saves in focus. Measured: one story split into twelve tasks spent 57M input tokens on its engineers alone, 15% of an eighteen-story feature. If a story genuinely needs more than six, it is more than one story and belongs back with the story-writer.
 4. **Show and launch in the same response.** Story list plus dependency graph, then start. No "shall I proceed".

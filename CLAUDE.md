@@ -49,8 +49,11 @@ More than one deliverable, a new feature, a schema or wire-format or security ch
 
 Nine agents, artifacts as the only hand-off. Nothing passes through conversation: an agent that needs something reads the file that holds it.
 
+**Request, first, verbatim.** Before dispatching the analyst, the main session writes the user's original request — as given, unedited, no summarizing or reinterpreting — to `.claude/specs/<feature>/request.md`. Unnumbered on purpose: it sits outside the numbered analysis→retrospective sequence so adding it never renumbers anything downstream. Every later phase can reread it directly instead of relying on what survived paraphrasing through the phases before it.
+
 | Artifact | Written by | Path |
 |---|---|---|
+| Request | main session | `.claude/specs/<feature>/request.md` |
 | Analysis | analyst | `.claude/specs/<feature>/00-analysis.md` |
 | Story | story-writer | `.claude/specs/<feature>/01-stories/<story-id>.md` |
 | Blueprint | project-manager | `.claude/specs/<feature>/02-blueprint/<story-id>.md` |
