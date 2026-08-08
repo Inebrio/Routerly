@@ -22,7 +22,7 @@ import { llmPolicy } from './policies/llm.js'
 import { fairnessPolicy } from './policies/fairness.js'
 import { InMemoryResilienceStore } from '../resilience/store.js'
 import { splitModelsIntoInstancesConnections } from '../../test-support/effective-models.js'
-import type { ModelConfig, RouterConfig } from '@routerly/shared'
+import { PASSTHROUGH_MODEL_ID, type ModelConfig, type RouterConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
 
@@ -997,6 +997,50 @@ describe('routeRequest', () => {
       })
       // Also present in the returned trace array (not just via emit).
       expect(result.trace.find(e => e.message === 'router:profile')).toBeDefined()
+    })
+  })
+
+  describe('passthrough sentinel exclusion (PR-E, AC8)', () => {
+    it('never reaches a policy\'s candidates on a mixed sentinel+real-model list', async () => {
+      mockModels([makeModel('m1'), makeModel('m2')])
+      mockIsAllowed.mockResolvedValue(true)
+      mockCheapestPolicy.mockResolvedValue({
+        routing: [{ model: 'm1', point: 0.9 }, { model: 'm2', point: 0.3 }],
+      })
+
+      const router = makeRouter([PASSTHROUGH_MODEL_ID, 'm1', 'm2'], [{ type: 'cheapest', enabled: true }])
+      const result = await routeRequest(request, router)
+
+      const call = mockCheapestPolicy.mock.calls[0]![0] as { candidates: { model: ModelConfig }[] }
+      expect(call.candidates.map(c => c.model.id)).toEqual(['m1', 'm2'])
+      expect(call.candidates.map(c => c.model.id)).not.toContain(PASSTHROUGH_MODEL_ID)
+      expect(result.models.map(m => m.model)).not.toContain(PASSTHROUGH_MODEL_ID)
+    })
+
+    it('never counts the sentinel toward missingModelIds', async () => {
+      mockModels([makeModel('m1')])
+      mockIsAllowed.mockResolvedValue(true)
+      const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+
+      const router = makeRouter([PASSTHROUGH_MODEL_ID, 'm1'])
+      await routeRequest(request, router, log)
+
+      expect(log.warn).not.toHaveBeenCalled()
+    })
+
+    it('does not throw no_models_available when a sentinel-only list also has a real model', async () => {
+      mockModels([makeModel('m1')])
+      mockIsAllowed.mockResolvedValue(true)
+
+      const router = makeRouter([PASSTHROUGH_MODEL_ID, 'm1'])
+      const result = await routeRequest(request, router)
+
+      expect(result.models).toEqual([{ model: 'm1', weight: 1 }])
+      expect(mockIsAllowed).not.toHaveBeenCalledWith(
+        expect.objectContaining({ id: PASSTHROUGH_MODEL_ID }),
+        expect.anything(),
+        expect.anything(),
+      )
     })
   })
 })
