@@ -7,7 +7,7 @@ import type {
   ModerationGuardConfig,
   RegexGuardConfig,
 } from '@routerly/shared';
-import type { ProjectConfig, ProjectToken } from '@routerly/shared';
+import type { RouterConfig, RouterToken } from '@routerly/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import { classifyIntent } from '../routing/intent/classifier.js';
 import { getEmbeddingProvider } from '../embeddings/dispatch.js';
@@ -17,16 +17,16 @@ import { listEffectiveModels } from '../provider/list-effective.js';
 import { trackUsage } from '../usage/tracker.js';
 
 /**
- * Real project context for guardrail judge calls (#77, BUG-4).
+ * Real router context for guardrail judge calls (#77, BUG-4).
  * Judge LLM calls (topic/moderation) and semantic embeddings run against the
- * caller's real project so their tokens are attributed, counted, and subject to
+ * caller's real router so their tokens are attributed, counted, and subject to
  * the same usage limits as a completion — the guardrail check runs *before* the
  * main completion, so an over-limit judge call fails like an over-limit call.
  */
-export interface GuardrailProjectCtx {
-  projectId: string;
-  project: ProjectConfig;
-  token?: ProjectToken;
+export interface GuardrailRouterCtx {
+  routerId: string;
+  router: RouterConfig;
+  token?: RouterToken;
 }
 
 /**
@@ -146,15 +146,15 @@ const INJECTION_PATTERNS: Array<{ name: string; re: RegExp }> = [
 /**
  * LLM ctx for a guardrail judge call (#77, BUG-4).
  *
- * Attributed to the real project so the judge call's tokens are counted in the
- * project's usage and gated by its limits (checkBudget runs inside llmChat).
+ * Attributed to the real router so the judge call's tokens are counted in the
+ * router's usage and gated by its limits (checkBudget runs inside llmChat).
  * callType 'guardrail' makes it a distinct sub-activity in the usage detail,
  * recorded once and separate from routing/completion — no double-count (#77, BUG-5).
  */
-function makeGuardrailCtx(pctx: GuardrailProjectCtx, log?: FastifyBaseLogger): LLMCallContext {
+function makeGuardrailCtx(pctx: GuardrailRouterCtx, log?: FastifyBaseLogger): LLMCallContext {
   return {
-    projectId: pctx.projectId,
-    project: pctx.project,
+    routerId: pctx.routerId,
+    router: pctx.router,
     callType: 'guardrail',
     ...(pctx.token ? { token: pctx.token } : {}),
     // ponytail: log is optional in LLMCallContext; spread only when present
@@ -168,7 +168,7 @@ export interface RuleEval {
   rule: string;
   outcome: 'passed' | 'triggered' | 'skipped';
   /**
-   * Position in the project's rule list. Two rules of the same type on the same
+   * Position in the router's rule list. Two rules of the same type on the same
    * model are otherwise indistinguishable in the trace.
    */
   index?: number;
@@ -221,7 +221,7 @@ function checkInjection(text: string): string | null {
 /** The identity checkRule would report, for a rule that never reaches it. */
 function ruleLabel(rule: GuardrailRule): string {
   const cfg = rule.config as { modelId?: string; embeddingModelId?: string };
-  // No model configured means the rule runs on the project default: label it by type alone,
+  // No model configured means the rule runs on the router default: label it by type alone,
   // a dangling `moderation:` reads as a truncated name in the trace.
   if (rule.type === 'semantic') return cfg.embeddingModelId ? `semantic:${cfg.embeddingModelId}` : 'semantic';
   if (rule.type === 'topic' || rule.type === 'moderation') return cfg.modelId ? `${rule.type}:${cfg.modelId}` : rule.type;
@@ -232,7 +232,7 @@ function ruleLabel(rule: GuardrailRule): string {
 async function checkRule(
   rule: GuardrailRule,
   text: string,
-  pctx: GuardrailProjectCtx,
+  pctx: GuardrailRouterCtx,
   log?: FastifyBaseLogger,
   context?: string,
 ): Promise<RuleEval> {
@@ -264,7 +264,7 @@ async function checkRule(
       }
       anyFound = true;
       // Budget pre-gate the embedding call like the judge path (#77 BUG-4 parity):
-      // an over-limit project must fail before we spend the embedding, same as topic/moderation.
+      // an over-limit router must fail before we spend the embedding, same as topic/moderation.
       await checkBudget(model, makeGuardrailCtx(pctx, log));
       const embType = model.provider === 'ollama' ? 'ollama' as const : 'openai' as const;
       try {
@@ -284,10 +284,10 @@ async function checkRule(
           },
         });
         const { classification, inputTokens } = result;
-        // Attribute the embedding call to the real project so it is counted in usage.
+        // Attribute the embedding call to the real router so it is counted in usage.
         if (inputTokens > 0) {
           await trackUsage({
-            projectId: pctx.projectId,
+            routerId: pctx.routerId,
             model,
             inputTokens,
             outputTokens: 0,
@@ -477,7 +477,7 @@ export async function checkGuardrails(
   target: GuardrailTarget,
   text: string,
   config: GuardrailConfig,
-  pctx: GuardrailProjectCtx,
+  pctx: GuardrailRouterCtx,
   log?: FastifyBaseLogger,
   context?: string,
 ): Promise<GuardrailResult> {
@@ -609,7 +609,7 @@ export function buildRequestInjection(config: GuardrailConfig | undefined): stri
 /**
  * The rules `buildRequestInjection` drew from. Injection is the one guardrail
  * path that changes the request without judging it, so without this the trace
- * shows nothing at all for a project whose rules are all inject-only.
+ * shows nothing at all for a router whose rules are all inject-only.
  */
 export function injectingRules(config: GuardrailConfig | undefined): Array<{ index: number; rule: string }> {
   if (!config) return [];

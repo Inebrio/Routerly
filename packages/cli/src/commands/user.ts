@@ -12,7 +12,7 @@ export function makeUserCommand(): Command {
     .description('List all users')
     .addHelpText('after', `
 Examples:
-  # Show all dashboard users with their roles and project access
+  # Show all dashboard users with their roles and router access
   routerly user list
 `)
     .action(async () => {
@@ -23,10 +23,10 @@ Examples:
           return;
         }
         const table = new Table({
-          head: ['ID', 'Email', 'Role', 'Projects'].map(h => chalk.cyan(h)),
+          head: ['ID', 'Email', 'Role', 'Routers'].map(h => chalk.cyan(h)),
         });
         for (const u of users) {
-          table.push([u.id, u.email, u.roleId, u.projectIds.join(', ') || 'all']);
+          table.push([u.id, u.email, u.roleId, u.routerIds.join(', ') || 'all']);
         }
         console.log(table.toString());
       } catch (err) {
@@ -46,17 +46,17 @@ Examples:
   # Create an admin user
   routerly user add --email admin@example.com --password secret --role admin
 
-  # Create a user restricted to specific projects
+  # Create a user restricted to specific routers
   routerly user add \\
     --email dev@example.com --password secret \\
-    --role developer --projects proj-1,proj-2
+    --role developer --routers proj-1,proj-2
 `)
     .requiredOption('--email <email>', 'User email')
     .option('--password <password>', 'Initial password')
     .option('--password-stdin', 'Read password from ROUTERLY_USER_PASSWORD env var')
     .option('--role <roleId>', 'Role ID to assign', 'viewer')
-    .option('--projects <ids>', 'Comma-separated project IDs this user can access (empty = all)')
-    .action(async (opts: { email: string; password?: string; passwordStdin?: boolean; role: string; projects?: string }) => {
+    .option('--routers <ids>', 'Comma-separated router IDs this user can access (empty = all)')
+    .action(async (opts: { email: string; password?: string; passwordStdin?: boolean; role: string; routers?: string }) => {
       let password = opts.password;
       if (opts.passwordStdin) {
         password = process.env.ROUTERLY_USER_PASSWORD;
@@ -69,7 +69,7 @@ Examples:
         email: opts.email,
         password,
         roleId: opts.role,
-        projectIds: (opts.projects ?? '').split(',').map((s: string) => s.trim()).filter(Boolean),
+        routerIds: (opts.routers ?? '').split(',').map((s: string) => s.trim()).filter(Boolean),
       };
 
       try {

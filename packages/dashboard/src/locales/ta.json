@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "தன்னியக்கம்",
+      "dark": "இரண்டாம்",
+      "light": "வெளிச்சம்"
+    },
+    "themeCycle": {
+      "title": "தீம்: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "பக்க பட்டையை விரிக்கவும்",
+      "collapse": "பக்க பட்டையை சுருக்கவும்"
+    },
+    "tagline": "ஒரு கேட்வே. எந்த AI மாதிரியும். முழு கட்டுப்பாடு.",
+    "nav": {
+      "overview": "மதிப்பொதிப்பு",
+      "providers": "வழங்குநர்கள்",
+      "models": "மாதிரிகள்",
+      "profiles": "சுயவிவரங்கள்",
+      "routers": "திசையாக்குபவர்கள்",
+      "experiments": "சோதனைகள்",
+      "usage": "பயன்பாடு",
+      "playground": "விளையாட்டு மைதானம்",
+      "settings": "அமைப்புகள்",
+      "connectApp": "பயன்பாட்டை இணைக்கவும்",
+      "help": "உதவி",
+      "signOut": "வெளியேறு"
+    },
+    "banner": {
+      "permissionWarning": "சில கட்டமைப்பு கோப்புகளுக்கு அனுமதிக்கப்பட்ட அ அணுக்கம் உள்ளது ({{files}}). தொடக்கம் மற்றும் கோரிக்கைகள் இன்னும் வேலை செய்கின்றன, ஆனால் இது சரிசெய்யவும் ஹோஸ்ட் கோப்பு அமைப்பிலிருந்து வசதிக்குத்து.",
+      "dismiss": "நிராகரிக்கவும்",
+      "updateAvailable": "Routerly v{{latest}} கிடைக்கிறது. நீங்கள் v{{current}} இல் இருக்கிறீர்கள்.",
+      "updateLink": "அமைப்புகளில் புதுப்பிக்கவும்",
+      "mfaRequired": "இந்த நிகழ்வுக்கு இரண்டு-முக உறுதிப்படுத்தல் தேவை.",
+      "mfaLink": "உங்கள் சுயவிவரத்தில் 2FA அமைக்கவும்",
+      "mfaSuffix": "உங்கள் கணக்கைப் பாதுகாக்க.",
+      "telemetryTitle": "Routerly எப்போதும் தரவை தானாக அனுப்பாது.",
+      "telemetryBody": "அநாமதேய நிறுவல் மெட்ரிக்குகளை அனுப்பி உதவ விரும்புகிறீர்களா? ஈவன்ட் வகை, பதிப்பு, தளம் மற்றும் ஒரு சீரற்ற ID மட்டுமே - எந்த ব்যক்திগত தரவு இல்லை, எந்த IP இல்லை.",
+      "telemetryLink": "என்ன அனுப்பப்படுகிறது?",
+      "telemetryYes": "ஆம், உதவி",
+      "telemetryNo": "இல்லை நன்றி"
+    },
+    "language": {
+      "label": "மொழி"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "{{count}} நொடி முன்",
+      "secondsAgo_other": "{{count}} நொடிகள் முன்",
+      "minutesAgo": "{{count}} நிமிட முன்",
+      "minutesAgo_other": "{{count}} நிமிடங்கள் முன்",
+      "hoursAgo": "{{count}} மணி நேரம் முன்",
+      "hoursAgo_other": "{{count}} மணி நேரங்கள் முன்",
+      "daysAgo": "{{count}} நாள் முன்",
+      "daysAgo_other": "{{count}} நாட்கள் முன்"
+    },
+    "confirm": "உறுதிப்படுத்து",
+    "cancel": "ரத்து செய்",
+    "remove": "அகற்று",
+    "select": "தேர்ந்தெடு...",
+    "search": "தேடு...",
+    "noResults": "முடிவுகள் இல்லை",
+    "noRemainingOptions": "மீதமுள்ள விকல்பங்கள் இல்லை",
+    "apply": "பயன்படுத்து",
+    "saved": "சேமிக்கப்பட்டது",
+    "showLess": "குறைவாகக் காட்டு",
+    "roles": "பாத்திரங்கள்",
+    "permissions": "அனுமதிகள்",
+    "notifications": {
+      "title": "அறிவிப்புகள்",
+      "markAllRead": "அனைத்தையும் படித்ததாக குறிக்கவும்",
+      "empty": "அறிவிப்புகள் இல்லை",
+      "viewAll": "அனைத்து அறிவிப்புகளையும் பார்க்கவும்"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "காலத்தை தேர்ந்தெடு",
+      "recent": "சமீபத்தை",
+      "ranges": "வரம்புகள்",
+      "from": "இருந்து",
+      "to": "க்கு"
+    },
+    "permissionGuard": {
+      "fixFailed": "அনுமதிகளை சரிசெய்ய தவறிவிட்டது",
+      "title": "பாதுரக்ஷைத்தற்ற கோப்பு அனுமதிகள்",
+      "defaultMessage": "சில கோப்புகளுக்கு பாதுரக்ஷைத்தற்ற அனுமதிகள் உள்ளன.",
+      "fixing": "சரிசெய்யப்படுகிறது…",
+      "fixNow": "இப்போது சரிசெய்"
+    },
+    "limitRows": {
+      "noLimits": "எந்த வரம்பும் அமைக்கப்படவில்லை.",
+      "metricLabel": "அளவீடு",
+      "typeLabel": "வகை",
+      "periodLabel": "காலம்",
+      "everyLabel": "ஒவ்வொரு",
+      "maxCost": "அதிக செலவு",
+      "maxCount": "அதிক எண்",
+      "maxTokens": "அதிக டோகன்கள்",
+      "allCombosSet": "அனைத்து அளவீடு/காலம் சேர்க்கைகளும் ஏற்கனவே அமைக்கப்பட்டுள்ளன",
+      "addLimit": "வரம்பு சேர்க்கவும்",
+      "metric": {
+        "cost": "செலவு",
+        "calls": "அழைப்புகள்",
+        "input_tokens": "உள்ளீடு டோகன்கள்",
+        "output_tokens": "வெளியீடு டோகன்கள்",
+        "total_tokens": "மொத்த டோகன்கள்"
+      },
+      "period": {
+        "hourly": "மணிக்கு",
+        "daily": "தினமும்",
+        "weekly": "வாரம்",
+        "monthly": "மாதம்",
+        "yearly": "ஆண்டு"
+      },
+      "rollingUnit": {
+        "second": "நொடி",
+        "minute": "நிமிட",
+        "hour": "மணி நேரம்",
+        "day": "நாள்",
+        "week": "வாரம்",
+        "month": "மாதம்"
+      },
+      "windowType": {
+        "period": "காலம்",
+        "rolling": "உருளும்"
+      },
+      "fmt": {
+        "requests": "{{value}} கோரிக்கைகள்",
+        "inputTokens": "{{value}} உள்ளீடு டோகன்கள்",
+        "outputTokens": "{{value}} வெளியீடு டோகன்கள்",
+        "totalTokens": "{{value}} மொத்த டோகன்கள்",
+        "everyRolling": "{{metric}} ஒவ்வொரு {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} ஒவ்வொரு {{period}}"
+      }
+    },
+    "savings": {
+      "title": "திசையாக்கல் சேமிக்கப்பட்டது",
+      "input": "உள்ளீடு",
+      "output": "வெளியீடு",
+      "actual": "உண்மையான",
+      "clientCalls": "{{count}} கிளையன்ட் அழைப்பு",
+      "clientCalls_other": "{{count}} கிளையன்ட் அழைப்புகள்",
+      "comparedAgainst": ", அதை ஒவ்வொரு",
+      "comparedAgainst_other": ", அனைத்தையும் ஒவ்வொரு",
+      "paidModelsInPlay": "{{count}} பணம் செலுத்தும் மாதிரி விளையாட்டில்",
+      "paidModelsInPlay_other": "{{count}} பணம் செலுத்தும் மாதிரிகள் விளையாட்டில்",
+      "metricCost": "செலவு",
+      "metricTokens": "டோகன்கள்",
+      "totalCost": "மொத்த செலவு",
+      "routed": "திசையாக்குபவர்: {{value}}",
+      "saved": "சேமிக்கப்பட்டது: {{value}}",
+      "usdThisPeriod": "USD இந்த காலத்தில்",
+      "savedVsAlways": "{{value}} சேமிக்கப்பட்டது ({{percent}}%) vs இதை எப்போதும் {{model}}",
+      "tokens": "டோகன்கள்",
+      "in": "உள்ளீடு: {{value}}",
+      "out": "வெளியீடு: {{value}}",
+      "tokenSubWithCache": "{{in}} உள்ளீடு · {{out}} வெளியீடு · {{cached}} கேச்",
+      "tokenSub": "{{in}} உள்ளீடு · {{out}} வெளியீடு",
+      "cutByOptimizers": "{{value}} உপকரণ மூலம் வெட்ட",
+      "fewerThanAlways": "{{value}} எப்போதும் {{model}} வை விட குறைவு, மதிப்பிடப்பட்ட"
+    },
+    "optimizerSteps": {
+      "downloaded": "பதிவிறக்கப்பட்டது",
+      "thisStepRunsOn": "இந்த படி இல் இயங்கும்",
+      "defaultCheckpoint": "முன்னிருப்பு செக்பாயிண்ட்"
+    },
+    "routingPolicies": {
+      "title": "திசையாக்கல் கொள்கைகள்",
+      "subtitle": "கொள்கைகள் கோரிக்கைகள் எப்படி திசையாக்குபவர் என்பதை தீர்மானிக்கின்றன. அவை மேலிருந்து கீழுக்கு வரிசையில் இயக்கப்படுகின்றன.",
+      "removePolicy": "கொள்கை அகற்றவும்",
+      "removeIntent": "உদ்தேசம் அகற்றவும்",
+      "removeExample": "உதாரணம் அகற்றவும்",
+      "routingModels": "திசையாக்கும் மாதிரிகள்",
+      "embeddingModels": "உள்பொதிப்பு மாதிரிகள்",
+      "maxCompletionTokens": "அதிக முடிப்பு டோகன்கள்",
+      "maxPromptChars": "அதிக தூண்டலுக்கு கூறுங்கள்",
+      "similarityThreshold": "ஒற்றுமை வாசல்",
+      "previousMessages": "முந்தைய செய்திகள்",
+      "intents": "உதிரங்கள்",
+      "confidenceThreshold": "நம்பிக்கை வாசல்",
+      "ambiguityMargin": "தெளிவற்ற விளிம்பு",
+      "maxCallsPerWindow": "சாளரத்திற்கு அதிக அழைப்புகள்",
+      "addFallbackModel": "பிற்பட்ட மாதிரி சேர்க்கவும்",
+      "autoRoutingLabel": "தன்னியக்க திசையாக்கல்",
+      "autoRoutingHint": "இயக்கினால், ট்ரাபிக் தனிப்பட்ட உத்தரவுகள் இல்லாமல் விநியோகிக்கப்படும். முடக்கினால், நீங்கள் தீர்குறிப்பாகவும் உத்தரவுகளை எழுதலாம் AI க்கு தெரிவுசெய்ய வேண்டும் என்று.",
+      "additionalPromptInfoLabel": "கூடுதல் தூண்டல் தகவல்",
+      "additionalPromptInfoPlaceholder": "திசையாக்கல் தூண்டலுக்கு சேர்க்க வேண்டிய கூடுதல் உத்தரவுகள்...",
+      "addExamplePlaceholder": "உதாரணம் சேர்க்கவும் மற்றும் Enter அழுத்தவும்…",
+      "addIntentPlaceholder": "உதிரம் சேர்க்கவும் மற்றும் Enter அழுத்தவும்…",
+      "addPolicyPlaceholder": "கொள்கை சேர்க்கவும்...",
+      "labels": {
+        "llm": "AI திசையாக்கல் கொள்கை",
+        "rate-limit": "வீத வரம்பு கொள்கை",
+        "budget-remaining": "மீதமுள்ள பட்ജெட் கொள்கை",
+        "semantic-intent": "சொற்பொருள் உதிரம் கொள்கை",
+        "health": "ஆரோக்கியம் கொள்கை",
+        "context": "சூழல் கொள்கை",
+        "capability": "திறன் கொள்கை",
+        "performance": "செயல்திறன் கொள்கை",
+        "fairness": "நியாயம் கொள்கை",
+        "cheapest": "மிக மலிவான கொள்கை",
+        "model-preference": "மாதிரி முன்னுரிமை கொள்கை"
+      },
+      "descriptions": {
+        "context": "கிடைக்கக்கூடிய சூழல் சாளரத்தின் அடிப்படையில் மாதிரிகளை மதிப்பிடும். மதிப்பிடப்பட்ட கோரிக்கை நீளத்தை விட சூழல் சாளரம் சிறிய மாதிரিகளுக்கு 0 ஒதுக்குகிறது, வெட்ட பிழைகளைத் தடுக்கிறது.",
+        "cheapest": "டோகன் செலவிற்கு 反比例 மாதிரிகளை மதிப்பிடும். மலிவான மாதிரி 1.0 பெறுகிறது, மிக விலையுயர்ந்த 0.0 பெறுகிறது, API செலவு குறைக்க உதவும்.",
+        "health": "அதிவேக சரிதளர்ப்பு இல்லாமல் கிளிப்டியை ஆய்வு செய்து, அதிவேக பிழைகளை தொடர்ச்சியாகக் கொண்டு மாதிரிகளை மதிப்பிடும். எண்ணிக்கை பிழைகள் விளிம்பு மிஞ்சும் போது மதிப்பிடு 0 அமைக்கிறது.",
+        "performance": "அதிவேக சரிதளர்ப்பு மூலம் சமீபத்திய சராசரி தாமதம் அடிப்படையில் மாதிரிகளை மதிப்பிடும். விரைந்து மாதிரி 1.0 பெறுகிறது, மெதுவான 0.0 பெறுகிறது. சமீபத்திய தரவு இல்லாத மாதிரிகள் 1.0 க்கு முன்னிருப்பு.",
+        "llm": "AI மாதிரியைக் கோரிக்கையின் சொற்பொருள் உள்ளடக்கத்தின் அடிப்படையில் பொறுத்தமுடைய மதிப்பிட பயன்படுத்துகிறது. மாதிரி மற்றும் பட்ஜெட் தலை பரிசை மாதிரி மாக்ஸ் உள்ளடக்கமாக கட்ட வழங்குங்கள்.",
+        "capability": "கடினமான வடிப்பு: கோரிக்கையை தேவையான ஒரு அம்சத்தை வெளிப்பட பற்றாக்குறை மாதிரிகளுக்கு 0 அதுவாகியும் (பார்வை, செயல்பாட்டு அழைப்பு, JSON பயன்முறை). பெயர்ச்சொல் திறன் அறிவிப்பு இல்லாத மாதிரிகள் தண்டனை செய்யப்படவில்லை.",
+        "rate-limit": "உயர்ந்த சமீபத்திய அழைப்பு அதிர்வெண் கொண்ட மாதிரிகளை தொடர்ந்து விசை வீத வரம்பை தாக்கும் ஆபத்து குறைக்க. சரிசெய்யக்கூடிய கடினமான வாசல் கொள்கை ஆதரிக்கிறது.",
+        "fairness": "சம நியாயம்",
+        "budget-remaining": "மீதமுள்ள பட்ஜெட்",
+        "semantic-intent": "சொற்பொருள் உதிரம்",
+        "model-preference": "மாதிரி முன்னுரிமை"
+      },
+      "selectModel": "மாதிரி தேர்ந்தெடு"
+    },
+    "securityRules": {
+      "applyTo": "பயன்படுத்து",
+      "streamingBufferSize": "ஸ்ட்ரீமிங் பாபர் அளவு (எழுத்துக்கள்)",
+      "entityTypes": "நிறுவன வகைகள்",
+      "target": "লக்ష்य",
+      "embeddingModel": "உள்பொதிப்பு மாதிரி",
+      "judgeModel": "நீதிபதி மாதிரி",
+      "contentGuardrails": "உள்ளடக்க பாதுகாப்பு",
+      "piiPolicies": "PII கொள்கைகள்",
+      "addSecurityPolicyPlaceholder": "பாதுகாப்பு கொள்கை சேர்க்கவும்...",
+      "removePolicyTooltip": "கொள்கை அகற்றவும்",
+      "deleteRuleAriaLabel": "விதி நீக்குக",
+      "embeddingModelPlaceholder": "உள்பொதிப்பு மாதிரி தேர்ந்தெடு...",
+      "fallbackModelsLabel": "பிற்பட்ட மாதிரிகள் (விரும்பத்தகாத, அளவு மாதிரி)",
+      "fallbackModelsPlaceholder": "பிற்பட்ட மாதிரிகள் இல்லை...",
+      "exampleTextsLabel": "உதாரணம் நவீனீகரண அட்டவணைக்கு (ஒன்றுக்கு வரி)",
+      "exampleTextsPlaceholder": "நான் ஹ్టॉக் செய்து மூலம்...\n...",
+      "similarityThresholdLabel": "ஒற்றுமை வாசல்:",
+      "judgeModelPlaceholder": "நீதிபதி மாதிரி தேர்ந்தெடு...",
+      "allowedTopicsLabel": "அனுமதிக்கப்பட்ட தலைப்புகள் (இயற்கை மொழி)",
+      "allowedTopicsPlaceholder": "மென்பொருள் பொருட்களுக்கான வாடிக்கை ஆதரவு. தொழில்நுட்ப சிக்கல் தீர்வு. பணம் செலுத்தும் கேள்விகள்.",
+      "onTopicThresholdLabel": "தொண்டு மாறிக்கொள்ளும் என்றால் தொண்டு மாறிக்கொள்ளும்:",
+      "harmThresholdLabel": "கூறப்பட்டது என்றால் தொண்டு மாறிக்கொள்ளும்:",
+      "customInstructionsLabel": "தனிப்பயன் உத்தரவுகள்",
+      "customInstructionsPlaceholder": "நீங்கள் ஒரு உள்ளடக்க பாதுகாப்பு வகைப்படுத்தல் நிரல்புரி. பிற்பட்ட உள்ளடக்கத்திற்கான மதிப்பீடு உத்தரவு:\nவகைகள்: வெறுப்பு பேச்சு, வன்முறை, பாலியல் உள்ளடக்கம், தன்-நுணுக்கம்.\nமாற்றுக்கோரிக்கை ONLY ஒரு JSON தாள் உடன்: {\"score\": <0 மற்றும் 1 இடையே தகவல்>}",
+      "customInstructionsRequired": "தனிப்பயன் உத்தரவுகள் தேவை.",
+      "enabledLabel": "இயக்கப்பட்டது",
+      "contentGuardrailsHint": "நிரீக்ஷணம் இயக்கிய கொள்கைகளுக்கு எதிரான கோரிக்கை மற்றும் பதிலுகளை. குறைந்தபட்சம் ஒரு விதி உரைகளும் இடம்.",
+      "securityPoliciesHeading": "பாதுகாப்பு கொள்கைகள்",
+      "noSecurityPolicies": "பாதுகாப்பு கொள்கைகள் தயாரிக்கப்படவில்லை.",
+      "piiPoliciesHint": "கண்டுபிடி மற்றும் விருப்பியாக் ব்যக்திகத் தரவு. ஒவ்வொரு கொள்கை இலக்கம் இறுதி உள்ளீடு, மாதிரி பதிலுக்கு, அல்லது இரண்டு, மற்றும் கட்டுப்பாடுகளுக்கு அதனுடைய நிறுவன அமைப்பு.",
+      "noPiiPolicies": "PII கொள்கைகள் தயாரிக்கப்படவில்லை.",
+      "addPolicyButton": "+ கொள்கை சேர்க்கவும்",
+      "injectionWarningTitle": "வேண்டாம் பாகம் மாறிமாறி மூலம் உத்தரவு",
+      "injectionWarningBody": "ஒன்று அல்லது அதிக விதிகளைக் தக்கம் வெளிச்சமுக்திறக்கு அவற்றின் உத்தரவுக்கொண்ட உத்தரவை நிலைநிறுத்தி, வழங்குநர் வெளிச்சமுக்திறக்கு அனுப்பிய வேண்டாம் ஈதர் உங்கள் மாறிய செய்யப்படுகிறது. கூடுதல் மாதிரி அழைப்பு உருவாக்கப்படுகிறது மற்றும் தொண்டு கூறிக்குதி முடக்கப்பட்டுக்கொள்ளும் வேண்டும் செயல்பாடு கூறிக்குதி தெளிவாக.",
+      "streamingDisabledWarningTitle": "ஸ்ட்ரீமிங் இந்த திசையாக்குபவர்க்கு முடக்கப்பட்டது",
+      "streamingDisabledWarningBody": "ஒன்று அல்லது அதிக விதிகளைக் தக்கம் வைக்க பதிலுக்கும் (லக்ష்য: பதிலுக்கும் அல்லது இரண்டு). முழு பதிலுக்கும் முன்னிரீக்ஷணம் அதேசமயத்திலும் முடிவு தீர்வு செய்ய முடியும் செய்ய, Routerly சோளம் உள்ள பதிலுக்கும் கொண்ட கிளையன்ட் திரும்ப. ஸ்ட்ரீமிங் இல்லை சக்தியுள்ள அபூர்வ ஒரு பதிலுக்கும் மாற்றுக் கொள்கை்க கட்ட்கப்பட்டுக்கொள்ளும் வேண்டும் செயல்பாடு கூறிக்குதி அதைக் கொண்ட கிளையன்ட் பெற்றுக் வெறு பெண் திரும்ப மாற्றும்."
+    },
+    "connectionFields": {
+      "azureResourceName": "Azure வளங்கள் பெயர்",
+      "azureResourceNamePlaceholder": "myresource",
+      "azureResourceNameHint": "Azure OpenAI வளங்கள் பெயர் (Azure போர்டலிலிருந்து).",
+      "deploymentId": "விநியோகம் ID",
+      "deploymentIdPlaceholder": "gpt-4o-deployment",
+      "deploymentIdHint": "Azure OpenAI பூக்கடையில் உருவாக்கிய விநியோகம் பெயர்.",
+      "azureApiVersionLabel": "API பதிப்பு",
+      "azureApiVersionDefaultHint": "(முன்னிருப்பு: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "AWS பகுதி",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "AWS அ அணுக்கம் விசை ID",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "AWS ரஹசிய அ அணுக்கம் விசை",
+      "awsSecretAccessKeyPlaceholderExisting": "தற்போதைய பயணப் விட விட்டு",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "அமர்வு டோகன்",
+      "awsSessionTokenOptionalHint": "(விரும்பத்தகாய, தற்காலிக நிலைமைகளுக்கு)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "GCP திசையாக்குபவர் ID",
+      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpLocationLabel": "இடம்",
+      "gcpLocationDefaultHint": "(முன்னிருப்பு: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "சேவைக் கணக்கு விசை",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "Endpoint URL",
+      "optional": "(விரும்பத்தகாய)",
+      "webProvider": {
+        "unofficialWarningTitle": "அதிகாரமற்ற வழங்குநர் — உங்கள் சொந்த ஆபத்தில்.",
+        "unofficialWarningBody": "இந்த ஒருங்கிணைப்பு ஒரு விவரிக்கப்படாத உள் API மீது நம்பிக்கை கொண்டுள்ளது, அது மாற்றம் அல்லது தகராறு இல்லாமல் உடைந்து விடலாம். இது வழங்குநர் சேவை நிபந்தனைகளை மீறலாம் மற்றும் கணக்கு நிறுத்தம் ஏற்படலாம்.",
+        "accessTokenLabel": "அ அணுக்கம் டோகன்",
+        "sessionTokenLabel": "அமர்வு டோகன்",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "sessionKey குக்கி மதிப்பை பேஸ் செய்யவும் (sk-ant-sid01-…)",
+        "openaiInstructions": "ChatGPT இல் நுழையும் போது, <code>https://chatgpt.com/api/auth/session</code> புதிய தாளில் திறக்கவும். <code>accessToken</code> கள் மதிப்பை நகலெடு (தொடங்குகிறது <code>eyJ</code> ). டோகன் ~24 மணி நேரம் வாழ்கிறது. நির்ভরக்கதமான அ அணுக்கம், கீழே <strong>cf_clearance</strong> கள் வகையை கொட்டவும்.",
+        "anthropicInstructions": "<strong>உங்கள் அமர்வு விசை தேர்வு மாறிக்கொள்ளும்:</strong> Claude இல் நுழையும் போது, DevTools (F12) → உருப்பொருள் → குக்கிகள் → <code>claude.ai</code> → <code>sessionKey</code> குக்கி மதிப்பை நகலெடு (தொடங்குகிறது <code>sk-ant-sid01-</code> ). விசை செல்லலாம் வரை செயல்பாடு நீங்கள் வெளிவருங்கள் வரை."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "சந்தா OAuth டோகன்",
+        "authFilePathLabel": "Auth கோப்பு பாதை",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (முன்னிருப்பு)",
+        "anthropicTitle": "Claude Pro/Max சந்தா பயன்படுத்தவும்.",
+        "anthropicRunCommandStep": "இந்த கட்டளை இயக்க மற்றும் பெறவும் டோகன் நகலெடு:",
+        "anthropicPasteTokenStep": "டோகனை பேஸ் செய்யவும் <em>சந்தா OAuth டோகன்</em> கீழே கள்।",
+        "termsNote": "அது மீ கிடைக்கும் போது புதிப்பிக்க. சந்தா வழங்குநர் கொள்கையை மீறலாம் வாயிலாக பயன்படுத்தவும் ஆ.",
+        "openaiTitle": "ChatGPT Plus/Pro சந்தா மூலம் Codex விண்ணப்பம் பயன்படுத்தவும்.",
+        "openaiLoginStep": "Codex பணிமேज விண்ணப்பம் ChatGPT Plus/Pro கணக்குடன் நுழையவும்.",
+        "openaiAutoRefreshStep": "Routerly உங்கள் அ அணுக்கம் டோகன் ~/.codex/auth.json மற்றும் தன்னியக்கமாக புதிப்பிக்க வாசிக்கப்படுகிறது. நாம் நகல்/பேஸ்ட தேவை இல்லை.",
+        "openaiAuthFilePathStep": "விட்டு <em>Auth கோப்பு பாதை</em> கள் வெளிப்பட பயன்படுத்த முன்னிருப்பு, அல்லது Codex விண்ணப்பம் auth வேறு இடத்தை சேமிக்க தனிப்பயன் பாதை உள்ளிடவும்.",
+        "openaiTermsNote": "சந்தா வழங்குநர் கொள்கையை மீறலாம் வாயிலாக பயன்படுத்தவும் ஆ."
+      },
+      "copyCode": {
+        "copiedTooltip": "நகলெடு!",
+        "copyTooltip": "கிளிப்போர்டுக்கு நகலெடு",
+        "copiedLabel": "நகலெடு",
+        "copyLabel": "நகலெடு"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "நகலெடு",
+      "copiedLabel": "நகலெடு!",
+      "copyErrorHint": "நகலெடு செய்ய தவறிவிட்டது, தேர்ந்தெடு மற்றும் நகலெடு மாதிரியாக."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "MCP கிளையன்ட்",
+      "hints": {
+        "claudeCode": "இதை ஒருமுறை இயக்கவும், எங்கும். Claude Code மூலம் சேமிக்கிறது <code>~/.claude.json</code>.",
+        "claudeDesktop": "இதை வைக்கவும் <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code> ), பின்னர் விண்ணப்பம் மறுதொடக்கம் செய். இது CLI தொடங்குவது, <code>routerly</code> உங்கள் PATH பட்டியல் இருக்க வேண்டும்.",
+        "codex": "இதை வைக்கவும் <code>~/.codex/config.toml</code>. Codex சூழல் முதல் டோகன் வாசிக்கப்படுகிறது, அதனால் உங்கள் shell உள்ள ஏற்றுமதி Codex தொடங்குவது.",
+        "opencode": "இதை வைக்கவும் <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "இதை ஒருமுறை இயக்கவும். OpenClaw sse போக்குவரத்து, யாவ் Routerly பெற்ற, முறப்பொருட்களையை நகாய் போக்குவரத்து அமைப்பு।",
+        "cursor": "இதை வைக்கவும் <code>~/.cursor/mcp.json</code>, அல்லது <code>.cursor/mcp.json</code> ஒரு திரு சம்பந்தம்.",
+        "cline": "இதை வைக்கவும் <code>~/.cline/mcp.json</code>, அல்லது Cline குழு இல் அமைப்பு MCP சேவைகளுக்கு பேஸ் செய்யவும்.",
+        "zed": "Zed வைக்கவும் <code>settings.json</code>, எந்த கூடுதல் சூழல் சேவைகளையும்."
+      }
+    },
+    "unsavedChanges": {
+      "title": "சேமிக்கப்படாத மாற்றங்கள்",
+      "message": "உங்களுக்கு சேமிக்கப்படாத மாற்றங்கள் உள்ளன. நீங்கள் இப்போது விட்டுவிட்டால், உங்கள் மாற்றங்கள் இழக்க முடியும்.",
+      "stay": "தங்கி உள்ளன",
+      "leaveAnyway": "எப்படியும் விட்டு"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "பாதுகாப்புகள்",
+        "pii": "PII",
+        "optimizers": "உपकरणगুसिতlizers",
+        "routerOverhead": "திசையாக்குபவர் சூழல் நேரம்"
+      },
+      "policyType": {
+        "llm": "AI திசையாக்கல்",
+        "rateLimit": "வீத வரம்பு",
+        "budgetRemaining": "மீதமுள்ள பட்ஜெட்",
+        "semanticIntent": "சொற்பொருள் உதிரம்",
+        "modelPreference": "மாதிரி முன்னுரிமை"
+      },
+      "rawDetails": "கொட்ட விவரங்கள்",
+      "technicalDetails": "தொழில்நுட்ப விவரங்கள்",
+      "systemPrompt": "கணினி தூண்டல்",
+      "responseText": "பதிலுக்கும் உரை",
+      "responseJson": "பதிலுக்கும் JSON",
+      "cacheEmbeddingCall": "கேச் உள்பொதிப்பு அழைப்பு",
+      "fallbackAttempt": "பிற்பட்ட #{{attempt}}",
+      "embeddingModel": "உள்பொதிப்பு மாதிரி",
+      "upstreamModel": "மேலுறை மாதிரி",
+      "provider": "வழங்குநர்",
+      "source": "உபயோஜன்",
+      "endpoint": "Endpoint",
+      "cacheHit": "கேச் HIT",
+      "ttlExtended": "TTL நீட்டிக்கப்பட்ட",
+      "model": "மாதிரி",
+      "similarity": "ஒற்றுமை",
+      "embedding": "உள்பொதிப்பு",
+      "cacheMiss": "கேச் மிஸ்",
+      "details": "விவரங்கள்",
+      "excludedByLimits": "வரம்புகளுக்கு விலக்கினிலுள்ளன",
+      "finalRanking": "இறுதி தரவரிசை",
+      "noRankingData": "தரவரிசை தரவு இல்லை (பதிவு சேதமுக்கையை அல்லது பুரான பதிப்பில் இருக்கலாம்)",
+      "policyScores": "கொள்கை மதிப்புகள்",
+      "weight": "எடை {{value}}",
+      "allScores": "அனைத்து மதிப்புகள்",
+      "noPolicyData": "கொள்கை தரவு இல்லை (பதிவு சேதமுக்கையை அல்லது புரான பதிப்பில் இருக்கலாம்)",
+      "requestGuardrailBlocked": "வேண்டாம் பாதுகாப்பு தொண்டு",
+      "requestGuardrailTriggered": "வேண்டாம் பாதுகாப்பு ஏற்படுத்தப்பட்ட",
+      "responseGuardrailBlocked": "பதிலுக்கும் பாதுகாப்பு தொண்டு",
+      "responseGuardrailTriggered": "பதிலுக்கும் பாதுகாப்பு ஏற்படுத்தப்பட்ட",
+      "rule": "விதி",
+      "action": "செயல்",
+      "guardrailsEvaluated": "பாதுகாப்புகள் மதிப்பிடப்பட்ட ({{target}})",
+      "ruleCount": "{{count}} விதி",
+      "ruleCount_other": "{{count}} விதிகள்",
+      "promptInjection": "தூண்டல் ஊடுருவல்",
+      "injects": "உத்திரம் செய்கிறது",
+      "judgeResponse": "நீதிபதி பதிலுக்கும்",
+      "piiScrubbed": "PII சுத்தம் செய்தான்",
+      "piiScanned": "PII ஸ்கேன் ({{target}})",
+      "policies": "கொள்கைகள்",
+      "entityTypes": "நிறுவன வகைகள்",
+      "customPatterns": "தனிப்பயன் முறைகள்",
+      "scanned": "ஸ்கேன்",
+      "redacted": "மறுக்கப்பட்ட",
+      "took": "எடுத்தான்",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "நிறுவன வகைகள் ஸ்கேன்",
+      "guardrailInjection": "பாதுகாப்பு ஊடுருவல்",
+      "rules": "விதிகள்",
+      "chars": "எழுத்துக்கள்",
+      "injectedText": "உத்திரம் உரை",
+      "optimizer": "உपकरणguSiti {{id}}",
+      "tokens": "டோகன்கள்",
+      "saved": "சேமிக்கப்பட்டது",
+      "tok": "{{value}} tok",
+      "reason": "காரணம்",
+      "budgetBlocked": "பட்ஜெட் தொண்டு",
+      "budgetOk": "பட்ஜெட் தகுதி",
+      "egressSent": "EGRESS அனுப்பிய",
+      "status": "நிலை",
+      "encoding": "குறியாக்கம்",
+      "frames": "பிரேம்கள்",
+      "bytes": "பைட்டுகள்"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "என் சுயவிவரம்",
+      "subtitle": "உங்கள் கணக்கு அமைப்புகளை நிர்வகிக்கவும்"
+    },
+    "tabs": {
+      "profile": "சுயவிவரம்",
+      "notifications": "அறிவிப்புகள்",
+      "mcp": "MCP",
+      "preferences": "விருப்பங்கள்"
+    },
+    "notifications": {
+      "close": "மூடு",
+      "refresh": "புதிப்பிக்கவும்",
+      "clear": "தெளிவு",
+      "empty": "அறிவிப்புகள் கண்டுபிடிக்கப்படவில்லை.",
+      "markAllRead": "அனைத்தையும் படித்ததாக குறிக்கவும்",
+      "allCaughtUp": "அனைத்தும் பிடுக்குப்பட்டது",
+      "unreadCount": "{{count}} படிக்கப்படாத",
+      "selectedCount": "{{count}} தேர்ந்தெடுக்கப்பட்ட",
+      "severity": {
+        "all": "அனைத்து",
+        "info": "தகவல்",
+        "warning": "எச்சரிக்கை",
+        "critical": "விமர்சனம்"
+      },
+      "status": {
+        "read": "படிக்க",
+        "unread": "படிக்கப்படாத"
+      },
+      "filters": {
+        "severity": "கடுமை",
+        "category": "வகை",
+        "event": "நிகழ்வு",
+        "date": "திகதி",
+        "period": "காலம்",
+        "status": "நிலை",
+        "all": "அனைத்து",
+        "allCategories": "அனைத்து வகைகள்",
+        "allEvents": "அனைத்து நிகழ்வுகள்",
+        "unreadOnly": "படிக்கப்படாத மட்டுமே"
+      },
+      "actions": {
+        "markRead": "படித்ததாக குறிக்கவும்",
+        "markUnread": "படிக்கப்படாத குறிக்கவும்",
+        "archive": "பறிவைத்திறக்கவும்"
+      },
+      "table": {
+        "severity": "கடுமை",
+        "event": "நிகழ்வு",
+        "date": "திகதி",
+        "status": "நிலை",
+        "selectAll": "அனைத்தையும் தேர்ந்தெடு",
+        "selectRow": "{{event}} தேர்ந்தெடு",
+        "eventCount": "{{count}} நிகழ்வுகள்"
+      },
+      "pagination": {
+        "previous": "← முந்தைய",
+        "next": "அடுத்த →",
+        "page": "பக்கம் {{page}} {{totalPages}} இல்",
+        "total": "({{count}} மொத்த)"
+      },
+      "detail": {
+        "ariaLabel": "அறிவிப்பு விவரம்",
+        "details": "விவரங்கள்",
+        "noDetails": "கூடுதல் விவரங்கள் இல்லை.",
+        "eventsInIncident": "இந்த சம்பவத்தில் நிகழ்வுகள்"
+      }
+    },
+    "security": {
+      "roleLabel": "பாத்திரம்:",
+      "password": {
+        "heading": "கடவுல் மாற்று",
+        "currentLabel": "தற்போதைய கடவுல்",
+        "newLabel": "புதிய கடவுல்",
+        "newPlaceholder": "குறைந்தபட்சம் 8 எழுத்துக்கள்",
+        "confirmLabel": "புதிய கடவுல் உறுதிப்படுத்தவும்",
+        "success": "கடவுல் வெற்றிகரமாக மாற்றப்பட்டது.",
+        "saving": "சேமிக்கப்படுகிறது...",
+        "submit": "கடவுல் மாற்று",
+        "errors": {
+          "mismatch": "கடவுல்கள் பொருந்தாக்க வேண்டும்.",
+          "tooShort": "புதிய கடவுல் குறைந்தபட்சம் 8 எழுத்துக்கள் இருக்க வேண்டும்.",
+          "updateFailed": "புதிப்பிக்க தவறிவிட்டது"
+        }
+      },
+      "tfa": {
+        "heading": "இரண்டு-முக உறுதிப்படுத்தல்",
+        "notEnabled": "2FA இயக்கப்பட்டுக்கொள்ளும் வேண்டும். உங்கள் கணக்கையை வேண்டாம் வாழ்நாள் கடவுல் பாதுகாக்கவும்.",
+        "enableButton": "இரண்டு-முக உறுதிப்படுத்தல் இயக்கவும்",
+        "scanInstructions": "இந்த QR குறியீட்டை சாதனங்கள் உருப்பொருள் உடன் ஸ்கேன் (Google உறுப்பதிவுசெய்யப்பட்ட, Authy, முதலியவை), பின்னர் 6-digit குறியீட்டை உள்ளிடவும் உறுதிப்படுத்த.",
+        "qrAlt": "2FA அமைப்பு QR குறியீட்டை",
+        "addAccountInstructions": "உங்கள் உறுப்பதிவுசெய்யப்பட்ட விண்ணப்பம் (Google உறுப்பதிவுசெய்யப்பட்ட, Authy, 1Password, முதலியவை) இல் ஒரு புதிய கணக்கு சேர்க்க:",
+        "setup": {
+          "step1": "Tap <strong>கணக்கு சேர்க்கவும்</strong> அல்லது <strong>+</strong> பொத்தாம்",
+          "step2": "தேர்ந்தெடு <strong>அமைப்பு விசை உள்ளிடவும்</strong> (அல்லது QR குறியீட்டை mobile மணைக்கவும்)",
+          "step3": "கீழே கூறிக்குதி கொட்ட சூழல் உள்ளிடவும்"
+        },
+        "mobileLink": "Mobile மணைக்கவும் உறுப்பதிவுசெய்யப்பட்ட திறக்க Tap",
+        "manualEntryLabel": "மாதிரியாக உள்ளிட சூழல்:",
+        "saveBackupCodes": "இந்த பிற்பட்ட குறியீடுகளை சேமிக்க. ஒவ்வொரு ஒரு முறை பயன்படுத்தலாம் நீங்கள் உறுப்பதிவுசெய்யப்பட்ட அணுக்கம் இழந்தாலும்.",
+        "copyBackupCodes": "நகলெடு பிற்பட்ட குறியீடுகளை",
+        "confirmCodeLabel": "உங்கள் விண்ணப்பம் குறியீட்டை உள்ளிடவும் செயல்பாடு",
+        "activate": "2FA செயல்பாடு",
+        "cancel": "ரத்து செய்",
+        "enabledBadge": "2FA இயக்கப்பட்ட",
+        "newBackupCodesLabel": "புதிய பிற்பட்ட குறியீடுகளை (இப்போது சேமிக்க):",
+        "copy": "நகலெடு",
+        "regenLabel": "உறுப்பதிவுசெய்யப்பட்ட குறியீட்டை பிற்பட்ட குறியீடுகளை புதிப்பிக்க உள்ளிடவும்",
+        "regenerate": "புதிப்பிக்க",
+        "regenerateBackupCodes": "பிற்பட்ட குறியீடுகளை புதிப்பிக்க",
+        "disableLabel": "2FA முடக்கவும் (உறுப்பதிவுசெய்யப்பட்ட குறியீட்டை உள்ளிடவும்)",
+        "disable": "2FA முடக்கவும்",
+        "errors": {
+          "setupFailed": "அமைப்பு தவறிவிட்டது",
+          "confirmFailed": "உறுதிப்படுத்தல் தவறிவிட்டது",
+          "disableFailed": "முடக்க தவறிவிட்டது",
+          "regenFailed": "புதிப்பிக்க தவறிவிட்டது"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "MCP நிலை சுமை தவறிவிட்டது",
+        "revokeFailed": "டோகனை மீளுளு செய்ய தவறிவிட்டது"
+      },
+      "revokeConfirm": "\"{{name}}\" MCP டோகனை மீளுளு செய்க? கிளையன்ட் உடனே வேலை நிறுத்த.",
+      "tokens": {
+        "heading": "MCP டோகன்கள்",
+        "newToken": "புதிய டோகன்",
+        "description": "ஒவ்வொரு டோகன் உங்கள் மாதிரி: இது நிக்க செய்கிறது என்று மீட்டபடுத்துங்கள் அனுமதிகளை. முழு மதிப்பு ஒருமுறை கூறப்பட்ட, பக்கத்தில் அதை உருவாக்குகிறது.",
+        "empty": "MCP டோகன்கள் இல்லை. MCP கிளையன்ட் இணைக்க ஒன்றை உருவாக்க.",
+        "created": "உருவாக்க",
+        "lastUsed": "கடைசியாக பயன்படுத்த",
+        "expires": "இறுதியாக வர",
+        "never": "ஒருபோதுமே",
+        "revokeTitle": "டோகனை மீளுளு செய்"
+      },
+      "tools": {
+        "heading": "கருவிகளை உங்கள் டோகன்கள் சிறிதாக்குவது",
+        "empty": "உங்கள் பாத்திரம் MCP கருவி மறுக்கப்பட்ட. நிர்வாகியிடம் கேட்கவும் அனுமதிகளை தேவை.",
+        "table": {
+          "name": "பெயர்",
+          "scope": "சம்பதம்",
+          "description": "விவரம்",
+          "sourceModule": "குறிப்பு தொகுதி",
+          "permission": "அனுமதி"
+        }
+      },
+      "connect": {
+        "heading": "MCP கிளையன்ட் இணைக்கவும்",
+        "descriptionPre": "கிளையன்ட் நீங்கள் கம்பி மேலே தேர்ந்தெடு, பின்னர் மாற்றம்",
+        "descriptionPost": "உங்கள் ஒன்று டோகன்கள் உடன். டோகன் உருவாக்க அதே பகுதி மதிப்பு உடன் கூறப்பட்ட.",
+        "otherClient": "மற்ற எந்த கிளையன்ட்",
+        "httpInstructionsPre": "HTTP, இல் முனை இல் endpoint மற்றும் உறுப்படி",
+        "httpInstructionsPost": ". இது JSON-RPC 2.0 மூலம் நேரவரிசைப்படுத்தக்கூடிய HTTP.",
+        "stdioInstructionsPre": "stdio, CLI பாலம் அந்த மற்றும் டோகன் மூலம். சேவை நேரடியாக பயன்படுத்த? அமைপு",
+        "stdioInstructionsAnd": "மற்றும்",
+        "stdioInstructionsPost": "நিজ."
+      },
+      "newToken": {
+        "backToMcp": "MCP திரும்ப",
+        "title": "புதிய MCP டோகன்",
+        "subtitle": "டோகன் உங்கள் மாதிரி: இது மீட்ட செய்கிறது சரியாக கருவிகளை உங்கள் பாத்திரம் அনுமதிகளை.",
+        "nameLabel": "பெயர்",
+        "namePlaceholder": "laptop",
+        "nameHint": "இந்த டோகன் பயன்படுத்த நேர்த்தான், எடுத்துக்காட்ட \"laptop\" அல்லது \"claude-desktop\".",
+        "expiryLabel": "இறுதியாக வர",
+        "expiryHint": "விரும்பத்தகாய. எம்ப இதை எம்ப மூலம் மீளுளு வரை ஒருபோதுமே வாழ்.",
+        "createButton": "டோகன் உருவாக்க",
+        "creatingButton": "உருவாக்க…",
+        "cancelButton": "ரத்து செய்",
+        "tokenSection": {
+          "title": "உங்கள் டோகன்",
+          "hint": "அதை நகலெடு இப்போது. இது மீண்டும் கூறப்பட்ட வேண்டும் இல்லை, மற்றும் இழந்து டோகன் மாற்றம் செய்ய முடியும்.",
+          "copyButton": "நகலெடு",
+          "copiedButton": "நகலெடு!",
+          "copyTitle": "டோகன் நகலெடு",
+          "copiedTitle": "நகலெடு!"
+        },
+        "connectSection": {
+          "title": "கிளையன்ட் இணைக்கவும்",
+          "hint": "கிளையன்ட் நீங்கள் கம்பி மேலே தேர்ந்தெடு. பகுதி ஏற்கனவே இந்த டோகன் கொண்ட."
+        },
+        "bridgeSection": {
+          "title": "அல்லது உபயோக பிற்பட்ட பாலம்",
+          "hint": "கிளையன்ட் என்று stdio மாத்திரம் பேசுகிறது, CLI பாலம் அந்த மற்றும் டோகன் மூலம்."
+        },
+        "doneButton": "முடிந்த",
+        "errors": {
+          "createFailed": "டோகன் உருவாக்க தவறிவிட்டது",
+          "copyFailed": "நகலெடு தவறிவிட்டது, தேர்ந்தெடு மற்றும் நகலெடு டோகன் மாதிரியாக."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "மொழி",
+      "description": "கட்டக்கம் மொழி பாணி வேண்ட்டை உள்ளடக்கப்பட்ட தளம் தேர்ந்தெடு.",
+      "languageLabel": "மொழி",
+      "saved": "மொழி விருப்பம் சேமிக்கப்பட்ட."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "அமைப்புகளை சுமை தவறிவிட்டது",
+        "loadFailedPeriod": "அமைப்புகளை சுமை தவறிவிட்டது.",
+        "saveFailed": "சேமிக்க தவறிவிட்டது",
+        "saveSettingsFailed": "அமைப்புகளை சேமிக்க தவறிவிட்டது"
+      },
+      "savedSuccess": "அமைப்புகளை வெற்றிகரமாக சேமிக்கப்பட்டது.",
+      "saving": "சேமிக்கப்படுகிறது…",
+      "saveSettings": "அமைப்புகளை சேமிக்க",
+      "serverInfo": {
+        "heading": "சேவை தகவல்",
+        "readOnly": "படிக்க மாத்திரம். ஹோஸ்ட் மற்றும் துறைமுக சூழல் அல்லது அமைப்புகளை கோப்பை வெளிச்சமுக்திறக்கு, ஈண்ட இல் வெளிபுறம் வரையில்.",
+        "reachableAt": "கட்ட",
+        "reachableAtAny": "இந்த முகவரிகளை ஏதேனும் கட்ட",
+        "thisMachine": "இந்த கணினி",
+        "network": "பெயர் வழங்குநர்",
+        "copyAddress": "{{address}} நகலெடு",
+        "copied": "நகலெடு!",
+        "copy": "நகலெடு",
+        "hostAndPort": "ஹோஸ்ட் மற்றும் துறைமுக",
+        "version": "பதிப்பு",
+        "uptime": "Uptime"
+      },
+      "runtime": {
+        "heading": "Runtime அமைப்புகள்",
+        "logLevel": "சொல் நிலை",
+        "logLevelHint": "சேவை சொல்லின் verbosity கட்டுப்பாட்டுகள்.",
+        "publicUrl": "பொது URL",
+        "publicUrlHint": "வெளிப்புற கிளையன்ட்களுக்கு சேவை கட்ட தளத்திற்கு (எ.கா. <code>http://192.168.1.10:3000</code> ). பயன்படுத்த <strong>எப்படி இணைக்கவும்</strong> ஒவ்வொரு பகுதி திசையாக்குபவர் தளம். கட்டக்கம் பாணி பயன்பாட மற்ற கணினி அல்லது துறைமுக சேவை மூலம் செயல்படுத்த பயனுள்ளதாய் உள்ளது.",
+        "usageRetention": "பயன்பாடு தொகுப்பு",
+        "noLimit": "எந்த வரம்பும் இல்லை",
+        "maxAgeDays": "அதிக வயது (நாட்கள்)",
+        "maxSizeMb": "அதிக அளவு (MB)",
+        "retentionHint": "பயன்பாடு/பணம் வரலாறு இந்த பல நாட்கள் பழைய, அல்லது இந்த அளவு எந்த தீவிர பட்டியல். இரண்டு வேண்டாம் செயல்குறிப்பாக எந்த தொகுப்பு வரம்பு அற்றவர். தட்டு."
+      },
+      "internationalization": {
+        "heading": "சர்வதேசமயமாக்கல்",
+        "defaultLanguage": "இயல்புநிலை மொழி",
+        "defaultLanguageHint": "இன்னும் அவர்களின் சொந்த மொழியைத் தேர்ந்தெடுக்காத பயனர்களுக்கான டாஷ்போர்ட் மொழி. பயனரின் ஆளுமை விருப்பங்களை ரத்து செய்யாது."
+      },
+      "telemetry": {
+        "heading": "அநாமதேய அளவீடுகள்",
+        "neverAutomatic": "Routerly எப்போதும் தரவை தானாக அனுப்பாது.",
+        "noChoice": "நீங்கள் இன்னும் தேர்ந்தெடுக்க உள்ளன.",
+        "enabledStatus": "அநாமதேய நிறுவல் அளவீடுகள் இயக்கப்பட்ட.",
+        "disabledStatus": "அநாமதேய நிறுவல் அளவீடுகள் முடக்கப்பட்ட.",
+        "explanation": "இயக்கப்படுகிறது, Routerly மூலம்மட்டு அனுப்புகிறது: நிகழ்வு வகை (நிறுவல் / மேம்பாடு / நிறுவல் அகற்றுக), பதிப்பு, தளம், மற்றும் ஒரு சீரற்ற ID. எந்த ব்যக்திகத் தரவு இல்லை, எந்த பயன்பாடு தரவு இல்லை, எந்த IP சேமிக்கப்பட்ட.",
+        "whatIsSent": "என்ன அனுப்பப்படுகிறது?",
+        "installId": "நிறுவல் ID: {{id}}",
+        "saving": "சேமிக்கப்படுகிறது…",
+        "enable": "இயக்கவும்",
+        "disable": "முடக்கவும்"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "பாணி (ஆப் உள் அ அணுக்கம்)",
+          "description": "பொருத்தம் நிகழ்வுகளை விளக்கும் அ அணுக்கம் அ."
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "தனிப்பயன் கடவுல் சேவை"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "AWS எளிய ஈமெயிל் சேவை"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "Twilio SendGrid"
+        },
+        "azure": {
+          "label": "Azure যোগাযோக",
+          "description": "Azure যোগாযோக் சேவைகள்"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail OAuth2 மூலம்"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "HTTP webhook மற்றுமொழி"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack போட் API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams உள்ளீடு Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty நிகழ்வுகளை API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "வழங்குநர் – பிழை",
+        "providerDegraded": "வழங்குநர் – தாழப்பட்ட",
+        "providerRecovered": "வழங்குநர் – மீட்ட",
+        "providerRateLimited": "வழங்குநர் – வீத வரம்பு",
+        "routingNoCandidates": "திசையாக்கல் – வேண்டாம் பொறுத்தம்",
+        "routingFallbackUsed": "திசையாக்கல் – பிற்பட்ட பயன்படுத்த",
+        "authLoginFailed": "உறுப்படி – நுழைக தவறிவிட்டது",
+        "authTokenInvalid": "உறுப்படி – டோகன் செல்லாதது",
+        "configModelAdded": "அমைப்பு – மாதிரி சேர்க்கப்பட்ட",
+        "configModelDeleted": "அமைப்பு – மாதிரி நீக்க",
+        "configRouterCreated": "அமைப்பு – திசையாக்குபவர் உருவாக்க",
+        "configRouterDeleted": "அமைப்பு – திசையாக்குபவர் நீக்க",
+        "budgetThresholdReached": "பட்ஜெட் – வாசல் கட்ட",
+        "budgetExceeded": "பட்ஜெட் – மாற்ற",
+        "budgetReset": "பட்ஜெட் – சாரம் மாற்றவும்",
+        "systemStartup": "கணினி – தொடக்கம்",
+        "systemShutdown": "கணினி – ஹிறுக்கம்",
+        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது"
+      },
+      "removeChannelTooltip": "சிறை அகற்றவும்",
+      "removeChannelConfirm": "சிறை அகற்ற?",
+      "formUpdatedHint": "படிவம் புதிப்பிக்கப்பட்டது — சேமிக்க செயல்படுத்த.",
+      "hmacSigningKeyPlaceholder": "HMAC கையொப்பம் விசை",
+      "perms": {
+        "routerRead": "திசையாக்குபவர்கள் – படிக்க",
+        "routerWrite": "திசையாக்குபவர்கள் – எழுதுக",
+        "modelRead": "மாதிரிகள் – படிக்க",
+        "modelWrite": "மாதிரிகள் – எழுதுக",
+        "userRead": "பயனர்கள் – படிக்க",
+        "userWrite": "பயனர்கள் – எழுதுக",
+        "reportRead": "மாதிரிக்கு – படிக்க",
+        "settingsRead": "அமைப்புகள் – படிக்க",
+        "settingsWrite": "அமைப்புகள் – எழுதுக",
+        "notificationWrite": "அறிவிப்புகள் – எழுதுக",
+        "tokenRead": "டோகன்கள் – படிக்க",
+        "tokenWrite": "டோகன்கள் – எழுதுக",
+        "roleWrite": "பாத்திரங்கள் – எழுதுக",
+        "auditRead": "அள்ள சொல்ல – படிக்க",
+        "modulesRead": "தொகுதிகள் – படிக்க",
+        "modulesManage": "தொகுதிகள் – நிர்வகம்",
+        "connectionsRead": "இணைப்புகள் – படிக்க",
+        "connectionsManage": "இணைப்புகள் – நிர்வகம்",
+        "resilienceRead": "மீள் நெகிழ்ந்து – படிக்க",
+        "resilienceManage": "மீள் நெகிழ்ந்து – நிர்வகம்",
+        "profilesRead": "திசையாக்கல் சுயவிவரங்கள் – படிக்க",
+        "profilesManage": "திசையாக்கல் சுயவிவரங்கள் – நிர்வகம்",
+        "optimizersRead": "உპकरणึ – படிக்க",
+        "optimizersManage": "உपكرąणึ – நிர்வகம்",
+        "experimentsRead": "சோதனைகள் – படிக்க",
+        "experimentsManage": "சோதனைகள் – நிர்வகம்"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "இந்த சிறை வகை, இலக்கங்கள் வழங்கல் மாற்றாக (endpoint நிலைநிறுத்தப்பட்ட). அவை பற்று என்ற நிகழ்வுகளை அள்ள சொல்ல ஒவ்வொரு பெறுநர் மாற்ற.",
+        "dashboard": "இலக்கங்கள் அ அணுக்கம் பார்வை கட்டுப்பாடு — மாத்திரம் பொருத்தம் பயனர்கள் பார்வை இந்த அறிவிப்புகளை அவற்றின் ஆப் உள் அ அணுக்கம்.",
+        "email": "இலக்கங்கள் ஈமெயிலை தீர்மாணிக்க பயனர்கள் பெற இந்த கூறிக்குதி. தட்டு அனைத்து வெளிப்பாக அனைத்து பயனர்கள் அனுப்ப வேண்டும்."
+      },
+      "summary": {
+        "allEvents": "அனைத்து நிகழ்வுகள்",
+        "eventCount": "{{count}} நிகழ்வு",
+        "eventCount_other": "{{count}} நிகழ்வுகள்",
+        "roleCount": "{{count}} பாத்திரம்",
+        "roleCount_other": "{{count}} பாத்திரங்கள்",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} பயனர்",
+        "userCount_other": "{{count}} பயனர்கள்",
+        "everyone": "அனைவரும்"
+      },
+      "errors": {
+        "loadFailed": "சுமை தவறிவிட்டது"
+      },
+      "fields": {
+        "dashboardHint": "பொருத்தம் நிகழ்வுகளை விளக்கும் அ அணுக்கம் அ அறிவிப்பு. எந்த நிலைமை தேவை.",
+        "labels": {
+          "fromAddress": "முகவரி இருந்து",
+          "fromName": "பெயர் இருந்து",
+          "host": "ஹோஸ்ட்",
+          "port": "துறைமுக",
+          "tls": "TLS/SSL",
+          "username": "பயனர் பெயர்",
+          "password": "கடவுல்",
+          "awsRegion": "AWS பகுதி",
+          "accessKeyId": "அ அணுக்கம் விசை ID",
+          "secretAccessKey": "ரஹசிய அ அணுக்கம் விசை",
+          "apiKey": "API விசை",
+          "connectionString": "இணைப்பு சரிப்படு",
+          "clientId": "கிளையன்ட் ID",
+          "clientSecret": "கிளையன்ட் ரஹசியம்",
+          "refreshToken": "புதிப்பிக்க டோகன்",
+          "url": "URL",
+          "method": "செயல்",
+          "signingSecret": "கையொப்பம் ரஹசியம்",
+          "botToken": "போட் டோகன்",
+          "channelId": "சிறை ID",
+          "webhookUrl": "Webhook URL",
+          "integrationKey": "ஒருங்கிணைப்பு விசை"
+        },
+        "values": {
+          "enabled": "இயக்கப்பட்ட",
+          "disabled": "முடக்கப்பட்ட",
+          "configured": "அமைப்பு",
+          "notSet": "அமைப்பு வேண்டும் இல்லை"
+        },
+        "optional": "(விரும்பத்தகாய)",
+        "keepCurrentPlaceholder": "தற்போதைய பயணப் விட விட்டு",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "TLS / SSL பயன்படுத்த",
+        "smtpTlsOnHint": "(துறைமுக 465 — நேரடியாக SSL)",
+        "smtpTlsOffHint": "(துறைமுக 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "IAM நிகழ்வு பாத்திரம் பயன்படுத்த நிலைமை வேண்டாம் விட विட्ट।",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "HMAC கையொப்பம் விசை",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "32-character மற்றுமொழி விசை",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "நிகழ்வுகள்",
+          "eventsPlaceholder": "அனைத்து நிகழ்வுகள் (அனைத்து வெளிப்பாக விட விட்டு)",
+          "eventsHint": "தட்டு அனைத்து நிகழ்வுகளை பெற வெளிப்பாக வேண்டாம். தீர்ப்பு குறிப்பிட்ட நிகழ்வுகளை வடிகட்ட.",
+          "routersHeading": "திசையாக்குபவர்கள்",
+          "routersPlaceholder": "அனைத்து திசையாக்குபவர்கள் (அனைத்து வெளிப்பாக விட விட்டு)",
+          "routersHint": "தட்டு அனைத்து திசையாக்குபவர்கள் மூலம் நிகழ்வுகளை பெற வெளிப்பாக வேண்டாம்.",
+          "cooldownHeading": "Cooldown",
+          "cooldownSuffix": "விநாடி (0 = மூட்டை சீல் நிலை)",
+          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।"
+        },
+        "recipients": {
+          "heading": "பெறுநர்கள் / இலக்கங்கள்",
+          "rolesLabel": "பாத்திரங்கள்",
+          "rolesPlaceholder": "அனைத்து பாத்திரங்கள் (அனைவரும்)",
+          "permissionsLabel": "அனுமதிகள்",
+          "permissionsPlaceholder": "அனைத்து அனுமதிகள் (அனைவரும்)",
+          "usersLabel": "தனித்துவ பயனர்கள்",
+          "usersPlaceholder": "அனைத்து பயனர்கள் (அனைவரும்)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "இணைப்பு",
+          "routing": "திசையாக்கல்",
+          "recipients": "பெறுநர்கள்"
+        },
+        "sections": {
+          "channelSettings": "சிறை அமைப்புகள்",
+          "eventsRouting": "நிகழ்வுகள் மற்றும் திசையாக்கல்",
+          "recipients": "பெறுநர்கள்"
+        },
+        "nameLabel": "பெயர்",
+        "namePlaceholder": "இந்த சிறை குறிப்பு",
+        "cancelButton": "ரத்து செய்"
+      },
+      "list": {
+        "countLabel": "{{count}} சிறை",
+        "countLabel_other": "{{count}} சிறைகளை",
+        "filteredLabel": "{{shown}} {{count}} சிறை",
+        "filteredLabel_other": "{{shown}} {{count}} சிறைகளை",
+        "allTypes": "அனைத்து வகைகள்",
+        "searchPlaceholder": "வடிகட்ட சிறைகளை…",
+        "searchChannelsPlaceholder": "சிறைகளை தேடு…",
+        "addButton": "சிறை சேர்க்கவும்",
+        "addSearchPlaceholder": "சிறைகளை தேடு…",
+        "noResults": "முடிவுகள் இல்லை",
+        "emptyTitle": "எந்த அறிவிப்பு சिறைகளை அமைப்பு வேண்டும் இல்லை.",
+        "noMatch": "எந்த சिறைகளை செயல்பட்ட வடிகட்ட பொருத்தம் நிலை।",
+        "nameInlinePlaceholder": "பெயர் (விரும்பத்தகாய)",
+        "columns": {
+          "name": "பெயர்",
+          "type": "வகை",
+          "summary": "நிகழ்வுகள் / இலக்கங்கள்"
+        },
+        "testTitle": "சோதனை அனுப்ப",
+        "editTitle": "சிறை தொகு",
+        "deleteTitle": "சிறை நீக்க",
+        "deleteConfirm": "\"{{name}}\" சிறை நீக்க? இதை தொடங்க முடியாது.",
+        "deleteConfirmButton": "நீக்க",
+        "errors": {
+          "deleteFailed": "நீக்க தவறிவிட்டது"
+        }
+      },
+      "edit": {
+        "backToList": "அறிவிப்புகளை திரும்ப",
+        "back": "பின்",
+        "heading": "{{provider}} சிறை தொகு",
+        "subtitle": "அல்லது இந்த அறிவிப்பு சிறை அமைப்பு புதிப்பிக்க.",
+        "testSection": {
+          "title": "சோதனை அனுப்ப",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "சோதனை அனுப்ப",
+          "sendingButton": "அனுப்ப…",
+          "hintEmail": "தட்டு உங்கள் கணக்கு ஈமெயிலை அனுப்ப வெளிப்பாக விட விட்டு. சோதனை சேமிக்கப்பட்ட சிறை அமைப்பு பயன்படுத்த.",
+          "hintOther": "சோதனை சேமிக்கப்பட்ட சிறை அமைப்பு பயன்படுத்த. புதிப்பிக்க மாற்றங்கள் சேமிக்க முன் பயன்பாட்டு புதிய அமைப்புகள்।"
+        },
+        "saveButton": "மாற்றங்கள் சேமிக்க",
+        "savingButton": "சேமிக்கப்படுகிறது…",
+        "errors": {
+          "loadFailed": "சுமை தவறிவிட்டது",
+          "saveFailed": "சேமிக்க தவறிவிட்டது"
+        }
+      },
+      "create": {
+        "backToList": "அறிவிப்புகளை திரும்ப",
+        "changeType": "வகை மாற்று",
+        "pickerHeading": "சிறை வகை தேர்ந்தெடு",
+        "pickerSubtitle": "அறிவிப்பு வழங்குநர் அமைப்பு தேர்ந்தெடு.",
+        "heading": "புதிய {{provider}} சிறை",
+        "subtitle": "ஒரு புதிய அறிவிப்பு சிறை அமைப்பு.",
+        "createButton": "சிறை உருவாக்க",
+        "creatingButton": "உருவாக்க…",
+        "errors": {
+          "createFailed": "உருவாக்க தவறிவிட்டது"
+        }
+      },
+      "sendTest": "சோதனை அனுப்ப",
+      "fromAddress": "முகவரி இருந்து",
+      "individualUsers": "தனித்துவ பயனர்கள்",
+      "host": "ஹோஸ்ட்",
+      "port": "துறைமுக",
+      "apiKey": "API விசை",
+      "connectionString": "இணைப்பு சரிப்படு",
+      "clientId": "கிளையன்ட் ID",
+      "clientSecret": "கிளையன்ட் ரஹசியம்",
+      "refreshToken": "புதிப்பிக்க டோகன்",
+      "method": "செயல்",
+      "botToken": "போட் டோகன்",
+      "channelId": "சிறை ID",
+      "webhookUrl": "Webhook URL",
+      "integrationKey": "ஒருங்கிணைப்பு விசை"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "வெளிநாடு — வெளிபுற /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "உறுதி — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "உறுதி — அளவீட் API"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "உறுதி — தொலை_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "உறுதி — வரி தளமைப்பு"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "உறுதி — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "வேண்டாம் தடம் ஏற்றுமதி",
+        "description": "செய் முழு தடம் ஒவ்வொரு মாற்றக்கோரி: ஒவ்வொரு கட்ட, ஒவ்வொரு தொகுதி பேசிய, மற்றும் குறிப்பு மற்றும் விளக்க திரு மாதிரிக்கு ஆசை வேண்டாம்.",
+        "sampleRateLabel": "மாதிரி விகிதம்",
+        "sampleRateHint": "1 ஒவ்வொரு கோரி ஏற்றுமதி, 0.1 ஒன்று பத்து உள்ளன।"
+      },
+      "optional": "(விரும்பத்தகாய)",
+      "headersHint": "(விரும்பத்தகாய, ஒன்றுக்கு வரி: விசை: மதிப்பு)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "தாங்குபவர் டோகன்",
+          "placeholder": "வெளிப்பாக வெளிப்பாக விட விட்டு வெளிப்பாக அணுக்கம்",
+          "description": "வெளிபுற <code>/metrics</code> Prometheus உரை விரு. டோகன் தாங்குபவர் உறுப்படி தேவை அமைப்பு।"
+        },
+        "otel": {
+          "endpoint": "சேகரணை endpoint",
+          "description": "URL உங்கள் OTLP பெறுநர். Routerly <code>/v1/metrics</code> சேர்க்க, மற்றும் <code>/v1/traces</code> தடம் ஏற்றுமதி போது. முன்னிருப்பு HTTP துறைமுக 4318, gRPC 4317।",
+          "protocol": "தொடக்கம்",
+          "headers": "முகப்பு பக்க"
+        },
+        "datadog": {
+          "apiKey": "API விசை",
+          "placeholder": "உங்கள் Datadog API விசை",
+          "description": "கீழ் கண்டுபிடிக்க <strong>அமைப்பு அமைப்புகளை → API விசைகள்</strong> உங்கள் Datadog கணக்கு।",
+          "site": "இடம்"
+        },
+        "grafana": {
+          "remoteWriteUrl": "தொலை Write URL",
+          "description": "இல் கண்டுபிடிக்க <strong>Grafana Cloud → இணைப்புகளை → Prometheus → விவரங்களை</strong> \"தொலை Write Endpoint\" என்று।",
+          "username": "பயனர் பெயர் / Stack ID",
+          "usernameHint": "எண்ணிக்கை ID Prometheus இணைப்பு விவரங்களை கூறிக்குதி।",
+          "apiKey": "API விசை / டோகன்",
+          "apiKeyHint": "Grafana Cloud டோகன் <strong>MetricsPublisher</strong> பாத்திரம் உடன்।"
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "InfluxDB v2 நிகழ்வுக் URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "டோகன்",
+          "tokenPlaceholder": "உங்கள் InfluxDB API டோகன்",
+          "tokenHint": "தேவை <strong>எழுதுக</strong> தட்டு அணுக்கம்।",
+          "org": "அமைப்பு",
+          "bucket": "வாளி"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "ரஹசியம்",
+          "secretHint": "(விரும்பத்தகாய — HMAC-SHA256 கையொப்பம் விசை)",
+          "headers": "முகப்பு பக்க"
+        }
+      },
+      "errors": {
+        "loadFailed": "ஒருங்கிணைப்புகளை சுமை தவறிவிட்டது",
+        "updateFailed": "ஒருங்கிணைப்பு புதிப்பிக்க தவறிவிட்டது",
+        "saveFailed": "சேமிக்க தவறிவிட்டது",
+        "deleteFailed": "நீக்க தவறிவிட்டது"
+      },
+      "empty": "எந்த ஒருங்கிணைப்புகளை அமைப்பு வேண்டும் இல்லை.",
+      "enabled": "இயக்கப்பட்ட",
+      "testing": "சோதனை…",
+      "test": "சோதனை",
+      "removeConfirm": "நீக்க?",
+      "remove": "அகற்று",
+      "cancel": "ரத்து செய்",
+      "removeTooltip": "ஒருங்கிணைப்பு அகற்றவும்",
+      "saving": "சேமிக்கப்படுகிறது…",
+      "save": "சேமிக்க",
+      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "அமைப்புகளை சுமை தவறிவிட்டது",
+        "duplicateUrl": "இந்த URL பட்டியலில் உள்ளது.",
+        "unreachable": "இல் ஒரு செல்லுபடியாகும் வழங்குநர் வழங்கல் கட்ட முடியாது URL."
+      },
+      "saved": "சேமிக்கப்பட்டது.",
+      "refreshed": "புதிப்பிக்கப்பட்டது.",
+      "heading": "வழங்குநர் வழங்கல் களஞ்சியம்",
+      "refreshing": "புதிப்பிக்கப்படுகிறது…",
+      "refresh": "புதிப்பிக்கவும்",
+      "nextRefresh": "அடுத்த: {{date}}",
+      "priorityHint": "வரி வரிசை மூல முன்னுரிமை — வரி 1 மூல மரியாதை தகராறு. பயன்படுத்த அம்புகளை மறுவரிசை.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "புதிப்பிக்கப்பட்டது",
+        "lastCheck": "கடைசி சோதனை",
+        "status": "நிலை"
+      },
+      "empty": "எந்த களஞ்சியம் அமைப்பு வேண்டும் இல்லை. முன்னிருப்பு Routerly பொது வழங்கல் பயன்படுத்தப்படும்।",
+      "status": {
+        "error": "பிழை",
+        "active": "செயல்பாட்டிலுள்ள",
+        "disabled": "முடக்கப்பட்ட"
+      },
+      "edit": "தொகு",
+      "removeTooltip": "அகற்று",
+      "addRepository": "களஞ்சியம் சேர்க்கவும்",
+      "checking": "சோதனை…",
+      "add": "சேர்க்கவும்",
+      "removeConfirm": "\"{{url}}\" களஞ்சியம் நீக்க?"
+    },
+    "about": {
+      "headings": {
+        "application": "பயன்பாடு",
+        "runtime": "Runtime",
+        "storage": "சேமிப்பை",
+        "softwareUpdate": "மென்பொருள் புதிப்பிக்க"
+      },
+      "labels": {
+        "version": "பதிப்பு",
+        "uptime": "Uptime",
+        "nodeVersion": "Node.js",
+        "platform": "தளம்",
+        "configDir": "அமைப்பு அட்டவணை",
+        "dataDir": "தரவு அட்டவணை",
+        "currentVersion": "தற்போதைய பதிப்பு",
+        "availableVersion": "கிடைக்கக்கூடிய பதிப்பு",
+        "upToDate": "தற்போதைய வரை",
+        "lastChecked": "கடைசி சோதனை"
+      },
+      "noCheckPerformed": "புதிப்பிக்க சோதனை செயல்படுத்த வேண்டும் இல்லை.",
+      "checkForUpdates": "புதிப்பிக்கம் சோதனை",
+      "checking": "சோதனை…",
+      "updateTo": "v{{version}} குக்குவிக்கவும்",
+      "updating": "புதிப்பிக்கப்படுகிறது…",
+      "dockerHint": "Docker மூলம் இயங்க — சமீபத்திய உருவ ஆ.",
+      "confirmUpdate": "இது சமீபத்திய பதிப்பு பதிவிறக்க மற்றும் நிறுவ. சேவை மறுதொடக்கம் வேண்டும். தொடரவும்?",
+      "updateComplete": "புதிப்பிக்க முடிந்து! மறுசெயலாக…",
+      "serviceRestarting": "சேவை மறுதொடக்கம் செய்யப்படுகிறது. பக்கத்தை மறுசெயலாக ஒரு தருணம் இல்.",
+      "errors": {
+        "loadFailed": "சுமை தவறிவிட்டது",
+        "checkFailed": "சோதனை தவறிவிட்டது",
+        "updateFailed": "புதிப்பிக்க தவறிவிட்டது"
+      },
+      "channel": "சிறை"
+    },
+    "security": {
+      "authentication": "உறுப்படி",
+      "requireMfa": "அனைத்து பயனர்களுக்கு இரண்டு-முக உறுதிப்படுத்தல் தேவை",
+      "requireMfaHint": "இயக்கப்படுகிறது, பயனர்கள் என்கோ 2FA அமைப்பு பார்ப்போம் ஒரு தூண்டல் நுழைய பிறகு. பயனர்கள் அவற்றின் சுயவிவரம் பக்கம் 2FA அமைக்க முடியும்.",
+      "savedSuccess": "அமைப்புகளை வெற்றிகரமாக சேமிக்கப்பட்டது.",
+      "saving": "சேமிக்கப்படுகிறது…",
+      "saveSettings": "அமைப்புகளை சேமிக்க",
+      "errors": {
+        "loadFailed": "அமைப்புகளை சுமை தவறிவிட்டது",
+        "saveFailed": "அமைப்புகளை சேமிக்க தவறிவிட்டது"
+      }
+    },
+    "title": "அமைப்புகள்",
+    "subtitle": "Routerly அமைப்பு",
+    "tabs": {
+      "general": "பொதுவை",
+      "security": "பாதுகாப்பு",
+      "notifications": "அறிவிப்புகள்",
+      "integrations": "ஒருங்கிணைப்புகளை",
+      "catalog": "வழங்குநர் வழங்கல்",
+      "users": "பயனர்கள்",
+      "roles": "பாத்திரங்கள்",
+      "audit": "அள்ள சொல்ல",
+      "about": "அறிய"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "திசையாக்குபவர்கள்",
+      "subtitle": "Routerly அணுக்கம் கிளையன்ட் பயன்பாடுகள்",
+      "count": "1 திசையாக்குபவர்",
+      "count_other": "{{count}} திசையாக்குபவர்கள்",
+      "newRouter": "புதிய திசையாக்குபவர்",
+      "empty": "எந்த திசையாக்குபவர்கள் இல்லை.",
+      "emptyFiltered": "இந்த வகையின் நল் இல்லை.",
+      "columns": {
+        "name": "பெயர்",
+        "tokens": "டோகன்கள்",
+        "policies": "கொள்கைகள்",
+        "models": "மாதிரிகள்"
+      },
+      "tokenCount": "1 டோகன்",
+      "tokenCount_other": "{{count}} டோகன்கள்",
+      "editRouter": "திசையாக்குபவர் தொகு",
+      "deleteRouter": "திசையாக்குபவர் நீக்க",
+      "deleteConfirm": "இந்த திசையாக்குபவர் நீக்க?",
+      "errors": {
+        "deleteFailed": "திசையாக்குபவர் நீக்க பிழை"
+      },
+      "newOrchestrator": "புதிய ஆர்கெஸ்ட்ரேட்டர்",
+      "newPassthrough": "புதிய பாஸ்-த்ரு"
+    },
+    "layout": {
+      "notFound": "திசையாக்குபவர் கண்டுபிடிக்கப்படவில்லை",
+      "tabs": {
+        "dashboard": "பாணி",
+        "general": "பொதுவை",
+        "orchestrator": "அயஸ்கரணி",
+        "routing": "திசையாக்கல்",
+        "optimizer": "உபকरணึ",
+        "security": "பாதுகாப்பு",
+        "token": "டோகன்",
+        "users": "பயனர்கள்",
+        "logs": "சொல்ல"
+      },
+      "backToRouters": "திசையாக்குபவர்கள் திரும்ப",
+      "backToRoutersTitle": "திசையாக்குபவர்கள் திரும்ப",
+      "newRouter": "புதிய திசையாக்குபவர்",
+      "loading": "சுமை...",
+      "routerId": "திசையாக்குபவர் ID:",
+      "saveFirstHint": "இந்த தாள் திறக்க திசையாக்குபவர் முதலாக சேமிக்க",
+      "newKind": "புதிய {{kind}}"
+    },
+    "dashboard": {
+      "period": "காலம்",
+      "noTraffic": "இந்த தேர்ந்தெடுக்கப்பட்ட கால திசையாக்குபவர் எந்த ட்ரொத் இல்லை.",
+      "stats": {
+        "savings": "சேமிப்பு",
+        "vsPrefix": "vs",
+        "forEverything": "அனைத்து",
+        "noTargetToCompare": "ஒப்பிட சிறை மாதிரி இல்லை",
+        "cost": "செலவு",
+        "callCount": "1 அழைப்பு",
+        "callCount_other": "{{count}} அழைப்புகள்",
+        "latency": "தாமதம்",
+        "medianP95": "சராசரி · p95 {{value}}",
+        "ttft": "முதல் டோகன் நேரம்",
+        "notMeasured": "இல் அளவிட வேண்டும் இந்த அழைப்புகள் தகவல்",
+        "reliability": "நம்பிக்கை",
+        "errorsAndBlocked": "{{errors}} பிழைகளை · {{blocked}} தொண்டு"
+      },
+      "tokens": {
+        "input": "உள்ளீடு டோகன்கள்:",
+        "output": "வெளியீடு டோகன்கள்:",
+        "fromCache": "கேச் இருந்து:",
+        "cacheSaved": "({{amount}} சேமிக்கப்பட்டது)"
+      },
+      "oneModel": {
+        "heading": "அனைத்தையும் ஒரு மாதிரி வேண்டு போய்",
+        "empty": "இலக்கம் மாதிரிகள் சேர்க்க இந்த திசையாக்குபவர் ஒப்பிட பார்க்க.",
+        "columns": {
+          "targetModel": "இலக்கம் மாதிரி",
+          "wouldHaveCost": "செலவு இருக்க வேண்டும்",
+          "saved": "சேமிக்கப்பட்டது"
+        },
+        "costsHint": "செலவு கவனிக்க டோகன்கள் repriced ஒவ்வொரு இலக்கம் விகிதங்கள் உள்ளன."
+      },
+      "optimizers": {
+        "heading": "என்ன உपకरণึ அகற்ற",
+        "columns": {
+          "optimizer": "உpकरणึ",
+          "callsChanged": "அழைப்புகள் மாற்ற",
+          "tokensSaved": "டோகன்கள் சேமிக்கப்பட்டது",
+          "costSaved": "செலவு சேமிக்கப்பட்டது",
+          "rolledBack": "அருண்கொடுப்பதற்கு"
+        },
+        "hint": "அழைப்புகள் மீது அளவிட, விலை மாதிரி வெளிச்சமுக்திறக்கு ஒவ்வொரு. அருண்கொடுப்பதற்கு இயக்க தாம் விளைபொருள் பாதுரக்ஷைத்தற்ற மற்றும் தூண்டல் மறு: வேண்டும் இல்லை சேமிக்க, மற்றும் உচ்ச பொருத்தம் வாசல் மிகவும் ஆ."
+      },
+      "traffic": {
+        "heading": "டி ட் கயிற",
+        "columns": {
+          "model": "மாதிரி",
+          "calls": "அழைப்புகள்",
+          "share": "பகிர்",
+          "cost": "செலவு",
+          "p95Latency": "p95 தாமதம்",
+          "errors": "பிழைகளை"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "திசையாக்குபவர் சேமிக்க பிழை",
+        "copyFailed": "நகலெடு தவறிவிட்டது — இயக்கிய தேர்ந்தெடு மற்றும் டோகன் நகலெடு।"
+      },
+      "kind": {
+        "router": {
+          "label": "திசையாக்குபவர்",
+          "description": "கோரிக்கைகள் மாதிரி பொறுத்தம் அண்டை திசையாக்கல்."
+        },
+        "orchestrator": {
+          "label": "அயஸ்கரணி",
+          "description": "கோரிக்கைகள் மாதிரிகள் பதிலாக மற்ற திசையாக்குபவர்கள் அண்டை திசையாக்கல்."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "கோரிக்கைகள் மாற்றம் இல்லாமல் பறித."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "இந்த டோகன் இப்போது சேமிக்க.",
+        "saveNowHint": "இது மீண்டும் கூறப்பட்ட வேண்டும் — நீங்கள் இந்த திரை விட்டু வேண்டும் இல் முடியாது மீட்ட.",
+        "copied": "நகலெடு!",
+        "copy": "நகலெடு",
+        "goToRouter": "திசையாக்குபவர் செல்"
+      },
+      "connect": {
+        "heading": "எப்படி இணைக்கவும்",
+        "intro": "கள் OpenAI அல்லது Anthropic SDK Routerly முனையில் மற்றும் பயன்படுத்த <tokenLink>திசையாக்குபவர் டோகன்</tokenLink> API விசை மாதிரில். {{token}} மாற்றவும் உங்கள் உடன் கீழே. மாதிரி {{model}} Routerly வெளிச்சமுக்திறக்கு தேர்ந்தெடு; எந்த மாதிரி id <modelsLink>மாதிரிகள்</modelsLink> வேலை மற்றும்।",
+        "openaiSdk": "OpenAI SDK",
+        "openaiBaseUrlHint": "বেস URL <code>{{baseUrl}}</code>, அதே ஒன்று எந்த \"OpenAI பொருத்தம்\" வழங்குநர் கள் தேவை.",
+        "anthropicSdk": "Anthropic SDK",
+        "anthropicBaseUrlHint": "বேस URL <code>{{baseUrl}}</code>, இல்லாமல் <code>/v1</code>: SDK சேர்க்க।",
+        "curl": "curl",
+        "curlHint": "கம்பி சோதனை நிறுவல் இல்லாமல், பின்னர் தேடு அழைப்பு <usageLink>பயன்பாடு</usageLink>."
+      },
+      "form": {
+        "kind": "வகை",
+        "kindFixedHint": "ஒரு முறை திசையாக்குபவர் உருவாக்க நிலைநிறுத்த.",
+        "routerName": "திசையாக்குபவர் பெயர்",
+        "routerNamePlaceholder": "என் ஆப்",
+        "advancedSettings": "மேம்பட்ட அமைப்புகளை",
+        "ttftTimeout": "TTFT Timeout (ms)",
+        "ttftTimeoutHint": "ஒரு மாதிரி கோரை முதல் பதிலுக்கும் பைட் இந்த நேரம் இல் அனுப்பாமல், Routerly நிறுத்த அதை மற்றும் அடுத்த பொறுத்தம் முயற்சி. மொத்த பதிலுக்கும் நெடுக்கு நிலைநிறுத்த வேண்டும் இல்லை. 0 அமைப்பு வழங்குநர் தேவை வரை காத்திருக்க.",
+        "traceContent": "தடம் உள்ளடக்கம்",
+        "traceContentHint": "தடம் எப்போதும் அளவிட தரவு (மாதிரிகள், மதிப்புகள், டோகன்கள், செலவு, தாமதம்). தூண்டல் அனுப்ப மற்றும் விளக்க பெற் இல் இந்த செய். அவை சேமிக்கப்பட்ட பயன்பாடு பதிவு மற்றும் பார்வை யாரும் பெற பற்றி.",
+        "capturePromptsAndAnswers": "தூண்டல் மற்றும் விளக்க பெற்",
+        "saveChanges": "மாற்றங்கள் சேமிக்க",
+        "createRouter": "திசையாக்குபவர் உருவாக்க",
+        "passthroughPath": "பாதை",
+        "passthroughPathHint": "கிளையண்டுகள் அழைக்கும் URL-ன் பகுதியாக மாறுகிறது: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "ஆர்கெஸ்ட்ரேட்டர் உருவாக்கவும்",
+        "createPassthrough": "பாஸ்-த்ரு உருவாக்கவும்"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "இந்த திசையாக்குபவர் ஒரு அயஸ்கரணி அல்லது.",
+      "candidateRouters": "பொறுத்தம் திசையாக்குபவர்கள்",
+      "candidateRoutersHint": "இந்த அயஸ்கரணி பறித கோரிக்கைகள் திசையாக்குபவர்கள். எடை பொறுத்தம் தேர்ந்தெடுக்கப்பட்ட எப்பொழுது; பெயர், id, எடை மற்றும் விரும்பत்தகாய ஒவ்வொரு-பொறுத்தம் வரம்புகள் கூறிக்குதி।",
+      "routingPolicies": "திறக்கும் கொள்கைகள்",
+      "routingPoliciesHint": "ஒர்கெஸ்ட்ரேட்டர் ஒவ்வொரு வேட்பாளர் ரூட்டரையும் முழுவதுமாக மதிப்பிடுகிறது, எனவே இங்கே சுகாதாரம், விகிதம் வரம்பு மற்றும் நியாயம் கொள்கைகள் மட்டுமே பொருந்தும். மற்ற கொள்கை வகைகள் ஒரு ரூட்டரின் சொந்த மாதிரிகளிலிருந்து தேர்வு செய்கின்றன, அவை ஆர்கெஸ்ட்ரேட்டரிடம் இல்லை.",
+      "router": "திசையாக்குபவர்",
+      "selectRouter": "திசையாக்குபவர் தேர்ந்தெடு",
+      "weight": "எடை",
+      "removeCandidate": "பொறுத்தம் அகற்றவும்",
+      "usageLimits": "இந்த பொறுத்தம் பயன்பாடு வரம்புகளை",
+      "limitCount": "{{count}} வரம்பு",
+      "limitCount_other": "{{count}} வரம்புகளை",
+      "usageLimitsHint": "விரும்பत்தகாய பயன்பாடு வரம்புகளை பயன்படுத்த மட்டுமே கோரிக்கைகளை இந்த அயஸ்கரணி பறित இந்த பொறுத்தம்।",
+      "empty": "எந்த பொறுத்தம் திசையாக்குபவர்கள் இல்லை. ஒரு அயஸ்கரணி அங்கீகாரம் முன்னே கோரிக்கைகளை பறிக வேண்டும்।",
+      "addCandidate": "பொறுத்தம் சேர்க்கவும்",
+      "saved": "சேமிக்கப்பட்டது!",
+      "saveCandidates": "பொறுத்தம் சேமிக்க",
+      "errors": {
+        "loadFailed": "திசையாக்குபவர்கள் சுமை தவறிவிட்டது",
+        "saveFailed": "அயஸ்கரணி பொறுத்தம் சேமிக்க பிழை"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "திசையாக்கல் சுயவிவரம் ஒதுக்க தவறிவிட்டது",
+        "duplicateTargets": "இலக்கம் மாதிரிகள் நகல் இல்லை முடியும் நம்.",
+        "saveFailed": "திசையாக்குபவர் திசையாக்கல் சேமிக்க பிழை",
+        "noProfileAvailable": "எந்த திசையாக்கல் சுயவிவரம் கிடைக்கிறது இல்லை. ஒன்று சுயவிவரங்கள் பக்கம் உருவாக்க।"
+      },
+      "form": {
+        "routing": "திசையாக்கல்",
+        "routingHint": "பயன்படுத்த முயற்சி ஒரு பகிரங்க திசையாக்கல் சுயவிவரம், அல்லது இந்த திசையாக்குபவர் சொந்த கொள்கைகள் வரையறை. இலக்கம் மாதிரிகள் பொருத்தம் எப்படி உள்ளன.",
+        "profileMode": "சுயவிவரம்",
+        "customMode": "தனிப்பயன்",
+        "routingProfile": "திசையாக்கல் சுயவிவரம்",
+        "builtinSuffix": "(உள்ளமைக்க)",
+        "profileHint": "கொள்கைகள் சுயவிவரம் வெளிச்சமுக்திறக்கு மற்றும் தெளிவாக அதன் மாற்றங்கள். தொகு அவை சுயவிவரங்கள் பக்கம், அல்லது தனிப்பயன் மாற்றம் தொடங்க அவை ஒரு நகல் இருந்து.",
+        "saved": "சேமிக்கப்பட்டது!",
+        "saveRoutingConfiguration": "திசையாக்கல் அமைப்பு சேமிக்க"
+      },
+      "targetModels": {
+        "heading": "இலக்கம் மாதிரிகள்",
+        "hint": "வரை நீத் வகை கொள்கைகளை வடிகட்ட மற்றும் தேர்ந்தெடு விரும்ப. விரும்பத்தகாய தூண்டல் திசையாக்குபவர் AI பயன்படுத்த குறிப்பு ஒவ்வொரு மாதிரி தேர்ந்தெடு.",
+        "endpointModel": "Endpoint மாதிரி",
+        "selectModel": "மாதிரி தேர்ந்தெடு",
+        "promptDefinition": "தூண்டல் வரையறை",
+        "promptPlaceholder": "கூறிக்குதி எப்பொழுது மற்றும் ஏன் திசையாக்குபவர் தேர்ந்தெடு வேண்டும் இந்த மாதிரி...",
+        "intents": "உதிரங்கள்",
+        "removeTarget": "இலக்கம் மாதிரி அகற்றவும்",
+        "empty": "எந்த இலக்கம் மாதிரிகள் அமைப்பு வேண்டும் இல்லை.",
+        "addTarget": "இலக்கம் மாதிரி சேர்க்கவும்",
+        "passthroughLabel": "பாஸ்-த்ரூ (மூல அனுப்புதல்)",
+        "passthroughNotRemovable": "பாஸ்-த்ரூ உள்ளீட்டை அகற்ற முடியாது"
+      }
+    },
+    "optimizer": {
+      "title": "உpकरणึ",
+      "description": "உpकरणึ குறைப்பு தூண்டல் டோகன்கள் முன் கோரிக்கைகள் வழங்குநர் கட்ட. அவை வரிசையில் மேல் தொடக்கம் இயக்க. பயன்படுத்த ஒரு பகிரங்க உपकरणึ சுயவிவரம், அல்லது இந்த திசையாக்குபவர் சொந்த குழாய வரையறை।",
+      "noPermission": "உपकरणึ பார்வை அனுமதி உங்களுக்கு இல்லை।",
+      "mode": {
+        "profile": "சுயவிவரம்",
+        "custom": "தனிப்பயன்"
+      },
+      "profileSelect": {
+        "ariaLabel": "உpकरणึ சுயவிவரம்",
+        "builtinLabel": "{{label}} (உள்ளமைக்க)",
+        "hint": "தேவைப்பட்ட சுயவிவரம் வெளிச்சமுக்திறக்கு மற்றும் தெளிவாக அதன் மாற்றங்கள். தொகு அவை சுயவிவரங்கள் பக்கம், அல்லது தனிப்பயன் மாற்றம் தொடங்க அவை ஒரு நகல் இருந்து.",
+        "disabledSuffix": "(முடக்கப்பட்ட)",
+        "thresholdSuffix": ", வாசல் {{threshold}}"
+      },
+      "customHint": "மறுவரிசை, மாற்றம் செயல்பாட்டுக் பயன்படுத்த. சில உपकरणึ ஒரு வாசல் பயன்படுத்த கட்டுப்பாட்ட எப்பொழுது ஆ.",
+      "saveButton": "உपकरणึ சேமிக்க",
+      "saving": "சேமிக்கப்படுகிறது...",
+      "saved": "சேமிக்கப்பட்டது",
+      "preview": {
+        "title": "டோகன் சேமிப்பு முன்",
+        "description": "தற்போதைய (சேமிக்கப்படாத) குழாய இயக்க ஒரு தூண்டல் மூலம் பார்வை என்ன ஒவ்வொரு கட்ட குறைக்க மற்றும் என்ன அதை செலவு. பொறுத்தம் மாதிரிக் உரை தொட்டுக்கள் ஒன்று, அல்லது வகை உங்கள் சொந்த தூண்டல்.",
+        "promptLabel": "தூண்டல்",
+        "promptAriaLabel": "தூண்டல் முன் மூலம்",
+        "typePromptOption": "கீழே தூண்டல் வகை",
+        "fixturesHint": "மாதிரிக் உரை தொட்டுக்கள் Routerly உடன் வெளிச்சமுக்திறக்கு. Routerly பெற் தூண்டல்கள் தகவல் தொகு வேண்டும் இல்லை।",
+        "modelLabel": "மாதிரி",
+        "modelAriaLabel": "மாதிரி முன் தொடர்ப்பு",
+        "modelWithContext": "{{id}} ({{k}}k சூழல்)",
+        "noModelOption": "மாதிரி இல்லை",
+        "modelHint": "தேவைப்பட்ட ஒரு சூழல் சாளரம் கொண்ட மாதிரி பெற்றால் தெரிய வேண்டும். மாதிரி இல்லாமல் அவை தகாத ஆ, சரியாக அவை இருப்பு வேண்டாம் ஒரு கோரை என்று கூறிக்குதி மாதிரி Routerly மாதிரி சாளரம் இல்லை.",
+        "sampleAriaLabel": "மாதிரி தூண்டல்",
+        "samplePlaceholder": "மாதிரி பயனர் செய்தி பேஸ்...",
+        "runButton": "முன் இயக்க",
+        "running": "இயங்கிக்கொள்ளும்...",
+        "before": "முன்",
+        "after": "பின்னர்",
+        "saved": "சேமிக்கப்பட்டது",
+        "columns": {
+          "optimizer": "உpकरणึ",
+          "before": "முன்",
+          "after": "பின்னர்",
+          "saved": "சேமிக்கப்பட்டது"
+        },
+        "rolledBackNote": "அருண்கொடுப்பதற்கு: மாற்றும் இந்த கட்ட குற்றம் பாதுரக்ஷைத்தற்ற மாற்றம் மீட்ட",
+        "skippedNote": "தகாத: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "மாற்றும் இந்த கட்ட குறைப்பு மீட்ட, எனவே தூண்டல் அடுத்த கட்ட வந்த மாற்றம் இல்லாமல்।",
+          "skipped": "இந்த கட்ப் இயக்க வேண்டும் இல்லை: {{reason}}",
+          "unchanged": "இந்த கட்ப் தூண்டல் மாற்றம் இல்லாமல் விட."
+        }
+      },
+      "errors": {
+        "assignFailed": "உपकरणึ சுயவிவரம் ஒதுக்க தவறிவிட்டது",
+        "saveFailed": "உपकरணึ சேமிக்க பிழை",
+        "previewFailed": "முன் பயற்ற பிழை",
+        "noProfileAvailable": "எந்த உपकरणึ சுயவிவரம் கிடைக்கிறது இல்லை. ஒன்று சுயவிவரங்கள் பக்கம் உருவாக்க।"
+      }
+    },
+    "token": {
+      "newButton": "புதிய டோகன்",
+      "empty": "எந்த API டோகன்கள் இல்லை. கோரிக்கைகளை உறுப்படி தொடங்க ஒன்று உருவாக்க.",
+      "budgetOverrides": "பட்ஜெட் மாற்றுப்படி",
+      "created": "உருவாக்க",
+      "lastUsed": "கடைசியாக பயன்படுத்த",
+      "expires": "இறுதியாக வர",
+      "never": "ஒருபோதுமை",
+      "editTitle": "அமைப்பு தொகு",
+      "revokeTitle": "டோகனை மீளுளு செய்",
+      "revokeConfirm": "{{snippet}}...\" டோகனை மீளுளு செய்க? பயன்பாடுகள் உடனே வேலை நிறுத்த.",
+      "labelInput": {
+        "placeholder": "தேடு அல்லது குறிப்பு உருவாக்க…",
+        "createPrefix": "உருவாக்க",
+        "noMatches": "பொருத்தம் குறிப்பு கண்டுபிடிக்கப்படவில்லை."
+      },
+      "errors": {
+        "deleteFailed": "டோகன் நீக்க பிழை"
+      },
+      "create": {
+        "backToTokens": "டோகன்கள் திரும்ப",
+        "title": "புதிய API டோகன்",
+        "subtitle": "முழு டோகன் தொடர்ந்து ஒருமுறை உருவாக்க — சேமிப்பை பாதுரக்ஷைத்தாக.",
+        "tokenCreated": "டோகன் வெற்றிகரமாக உருவாக்க. இப்போது நகலெடு — இது மீண்டும் கூறப்பட்ட வேண்டும் இல்லை.",
+        "copied": "நகலெடு!",
+        "copy": "நகலெடு",
+        "done": "முடிந்த",
+        "optional": "விரும்பத்தகாய",
+        "labels": "குறிப்புகள்",
+        "labelsHint": "இந்த டோகன் ஐडि (எ.கா. \"உபยோக\", \"ci\").",
+        "scopes": "scopes",
+        "scopesHint": "வினამுனा scopes சேர்க்கப்பட்ட இந்த டோகன் (எ.கா. \"batch\", \"உள்ளீடு\"), உங்கள் சொந்த குறிப்புக்களுக்கு சேமிக்க।",
+        "tags": "tags",
+        "tagsHint": "விசை-মதிப்பு metadataவர் முன்புற பயன்பாடு தகவல் (எ.கा env=உபयோக).",
+        "keyPlaceholder": "விசை",
+        "valuePlaceholder": "மதிப்பு",
+        "createButton": "டோகன் உருவாக்க",
+        "cancel": "ரத்து செய்",
+        "copyFailed": "நகலெடு தவறிவிட்டது — இயக்கிய தேர்ந்தெடு மற்றும் டோகन் நகலெடு।",
+        "errors": {
+          "createFailed": "டோகन் உருவாக்க தவறிவிட்டது"
+        }
+      },
+      "edit": {
+        "title": "பாதுகாப்பு",
+        "subtitle": "குறிப்பு மற்றும் ஒவ்வொரு-माथेल வரम்பு மாற்றுप்पदि இந்த டोকेन்.",
+        "token": "டோகन்",
+        "labels": "குறிப்புகள்",
+        "perModelLimits": "ஒவ்வொரு-मাथेल வरम्बु",
+        "perModelLimitsHint": "मा०० वैश्विक मर्दा র௭ट्टार-स्तर वरम्बु् के लिए अनुरोध इस डिटोकेन् का उपयोग कर।",
+        "noTargetModels": "पहले रूटिंग टैब में लक्ष्य मॉडल जोड़ें।",
+        "noOverride": "कोई ओवरराइड नहीं",
+        "noLimits": "कोई सीमा नहीं",
+        "noLimitsSet": "कोई सीमा सेट नहीं — प्रभावी माता-पिता से। नीचे एक सीमा जोड़ें ओवरराइड करने के लिए।",
+        "metric": "अनुमति दीजिये",
+        "type": "प्रकार",
+        "periodLabel": "काल",
+        "every": "हर",
+        "maxCost": "अधिकतम ($)",
+        "maxCalls": "अधिकतम (n.)",
+        "maxTokens": "अधिकतम (टोकन)",
+        "allCombosSet": "सभी मीट्रिक/पीरियड संयोजन पहले से सेट हैं",
+        "addLimit": "सीमा जोड़ें",
+        "windowType": {
+          "period": "काल",
+          "rolling": "Rolling"
+        },
+        "limitMetric": {
+          "cost": "செலவு",
+          "calls": "Requests",
+          "input_tokens": "Input tokens",
+          "output_tokens": "Output tokens",
+          "total_tokens": "Total tokens"
+        },
+        "period": {
+          "hourly": "Hourly",
+          "daily": "दैनिक",
+          "weekly": "साप्ताहिक",
+          "monthly": "मासिक",
+          "yearly": "वार्षिक"
+        },
+        "rollingUnit": {
+          "second": "सेकंड",
+          "minute": "मिनट",
+          "hour": "घंटे",
+          "day": "दिन",
+          "week": "सप्ताह",
+          "month": "महीना"
+        },
+        "fmt": {
+          "requests": "{{value}} req",
+          "inputTokens": "{{value}} in-tok",
+          "outputTokens": "{{value}} out-tok",
+          "totalTokens": "{{value}} tok",
+          "everyRolling": "{{metric}} / हर {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "பாதுகாப்பு அமைப்பு சேமிக்க பிழை"
+        }
+      }
+    },
+    "users": {
+      "title": "பாதுகாப்பு",
+      "description": "ஒரு பகிரங்க பாதுகாப்பு சுயவிவரம் பயன்படுத்த, அல்லு இந்த திசையாக்குபவர் சொந்த பாதுகாப்பு மற்றும் PII கொள்கைகளை வரையறை।",
+      "addButton": "Add Member",
+      "addNewTitle": "Add New Member",
+      "selectUserPlaceholder": "Select a user...",
+      "addConfirmButton": "Add",
+      "cancelButton": "Cancel",
+      "empty": "No members found.",
+      "removeConfirm": "Are you sure you want to remove this member?",
+      "saveTitle": "Save changes",
+      "changeRoleTitle": "Change Role",
+      "removeTitle": "Remove Member",
+      "roles": {
+        "viewer": "Viewer",
+        "editor": "Editor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "actions": "Actions"
+      },
+      "errors": {
+        "loadFailed": "Failed to load users",
+        "addFailed": "Error adding member",
+        "updateFailed": "Error updating member",
+        "removeFailed": "Error removing member"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Off"
+      },
+      "autoRefreshOff": "தன்னியக்க புதிப்பிக்க முடக்க",
+      "autoRefreshEvery": "ஒவ்வொரு {{interval}} தன்னியக்க புதிப்பிக்க",
+      "lastUpdated": "கடைசி புதிப்பிக்கப்பட்டது: {{time}}",
+      "refresh": "புதிப்பிக்கவும்",
+      "refreshNowTitle": "இப்போது புதிப்பிக்கவும்",
+      "refreshNowButton": "↻ இப்போது",
+      "filters": {
+        "period": "काल",
+        "model": "மாதிரி",
+        "allModels": "அனைத்து மாதிரிகள்",
+        "type": "प्रकार",
+        "all": "அனைத்து",
+        "completion": "முடிப்பு",
+        "router": "திசையாக்குபவர்",
+        "status": "நிலை",
+        "success": "வெற்றி",
+        "blocked": "தொண்டு",
+        "error": "பிழை",
+        "resetButton": "வடிகட்ட மாற்றவும்"
+      },
+      "stats": {
+        "totalCost": "மொத்த செலவு",
+        "totalCalls": "மொத்த அழைப்புகள்",
+        "completionCalls": "முடிப்பு அழைப்புகள்",
+        "routerCalls": "திசையாக்குபவர் அழைப்புகள்",
+        "errors": "பிழைகளை"
+      },
+      "requestLogs": "கோரிக்கை சொல்ல",
+      "emptyNoRequests": "இந்த திசையாக்குபவர் தேர்ந்தெடுக்கப்பட்ட கால எந்த கோரிக்கைகளை இல்லை.",
+      "emptyNoMatches": "எந்த தகவல் செயல்பட்ட வடிகட்ட பொருத்தம் வேண்டாம் இல்.",
+      "columns": {
+        "time": "நேரம்",
+        "model": "மாதிரி",
+        "type": "प्रकार",
+        "in": "உள்ளீடு",
+        "out": "வெளியீடு",
+        "cost": "செலவு",
+        "latency": "தாமதம்",
+        "ttft": "TTFT",
+        "tokPerSec": "Tok/s",
+        "status": "நிலை"
+      },
+      "typeRouter": "திசையாக்குபவர்",
+      "typeCompletion": "முடிப்பு",
+      "pagination": {
+        "previous": "← முந்தைய",
+        "next": "அடுத்த →",
+        "pageOf": "பக்கம் {{page}} {{totalPages}} இல்",
+        "totalRecords": "({{count}} மொத்த தகவல்)"
+      }
+    },
+    "security": {
+      "title": "பாதுகாப்பு",
+      "description": "ஒரு பகிரங்க பாதுகாப்பு சுயவிவரம் பயன்படுத்த, அல்லு இந்த திசையாக்குபவர் சொந்த பாதுகாப்பு மற்றும் PII கொள்கைகளை வரையறை।",
+      "mode": {
+        "profile": "சுயவிவரம்",
+        "custom": "தனிப்பயன்"
+      },
+      "profileSelect": {
+        "ariaLabel": "பாதுகாப்பு சுயவிவரம்",
+        "builtinLabel": "{{label}} (உள்ளமைக்க)",
+        "hint": "பாதுகாப்பு மற்றும் PII கொள்கைகளை சுயவிவரம் வெளிச்சமுக்திறக்கு மற்றும் தெளிவாக அதன் மாற்றங்கள். தொகு அவை சுயவிவரங்கள் பக்கம், அல்லு தனிப்பயன் மாற்றம் தொடங்க அவை ஒரு நகல் இருந்து।",
+        "blockingSuffix": ", தொண்டு",
+        "disabledSuffix": ", முடக்கப்பட்ட",
+        "piiRedaction": "PII நீக்कம் ({{target}})"
+      },
+      "saveButton": "பாதுகாப்பு அமைப்பு சேமிக்க",
+      "saved": "சேமிக்கப்பட்டது!",
+      "errors": {
+        "assignFailed": "பாதுகாப்பு சுயவிவரம் ஒதுக்க தவறிவிட்டது",
+        "saveFailed": "பாதுகாப்பு அமைப்பு சேமிக்க பிழை",
+        "noProfileAvailable": "எந்த பாதுகாப்பு சுயவிவரம் கிடைக்கிறது இல்லை. ஒன்று சுயவிவரங்கள் பக்கம் உருவாக்க।"
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "நீங்கள் ஒரு உதவிக்குத் தயாரான AI உதவி.",
+      "errors": {
+        "unknown": "Unknown error occurred",
+        "onlyImages": "தொடும் உள்ளீடு வரையப் விளக்கத்தை ஆதரிக்க போது தொடும்."
+      },
+      "title": "பாதுகாப்பு",
+      "subtitle": "குறிப்பு மற்றும் ஒவ்வொரு-माथेल வரम்பு மாற்றுप்पदि இந்த டोকेन்.",
+      "routerToken": "திசையாக்குபவர் டோகன்:",
+      "hideToken": "டோகன் உளை",
+      "showToken": "டோகன் கூறிக்குதி",
+      "recognizedToken": "அறியப்பட்ட டோகன்",
+      "unrecognizedToken": "அறியப்படாத டோகன்",
+      "noMessages": "எந்த செய்திகள் இல்லை.",
+      "enterTokenHint": "செய்தி அனுப்ப ஒரு திசையாக்குபவர் டோகன் மேலே உள்ளிட.",
+      "typeMessageHint": "சோதனை தொடங்க கீழே ஒரு செய்தி வகை.",
+      "reasoning": "தர்க்க",
+      "attachedAlt": "சேர்க்கப்பட்ட",
+      "attachmentAlt": "சேர்க்க",
+      "attachImage": "உருவம் சேர்க்கவும்",
+      "typeMessagePlaceholder": "ஒரு செய்தி வகை...",
+      "stopGeneration": "உபยோக நிறுத்த",
+      "sendEnter": "அனுப்ப (Enter)",
+      "debugLog": "Debug சொல்ல",
+      "clear": "தெளிவு",
+      "noRequestSent": "எந்த கோரிக்கை இல் அனுப்பப்பட்ட.",
+      "turnTraceLog": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்",
+      "turnTraceLog_other": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்கள்"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "இணைப்புகள்",
+      "subtitle": "வழங்குநர் கணக்கு மாதிரி நிகழ்வுக் இயக்க",
+      "noPermission": "இணைப்புகள் பார்வை அனுமதி உங்களுக்கு இல்லை।",
+      "count": "{{count}} இணைப்பு",
+      "count_other": "{{count}} இணைப்புகள்",
+      "addConnection": "இணைப்பு சேர்க்கவும்",
+      "empty": "எந்த இணைப்புகள் இல்லை. தொடங்க ஒன்று சேர்க்க.",
+      "deleteConfirm": "\"{{label}}\" இணைப்பு அகற்ற? நிகழ்வுக் பற்ற வேலை நிறுத்த.",
+      "errors": {
+        "loadFailed": "இணைப்புகள் சுமை தவறிவிட்டது",
+        "deleteFailed": "இணைப்பு நீக்க தவறிவிட்டது"
+      },
+      "columns": {
+        "label": "குறிப்பு",
+        "provider": "வழங்குநர்",
+        "endpoint": "Endpoint",
+        "status": "நிலை"
+      },
+      "status": {
+        "enabled": "இயக்கப்பட்ட",
+        "disabled": "முடக்கப்பட்ட"
+      },
+      "actions": {
+        "models": "மாதிரிகள்",
+        "edit": "தொகு",
+        "remove": "அகற்று"
+      }
+    },
+    "form": {
+      "backToConnections": "இணைப்புகள் திரும்ப",
+      "editTitle": "இணைப்பு தொகு",
+      "addTitle": "இணைப்பு சேர்க்கவும்",
+      "enabled": "இயக்கப்பட்ட",
+      "editSubtitle": "வழங்குநர் கணக்கு அமைப்புகள் புதிப்பிக்க",
+      "addSubtitle": "ஒரு புதிய வழங்குநர் கணக்கு பதிவு",
+      "sectionTitle": "இணைப்பு விவரங்களை",
+      "sectionDesc": "வழங்குநர் கணக்கு, நிலைமை, மற்றும் endpoint கோரிக்கைகளை செய்ய.",
+      "provider": "வழங்குநர்",
+      "groups": {
+        "directApi": "நேரடி API",
+        "cloudPlatform": "Cloud தளம்",
+        "subscription": "சந்தா",
+        "browserSession": "பிரவுசர் அமர்வு",
+        "selfHosted": "சொந்த-ஹோஸ்ட்"
+      },
+      "upstreamProvider": {
+        "label": "வழங்குநர்",
+        "hintLabel": "(மேலுறை வழங்குநர் பெயர்)",
+        "placeholder": "எ.கா. deepseek, mistral, groq",
+        "description": "பெயரிடும் சேவை இந்த endpoint பற்றி வரை. மாதிரிகள் இந்த இணைப்பு பயன்படுத்த அதை ID முன்னொட்டு (எ.கா. <code>deepseek/deepseek-r1</code> )."
+      },
+      "name": {
+        "label": "பெயர்",
+        "hint": "ஐடி பெயர் அனைத்து மூலம் வெளிப்பாக உள்ளன. விட்டு வெளிப்பாக <code>{{suggested}}</code> பயன்படுத்த।"
+      },
+      "credentialsBlankHint": "தற்போதைய மதிப்புகளை வைத்திருக்க நிலைமை கள் வெளிப்பாக விட விட்டு.",
+      "save": "சேமிக்க",
+      "create": "உருவாக்க",
+      "cancel": "ரத்து செய்",
+      "oauth": {
+        "unknown": "தெரியாத",
+        "accountExpires": "கணக்கு: {{account}} — வர {{expires}}",
+        "unknownError": "தெரியாத பிழை"
+      },
+      "errors": {
+        "notFound": "இணைப்பு கண்டுபிடிக்கப்படவில்லை",
+        "loadFailed": "இணைப்பு சுமை தவறிவிட்டது",
+        "updateFailed": "இணைப்பு புதிப்பிக்க தவறிவிட்டது",
+        "createFailed": "இணைப்பு உருவாக்க தவறிவிட்டது"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "மாதிரிகள் திரும்ப",
+      "title": "மாதிரி கண்ட்",
+      "subtitle": "கிடைக்க மாதிரிகள் உலாவ மற்றும் உங்கள் திசையாக்கல் அமைப்பு சேர்க்க",
+      "count": "{{count}} மாதிரிகள்",
+      "filteredCount": "{{filtered}} {{count}}",
+      "free": "இலவசம்",
+      "add": "சேர்க்கவும்",
+      "addAgain": "மீண்டும் சேர்க்கவும்",
+      "loadFailed": "வழங்கல் சுமை தவறிவிட்டது: {{error}}",
+      "filters": {
+        "search": "தேடு",
+        "searchPlaceholder": "மாதிரி ID அல்லது பெயர்…",
+        "provider": "வழங்குநர்",
+        "allProviders": "அனைத்து வழங்குநர்கள்",
+        "context": "சூழல்",
+        "ctxOptions": {
+          "all": "அனைத்து",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "விலை / 1M",
+        "priceOptions": {
+          "all": "அனைத்து",
+          "free": "இலவசம்",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "கூறிக்குதி",
+        "configured": "அமைப்பு",
+        "embedding": "உள்பொதிப்பு",
+        "resetFilters": "வடிகட்ட மாற்றவும்"
+      },
+      "empty": {
+        "noMatches": "முற்றும் மாதிரிகள் உங்கள் வடிகட்ட பொருத்தம் வேண்டாம் இல்லை।"
+      },
+      "columns": {
+        "model": "மாதிரி",
+        "provider": "வழங்குநர்",
+        "context": "சூழல்",
+        "input": "உள்ளீடு / 1M",
+        "output": "வெளியீடு / 1M"
+      },
+      "badges": {
+        "configured": "அமைப்பு",
+        "embedding": "உள்பொதிப்பு",
+        "runsLocally": "স্थानીয় இயக்கு"
+      },
+      "pagination": {
+        "prev": "முந்தைய",
+        "next": "அடுத்த",
+        "range": "{{start}}–{{end}} {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "மாதிரிகள் திரும்ப",
+      "title": {
+        "add": "மாதிரி சேர்க்கவும்",
+        "edit": "மாதிரி தொகு",
+        "clone": "மாதிரி நகल"
+      },
+      "subtitle": {
+        "add": "புதிய LLM வழங்குநர் மாதிரி பதிவு",
+        "edit": "{{id}} அமைப்பு மாற்றும்",
+        "clone": "{{id}} இல் இருந்து நகல் — உருவாக்க புதிய ID ஒதுக்க"
+      },
+      "errors": {
+        "modelNotFound": "மாதிரி கண்டுபிடிக்கப்படவில்லை",
+        "sourceModelNotFound": "புகள் மாதிரி கண்டுபிடிக்கப்படவில்லை",
+        "loadFailed": "மாதிரிகளை சுமை பிழை",
+        "idRequired": "மாதிரி ID தேவை",
+        "duplicateId": "{{id}} माদेल\" ஏற்கனவே உள்ளே — வித்தியாசமான தனிப்பயன் ID அமைப்பு",
+        "selectConnection": "இணைப்பு தேர்ந்தெடு",
+        "saveFailed": "பிழை"
+      },
+      "badge": {
+        "yes": "ஆம்",
+        "no": "இல்லை",
+        "override": "மாற்றுப்படி",
+        "auto": "தன்னியக்கம்",
+        "default": "முன்னிருப்பு: {{value}}",
+        "reset": "மாற்றவும்"
+      },
+      "oauth": {
+        "unknownExpiry": "தெரியாத",
+        "accountOk": "கணக்கு: {{account}} — வர {{expires}}",
+        "unknownError": "தெரியாத பிழை"
+      },
+      "identification": {
+        "title": "மாதிரி ஐடி",
+        "description": "தனிக் ஐடி மற்றும் வழங்குநர் அமைப்புகளை இந்த மாதிரி அமைப்பு।",
+        "routerlyId": "Routerly ஐடி",
+        "routerlyIdHintPre": "(விரும்பத்தகாய — முன்னிருப்பு:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "ஐडي Routerly API அழைப்புகள் இந்த மாதிரி குறிப்பு போது பயன்படுத்த.",
+        "provider": "வழங்குநர்",
+        "upstreamProviderHint": "(மேலுறை வழங்குநர் பெயர்)",
+        "upstreamProviderPlaceholder": "எ.கா. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly ஐดि உன்னிட்ட முன்னொட்டு பயன்படுத்த (எ.கா.",
+        "upstreamProviderDescPost": ").",
+        "model": "மாதிரி",
+        "upstreamModelHint": "(மேலுறை மாதிரி ஐडि)",
+        "upstreamModelPlaceholder": "எ.கா. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "மாதிரி ஐडि மேலுறை API endpoint அனுப்ப।",
+        "modelPreset": "மாதிரி முன்",
+        "customModelOption": "— தனிப்பயன் மாதிரி பெயர் —",
+        "customModelPlaceholder": "எ.கா. my-fine-tuned-model"
+      },
+      "connection": {
+        "title": "இணைப்பு விவரங்களை",
+        "description": "API endpoint மற்றும் உறுப்படி நிலைமை கோரிக்கைகளை செய்ய வேண்டிய.",
+        "preconfigured": "முன்செய்",
+        "custom": "தனிப்பயன்",
+        "connection": "இணைப்பு",
+        "selectPlaceholder": "— இணைப்பு தேர்ந்தெடு —",
+        "noneAvailable": "முன்செய் இணைப்புகளை இல்லை இந்த வழங்குநர். তனிप്പയன் மாற்றம், அல்லது இணைப்புகள் பக்கம் ஒன்று உருவாக்க।",
+        "editHint": "தொகு இந்த இணைப்பு தொடர்ந்து நிருக் மாதிரிகள் பற்ற பற்ற."
+      },
+      "capabilities": {
+        "title": "திறன்",
+        "description": "வகை மற்றும் திறன் இந்த மாதிரி விவரம்।",
+        "embeddingModel": "உள்பொதிப்பு மாதிரி",
+        "embeddingModelHint": "இந்த மாதிரி வெக்டर உள்பொதிப்பு உபயோசல் (உச்சரணை பூர்த் இல்லை)"
+      },
+      "pricing": {
+        "title": "விலை & சூழல்",
+        "description": "செலவு அளவுருக்கள் மற்றும் பெறுப் வரம்புகளை பணம் மற்றும் திசையாக்கல் பயன்படுத்த।",
+        "inputPerMillion": "உள்ளீடு $/1M",
+        "outputPerMillion": "வெளியீடு $/1M",
+        "cachePerMillion": "கேச் புறப்பாட்டு $/1M",
+        "cacheWritePerMillion": "கேச் எழுதுக $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "சூழல் சாளரம்",
+        "contextWindowHint": "(டோகன்கள், விரும்பத்தகாய)"
+      },
+      "tiers": {
+        "title": "மேம்பட்ட — விலை தளை",
+        "description": "மாற்றுப்படி விலை ஒரு அளவீட்டுக் வாசல் விதை. எடுத்துக்காட்ட: \"மேல் 200 000 சூழல் டோகன்கள், விலை மாற்றம்.\"",
+        "removeTier": "தளை அகற்றவும்",
+        "above": "மேல்",
+        "metric": "அளவீடு",
+        "metricContextTokens": "சூழல் டோகன்கள்",
+        "overridePricing": "விலை மாற்றுப்படி",
+        "addTier": "விலை தளை சேர்க்கவும்"
+      },
+      "limits": {
+        "title": "வரம்புகளை",
+        "description": "இந்த மாதிரி பயன்பாடு வரம்புகளை. பல விதிகளை கூட்டிச் செய்யலாம்।",
+        "metric": "அளவீடு",
+        "type": "வகை",
+        "addLimit": "வரம்பு சேர்க்கவும்"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (Pro/Max சந்தா)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro சந்தா)"
+      },
+      "saveChanges": "மாற்றங்கள் சேமிக்க",
+      "createClone": "நகல் உருவாக்க",
+      "createModel": "மாதிரி உருவாக்க"
+    },
+    "page": {
+      "title": "மாதிரிகள்",
+      "subtitle": "LLM வழங்குநர்கள் Routerly உடன் பதிவு",
+      "tabs": {
+        "models": "மாதிரிகள்",
+        "health": "ஆரோக்கியம்"
+      },
+      "toolbar": {
+        "count": "{{count}} மாதிரி",
+        "count_other": "{{count}} மாதிரிகள்",
+        "filteredCount": "{{filtered}} {{count}} மாதிரி",
+        "filteredCount_other": "{{filtered}} {{count}} மாதிரிகள்"
+      },
+      "filters": {
+        "allProviders": "அனைத்து வழங்குநர்கள்",
+        "allConnections": "அனைத்து இணைப்புகள்",
+        "searchPlaceholder": "மாதிரிகளை வடிகட்ட…"
+      },
+      "discover": "கண்ட",
+      "addModel": "மாதிரி சேர்க்கவும்",
+      "deleteConfirm": "\"{{id}}\" மாதிரி அகற்ற?",
+      "empty": {
+        "noModels": "எந்த மாதிரிகள் இல்லை. தொடங்க ஒன்று சேர்க்க।",
+        "noMatches": "முற்றும் மாதிரிகள் செயல்பட்ட வடிகட்ட பொருத்தம் வேண்டாம் இல்லை।"
+      },
+      "columns": {
+        "id": "ஐडि",
+        "provider": "வழங்குநர்",
+        "endpoint": "Endpoint",
+        "input": "உள்ளீடு $/1M",
+        "output": "வெளியீடு $/1M",
+        "cache": "கேச் $/1M",
+        "context": "சூழல் அளவு"
+      },
+      "actions": {
+        "test": "சோதனை",
+        "clone": "நகல",
+        "edit": "தொகு",
+        "remove": "அகற்று"
+      },
+      "pagination": {
+        "previous": "← முந்தைய",
+        "next": "அடுத்த →",
+        "pageOf": "பக்கம் {{page}} {{totalPages}} இல்",
+        "total": "({{count}} मаदेल)",
+        "total_other": "({{count}} माదेल)"
+      },
+      "health": {
+        "emptyNoModels": "எந்த माथेल அமைप்पु।",
+        "emptyNoMatches": "குறிப்பிட்ட माथेल வடिकट्ट பொறுத்தம் வேண்டாம் இல்.",
+        "resetAll": "அனைவரும் மாற்றவும்",
+        "resetAllTitle": "ஒவ்வொரு சர்க्यుืட் பிறப்பு, cooldown, மற்றும் lockout மாற்றவும்",
+        "resetTitle": "சர்க्युืট் பிறப்பு மாற்றவும்",
+        "confirmResetModel": "\"{{id}}\" मаثेल செயல்பு பிறப்पு மாற்றவும்?",
+        "confirmResetAll": "அனைத்த வாழ்நாள் நிலை மாற்றவும்? இது பரிசு ஒவ்வொரு சர்क्युుট் பிறப்பு, cooldown, மற்றும் lockout।",
+        "errors": {
+          "resetModelFailed": "சர्क्युืட் பிறப்பு மாற்ற தவறிவிட்டது",
+          "resetAllFailed": "வாழ்நாள் நிலை மாற்ற தவறிவிட்டது"
+        },
+        "columns": {
+          "model": "माথेल",
+          "provider": "வழங்குநர்",
+          "status": "நिलை",
+          "circuit": "सर्क्यूট",
+          "errorRate": "பிழை விகிதம் (5m)",
+          "p95Latency": "P95 தாமதம் (1h)",
+          "requests": "कोरुकल (1h)",
+          "lastSuccess": "கடைசி வெற்றி",
+          "cooldownLockout": "Cooldown / lockout"
+        },
+        "status": {
+          "healthy": "ஆரோக்கிய",
+          "degraded": "தாழப்பட்ட",
+          "unavailable": "கிடைக்கிறது இல்",
+          "cooldown": "Cooldown",
+          "nodata": "தரவு இல்"
+        },
+        "circuit": {
+          "ok": "சரி",
+          "recovering": "மீட்டுக்கொள்ளும்",
+          "tripped": "பயணம்"
+        },
+        "time": {
+          "never": "ஒருபோதுமை",
+          "now": "இப்பொழுது",
+          "secondsAgo": "{{count}}s முன்",
+          "minutesAgo": "{{count}}m முன்",
+          "hoursAgo": "{{count}}h முன்",
+          "daysAgo": "{{count}}d முன்",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "cooldown {{time}}",
+          "lockout": "lockout {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "சோதனைகள்",
+      "subtitle": "A/B சோதனை திசையாக்குபவர்கள் எதிராக",
+      "noPermission": "சோதனைகள் பார்வை அனுமதி உங்களுக்கு இல்லை।",
+      "count": "{{count}} சோதனை",
+      "count_other": "{{count}} சோதனைகள்",
+      "newExperiment": "புதிய சோதனை",
+      "empty": "எந்த சோதனைகள் இல்லை. மு ஒரு திசையாக்குபவர்கள் தலை தலை ஒப்பிட.",
+      "deleteConfirm": "\"{{name}}\" சோதனை நீக்க? இதை ஆ முடியாது.",
+      "noToken": "டோகன் இல்",
+      "noTokenTitle": "ஒரு டோகன் இல்லாமல் எந்த கிளையன்ட் இந்த சோதனை கட்ட முடியாது",
+      "errors": {
+        "loadFailed": "சோதனைகள் சுமை தவறிவிட்டது",
+        "deleteFailed": "சோதனை நீக்க தவறிவிட்டது"
+      },
+      "columns": {
+        "name": "பெயர்",
+        "variants": "மாறுபாடுகள்",
+        "rotation": "சுழற்றல்",
+        "created": "உருவாக்க"
+      },
+      "actions": {
+        "edit": "சோதனை தொகு",
+        "remove": "நீக்க"
+      }
+    },
+    "layout": {
+      "backToExperiments": "சோதனைகள் திரும்ப",
+      "newExperiment": "புதிய சோதனை",
+      "loading": "சுமை...",
+      "experimentId": "சோதனை ஐडि:",
+      "disabledTabTitle": "இந்த தாள் திறக்க சோதனை முதலாக சேமிக்க",
+      "errors": {
+        "notFound": "சோதனை கண்டுபிடிக்கப்படவில்லை"
+      },
+      "tabs": {
+        "config": "அமைப்பு",
+        "metrics": "அளவீடுகள்",
+        "token": "டோகன்"
+      }
+    },
+    "config": {
+      "saved": "சேமிக்கப்பட்டது.",
+      "created": "சோதனை உருவாக்க. உங்கள் கிளையன்ட் இந்த டோகன் திசையாக்குபவர் டோகன் பதிலாக முனை. இது மீண்டும் கூறப்பட்ட வேண்டும் இல்லை.",
+      "copy": "நகலெடு",
+      "copied": "நகலெடு!",
+      "done": "முடிந்த",
+      "saving": "சேமிக்கப்படுகிறது...",
+      "create": "சோதனை உருவாக்க",
+      "save": "மாற்றங்கள் சேமிக்க",
+      "cancel": "ரத்து செய்",
+      "trafficSplit": "டி ஈ பிரிப்",
+      "errors": {
+        "loadRoutersFailed": "திசையாக்குபவர்கள் சுமை தவறிவிட்டது",
+        "saveFailed": "சோதனை சேமிக்க தவறிவிட்டது",
+        "copyFailed": "நகலெடு தவறிவிட்டது: தேர்ந்தெடு மற்றும் டோகன் நகலெடு।"
+      },
+      "fields": {
+        "name": "பெயர்",
+        "namePlaceholder": "மிக விலை vs பிற்பட்ட திசையாக்கல்",
+        "description": "விவரம்",
+        "optional": "(விரும்பத்தகாய)",
+        "descriptionPlaceholder": "என்ன இந்த சோதனை தீர்க்க முயற்ற",
+        "minSamples": "குறைந்த அழைப்புகள் ஒவ்வொரு மாறுபாடு",
+        "minSamplesHint": "இந்த, அளவீடுகள் தாள் குறிப்பு ஒப்பிட அறிகுறிக்க வேண்டும் இல் இன்னும் வெளிச்சமுக்திறக்கு.",
+        "rotation": "சுழற்றல்",
+        "stickyOn": "செய் மீது மாணவர்",
+        "stickyKey": "மாணவர் விசை"
+      },
+      "variants": {
+        "title": "மாறுபாடுகள்",
+        "desc": "ஒவ்வொரு மாறுபாடு ஒரு பெயர் திசையாக்குபவர், எடுத்தான் முழு: அதன் মாதிரிகள், திசையாக்கல் மற்றும் பாதுகாப்பு எல்லா பயன்படுத்த. சோதனை வேண்டும் குறைந்தபட்சம் இரண்டு।",
+        "routerAriaLabel": "மாறுபாடு {{index}} திசையாக்குபவர்",
+        "routerPlaceholder": "திசையாக்குபவர் தேர்ந்தெடு",
+        "labelAriaLabel": "மாறுபாடு {{index}} குறிப்பு",
+        "labelPlaceholder": "குறிப்பு (விரும்பத்தகாய)",
+        "weightAriaLabel": "மாறுபாடு {{index}} எடை",
+        "weightPlaceholder": "எடை",
+        "removeTitle": "மாறுபாடு {{index}} அகற்றவும்",
+        "add": "மாறுபாடு சேர்க்கவும்"
+      },
+      "judge": {
+        "title": "நீதிபதி",
+        "desc": "விரும்பத்தகாய: ஒரு மாதிரி பெற் ஆம் விளக்க மற்றும் மதிப்பிட 0-10 உங்கள் வெளிச்சமுக்திறக்கு. ஒவ்வொரு மதிப்பிட அழைப்பு ஒரு கூடுதல் மாதிரி அழைப்பு, பிற்பட்ட எந்த மற்ற பணம் செய்யப்பட்ட।",
+        "enable": "நீதிபதி மாதிரி உடன் விளக்க மதிப்பிட",
+        "model": "நீதிபதி மாதிரி",
+        "modelPlaceholder": "மாதிரி தேர்ந்தெடு",
+        "criteria": "வெளிச்சமுக்திறக்கு",
+        "criteriaPlaceholder": "ஒன்றுக்கு வரி, எ.கா.\nகேட்ட வெளிச்சமுக்திறக்கு விளக்க\nசாரம் விட்டு\nக்கு கோரியும் வகை வைத்திருக்க",
+        "sampleRate": "பகிர் அழைப்புகள் மதிப்பிட (%)"
+      }
+    },
+    "metrics": {
+      "loading": "சுமை...",
+      "callsMeasured": "{{count}} அழைப்பு அளவிட",
+      "callsMeasured_other": "{{count}} அழைப்புகள் அளவிட",
+      "empty": "இந்த சாளரம் எந்த அழைப்புகள் இல்லை. சோதனை டோகன் கட்ட கிளையன்ட் முனை ஒப்பிட தொடங்க।",
+      "notConclusive": "வெளிச்சமுக்திறக்கு இன்னும் இல்: ஒவ்வொரு மாறுபாடு வேண்டும் குறைந்தபட்சம் {{minSamples}} இந்த சாளரம் அழைப்புகள்। ",
+      "explanation": "சிறந்தது எண்ணிக்கை ஒவ்வொரு ஜோடி விளக்கப்पட்டது: மிக விலை ஒவ்வொரு அழைப்பு, வேகமாக, உচ்ச நீதிபதி மதிப்பு. விழுக்காடு கீழே ஒரு மதிப்பு அதன் தூரம் சிறந்தை கைகள்। நீதிபதி மதிப்பு ஒரு பயணம் சராசரி விட சோதனை வாழ்நாள், எனவே இது ஒரு எண்ணிக்கை சாளரம் না பதிவு।",
+      "lowSample": "குறைந்த மாதிரி",
+      "lowSampleTitle": "அண்டை {{minSamples}} இந்த சாளரம் அழைப்புகள்",
+      "judgedCallsTitle": "{{count}} விளக்க நீதிபதி தொடக்கம் சோதனை",
+      "judgedCallsTitle_other": "{{count}} விளக்க நீதிபதி தொடக்கம் சோதனை",
+      "errors": {
+        "loadFailed": "அளவீடுகள் சுமை தவறிவிட்டது"
+      },
+      "columns": {
+        "variant": "மாறுபாடு",
+        "calls": "அழைப்புகள்",
+        "share": "பகிர்",
+        "errors": "பிழைகளை",
+        "tokens": "டோகன்கள் உள்ளீடு / வெளியீடு",
+        "cost": "செலவு",
+        "costPerCall": "செலவு / அழைப்பு",
+        "avgLatency": "Avg தாமதம்",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "நீதிபதி மதிப்பு"
+      }
+    },
+    "token": {
+      "desc": "கிளையன்ட் சோதனை திசையாக்குபவர் மீண்டும்: அதே தளத்திற்கு URL, இந்த டோகன் பதிலாக ஒரு திசையாக்குபவர் டோகன். ஒவ்வொரு கோரை விட மாறுபாடு மற்றும் பிற்பட்ட மாறுபாடு திசையாக்குபவர் பணம்।",
+      "baseUrlLabel": "OpenAI அல்லது Anthropic SDK, ஒரு சோதனை டோகன் API விசை உடன் URL:",
+      "created": "டோகன் உருவாக்க. நகலெடு இப்போது, இது மீண்டும் கூறப்பட்ட வேண்டும் இல்லை.",
+      "copy": "நகலெடு",
+      "copied": "நகலெடு!",
+      "newToken": "புதிய டோகன்",
+      "empty": "எந்த டோகன்கள் இந்த சோதனை உள்ளன. கிளையன்ட் இதை அழைக்க முடியும் வரை ஒன்று உருவாக்க।",
+      "revokeConfirm": "{{snippet}}...\" டோகனை மீளுளு செய்க? கிளையன்ட் உடனே வேலை நிறுத்த।",
+      "revokeTitle": "டோகனை மீளுளு செய்",
+      "errors": {
+        "createFailed": "டோகன் உருவாக்க தவறிவிட்டது",
+        "revokeFailed": "டோகனை மீளுளு செய்ய தவறிவிட்டது",
+        "copyFailed": "நகலெடு தவறிவிட்டது: தேர்ந்தெடு மற்றும் டோகன் நகலெடு।"
+      },
+      "columns": {
+        "created": "உருவாக்க",
+        "lastUsed": "கடைசியாக பயன்படுத்த"
+      }
+    }
+  },
+  "overview": {
+    "title": "மதிப்பொதிப்பு",
+    "subtitle": "பயன்பாடு சுருக்கம் மற்றும் செலவு முறிவு",
+    "noPermission": "பயன்பாடு தரவு பார்வை அனுமதி இல்.",
+    "costByModel": "மாதிரி மூலம் செலவு",
+    "noCostRecorded": "இந்த கால தகவல் பிற்பட்ட வேண்டும் இல்லை.",
+    "callsByModel": "மாதிரி மூலம் அழைப்புகள்",
+    "columns": {
+      "model": "மாதிரி",
+      "calls": "அழைப்புகள்",
+      "errors": "பிழைகளை",
+      "cost": "செலவு"
+    },
+    "stats": {
+      "totalCalls": "மொத்த அழைப்புகள்",
+      "callsBreakdown": "{{routing}} திசையாக்கல் · {{completion}} பூர்த்தி",
+      "successRate": "வெற்றி விகிதம்",
+      "ofAllRequests": "அனைத்து கோரிக்கைகளை இல்",
+      "errors": "பிழைகளை",
+      "failedRequests": "தவறிவிட்ட கோரிக்கைகளை",
+      "models": "மாதிரிகள்",
+      "registered": "பதிவு",
+      "routers": "திசையாக்குபவர்கள்",
+      "active": "செயல்பாட்டிலுள்ள"
+    },
+    "connectCard": {
+      "title": "கிளையன்ட் இணைக்கவும்",
+      "desc": "Claude குறியீடு, Codex, Cursor மற்றும் {{count}} இந்த கேட்வே மேலும் முனை."
+    }
+  },
+  "login": {
+    "emailLabel": "ஈமெயிலை",
+    "passwordLabel": "கடவுல்",
+    "signIn": "உள் நுழைக",
+    "errors": {
+      "loginFailed": "நுழைக தவறிவிட்டது",
+      "totpFailed": "2FA வெளிச்சமுக்திறக்கு தவறிவிட்டது"
+    },
+    "totp": {
+      "title": "இரண்டு-முக உறுதிப்படுத்தல்",
+      "backupPrompt": "பிற்பட்ட குறியீட்டை உள்ளிடவும்.",
+      "appPrompt": "உங்கள் உறுப்பதிவுசெய்யப்பட்ட விண்ணப்பம் 6-digit குறியீட்டை உள்ளிடவும்.",
+      "backupCodeLabel": "பிற்பட்ட குறியீட்",
+      "authenticatorCodeLabel": "உறுப்பதிவுசெய்யப்பட்ட குறியீட்",
+      "verify": "வெளிச்சமுக்திறக்கு",
+      "useAuthenticatorInstead": "பதிலாக உறுப்பதிவுசெய்யப்பட்ட விண்ணப்பம் பயன்படுத்த",
+      "useBackupInstead": "பதிலாக ஒரு பிற்பட்ட குறியீட்டை பயன்படுத்த"
+    }
+  },
+  "setup": {
+    "welcome": "சுவாகதம்! உங்கள் அமைப்பு விட.",
+    "welcomeSubtitle": "முதல் நிர்வாகி கணக்கு Routerly நிர்வகம் தொடங்க உருவாக்க.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly செயல்படி பரிணாமம் அதிக. பிழைகள் ஏற்படலாம்।",
+    "betaFeedback": "உங்கள் கணிப்பு அதை வெளிச்சமுக்திறக்கு வடிவ — ",
+    "betaLink": "சிக्कल் மாணवृत்तি அல्લو ",
+    "emailLabel": "நிர்வாகி ஈமெயிலை",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "கடவுல்",
+    "passwordPlaceholder": "குறைந்தபட்சம் 8 எழுத்துக்கள்",
+    "confirmLabel": "கடவுல் உறுதிப்படுத்தவும்",
+    "confirmPlaceholder": "கடவுல் மீண்டும் உள்ளிட",
+    "submit": "நிர்வாகி கணக்கு உருவாக்க",
+    "errors": {
+      "mismatch": "கடவுல்கள் பொருந்தாக்க வேண்டும்",
+      "tooShort": "கடவுல் குறைந்தபட்சம் 8 எழுத்துக்கள் இருக்க வேண்டும்",
+      "setupFailed": "அமைப்பு தவறிவிட்டது"
+    }
+  },
+  "audit": {
+    "empty": "எந்த அள்ள உள் தேவைப்பட்ட விட்டு வந்தனர் இல்லை।",
+    "errors": {
+      "loadFailed": "அள்ள சொல் சுமை தவறிவிட்டது"
+    },
+    "filters": {
+      "period": "காலம்",
+      "user": "பயனர்",
+      "userPlaceholder": "ஈமெயிலை அல்லו பயனர் ஐडि",
+      "action": "செயல்",
+      "actionPlaceholder": "எ.கா. मादेल:விட்டு",
+      "result": "விளைபொருள்",
+      "results": {
+        "all": "அனைத்து",
+        "success": "வெற்றி",
+        "forbidden": "தடை",
+        "error": "பிழை"
+      },
+      "refresh": "புதிப்பிக்கவும்"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "user": "பயனர்",
+      "action": "செயல்",
+      "endpoint": "Endpoint",
+      "result": "விளைபொருள்",
+      "details": "விவரங்கள்"
+    },
+    "pagination": {
+      "previous": "முந்தைய",
+      "next": "அடுத்த",
+      "page": "பக்கம் {{page}} {{totalPages}} இல்",
+      "total": "({{count}} மொத्त)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "பயன்பாடு",
+      "live": "LIVE",
+      "subtitle": "விரிபொருள் அழைப்பு சொல் மற்றும் ஒவ்வொரு-मাथेல முறிவு",
+      "updatedAt": "· {{time}} புதிப்பிக்கப்பட்ட",
+      "poll": {
+        "off": "பந்தய",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Live பயன்मोडे अक्षम",
+        "enable": "Live मोड सक्षम (हर 2s ताजा)"
+      },
+      "refreshNow": "↻ अभी",
+      "refreshNowTitle": "अभी ताजा",
+      "filters": {
+        "period": "काल",
+        "router": "रूटर",
+        "model": "मॉडल",
+        "token": "टोकन",
+        "caller": "कॉलर",
+        "type": "प्रकार",
+        "status": "स्थिति",
+        "allRouters": "सभी रूटर",
+        "allModels": "सभी मॉडल",
+        "allTokens": "सभी टोकन",
+        "resetFilters": "फ़िल्टर रीसेट",
+        "all": "सभी",
+        "success": "सफलता",
+        "blocked": "ब्लॉक किया",
+        "error": "त्रुटि"
+      },
+      "caller": {
+        "all": "सभी",
+        "completion": "समापन",
+        "routing": "रूटर",
+        "guardrail": "गार्डरेल",
+        "judge": "न्यायाधीश"
+      },
+      "callerBadge": {
+        "completion": "समापन",
+        "routing": "रूटर",
+        "guardrail": "गार्डरेल",
+        "judge": "न्यायाधीश"
+      },
+      "errors": {
+        "loadFailedPrefix": "उपयोग डेटा लोड करने में विफल:",
+        "retry": "पुनः प्रयास"
+      },
+      "stats": {
+        "totalCalls": "कुल कॉल",
+        "completionCalls": "समापन कॉल",
+        "routerCalls": "रूटर कॉल",
+        "guardrailCalls": "गार्डरेल कॉल",
+        "blockedCalls": "ब्लॉक किए गए कॉल",
+        "errors": "त्रुटियाँ"
+      },
+      "table": {
+        "rank": "रैंक",
+        "model": "मॉडल",
+        "provider": "प्रदाता",
+        "calls": "कॉल",
+        "errors": "त्रुटियाँ",
+        "successRate": "सफलता दर",
+        "avgLatency": "Avg विलंबता",
+        "p95Latency": "P95 विलंबता",
+        "inputTokens": "इनपुट टोकन",
+        "outputTokens": "आउटपुट टोकन",
+        "costPer1k": "लागत / 1K",
+        "cost": "लागत (यूएसडी)",
+        "bestCostPerformance": "सर्वश्रेष्ठ लागत-प्रदर्शन"
+      },
+      "showMoreModels": "{{count}} अधिक मॉडल दिखाएं",
+      "showMoreModels_other": "{{count}} अधिक मॉडल दिखाएं",
+      "showFewerModels": "कम मॉडल दिखाएं",
+      "recentCalls": {
+        "title": "हाल के कॉल",
+        "empty": "इस अवधि के लिए कोई उपयोग रिकॉर्ड नहीं।",
+        "columns": {
+          "time": "समय",
+          "router": "रूटर",
+          "model": "मॉडल",
+          "type": "प्रकार",
+          "caller": "कॉलर",
+          "in": "अंदर",
+          "out": "बाहर",
+          "cost": "लागत",
+          "latency": "विलंबता",
+          "ttft": "TTFT",
+          "tokensPerSec": "Tok/s",
+          "status": "स्थिति"
+        }
+      },
+      "pagination": {
+        "previous": "पूर्व",
+        "next": "अगली",
+        "pageOf": "पृष्ठ {{page}} कुल {{totalPages}}",
+        "totalRecords": "({{count}} कुल रिकॉर्ड)"
+      }
+    },
+    "record": {
+      "back": "पीछे",
+      "title": "कॉल विवरण",
+      "notFoundTitle": "रिकॉर्ड नहीं मिला",
+      "notFoundBody": "उपयोग रिकॉर्ड {{id}} लोड नहीं किया जा सका।",
+      "errors": {
+        "loadFailed": "रिकॉर्ड लोड करने में विफल"
+      },
+      "sections": {
+        "identity": "पहचान",
+        "tokensAndCost": "टोकन और लागत",
+        "performanceAndOutcome": "प्रदर्शन और परिणाम",
+        "traceLog": "ट्रेस लॉग"
+      },
+      "fields": {
+        "recordId": "रिकॉर्ड आईडी",
+        "router": "रूटर",
+        "token": "टोकन",
+        "model": "मॉडल",
+        "callType": "कॉल प्रकार",
+        "requestType": "अनुरोध प्रकार",
+        "inputTokens": "इनपुट टोकन",
+        "outputTokens": "आउटपुट टोकन",
+        "totalTokens": "कुल टोकन",
+        "costUsd": "लागत (यूएसडी)",
+        "costUnknown": "अज्ञात",
+        "latency": "विलंबता",
+        "ttft": "TTFT",
+        "tokensPerSec": "Tok/s",
+        "outcome": "परिणाम",
+        "timestamp": "Timestamp",
+        "guardrailTriggered": "गार्डरेल ट्रिगर किया गया",
+        "blockedBy": "द्वारा ब्लॉक किया गया",
+        "piiRedacted": "PII संपादित किया गया"
+      },
+      "errorMessage": "त्रुटि संदेश",
+      "eventCount": "{{count}} घटना",
+      "eventCount_other": "{{count}} घटनाएं",
+      "noTrace": "कोई ट्रेस उपलब्ध नहीं। ट्रेस डेटा केवल नई कॉल के लिए कैप्चर किया जाता है।"
+    }
+  },
+  "playground": {
+    "title": "விளையாட்டு மைதानம்",
+    "subtitle": "माथेलों का परीक्षण करें, प्रतिक्रियाओं की तुलना करें, और प्रॉम्प्ट प्रीसेट सहेजें।",
+    "mode": {
+      "single": "एकल",
+      "compare": "तुलना करें"
+    },
+    "token": {
+      "label": "टोकन:",
+      "labelA": "टोकन A",
+      "labelB": "टोकन B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "A जैसा ही",
+      "unknownToken": "अज्ञात टोकन"
+    },
+    "presets": {
+      "button": "प्रीसेट",
+      "panelTitle": "प्रीसेट",
+      "saveCurrent": "वर्तमान सहेजें",
+      "namePlaceholder": "प्रीसेट नाम...",
+      "save": "सहेजें",
+      "empty": "अभी तक कोई प्रीसेट नहीं।",
+      "delete": "प्रीसेट हटाएं"
+    },
+    "streamingDisabled": {
+      "banner": "स्ट्रीमिंग उपलब्ध नहीं",
+      "bannerBody": "इस रूटर के पास प्रतिक्रिया-ब्लॉकिंग गार्डरेल सक्रिय है। Routerly को डिलीवरी से पहले पूर्ण प्रतिक्रिया का निरीक्षण करना चाहिए, इसलिए प्रतिक्रियाएं एक बार में आती हैं।",
+      "tooltip": "स्ट्रीमिंग उपलब्ध नहीं है: एक प्रतिक्रिया-ब्लॉकिंग गार्डरेल को डिलीवरी से पहले पूर्ण प्रतिक्रिया का निरीक्षण करने की आवश्यकता है।",
+      "ariaLabel": "स्ट्रीमिंग अनुपलब्ध"
+    },
+    "systemPrompt": "सिस्टम प्रॉम्प्ट",
+    "model": "मॉडल",
+    "modelPlaceholder": "ऑटो (रूटर डिफ़ॉल्ट)",
+    "params": {
+      "temp": "तापमान",
+      "maxTokens": "अधिकतम टोकन",
+      "topP": "शीर्ष-पी"
+    },
+    "stream": "प्रवाह",
+    "clear": "स्पष्ट करें",
+    "empty": {
+      "noMessages": "अभी तक कोई संदेश नहीं।",
+      "enterToken": "शुरू करने के लिए ऊपर एक रूटर टोकन दर्ज करें।"
+    },
+    "reasoning": "तर्क",
+    "blockedDefault": "यह संदेश एक गार्डरेल द्वारा ब्लॉक किया गया था।",
+    "truncated": "काट दिया गया — प्रतिक्रिया अधिकतम टोकन द्वारा काट दी गई",
+    "bufferedNote": "सुरक्षा समीक्षा के लिए आयोजित",
+    "errors": {
+      "onlyImages": "केवल छवि संलग्नताएं समर्थित हैं।"
+    },
+    "rawToggle": {
+      "rendered": "प्रस्तुत",
+      "raw": "कच्चा"
+    },
+    "inputPlaceholder": "एक संदेश टाइप करें...",
+    "attachImage": "छवि संलग्न करें",
+    "attachedImageAlt": "संलग्न",
+    "attachmentAlt": "संलग्नता",
+    "debug": {
+      "title": "डीबग",
+      "clear": "स्पष्ट करें",
+      "hide": "डीबग छुपाएं",
+      "show": "डीबग दिखाएं",
+      "empty": "अभी तक कोई डीबग डेटा नहीं।",
+      "emptyHint": "रूटिंग विवरण देखने के लिए एक संदेश भेजें।",
+      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग"
+    },
+    "compare": {
+      "modelLabel": "मॉडल {{label}}:",
+      "modelSelectPlaceholder": "मॉडल चुनें...",
+      "noMessages": "अभी तक कोई संदेश नहीं।",
+      "debugTurns": "डीबग ({{count}} पाली)",
+      "debugTurns_other": "डीबग ({{count}} पालियां)",
+      "guardrailTokensTitle": "गार्डरेल न्यायाधीश टोकन",
+      "stop": "रोकना",
+      "inputPlaceholder": "दोनों मॉडल को एक ही संदेश भेजें..."
+    }
+  },
+  "help": {
+    "title": "मदद और समर्थन",
+    "subtitle": "हम मदद के लिए यहाँ हैं — किसी भी समय उत्तर खोजें या हमसे संपर्क करें।",
+    "docs": {
+      "title": "प्रलेखन",
+      "subtitle": "गाइड, API संदर्भ, और कॉन्फ़िगरेशन दस्तावेज़",
+      "body": "आधिकारिक दस्तावेज़ शुरुआत से लेकर उन्नत रूटिंग नीतियों, प्रदाता सेटअप, बजट, और पूर्ण API संदर्भ तक सब कुछ कवर करते हैं।",
+      "openLink": "प्रलेखन खोलें"
+    },
+    "issues": {
+      "title": "एक बग की सूचना दें या एक सुविधा सुझाएं",
+      "subtitle": "एक GitHub समस्या खोलें — यह 2 मिनट लगता है",
+      "body": "GitHub समस्याएं बग की रिपोर्ट करने या सुधार का सुझाव देने का सर्वोत्तम तरीका है। चीजों को तेजी से ठीक करने में हमारी मदद करने के लिए, शामिल करें: आपने क्या किया, आप क्या होने की उम्मीद करते थे, और वास्तव में क्या हुआ।",
+      "showTemplate": "समस्या टेम्पलेट दिखाएं",
+      "reportBug": "एक बग की रिपोर्ट करें",
+      "requestFeature": "एक विशेषता का अनुरोध करें"
+    },
+    "issueTemplate": {
+      "whatHappened": "क्या हुआ?",
+      "whatHappenedHint": "समस्या का सादा शब्दों में वर्णन करें",
+      "stepsToReproduce": "पुन: उत्पन्न करने के चरण",
+      "expectedBehaviour": "अपेक्षित व्यवहार",
+      "expectedBehaviourHint": "आप क्या देखने की उम्मीद करते थे",
+      "version": "Routerly संस्करण",
+      "versionHint": "`routerly --version` चलाएं या सेटिंग्स → के बारे में देखें"
+    },
+    "email": {
+      "title": "समर्थन से संपर्क करें",
+      "subtitle": "हम हर संदेश पढ़ते हैं और जल्द से जल्द जवाब देते हैं",
+      "body": "ऐसा कुछ भी जो GitHub समस्या में फिट नहीं होता है — बिलिंग प्रश्न, निजी चिंताएं, या यदि आप बस नमस्ते कहना चाहते हैं — हमें एक संदेश छोड़ दें।"
+    },
+    "faq": {
+      "title": "अक्सर पूछे जाने वाले प्रश्न",
+      "subtitle": "सबसे सामान्य प्रश्नों के त्वरित उत्तर",
+      "items": {
+        "connect": {
+          "q": "मैं अपने ऐप को Routerly से कैसे कनेक्ट करूं?",
+          "a": "अपने OpenAI या Anthropic SDK को अपने Routerly उदाहरण पर इंगित करें। आधार URL को http://your-host:3000/v1 (OpenAI-compatible) या http://your-host:3000/anthropic (Anthropic-compatible) से बदलें, फिर API कुंजी के रूप में एक राउटर टोकन का उपयोग करें। बस इतना ही — कोई अन्य परिवर्तन की आवश्यकता नहीं।"
+        },
+        "openaiCompat": {
+          "q": "क्या Routerly उन उपकरणों के साथ संगत है जो OpenAI SDK का उपयोग करते हैं?",
+          "a": "हाँ। Routerly एक ड्रॉप-इन प्रतिस्थापन है: कोई भी उपकरण जो एक कस्टम आधार URL और API कुंजी का समर्थन करता है (LangChain, LlamaIndex, Cursor, Continue, आदि) बॉक्स से बाहर काम करता है। Anthropic-format क्लाइंट्स के लिए, इसके बजाय /anthropic endpoint का उपयोग करें।"
+        },
+        "routing": {
+          "q": "मॉडल रूटिंग कैसे काम करती है?",
+          "a": "प्रत्येक राउटर के पास एक रूटिंग नीति है जो तय करती है कि कौन सा मॉडल एक अनुरोध प्राप्त करता है। नीतियों में राउंड-रॉबिन, सबसे कम लागत, सबसे तेज प्रतिक्रिया, फॉलबैक चेन, और बहुत कुछ शामिल है। आप उन्हें राउटर्स → रूटिंग के तहत प्रति राउटर कॉन्फ़िगर करते हैं।"
+        },
+        "addModel": {
+          "q": "मैं एक नया AI मॉडल कैसे जोड़ूं?",
+          "a": "मॉडल्स → मॉडल जोड़ें पर जाएं। आप किसी भी OpenAI-compatible प्रदाता (Ollama, LM Studio, कस्टम एंडपॉइंट) या एक देशी Anthropic endpoint जोड़ सकते हैं। बेस URL, API कुंजी, और मॉडल ID भरें — Routerly बाकी संभाल लेगा।"
+        },
+        "dataStored": {
+          "q": "क्या मेरा डेटा संग्रहीत है? क्या मेरे संकेत लॉग हैं?",
+          "a": "Routerly स्व-होस्ट किया गया है और डेटा केवल आपकी मशीन पर संग्रहीत है (~/.routerly/ डिफ़ॉल्ट रूप से)। संकेत और प्रतिक्रियाएं कभी भी Routerly द्वारा कहीं भी भेजी नहीं जाती हैं। अनुरोध लॉग स्थानीय रूप से संग्रहीत होती हैं और केवल यदि आप उन्हें प्रति-राउटर सक्षम करते हैं।"
+        },
+        "routerToken": {
+          "q": "राउटर टोकन क्या है और यह प्रदाता API कुंजी से कैसे अलग है?",
+          "a": "एक राउटर टोकन एक साख है जो आप अपने ऐप या टीम के सदस्यों को Routerly से प्रमाणित करने के लिए देते हैं। यह आपकी प्रदाता API कुंजियों से अलग है, जिन्हें Routerly सर्वर पक्ष पर सुरक्षित रूप से संग्रहीत करता है। आपके ऐप्स कभी भी वास्तविक प्रदाता कुंजियां नहीं देखते हैं।"
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} उपयोगकर्ता",
+    "countLabel_other": "{{count}} उपयोगकर्ता",
+    "addButton": "उपयोगकर्ता जोड़ें",
+    "columns": {
+      "email": "ईमेल",
+      "role": "भूमिका",
+      "routers": "राउटर"
+    },
+    "allRouters": "सभी",
+    "resetTwoFaTitle": "2FA रीसेट करें",
+    "resetTwoFaConfirm": "{{email}} के लिए 2FA रीसेट करें? उन्हें फिर से नामांकन करना होगा।",
+    "deleteConfirm": "इस उपयोगकर्ता को हटाएं?",
+    "emptyTitle": "कोई उपयोगकर्ता अभी तक नहीं।",
+    "noPermission": "उपयोगकर्ताओं को देखने की अनुमति आपके पास नहीं है।",
+    "modal": {
+      "title": "उपयोगकर्ता जोड़ें",
+      "emailLabel": "ईमेल",
+      "emailPlaceholder": "user@example.com",
+      "passwordLabel": "पासवर्ड",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "भूमिका",
+      "roleAdmin": "प्रशासक",
+      "roleViewer": "दर्शक",
+      "cancelButton": "रद्द करें",
+      "submitButton": "उपयोगकर्ता जोड़ें"
+    },
+    "errors": {
+      "loadFailed": "उपयोगकर्ताओं को लोड करने में विफल",
+      "addFailed": "त्रुटि"
+    }
+  },
+  "userEdit": {
+    "title": "उपयोगकर्ता संपादित करें",
+    "account": "खाता",
+    "email": "ईमेल",
+    "role": "भूमिका",
+    "changePassword": "पासवर्ड बदलें",
+    "newPassword": "नया पासवर्ड",
+    "newPasswordHint": "(वर्तमान रखने के लिए खाली छोड़ दें)",
+    "save": "सहेजें",
+    "saved": "सहेजा गया!",
+    "errors": {
+      "loadFailed": "उपयोगकर्ता को लोड करने में विफल",
+      "saveFailed": "सहेजने में विफल"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "भूमिकाओं और अनुमतियों को प्रबंधित करें। अंतर्निहित भूमिकाओं को संशोधित नहीं किया जा सकता।",
+    "newRole": "नई भूमिका",
+    "builtin": "अंतर्निहित",
+    "edit": "संपादित करें",
+    "deleteConfirm": "इस भूमिका को हटाएं? इस भूमिका वाले उपयोगकर्ता प्रभावित होंगे।",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "उदाहरण के लिए ऑपरेटर",
+      "name": "नाम",
+      "namePlaceholder": "भूमिका नाम",
+      "permissions": "अनुमतियाँ",
+      "create": "बनाओ",
+      "save": "सहेजें",
+      "cancel": "रद्द करें"
+    },
+    "permissions": {
+      "routerRead": "राउटर — पढ़ें",
+      "routerWrite": "राउटर — लिखें",
+      "modelRead": "मॉडल — पढ़ें",
+      "modelWrite": "मॉडल — लिखें",
+      "userRead": "उपयोगकर्ता — पढ़ें",
+      "userWrite": "उपयोगकर्ता — लिखें",
+      "reportRead": "रिपोर्ट — पढ़ें",
+      "settingsRead": "सेटिंग्स — पढ़ें",
+      "settingsWrite": "सेटिंग्स — लिखें",
+      "notificationWrite": "सूचनाएं — लिखें",
+      "tokenRead": "टोकन — पढ़ें",
+      "tokenWrite": "टोकन — लिखें",
+      "roleWrite": "भूमिकाएं — लिखें",
+      "auditRead": "ऑडिट लॉग — पढ़ें",
+      "modulesRead": "मॉड्यूल — पढ़ें",
+      "modulesManage": "मॉड्यूल — प्रबंधित करें",
+      "connectionsRead": "कनेक्शन — पढ़ें",
+      "connectionsManage": "कनेक्शन — प्रबंधित करें",
+      "resilienceRead": "अनुपालन — पढ़ें",
+      "resilienceManage": "अनुपालन — प्रबंधित करें",
+      "profilesRead": "रूटिंग प्रोफ़ाइल — पढ़ें",
+      "profilesManage": "रूटिंग प्रोफ़ाइल — प्रबंधित करें",
+      "optimizersRead": "ऑप्टिमाइज़र — पढ़ें",
+      "optimizersManage": "ऑप्टिमाइज़र — प्रबंधित करें",
+      "experimentsRead": "प्रयोग — पढ़ें",
+      "experimentsManage": "प्रयोग — प्रबंधित करें"
+    },
+    "errors": {
+      "loadFailed": "भूमिकाओं को लोड करने में विफल",
+      "updateFailed": "भूमिका को अपडेट करने में विफल",
+      "createFailed": "भूमिका बनाने में विफल",
+      "deleteFailed": "भूमिका हटाने में विफल"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "प्रोफाइल",
+      "subtitle": "पुन: प्रयोग योग्य रूटिंग, ऑप्टिमाइज़र और सुरक्षा कॉन्फ़िगरेशन",
+      "noPermission": "प्रोफ़ाइल को देखने की अनुमति आपके पास नहीं है।",
+      "newProfile": "नई {{kind}} प्रोफ़ाइल",
+      "empty": "अभी तक कोई {{kind}} प्रोफ़ाइल नहीं।",
+      "builtin": "अंतर्निहित",
+      "custom": "कस्टम",
+      "view": "देखें",
+      "edit": "संपादित करें",
+      "clone": "क्लोन",
+      "delete": "हटाएं",
+      "deleteConfirm": "प्रोफ़ाइल \"{{label}}\" हटाएं? यह पूर्ववत नहीं किया जा सकता।",
+      "kindDescriptions": {
+        "routing": "कौन सा मॉडल एक अनुरोध का उत्तर देता है, और जब यह नहीं हो सके तो क्या होता है",
+        "optimizer": "भेजने से पहले एक प्रॉम्प्ट से क्या हटाया जाता है",
+        "security": "ट्रैफ़िक पर लागू होने वाले गार्डरेल और PII नीतियां"
+      },
+      "columns": {
+        "label": "लेबल",
+        "type": "प्रकार",
+        "configuration": "कॉन्फ़िगरेशन",
+        "version": "संस्करण"
+      },
+      "errors": {
+        "loadFailed": "प्रोफ़ाइल को लोड करने में विफल",
+        "deleteFailed": "प्रोफ़ाइल हटाने में विफल"
+      }
+    },
+    "form": {
+      "backToProfiles": "प्रोफाइल पर वापस जाएं",
+      "newProfileTitle": "नई {{kind}} प्रोफ़ाइल",
+      "editProfileTitle": "{{label}} संपादित करें",
+      "builtinHint": "अंतर्निहित प्रोफ़ाइल को संपादित नहीं किया जा सकता। इसे कस्टमाइज़ करने के लिए एक क्लोन करें।",
+      "assignHint": "{{article}} {{kind}} प्रोफ़ाइल को किसी भी संख्या में राउटर को सौंपा जा सकता है।",
+      "noPermission": "प्रोफ़ाइल को देखने की अनुमति आपके पास नहीं है।",
+      "label": "लेबल",
+      "optimizers": "ऑप्टिमाइज़र",
+      "optimizersHint": "पुन: क्रम के लिए खींचें, सक्षम करने के लिए टॉगल करें। वे ऊपर से नीचे तक क्रम में चलते हैं।",
+      "createProfile": "प्रोफ़ाइल बनाएं",
+      "saveProfile": "प्रोफ़ाइल सहेजें",
+      "cancel": "रद्द करें",
+      "copySuffix": "{{label}} कॉपी",
+      "labelPlaceholders": {
+        "routing": "उदाहरण के लिए मेरी संतुलित रूटिंग",
+        "optimizer": "उदाहरण के लिए मेरा प्रॉम्प्ट ट्रिमर",
+        "security": "उदाहरण के लिए मेरे सख्त गार्डरेल"
+      },
+      "errors": {
+        "notFound": "प्रोफ़ाइल नहीं मिली।",
+        "loadFailed": "प्रोफ़ाइल को लोड करने में विफल",
+        "saveFailed": "प्रोफ़ाइल सहेजने में विफल"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "कनेक्ट पर वापस जाएं",
+    "title": "कनेक्ट करें",
+    "docs": "दस्तावेज़",
+    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
+    "noClientPrefix": "कोई क्लाइंट नाम नहीं",
+    "errors": {
+      "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
+    },
+    "oneCommand": {
+      "title": "सबसे तेज़: एक कमांड",
+      "description": "इसे उस मशीन पर चलाएं जहां {{client}} स्थापित है। यह {{configPath}} लिखता है, एक बैकअप रखता है जो आप पूर्ववत कर सकते हैं।"
+    },
+    "byHand": {
+      "titleAlt": "या इसे हाथ से सेट करें",
+      "titleUi": "इसे हाथ से सेट करें",
+      "titleConfigFile": "कॉन्फ़िगरेशन फ़ाइल सेट करें",
+      "setValuesIn": "{{configPath}} में इन मानों को सेट करें।",
+      "putThisIn": "इसे में डालें",
+      "replaceToken": "बदलें",
+      "withRouterToken": "एक रूटर टोकन के साथ:",
+      "createOne": "एक बनाएं",
+      "onRoutersPage": "राउटर पृष्ठ पर।",
+      "modelLabel": "मॉडल:",
+      "modelHint": "Routerly को चुनने देता है, कोई भी मॉडल id से",
+      "modelsLink": "मॉडल",
+      "worksToo": "भी काम करता है।",
+      "openaiCompatHint": "एक ही बेस URL, कुंजी और मॉडल किसी भी क्लाइंट में फिट बैठते हैं जो \"OpenAI compatible\" प्रदाता प्रदान करता है।"
+    },
+    "mcp": {
+      "title": "MCP सर्वर",
+      "description": "ऊपर दिए गए चरणों से अलग: यह {{client}} को Routerly उपकरणों को कॉल करने देता है। इसे एक व्यक्तिगत MCP टोकन की आवश्यकता है",
+      "orFromYour": "या आपके से",
+      "profileLink": "प्रोफ़ाइल"
+    },
+    "checkItWorked": {
+      "title": "जांचें कि यह काम किया",
+      "restart": "{{client}} को पुनरारंभ करें, इसे एक संदेश भेजें, फिर कॉल को देखें",
+      "usageLink": "उपयोग",
+      "cliReports": "एक ही मशीन से, CLI रिपोर्ट करता है कि यह क्या पाता है:"
+    }
+  },
+  "connect": {
+    "title": "कनेक्ट करें",
+    "subtitle": "एक AI कोडिंग क्लाइंट को इस गेटवे पर इंगित करें। इसके सेटअप चरणों के लिए एक क्लाइंट चुनें।",
+    "llmLabel": "LLM",
+    "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से रूट करता है।",
+    "mcpLabel": "MCP",
+    "mcpDescription": "इसके अंदर Routerly को एक उपकरण सर्वर के रूप में लोड करता है।",
+    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
+    "errors": {
+      "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
+    },
+    "oneCommand": {
+      "title": "एक कमांड",
+      "hint": "CLI आपके लिए कॉन्फ़िगरेशन फ़ाइल लिखता है, एक बैकअप के साथ जो आप पूर्ववत कर सकते हैं।"
+    },
+    "byHand": {
+      "title": "हाथ से",
+      "hint": "क्लाइंट पृष्ठ से स्निपेट को इसकी सेटिंग्स में कॉपी करें, फिर इसे पुनरारंभ करें।"
+    },
+    "endpoint": {
+      "title": "किसी भी क्लाइंट को यहां इंगित करें",
+      "description": "बेस URL और कुंजी बदलकर OpenAI या Anthropic SDK के निर्माण पर कुछ भी काम करता है। कुछ और नहीं बदलता है: अनुरोध और प्रतिक्रियाएं Routerly के माध्यम से जैसे हैं।",
+      "openaiBaseUrl": "OpenAI बेस URL",
+      "anthropicBaseUrl": "Anthropic बेस URL",
+      "apiKey": "API कुंजी",
+      "model": "मॉडल",
+      "apiKeyDescription": "एक राउटर टोकन, के रूप में भेजा",
+      "or": "या",
+      "createOne": "एक बनाएं",
+      "onRoutersPage": "राउटर पृष्ठ पर।",
+      "modelDescription": "Routerly को चुनने देता है। कोई भी मॉडल id से",
+      "modelsLink": "मॉडल",
+      "worksToo": "पृष्ठ भी काम करता है।"
+    }
+  }
+}

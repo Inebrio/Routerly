@@ -17,7 +17,7 @@ import { getRoutingHistory } from '../routingMemoryStore.js'
 import { getLimitUsageSnapshot } from '../../budget/budget.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
 import type { PolicyInput } from './types.js'
-import type { ModelConfig, ProjectConfig } from '@routerly/shared'
+import type { ModelConfig, RouterConfig } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockLlmChat = vi.mocked(llmChat)
@@ -25,12 +25,12 @@ const mockGetRoutingHistory = vi.mocked(getRoutingHistory)
 const mockGetLimitUsageSnapshot = vi.mocked(getLimitUsageSnapshot)
 
 /** listEffectiveModels() reads instances+connections, not 'models' directly (task A3). */
-function mockModelsAndProjects(models: ModelConfig[], projects: ProjectConfig[]): void {
+function mockModelsAndRouters(models: ModelConfig[], routers: RouterConfig[]): void {
   const { instances, connections } = splitModelsIntoInstancesConnections(models)
   mockReadConfig.mockImplementation(async (key: string) => {
     if (key === 'connections') return connections as never
     if (key === 'instances') return instances as never
-    if (key === 'projects') return projects as never
+    if (key === 'routers') return routers as never
     return [] as never
   })
 }
@@ -55,7 +55,7 @@ const candidateB: ModelConfig = {
   cost: { inputPerMillion: 5, outputPerMillion: 15 },
 }
 
-const project: ProjectConfig = {
+const router: RouterConfig = {
   id: 'proj-1', name: 'Test', tokens: [], members: [], models: [],
 }
 
@@ -64,7 +64,7 @@ function makeInput(config: any, overrides: Partial<PolicyInput> = {}): PolicyInp
     request: { model: 'auto', messages: [{ role: 'user', content: 'What is 2+2?' }] },
     candidates: [{ model: candidateA }, { model: candidateB }],
     config,
-    projectId: 'proj-1',
+    routerId: 'proj-1',
     ...overrides,
   } as PolicyInput
 }
@@ -79,7 +79,7 @@ describe('llmPolicy', () => {
   })
 
   it('returns routing scores from LLM response', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -94,7 +94,7 @@ describe('llmPolicy', () => {
   })
 
   it('strips markdown code fences from LLM response', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     const json = JSON.stringify({ routing: [{ model: 'candidate-a', point: 0.7 }, { model: 'candidate-b', point: 0.3 }] })
@@ -105,7 +105,7 @@ describe('llmPolicy', () => {
   })
 
   it('attempts repair when initial parse fails', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -121,7 +121,7 @@ describe('llmPolicy', () => {
   })
 
   it('throws when all routing model attempts fail with parse errors', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: 'garbage' } }] } as any)
@@ -135,7 +135,7 @@ describe('llmPolicy', () => {
       endpoint: 'https://api.openai.com/v1',
       cost: { inputPerMillion: 1, outputPerMillion: 3 },
     }
-    mockModelsAndProjects([routingModel, fallbackModel], [project])
+    mockModelsAndRouters([routingModel, fallbackModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -154,7 +154,7 @@ describe('llmPolicy', () => {
   })
 
   it('skips model on generic call error', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockRejectedValue(new Error('network error'))
@@ -163,7 +163,7 @@ describe('llmPolicy', () => {
   })
 
   it('skips model when routing model not found in models config', async () => {
-    mockModelsAndProjects([], [project]) // no models
+    mockModelsAndRouters([], [router]) // no models
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
 
@@ -171,7 +171,7 @@ describe('llmPolicy', () => {
   })
 
   it('uses memory when enabled and conversationId is provided', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([{ model: 'candidate-a', ts: Date.now() }])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -190,7 +190,7 @@ describe('llmPolicy', () => {
   })
 
   it('includes additionalPromptInfo when autoRouting is false', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -209,7 +209,7 @@ describe('llmPolicy', () => {
   })
 
   it('does not include additionalPromptInfo when autoRouting is true', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -227,7 +227,7 @@ describe('llmPolicy', () => {
   })
 
   it('applies maxCompletionTokens from config', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -241,7 +241,7 @@ describe('llmPolicy', () => {
   })
 
   it('truncates user message when maxUserMessageChars is set', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -254,14 +254,14 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: longContent }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model', maxUserMessageChars: 100 },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as PolicyInput)
     const userMsg = (mockLlmChat.mock.calls[0]![0] as any).messages.find((m: any) => m.role === 'user').content
     expect(userMsg).toContain('[truncated]')
   })
 
   it('handles system message in request', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -279,14 +279,14 @@ describe('llmPolicy', () => {
       },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as PolicyInput)
     const userMsg = (mockLlmChat.mock.calls[0]![0] as any).messages.find((m: any) => m.role === 'user').content
     expect(userMsg).toContain('system_prompt')
   })
 
   it('recovers routing from truncated JSON via regex', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     // Truncated JSON with complete entries
@@ -298,7 +298,7 @@ describe('llmPolicy', () => {
   })
 
   it('includes limit snapshots in system prompt when model has limits', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValueOnce([
       { metric: 'cost', window: 'daily', value: 100, current: 20, remaining: 80 },
     ])
@@ -314,7 +314,7 @@ describe('llmPolicy', () => {
   })
 
   it('includes reason in routing when includeReason is true', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue({
@@ -332,7 +332,7 @@ describe('llmPolicy', () => {
 
   it('disables thinking when model does not support it', async () => {
     const routingModelNoThinking = { ...routingModel, capabilities: { thinking: false } }
-    mockModelsAndProjects([routingModelNoThinking], [project])
+    mockModelsAndRouters([routingModelNoThinking], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -344,8 +344,8 @@ describe('llmPolicy', () => {
     expect(mockLlmChat).toHaveBeenCalled()
   })
 
-  it('uses project defaults when project is not found in config', async () => {
-    mockModelsAndProjects([routingModel], []) // no projects
+  it('uses router defaults when router is not found in config', async () => {
+    mockModelsAndRouters([routingModel], []) // no routers
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -358,7 +358,7 @@ describe('llmPolicy', () => {
   })
 
   it('handles candidate with a routing prompt', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -373,14 +373,14 @@ describe('llmPolicy', () => {
         { model: candidateB },
       ],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as PolicyInput)
     const systemMsg = (mockLlmChat.mock.calls[0]![0] as any).messages.find((m: any) => m.role === 'system').content
     expect(systemMsg).toContain('routing_guidance')
   })
 
   it('handles non-string user message content', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -395,14 +395,14 @@ describe('llmPolicy', () => {
       } as any,
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as PolicyInput)
     expect(mockLlmChat).toHaveBeenCalled()
   })
 
   // ── Line 80: non-string system message content (object) ──────────────────
   it('handles non-string system message content', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -420,7 +420,7 @@ describe('llmPolicy', () => {
       } as any,
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as PolicyInput)
     const userMsg = (mockLlmChat.mock.calls[0]![0] as any).messages.find((m: any) => m.role === 'user').content
     expect(userMsg).toContain('system_prompt')
@@ -428,7 +428,7 @@ describe('llmPolicy', () => {
 
   // ── Line 86: no user message in request (content defaults to empty) ───────
   it('handles request with no user message', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -443,7 +443,7 @@ describe('llmPolicy', () => {
       } as any,
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as PolicyInput)
     const userMsg = (mockLlmChat.mock.calls[0]![0] as any).messages.find((m: any) => m.role === 'user').content
     expect(userMsg).toContain('request_to_route')
@@ -451,7 +451,7 @@ describe('llmPolicy', () => {
 
   // ── Lines 200-201: request.messages is undefined ──────────────────────────
   it('handles request with undefined messages', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -463,14 +463,14 @@ describe('llmPolicy', () => {
       request: { model: 'auto' } as any,
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
     } as unknown as PolicyInput)
     expect(mockLlmChat).toHaveBeenCalled()
   })
 
   // ── Line 124: routing entry with non-numeric or NaN point ─────────────────
   it('defaults point to 0 when routing entry has non-numeric point', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue({
@@ -489,7 +489,7 @@ describe('llmPolicy', () => {
 
   // ── Line 130: non-Error thrown during JSON parse ──────────────────────────
   it('handles non-Error thrown during JSON parse (string thrown)', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     // Malformed JSON that causes parse to fail with a string message; we simulate
@@ -508,7 +508,7 @@ describe('llmPolicy', () => {
 
   // ── Lines 143-145: regex recovery includes reason field ───────────────────
   it('recovers routing entries with reason field from truncated JSON', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     const truncated = `{"routing": [{"model": "candidate-a", "point": 0.9, "reason": "complex task"}, {"model": "candidate-b", "point": 0`
@@ -522,7 +522,7 @@ describe('llmPolicy', () => {
 
   // ── Line 144: regex recovery with NaN point value ─────────────────────────
   it('defaults point to 0 when regex-recovered entry has unparseable number', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     // Craft a response where JSON.parse fails but regex matches an entry
@@ -542,7 +542,7 @@ describe('llmPolicy', () => {
 
   // ── Lines 181, 320: repairRoutingResponse with maxCompletionTokens set ────
   it('passes maxCompletionTokens to repair call when initial parse fails', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -559,7 +559,7 @@ describe('llmPolicy', () => {
 
   // ── Line 188: repairRoutingResponse with null/undefined message content ───
   it('handles null content in repair response gracefully', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -569,9 +569,9 @@ describe('llmPolicy', () => {
     await expect(llmPolicy(makeInput({ routingModelId: 'router-model' }))).rejects.toThrow('all models failed')
   })
 
-  // ── Line 216: projectId is undefined → fallback project id is empty string ─
-  it('uses empty string project id when projectId is undefined', async () => {
-    mockModelsAndProjects([routingModel], [])
+  // ── Line 216: routerId is undefined → fallback router id is empty string ─
+  it('uses empty string router id when routerId is undefined', async () => {
+    mockModelsAndRouters([routingModel], [])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -583,14 +583,14 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'test' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: undefined,
+      routerId: undefined,
     } as unknown as PolicyInput)
     expect(result.routing).toHaveLength(2)
   })
 
   // ── Line 251: memory enabled but conversationId missing ──────────────────
   it('skips memory lookup when conversationId is missing', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -602,9 +602,9 @@ describe('llmPolicy', () => {
     expect(mockGetRoutingHistory).not.toHaveBeenCalled()
   })
 
-  // ── Line 251: memory enabled but projectId is missing ────────────────────
-  it('skips memory lookup when projectId is missing', async () => {
-    mockModelsAndProjects([routingModel], [project])
+  // ── Line 251: memory enabled but routerId is missing ────────────────────
+  it('skips memory lookup when routerId is missing', async () => {
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -614,7 +614,7 @@ describe('llmPolicy', () => {
 
     await llmPolicy({
       ...makeInput({ routingModelId: 'router-model', memory: true }),
-      projectId: undefined,
+      routerId: undefined,
       conversationId: 'conv-xyz',
     } as unknown as PolicyInput)
     expect(mockGetRoutingHistory).not.toHaveBeenCalled()
@@ -622,7 +622,7 @@ describe('llmPolicy', () => {
 
   // ── Line 251: memory enabled with memoryCount of 0 (uses default 5) ───────
   it('uses default memoryCount of 5 when memoryCount is 0 or invalid', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([{ model: 'candidate-a', ts: Date.now() }])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -639,7 +639,7 @@ describe('llmPolicy', () => {
 
   // ── Line 253: memory enabled but history is empty → previousDecisions = undefined
   it('sets previousDecisions to undefined when memory history is empty', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -661,7 +661,7 @@ describe('llmPolicy', () => {
       ...routingModel,
       capabilities: { thinking: true },
     }
-    mockModelsAndProjects([thinkingModel], [project])
+    mockModelsAndRouters([thinkingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -676,7 +676,7 @@ describe('llmPolicy', () => {
 
   // ── Lines 290-293: no token/traceId/emit/log in context ──────────────────
   it('builds ctx without optional fields when token/traceId/emit/log are absent', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -688,7 +688,7 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'test' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       // no token, traceId, emit, log
     } as PolicyInput)
     expect(result.routing).toHaveLength(2)
@@ -701,7 +701,7 @@ describe('llmPolicy', () => {
 
   // ── Lines 290-293: all optional ctx fields are present ───────────────────
   it('includes token/traceId/emit/log in ctx when all are provided', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -715,7 +715,7 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'test' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       token: 'tok-abc',
       traceId: 'trace-xyz',
       emit,
@@ -730,7 +730,7 @@ describe('llmPolicy', () => {
 
   // ── Line 320: response with null/undefined choices content ───────────────
   it('treats empty choices content as empty string and attempts repair', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -746,7 +746,7 @@ describe('llmPolicy', () => {
 
   // ── Line 320: response with missing choices array ─────────────────────────
   it('treats missing choices array as empty string and attempts repair', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -762,7 +762,7 @@ describe('llmPolicy', () => {
 
   // ── Line 345: emit scores with reason field present ───────────────────────
   it('includes reason in emitted scores when routing entries have reasons', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     const emit = vi.fn()
@@ -779,7 +779,7 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'hello' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       emit,
     } as unknown as PolicyInput)
 
@@ -792,7 +792,7 @@ describe('llmPolicy', () => {
 
   // ── Line 355: non-Error thrown in llmChat (string exception) ─────────────
   it('handles non-Error thrown by llmChat (string exception)', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
@@ -803,7 +803,7 @@ describe('llmPolicy', () => {
 
   // ── Line 278: emit called when model not found in config ──────────────────
   it('calls emit with skip message when routing model not found in config', async () => {
-    mockModelsAndProjects([], [project])
+    mockModelsAndRouters([], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     const emit = vi.fn()
@@ -812,7 +812,7 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'test' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'nonexistent' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       emit,
     } as unknown as PolicyInput)).rejects.toThrow('all models failed')
     expect(emit).toHaveBeenCalledWith(expect.objectContaining({ message: 'llm-policy:skip' }))
@@ -820,7 +820,7 @@ describe('llmPolicy', () => {
 
   // ── maxCompletionTokens clamps to minimum 50 ─────────────────────────────
   it('clamps maxCompletionTokens to minimum 50', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -835,7 +835,7 @@ describe('llmPolicy', () => {
 
   // ── maxUserMessageChars clamps to minimum 100 ─────────────────────────────
   it('clamps maxUserMessageChars to minimum 100', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([
@@ -851,7 +851,7 @@ describe('llmPolicy', () => {
 
   // ── repair call throws → skips model and throws all models failed ─────────
   it('skips model when repair call itself throws', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat
@@ -864,7 +864,7 @@ describe('llmPolicy', () => {
 
   // ── emit called for repair attempt ───────────────────────────────────────
   it('calls emit with repair message when parse fails', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     const emit = vi.fn()
@@ -879,7 +879,7 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'test' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       emit,
     } as unknown as PolicyInput)
     expect(emit).toHaveBeenCalledWith(expect.objectContaining({ message: 'llm-policy:repair' }))
@@ -887,7 +887,7 @@ describe('llmPolicy', () => {
 
   // ── emit called for llm-policy:error on non-budget call failure ───────────
   it('calls emit with error message on non-budget llmChat failure', async () => {
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     const emit = vi.fn()
@@ -897,7 +897,7 @@ describe('llmPolicy', () => {
       request: { model: 'auto', messages: [{ role: 'user', content: 'test' }] },
       candidates: [{ model: candidateA }, { model: candidateB }],
       config: { routingModelId: 'router-model' },
-      projectId: 'proj-1',
+      routerId: 'proj-1',
       emit,
     } as unknown as PolicyInput)).rejects.toThrow('all models failed')
     expect(emit).toHaveBeenCalledWith(expect.objectContaining({ message: 'llm-policy:error' }))
@@ -905,7 +905,7 @@ describe('llmPolicy', () => {
 
   it('log.info includes max_completion_tokens when set (line 300 cond-expr branch=0)', async () => {
     // log is defined + maxCompletionTokens is set → line 300 ternary evaluates both branches
-    mockModelsAndProjects([routingModel], [project])
+    mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
     mockLlmChat.mockResolvedValue(makeSuccessResponse([

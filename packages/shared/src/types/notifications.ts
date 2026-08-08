@@ -38,8 +38,8 @@ export const NOTIFICATION_EVENT_CATALOG: Record<NotificationEvent, NotificationE
   'auth.token_invalid':       { category: 'security', title: 'Invalid API token' },
   'config.model_added':       { category: 'config',   title: 'Model added' },
   'config.model_deleted':     { category: 'config',   title: 'Model deleted' },
-  'config.project_created':   { category: 'config',   title: 'Project created' },
-  'config.project_deleted':   { category: 'config',   title: 'Project deleted' },
+  'config.router_created':   { category: 'config',   title: 'Router created' },
+  'config.router_deleted':   { category: 'config',   title: 'Router deleted' },
   'budget.threshold_reached': { category: 'budget',   title: 'Budget threshold reached' },
   'budget.exceeded':          { category: 'budget',   title: 'Budget exhausted' },
   'budget.reset':             { category: 'budget',   title: 'Budget period reset' },
@@ -128,8 +128,8 @@ export function notificationCause(event: string, details: Record<string, unknown
       if (email) parts.push(email);
       break;
     }
-    case 'config.project_created':
-    case 'config.project_deleted': {
+    case 'config.router_created':
+    case 'config.router_deleted': {
       const name = text(details['name']);
       if (name) parts.push(name);
       break;

@@ -444,7 +444,7 @@ POST /api/instances
 - `upstreamModelId` - the provider's model id, e.g. `gpt-5-mini` (required)
 - `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
 - `contextWindow` - token limit (required)
-- `limits` - array of usage limit objects, same shape as [project token limits](#create-token) (optional)
+- `limits` - array of usage limit objects, same shape as [router token limits](#create-token) (optional)
 - `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)
 
 **Response `200`:** the created instance.
@@ -481,7 +481,7 @@ DELETE /api/instances/:id
 
 ## Profiles
 
-A profile bundles one area of a project's configuration into a reusable, named
+A profile bundles one area of a router's configuration into a reusable, named
 unit. Its `kind` decides which fields it carries:
 
 | `kind` | Fields |
@@ -496,10 +496,10 @@ was produced by [Clone Profile](#clone-profile), `baseId`.
 Routerly ships read-only built-ins for two kinds (`auto`, `cheap`, `fast`,
 `coding`; `optimizer-safe`, `optimizer-balanced`, `optimizer-aggressive`).
 Security ships none: guardrails and PII policies rewrite the request, so a
-project never inherits them from a preset it did not choose, and every security
-profile is user-created. A project either keeps its own inline
+router never inherits them from a preset it did not choose, and every security
+profile is user-created. A router either keeps its own inline
 configuration for a kind or is assigned a profile of that kind via
-[Assign Project Profiles](#assign-project-profiles); the three kinds are
+[Assign Router Profiles](#assign-router-profiles); the three kinds are
 assigned independently.
 
 See [Concepts: Routing: Routing Profiles](../concepts/routing.md#routing-profiles)
@@ -654,16 +654,16 @@ DELETE /api/profiles/:id
 **Response**: `204 No Content`
 
 **Errors**: `404` profile not found · `409` `immutable_builtin_profile`
-(target id matches a built-in) · `409` `profile_in_use` (a project still
+(target id matches a built-in) · `409` `profile_in_use` (a router still
 references it, unassign it first) · `403` insufficient permissions
 
-### Assign Project Profiles
+### Assign Router Profiles
 
 ```
-PUT /api/projects/:id/profiles
+PUT /api/routers/:id/profiles
 ```
 
-**Auth**: `Authorization: Bearer <jwt>` (requires `project:write`)
+**Auth**: `Authorization: Bearer <jwt>` (requires `router:write`)
 
 ```json
 { "routing": "auto", "optimizer": null }
@@ -671,15 +671,15 @@ PUT /api/projects/:id/profiles
 
 **Fields** (at least one required, each `string | null`):
 - `routing`, `optimizer`, `security`: id of an existing profile of that kind,
-  or `null` to clear the assignment and fall back to the project's own inline
+  or `null` to clear the assignment and fall back to the router's own inline
   configuration for that kind
 
 Kinds omitted from the body keep their current assignment.
 
-**Response `200`:** the updated project (same shape as
-[List Projects](#list-projects), `tokens` present with `token` values stripped).
+**Response `200`:** the updated router (same shape as
+[List Routers](#list-routers), `tokens` present with `token` values stripped).
 
-**Errors**: `400` invalid body · `404` project not found or
+**Errors**: `400` invalid body · `404` router not found or
 `profile_not_found` (with the offending `kind`) · `403` insufficient permissions
 
 ---
@@ -687,8 +687,8 @@ Kinds omitted from the body keep their current assignment.
 ## Optimizers
 
 Prompt/context optimizers reduce a request's token footprint before it is
-forwarded to a provider. All 8 ship disabled by default; a project opts in
-per-optimizer via its [`optimizers` field](#optimizers-project-field). See
+forwarded to a provider. All 8 ship disabled by default; a router opts in
+per-optimizer via its [`optimizers` field](#optimizers-router-field). See
 [Concepts: Optimizers](../concepts/optimizers.md) for what each optimizer
 does, its class (`lossless` / `recoverable` / `lossy`), the safety gate, and
 which steps are language-bound.
@@ -731,12 +731,12 @@ POST /api/optimizers/preview
 **Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
 
 Pure dry-run: applies the given steps to sample messages and reports the
-token delta per step. **No upstream call is made and no project config is
+token delta per step. **No upstream call is made and no router config is
 written.**
 
 ```json
 {
-  "projectId": "proj-uuid",
+  "routerId": "proj-uuid",
   "model": "openai/gpt-4o-mini",
   "sampleMessages": [{ "role": "user", "content": "Hello, please help me with this." }],
   "steps": [
@@ -750,10 +750,10 @@ written.**
 - `sampleMessages`: message array to run the pipeline over, same shape as an
   [LLM Proxy](./llm-proxy.md) request's `messages` (required, min 1)
 - `steps`: the optimizer steps to dry-run, same shape as the
-  [`optimizers` project field](#optimizers-project-field) (required)
-- `projectId`: optional. When given, the preview runs "as" that project (its
+  [`optimizers` router field](#optimizers-router-field) (required)
+- `routerId`: optional. When given, the preview runs "as" that router (its
   other config is read; nothing is written); `404` if unknown. The `steps`
-  in the request body still drive which optimizers run. The project's own
+  in the request body still drive which optimizers run. The router's own
   saved `optimizers.steps` are not substituted in
 - `model`: optional model id the sample is addressed to. `headroom` sizes its
   budget on the requested model's context window, so without one it reports a
@@ -801,7 +801,7 @@ at all reports `skipReason` instead: no context window for the model, no
 repeated message, text that is not English, no JSON array long enough, the
 `llmlingua-2` checkpoint not downloaded.
 
-**Errors**: `400` invalid body · `404` `projectId` given but not found ·
+**Errors**: `400` invalid body · `404` `routerId` given but not found ·
 `403` insufficient permissions
 
 ### LLMLingua-2 Checkpoints
@@ -813,8 +813,8 @@ GET /api/optimizers/llmlingua2/model
 **Auth**: `Authorization: Bearer <jwt>` (requires `optimizers:read`)
 
 State of the optional `llmlingua-2` install on **this service host**. Not
-project-scoped: the runtime and the downloaded checkpoints are shared by
-every project that names one. Carries no prompt content.
+router-scoped: the runtime and the downloaded checkpoints are shared by
+every router that names one. Carries no prompt content.
 
 **Response `200`:**
 ```json
@@ -853,7 +853,7 @@ every project that names one. Carries no prompt content.
 | Field | Description |
 |-------|-------------|
 | `runtimeInstalled` | Whether the optional `@huggingface/transformers` dependency is present. `false` means no checkpoint can be downloaded or used |
-| `checkpoints[].key` | The value a step's `model` field takes ([`optimizers` project field](#optimizers-project-field)) |
+| `checkpoints[].key` | The value a step's `model` field takes ([`optimizers` router field](#optimizers-router-field)) |
 | `checkpoints[].isDefault` | The checkpoint a step with no `model` runs on. Reported rather than derived, because `ROUTERLY_LLMLINGUA_MODEL` can move it |
 | `checkpoints[].state` | `absent`, `downloading` or `ready` |
 | `checkpoints[].progress` | 0–100 while `downloading`, absent otherwise. `loadedBytes` / `totalBytes` accompany it when the host reports sizes |
@@ -889,8 +889,8 @@ is not installed on the service host · `403` insufficient permissions
 
 ## Experiments
 
-A/B tests that route each call to one of several projects. A variant is an
-existing project taken whole, so the whole of what a project expresses (its
+A/B tests that route each call to one of several routers. A variant is an
+existing router taken whole, so the whole of what a router expresses (its
 models, routing profile, optimizer pipeline, guardrails) becomes comparable.
 See [Concepts: Experiments](../concepts/experiments.md) for how a test lives,
 the rotations and how the numbers are computed.
@@ -902,7 +902,7 @@ tell "turned off" from "not allowed" (`403 Forbidden` with a
 
 Tokens are returned with `token` stripped on every read: the raw value exists
 only in the `201` of [Create Experiment](#create-experiment) and the response
-of [Create Experiment Token](#create-experiment-token), the same rule project
+of [Create Experiment Token](#create-experiment-token), the same rule router
 tokens follow.
 
 ### List Experiments
@@ -923,8 +923,8 @@ GET /api/experiments
     "rotation": "sticky",
     "stickyKey": "auto",
     "variants": [
-      { "id": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d", "projectId": "proj-cheap", "name": "Cheap" },
-      { "id": "6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35", "projectId": "proj-premium", "name": "Premium" }
+      { "id": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d", "routerId": "proj-cheap", "name": "Cheap" },
+      { "id": "6a1c9e07-5b3d-42f8-8e10-7c4d9f2b0a35", "routerId": "proj-premium", "name": "Premium" }
     ],
     "tokens": [
       {
@@ -944,8 +944,8 @@ GET /api/experiments
 |-------|-------------|
 | `rotation` | `sticky` (default), `weighted` or `round-robin` |
 | `stickyKey` | `auto` (default), `end-user`, `conversation` or `client`. Read only by `sticky` |
-| `variants[].projectId` | The project this arm routes to |
-| `variants[].name` | Display label. Absent means the project's own name is shown |
+| `variants[].routerId` | The router this arm routes to |
+| `variants[].name` | Display label. Absent means the router's own name is shown |
 | `variants[].weight` | Share of traffic under `weighted`. Normalised against the other weights, so `1`/`1` and `50`/`50` are the same split. A missing weight counts as `1` |
 | `judge` | Quality scoring. Absent when never configured, `enabled: false` when turned off |
 | `judge.sampleRate` | Fraction of calls scored, `0`-`1` (the dashboard field and the CLI flag take a percentage) |
@@ -996,7 +996,7 @@ a full instant is taken as given.
   "variants": [
     {
       "variantId": "4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d",
-      "projectId": "proj-cheap",
+      "routerId": "proj-cheap",
       "name": "Cheap",
       "calls": 118,
       "errors": 2,
@@ -1047,8 +1047,8 @@ POST /api/experiments
   "description": "Is the cheap model good enough for support replies?",
   "rotation": "weighted",
   "variants": [
-    { "projectId": "proj-cheap", "name": "Cheap", "weight": 80 },
-    { "projectId": "proj-premium", "name": "Premium", "weight": 20 }
+    { "routerId": "proj-cheap", "name": "Cheap", "weight": 80 },
+    { "routerId": "proj-premium", "name": "Premium", "weight": 20 }
   ],
   "judge": { "enabled": true, "modelId": "gpt-4o", "criteria": ["Answers the question asked"], "sampleRate": 0.2 },
   "minSamplesPerVariant": 50
@@ -1056,7 +1056,7 @@ POST /api/experiments
 ```
 
 **Fields:** `name` (required) · `description` · `rotation` (default
-`sticky`) · `stickyKey` · `variants` (default `[]`, each needs `projectId`;
+`sticky`) · `stickyKey` · `variants` (default `[]`, each needs `routerId`;
 `id` is generated when omitted) · `judge` · `minSamplesPerVariant` (integer
 `>= 1`).
 
@@ -1066,8 +1066,8 @@ away. Variants can be left empty here and added by `PATCH` later.
 **Response `201`**: the experiment, plus a top-level `token` holding the raw
 value. It is returned here and nowhere else.
 
-**Errors**: `400` invalid body · `404` `project_not_found` (with the offending
-`projectIds`) · `409` name already taken · `403` insufficient permissions ·
+**Errors**: `400` invalid body · `404` `router_not_found` (with the offending
+`routerIds`) · `409` name already taken · `403` insufficient permissions ·
 `403` `module_disabled`
 
 ### Update Experiment
@@ -1088,7 +1088,7 @@ window to the period after the change.
 
 **Response `200`**: the updated experiment.
 
-**Errors**: `400` invalid body · `404` not found · `404` `project_not_found` ·
+**Errors**: `400` invalid body · `404` not found · `404` `router_not_found` ·
 `403` insufficient permissions · `403` `module_disabled`
 
 ### Create Experiment Token
@@ -1114,9 +1114,9 @@ several clients and one of them revoked later. No body.
 }
 ```
 
-A client uses it exactly like a project token: same base URL, this value in
-place of the project's. Each request lands on one variant and is billed to
-that variant's project. Nothing about the test reaches the wire.
+A client uses it exactly like a router token: same base URL, this value in
+place of the router's. Each request lands on one variant and is billed to
+that variant's router. Nothing about the test reaches the wire.
 
 **Errors**: `404` not found · `403` insufficient permissions · `403`
 `module_disabled`
@@ -1146,28 +1146,28 @@ DELETE /api/experiments/:id
 **Response `204`**: no content.
 
 The experiment's tokens go with it, so every client still calling one starts
-getting `401`. Move those clients to a project token first.
+getting `401`. Move those clients to a router token first.
 
 **Errors**: `404` not found · `403` insufficient permissions · `403`
 `module_disabled`
 
 ---
 
-## Projects
+## Routers
 
-### List Projects
+### List Routers
 
 ```
-GET /api/projects
+GET /api/routers
 ```
 
-There is no single-project route: read a project from this list. Projects are
+There is no single-router route: read a router from this list. Routers are
 addressed by `id`, never by name or slug.
 
-### Create Project
+### Create Router
 
 ```
-POST /api/projects
+POST /api/routers
 ```
 
 ```json
@@ -1182,16 +1182,25 @@ POST /api/projects
 
 Only `name` is required. `models` holds target model references, not bare id
 strings: each entry is `{ modelId, prompt? }`. **Response `201`**: the created
-project plus a `token` field with the first project token in clear text, which
+router plus a `token` field with the first router token in clear text, which
 is the only time it is readable.
 
-**Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a project with
+**Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a router with
 that name already exists · `403` insufficient permissions
 
-### Update Project
+For a router created with `kind: "passthrough"` (see
+[Concepts: Architecture](../concepts/architecture.md#router-orchestrator-passthrough)),
+no request or response field changes: `tokens[]` is still returned as-is. But
+a token is now issued for it under the same condition as any other kind — a
+real target model present in the submitted `models`, alongside the fixed
+pass-through entry — instead of `tokens[]` being left empty unconditionally.
+A passthrough router created with only the pass-through entry, the previous
+default, still gets no token.
+
+### Update Router
 
 ```
-PUT /api/projects/:id
+PUT /api/routers/:id
 ```
 
 On `PUT`, the `guardrails` and `pii` fields are optional: omit a field to leave it
@@ -1199,15 +1208,27 @@ unchanged, send `null` to clear it, or send an object to replace it.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | string | Project name |
-| `timeoutMs` | number | Upstream timeout for this project's requests |
+| `name` | string | Router name |
+| `timeoutMs` | number | Upstream timeout for this router's requests |
 | `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
+| `candidates` | array | Only on `kind: "orchestrator"`. Request body: `{ routerId, limits? }[]`. Response also resolves each candidate's `name`: `{ routerId, name, limits? }[]`. Array order **is** the priority order (index 0 = highest) — there is no `weight` field. |
 
-### Content Guardrails and PII (project fields)
+For a router with `kind: "passthrough"`, no request or response field
+changes here either — `toRouterResponse` still returns `tokens[]` as-is.
+`PUT` now issues a token (`tokens[]` gains an entry) the moment the submitted
+`models` gains its first real target model, and revokes it (`tokens: []`)
+the moment the last real target model is removed, leaving only the fixed
+pass-through entry. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-which-path-a-request-takes)
+for the ordering rule that decides which of a passthrough router's real
+models get scored versus the pass-through entry's own raw-forward, and for
+the fallback's forwarded-credential caveat.
 
-A project may carry two optional security blocks, accepted by both
-`POST /api/projects` and `PUT /api/projects/:id` and validated server-side.
-Use `PATCH /api/projects/:id/guardrails` for partial updates (guardrails or PII only).
+### Content Guardrails and PII (router fields)
+
+A router may carry two optional security blocks, accepted by both
+`POST /api/routers` and `PUT /api/routers/:id` and validated server-side.
+Use `PATCH /api/routers/:id/guardrails` for partial updates (guardrails or PII only).
 
 #### Guardrails
 
@@ -1355,7 +1376,7 @@ entity types).
 
 Security rules that call a model (semantic embedding, topic judge, moderation
 judge) are tracked as separate usage records with `callType: "guardrail"`. These
-records are attributed to the same project and token as the originating request
+records are attributed to the same router and token as the originating request
 and are subject to the same budget limits - an over-budget judge call fails
 the same as an over-budget completion. The records appear in
 `GET /api/usage` alongside completion and routing records and are broken out in
@@ -1375,15 +1396,15 @@ A rule with `log: true` (and `block` unset) forwards the request to the model wi
 consumer-visible impact; the match is recorded on the usage record for audit purposes.
 `block` and `log` are independent, so a rule may do both: block the request and record the match.
 
-### Optimizers (project field) {#optimizers-project-field}
+### Optimizers (router field) {#optimizers-router-field}
 
-A project may carry an optional `optimizers` block, accepted by both
-`POST /api/projects` and `PUT /api/projects/:id`. On `PUT`, the field
+A router may carry an optional `optimizers` block, accepted by both
+`POST /api/routers` and `PUT /api/routers/:id`. On `PUT`, the field
 follows the same undefined/null/object convention as `guardrails` and `pii`:
 omit it to leave the pipeline unchanged, send `null` to clear it, or send an
 object to validate and replace it. Setting or clearing it requires
-`optimizers:manage` **in addition to** `project:write`. A caller with
-`project:write` but not `optimizers:manage` gets `403` on any request whose
+`optimizers:manage` **in addition to** `router:write`. A caller with
+`router:write` but not `optimizers:manage` gets `403` on any request whose
 body includes a non-`undefined` `optimizers` field, even if every other
 field is otherwise valid.
 
@@ -1429,26 +1450,26 @@ threshold, duplicate step id, unknown checkpoint key, or `model` on a step
 that runs on none) · `403` insufficient permissions (`optimizers:manage`
 required to set/clear)
 
-### Delete Project
+### Delete Router
 
 ```
-DELETE /api/projects/:id
+DELETE /api/routers/:id
 ```
 
 ---
 
-## Project Tokens
+## Router Tokens
 
 ### List Tokens
 
 ```
-GET /api/projects/:id/tokens
+GET /api/routers/:id/tokens
 ```
 
 ### Create Token
 
 ```
-POST /api/projects/:id/tokens
+POST /api/routers/:id/tokens
 ```
 
 ```json
@@ -1486,7 +1507,7 @@ POST /api/projects/:id/tokens
 ### Update Token
 
 ```
-PUT /api/projects/:id/tokens/:tokenId
+PUT /api/routers/:id/tokens/:tokenId
 ```
 
 ```json
@@ -1508,23 +1529,23 @@ Any field omitted from the request body is left unchanged (partial update).
 ### Delete Token
 
 ```
-DELETE /api/projects/:id/tokens/:tokenId
+DELETE /api/routers/:id/tokens/:tokenId
 ```
 
 ---
 
-## Project Members
+## Router Members
 
 ### List Members
 
 ```
-GET /api/projects/:id/members
+GET /api/routers/:id/members
 ```
 
 ### Add Member
 
 ```
-POST /api/projects/:id/members
+POST /api/routers/:id/members
 ```
 
 ```json
@@ -1534,7 +1555,7 @@ POST /api/projects/:id/members
 ### Update Member Role
 
 ```
-PUT /api/projects/:id/members/:userId
+PUT /api/routers/:id/members/:userId
 ```
 
 ```json
@@ -1544,7 +1565,7 @@ PUT /api/projects/:id/members/:userId
 ### Remove Member
 
 ```
-DELETE /api/projects/:id/members/:userId
+DELETE /api/routers/:id/members/:userId
 ```
 
 ---
@@ -1604,7 +1625,7 @@ POST /api/roles
 ```json
 {
   "name": "billing_reviewer",
-  "permissions": ["project:read", "report:read"]
+  "permissions": ["router:read", "report:read"]
 }
 ```
 
@@ -1625,10 +1646,10 @@ DELETE /api/roles/:name
 ## Spend Groups
 
 Org- and team-level budget containers for the hierarchical spend-limit cascade
-(organisation -> team -> API key). A project belongs to a group via its
+(organisation -> team -> API key). A router belongs to a group via its
 `spendGroupId`; groups may nest via `parentGroupId`. When a request runs through
-a project that belongs to a group, the group chain's limits are enforced in
-addition to the per-model/project/token limits. Child limits cannot exceed
+a router that belongs to a group, the group chain's limits are enforced in
+addition to the per-model/router/token limits. Child limits cannot exceed
 parent limits (validated on create/update).
 
 A group object:
@@ -1638,7 +1659,7 @@ A group object:
   "id": "uuid",
   "name": "Engineering",
   "limits": [{ "metric": "cost", "windowType": "period", "period": "monthly", "value": 1000 }],
-  "projectIds": ["proj-1"],
+  "routerIds": ["proj-1"],
   "tokenIds": [],
   "parentGroupId": "org-uuid"
 }
@@ -1652,7 +1673,7 @@ GET /api/spend-groups
 
 Requires `report:read`. Returns each group with a `usage` array (current and
 remaining consumption per limit, aggregating its own and descendant groups'
-projects) for the consumption tree view and end-of-period forecast.
+routers) for the consumption tree view and end-of-period forecast.
 
 ### Create Spend Group
 
@@ -1660,8 +1681,8 @@ projects) for the consumption tree view and end-of-period forecast.
 POST /api/spend-groups
 ```
 
-Requires `project:write`. Body validated with Zod (`name` required; `limits`,
-`projectIds`, `tokenIds`, `parentGroupId` optional). Returns `400` if a child
+Requires `router:write`. Body validated with Zod (`name` required; `limits`,
+`routerIds`, `tokenIds`, `parentGroupId` optional). Returns `400` if a child
 limit exceeds the parent's matching limit or the parent does not exist.
 
 ### Update Spend Group
@@ -1670,7 +1691,7 @@ limit exceeds the parent's matching limit or the parent does not exist.
 PUT /api/spend-groups/:id
 ```
 
-Requires `project:write`. Same validation as create. A group cannot be its own
+Requires `router:write`. Same validation as create. A group cannot be its own
 parent.
 
 ### Delete Spend Group
@@ -1679,7 +1700,7 @@ parent.
 DELETE /api/spend-groups/:id
 ```
 
-Requires `project:write`. Returns `409` if the group still has child groups.
+Requires `router:write`. Returns `409` if the group still has child groups.
 
 ---
 
@@ -1697,11 +1718,11 @@ Query parameters:
 |-----------|------|-------------|
 | `from` | ISO date | Start of range |
 | `to` | ISO date | End of range |
-| `project` | string | Filter by project slug |
-| `projectIds` | string | Comma-separated project IDs to filter by |
+| `router` | string | Filter by router slug |
+| `routerIds` | string | Comma-separated router IDs to filter by |
 | `model` | string | Filter by model ID |
 | `modelIds` | string | Comma-separated model IDs to filter by |
-| `tokenIds` | string | Comma-separated project token IDs to filter by. Matches the token the call authenticated with, so a project's traffic can be narrowed to one client. Records written before 0.4.0 carry no `tokenId` and are excluded whenever this filter is set |
+| `tokenIds` | string | Comma-separated router token IDs to filter by. Matches the token the call authenticated with, so a router's traffic can be narrowed to one client. Records written before 0.4.0 carry no `tokenId` and are excluded whenever this filter is set |
 | `callType` | string | Who made the call: `completion` (the client), `routing`, or `guardrail`. `completion` also matches legacy records with no `callType` field |
 | `requestType` | string | What was asked for, from the endpoint the client hit: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio`. `chat` also matches records written before 0.4.0, which had no `requestType` field |
 | `outcome` | string | `success`, `error`, `budget_exceeded`, `timeout`, `blocked`. `error` matches records that are neither `success` nor `blocked` |
@@ -1712,7 +1733,7 @@ Query parameters:
 
 `callType` and `requestType` are two different questions about the same record. A semantic-intent embedding fired by the router is `callType: "routing"`, `requestType: "embedding"`; a plain chat request from a client is `callType: "completion"`, `requestType: "chat"`. Calls the gateway forwards through the pass-through proxy (embeddings, images, audio) are recorded with their `requestType` and zero tokens, since their body is streamed to the client rather than parsed.
 
-All filters are applied server-side. `projectIds`, `modelIds` and `tokenIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `project` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
+All filters are applied server-side. `routerIds`, `modelIds` and `tokenIds` accept comma-separated values for multi-value filtering; they combine with (AND) the single-value `router` and `model` parameters when both are provided, narrowing the result to records that match every active filter.
 
 **Response summary object:**
 
@@ -1766,7 +1787,7 @@ The `summary` object breaks down calls and cost by sub-activity type:
 | `ttftMedianMs` / `ttftP95Ms` | Time-to-first-token distribution over the same calls |
 | `ttftSamples` | Calls backing the TTFT figures. `ttftMs` is optional on the record, so this can be lower than `successCalls` |
 
-`byCallType` and `byRequestType` count the records of each kind in the window. Both are counted **before** the `callType` and `requestType` filters are applied, so they stay stable while a type filter is active: a client can build its filter controls from them and still show every value available. The other filters (period, project, model, outcome, tags) do narrow them. Records written before these fields existed are counted as `completion` and `chat`.
+`byCallType` and `byRequestType` count the records of each kind in the window. Both are counted **before** the `callType` and `requestType` filters are applied, so they stay stable while a type filter is active: a client can build its filter controls from them and still show every value available. The other filters (period, router, model, outcome, tags) do narrow them. Records written before these fields existed are counted as `completion` and `chat`.
 
 Each `byModel` entry includes:
 
@@ -1778,7 +1799,7 @@ Each `byModel` entry includes:
 | `avgLatencyMs` | Mean response time in milliseconds |
 | `p95LatencyMs` | 95th-percentile response time in milliseconds |
 
-Every record in the `records` array carries `tokenId`, the project token the call authenticated with, taken from the bearer token that was presented and never from the payload. Records written before 0.4.0 have no such field. Internal calls that no client token stands behind, such as an experiment rotation firing on its own, are recorded without one.
+Every record in the `records` array carries `tokenId`, the router token the call authenticated with, taken from the bearer token that was presented and never from the payload. Records written before 0.4.0 have no such field. Internal calls that no client token stands behind, such as an experiment rotation firing on its own, are recorded without one.
 
 Guardrail judge call records appear in the `records` array with `callType: "guardrail"`. Blocked request records appear with `outcome: "blocked"` and `callType: "guardrail"`. The `errorCalls` counter excludes blocked requests -- a block is a normal guardrail outcome, not a model error.
 
@@ -1859,7 +1880,7 @@ Each baseline entry:
 | `tokensEstimated` | Input plus output tokens the same conversations are estimated to take on this model, from the ratio between its tokenizer family and the family of the model that served each call |
 | `tokenDelta` | `tokensEstimated - (comparedInputTokens + comparedOutputTokens)`: tokens saved against this baseline. Positive means routing moved fewer |
 
-Baselines depend on the scope of the query. A query scoped with `projectId` counterfactuals exactly that project's enabled target models. An unscoped query counterfactuals the paid models **in play** in the window: every enabled target model of the projects that produced a record in it, plus every model that served a client call in it. Free models are excluded because they make the cost comparison meaningless, and embedding models are excluded because they cannot answer a completion call. A model that only served routing or guardrail calls is not in play either. This is the set the dashboard [Overview](../dashboard/overview.md#what-routing-saved) compares against.
+Baselines depend on the scope of the query. A query scoped with `routerId` counterfactuals exactly that router's enabled target models. An unscoped query counterfactuals the paid models **in play** in the window: every enabled target model of the routers that produced a record in it, plus every model that served a client call in it. Free models are excluded because they make the cost comparison meaningless, and embedding models are excluded because they cannot answer a completion call. A model that only served routing or guardrail calls is not in play either. This is the set the dashboard [Overview](../dashboard/overview.md#what-routing-saved) compares against.
 
 :::note The token counterfactual is a ratio, not a re-tokenization
 `tokensEstimated` is derived from a fixed ratio per tokenizer family (o200k, cl100k, Claude, Llama). Routerly does not retain prompts, so nothing is re-tokenized. Every surface that shows this figure declares it as an estimate.
@@ -1871,7 +1892,7 @@ Routing and guardrail calls are excluded from the comparison: they are the gatew
 The cost figure is exact arithmetic on the observed token counts, but a different model tokenizes the same text slightly differently and may answer at a different length. Read a baseline as "the same conversation, priced elsewhere". Measuring the real difference needs a live comparison on production traffic.
 :::
 
-The same block is rendered by [`routerly report savings`](../cli/commands.md#routerly-report-savings) and by the project's [Dashboard tab](../dashboard/projects.md#dashboard-tab).
+The same block is rendered by [`routerly report savings`](../cli/commands.md#routerly-report-savings) and by the router's [Dashboard tab](../dashboard/routers.md#dashboard-tab).
 
 ### Savings series
 
@@ -1961,12 +1982,12 @@ Every entry carries where it came from, so a consumer can group a request by pha
 | `panel` | Which side of the call the entry belongs to: `request`/`response` for the client's own call, `router-request`/`router-response` for the calls Routerly made on its behalf. This is what keeps router overhead out of the request's own cost |
 | `details` | Event-specific metadata (see below) |
 | `at` | Epoch milliseconds |
-| `content` | Prompts and answers. Present **only** for projects with `traceContent: true` (see [Update Project](#update-project)); otherwise the field never exists, in the buffer or on disk |
+| `content` | Prompts and answers. Present **only** for routers with `traceContent: true` (see [Update Router](#update-router)); otherwise the field never exists, in the buffer or on disk |
 
 | Entry | When emitted | `details` shape |
 |-------|-------------|-----------------|
 | `guardrail:evaluated` | After every guardrail check on each target, whether or not any rule fires | `{ target: "request"\|"response", rules: RuleEval[] }`. One object per configured rule, inject-only and skipped rules included. `RuleEval` is `{ rule, outcome, index?, type?, target?, score?, threshold?, ms?, injects?, reason?, judgeMessage?, judgeRaw?, usage? }`. `outcome` is `passed`, `triggered`, or `skipped`; `score`/`threshold` are reported whatever the outcome, so a rule that passed at 0.49 against 0.50 is visible; `reason` carries the hit string on a trigger and the cause on a skip (`model-not-found`, `embedding-failed`, `judge-failed`); `usage` is the judge call's tokens. The built-in prompt-injection check appears as `rule: "injection"`. |
-| `guardrail:injected` | A rule added steering text to the request | `{ target: "request", rules: string[], chars }`. The injected text itself is on `content.injection`, and only for projects with `traceContent: true`. |
+| `guardrail:injected` | A rule added steering text to the request | `{ target: "request", rules: string[], chars }`. The injected text itself is on `content.injection`, and only for routers with `traceContent: true`. |
 | `guardrail:triggered` | Emitted whenever a rule triggers (block or log) on the request side | `{ rule, target, block, log, blockMessage }` |
 | `guardrail:response-triggered` | Emitted whenever a rule triggers (block or log) on the response side | `{ rule, target, block, log, blockMessage }` |
 | `pii:evaluated` | After every PII scrubbing pass, on the request and on the response, whether or not anything was redacted | `{ target, mode?, policies: { configured, active }, entities: string[], customPatterns, scanned, redacted: string[], counts: Record<string, number>, ms }`. `entities` is what was looked for, `redacted` what was found, `counts` how many of each. `scanned` is how many message contents were scanned: multimodal parts are skipped, so a clean pass still says what it looked at. |
@@ -1992,7 +2013,7 @@ Server-sent events, one `trace` event per entry, as the entries happen. Requires
 | Query parameter | Description |
 |-----------------|-------------|
 | `correlationId` | Only requests that carried this `x-routerly-trace` value |
-| `projectId` | Only requests of this project |
+| `routerId` | Only requests of this router |
 | `traceId` | Only this one request |
 
 Without filters the stream carries every request the service handles. Filters combine (AND).
@@ -2006,7 +2027,7 @@ curl -N "http://localhost:3000/api/traces/stream?correlationId=my-id" \
 : open
 
 event: trace
-data: {"traceId":"018f3c2a-...","entry":{"phase":"routing.prepare","module":"router","message":"router:result","panel":"router-response","details":{...},"at":1785700142000},"projectId":"...","correlationId":"my-id","topic":"trace/routing.prepare/router/result"}
+data: {"traceId":"018f3c2a-...","entry":{"phase":"routing.prepare","module":"router","message":"router:result","panel":"router-response","details":{...},"at":1785700142000},"routerId":"...","correlationId":"my-id","topic":"trace/routing.prepare/router/result"}
 
 : ping
 ```
@@ -2489,8 +2510,8 @@ POST /api/notifications/channels/:id/test
 The in-app notification inbox is per-user, available to any authenticated dashboard user (no special permission required). Three gates decide whether an item reaches the caller:
 
 1. **Audience** - the `targets` of the `dashboard` channel that created the item; no targeting means everyone.
-2. **Permissions** - `auth.*` events need `audit:read`, `config.model_*` needs `model:read`, `config.project_*` needs `project:read`, `system.*` needs `settings:read`. Routing, provider and budget events are not gated.
-3. **Projects** - an item whose `details.projectId` points at a project the caller cannot reach (by `projectIds` scope or membership) is hidden. Callers without a project scope see every project.
+2. **Permissions** - `auth.*` events need `audit:read`, `config.model_*` needs `model:read`, `config.router_*` needs `router:read`, `system.*` needs `settings:read`. Routing, provider and budget events are not gated.
+3. **Routers** - an item whose `details.routerId` points at a router the caller cannot reach (by `routerIds` scope or membership) is hidden. Callers without a router scope see every router.
 
 Users can also dismiss items individually (soft delete), which removes them from their personal inbox only.
 
@@ -2591,7 +2612,7 @@ GET /api/notifications/inbox/:id
 - `events` - the incident's sequence, oldest first. Present only when a second event correlated on the same `traceId`. The top-level `event`, `severity` and `details` mirror the most severe entry
 - Only this endpoint returns `events`; the list endpoint stops at `traceId` and `eventCount`
 
-**Errors**: `404` notification not found (does not exist, is not in the current user's inbox, or the caller lacks the permission or project scope the item requires)
+**Errors**: `404` notification not found (does not exist, is not in the current user's inbox, or the caller lacks the permission or router scope the item requires)
 
 #### Mark Inbox Items as Read
 
@@ -2915,12 +2936,12 @@ All push-type integrations (OpenTelemetry, Datadog, Grafana, InfluxDB, Webhook) 
 
 | Metric | Type | Labels/Dimensions | Description |
 |--------|------|-------------------|-------------|
-| `routerly_requests_total` | Counter | `project`, `model` | Total request count |
-| `routerly_tokens_total` | Counter | `type` (input/output), `project`, `model` | Total tokens consumed |
-| `routerly_cost_usd_total` | Gauge | `project`, `model` | Estimated USD cost |
-| `routerly_request_duration_p50_ms` | Gauge | `project` | Median request latency |
-| `routerly_request_duration_p95_ms` | Gauge | `project` | 95th percentile latency |
-| `routerly_budget_used_ratio` | Gauge | `project` | Budget consumption (0–1) |
+| `routerly_requests_total` | Counter | `router`, `model` | Total request count |
+| `routerly_tokens_total` | Counter | `type` (input/output), `router`, `model` | Total tokens consumed |
+| `routerly_cost_usd_total` | Gauge | `router`, `model` | Estimated USD cost |
+| `routerly_request_duration_p50_ms` | Gauge | `router` | Median request latency |
+| `routerly_request_duration_p95_ms` | Gauge | `router` | 95th percentile latency |
+| `routerly_budget_used_ratio` | Gauge | `router` | Budget consumption (0–1) |
 
 Each integration type sends these metrics in its native format (OTLP, Datadog Series API, Prometheus remote_write, InfluxDB line protocol, JSON webhook).
 
@@ -2947,7 +2968,7 @@ caches the integration list for 30 seconds otherwise).
 
 **OpenTelemetry** — OTLP/HTTP JSON to `<endpoint>/v1/traces`, native spans:
 
-- one `routerly.request` server span per request, carrying `routerly.trace_id` and `routerly.project_id`
+- one `routerly.request` server span per request, carrying `routerly.trace_id` and `routerly.router_id`
 - one `routerly.<phase>` internal child span per pipeline phase (`routerly.routing.prepare`, `routerly.routing.execute`, …)
 - every trace entry as a span event on its phase, named after the entry (`router:result`), with `routerly.panel`, `routerly.module` and the entry details as attributes (values over 4096 chars are truncated)
 
@@ -2962,7 +2983,7 @@ Span ids are derived from the trace id, so a retried export overwrites instead o
   "timestamp": "2026-08-02T19:37:33.485Z",
   "trace": {
     "id": "018f3c2a-4b5d-7e8f-9012-34567890abcd",
-    "projectId": "7a1f9a3b-...",
+    "routerId": "7a1f9a3b-...",
     "entries": [
       { "phase": "routing.prepare", "module": "router", "panel": "router-response", "message": "router:result", "details": { }, "at": 1785700142000 }
     ]
@@ -2970,7 +2991,7 @@ Span ids are derived from the trace id, so a retried export overwrites instead o
 }
 ```
 
-Prompts and answers are included only for projects with `traceContent: true`.
+Prompts and answers are included only for routers with `traceContent: true`.
 An export failure is never surfaced on the proxy path: the request that produced
 the trace is unaffected.
 
@@ -3142,9 +3163,9 @@ the caller's permissions. A tool the caller cannot call is never listed.
   {
     "name": "toggle_model",
     "scope": "write",
-    "description": "Enable or disable one of a project's model refs (flips its `enabled` flag). The flag is persisted but not yet honored by the routing engine. Requires the 'project:write' permission.",
+    "description": "Enable or disable one of a router's model refs (flips its `enabled` flag). The flag is persisted but not yet honored by the routing engine. Requires the 'router:write' permission.",
     "sourceModule": "config.store",
-    "permission": "project:write"
+    "permission": "router:write"
   }
 ]
 ```

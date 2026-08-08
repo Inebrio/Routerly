@@ -23,8 +23,10 @@ vi.mock('../api', () => ({
   refreshCatalog:       vi.fn(),
   getCatalogStatus:     vi.fn(),
   probeRepo:            vi.fn(),
+  getPermissionStatus:  vi.fn(),
+  fixPermissions:       vi.fn(),
   ALL_PERMISSIONS: [
-    'project:read', 'project:write', 'model:read', 'model:write',
+    'router:read', 'router:write', 'model:read', 'model:write',
     'user:read', 'user:write', 'report:read', 'settings:read', 'settings:write',
     'notification:write', 'token:read', 'token:write', 'role:write', 'audit:read',
   ] as const,
@@ -79,6 +81,12 @@ vi.mock('../components/MultiSelect', () => ({
   ),
 }));
 
+// ponytail: default to a full-access role; individual tests override mockCan to check gating
+let mockCan = (_perm: string) => true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: (perm: string) => mockCan(perm) }),
+}));
+
 import {
   getSettings,
   updateSettings,
@@ -97,6 +105,8 @@ import {
   refreshCatalog,
   getCatalogStatus,
   probeRepo,
+  getPermissionStatus,
+  fixPermissions,
 } from '../api';
 
 import {
@@ -126,6 +136,8 @@ const mockTestIntegration         = vi.mocked(testIntegration);
 const mockRefreshCatalog          = vi.mocked(refreshCatalog);
 const mockGetCatalogStatus        = vi.mocked(getCatalogStatus);
 const mockProbeRepo               = vi.mocked(probeRepo);
+const mockGetPermissionStatus     = vi.mocked(getPermissionStatus);
+const mockFixPermissions          = vi.mocked(fixPermissions);
 
 // ── Base fixtures ─────────────────────────────────────────────────────────────
 
@@ -152,7 +164,7 @@ const baseSystemInfo = {
   updateInfo: null,
 };
 
-afterEach(() => { vi.clearAllMocks(); cleanup(); });
+afterEach(() => { vi.clearAllMocks(); cleanup(); mockCan = () => true; });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SettingsGeneralTab
@@ -263,6 +275,44 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => screen.getByLabelText('Public URL'));
     const input = screen.getByLabelText('Public URL') as HTMLInputElement;
     expect(input.value).toBe('http://localhost:3000');
+  });
+
+  it('renders usage retention inputs empty when no policy is configured', async () => {
+    renderGeneral();
+    await waitFor(() => expect(screen.queryByLabelText('Max age (days)')).not.toBeNull());
+    expect((screen.getByLabelText('Max age (days)') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('Max size (MB)') as HTMLInputElement).value).toBe('');
+  });
+
+  it('renders usage retention inputs pre-filled from settings', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Max age (days)'));
+    expect((screen.getByLabelText('Max age (days)') as HTMLInputElement).value).toBe('30');
+    expect((screen.getByLabelText('Max size (MB)') as HTMLInputElement).value).toBe('500');
+  });
+
+  it('saving entered usage retention values calls updateSettings with usageRetention', async () => {
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Max age (days)'));
+    await userEvent.type(screen.getByLabelText('Max age (days)'), '30');
+    await userEvent.type(screen.getByLabelText('Max size (MB)'), '500');
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    const call = mockUpdateSettings.mock.calls[0]![0] as { usageRetention?: { maxAgeDays?: number; maxSizeMb?: number } };
+    expect(call.usageRetention).toEqual({ maxAgeDays: 30, maxSizeMb: 500 });
+  });
+
+  it('clearing usage retention inputs sends an empty usageRetention object to unset the policy', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, usageRetention: { maxAgeDays: 30, maxSizeMb: 500 } } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Max age (days)'));
+    await userEvent.clear(screen.getByLabelText('Max age (days)'));
+    await userEvent.clear(screen.getByLabelText('Max size (MB)'));
+    await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalled());
+    const call = mockUpdateSettings.mock.calls[0]![0] as { usageRetention?: { maxAgeDays?: number; maxSizeMb?: number } };
+    expect(call.usageRetention).toEqual({});
   });
 
   it('renders log level select pre-filled with info', async () => {
@@ -424,6 +474,7 @@ describe('SettingsSecurityTab', () => {
   beforeEach(() => {
     mockGetSettings.mockResolvedValue({ ...baseSettings } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
+    mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
   });
 
   function renderSecurity() {
@@ -490,6 +541,87 @@ describe('SettingsSecurityTab', () => {
     await waitFor(() => screen.getByRole('button', { name: /Save Settings/i }));
     await userEvent.click(screen.getByRole('button', { name: /Save Settings/i }));
     await waitFor(() => expect(screen.queryByText('Failed to save settings')).not.toBeNull());
+  });
+
+  // ── File Permissions section (RTR-08) ────────────────────────────────────
+  describe('File Permissions section', () => {
+    it('is hidden entirely without settings:read', async () => {
+      mockCan = (p) => p !== 'settings:read';
+      renderSecurity();
+      await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+      expect(screen.queryByText('File Permissions')).toBeNull();
+      expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    });
+
+    it('shows a calm all-good state when nothing is unsafe', async () => {
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
+    });
+
+    it('lists unsafe files with severity and offers Fix now with settings:write', async () => {
+      mockGetPermissionStatus.mockResolvedValue({
+        blocked: true,
+        bypassActive: false,
+        unsafe: [
+          { file: 'users.json', path: '/etc/routerly/users.json', mode: '644', severity: 'secret' },
+          { file: 'audit.json', path: '/etc/routerly/audit.json', mode: '644', severity: 'general' },
+        ],
+      });
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText('/etc/routerly/users.json')).toBeTruthy());
+      expect(screen.getByText('/etc/routerly/audit.json')).toBeTruthy();
+      expect(screen.getByText('Blocking')).toBeTruthy();
+      expect(screen.getByText('Warning')).toBeTruthy();
+      expect(screen.getByRole('button', { name: /Fix now/i })).toBeTruthy();
+    });
+
+    it('hides the fix button and explains without settings:write', async () => {
+      mockCan = (p) => p !== 'settings:write';
+      mockGetPermissionStatus.mockResolvedValue({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'notifications.json', path: '/etc/routerly/notifications.json', mode: '644', severity: 'general' }],
+      });
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText('/etc/routerly/notifications.json')).toBeTruthy());
+      expect(screen.queryByRole('button', { name: /Fix now/i })).toBeNull();
+      expect(screen.getByText(/Ask an operator/)).toBeTruthy();
+    });
+
+    it('calls fixPermissions and reloads the status on Fix now', async () => {
+      mockGetPermissionStatus
+        .mockResolvedValueOnce({
+          blocked: false,
+          bypassActive: false,
+          unsafe: [{ file: 'audit.json', path: '/etc/routerly/audit.json', mode: '644', severity: 'general' }],
+        })
+        .mockResolvedValueOnce({ blocked: false, bypassActive: false, unsafe: [] });
+      mockFixPermissions.mockResolvedValue({ fixed: ['/etc/routerly/audit.json'] });
+      renderSecurity();
+      await waitFor(() => screen.getByRole('button', { name: /Fix now/i }));
+      await userEvent.click(screen.getByRole('button', { name: /Fix now/i }));
+      await waitFor(() => expect(mockFixPermissions).toHaveBeenCalled());
+      await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
+    });
+
+    it('shows an error when the permission status fails to load', async () => {
+      mockGetPermissionStatus.mockRejectedValue(new Error('boom'));
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText('boom')).toBeTruthy());
+    });
+
+    it('shows an error when fixing fails', async () => {
+      mockGetPermissionStatus.mockResolvedValue({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'audit.json', path: '/etc/routerly/audit.json', mode: '644', severity: 'general' }],
+      });
+      mockFixPermissions.mockRejectedValue(new Error('fix failed'));
+      renderSecurity();
+      await waitFor(() => screen.getByRole('button', { name: /Fix now/i }));
+      await userEvent.click(screen.getByRole('button', { name: /Fix now/i }));
+      await waitFor(() => expect(screen.getByText('fix failed')).toBeTruthy());
+    });
   });
 });
 
@@ -4080,13 +4212,13 @@ describe('SettingsNotificationsTab — ch.targets field nullish branch coverage'
   it('ch.targets.permissions defined → ?? [] left branch (L619 branch 1)', async () => {
     mockGetSettings.mockResolvedValue({
       ...baseSettings,
-      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['project:read'] } }] },
+      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['router:read'] } }] },
     } as never);
     render(<MemoryRouter><SettingsNotificationsTab /></MemoryRouter>);
     await waitFor(() => expect(document.querySelector('button svg.lucide-chevron-right')).not.toBeNull());
     await expandDashboardChannel();
     await waitFor(() => screen.getByTestId('multiselect-All permissions (everyone)'));
-    // ch.targets.permissions = ['project:read'] → ?? [] left side NOT null → branch 1
+    // ch.targets.permissions = ['router:read'] → ?? [] left side NOT null → branch 1
   });
 
   it('ch.targets.users defined → ?? [] left branch (L628 branch 1)', async () => {
@@ -4519,7 +4651,7 @@ describe('SettingsNotificationsTab — summariseChannel permissions branch (L336
   it('summariseChannel: permissions targets shows perm count (L336 branch 42,0)', async () => {
     mockGetSettings.mockResolvedValue({
       ...baseSettings,
-      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['project:read', 'model:read'] } }] },
+      notifications: { channels: [{ id: 'ch1', provider: 'dashboard' as const, targets: { permissions: ['router:read', 'model:read'] } }] },
     } as never);
     render(<MemoryRouter><SettingsNotificationsTab /></MemoryRouter>);
     // summariseChannel runs on collapsed card — "2 perms" appears (permissions.length > 1)

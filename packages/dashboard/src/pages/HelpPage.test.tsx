@@ -58,7 +58,7 @@ describe('HelpPage — static content', () => {
     expect(screen.queryByText('How does model routing work?')).not.toBeNull();
     expect(screen.queryByText('How do I add a new AI model?')).not.toBeNull();
     expect(screen.queryByText('Is my data stored? Are my prompts logged?')).not.toBeNull();
-    expect(screen.queryByText(/What's a project token/)).not.toBeNull();
+    expect(screen.queryByText(/What's a router token/)).not.toBeNull();
   });
 
   it('FAQ answers are not visible by default', () => {
@@ -145,7 +145,7 @@ describe('HelpPage — FAQ accordion', () => {
 
   it('expands sixth FAQ item independently', async () => {
     renderPage();
-    await userEvent.click(screen.getByText(/What's a project token/));
+    await userEvent.click(screen.getByText(/What's a router token/));
     await waitFor(() =>
       expect(screen.queryByText(/credential you give to your app/)).not.toBeNull()
     );

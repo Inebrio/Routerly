@@ -57,9 +57,9 @@ routerly model add \
 
 ---
 
-## Step 3: Attach the model to a project
+## Step 3: Attach the model to a router
 
-In the dashboard, go to **Projects > your project > Models** and add the model. Copy the project token.
+In the dashboard, go to **Routers > your router > Models** and add the model. Copy the router token.
 
 ---
 
@@ -68,7 +68,7 @@ In the dashboard, go to **Projects > your project > Models** and add the model. 
 ```bash
 # OpenAI-compatible client
 export OPENAI_BASE_URL="http://localhost:3000/v1"
-export OPENAI_API_KEY="<routerly-project-token>"
+export OPENAI_API_KEY="<routerly-router-token>"
 ```
 
 ```python
@@ -76,7 +76,7 @@ import openai
 
 client = openai.OpenAI(
     base_url="http://localhost:3000/v1",
-    api_key="<routerly-project-token>",
+    api_key="<routerly-router-token>",
 )
 
 response = client.chat.completions.create(
@@ -91,7 +91,7 @@ import anthropic
 
 client = anthropic.Anthropic(
     base_url="http://localhost:3000",
-    api_key="<routerly-project-token>",
+    api_key="<routerly-router-token>",
 )
 ```
 

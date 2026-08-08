@@ -14,7 +14,7 @@ import { MemoryRouter } from 'react-router-dom';
 // ── Module mocks (hoisted) ─────────────────────────────────────────────────
 
 vi.mock('../api.js', () => ({
-  getProjects: vi.fn(),
+  getRouters: vi.fn(),
   getPlaygroundPresets: vi.fn(),
   createPlaygroundPreset: vi.fn(),
   deletePlaygroundPreset: vi.fn(),
@@ -50,17 +50,17 @@ vi.mock('../components/TraceEntryRenderer.js', () => ({
 // ── Imports after mocks ────────────────────────────────────────────────────
 
 import { TestPage } from './TestPage';
-import { getProjects, getPlaygroundPresets, getTrace, createPlaygroundPreset, deletePlaygroundPreset, streamTraces } from '../api.js';
+import { getRouters, getPlaygroundPresets, getTrace, createPlaygroundPreset, deletePlaygroundPreset, streamTraces } from '../api.js';
 
-const FAKE_PROJECT = {
+const FAKE_ROUTER = {
   id: 'proj-1', name: 'Test',
   models: [{ modelId: 'openai/gpt-4o' }],
   tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-test', createdAt: '' }],
 };
 
-// Project with a response-blocking rule → streamingDisabled=true
-const FAKE_PROJECT_BLOCK_RESPONSE = {
-  ...FAKE_PROJECT,
+// Router with a response-blocking rule → streamingDisabled=true
+const FAKE_ROUTER_BLOCK_RESPONSE = {
+  ...FAKE_ROUTER,
   guardrails: {
     rules: [
       { type: 'moderation', target: 'response', block: true, config: { modelId: 'openai/gpt-4o', threshold: 0.5 } },
@@ -106,7 +106,7 @@ async function setupWithToken() {
   renderPage();
   const tokenInput = screen.getByPlaceholderText('sk-rt-...');
   await userEvent.clear(tokenInput);
-  // Token snippet must match FAKE_PROJECT's tokenSnippet prefix
+  // Token snippet must match FAKE_ROUTER's tokenSnippet prefix
   await userEvent.type(tokenInput, 'sk-rt-testABCDE');
   await waitFor(() => expect(screen.queryByText('Test')).not.toBeNull());
 }
@@ -114,7 +114,7 @@ async function setupWithToken() {
 // ── beforeEach ─────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT] as never);
+  vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
   vi.mocked(getPlaygroundPresets).mockResolvedValue([]);
   vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
   mockTraceStream();
@@ -347,8 +347,8 @@ describe('TestPage — truncation badge (finish_reason=length)', () => {
 // ── Streaming-disabled banner + disabled toggle ────────────────────────────
 
 describe('TestPage — streaming-disabled banner and toggle (block+response rule)', () => {
-  it('shows streaming-disabled banner when project has block+response rule', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT_BLOCK_RESPONSE] as never);
+  it('shows streaming-disabled banner when router has block+response rule', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER_BLOCK_RESPONSE] as never);
 
     renderPage();
     const tokenInput = screen.getByPlaceholderText('sk-rt-...');
@@ -359,8 +359,8 @@ describe('TestPage — streaming-disabled banner and toggle (block+response rule
     expect(screen.queryByTestId('streaming-disabled-banner')).not.toBeNull();
   });
 
-  it('stream toggle is disabled when project has block+response rule', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT_BLOCK_RESPONSE] as never);
+  it('stream toggle is disabled when router has block+response rule', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER_BLOCK_RESPONSE] as never);
 
     renderPage();
     const tokenInput = screen.getByPlaceholderText('sk-rt-...');
@@ -373,8 +373,8 @@ describe('TestPage — streaming-disabled banner and toggle (block+response rule
     expect(toggle.checked).toBe(false);
   });
 
-  it('does NOT show streaming-disabled banner when project has no blocking response rule', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT] as never);
+  it('does NOT show streaming-disabled banner when router has no blocking response rule', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
 
     renderPage();
     const tokenInput = screen.getByPlaceholderText('sk-rt-...');
@@ -392,8 +392,8 @@ describe('TestPage — streaming-disabled banner and toggle (block+response rule
 // ── Buffered-by-guardrail note ─────────────────────────────────────────────
 
 describe('TestPage — buffered-by-guardrail note', () => {
-  it('shows buffered note on assistant message when project has block+response rule', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT_BLOCK_RESPONSE] as never);
+  it('shows buffered note on assistant message when router has block+response rule', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER_BLOCK_RESPONSE] as never);
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Held response'));
 
@@ -412,8 +412,8 @@ describe('TestPage — buffered-by-guardrail note', () => {
     { timeout: 4000 });
   });
 
-  it('does NOT show buffered note when project has no block+response rule', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT] as never);
+  it('does NOT show buffered note when router has no block+response rule', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Normal response'));
 
@@ -498,8 +498,8 @@ describe('TestPage — debug sidebar Clear button', () => {
 // ── Unknown token indicator ───────────────────────────────────────────────────
 
 describe('TestPage — unknown token indicator', () => {
-  it('shows "Unknown token" when token does not match any project', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT] as never);
+  it('shows "Unknown token" when token does not match any router', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
 
     renderPage();
     const tokenInput = screen.getByPlaceholderText('sk-rt-...');
@@ -1326,12 +1326,12 @@ describe('TestPage — presets count in button', () => {
 // ── matchedToken labels shown in single mode token indicator (line 786) ───────
 
 describe('TestPage — matched token labels display', () => {
-  it('shows token labels next to project name when token has labels', async () => {
+  it('shows token labels next to router name when token has labels', async () => {
     const projWithLabels = {
-      ...FAKE_PROJECT,
+      ...FAKE_ROUTER,
       tokens: [{ id: 'tok-1', tokenSnippet: 'sk-rt-test', labels: ['production', 'v2'], createdAt: '' }],
     };
-    vi.mocked(getProjects).mockResolvedValue([projWithLabels] as never);
+    vi.mocked(getRouters).mockResolvedValue([projWithLabels] as never);
 
     renderPage();
     const tokenInput = screen.getByPlaceholderText('sk-rt-...');
@@ -1339,7 +1339,7 @@ describe('TestPage — matched token labels display', () => {
     await userEvent.type(tokenInput, 'sk-rt-testABCDE');
     await waitFor(() => expect(screen.queryByText('Test')).not.toBeNull());
 
-    // Labels shown in parentheses next to project name
+    // Labels shown in parentheses next to router name
     await waitFor(() =>
       expect(screen.queryByText(/production, v2/)).not.toBeNull()
     );
@@ -1841,8 +1841,8 @@ describe('TestPage — ComparePanel assistant message with latencyMs', () => {
 // ── handleSend: stream=false when streamingDisabled=true (line 475 branch 2) ──
 
 describe('TestPage — handleSend stream=false when streamingDisabled', () => {
-  it('sends stream=false in payload when project has response-blocking rule', async () => {
-    vi.mocked(getProjects).mockResolvedValue([FAKE_PROJECT_BLOCK_RESPONSE] as never);
+  it('sends stream=false in payload when router has response-blocking rule', async () => {
+    vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER_BLOCK_RESPONSE] as never);
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Buffered reply'));
 
@@ -2458,13 +2458,13 @@ describe('TestPage — handleSend AbortError is swallowed', () => {
   });
 });
 
-// ── savePreset: no matchedProject returns early (L646 br0) ────────────────────
+// ── savePreset: no matchedRouter returns early (L646 br0) ────────────────────
 
-describe('TestPage — savePreset early return without matchedProject', () => {
-  it('savePreset does nothing when matchedProject is null', async () => {
+describe('TestPage — savePreset early return without matchedRouter', () => {
+  it('savePreset does nothing when matchedRouter is null', async () => {
     renderPage();
-    // Don't set token, so matchedProject = null
-    // Try to show presets panel — not visible without matchedProject
+    // Don't set token, so matchedRouter = null
+    // Try to show presets panel — not visible without matchedRouter
     expect(screen.queryByRole('button', { name: /Presets/i })).toBeNull();
     // No error — component renders fine
     expect(screen.getByPlaceholderText('sk-rt-...')).toBeTruthy();
@@ -2718,12 +2718,12 @@ describe('TestPage — debug trace null entry renders null', () => {
   });
 });
 
-// ── deletePreset: no matchedProject early return (L668 br0) ───────────────────
+// ── deletePreset: no matchedRouter early return (L668 br0) ───────────────────
 
-describe('TestPage — deletePreset early return without matchedProject', () => {
-  it('deletePreset is unreachable without matchedProject (presets panel requires it)', async () => {
-    // The Presets button only appears when matchedProject is set
-    // Directly verify the guard: without matchedProject, no delete button exists
+describe('TestPage — deletePreset early return without matchedRouter', () => {
+  it('deletePreset is unreachable without matchedRouter (presets panel requires it)', async () => {
+    // The Presets button only appears when matchedRouter is set
+    // Directly verify the guard: without matchedRouter, no delete button exists
     renderPage();
     expect(screen.queryByTitle('Delete preset')).toBeNull();
     expect(screen.queryByRole('button', { name: /Presets/i })).toBeNull();
@@ -2869,14 +2869,14 @@ describe('TestPage — ComparePanel assistant message latencyMs=0', () => {
 
 describe('TestPage — streamingDisabled: rule target=request not response/both', () => {
   it('streamingDisabled remains false when rule has target=request', async () => {
-    // Set up project with block=true but target=request (not response/both)
+    // Set up router with block=true but target=request (not response/both)
     const projRequestBlock = {
-      ...FAKE_PROJECT,
+      ...FAKE_ROUTER,
       guardrails: {
         rules: [{ type: 'moderation', target: 'request', block: true, config: {} }],
       },
     };
-    vi.mocked(getProjects).mockResolvedValue([projRequestBlock] as never);
+    vi.mocked(getRouters).mockResolvedValue([projRequestBlock] as never);
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Request rule reply'));
 
@@ -2903,13 +2903,13 @@ describe('TestPage — streamingDisabled: rule target=request not response/both'
 // ── modelToUse: empty fallback (L469 br3) ────────────────────────────────────
 
 describe('TestPage — handleSend modelToUse empty fallback', () => {
-  it('uses empty string modelToUse when project has no models and no routingModelId', async () => {
+  it('uses empty string modelToUse when router has no models and no routingModelId', async () => {
     const projNoModels = {
-      ...FAKE_PROJECT,
+      ...FAKE_ROUTER,
       models: [],
       routingModelId: undefined,
     };
-    vi.mocked(getProjects).mockResolvedValue([projNoModels] as never);
+    vi.mocked(getRouters).mockResolvedValue([projNoModels] as never);
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Empty model fallback'));
 

@@ -101,8 +101,8 @@ describe('LoginPage — redirect when already logged in', () => {
       updateUser: vi.fn(),
       can: vi.fn(),
     });
-    renderLogin('?to=/dashboard/projects');
-    await waitFor(() => expect(navigateFn).toHaveBeenCalledWith('/dashboard/projects', { replace: true }));
+    renderLogin('?to=/dashboard/routers');
+    await waitFor(() => expect(navigateFn).toHaveBeenCalledWith('/dashboard/routers', { replace: true }));
   });
 
   it('ignores invalid `to` param (not /dashboard/)', async () => {

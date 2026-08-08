@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { LLMLINGUA_CHECKPOINTS, OPTIMIZER_CATALOG, type OptimizerId } from '@routerly/shared';
 
 /**
- * Zod schemas for the project config shapes that more than one route file has
+ * Zod schemas for the router config shapes that more than one route file has
  * to validate: guardrails, PII and optimizers. They live here rather than in
  * api.ts because profiles.ts validates the same shapes, and api.ts imports
  * profiles.ts, so importing back the other way would be a cycle.

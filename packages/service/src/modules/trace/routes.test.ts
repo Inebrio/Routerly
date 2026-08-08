@@ -39,7 +39,7 @@ function fakeRequest(permissions: string[], query: Record<string, string> = {}) 
 
 const event = (over: Partial<TraceEvent> = {}): TraceEvent => ({
   traceId: 't1',
-  projectId: 'p1',
+  routerId: 'p1',
   correlationId: 'c1',
   entry: { panel: 'request', message: 'pii:scrubbed', details: {} },
   ...over,
@@ -75,10 +75,10 @@ describe('GET /api/traces/stream', () => {
     expect(data.entry.message).toBe('pii:scrubbed')
   })
 
-  it('filters by correlationId, projectId and traceId', async () => {
+  it('filters by correlationId, routerId and traceId', async () => {
     for (const [query, mismatch] of [
       [{ correlationId: 'c1' }, { correlationId: 'other' }],
-      [{ projectId: 'p1' }, { projectId: 'other' }],
+      [{ routerId: 'p1' }, { routerId: 'other' }],
       [{ traceId: 't1' }, { traceId: 'other' }],
     ] as Array<[Record<string, string>, Partial<TraceEvent>]>) {
       const { events, reply } = await open(['report:read'], query)

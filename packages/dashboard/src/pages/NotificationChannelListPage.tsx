@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Bell, Pencil, Trash2, FlaskConical, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getNotificationChannels, deleteNotificationChannel, testNotificationChannel } from '../api';
 import type { RedactedChannel } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { SearchableSelect } from '../components/SearchableSelect';
 import {
-  CHANNEL_PROVIDER_META,
+  getChannelProviderMeta,
   summariseChannel,
   providerLabel,
 } from './notificationChannelFields';
@@ -25,6 +26,7 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 type TestState = { loading: boolean; ok?: boolean; message?: string };
 
 export function NotificationChannelListPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [channels, setChannels] = useState<RedactedChannel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export function NotificationChannelListPage() {
     setLoading(true);
     getNotificationChannels()
       .then(setChannels)
-      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .catch(e => setError(e instanceof Error ? e.message : t('settings.notifications.edit.errors.loadFailed')))
       .finally(() => setLoading(false));
   }
 
@@ -86,14 +88,14 @@ export function NotificationChannelListPage() {
 
   function handleDelete(id: string, name: string | undefined) {
     setConfirmState({
-      message: `Remove channel "${name ?? id}"? This cannot be undone.`,
+      message: t('settings.notifications.list.deleteConfirm', { name: name ?? id }),
       onConfirm: async () => {
         setConfirmState(null);
         try {
           await deleteNotificationChannel(id);
           setChannels(cs => cs.filter(c => c.id !== id));
         } catch (e) {
-          setError(e instanceof Error ? e.message : 'Failed to delete');
+          setError(e instanceof Error ? e.message : t('settings.notifications.list.errors.deleteFailed'));
         }
       },
     });
@@ -124,7 +126,7 @@ export function NotificationChannelListPage() {
       if (providerFilter && c.provider !== providerFilter) return false;
       if (!q) return true;
       const name = (c.name ?? '').toLowerCase();
-      const prov = providerLabel(c.provider as ChannelProvider).toLowerCase();
+      const prov = providerLabel(c.provider as ChannelProvider, t).toLowerCase();
       return name.includes(q) || prov.includes(q);
     });
   }, [channels, search, providerFilter]);
@@ -138,12 +140,12 @@ export function NotificationChannelListPage() {
           cmp = (a.name ?? '').localeCompare(b.name ?? '');
           break;
         case 'type':
-          cmp = providerLabel(a.provider as ChannelProvider).localeCompare(
-            providerLabel(b.provider as ChannelProvider),
+          cmp = providerLabel(a.provider as ChannelProvider, t).localeCompare(
+            providerLabel(b.provider as ChannelProvider, t),
           );
           break;
         case 'summary':
-          cmp = summariseChannel(a).localeCompare(summariseChannel(b));
+          cmp = summariseChannel(a, t).localeCompare(summariseChannel(b, t));
           break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
@@ -157,11 +159,12 @@ export function NotificationChannelListPage() {
     </span>
   );
 
+  const channelProviderMeta = useMemo(() => getChannelProviderMeta(t), [t]);
   const filteredToAdd = channelSearch.trim()
-    ? CHANNEL_PROVIDER_META.filter(p =>
+    ? channelProviderMeta.filter(p =>
         p.label.toLowerCase().includes(channelSearch.toLowerCase()) ||
         p.description.toLowerCase().includes(channelSearch.toLowerCase()))
-    : CHANNEL_PROVIDER_META;
+    : channelProviderMeta;
 
   return (
     <>
@@ -170,8 +173,8 @@ export function NotificationChannelListPage() {
       <div className="toolbar">
         <span className="toolbar-title">
           {filtered.length !== channels.length
-            ? `${filtered.length} of ${channels.length} channel${channels.length !== 1 ? 's' : ''}`
-            : `${channels.length} channel${channels.length !== 1 ? 's' : ''}`}
+            ? t('settings.notifications.list.filteredLabel', { shown: filtered.length, count: channels.length })
+            : t('settings.notifications.list.countLabel', { count: channels.length })}
         </span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* Provider filter */}
@@ -179,11 +182,11 @@ export function NotificationChannelListPage() {
             <SearchableSelect
               value={providerFilter}
               onChange={setProviderFilter}
-              placeholder="All types"
+              placeholder={t('settings.notifications.list.allTypes')}
               style={{ height: 32, fontSize: '0.85rem', minWidth: 150 }}
               options={[
-                { value: '', label: 'All types' },
-                ...providerOptions.map(p => ({ value: p, label: providerLabel(p as ChannelProvider) })),
+                { value: '', label: t('settings.notifications.list.allTypes') },
+                ...providerOptions.map(p => ({ value: p, label: providerLabel(p as ChannelProvider, t) })),
               ]}
             />
           )}
@@ -193,7 +196,7 @@ export function NotificationChannelListPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Filter channels…"
+              placeholder={t('settings.notifications.list.searchPlaceholder')}
               style={{ paddingLeft: 28, paddingRight: search ? 28 : 10, height: 32, fontSize: '0.85rem', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none', width: 200 }}
             />
             {search && (
@@ -210,7 +213,7 @@ export function NotificationChannelListPage() {
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               onClick={() => setAddOpen(o => !o)}
             >
-              <Plus size={16} /> Add Channel
+              <Plus size={16} /> {t('settings.notifications.list.addButton')}
             </button>
             {addOpen && (
               <div style={{
@@ -221,11 +224,11 @@ export function NotificationChannelListPage() {
                 <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Search size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                   <input ref={searchRef} type="text" value={channelSearch}
-                    onChange={e => setChannelSearch(e.target.value)} placeholder="Search channels…"
+                    onChange={e => setChannelSearch(e.target.value)} placeholder={t('settings.notifications.list.addSearchPlaceholder')}
                     style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '0.85rem', color: 'var(--text-primary)' }} />
                 </div>
                 {filteredToAdd.length === 0
-                  ? <div style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>No results</div>
+                  ? <div style={{ padding: '10px 14px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.notifications.list.noResults')}</div>
                   : filteredToAdd.map((ch, i) => (
                       <button key={ch.key} type="button"
                         onClick={() => {
@@ -251,17 +254,17 @@ export function NotificationChannelListPage() {
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
       ) : channels.length === 0 ? (
-        <div className="empty-state"><Bell size={40} /><p>No notification channels configured yet.</p></div>
+        <div className="empty-state"><Bell size={40} /><p>{t('settings.notifications.list.emptyTitle')}</p></div>
       ) : sorted.length === 0 ? (
-        <div className="empty-state"><Search size={40} /><p>No channels match the active filters.</p></div>
+        <div className="empty-state"><Search size={40} /><p>{t('settings.notifications.list.noMatch')}</p></div>
       ) : (
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th style={thStyle}>{thInner('Name', 'name')}</th>
-                <th style={thStyle}>{thInner('Type', 'type')}</th>
-                <th style={thStyle}>{thInner('Events / Targets', 'summary')}</th>
+                <th style={thStyle}>{thInner(t('settings.notifications.list.columns.name'), 'name')}</th>
+                <th style={thStyle}>{thInner(t('settings.notifications.list.columns.type'), 'type')}</th>
+                <th style={thStyle}>{thInner(t('settings.notifications.list.columns.summary'), 'summary')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -277,16 +280,16 @@ export function NotificationChannelListPage() {
                       <td>
                         {ch.name
                           ? <strong style={{ color: 'var(--text-primary)' }}>{ch.name}</strong>
-                          : <strong style={{ color: 'var(--text-primary)' }}>{providerLabel(ch.provider as ChannelProvider)}</strong>}
+                          : <strong style={{ color: 'var(--text-primary)' }}>{providerLabel(ch.provider as ChannelProvider, t)}</strong>}
                       </td>
                       <td>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                          {providerLabel(ch.provider as ChannelProvider)}
+                          {providerLabel(ch.provider as ChannelProvider, t)}
                         </span>
                       </td>
                       <td>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                          {summariseChannel(ch)}
+                          {summariseChannel(ch, t)}
                         </span>
                       </td>
                       <td
@@ -296,7 +299,7 @@ export function NotificationChannelListPage() {
                         <button
                           className="btn-icon"
                           onClick={() => handleTest(ch)}
-                          title="Send test"
+                          title={t('settings.notifications.list.testTitle')}
                           disabled={ts?.loading}
                         >
                           {ts?.loading
@@ -306,14 +309,14 @@ export function NotificationChannelListPage() {
                         <button
                           className="btn-icon"
                           onClick={() => navigate(`/dashboard/settings/notifications/${ch.id}`)}
-                          title="Edit channel"
+                          title={t('settings.notifications.list.editTitle')}
                         >
                           <Pencil size={15} />
                         </button>
                         <button
                           className="btn-icon danger"
                           onClick={() => handleDelete(ch.id, ch.name)}
-                          title="Delete channel"
+                          title={t('settings.notifications.list.deleteTitle')}
                         >
                           <Trash2 size={15} />
                         </button>
@@ -344,7 +347,7 @@ export function NotificationChannelListPage() {
       {confirmState && (
         <ConfirmDialog
           message={confirmState.message}
-          confirmLabel="Delete"
+          confirmLabel={t('settings.notifications.list.deleteConfirmButton')}
           onConfirm={confirmState.onConfirm}
           onCancel={() => setConfirmState(null)}
         />

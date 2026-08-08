@@ -229,7 +229,7 @@ describe('forwardOpenAIOAuthSSE', () => {
     const joined = raw.chunks.join('')
     expect(joined).toContain('"content":"Hello!"')
     expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'success' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'proj-1', outcome: 'success' }))
   })
 
   it('extracts instructions from system message and excludes it from input', async () => {
@@ -276,7 +276,7 @@ describe('forwardOpenAIOAuthSSE', () => {
 
     expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
     expect(log.error).toHaveBeenCalled()
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'proj-1', outcome: 'error' }))
   })
 
   it('handles upstream.text() rejection gracefully (error body unreadable)', async () => {
@@ -302,7 +302,7 @@ describe('forwardOpenAIOAuthSSE', () => {
 
     expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
     expect(log.error).toHaveBeenCalled()
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'proj-1', outcome: 'error' }))
   })
 
   it('strips non-standard fields (model, thinking) from assistant messages before forwarding', async () => {
@@ -350,7 +350,7 @@ describe('forwardOpenAIOAuthSSE', () => {
 
     expect(raw.chunks.at(-1)).toBe('data: [DONE]\n\n')
     expect(log.error).toHaveBeenCalled()
-    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'proj-1', outcome: 'error' }))
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'proj-1', outcome: 'error' }))
   })
 
   it('maps a tool round trip onto Responses items (chat shapes are refused upstream)', async () => {

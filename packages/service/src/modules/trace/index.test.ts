@@ -33,7 +33,7 @@ describe('trace module', () => {
     const ingress = pipeline.orderedFor('ingress').find((p) => p.id === 'trace.ingress')!
     const ctx = {
       traceId: 'trace-test-1',
-      projectId: 'p1',
+      routerId: 'p1',
       req: { headers: { 'x-routerly-trace': 'c1' } },
     } as unknown as ProxyContext
     await ingress.run(ctx)
@@ -58,7 +58,7 @@ describe('trace module', () => {
     await traceModule.register({ container, events })
     const pipeline = container.resolve(PROXY_PIPELINE)
     const ingress = pipeline.orderedFor('ingress').find((p) => p.id === 'trace.ingress')!
-    const ctx = { traceId: 'trace-test-2', projectId: 'p1', phase: 'ingress' } as unknown as ProxyContext
+    const ctx = { traceId: 'trace-test-2', routerId: 'p1', phase: 'ingress' } as unknown as ProxyContext
     await ingress.run(ctx)
 
     ctx.phase = 'request.preprocess'
@@ -80,7 +80,7 @@ describe('trace module', () => {
     const completed: TraceCompletedEvent[] = []
     events.subscribe(TRACE_COMPLETED_TOPIC, (_t, payload) => { completed.push(payload as TraceCompletedEvent) })
 
-    const ctx = { traceId: 'trace-test-3', projectId: 'p1' } as unknown as ProxyContext
+    const ctx = { traceId: 'trace-test-3', routerId: 'p1' } as unknown as ProxyContext
     await ingress.run(ctx)
     ctx.phase = 'routing.prepare'
     ctx.emit!({ panel: 'response', message: 'router:result', details: {} })
@@ -110,7 +110,7 @@ describe('trace module', () => {
 
     const ctx = {
       traceId: 'trace-test-5',
-      projectId: 'p1',
+      routerId: 'p1',
       req: { headers: { 'x-routerly-trace': 'c9' } },
     } as unknown as ProxyContext
     await ingress.run(ctx)
@@ -119,7 +119,7 @@ describe('trace module', () => {
 
     expect(completed).toHaveLength(1)
     expect(completed[0]!.traceId).toBe('trace-test-5')
-    expect(completed[0]!.projectId).toBe('p1')
+    expect(completed[0]!.routerId).toBe('p1')
     expect(completed[0]!.correlationId).toBe('c9')
     expect(completed[0]!.entries).toHaveLength(2)
     // The completion event must never be mistaken for one more entry.
@@ -133,7 +133,7 @@ describe('trace module', () => {
     const ingress = pipeline.orderedFor('ingress').find((p) => p.id === 'trace.ingress')!
     const finalize = pipeline.orderedFor('finalize').find((p) => p.id === 'trace.finalize')!
 
-    const ctx = { traceId: 'trace-test-7', projectId: 'p1' } as unknown as ProxyContext
+    const ctx = { traceId: 'trace-test-7', routerId: 'p1' } as unknown as ProxyContext
     await ingress.run(ctx)
     ctx.phase = 'upstream.execute'
     ctx.emit!({ panel: 'request', message: 'model:request', details: { modelId: 'gpt-4o', provider: 'openai' } })

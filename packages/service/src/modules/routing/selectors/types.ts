@@ -10,7 +10,7 @@ export interface ScoredCandidate {
 
 /** Context passed to a selector alongside the scored candidates. */
 export interface SelectorContext {
-  projectId: string;
+  routerId: string;
   conversationId?: string;
   /** True when every active policy abstained (no discriminating signal). */
   allAbstained: boolean;

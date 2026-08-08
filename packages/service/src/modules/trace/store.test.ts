@@ -37,7 +37,7 @@ describe('trace store', () => {
   })
 
   it('keeps the correlation id the caller sent', () => {
-    openTrace('trace-4', { correlationId: 'corr-1', projectId: 'p1' })
+    openTrace('trace-4', { correlationId: 'corr-1', routerId: 'p1' })
     expect(getTraceCorrelationId('trace-4')).toBe('corr-1')
     openTrace('trace-5')
     expect(getTraceCorrelationId('trace-5')).toBeUndefined()

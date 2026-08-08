@@ -24,12 +24,12 @@ function makeModel() {
   } as any
 }
 
-function makeProject() {
+function makeRouter() {
   return { id: 'proj-1', name: 'Test', tokens: [], members: [], models: [{ modelId: 'm1' }], policies: [] } as any
 }
 
 function makeCtx(override: any = {}): any {
-  return { projectId: 'proj-1', project: makeProject(), callType: 'completion' as const, ...override }
+  return { routerId: 'proj-1', router: makeRouter(), callType: 'completion' as const, ...override }
 }
 
 // If the old inline total (which omits cacheCreationInputTokens) were still present,

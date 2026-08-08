@@ -41,7 +41,7 @@ the grid below:
 |-----|-------|
 | **OpenAI base URL** | `<gateway>/v1`, with a Copy button |
 | **Anthropic base URL** | `<gateway>`, with a Copy button |
-| **API key** | A project token, sent as `Authorization: Bearer` or `x-api-key`. Links to [Projects](./projects.md) to create one |
+| **API key** | A router token, sent as `Authorization: Bearer` or `x-api-key`. Links to [Routers](./routers.md) to create one |
 | **Model** | `routerly/ada` hands the choice to the router; any model id from [Models](./models.md) works too |
 
 Nothing else changes on the client side: requests and responses cross
@@ -85,15 +85,15 @@ Every code block has a Copy button.
 ## Tokens are placeholders here
 
 Snippets in the dashboard carry `sk-rt-YOUR_TOKEN` (and `<YOUR_MCP_TOKEN>`
-for MCP), never a real credential: the dashboard has no raw project token to
+for MCP), never a real credential: the dashboard has no raw router token to
 embed. Replace the placeholder before saving the file.
 
-- **Project tokens**, for LLM traffic, are created on the
-  [Projects](./projects.md) page.
+- **Router tokens**, for LLM traffic, are created on the
+  [Routers](./routers.md) page.
 - **MCP tokens** are personal: create them under **Profile → MCP** or with
   `routerly mcp token create --label <name>`.
 
-The CLI does this for you: `routerly clients configure <id> --project my-api`
+The CLI does this for you: `routerly clients configure <id> --router my-api`
 mints a token when you do not pass `--token`, and writes the file with the
 real value.
 

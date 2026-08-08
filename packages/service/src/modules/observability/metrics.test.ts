@@ -26,7 +26,7 @@ const models = [
   { id: 'claude', name: 'Claude', provider: 'anthropic', endpoint: '', cost: { inputPerMillion: 1, outputPerMillion: 1 } },
 ];
 
-const projects = [
+const routers = [
   { id: 'p1', name: 'proj1', tokens: [], members: [], models: [{ modelId: 'gpt-4o' }] },
 ];
 
@@ -42,11 +42,11 @@ describe('GET /metrics', () => {
     setup({
       settings: {},
       models,
-      projects,
+      routers,
       usage: [
-        { id: '1', timestamp: '2026-01-01T00:00:00Z', projectId: 'p1', modelId: 'gpt-4o', inputTokens: 100, outputTokens: 50, cachedInputTokens: 10, cost: 0.001, latencyMs: 200, outcome: 'success' },
-        { id: '2', timestamp: '2026-01-01T00:01:00Z', projectId: 'p1', modelId: 'gpt-4o', inputTokens: 200, outputTokens: 60, cost: 0.002, latencyMs: 400, outcome: 'success' },
-        { id: '3', timestamp: '2026-01-01T00:02:00Z', projectId: 'p1', modelId: 'gpt-4o', inputTokens: 10, outputTokens: 5, cost: 0.0001, latencyMs: 100, outcome: 'error' },
+        { id: '1', timestamp: '2026-01-01T00:00:00Z', routerId: 'p1', modelId: 'gpt-4o', inputTokens: 100, outputTokens: 50, cachedInputTokens: 10, cost: 0.001, latencyMs: 200, outcome: 'success' },
+        { id: '2', timestamp: '2026-01-01T00:01:00Z', routerId: 'p1', modelId: 'gpt-4o', inputTokens: 200, outputTokens: 60, cost: 0.002, latencyMs: 400, outcome: 'success' },
+        { id: '3', timestamp: '2026-01-01T00:02:00Z', routerId: 'p1', modelId: 'gpt-4o', inputTokens: 10, outputTokens: 5, cost: 0.0001, latencyMs: 100, outcome: 'error' },
       ],
     });
     mockSnapshot.mockResolvedValue([{ metric: 'cost', window: 'daily', value: 10, current: 2.5, remaining: 7.5 }]);
@@ -61,28 +61,28 @@ describe('GET /metrics', () => {
 
     // counters
     expect(body).toContain('# TYPE routerly_requests_total counter');
-    expect(body).toContain('routerly_requests_total{project="proj1",model="gpt-4o",provider="openai",status="success"} 2');
-    expect(body).toContain('routerly_requests_total{project="proj1",model="gpt-4o",provider="openai",status="error"} 1');
+    expect(body).toContain('routerly_requests_total{router="proj1",model="gpt-4o",provider="openai",status="success"} 2');
+    expect(body).toContain('routerly_requests_total{router="proj1",model="gpt-4o",provider="openai",status="error"} 1');
 
     // tokens: input 100+200+10=310, output 50+60+5=115, cached 10
-    expect(body).toContain('routerly_tokens_total{project="proj1",model="gpt-4o",type="input"} 310');
-    expect(body).toContain('routerly_tokens_total{project="proj1",model="gpt-4o",type="output"} 115');
-    expect(body).toContain('routerly_tokens_total{project="proj1",model="gpt-4o",type="cached"} 10');
+    expect(body).toContain('routerly_tokens_total{router="proj1",model="gpt-4o",type="input"} 310');
+    expect(body).toContain('routerly_tokens_total{router="proj1",model="gpt-4o",type="output"} 115');
+    expect(body).toContain('routerly_tokens_total{router="proj1",model="gpt-4o",type="cached"} 10');
 
     // cost: 0.0031
-    expect(body).toContain('routerly_cost_usd_total{project="proj1",model="gpt-4o"} 0.0031');
+    expect(body).toContain('routerly_cost_usd_total{router="proj1",model="gpt-4o"} 0.0031');
 
     // duration gauges present
     expect(body).toContain('# TYPE routerly_request_duration_p50_ms gauge');
-    expect(body).toContain('routerly_request_duration_p50_ms{project="proj1",model="gpt-4o"}');
-    expect(body).toContain('routerly_request_duration_p95_ms{project="proj1",model="gpt-4o"}');
+    expect(body).toContain('routerly_request_duration_p50_ms{router="proj1",model="gpt-4o"}');
+    expect(body).toContain('routerly_request_duration_p95_ms{router="proj1",model="gpt-4o"}');
 
     // budget ratio: 2.5 / 10 = 0.25
-    expect(body).toContain('routerly_budget_used_ratio{project="proj1"} 0.25');
+    expect(body).toContain('routerly_budget_used_ratio{router="proj1"} 0.25');
   });
 
   it('returns 404 when metricsEnabled is false', async () => {
-    setup({ settings: { metricsEnabled: false }, models: [], projects: [], usage: [] });
+    setup({ settings: { metricsEnabled: false }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
@@ -90,71 +90,71 @@ describe('GET /metrics', () => {
   });
 
   it('serves when metricsEnabled is undefined (default true)', async () => {
-    setup({ settings: {}, models: [], projects: [], usage: [] });
+    setup({ settings: {}, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
     expect(res.statusCode).toBe(200);
   });
 
-  it('reports unknown provider for unmapped models and falls back to projectId for unknown projects', async () => {
+  it('reports unknown provider for unmapped models and falls back to routerId for unknown routers', async () => {
     setup({
       settings: {},
       models: [],
-      projects: [],
+      routers: [],
       usage: [
-        { id: '1', timestamp: '2026-01-01T00:00:00Z', projectId: 'ghost', modelId: 'mystery', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 10, outcome: 'success' },
+        { id: '1', timestamp: '2026-01-01T00:00:00Z', routerId: 'ghost', modelId: 'mystery', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 10, outcome: 'success' },
       ],
     });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
     expect(res.body).toContain('provider="unknown"');
-    expect(res.body).toContain('project="ghost"');
+    expect(res.body).toContain('router="ghost"');
   });
 
   it('escapes special characters in label values', async () => {
     setup({
       settings: {},
       models: [{ id: 'm"q', name: 'x', provider: 'custom', endpoint: '', cost: { inputPerMillion: 0, outputPerMillion: 0 } }],
-      projects: [{ id: 'pq', name: 'proj"two', tokens: [], members: [], models: [] }],
+      routers: [{ id: 'pq', name: 'proj"two', tokens: [], members: [], models: [] }],
       usage: [
-        { id: '1', timestamp: '2026-01-01T00:00:00Z', projectId: 'pq', modelId: 'm"q', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 10, outcome: 'success' },
+        { id: '1', timestamp: '2026-01-01T00:00:00Z', routerId: 'pq', modelId: 'm"q', inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: 10, outcome: 'success' },
       ],
     });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
-    expect(res.body).toContain('project="proj\\"two"');
+    expect(res.body).toContain('router="proj\\"two"');
     expect(res.body).toContain('model="m\\"q"');
   });
 
   it('computes percentiles from the latency distribution', async () => {
     const usage = Array.from({ length: 10 }, (_v, i) => ({
-      id: String(i), timestamp: `2026-01-01T00:0${i}:00Z`, projectId: 'p1', modelId: 'gpt-4o',
+      id: String(i), timestamp: `2026-01-01T00:0${i}:00Z`, routerId: 'p1', modelId: 'gpt-4o',
       inputTokens: 1, outputTokens: 1, cost: 0, latencyMs: (i + 1) * 100, outcome: 'success',
     }));
-    setup({ settings: {}, models, projects, usage });
+    setup({ settings: {}, models, routers, usage });
     mockSnapshot.mockResolvedValue([]);
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
     // latencies 100..1000; p50 -> index ceil(0.5*10)-1=4 -> 500; p95 -> ceil(0.95*10)-1=9 -> 1000
-    expect(res.body).toContain('routerly_request_duration_p50_ms{project="proj1",model="gpt-4o"} 500');
-    expect(res.body).toContain('routerly_request_duration_p95_ms{project="proj1",model="gpt-4o"} 1000');
+    expect(res.body).toContain('routerly_request_duration_p50_ms{router="proj1",model="gpt-4o"} 500');
+    expect(res.body).toContain('routerly_request_duration_p95_ms{router="proj1",model="gpt-4o"} 1000');
   });
 
   it('reports 0 budget ratio when no cost limits are configured', async () => {
-    setup({ settings: {}, models, projects, usage: [] });
+    setup({ settings: {}, models, routers, usage: [] });
     mockSnapshot.mockResolvedValue([]);
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
-    expect(res.body).toContain('routerly_budget_used_ratio{project="proj1"} 0');
+    expect(res.body).toContain('routerly_budget_used_ratio{router="proj1"} 0');
   });
 
   it('returns 401 when prometheusAuthToken is set and request has no token', async () => {
-    setup({ settings: { prometheusAuthToken: 'secret' }, models: [], projects: [], usage: [] });
+    setup({ settings: { prometheusAuthToken: 'secret' }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
@@ -162,7 +162,7 @@ describe('GET /metrics', () => {
   });
 
   it('returns 200 when correct Bearer token is provided', async () => {
-    setup({ settings: { prometheusAuthToken: 'secret' }, models: [], projects: [], usage: [] });
+    setup({ settings: { prometheusAuthToken: 'secret' }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics', headers: { authorization: 'Bearer secret' } });
     await app.close();
@@ -171,7 +171,7 @@ describe('GET /metrics', () => {
   });
 
   it('integration: enabled, no auth → 200', async () => {
-    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true }] }, models: [], projects: [], usage: [] });
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true }] }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
@@ -179,7 +179,7 @@ describe('GET /metrics', () => {
   });
 
   it('integration: disabled → 404', async () => {
-    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: false }] }, models: [], projects: [], usage: [] });
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: false }] }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
@@ -187,7 +187,7 @@ describe('GET /metrics', () => {
   });
 
   it('integration: authToken, no header → 401', async () => {
-    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true, authToken: 'tok' }] }, models: [], projects: [], usage: [] });
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true, authToken: 'tok' }] }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics' });
     await app.close();
@@ -195,7 +195,7 @@ describe('GET /metrics', () => {
   });
 
   it('integration: authToken, correct header → 200', async () => {
-    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true, authToken: 'tok' }] }, models: [], projects: [], usage: [] });
+    setup({ settings: { integrations: [{ id: 'i1', type: 'prometheus', enabled: true, authToken: 'tok' }] }, models: [], routers: [], usage: [] });
     const app = await buildApp();
     const res = await app.inject({ method: 'GET', url: '/metrics', headers: { authorization: 'Bearer tok' } });
     await app.close();

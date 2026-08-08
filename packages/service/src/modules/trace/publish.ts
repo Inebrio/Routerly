@@ -17,10 +17,10 @@ import type { TraceEvent } from './store.js'
 /** Everything publish needs from the request. Kept structural so tests can pass a literal. */
 export interface TraceOrigin {
   traceId: string
-  projectId?: string
+  routerId?: string
   phase?: string
   correlationId?: string
-  /** Project opt-in. False (the default) drops `entry.content` here, before anyone sees it. */
+  /** Router opt-in. False (the default) drops `entry.content` here, before anyone sees it. */
   captureContent?: boolean
 }
 
@@ -34,7 +34,7 @@ export const TRACE_COMPLETED_TOPIC = 'traces/completed'
 export interface TraceCompletedEvent {
   traceId: string
   entries: TraceEntry[]
-  projectId?: string
+  routerId?: string
   correlationId?: string
 }
 
@@ -55,7 +55,7 @@ export function traceTopic(phase: string | undefined, message: string): string {
  * Stamp the entry with where it came from and publish it.
  *
  * The content gate is here and nowhere else: producers always fill `entry.content`
- * with the prompts and answers they saw, and a project that did not opt in never
+ * with the prompts and answers they saw, and a router that did not opt in never
  * gets them past this function — not to the buffer, not to usage.json, not to the
  * side channel.
  */
@@ -72,7 +72,7 @@ export function publishTrace(events: EventBus, origin: TraceOrigin, entry: Trace
   const event: TraceEvent = {
     traceId: origin.traceId,
     entry: stamped,
-    ...(origin.projectId ? { projectId: origin.projectId } : {}),
+    ...(origin.routerId ? { routerId: origin.routerId } : {}),
     ...(origin.correlationId ? { correlationId: origin.correlationId } : {}),
   }
   events.publish(traceTopic(origin.phase, entry.message), event)

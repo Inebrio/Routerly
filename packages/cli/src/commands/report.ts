@@ -31,8 +31,8 @@ interface UsageResponse {
   byRequestType?: Record<string, number>;
   records: Array<{
     timestamp: string;
-    projectId: string;
-    /** Project token the call authenticated with. Absent on records written before it was tracked. */
+    routerId: string;
+    /** Router token the call authenticated with. Absent on records written before it was tracked. */
     tokenId?: string;
     modelId: string;
     inputTokens: number;
@@ -150,10 +150,10 @@ Examples:
   # Weekly usage
   routerly report usage --period weekly
 
-  # Usage for a specific project
-  routerly report usage --project my-api
+  # Usage for a specific router
+  routerly report usage --router my-api
 
-  # All-time usage across all projects
+  # All-time usage across all routers
   routerly report usage --period all
 
   # Only embedding calls
@@ -162,22 +162,22 @@ Examples:
   # Only the calls the router made to decide where to route
   routerly report usage --caller routing
 
-  # Only the traffic that came in on one project token
+  # Only the traffic that came in on one router token
   routerly report usage --token 3f2b1c4d-...
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
-    .option('--project <id>', 'Filter by project ID')
+    .option('--router <id>', 'Filter by router ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
     .option('--session-id <id>', 'Filter by session ID')
     .option('--end-user <id>', 'Filter by end-user ID')
-    .option('--token <id>', 'Filter by project token ID (comma-separated for several)')
+    .option('--token <id>', 'Filter by router token ID (comma-separated for several)')
     .option('--tag <key=value>', 'Filter by tag (key=value)')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; token?: string; tag?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; router?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; token?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
-        if (opts.project) params.set('projectId', opts.project);
+        if (opts.router) params.set('routerId', opts.router);
         if (opts.type) params.set('requestType', opts.type);
         if (opts.caller) params.set('callType', opts.caller);
         if (opts.sessionId) params.set('sessionId', opts.sessionId);
@@ -249,8 +249,8 @@ Examples:
   # Show the last 50 calls
   routerly report calls --limit 50
 
-  # Show the last 100 calls for a specific project
-  routerly report calls --limit 100 --project my-api
+  # Show the last 100 calls for a specific router
+  routerly report calls --limit 100 --router my-api
 
   # Only image generation calls
   routerly report calls --type image
@@ -258,18 +258,18 @@ Examples:
   # Only the calls a guardrail made
   routerly report calls --caller guardrail
 
-  # Only the traffic that came in on one project token
+  # Only the traffic that came in on one router token
   routerly report calls --token 3f2b1c4d-...
 `)
     .option('--limit <n>', 'Number of records to show', '20')
-    .option('--project <id>', 'Filter by project ID')
+    .option('--router <id>', 'Filter by router ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
-    .option('--token <id>', 'Filter by project token ID (comma-separated for several)')
-    .action(async (opts: { limit: string; project?: string; type?: string; caller?: string; token?: string }) => {
+    .option('--token <id>', 'Filter by router token ID (comma-separated for several)')
+    .action(async (opts: { limit: string; router?: string; type?: string; caller?: string; token?: string }) => {
       try {
         const params = new URLSearchParams({ period: 'all' });
-        if (opts.project) params.set('projectId', opts.project);
+        if (opts.router) params.set('routerId', opts.router);
         if (opts.type) params.set('requestType', opts.type);
         if (opts.caller) params.set('callType', opts.caller);
         if (opts.token) params.set('tokenIds', opts.token);
@@ -278,14 +278,14 @@ Examples:
         const limited = data.records.slice(0, parseInt(opts.limit, 10));
 
         const table = new Table({
-          head: ['Timestamp', 'Project', 'Token', 'Model', 'Type', 'Caller', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
+          head: ['Timestamp', 'Router', 'Token', 'Model', 'Type', 'Caller', 'In Tokens', 'Out Tokens', 'Cost', 'Latency', 'Outcome'].map(h => chalk.cyan(h)),
         });
 
         for (const r of limited) {
           const outcome = r.outcome === 'success' ? chalk.green(r.outcome) : chalk.red(r.outcome);
           table.push([
             new Date(r.timestamp).toLocaleString(),
-            r.projectId.slice(0, 8),
+            r.routerId.slice(0, 8),
             // Records written before tokenId existed carry no caller token.
             r.tokenId ? r.tokenId.slice(0, 8) : '-',
             r.modelId,
@@ -312,12 +312,12 @@ Examples:
   cmd.command('leaderboard')
     .description('Show model performance leaderboard')
     .option('--period <period>', 'Period: daily | weekly | monthly', 'weekly')
-    .option('--project <id>', 'Filter by project ID')
+    .option('--router <id>', 'Filter by router ID')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; json?: boolean }) => {
+    .action(async (opts: { period: string; router?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
-        if (opts.project) params.set('projectId', opts.project);
+        if (opts.router) params.set('routerId', opts.router);
 
         const data = await api<Array<{
           modelId: string;
@@ -364,17 +364,17 @@ Examples:
   // ── report sessions ──
   cmd.command('sessions')
     .description('Show usage sessions')
-    .option('--project <id>', 'Filter by project ID')
+    .option('--router <id>', 'Filter by router ID')
     .option('--limit <n>', 'Number of sessions to show', '20')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { project?: string; limit: string; json?: boolean }) => {
+    .action(async (opts: { router?: string; limit: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ limit: opts.limit });
-        if (opts.project) params.set('projectId', opts.project);
+        if (opts.router) params.set('routerId', opts.router);
 
         const data = await api<Array<{
           sessionId: string;
-          projectId: string;
+          routerId: string;
           requests: number;
           totalCost: number;
           startedAt: string;
@@ -388,13 +388,13 @@ Examples:
         }
 
         const table = new Table({
-          head: ['Session ID', 'Project', 'Requests', 'Total Cost', 'Started At'].map(h => chalk.cyan(h)),
+          head: ['Session ID', 'Router', 'Requests', 'Total Cost', 'Started At'].map(h => chalk.cyan(h)),
         });
 
         for (const s of data) {
           table.push([
             chalk.gray(s.sessionId.slice(0, 12) + '…'),
-            s.projectId.slice(0, 12),
+            s.routerId.slice(0, 12),
             s.requests,
             `$${s.totalCost.toFixed(6)}`,
             new Date(s.startedAt).toLocaleString(),
@@ -412,11 +412,11 @@ Examples:
     .description('Show what routing, the prompt cache and the optimizers saved')
     .addHelpText('after', `
 Examples:
-  # This month's saving across every project
+  # This month's saving across every router
   routerly report savings
 
-  # One project, all time
-  routerly report savings --project my-api --period all
+  # One router, all time
+  routerly report savings --router my-api --period all
 
   # Break the saving down over time
   routerly report savings --trend
@@ -425,15 +425,15 @@ Examples:
   routerly report savings --json
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
-    .option('--project <id>', 'Filter by project ID')
+    .option('--router <id>', 'Filter by router ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--trend', 'Break the saving down per hour (daily period) or per day')
     .option('--json', 'Output as JSON')
-    .action(async (opts: { period: string; project?: string; type?: string; trend?: boolean; json?: boolean }) => {
+    .action(async (opts: { period: string; router?: string; type?: string; trend?: boolean; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period, savings: '1' });
         if (opts.trend) params.set('series', '1');
-        if (opts.project) params.set('projectId', opts.project);
+        if (opts.router) params.set('routerId', opts.router);
         if (opts.type) params.set('requestType', opts.type);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);

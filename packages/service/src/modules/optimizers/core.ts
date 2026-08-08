@@ -37,7 +37,7 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
     async run(ctx) {
       if (ctx.result) return
 
-      const steps = ctx.project.optimizers?.steps
+      const steps = ctx.router.optimizers?.steps
       if (!steps?.length) return
 
       // Every configured step reports, whatever it did: a step that was skipped,

@@ -14,7 +14,7 @@ vi.mock('../usage/tracker.js', () => ({ trackUsage: vi.fn(() => Promise.resolve(
 vi.mock('../routing/intent/classifier.js', () => ({ classifyIntent: vi.fn() }));
 vi.mock('../embeddings/dispatch.js', () => ({ getEmbeddingProvider: vi.fn() }));
 
-import { checkGuardrails, buildRequestInjection, injectingRules, type GuardrailProjectCtx } from './guardrails.js';
+import { checkGuardrails, buildRequestInjection, injectingRules, type GuardrailRouterCtx } from './guardrails.js';
 import { readConfig } from '../config/loader.js';
 import { llmChat, checkBudget, BudgetExceededError } from '../reverse-proxy/execute.js';
 import { trackUsage } from '../usage/tracker.js';
@@ -39,9 +39,9 @@ function mockModels(models: any[]) {
   });
 }
 
-const pctx: GuardrailProjectCtx = {
-  projectId: 'proj-1',
-  project: { id: 'proj-1', name: 'Test', models: [], tokens: [], members: [] } as any,
+const pctx: GuardrailRouterCtx = {
+  routerId: 'proj-1',
+  router: { id: 'proj-1', name: 'Test', models: [], tokens: [], members: [] } as any,
 };
 
 function regexRule(patterns: string[], target: GuardrailRule['target'] = 'request', extra?: Partial<GuardrailRule>): GuardrailRule {
@@ -141,7 +141,7 @@ describe('checkGuardrails — aggregated blockers', () => {
   });
 });
 
-// ─── Judge calls attributed to the real project (#77 BUG-4) ──────────────────
+// ─── Judge calls attributed to the real router (#77 BUG-4) ──────────────────
 
 const judgeModel = { id: 'openai/gpt-4o-mini', name: 'Mini', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'k', cost: { inputPerMillion: 1, outputPerMillion: 2 } };
 
@@ -153,7 +153,7 @@ function moderationRule(extra?: Partial<GuardrailRule>): GuardrailRule {
 }
 
 describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
-  it('topic judge runs llmChat against the real project (counted in usage)', async () => {
+  it('topic judge runs llmChat against the real router (counted in usage)', async () => {
     mockModels([judgeModel]);
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
 
@@ -161,8 +161,8 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
     expect(result.triggered).toBeUndefined(); // on-topic
     expect(mockLlmChat).toHaveBeenCalledTimes(1);
     const ctxArg = mockLlmChat.mock.calls[0]![2];
-    expect(ctxArg.projectId).toBe('proj-1');
-    expect(ctxArg.project.id).toBe('proj-1');
+    expect(ctxArg.routerId).toBe('proj-1');
+    expect(ctxArg.router.id).toBe('proj-1');
     expect(ctxArg.callType).toBe('guardrail'); // distinct sub-activity, counted once (BUG-5)
   });
 
@@ -172,7 +172,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
 
     const result = await checkGuardrails('request', 'bad', baseConfig([moderationRule({ block: true })]), pctx);
     expect(result.triggered).toBe('moderation:score=0.95');
-    expect(mockLlmChat.mock.calls[0]![2].projectId).toBe('proj-1');
+    expect(mockLlmChat.mock.calls[0]![2].routerId).toBe('proj-1');
   });
 
   it('over-limit judge call propagates BudgetExceededError (fails like over-limit completion)', async () => {
@@ -192,7 +192,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
     expect(result.triggered).toBeUndefined();
   });
 
-  it('semantic embedding tokens are tracked against the real project', async () => {
+  it('semantic embedding tokens are tracked against the real router', async () => {
     mockModels([judgeModel]);
     mockClassifyIntent.mockResolvedValue({
       classification: { topIntent: 'blocked', topScore: 0.9, secondIntent: null, secondScore: 0, margin: 0, status: 'confident' },
@@ -205,7 +205,7 @@ describe('checkGuardrails — judge call usage attribution (BUG-4)', () => {
     expect(result.triggered).toBe('semantic:90%');
     expect(mockTrackUsage).toHaveBeenCalledTimes(1);
     const usageArg = mockTrackUsage.mock.calls[0]![0];
-    expect(usageArg.projectId).toBe('proj-1');
+    expect(usageArg.routerId).toBe('proj-1');
     expect(usageArg.inputTokens).toBe(12);
     expect(usageArg.callType).toBe('guardrail');
   });
@@ -259,7 +259,7 @@ describe('checkGuardrails — evaluation trace (#77 C1)', () => {
   });
 });
 
-// ─── C4: semantic embedding pre-gated by project budget ──────────────────────
+// ─── C4: semantic embedding pre-gated by router budget ──────────────────────
 
 describe('checkGuardrails — semantic budget pre-gate (#77 C4)', () => {
   const semanticRule: GuardrailRule = { type: 'semantic', target: 'request', config: { embeddingModelId: judgeModel.id, examples: ['x'], threshold: 0.8 } } as any;
@@ -583,9 +583,9 @@ describe('checkGuardrails — pctx.token present (line 58 branch=0)', () => {
     // Score 9 → normalized 0.9 >= threshold 0.5 → on-topic → not triggered
     mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":9}' } }] } as any);
 
-    const pctxWithToken: GuardrailProjectCtx = {
-      projectId: 'proj-1',
-      project: { id: 'proj-1', name: 'Test', models: [], tokens: [], members: [] } as any,
+    const pctxWithToken: GuardrailRouterCtx = {
+      routerId: 'proj-1',
+      router: { id: 'proj-1', name: 'Test', models: [], tokens: [], members: [] } as any,
       token: { token: 'tok', name: 'T', permissions: ['completion'] } as any,
     };
     const result = await checkGuardrails('request', 'hi', baseConfig([topicRule()]), pctxWithToken);

@@ -4,7 +4,7 @@ import type {
   OptimizerId,
   OptimizerResult,
   OptimizerStep,
-  ProjectConfig,
+  RouterConfig,
 } from '@routerly/shared'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import type { OptimizerRegistry } from './registry.js'
@@ -51,8 +51,8 @@ export interface PreviewInput {
   registry: OptimizerRegistry | undefined
   sampleMessages: Message[]
   steps: OptimizerStep[]
-  /** Optional project the preview runs "as" — only its config is read; nothing is written. */
-  project?: ProjectConfig
+  /** Optional router the preview runs "as" — only its config is read; nothing is written. */
+  router?: RouterConfig
   /**
    * Model id the sample is addressed to. `headroom` sizes its budget on the
    * requested model's context window, so without one it has nothing to compare
@@ -78,7 +78,7 @@ const NOOP_LOG = {
 /**
  * Build a minimal ProxyContext sufficient for an optimizer's supports/optimize/
  * validate/recover to run against sample messages. It carries no reply, no route,
- * and no upstream: optimizers only read ctx.request and ctx.project.optimizers.
+ * and no upstream: optimizers only read ctx.request and ctx.router.optimizers.
  *
  * The model name is what `headroom` sizes its budget against. When the caller
  * names one of the configured models, the step fires here exactly as it does
@@ -86,7 +86,7 @@ const NOOP_LOG = {
  * says the sample is addressed to no model rather than inventing a budget or
  * naming a placeholder the reader would go looking for in the model list.
  */
-function buildPreviewContext(messages: Message[], project: ProjectConfig, model: string): ProxyContext {
+function buildPreviewContext(messages: Message[], router: RouterConfig, model: string): ProxyContext {
   // Same object for request and original — the in-place mutation contract in core.ts
   // assumes ctx.request === ctx.original for the Anthropic lane. Cloning keeps the
   // caller's sampleMessages untouched.
@@ -94,8 +94,8 @@ function buildPreviewContext(messages: Message[], project: ProjectConfig, model:
   return {
     protocol: 'openai',
     log: NOOP_LOG,
-    project,
-    projectId: project.id,
+    router,
+    routerId: router.id,
     traceId: 'preview',
     original: request,
     request,
@@ -113,11 +113,11 @@ function buildPreviewContext(messages: Message[], project: ProjectConfig, model:
  */
 export async function runPreview(input: PreviewInput): Promise<PreviewResult> {
   const { registry, sampleMessages, steps } = input
-  // The fake project's optimizers.steps drives per-optimizer threshold lookup
-  // (ccr/headroom/relevance read ctx.project.optimizers.steps.find(...)).
-  const base = input.project ?? ({ id: 'preview' } as ProjectConfig)
-  const project = { ...base, optimizers: { steps } }
-  const ctx = buildPreviewContext(sampleMessages, project, input.model ?? '')
+  // The fake router's optimizers.steps drives per-optimizer threshold lookup
+  // (ccr/headroom/relevance read ctx.router.optimizers.steps.find(...)).
+  const base = input.router ?? ({ id: 'preview' } as RouterConfig)
+  const router = { ...base, optimizers: { steps } }
+  const ctx = buildPreviewContext(sampleMessages, router, input.model ?? '')
   const req = ctx.request
 
   const estimatedTokensBefore = tokensOf(req.messages ?? [])

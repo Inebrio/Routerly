@@ -364,7 +364,7 @@ describe('ProfileNotificationsTab', () => {
 
   it('opens the detail drawer on row click and marks the item read', async () => {
     mockGetInboxPage.mockResolvedValue(pageOf([
-      { id: 'n1', event: 'budget.exceeded', severity: 'warning', timestamp: new Date().toISOString(), read: false, details: { projectId: 'p1' } },
+      { id: 'n1', event: 'budget.exceeded', severity: 'warning', timestamp: new Date().toISOString(), read: false, details: { routerId: 'p1' } },
     ], 1));
     mockMarkRead.mockResolvedValue(undefined);
     renderTab();
@@ -372,7 +372,7 @@ describe('ProfileNotificationsTab', () => {
     await userEvent.click(screen.getByText('budget.exceeded'));
     // Drawer shows details + the detail key
     await waitFor(() => expect(screen.getByRole('dialog', { name: /notification detail/i })).toBeTruthy());
-    expect(screen.getByText('projectId')).toBeTruthy();
+    expect(screen.getByText('routerId')).toBeTruthy();
     await userEvent.click(screen.getByText(/Mark as read/));
     expect(mockMarkRead).toHaveBeenCalledWith({ ids: ['n1'] });
   });
@@ -1093,19 +1093,19 @@ describe('ProfileNotificationsTab — readable rows and links', () => {
     await waitFor(() => expect(screen.getByText('3 events')).toBeTruthy());
   });
 
-  it('links project, model and trace ids from the detail drawer', async () => {
+  it('links router, model and trace ids from the detail drawer', async () => {
     const ts = new Date().toISOString();
     mockGetInboxPage.mockResolvedValue(pageOf([
       {
         id: 'n1', event: 'routing.fallback_used', severity: 'warning', timestamp: ts, read: true,
-        details: { projectId: 'p1', modelId: 'm1', traceId: 't1' },
+        details: { routerId: 'p1', modelId: 'm1', traceId: 't1' },
       },
     ]));
     renderTab();
     await waitFor(() => screen.getByText('Fallback model used'));
     await userEvent.click(screen.getByText('Fallback model used'));
     await waitFor(() => screen.getByRole('dialog', { name: /notification detail/i }));
-    expect(screen.getByRole('link', { name: 'p1' }).getAttribute('href')).toBe('/dashboard/projects/p1');
+    expect(screen.getByRole('link', { name: 'p1' }).getAttribute('href')).toBe('/dashboard/routers/p1');
     expect(screen.getByRole('link', { name: 'm1' }).getAttribute('href')).toBe('/dashboard/models/m1');
     expect(screen.getByRole('link', { name: 't1' }).getAttribute('href')).toBe('/dashboard/usage/t1');
   });

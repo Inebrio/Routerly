@@ -49,7 +49,7 @@ vi.mock('../components/SearchableSelect', () => ({
 }));
 
 vi.mock('./notificationChannelFields', () => ({
-  CHANNEL_PROVIDER_META: [
+  getChannelProviderMeta: () => [
     { key: 'dashboard', label: 'Dashboard', description: 'In-app inbox' },
     { key: 'smtp',      label: 'SMTP',      description: 'Custom mail server' },
     { key: 'webhook',   label: 'Webhook',   description: 'HTTP webhook' },

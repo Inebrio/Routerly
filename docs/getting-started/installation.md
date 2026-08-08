@@ -252,7 +252,7 @@ curl -fsSL https://www.routerly.ai/install.sh | bash
 powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
 ```
 
-The wizard will walk you through the same questions as a fresh install, pre-filling your existing answers. All accounts, projects, models and usage history are preserved.
+The wizard will walk you through the same questions as a fresh install, pre-filling your existing answers. All accounts, routers, models and usage history are preserved.
 
 ---
 
@@ -318,4 +318,4 @@ You should see the service URL, version, and a reachability check. Then open the
 http://localhost:3000/dashboard
 ```
 
-→ Continue to [Quick Start](./quick-start.md) to set up your first model and project.
+→ Continue to [Quick Start](./quick-start.md) to set up your first model and router.

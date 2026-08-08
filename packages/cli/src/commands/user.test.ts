@@ -25,7 +25,7 @@ function makeCmd() {
   return cmd;
 }
 
-const baseUser = { id: 'u1', email: 'alice@example.com', roleId: 'viewer', projectIds: [] };
+const baseUser = { id: 'u1', email: 'alice@example.com', roleId: 'viewer', routerIds: [] };
 
 // ── user list ─────────────────────────────────────────────────────────────────
 
@@ -44,16 +44,16 @@ describe('user list', () => {
     expect(lines.join('\n')).toContain('alice@example.com');
   });
 
-  it('shows "all" for user with empty projectIds', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseUser, projectIds: [] }]);
+  it('shows "all" for user with empty routerIds', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseUser, routerIds: [] }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'user', 'list']);
     expect(lines.join('\n')).toContain('all');
   });
 
-  it('shows project ids joined', async () => {
-    mockApi.mockResolvedValueOnce([{ ...baseUser, projectIds: ['p1', 'p2'] }]);
+  it('shows router ids joined', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseUser, routerIds: ['p1', 'p2'] }]);
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'user', 'list']);
@@ -90,7 +90,7 @@ describe('user add', () => {
       email: 'alice@example.com',
       password: 'secret',
       roleId: 'viewer',
-      projectIds: [],
+      routerIds: [],
     });
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('created'));
   });
@@ -102,11 +102,11 @@ describe('user add', () => {
     expect((call[2] as { roleId: string }).roleId).toBe('admin');
   });
 
-  it('parses --projects into array', async () => {
+  it('parses --routers into array', async () => {
     mockApi.mockResolvedValueOnce(baseUser);
-    await makeCmd().parseAsync(['node', 'user', 'add', '--email', 'a@b.com', '--password', 'p', '--projects', 'p1,p2']);
+    await makeCmd().parseAsync(['node', 'user', 'add', '--email', 'a@b.com', '--password', 'p', '--routers', 'p1,p2']);
     const call = mockApi.mock.calls[0]!;
-    expect((call[2] as { projectIds: string[] }).projectIds).toEqual(['p1', 'p2']);
+    expect((call[2] as { routerIds: string[] }).routerIds).toEqual(['p1', 'p2']);
   });
 
   it('reads password from env with --password-stdin', async () => {

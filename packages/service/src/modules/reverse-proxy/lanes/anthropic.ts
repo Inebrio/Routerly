@@ -4,6 +4,8 @@ import type { MessagesRequest, ChatCompletionRequest, StreamChunk } from '@route
 import type { Processor } from '../../../core/index.js'
 import type { ProxyContext } from '../context.js'
 import { getProxyPipeline } from '../run.js'
+import { runCandidateLoop } from '../candidate-loop.js'
+import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
@@ -25,8 +27,8 @@ export function buildAnthropicContext(req: FastifyRequest, reply: FastifyReply):
     req,
     reply,
     log: req.log,
-    project: req.project,
-    projectId: req.project.id,
+    router: req.router,
+    routerId: req.router.id,
     ...(req.token ? { token: req.token } : {}),
     traceId: randomUUID(),
     ...(conversationId ? { conversationId } : {}),
@@ -70,7 +72,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     const req = ctx.req
     const reply = ctx.reply
     const log = ctx.log
-    const project = ctx.project
+    const router = ctx.router
     const endUserId = (body as any).user as string | undefined || undefined
 
     // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──
@@ -96,8 +98,8 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       try {
         const chunks = streamOpenAIOAuthChunks(toChat(body), model, log, {
           traceId: ctx.traceId,
-          projectId: project.id,
-          ...(project.pii ? { pii: project.pii } : {}),
+          routerId: router.id,
+          ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
         })
         if (!body.stream) {
@@ -117,8 +119,8 @@ export const anthropicUpstream: Processor<ProxyContext> = {
 
     // ── Non-Anthropic providers: convert format and call the executor. ──
     const cctx: LLMCallContext = {
-      projectId: project.id,
-      project,
+      routerId: router.id,
+      router,
       ...(ctx.token ? { token: ctx.token } : {}),
       callType: 'completion',
       traceId: ctx.traceId,
@@ -131,6 +133,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       ...(ctx.req?.experiment ? { experiment: ctx.req.experiment } : {}),
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
+      ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
     }
 
     if (body.stream) {
@@ -174,18 +177,25 @@ export const anthropicAttempt: Processor<ProxyContext> = {
     if (ctx.protocol !== 'anthropic') return
     if (ctx.result) return
     const pipeline = getProxyPipeline()
+
+    // Orchestrator: no models of its own — resolve via its candidate Routers instead of the
+    // plain-Router model loop below (RTR-02).
+    if (ctx.router.kind === 'orchestrator') {
+      await forwardToRouter(ctx.router, ctx, pipeline)
+      return
+    }
+
     // execution: only route to models on enabled connections
     const allModels = await listEffectiveModels()
-    const sorted = [...(ctx.candidates ?? [])].sort((a, b) => b.weight - a.weight)
 
-    for (const candidate of sorted) {
+    await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
       const model = allModels.find((m) => m.id === candidate.model)
-      if (!model) continue
+      if (!model) return false
       ctx.attempt = { model, candidate }
       await pipeline.runPhase('upstream.prepare', ctx) // Plan 5 budget
-      if (ctx.result) return
+      if (ctx.result) return true
       await pipeline.runPhase('upstream.execute', ctx)
-      if (ctx.result) return
+      if (ctx.result) return true
       // The fault (if any) was already recorded once by handleProviderResult inside
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
       // candidate here; clearing the stash keeps it from leaking into the next iteration.
@@ -193,10 +203,11 @@ export const anthropicAttempt: Processor<ProxyContext> = {
         ctx.attemptError = undefined
         delete ctx.attemptResponse
       }
-    }
-
-    // Exhausted, no events on the Anthropic lane (decision #8).
-    ctx.result = { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
+      return false
+    }, () => {
+      // Exhausted, no events on the Anthropic lane (decision #8).
+      ctx.result = { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
+    })
   },
 }
 

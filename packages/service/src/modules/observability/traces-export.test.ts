@@ -26,7 +26,7 @@ const entry = (over: Partial<TraceEntry>): TraceEntry => ({
 
 const trace = {
   traceId: '3f7b1c2d-4e5a-6b7c-8d9e-0f1a2b3c4d5e',
-  projectId: 'proj-1',
+  routerId: 'proj-1',
   entries: [
     entry({ message: 'pii:scrubbed', phase: 'request.preprocess', module: 'pii', at: 1_000, details: { hits: 2 } }),
     entry({ message: 'router:selected', phase: 'routing.execute', module: 'router', at: 1_040, panel: 'router-response' }),
@@ -123,10 +123,10 @@ describe('pushWebhookTrace', () => {
     expect(url).toBe('http://hook.local/traces');
     expect((opts.headers as Record<string, string>)['X-Routerly-Signature']).toMatch(/^sha256=[0-9a-f]{64}$/);
 
-    const body = JSON.parse(opts.body as string) as { type: string; trace: { id: string; projectId: string; entries: unknown[] } };
+    const body = JSON.parse(opts.body as string) as { type: string; trace: { id: string; routerId: string; entries: unknown[] } };
     expect(body.type).toBe('trace');
     expect(body.trace.id).toBe(trace.traceId);
-    expect(body.trace.projectId).toBe('proj-1');
+    expect(body.trace.routerId).toBe('proj-1');
     expect(body.trace.entries).toHaveLength(3);
   });
 
@@ -136,7 +136,7 @@ describe('pushWebhookTrace', () => {
 
     const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect((opts.headers as Record<string, string>)['X-Routerly-Signature']).toBeUndefined();
-    expect(JSON.parse(opts.body as string).trace.projectId).toBeUndefined();
+    expect(JSON.parse(opts.body as string).trace.routerId).toBeUndefined();
   });
 });
 

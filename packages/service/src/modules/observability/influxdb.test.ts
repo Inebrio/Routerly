@@ -17,14 +17,14 @@ const integration = {
 
 const snapshot = {
   agg: {
-    requests: new Map([['k', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 7 }]]),
+    requests: new Map([['k', { labels: { router: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 7 }]]),
     tokens: new Map(),
     cost: new Map(),
     durations: new Map(),
   },
-  projectName: (id: string) => id,
+  routerName: (id: string) => id,
   modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
-  projects: [],
+  routers: [],
   models: [],
 };
 
@@ -57,14 +57,14 @@ describe('pushInfluxDB', () => {
 
     const richSnapshot = {
       agg: {
-        requests: new Map([['r', { labels: { project: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 7 }]]),
-        tokens: new Map([['t', { labels: { project: 'P', model: 'M', type: 'input' }, value: 100 }]]),
-        cost: new Map([['c', { labels: { project: 'P', model: 'M' }, value: 0.005 }]]),
-        durations: new Map([['d', { labels: { project: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
+        requests: new Map([['r', { labels: { router: 'P', model: 'M', provider: 'openai', status: 'success' }, value: 7 }]]),
+        tokens: new Map([['t', { labels: { router: 'P', model: 'M', type: 'input' }, value: 100 }]]),
+        cost: new Map([['c', { labels: { router: 'P', model: 'M' }, value: 0.005 }]]),
+        durations: new Map([['d', { labels: { router: 'P', model: 'M' }, latencies: [10, 20, 30, 40, 50] }]]),
       },
-      projectName: (id: string) => id,
+      routerName: (id: string) => id,
       modelInfo: (id: string) => ({ model: id, provider: 'openai' }),
-      projects: [],
+      routers: [],
       models: [],
     };
 

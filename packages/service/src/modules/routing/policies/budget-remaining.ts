@@ -21,19 +21,19 @@ import { readConfig } from '../../config/loader.js';
  *  - Limite già superato           → headroom = 0.0 (già escluso dal pre-filtro,
  *                                    ma incluso per completezza)
  */
-export const budgetRemainingPolicy: PolicyFn = async ({ candidates, config: _, token, projectId }) => {
-  const allProjects = await readConfig('projects');
+export const budgetRemainingPolicy: PolicyFn = async ({ candidates, config: _, token, routerId }) => {
+  const allRouters = await readConfig('routers');
 
-  // Usa il projectId dell'input per trovare il progetto corrente
-  const project = (allProjects as any[]).find((p: any) => p.id === projectId);
+  // Usa il routerId dell'input per trovare il progetto corrente
+  const router = (allRouters as any[]).find((p: any) => p.id === routerId);
 
   const headrooms = await Promise.all(
     candidates.map(async c => {
-      if (!project) {
+      if (!router) {
         return { modelId: c.model.id, minHeadroom: 1.0, snapshotCount: 0 };
       }
 
-      const snapshots = await getLimitUsageSnapshot(c.model, project, token);
+      const snapshots = await getLimitUsageSnapshot(c.model, router, token);
 
       if (snapshots.length === 0) {
         return { modelId: c.model.id, minHeadroom: 1.0, snapshotCount: 0 };

@@ -114,7 +114,7 @@ describe('helpers', () => {
   })
 
   describe('wrapWithResponseGuardrail', () => {
-    const project = {
+    const router = {
       guardrails: {
         rules: [{ id: 'r1', enabled: true, block: true, target: 'response' }],
       },
@@ -128,7 +128,7 @@ describe('helpers', () => {
     it('BLOCK path: drops buffered chunks, yields a single content_filter chunk, sets ctx.blockedBy', async () => {
       mockCheckGuardrails.mockResolvedValue({ triggered: 'r1', block: true, evaluated: [] } as any)
       const ctx = ctxOf({})
-      const out = await collect(wrapWithResponseGuardrail(src(), project, {}, { info: vi.fn() } as any, ctx))
+      const out = await collect(wrapWithResponseGuardrail(src(), router, {}, { info: vi.fn() } as any, ctx))
       expect(out).toHaveLength(1)
       expect((out[0] as any).choices[0].finish_reason).toBe('content_filter')
       expect((out[0] as any).choices[0].delta).toEqual({})
@@ -136,9 +136,9 @@ describe('helpers', () => {
     })
 
     it('PASS-THROUGH path: no block rule configured, all chunks yielded unchanged, blockedBy unset', async () => {
-      const passProject = {} as any
+      const passRouter = {} as any
       const ctx = ctxOf({})
-      const out = await collect(wrapWithResponseGuardrail(src(), passProject, {}, { info: vi.fn() } as any, ctx))
+      const out = await collect(wrapWithResponseGuardrail(src(), passRouter, {}, { info: vi.fn() } as any, ctx))
       expect(out).toHaveLength(2)
       expect((out[0] as any).choices[0].delta.content).toBe('hello ')
       expect((out[1] as any).choices[0].delta.content).toBe('world')
@@ -149,7 +149,7 @@ describe('helpers', () => {
     it('PASS-THROUGH path: block rule configured but checkGuardrails does not trigger a block', async () => {
       mockCheckGuardrails.mockResolvedValue({ evaluated: [] } as any)
       const ctx = ctxOf({})
-      const out = await collect(wrapWithResponseGuardrail(src(), project, {}, { info: vi.fn() } as any, ctx))
+      const out = await collect(wrapWithResponseGuardrail(src(), router, {}, { info: vi.fn() } as any, ctx))
       expect(out).toHaveLength(2)
       expect((out[0] as any).choices[0].delta.content).toBe('hello ')
       expect((out[1] as any).choices[0].delta.content).toBe('world')

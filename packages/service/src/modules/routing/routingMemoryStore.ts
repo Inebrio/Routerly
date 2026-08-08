@@ -1,6 +1,6 @@
 /**
  * In-memory store for per-conversation routing decisions.
- * Keyed by `${projectId}:${conversationId}` to avoid cross-project collisions.
+ * Keyed by `${routerId}:${conversationId}` to avoid cross-router collisions.
  * Entries expire after MAX_AGE_MS.
  */
 
@@ -25,17 +25,17 @@ function cleanup(): void {
   }
 }
 
-export function addRoutingDecision(projectId: string, conversationId: string, model: string): void {
+export function addRoutingDecision(routerId: string, conversationId: string, model: string): void {
   cleanup();
-  const key = `${projectId}:${conversationId}`;
+  const key = `${routerId}:${conversationId}`;
   const existing = store.get(key) ?? [];
   existing.push({ model, ts: Date.now() });
   if (existing.length > MAX_ENTRIES_PER_CONV) existing.splice(0, existing.length - MAX_ENTRIES_PER_CONV);
   store.set(key, existing);
 }
 
-export function getRoutingHistory(projectId: string, conversationId: string, count: number): RoutingMemoryEntry[] {
-  const key = `${projectId}:${conversationId}`;
+export function getRoutingHistory(routerId: string, conversationId: string, count: number): RoutingMemoryEntry[] {
+  const key = `${routerId}:${conversationId}`;
   return (store.get(key) ?? []).slice(-count);
 }
 

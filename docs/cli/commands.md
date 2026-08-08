@@ -420,7 +420,7 @@ routerly model add --id <id> --provider <provider> [options]
 
 Azure, AWS Bedrock, Google Vertex, and ChatGPT-web-session providers accept
 additional provider-specific flags (`--azure-resource`, `--aws-region`,
-`--vertex-project`, `--cf-clearance`, etc.); see `routerly model add --help`.
+`--vertex-router`, `--cf-clearance`, etc.); see `routerly model add --help`.
 
 **`--connection` vs. inline credentials:**
 - With `--connection <id>`: the model binds to that existing connection. No credential flags (`--api-key`, `--endpoint`, and the provider-specific credential flags) are sent; the connection already owns them. The connection's provider must match `--provider`.
@@ -478,71 +478,101 @@ routerly model discover --json
 
 ---
 
-## `routerly project`
+## `routerly router`
 
-Project commands are organised into sub-groups. The first argument is always a **project name or ID**.
+Router commands are organised into sub-groups. The first argument is always a **router name or ID**.
 
-### `routerly project list`
-
-```
-routerly project list [--json]
-```
-
-### `routerly project create`
+### `routerly router list`
 
 ```
-routerly project create [options]
+routerly router list [--json]
+```
+
+### `routerly router create`
+
+```
+routerly router create [options]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--name <name>` | Project display name (required) |
+| `--name <name>` | Router display name (required) |
 | `--timeout <ms>` | Time-to-first-token timeout per model attempt, in ms (default `2000`, `0` disables it) |
 | `--routing-model <id>` | Model ID used for routing decisions |
+| `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router's fixed pass-through entry, but do apply to any real target model added to it, exactly like on a `router`-kind router. |
+| `--candidate <routerId>` | Candidate router for an orchestrator (repeatable). Order of repetition sets priority: the first `--candidate` given is highest priority. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period|rolling:...:<value>`. Requires a matching `--candidate`. |
 
-### `routerly project edit`
+```bash
+# An orchestrator, routing to two candidate routers in priority order (first = highest priority)
+routerly router create --name "Global" --kind orchestrator --candidate <router-id-1> --candidate <router-id-2>
+
+# An orchestrator candidate with a usage limit
+routerly router create --name "Global" --kind orchestrator \
+  --candidate <router-id-1> --candidate <router-id-2> \
+  --candidate-limit <router-id-1>:cost:period:daily:50
+```
+
+Candidate limit spec format (repeatable, requires a matching `--candidate`):
+```
+<router-id>:<metric>:period:<period>:<value>
+<router-id>:<metric>:rolling:<amount>:<unit>:<value>
+```
+Metrics: `cost | calls | input_tokens | output_tokens | total_tokens` · Periods: `hourly | daily | weekly | monthly | yearly` · Units: `second | minute | hour | day | week | month`
+
+### `routerly router edit`
 
 ```
-routerly project edit <project> [options]
+routerly router edit <router> [options]
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--name <name>` | New display name |
 | `--timeout <ms>` | New time-to-first-token timeout per model attempt, in ms (`0` disables it) |
-| `--trace-content` | Record prompts and answers in the project's traces |
+| `--trace-content` | Record prompts and answers in the router's traces |
 | `--no-trace-content` | Record metadata only: no prompts, no answers (default) |
+| `--candidate <routerId>` | Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period|rolling:...:<value>` |
 
 Traces always carry metadata (models, policies, guardrail outcomes, tokens,
 timings). Prompts and answers are recorded only with `--trace-content`, and the
 setting applies to every surface that reads a trace: the dashboard, the
 Playground, and any integration exporting traces. A flag that is not passed
-leaves the stored value alone. `routerly project show` prints the current state
+leaves the stored value alone. `routerly router show` prints the current state
 as `Traces: metadata only` or `Traces: metadata + content`.
 
 ```bash
-routerly project edit my-api --trace-content
-routerly project edit my-api --no-trace-content
+routerly router edit my-api --trace-content
+routerly router edit my-api --no-trace-content
+
+# Replace an orchestrator's candidates, in priority order (first = highest priority)
+routerly router edit my-api --candidate <router-id-1> --candidate <router-id-2>
+
+# Replace candidates, one with a usage limit
+routerly router edit my-api \
+  --candidate <router-id-1> --candidate <router-id-2> \
+  --candidate-limit <router-id-1>:cost:period:daily:50
 ```
 
-### `routerly project remove`
+### `routerly router remove`
 
 ```
-routerly project remove <project>
+routerly router remove <router>
 ```
 
 ---
 
-### Routing - `routerly project routing`
+### Routing - `routerly router routing`
 
-#### `routerly project routing show <project>`
+#### `routerly router routing show <router>`
 
 Display the routing configuration (auto-routing flag, routing model, fallback models, and policy stack).
 
-#### `routerly project routing update <project>`
+#### `routerly router routing update <router>`
 
 ```
-routerly project routing update <project> [options]
+routerly router routing update <router> [options]
 ```
 
 | Option | Description |
@@ -551,75 +581,124 @@ routerly project routing update <project> [options]
 | `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
 | `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
 
-#### `routerly project routing policy list <project>`
+#### `routerly router routing policy list <router>`
 
 List all routing policies with their priority order, enabled status, and configuration.
 
-#### `routerly project routing policy enable <project> <type>`
+#### `routerly router routing policy enable <router> <type>`
 
 Enable a policy type (adds it to the stack if not present). Optionally pass `--config <json>` for policy-specific settings.
 
 Available types: `health`, `context`, `capability`, `budget-remaining`, `rate-limit`, `llm`, `performance`, `fairness`, `cheapest`
 
 ```bash
-routerly project routing policy enable my-api health
-routerly project routing policy enable my-api llm --config '{"memoryCount":3}'
+routerly router routing policy enable my-api health
+routerly router routing policy enable my-api llm --config '{"memoryCount":3}'
 ```
 
-#### `routerly project routing policy disable <project> <type>`
+#### `routerly router routing policy disable <router> <type>`
 
 Disable a policy without removing it from the stack.
 
-#### `routerly project routing policy reorder <project> <types>`
+#### `routerly router routing policy reorder <router> <types>`
 
 Reorder the policy stack. Provide a comma-separated list of types in the desired evaluation order; any unlisted policies are appended at the end.
 
 ```bash
-routerly project routing policy reorder my-api health,context,budget-remaining,llm,cheapest
+routerly router routing policy reorder my-api health,context,budget-remaining,llm,cheapest
 ```
 
 ---
 
-### Models - `routerly project model`
+### Models - `routerly router model`
 
-#### `routerly project model list <project>`
+A passthrough-kind router's model list always contains one **pass-through
+entry** (`__passthrough__`) alongside zero or more real target models, in one
+ordered array — it forwards the client's own credential unchanged and is
+created automatically, never by hand. `model list` and `model reorder` render
+it as `(pass-through) __passthrough__`, distinct from a real model ID.
+`model add`, `model remove`, and `model set-prompt` all reject an attempt to
+touch it (named stderr error, exit 1) — it has no prompt and can never be
+removed. Reorder it like any other entry with `model reorder`.
 
-List target models configured in the project, with their prompt hints.
+#### `routerly router model list <router>`
 
-#### `routerly project model add <project> <model-id>`
+List target models configured in the router, with their prompt hints. On a
+passthrough router, the pass-through entry is shown as `(pass-through)
+__passthrough__`.
+
+#### `routerly router model add <router> <model-id>`
 
 ```bash
-routerly project model add my-api openai/gpt-5.2
-routerly project model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning"
+routerly router model add my-api openai/gpt-5.2
+routerly router model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning"
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--prompt <text>` | System prompt hint used when this model is selected |
 
-#### `routerly project model remove <project> <model-id>`
+Rejects `__passthrough__` (exit 1) — the pass-through entry cannot be added
+manually.
 
-Remove a target model from the project.
+#### `routerly router model remove <router> <model-id>`
 
-#### `routerly project model set-prompt <project> <model-id>`
+Remove a target model from the router. Rejects `__passthrough__` (exit 1) —
+the pass-through entry is always present on a passthrough-kind router and
+cannot be removed.
+
+#### `routerly router model set-prompt <router> <model-id>`
 
 Update (or clear) the system prompt hint for a model.
 
 ```bash
-routerly project model set-prompt my-api openai/gpt-5.2 --prompt "Fast tasks only"
-routerly project model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
+routerly router model set-prompt my-api openai/gpt-5.2 --prompt "Fast tasks only"
+routerly router model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
 ```
+
+Rejects `__passthrough__` (exit 1) — it forwards the request unmodified, so
+there is no prompt to set.
+
+#### `routerly router model reorder <router> <model-ids>`
+
+Reorder target models: a comma-separated list of model IDs in the desired
+order. Any model not mentioned is appended at the end, in its current
+relative order. `__passthrough__` can appear anywhere in the list, including
+first or last.
+
+```bash
+routerly router model reorder my-api openai/gpt-5.2,anthropic/claude-opus-4-6
+
+# Move the pass-through entry to the front of a passthrough router's model list
+routerly router model reorder my-api __passthrough__,openai/gpt-5.2
+```
+
+Moving the pass-through entry to the front, as in the example above, makes
+raw-forward the router's default outcome for every request reaching it
+through its token: real models are never scored, regardless of how many are
+configured. Anywhere else in the list, real models are scored and routed
+normally, and the pass-through entry is used only as a last-resort fallback
+when none of them turn out eligible. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-which-path-a-request-takes)
+for the full rule, including the fallback's forwarded-credential caveat.
+
+A passthrough-kind router is issued a Routerly bearer token
+(`router token list`) as soon as it has at least one real target model
+configured, whether added on `router create` or with `model add`; the token
+is revoked (all tokens removed) the moment the last real model is removed
+with `model remove`, leaving only the pass-through entry. A sentinel-only
+passthrough router, with no real models ever added, is never issued one.
 
 ---
 
-### Tokens - `routerly project token`
+### Tokens - `routerly router token`
 
-#### `routerly project token list <project>`
+#### `routerly router token list <router>`
 
-List all API tokens for the project, including their names, IDs, creation date, and tags.
+List all API tokens for the router, including their names, IDs, creation date, and tags.
 
 ```bash
-routerly project token list my-api
+routerly router token list my-api
 ```
 
 Output includes columns for:
@@ -628,14 +707,14 @@ Output includes columns for:
 - **Created** - when the token was created
 - **Tags** - key-value metadata (comma-separated, or empty if no tags)
 
-#### `routerly project token create <project>`
+#### `routerly router token create <router>`
 
-Create a new project API token. The token value is shown **once only**.
+Create a new router API token. The token value is shown **once only**.
 
 ```bash
-routerly project token create my-api
-routerly project token create my-api --tag environment=prod --tag team=backend
-routerly project token create my-api --scopes batch,internal
+routerly router token create my-api
+routerly router token create my-api --tag environment=prod --tag team=backend
+routerly router token create my-api --scopes batch,internal
 ```
 
 | Option | Description |
@@ -645,10 +724,10 @@ routerly project token create my-api --scopes batch,internal
 | `--tag <key=value>` | Attach key-value metadata to the token (repeatable). Tags are included in every usage record created with this token. |
 
 ```bash
-routerly project token create Test --scopes batch,internal --labels nightly
+routerly router token create Test --scopes batch,internal --labels nightly
 ```
 ```
-✓ Token created for project "Test".
+✓ Token created for router "Test".
 
 Token (save this - shown only once):
 sk-rt-d551c6a3bc1c126f938839ec654806ebd0a86968824b81ccf81fb842ea82f54f
@@ -668,12 +747,12 @@ Limit spec examples:
 - `openai/gpt-5.2:cost:period:monthly:10` - $10/month cap
 - `openai/gpt-5.2:calls:rolling:24:hours:500` - 500 calls per rolling 24 h
 
-#### `routerly project token edit <project> <token-id>`
+#### `routerly router token edit <router> <token-id>`
 
 Update tags or spending limits on an existing token.
 
 ```bash
-routerly project token edit my-api abc123 --tag environment=staging --tag team=qa
+routerly router token edit my-api abc123 --tag environment=staging --tag team=qa
 ```
 
 | Option | Description |
@@ -684,22 +763,22 @@ routerly project token edit my-api abc123 --tag environment=staging --tag team=q
 | `--add-limit <spec>` | Add a limit (repeatable) |
 | `--remove-limit <spec>` | Remove a limit matching model+metric+window (repeatable) |
 
-#### `routerly project token remove <project> <token-id>`
+#### `routerly router token remove <router> <token-id>`
 
 Revoke and delete an API token.
 
 ---
 
-### Members - `routerly project member`
+### Members - `routerly router member`
 
-#### `routerly project member list <project>`
+#### `routerly router member list <router>`
 
-List project members with their role.
+List router members with their role.
 
-#### `routerly project member add <project>`
+#### `routerly router member add <router>`
 
 ```bash
-routerly project member add my-api --email user@example.com --role viewer
+routerly router member add my-api --email user@example.com --role viewer
 ```
 
 | Option | Description |
@@ -707,31 +786,31 @@ routerly project member add my-api --email user@example.com --role viewer
 | `--email <email>` | Member's email address |
 | `--role <role>` | Role to assign (`admin`, `editor`, `viewer`, or a custom role) |
 
-#### `routerly project member set-role <project>`
+#### `routerly router member set-role <router>`
 
 ```bash
-routerly project member set-role my-api --email user@example.com --role editor
+routerly router member set-role my-api --email user@example.com --role editor
 ```
 
-#### `routerly project member remove <project>`
+#### `routerly router member remove <router>`
 
 ```bash
-routerly project member remove my-api --email user@example.com
+routerly router member remove my-api --email user@example.com
 ```
 
 ---
 
-### Guardrails - `routerly project guardrails`
+### Guardrails - `routerly router guardrails`
 
-Manage the content guardrail configuration for a project. Guardrails evaluate each request and/or response against an ordered list of rules; each enabled rule is evaluated and triggers its configured actions independently.
+Manage the content guardrail configuration for a router. Guardrails evaluate each request and/or response against an ordered list of rules; each enabled rule is evaluated and triggers its configured actions independently.
 
-#### `routerly project guardrails <project>`
+#### `routerly router guardrails <router>`
 
 Show the current guardrail configuration.
 
 ```bash
-routerly project guardrails my-api
-routerly project guardrails my-api --json   # raw JSON output
+routerly router guardrails my-api
+routerly router guardrails my-api --json   # raw JSON output
 ```
 
 Output example:
@@ -758,7 +837,7 @@ The Scope column shows the active flags:
 #### Adding a security rule
 
 ```bash
-routerly project guardrails my-api --add-rule
+routerly router guardrails my-api --add-rule
 ```
 
 Launches an interactive wizard. Steps:
@@ -792,7 +871,7 @@ New rules are appended to the end of the list and are active by default.
 #### Removing a security rule
 
 ```bash
-routerly project guardrails my-api --remove-rule 2   # delete rule at index 2
+routerly router guardrails my-api --remove-rule 2   # delete rule at index 2
 ```
 
 | Option | Description |
@@ -801,17 +880,17 @@ routerly project guardrails my-api --remove-rule 2   # delete rule at index 2
 
 ---
 
-### PII: `routerly project pii`
+### PII: `routerly router pii`
 
-Manage PII scrubbing policies for a project. PII detection and scrubbing configuration uses policies, each with its own entity set, patterns, direction, and streaming buffer.
+Manage PII scrubbing policies for a router. PII detection and scrubbing configuration uses policies, each with its own entity set, patterns, direction, and streaming buffer.
 
-#### `routerly project pii list <project>`
+#### `routerly router pii list <router>`
 
-List all PII policies for a project.
+List all PII policies for a router.
 
 ```bash
-routerly project pii list my-api
-routerly project pii list my-api --json
+routerly router pii list my-api
+routerly router pii list my-api --json
 ```
 
 Output example:
@@ -825,12 +904,12 @@ PII Policies - my-api
 
 Policies are identified by their 0-based index (`#` column).
 
-#### `routerly project pii add <project>`
+#### `routerly router pii add <router>`
 
 Add a new PII policy.
 
 ```bash
-routerly project pii add my-api
+routerly router pii add my-api
 ```
 
 Launches an interactive wizard. Steps:
@@ -840,13 +919,13 @@ Launches an interactive wizard. Steps:
 3. **Custom patterns**: comma-separated regex patterns to scrub in addition to entity detection. Leave empty for none.
 4. **Output buffer size**: (response scrubbing only) suffix buffer size in characters (default 30, valid range: 10 to 500). Used to catch patterns spanning chunk boundaries when streaming. Prompted only when target includes response.
 
-#### `routerly project pii remove <project> <index>`
+#### `routerly router pii remove <router> <index>`
 
 Remove a PII policy by its 0-based index (from `pii list`).
 
 ```bash
-routerly project pii remove my-api 0   # Remove the first policy
-routerly project pii remove my-api 1   # Remove the second policy
+routerly router pii remove my-api 0   # Remove the first policy
+routerly router pii remove my-api 1   # Remove the second policy
 ```
 
 The index is validated against the current policy list.
@@ -1029,11 +1108,11 @@ What each type receives:
 | Type | Shape |
 |------|-------|
 | `otel` | Native OTLP spans on `<endpoint>/v1/traces`: a `routerly.request` root span with one `routerly.<phase>` child per pipeline phase, and each trace entry as a span event |
-| `webhook` | One POST per completed request, `{ "source": "routerly", "type": "trace", "timestamp", "trace": { "id", "projectId", "entries" } }`, signed like the metric payloads when a secret is set |
+| `webhook` | One POST per completed request, `{ "source": "routerly", "type": "trace", "timestamp", "trace": { "id", "routerId", "entries" } }`, signed like the metric payloads when a secret is set |
 
 Sampling is per request and decided once, so a sampled-out request produces no
 partial export. Prompts and answers appear in the exported entries only for
-projects with trace content enabled (`routerly project edit <project> --trace-content`).
+routers with trace content enabled (`routerly router edit <router> --trace-content`).
 
 ### `routerly integrations remove`
 
@@ -1134,7 +1213,7 @@ routerly role list [--json]
 routerly role add --name <name> --permissions <perm1,perm2,...>
 ```
 
-Available permissions: `project:read`, `project:write`, `model:read`, `model:write`, `user:read`, `user:write`, `role:write`, `report:read`, `audit:read`, `settings:read`, `settings:write`, `notification:write`, `token:read`, `token:write`.
+Available permissions: `router:read`, `router:write`, `model:read`, `model:write`, `user:read`, `user:write`, `role:write`, `report:read`, `audit:read`, `settings:read`, `settings:write`, `notification:write`, `token:read`, `token:write`.
 
 ### `routerly role edit`
 
@@ -1272,7 +1351,7 @@ Exit code: `0` on success, `1` on error (both subcommands).
 
 ## `routerly profiles`
 
-Manage profiles: reusable configuration bundles a project can adopt in place of its own inline setup. A profile has one `kind`:
+Manage profiles: reusable configuration bundles a router can adopt in place of its own inline setup. A profile has one `kind`:
 
 | Kind | What it bundles |
 |------|-----------------|
@@ -1280,7 +1359,7 @@ Manage profiles: reusable configuration bundles a project can adopt in place of 
 | `optimizer` | the ordered optimizer pipeline |
 | `security` | guardrail rules and PII policies |
 
-A project binds at most one profile per kind, and the three are independent. See [Dashboard: Profiles](../dashboard/profiles.md) for the equivalent UI.
+A router binds at most one profile per kind, and the three are independent. See [Dashboard: Profiles](../dashboard/profiles.md) for the equivalent UI.
 
 ### `routerly profiles list`
 
@@ -1393,7 +1472,7 @@ Requires `profiles:manage` permission.
 routerly profiles delete <id>
 ```
 
-Delete a user profile. Built-in profiles cannot be deleted, and a profile still assigned to a project is refused.
+Delete a user profile. Built-in profiles cannot be deleted, and a profile still assigned to a router is refused.
 
 ```bash
 routerly profiles delete 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
@@ -1405,22 +1484,22 @@ routerly profiles delete 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
 ```
 
 **Error cases:**
-- Profile assigned to a project: `Cannot delete "<id>": it is still assigned to a project.`
+- Profile assigned to a router: `Cannot delete "<id>": it is still assigned to a router.`
 
 Requires `profiles:manage` permission.
 
 ### `routerly profiles set`
 
 ```
-routerly profiles set <project> <kind> [profileId] [--none] [--json]
+routerly profiles set <router> <kind> [profileId] [--none] [--json]
 ```
 
-Assign or clear the profile of one kind for a project. Provide `profileId` to assign it, or `--none` to clear the assignment and fall back to the project's own inline configuration for that kind. The other two kinds are left untouched.
+Assign or clear the profile of one kind for a router. Provide `profileId` to assign it, or `--none` to clear the assignment and fall back to the router's own inline configuration for that kind. The other two kinds are left untouched.
 
 | Option | Description |
 |--------|-------------|
 | `--none` | Clear the assignment for this kind |
-| `--json` | Output the updated (sanitized) project as raw JSON |
+| `--json` | Output the updated (sanitized) router as raw JSON |
 
 ```bash
 routerly profiles set my-api routing auto
@@ -1430,31 +1509,31 @@ routerly profiles set my-api security --none
 
 **Output on success:**
 ```
-✓ routing profile set to "auto" on project "my-api"
+✓ routing profile set to "auto" on router "my-api"
 ```
-(or `✓ security profile cleared on project "my-api"` with `--none`)
+(or `✓ security profile cleared on router "my-api"` with `--none`)
 
 **Error cases:**
 - Neither `profileId` nor `--none` given: `Error: provide a profileId or --none.`
 - Unknown kind: `Unknown kind "<value>". Expected one of: routing, optimizer, security.`
-- Project not found: `Project "<name>" not found. Run \`routerly project list\` to see available projects.`
+- Router not found: `Router "<name>" not found. Run \`routerly router list\` to see available routers.`
 
-Requires `project:write` permission.
+Requires `router:write` permission.
 
 ### `routerly profiles get`
 
 ```
-routerly profiles get <project> [--json]
+routerly profiles get <router> [--json]
 ```
 
-Show which profile each kind is bound to for a project. A kind with no profile assigned prints `custom`, meaning the project uses its own inline configuration. `--json` prints an object keyed by kind, with `null` for unassigned kinds.
+Show which profile each kind is bound to for a router. A kind with no profile assigned prints `custom`, meaning the router uses its own inline configuration. `--json` prints an object keyed by kind, with `null` for unassigned kinds.
 
 ```bash
 routerly profiles get my-api
 routerly profiles get my-api --json
 ```
 
-No extra permission beyond dashboard authentication: it reads the project list.
+No extra permission beyond dashboard authentication: it reads the router list.
 
 Exit code: `0` on success, `1` on error (all subcommands).
 
@@ -1462,7 +1541,7 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ## `routerly optimizers`
 
-Manage the prompt/context optimizer catalog and a project's per-optimizer
+Manage the prompt/context optimizer catalog and a router's per-optimizer
 pipeline config. See [Concepts: Optimizers](../concepts/optimizers.md) for
 what each optimizer does and its class.
 
@@ -1510,7 +1589,7 @@ routerly optimizers list
 ```
 
 `required` in the threshold column would mean an optimizer with no default,
-which stays inert until a project sets one. No shipped optimizer is in that
+which stays inert until a router sets one. No shipped optimizer is in that
 state today.
 
 ```bash
@@ -1595,7 +1674,7 @@ routerly optimizers model [--install [key]] [--json]
 ```
 
 Show, and install, the optional LLMLingua-2 checkpoints on the **service
-host**. Checkpoints are shared by every project; which one a project uses is
+host**. Checkpoints are shared by every router; which one a router uses is
 set with [`optimizers config --checkpoint`](#routerly-optimizers-config).
 
 | Option | Description |
@@ -1657,10 +1736,10 @@ the host first, and what each checkpoint costs.
 ### `routerly optimizers config`
 
 ```
-routerly optimizers config <project> [--enable id] [--disable id] [--threshold id=val] [--checkpoint key] [--order ids] [--json]
+routerly optimizers config <router> [--enable id] [--disable id] [--threshold id=val] [--checkpoint key] [--order ids] [--json]
 ```
 
-Read-modify-write a project's `optimizers.steps`. Run with no flags to print
+Read-modify-write a router's `optimizers.steps`. Run with no flags to print
 the current pipeline unchanged.
 
 | Option | Description |
@@ -1668,9 +1747,9 @@ the current pipeline unchanged.
 | `--enable <id>` | Enable an optimizer step (repeatable) |
 | `--disable <id>` | Disable an optimizer step (repeatable) |
 | `--threshold <id=val>` | Set an optimizer step's threshold, range depends on the optimizer id (repeatable), see [Threshold Range](../concepts/optimizers.md#threshold-range) |
-| `--checkpoint <key>` | LLMLingua-2 checkpoint this project runs on, from [`optimizers model`](#routerly-optimizers-model) |
+| `--checkpoint <key>` | LLMLingua-2 checkpoint this router runs on, from [`optimizers model`](#routerly-optimizers-model) |
 | `--order <ids>` | Comma-separated optimizer ids controlling step order |
-| `--json` | Output the updated (sanitized) project as raw JSON |
+| `--json` | Output the updated (sanitized) router as raw JSON |
 
 `--enable`/`--disable`/`--threshold` create the step if it is not already
 configured (new steps default to `enabled: false` unless `--enable` is also
@@ -1683,7 +1762,7 @@ order at the end.
 routerly optimizers config Test --order session-dedup,caveman,rtk,relevance,ccr
 ```
 ```
-✓ Updated optimizer pipeline on project "Test"
+✓ Updated optimizer pipeline on router "Test"
 ┌───┬───────────────┬────────────────────────────────┬─────────┬─────────────┬────────────┐
 │ # │ ID            │ Name                           │ Enabled │ Threshold   │ Checkpoint │
 ├───┼───────────────┼────────────────────────────────┼─────────┼─────────────┼────────────┤
@@ -1734,10 +1813,10 @@ Error: Invalid optimizers config
 The checkpoint must be one the service publishes, see [`optimizers
 model`](#routerly-optimizers-model).
 ```bash
-routerly optimizers config nonexistent-project-xyz --enable rtk
+routerly optimizers config nonexistent-router-xyz --enable rtk
 ```
 ```
-Project "nonexistent-project-xyz" not found. Run `routerly project list` to see available projects.
+Router "nonexistent-router-xyz" not found. Run `routerly router list` to see available routers.
 ```
 
 Requires `optimizers:manage` permission.
@@ -1745,11 +1824,11 @@ Requires `optimizers:manage` permission.
 ### `routerly optimizers preview`
 
 ```
-routerly optimizers preview <project> (--message <text> ... | --fixture <id>) [--model <id>] [--json]
+routerly optimizers preview <router> (--message <text> ... | --fixture <id>) [--model <id>] [--json]
 ```
 
-Dry-run the project's currently configured optimizer pipeline against a
-sample message list. No upstream call is made and the project's config is
+Dry-run the router's currently configured optimizer pipeline against a
+sample message list. No upstream call is made and the router's config is
 not modified.
 
 | Option | Description |
@@ -1849,8 +1928,8 @@ Exit code: `0` on success, `1` on error (all subcommands).
 
 ## `routerly experiments`
 
-Run A/B tests that route each call to one of several projects. A variant is
-an existing project taken whole, so two model sets, two routing profiles or
+Run A/B tests that route each call to one of several routers. A variant is
+an existing router taken whole, so two model sets, two routing profiles or
 two optimizer pipelines become directly comparable on cost, latency, errors
 and judge score. See [Concepts: Experiments](../concepts/experiments.md) for
 how a test lives and how the numbers are computed, and
@@ -1911,14 +1990,14 @@ routerly experiments show <id> [--json]
 ```
 
 Print one experiment with its variants and tokens. The variant table shows
-project **names**, the same values `--variant` takes; ids stay in `--json`.
+router **names**, the same values `--variant` takes; ids stay in `--json`.
 
 | Option | Description |
 |--------|-------------|
 | `--json` | Output raw JSON |
 
 **Variant columns:** ID, Label,
-Project (`<id> (deleted)` in red when the project is gone), Weight (`1` when
+Router (`<id> (deleted)` in red when the router is gone), Weight (`1` when
 unset).
 
 **Token columns:** ID, Token (first characters only), Created, Last used
@@ -1939,7 +2018,7 @@ judge:       gpt-4o, 20% of calls
 
 Variants:
 ┌──────────────────────────────────────┬─────────┬─────────────┬────────┐
-│ ID                                   │ Label   │ Project     │ Weight │
+│ ID                                   │ Label   │ Router     │ Weight │
 ├──────────────────────────────────────┼─────────┼─────────────┼────────┤
 │ 4d3b2a10-8c7e-4f21-9b0d-1e2f3a4b5c6d │ Cheap   │ cheap-api   │ 1      │
 ├──────────────────────────────────────┼─────────┼─────────────┼────────┤
@@ -1973,16 +2052,16 @@ it exists: there is no start step.
 | `--description <text>` | What this test is trying to settle |
 | `--rotation <rotation>` | `sticky` (default), `weighted`, `round-robin` |
 | `--sticky-key <key>` | `auto` (default), `end-user`, `conversation`, `client`. Read only by `sticky` |
-| `--variant <spec>` | An arm of the test: `<project>[:label][=weight]`. Repeat for each variant |
+| `--variant <spec>` | An arm of the test: `<router>[:label][=weight]`. Repeat for each variant |
 | `--judge-model <modelId>` | Score answers with this model |
 | `--criteria <text>` | One judge criterion. Repeat for each |
 | `--sample-rate <percent>` | Share of calls the judge scores, `0`-`100` (default `100`) |
 | `--min-samples <n>` | Calls per variant below which the comparison is not conclusive (default `30`) |
 | `--json` | Output raw JSON |
 
-One `--variant` carries a whole arm: `cheap-api` is the project alone,
+One `--variant` carries a whole arm: `cheap-api` is the router alone,
 `cheap-api:Cheap` renames it in the tables, `cheap-api=80` gives it a weight.
-The project is taken by name or by id.
+The router is taken by name or by id.
 
 `--help` lists every rotation and sticky key with its one-line meaning,
 generated from the same catalog the dashboard reads.
@@ -1994,7 +2073,7 @@ routerly experiments create --name "Cheap vs premium" \
 ```
 ✓ Experiment "Cheap vs premium" created -> 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
 
-Token (shown once, point your client at it instead of a project token):
+Token (shown once, point your client at it instead of a router token):
 sk-rt-2246a1f0c8b34d17a9e05c2b6f8d41e37a0b9c5d8e2f1a4b7c6d0e9f3a2b5c8
 ```
 
@@ -2014,7 +2093,7 @@ routerly experiments create --name "Prompt test" \
 routerly experiments create --name Test --variant ":Label"
 ```
 ```
-Invalid --variant ":Label". Expected <project>[:label][=weight].
+Invalid --variant ":Label". Expected <router>[:label][=weight].
 ```
 ```bash
 routerly experiments create --name Test --variant "cheap-api=-1"
@@ -2023,10 +2102,10 @@ routerly experiments create --name Test --variant "cheap-api=-1"
 Invalid weight in --variant "cheap-api=-1". Expected a number >= 0.
 ```
 ```bash
-routerly experiments create --name Test --variant nonexistent-project-xyz
+routerly experiments create --name Test --variant nonexistent-router-xyz
 ```
 ```
-Project "nonexistent-project-xyz" not found. Run `routerly project list` to see available projects.
+Router "nonexistent-router-xyz" not found. Run `routerly router list` to see available routers.
 ```
 ```bash
 routerly experiments create --name Test --criteria "Is correct"
@@ -2169,7 +2248,7 @@ routerly experiments delete <id>
 ```
 
 Delete an experiment. Its tokens stop working immediately, so move clients to
-a project token first.
+a router token first.
 
 ```bash
 routerly experiments delete 8f2c1d64-2f1e-4c0a-9a1b-6b5c2d0e7f31
@@ -2188,10 +2267,10 @@ routerly experiments token create <id> [--json]
 routerly experiments token revoke <id> <tokenId>
 ```
 
-The tokens clients call to reach the experiment. Same shape as a project
+The tokens clients call to reach the experiment. Same shape as a router
 token, `sk-rt-...`, and used the same way: same base URL, this value in
-place of a project token. Each request lands on one variant and is billed to
-that variant's project.
+place of a router token. Each request lands on one variant and is billed to
+that variant's router.
 
 ```bash
 routerly experiments token list 8f2c1d64
@@ -2223,7 +2302,7 @@ An experiment with no tokens prints `No tokens on this experiment.`
 
 What a client gets back: the provider's own response once a variant is
 resolved, `401 Token expired` past the token's expiry, and
-`503 experiment_misconfigured` when no variant points at an existing project.
+`503 experiment_misconfigured` when no variant points at an existing router.
 
 `token list` requires `experiments:read`; `create` and `revoke` require
 `experiments:manage`.
@@ -2247,7 +2326,7 @@ These commands require a logged-in session (`routerly auth login`). No
 specific permission is required for `list`, `endpoints`, `inspect`, `doctor`, `undo`,
 `launch`, or `configure --token <token>` (reusing an existing token skips
 minting). Minting a new token via `configure` (the default, when `--token`
-is omitted) requires `project:write` permission on the target project.
+is omitted) requires `router:write` permission on the target router.
 
 ### `routerly clients list`
 
@@ -2328,14 +2407,14 @@ routerly clients endpoints
 Point any client here
   OpenAI base URL:     http://localhost:3000/v1
   Anthropic base URL:  http://localhost:3000
-  API key:             a project token, as Authorization: Bearer or x-api-key
+  API key:             a router token, as Authorization: Bearer or x-api-key
   Model:               routerly/ada (Routerly picks), or any model id
   From other machines: 192.168.1.116, 192.168.1.111
 ```
 
 `routerly/ada` hands the model choice to the router; any model id from
 `routerly models list` works in its place. Mint the token with
-`routerly project token create <project>`.
+`routerly router token create <router>`.
 
 With `--json`:
 
@@ -2384,7 +2463,7 @@ Exit code `1`, printed to stderr, before any file I/O.
 ### `routerly clients configure`
 
 ```
-routerly clients configure <id> [--project <id>] [--token <token>] [--yes] [--json]
+routerly clients configure <id> [--router <id>] [--token <token>] [--yes] [--json]
 ```
 
 Write Routerly connection settings into a client's own config file. Shows a
@@ -2392,20 +2471,20 @@ before/after plan, then applies it.
 
 | Option | Description |
 |--------|-------------|
-| `--project <id>` | Project name or ID to mint/use a token for (prompts with a picker if omitted) |
+| `--router <id>` | Router name or ID to mint/use a token for (prompts with a picker if omitted) |
 | `--token <token>` | Use this token instead of minting a new one, skips the consent prompt |
 | `--yes` | Skip the consent prompt without supplying `--token` (a new token is still minted) |
 | `--json` | Output `{ plan, applied, validated }` as JSON instead of the human-readable plan |
 
-**Mint vs. `--token`:** by default `configure` mints a brand-new project
-token via `POST /api/projects/:id/tokens` and asks for confirmation first
-(`Mint a new Routerly token for project "…" to configure …?`). Pass an
+**Mint vs. `--token`:** by default `configure` mints a brand-new router
+token via `POST /api/routers/:id/tokens` and asks for confirmation first
+(`Mint a new Routerly token for router "…" to configure …?`). Pass an
 existing token with `--token` to reuse it instead. No new token is created
 and no prompt is shown. `--yes` skips the confirmation prompt but still
 mints a new token; use `--token` if you don't want a new token minted at all.
 
 ```bash
-routerly clients configure opencode --project Test --token sk-rt-YOUR_PROJECT_TOKEN
+routerly clients configure opencode --router Test --token sk-rt-YOUR_ROUTER_TOKEN
 ```
 ```
 Plan for OpenCode (/Users/you/.config/opencode/opencode.json):
@@ -2420,7 +2499,7 @@ Plan for OpenCode (/Users/you/.config/opencode/opencode.json):
       "name": "Routerly",
       "options": {
         "baseURL": "http://localhost:3000/v1",
-        "apiKey": "sk-rt-YOUR_PROJECT_TOKEN"
+        "apiKey": "sk-rt-YOUR_ROUTER_TOKEN"
       },
       "models": {
         "routerly/ada": {
@@ -2450,7 +2529,7 @@ via the `ROUTERLY_HOME` env var). Every successful `configure` prints its
 `configure` prints the steps, with a real token, and exits `0`:
 
 ```bash
-routerly clients configure cline --project Test --token sk-rt-YOUR_PROJECT_TOKEN
+routerly clients configure cline --router Test --token sk-rt-YOUR_ROUTER_TOKEN
 ```
 ```
 Cline: is configured by hand
@@ -2458,8 +2537,8 @@ Cline: is configured by hand
 Cline panel > settings (gear icon):
 1. API Provider: OpenAI Compatible.
 2. Base URL: http://localhost:3000/v1
-3. API Key: sk-rt-YOUR_PROJECT_TOKEN
-4. Model ID: routerly/ada, or any model registered in your project.
+3. API Key: sk-rt-YOUR_ROUTER_TOKEN
+4. Model ID: routerly/ada, or any model registered in your router.
 
 Docs: https://doc.routerly.ai/next/integrations/clients/cline
 ```
@@ -2469,7 +2548,7 @@ Clients with a config file print the path plus the block to paste (Zed,
 variables print the variables (`generic-openai`, `generic-anthropic`).
 
 **MCP-only clients** print the `mcpServers` block and the command that mints
-the token. No project token is involved, so `--project` is not needed:
+the token. No router token is involved, so `--router` is not needed:
 
 ```bash
 routerly clients configure claude-desktop
@@ -2615,7 +2694,7 @@ routerly mcp tools
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
 │ get_model            │ read  │ catalog.registry      │ model:read    │
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
-│ route_preview        │ read  │ routing.router        │ project:read  │
+│ route_preview        │ read  │ routing.router        │ router:read  │
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
 │ get_usage_summary    │ read  │ usage.tracker         │ report:read   │
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
@@ -2623,11 +2702,11 @@ routerly mcp tools
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
 │ get_metrics_snapshot │ read  │ observability.registry│ report:read   │
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
-│ list_projects        │ read  │ config.store          │ project:read  │
+│ list_routers        │ read  │ config.store          │ router:read  │
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
-│ create_project_token │ write │ config.store          │ token:write   │
+│ create_router_token │ write │ config.store          │ token:write   │
 ├──────────────────────┼───────┼───────────────────────┼───────────────┤
-│ toggle_model         │ write │ config.store          │ project:write │
+│ toggle_model         │ write │ config.store          │ router:write │
 └──────────────────────┴───────┴───────────────────────┴───────────────┘
 ```
 
@@ -2786,12 +2865,12 @@ routerly report usage [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
-| `--project <slug>` | Filter to one project |
+| `--router <slug>` | Filter to one router |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--session-id <id>` | Filter by session ID |
 | `--end-user <id>` | Filter by end-user ID |
-| `--token <id>` | Filter by project token ID, comma-separated for several |
+| `--token <id>` | Filter by router token ID, comma-separated for several |
 | `--tag <key=value>` | Filter by tag |
 | `--json` | JSON output |
 
@@ -2826,14 +2905,14 @@ routerly report calls [options]
 | Option | Description |
 |--------|-------------|
 | `--limit <n>` | Number of records to return (default: 20) |
-| `--project <slug>` | Filter to one project |
+| `--router <slug>` | Filter to one router |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
-| `--token <id>` | Filter by project token ID, comma-separated for several |
+| `--token <id>` | Filter by router token ID, comma-separated for several |
 
 The table has a **Type** column showing what each call asked for and a **Caller** column showing who made it: `completion` for what a client asked for, `routing` for the router's own decision calls, `guardrail` for security-rule calls, `judge` for experiment judges. Records written before 0.4.0 carry neither field and are shown as `Chat` / `completion`, which is what the gateway tracked at the time.
 
-The **Token** column shows the head of the project token the call came in on, the one identifier that separates two clients of the same project. It reads `-` on records written before 0.4.0 and on calls the gateway made on its own behalf. Pass the full token ID to `--token` to keep only that client's traffic.
+The **Token** column shows the head of the router token the call came in on, the one identifier that separates two clients of the same router. It reads `-` on records written before 0.4.0 and on calls the gateway made on its own behalf. Pass the full token ID to `--token` to keep only that client's traffic.
 
 ```
 routerly report calls --type embedding --limit 10
@@ -2854,15 +2933,15 @@ routerly report savings [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly`, `all` (default: `monthly`) |
-| `--project <id>` | Filter by project ID |
+| `--router <id>` | Filter by router ID |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--trend` | Add a per-bucket breakdown: one row per hour with `--period daily`, one per day otherwise |
 | `--json` | Output the raw savings block |
 
-The command reads `GET /api/usage?savings=1` (see [API: Usage](../api/management.md#usage)) and needs the same `report:read` permission as the rest of `report`. With `--project`, the counterfactual is computed against that project's **enabled target models**, so the flag narrows both the traffic and the models it is compared against. Without it, the comparison covers the paid models **in play** in the period: the enabled target models of the projects that produced traffic, plus the models that actually served a client call. Embedding models are never baselines, since they cannot answer a completion call.
+The command reads `GET /api/usage?savings=1` (see [API: Usage](../api/management.md#usage)) and needs the same `report:read` permission as the rest of `report`. With `--router`, the counterfactual is computed against that router's **enabled target models**, so the flag narrows both the traffic and the models it is compared against. Without it, the comparison covers the paid models **in play** in the period: the enabled target models of the routers that produced traffic, plus the models that actually served a client call. Embedding models are never baselines, since they cannot answer a completion call.
 
 ```
-routerly report savings --project my-api --period weekly
+routerly report savings --router my-api --period weekly
 ```
 
 ```
@@ -2909,7 +2988,7 @@ Reading the two tables:
 - The lines under the table are the **summary**, the same figures the dashboard [Overview](../dashboard/overview.md#the-saving-cards) shows as cards. Each one is anchored on the costliest paid baseline, the worst case routing avoided, and names it. The second cost line repeats the comparison against the cheapest paid baseline, which is usually negative: sending everything to the cheapest model always costs less than routing, and costs quality. Free models are left out entirely: a saving measured against a local model that costs nothing says nothing about what routing avoided paying. Token savings are kept apart on purpose, what the optimizers really removed against what a different tokenizer would have counted.
 - **What the optimizers removed** is measured on the calls as they were served, not repriced. It is printed only when at least one optimizer changed a call in the period, and stays empty for records written before 0.4.0, which carry no per-optimizer numbers. A non-zero `Rolled back` count is highlighted: those results were rejected by the safety gate, which means that optimizer's threshold is too aggressive for this traffic. Tune it with [`routerly optimizers config`](#routerly-optimizers-config).
 
-When nothing in the window can be compared, the command prints `No comparable calls for period: <period>` instead of a table of zeros. When the traffic belongs to projects with no enabled target model, the headline still prints and the counterfactual is replaced by `No target model to compare against.`
+When nothing in the window can be compared, the command prints `No comparable calls for period: <period>` instead of a table of zeros. When the traffic belongs to routers with no enabled target model, the headline still prints and the counterfactual is replaced by `No target model to compare against.`
 
 ### Breaking the saving down over time
 
@@ -2973,7 +3052,7 @@ routerly service configure [options]
 | `--public-url <url>` | External URL of the service |
 | `--require-mfa <bool>` | Require two-factor authentication for all users |
 
-Per-request timeouts are configured per project with `routerly project edit --timeout <ms>`, not service-wide.
+Per-request timeouts are configured per router with `routerly router edit --timeout <ms>`, not service-wide.
 
 ---
 

@@ -12,7 +12,7 @@
  *   round-trip.
  * - `claude-desktop`: it has no base URL override at all, its only Routerly
  *   surface is MCP, which is wired with an MCP token (`routerly mcp token
- *   create`) rather than a project token.
+ *   create`) rather than a router token.
  *
  * They still get an integration so that `routerly clients list`/`inspect`
  * cover the whole registry and `configure` answers with the manual steps

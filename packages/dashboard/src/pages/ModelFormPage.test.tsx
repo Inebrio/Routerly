@@ -497,7 +497,7 @@ describe('ModelFormPage — provider-specific fields', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    expect(screen.getByPlaceholderText('my-gcp-project')).toBeTruthy();
+    expect(screen.getByPlaceholderText('my-gcp-router')).toBeTruthy();
     expect(screen.getByPlaceholderText('us-central1')).toBeTruthy();
     expect(screen.getByPlaceholderText(/Paste the contents/)).toBeTruthy();
   });
@@ -1503,7 +1503,7 @@ describe('ModelFormPage — edit provider-specific models', () => {
       provider: 'vertex',
       endpoint: 'https://us-central1-aiplatform.googleapis.com',
       cost: { inputPerMillion: 3.5, outputPerMillion: 10.5, cachePerMillion: null },
-      vertexProjectId: 'my-gcp-project',
+      VERTEXROUTERIDPLACEHOLDER: 'my-gcp-router',
       vertexLocation: 'us-central1',
     });
     mockGetModels.mockResolvedValue([model]);
@@ -1515,7 +1515,7 @@ describe('ModelFormPage — edit provider-specific models', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    expect(screen.getByDisplayValue('my-gcp-project')).toBeTruthy();
+    expect(screen.getByDisplayValue('my-gcp-router')).toBeTruthy();
     expect(screen.getByDisplayValue('us-central1')).toBeTruthy();
   });
 
@@ -2294,13 +2294,13 @@ describe('ModelFormPage — provider-specific field save', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    await user.type(screen.getByPlaceholderText('my-gcp-project'), 'my-project');
+    await user.type(screen.getByPlaceholderText('my-gcp-router'), 'my-router');
 
     await user.click(screen.getByRole('button', { name: /Create Model/ }));
     await waitFor(() => expect(mockCreateModel).toHaveBeenCalled());
 
     const payload = (mockCreateModel.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
-    expect(payload.vertexProjectId).toBe('my-project');
+    expect(payload.VERTEXROUTERIDPLACEHOLDER).toBe('my-router');
   });
 
   it('updateModel sends azureApiVersion when filled', async () => {
@@ -2337,7 +2337,7 @@ describe('ModelFormPage — provider-specific field save', () => {
       provider: 'vertex',
       endpoint: 'https://us-central1-aiplatform.googleapis.com',
       cost: { inputPerMillion: 3.5, outputPerMillion: 10.5, cachePerMillion: null },
-      vertexProjectId: 'my-proj',
+      VERTEXROUTERIDPLACEHOLDER: 'my-proj',
       vertexLocation: 'eu-west4',
     });
     mockGetModels.mockResolvedValue([model]);
@@ -2353,7 +2353,7 @@ describe('ModelFormPage — provider-specific field save', () => {
     await waitFor(() => expect(mockUpdateModel).toHaveBeenCalled());
 
     const payload = (mockUpdateModel.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
-    expect(payload.vertexProjectId).toBe('my-proj');
+    expect(payload.VERTEXROUTERIDPLACEHOLDER).toBe('my-proj');
     expect(payload.vertexLocation).toBe('eu-west4');
   });
 });
@@ -3521,8 +3521,8 @@ describe('ModelFormPage — handleSave AWS/Vertex secret fields', () => {
       if (all[0]!.value !== 'vertex') throw new Error('not yet');
     });
 
-    const projectInput = screen.getByPlaceholderText('my-gcp-project') as HTMLInputElement;
-    await user.type(projectInput, 'my-project');
+    const routerInput = screen.getByPlaceholderText('my-gcp-router') as HTMLInputElement;
+    await user.type(routerInput, 'my-router');
 
     const keyTextarea = screen.getByPlaceholderText(/Paste the contents/) as HTMLTextAreaElement;
     fireEvent.change(keyTextarea, { target: { value: 'service-account-json-content' } });

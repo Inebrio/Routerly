@@ -24,15 +24,28 @@ vi.mock('./modules/notifications/emitter.js', () => ({ emitEvent: vi.fn(async ()
 vi.mock('./modules/update-checker/update-checker.js', () => ({
   updateChecker: { start: vi.fn(), check: vi.fn(), getLastResult: vi.fn(() => null), getAvailableReleases: vi.fn(() => []), updateChannel: vi.fn() }
 }))
-vi.mock('./modules/config/migrate.js', () => ({ migrateProjectConfigs: vi.fn(async () => 0) }))
+vi.mock('./modules/config/migrate.js', () => ({
+  migrateProjectConfigs: vi.fn(async () => 0),
+  migrateSettings: vi.fn(async () => [] as string[]),
+  migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
+  migrateRolePermissions: vi.fn(async () => 0),
+  migrateUsageRouterId: vi.fn(async () => 0),
+  migrateNotificationChannelScope: vi.fn(async () => 0),
+  migrateUsageToNdjson: vi.fn(async () => 0),
+  migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
+  migratePassthroughPseudoModel: vi.fn(async () => 0),
+}))
+vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }))
 
 import { buildServer, startServer } from './server.js'
 import { readConfig, writeConfig } from './modules/config/loader.js'
 import { pingTelemetry } from './modules/telemetry/telemetry.js'
+import { migrateUsageToNdjson } from './modules/config/migrate.js'
 
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
 const mockPingTelemetry = vi.mocked(pingTelemetry)
+const mockMigrateUsage = vi.mocked(migrateUsageToNdjson)
 
 // bootstrap() now reads the 'modules' config key too (module enable/disable
 // registry) — keyed mock keeps that read returning [] (no disabled modules)
@@ -152,6 +165,32 @@ describe('startServer', () => {
   // Config migrations moved out of startServer() into configModule.migrate(),
   // which the kernel runs before any register(). Coverage lives in
   // modules/config/index.test.ts and core/lifecycle/kernel.test.ts.
+  // Exception: migrateRouterStorage() and migrateUsageToNdjson() both run
+  // directly in startServer(), before configModule.migrate(), so their
+  // throws are fatal instead of swallowed by the kernel's best-effort catch
+  // (RTR-01 finding B2, RTR-06 finding B1) — mocked above, coverage for the
+  // real behaviour lives in server.migration-fatal.test.ts.
+
+  it('migrates usage.json and logs the migrated record count on startup', async () => {
+    mockMigrateUsage.mockResolvedValueOnce(42)
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3094, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+
+    await startServer()
+
+    expect(mockMigrateUsage).toHaveBeenCalled()
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('migrated 42 usage record'))
+    logSpy.mockRestore()
+  })
+
+  it('propagates a fatal migrateUsageToNdjson() failure instead of starting the server (EC2)', async () => {
+    mockMigrateUsage.mockRejectedValueOnce(new SyntaxError('Unexpected token in JSON'))
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3093, host: '127.0.0.1', telemetry: { enabled: false } } as any)
+
+    await expect(startServer()).rejects.toThrow('Unexpected token in JSON')
+
+    expect(mockPingTelemetry).not.toHaveBeenCalled()
+  })
 
   it('prunes orphan usage records on startup and logs when any removed (BUG-5)', async () => {
     const { pruneOrphanUsage } = await import('./modules/config/loader.js')

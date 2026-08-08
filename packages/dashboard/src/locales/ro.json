@@ -1,0 +1,2766 @@
+{
+  "app": {
+    "theme": {
+      "auto": "Automat",
+      "dark": "Întunecat",
+      "light": "Luminos"
+    },
+    "themeCycle": {
+      "title": "Temă: {{theme}}"
+    },
+    "sidebar": {
+      "expand": "Extinde bara laterală",
+      "collapse": "Restrânge bara laterală"
+    },
+    "tagline": "O singură pasarelă. Orice model AI. Control total.",
+    "nav": {
+      "overview": "Privire de ansamblu",
+      "providers": "Furnizori",
+      "models": "Modele",
+      "profiles": "Profile",
+      "routers": "Rutere",
+      "experiments": "Experimente",
+      "usage": "Utilizare",
+      "playground": "Teren de joacă",
+      "settings": "Setări",
+      "connectApp": "Conectează aplicație",
+      "help": "Ajutor",
+      "signOut": "Ieșire"
+    },
+    "banner": {
+      "permissionWarning": "Unele fișiere de configurare au acces permisiv ({{files}}). Pornirea și cererile funcționează în continuare, dar corectați acest lucru din sistemul de fișiere gazdă când este convenabil.",
+      "dismiss": "Respinge",
+      "updateAvailable": "Routerly v{{latest}} este disponibil. Ești pe v{{current}}.",
+      "updateLink": "Actualizează în Setări",
+      "mfaRequired": "Autentificarea cu doi factori este necesară pentru această instanță.",
+      "mfaLink": "Configurează 2FA în Profitul tău",
+      "mfaSuffix": "pentru a securiza contul tău.",
+      "telemetryTitle": "Routerly nu trimite date automat niciodată.",
+      "telemetryBody": "Doriți să ajutați trimițând metrici de instalare anonime? Doar tip eveniment, versiune, platformă și ID aleatoriu — fără date personale, fără IP.",
+      "telemetryLink": "Ce se trimite?",
+      "telemetryYes": "Da, ajută",
+      "telemetryNo": "Nu, mulțumesc"
+    },
+    "language": {
+      "label": "Limbă"
+    }
+  },
+  "common": {
+    "time": {
+      "secondsAgo": "acum {{count}} secundă",
+      "secondsAgo_other": "acum {{count}} secunde",
+      "minutesAgo": "acum {{count}} minut",
+      "minutesAgo_other": "acum {{count}} minute",
+      "hoursAgo": "acum {{count}} oră",
+      "hoursAgo_other": "acum {{count}} ore",
+      "daysAgo": "acum {{count}} zi",
+      "daysAgo_other": "acum {{count}} zile"
+    },
+    "confirm": "Confirmă",
+    "cancel": "Anulează",
+    "remove": "Elimină",
+    "select": "Selectează...",
+    "search": "Căutare...",
+    "noResults": "Niciun rezultat",
+    "noRemainingOptions": "Nicio opțiune rămasă",
+    "apply": "Aplică",
+    "saved": "Salvat",
+    "showLess": "Arată mai puțin",
+    "roles": "Roluri",
+    "permissions": "Permisiuni",
+    "notifications": {
+      "title": "Notificări",
+      "markAllRead": "Marchează toate ca citite",
+      "empty": "Nicio notificare",
+      "viewAll": "Vizualizează toate notificările"
+    },
+    "dateRangePicker": {
+      "selectPeriod": "Selectează perioada",
+      "recent": "Recent",
+      "ranges": "Intervale",
+      "from": "De la",
+      "to": "Până la"
+    },
+    "permissionGuard": {
+      "fixFailed": "Repararea permisiunilor a eșuat",
+      "title": "Permisiuni nesigure pe fișier",
+      "defaultMessage": "Unele fișiere au permisiuni nesigure.",
+      "fixing": "Se repară…",
+      "fixNow": "Repară acum"
+    },
+    "limitRows": {
+      "noLimits": "Niciun limită setată.",
+      "metricLabel": "Metrică",
+      "typeLabel": "Tip",
+      "periodLabel": "Perioadă",
+      "everyLabel": "Fiecare",
+      "maxCost": "Cost maxim",
+      "maxCount": "Număr maxim",
+      "maxTokens": "Jetoane maxime",
+      "allCombosSet": "Toate combinațiile de metrică/perioadă sunt deja setate",
+      "addLimit": "Adaugă limită",
+      "metric": {
+        "cost": "Cost",
+        "calls": "Apeluri",
+        "input_tokens": "Jetoane de intrare",
+        "output_tokens": "Jetoane de ieșire",
+        "total_tokens": "Jetoane totale"
+      },
+      "period": {
+        "hourly": "Orar",
+        "daily": "Zilnic",
+        "weekly": "Săptămânal",
+        "monthly": "Lunar",
+        "yearly": "Anual"
+      },
+      "rollingUnit": {
+        "second": "secundă",
+        "minute": "minut",
+        "hour": "oră",
+        "day": "zi",
+        "week": "săptămână",
+        "month": "lună"
+      },
+      "windowType": {
+        "period": "Perioadă",
+        "rolling": "Continuu"
+      },
+      "fmt": {
+        "requests": "{{value}} cereri",
+        "inputTokens": "{{value}} jetoane de intrare",
+        "outputTokens": "{{value}} jetoane de ieșire",
+        "totalTokens": "{{value}} jetoane totale",
+        "everyRolling": "{{metric}} fiecare {{amount}} {{unit}}",
+        "perPeriod": "{{metric}} per {{period}}"
+      }
+    },
+    "savings": {
+      "title": "Ce a salvat rutarea",
+      "input": "Intrare",
+      "output": "Ieșire",
+      "actual": "Real",
+      "clientCalls": "{{count}} apel client",
+      "clientCalls_other": "{{count}} apeluri client",
+      "comparedAgainst": ", comparat cu trimiterea acestuia la fiecare dintre",
+      "comparedAgainst_other": ", comparat cu trimiterea tuturor la fiecare dintre",
+      "paidModelsInPlay": "{{count}} model plătit în joc",
+      "paidModelsInPlay_other": "{{count}} modele plătite în joc",
+      "metricCost": "Cost",
+      "metricTokens": "Jetoane",
+      "totalCost": "Cost total",
+      "routed": "Rutat: {{value}}",
+      "saved": "Salvat: {{value}}",
+      "usdThisPeriod": "USD această perioadă",
+      "savedVsAlways": "{{value}} salvat ({{percent}}%) vs întotdeauna {{model}}",
+      "tokens": "Jetoane",
+      "in": "Intrare: {{value}}",
+      "out": "Ieșire: {{value}}",
+      "tokenSubWithCache": "{{in}} intrare · {{out}} ieșire · {{cached}} cache",
+      "tokenSub": "{{in}} intrare · {{out}} ieșire",
+      "cutByOptimizers": "{{value}} redus de optimizatori",
+      "fewerThanAlways": "{{value}} mai puțin decât întotdeauna {{model}}, estimat"
+    },
+    "optimizerSteps": {
+      "downloaded": "Descărcat",
+      "thisStepRunsOn": "Acest pas rulează pe",
+      "defaultCheckpoint": "Punct de control implicit"
+    },
+    "routingPolicies": {
+      "title": "Politici de rutare",
+      "subtitle": "Politicile determină cum sunt direcționate cererile. Sunt executate în ordine de sus în jos.",
+      "removePolicy": "Elimină politică",
+      "removeIntent": "Elimină intenție",
+      "removeExample": "Elimină exemplu",
+      "routingModels": "Modele de rutare",
+      "embeddingModels": "Modele de încorporare",
+      "maxCompletionTokens": "Jetoane de completare maxime",
+      "maxPromptChars": "Caractere maxime în instrucțiune",
+      "similarityThreshold": "Prag de similitudine",
+      "previousMessages": "Mesaje anterioare",
+      "intents": "Intenții",
+      "confidenceThreshold": "Prag de încredere",
+      "ambiguityMargin": "Marjă de ambiguitate",
+      "maxCallsPerWindow": "Apeluri maxime pe fereastră",
+      "addFallbackModel": "Adaugă model de rezervă",
+      "autoRoutingLabel": "Rutare automată",
+      "autoRoutingHint": "Dacă este activat, traficul este distribuit fără instrucțiuni personalizate. Dacă este dezactivat, puteți scrie instrucțiuni specifice care să spună AI-ului când să selecteze fiecare model țintă.",
+      "additionalPromptInfoLabel": "Informații suplimentare de instrucțiune",
+      "additionalPromptInfoPlaceholder": "Instrucțiuni suplimentare pentru a include în instrucțiunea de rutare...",
+      "addExamplePlaceholder": "Adaugă exemplu și apasă Enter…",
+      "addIntentPlaceholder": "Adaugă intenție și apasă Enter…",
+      "addPolicyPlaceholder": "Adaugă o politică...",
+      "labels": {
+        "llm": "Politică de rutare IA",
+        "rate-limit": "Politică de limită de rată",
+        "budget-remaining": "Politică de buget rămas",
+        "semantic-intent": "Politică de intenție semantică",
+        "health": "Politică de sănătate",
+        "context": "Politică de context",
+        "capability": "Politică de capacitate",
+        "performance": "Politică de performanță",
+        "fairness": "Politică de echitate",
+        "cheapest": "Politică cea mai ieftină",
+        "model-preference": "Politică de preferință model"
+      },
+      "descriptions": {
+        "context": "Notează modelele pe baza ferestrei de context disponibile. Atribuie 0 modelelor a căror fereastră de context este mai mică decât lungimea estimată a cererii, prevenind erorile de trunchiere.",
+        "cheapest": "Notează modelele invers proporțional cu costul lor de jetons. Modelul cel mai ieftin obține 1,0, cel mai scump obține 0,0, ajutând la reducerea cheltuielilor API pe cererile.",
+        "health": "Notează modelele pe baza ratei de eroare recente folosind dezintegrare exponențială (erorile recente cântăresc mai mult). Aplică un dispozitiv de întrerupere care setează scorul la 0 atunci când rata ponderată a erorilor depășește pragul critic.",
+        "performance": "Notează modelele pe baza latenței medii recente folosind dezintegrare exponențială. Modelul cel mai rapid obține 1,0, cel mai lent obține 0,0. Modelele fără date recente sunt implicit 1,0.",
+        "llm": "Folosește un model IA pentru a nota candidații pe baza conținutului semantic al cererii. Acceptă instrucțiuni de ghidare de rutare per model și ia în considerare spațiul bugetar atunci când sunt configurate limite.",
+        "capability": "Filtru greu: atribuie 0 modelelor care lipsesc în mod explicit o caracteristică necesară de cerere (vedere, apeluri funcționale, mod JSON). Modelele fără declarații de capacitate explicite nu sunt penalizate.",
+        "rate-limit": "Penalizează modelele cu o frecvență recentă ridicată a apelurilor pentru a reduce riscul de a atinge limitele de rată ale furnizorului (HTTP 429). Acceptă un prag greu configurabil care forțează scorul la 0.",
+        "fairness": "Distribuie traficul uniform penalizând modelele care au primit mai multe apeluri reușite recent. Funcționează ca o rotire soft pentru a preveni concentrarea încărcăturii pe un singur model.",
+        "budget-remaining": "Notează modelele pe baza spațiului bugetar rămas pe toate limitele configurate. Preferă modelele cu mai mult spațiu înainte ca pragurile lor să fie atinse, răspândindu-se consumul în mod proactiv.",
+        "semantic-intent": "Clasifică cererea după intenție semantică folosind înglobări, apoi restricționează grupul de candidați la modelele mapate la acea intenție. Potriviri sigure filtrează greu grupul; potriviri ambigui fuzionează grupurile top-2; cererile necunoscute trec prin toți candidații.",
+        "model-preference": "Când clientul solicită un model specific (nu routerly/ada), acordă o scor de bonus configurabil acelui model. Când nicio preferință nu este exprimată, politica se abține. Poziția din listă controlează cât de mult preferința cântărește împotriva altor politici."
+      },
+      "selectModel": "Selectează model"
+    },
+    "securityRules": {
+      "applyTo": "Aplică la",
+      "streamingBufferSize": "Dimensiunea buffer-ului de streaming (caractere)",
+      "entityTypes": "Tipuri de entități",
+      "target": "Țintă",
+      "embeddingModel": "Model de încorporare",
+      "judgeModel": "Model de judecată",
+      "contentGuardrails": "Protecții de conținut",
+      "piiPolicies": "Politici PII",
+      "addSecurityPolicyPlaceholder": "Adaugă o politică de securitate...",
+      "removePolicyTooltip": "Elimină politică",
+      "deleteRuleAriaLabel": "Șterge regulă",
+      "embeddingModelPlaceholder": "Selectează model de încorporare...",
+      "fallbackModelsLabel": "Modele de rezervă (opțional, încercate în ordine)",
+      "fallbackModelsPlaceholder": "Nicio model de rezervă...",
+      "exampleTextsLabel": "Texte de exemplu pentru blocare (unul pe linie)",
+      "exampleTextsPlaceholder": "Cum pot hackui...\n...",
+      "similarityThresholdLabel": "Prag de similitudine:",
+      "judgeModelPlaceholder": "Selectează model de judecată...",
+      "allowedTopicsLabel": "Subiecte permise (limbaj natural)",
+      "allowedTopicsPlaceholder": "Asistență pentru clienți pentru produse software. Depanare tehnică. Întrebări de facturare.",
+      "onTopicThresholdLabel": "Blochează dacă scorul pe-subiect este sub:",
+      "harmThresholdLabel": "Blochează dacă scorul de vătămare este peste:",
+      "customInstructionsLabel": "Instrucțiuni personalizate",
+      "customInstructionsPlaceholder": "Ești un clasificator de siguranță a conținutului. Evaluează următorul text pentru conținut dăunător.\nCategorii: vorbire plină de ură, violență, conținut sexual, autolesiv.\nRăspunde DOAR cu un obiect JSON: {\"score\": <număr între 0 și 1>}",
+      "customInstructionsRequired": "Instrucțiunile personalizate sunt necesare.",
+      "enabledLabel": "Activat",
+      "contentGuardrailsHint": "Inspectează cererile și răspunsurile din reguli configurate. Activ atunci când cel puțin o regulă este configurată.",
+      "securityPoliciesHeading": "Politici de securitate",
+      "noSecurityPolicies": "Nicio politică de securitate configurată.",
+      "piiPoliciesHint": "Detectează și redactează date personale. Fiecare politică țintea intrarea modelului, răspunsul sau ambele, și controlează propriul set de entități.",
+      "noPiiPolicies": "Nicio politică PII configurată.",
+      "addPolicyButton": "+ Adaugă politică",
+      "injectionWarningTitle": "Payload-ul cererii modificat prin injectare",
+      "injectionWarningBody": "Una sau mai multe reguli injectează instrucțiunile lor în instrucțiunea de sistem a cererii de ieșire, deci payload-ul trimis furnizorului este modificat. Nicio apel de model suplimentar nu este făcut și nimic nu este blocat; modelul care deservește automat aplică instrucțiunea.",
+      "streamingDisabledWarningTitle": "Streaming-ul dezactivat pentru acest router",
+      "streamingDisabledWarningBody": "Una sau mai multe reguli sunt configurate pentru a bloca răspunsuri (țintă: răspuns sau ambele). Deoarece răspunsul complet trebuie inspectat înainte ca o decizie de blocare să poată fi luată, Routerly păstrează răspunsul în totalitate înainte de a-l returna clientului. Streaming-ul nu este disponibil în timp ce o regulă de blocare a răspunsului este activă; clienții vor primi răspunsul complet la o dată în loc de bucăți incrementale."
+    },
+    "connectionFields": {
+      "azureResourceName": "Nume resurse Azure",
+      "azureResourceNamePlaceholder": "resursa-mea",
+      "azureResourceNameHint": "Numele resursei Azure OpenAI (din portalul Azure).",
+      "deploymentId": "ID de implementare",
+      "deploymentIdPlaceholder": "implementare-gpt-4o",
+      "deploymentIdHint": "Numele implementării pe care l-ai creat în Azure OpenAI Studio.",
+      "azureApiVersionLabel": "Versiune API",
+      "azureApiVersionDefaultHint": "(implicit: 2024-02-01)",
+      "azureApiVersionPlaceholder": "2024-02-01",
+      "awsRegion": "Regiune AWS",
+      "awsRegionPlaceholder": "us-east-1",
+      "awsAccessKeyId": "ID cheie de acces AWS",
+      "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+      "awsSecretAccessKey": "Cheie de acces secret AWS",
+      "awsSecretAccessKeyPlaceholderExisting": "Lăsați gol pentru a păstra valoarea existentă",
+      "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
+      "awsSessionTokenLabel": "Token de sesiune",
+      "awsSessionTokenOptionalHint": "(opțional, pentru acreditări temporare)",
+      "awsSessionTokenPlaceholder": "AQoDYXdz…",
+      "gcpRouterId": "ID Router GCP",
+      "gcpRouterIdPlaceholder": "router-gcp-meu",
+      "gcpLocationLabel": "Locație",
+      "gcpLocationDefaultHint": "(implicit: us-central1)",
+      "gcpLocationPlaceholder": "us-central1",
+      "gcpServiceAccountKeyLabel": "Cheie de cont de serviciu",
+      "gcpServiceAccountKeyJsonHint": "(JSON)",
+      "endpointUrl": "URL punct terminal",
+      "optional": "(opțional)",
+      "webProvider": {
+        "unofficialWarningTitle": "Furnizor neoficial — utilizați pe propriul risc.",
+        "unofficialWarningBody": "Această integrare se bazează pe un API intern nedocumentat care se poate schimba sau se poate întrerupe fără notificare. Poate încălca Termenii de servicii ai furnizorului și ar putea duce la suspendarea contului.",
+        "accessTokenLabel": "Token de acces",
+        "sessionTokenLabel": "Token de sesiune",
+        "accessTokenPlaceholder": "eyJ…",
+        "sessionTokenPlaceholder": "Lipește valoarea cookie sessionKey (sk-ant-sid01-…)",
+        "openaiInstructions": "Mientras estés conectado a ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> în fila nouă. Copiați valoarea din câmpul <code>accessToken</code> (începe cu <code>eyJ</code>). Tokenul expiră la fiecare ~24 de ore. Pentru acces fiabil, completați și câmpul <strong>cf_clearance</strong> de mai jos.",
+        "anthropicInstructions": "<strong>Cum să obțineți cheia de sesiune:</strong> Mentre estés conectado a Claude, abre DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copiază valoarea din cookie-ul <code>sessionKey</code> (comienza con <code>sk-ant-sid01-</code>). Cheia rămâne valabilă până când te deconectezi."
+      },
+      "subscriptionProvider": {
+        "oauthTokenLabel": "Token OAuth abonament",
+        "authFilePathLabel": "Cale fișier autentificare",
+        "oauthTokenPlaceholder": "sk-ant-oat01-…",
+        "authFilePathPlaceholder": "~/.codex/auth.json (implicit)",
+        "anthropicTitle": "Utilizează abonamentul Claude Pro/Max.",
+        "anthropicRunCommandStep": "Rulează această comandă și copiază tokenul pe care îl tipărește:",
+        "anthropicPasteTokenStep": "Lipește tokenul în câmpul <em>Token OAuth abonament</em> de mai jos.",
+        "termsNote": "Regenerează când expiră. Utilizarea abonamentului printr-o pasarelă poate fi împotriva Termenilor de servicii ai furnizorului.",
+        "openaiTitle": "Utilizează abonamentul ChatGPT Plus/Pro prin aplicația Codex.",
+        "openaiLoginStep": "Conectează-te la aplicația desktop Codex cu contul ChatGPT Plus/Pro.",
+        "openaiAutoRefreshStep": "Routerly citește tokenul tău de acces din <code>~/.codex/auth.json</code> și îl reîmprospătează automat. Nicio copiere/lipire manuală nu este necesară.",
+        "openaiAuthFilePathStep": "Lăsați câmpul <em>Cale fișier autentificare</em> gol pentru a utiliza valoarea implicită, sau introduceți o cale personalizată dacă aplicația Codex stochează autentificarea în alt loc.",
+        "openaiTermsNote": "Utilizarea abonamentului printr-o pasarelă poate fi împotriva Termenilor de servicii ai furnizorului."
+      },
+      "copyCode": {
+        "copiedTooltip": "Copiat!",
+        "copyTooltip": "Copiază în clipboard",
+        "copiedLabel": "Copiat",
+        "copyLabel": "Copiază"
+      }
+    },
+    "copyBlock": {
+      "copyLabel": "Copiază",
+      "copiedLabel": "Copiat!",
+      "copyErrorHint": "Copierea a eșuat, selectează și copiază manual."
+    },
+    "mcpClientGuide": {
+      "clientAriaLabel": "Client MCP",
+      "hints": {
+        "claudeCode": "Rulează-o o dată, oriunde. Claude Code stochează serverul în <code>~/.claude.json</code>.",
+        "claudeDesktop": "Pune-o în <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (pe Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), apoi repornește aplicația. Spawnează CLI-ul, deci <code>routerly</code> trebuie să fie pe PATH.",
+        "codex": "Pune-o în <code>~/.codex/config.toml</code>. Codex citește tokenul din mediu, deci exportă-l în shell-ul din care pornești Codex.",
+        "opencode": "Pune-o în <code>~/.config/opencode/opencode.json</code>.",
+        "openclaw": "Rulează-o o dată. OpenClaw implicite la transport sse, pe care Routerly nu-l servește, deci transportul este setat în mod explicit.",
+        "cursor": "Pune-o în <code>~/.cursor/mcp.json</code>, sau în <code>.cursor/mcp.json</code> pentru a-l rescopi la un singur proiect.",
+        "cline": "Pune-o în <code>~/.cline/mcp.json</code>, sau lipește-o în Configure MCP Servers din panoul Cline.",
+        "zed": "Pune-o în <code>settings.json</code> din Zed, alături de orice alt server de context."
+      }
+    },
+    "unsavedChanges": {
+      "title": "Modificări nesalvate",
+      "message": "Ai modificări nesalvate. Dacă pleci acum, modificările vor fi pierdute.",
+      "stay": "Rămâi",
+      "leaveAnyway": "Pleacă oricum"
+    },
+    "trace": {
+      "summary": {
+        "guardrails": "Protecții",
+        "pii": "PII",
+        "optimizers": "Optimizatori",
+        "routerOverhead": "Suprasarcina router-ului"
+      },
+      "policyType": {
+        "llm": "Rutare IA",
+        "rateLimit": "Limită de rată",
+        "budgetRemaining": "Buget rămas",
+        "semanticIntent": "Intenție semantică",
+        "modelPreference": "Preferință model"
+      },
+      "rawDetails": "detalii brute",
+      "technicalDetails": "detalii tehnice",
+      "systemPrompt": "instrucțiune de sistem",
+      "responseText": "text răspuns",
+      "responseJson": "JSON răspuns",
+      "cacheEmbeddingCall": "APEL DE ÎNCORPORARE CACHE",
+      "fallbackAttempt": "rezervă #{{attempt}}",
+      "embeddingModel": "Model de încorporare",
+      "upstreamModel": "Model amonte",
+      "provider": "Furnizor",
+      "source": "Sursă",
+      "endpoint": "Punct terminal",
+      "cacheHit": "LOVITURĂ CACHE",
+      "ttlExtended": "TTL extins",
+      "model": "Model",
+      "similarity": "Similitudine",
+      "embedding": "Încorporare",
+      "cacheMiss": "LIPSĂ CACHE",
+      "details": "detalii",
+      "excludedByLimits": "EXCLUS DE LIMITE",
+      "finalRanking": "CLASARE FINALĂ",
+      "noRankingData": "Niciun date de clasare (înregistrarea poate fi coruptă sau dintr-o versiune mai veche)",
+      "policyScores": "SCORURI POLITICE",
+      "weight": "greutate {{value}}",
+      "allScores": "toate scorurile",
+      "noPolicyData": "Niciun date de politică (înregistrarea poate fi coruptă sau dintr-o versiune mai veche)",
+      "requestGuardrailBlocked": "PROTECȚIE LA CERERE BLOCATĂ",
+      "requestGuardrailTriggered": "PROTECȚIE LA CERERE DECLANȘATĂ",
+      "responseGuardrailBlocked": "PROTECȚIE LA RĂSPUNS BLOCATĂ",
+      "responseGuardrailTriggered": "PROTECȚIE LA RĂSPUNS DECLANȘATĂ",
+      "rule": "Regulă",
+      "action": "Acțiune",
+      "guardrailsEvaluated": "PROTECȚII EVALUATE ({{target}})",
+      "ruleCount": "{{count}} regulă",
+      "ruleCount_other": "{{count}} reguli",
+      "promptInjection": "Injectare instrucțiune",
+      "injects": "injectează",
+      "judgeResponse": "Răspuns judecată",
+      "piiScrubbed": "PII ȘTERS",
+      "piiScanned": "PII SCANAT ({{target}})",
+      "policies": "politici",
+      "entityTypes": "tipuri de entități",
+      "customPatterns": "modele personalizate",
+      "scanned": "scanat",
+      "redacted": "redactat",
+      "took": "a durat",
+      "ms": "{{value}} ms",
+      "entityTypesScanned": "tipuri de entități scannate",
+      "guardrailInjection": "INJECTARE PROTECȚIE",
+      "rules": "reguli",
+      "chars": "caractere",
+      "injectedText": "text injectat",
+      "optimizer": "OPTIMIZER {{id}}",
+      "tokens": "jetoane",
+      "saved": "salvat",
+      "tok": "{{value}} jet",
+      "reason": "motiv",
+      "budgetBlocked": "BUGET BLOCAT",
+      "budgetOk": "BUGET OK",
+      "egressSent": "EGRESS TRIMIS",
+      "status": "stare",
+      "encoding": "codificare",
+      "frames": "cadre",
+      "bytes": "octeți"
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Profilul meu",
+      "subtitle": "Gestionează setările contului tău"
+    },
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Notificări",
+      "mcp": "MCP",
+      "preferences": "Preferințe"
+    },
+    "notifications": {
+      "close": "Închide",
+      "refresh": "Reîmprospătează",
+      "clear": "Șterge",
+      "empty": "Nicio notificare găsită.",
+      "markAllRead": "Marchează toate ca citite",
+      "allCaughtUp": "Totul e prins",
+      "unreadCount": "{{count}} necitit",
+      "selectedCount": "{{count}} selectat",
+      "severity": {
+        "all": "Toate",
+        "info": "Informație",
+        "warning": "Avertisment",
+        "critical": "Critic"
+      },
+      "status": {
+        "read": "Citit",
+        "unread": "Necitit"
+      },
+      "filters": {
+        "severity": "Severitate",
+        "category": "Categorie",
+        "event": "Eveniment",
+        "date": "Dată",
+        "period": "Perioadă",
+        "status": "Stare",
+        "all": "Toate",
+        "allCategories": "Toate categoriile",
+        "allEvents": "Toate evenimentele",
+        "unreadOnly": "Doar necitite"
+      },
+      "actions": {
+        "markRead": "Marchează ca citit",
+        "markUnread": "Marchează ca necitit",
+        "archive": "Arhivă"
+      },
+      "table": {
+        "severity": "Severitate",
+        "event": "Eveniment",
+        "date": "Dată",
+        "status": "Stare",
+        "selectAll": "Selectează toate",
+        "selectRow": "Selectează {{event}}",
+        "eventCount": "{{count}} evenimente"
+      },
+      "pagination": {
+        "previous": "← Anterior",
+        "next": "Următor →",
+        "page": "Pagina {{page}} din {{totalPages}}",
+        "total": "({{count}} total)"
+      },
+      "detail": {
+        "ariaLabel": "Detaliu notificare",
+        "details": "Detalii",
+        "noDetails": "Niciun detaliu suplimentar.",
+        "eventsInIncident": "Evenimente în acest incident"
+      }
+    },
+    "security": {
+      "roleLabel": "Rol:",
+      "password": {
+        "heading": "Schimbă parola",
+        "currentLabel": "Parola actuală",
+        "newLabel": "Parola nouă",
+        "newPlaceholder": "Minim 8 caractere",
+        "confirmLabel": "Confirmă parola nouă",
+        "success": "Parola schimbată cu succes.",
+        "saving": "Se salvează...",
+        "submit": "Schimbă parola",
+        "errors": {
+          "mismatch": "Parolele nu se potrivesc.",
+          "tooShort": "Parola nouă trebuie să aibă cel puțin 8 caractere.",
+          "updateFailed": "Actualizarea a eșuat"
+        }
+      },
+      "tfa": {
+        "heading": "Autentificare cu doi factori",
+        "notEnabled": "2FA nu este activat. Protejează-ți contul cu o parolă unică bazată pe timp.",
+        "enableButton": "Activează autentificarea cu doi factori",
+        "scanInstructions": "Scanează acest cod QR cu aplicația autenticatoare (Google Authenticator, Authy, etc.), apoi introduceți codul de 6 cifre pentru a confirma.",
+        "qrAlt": "Cod QR de configurare 2FA",
+        "addAccountInstructions": "Deschide aplicația autenticatoare (Google Authenticator, Authy, 1Password, etc.) și adaugă un cont nou:",
+        "setup": {
+          "step1": "Atinge <strong>Adaugă cont</strong> sau butonul <strong>+</strong>",
+          "step2": "Alege <strong>Introduceți cheia de configurare</strong> (sau scanați codul QR dacă sunteți pe mobil)",
+          "step3": "Introduceți secretul afișat mai jos"
+        },
+        "mobileLink": "Atinge aici pe mobil pentru a deschide autenticatorul",
+        "manualEntryLabel": "Secret intrare manuală:",
+        "saveBackupCodes": "Salvează aceste coduri de backup. Fiecare poate fi folosit o dată dacă pierzi acces la autenticator.",
+        "copyBackupCodes": "Copiază coduri de backup",
+        "confirmCodeLabel": "Introduceți codul din aplicația dvs. pentru a activa",
+        "activate": "Activează 2FA",
+        "cancel": "Anulează",
+        "enabledBadge": "2FA este activat",
+        "newBackupCodesLabel": "Coduri de backup noi (salvează acum):",
+        "copy": "Copiază",
+        "regenLabel": "Introduceți codul autenticator pentru a regenera codurile de backup",
+        "regenerate": "Regenerează",
+        "regenerateBackupCodes": "Regenerează codurile de backup",
+        "disableLabel": "Dezactivează 2FA (introduceți codul autenticator)",
+        "disable": "Dezactivează 2FA",
+        "errors": {
+          "setupFailed": "Configurarea a eșuat",
+          "confirmFailed": "Confirmarea a eșuat",
+          "disableFailed": "Dezactivarea a eșuat",
+          "regenFailed": "Regenerarea a eșuat"
+        }
+      }
+    },
+    "mcp": {
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca suprafața MCP",
+        "revokeFailed": "Revocare token MCP eșuată"
+      },
+      "revokeConfirm": "Revocare token MCP \"{{name}}\"? Clienții care îl folosesc încetează să funcționeze imediat.",
+      "tokens": {
+        "heading": "Tokenuri MCP",
+        "newToken": "Token nou",
+        "description": "Fiecare token funcționează ca tine: expune exact instrumentele pe care rolul tău le permite. Valoarea completă este afișată o dată, pe pagina care o creează.",
+        "empty": "Niciun token MCP încă. Creează-l pentru a conecta un client MCP.",
+        "created": "Creat",
+        "lastUsed": "Utilizat ultima dată",
+        "expires": "Expiră",
+        "never": "Niciodată",
+        "revokeTitle": "Revocare token"
+      },
+      "tools": {
+        "heading": "Instrumente pe care le expun tokenurile tale",
+        "empty": "Rolul tău nu acordă niciun instrument MCP. Cere unui administrator permisiunile de care ai nevoie.",
+        "table": {
+          "name": "Nume",
+          "scope": "Domeniu",
+          "description": "Descriere",
+          "sourceModule": "Modul sursă",
+          "permission": "Permisiune"
+        }
+      },
+      "connect": {
+        "heading": "Conectează un client MCP",
+        "descriptionPre": "Alege clientul pe care-l firezi, apoi înlocuiește",
+        "descriptionPost": "cu unul dintre tokenurile tale. Crearea unui token arată același fragment cu valoarea deja în el.",
+        "otherClient": "Orice alt client",
+        "httpInstructionsPre": "Pe HTTP, redirecționează-l la acest punct terminal și autentifică-te cu",
+        "httpInstructionsPost": ". Este JSON-RPC 2.0 peste HTTP transmisibil.",
+        "stdioInstructionsPre": "Pe stdio, CLI-ul îl conectează și trece tokenul tău prin. Rulezi serviciul direct? Setează",
+        "stdioInstructionsAnd": "și",
+        "stdioInstructionsPost": "singur."
+      },
+      "newToken": {
+        "backToMcp": "Înapoi la MCP",
+        "title": "Token MCP nou",
+        "subtitle": "Tokenul funcționează ca tine: expune exact instrumentele pe care rolul tău le permite.",
+        "nameLabel": "Nume",
+        "namePlaceholder": "laptop",
+        "nameHint": "Unde se utilizează acest token, de exemplu \"laptop\" sau \"claude-desktop\".",
+        "expiryLabel": "Expiră pe",
+        "expiryHint": "Opțional. Lăsați gol și tokenul nu expiră niciodată, până când îl revoci.",
+        "createButton": "Creează token",
+        "creatingButton": "Se crează…",
+        "cancelButton": "Anulează",
+        "tokenSection": {
+          "title": "Tokenul tău",
+          "hint": "Copiază acum. Nu va fi afișat din nou, iar un token pierdut poate fi doar înlocuit.",
+          "copyButton": "Copiază",
+          "copiedButton": "Copiat!",
+          "copyTitle": "Copiază token",
+          "copiedTitle": "Copiat!"
+        },
+        "connectSection": {
+          "title": "Conectează un client",
+          "hint": "Alege clientul pe care-l firezi. Fragmentul deja poartă acest token."
+        },
+        "bridgeSection": {
+          "title": "Sau folosește puntea locală",
+          "hint": "Pentru un client care vorbește doar stdio, CLI-ul îl conectează și trece tokenul tău prin."
+        },
+        "doneButton": "Gata",
+        "errors": {
+          "createFailed": "Nu s-a putut crea tokenul",
+          "copyFailed": "Copierea a eșuat, selectează și copiază tokenul manual."
+        }
+      }
+    },
+    "preferences": {
+      "heading": "Limbă",
+      "description": "Alege limba în care este afișat panoul de bord.",
+      "languageLabel": "Limbă",
+      "saved": "Preferință de limbă salvată."
+    }
+  },
+  "settings": {
+    "general": {
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca setările",
+        "loadFailedPeriod": "Nu s-a putut încărca setările.",
+        "saveFailed": "Nu s-a putut salva",
+        "saveSettingsFailed": "Nu s-a putut salva setările"
+      },
+      "savedSuccess": "Setări salvate cu succes.",
+      "saving": "Se salvează…",
+      "saveSettings": "Salvează setări",
+      "serverInfo": {
+        "heading": "Informații server",
+        "readOnly": "Doar citire. Gazdă și port provin din mediu sau fișierul de setări, nu de aici.",
+        "reachableAt": "Accesibil la",
+        "reachableAtAny": "Accesibil la oricare din aceste adrese",
+        "thisMachine": "Această mașină",
+        "network": "Rețea",
+        "copyAddress": "Copiază {{address}}",
+        "copied": "Copiat!",
+        "copy": "Copiază",
+        "hostAndPort": "Gazdă și port",
+        "version": "Versiune",
+        "uptime": "Timp de funcționare"
+      },
+      "runtime": {
+        "heading": "Setări de runtime",
+        "logLevel": "Nivel jurnal",
+        "logLevelHint": "Controlează verbozitatea jurnalelor serviciului.",
+        "publicUrl": "URL public",
+        "publicUrlHint": "URL de bază la care serviciul este accesibil din clienți externi (ex. <code>http://192.168.1.10:3000</code>). Utilizat în secțiunea <strong>Cum să te conectezi</strong> a fiecărui router. Util atunci când panoul de bord rulează pe o mașină sau port diferit decât serviciul.",
+        "usageRetention": "Retenție utilizare",
+        "noLimit": "Fără limită",
+        "maxAgeDays": "Vârstă maximă (zile)",
+        "maxSizeMb": "Dimensiune maximă (MB)",
+        "retentionHint": "Istoria utilizării/facturării mai veche decât atâtea zile, sau depășind această dimensiune, este eliminată din jurnalul activ. Lăsați ambele goale pentru fără limită de retenție."
+      },
+      "internationalization": {
+        "heading": "Internaționalizare",
+        "defaultLanguage": "Limbă Implicită",
+        "defaultLanguageHint": "Limba panoului pentru utilizatorii care nu și-au ales încă propria limbă. Nu înlocuiește alegerea personală a utilizatorului."
+      },
+      "telemetry": {
+        "heading": "Metrici anonime",
+        "neverAutomatic": "Routerly nu trimite date automat niciodată.",
+        "noChoice": "Nu ai făcut o alegere încă.",
+        "enabledStatus": "Metrici de instalare anonime sunt activate.",
+        "disabledStatus": "Metrici de instalare anonime sunt dezactivate.",
+        "explanation": "Când este activat, Routerly trimite doar: tip eveniment (instalare / upgrade / dezinstalare), versiune, platformă și ID aleatoriu. Nicio date personale, nicio date de utilizare, nicio IP stocată.",
+        "whatIsSent": "Ce se trimite?",
+        "installId": "ID instalare: {{id}}",
+        "saving": "Se salvează…",
+        "enable": "Activează",
+        "disable": "Dezactivează"
+      }
+    },
+    "notifications": {
+      "providers": {
+        "dashboard": {
+          "label": "Panou de bord (inbox in-app)",
+          "description": "Direcționează evenimente la inboxul in-app"
+        },
+        "smtp": {
+          "label": "SMTP",
+          "description": "Server de poștă personalizat"
+        },
+        "ses": {
+          "label": "Amazon SES",
+          "description": "Serviciu de poștă electronică simplă AWS"
+        },
+        "sendgrid": {
+          "label": "SendGrid",
+          "description": "SendGrid Twilio"
+        },
+        "azure": {
+          "label": "Azure Communication",
+          "description": "Servicii de comunicare Azure"
+        },
+        "google": {
+          "label": "Google / Gmail",
+          "description": "Gmail via OAuth2"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "Callback HTTP webhook"
+        },
+        "slack": {
+          "label": "Slack",
+          "description": "Slack Bot API"
+        },
+        "teams": {
+          "label": "Microsoft Teams",
+          "description": "Teams Incoming Webhook"
+        },
+        "pagerduty": {
+          "label": "PagerDuty",
+          "description": "PagerDuty Events API v2"
+        },
+        "discord": {
+          "label": "Discord",
+          "description": "Discord Webhook"
+        }
+      },
+      "events": {
+        "providerError": "Furnizor – Eroare",
+        "providerDegraded": "Furnizor – Degradat",
+        "providerRecovered": "Furnizor – Recuperat",
+        "providerRateLimited": "Furnizor – Limitat de rată",
+        "routingNoCandidates": "Rutare – Niciun candidat",
+        "routingFallbackUsed": "Rutare – Rezervă utilizată",
+        "authLoginFailed": "Auth – Conectare eșuată",
+        "authTokenInvalid": "Auth – Token nevalid",
+        "configModelAdded": "Config – Model adăugat",
+        "configModelDeleted": "Config – Model șters",
+        "configRouterCreated": "Config – Router creat",
+        "configRouterDeleted": "Config – Router șters",
+        "budgetThresholdReached": "Buget – Prag atins",
+        "budgetExceeded": "Buget – Depășit",
+        "budgetReset": "Buget – Resetat",
+        "systemStartup": "Sistem – Pornire",
+        "systemShutdown": "Sistem – Oprire",
+        "systemUpdateAvailable": "Sistem – Actualizare disponibilă"
+      },
+      "removeChannelTooltip": "Elimină canal",
+      "removeChannelConfirm": "Elimini canalul?",
+      "formUpdatedHint": "Formular actualizat — salvează pentru a aplica.",
+      "hmacSigningKeyPlaceholder": "Cheie de semnare HMAC",
+      "perms": {
+        "routerRead": "Rutere – Citire",
+        "routerWrite": "Rutere – Scriere",
+        "modelRead": "Modele – Citire",
+        "modelWrite": "Modele – Scriere",
+        "userRead": "Utilizatori – Citire",
+        "userWrite": "Utilizatori – Scriere",
+        "reportRead": "Rapoarte – Citire",
+        "settingsRead": "Setări – Citire",
+        "settingsWrite": "Setări – Scriere",
+        "notificationWrite": "Notificări – Scriere",
+        "tokenRead": "Tokenuri – Citire",
+        "tokenWrite": "Tokenuri – Scriere",
+        "roleWrite": "Roluri – Scriere",
+        "auditRead": "Jurnal audit – Citire",
+        "modulesRead": "Module – Citire",
+        "modulesManage": "Module – Gestionare",
+        "connectionsRead": "Conexiuni – Citire",
+        "connectionsManage": "Conexiuni – Gestionare",
+        "resilienceRead": "Reziliență – Citire",
+        "resilienceManage": "Reziliență – Gestionare",
+        "profilesRead": "Profile de rutare – Citire",
+        "profilesManage": "Profile de rutare – Gestionare",
+        "optimizersRead": "Optimizatori – Citire",
+        "optimizersManage": "Optimizatori – Gestionare",
+        "experimentsRead": "Experimente – Citire",
+        "experimentsManage": "Experimente – Gestionare"
+      },
+      "targetsHint": {
+        "fixedEndpoint": "Pentru acest tip de canal, țintele nu schimbă livrarea (punct terminal este fix). Filtrează care evenimente sunt înregistrate în pista de audit per destinatar.",
+        "dashboard": "Țintele controlează vizibilitatea inbox-ului — doar utilizatorii potriviți vor vedea aceste notificări în inboxul lor in-app.",
+        "email": "Țintele determină care utilizatori primesc acest e-mail. Lăsați toate goale pentru a trimite tuturor utilizatorilor."
+      },
+      "summary": {
+        "allEvents": "Toate evenimentele",
+        "eventCount": "{{count}} eveniment",
+        "eventCount_other": "{{count}} evenimente",
+        "roleCount": "{{count}} rol",
+        "roleCount_other": "{{count}} roluri",
+        "permCount": "{{count}} perm",
+        "permCount_other": "{{count}} perms",
+        "userCount": "{{count}} utilizator",
+        "userCount_other": "{{count}} utilizatori",
+        "everyone": "Toți"
+      },
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca"
+      },
+      "fields": {
+        "dashboardHint": "Direcționează evenimente potrivite la inboxul notificării in-app. Nicio acreditare necesară.",
+        "labels": {
+          "fromAddress": "Adresă de la",
+          "fromName": "Nume de la",
+          "host": "Gazdă",
+          "port": "Port",
+          "tls": "TLS/SSL",
+          "username": "Nume utilizator",
+          "password": "Parolă",
+          "awsRegion": "Regiune AWS",
+          "accessKeyId": "ID cheie de acces",
+          "secretAccessKey": "Cheie de acces secret",
+          "apiKey": "Cheie API",
+          "connectionString": "Șir de conexiune",
+          "clientId": "ID client",
+          "clientSecret": "Secret client",
+          "refreshToken": "Token de reîmprospătare",
+          "url": "URL",
+          "method": "Metodă",
+          "signingSecret": "Secret de semnare",
+          "botToken": "Token bot",
+          "channelId": "ID canal",
+          "webhookUrl": "URL webhook",
+          "integrationKey": "Cheie integrare"
+        },
+        "values": {
+          "enabled": "Activat",
+          "disabled": "Dezactivat",
+          "configured": "Configurat",
+          "notSet": "Nu este setat"
+        },
+        "optional": "(opțional)",
+        "keepCurrentPlaceholder": "Lăsați gol pentru a păstra actual",
+        "emailFromAddressPlaceholder": "noreply@example.com",
+        "emailFromNamePlaceholder": "Routerly",
+        "smtpHostPlaceholder": "smtp.example.com",
+        "smtpTlsLabel": "Utilizează TLS / SSL",
+        "smtpTlsOnHint": "(port 465 — SSL direct)",
+        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "sesRegionPlaceholder": "us-east-1",
+        "sesIamHint": "Lăsați credențialele goale pentru a utiliza rolul instanței IAM.",
+        "sendgridApiKeyPlaceholder": "SG.…",
+        "webhookUrlPlaceholder": "https://example.com/webhook",
+        "webhookSecretPlaceholder": "Cheie de semnare HMAC",
+        "slackBotTokenPlaceholder": "xoxb-…",
+        "slackChannelIdPlaceholder": "C1234567890",
+        "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
+        "pagerdutyKeyPlaceholder": "Cheie de rutare de 32 caractere",
+        "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
+        "routing": {
+          "eventsHeading": "Evenimente",
+          "eventsPlaceholder": "Toate evenimentele (lăsați gol pentru toate)",
+          "eventsHint": "Lăsați gol pentru a primi toate evenimentele. Selectați evenimente specifice pentru a filtra.",
+          "routersHeading": "Rutere",
+          "routersPlaceholder": "Toți ruterii (lăsați gol pentru toți)",
+          "routersHint": "Lăsați gol pentru a primi evenimente din toți ruterii.",
+          "cooldownHeading": "Tiempo de espera",
+          "cooldownSuffix": "secunde (0 = fără timp de espera)",
+          "cooldownHint": "Interval minim înainte ca acest canal să poată declanșa din nou pentru același eveniment."
+        },
+        "recipients": {
+          "heading": "Destinatari / Ținte",
+          "rolesLabel": "Roluri",
+          "rolesPlaceholder": "Toate rolurile (toți)",
+          "permissionsLabel": "Permisiuni",
+          "permissionsPlaceholder": "Toate permisiunile (toți)",
+          "usersLabel": "Utilizatori individuali",
+          "usersPlaceholder": "Toți utilizatorii (toți)"
+        }
+      },
+      "form": {
+        "tabs": {
+          "connection": "conexiune",
+          "routing": "rutare",
+          "recipients": "destinatari"
+        },
+        "sections": {
+          "channelSettings": "Setări canal",
+          "eventsRouting": "Evenimente și rutare",
+          "recipients": "Destinatari"
+        },
+        "nameLabel": "Nume",
+        "namePlaceholder": "Etichetă pentru acest canal",
+        "cancelButton": "Anulează"
+      },
+      "list": {
+        "countLabel": "{{count}} canal",
+        "countLabel_other": "{{count}} canale",
+        "filteredLabel": "{{shown}} din {{count}} canal",
+        "filteredLabel_other": "{{shown}} din {{count}} canale",
+        "allTypes": "Toate tipurile",
+        "searchPlaceholder": "Filtrează canale…",
+        "searchChannelsPlaceholder": "Caută canale…",
+        "addButton": "Adaugă canal",
+        "addSearchPlaceholder": "Caută canale…",
+        "noResults": "Niciun rezultat",
+        "emptyTitle": "Niciun canal de notificare configurat încă.",
+        "noMatch": "Niciun canal nu se potrivește cu filtrele active.",
+        "nameInlinePlaceholder": "Etichetă (opțional)",
+        "columns": {
+          "name": "Nume",
+          "type": "Tip",
+          "summary": "Evenimente / Ținte"
+        },
+        "testTitle": "Trimite test",
+        "editTitle": "Editează canal",
+        "deleteTitle": "Șterge canal",
+        "deleteConfirm": "Elimini canalul \"{{name}}\"? Aceasta nu poate fi anulată.",
+        "deleteConfirmButton": "Șterge",
+        "errors": {
+          "deleteFailed": "Ștergerea a eșuat"
+        }
+      },
+      "edit": {
+        "backToList": "Înapoi la notificări",
+        "back": "Înapoi",
+        "heading": "Editează canalul {{provider}}",
+        "subtitle": "Actualizează configurația pentru acest canal de notificare.",
+        "testSection": {
+          "title": "Trimite test",
+          "recipientPlaceholder": "recipient@example.com",
+          "sendButton": "Trimite test",
+          "sendingButton": "Se trimite…",
+          "hintEmail": "Lăsați gol pentru a trimite la e-mailul contului tău. Testul folosește configurația canalului salvat.",
+          "hintOther": "Testul folosește configurația canalului salvat. Salvează modificări mai întâi pentru a testa setări actualizate."
+        },
+        "saveButton": "Salvează modificări",
+        "savingButton": "Se salvează…",
+        "errors": {
+          "loadFailed": "Nu s-a putut încărca",
+          "saveFailed": "Nu s-a putut salva"
+        }
+      },
+      "create": {
+        "backToList": "Înapoi la notificări",
+        "changeType": "Schimbă tip",
+        "pickerHeading": "Alege un tip de canal",
+        "pickerSubtitle": "Selectează furnizorul de notificări pentru a configura.",
+        "heading": "Noul canal {{provider}}",
+        "subtitle": "Configurează un nou canal de notificare.",
+        "createButton": "Creează canal",
+        "creatingButton": "Se crează…",
+        "errors": {
+          "createFailed": "Nu s-a putut crea"
+        }
+      },
+      "sendTest": "Trimite test",
+      "fromAddress": "Adresă de la",
+      "individualUsers": "Utilizatori individuali",
+      "host": "Gazdă",
+      "port": "Port",
+      "apiKey": "Cheie API",
+      "connectionString": "Șir de conexiune",
+      "clientId": "ID client",
+      "clientSecret": "Secret client",
+      "refreshToken": "Token de reîmprospătare",
+      "method": "Metodă",
+      "botToken": "Token bot",
+      "channelId": "ID canal",
+      "webhookUrl": "URL webhook",
+      "integrationKey": "Cheie integrare"
+    },
+    "integrations": {
+      "types": {
+        "prometheus": {
+          "label": "Prometheus",
+          "description": "pull — expune /metrics"
+        },
+        "otel": {
+          "label": "OpenTelemetry",
+          "description": "push — OTLP HTTP"
+        },
+        "datadog": {
+          "label": "Datadog",
+          "description": "push — API metrici"
+        },
+        "grafana": {
+          "label": "Grafana Cloud",
+          "description": "push — remote_write"
+        },
+        "influxdb": {
+          "label": "InfluxDB",
+          "description": "push — protocol linie"
+        },
+        "webhook": {
+          "label": "Webhook",
+          "description": "push — HTTP POST JSON"
+        }
+      },
+      "traces": {
+        "label": "Exportă trasee de cerere",
+        "description": "Navete traseu complet al fiecărei cereri proxied: fiecare fază, fiecare modul care a vorbit, și instrucțiuni și răspunsuri pentru proiectele care au optat.",
+        "sampleRateLabel": "Rată de eșantion",
+        "sampleRateHint": "1 exportă fiecare cerere, 0,1 una din zece."
+      },
+      "optional": "(opțional)",
+      "headersHint": "(opțional, una pe linie: Cheie: Valoare)",
+      "fields": {
+        "prometheus": {
+          "bearerToken": "Token purtător",
+          "placeholder": "Lăsați gol pentru acces deschis",
+          "description": "Expune <code>/metrics</code> în format text Prometheus. Setează un token pentru a necesita autentificare Bearer."
+        },
+        "otel": {
+          "endpoint": "Punct terminal colector",
+          "description": "URL de bază al receptorului OTLP. Routerly anexează <code>/v1/metrics</code>, și <code>/v1/traces</code> când exportul de traseu este activat. Portul implicit HTTP este 4318, gRPC este 4317.",
+          "protocol": "Protocol",
+          "headers": "Anteturi"
+        },
+        "datadog": {
+          "apiKey": "Cheie API",
+          "placeholder": "Cheia API Datadog",
+          "description": "Găsit sub <strong>Setări organizație → Chei API</strong> în contul Datadog.",
+          "site": "Site"
+        },
+        "grafana": {
+          "remoteWriteUrl": "URL de scriere la distanță",
+          "description": "Găsit în <strong>Grafana Cloud → Conexiuni → Prometheus → Detalii</strong> ca \"Punct terminal de scriere la distanță\".",
+          "username": "Nume utilizator / ID stivă",
+          "usernameHint": "ID numeric afișat în detaliile conexiunii Prometheus.",
+          "apiKey": "Cheie API / Token",
+          "apiKeyHint": "Token Grafana Cloud cu rol <strong>MetricsPublisher</strong>."
+        },
+        "influxdb": {
+          "url": "URL",
+          "urlHint": "URL instanță InfluxDB v2. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "token": "Token",
+          "tokenPlaceholder": "Tokenul API InfluxDB",
+          "tokenHint": "Trebuie să aibă acces <strong>write</strong> la depozit.",
+          "org": "Organizație",
+          "bucket": "Depozit"
+        },
+        "webhook": {
+          "url": "URL",
+          "secret": "Secret",
+          "secretHint": "(opțional — cheie de semnare HMAC-SHA256)",
+          "headers": "Anteturi"
+        }
+      },
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca integrări",
+        "updateFailed": "Nu s-a putut actualiza integrare",
+        "saveFailed": "Nu s-a putut salva integrare",
+        "deleteFailed": "Nu s-a putut șterge integrare"
+      },
+      "empty": "Nicio integrare configurată încă.",
+      "enabled": "Activat",
+      "testing": "Se testează…",
+      "test": "Test",
+      "removeConfirm": "Elimini?",
+      "remove": "Elimină",
+      "cancel": "Anulează",
+      "removeTooltip": "Elimină integrare",
+      "saving": "Se salvează…",
+      "save": "Salvează",
+      "addButton": "Adaugă integrare"
+    },
+    "catalog": {
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca setările",
+        "duplicateUrl": "Acest URL este deja în listă.",
+        "unreachable": "Nu s-a putut ajunge la un catalog de furnizor valid la acest URL."
+      },
+      "saved": "Salvat.",
+      "refreshed": "Reîmprospătat.",
+      "heading": "Depozite catalog furnizor",
+      "refreshing": "Se reîmprospătează…",
+      "refresh": "Reîmprospătează",
+      "nextRefresh": "Următor: {{date}}",
+      "priorityHint": "Ordinea rândului determină prioritatea de înglobare — rândul 1 câștigă în caz de conflict. Utilizați săgețile pentru a reordona.",
+      "columns": {
+        "priority": "#",
+        "url": "URL",
+        "updated": "Actualizat",
+        "lastCheck": "Ultima verificare",
+        "status": "Stare"
+      },
+      "empty": "Niciun depozit configurat. Catalogul public Routerly implicit va fi utilizat.",
+      "status": {
+        "error": "Eroare",
+        "active": "Activ",
+        "disabled": "Dezactivat"
+      },
+      "edit": "Editează",
+      "removeTooltip": "Elimină",
+      "addRepository": "Adaugă depozit",
+      "checking": "Se verifică…",
+      "add": "Adaugă",
+      "removeConfirm": "Elimini depozitul \"{{url}}\"?"
+    },
+    "about": {
+      "headings": {
+        "application": "Aplicație",
+        "runtime": "Runtime",
+        "storage": "Stocare",
+        "softwareUpdate": "Actualizare software"
+      },
+      "labels": {
+        "version": "Versiune",
+        "uptime": "Timp de funcționare",
+        "nodeVersion": "Node.js",
+        "platform": "Platformă",
+        "configDir": "Directorul de configurare",
+        "dataDir": "Directorul de date",
+        "currentVersion": "Versiune curentă",
+        "availableVersion": "Versiune disponibilă",
+        "upToDate": "La zi",
+        "lastChecked": "Ultima verificare"
+      },
+      "noCheckPerformed": "Nicio verificare de actualizare efectuată încă.",
+      "checkForUpdates": "Caută actualizări",
+      "checking": "Se verifică…",
+      "updateTo": "Actualizează la v{{version}}",
+      "updating": "Se actualizează…",
+      "dockerHint": "Rulează în Docker — extrage cea mai recentă imagine pentru a actualiza.",
+      "confirmUpdate": "Aceasta va descărca și instala cea mai recentă versiune. Serviciul va reporni. Continui?",
+      "updateComplete": "Actualizare completă! Se reîncarcă…",
+      "serviceRestarting": "Serviciul se reia. Vă rugăm să reîncărcați pagina în câteva momente.",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca",
+        "checkFailed": "Verificarea a eșuat",
+        "updateFailed": "Actualizarea a eșuat"
+      },
+      "channel": "Canal"
+    },
+    "security": {
+      "authentication": "Autentificare",
+      "requireMfa": "Necesită autentificare cu doi factori pentru toți utilizatorii",
+      "requireMfaHint": "Când este activat, utilizatorii care nu au configurat 2FA vor vedea o solicitare pentru a face-o după conectare. Utilizatorii pot configura 2FA pe pagina Profil.",
+      "savedSuccess": "Setări salvate cu succes.",
+      "saving": "Se salvează…",
+      "saveSettings": "Salvează setări",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca setările",
+        "saveFailed": "Nu s-a putut salva setările"
+      }
+    },
+    "title": "Setări",
+    "subtitle": "Configurație pentru Routerly",
+    "tabs": {
+      "general": "General",
+      "security": "Securitate",
+      "notifications": "Notificări",
+      "integrations": "Integrări",
+      "catalog": "Catalog furnizor",
+      "users": "Utilizatori",
+      "roles": "Roluri",
+      "audit": "Jurnal audit",
+      "about": "Despre"
+    }
+  },
+  "routers": {
+    "list": {
+      "title": "Rutere",
+      "subtitle": "Aplicații client care accesează Routerly",
+      "count": "1 router",
+      "count_other": "{{count}} rutere",
+      "newRouter": "Router nou",
+      "empty": "Niciun router încă.",
+      "emptyFiltered": "Nu sunt rutere de acest tip.",
+      "columns": {
+        "name": "Nume",
+        "tokens": "Tokenuri",
+        "policies": "Politici",
+        "models": "Modele"
+      },
+      "tokenCount": "1 token",
+      "tokenCount_other": "{{count}} tokenuri",
+      "editRouter": "Editează router",
+      "deleteRouter": "Șterge router",
+      "deleteConfirm": "Ștergi acest router?",
+      "errors": {
+        "deleteFailed": "Eroare la ștergerea router-ului"
+      },
+      "newOrchestrator": "Noul Orchestrator",
+      "newPassthrough": "Noul Passthrough"
+    },
+    "layout": {
+      "notFound": "Router nu găsit",
+      "tabs": {
+        "dashboard": "Panou de bord",
+        "general": "General",
+        "orchestrator": "Orchestrator",
+        "routing": "Rutare",
+        "optimizer": "Optimizer",
+        "security": "Securitate",
+        "token": "Token",
+        "users": "Utilizatori",
+        "logs": "Jurnale"
+      },
+      "backToRouters": "Înapoi la rutere",
+      "backToRoutersTitle": "Înapoi la rutere",
+      "newRouter": "Router nou",
+      "loading": "Se încarcă...",
+      "routerId": "ID router:",
+      "saveFirstHint": "Salvează mai întâi routerul pentru a debloca această filă",
+      "newKind": "Noul {{kind}}"
+    },
+    "dashboard": {
+      "period": "Perioadă",
+      "noTraffic": "Niciun trafic pentru acest router în perioada selectată.",
+      "stats": {
+        "savings": "Economii",
+        "vsPrefix": "vs",
+        "forEverything": "pentru totul",
+        "noTargetToCompare": "niciun model țintă pentru a compara",
+        "cost": "Cost",
+        "callCount": "1 apel",
+        "callCount_other": "{{count}} apeluri",
+        "latency": "Latență",
+        "medianP95": "median · p95 {{value}}",
+        "ttft": "Timp până la primul jetons",
+        "notMeasured": "nu s-a măsurat pe aceste apeluri",
+        "reliability": "Fiabilitate",
+        "errorsAndBlocked": "{{errors}} erori · {{blocked}} blocate"
+      },
+      "tokens": {
+        "input": "Jetoane de intrare:",
+        "output": "Jetoane de ieșire:",
+        "fromCache": "Din cache:",
+        "cacheSaved": "({{amount}} salvat)"
+      },
+      "oneModel": {
+        "heading": "Dacă totul ar fi mers la un model",
+        "empty": "Adaugă modele țintă acestui router pentru a vedea comparația.",
+        "columns": {
+          "targetModel": "Model țintă",
+          "wouldHaveCost": "Ar fi costat",
+          "saved": "Salvat"
+        },
+        "costsHint": "Costurile sunt jetoniile observate retarife la ratele fiecărei ținte."
+      },
+      "optimizers": {
+        "heading": "Ce au eliminat optimizatorii",
+        "columns": {
+          "optimizer": "Optimizer",
+          "callsChanged": "Apeluri schimbate",
+          "tokensSaved": "Jetoane salvate",
+          "costSaved": "Cost salvat",
+          "rolledBack": "Revenire"
+        },
+        "hint": "Măsurat pe apelurile în sine, prețuite la modelul care a servit fiecare. O rulare revenită înseamnă că ieșirea pasului a fost respingă ca nesigură și instrucțiunea a fost restaurată: nu a salvat nimic, și un număr mare înseamnă că pragul este prea agresiv."
+      },
+      "traffic": {
+        "heading": "Unde a mers traficul",
+        "columns": {
+          "model": "Model",
+          "calls": "Apeluri",
+          "share": "Cota",
+          "cost": "Cost",
+          "p95Latency": "latență p95",
+          "errors": "Erori"
+        }
+      }
+    },
+    "general": {
+      "errors": {
+        "saveFailed": "Eroare la salvarea router-ului",
+        "copyFailed": "Copierea a eșuat — vă rugăm să selectați și să copiați tokenul manual."
+      },
+      "kind": {
+        "router": {
+          "label": "Router",
+          "description": "Direcționează cererile pe candidații model."
+        },
+        "orchestrator": {
+          "label": "Orchestrator",
+          "description": "Direcționează cererile pe alți rutere în loc de modele."
+        },
+        "passthrough": {
+          "label": "Passthrough",
+          "description": "Direcționează cererile neschimbate."
+        }
+      },
+      "tokenReveal": {
+        "saveNow": "Salvează acest token acum.",
+        "saveNowHint": "Nu va fi arătat din nou — o dată ce pleci de pe acest ecran, nu poate fi recuperat.",
+        "copied": "Copiat!",
+        "copy": "Copiază",
+        "goToRouter": "Du-te la router"
+      },
+      "connect": {
+        "heading": "Cum să te conectezi",
+        "intro": "Indică orice SDK OpenAI sau Anthropic la Routerly și utilizează un <tokenLink>token router</tokenLink> ca cheie API. Înlocuiește <code>{{token}}</code> de mai jos cu al tău. Model <code>{{model}}</code> transmite alegerea la Routerly; orice id model din <modelsLink>Modele</modelsLink> funcționează și.",
+        "openaiSdk": "SDK OpenAI",
+        "openaiBaseUrlHint": "URL de bază <code>{{baseUrl}}</code>, același pe care orice câmp furnizor \"compatibil cu OpenAI\" îl ia.",
+        "anthropicSdk": "SDK Anthropic",
+        "anthropicBaseUrlHint": "URL de bază <code>{{baseUrl}}</code>, fără <code>/v1</code>: SDK-ul adaugă-l.",
+        "curl": "curl",
+        "curlHint": "Verifică cablajul fără a instala nimic, apoi caută apelul în <usageLink>Utilizare</usageLink>."
+      },
+      "form": {
+        "kind": "Tip",
+        "kindFixedHint": "Fix o dată ce routerul este creat.",
+        "routerName": "Nume router",
+        "routerNamePlaceholder": "Aplicația mea",
+        "advancedSettings": "Setări avansate",
+        "ttftTimeout": "Timeout TTFT (ms)",
+        "ttftTimeoutHint": "Dacă un model nu trimite octetul de răspuns din prima în această durată, Routerly o anulează și încearcă următorul candidat. Nu limitează durata răspunsului total. Setează la 0 pentru a aștepta cât ia furnizorul.",
+        "traceContent": "Trasare conținut",
+        "traceContentHint": "Trasatele înregistrează întotdeauna metadate (modele, scoruri, jetoane, cost, latență). Activează asta pentru a înregistra și instrucțiunile trimise și răspunsurile primite. Sunt stocate cu înregistrarea de utilizare și vizibile oricui poate citi rapoarte.",
+        "capturePromptsAndAnswers": "Captură instrucțiuni și răspunsuri",
+        "saveChanges": "Salvează modificări",
+        "createRouter": "Creează router",
+        "passthroughPath": "Cale",
+        "passthroughPathHint": "Devine parte din URL-ul pe care îl apelează clienții: <code>/passthrough/{{path}}/...</code>",
+        "createOrchestrator": "Creează Orchestrator",
+        "createPassthrough": "Creează Passthrough"
+      }
+    },
+    "orchestrator": {
+      "notOrchestrator": "Acest router nu este un orchestrator.",
+      "candidateRouters": "Rutere candidate",
+      "candidateRoutersHint": "Ruterii pe care acest orchestrator le transmite cererile. Greutatea influențează cât de des este ales fiecare candidat; doar numele, id, greutate și limite opționale per candidat sunt afișate aici.",
+      "routingPolicies": "Politici de rutare",
+      "routingPoliciesHint": "Un Orchestrator evaluează fiecare Router candidat în ansamblu, deci doar politicile de sănătate, limită de rată și corectitudine se aplică aici. Alte tipuri de politici aleg din modelele proprii ale unui router, pe care un Orchestrator nu le are.",
+      "router": "Router",
+      "selectRouter": "Selectează router",
+      "weight": "Greutate",
+      "removeCandidate": "Elimină candidat",
+      "usageLimits": "Limite de utilizare pentru acest candidat",
+      "limitCount": "{{count}} limită",
+      "limitCount_other": "{{count}} limite",
+      "usageLimitsHint": "Limite de utilizare opționale aplicate doar cererilor pe care acest orchestrator le transmite acestui candidat.",
+      "empty": "Niciun router candidat încă. Un orchestrator are nevoie de cel puțin unu înainte de a putea transmite cereri.",
+      "addCandidate": "Adaugă candidat",
+      "saved": "Salvat!",
+      "saveCandidates": "Salvează candidați",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca ruterii",
+        "saveFailed": "Eroare la salvarea candidaților orchestrator"
+      }
+    },
+    "routing": {
+      "errors": {
+        "assignProfileFailed": "Nu s-a putut atribui profilul de rutare",
+        "duplicateTargets": "Modelele țintă nu pot conține duplicate.",
+        "saveFailed": "Eroare la salvarea rutării router-ului",
+        "noProfileAvailable": "Niciun profil de rutare disponibil. Crea-l din pagina Profile."
+      },
+      "form": {
+        "routing": "Rutare",
+        "routingHint": "Utilizează un profil de rutare partajat, sau definește propriile politici ale acestui router. Modelele țintă rămân configurabile oricum.",
+        "profileMode": "Profil",
+        "customMode": "Personalizat",
+        "routingProfile": "Profil de rutare",
+        "builtinSuffix": "(built-in)",
+        "profileHint": "Politicile vin din profil și urmăresc modificările acestuia. Editează-le pe pagina Profile, sau schimbă la Personalizat pentru a începe dintr-o copie.",
+        "saved": "Salvat!",
+        "saveRoutingConfiguration": "Salvează configurația rutării"
+      },
+      "targetModels": {
+        "heading": "Modele țintă",
+        "hint": "Definește grupul de modele pe care Politicile îl vor filtra și selecta. Instrucțiuni opționale instruiesc rutere IA cu privire la când să selecteze fiecare model.",
+        "endpointModel": "Model punct terminal",
+        "selectModel": "Selectează model",
+        "promptDefinition": "Definiție instrucțiune",
+        "promptPlaceholder": "Descrie exact când și de ce ar trebui routerul să selecteze acest model...",
+        "intents": "Intenții",
+        "removeTarget": "Elimină model țintă",
+        "empty": "Niciun model țintă configurat.",
+        "addTarget": "Adaugă model țintă",
+        "passthroughLabel": "Transmitere directă (redirecționare brută)",
+        "passthroughNotRemovable": "Intrarea de transmitere directă nu poate fi eliminată"
+      }
+    },
+    "optimizer": {
+      "title": "Optimizatori",
+      "description": "Optimizatorii reduc jetonurile instrucțiunilor înainte ca cererile să ajungă la furnizor. Rulează în ordine de sus în jos. Utilizează un profil de optimizer partajat, sau definește propria conductă pentru acest router.",
+      "noPermission": "Nu ai permisiunea să vizualizezi optimizatori.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Personalizat"
+      },
+      "profileSelect": {
+        "ariaLabel": "Profil optimizer",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Pașii vin din profil și urmăresc modificările acestuia. Editează-le pe pagina Profile, sau schimbă la Personalizat pentru a începe dintr-o copie.",
+        "disabledSuffix": "(dezactivat)",
+        "thresholdSuffix": ", prag {{threshold}}"
+      },
+      "customHint": "Trage pentru a reordona, comută pentru a activa. Unii optimizatori folosesc un prag pentru a controla cum apasă agresiv.",
+      "saveButton": "Salvează optimizatori",
+      "saving": "Se salvează...",
+      "saved": "Salvat",
+      "preview": {
+        "title": "Previzualizare economii jetoane",
+        "description": "Rulează conducta actuală (nesalvată) pe o instrucțiune pentru a vedea ce elimină fiecare pas și cât costă. Alege din conversații exemplu, sau tastează propria instrucțiune.",
+        "promptLabel": "Instrucțiune",
+        "promptAriaLabel": "Instrucțiune de previzualizat",
+        "typePromptOption": "Tastează o instrucțiune mai jos",
+        "fixturesHint": "Conversații exemplu expediază cu Routerly. Routerly nu înregistrează instrucțiuni reale.",
+        "modelLabel": "Model",
+        "modelAriaLabel": "Model pentru a previzualiza împotriva",
+        "modelWithContext": "{{id}} (context {{k}}k)",
+        "noModelOption": "Niciun model",
+        "modelHint": "Pașii care trunchiază pentru a se potrivi unei ferestre de context trebuie să știe care fereastră. Fără un model sunt saltați, exact cum ar fi pe o cerere care numește un model pe care Routerly nu are fereastră pentru.",
+        "sampleAriaLabel": "Instrucțiune exemplu",
+        "samplePlaceholder": "Lipește un mesaj utilizator exemplu...",
+        "runButton": "Rulează previzualizare",
+        "running": "Se rulează...",
+        "before": "Înainte",
+        "after": "După",
+        "saved": "Salvat",
+        "columns": {
+          "optimizer": "Optimizer",
+          "before": "Înainte",
+          "after": "După",
+          "saved": "Salvat"
+        },
+        "rolledBackNote": "revenire: schimbarea a fost respingă ca nesigură",
+        "skippedNote": "saltată: {{reason}}",
+        "diffEmpty": {
+          "rolledBack": "Schimbarea pe care acest pas a produs-o a fost revenită, deci instrucțiunea a ajuns la pasul următor neatinsă.",
+          "skipped": "Acest pas nu a rulat: {{reason}}",
+          "unchanged": "Acest pas a lăsat instrucțiunea neschimbată."
+        }
+      },
+      "errors": {
+        "assignFailed": "Nu s-a putut atribui profilul optimizer",
+        "saveFailed": "Eroare la salvarea optimizatorilor",
+        "previewFailed": "Eroare la rularea previzualizării",
+        "noProfileAvailable": "Niciun profil optimizer disponibil. Crea-l din pagina Profile."
+      }
+    },
+    "token": {
+      "newButton": "Token nou",
+      "empty": "Niciun token API încă. Crea-l pentru a începe autentificarea cererilor.",
+      "budgetOverrides": "Invalidări buget",
+      "created": "Creat",
+      "lastUsed": "Utilizat ultima dată",
+      "expires": "Expiră",
+      "never": "Niciodată",
+      "editTitle": "Editează configurație",
+      "revokeTitle": "Revocare token",
+      "revokeConfirm": "Revocare token \"{{snippet}}...\"? Aplicațiile care-l utilizează vor înceta să funcționeze imediat.",
+      "labelInput": {
+        "placeholder": "Cauta sau crea o etichetă…",
+        "createPrefix": "Creează",
+        "noMatches": "Nicio etichetă corespunzătoare găsită."
+      },
+      "errors": {
+        "deleteFailed": "Eroare la ștergerea token-ului"
+      },
+      "create": {
+        "backToTokens": "Înapoi la tokenuri",
+        "title": "Token API nou",
+        "subtitle": "Tokenul complet este afișat doar o dată după creare — stochează-l în siguranță.",
+        "tokenCreated": "Token creat cu succes. Copiază-l acum — nu va mai fi afișat.",
+        "copied": "Copiat!",
+        "copy": "Copiază",
+        "done": "Gata",
+        "optional": "opțional",
+        "labels": "Etichete",
+        "labelsHint": "Etichetează acest token pentru a identifica unde este utilizat (ex. \"producție\", \"ci\").",
+        "scopes": "Domenii",
+        "scopesHint": "Domenii fără format atasat acestui token (ex. \"batch\", \"internal\"), stocate cu tokenul pentru propria ta ținere de cărți.",
+        "tags": "Etichete",
+        "tagsHint": "Metadate cheie-valoare transmise la înregistrări de utilizare (ex. env=production).",
+        "keyPlaceholder": "cheie",
+        "valuePlaceholder": "valoare",
+        "createButton": "Creează token",
+        "cancel": "Anulează",
+        "copyFailed": "Copierea a eșuat — vă rugăm să selectați și să copiați tokenul manual.",
+        "errors": {
+          "createFailed": "Eroare la crearea token-ului"
+        }
+      },
+      "edit": {
+        "title": "Editează token",
+        "subtitle": "Actualizează etichete și override-uri de limite per model pentru acest token.",
+        "token": "Token",
+        "labels": "Etichete",
+        "perModelLimits": "Limite per model",
+        "perModelLimitsHint": "Invalidează limitele globale și la nivel de router pentru cererile care utilizează acest token.",
+        "noTargetModels": "Adaugă mai întâi modele țintă în fila Rutare.",
+        "noOverride": "fără override",
+        "noLimits": "Nicio limită",
+        "noLimitsSet": "Nicio limită setată — moștenind din părinte. Adaugă o limită mai jos pentru a invalida.",
+        "metric": "Metrică",
+        "type": "Tip",
+        "periodLabel": "Perioadă",
+        "every": "Fiecare",
+        "maxCost": "Max ($)",
+        "maxCalls": "Max (n.)",
+        "maxTokens": "Max (jetoane)",
+        "allCombosSet": "Toate combinațiile de metrică/perioadă sunt deja setate",
+        "addLimit": "Adaugă limită",
+        "windowType": {
+          "period": "Perioadă",
+          "rolling": "Continuu"
+        },
+        "limitMetric": {
+          "cost": "Cost (USD)",
+          "calls": "Cereri",
+          "input_tokens": "Jetoane de intrare",
+          "output_tokens": "Jetoane de ieșire",
+          "total_tokens": "Jetoane totale"
+        },
+        "period": {
+          "hourly": "Orar",
+          "daily": "Zilnic",
+          "weekly": "Săptămânal",
+          "monthly": "Lunar",
+          "yearly": "Anual"
+        },
+        "rollingUnit": {
+          "second": "secunde",
+          "minute": "minute",
+          "hour": "ore",
+          "day": "zile",
+          "week": "săptămâni",
+          "month": "luni"
+        },
+        "fmt": {
+          "requests": "{{value}} cer",
+          "inputTokens": "{{value}} jet-int",
+          "outputTokens": "{{value}} jet-ies",
+          "totalTokens": "{{value}} jet",
+          "everyRolling": "{{metric}} / fiecare {{amount}} {{unit}}",
+          "perPeriod": "{{metric}} / {{period}}"
+        },
+        "errors": {
+          "saveFailed": "Eroare la salvarea token-ului"
+        }
+      }
+    },
+    "users": {
+      "title": "Membri router",
+      "description": "Gestionează utilizatorii care au acces la acest router.",
+      "addButton": "Adaugă membru",
+      "addNewTitle": "Adaugă nou membru",
+      "selectUserPlaceholder": "Selectează utilizator...",
+      "addConfirmButton": "Adaugă",
+      "cancelButton": "Anulează",
+      "empty": "Niciun membru găsit.",
+      "removeConfirm": "Ești sigur că vrei să elimini acest membru?",
+      "saveTitle": "Salvează modificări",
+      "changeRoleTitle": "Schimbă rol",
+      "removeTitle": "Elimină membru",
+      "roles": {
+        "viewer": "Vizualizator",
+        "editor": "Editor",
+        "admin": "Admin"
+      },
+      "columns": {
+        "user": "Utilizator",
+        "role": "Rol",
+        "actions": "Acțiuni"
+      },
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca utilizatori",
+        "addFailed": "Eroare la adăugarea membru",
+        "updateFailed": "Eroare la actualizarea membru",
+        "removeFailed": "Eroare la eliminarea membru"
+      }
+    },
+    "logs": {
+      "poll": {
+        "off": "Oprit"
+      },
+      "autoRefreshOff": "Reîmprospătare automată dezactivată",
+      "autoRefreshEvery": "Reîmprospătare automată fiecare {{interval}}",
+      "lastUpdated": "ultima actualizare: {{time}}",
+      "refresh": "Reîmprospătează",
+      "refreshNowTitle": "Reîmprospătează acum",
+      "refreshNowButton": "↻ Acum",
+      "filters": {
+        "period": "Perioadă",
+        "model": "Model",
+        "allModels": "Toate modelele",
+        "type": "Tip",
+        "all": "Toate",
+        "completion": "Completare",
+        "router": "Router",
+        "status": "Stare",
+        "success": "Succes",
+        "blocked": "Blocat",
+        "error": "Eroare",
+        "resetButton": "Resetează filtre"
+      },
+      "stats": {
+        "totalCost": "Cost total",
+        "totalCalls": "Apeluri totale",
+        "completionCalls": "Apeluri completare",
+        "routerCalls": "Apeluri router",
+        "errors": "Erori"
+      },
+      "requestLogs": "Jurnale cereri",
+      "emptyNoRequests": "Nicio cerere pentru acest router în perioada selectată.",
+      "emptyNoMatches": "Nicio înregistrare nu se potrivește cu filtrele active.",
+      "columns": {
+        "time": "Timp",
+        "model": "Model",
+        "type": "Tip",
+        "in": "Intrare",
+        "out": "Ieșire",
+        "cost": "Cost",
+        "latency": "Latență",
+        "ttft": "TTFT",
+        "tokPerSec": "Jet/s",
+        "status": "Stare"
+      },
+      "typeRouter": "router",
+      "typeCompletion": "completare",
+      "pagination": {
+        "previous": "← Anterior",
+        "next": "Următor →",
+        "pageOf": "Pagina {{page}} din {{totalPages}}",
+        "totalRecords": "({{count}} înregistrări totale)"
+      }
+    },
+    "security": {
+      "title": "Securitate",
+      "description": "Utilizează un profil de securitate partajat, sau definește propriile protecții și politici PII pentru acest router.",
+      "mode": {
+        "profile": "Profil",
+        "custom": "Personalizat"
+      },
+      "profileSelect": {
+        "ariaLabel": "Profil securitate",
+        "builtinLabel": "{{label}} (built-in)",
+        "hint": "Protecții și politici PII vin din profil și urmăresc modificările acestuia. Editează-le pe pagina Profile, sau schimbă la Personalizat pentru a începe dintr-o copie.",
+        "blockingSuffix": ", blocare",
+        "disabledSuffix": ", dezactivat",
+        "piiRedaction": "Redactare PII ({{target}})"
+      },
+      "saveButton": "Salvează setări securitate",
+      "saved": "Salvat!",
+      "errors": {
+        "assignFailed": "Nu s-a putut atribui profilul de securitate",
+        "saveFailed": "Eroare la salvarea setărilor de securitate",
+        "noProfileAvailable": "Niciun profil de securitate disponibil. Crea-l din pagina Profile."
+      }
+    },
+    "test": {
+      "defaultSystemMessage": "Ești un asistent IA util.",
+      "errors": {
+        "unknown": "Eroare necunoscută",
+        "onlyImages": "Actualmente sunt acceptate doar atașamente imagine pentru modelele vizuale."
+      },
+      "title": "Test chat",
+      "subtitle": "Trimite interogări de test prin poarta de rutare.",
+      "routerToken": "Token router:",
+      "hideToken": "Ascunde token",
+      "showToken": "Arată token",
+      "recognizedToken": "Token recunoscut",
+      "unrecognizedToken": "Token nerecunoscut",
+      "noMessages": "Nicio mesaj încă.",
+      "enterTokenHint": "Vă rugăm să introduceți un token router mai sus pentru a trimite un mesaj.",
+      "typeMessageHint": "Tastează un mesaj mai jos pentru a începe testarea.",
+      "reasoning": "Raționament",
+      "attachedAlt": "Atașat",
+      "attachmentAlt": "Atașament",
+      "attachImage": "Atașează imagine",
+      "typeMessagePlaceholder": "Tastează un mesaj...",
+      "stopGeneration": "Oprește generare",
+      "sendEnter": "Trimite (Enter)",
+      "debugLog": "Jurnal depanare",
+      "clear": "Șterge",
+      "noRequestSent": "Nicio cerere trimisă încă.",
+      "turnTraceLog": "Jurnal trasă rând #{{turn}} · {{count}} eveniment",
+      "turnTraceLog_other": "Jurnal trasă rând #{{turn}} · {{count}} evenimente"
+    }
+  },
+  "connections": {
+    "list": {
+      "title": "Conexiuni",
+      "subtitle": "Conturi furnizor utilizate pentru a executa instanțe model",
+      "noPermission": "Nu ai permisiunea să vizualizezi conexiuni.",
+      "count": "{{count}} conexiune",
+      "count_other": "{{count}} conexiuni",
+      "addConnection": "Adaugă conexiune",
+      "empty": "Nicio conexiune încă. Adaugă una pentru a începe.",
+      "deleteConfirm": "Elimini conexiunea \"{{label}}\"? Instanțele legate de ea vor înceta să funcționeze.",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca conexiuni",
+        "deleteFailed": "Nu s-a putut șterge conexiune"
+      },
+      "columns": {
+        "label": "Etichetă",
+        "provider": "Furnizor",
+        "endpoint": "Punct terminal",
+        "status": "Stare"
+      },
+      "status": {
+        "enabled": "Activat",
+        "disabled": "Dezactivat"
+      },
+      "actions": {
+        "models": "Modele",
+        "edit": "Editează",
+        "remove": "Elimină"
+      }
+    },
+    "form": {
+      "backToConnections": "Înapoi la conexiuni",
+      "editTitle": "Editează conexiune",
+      "addTitle": "Adaugă conexiune",
+      "enabled": "Activat",
+      "editSubtitle": "Actualizează setările contului furnizor",
+      "addSubtitle": "Înregistrează un cont furnizor nou",
+      "sectionTitle": "Detalii conexiune",
+      "sectionDesc": "Cont furnizor, credențiale și punct terminal utilizat pentru a efectua cereri.",
+      "provider": "Furnizor",
+      "groups": {
+        "directApi": "API direct",
+        "cloudPlatform": "Platformă cloud",
+        "subscription": "Abonament",
+        "browserSession": "Sesiune browser",
+        "selfHosted": "Auto-găzduire"
+      },
+      "upstreamProvider": {
+        "label": "Furnizor",
+        "hintLabel": "(nume furnizor amonte)",
+        "placeholder": "ex. deepseek, mistral, groq",
+        "description": "Numește serviciul acestui punct terminal aparține. Modelele pe această conexiune îl folosesc ca prefix de ID (ex. <code>deepseek/deepseek-r1</code>)."
+      },
+      "name": {
+        "label": "Nume",
+        "hint": "Identifică această conexiune oriunde este referențiată, deci trebuie să fie unică. Lăsați gol pentru a utiliza <code>{{suggested}}</code>."
+      },
+      "credentialsBlankHint": "Lăsați câmpurile de credențiale goale pentru a păstra valori existente.",
+      "save": "Salvează",
+      "create": "Creează",
+      "cancel": "Anulează",
+      "oauth": {
+        "unknown": "necunoscut",
+        "accountExpires": "Cont: {{account}} — expiră {{expires}}",
+        "unknownError": "Eroare necunoscută"
+      },
+      "errors": {
+        "notFound": "Conexiune nu găsită",
+        "loadFailed": "Nu s-a putut încărca conexiune",
+        "updateFailed": "Nu s-a putut actualiza conexiune",
+        "createFailed": "Nu s-a putut crea conexiune"
+      }
+    }
+  },
+  "models": {
+    "discovery": {
+      "backToModels": "Înapoi la modele",
+      "title": "Descoperire model",
+      "subtitle": "Explorează modele disponibile și adaugă-le la configurația rutării",
+      "count": "{{count}} modele",
+      "filteredCount": "{{filtered}} din {{count}}",
+      "free": "gratuit",
+      "add": "Adaugă",
+      "addAgain": "Adaugă din nou",
+      "loadFailed": "Nu s-a putut încărca catalog: {{error}}",
+      "filters": {
+        "search": "Căutare",
+        "searchPlaceholder": "ID model sau nume…",
+        "provider": "Furnizor",
+        "allProviders": "Toți furnizorii",
+        "context": "Context",
+        "ctxOptions": {
+          "all": "Toate",
+          "small": "< 32k",
+          "medium": "32k–200k",
+          "large": "200k–1M",
+          "xl": "> 1M"
+        },
+        "pricePer1M": "Preț / 1M",
+        "priceOptions": {
+          "all": "Toate",
+          "free": "Gratuit",
+          "low": "< $1",
+          "mid": "$1–$5",
+          "high": "> $5"
+        },
+        "show": "Arată",
+        "configured": "Configurat",
+        "embedding": "Încorporare",
+        "resetFilters": "Resetează filtre"
+      },
+      "empty": {
+        "noMatches": "Niciun model se potrivește cu filtrele tale."
+      },
+      "columns": {
+        "model": "Model",
+        "provider": "Furnizor",
+        "context": "Context",
+        "input": "Intrare / 1M",
+        "output": "Ieșire / 1M"
+      },
+      "badges": {
+        "configured": "Configurat",
+        "embedding": "încorporare",
+        "runsLocally": "Rulează local"
+      },
+      "pagination": {
+        "prev": "Anterior",
+        "next": "Următor",
+        "range": "{{start}}–{{end}} din {{count}}"
+      }
+    },
+    "form": {
+      "backToModels": "Înapoi la modele",
+      "title": {
+        "add": "Adaugă model",
+        "edit": "Editează model",
+        "clone": "Clonează model"
+      },
+      "subtitle": {
+        "add": "Înregistrează un model furnizor LLM nou",
+        "edit": "Modificare configurație pentru {{id}}",
+        "clone": "Clonare din {{id}} — atribuie un ID nou pentru a salva"
+      },
+      "errors": {
+        "modelNotFound": "Model nu găsit",
+        "sourceModelNotFound": "Model sursă nu găsit",
+        "loadFailed": "Eroare la încărcarea modelelor",
+        "idRequired": "ID model necesar",
+        "duplicateId": "Model \"{{id}}\" există deja — setează un ID personalizat diferit",
+        "selectConnection": "Selectează o conexiune",
+        "saveFailed": "Eroare"
+      },
+      "badge": {
+        "yes": "da",
+        "no": "nu",
+        "override": "Override",
+        "auto": "Auto",
+        "default": "Implicit: {{value}}",
+        "reset": "Resetează"
+      },
+      "oauth": {
+        "unknownExpiry": "necunoscut",
+        "accountOk": "Cont: {{account}} — expiră {{expires}}",
+        "unknownError": "Eroare necunoscută"
+      },
+      "identification": {
+        "title": "Identificare model",
+        "description": "Identificator unic și setări furnizor pentru această configurație model.",
+        "routerlyId": "ID Routerly",
+        "routerlyIdHintPre": "(opțional — implicit:",
+        "routerlyIdHintPost": ")",
+        "routerlyIdDesc": "Identificatorul folosit atunci când se face referință la acest model în apeluri Routerly API.",
+        "provider": "Furnizor",
+        "upstreamProviderHint": "(nume furnizor amonte)",
+        "upstreamProviderPlaceholder": "ex. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Utilizat ca prefix pentru ID-ul Routerly (ex.",
+        "upstreamProviderDescPost": ").",
+        "model": "Model",
+        "upstreamModelHint": "(ID model amonte)",
+        "upstreamModelPlaceholder": "ex. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "Identificatorul modelului trimis la punctul terminal API amonte.",
+        "modelPreset": "Preset model",
+        "customModelOption": "— nume model personalizat —",
+        "customModelPlaceholder": "ex. modelul-meu-fine-tuned"
+      },
+      "connection": {
+        "title": "Detalii conexiune",
+        "description": "Punct terminal API și credențiale de autentificare necesare pentru a efectua cereri.",
+        "preconfigured": "Preconfigurat",
+        "custom": "Personalizat",
+        "connection": "Conexiune",
+        "selectPlaceholder": "— selectează o conexiune —",
+        "noneAvailable": "Nicio conexiune preconfigurata pentru acest furnizor. Schimbă la Personalizat, sau creează una pe pagina Conexiuni.",
+        "editHint": "Editarea acestei conexiuni mai târziu actualizează fiecare model legat de ea."
+      },
+      "capabilities": {
+        "title": "Capacități",
+        "description": "Specifică tipul și capacitățile acestui model.",
+        "embeddingModel": "Model de încorporare",
+        "embeddingModelHint": "Acest model generează încorporări vectoriale (nu completări chat)"
+      },
+      "pricing": {
+        "title": "Prețuri & context",
+        "description": "Parametri cost și limite de procesare folosite pentru facturare și rutare.",
+        "inputPerMillion": "Intrare $/1M",
+        "outputPerMillion": "Ieșire $/1M",
+        "cachePerMillion": "Citire cache $/1M",
+        "cacheWritePerMillion": "Scriere cache $/1M",
+        "optional": "(opt.)",
+        "contextWindow": "Fereastră context",
+        "contextWindowHint": "(jetoane, opțional)"
+      },
+      "tiers": {
+        "title": "Avansat — niveluri de prețuri",
+        "description": "Invalidează prețurile atunci când o metrică depășește un prag. De exemplu: \"Peste 200 000 de jetoane de context, prețurile se schimbă.\"",
+        "removeTier": "Elimină nivel",
+        "above": "Peste",
+        "metric": "Metrică",
+        "metricContextTokens": "Jetoane de context",
+        "overridePricing": "Invalidare prețuri",
+        "addTier": "Adaugă nivel prețuri"
+      },
+      "limits": {
+        "title": "Limite",
+        "description": "Limite de utilizare pentru acest model. Se pot combina mai multe reguli.",
+        "metric": "Metrică",
+        "type": "Tip",
+        "addLimit": "Adaugă limită"
+      },
+      "providerLabels": {
+        "anthropicOauth": "Anthropic (abonament Pro/Max)",
+        "openaiOauth": "OpenAI (abonament ChatGPT Plus/Pro)"
+      },
+      "saveChanges": "Salvează modificări",
+      "createClone": "Creează clon",
+      "createModel": "Creează model"
+    },
+    "page": {
+      "title": "Modele",
+      "subtitle": "Furnizori LLM înregistrați cu Routerly",
+      "tabs": {
+        "models": "Modele",
+        "health": "Sănătate"
+      },
+      "toolbar": {
+        "count": "{{count}} model",
+        "count_other": "{{count}} modele",
+        "filteredCount": "{{filtered}} din {{count}} model",
+        "filteredCount_other": "{{filtered}} din {{count}} modele"
+      },
+      "filters": {
+        "allProviders": "Toți furnizorii",
+        "allConnections": "Toate conexiunile",
+        "searchPlaceholder": "Filtrează modele…"
+      },
+      "discover": "Descoperă",
+      "addModel": "Adaugă model",
+      "deleteConfirm": "Elimini modelul \"{{id}}\"?",
+      "empty": {
+        "noModels": "Niciun model încă. Adaugă unu pentru a începe.",
+        "noMatches": "Niciun model se potrivește cu filtrele active."
+      },
+      "columns": {
+        "id": "ID",
+        "provider": "Furnizor",
+        "endpoint": "Punct terminal",
+        "input": "Intrare $/1M",
+        "output": "Ieșire $/1M",
+        "cache": "Cache $/1M",
+        "context": "Dimensiune context"
+      },
+      "actions": {
+        "test": "Test",
+        "clone": "Clonează",
+        "edit": "Editează",
+        "remove": "Elimină"
+      },
+      "pagination": {
+        "previous": "← Anterior",
+        "next": "Următor →",
+        "pageOf": "Pagina {{page}} din {{totalPages}}",
+        "total": "({{count}} model)",
+        "total_other": "({{count}} modele)"
+      },
+      "health": {
+        "emptyNoModels": "Niciun model configurat.",
+        "emptyNoMatches": "Niciun model se potrivește cu filtrul.",
+        "resetAll": "Resetează totul",
+        "resetAllTitle": "Resetează fiecare dispoztiv de întrerupere, timp de espera și blocare",
+        "resetTitle": "Resetează dispoztivul de întrerupere",
+        "confirmResetModel": "Resetezi dispoztivul de întrerupere pentru modelul \"{{id}}\"?",
+        "confirmResetAll": "Resetezi starea rezilienței? Aceasta șterge fiecare dispoztiv de întrerupere, timp de espera și blocare.",
+        "errors": {
+          "resetModelFailed": "Nu s-a putut reseteza dispoztivul de întrerupere",
+          "resetAllFailed": "Nu s-a putut reseteza starea rezilienței"
+        },
+        "columns": {
+          "model": "Model",
+          "provider": "Furnizor",
+          "status": "Stare",
+          "circuit": "Circuit",
+          "errorRate": "Rată erori (5m)",
+          "p95Latency": "Latență P95 (1h)",
+          "requests": "Cereri (1h)",
+          "lastSuccess": "Ultimul succes",
+          "cooldownLockout": "Timp de espera / blocare"
+        },
+        "status": {
+          "healthy": "Sănătos",
+          "degraded": "Degradat",
+          "unavailable": "Indisponibil",
+          "cooldown": "Timp de espera",
+          "nodata": "Nicio date"
+        },
+        "circuit": {
+          "ok": "OK",
+          "recovering": "Se recuperează",
+          "tripped": "Declanșat"
+        },
+        "time": {
+          "never": "niciodată",
+          "now": "acum",
+          "secondsAgo": "{{count}}s în urmă",
+          "minutesAgo": "{{count}}m în urmă",
+          "hoursAgo": "{{count}}h în urmă",
+          "daysAgo": "{{count}}z în urmă",
+          "minSec": "{{min}}m {{sec}}s",
+          "sec": "{{sec}}s",
+          "cooldown": "timp de espera {{time}}",
+          "lockout": "blocare {{time}}"
+        }
+      }
+    }
+  },
+  "experiments": {
+    "list": {
+      "title": "Experimente",
+      "subtitle": "Test A/B ruterii unul împotriva altuia",
+      "noPermission": "Nu ai permisiunea să vizualizezi experimente.",
+      "count": "{{count}} experiment",
+      "count_other": "{{count}} experimente",
+      "newExperiment": "Experiment nou",
+      "empty": "Nicio experiment încă. Creează unu pentru a compara ruterii cap la cap.",
+      "deleteConfirm": "Ștergi experimentul \"{{name}}\"? Aceasta nu poate fi anulată.",
+      "noToken": "Niciun token",
+      "noTokenTitle": "Fără token niciun client nu poate ajunge la acest experiment",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca experimente",
+        "deleteFailed": "Nu s-a putut șterge experiment"
+      },
+      "columns": {
+        "name": "Nume",
+        "variants": "Variante",
+        "rotation": "Rotație",
+        "created": "Creat"
+      },
+      "actions": {
+        "edit": "Editează experiment",
+        "remove": "Șterge"
+      }
+    },
+    "layout": {
+      "backToExperiments": "Înapoi la experimente",
+      "newExperiment": "Experiment nou",
+      "loading": "Se încarcă...",
+      "experimentId": "ID experiment:",
+      "disabledTabTitle": "Salvează mai întâi experimentul pentru a debloca această filă",
+      "errors": {
+        "notFound": "Experiment nu găsit"
+      },
+      "tabs": {
+        "config": "Configurație",
+        "metrics": "Metrici",
+        "token": "Token"
+      }
+    },
+    "config": {
+      "saved": "Salvat.",
+      "created": "Experiment creat. Indică clientul la acest token în loc de un token router. Nu va fi afișat din nou.",
+      "copy": "Copiază",
+      "copied": "Copiat!",
+      "done": "Gata",
+      "saving": "Se salvează...",
+      "create": "Creează experiment",
+      "save": "Salvează modificări",
+      "cancel": "Anulează",
+      "trafficSplit": "Împărțire trafic",
+      "errors": {
+        "loadRoutersFailed": "Nu s-a putut încărca ruterii",
+        "saveFailed": "Nu s-a putut salva experimentul",
+        "copyFailed": "Copierea a eșuat: selectează și copiază tokenul manual."
+      },
+      "fields": {
+        "name": "Nume",
+        "namePlaceholder": "Rutare ieftină vs premium",
+        "description": "Descriere",
+        "optional": "(opțional)",
+        "descriptionPlaceholder": "Ce încearcă să rezolve acest test",
+        "minSamples": "Apeluri minime per variantă",
+        "minSamplesHint": "Sub aceasta, fila Metrici marchează comparația ca nu încă concludent.",
+        "rotation": "Rotație",
+        "stickyOn": "Lipicios pe",
+        "stickyKey": "Cheie lipicioasă"
+      },
+      "variants": {
+        "title": "Variante",
+        "desc": "Fiecare variantă este un router existent, luat integral: modelele, rutarea și protecțiile sale se aplică toate. Un test are nevoie de cel puțin doi.",
+        "routerAriaLabel": "Router variantă {{index}}",
+        "routerPlaceholder": "Selectează router",
+        "labelAriaLabel": "Etichetă variantă {{index}}",
+        "labelPlaceholder": "Etichetă (opțional)",
+        "weightAriaLabel": "Greutate variantă {{index}}",
+        "weightPlaceholder": "Greutate",
+        "removeTitle": "Elimină variantă {{index}}",
+        "add": "Adaugă variantă"
+      },
+      "judge": {
+        "title": "Judecător",
+        "desc": "Opțional: un model citește fiecare răspuns eșantionat și-l notează 0-10 împotriva criteriilor tale. Fiecare apel judecat este un apel model suplimentar, facturat ca oricine altul.",
+        "enable": "Notează răspunsuri cu un model judecător",
+        "model": "Model judecător",
+        "modelPlaceholder": "Selectează model",
+        "criteria": "Criterii",
+        "criteriaPlaceholder": "Una pe linie, ex.\nRăspunde la întrebarea pusă\nRămâi factual\nOpisează formatul solicitat",
+        "sampleRate": "Cota apelurilor judecate (%)"
+      }
+    },
+    "metrics": {
+      "loading": "Se încarcă...",
+      "callsMeasured": "{{count}} apel măsurat",
+      "callsMeasured_other": "{{count}} apeluri măsurate",
+      "empty": "Nicio apel în această fereastră încă. Indică un client la tokenul experimentului pentru a începe comparația.",
+      "notConclusive": "Nu încă concludent: fiecare variantă are nevoie de cel puțin {{minSamples}} apeluri în această fereastră. ",
+      "explanation": "Figura mai bună a fiecărei perechi este evidențiată: mai ieftin pe apel, mai rapid, scor judecător mai înalt. Procentul sub o valoare este distanța din brațul cel mai bun. Scorul judecătorului este o medie continuă pe toată viața experimentului, deci este figura pe care fereastra nu o restrânge.",
+      "lowSample": "Eșantion scăzut",
+      "lowSampleTitle": "Sub {{minSamples}} apeluri în această fereastră",
+      "judgedCallsTitle": "{{count}} răspuns notat de judecător de când experimentul a început",
+      "judgedCallsTitle_other": "{{count}} răspunsuri notate de judecător de când experimentul a început",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca metrici"
+      },
+      "columns": {
+        "variant": "Variantă",
+        "calls": "Apeluri",
+        "share": "Cota",
+        "errors": "Erori",
+        "tokens": "Jetoane intrare / ieșire",
+        "cost": "Cost",
+        "costPerCall": "Cost / apel",
+        "avgLatency": "Latență medie",
+        "p95": "p95",
+        "ttft": "TTFT",
+        "judgeScore": "Scor judecător"
+      }
+    },
+    "token": {
+      "desc": "Un client apelează experimentul exact cum apelează un router: același URL de bază, acest token în loc de un token router. Fiecare cerere ateriza pe o variantă și este facturat variantei router-ului.",
+      "baseUrlLabel": "URL de bază pentru SDK-ul OpenAI sau Anthropic, cu un token experiment ca cheie API:",
+      "created": "Token creat. Copiază-l acum, nu va mai fi afișat.",
+      "copy": "Copiază",
+      "copied": "Copiat!",
+      "newToken": "Token nou",
+      "empty": "Niciun token pe acest experiment. Creează unu pentru ca clienții să-l poată apela.",
+      "revokeConfirm": "Revocare token \"{{snippet}}...\"? Clienții care-l utilizează încetează să funcționeze imediat.",
+      "revokeTitle": "Revocare token",
+      "errors": {
+        "createFailed": "Nu s-a putut crea tokenul",
+        "revokeFailed": "Nu s-a putut revoca tokenul",
+        "copyFailed": "Copierea a eșuat: selectează și copiază tokenul manual."
+      },
+      "columns": {
+        "created": "Creat",
+        "lastUsed": "Utilizat ultima dată"
+      }
+    }
+  },
+  "overview": {
+    "title": "Privire de ansamblu",
+    "subtitle": "Rezumat utilizare și defalcare cost",
+    "noPermission": "Nicio permisiune pentru a vedea date de utilizare.",
+    "costByModel": "Cost după model",
+    "noCostRecorded": "Niciun cost înregistrat această perioadă.",
+    "callsByModel": "Apeluri după model",
+    "columns": {
+      "model": "Model",
+      "calls": "Apeluri",
+      "errors": "Erori",
+      "cost": "Cost"
+    },
+    "stats": {
+      "totalCalls": "Apeluri totale",
+      "callsBreakdown": "{{routing}} rutare · {{completion}} completare",
+      "successRate": "Rată succes",
+      "ofAllRequests": "din toate cererile",
+      "errors": "Erori",
+      "failedRequests": "cereri eșuate",
+      "models": "Modele",
+      "registered": "înregistrate",
+      "routers": "Rutere",
+      "active": "active"
+    },
+    "connectCard": {
+      "title": "Conectează un client",
+      "desc": "Indică Claude Code, Codex, Cursor și {{count}} mai mulți la această pasarelă."
+    }
+  },
+  "login": {
+    "emailLabel": "E-mail",
+    "passwordLabel": "Parolă",
+    "signIn": "Conectare",
+    "errors": {
+      "loginFailed": "Conectarea a eșuat",
+      "totpFailed": "Verificarea 2FA a eșuat"
+    },
+    "totp": {
+      "title": "Autentificare cu doi factori",
+      "backupPrompt": "Introduceți un cod de backup.",
+      "appPrompt": "Introduceți codul de 6 cifre din aplicația autenticatoare.",
+      "backupCodeLabel": "Cod de backup",
+      "authenticatorCodeLabel": "Cod autenticator",
+      "verify": "Verifică",
+      "useAuthenticatorInstead": "Utilizează aplicația autenticatoare în schimb",
+      "useBackupInstead": "Utilizează un cod de backup în schimb"
+    }
+  },
+  "setup": {
+    "welcome": "Bine ai venit! Să te instalez.",
+    "welcomeSubtitle": "Creează primul cont admin pentru a începe gestionarea Routerly.",
+    "betaBadge": "🚧 Beta",
+    "betaNotice": "Routerly evoluează activ. Bugs pot apărea.",
+    "betaFeedback": "Feedback-ul tău ajută să formeze ceea ce devine —",
+    "betaLink": "raportează probleme sau împărtășește idei",
+    "emailLabel": "E-mail admin",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Parolă",
+    "passwordPlaceholder": "Minim 8 caractere",
+    "confirmLabel": "Confirmă parolă",
+    "confirmPlaceholder": "Re-introduceți parola",
+    "submit": "Creează cont admin",
+    "errors": {
+      "mismatch": "Parolele nu se potrivesc",
+      "tooShort": "Parola trebuie să aibă cel puțin 8 caractere",
+      "setupFailed": "Instalarea a eșuat"
+    }
+  },
+  "audit": {
+    "empty": "Nicio intrare în audit găsită.",
+    "errors": {
+      "loadFailed": "Nu s-a putut încărca jurnalul audit"
+    },
+    "filters": {
+      "period": "Perioadă",
+      "user": "Utilizator",
+      "userPlaceholder": "E-mail sau ID utilizator",
+      "action": "Acțiune",
+      "actionPlaceholder": "ex. model:create",
+      "result": "Rezultat",
+      "results": {
+        "all": "Toate",
+        "success": "Succes",
+        "forbidden": "Interzis",
+        "error": "Eroare"
+      },
+      "refresh": "Reîmprospătează"
+    },
+    "columns": {
+      "timestamp": "Marcă de timp",
+      "user": "Utilizator",
+      "action": "Acțiune",
+      "endpoint": "Punct terminal",
+      "result": "Rezultat",
+      "details": "Detalii"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Următor",
+      "page": "Pagina {{page}} din {{totalPages}}",
+      "total": "({{count}} total)"
+    }
+  },
+  "usage": {
+    "page": {
+      "title": "Utilizare",
+      "live": "LIVE",
+      "subtitle": "Jurnale apeluri detaliate și defalcare per model",
+      "updatedAt": "· actualizat la {{time}}",
+      "poll": {
+        "off": "Oprit",
+        "5s": "5s",
+        "15s": "15s",
+        "30s": "30s",
+        "1m": "1m",
+        "5m": "5m"
+      },
+      "liveButton": "● Live",
+      "liveButtonTitle": {
+        "disable": "Dezactivează modul live",
+        "enable": "Activează modul live (reîmprospătează fiecare 2s)"
+      },
+      "refreshNow": "↻ Acum",
+      "refreshNowTitle": "Reîmprospătează acum",
+      "filters": {
+        "period": "Perioadă",
+        "router": "Router",
+        "model": "Model",
+        "token": "Token",
+        "caller": "Apelant",
+        "type": "Tip",
+        "status": "Stare",
+        "allRouters": "Toți ruterii",
+        "allModels": "Toate modelele",
+        "allTokens": "Toate tokenurile",
+        "resetFilters": "Resetează filtre",
+        "all": "Toate",
+        "success": "Succes",
+        "blocked": "Blocat",
+        "error": "Eroare"
+      },
+      "caller": {
+        "all": "Toate",
+        "completion": "Completare",
+        "routing": "Router",
+        "guardrail": "Protecție",
+        "judge": "Judecător"
+      },
+      "callerBadge": {
+        "completion": "completare",
+        "routing": "router",
+        "guardrail": "protecție",
+        "judge": "judecător"
+      },
+      "errors": {
+        "loadFailedPrefix": "Nu s-a putut încărca date de utilizare:",
+        "retry": "Reîncearcă"
+      },
+      "stats": {
+        "totalCalls": "Apeluri totale",
+        "completionCalls": "Apeluri completare",
+        "routerCalls": "Apeluri router",
+        "guardrailCalls": "Apeluri protecție",
+        "blockedCalls": "Apeluri blocate",
+        "errors": "Erori"
+      },
+      "table": {
+        "rank": "Rang",
+        "model": "Model",
+        "provider": "Furnizor",
+        "calls": "Apeluri",
+        "errors": "Erori",
+        "successRate": "Rată succes",
+        "avgLatency": "Latență medie",
+        "p95Latency": "Latență P95",
+        "inputTokens": "Jetoane de intrare",
+        "outputTokens": "Jetoane de ieșire",
+        "costPer1k": "Cost / 1K",
+        "cost": "Cost (USD)",
+        "bestCostPerformance": "Cea mai bună performanță cost"
+      },
+      "showMoreModels": "Arată {{count}} model mai mult",
+      "showMoreModels_other": "Arată {{count}} modele mai mult",
+      "showFewerModels": "Arată mai puține modele",
+      "recentCalls": {
+        "title": "Apeluri recente",
+        "empty": "Nicio înregistrare de utilizare pentru această perioadă.",
+        "columns": {
+          "time": "Timp",
+          "router": "Router",
+          "model": "Model",
+          "type": "Tip",
+          "caller": "Apelant",
+          "in": "Intrare",
+          "out": "Ieșire",
+          "cost": "Cost",
+          "latency": "Latență",
+          "ttft": "TTFT",
+          "tokensPerSec": "Jet/s",
+          "status": "Stare"
+        }
+      },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Următor",
+        "pageOf": "Pagina {{page}} din {{totalPages}}",
+        "totalRecords": "({{count}} înregistrări totale)"
+      }
+    },
+    "record": {
+      "back": "Înapoi",
+      "title": "Detaliu apel",
+      "notFoundTitle": "Înregistrare nu găsită",
+      "notFoundBody": "Înregistrarea de utilizare {{id}} nu a putut fi încărcată.",
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca înregistrare"
+      },
+      "sections": {
+        "identity": "Identitate",
+        "tokensAndCost": "Jetoane și cost",
+        "performanceAndOutcome": "Performanță și rezultat",
+        "traceLog": "Jurnal trasă"
+      },
+      "fields": {
+        "recordId": "ID înregistrare",
+        "router": "Router",
+        "token": "Token",
+        "model": "Model",
+        "callType": "Tip apel",
+        "requestType": "Tip cerere",
+        "inputTokens": "Jetoane de intrare",
+        "outputTokens": "Jetoane de ieșire",
+        "totalTokens": "Jetoane totale",
+        "costUsd": "Cost (USD)",
+        "costUnknown": "Necunoscut",
+        "latency": "Latență",
+        "ttft": "TTFT",
+        "tokensPerSec": "Jet/s",
+        "outcome": "Rezultat",
+        "timestamp": "Marcă de timp",
+        "guardrailTriggered": "Protecție declanșată",
+        "blockedBy": "Blocat de",
+        "piiRedacted": "PII redactat"
+      },
+      "errorMessage": "Mesaj eroare",
+      "eventCount": "{{count}} eveniment",
+      "eventCount_other": "{{count}} evenimente",
+      "noTrace": "Nicio trasă disponibilă. Date de trasă sunt capturate doar pentru apeluri noi."
+    }
+  },
+  "playground": {
+    "title": "Teren de joacă",
+    "subtitle": "Testează modele, compară răspunsuri și salvează preseturi instrucțiuni.",
+    "mode": {
+      "single": "Unic",
+      "compare": "Compară"
+    },
+    "token": {
+      "label": "Token:",
+      "labelA": "Token A",
+      "labelB": "Token B",
+      "placeholder": "sk-rt-...",
+      "placeholderB": "același ca A",
+      "unknownToken": "Token necunoscut"
+    },
+    "presets": {
+      "button": "Preseturi",
+      "panelTitle": "Preseturi",
+      "saveCurrent": "Salvează actual",
+      "namePlaceholder": "Nume preset...",
+      "save": "Salvează",
+      "empty": "Niciun preset încă.",
+      "delete": "Șterge preset"
+    },
+    "streamingDisabled": {
+      "banner": "Streaming nu este disponibil",
+      "bannerBody": "acest router are o protecție de blocare a răspunsului activă. Routerly trebuie să inspecteze răspunsul complet înainte de livrare, deci răspunsurile sosesc toate la o dată.",
+      "tooltip": "Streaming nu este disponibil: o protecție de blocare a răspunsului necesită ca răspunsul complet să fie inspectat înainte de livrare.",
+      "ariaLabel": "Streaming indisponibil"
+    },
+    "systemPrompt": "Instrucțiune de sistem",
+    "model": "Model",
+    "modelPlaceholder": "Auto (implicit router)",
+    "params": {
+      "temp": "Temp",
+      "maxTokens": "Jetoane maxime",
+      "topP": "Top-p"
+    },
+    "stream": "Streaming",
+    "clear": "Șterge",
+    "empty": {
+      "noMessages": "Nicio mesaj încă.",
+      "enterToken": "Introduceți un token router mai sus pentru a începe."
+    },
+    "reasoning": "Raționament",
+    "blockedDefault": "Acest mesaj a fost blocat de o protecție.",
+    "truncated": "Trunchiat — răspuns tăiat de jetoanele maxime",
+    "bufferedNote": "Ținut pentru revizuire de securitate",
+    "errors": {
+      "onlyImages": "Sunt acceptate doar atașamente imagine."
+    },
+    "rawToggle": {
+      "rendered": "randare",
+      "raw": "brut"
+    },
+    "inputPlaceholder": "Tastează un mesaj...",
+    "attachImage": "Atașează imagine",
+    "attachedImageAlt": "Atașat",
+    "attachmentAlt": "Atașament",
+    "debug": {
+      "title": "Depanare",
+      "clear": "Șterge",
+      "hide": "Ascunde depanare",
+      "show": "Arată depanare",
+      "empty": "Niciun date de depanare încă.",
+      "emptyHint": "Trimite un mesaj pentru a vedea detalii rutare.",
+      "turnTraceLog": "Jurnal trasă rând #{{turn}}"
+    },
+    "compare": {
+      "modelLabel": "Model {{label}}:",
+      "modelSelectPlaceholder": "Selectează model...",
+      "noMessages": "Nicio mesaj încă.",
+      "debugTurns": "Depanare ({{count}} rând)",
+      "debugTurns_other": "Depanare ({{count}} rânduri)",
+      "guardrailTokensTitle": "Jetoane judecător protecție",
+      "stop": "Oprește",
+      "inputPlaceholder": "Trimite același mesaj la ambele modele..."
+    }
+  },
+  "help": {
+    "title": "Ajutor și suport",
+    "subtitle": "Suntem aici pentru a ajuta — găsește răspunsuri sau contactează-ne oricând.",
+    "docs": {
+      "title": "Documentație",
+      "subtitle": "Ghiduri, referință API și documentație configurație",
+      "body": "Documentele oficiale acoperă totul de la noțiuni de bază la politici de rutare avansate, configurare furnizor, bugete și referință API completă.",
+      "openLink": "Deschide documentație"
+    },
+    "issues": {
+      "title": "Raportează o greșeală sau sugerează o caracteristică",
+      "subtitle": "Deschide o problemă GitHub — dureaza 2 minute",
+      "body": "Problemele GitHub sunt cel mai bun mod de a raporta greșeli sau propune îmbunătățiri. Pentru a ajuta să reparezi lucrurile mai repede, includ: ce ai făcut, ce te-ai așteptat să se întâmple și ce s-a întâmplat de fapt.",
+      "showTemplate": "Arată șablon problemă",
+      "reportBug": "Raportează o greșeală",
+      "requestFeature": "Cere o caracteristică"
+    },
+    "issueTemplate": {
+      "whatHappened": "Ce s-a întâmplat?",
+      "whatHappenedHint": "Descrie problema în cuvinte simple",
+      "stepsToReproduce": "Pași pentru reproducere",
+      "expectedBehaviour": "Comportament așteptat",
+      "expectedBehaviourHint": "Ce te-ai așteptat să vezi",
+      "version": "Versiune Routerly",
+      "versionHint": "Rulează `routerly --version` sau verifică Setări → Despre"
+    },
+    "email": {
+      "title": "Contactează suportul",
+      "subtitle": "Citim fiecare mesaj și răspundem cât mai curând putem",
+      "body": "Pentru orice nu se potrivește o problemă GitHub — întrebări de facturare, preocupări private, sau dacă dorești doar să spui salut — trimite-ne o linie."
+    },
+    "faq": {
+      "title": "Întrebări frecvente",
+      "subtitle": "Răspunsuri rapide la cele mai comune întrebări",
+      "items": {
+        "connect": {
+          "q": "Cum mă conectez aplicația la Routerly?",
+          "a": "Indică SDK-ul OpenAI sau Anthropic la instanța Routerly. Înlocuiește URL-ul de bază cu http://your-host:3000/v1 (compatibil OpenAI) sau http://your-host:3000/anthropic (compatibil Anthropic), apoi utilizează un token router ca cheie API. Atât de mult — nicio altă schimbare necesară."
+        },
+        "openaiCompat": {
+          "q": "Routerly este compatibil cu unelte care utilizează SDK-ul OpenAI?",
+          "a": "Da. Routerly este o înlocuire drop-in: orice unealtă care acceptă un URL de bază personalizat și o cheie API (LangChain, LlamaIndex, Cursor, Continue, etc.) funcționează de îndată. Pentru clienți în format Anthropic, utilizați în schimb punctul terminal /anthropic."
+        },
+        "routing": {
+          "q": "Cum funcționează rutarea modelului?",
+          "a": "Fiecare router are o politică de rutare care decide ce model primește o cerere. Politicile includ round-robin, cost cel mai scăzut, răspuns cel mai rapid, lanțuri de rezervă și mai mult. Le configurezi per router sub Rutere → Rutare."
+        },
+        "addModel": {
+          "q": "Cum adaug un model AI nou?",
+          "a": "Mergi la Modele → Adaugă model. Poți adăuga orice furnizor compatibil cu OpenAI (Ollama, LM Studio, puncte terminale personalizate) sau un punct terminal Anthropic nativ. Completează URL-ul de bază, cheia API și ID-ul modelului — Routerly va face restul."
+        },
+        "dataStored": {
+          "q": "Sunt stocate datele mele? Sunt stocate instrucțiunile mele?",
+          "a": "Routerly este auto-găzduită și stochează date doar pe mașina ta (în ~/.routerly/ implicit). Instrucțiunile și răspunsurile nu sunt trimise nicăiri de Routerly. Jurnalele de cereri sunt stocate local și doar dacă le activezi per router."
+        },
+        "routerToken": {
+          "q": "Ce este un token router și cum diferă de o cheie API de furnizor?",
+          "a": "Un token router este o acreditare pe care o dai aplicației sau membrilor echipei pentru autentificarea cu Routerly. Este separate de cheile API ale furnizorului, pe care Routerly le stochează în siguranță pe server. Aplicațiile tale nu văd niciodată cheile furnizorului real."
+        }
+      }
+    }
+  },
+  "users": {
+    "countLabel": "{{count}} utilizator",
+    "countLabel_other": "{{count}} utilizatori",
+    "addButton": "Adaugă utilizator",
+    "columns": {
+      "email": "E-mail",
+      "role": "Rol",
+      "routers": "Rutere"
+    },
+    "allRouters": "Toate",
+    "resetTwoFaTitle": "Resetează 2FA",
+    "resetTwoFaConfirm": "Resetezi 2FA pentru {{email}}? Vor trebui să se re-înscrie.",
+    "deleteConfirm": "Ștergi acest utilizator?",
+    "emptyTitle": "Niciun utilizator încă.",
+    "noPermission": "Nu ai permisiunea să vizualizezi utilizatori.",
+    "modal": {
+      "title": "Adaugă utilizator",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "utilizator@example.com",
+      "passwordLabel": "Parolă",
+      "passwordPlaceholder": "••••••••",
+      "roleLabel": "Rol",
+      "roleAdmin": "Admin",
+      "roleViewer": "Vizualizator",
+      "cancelButton": "Anulează",
+      "submitButton": "Adaugă utilizator"
+    },
+    "errors": {
+      "loadFailed": "Nu s-a putut încărca utilizatori",
+      "addFailed": "Eroare"
+    }
+  },
+  "userEdit": {
+    "title": "Editează utilizator",
+    "account": "Cont",
+    "email": "E-mail",
+    "role": "Rol",
+    "changePassword": "Schimbă parolă",
+    "newPassword": "Parolă nouă",
+    "newPasswordHint": "(lăsați gol pentru a păstra actual)",
+    "save": "Salvează",
+    "saved": "Salvat!",
+    "errors": {
+      "loadFailed": "Nu s-a putut încărca utilizator",
+      "saveFailed": "Nu s-a putut salva"
+    }
+  },
+  "roles": {
+    "toolbarTitle": "Gestionează roluri și permisiuni. Rolurile built-in nu pot fi modificate.",
+    "newRole": "Rol nou",
+    "builtin": "built-in",
+    "edit": "Editează",
+    "deleteConfirm": "Ștergi acest rol? Utilizatorii cu acest rol vor fi afectați.",
+    "form": {
+      "id": "ID",
+      "idPlaceholder": "ex. operator",
+      "name": "Nume",
+      "namePlaceholder": "Nume rol",
+      "permissions": "Permisiuni",
+      "create": "Creează",
+      "save": "Salvează",
+      "cancel": "Anulează"
+    },
+    "permissions": {
+      "routerRead": "Rutere – Citire",
+      "routerWrite": "Rutere – Scriere",
+      "modelRead": "Modele – Citire",
+      "modelWrite": "Modele – Scriere",
+      "userRead": "Utilizatori – Citire",
+      "userWrite": "Utilizatori – Scriere",
+      "reportRead": "Rapoarte – Citire",
+      "settingsRead": "Setări – Citire",
+      "settingsWrite": "Setări – Scriere",
+      "notificationWrite": "Notificări – Scriere",
+      "tokenRead": "Tokenuri – Citire",
+      "tokenWrite": "Tokenuri – Scriere",
+      "roleWrite": "Roluri – Scriere",
+      "auditRead": "Jurnal audit – Citire",
+      "modulesRead": "Module – Citire",
+      "modulesManage": "Module – Gestionare",
+      "connectionsRead": "Conexiuni – Citire",
+      "connectionsManage": "Conexiuni – Gestionare",
+      "resilienceRead": "Reziliență – Citire",
+      "resilienceManage": "Reziliență – Gestionare",
+      "profilesRead": "Profile de rutare – Citire",
+      "profilesManage": "Profile de rutare – Gestionare",
+      "optimizersRead": "Optimizatori – Citire",
+      "optimizersManage": "Optimizatori – Gestionare",
+      "experimentsRead": "Experimente – Citire",
+      "experimentsManage": "Experimente – Gestionare"
+    },
+    "errors": {
+      "loadFailed": "Nu s-a putut încărca roluri",
+      "updateFailed": "Nu s-a putut actualiza rol",
+      "createFailed": "Nu s-a putut crea rol",
+      "deleteFailed": "Nu s-a putut șterge rol"
+    }
+  },
+  "profiles": {
+    "list": {
+      "title": "Profile",
+      "subtitle": "Configurații de rutare, optimizer și securitate reutilizabile",
+      "noPermission": "Nu ai permisiunea să vizualizezi profile.",
+      "newProfile": "Profil {{kind}} nou",
+      "empty": "Niciun profil {{kind}} încă.",
+      "builtin": "Built-in",
+      "custom": "Personalizat",
+      "view": "Vizualizează",
+      "edit": "Editează",
+      "clone": "Clonează",
+      "delete": "Șterge",
+      "deleteConfirm": "Ștergi profilul \"{{label}}\"? Aceasta nu poate fi anulată.",
+      "kindDescriptions": {
+        "routing": "Ce model răspunde la o cerere și ce se întâmplă când nu poate",
+        "optimizer": "Ce este eliminat dintr-o instrucțiune înainte de a fi trimisă",
+        "security": "Protecții și politici PII aplicate traficului"
+      },
+      "columns": {
+        "label": "Etichetă",
+        "type": "Tip",
+        "configuration": "Configurație",
+        "version": "Versiune"
+      },
+      "errors": {
+        "loadFailed": "Nu s-a putut încărca profile",
+        "deleteFailed": "Nu s-a putut șterge profil"
+      }
+    },
+    "form": {
+      "backToProfiles": "Înapoi la profile",
+      "newProfileTitle": "Profil {{kind}} nou",
+      "editProfileTitle": "Editează {{label}}",
+      "builtinHint": "Profilele built-in nu pot fi editate. Clonează unu pentru a-l personaliza.",
+      "assignHint": "{{article}} profil {{kind}} poate fi atribuit la orice număr de rutere.",
+      "noPermission": "Nu ai permisiunea să vizualizezi profile.",
+      "label": "Etichetă",
+      "optimizers": "Optimizatori",
+      "optimizersHint": "Trage pentru a reordona, comută pentru a activa. Rulează în ordine de sus în jos.",
+      "createProfile": "Creează profil",
+      "saveProfile": "Salvează profil",
+      "cancel": "Anulează",
+      "copySuffix": "{{label}} copie",
+      "labelPlaceholders": {
+        "routing": "ex. Rutarea mea echilibrată",
+        "optimizer": "ex. Trimmers meu instrucțiuni",
+        "security": "ex. Protecții mele stricte"
+      },
+      "errors": {
+        "notFound": "Profil nu găsit.",
+        "loadFailed": "Nu s-a putut încărca profil",
+        "saveFailed": "Nu s-a putut salva profil"
+      }
+    }
+  },
+  "connectClient": {
+    "backToConnect": "Înapoi la conectare",
+    "title": "Conectare",
+    "docs": "Documente",
+    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
+    "noClientPrefix": "Niciun client numit",
+    "errors": {
+      "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
+    },
+    "oneCommand": {
+      "title": "Cel mai rapid: o comandă",
+      "description": "Rulează-o pe mașina unde {{client}} este instalat. Scrie {{configPath}}, păstrând o copie de siguranță pe care o poți anula."
+    },
+    "byHand": {
+      "titleAlt": "Sau configurează-o manual",
+      "titleUi": "Configurează-o manual",
+      "titleConfigFile": "Configurează fișierul de configurare",
+      "setValuesIn": "Setează aceste valori în {{configPath}}.",
+      "putThisIn": "Pune asta în",
+      "replaceToken": "Înlocuiește",
+      "withRouterToken": "cu un token router:",
+      "createOne": "creează unu",
+      "onRoutersPage": "pe pagina Rutere.",
+      "modelLabel": "Model:",
+      "modelHint": "transmite alegerea la Routerly, orice id model din",
+      "modelsLink": "Modele",
+      "worksToo": "funcționează și.",
+      "openaiCompatHint": "Același URL de bază, cheie și model se potrivesc oricărui client care oferă un furnizor \"compatibil cu OpenAI\"."
+    },
+    "mcp": {
+      "title": "Server MCP",
+      "description": "Separat de pașii de mai sus: acesta îi permite {{client}} să apeleze instrumentele Routerly. Are nevoie de un token MCP personal, creat cu",
+      "orFromYour": "sau din",
+      "profileLink": "profil"
+    },
+    "checkItWorked": {
+      "title": "Verifică că a funcționat",
+      "restart": "Repornește {{client}}, trimite-i o instrucțiune, apoi caută apelul în",
+      "usageLink": "Utilizare",
+      "cliReports": "Din aceeași mașină, CLI raportează ce găsește:"
+    }
+  },
+  "connect": {
+    "title": "Conectare",
+    "subtitle": "Indică un client AI de codificare la această pasarelă. Alege un client pentru pașii de configurare.",
+    "llmLabel": "LLM",
+    "llmDescription": "rutează trafic model al clientului prin Routerly.",
+    "mcpLabel": "MCP",
+    "mcpDescription": "încarcă Routerly ca server unealtă în el.",
+    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
+    "errors": {
+      "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
+    },
+    "oneCommand": {
+      "title": "O comandă",
+      "hint": "CLI-ul scrie fișierul de configurare pentru tine, cu o copie de siguranță pe care o poți anula."
+    },
+    "byHand": {
+      "title": "Manual",
+      "hint": "Copiază fragmentul din pagina clientului în setările acestuia, apoi repornește."
+    },
+    "endpoint": {
+      "title": "Indică orice client aici",
+      "description": "Orice construit pe SDK-ul OpenAI sau Anthropic funcționează prin schimbarea doar URL-ului de bază și cheii. Nimic altceva se schimbă: cererile și răspunsurile traversează Routerly așa cum sunt.",
+      "openaiBaseUrl": "URL de bază OpenAI",
+      "anthropicBaseUrl": "URL de bază Anthropic",
+      "apiKey": "Cheie API",
+      "model": "Model",
+      "apiKeyDescription": "Un token router, trimis ca",
+      "or": "sau",
+      "createOne": "Creează unu",
+      "onRoutersPage": "pe pagina Rutere.",
+      "modelDescription": "lase Routerly să selecteze. Orice id model din",
+      "modelsLink": "Modele",
+      "worksToo": "pagina funcționează și."
+    }
+  }
+}

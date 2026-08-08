@@ -42,7 +42,7 @@ const mockUpdateUser = vi.mocked(updateUser as (...a: unknown[]) => Promise<unkn
 const mockGetRoles  = vi.mocked(getRoles as () => Promise<unknown>);
 
 function makeUser(overrides: Record<string, unknown> = {}) {
-  return { id: 'u1', email: 'alice@x.com', roleId: 'viewer', projectIds: [], totpEnabled: false, ...overrides };
+  return { id: 'u1', email: 'alice@x.com', roleId: 'viewer', routerIds: [], totpEnabled: false, ...overrides };
 }
 
 function makeRole(overrides: Record<string, unknown> = {}) {

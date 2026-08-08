@@ -14,7 +14,7 @@ function record(partial: Partial<UsageRecord> = {}): UsageRecord {
   return {
     id: `r${++seq}`,
     timestamp: '2026-08-01T10:00:00.000Z',
-    projectId: 'p1',
+    routerId: 'p1',
     modelId: 'cheap',
     inputTokens: 1000,
     outputTokens: 1000,
