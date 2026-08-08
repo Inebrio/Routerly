@@ -88,6 +88,7 @@ vi.mock('../catalog/fetcher.js', () => ({
 }))
 
 import { apiRoutes, listeningAddresses } from './api.js'
+import authPlugin from '../auth/auth.js'
 import { readConfig, writeConfig, updateConfig, getOrCreateSecret } from '../config/loader.js'
 import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
@@ -1826,6 +1827,27 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
     expect(res.json().models).toEqual([{ modelId: PASSTHROUGH_MODEL_ID }, { modelId: 'gpt-4o' }])
   })
 
+  it('issues a Routerly token when created with a real model (PR-E AC1)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/routers',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', models: [{ modelId: 'gpt-4o' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(res.json().token).toMatch(/^sk-rt-/)
+  })
+
   it('disambiguates the slug when another passthrough router already slugs to the same name', async () => {
     setupAdminAuth()
     const other = { id: 'pt-1', name: 'My OpenAI', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [] }
@@ -1939,6 +1961,83 @@ describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(res.json().slug).toBe('my-openai')
+  })
+
+  it('issues a token when the first real model is added to a sentinel-only passthrough router (PR-E AC1)', async () => {
+    setupAdminAuth()
+    const target = { id: 'pt-1', name: 'PT', kind: 'passthrough', slug: 'my-openai', tokens: [], members: [], models: [{ modelId: PASSTHROUGH_MODEL_ID }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [target]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/pt-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', models: [{ modelId: PASSTHROUGH_MODEL_ID }, { modelId: 'gpt-4o' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().tokens.length).toBe(1)
+    const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
+    const persisted = (routersCall![1] as any[]).find(r => r.id === 'pt-1')
+    expect(persisted.tokens.length).toBe(1)
+    expect(persisted.tokens[0].token).toMatch(/^sk-rt-/)
+  })
+
+  it('revokes the token when the last real model is removed, and the old token is then rejected on an authenticated request (PR-E EC1)', async () => {
+    setupAdminAuth()
+    const oldToken = 'sk-rt-old-token-being-revoked'
+    const target = {
+      id: 'pt-1', name: 'PT', kind: 'passthrough', slug: 'my-openai', members: [],
+      models: [{ modelId: PASSTHROUGH_MODEL_ID }, { modelId: 'gpt-4o' }],
+      tokens: [{ id: 't1', token: oldToken, tokenSnippet: oldToken.substring(0, 10), createdAt: new Date().toISOString() }],
+    }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [target]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/pt-1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'PT', kind: 'passthrough', models: [{ modelId: PASSTHROUGH_MODEL_ID }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().tokens).toEqual([])
+    const routersCall = mockWriteConfig.mock.calls.find(c => c[0] === 'routers')
+    const persisted = (routersCall![1] as any[]).find(r => r.id === 'pt-1')
+    expect(persisted.tokens).toEqual([])
+
+    // The persisted (now token-less) router is what auth.ts's resolver reads —
+    // confirm the old token is rejected with the exact message auth.ts sends
+    // for an unknown/removed token.
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'routers') return [persisted]
+      if (t === 'experiments') return []
+      return []
+    })
+    const authApp = Fastify({ logger: false })
+    await authApp.register(authPlugin)
+    authApp.post('/v1/chat/completions', async () => ({ ok: true }))
+    await authApp.ready()
+    const authRes = await authApp.inject({
+      method: 'POST', url: '/v1/chat/completions',
+      headers: { authorization: `Bearer ${oldToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [] }),
+    })
+    await authApp.close()
+    expect(authRes.statusCode).toBe(401)
+    expect(authRes.json()).toEqual({ error: 'unauthorized', message: 'Invalid router token.' })
   })
 })
 

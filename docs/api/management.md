@@ -1188,6 +1188,15 @@ is the only time it is readable.
 **Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a router with
 that name already exists · `403` insufficient permissions
 
+For a router created with `kind: "passthrough"` (see
+[Concepts: Architecture](../concepts/architecture.md#router-orchestrator-passthrough)),
+no request or response field changes: `tokens[]` is still returned as-is. But
+a token is now issued for it under the same condition as any other kind — a
+real target model present in the submitted `models`, alongside the fixed
+pass-through entry — instead of `tokens[]` being left empty unconditionally.
+A passthrough router created with only the pass-through entry, the previous
+default, still gets no token.
+
 ### Update Router
 
 ```
@@ -1203,6 +1212,17 @@ unchanged, send `null` to clear it, or send an object to replace it.
 | `timeoutMs` | number | Upstream timeout for this router's requests |
 | `traceContent` | boolean | Trace content opt-in. Default `false`: traces record metadata only. Set to `true` to also store prompts and answers on the trace (`entry.content`) — they then reach the trace stream, the usage record and any integration exporting traces. |
 | `candidates` | array | Only on `kind: "orchestrator"`. Request body: `{ routerId, limits? }[]`. Response also resolves each candidate's `name`: `{ routerId, name, limits? }[]`. Array order **is** the priority order (index 0 = highest) — there is no `weight` field. |
+
+For a router with `kind: "passthrough"`, no request or response field
+changes here either — `toRouterResponse` still returns `tokens[]` as-is.
+`PUT` now issues a token (`tokens[]` gains an entry) the moment the submitted
+`models` gains its first real target model, and revokes it (`tokens: []`)
+the moment the last real target model is removed, leaving only the fixed
+pass-through entry. See
+[Concepts: Architecture](../concepts/architecture.md#passthrough-which-path-a-request-takes)
+for the ordering rule that decides which of a passthrough router's real
+models get scored versus the pass-through entry's own raw-forward, and for
+the fallback's forwarded-credential caveat.
 
 ### Content Guardrails and PII (router fields)
 

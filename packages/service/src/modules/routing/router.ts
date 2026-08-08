@@ -1,4 +1,4 @@
-import type { ChatCompletionRequest, ModelConfig, RouterConfig, RouterToken, ResilienceStore, RoutingCandidate, RoutingProfile } from '@routerly/shared';
+import { PASSTHROUGH_MODEL_ID, type ChatCompletionRequest, type ModelConfig, type RouterConfig, type RouterToken, type ResilienceStore, type RoutingCandidate, type RoutingProfile } from '@routerly/shared';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { isAllowed, getViolatedLimits } from '../budget/budget.js';
 import type { LimitSnapshot } from '../budget/budget.js';
@@ -100,6 +100,7 @@ export async function scoreCandidates(
   const allModels: ModelConfig[] = await listEffectiveModels();
   const missingModelIds: string[] = [];
   let candidates: CandidateModel[] = router.models
+    .filter(ref => ref.modelId !== PASSTHROUGH_MODEL_ID)
     .map(ref => {
       const model = allModels.find(m => m.id === ref.modelId);
       if (!model) {
@@ -118,6 +119,8 @@ export async function scoreCandidates(
   }
 
   if (candidates.length === 0) {
+    // Message prefix `no_models_available` is pattern-matched by routing/index.ts's
+    // passthrough fallback branch — reword it there too, or the fallback stops firing.
     throw new Error(`no_models_available: router has no resolvable models (referenced: [${router.models.map(m => m.modelId).join(', ')}])`);
   }
 
@@ -174,6 +177,8 @@ export async function scoreCandidates(
   }
 
   if (validCandidates.length === 0) {
+    // Message `all_models_limits_exceeded` is pattern-matched by routing/index.ts's
+    // passthrough fallback branch — reword it there too, or the fallback stops firing.
     throw new Error('all_models_limits_exceeded');
   }
 
@@ -314,6 +319,8 @@ export async function scoreCandidates(
   const scoringCandidates = validCandidates.filter(c => !policyExcludes.has(c.model.id));
 
   if (scoringCandidates.length === 0) {
+    // Message `all_models_excluded_by_policies` is pattern-matched by routing/index.ts's
+    // passthrough fallback branch — reword it there too, or the fallback stops firing.
     throw new Error('all_models_excluded_by_policies');
   }
 

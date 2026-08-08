@@ -138,6 +138,63 @@ describe('routerPassthroughRoutes', () => {
     expect(init.headers['expect']).toBeUndefined();
   });
 
+  // PR-E AC5/EC4 — a passthrough router that now holds real target models must still
+  // raw-forward exactly as before: family resolution reads only the URL path, never the
+  // body's `model` field, even when that field happens to name one of the router's own
+  // configured real target models.
+  it('a body `model` matching one of the router\'s real target models has zero effect on family resolution or forwarding (AC5/EC4)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'chatcmpl-1', object: 'chat.completion', choices: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', mockFetch);
+
+    const routerWithRealModels: RouterConfig = {
+      ...plainRouter,
+      models: [{ modelId: 'gpt-4o' }, { modelId: 'claude-3-5-sonnet' }],
+    };
+    const app = await buildApp([routerWithRealModels]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/passthrough/my-openai/v1/chat/completions',
+      headers: { authorization: 'Bearer sk-caller-owns-this', 'content-type': 'application/json' },
+      // body.model names one of the router's own real target models — must not steer
+      // resolution away from the plain path-based family match (still OpenAI, from the URL).
+      payload: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: 'hi' }] }),
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(200);
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    expect(url).toBe('https://api.openai.com/v1/chat/completions'); // path-based, unaffected by body.model
+    expect(init.headers['authorization']).toBe('Bearer sk-caller-owns-this'); // unauthenticated lane, client's own credential forwarded as-is
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ routerId: 'pr-1', modelId: 'gpt-4o', outcome: 'success' }));
+  });
+
+  it('a body `model` matching one of the router\'s real target models still resolves to the Anthropic family purely from the URL path (AC5/EC4)', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', mockFetch);
+
+    const routerWithRealModels: RouterConfig = {
+      ...plainRouter,
+      models: [{ modelId: 'gpt-4o' }, { modelId: 'claude-3-5-sonnet' }],
+    };
+    const app = await buildApp([routerWithRealModels]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/passthrough/my-openai/v1/messages',
+      headers: { 'x-api-key': 'sk-ant-caller', 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'claude-3-5-sonnet', messages: [{ role: 'user', content: 'hi' }] }),
+    });
+    await app.close();
+
+    expect(res.statusCode).toBe(200);
+    const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.anthropic.com/v1/messages');
+  });
+
   it('blocks a request matched by a blocking guardrail rule before forwarding', async () => {
     const mockFetch = vi.fn();
     vi.stubGlobal('fetch', mockFetch);
