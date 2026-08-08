@@ -90,6 +90,12 @@ Use the **+ Add Model** button to pick from registered models. Models appear in 
 
 Drag and drop to reorder.
 
+**Passthrough routers** always show one additional, fixed row labelled
+**Pass-through (raw forward)** — it forwards the client's own credential to
+the provider unmodified, is created automatically with the router and cannot
+be removed (its delete button is disabled). It can be dragged to any position
+alongside the router's real target models, same as any other row.
+
 ### Adding Policies
 
 Drag policies from the policy panel on the right into the active-policies list on the left. Each policy can be expanded to configure its parameters.

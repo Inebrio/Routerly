@@ -582,9 +582,20 @@ routerly router routing policy reorder my-api health,context,budget-remaining,ll
 
 ### Models - `routerly router model`
 
+A passthrough-kind router's model list always contains one **pass-through
+entry** (`__passthrough__`) alongside zero or more real target models, in one
+ordered array — it forwards the client's own credential unchanged and is
+created automatically, never by hand. `model list` and `model reorder` render
+it as `(pass-through) __passthrough__`, distinct from a real model ID.
+`model add`, `model remove`, and `model set-prompt` all reject an attempt to
+touch it (named stderr error, exit 1) — it has no prompt and can never be
+removed. Reorder it like any other entry with `model reorder`.
+
 #### `routerly router model list <router>`
 
-List target models configured in the router, with their prompt hints.
+List target models configured in the router, with their prompt hints. On a
+passthrough router, the pass-through entry is shown as `(pass-through)
+__passthrough__`.
 
 #### `routerly router model add <router> <model-id>`
 
@@ -597,9 +608,14 @@ routerly router model add my-api anthropic/claude-opus-4-6 --prompt "Use for com
 |--------|-------------|
 | `--prompt <text>` | System prompt hint used when this model is selected |
 
+Rejects `__passthrough__` (exit 1) — the pass-through entry cannot be added
+manually.
+
 #### `routerly router model remove <router> <model-id>`
 
-Remove a target model from the router.
+Remove a target model from the router. Rejects `__passthrough__` (exit 1) —
+the pass-through entry is always present on a passthrough-kind router and
+cannot be removed.
 
 #### `routerly router model set-prompt <router> <model-id>`
 
@@ -608,6 +624,23 @@ Update (or clear) the system prompt hint for a model.
 ```bash
 routerly router model set-prompt my-api openai/gpt-5.2 --prompt "Fast tasks only"
 routerly router model set-prompt my-api openai/gpt-5.2 --prompt ""  # clear
+```
+
+Rejects `__passthrough__` (exit 1) — it forwards the request unmodified, so
+there is no prompt to set.
+
+#### `routerly router model reorder <router> <model-ids>`
+
+Reorder target models: a comma-separated list of model IDs in the desired
+order. Any model not mentioned is appended at the end, in its current
+relative order. `__passthrough__` can appear anywhere in the list, including
+first or last.
+
+```bash
+routerly router model reorder my-api openai/gpt-5.2,anthropic/claude-opus-4-6
+
+# Move the pass-through entry to the front of a passthrough router's model list
+routerly router model reorder my-api __passthrough__,openai/gpt-5.2
 ```
 
 ---
