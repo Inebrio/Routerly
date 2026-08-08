@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat, chmod } from 'node:fs/promises';
 import { readConfig, writeConfig, updateConfig, initConfigDirs } from './loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 
@@ -97,6 +97,22 @@ describe('loader — real-FS concurrent safety (data-loss regression)', () => {
     const ids = new Set(onDisk.map((r: any) => r.id));
     for (let i = 0; i < N; i++) expect(ids.has(`race-${i}`)).toBe(true);
   }, 20000);
+
+  it('updateConfig on a SECRET_KEYS file preserves 0600 through a real mutation (permission-reversion regression)', async () => {
+    // Reproduces the bug found during PR-D validation: updateConfig's tmp-file
+    // write omitted the `mode` option writeConfig already applies, silently
+    // regressing a secret-tier file (routers.json et al.) to the process
+    // umask default on every mutation — re-tripping the unsafe_permissions
+    // startup guard on the very next request.
+    await initConfigDirs();
+    await writeConfig('routers', [{ id: 'p1', name: 'One' }] as any);
+    await chmod(CONFIG_PATHS.routers, 0o600);
+    expect((await stat(CONFIG_PATHS.routers)).mode & 0o777).toBe(0o600);
+
+    await updateConfig('routers', (current) => [...(current as any[]), { id: 'p2', name: 'Two' }]);
+
+    expect((await stat(CONFIG_PATHS.routers)).mode & 0o777).toBe(0o600);
+  });
 
   it('a read of a truly-missing file creates it with defaults (first run unchanged)', async () => {
     // models.json under a fresh isolated home; readConfig must create it as [].
