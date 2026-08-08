@@ -49,6 +49,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - Passthrough routers no longer take a manual slug/path field. The `/passthrough/<slug>/...` path segment is now derived automatically from the router's name (disambiguated with a numeric suffix on collision), removing a step that duplicated the name and could conflict silently. `router create`/`router edit` drop `--slug`; the management API drops `slug` from the request body (still present, read-only, in the response).
 - Passthrough router names are now unique only among other Passthroughs, not across every router kind — a Passthrough can share its name with an existing Router or Orchestrator (it is reached by slug, never by name), while Router and Orchestrator names stay unique among themselves as before.
 - Dashboard: creating a Passthrough router now redirects straight to its General tab, instead of surfacing a spurious "Unsaved Changes" confirmation on the create form's own success redirect.
+- Dashboard: an Orchestrator's Routing tab no longer shows the "Target Models" section — that model picker had no `kind`-based guard and let a model be added to an Orchestrator, which only ever routes to candidate Routers (configured on its own Orchestrator tab), never to models directly.
 
 ### Breaking changes
 

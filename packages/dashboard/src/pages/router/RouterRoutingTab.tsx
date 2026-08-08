@@ -355,6 +355,8 @@ export function RouterRoutingTab() {
           </>
         )}
 
+        {(router?.kind ?? 'router') !== 'orchestrator' && (
+        <>
         <div style={{ margin: '32px 0 24px', borderTop: '1px solid var(--border)' }} />
 
         {/* Target Models Section */}
@@ -515,6 +517,8 @@ export function RouterRoutingTab() {
             <Plus size={16} /> {t('routers.routing.targetModels.addTarget')}
           </button>
         </div>
+        </>
+        )}
 
         <div style={{ marginTop: 32 }}>
           <button
