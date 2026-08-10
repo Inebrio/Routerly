@@ -202,7 +202,13 @@ export async function startServer() {
   try {
     await server.listen({ port: settings.port, host: settings.host });
     // The 60s integration push is started by the observability module (kernel start).
-    if (process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
+    // Skipped outside production by default: a dev checkout's package.json version
+    // is never bumped by semantic-release on develop/main (see docs/contributing/
+    // releasing.md's "unstamped tag" note), so it always lags the tag a release just
+    // cut — comparing it would flag the instance actively building that release as
+    // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.
+    const updateCheckWanted = process.env['NODE_ENV'] === 'production' || process.env['ROUTERLY_FORCE_UPDATE_CHECK'] === 'true';
+    if (updateCheckWanted && process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
       updateChecker.start(pkgVersion, settings.channel ?? 'latest');
     }
   } catch (err) {
