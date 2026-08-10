@@ -52,6 +52,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - Passthrough router names are now unique only among other Passthroughs, not across every router kind — a Passthrough can share its name with an existing Router or Orchestrator (it is reached by slug, never by name), while Router and Orchestrator names stay unique among themselves as before.
 - Dashboard: creating a Passthrough router now redirects straight to its General tab, instead of surfacing a spurious "Unsaved Changes" confirmation on the create form's own success redirect.
 - Dashboard: an Orchestrator's Routing tab no longer shows the "Target Models" section — that model picker had no `kind`-based guard and let a model be added to an Orchestrator, which only ever routes to candidate Routers (configured on its own Orchestrator tab), never to models directly.
+- `POST /mcp` no longer 500s ("Cannot read properties of undefined (reading 'includes')") for any user account created before `routerIds` was added to `UserConfig` — a startup migration now backfills `routerIds: []` on stored users missing it, and `accessibleRouters()` no longer assumes the field is present on every user record on disk.
 
 ### Breaking changes
 

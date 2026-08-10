@@ -69,7 +69,7 @@ export async function resolveUserPermissions(user: UserConfig): Promise<Permissi
 export async function accessibleRouters(user: UserConfig): Promise<RouterConfig[]> {
   const routers = await readConfig('routers')
   const scoped = routers.filter(
-    (p) => user.routerIds.includes(p.id) || p.members?.some((m) => m.userId === user.id),
+    (p) => (user.routerIds ?? []).includes(p.id) || p.members?.some((m) => m.userId === user.id),
   )
   return scoped.length > 0 ? scoped : routers
 }

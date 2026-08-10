@@ -11,6 +11,7 @@ vi.mock('./migrate.js', () => ({
   migrateNotificationChannelScope: vi.fn(async () => 0),
   migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
   migratePassthroughPseudoModel: vi.fn(async () => 0),
+  migrateUserRouterIds: vi.fn(async () => 0),
 }))
 vi.mock('./migrate-connections.js', () => ({
   migrateModelsToConnections: vi.fn(async () => ({ connections: 0, instances: 0 })),
