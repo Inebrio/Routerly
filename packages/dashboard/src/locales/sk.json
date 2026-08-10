@@ -28,7 +28,7 @@
       "signOut": "Odhlásiť sa"
     },
     "banner": {
-      "permissionWarning": "Niektoré konfiguračné súbory majú permisívny prístup ({{files}}). Spustenie a požiadavky stále fungujú, ale opravte to zo súborového systému hostiteľa, keď je čas vhodný.",
+      "permissionWarning": "Niektoré konfiguračné súbory majú prístupné oprávnenia ({{files}}). Spustenie a požiadavky stále fungujú. Opravte to z Nastavenia → Bezpečnosť, alebo zo súborového systému hostiteľa, keď je to vhodné.",
       "dismiss": "Zavrieť",
       "updateAvailable": "Routerly v{{latest}} je dostupná. Používate v{{current}}.",
       "updateLink": "Aktualizovať v Nastaveniach",

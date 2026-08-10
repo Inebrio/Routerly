@@ -28,7 +28,7 @@
       "signOut": "Ieșire"
     },
     "banner": {
-      "permissionWarning": "Unele fișiere de configurare au acces permisiv ({{files}}). Pornirea și cererile funcționează în continuare, dar corectați acest lucru din sistemul de fișiere gazdă când este convenabil.",
+      "permissionWarning": "Unele fișiere de configurare au acces permisiv ({{files}}). Pornirea și cererile continuă să funcționeze. Remediați din Setări → Securitate, sau din sistemul de fișiere al gazdei când este convenabil.",
       "dismiss": "Respinge",
       "updateAvailable": "Routerly v{{latest}} este disponibil. Ești pe v{{current}}.",
       "updateLink": "Actualizează în Setări",

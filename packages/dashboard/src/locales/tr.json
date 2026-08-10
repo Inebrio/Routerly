@@ -28,7 +28,7 @@
       "signOut": "Çıkış Yap"
     },
     "banner": {
-      "permissionWarning": "Bazı yapılandırma dosyaları izin verici erişime sahiptir ({{files}}). Başlangıç ve istekler yine de çalışır, ancak uygun bir zaman diliminde ana bilgisayar dosya sisteminden bu sorunu giderin.",
+      "permissionWarning": "Bazı yapılandırma dosyaları izin verilen erişime sahiptir ({{files}}). Başlatma ve istekler hala çalışıyor. Bunu Ayarlar → Güvenlik bölümünden düzeltin, ya da uygun olduğunda ana bilgisayar dosya sisteminden düzeltin.",
       "dismiss": "Kapat",
       "updateAvailable": "Routerly v{{latest}} kullanılabilir. Siz v{{current}} üzerindeysiniz.",
       "updateLink": "Ayarlar'da Güncelle",

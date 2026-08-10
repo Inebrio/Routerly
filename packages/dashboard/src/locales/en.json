@@ -31,7 +31,7 @@
       "signOut": "Sign Out"
     },
     "banner": {
-      "permissionWarning": "Some configuration files have permissive access ({{files}}). Startup and requests still work, but fix this from the host filesystem when convenient.",
+      "permissionWarning": "Some configuration files have permissive access ({{files}}). Startup and requests still work. Fix it from Settings → Security, or on the host filesystem when convenient.",
       "dismiss": "Dismiss",
       "updateAvailable": "Routerly v{{latest}} is available. You are on v{{current}}.",
       "updateLink": "Update in Settings",

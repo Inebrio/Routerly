@@ -28,7 +28,7 @@
       "signOut": "Esci"
     },
     "banner": {
-      "permissionWarning": "Alcuni file di configurazione hanno permessi troppo permissivi ({{files}}). Avvio e richieste funzionano comunque, ma correggilo sul filesystem dell'host quando puoi.",
+      "permissionWarning": "Alcuni file di configurazione hanno permessi troppo permissivi ({{files}}). Avvio e richieste funzionano comunque. Correggilo da Impostazioni → Sicurezza, oppure sul filesystem dell'host quando puoi.",
       "dismiss": "Ignora",
       "updateAvailable": "Routerly v{{latest}} è disponibile. Stai usando v{{current}}.",
       "updateLink": "Aggiorna dalle impostazioni",

@@ -28,7 +28,7 @@
       "signOut": "Ondoka"
     },
     "banner": {
-      "permissionWarning": "Faili kadhaa za usanidi zina upatikanaji wasiokidhi haraka ({{files}}). Kuanzishwa na maombi bado vinafanya kazi, lakini kurekebisha hili kutoka kwa mfumo wa huduma wakati uwezeshaji unafaa.",
+      "permissionWarning": "Baadhi ya faili za usanidi zina ufikiaji unaoruhusa ({{files}}). Kuanza na ombi bado zinafanya kazi. Malizisha kutoka kwa Mipangilio → Usalama, au kutoka kwa mfumo wa faili wa kompyuta wakati inapofaa.",
       "dismiss": "Ondoa",
       "updateAvailable": "Routerly v{{latest}} inapatikana. Uko kwenye v{{current}}.",
       "updateLink": "Sasisha katika Mipangilio",

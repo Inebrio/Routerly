@@ -28,7 +28,7 @@
       "signOut": "Logg ut"
     },
     "banner": {
-      "permissionWarning": "Noen konfigurasjonsfiler har tillatelser som er for åpne ({{files}}). Oppstart og forespørsler fungerer fortsatt, men fikser dette fra vertsfilsystemet når det passer.",
+      "permissionWarning": "Noen konfigurasjonsfiler har tillatende tilgang ({{files}}). Oppstart og forespørsler fungerer fortsatt. Fiks det fra Innstillinger → Sikkerhet, eller fra vertsfilsystemet når det passer.",
       "dismiss": "Avvis",
       "updateAvailable": "Routerly v{{latest}} er tilgjengelig. Du bruker v{{current}}.",
       "updateLink": "Oppdater i Innstillinger",
