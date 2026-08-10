@@ -28,7 +28,7 @@
       "signOut": "Terminar sessão"
     },
     "banner": {
-      "permissionWarning": "Alguns ficheiros de configuração têm acesso permissivo ({{files}}). Inicio e pedidos funcionam, mas corrija isto no sistema de ficheiros do anfitrião quando possível.",
+      "permissionWarning": "Alguns ficheiros de configuração têm acesso permissivo ({{files}}). O arranque e os pedidos continuam a funcionar. Corrija isto em Definições → Segurança, ou a partir do sistema de ficheiros do anfitrião quando for conveniente.",
       "dismiss": "Descartar",
       "updateAvailable": "Routerly v{{latest}} está disponível. Tem v{{current}}.",
       "updateLink": "Atualizar em Definições",

@@ -28,7 +28,7 @@
       "signOut": "Afmelden"
     },
     "banner": {
-      "permissionWarning": "Sommige configuratiebestanden hebben permissieve toegang ({{files}}). Opstarten en verzoeken werken nog steeds, maar zet dit op wanneer het praktisch is vanuit het hostbestandssysteem.",
+      "permissionWarning": "Sommige configuratiebestanden hebben permissieve toegang ({{files}}). Opstarten en aanvragen werken nog steeds. Repareer het vanuit Instellingen → Beveiliging, of vanuit het hostbestandssysteem indien nodig.",
       "dismiss": "Sluiten",
       "updateAvailable": "Routerly v{{latest}} is beschikbaar. U bent op v{{current}}.",
       "updateLink": "Update in Instellingen",

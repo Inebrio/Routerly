@@ -28,7 +28,7 @@
       "signOut": "Keluar"
     },
     "banner": {
-      "permissionWarning": "Beberapa file konfigurasi memiliki akses permisif ({{files}}). Startup dan permintaan masih berfungsi, tetapi perbaiki ini dari sistem file host ketika praktis.",
+      "permissionWarning": "Beberapa file konfigurasi mempunyai akses permisif ({{files}}). Permulaan dan permintaan masih berfungsi. Perbaiki dari Pengaturan → Keamanan, atau dari filesystem host apabila diperlukan.",
       "dismiss": "Tutup",
       "updateAvailable": "Routerly v{{latest}} tersedia. Anda menggunakan v{{current}}.",
       "updateLink": "Perbarui di Pengaturan",

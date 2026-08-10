@@ -28,7 +28,7 @@
       "signOut": "로그아웃"
     },
     "banner": {
-      "permissionWarning": "일부 구성 파일의 액세스 권한이 너무 광범위합니다({{files}}). 시작 및 요청은 작동하지만 편한 시간에 호스트 파일 시스템에서 이를 수정하십시오.",
+      "permissionWarning": "일부 구성 파일에는 허용 가능한 액세스 권한이 있습니다 ({{files}})। 시작 및 요청이 계속 작동합니다. 설정 → 보안에서 수정하거나 편할 때 호스트 파일 시스템에서 수정하세요.",
       "dismiss": "닫기",
       "updateAvailable": "Routerly v{{latest}}를 사용할 수 있습니다. 현재 v{{current}}를 사용 중입니다.",
       "updateLink": "설정에서 업데이트",

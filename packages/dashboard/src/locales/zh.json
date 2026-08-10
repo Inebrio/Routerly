@@ -28,7 +28,7 @@
       "signOut": "登出"
     },
     "banner": {
-      "permissionWarning": "某些配置文件权限过开放({{files}})。启动和请求仍可正常工作，但请在方便时从主机文件系统修复此问题。",
+      "permissionWarning": "某些配置文件具有宽松的访问权限 ({{files}})。启动和请求仍然有效。从设置 → 安全中进行修复，或在方便时从主机文件系统中进行修复.",
       "dismiss": "关闭",
       "updateAvailable": "Routerly v{{latest}} 已发布。您当前使用的是 v{{current}}。",
       "updateLink": "在设置中更新",
