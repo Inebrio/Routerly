@@ -32,6 +32,7 @@ import {
   migrateUsageToNdjson,
   migrateOrchestratorCandidateOrder,
   migratePassthroughPseudoModel,
+  migrateUserRouterIds,
 } from './migrate.js';
 import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
@@ -1127,6 +1128,35 @@ describe('migrateOrchestratorCandidateOrder', () => {
     mockReadConfig.mockResolvedValueOnce(migrated as any);
     const count2 = await migrateOrchestratorCandidateOrder();
     expect(count2).toBe(0);
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
+});
+
+// ─── migrateUserRouterIds (RTR-01: backfill routerIds on pre-existing users) ─
+
+describe('migrateUserRouterIds', () => {
+  it('backfills routerIds: [] on users missing the field, writes users back', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'u1', email: 'a@a.com', roleId: 'admin' },
+      { id: 'u2', email: 'b@b.com', roleId: 'member', routerIds: ['p1'] },
+    ] as any);
+
+    const count = await migrateUserRouterIds();
+
+    expect(count).toBe(1);
+    const saved = mockWriteConfig.mock.calls[0]![1] as any[];
+    expect(saved[0].routerIds).toEqual([]);
+    expect(saved[1].routerIds).toEqual(['p1']);
+  });
+
+  it('EC1: every user already has routerIds → no-op, no write', async () => {
+    mockReadConfig.mockResolvedValue([
+      { id: 'u1', email: 'a@a.com', roleId: 'admin', routerIds: [] },
+    ] as any);
+
+    const count = await migrateUserRouterIds();
+
+    expect(count).toBe(0);
     expect(mockWriteConfig).not.toHaveBeenCalled();
   });
 });

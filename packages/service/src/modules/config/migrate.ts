@@ -137,6 +137,27 @@ export async function migrateNotificationChannelScope(): Promise<number> {
   return count;
 }
 
+/**
+ * Backfills `routerIds: []` on any stored user missing the field (RTR-01
+ * added `routerIds` to `UserConfig` after some installs already had users on
+ * disk). Without this, `accessibleRouters()`'s `user.routerIds.includes(...)`
+ * throws on that user's very first MCP/API call — `routerIds` is typed
+ * required, but nothing ever wrote it onto pre-existing records. Idempotent:
+ * a user that already has the field is left untouched. Returns the number of
+ * users rewritten.
+ */
+export async function migrateUserRouterIds(): Promise<number> {
+  const users = await readConfig('users') as unknown as Array<Record<string, unknown>>;
+  let count = 0;
+  const updated = users.map((user) => {
+    if (Array.isArray(user['routerIds'])) return user;
+    count++;
+    return { ...user, routerIds: [] };
+  });
+  if (count > 0) await writeConfig('users', updated as unknown as Awaited<ReturnType<typeof readConfig<'users'>>>);
+  return count;
+}
+
 // Legacy shapes (only what we need to detect/convert — not exported to callers)
 interface LegacyGuardrailConfig {
   action?: string;
