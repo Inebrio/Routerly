@@ -28,7 +28,7 @@
       "signOut": "Kirjaudu ulos"
     },
     "banner": {
-      "permissionWarning": "Joillakin asetustiedostoilla on liian sallivat käyttöoikeudet ({{files}}). Käynnistys ja pyynnöt toimivat edelleen, mutta korjaa tämä isäntäjärjestelmästä sopivalla hetkellä.",
+      "permissionWarning": "Joillakin asetustiedostoilla on luvallinen pääsy ({{files}}). Käynnistys ja pyynnöt toimivat yhä. Korjaa se Asetukset → Turvallisuus -kohdasta, tai isäntäpalvelimen tiedostojärjestelmästä kun siihen on mahdollisuus.",
       "dismiss": "Hylkää",
       "updateAvailable": "Routerly v{{latest}} on saatavilla. Käytössäsi on v{{current}}.",
       "updateLink": "Päivitä asetuksista",

@@ -28,7 +28,7 @@
       "signOut": "Se déconnecter"
     },
     "banner": {
-      "permissionWarning": "Certains fichiers de configuration ont un accès permissif ({{files}}). Le démarrage et les requêtes fonctionnent toujours, mais corrigez cela depuis le système de fichiers hôte quand c'est opportun.",
+      "permissionWarning": "Certains fichiers de configuration ont un accès permissif ({{files}}). Le démarrage et les requêtes fonctionnent toujours. Corrigez cela dans Paramètres → Sécurité, ou dans le système de fichiers hôte quand c'est pratique.",
       "dismiss": "Rejeter",
       "updateAvailable": "Routerly v{{latest}} est disponible. Vous êtes sur v{{current}}.",
       "updateLink": "Mettre à jour dans Paramètres",

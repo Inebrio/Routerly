@@ -28,7 +28,7 @@
       "signOut": "Abmelden"
     },
     "banner": {
-      "permissionWarning": "Einige Konfigurationsdateien haben permissive Zugriffsrechte ({{files}}). Start und Anfragen funktionieren weiterhin, behebe dies aber im Dateisystem des Hosts, wenn es passt.",
+      "permissionWarning": "Einige Konfigurationsdateien haben permissive Zugriffsrechte ({{files}}). Start und Anfragen funktionieren weiterhin. Behebe dies in Einstellungen → Sicherheit oder im Dateisystem des Hosts, wenn es passt.",
       "dismiss": "Ausblenden",
       "updateAvailable": "Routerly v{{latest}} ist verfügbar. Du nutzt v{{current}}.",
       "updateLink": "In den Einstellungen aktualisieren",

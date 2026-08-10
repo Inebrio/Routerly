@@ -28,7 +28,7 @@
       "signOut": "Kijelentkezés"
     },
     "banner": {
-      "permissionWarning": "Néhány konfigurációs fájl engedményes hozzáféréssel rendelkezik ({{files}}). Az indítás és a kérések továbbra is működnek, de javítsa ezt a gazdaszámítógépről, amikor lehetséges.",
+      "permissionWarning": "Néhány konfigurációs fájlnak megengedő hozzáférése van ({{files}}). Az indítás és a kérések még mindig működnek. Javítsa ki a Beállítások → Biztonság menüből, vagy amikor kényelmes, a gazda fájlrendszeréből.",
       "dismiss": "Elutasítás",
       "updateAvailable": "Routerly v{{latest}} elérhető. Az Ön verziója: v{{current}}.",
       "updateLink": "Frissítés a beállításokból",

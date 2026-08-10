@@ -169,10 +169,12 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
     await readFile(filePath);
   } catch {
     // Seed with the correct empty default, not '{}', so a crash between here
-    // and the rename never leaves a type-wrong placeholder on disk.
-    const seedOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
-    if ((SECRET_KEYS as readonly string[]).includes(key)) seedOptions.mode = 0o600;
-    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), seedOptions);
+    // and the rename never leaves a type-wrong placeholder on disk. Every
+    // config-tier file, not just SECRET_KEYS, is seeded 0600: the umask
+    // default (typically 0644) is what permission-guard flags as unsafe, and
+    // the "preserve existing mode" logic below would otherwise perpetuate
+    // that loose default forever from this very first write.
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), { encoding: 'utf-8', mode: 0o600 });
   }
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
@@ -263,11 +265,9 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
   try {
     await readFile(filePath);
   } catch {
-    // Same seed-mode logic as writeConfig: a secret-tier file must never be
+    // Same seed-mode logic as writeConfig: no config-tier file is ever
     // seeded at the umask default, even on its very first write.
-    const seedOptions: { encoding: 'utf-8'; mode?: number } = { encoding: 'utf-8' };
-    if ((SECRET_KEYS as readonly string[]).includes(key)) seedOptions.mode = 0o600;
-    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), seedOptions);
+    await writeFile(filePath, JSON.stringify(DEFAULTS[key], null, 2), { encoding: 'utf-8', mode: 0o600 });
   }
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;

@@ -28,7 +28,7 @@
       "signOut": "Sair"
     },
     "banner": {
-      "permissionWarning": "Alguns arquivos de configuração têm acesso permissivo ({{files}}). Inicialização e solicitações funcionam, mas resolva isso no sistema de arquivos do host quando conveniente.",
+      "permissionWarning": "Alguns arquivos de configuração têm acesso permissivo ({{files}}). Inicialização e solicitações ainda funcionam. Corrija isso em Configurações → Segurança, ou do sistema de arquivos do host quando for conveniente.",
       "dismiss": "Descartar",
       "updateAvailable": "Routerly v{{latest}} está disponível. Você está na v{{current}}.",
       "updateLink": "Atualizar em Configurações",

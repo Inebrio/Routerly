@@ -28,7 +28,7 @@
       "signOut": "Wyloguj się"
     },
     "banner": {
-      "permissionWarning": "Niektóre pliki konfiguracyjne mają permisywny dostęp ({{files}}). Uruchamianie i żądania nadal działają, ale napraw to z systemu plików hosta, gdy będzie to wygodne.",
+      "permissionWarning": "Kilka plików konfiguracyjnych ma permisywny dostęp ({{files}}). Uruchamianie i żądania nadal działają. Napraw to z Ustawienia → Bezpieczeństwo, lub z systemu plików hosta, gdy jest to wygodne.",
       "dismiss": "Odrzuć",
       "updateAvailable": "Routerly v{{latest}} jest dostępna. Używasz v{{current}}.",
       "updateLink": "Aktualizuj w Ustawieniach",
