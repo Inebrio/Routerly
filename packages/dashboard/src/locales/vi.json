@@ -28,7 +28,7 @@
       "signOut": "Đăng xuất"
     },
     "banner": {
-      "permissionWarning": "Một số tệp cấu hình có quyền truy cập cho phép ({{files}}). Khởi động và yêu cầu vẫn hoạt động, nhưng hãy sửa chữa điều này từ hệ thống tệp máy chủ khi tiện.",
+      "permissionWarning": "Một số tệp cấu hình có quyền truy cập cho phép ({{files}})। Khởi động và yêu cầu vẫn hoạt động. Sửa nó từ Cài đặt → Bảo mật, hoặc từ hệ thống tệp máy chủ khi thuận tiện.",
       "dismiss": "Bỏ qua",
       "updateAvailable": "Routerly v{{latest}} có sẵn. Bạn đang dùng v{{current}}.",
       "updateLink": "Cập nhật trong Cài đặt",

@@ -28,7 +28,7 @@
       "signOut": "Sign Out"
     },
     "banner": {
-      "permissionWarning": "Some configuration files have permissive access ({{files}}). Startup and requests still work, but fix this from the host filesystem when convenient.",
+      "permissionWarning": "काही कॉन्फिगरेशन फाइलांना परवानगीदायक अ‍ॅक्सेस आहे ({{files}})। स्टार्टअप आणि विनंत्या अजूनही कार्य करतात। हे सेटिंग्स → सुरक्षा वरून दुरुस्त करा, किंवा जेव्हा सुविधाजनक असेल तेव्हा होस्ट फाइलसिस्टमवरून दुरुस्त करा.",
       "dismiss": "Dismiss",
       "updateAvailable": "Routerly v{{latest}} is available. You are on v{{current}}.",
       "updateLink": "Update in Settings",

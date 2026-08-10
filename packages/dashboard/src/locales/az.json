@@ -28,7 +28,7 @@
       "signOut": "Çıxış"
     },
     "banner": {
-      "permissionWarning": "Bəzi konfiqurasiya fayllarında icazəli giriş var ({{files}}). Başlanğıc və sorğular hələ də işləyir, amma münasib vaxtda host fayl sistemindən bunu düzəldin.",
+      "permissionWarning": "Bəzi konfiqurasiya faylları açıq icazələrə malikdir ({{files}}). Başlanğıc və istəklər əks halda işləyir. Bunu Parametrlər → Təhlükəsizlik-dən düzəldin, və ya ehtiyac olduqda hostun faylsistemindən düzəldin.",
       "dismiss": "Bağla",
       "updateAvailable": "Routerly v{{latest}} mövcuddur. Siz v{{current}} versiyasındasınız.",
       "updateLink": "Parametrlərdə yenilə",

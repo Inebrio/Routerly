@@ -28,7 +28,7 @@
       "signOut": "Mag-sign Out"
     },
     "banner": {
-      "permissionWarning": "May mga configuration file na may permisibong access ({{files}}). Gumagana pa rin ang startup at mga request, pero ayusin ito mula sa host filesystem kapag may oras.",
+      "permissionWarning": "Ang ilang mga configuration files ay may permissive access ({{files}}). Ang startup at mga requests ay patuloy na gumagana. Ayusin ito mula sa Mga Setting → Seguridad, o mula sa host filesystem kung convenient.",
       "dismiss": "Isara",
       "updateAvailable": "Available na ang Routerly v{{latest}}. Ikaw ay sa v{{current}}.",
       "updateLink": "I-update sa Mga Setting",

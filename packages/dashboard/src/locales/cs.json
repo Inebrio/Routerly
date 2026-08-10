@@ -28,7 +28,7 @@
       "signOut": "Odhlásit se"
     },
     "banner": {
-      "permissionWarning": "Některé konfigurační soubory mají příliš volná oprávnění ({{files}}). Spouštění i požadavky stále fungují, ale opravte to na hostitelském systému souborů, jak vám to bude vyhovovat.",
+      "permissionWarning": "Některé konfigurační soubory mají volný přístup ({{files}}). Spuštění a požadavky stále fungují. Opravte to v Nastavení → Zabezpečení, nebo v hostitelském filesystému, když je to vhodné.",
       "dismiss": "Zavřít",
       "updateAvailable": "Je k dispozici Routerly v{{latest}}. Vy používáte v{{current}}.",
       "updateLink": "Aktualizovat v Nastavení",

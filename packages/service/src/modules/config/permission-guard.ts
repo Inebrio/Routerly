@@ -128,7 +128,7 @@ export async function enforceStartupGuard(): Promise<void> {
 
   if (generalUnsafe.length > 0) {
     console.warn(
-      `[permission-guard] Warning: unsafe permissions on general config file(s): ${generalUnsafe.map(u => `${u.path} (${u.mode})`).join(', ')}. Startup proceeding.`,
+      `[permission-guard] Warning: unsafe permissions on general config file(s). Startup and requests still work; fix on the host filesystem when you can. Run: ${generalUnsafe.map(u => `chmod 600 ${u.path}`).join(' && ')}`,
     );
   }
 

@@ -28,7 +28,7 @@
       "signOut": "Cerrar sesión"
     },
     "banner": {
-      "permissionWarning": "Algunos archivos de configuración tienen permisos demasiado abiertos ({{files}}). El inicio y las solicitudes siguen funcionando, pero corrígelo desde el sistema de archivos del host cuando puedas.",
+      "permissionWarning": "Algunos archivos de configuración tienen acceso permisivo ({{files}}). El inicio y las solicitudes siguen funcionando. Solucionarlo desde Configuración → Seguridad, o desde el sistema de archivos del host cuando sea conveniente.",
       "dismiss": "Descartar",
       "updateAvailable": "Routerly v{{latest}} está disponible. Tienes la v{{current}}.",
       "updateLink": "Actualizar en Configuración",

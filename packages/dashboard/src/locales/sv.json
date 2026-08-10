@@ -28,7 +28,7 @@
       "signOut": "Logga ut"
     },
     "banner": {
-      "permissionWarning": "Vissa konfigurationsfiler har öppen åtkomst ({{files}}). Start och förfrågningar fungerar, men åtgärda detta från värdfilsystemet när det passar.",
+      "permissionWarning": "Vissa konfigurationsfiler har tillåtande åtkomst ({{files}}). Start och förfrågningar fungerar fortfarande. Åtgärda det från Inställningar → Säkerhet, eller från värdfilsystemet när det passar.",
       "dismiss": "Stäng",
       "updateAvailable": "Routerly v{{latest}} är tillgänglig. Du är på v{{current}}.",
       "updateLink": "Uppdatera i Inställningar",
