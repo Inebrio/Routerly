@@ -7,7 +7,7 @@ import { getProxyPipeline } from '../run.js'
 import { runCandidateLoop } from '../candidate-loop.js'
 import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
-import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
+import { llmChat, llmStream, loadEffectiveModel, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { traceEgress } from '../helpers.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
@@ -76,17 +76,25 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     const endUserId = (body as any).user as string | undefined || undefined
 
     // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──
+    // listEffectiveModels() above is a static resolve (no live token fetch) — reload via
+    // loadEffectiveModel() so the OAuth token is decrypted and refreshed if near expiry,
+    // same as llmChat/llmStream already do for the SDK path (execute.ts). Without this the
+    // passthrough forwards `Bearer ` with no/stale token and every request 401s immediately.
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
-      await forwardAnthropicOAuth(req, reply, model)
+      const liveModel = (await loadEffectiveModel(model.id)) ?? model
+      await forwardAnthropicOAuth(req, reply, liveModel)
       ctx.result = { kind: 'passthrough' }
       return
     }
 
     // ── Anthropic API-key / web models: verbatim pass-through (anthropic.ts L229-232). ──
+    // Same live-credential reload as above: anthropic-web's session key also needs it;
+    // plain anthropic api-key models resolve to the same static value either way.
     if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
       ctx.passthrough = true
-      await forwardAnthropicApiKey(req, reply, model)
+      const liveModel = (await loadEffectiveModel(model.id)) ?? model
+      await forwardAnthropicApiKey(req, reply, liveModel)
       ctx.result = { kind: 'passthrough' }
       return
     }

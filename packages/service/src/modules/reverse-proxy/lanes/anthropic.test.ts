@@ -464,6 +464,28 @@ describe('anthropic:upstream', () => {
     expect(ctx.result).toEqual({ kind: 'passthrough' })
   })
 
+  // Regression: listEffectiveModels() (used to build ctx.attempt.model) is a static resolve
+  // with no live token fetch, so a plain anthropic-oauth connection's apiKey field is empty —
+  // forwarding that model verbatim sends `Authorization: Bearer ` and every request 401s.
+  // The lane must reload via loadEffectiveModel() to get the decrypted/refreshed token.
+  it('anthropic-oauth reloads the live (decrypted/refreshed) credential before forwarding', async () => {
+    await seedModels([
+      { ...model, id: 'oauth-a', name: 'oauth-a', provider: 'anthropic-oauth', apiKey: 'live-token-from-connection' },
+    ])
+    const reply: any = { header: vi.fn() }
+    const ctx = {
+      protocol: 'anthropic', reply, traceId: 't1',
+      // Stale/empty apiKey, as listEffectiveModels() would hand back for a real OAuth connection
+      // whose credentials live in oauthEnc/refreshEnc, not apiKey.
+      attempt: { model: { ...model, id: 'oauth-a', provider: 'anthropic-oauth', apiKey: undefined }, candidate },
+      original: { model: 'claude-3-5', messages: [] }, req: {}, log: makeLog(), router: { id: 'p1' },
+    } as unknown as ProxyContext
+    await anthropicUpstream.run(ctx)
+    expect(mockForwardOAuth).toHaveBeenCalledOnce()
+    const forwardedModel = mockForwardOAuth.mock.calls[0]![2]
+    expect(forwardedModel.apiKey).toBe('live-token-from-connection')
+  })
+
   describe('openai-oauth', () => {
     const oauthCtx = (stream: boolean) => ({
       protocol: 'anthropic', traceId: 't-oa',

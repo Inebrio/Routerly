@@ -53,6 +53,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - Dashboard: creating a Passthrough router now redirects straight to its General tab, instead of surfacing a spurious "Unsaved Changes" confirmation on the create form's own success redirect.
 - Dashboard: an Orchestrator's Routing tab no longer shows the "Target Models" section — that model picker had no `kind`-based guard and let a model be added to an Orchestrator, which only ever routes to candidate Routers (configured on its own Orchestrator tab), never to models directly.
 - `POST /mcp` no longer 500s ("Cannot read properties of undefined (reading 'includes')") for any user account created before `routerIds` was added to `UserConfig` — a startup migration now backfills `routerIds: []` on stored users missing it, and `accessibleRouters()` no longer assumes the field is present on every user record on disk.
+- Anthropic OAuth (and Anthropic web) models on the `/v1/messages` passthrough lane no longer fail every request with an immediate auth error. The lane built its forwarding model from the routing candidate list, which never fetches a live token; the decrypted/refreshed OAuth credential was only ever wired into the non-passthrough SDK path. Every OAuth-connected Anthropic request now reloads the live credential right before forwarding, same as the SDK path already did.
 
 ### Breaking changes
 
