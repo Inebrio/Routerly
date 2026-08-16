@@ -3,13 +3,17 @@
 Setup e test integrazione Routerly <-> Alibaba DashScope.
 Uso: python3 test/setup_alibaba_test.py
 """
-import json, urllib.request, urllib.error, base64, sys
+import json, os, urllib.request, urllib.error, base64, sys
 
 BASE = "http://localhost:3000"
-ADMIN_EMAIL = "info@routerly.ai"
-ADMIN_PASSWORD = "C4m4ll0!"
-DASHSCOPE_KEY = "sk-41c27074f7a54378a8cecd28763785cc"
+ADMIN_EMAIL = os.environ.get("ROUTERLY_SMOKE_EMAIL")
+ADMIN_PASSWORD = os.environ.get("ROUTERLY_SMOKE_PASSWORD")
+DASHSCOPE_KEY = os.environ.get("DASHSCOPE_KEY")
 DASHSCOPE_ENDPOINT = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+if not (ADMIN_EMAIL and ADMIN_PASSWORD and DASHSCOPE_KEY):
+    print("ERRORE: imposta ROUTERLY_SMOKE_EMAIL, ROUTERLY_SMOKE_PASSWORD, DASHSCOPE_KEY")
+    sys.exit(1)
 
 def req(method, path, body=None, token=None, bearer_type="session"):
     url = BASE + path
