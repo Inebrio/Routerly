@@ -132,6 +132,45 @@ describe('OpenAIAdapter.chatCompletion', () => {
   });
 });
 
+describe('OpenAIAdapter — reasoning_effort/tools conflict retry', () => {
+  it('retries once with reasoning_effort: "none" when the provider rejects tools+reasoning', async () => {
+    const conflictError = Object.assign(new Error(
+      "Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. " +
+      "To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+    ), { status: 400 });
+    create.mockRejectedValueOnce(conflictError).mockResolvedValueOnce(makeResponse());
+
+    const adapter = new OpenAIAdapter();
+    await adapter.chatCompletion(
+      {
+        model: 'gpt-5.6-luna',
+        messages: [{ role: 'user', content: 'Hi' }],
+        tools: [{ type: 'function', function: { name: 'lookup', parameters: {} } }],
+      } as unknown as ChatCompletionRequest,
+      makeModel({ id: 'openai/gpt-5.6-luna' }),
+    );
+
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]?.[0]).not.toHaveProperty('reasoning_effort');
+    expect(create.mock.calls[1]?.[0]).toHaveProperty('reasoning_effort', 'none');
+  });
+
+  it('does not retry on unrelated errors', async () => {
+    const otherError = Object.assign(new Error('Invalid API key'), { status: 401 });
+    create.mockRejectedValueOnce(otherError);
+
+    const adapter = new OpenAIAdapter();
+    await expect(
+      adapter.chatCompletion(
+        { model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] },
+        makeModel(),
+      ),
+    ).rejects.toThrow('Invalid API key');
+
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('OpenAIAdapter.streamCompletion', () => {
   it('yields chunks from the provider', async () => {
     const chunks = [
