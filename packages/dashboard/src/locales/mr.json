@@ -8,11 +8,15 @@
     "themeCycle": {
       "title": "Theme: {{theme}}"
     },
-    "sidebar": {
-      "expand": "Expand sidebar",
-      "collapse": "Collapse sidebar"
+    "language": {
+      "label": "भाषा",
+      "saveError": "आपकी भाषा सहेजना संभव नहीं हो सका। पिछली भाषा पर वापस आ गया।"
     },
-    "tagline": "One gateway. Any AI model. Total control.",
+    "sidebar": {
+      "expand": "साइडबार विस्तृत करें",
+      "collapse": "साइडबार संकुचित करें"
+    },
+    "tagline": "एक गेटवे। कोई भी AI मॉडल। पूर्ण नियंत्रण।",
     "nav": {
       "overview": "Overview",
       "providers": "Providers",
@@ -23,88 +27,85 @@
       "usage": "Usage",
       "playground": "Playground",
       "settings": "Settings",
-      "connectApp": "Connect app",
+      "connectApp": "ऐप कनेक्ट करें",
       "help": "Help",
-      "signOut": "Sign Out"
+      "signOut": "साइन आउट"
     },
     "banner": {
       "permissionWarning": "काही कॉन्फिगरेशन फाइलांना परवानगीदायक अ‍ॅक्सेस आहे ({{files}})। स्टार्टअप आणि विनंत्या अजूनही कार्य करतात। हे सेटिंग्स → सुरक्षा वरून दुरुस्त करा, किंवा जेव्हा सुविधाजनक असेल तेव्हा होस्ट फाइलसिस्टमवरून दुरुस्त करा.",
       "dismiss": "Dismiss",
-      "updateAvailable": "Routerly v{{latest}} is available. You are on v{{current}}.",
-      "updateLink": "Update in Settings",
-      "mfaRequired": "Two-factor authentication is required for this instance.",
-      "mfaLink": "Set up 2FA in your Profile",
-      "mfaSuffix": "to secure your account.",
-      "telemetryTitle": "Routerly never sends data automatically.",
-      "telemetryBody": "Would you like to help by sending anonymous install metrics? Only event type, version, platform, and a random ID — no personal data, no IP.",
-      "telemetryLink": "What is sent?",
-      "telemetryYes": "Yes, help out",
-      "telemetryNo": "No thanks"
-    },
-    "language": {
-      "label": "भाषा"
+      "updateAvailable": "Routerly v{{latest}} उपलब्ध है। आप v{{current}} पर हैं।",
+      "updateLink": "सेटिंग्स में अपडेट करें",
+      "mfaRequired": "इस उदाहरण के लिए दो-कारक प्रमाणीकरण आवश्यक है।",
+      "mfaLink": "अपनी प्रोफ़ाइल में 2FA सेट अप करें",
+      "mfaSuffix": "अपने खाते को सुरक्षित करने के लिए।",
+      "telemetryTitle": "Routerly कभी स्वचालित रूप से डेटा नहीं भेजता।",
+      "telemetryBody": "क्या आप अनाम इंस्टॉल मेट्रिक्स भेजकर मदद करना चाहते हैं? केवल ईवेंट प्रकार, संस्करण, प्लेटफ़ॉर्म और एक यादृच्छिक ID — कोई व्यक्तिगत डेटा नहीं, कोई IP नहीं।",
+      "telemetryLink": "क्या भेजा जाता है?",
+      "telemetryYes": "हां, मदद करें",
+      "telemetryNo": "धन्यवाद नहीं"
     }
   },
   "common": {
     "time": {
-      "secondsAgo": "{{count}} second ago",
-      "secondsAgo_other": "{{count}} seconds ago",
-      "minutesAgo": "{{count}} minute ago",
-      "minutesAgo_other": "{{count}} minutes ago",
-      "hoursAgo": "{{count}} hour ago",
-      "hoursAgo_other": "{{count}} hours ago",
-      "daysAgo": "{{count}} day ago",
-      "daysAgo_other": "{{count}} days ago"
+      "secondsAgo": "{{count}} सेकंड पहले",
+      "secondsAgo_other": "{{count}} सेकंड पहले",
+      "minutesAgo": "{{count}} मिनट पहले",
+      "minutesAgo_other": "{{count}} मिनट पहले",
+      "hoursAgo": "{{count}} घंटा पहले",
+      "hoursAgo_other": "{{count}} घंटे पहले",
+      "daysAgo": "{{count}} दिन पहले",
+      "daysAgo_other": "{{count}} दिन पहले"
     },
     "confirm": "Confirm",
     "cancel": "Cancel",
     "remove": "Remove",
     "select": "Select...",
     "search": "Search...",
-    "noResults": "No results",
-    "noRemainingOptions": "No remaining options",
+    "noResults": "कोई परिणाम नहीं",
+    "noRemainingOptions": "कोई शेष विकल्प नहीं",
     "apply": "Apply",
     "saved": "Saved",
-    "showLess": "Show less",
+    "showLess": "कम दिखाएं",
     "roles": "Roles",
     "permissions": "Permissions",
     "notifications": {
       "title": "Notifications",
-      "markAllRead": "Mark all read",
-      "empty": "No notifications",
-      "viewAll": "View all notifications"
+      "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+      "empty": "कोई सूचनाएं नहीं",
+      "viewAll": "सभी सूचनाएं देखें"
     },
     "dateRangePicker": {
-      "selectPeriod": "Select period",
+      "selectPeriod": "अवधि चुनें",
       "recent": "Recent",
       "ranges": "Ranges",
       "from": "From",
       "to": "To"
     },
     "permissionGuard": {
-      "fixFailed": "Failed to fix permissions",
-      "title": "Unsafe file permissions",
-      "defaultMessage": "Some files have unsafe permissions.",
+      "fixFailed": "अनुमतियां ठीक करने में विफल",
+      "title": "असुरक्षित फ़ाइल अनुमतियां",
+      "defaultMessage": "कुछ फ़ाइलों में असुरक्षित अनुमतियां हैं।",
       "fixing": "Fixing…",
-      "fixNow": "Fix now"
+      "fixNow": "अभी ठीक करें"
     },
     "limitRows": {
-      "noLimits": "No limits set.",
+      "noLimits": "कोई सीमा निर्धारित नहीं।",
       "metricLabel": "Metric",
       "typeLabel": "Type",
       "periodLabel": "Period",
       "everyLabel": "Every",
-      "maxCost": "Max cost",
-      "maxCount": "Max count",
-      "maxTokens": "Max tokens",
-      "allCombosSet": "All metric/period combinations are already set",
-      "addLimit": "Add limit",
+      "maxCost": "अधिकतम लागत",
+      "maxCount": "अधिकतम गणना",
+      "maxTokens": "अधिकतम टोकन",
+      "allCombosSet": "सभी मेट्रिक/अवधि संयोजन पहले से सेट हैं",
+      "addLimit": "सीमा जोड़ें",
       "metric": {
         "cost": "Cost",
         "calls": "Calls",
-        "input_tokens": "Input tokens",
-        "output_tokens": "Output tokens",
-        "total_tokens": "Total tokens"
+        "input_tokens": "इनपुट टोकन",
+        "output_tokens": "आउटपुट टोकन",
+        "total_tokens": "कुल टोकन"
       },
       "period": {
         "hourly": "Hourly",
@@ -127,191 +128,191 @@
       },
       "fmt": {
         "requests": "{{value}} requests",
-        "inputTokens": "{{value}} input tokens",
-        "outputTokens": "{{value}} output tokens",
-        "totalTokens": "{{value}} total tokens",
+        "inputTokens": "{{value}} इनपुट टोकन",
+        "outputTokens": "{{value}} आउटपुट टोकन",
+        "totalTokens": "{{value}} कुल टोकन",
         "everyRolling": "{{metric}} every {{amount}} {{unit}}",
         "perPeriod": "{{metric}} per {{period}}"
       }
     },
     "savings": {
-      "title": "What routing saved",
+      "title": "रूटिंग ने क्या बचाया",
       "input": "Input",
       "output": "Output",
       "actual": "Actual",
-      "clientCalls": "{{count}} client call",
-      "clientCalls_other": "{{count}} client calls",
-      "comparedAgainst": ", compared against sending it to each of the",
-      "comparedAgainst_other": ", compared against sending them all to each of the",
-      "paidModelsInPlay": "{{count}} paid model in play",
-      "paidModelsInPlay_other": "{{count}} paid models in play",
+      "clientCalls": "{{count}} क्लाइंट कॉल",
+      "clientCalls_other": "{{count}} क्लाइंट कॉल",
+      "comparedAgainst": ", इसे प्रत्येक के लिए भेजने की तुलना में",
+      "comparedAgainst_other": ", उन्हें प्रत्येक के लिए भेजने की तुलना में",
+      "paidModelsInPlay": "{{count}} सशुल्क मॉडल चल रहा है",
+      "paidModelsInPlay_other": "{{count}} सशुल्क मॉडल चल रहे हैं",
       "metricCost": "Cost",
       "metricTokens": "Tokens",
-      "totalCost": "Total Cost",
+      "totalCost": "कुल लागत",
       "routed": "Routed: {{value}}",
       "saved": "Saved: {{value}}",
-      "usdThisPeriod": "USD this period",
-      "savedVsAlways": "{{value}} saved ({{percent}}%) vs always {{model}}",
+      "usdThisPeriod": "इस अवधि में USD",
+      "savedVsAlways": "{{value}} बचाया गया ({{percent}}%) हमेशा {{model}} के विरुद्ध",
       "tokens": "Tokens",
       "in": "In: {{value}}",
       "out": "Out: {{value}}",
-      "tokenSubWithCache": "{{in}} in · {{out}} out · {{cached}} cached",
-      "tokenSub": "{{in}} in · {{out}} out",
-      "cutByOptimizers": "{{value}} cut by optimizers",
-      "fewerThanAlways": "{{value}} fewer than always {{model}}, estimated"
+      "tokenSubWithCache": "{{in}} इन · {{out}} आउट · {{cached}} कैश किया गया",
+      "tokenSub": "{{in}} इन · {{out}} आउट",
+      "cutByOptimizers": "{{value}} ऑप्टिमाइज़र द्वारा काट दिया गया",
+      "fewerThanAlways": "हमेशा {{model}} की तुलना में {{value}} कम, अनुमानित"
     },
     "optimizerSteps": {
       "downloaded": "Downloaded",
-      "thisStepRunsOn": "This step runs on",
-      "defaultCheckpoint": "Default checkpoint"
+      "thisStepRunsOn": "यह चरण इस पर चलता है",
+      "defaultCheckpoint": "डिफॉल्ट चेकपॉइंट"
     },
     "routingPolicies": {
-      "title": "Routing Policies",
-      "subtitle": "Policies determine how requests are routed. They are executed in order from top to bottom.",
-      "removePolicy": "Remove policy",
-      "removeIntent": "Remove intent",
-      "removeExample": "Remove example",
-      "routingModels": "Routing Models",
-      "embeddingModels": "Embedding Models",
-      "maxCompletionTokens": "Max completion tokens",
-      "maxPromptChars": "Max prompt chars",
-      "similarityThreshold": "Similarity threshold",
-      "previousMessages": "Previous messages",
+      "title": "रूटिंग नीतियां",
+      "subtitle": "नीतियां निर्धारित करती हैं कि अनुरोध कैसे रूट किए जाते हैं। उन्हें ऊपर से नीचे तक क्रम में निष्पादित किया जाता है।",
+      "removePolicy": "नीति हटाएं",
+      "removeIntent": "इरादे को हटाएं",
+      "removeExample": "उदाहरण हटाएं",
+      "routingModels": "रूटिंग मॉडल",
+      "embeddingModels": "एम्बेडिंग मॉडल",
+      "maxCompletionTokens": "अधिकतम समापन टोकन",
+      "maxPromptChars": "अधिकतम प्रॉम्प्ट वर्ण",
+      "similarityThreshold": "समानता थ्रेसहोल्ड",
+      "previousMessages": "पिछले संदेश",
       "intents": "Intents",
-      "confidenceThreshold": "Confidence threshold",
-      "ambiguityMargin": "Ambiguity margin",
-      "maxCallsPerWindow": "Max calls per window",
-      "addFallbackModel": "Add Fallback Model",
-      "autoRoutingLabel": "Auto Routing",
-      "autoRoutingHint": "If enabled, traffic is distributed without custom prompts. If disabled, you can write specific prompts instructing the AI when to select each target model.",
-      "additionalPromptInfoLabel": "Additional Prompt Info",
-      "additionalPromptInfoPlaceholder": "Extra instructions to include in the routing prompt...",
-      "addExamplePlaceholder": "Add example and press Enter…",
-      "addIntentPlaceholder": "Add intent and press Enter…",
-      "addPolicyPlaceholder": "Add a policy...",
+      "confidenceThreshold": "आत्मविश्वास थ्रेसहोल्ड",
+      "ambiguityMargin": "अस्पष्टता मार्जिन",
+      "maxCallsPerWindow": "प्रति विंडो अधिकतम कॉल",
+      "addFallbackModel": "फॉलबैक मॉडल जोड़ें",
+      "autoRoutingLabel": "स्वचालित रूटिंग",
+      "autoRoutingHint": "यदि सक्षम है, तो ट्रैफिक कस्टम प्रॉम्प्ट के बिना वितरित किया जाता है। यदि अक्षम है, तो आप विशिष्ट प्रॉम्प्ट लिख सकते हैं जो AI को बताते हैं कि प्रत्येक लक्ष्य मॉडल को कब चुनना है।",
+      "additionalPromptInfoLabel": "अतिरिक्त प्रॉम्प्ट जानकारी",
+      "additionalPromptInfoPlaceholder": "रूटिंग प्रॉम्प्ट में शामिल करने के लिए अतिरिक्त निर्देश...",
+      "addExamplePlaceholder": "उदाहरण जोड़ें और Enter दबाएं…",
+      "addIntentPlaceholder": "इरादा जोड़ें और Enter दबाएं…",
+      "addPolicyPlaceholder": "एक नीति जोड़ें...",
       "labels": {
-        "llm": "AI Routing Policy",
-        "rate-limit": "Rate Limit Policy",
-        "budget-remaining": "Budget Remaining Policy",
-        "semantic-intent": "Semantic Intent Policy",
-        "health": "Health Policy",
-        "context": "Context Policy",
-        "capability": "Capability Policy",
-        "performance": "Performance Policy",
-        "fairness": "Fairness Policy",
-        "cheapest": "Cheapest Policy",
-        "model-preference": "Model Preference Policy"
+        "llm": "AI रूटिंग नीति",
+        "rate-limit": "दर सीमा नीति",
+        "budget-remaining": "बजट शेष नीति",
+        "semantic-intent": "शब्दार्थ इरादा नीति",
+        "health": "स्वास्थ्य नीति",
+        "context": "संदर्भ नीति",
+        "capability": "क्षमता नीति",
+        "performance": "प्रदर्शन नीति",
+        "fairness": "निष्पक्षता नीति",
+        "cheapest": "सस्ती नीति",
+        "model-preference": "मॉडल पसंद नीति"
       },
       "descriptions": {
-        "context": "Scores models based on available context window. Assigns 0 to models whose context window is smaller than the estimated request length, preventing truncation errors.",
-        "cheapest": "Scores models inversely proportional to their token cost. The cheapest model gets 1.0, the most expensive gets 0.0, helping reduce API spend across requests.",
-        "health": "Scores models based on their recent error rate using exponential decay (recent errors weigh more). Applies a circuit breaker that sets the score to 0 when the weighted error rate exceeds a critical threshold.",
-        "performance": "Scores models based on their recent average latency using exponential decay. The fastest model gets 1.0, the slowest gets 0.0. Models without recent data default to 1.0.",
-        "llm": "Uses an AI model to score candidates based on the semantic content of the request. Supports routing guidance prompts per model and considers budget headroom when limits are configured.",
-        "capability": "Hard filter: assigns 0 to models that explicitly lack a feature required by the request (vision, function calling, JSON mode). Models without explicit capability declarations are not penalized.",
-        "rate-limit": "Penalizes models with a high recent call frequency to reduce the risk of hitting provider rate limits (HTTP 429). Supports a configurable hard threshold that forces the score to 0.",
-        "fairness": "Distributes traffic evenly by penalizing models that received more successful calls recently. Acts as a soft round-robin to prevent load from concentrating on a single model.",
-        "budget-remaining": "Scores models based on remaining budget headroom across all configured limits. Prefers models with more room before their thresholds are hit, spreading consumption proactively.",
-        "semantic-intent": "Classifies the request by semantic intent using embeddings, then restricts the candidate pool to the models mapped to that intent. Confident matches hard-filter the pool; ambiguous matches merge top-2 pools; unknown requests pass all candidates through.",
-        "model-preference": "When the client requests a specific model (not routerly/ada), awards a configurable bonus score to that model. When no preference is expressed, the policy abstains. Position in the list controls how much the preference weighs against other policies."
+        "context": "उपलब्ध संदर्भ विंडो के आधार पर मॉडल को स्कोर करता है। अनुमानित अनुरोध लंबाई से छोटी संदर्भ विंडो वाले मॉडल को 0 असाइन करता है, काट-छांट त्रुटियों को रोकता है।",
+        "cheapest": "उनके टोकन लागत के विपरीत आनुपातिक रूप से मॉडल को स्कोर करता है। सबसे सस्ता मॉडल 1.0 प्राप्त करता है, सबसे महंगा 0.0 प्राप्त करता है, API खर्च को कम करने में मदद करता है।",
+        "health": "घातीय क्षय का उपयोग करके उनकी हाल की त्रुटि दर के आधार पर मॉडल को स्कोर करता है (हाल की त्रुटियां अधिक वजन रखती हैं)। एक सर्किट ब्रेकर लागू करता है जो भारित त्रुटि दर गंभीर सीमा से अधिक होने पर स्कोर को 0 पर सेट करता है।",
+        "performance": "घातीय क्षय का उपयोग करके उनकी हाल की औसत विलंबता के आधार पर मॉडल को स्कोर करता है। सबसे तेज़ मॉडल 1.0 प्राप्त करता है, सबसे धीमा 0.0 प्राप्त करता है। हाल के डेटा के बिना मॉडल डिफ़ॉल्ट रूप से 1.0 करते हैं।",
+        "llm": "अनुरोध की शब्दार्थ सामग्री के आधार पर उम्मीदवारों को स्कोर करने के लिए एक AI मॉडल का उपयोग करता है। प्रत्येक मॉडल के लिए रूटिंग मार्गदर्शन प्रॉम्प्ट का समर्थन करता है और सीमा निर्धारित होने पर बजट हेडरूम पर विचार करता है।",
+        "capability": "कठोर फिल्टर: मॉडल को 0 असाइन करता है जिनके पास अनुरोध (दृष्टि, फ़ंक्शन कॉलिंग, JSON मोड) द्वारा आवश्यक सुविधा स्पष्ट रूप से नहीं है। स्पष्ट क्षमता घोषणा के बिना मॉडल दंडित नहीं होते हैं।",
+        "rate-limit": "उच्च हाल की कॉल आवृत्ति वाले मॉडल को दंडित करता है ताकि प्रदाता दर सीमा (HTTP 429) हिट करने का जोखिम कम हो। एक कॉन्फ़िगर करने योग्य कठोर थ्रेसहोल्ड को समर्थन करता है जो स्कोर को 0 पर बाध्य करता है।",
+        "fairness": "हाल ही में अधिक सफल कॉल प्राप्त करने वाले मॉडल को दंडित करके ट्रैफिक को समान रूप से वितरित करता है। नरम राउंड-रॉबिन के रूप में कार्य करता है ताकि भार एकल मॉडल पर केंद्रित न हो।",
+        "budget-remaining": "सभी कॉन्फ़िगर की गई सीमाओं में शेष बजट हेडरूम के आधार पर मॉडल को स्कोर करता है। अधिक कमरे वाले मॉडल को प्राथमिकता देता है, खपत को सक्रिय रूप से फैलाता है।",
+        "semantic-intent": "एम्बेडिंग का उपयोग करके शब्दार्थ इरादे द्वारा अनुरोध को वर्गीकृत करता है, फिर उम्मीदवार पूल को उस इरादे पर मैप किए गए मॉडल तक सीमित करता है। आत्मविश्वास से मेल खाता है कठोर-फिल्टर पूल; अस्पष्ट मिलान शीर्ष-2 पूल विलय करते हैं; अज्ञात अनुरोध सभी उम्मीदवारों को पारित करते हैं।",
+        "model-preference": "जब क्लाइंट एक विशिष्ट मॉडल का अनुरोध करता है (routerly/ada नहीं), उस मॉडल को एक कॉन्फ़िगर करने योग्य बोनस स्कोर देता है। जब कोई प्राथमिकता व्यक्त नहीं की जाती है, तो नीति अलग रहती है। सूची में स्थिति नियंत्रित करती है कि प्राथमिकता अन्य नीतियों के विरुद्ध कितना वजन रखती है।"
       },
-      "selectModel": "Select model"
+      "selectModel": "मॉडल चुनें"
     },
     "securityRules": {
-      "applyTo": "Apply to",
-      "streamingBufferSize": "Streaming buffer size (characters)",
-      "entityTypes": "Entity types",
+      "applyTo": "लागू करें",
+      "streamingBufferSize": "स्ट्रीमिंग बफर आकार (वर्ण)",
+      "entityTypes": "इकाई प्रकार",
       "target": "Target",
-      "embeddingModel": "Embedding model",
-      "judgeModel": "Judge model",
-      "contentGuardrails": "Content Guardrails",
-      "piiPolicies": "PII Policies",
-      "addSecurityPolicyPlaceholder": "Add a security policy...",
-      "removePolicyTooltip": "Remove policy",
-      "deleteRuleAriaLabel": "Delete rule",
-      "embeddingModelPlaceholder": "Select embedding model...",
-      "fallbackModelsLabel": "Fallback models (optional, tried in order)",
-      "fallbackModelsPlaceholder": "No fallback models...",
-      "exampleTextsLabel": "Example texts to block (one per line)",
-      "exampleTextsPlaceholder": "How do I hack...\n...",
-      "similarityThresholdLabel": "Similarity threshold:",
-      "judgeModelPlaceholder": "Select judge model...",
-      "allowedTopicsLabel": "Allowed topics (natural language)",
-      "allowedTopicsPlaceholder": "Customer support for software products. Technical troubleshooting. Billing questions.",
-      "onTopicThresholdLabel": "Block if on-topic score below:",
-      "harmThresholdLabel": "Block if harm score above:",
-      "customInstructionsLabel": "Custom instructions",
-      "customInstructionsPlaceholder": "You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\nRespond ONLY with a JSON object: {\"score\": <number between 0 and 1>}",
-      "customInstructionsRequired": "Custom instructions are required.",
+      "embeddingModel": "एम्बेडिंग मॉडल",
+      "judgeModel": "न्यायाधीश मॉडल",
+      "contentGuardrails": "सामग्री सुरक्षा",
+      "piiPolicies": "PII नीतियां",
+      "addSecurityPolicyPlaceholder": "एक सुरक्षा नीति जोड़ें...",
+      "removePolicyTooltip": "नीति हटाएं",
+      "deleteRuleAriaLabel": "नियम हटाएं",
+      "embeddingModelPlaceholder": "एम्बेडिंग मॉडल चुनें...",
+      "fallbackModelsLabel": "फॉलबैक मॉडल (वैकल्पिक, क्रम में प्रयास किए गए)",
+      "fallbackModelsPlaceholder": "कोई फॉलबैक मॉडल नहीं...",
+      "exampleTextsLabel": "उदाहरण ग्रंथ को ब्लॉक करने के लिए (प्रति पंक्ति एक)",
+      "exampleTextsPlaceholder": "मैं कैसे हैक करूं...\n...",
+      "similarityThresholdLabel": "समानता थ्रेसहोल्ड:",
+      "judgeModelPlaceholder": "न्यायाधीश मॉडल चुनें...",
+      "allowedTopicsLabel": "अनुमत विषय (प्राकृतिक भाषा)",
+      "allowedTopicsPlaceholder": "सॉफ़्टवेयर उत्पादों के लिए ग्राहक समर्थन। तकनीकी समस्या निवारण। बिलिंग प्रश्न।",
+      "onTopicThresholdLabel": "ब्लॉक करें यदि विषय पर स्कोर से कम हो:",
+      "harmThresholdLabel": "ब्लॉक करें यदि हानि स्कोर से अधिक हो:",
+      "customInstructionsLabel": "कस्टम निर्देश",
+      "customInstructionsPlaceholder": "आप एक सामग्री सुरक्षा वर्गीकरणकारी हैं। हानिकारक सामग्री के लिए निम्नलिखित पाठ का मूल्यांकन करें।\nश्रेणियां: घृणा भाषण, हिंसा, यौन सामग्री, आत्म-नुकसान।\nकेवल JSON ऑब्जेक्ट के साथ प्रतिक्रिया दें: {\"score\": <0 और 1 के बीच की संख्या>}",
+      "customInstructionsRequired": "कस्टम निर्देश आवश्यक हैं।",
       "enabledLabel": "Enabled",
-      "contentGuardrailsHint": "Inspect requests and responses against configured rules. Active when at least one rule is configured.",
-      "securityPoliciesHeading": "Security Policies",
-      "noSecurityPolicies": "No security policies configured.",
-      "piiPoliciesHint": "Detect and redact personal data. Each policy targets request input, model response, or both, and controls its own entity set.",
-      "noPiiPolicies": "No PII policies configured.",
-      "addPolicyButton": "+ Add Policy",
-      "injectionWarningTitle": "Request payload modified by injection",
-      "injectionWarningBody": "One or more rules inject their instruction into the outgoing request's system prompt, so the payload sent to the provider is modified. No additional model call is made and nothing is blocked; the serving model self-enforces the instruction.",
-      "streamingDisabledWarningTitle": "Streaming disabled for this router",
-      "streamingDisabledWarningBody": "One or more rules are configured to block responses (target: response or both). Because the entire response must be inspected before a blocking decision can be made, Routerly holds the response in full before returning it to the client. Streaming is not available while a response-blocking rule is active; clients will receive the complete response at once instead of in incremental chunks."
+      "contentGuardrailsHint": "कॉन्फ़िगर की गई नीतियों के विरुद्ध अनुरोध और प्रतिक्रियाओं का निरीक्षण करें। कम से कम एक नीति कॉन्फ़िगर होने पर सक्रिय।",
+      "securityPoliciesHeading": "सुरक्षा नीतियां",
+      "noSecurityPolicies": "कोई सुरक्षा नीतियां कॉन्फ़िगर नहीं।",
+      "piiPoliciesHint": "व्यक्तिगत डेटा का पता लगाएं और संपादित करें। प्रत्येक नीति अनुरोध इनपुट, मॉडल प्रतिक्रिया या दोनों को लक्षित करती है, और अपने स्वयं के इकाई सेट को नियंत्रित करती है।",
+      "noPiiPolicies": "कोई PII नीतियां कॉन्फ़िगर नहीं।",
+      "addPolicyButton": "+ नीति जोड़ें",
+      "injectionWarningTitle": "अनुरोध पेलोड इंजेक्शन द्वारा संशोधित",
+      "injectionWarningBody": "एक या अधिक नीतियां आउटपुट अनुरोध के सिस्टम प्रॉम्प्ट में अपने निर्देश को इंजेक्ट करती हैं, इसलिए प्रदाता को भेजा गया पेलोड संशोधित होता है। कोई अतिरिक्त मॉडल कॉल नहीं किया जाता है और कुछ भी ब्लॉक नहीं किया जाता है; सेवा प्रदान करने वाला मॉडल निर्देश को स्वयं-लागू करता है।",
+      "streamingDisabledWarningTitle": "इस राउटर के लिए स्ट्रीमिंग अक्षम",
+      "streamingDisabledWarningBody": "एक या अधिक नीतियां प्रतिक्रिया को ब्लॉक करने के लिए कॉन्फ़िगर की जाती हैं (लक्ष्य: प्रतिक्रिया या दोनों)। क्योंकि पूरी प्रतिक्रिया को ब्लॉकिंग निर्णय से पहले निरीक्षण किया जाना चाहिए, Routerly क्लाइंट को वापस करने से पहले पूरी प्रतिक्रिया को होल्ड करता है। जब कोई प्रतिक्रिया-ब्लॉकिंग नियम सक्रिय हो तो स्ट्रीमिंग उपलब्ध नहीं है; क्लाइंट पूरी प्रतिक्रिया एक साथ प्राप्त करेंगे बजाय वृद्धिशील चंक्स के।"
     },
     "connectionFields": {
-      "azureResourceName": "Azure Resource Name",
+      "azureResourceName": "Azure संसाधन नाम",
       "azureResourceNamePlaceholder": "myresource",
-      "azureResourceNameHint": "The Azure OpenAI resource name (from the Azure portal).",
-      "deploymentId": "Deployment ID",
+      "azureResourceNameHint": "Azure OpenAI संसाधन का नाम (Azure पोर्टल से)।",
+      "deploymentId": "तैनाती ID",
       "deploymentIdPlaceholder": "gpt-4o-deployment",
-      "deploymentIdHint": "The deployment name you created in Azure OpenAI Studio.",
+      "deploymentIdHint": "Azure OpenAI Studio में आपने बनाया गया तैनाती का नाम।",
       "azureApiVersionLabel": "API Version",
-      "azureApiVersionDefaultHint": "(default: 2024-02-01)",
+      "azureApiVersionDefaultHint": "(डिफ़ॉल्ट: 2024-02-01)",
       "azureApiVersionPlaceholder": "2024-02-01",
-      "awsRegion": "AWS Region",
+      "awsRegion": "AWS क्षेत्र",
       "awsRegionPlaceholder": "us-east-1",
-      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyId": "AWS एक्सेस कुंजी ID",
       "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
-      "awsSecretAccessKey": "AWS Secret Access Key",
-      "awsSecretAccessKeyPlaceholderExisting": "Leave blank to keep existing",
+      "awsSecretAccessKey": "AWS गुप्त एक्सेस कुंजी",
+      "awsSecretAccessKeyPlaceholderExisting": "विद्यमान राखून ठेवण्यासाठी रिक्त सोडा",
       "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
-      "awsSessionTokenLabel": "Session Token",
-      "awsSessionTokenOptionalHint": "(optional, for temporary credentials)",
+      "awsSessionTokenLabel": "सेशन टोकन",
+      "awsSessionTokenOptionalHint": "(वैकल्पिक, अस्थायी क्रेडेंशियलसाठी)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
       "gcpRouterId": "GCP Router ID",
       "gcpRouterIdPlaceholder": "my-gcp-router",
       "gcpLocationLabel": "Location",
-      "gcpLocationDefaultHint": "(default: us-central1)",
+      "gcpLocationDefaultHint": "(डिफॉल्ट: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
-      "gcpServiceAccountKeyLabel": "Service Account Key",
+      "gcpServiceAccountKeyLabel": "सेवा खाते की",
       "gcpServiceAccountKeyJsonHint": "(JSON)",
-      "endpointUrl": "Endpoint URL",
+      "endpointUrl": "एंडपॉइंट URL",
       "optional": "(optional)",
       "webProvider": {
-        "unofficialWarningTitle": "Unofficial provider — use at your own risk.",
-        "unofficialWarningBody": "This integration relies on an undocumented internal API that may change or break without notice. It may violate the provider's Terms of Service and could result in account suspension.",
-        "accessTokenLabel": "Access Token",
-        "sessionTokenLabel": "Session Token",
+        "unofficialWarningTitle": "अनौपचारिक प्रदाता — स्वतःच्या जोखिमीवर वापरा।",
+        "unofficialWarningBody": "हे एकीकरण अनिर्दिष्ट आंतरिक API वर अवलंबून आहे जे बिनधारणा बदलू किंवा खराब होऊ शकते। हे प्रदातेच्या सेवा अटींचे उल्लंघन करू शकते आणि खाते निलंबनाचा परिणाम होऊ शकते।",
+        "accessTokenLabel": "प्रवेश टोकन",
+        "sessionTokenLabel": "सेशन टोकन",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Paste sessionKey cookie value (sk-ant-sid01-…)",
-        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token expires every ~24 hours. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
-        "anthropicInstructions": "<strong>How to get your session key:</strong> While logged in to Claude, open DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copy the value of the <code>sessionKey</code> cookie (starts with <code>sk-ant-sid01-</code>). The key stays valid until you log out."
+        "sessionTokenPlaceholder": "sessionKey कुकी मूल्य पेस्ट करा (sk-ant-sid01-…)",
+        "openaiInstructions": "ChatGPT मध्ये लॉग इन केल्यानंतर, नवीन टॅबमध्ये <code>https://chatgpt.com/api/auth/session</code> उघडा। <code>accessToken</code> फील्डचे मूल्य कॉपी करा (<code>eyJ</code>सह सुरू होते)। टोकन प्रत्येक ~24 तासात समाप्त होतो। विश्वसनीय प्रवेशासाठी, खाली <strong>cf_clearance</strong> फील्ड भरा.",
+        "anthropicInstructions": "<strong>आपली सेशन की कसे मिळवायची:</strong> Claude मध्ये लॉग इन केल्यानंतर, DevTools (F12) → Application → Cookies → <code>claude.ai</code> उघडा → <code>sessionKey</code> कुकीचे मूल्य कॉपी करा (<code>sk-ant-sid01-</code>सह सुरू होते)। की तुम्ही लॉग आउट करेपर्यंत वैध राहते।"
       },
       "subscriptionProvider": {
-        "oauthTokenLabel": "Subscription OAuth Token",
-        "authFilePathLabel": "Auth file path",
+        "oauthTokenLabel": "सदस्यता OAuth टोकन",
+        "authFilePathLabel": "प्रमाणीकरण फाइल पथ",
         "oauthTokenPlaceholder": "sk-ant-oat01-…",
-        "authFilePathPlaceholder": "~/.codex/auth.json (default)",
-        "anthropicTitle": "Use your Claude Pro/Max subscription.",
-        "anthropicRunCommandStep": "Run this command and copy the token it prints:",
-        "anthropicPasteTokenStep": "Paste the token into the <em>Subscription OAuth Token</em> field below.",
-        "termsNote": "Regenerate when it expires. Subscription use via a gateway may be against the provider's Terms.",
-        "openaiTitle": "Use your ChatGPT Plus/Pro subscription via the Codex app.",
-        "openaiLoginStep": "Log in to the Codex desktop app with your ChatGPT Plus/Pro account.",
-        "openaiAutoRefreshStep": "Routerly reads your access token from <code>~/.codex/auth.json</code> and refreshes it automatically. No manual copy/paste needed.",
-        "openaiAuthFilePathStep": "Leave the <em>Auth file path</em> field blank to use the default, or enter a custom path if your Codex app stores auth elsewhere.",
-        "openaiTermsNote": "Subscription use via a gateway may be against the provider's Terms."
+        "authFilePathPlaceholder": "~/.codex/auth.json (डिफॉल्ट)",
+        "anthropicTitle": "आपली Claude Pro/Max सदस्यता वापरा।",
+        "anthropicRunCommandStep": "हे आदेश चलवा आणि ते प्रिंट करत असलेले टोकन कॉपी करा:",
+        "anthropicPasteTokenStep": "टोकन खाली <em>सदस्यता OAuth टोकन</em> फील्डमध्ये पेस्ट करा।",
+        "termsNote": "हे समाप्त झाल्यावर पुनरुत्पादित करा। प्रदाता वर्जनद्वारे गेटवे द्वारे सदस्यता वापर विरुद्ध असू शकते।",
+        "openaiTitle": "Codex अ‍ॅपद्वारे आपली ChatGPT Plus/Pro सदस्यता वापरा।",
+        "openaiLoginStep": "Codex डेस्कटॉप अ‍ॅपमध्ये आपल्या ChatGPT Plus/Pro खात्याने लॉग इन करा।",
+        "openaiAutoRefreshStep": "Routerly आपल्या प्रवेश टोकन <code>~/.codex/auth.json</code> वरून वाचते आणि स्वयंचलितपणे ताज्या करतो। कोणतीही हाताने कॉपी/पेस्ट आवश्यक नाही।",
+        "openaiAuthFilePathStep": "डिफॉल्ट वापरण्यासाठी <em>प्रमाणीकरण फाइल पथ</em> फील्ड रिक्त सोडा, किंवा आपल्या Codex अ‍ॅपने प्रमाणीकरण इतरत्र संचयित केल्यास कस्टम पथ प्रविष्ट करा।",
+        "openaiTermsNote": "प्रदाता वर्जनद्वारे गेटवे द्वारे सदस्यता वापर विरुद्ध असू शकते।"
       },
       "copyCode": {
         "copiedTooltip": "Copied!",
-        "copyTooltip": "Copy to clipboard",
+        "copyTooltip": "क्लिपबोर्डमध्ये कॉपी करा",
         "copiedLabel": "Copied",
         "copyLabel": "Copy"
       }
@@ -319,26 +320,26 @@
     "copyBlock": {
       "copyLabel": "Copy",
       "copiedLabel": "Copied!",
-      "copyErrorHint": "Copy failed, select and copy manually."
+      "copyErrorHint": "कॉपी अपयशी, निवडा आणि हाताने कॉपी करा।"
     },
     "mcpClientGuide": {
       "clientAriaLabel": "MCP client",
       "hints": {
-        "claudeCode": "Run this once, anywhere. Claude Code stores the server in <code>~/.claude.json</code>.",
-        "claudeDesktop": "Put this in <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (on Windows, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), then restart the app. It spawns the CLI, so <code>routerly</code> must be on your PATH.",
-        "codex": "Put this in <code>~/.codex/config.toml</code>. Codex reads the token from the environment, so export it in the shell you start Codex from.",
-        "opencode": "Put this in <code>~/.config/opencode/opencode.json</code>.",
-        "openclaw": "Run this once. OpenClaw defaults to the sse transport, which Routerly does not serve, so the transport is set explicitly.",
-        "cursor": "Put this in <code>~/.cursor/mcp.json</code>, or in <code>.cursor/mcp.json</code> to scope it to one project.",
-        "cline": "Put this in <code>~/.cline/mcp.json</code>, or paste it into Configure MCP Servers in the Cline panel.",
-        "zed": "Put this in your Zed <code>settings.json</code>, alongside any other context server."
+        "claudeCode": "हे एकदा कुठेही चलवा। Claude Code सर्व्हर <code>~/.claude.json</code> मध्ये संग्रहित करतो।",
+        "claudeDesktop": "हे <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> मध्ये ठेवा (Windows वर, <code>%APPDATA%\\Claude\\claude_desktop_config.json</code>), नंतर अ‍ॅप पुनः सुरू करा। हे CLI स्पॉन करतो, म्हणून <code>routerly</code> आपल्या PATH वर असले पाहिजे।",
+        "codex": "हे <code>~/.codex/config.toml</code> मध्ये ठेवा। Codex वातावरणापासून टोकन वाचते, म्हणून आपण Codex सुरू करत असलेल्या शेलमध्ये ते निर्यात करा।",
+        "opencode": "हे <code>~/.config/opencode/opencode.json</code> मध्ये ठेवा।",
+        "openclaw": "हे एकदा चलवा। OpenClaw sse वाहक वर डिफॉल्ट आहे, जो Routerly प्रदान करत नाही, म्हणून वाहक स्पष्टपणे सेट केला आहे।",
+        "cursor": "हे <code>~/.cursor/mcp.json</code> मध्ये ठेवा, किंवा एक प्रकल्प स्कोप करण्यासाठी <code>.cursor/mcp.json</code> मध्ये।",
+        "cline": "हे <code>~/.cline/mcp.json</code> मध्ये ठेवा, किंवा Cline पॅनेलमध्ये कॉन्फिगर MCP सर्व्हर्समध्ये पेस्ट करा।",
+        "zed": "हे आपल्या Zed <code>settings.json</code> मध्ये ठेवा, इतर संदर्भ सर्व्हर सह."
       }
     },
     "unsavedChanges": {
-      "title": "Unsaved Changes",
-      "message": "You have unsaved changes. If you leave now, your changes will be lost.",
+      "title": "असंरक्षित बदल",
+      "message": "आपल्याकडे असंरक्षित बदल आहेत. जर आपण आता सोडले तर आपल्या बदल हरविले जातील.",
       "stay": "Stay",
-      "leaveAnyway": "Leave anyway"
+      "leaveAnyway": "तरीही सोडा"
     },
     "trace": {
       "summary": {
@@ -348,72 +349,72 @@
         "routerOverhead": "Router overhead"
       },
       "policyType": {
-        "llm": "AI Routing",
-        "rateLimit": "Rate Limit",
-        "budgetRemaining": "Budget Remaining",
-        "semanticIntent": "Semantic Intent",
-        "modelPreference": "Model Preference"
+        "llm": "AI मार्गनिर्देशन",
+        "rateLimit": "दर मर्यादा",
+        "budgetRemaining": "बजेट शेष",
+        "semanticIntent": "सिमांटिक उद्देश",
+        "modelPreference": "मॉडेल प्राधान्य"
       },
-      "rawDetails": "raw details",
-      "technicalDetails": "technical details",
-      "systemPrompt": "system prompt",
-      "responseText": "response text",
+      "rawDetails": "कच्चा तपशील",
+      "technicalDetails": "तांत्रिक तपशील",
+      "systemPrompt": "सिस्टम प्रॉम्प्ट",
+      "responseText": "प्रतिक्रिया मजकूर",
       "responseJson": "response JSON",
-      "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
-      "fallbackAttempt": "fallback #{{attempt}}",
-      "embeddingModel": "Embedding Model",
-      "upstreamModel": "Upstream Model",
+      "cacheEmbeddingCall": "कॅश एम्बेडिंग कॉल",
+      "fallbackAttempt": "फॉलबॅक #{{attempt}}",
+      "embeddingModel": "एम्बेडिंग मॉडेल",
+      "upstreamModel": "अपस्ट्रीम मॉडेल",
       "provider": "Provider",
       "source": "Source",
       "endpoint": "Endpoint",
-      "cacheHit": "CACHE HIT",
-      "ttlExtended": "TTL extended",
+      "cacheHit": "कॅश हिट",
+      "ttlExtended": "TTL विस्तारित",
       "model": "Model",
       "similarity": "Similarity",
       "embedding": "Embedding",
-      "cacheMiss": "CACHE MISS",
+      "cacheMiss": "कॅश मिस",
       "details": "details",
-      "excludedByLimits": "EXCLUDED BY LIMITS",
-      "finalRanking": "FINAL RANKING",
-      "noRankingData": "No ranking data (record may be corrupted or from older version)",
-      "policyScores": "POLICY SCORES",
+      "excludedByLimits": "मर्यादांद्वारे वगळले",
+      "finalRanking": "अंतिम रँकिंग",
+      "noRankingData": "कोणताही रँकिंग डेटा नाही (रेकॉर्ड दूषित असू शकतो किंवा पुरानी आवृत्तीपासून)",
+      "policyScores": "धोरण स्कोर",
       "weight": "weight {{value}}",
-      "allScores": "all scores",
-      "noPolicyData": "No policy data (record may be corrupted or from older version)",
-      "requestGuardrailBlocked": "REQUEST GUARDRAIL BLOCKED",
-      "requestGuardrailTriggered": "REQUEST GUARDRAIL TRIGGERED",
-      "responseGuardrailBlocked": "RESPONSE GUARDRAIL BLOCKED",
-      "responseGuardrailTriggered": "RESPONSE GUARDRAIL TRIGGERED",
+      "allScores": "सर्व स्कोर",
+      "noPolicyData": "कोणताही धोरण डेटा नाही (रेकॉर्ड दूषित असू शकतो किंवा पुरानी आवृत्तीपासून)",
+      "requestGuardrailBlocked": "विनंती संरक्षण अवरुद्ध",
+      "requestGuardrailTriggered": "विनंती संरक्षण ट्रिगर",
+      "responseGuardrailBlocked": "प्रतिक्रिया संरक्षण अवरुद्ध",
+      "responseGuardrailTriggered": "प्रतिक्रिया संरक्षण ट्रिगर",
       "rule": "Rule",
       "action": "Action",
-      "guardrailsEvaluated": "GUARDRAILS EVALUATED ({{target}})",
+      "guardrailsEvaluated": "संरक्षण मूल्यांकित ({{target}})",
       "ruleCount": "{{count}} rule",
       "ruleCount_other": "{{count}} rules",
-      "promptInjection": "Prompt injection",
+      "promptInjection": "प्रॉम्प्ट इंजेक्शन",
       "injects": "injects",
-      "judgeResponse": "Judge response",
-      "piiScrubbed": "PII SCRUBBED",
-      "piiScanned": "PII SCANNED ({{target}})",
+      "judgeResponse": "न्यायाधीश प्रतिक्रिया",
+      "piiScrubbed": "व्यक्तिगत माहिती साफ केली",
+      "piiScanned": "व्यक्तिगत माहिती स्कॅन केली ({{target}})",
       "policies": "policies",
-      "entityTypes": "entity types",
-      "customPatterns": "custom patterns",
+      "entityTypes": "इकाई प्रकार",
+      "customPatterns": "सानुकूल नमुने",
       "scanned": "scanned",
       "redacted": "redacted",
       "took": "took",
       "ms": "{{value}} ms",
-      "entityTypesScanned": "entity types scanned",
-      "guardrailInjection": "GUARDRAIL INJECTION",
+      "entityTypesScanned": "इकाई प्रकार स्कॅन केले",
+      "guardrailInjection": "संरक्षण इंजेक्शन",
       "rules": "rules",
       "chars": "chars",
-      "injectedText": "injected text",
+      "injectedText": "इंजेक्ट केलेले मजकूर",
       "optimizer": "OPTIMIZER {{id}}",
       "tokens": "tokens",
       "saved": "saved",
       "tok": "{{value}} tok",
       "reason": "reason",
-      "budgetBlocked": "BUDGET BLOCKED",
-      "budgetOk": "BUDGET OK",
-      "egressSent": "EGRESS SENT",
+      "budgetBlocked": "बजेट अवरुद्ध",
+      "budgetOk": "बजेट ठीक",
+      "egressSent": "निर्गमन पाठवले",
       "status": "status",
       "encoding": "encoding",
       "frames": "frames",
@@ -422,8 +423,8 @@
   },
   "profile": {
     "header": {
-      "title": "My Profile",
-      "subtitle": "Manage your account settings"
+      "title": "माझी प्रोफाइल",
+      "subtitle": "आपल्या खाते सेटिंग्ज व्यवस्थापित करा"
     },
     "tabs": {
       "profile": "Profile",
@@ -435,9 +436,9 @@
       "close": "Close",
       "refresh": "Refresh",
       "clear": "Clear",
-      "empty": "No notifications found.",
-      "markAllRead": "Mark all read",
-      "allCaughtUp": "All caught up",
+      "empty": "कोणतसही सूचना सापडला नाही.",
+      "markAllRead": "सर्व पढ्या म्हणून चिन्हांकित करा",
+      "allCaughtUp": "सर्व पकडलेले",
       "unreadCount": "{{count}} unread",
       "selectedCount": "{{count}} selected",
       "severity": {
@@ -458,13 +459,13 @@
         "period": "Period",
         "status": "Status",
         "all": "All",
-        "allCategories": "All categories",
-        "allEvents": "All events",
-        "unreadOnly": "Unread only"
+        "allCategories": "सर्व श्रेणी",
+        "allEvents": "सर्व इव्हेंट",
+        "unreadOnly": "केवळ अपठित"
       },
       "actions": {
-        "markRead": "Mark as read",
-        "markUnread": "Mark as unread",
+        "markRead": "पढ्या म्हणून चिन्हांकित करा",
+        "markUnread": "अपठित म्हणून चिन्हांकित करा",
         "archive": "Archive"
       },
       "table": {
@@ -472,192 +473,193 @@
         "event": "Event",
         "date": "Date",
         "status": "Status",
-        "selectAll": "Select all",
+        "selectAll": "सर्व निवडा",
         "selectRow": "Select {{event}}",
         "eventCount": "{{count}} events"
       },
       "pagination": {
-        "previous": "← Previous",
-        "next": "Next →",
-        "page": "Page {{page}} of {{totalPages}}",
-        "total": "({{count}} total)"
+        "previous": "← मागे",
+        "next": "पुढे →",
+        "page": "पृष्ठ {{page}} of {{totalPages}}",
+        "total": "(एकूण {{count}})"
       },
       "detail": {
-        "ariaLabel": "Notification detail",
+        "ariaLabel": "सूचना तपशील",
         "details": "Details",
-        "noDetails": "No additional details.",
-        "eventsInIncident": "Events in this incident"
+        "noDetails": "अतिरिक्त तपशील नाही.",
+        "eventsInIncident": "या घटनेतील इव्हेंट"
       }
     },
     "security": {
       "roleLabel": "Role:",
       "password": {
-        "heading": "Change Password",
-        "currentLabel": "Current Password",
-        "newLabel": "New Password",
-        "newPlaceholder": "Minimum 8 characters",
-        "confirmLabel": "Confirm New Password",
-        "success": "Password changed successfully.",
+        "heading": "पासवर्ड बदला",
+        "currentLabel": "वर्तमान पासवर्ड",
+        "newLabel": "नवीन पासवर्ड",
+        "newPlaceholder": "किमान 8 अक्षरे",
+        "confirmLabel": "नवीन पासवर्ड पुष्टी करा",
+        "success": "पासवर्ड यशस्वीरित्या बदलला.",
         "saving": "Saving...",
-        "submit": "Change Password",
+        "submit": "पासवर्ड बदला",
         "errors": {
-          "mismatch": "Passwords do not match.",
-          "tooShort": "New password must be at least 8 characters.",
-          "updateFailed": "Update failed"
+          "mismatch": "पासवर्ड जुळत नाहीत.",
+          "tooShort": "नवीन पासवर्ड किमान 8 अक्षरांचा असणे आवश्यक आहे.",
+          "updateFailed": "अपडेट अपयशी"
         }
       },
       "tfa": {
-        "heading": "Two-Factor Authentication",
-        "notEnabled": "2FA is not enabled. Protect your account with a time-based one-time password.",
-        "enableButton": "Enable Two-Factor Authentication",
-        "scanInstructions": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.",
-        "qrAlt": "2FA setup QR code",
-        "addAccountInstructions": "Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and add a new account:",
+        "heading": "दोन-घटक प्रमाणीकरण",
+        "notEnabled": "2FA सक्षम नाही. वेळ-आधारित एकक-वापर पासवर्डसह आपल्या खाता संरक्षित करा.",
+        "enableButton": "दोन-घटक प्रमाणीकरण सक्षम करा",
+        "scanInstructions": "आपल्या प्रामाणिकर्ता अ‍ॅपसह (Google Authenticator, Authy, इत्यादी) हे QR कोड स्कॅन करा, नंतर 6-अंकी कोड प्रविष्ट करून पुष्टी करा.",
+        "qrAlt": "2FA सेटअप QR कोड",
+        "addAccountInstructions": "आपल्या प्रामाणिकर्ता अ‍ॅप (Google Authenticator, Authy, 1Password, इत्यादी) उघडा आणि नवीन खाते जोडा:",
         "setup": {
-          "step1": "Tap <strong>Add account</strong> or the <strong>+</strong> button",
-          "step2": "Choose <strong>Enter setup key</strong> (or scan QR code if on mobile)",
-          "step3": "Enter the secret shown below"
+          "step1": "<strong>खाते जोडा</strong> किंवा <strong>+</strong> बटण टॅप करा",
+          "step2": "<strong>सेटअप की प्रविष्ट करा</strong> निवडा (किंवा मोबाइलवर QR कोड स्कॅन करा)",
+          "step3": "खाली दर्शविलेली गुप्त प्रविष्ट करा"
         },
-        "mobileLink": "Tap here on mobile to open authenticator",
-        "manualEntryLabel": "Manual entry secret:",
-        "saveBackupCodes": "Save these backup codes. Each can be used once if you lose access to your authenticator.",
-        "copyBackupCodes": "Copy backup codes",
-        "confirmCodeLabel": "Enter code from your app to activate",
-        "activate": "Activate 2FA",
+        "mobileLink": "मोबाइलवर प्रामाणिकर्ता उघडण्यासाठी यथे टॅप करा",
+        "manualEntryLabel": "व्यक्तिगत प्रविष्टी गुप्त:",
+        "saveBackupCodes": "या बॅकअप कोड सेव्ह करा. आपण आपल्या प्रामाणिकर्तामध्ये प्रवेश हरविल्यास प्रत्येक एकदा वापरला जाऊ शकतो.",
+        "copyBackupCodes": "बॅकअप कोड कॉपी करा",
+        "confirmCodeLabel": "सक्रिय करण्यासाठी आपल्या अ‍ॅपमधून कोड प्रविष्ट करा",
+        "activate": "2FA सक्रिय करा",
         "cancel": "Cancel",
-        "enabledBadge": "2FA is enabled",
-        "newBackupCodesLabel": "New backup codes (save these now):",
+        "enabledBadge": "2FA सक्षम आहे",
+        "newBackupCodesLabel": "नवीन बॅकअप कोड (आता सेव्ह करा):",
         "copy": "Copy",
-        "regenLabel": "Enter authenticator code to regenerate backup codes",
+        "regenLabel": "बॅकअप कोड पुनर्निर्मित करण्यासाठी प्रामाणिकर्ता कोड प्रविष्ट करा",
         "regenerate": "Regenerate",
-        "regenerateBackupCodes": "Regenerate backup codes",
-        "disableLabel": "Disable 2FA (enter authenticator code)",
-        "disable": "Disable 2FA",
+        "regenerateBackupCodes": "बॅकअप कोड पुनर्निर्मित करा",
+        "disableLabel": "2FA अक्षम करा (प्रामाणिकर्ता कोड प्रविष्ट करा)",
+        "disable": "2FA अक्षम करा",
         "errors": {
-          "setupFailed": "Setup failed",
-          "confirmFailed": "Confirmation failed",
-          "disableFailed": "Disable failed",
-          "regenFailed": "Regeneration failed"
+          "setupFailed": "सेटअप अपयशी",
+          "confirmFailed": "पुष्टीकरण अपयशी",
+          "disableFailed": "अक्षम करणे अपयशी",
+          "regenFailed": "पुनर्निर्मित करणे अपयशी"
         }
       }
     },
     "mcp": {
       "errors": {
-        "loadFailed": "Failed to load the MCP surface",
-        "revokeFailed": "Failed to revoke the token"
+        "loadFailed": "MCP पृष्ठभाग लोड करणे अपयशी",
+        "revokeFailed": "टोकन रद्द करणे अपयशी"
       },
-      "revokeConfirm": "Revoke MCP token \"{{name}}\"? Clients using it stop working immediately.",
+      "revokeConfirm": "MCP टोकन \"{{name}}\" रद्द करा? हे वापरणारे ग्राहक तत्काल काम करणे बंद करतात.",
       "tokens": {
         "heading": "MCP Tokens",
-        "newToken": "New Token",
-        "description": "Each token acts as you: it exposes exactly the tools your role permits. The full value is shown once, on the page that creates it.",
-        "empty": "No MCP tokens yet. Create one to connect an MCP client.",
+        "newToken": "नवीन टोकन",
+        "description": "प्रत्येक टोकन आपल्या रूपात कार्य करतो: हे तुमच्या भूमिका परवानगी देणारे साधने उघड करतो. पूर्ण मूल्य एकदा दर्शविले जाते, ते तयार करणारे पृष्ठावर.",
+        "empty": "अजून कोणतेही MCP टोकन नाहीत. MCP क्लायंट कनेक्ट करण्यासाठी एक तयार करा.",
         "created": "Created",
-        "lastUsed": "Last used",
+        "lastUsed": "शेवटी वापरले",
         "expires": "Expires",
         "never": "Never",
-        "revokeTitle": "Revoke token"
+        "revokeTitle": "टोकन रद्द करा"
       },
       "tools": {
-        "heading": "Tools Your Tokens Expose",
-        "empty": "Your role grants no MCP tool. Ask an administrator for the permissions you need.",
+        "heading": "आपल्या टोकन उघड करणारी साधने",
+        "empty": "आपल्याकडे कोणतेही MCP साधन मंजूरी नाही. आपल्याला आवश्यक अनुमती साधकाला विचारा.",
         "table": {
           "name": "Name",
           "scope": "Scope",
           "description": "Description",
-          "sourceModule": "Source module",
+          "sourceModule": "स्रोत मॉड्यूल",
           "permission": "Permission"
         }
       },
       "connect": {
-        "heading": "Connect an MCP Client",
-        "descriptionPre": "Pick the client you are wiring up, then replace",
-        "descriptionPost": "with one of your tokens. Creating a token shows the same snippet with the value already in it.",
-        "otherClient": "Any other client",
-        "httpInstructionsPre": "Over HTTP, point it at this endpoint and authenticate with",
-        "httpInstructionsPost": ". It is JSON-RPC 2.0 over Streamable HTTP.",
-        "stdioInstructionsPre": "Over stdio, the CLI bridges it and passes your token through. Running the service directly instead? Set",
+        "heading": "MCP क्लायंट कनेक्ट करा",
+        "descriptionPre": "आपण जोडणारे ग्राहक निवडा, नंतर बदला",
+        "descriptionPost": "आपल्या टोकनपैकी एकासह. टोकन तयार करणे मूल्य आधीच त्यात असलेले समान स्निपेट दर्शविते.",
+        "otherClient": "इतर कोणताही ग्राहक",
+        "httpInstructionsPre": "HTTP वर, हे एंडपॉइंट येथे निर्देशित करा आणि प्रमाणीकृत करा",
+        "httpInstructionsPost": ". हे JSON-RPC 2.0 Streamable HTTP वर आहे.",
+        "stdioInstructionsPre": "stdio वर, CLI हे ब्रिज करतो आणि आपल्या टोकन द्वारे पास करतो. याऐवजी सेवा थेट चलवा? सेट करा",
         "stdioInstructionsAnd": "and",
         "stdioInstructionsPost": "yourself."
       },
       "newToken": {
-        "backToMcp": "Back to MCP",
-        "title": "New MCP Token",
-        "subtitle": "The token acts as you: it exposes exactly the tools your role permits.",
+        "backToMcp": "MCP वर परत",
+        "title": "नवीन MCP टोकन",
+        "subtitle": "टोकन आपल्या रूपात कार्य करतो: हे तुमच्या भूमिका परवानगी देणारे साधने उघड करतो.",
         "nameLabel": "Name",
         "namePlaceholder": "laptop",
-        "nameHint": "Where this token is used, for example \"laptop\" or \"claude-desktop\".",
-        "expiryLabel": "Expires on",
-        "expiryHint": "Optional. Leave it empty and the token never expires, until you revoke it.",
-        "createButton": "Create token",
+        "nameHint": "हे टोकन कोठे वापरले जाते, उदाहरणार्थ \"लॅपटॉप\" किंवा \"claude-desktop\".",
+        "expiryLabel": "समाप्तीचे तारीख",
+        "expiryHint": "वैकल्पिक. त्यास रिक्त सोडा आणि टोकन कधीही समाप्त होत नाही, जोपर्यंत आपण ते रद्द करत नाही.",
+        "createButton": "टोकन तयार करा",
         "creatingButton": "Creating…",
         "cancelButton": "Cancel",
         "tokenSection": {
-          "title": "Your token",
-          "hint": "Copy it now. It is not shown again, and a lost token can only be replaced.",
+          "title": "आपल्या टोकन",
+          "hint": "आता कॉपी करा. ते पुन्हा दर्शविले जाणार नाही, आणि हरविलेले टोकन फक्त बदलले जाऊ शकते.",
           "copyButton": "Copy",
           "copiedButton": "Copied!",
-          "copyTitle": "Copy token",
+          "copyTitle": "टोकन कॉपी करा",
           "copiedTitle": "Copied!"
         },
         "connectSection": {
-          "title": "Connect a client",
-          "hint": "Pick the client you are wiring up. The snippet already carries this token."
+          "title": "एक ग्राहक कनेक्ट करा",
+          "hint": "आपण जोडणारे ग्राहक निवडा. स्निपेट आधीच हे टोकन वाहून नेतो."
         },
         "bridgeSection": {
-          "title": "Or use the local bridge",
-          "hint": "For a client that only speaks stdio, the CLI bridges it and passes your token through."
+          "title": "किंवा स्थानीय ब्रिज वापरा",
+          "hint": "केवळ stdio बोलणारे ग्राहकासाठी, CLI हे ब्रिज करतो आणि आपल्या टोकन द्वारे पास करतो."
         },
         "doneButton": "Done",
         "errors": {
-          "createFailed": "Failed to create the token",
-          "copyFailed": "Copy failed, select and copy the token manually."
+          "createFailed": "टोकन तयार करणे अपयशी",
+          "copyFailed": "कॉपी अपयशी, टोकन हाताने निवडा आणि कॉपी करा."
         }
       }
     },
     "preferences": {
       "heading": "Language",
-      "description": "Choose the language the dashboard is displayed in.",
+      "description": "डॅशबोर्ड प्रदर्शित केल्या जाणारे भाषा निवडा.",
       "languageLabel": "Language",
-      "saved": "Language preference saved."
+      "saved": "भाषा पसंद सेव्ह केली.",
+      "saveError": "आपल्या भाषा पसंद सेव्ह करू शकत नाही. मागील एकावर परत केले."
     }
   },
   "settings": {
     "general": {
       "errors": {
-        "loadFailed": "Failed to load settings",
-        "loadFailedPeriod": "Failed to load settings.",
-        "saveFailed": "Failed to save",
-        "saveSettingsFailed": "Failed to save settings"
+        "loadFailed": "सेटिंग्ज लोड करणे अपयशी",
+        "loadFailedPeriod": "सेटिंग्ज लोड करणे अपयशी.",
+        "saveFailed": "सेव्ह करणे अपयशी",
+        "saveSettingsFailed": "सेटिंग्ज सेव्ह करणे अपयशी"
       },
-      "savedSuccess": "Settings saved successfully.",
+      "savedSuccess": "सेटिंग्ज यशस्वीरित्या सेव्ह केल्या.",
       "saving": "Saving…",
-      "saveSettings": "Save Settings",
+      "saveSettings": "सेटिंग्ज सेव्ह करा",
       "serverInfo": {
-        "heading": "Server Info",
-        "readOnly": "Read-only. Host and port come from the environment or the settings file, not from here.",
-        "reachableAt": "Reachable at",
-        "reachableAtAny": "Reachable at any of these addresses",
-        "thisMachine": "This machine",
+        "heading": "सर्व्हर माहिती",
+        "readOnly": "केवळ वाचन. होस्ट आणि पोर्ट वातावरण किंवा सेटिंग्ज फाइलीकडून येतात, येथूनच नाहीत.",
+        "reachableAt": "येथे पोहोचू शकतो",
+        "reachableAtAny": "यापैकी कोणत्याही पत्त्यावर पोहोचू शकतो",
+        "thisMachine": "हे मशीन",
         "network": "Network",
         "copyAddress": "Copy {{address}}",
         "copied": "Copied!",
         "copy": "Copy",
-        "hostAndPort": "Host and port",
+        "hostAndPort": "होस्ट आणि पोर्ट",
         "version": "Version",
         "uptime": "Uptime"
       },
       "runtime": {
-        "heading": "Runtime Settings",
-        "logLevel": "Log Level",
-        "logLevelHint": "Controls the verbosity of service logs.",
-        "publicUrl": "Public URL",
-        "publicUrlHint": "Base URL at which the service is reachable from external clients (e.g. <code>http://192.168.1.10:3000</code>). Used in the <strong>How to connect</strong> section of each router. Useful when the dashboard runs on a different machine or port than the service.",
-        "usageRetention": "Usage Retention",
-        "noLimit": "No limit",
-        "maxAgeDays": "Max age (days)",
-        "maxSizeMb": "Max size (MB)",
-        "retentionHint": "Usage/billing history older than this many days, or exceeding this size, is dropped from the active log. Leave both empty for no retention limit."
+        "heading": "रनटाइम सेटिंग्ज",
+        "logLevel": "लॉग स्तर",
+        "logLevelHint": "सेवा लॉगचे शब्दशः नियंत्रित करतो.",
+        "publicUrl": "सार्वजनिक URL",
+        "publicUrlHint": "आधार URL ज्यावर सेवा बाह्य ग्राहकांकडून पोहोचू शकतो (उदा. <code>http://192.168.1.10:3000</code>). प्रत्येक राउटरच्या <strong>कसे कनेक्ट करायचे</strong> विभागात वापरले जाते. उपयोगी जेव्हा डॅशबोर्ड सेवापेक्षा वेगळ्या मशीन किंवा पोर्टवर चलते.",
+        "usageRetention": "वापर धारण",
+        "noLimit": "कोणतीही मर्यादा नाही",
+        "maxAgeDays": "कमाल वय (दिवस)",
+        "maxSizeMb": "कमाल आकार (MB)",
+        "retentionHint": "या अनेक दिवसांपेक्षा जुने वापर/बिलिंग इतिहास, किंवा हा आकार ओलांडणारे, सक्रिय लॉगमधून टाकले जाते. दोन्ही रिक्त सोडा तर कोणतीही धारण मर्यादा नाही."
       },
       "internationalization": {
         "heading": "आंतरराष्ट्रीयकरण",
@@ -665,14 +667,14 @@
         "defaultLanguageHint": "ज्या वापरकर्त्यांनी अजून त्यांची स्वतःची भाषा निवडली नाही त्यांच्यासाठी डॅशबोर्डची भाषा. वापरकर्त्याची वैयक्तिक पसंद ओव्हरराइड करत नाही."
       },
       "telemetry": {
-        "heading": "Anonymous Metrics",
-        "neverAutomatic": "Routerly never sends data automatically.",
-        "noChoice": "You have not made a choice yet.",
-        "enabledStatus": "Anonymous install metrics are enabled.",
-        "disabledStatus": "Anonymous install metrics are disabled.",
-        "explanation": "When enabled, Routerly sends only: event type (install / upgrade / uninstall), version, platform, and a random ID. No personal data, no usage data, no IP stored.",
-        "whatIsSent": "What is sent?",
-        "installId": "Install ID: {{id}}",
+        "heading": "अनामिक मेट्रिक्स",
+        "neverAutomatic": "Routerly कधीही डेटा स्वयंचलितपणे पाठवत नाही.",
+        "noChoice": "आपणी अजून कोणतीही पसंद केली नाही.",
+        "enabledStatus": "अनामिक स्थापना मेट्रिक्स सक्षम आहेत.",
+        "disabledStatus": "अनामिक स्थापना मेट्रिक्स अक्षम आहेत.",
+        "explanation": "सक्षम केल्यावर, Routerly फक्त पाठवते: इव्हेंट प्रकार (स्थापना / अपग्रेड / अनस्थापन), आवृत्ती, मंच, आणि एक यादृच्छिक ID. कोणताही व्यक्तिगत डेटा, कोणताही वापर डेटा, कोणताही IP संचयित नाही.",
+        "whatIsSent": "काय पाठवले जाते?",
+        "installId": "स्थापना ID: {{id}}",
         "saving": "Saving…",
         "enable": "Enable",
         "disable": "Disable"
@@ -681,24 +683,24 @@
     "notifications": {
       "providers": {
         "dashboard": {
-          "label": "Dashboard (in-app inbox)",
-          "description": "Routes events to the in-app inbox"
+          "label": "डॅशबोर्ड (अ‍ॅप-मध्ये इनबॉक्स)",
+          "description": "मेल खाणारे इव्हेंट अ‍ॅप-मध्ये सूचना इनबॉक्समध्ये मार्गनिर्देशित करते"
         },
         "smtp": {
           "label": "SMTP",
-          "description": "Custom mail server"
+          "description": "कस्टम मेल सर्व्हर"
         },
         "ses": {
           "label": "Amazon SES",
-          "description": "AWS Simple Email Service"
+          "description": "AWS सरल ईमेल सेवा"
         },
         "sendgrid": {
           "label": "SendGrid",
           "description": "Twilio SendGrid"
         },
         "azure": {
-          "label": "Azure Communication",
-          "description": "Azure Communication Services"
+          "label": "Azure संपर्क",
+          "description": "Azure संपर्क सेवा"
         },
         "google": {
           "label": "Google / Gmail",
@@ -706,7 +708,7 @@
         },
         "webhook": {
           "label": "Webhook",
-          "description": "HTTP webhook callback"
+          "description": "HTTP webhook कॉलबॅक"
         },
         "slack": {
           "label": "Slack",
@@ -714,11 +716,11 @@
         },
         "teams": {
           "label": "Microsoft Teams",
-          "description": "Teams Incoming Webhook"
+          "description": "Teams येणार्या Webhook"
         },
         "pagerduty": {
           "label": "PagerDuty",
-          "description": "PagerDuty Events API v2"
+          "description": "PagerDuty इव्हेंट API v2"
         },
         "discord": {
           "label": "Discord",
@@ -726,64 +728,64 @@
         }
       },
       "events": {
-        "providerError": "Provider – Error",
-        "providerDegraded": "Provider – Degraded",
-        "providerRecovered": "Provider – Recovered",
-        "providerRateLimited": "Provider – Rate Limited",
-        "routingNoCandidates": "Routing – No Candidates",
-        "routingFallbackUsed": "Routing – Fallback Used",
-        "authLoginFailed": "Auth – Login Failed",
-        "authTokenInvalid": "Auth – Token Invalid",
-        "configModelAdded": "Config – Model Added",
-        "configModelDeleted": "Config – Model Deleted",
-        "configRouterCreated": "Config – Router Created",
-        "configRouterDeleted": "Config – Router Deleted",
-        "budgetThresholdReached": "Budget – Threshold Reached",
-        "budgetExceeded": "Budget – Exceeded",
-        "budgetReset": "Budget – Reset",
-        "systemStartup": "System – Startup",
-        "systemShutdown": "System – Shutdown",
-        "systemUpdateAvailable": "System – Update Available"
+        "providerError": "प्रदाता – त्रुटी",
+        "providerDegraded": "प्रदाता – कमी झाले",
+        "providerRecovered": "प्रदाता – पुनरावृत्ती",
+        "providerRateLimited": "प्रदाता – दर मर्यादित",
+        "routingNoCandidates": "मार्गनिर्देशन – कोणतेही उमेदवार नाही",
+        "routingFallbackUsed": "मार्गनिर्देशन – फॉलबॅक वापरले",
+        "authLoginFailed": "प्रमाण – लॉगिन अपयशी",
+        "authTokenInvalid": "प्रमाण – टोकन अमान्य",
+        "configModelAdded": "कॉन्फिग – मॉडेल जोडले",
+        "configModelDeleted": "कॉन्फिग – मॉडेल हटविले",
+        "configRouterCreated": "कॉन्फिग – Router तयार",
+        "configRouterDeleted": "कॉन्फिग – Router हटविले",
+        "budgetThresholdReached": "बजेट – थ्रेशोल्ड पोहोचले",
+        "budgetExceeded": "बजेट – ओलांडले",
+        "budgetReset": "बजेट – रीसेट",
+        "systemStartup": "सिस्टम – सुरुवात",
+        "systemShutdown": "सिस्टम – बंद",
+        "systemUpdateAvailable": "सिस्टम – अपडेट उपलब्ध"
       },
-      "removeChannelTooltip": "Remove channel",
-      "removeChannelConfirm": "Remove channel?",
-      "formUpdatedHint": "Form updated — save to apply.",
-      "hmacSigningKeyPlaceholder": "HMAC signing key",
+      "removeChannelTooltip": "चॅनल काढून टाका",
+      "removeChannelConfirm": "चॅनल काढून टाकायचा?",
+      "formUpdatedHint": "फॉर्म अपडेट केला — लागू करण्यासाठी सेव्ह करा.",
+      "hmacSigningKeyPlaceholder": "HMAC स्वाक्षरी की",
       "perms": {
-        "routerRead": "Routers – Read",
-        "routerWrite": "Routers – Write",
-        "modelRead": "Models – Read",
-        "modelWrite": "Models – Write",
-        "userRead": "Users – Read",
-        "userWrite": "Users – Write",
-        "reportRead": "Reports – Read",
-        "settingsRead": "Settings – Read",
-        "settingsWrite": "Settings – Write",
-        "notificationWrite": "Notifications – Write",
-        "tokenRead": "Tokens – Read",
-        "tokenWrite": "Tokens – Write",
-        "roleWrite": "Roles – Write",
-        "auditRead": "Audit Log – Read",
-        "modulesRead": "Modules – Read",
-        "modulesManage": "Modules – Manage",
-        "connectionsRead": "Connections – Read",
-        "connectionsManage": "Connections – Manage",
-        "resilienceRead": "Resilience – Read",
-        "resilienceManage": "Resilience – Manage",
-        "profilesRead": "Routing Profiles – Read",
-        "profilesManage": "Routing Profiles – Manage",
-        "optimizersRead": "Optimizers – Read",
-        "optimizersManage": "Optimizers – Manage",
-        "experimentsRead": "Experiments – Read",
-        "experimentsManage": "Experiments – Manage"
+        "routerRead": "राउटर – वाचा",
+        "routerWrite": "राउटर – लिहा",
+        "modelRead": "मॉडेल – वाचा",
+        "modelWrite": "मॉडेल – लिहा",
+        "userRead": "वापरकर्ते – वाचा",
+        "userWrite": "वापरकर्ते – लिहा",
+        "reportRead": "अहवाल – वाचा",
+        "settingsRead": "सेटिंग्ज – वाचा",
+        "settingsWrite": "सेटिंग्ज – लिहा",
+        "notificationWrite": "सूचना – लिहा",
+        "tokenRead": "टोकन – वाचा",
+        "tokenWrite": "टोकन – लिहा",
+        "roleWrite": "भूमिका – लिहा",
+        "auditRead": "ऑडिट लॉग – वाचा",
+        "modulesRead": "मॉड्यूल – वाचा",
+        "modulesManage": "मॉड्यूल – व्यवस्थापित करा",
+        "connectionsRead": "कनेक्शन – वाचा",
+        "connectionsManage": "कनेक्शन – व्यवस्थापित करा",
+        "resilienceRead": "लचक – वाचा",
+        "resilienceManage": "लचक – व्यवस्थापित करा",
+        "profilesRead": "मार्गनिर्देशन प्रोफाइल – वाचा",
+        "profilesManage": "मार्गनिर्देशन प्रोफाइल – व्यवस्थापित करा",
+        "optimizersRead": "ऑप्टिमाइज़र – वाचा",
+        "optimizersManage": "ऑप्टिमाइज़र – व्यवस्थापित करा",
+        "experimentsRead": "प्रयोग – वाचा",
+        "experimentsManage": "प्रयोग – व्यवस्थापित करा"
       },
       "targetsHint": {
-        "fixedEndpoint": "For this channel type, targets do not change delivery (the endpoint is fixed). They filter which events are logged in the audit trail per recipient.",
-        "dashboard": "Targets control inbox visibility — only the matched users will see these notifications in their in-app inbox.",
-        "email": "Targets determine which users receive this email. Leave all empty to send to all users."
+        "fixedEndpoint": "या चॅनल प्रकारसाठी, लक्ष्य वितरण बदलत नाहीत (एंडपॉइंट निश्चित आहे). ते ऑडिट ट्रेलमध्ये प्रति प्राप्तकर्ता कोण इव्हेंट लॉग केले जातात हे फिल्टर करतात.",
+        "dashboard": "लक्ष्य इनबॉक्स दृश्यमानता नियंत्रित करतात — फक्त जुळलेले वापरकर्ते आपल्या अ‍ॅप-मध्ये इनबॉक्समध्ये हे सूचना पाहतील.",
+        "email": "लक्ष्य निर्धारित करतात कोण वापरकर्ते हे ईमेल प्राप्त करतात. सर्व वापरकर्त्यांना पाठवण्यासाठी सर्व रिक्त सोडा."
       },
       "summary": {
-        "allEvents": "All events",
+        "allEvents": "सर्व इव्हेंट",
         "eventCount": "{{count}} event",
         "eventCount_other": "{{count}} events",
         "roleCount": "{{count}} role",
@@ -795,77 +797,77 @@
         "everyone": "Everyone"
       },
       "errors": {
-        "loadFailed": "Failed to load"
+        "loadFailed": "लोड करणे अपयशी"
       },
       "fields": {
-        "dashboardHint": "Routes matching events to the in-app notification inbox. No credentials required.",
+        "dashboardHint": "मेल खाणारे इव्हेंट अ‍ॅप-मध्ये सूचना इनबॉक्समध्ये मार्गनिर्देशित करते. कोणतेही क्रेडेंशियल आवश्यक नाही.",
         "labels": {
-          "fromAddress": "From Address",
-          "fromName": "From Name",
+          "fromAddress": "पत्ता करून",
+          "fromName": "नाव करून",
           "host": "Host",
           "port": "Port",
           "tls": "TLS/SSL",
           "username": "Username",
           "password": "Password",
-          "awsRegion": "AWS Region",
-          "accessKeyId": "Access Key ID",
-          "secretAccessKey": "Secret Access Key",
+          "awsRegion": "AWS प्रदेश",
+          "accessKeyId": "प्रवेश की ID",
+          "secretAccessKey": "गुप्त प्रवेश की",
           "apiKey": "API Key",
-          "connectionString": "Connection String",
-          "clientId": "Client ID",
-          "clientSecret": "Client Secret",
-          "refreshToken": "Refresh Token",
+          "connectionString": "कनेक्शन स्ट्रिंग",
+          "clientId": "क्लायंट ID",
+          "clientSecret": "क्लायंट गुप्त",
+          "refreshToken": "ताज्या करा टोकन",
           "url": "URL",
           "method": "Method",
-          "signingSecret": "Signing Secret",
-          "botToken": "Bot Token",
-          "channelId": "Channel ID",
+          "signingSecret": "स्वाक्षरी गुप्त",
+          "botToken": "बॉट टोकन",
+          "channelId": "चॅनल ID",
           "webhookUrl": "Webhook URL",
-          "integrationKey": "Integration Key"
+          "integrationKey": "एकीकरण की"
         },
         "values": {
           "enabled": "Enabled",
           "disabled": "Disabled",
           "configured": "Configured",
-          "notSet": "Not set"
+          "notSet": "सेट नाही"
         },
         "optional": "(optional)",
-        "keepCurrentPlaceholder": "Leave blank to keep current",
+        "keepCurrentPlaceholder": "वर्तमान राखून ठेवण्यासाठी रिक्त सोडा",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
-        "smtpTlsLabel": "Use TLS / SSL",
-        "smtpTlsOnHint": "(port 465 — direct SSL)",
-        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "smtpTlsLabel": "TLS / SSL वापरा",
+        "smtpTlsOnHint": "(पोर्ट 465 — थेट SSL)",
+        "smtpTlsOffHint": "(पोर्ट 587 — STARTTLS)",
         "sesRegionPlaceholder": "us-east-1",
-        "sesIamHint": "Leave credentials blank to use the IAM instance role.",
+        "sesIamHint": "IAM उदाहरण भूमिका वापरण्यासाठी क्रेडेंशियल रिक्त सोडा.",
         "sendgridApiKeyPlaceholder": "SG.…",
         "webhookUrlPlaceholder": "https://example.com/webhook",
-        "webhookSecretPlaceholder": "HMAC signing key",
+        "webhookSecretPlaceholder": "HMAC स्वाक्षरी की",
         "slackBotTokenPlaceholder": "xoxb-…",
         "slackChannelIdPlaceholder": "C1234567890",
         "teamsWebhookPlaceholder": "https://outlook.office.com/webhook/…",
-        "pagerdutyKeyPlaceholder": "32-character routing key",
+        "pagerdutyKeyPlaceholder": "32-वर्णांचे मार्गनिर्देशन की",
         "discordWebhookPlaceholder": "https://discord.com/api/webhooks/…",
         "routing": {
           "eventsHeading": "Events",
-          "eventsPlaceholder": "All events (leave empty for all)",
-          "eventsHint": "Leave empty to receive all events. Select specific events to filter.",
+          "eventsPlaceholder": "सर्व इव्हेंट (सर्वांसाठी रिक्त सोडा)",
+          "eventsHint": "सर्व इव्हेंट प्राप्त करण्यासाठी रिक्त सोडा. विशिष्ट इव्हेंट निवडा फिल्टर करण्यासाठी.",
           "routersHeading": "Routers",
-          "routersPlaceholder": "All routers (leave empty for all)",
-          "routersHint": "Leave empty to receive events from all routers.",
+          "routersPlaceholder": "सर्व राउटर (सर्वांसाठी रिक्त सोडा)",
+          "routersHint": "सर्व राउटरमधून इव्हेंट प्राप्त करण्यासाठी रिक्त सोडा.",
           "cooldownHeading": "Cooldown",
-          "cooldownSuffix": "seconds (0 = no cooldown)",
-          "cooldownHint": "Minimum interval before this channel can fire again for the same event."
+          "cooldownSuffix": "सेकंद (0 = कुलडाउन नाही)",
+          "cooldownHint": "समान इव्हेंटसाठी हा चॅनल पुन्हा फायर करण्यापूर्वी किमान मध्यांतर."
         },
         "recipients": {
-          "heading": "Recipients / Targets",
+          "heading": "प्राप्तकर्ते / लक्ष्य",
           "rolesLabel": "Roles",
-          "rolesPlaceholder": "All roles (everyone)",
+          "rolesPlaceholder": "सर्व भूमिका (प्रत्येकजण)",
           "permissionsLabel": "Permissions",
-          "permissionsPlaceholder": "All permissions (everyone)",
-          "usersLabel": "Individual users",
-          "usersPlaceholder": "All users (everyone)"
+          "permissionsPlaceholder": "सर्व अनुमती (प्रत्येकजण)",
+          "usersLabel": "व्यक्तिगत वापरकर्ते",
+          "usersPlaceholder": "सर्व वापरकर्ते (प्रत्येकजण)"
         }
       },
       "form": {
@@ -875,207 +877,207 @@
           "recipients": "recipients"
         },
         "sections": {
-          "channelSettings": "Channel settings",
-          "eventsRouting": "Events and routing",
+          "channelSettings": "चॅनल सेटिंग्ज",
+          "eventsRouting": "इव्हेंट आणि मार्गनिर्देशन",
           "recipients": "Recipients"
         },
         "nameLabel": "Name",
-        "namePlaceholder": "Label for this channel",
+        "namePlaceholder": "या चॅनलसाठी लेबल",
         "cancelButton": "Cancel"
       },
       "list": {
         "countLabel": "{{count}} channel",
         "countLabel_other": "{{count}} channels",
-        "filteredLabel": "{{shown}} of {{count}} channel",
-        "filteredLabel_other": "{{shown}} of {{count}} channels",
-        "allTypes": "All types",
-        "searchPlaceholder": "Filter channels…",
-        "searchChannelsPlaceholder": "Search channels…",
-        "addButton": "Add Channel",
-        "addSearchPlaceholder": "Search channels…",
-        "noResults": "No results",
-        "emptyTitle": "No notification channels configured yet.",
-        "noMatch": "No channels match the active filters.",
-        "nameInlinePlaceholder": "Label (optional)",
+        "filteredLabel": "{{shown}} of {{count}} चॅनल",
+        "filteredLabel_other": "{{shown}} of {{count}} चॅनल",
+        "allTypes": "सर्व प्रकार",
+        "searchPlaceholder": "चॅनल फिल्टर करा…",
+        "searchChannelsPlaceholder": "चॅनल शोधा…",
+        "addButton": "चॅनल जोडा",
+        "addSearchPlaceholder": "चॅनल शोधा…",
+        "noResults": "कोणतेही परिणाम नाही",
+        "emptyTitle": "अजून कोणतेही सूचना चॅनल कॉन्फिगर केले नाही.",
+        "noMatch": "सक्रिय फिल्टरशी कोणतेही चॅनल जुळत नाही.",
+        "nameInlinePlaceholder": "लेबल (वैकल्पिक)",
         "columns": {
           "name": "Name",
           "type": "Type",
-          "summary": "Events / Targets"
+          "summary": "इव्हेंट / लक्ष्य"
         },
-        "testTitle": "Send test",
-        "editTitle": "Edit channel",
-        "deleteTitle": "Delete channel",
-        "deleteConfirm": "Remove channel \"{{name}}\"? This cannot be undone.",
+        "testTitle": "चाचणी पाठवा",
+        "editTitle": "चॅनल संपादित करा",
+        "deleteTitle": "चॅनल हटवा",
+        "deleteConfirm": "\"{{name}}\" चॅनल काढून टाका? हे पूर्ववत् केले जाऊ शकत नाही.",
         "deleteConfirmButton": "Delete",
         "errors": {
-          "deleteFailed": "Failed to delete"
+          "deleteFailed": "हटवणे अपयशी"
         }
       },
       "edit": {
-        "backToList": "Back to Notifications",
+        "backToList": "सूचना वर परत",
         "back": "Back",
-        "heading": "Edit {{provider}} channel",
-        "subtitle": "Update configuration for this notification channel.",
+        "heading": "{{provider}} चॅनल संपादित करा",
+        "subtitle": "या सूचना चॅनलसाठी कॉन्फिगरेशन अपडेट करा.",
         "testSection": {
-          "title": "Send test",
+          "title": "चाचणी पाठवा",
           "recipientPlaceholder": "recipient@example.com",
-          "sendButton": "Send Test",
+          "sendButton": "चाचणी पाठवा",
           "sendingButton": "Sending…",
-          "hintEmail": "Leave empty to send to your account email. Test uses the saved channel configuration.",
-          "hintOther": "Test uses the saved channel configuration. Save changes first to test updated settings."
+          "hintEmail": "आपल्या खाते ईमेलला पाठवण्यासाठी रिक्त सोडा. चाचणी सेव्ह केलेले चॅनल कॉन्फिगरेशन वापरतो.",
+          "hintOther": "चाचणी सेव्ह केलेले चॅनल कॉन्फिगरेशन वापरतो. अपडेट केलेल्या सेटिंग्जची चाचणी घेण्यासाठी प्रथम बदल सेव्ह करा."
         },
-        "saveButton": "Save Changes",
+        "saveButton": "बदल सेव्ह करा",
         "savingButton": "Saving…",
         "errors": {
-          "loadFailed": "Failed to load",
-          "saveFailed": "Failed to save"
+          "loadFailed": "लोड करणे अपयशी",
+          "saveFailed": "सेव्ह करणे अपयशी"
         }
       },
       "create": {
-        "backToList": "Back to Notifications",
-        "changeType": "Change type",
-        "pickerHeading": "Choose a channel type",
-        "pickerSubtitle": "Select the notification provider to configure.",
-        "heading": "New {{provider}} channel",
-        "subtitle": "Configure a new notification channel.",
-        "createButton": "Create Channel",
+        "backToList": "सूचना वर परत",
+        "changeType": "प्रकार बदला",
+        "pickerHeading": "चॅनल प्रकार निवडा",
+        "pickerSubtitle": "कॉन्फिगर करण्यासाठी सूचना प्रदाता निवडा.",
+        "heading": "नवीन {{provider}} चॅनल",
+        "subtitle": "नवीन सूचना चॅनल कॉन्फिगर करा.",
+        "createButton": "चॅनल तयार करा",
         "creatingButton": "Creating…",
         "errors": {
-          "createFailed": "Failed to create"
+          "createFailed": "तयार करणे अपयशी"
         }
       },
-      "sendTest": "Send test",
-      "fromAddress": "From Address",
-      "individualUsers": "Individual users",
+      "sendTest": "चाचणी पाठवा",
+      "fromAddress": "पत्ता करून",
+      "individualUsers": "व्यक्तिगत वापरकर्ते",
       "host": "Host",
       "port": "Port",
       "apiKey": "API Key",
-      "connectionString": "Connection String",
-      "clientId": "Client ID",
-      "clientSecret": "Client Secret",
-      "refreshToken": "Refresh Token",
+      "connectionString": "कनेक्शन स्ट्रिंग",
+      "clientId": "क्लायंट ID",
+      "clientSecret": "क्लायंट गुप्त",
+      "refreshToken": "ताज्या करा टोकन",
       "method": "Method",
-      "botToken": "Bot Token",
-      "channelId": "Channel ID",
+      "botToken": "बॉट टोकन",
+      "channelId": "चॅनल ID",
       "webhookUrl": "Webhook URL",
-      "integrationKey": "Integration Key"
+      "integrationKey": "एकीकरण की"
     },
     "integrations": {
       "types": {
         "prometheus": {
           "label": "Prometheus",
-          "description": "pull — exposes /metrics"
+          "description": "खेचा — /metrics उघड करतो"
         },
         "otel": {
           "label": "OpenTelemetry",
-          "description": "push — OTLP HTTP"
+          "description": "धक्का — OTLP HTTP"
         },
         "datadog": {
           "label": "Datadog",
-          "description": "push — metrics API"
+          "description": "धक्का — मेट्रिक्स API"
         },
         "grafana": {
-          "label": "Grafana Cloud",
-          "description": "push — remote_write"
+          "label": "Grafana क्लाउड",
+          "description": "धक्का — remote_write"
         },
         "influxdb": {
           "label": "InfluxDB",
-          "description": "push — line protocol"
+          "description": "धक्का — ओळ प्रोटोकॉल"
         },
         "webhook": {
           "label": "Webhook",
-          "description": "push — HTTP POST JSON"
+          "description": "धक्का — HTTP POST JSON"
         }
       },
       "traces": {
-        "label": "Export request traces",
-        "description": "Ships the full trace of each proxied request: every phase, every module that spoke, and prompts and answers for the projects that opted in.",
-        "sampleRateLabel": "Sample rate",
-        "sampleRateHint": "1 exports every request, 0.1 one in ten."
+        "label": "विनंती ट्रेस निर्यात करा",
+        "description": "प्रत्येक प्रॉक्सी विनंतीचा पूर्ण ट्रेस: प्रत्येक टप्पा, प्रत्येक मॉड्यूल जो बोलले, आणि प्रकल्पांसाठी प्रॉम्प्ट आणि उत्तर जे ऑप्ट इन केले.",
+        "sampleRateLabel": "नमुना दर",
+        "sampleRateHint": "1 प्रत्येक विनंती निर्यात करतो, 0.1 दहाहून एक."
       },
       "optional": "(optional)",
-      "headersHint": "(optional, one per line: Key: Value)",
+      "headersHint": "(वैकल्पिक, प्रति ओळ: की: मूल्य)",
       "fields": {
         "prometheus": {
-          "bearerToken": "Bearer Token",
-          "placeholder": "Leave empty for open access",
-          "description": "Exposes <code>/metrics</code> in Prometheus text format. Set a token to require Bearer auth."
+          "bearerToken": "वाहक टोकन",
+          "placeholder": "खुल्या प्रवेशासाठी रिक्त सोडा",
+          "description": "Prometheus मजकूर स्वरूपात <code>/metrics</code> उघड करतो. Bearer प्रमाणीकरण आवश्यक करण्यासाठी टोकन सेट करा."
         },
         "otel": {
-          "endpoint": "Collector endpoint",
-          "description": "Base URL of your OTLP receiver. Routerly appends <code>/v1/metrics</code>, and <code>/v1/traces</code> when trace export is on. Default HTTP port is 4318, gRPC is 4317.",
+          "endpoint": "संग्राहक एंडपॉइंट",
+          "description": "आपल्या OTLP प्राप्तकर्ताचा आधार URL. Routerly <code>/v1/metrics</code>, आणि <code>/v1/traces</code> जोडते जेव्हा ट्रेस निर्यात चालू आहे. डिफॉल्ट HTTP पोर्ट 4318, gRPC 4317 आहे.",
           "protocol": "Protocol",
           "headers": "Headers"
         },
         "datadog": {
           "apiKey": "API Key",
-          "placeholder": "Your Datadog API key",
-          "description": "Found under <strong>Organization Settings → API Keys</strong> in your Datadog account.",
+          "placeholder": "आपली Datadog API की",
+          "description": "आपल्या Datadog खाते <strong>संस्था सेटिंग्ज → API की</strong> अंतर्गत सापडली.",
           "site": "Site"
         },
         "grafana": {
-          "remoteWriteUrl": "Remote Write URL",
-          "description": "Found in <strong>Grafana Cloud → Connections → Prometheus → Details</strong> as \"Remote Write Endpoint\".",
-          "username": "Username / Stack ID",
-          "usernameHint": "Numeric ID shown in the Prometheus connection details.",
-          "apiKey": "API Key / Token",
-          "apiKeyHint": "Grafana Cloud token with <strong>MetricsPublisher</strong> role."
+          "remoteWriteUrl": "दूरस्थ लिहा URL",
+          "description": "<strong>Grafana क्लाउड → कनेक्शन → Prometheus → तपशील</strong> मध्ये \"दूरस्थ लिहा एंडपॉइंट\" म्हणून सापडली.",
+          "username": "वापरकर्तानाम / स्टॅक ID",
+          "usernameHint": "Prometheus कनेक्शन तपशिलांमध्ये दर्शविलेले संख्यात्मक ID.",
+          "apiKey": "API की / टोकन",
+          "apiKeyHint": "<strong>MetricsPublisher</strong> भूमिकेसह Grafana क्लाउड टोकन."
         },
         "influxdb": {
           "url": "URL",
-          "urlHint": "InfluxDB v2 instance URL. Cloud: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
+          "urlHint": "InfluxDB v2 उदाहरण URL. क्लाउड: <code>https://us-east-1-1.aws.cloud2.influxdata.com</code>",
           "token": "Token",
-          "tokenPlaceholder": "Your InfluxDB API token",
-          "tokenHint": "Must have <strong>write</strong> access to the bucket.",
+          "tokenPlaceholder": "आपली InfluxDB API की",
+          "tokenHint": "बकेटमध्ये <strong>लिहा</strong> प्रवेश असणे आवश्यक आहे.",
           "org": "Organization",
           "bucket": "Bucket"
         },
         "webhook": {
           "url": "URL",
           "secret": "Secret",
-          "secretHint": "(optional — HMAC-SHA256 signing key)",
+          "secretHint": "(वैकल्पिक — HMAC-SHA256 स्वाक्षरी की)",
           "headers": "Headers"
         }
       },
       "errors": {
-        "loadFailed": "Failed to load integrations",
-        "updateFailed": "Failed to update integration",
-        "saveFailed": "Failed to save integration",
-        "deleteFailed": "Failed to delete integration"
+        "loadFailed": "एकीकरण लोड करणे अपयशी",
+        "updateFailed": "एकीकरण अपडेट करणे अपयशी",
+        "saveFailed": "एकीकरण सेव्ह करणे अपयशी",
+        "deleteFailed": "एकीकरण हटवणे अपयशी"
       },
-      "empty": "No integrations configured yet.",
+      "empty": "अजून कोणतेही एकीकरण कॉन्फिगर केले नाही.",
       "enabled": "Enabled",
       "testing": "Testing…",
       "test": "Test",
       "removeConfirm": "Remove?",
       "remove": "Remove",
       "cancel": "Cancel",
-      "removeTooltip": "Remove integration",
+      "removeTooltip": "एकीकरण काढून टाका",
       "saving": "Saving…",
       "save": "Save",
-      "addButton": "Add Integration"
+      "addButton": "एकीकरण जोडा"
     },
     "catalog": {
       "errors": {
-        "loadFailed": "Failed to load settings",
-        "duplicateUrl": "This URL is already in the list.",
-        "unreachable": "Could not reach a valid provider catalog at this URL."
+        "loadFailed": "सेटिंग्ज लोड करणे अपयशी",
+        "duplicateUrl": "हा URL आधीच सूचीत आहे.",
+        "unreachable": "या URL वर वैध प्रदाता कॅटलॉग पोहोचू शकत नाही."
       },
       "saved": "Saved.",
       "refreshed": "Refreshed.",
-      "heading": "Provider Catalog Repositories",
+      "heading": "प्रदाता कॅटलॉग संग्रह",
       "refreshing": "Refreshing…",
       "refresh": "Refresh",
       "nextRefresh": "Next: {{date}}",
-      "priorityHint": "Row order determines merge priority — row 1 wins on conflict. Use the arrows to reorder.",
+      "priorityHint": "पंक्ती क्रम विलीन प्राधान्य निर्धारित करतो — पंक्ती 1 संघर्षावर जिंकते. पुनः ऑर्डर करण्यासाठी बाण वापरा.",
       "columns": {
         "priority": "#",
         "url": "URL",
         "updated": "Updated",
-        "lastCheck": "Last Check",
+        "lastCheck": "शेवटची तपासणी",
         "status": "Status"
       },
-      "empty": "No repositories configured. The default Routerly public catalog will be used.",
+      "empty": "कोणतेही संग्रह कॉन्फिगर नाही. डिफॉल्ट Routerly सार्वजनिक कॅटलॉग वापरले जाईल.",
       "status": {
         "error": "Error",
         "active": "Active",
@@ -1083,80 +1085,82 @@
       },
       "edit": "Edit",
       "removeTooltip": "Remove",
-      "addRepository": "Add Repository",
+      "addRepository": "संग्रह जोडा",
       "checking": "Checking…",
       "add": "Add",
-      "removeConfirm": "Remove repository \"{{url}}\"?"
+      "removeConfirm": "\"{{url}}\" संग्रह काढून टाका?"
     },
     "about": {
       "headings": {
         "application": "Application",
         "runtime": "Runtime",
         "storage": "Storage",
-        "softwareUpdate": "Software Update"
+        "softwareUpdate": "सॉफ्टवेअर अपडेट"
       },
       "labels": {
         "version": "Version",
         "uptime": "Uptime",
         "nodeVersion": "Node.js",
         "platform": "Platform",
-        "configDir": "Config directory",
-        "dataDir": "Data directory",
-        "currentVersion": "Current version",
-        "availableVersion": "Available version",
-        "upToDate": "Up to date",
-        "lastChecked": "Last checked"
+        "configDir": "कॉन्फिग निर्देशिका",
+        "dataDir": "डेटा निर्देशिका",
+        "currentVersion": "वर्तमान आवृत्ती",
+        "availableVersion": "उपलब्ध आवृत्ती",
+        "upToDate": "अद्यतन आहे",
+        "lastChecked": "शेवटी तपासले"
       },
-      "noCheckPerformed": "No update check performed yet.",
-      "checkForUpdates": "Check for updates",
+      "noCheckPerformed": "अजून कोणतीही अपडेट तपासणी केली नाही.",
+      "checkForUpdates": "अपडेट तपासा",
       "checking": "Checking…",
-      "updateTo": "Update to v{{version}}",
+      "updateTo": "v{{version}} वर अपडेट करा",
       "updating": "Updating…",
-      "dockerHint": "Running in Docker — pull the latest image to update.",
-      "confirmUpdate": "This will download and install the latest version. The service will restart. Continue?",
-      "updateComplete": "Update complete! Reloading…",
-      "serviceRestarting": "Service is restarting. Please reload the page in a moment.",
+      "dockerHint": "Docker मध्ये चल — अपडेट करण्यासाठी सर्वशेष प्रतिमा खेचा.",
+      "confirmUpdate": "हे सर्वशेष आवृत्ती डाउनलोड आणि स्थापित करेल. सेवा पुनः सुरू होईल. चालू ठेवा?",
+      "updateComplete": "अपडेट पूर्ण! पुनः लोड होत आहे…",
+      "serviceRestarting": "सेवा पुनः सुरू होत आहे. कृपया एक क्षणामध्ये पृष्ठ पुनः लोड करा.",
       "errors": {
-        "loadFailed": "Failed to load",
-        "checkFailed": "Check failed",
-        "updateFailed": "Update failed"
+        "loadFailed": "लोड करणे अपयशी",
+        "checkFailed": "तपास अपयशी",
+        "updateFailed": "अपडेट अपयशी"
       },
       "channel": "Channel"
     },
     "security": {
       "authentication": "Authentication",
-      "requireMfa": "Require Two-Factor Authentication for all users",
-      "requireMfaHint": "When enabled, users who have not set up 2FA will see a prompt to do so after logging in. Users can configure 2FA in their Profile page.",
-      "savedSuccess": "Settings saved successfully.",
+      "requireMfa": "सर्व वापरकर्त्यांसाठी दोन-घटक प्रमाणीकरण आवश्यक करा",
+      "requireMfaHint": "सक्षम केल्यावर, 2FA सेट अप केलेले नाहीत अशा वापरकर्त्यांना लॉग इन केल्यानंतर असे करण्यासाठी एक प्रॉम्प्ट दिसेल. वापरकर्ते त्यांच्या प्रोफाइल पृष्ठावर 2FA कॉन्फिगर करू शकतात.",
+      "savedSuccess": "सेटिंग्ज यशस्वीरित्या सेव्ह केल्या.",
       "saving": "Saving…",
-      "saveSettings": "Save Settings",
+      "saveSettings": "सेटिंग्ज सेव्ह करा",
       "errors": {
-        "loadFailed": "Failed to load settings",
-        "saveFailed": "Failed to save settings"
+        "loadFailed": "सेटिंग्ज लोड करणे अपयशी",
+        "saveFailed": "सेटिंग्ज सेव्ह करणे अपयशी"
       }
     },
     "title": "Settings",
-    "subtitle": "Configuration for Routerly",
+    "subtitle": "Routerly साठी कॉन्फिगरेशन",
     "tabs": {
       "general": "General",
       "security": "Security",
       "notifications": "Notifications",
       "integrations": "Integrations",
-      "catalog": "Provider Catalog",
+      "catalog": "प्रदाता कॅटलॉग",
       "users": "Users",
       "roles": "Roles",
-      "audit": "Audit Log",
+      "audit": "ऑडिट लॉग",
       "about": "About"
     }
   },
   "routers": {
     "list": {
       "title": "Routers",
-      "subtitle": "Client applications that access Routerly",
-      "count": "1 router",
+      "subtitle": "Routerly प्रवेश करणारे ग्राहक अनुप्रयोग",
+      "count": "1 राउटर",
       "count_other": "{{count}} routers",
       "newRouter": "New Router",
-      "empty": "No routers yet.",
+      "newOrchestrator": "नवीन ऑर्केस्ट्रेटर",
+      "newPassthrough": "नवीन पास-थ्रू",
+      "empty": "अजून कोणताही राउटर नाही.",
       "emptyFiltered": "या प्रकारचे कोणतेही राउटर नाही.",
       "columns": {
         "name": "Name",
@@ -1164,19 +1168,17 @@
         "policies": "Policies",
         "models": "Models"
       },
-      "tokenCount": "1 token",
+      "tokenCount": "1 टोकन",
       "tokenCount_other": "{{count}} tokens",
-      "editRouter": "Edit router",
-      "deleteRouter": "Delete router",
-      "deleteConfirm": "Delete this router?",
+      "editRouter": "राउटर संपादित करा",
+      "deleteRouter": "राउटर हटवा",
+      "deleteConfirm": "हा राउटर हटवा?",
       "errors": {
-        "deleteFailed": "Error deleting router"
-      },
-      "newOrchestrator": "नवीन ऑर्केस्ट्रेटर",
-      "newPassthrough": "नवीन पास-थ्रू"
+        "deleteFailed": "राउटर हटवतेवेळी त्रुटी"
+      }
     },
     "layout": {
-      "notFound": "Router not found",
+      "notFound": "Router आढळला नाही",
       "tabs": {
         "dashboard": "Dashboard",
         "general": "General",
@@ -1188,216 +1190,225 @@
         "users": "Users",
         "logs": "Logs"
       },
-      "backToRouters": "Back to Routers",
-      "backToRoutersTitle": "Back to routers",
+      "backToRouters": "राउटर वर परत",
+      "backToRoutersTitle": "राउटरमध्ये परत",
       "newRouter": "New Router",
+      "newKind": "नवीन {{kind}}",
       "loading": "Loading...",
       "routerId": "Router ID:",
-      "saveFirstHint": "Save the router first to unlock this tab",
-      "newKind": "नवीन {{kind}}"
+      "saveFirstHint": "या टॅब अनलॉक करण्यासाठी प्रथम राउटर सेव्ह करा"
     },
     "dashboard": {
       "period": "Period",
-      "noTraffic": "No traffic for this router in the selected period.",
+      "noTraffic": "निवडलेल्या कालावधीत या राउटरसाठी कोणतीही ट्रॅफिक नाही.",
       "stats": {
         "savings": "Savings",
         "vsPrefix": "vs",
-        "forEverything": "for everything",
-        "noTargetToCompare": "no target model to compare against",
+        "forEverything": "सर्वांसाठी",
+        "noTargetToCompare": "तुलना करण्यासाठी कोणताही लक्ष्य मॉडेल नाही",
         "cost": "Cost",
-        "callCount": "1 call",
+        "callCount": "1 कॉल",
         "callCount_other": "{{count}} calls",
         "latency": "Latency",
-        "medianP95": "median · p95 {{value}}",
-        "ttft": "Time to first token",
-        "notMeasured": "not measured on these calls",
+        "medianP95": "मध्यम · p95 {{value}}",
+        "ttft": "प्रथम टोकन वेळ",
+        "notMeasured": "या कॉलवर मापन केले नाही",
         "reliability": "Reliability",
-        "errorsAndBlocked": "{{errors}} errors · {{blocked}} blocked"
+        "errorsAndBlocked": "{{errors}} त्रुटी · {{blocked}} अवरुद्ध"
       },
       "tokens": {
-        "input": "Input tokens:",
-        "output": "Output tokens:",
-        "fromCache": "From cache:",
-        "cacheSaved": "({{amount}} saved)"
+        "input": "इनपुट टोकन:",
+        "output": "आउटपुट टोकन:",
+        "fromCache": "कॅश मधून:",
+        "cacheSaved": "({{amount}} सेव्ह)"
       },
       "oneModel": {
-        "heading": "If everything had gone to one model",
-        "empty": "Add target models to this router to see the comparison.",
+        "heading": "जर सर्वकाही एक मॉडेलला गेले असते",
+        "empty": "तुलना पाहण्यासाठी या राउटरला लक्ष्य मॉडेल जोडा.",
         "columns": {
-          "targetModel": "Target model",
-          "wouldHaveCost": "Would have cost",
+          "targetModel": "लक्ष्य मॉडेल",
+          "wouldHaveCost": "खर्च झाला असता",
           "saved": "Saved"
         },
-        "costsHint": "Costs are the observed tokens repriced at each target's rates."
+        "costsHint": "खर्च निरीक्षण केलेल्या टोकन प्रत्येक लक्ष्याच्या दरांवर पुन्हा मूल्य आहेत."
       },
       "optimizers": {
-        "heading": "What the optimizers removed",
+        "heading": "ऑप्टिमाइज़रने काय काढले",
         "columns": {
           "optimizer": "Optimizer",
-          "callsChanged": "Calls changed",
-          "tokensSaved": "Tokens saved",
-          "costSaved": "Cost saved",
-          "rolledBack": "Rolled back"
+          "callsChanged": "कॉल बदलले",
+          "tokensSaved": "टोकन सेव्ह",
+          "costSaved": "खर्च सेव्ह",
+          "rolledBack": "परत केले"
         },
-        "hint": "Measured on the calls themselves, priced at the model that served each one. A rolled-back run means the step's output was rejected as unsafe and the prompt was restored: it saved nothing, and a high count means the threshold is too aggressive."
+        "hint": "प्रत्येकाने प्रदान केलेल्या मॉडेलवर मापन केले. रोल-बॅक रन म्हणजे चरणाचे आउटपुट असुरक्षित म्हणून नाकारले गेले आणि प्रॉम्प्ट पुनर्स्थापित केला गेला: त्याने काहीही सेव्ह केले नाही, आणि उच्च संख्या म्हणजे थ्रेशोल्ड खूप आक्रमक आहे."
       },
       "traffic": {
-        "heading": "Where the traffic went",
+        "heading": "ट्रॅफिक कुठे गेला",
         "columns": {
           "model": "Model",
           "calls": "Calls",
           "share": "Share",
           "cost": "Cost",
-          "p95Latency": "p95 latency",
+          "p95Latency": "p95 विलंब",
           "errors": "Errors"
         }
       }
     },
     "general": {
       "errors": {
-        "saveFailed": "Error saving router",
-        "copyFailed": "Copy failed — please select and copy the token manually."
+        "saveFailed": "राउटर सेव्ह करतेवेळी त्रुटी",
+        "copyFailed": "कॉपी अपयशी — कृपया टोकन हाताने निवडा आणि कॉपी करा."
       },
       "kind": {
         "router": {
           "label": "Router",
-          "description": "Routes requests across model candidates."
+          "description": "मॉडेल उमेदवारांचे विनंती मार्गनिर्देशित करतो."
         },
         "orchestrator": {
           "label": "Orchestrator",
-          "description": "Routes requests across other routers instead of models."
+          "description": "मॉडेलऐवजी इतर राउटरमध्ये विनंती मार्गनिर्देशित करतो."
         },
         "passthrough": {
           "label": "Passthrough",
-          "description": "Forwards requests unmodified."
+          "description": "विनंती अपरिवर्तित पुढे पाठवते."
         }
       },
       "tokenReveal": {
-        "saveNow": "Save this token now.",
-        "saveNowHint": "It won't be shown again — once you leave this screen it cannot be recovered.",
+        "saveNow": "हे टोकन आता सेव्ह करा.",
+        "saveNowHint": "हे पुन्हा दर्शविले जाणार नाही — एकदा आपण हा स्क्रीन सोडला तर ते पुनरुद्धार केले जाऊ शकत नाही.",
         "copied": "Copied!",
         "copy": "Copy",
-        "goToRouter": "Go to router"
+        "goToRouter": "राउटरला जा"
       },
       "connect": {
-        "heading": "How to connect",
-        "intro": "Point any OpenAI or Anthropic SDK at Routerly and use a <tokenLink>router token</tokenLink> as the API key. Replace <code>{{token}}</code> below with yours. Model <code>{{model}}</code> hands the choice to Routerly; any model id from <modelsLink>Models</modelsLink> works too.",
+        "heading": "कसे कनेक्ट करायचे",
+        "intro": "कोणतेही OpenAI किंवा Anthropic SDK Routerly येथे निर्देशित करा आणि <tokenLink>राउटर टोकन</tokenLink> API की म्हणून वापरा. खाली {{token}} हे बदलून आपले वापरा. मॉडेल {{model}} निवड Routerly ला हाताळ; कोणतीही मॉडेल id <modelsLink>मॉडेल</modelsLink> वरून काम करते.",
         "openaiSdk": "OpenAI SDK",
-        "openaiBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, the same one any \"OpenAI compatible\" provider field takes.",
+        "openaiBaseUrlHint": "आधार URL <code>{{baseUrl}}</code>, समान जो \"OpenAI सुसंगत\" प्रदाता क्षेत्र घेतो.",
         "anthropicSdk": "Anthropic SDK",
-        "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, without the <code>/v1</code>: the SDK adds it.",
+        "anthropicBaseUrlHint": "आधार URL <code>{{baseUrl}}</code>, <code>/v1</code> शिवाय: SDK हे जोडते.",
         "curl": "curl",
-        "curlHint": "Check the wiring without installing anything, then look for the call in <usageLink>Usage</usageLink>."
+        "curlHint": "कुणाला काही स्थापित केल्याशिवाय वायरिंग तपासा, नंतर <usageLink>वापर</usageLink> मध्ये कॉल शोधा.",
+        "passthrough": {
+          "heading": "कसे कनेक्ट करायचे",
+          "intro": "Passthrough प्रत्येक विनंती अपरिवर्तित पुढे पाठवते — <strong>आपल्या स्वतः</strong> अपस्ट्रीम प्रदाता की API की म्हणून वापरा, कधीही Routerly टोकन नाही. Routerly या राउटरसाठी क्रेडेंशियल संचयित किंवा जारी करत नाही; क्लायंट कोणतीही पाठवते तर ते थेट प्रदातेकडे जाते.",
+          "noLimits": "बजेट आणि मर्यादा या राउटरला लागू होत नाहीत: Passthrough ट्रॅफिकसाठी खर्च अज्ञात आहे, म्हणून ते कधीही तपासले जाते किंवा खर्च मर्यादेविरुद्ध मोजले जाते.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "आधार URL <code>{{url}}</code> — <code>/v1</code> प्रत्यय नाही, SDK अजूनही वास्तविक OpenAI API विरुद्ध केल्यावर तसेच त्याचा स्वतःचा मार्ग जोडते.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "आधार URL <code>{{url}}</code> — SDK अजूनही वास्तविक Anthropic API विरुद्ध केल्यावर तसेच <code>/v1/messages</code> स्वतःला जोडते."
+        }
       },
       "form": {
         "kind": "Kind",
-        "kindFixedHint": "Fixed once the router is created.",
+        "kindFixedHint": "राउटर तयार केल्यानंतर निश्चित.",
         "routerName": "Router Name",
-        "routerNamePlaceholder": "My App",
-        "advancedSettings": "Advanced settings",
-        "ttftTimeout": "TTFT Timeout (ms)",
-        "ttftTimeoutHint": "If a model does not send the first response byte within this time, Routerly aborts it and tries the next candidate. Does not limit total response duration. Set it to 0 to wait as long as the provider takes.",
-        "traceContent": "Trace content",
-        "traceContentHint": "Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also record the prompts sent and the answers received. They are stored with the usage record and visible to anyone who can read reports.",
-        "capturePromptsAndAnswers": "Capture prompts and answers",
-        "saveChanges": "Save Changes",
-        "createRouter": "Create Router",
+        "routerNamePlaceholder": "माझे अ‍ॅप",
         "passthroughPath": "मार्ग",
         "passthroughPathHint": "क्लायंटद्वारे कॉल केलेल्या URL चा भाग बनते: <code>/passthrough/{{path}}/...</code>",
+        "advancedSettings": "उन्नत सेटिंग्ज",
+        "ttftTimeout": "TTFT टाइमआउट (ms)",
+        "ttftTimeoutHint": "जर मॉडेल या वेळेत प्रथम प्रतिक्रिया बाइट पाठवत नाही तर Routerly ते बाधित करतो आणि पुढील उमेदवार प्रयत्न करतो. एकूण प्रतिक्रिया कालावधी मर्यादित करत नाही. प्रदाता घेतो तोपर्यंत प्रतीक्षा करण्यासाठी 0 सेट करा.",
+        "traceContent": "ट्रेस सामग्री",
+        "traceContentHint": "ट्रेस नेहमी मेटाडेटा (मॉडेल, स्कोर, टोकन, खर्च, विलंब) रेकॉर्ड करतात. पाठवलेल्या प्रॉम्प्ट आणि प्राप्त उत्तरे रेकॉर्ड करण्यासाठी हे चालू करा. ते वापर रेकॉर्डसह संचयित केले जातात आणि अहवाल वाचू शकणारे कोणालाही दृश्यमान आहेत.",
+        "capturePromptsAndAnswers": "प्रॉम्प्ट आणि उत्तरे कॅप्चर करा",
+        "saveChanges": "बदल सेव्ह करा",
+        "createRouter": "Create Router",
         "createOrchestrator": "ऑर्केस्ट्रेटर तयार करा",
         "createPassthrough": "पास-थ्रू तयार करा"
       }
     },
     "orchestrator": {
-      "notOrchestrator": "This router is not an Orchestrator.",
-      "candidateRouters": "Candidate Routers",
-      "candidateRoutersHint": "The routers this Orchestrator forwards requests to. Weight influences how often each candidate is picked; only its name, id, weight and optional per-candidate limits are shown here.",
+      "notOrchestrator": "हा राउटर आयोजक नाही.",
+      "candidateRouters": "उमेदवार राउटर",
+      "candidateRoutersHint": "राउटर हे आयोजक विनंती पुढे पाठवतो. वजन प्रभावित करतो किती वेळा प्रत्येक उमेदवार निवडला जातो; फक्त त्याचे नाव, id, वजन आणि वैकल्पिक प्रति-उमेदवार मर्यादा दर्शविले जातात.",
       "routingPolicies": "रूटिंग धोरणा",
       "routingPoliciesHint": "एक ऑर्केस्ट्रेटर प्रत्येक उमेदवार राउटरला संपूर्ण म्हणून स्कोर करतो, त्यामुळे येथे केवळ आरोग्य, दर मर्यादा आणि न्याय धोरणा लागू होतात. इतर नीती प्रकार राउटरचे स्वतःचे मॉडेल निवडतात, जे ऑर्केस्ट्रेटरकडे नाहीत.",
       "router": "Router",
-      "selectRouter": "Select router",
+      "selectRouter": "राउटर निवडा",
       "weight": "Weight",
-      "removeCandidate": "Remove candidate",
-      "usageLimits": "Usage limits for this candidate",
+      "removeCandidate": "उमेदवार काढून टाका",
+      "usageLimits": "या उमेदवारसाठी वापर मर्यादा",
       "limitCount": "{{count}} limit",
       "limitCount_other": "{{count}} limits",
-      "usageLimitsHint": "Optional usage limits applied only to requests this Orchestrator forwards to this candidate.",
-      "empty": "No candidate routers yet. An Orchestrator needs at least one before it can forward requests.",
-      "addCandidate": "Add Candidate",
+      "usageLimitsHint": "वैकल्पिक वापर मर्यादा फक्त या आयोजक हे उमेदवारला पुढे पाठवतात अशा विनंतीला लागू केल्या जातात.",
+      "empty": "अजून कोणतेही उमेदवार राउटर नाही. आयोजक सक्षम होण्यापूर्वी विनंती पुढे पाठवायला किमान एक आवश्यक आहे.",
+      "addCandidate": "उमेदवार जोडा",
       "saved": "Saved!",
-      "saveCandidates": "Save Candidates",
+      "saveCandidates": "उमेदवार सेव्ह करा",
       "errors": {
-        "loadFailed": "Failed to load routers",
-        "saveFailed": "Error saving orchestrator candidates"
+        "loadFailed": "राउटर लोड करणे अपयशी",
+        "saveFailed": "आयोजक उमेदवार सेव्ह करतेवेळी त्रुटी"
       }
     },
     "routing": {
       "errors": {
-        "assignProfileFailed": "Failed to assign routing profile",
-        "duplicateTargets": "Target models cannot contain duplicates.",
-        "saveFailed": "Error saving router routing",
-        "noProfileAvailable": "No routing profile available. Create one from the Profiles page."
+        "assignProfileFailed": "मार्गनिर्देशन प्रोफाइल नियुक्त करणे अपयशी",
+        "duplicateTargets": "लक्ष्य मॉडेल नकल असू शकत नाहीत.",
+        "saveFailed": "राउटर मार्गनिर्देशन सेव्ह करतेवेळी त्रुटी",
+        "noProfileAvailable": "कोणतेही मार्गनिर्देशन प्रोफाइल उपलब्ध नाही. प्रोफाइल पृष्ठ वरून एक तयार करा."
       },
       "form": {
         "routing": "Routing",
-        "routingHint": "Use a shared routing profile, or define this router's own policies. Target models stay configurable either way.",
+        "routingHint": "साझा मार्गनिर्देशन प्रोफाइल वापरा, किंवा या राउटरचे स्वतःचे धोरण परिभाषित करा. लक्ष्य मॉडेल कोणत्याही प्रकारे कॉन्फिगरेबल राहतात.",
         "profileMode": "Profile",
         "customMode": "Custom",
-        "routingProfile": "Routing Profile",
+        "routingProfile": "मार्गनिर्देशन प्रोफाइल",
         "builtinSuffix": "(built-in)",
-        "profileHint": "Policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "profileHint": "धोरण प्रोफाइल वरून येतात आणि त्याचे बदल अनुसरण करतात. प्रोफाइल पृष्ठ वर संपादित करा, किंवा त्यापैकी एक कॉपीपासून सुरू करण्यासाठी कस्टम मध्ये स्विच करा.",
         "saved": "Saved!",
-        "saveRoutingConfiguration": "Save Routing Configuration"
+        "saveRoutingConfiguration": "मार्गनिर्देशन कॉन्फिगरेशन सेव्ह करा"
       },
       "targetModels": {
-        "heading": "Target Models",
-        "hint": "Define the pool of models that the Policies will filter and select from. Optional prompts instruct the AI Router on when to pick each model.",
-        "endpointModel": "Endpoint Model",
-        "selectModel": "Select model",
-        "promptDefinition": "Prompt Definition",
-        "promptPlaceholder": "Describe exactly when and why the router should pick this model...",
+        "heading": "लक्ष्य मॉडेल",
+        "hint": "मॉडेलचा पूल परिभाषित करा जो Policies फिल्टर आणि निवडेल. वैकल्पिक प्रॉम्प्ट्स AI Router ला प्रत्येक मॉडेल कधी निवडायचे हे सांगतात.",
+        "endpointModel": "एंडपॉइंट मॉडेल",
+        "selectModel": "मॉडेल निवडा",
+        "promptDefinition": "प्रॉम्प्ट परिभाषा",
+        "promptPlaceholder": "तुमचे लक्ष्य मॉडेल कधी आणि का राउटर निवडला पाहिजे हे अचूकपणे वर्णन करा...",
         "intents": "Intents",
-        "removeTarget": "Remove target model",
-        "empty": "No target models configured.",
-        "addTarget": "Add Target Model",
+        "removeTarget": "लक्ष्य मॉडेल काढून टाका",
+        "empty": "कोणतेही लक्ष्य मॉडेल कॉन्फिगर नाही.",
+        "addTarget": "लक्ष्य मॉडेल जोडा",
         "passthroughLabel": "पास-थ्रू (कच्चे फॉरवर्ड)",
         "passthroughNotRemovable": "पास-थ्रू नोंद काढली जाऊ शकत नाही"
       }
     },
     "optimizer": {
       "title": "Optimizers",
-      "description": "Optimizers reduce prompt tokens before requests reach the provider. They run in order from top to bottom. Use a shared optimizer profile, or define this router's own pipeline.",
-      "noPermission": "You don't have permission to view optimizers.",
+      "description": "ऑप्टिमाइज़र विनंती प्रदातेकडे पोहोचण्यापूर्वी प्रॉम्प्ट टोकन कमी करतात. ते वरून खाली क्रमाने चलतात. साझा ऑप्टिमाइज़र प्रोफाइल वापरा, किंवा या राउटरचे स्वतःचे पाइपलाइन परिभाषित करा.",
+      "noPermission": "आपल्याकडे ऑप्टिमाइज़र पाहण्याची अनुमती नाही.",
       "mode": {
         "profile": "Profile",
         "custom": "Custom"
       },
       "profileSelect": {
-        "ariaLabel": "Optimizer Profile",
+        "ariaLabel": "ऑप्टिमाइज़र प्रोफाइल",
         "builtinLabel": "{{label}} (built-in)",
-        "hint": "Steps come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "hint": "पग प्रोफाइल वरून येतात आणि त्याचे बदल अनुसरण करतात. प्रोफाइल पृष्ठ वर संपादित करा, किंवा त्यापैकी एक कॉपीपासून सुरू करण्यासाठी कस्टम मध्ये स्विच करा.",
         "disabledSuffix": "(disabled)",
-        "thresholdSuffix": ", threshold {{threshold}}"
+        "thresholdSuffix": ", थ्रेशोल्ड {{threshold}}"
       },
-      "customHint": "Drag to reorder, toggle to enable. Some optimizers use a threshold to control how aggressively they trim.",
-      "saveButton": "Save Optimizers",
+      "customHint": "पुनः ऑर्डर करण्यासाठी ड्रॅग करा, टॉगल सक्षम करा. काही ऑप्टिमाइज़र कितनी आक्रमकपणे ट्रिम करतात हे नियंत्रित करण्यासाठी थ्रेशोल्ड वापरतात.",
+      "saveButton": "ऑप्टिमाइज़र सेव्ह करा",
       "saving": "Saving...",
       "saved": "Saved",
       "preview": {
-        "title": "Preview token savings",
-        "description": "Run the current (unsaved) pipeline over a prompt to see what each step removes and what it costs. Pick one of the sample conversations, or type your own prompt.",
+        "title": "टोकन बचत पूर्वावलोकन",
+        "description": "प्रत्येक चरण काय काढते आणि खर्च काय आहे हे पाहण्यासाठी वर्तमान (असंरक्षित) पाइपलाइन प्रॉम्प्टवर चलवा. नमुना संभाषणपैकी एक निवडा, किंवा आपली स्वतःची प्रॉम्प्ट टाइप करा.",
         "promptLabel": "Prompt",
-        "promptAriaLabel": "Prompt to preview",
-        "typePromptOption": "Type a prompt below",
-        "fixturesHint": "Sample conversations shipped with Routerly. Routerly does not record real prompts.",
+        "promptAriaLabel": "प्रॉम्प्ट पूर्वावलोकन",
+        "typePromptOption": "खाली प्रॉम्प्ट टाइप करा",
+        "fixturesHint": "Routerly सह शिपिंग केलेले नमुना संभाषण. Routerly वास्तविक प्रॉम्प्ट रेकॉर्ड करत नाही.",
         "modelLabel": "Model",
-        "modelAriaLabel": "Model to preview against",
-        "modelWithContext": "{{id}} ({{k}}k context)",
-        "noModelOption": "No model",
-        "modelHint": "Steps that trim to fit a context window need to know which window. Without a model they are skipped, exactly as they would be on a request that names a model Routerly has no window for.",
-        "sampleAriaLabel": "Sample prompt",
-        "samplePlaceholder": "Paste a sample user message...",
-        "runButton": "Run Preview",
+        "modelAriaLabel": "विरुद्ध पूर्वावलोकन करण्यासाठी मॉडेल",
+        "modelWithContext": "{{id}} ({{k}}k संदर्भ)",
+        "noModelOption": "कोणताही मॉडेल नाही",
+        "modelHint": "संदर्भ विंडोला फिट करण्यासाठी ट्रिम करणारे पग कोणती विंडो आहे हे जाणण्याची आवश्यकता आहे. मॉडेलशिवाय ते सोडण्यात आले आहेत, तसेच ते विनंतीवर आहेत जे Routerly कोणतेही विंडो नाही.",
+        "sampleAriaLabel": "नमुना प्रॉम्प्ट",
+        "samplePlaceholder": "नमुना वापरकर्ता संदेश पेस्ट करा...",
+        "runButton": "चाचणी चलवा",
         "running": "Running...",
         "before": "Before",
         "after": "After",
@@ -1408,94 +1419,94 @@
           "after": "After",
           "saved": "Saved"
         },
-        "rolledBackNote": "rolled back: the change was rejected as unsafe",
+        "rolledBackNote": "परत केले: बदल असुरक्षित म्हणून नाकारले गेले",
         "skippedNote": "skipped: {{reason}}",
         "diffEmpty": {
-          "rolledBack": "The change this step produced was rolled back, so the prompt reached the next step untouched.",
-          "skipped": "This step did not run: {{reason}}",
-          "unchanged": "This step left the prompt unchanged."
+          "rolledBack": "हे पग तयार केलेले बदल परत केला गेला, म्हणून प्रॉम्प्ट पुढील पगला अस्पृश्य पोहोचले.",
+          "skipped": "हा पग चलले नाही: {{reason}}",
+          "unchanged": "हे पग प्रॉम्प्ट अपरिवर्तित सोडले."
         }
       },
       "errors": {
-        "assignFailed": "Failed to assign optimizer profile",
-        "saveFailed": "Error saving optimizers",
-        "previewFailed": "Error running preview",
-        "noProfileAvailable": "No optimizer profile available. Create one from the Profiles page."
+        "assignFailed": "ऑप्टिमाइज़र प्रोफाइल नियुक्त करणे अपयशी",
+        "saveFailed": "ऑप्टिमाइज़र सेव्ह करतेवेळी त्रुटी",
+        "previewFailed": "पूर्वावलोकन चलवतेवेळी त्रुटी",
+        "noProfileAvailable": "कोणतेही ऑप्टिमाइज़र प्रोफाइल उपलब्ध नाही. प्रोफाइल पृष्ठ वरून एक तयार करा."
       }
     },
     "token": {
-      "newButton": "New Token",
-      "empty": "No API tokens yet. Create one to start authenticating requests.",
-      "budgetOverrides": "Budget Overrides",
+      "newButton": "नवीन टोकन",
+      "empty": "अजून कोणतेही API टोकन नाही. विनंती प्रमाणीकृत करण्यासाठी सुरू करण्यासाठी एक तयार करा.",
+      "budgetOverrides": "बजेट अधिक लेखन",
       "created": "Created",
-      "lastUsed": "Last used",
+      "lastUsed": "शेवटी वापरले",
       "expires": "Expires",
       "never": "Never",
-      "editTitle": "Edit Configuration",
-      "revokeTitle": "Revoke Token",
-      "revokeConfirm": "Revoke token \"{{snippet}}...\"? Apps using it will stop working immediately.",
+      "editTitle": "कॉन्फिगरेशन संपादित करा",
+      "revokeTitle": "टोकन रद्द करा",
+      "revokeConfirm": "\"{{snippet}}...\" टोकन रद्द करा? अ‍ॅप ते वापरणे तत्काल बंद होईल.",
       "labelInput": {
-        "placeholder": "Search or create a label…",
+        "placeholder": "लेबल शोधा किंवा तयार करा…",
         "createPrefix": "Create",
-        "noMatches": "No matching labels found."
+        "noMatches": "कोणतेही जुळलेले लेबल सापडले नाही."
       },
       "errors": {
-        "deleteFailed": "Error deleting token"
+        "deleteFailed": "टोकन हटवतेवेळी त्रुटी"
       },
       "create": {
-        "backToTokens": "Back to tokens",
-        "title": "New API Token",
-        "subtitle": "The full token is shown only once after creation — store it securely.",
-        "tokenCreated": "Token created successfully. Copy it now — it won't be shown again.",
+        "backToTokens": "टोकनमध्ये परत",
+        "title": "नवीन API टोकन",
+        "subtitle": "पूर्ण टोकन तयार केल्यानंतर एकदाच दर्शविला जातो — सुरक्षितपणे संचयित करा.",
+        "tokenCreated": "टोकन यशस्वीरित्या तयार केला. आता कॉपी करा — हे पुन्हा दर्शविले जाणार नाही.",
         "copied": "Copied!",
         "copy": "Copy",
         "done": "Done",
         "optional": "optional",
         "labels": "Labels",
-        "labelsHint": "Tag this token to identify where it's used (e.g. \"production\", \"ci\").",
+        "labelsHint": "टोकन टॅग करा ते कोठे वापरले जाते हे ओळखण्यासाठी (उदा. \"उत्पादन\", \"ci\").",
         "scopes": "Scopes",
-        "scopesHint": "Free-form scopes attached to this token (e.g. \"batch\", \"internal\"), stored with the token for your own bookkeeping.",
+        "scopesHint": "हे टोकन संलग्न मुक्त-फॉर्म स्कोप (उदा. \"बॅच\", \"आंतरिक\"), आपल्या स्वतःच्या बुककीपिंगसाठी संचयित.",
         "tags": "Tags",
-        "tagsHint": "Key-value metadata forwarded to usage records (e.g. env=production).",
+        "tagsHint": "मुख्य-मूल्य मेटाडेटा वापर रेकॉर्डला पाठविले (उदा. env=production).",
         "keyPlaceholder": "key",
         "valuePlaceholder": "value",
-        "createButton": "Create Token",
+        "createButton": "टोकन तयार करा",
         "cancel": "Cancel",
-        "copyFailed": "Copy failed — please select and copy the token manually.",
+        "copyFailed": "कॉपी अपयशी — कृपया टोकन हाताने निवडा आणि कॉपी करा.",
         "errors": {
-          "createFailed": "Error creating token"
+          "createFailed": "टोकन तयार करतेवेळी त्रुटी"
         }
       },
       "edit": {
-        "title": "Edit Token",
-        "subtitle": "Update labels and per-model limit overrides for this token.",
+        "title": "टोकन संपादित करा",
+        "subtitle": "हे टोकन लेबल आणि प्रति-मॉडेल मर्यादा अधिलेखन अपडेट करा.",
         "token": "Token",
         "labels": "Labels",
-        "perModelLimits": "Per-model limits",
-        "perModelLimitsHint": "Override global and router-level limits for requests using this token.",
-        "noTargetModels": "Add target models in the Routing tab first.",
-        "noOverride": "no override",
-        "noLimits": "No limits",
-        "noLimitsSet": "No limits set — inheriting from parent. Add a limit below to override.",
+        "perModelLimits": "प्रति-मॉडेल मर्यादा",
+        "perModelLimitsHint": "या टोकन वापरणारे विनंती वैश्विक आणि राउटर-स्तरीय मर्यादा अधिभूत करा.",
+        "noTargetModels": "प्रथम मार्गनिर्देशन टॅबमध्ये लक्ष्य मॉडेल जोडा.",
+        "noOverride": "कोणतेही अधिभूत नाही",
+        "noLimits": "कोणतीही मर्यादा नाही",
+        "noLimitsSet": "कोणतीही मर्यादा सेट नाही — मुख्य पासून वारसा. अधिभूत करण्यासाठी खाली एक मर्यादा जोडा.",
         "metric": "Metric",
         "type": "Type",
         "periodLabel": "Period",
         "every": "Every",
-        "maxCost": "Max ($)",
-        "maxCalls": "Max (n.)",
-        "maxTokens": "Max (tokens)",
-        "allCombosSet": "All metric/period combinations are already set",
-        "addLimit": "Add limit",
+        "maxCost": "कमाल ($)",
+        "maxCalls": "कमाल (n.)",
+        "maxTokens": "कमाल (टोकन)",
+        "allCombosSet": "सर्व मेट्रिक/कालावधी संयोजन आधीच सेट आहेत",
+        "addLimit": "मर्यादा जोडा",
         "windowType": {
           "period": "Period",
           "rolling": "Rolling"
         },
         "limitMetric": {
-          "cost": "Cost (USD)",
+          "cost": "खर्च (USD)",
           "calls": "Requests",
-          "input_tokens": "Input tokens",
-          "output_tokens": "Output tokens",
-          "total_tokens": "Total tokens"
+          "input_tokens": "इनपुट टोकन",
+          "output_tokens": "आउटपुट टोकन",
+          "total_tokens": "एकूण टोकन"
         },
         "period": {
           "hourly": "Hourly",
@@ -1517,27 +1528,27 @@
           "inputTokens": "{{value}} in-tok",
           "outputTokens": "{{value}} out-tok",
           "totalTokens": "{{value}} tok",
-          "everyRolling": "{{metric}} / every {{amount}} {{unit}}",
+          "everyRolling": "{{metric}} / प्रत्येक {{amount}} {{unit}}",
           "perPeriod": "{{metric}} / {{period}}"
         },
         "errors": {
-          "saveFailed": "Error saving token"
+          "saveFailed": "टोकन सेव्ह करतेवेळी त्रुटी"
         }
       }
     },
     "users": {
       "title": "Router Members",
-      "description": "Manage users who have access to this router.",
-      "addButton": "Add Member",
-      "addNewTitle": "Add New Member",
-      "selectUserPlaceholder": "Select a user...",
+      "description": "या राउटरला प्रवेश असलेल्या वापरकर्त्यांचे प्रबंध करा.",
+      "addButton": "सदस्य जोडा",
+      "addNewTitle": "नवीन सदस्य जोडा",
+      "selectUserPlaceholder": "वापरकर्ता निवडा...",
       "addConfirmButton": "Add",
       "cancelButton": "Cancel",
-      "empty": "No members found.",
-      "removeConfirm": "Are you sure you want to remove this member?",
-      "saveTitle": "Save changes",
-      "changeRoleTitle": "Change Role",
-      "removeTitle": "Remove Member",
+      "empty": "कोणतेही सदस्य सापडले नाही.",
+      "removeConfirm": "आपण या सदस्याला काढून टाकायचे आहे?",
+      "saveTitle": "बदल सेव्ह करा",
+      "changeRoleTitle": "भूमिका बदला",
+      "removeTitle": "सदस्य काढून टाका",
       "roles": {
         "viewer": "Viewer",
         "editor": "Editor",
@@ -1549,26 +1560,26 @@
         "actions": "Actions"
       },
       "errors": {
-        "loadFailed": "Failed to load users",
-        "addFailed": "Error adding member",
-        "updateFailed": "Error updating member",
-        "removeFailed": "Error removing member"
+        "loadFailed": "वापरकर्ते लोड करणे अपयशी",
+        "addFailed": "सदस्य जोडतेवेळी त्रुटी",
+        "updateFailed": "सदस्य अपडेट करतेवेळी त्रुटी",
+        "removeFailed": "सदस्य हटवतेवेळी त्रुटी"
       }
     },
     "logs": {
       "poll": {
         "off": "Off"
       },
-      "autoRefreshOff": "Auto-refresh disabled",
-      "autoRefreshEvery": "Auto-refresh every {{interval}}",
-      "lastUpdated": "last updated: {{time}}",
+      "autoRefreshOff": "स्वयंचलित रीफ्रेश अक्षम",
+      "autoRefreshEvery": "प्रत्येक {{interval}} स्वयंचलित रीफ्रेश",
+      "lastUpdated": "शेवटी अपडेट: {{time}}",
       "refresh": "Refresh",
-      "refreshNowTitle": "Refresh now",
-      "refreshNowButton": "↻ Now",
+      "refreshNowTitle": "आता रीफ्रेश करा",
+      "refreshNowButton": "↻ आता",
       "filters": {
         "period": "Period",
         "model": "Model",
-        "allModels": "All Models",
+        "allModels": "सर्व मॉडेल्स",
         "type": "Type",
         "all": "All",
         "completion": "Completion",
@@ -1577,18 +1588,18 @@
         "success": "Success",
         "blocked": "Blocked",
         "error": "Error",
-        "resetButton": "Reset filters"
+        "resetButton": "फिल्टर रिसेट करा"
       },
       "stats": {
-        "totalCost": "Total Cost",
-        "totalCalls": "Total Calls",
-        "completionCalls": "Completion Calls",
+        "totalCost": "एकूण खर्च",
+        "totalCalls": "एकूण कॉल्स",
+        "completionCalls": "पूर्णता कॉल्स",
         "routerCalls": "Router Calls",
         "errors": "Errors"
       },
-      "requestLogs": "Request Logs",
-      "emptyNoRequests": "No requests for this router in the selected period.",
-      "emptyNoMatches": "No records match the active filters.",
+      "requestLogs": "विनंती लॉग्स",
+      "emptyNoRequests": "या राउटरसाठी निवडलेल्या कालावधीत विनंती नाहीत।",
+      "emptyNoMatches": "सक्रिय फिल्टर्स सह कोणतेही रेकॉर्ड मेल खात नाहीत।",
       "columns": {
         "time": "Time",
         "model": "Model",
@@ -1604,78 +1615,78 @@
       "typeRouter": "router",
       "typeCompletion": "completion",
       "pagination": {
-        "previous": "← Previous",
-        "next": "Next →",
-        "pageOf": "Page {{page}} of {{totalPages}}",
-        "totalRecords": "({{count}} total records)"
+        "previous": "← मागील",
+        "next": "पुढील →",
+        "pageOf": "पृष्ठ {{page}} च्या {{totalPages}} पैकी",
+        "totalRecords": "({{count}} एकूण रेकॉर्ड्स)"
       }
     },
     "security": {
       "title": "Security",
-      "description": "Use a shared security profile, or define this router's own guardrails and PII policies.",
+      "description": "साझा सुरक्षा प्रोफाइल वापरा, किंवा या राउटरसाठी स्वतःचे गार्डरेल्स आणि PII धोरण परिभाषित करा।",
       "mode": {
         "profile": "Profile",
         "custom": "Custom"
       },
       "profileSelect": {
-        "ariaLabel": "Security Profile",
+        "ariaLabel": "सुरक्षा प्रोफाइल",
         "builtinLabel": "{{label}} (built-in)",
-        "hint": "Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
-        "blockingSuffix": ", blocking",
-        "disabledSuffix": ", disabled",
-        "piiRedaction": "PII redaction ({{target}})"
+        "hint": "गार्डरेल्स आणि PII धोरण प्रोफाइलमधून येतात आणि त्याच्या बदलांचे पालन करतात। प्रोफाइल पृष्ठावर त्यांना संपादित करा, किंवा कस्टमवर स्विच करून त्यांची प्रत बनवा।",
+        "blockingSuffix": ", अवरोधित",
+        "disabledSuffix": ", अक्षम",
+        "piiRedaction": "PII रिडॅक्शन ({{target}})"
       },
-      "saveButton": "Save Security Settings",
+      "saveButton": "सुरक्षा सेटिंग्स सेव करा",
       "saved": "Saved!",
       "errors": {
-        "assignFailed": "Failed to assign security profile",
-        "saveFailed": "Error saving security settings",
-        "noProfileAvailable": "No security profile available. Create one from the Profiles page."
+        "assignFailed": "सुरक्षा प्रोफाइल निर्धारित करणे अयशस्वी",
+        "saveFailed": "सुरक्षा सेटिंग्स सेव करताना त्रुटी",
+        "noProfileAvailable": "कोणतीही सुरक्षा प्रोफाइल उपलब्ध नाही। प्रोफाइल पृष्ठमधून एक तयार करा।"
       }
     },
     "test": {
-      "defaultSystemMessage": "You are a helpful AI assistant.",
+      "defaultSystemMessage": "आप एक उपयोगी AI सहायक आहात।",
       "errors": {
-        "unknown": "Unknown error occurred",
-        "onlyImages": "Only image attachments are supported for vision models currently."
+        "unknown": "अज्ञात त्रुटी आली",
+        "onlyImages": "दृष्टि मॉडेल्ससाठी सध्या फक्त प्रतिमा संलग्नता समर्थित आहे।"
       },
-      "title": "Test Chat",
-      "subtitle": "Send test queries through the routing gateway.",
+      "title": "चाचणी चॅट",
+      "subtitle": "राउटिंग गेटवे द्वारे चाचणी क्वेरी पाठवा।",
       "routerToken": "Router Token:",
-      "hideToken": "Hide Token",
-      "showToken": "Show Token",
-      "recognizedToken": "Recognized Token",
-      "unrecognizedToken": "Unrecognized Token",
-      "noMessages": "No messages yet.",
-      "enterTokenHint": "Please enter a Router Token above to send a message.",
-      "typeMessageHint": "Type a message below to start testing.",
+      "hideToken": "टोकन लपवा",
+      "showToken": "टोकन दाखवा",
+      "recognizedToken": "ओळखलेले टोकन",
+      "unrecognizedToken": "अज्ञात टोकन",
+      "noMessages": "अद्याप कोणतेही संदेश नाहीत।",
+      "enterTokenHint": "संदेश पाठवण्यासाठी कृपया वर एक Router Token प्रविष्ट करा।",
+      "typeMessageHint": "चाचणी सुरू करण्यासाठी खालीच एक संदेश टाइप करा।",
       "reasoning": "Reasoning",
       "attachedAlt": "Attached",
       "attachmentAlt": "Attachment",
-      "attachImage": "Attach image",
-      "typeMessagePlaceholder": "Type a message...",
-      "stopGeneration": "Stop generation",
-      "sendEnter": "Send (Enter)",
-      "debugLog": "Debug Log",
+      "attachImage": "प्रतिमा संलग्न करा",
+      "typeMessagePlaceholder": "संदेश टाइप करा...",
+      "stopGeneration": "निर्मिती थांबवा",
+      "sendEnter": "पाठवा (Enter)",
+      "debugLog": "डीबग लॉग",
       "clear": "Clear",
-      "noRequestSent": "No request sent yet.",
-      "turnTraceLog": "Turn #{{turn}} trace log · {{count}} event",
-      "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} events"
+      "noRequestSent": "अद्याप कोणतीही विनंती पाठवलेली नाही।",
+      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग · {{count}} इव्हेंट",
+      "turnTraceLog_other": "Turn #{{turn}} ट्रेस लॉग · {{count}} इव्हेंट्स"
     }
   },
   "connections": {
     "list": {
       "title": "Connections",
-      "subtitle": "Provider accounts used to run model instances",
-      "noPermission": "You don't have permission to view connections.",
+      "subtitle": "मॉडेल इंस्टान्स चलवण्यासाठी वापरलेले प्रदाता खाते",
+      "noPermission": "आपल्याकडे कनेक्शन्स पाहण्याची अनुमती नाही।",
       "count": "{{count}} connection",
       "count_other": "{{count}} connections",
-      "addConnection": "Add Connection",
-      "empty": "No connections yet. Add one to get started.",
-      "deleteConfirm": "Remove connection \"{{label}}\"? Instances bound to it will stop working.",
+      "addConnection": "कनेक्शन जोडा",
+      "empty": "अद्याप कोणतेही कनेक्शन नाहीत। सुरुवात करण्यासाठी एक जोडा।",
+      "deleteConfirm": "कनेक्शन \"{{label}}\" काढून टाका? त्यास बांधलेले इंस्टान्स काम करणे बंद करतील।",
       "errors": {
-        "loadFailed": "Failed to load connections",
-        "deleteFailed": "Failed to delete connection"
+        "loadFailed": "कनेक्शन्स लोड करणे अयशस्वी",
+        "deleteFailed": "कनेक्शन हटवणे अयशस्वी"
       },
       "columns": {
         "label": "Label",
@@ -1694,65 +1705,65 @@
       }
     },
     "form": {
-      "backToConnections": "Back to Connections",
-      "editTitle": "Edit Connection",
-      "addTitle": "Add Connection",
+      "backToConnections": "कनेक्शन्सकडे परत",
+      "editTitle": "कनेक्शन संपादित करा",
+      "addTitle": "कनेक्शन जोडा",
       "enabled": "Enabled",
-      "editSubtitle": "Update the provider account settings",
-      "addSubtitle": "Register a new provider account",
-      "sectionTitle": "Connection details",
-      "sectionDesc": "Provider account, credentials, and endpoint used to perform requests.",
+      "editSubtitle": "प्रदाता खाता सेटिंग्स अपडेट करा",
+      "addSubtitle": "नवीन प्रदाता खाता नोंदणीकृत करा",
+      "sectionTitle": "कनेक्शन तपशील",
+      "sectionDesc": "विनंती करण्यासाठी वापरलेले प्रदाता खाते, तपशील आणि एंडपॉइंट।",
       "provider": "Provider",
       "groups": {
         "directApi": "Direct API",
-        "cloudPlatform": "Cloud platform",
+        "cloudPlatform": "क्लाउड प्लॅटफॉर्म",
         "subscription": "Subscription",
-        "browserSession": "Browser session",
+        "browserSession": "ब्राउজर सेशन",
         "selfHosted": "Self-hosted"
       },
       "upstreamProvider": {
         "label": "Provider",
-        "hintLabel": "(upstream provider name)",
-        "placeholder": "e.g. deepseek, mistral, groq",
-        "description": "Names the service this endpoint belongs to. Models on this connection use it as their ID prefix (e.g. <code>deepseek/deepseek-r1</code>)."
+        "hintLabel": "(अपस्ट्रीम प्रदाता नाव)",
+        "placeholder": "उदा. deepseek, mistral, groq",
+        "description": "हे एंडपॉइंट ज्या सेवेशी संबंधित आहे त्याला नाव देते। या कनेक्शनवरील मॉडेल्स त्यांचा ID प्रीफिक्स म्हणून वापरतात (उदा. <code>deepseek/deepseek-r1</code>)।"
       },
       "name": {
         "label": "Name",
-        "hint": "Identifies this connection everywhere it is referenced, so it has to be unique. Leave it blank to use <code>{{suggested}}</code>."
+        "hint": "हे कनेक्शन सर्वत्र ओळखते, म्हणून ते अद्वितीय असणे आवश्यक आहे। रिक्त ठेवून <code>{{suggested}}</code> वापरा।"
       },
-      "credentialsBlankHint": "Leave credential fields blank to keep existing values.",
+      "credentialsBlankHint": "विद्यमान मूल्यांना ठेवण्यासाठी तपशील फील्ड रिक्त ठेवा।",
       "save": "Save",
       "create": "Create",
       "cancel": "Cancel",
       "oauth": {
         "unknown": "unknown",
-        "accountExpires": "Account: {{account}} — expires {{expires}}",
-        "unknownError": "Unknown error"
+        "accountExpires": "खाते: {{account}} — समाप्त {{expires}}",
+        "unknownError": "अज्ञात त्रुटी"
       },
       "errors": {
-        "notFound": "Connection not found",
-        "loadFailed": "Failed to load connection",
-        "updateFailed": "Failed to update connection",
-        "createFailed": "Failed to create connection"
+        "notFound": "कनेक्शन आढळले नाही",
+        "loadFailed": "कनेक्शन लोड करणे अयशस्वी",
+        "updateFailed": "कनेक्शन अपडेट करणे अयशस्वी",
+        "createFailed": "कनेक्शन तयार करणे अयशस्वी"
       }
     }
   },
   "models": {
     "discovery": {
-      "backToModels": "Back to Models",
-      "title": "Model Discovery",
-      "subtitle": "Browse available models and add them to your routing configuration",
+      "backToModels": "मॉडेल्सकडे परत",
+      "title": "मॉडेल शोध",
+      "subtitle": "उपलब्ध मॉडेल्स ब्राउজ करा आणि त्यांना आपल्या राउटिंग कॉन्फिगरेशनमध्ये जोडा",
       "count": "{{count}} models",
       "filteredCount": "{{filtered}} of {{count}}",
       "free": "free",
       "add": "Add",
-      "addAgain": "Add again",
-      "loadFailed": "Failed to load catalog: {{error}}",
+      "addAgain": "पुन्हा जोडा",
+      "loadFailed": "कॅटलॉग लोड करणे अयशस्वी: {{error}}",
       "filters": {
         "search": "Search",
-        "searchPlaceholder": "Model ID or name…",
+        "searchPlaceholder": "मॉडेल ID किंवा नाव…",
         "provider": "Provider",
-        "allProviders": "All providers",
+        "allProviders": "सर्व प्रदाते",
         "context": "Context",
         "ctxOptions": {
           "all": "All",
@@ -1761,7 +1772,7 @@
           "large": "200k–1M",
           "xl": "> 1M"
         },
-        "pricePer1M": "Price / 1M",
+        "pricePer1M": "किंमत / 1M",
         "priceOptions": {
           "all": "All",
           "free": "Free",
@@ -1772,48 +1783,48 @@
         "show": "Show",
         "configured": "Configured",
         "embedding": "Embedding",
-        "resetFilters": "Reset filters"
+        "resetFilters": "फिल्टर रिसेट करा"
       },
       "empty": {
-        "noMatches": "No models match your filters."
+        "noMatches": "आपल्या फिल्टर्सशी कोणतेही मॉडेल्स मेल खात नाहीत।"
       },
       "columns": {
         "model": "Model",
         "provider": "Provider",
         "context": "Context",
-        "input": "Input / 1M",
-        "output": "Output / 1M"
+        "input": "इनपुट / 1M",
+        "output": "आउटपुट / 1M"
       },
       "badges": {
         "configured": "Configured",
         "embedding": "embedding",
-        "runsLocally": "Runs locally"
+        "runsLocally": "स्थानिकपणे चलते"
       },
       "pagination": {
         "prev": "Prev",
         "next": "Next",
-        "range": "{{start}}–{{end}} of {{count}}"
+        "range": "{{start}}–{{end}} च्या {{count}} पैकी"
       }
     },
     "form": {
-      "backToModels": "Back to Models",
+      "backToModels": "मॉडेल्सकडे परत",
       "title": {
-        "add": "Add Model",
-        "edit": "Edit Model",
-        "clone": "Clone Model"
+        "add": "मॉडेल जोडा",
+        "edit": "मॉडेल संपादित करा",
+        "clone": "मॉडेल क्लोन करा"
       },
       "subtitle": {
-        "add": "Register a new LLM provider model",
-        "edit": "Modifying configuration for {{id}}",
-        "clone": "Cloning from {{id}} — assign a new ID to save"
+        "add": "नवीन LLM प्रदाता मॉडेल नोंदणीकृत करा",
+        "edit": "{{id}} साठी कॉन्फिगरेशन संपादित करत आहे",
+        "clone": "{{id}} वरून क्लोन करत आहे — नवीन ID निर्धारित करून सेव करा"
       },
       "errors": {
-        "modelNotFound": "Model not found",
-        "sourceModelNotFound": "Source model not found",
-        "loadFailed": "Error loading models",
-        "idRequired": "Model ID required",
-        "duplicateId": "Model \"{{id}}\" already exists — set a different Custom ID",
-        "selectConnection": "Select a connection",
+        "modelNotFound": "मॉडेल आढळले नाही",
+        "sourceModelNotFound": "स्रोत मॉडेल आढळले नाही",
+        "loadFailed": "मॉडेल्स लोड करताना त्रुटी",
+        "idRequired": "मॉडेल ID आवश्यक आहे",
+        "duplicateId": "मॉडेल \"{{id}}\" आधीच अस्तित्वात आहे — भिन्न कस्टम ID सेट करा",
+        "selectConnection": "कनेक्शन निवडा",
         "saveFailed": "Error"
       },
       "badge": {
@@ -1826,84 +1837,84 @@
       },
       "oauth": {
         "unknownExpiry": "unknown",
-        "accountOk": "Account: {{account}} — expires {{expires}}",
-        "unknownError": "Unknown error"
+        "accountOk": "खाते: {{account}} — समाप्त {{expires}}",
+        "unknownError": "अज्ञात त्रुटी"
       },
       "identification": {
-        "title": "Model Identification",
-        "description": "Unique identifier and provider settings for this model configuration.",
+        "title": "मॉडेल ओळख",
+        "description": "या मॉडेल कॉन्फिगरेशनसाठी अद्वितीय ओळखकर्ता आणि प्रदाता सेटिंग्स।",
         "routerlyId": "Routerly ID",
-        "routerlyIdHintPre": "(optional — default:",
+        "routerlyIdHintPre": "(वैकल्पिक — डीफॉल्ट:",
         "routerlyIdHintPost": ")",
-        "routerlyIdDesc": "The identifier used when referencing this model in Routerly API calls.",
+        "routerlyIdDesc": "Routerly API कॉल्समध्ये या मॉडेलचा संदर्भ देताना वापरली जाणारी ओळखकर्ता।",
         "provider": "Provider",
-        "upstreamProviderHint": "(upstream provider name)",
-        "upstreamProviderPlaceholder": "e.g. deepseek, mistral, groq",
-        "upstreamProviderDescPre": "Used as prefix for the Routerly ID (e.g.",
+        "upstreamProviderHint": "(अपस्ट्रीम प्रदाता नाव)",
+        "upstreamProviderPlaceholder": "उदा. deepseek, mistral, groq",
+        "upstreamProviderDescPre": "Routerly ID साठी प्रीफिक्स म्हणून वापरले (उदा.",
         "upstreamProviderDescPost": ").",
         "model": "Model",
-        "upstreamModelHint": "(upstream model ID)",
-        "upstreamModelPlaceholder": "e.g. deepseek-r1, mistral-large-latest",
-        "upstreamModelDesc": "The model identifier sent to the upstream API endpoint.",
-        "modelPreset": "Model Preset",
-        "customModelOption": "— custom model name —",
-        "customModelPlaceholder": "e.g. my-fine-tuned-model"
+        "upstreamModelHint": "(अपस्ट्रीम मॉडेल ID)",
+        "upstreamModelPlaceholder": "उदा. deepseek-r1, mistral-large-latest",
+        "upstreamModelDesc": "अपस्ट्रीम API एंडपॉइंटला पाठवलेली मॉडेल ओळखकर्ता।",
+        "modelPreset": "मॉडेल प्रीसेट",
+        "customModelOption": "— कस्टम मॉडेल नाव —",
+        "customModelPlaceholder": "उदा. my-fine-tuned-model"
       },
       "connection": {
-        "title": "Connection details",
-        "description": "API endpoint and authentication credentials required to perform requests.",
+        "title": "कनेक्शन तपशील",
+        "description": "विनंती करण्यासाठी आवश्यक API एंडपॉइंट आणि प्रमाणीकरण तपशील।",
         "preconfigured": "Preconfigured",
         "custom": "Custom",
         "connection": "Connection",
-        "selectPlaceholder": "— select a connection —",
-        "noneAvailable": "No preconfigured connections for this provider. Switch to Custom, or create one on the Connections page.",
-        "editHint": "Editing this connection later updates every model bound to it."
+        "selectPlaceholder": "— कनेक्शन निवडा —",
+        "noneAvailable": "या प्रदातासाठी कोणतेही प्रीकॉन्फिगर्ड कनेक्शन नाहीत। कस्टमवर स्विच करा किंवा कनेक्शन्स पृष्ठावर एक तयार करा।",
+        "editHint": "या कनेक्शनला नंतर संपादित केल्याने त्यास बांधलेल्या प्रत्येक मॉडेलची अपडेट होते।"
       },
       "capabilities": {
         "title": "Capabilities",
-        "description": "Specify the type and capabilities of this model.",
-        "embeddingModel": "Embedding model",
-        "embeddingModelHint": "This model generates vector embeddings (not chat completions)"
+        "description": "या मॉडेलचा प्रकार आणि क्षमता निर्दिष्ट करा।",
+        "embeddingModel": "एम्बेडिंग मॉडेल",
+        "embeddingModelHint": "हा मॉडेल वेक्टर एम्बेडिंग तयार करते (चॅट समाप्तिनाही)"
       },
       "pricing": {
-        "title": "Pricing & context",
-        "description": "Cost parameters and processing limits used for billing and routing.",
-        "inputPerMillion": "Input $/1M",
-        "outputPerMillion": "Output $/1M",
-        "cachePerMillion": "Cache read $/1M",
-        "cacheWritePerMillion": "Cache write $/1M",
+        "title": "किंमत आणि संदर्भ",
+        "description": "बिलिंग आणि राउटिंगसाठी वापरलेले खर्च पैरामीटर्स आणि प्रोसेसिंग मर्यादा।",
+        "inputPerMillion": "इनपुट $/1M",
+        "outputPerMillion": "आउटपुट $/1M",
+        "cachePerMillion": "कॅश वाचन $/1M",
+        "cacheWritePerMillion": "कॅश लेखन $/1M",
         "optional": "(opt.)",
-        "contextWindow": "Context Window",
-        "contextWindowHint": "(tokens, optional)"
+        "contextWindow": "संदर्भ विंडो",
+        "contextWindowHint": "(टोकन्स, वैकल्पिक)"
       },
       "tiers": {
-        "title": "Advanced — Pricing tiers",
-        "description": "Override pricing when a metric exceeds a threshold. For example: \"Above 200 000 context tokens, prices change.\"",
-        "removeTier": "Remove tier",
+        "title": "प्रगत — किंमत स्तर",
+        "description": "जेव्हा मेट्रिक थ्रेशहोल्ड ओलांडते तेव्हा किंमत ओव्हरराइड करा। उदाहरणार्थ: \"200,000 संदर्भ टोकन्सच्या वर, किंमतीत बदल होतो।\"",
+        "removeTier": "स्तर काढून टाका",
         "above": "Above",
         "metric": "Metric",
-        "metricContextTokens": "Context tokens",
-        "overridePricing": "Override pricing",
-        "addTier": "Add pricing tier"
+        "metricContextTokens": "संदर्भ टोकन्स",
+        "overridePricing": "किंमत ओव्हरराइड करा",
+        "addTier": "किंमत स्तर जोडा"
       },
       "limits": {
         "title": "Limits",
-        "description": "Usage limits for this model. Multiple rules can be combined.",
+        "description": "या मॉडेलसाठी वापर मर्यादा। एकाधिक नियम एकत्रित केले जाऊ शकतात।",
         "metric": "Metric",
         "type": "Type",
-        "addLimit": "Add limit"
+        "addLimit": "मर्यादा जोडा"
       },
       "providerLabels": {
-        "anthropicOauth": "Anthropic (Pro/Max subscription)",
-        "openaiOauth": "OpenAI (ChatGPT Plus/Pro subscription)"
+        "anthropicOauth": "Anthropic (Pro/Max सदस्यता)",
+        "openaiOauth": "OpenAI (ChatGPT Plus/Pro सदस्यता)"
       },
-      "saveChanges": "Save Changes",
-      "createClone": "Create Clone",
-      "createModel": "Create Model"
+      "saveChanges": "बदल सेव करा",
+      "createClone": "क्लोन तयार करा",
+      "createModel": "मॉडेल तयार करा"
     },
     "page": {
       "title": "Models",
-      "subtitle": "LLM providers registered with Routerly",
+      "subtitle": "Routerly सह नोंदणीकृत LLM प्रदाते",
       "tabs": {
         "models": "Models",
         "health": "Health"
@@ -1911,29 +1922,29 @@
       "toolbar": {
         "count": "{{count}} model",
         "count_other": "{{count}} models",
-        "filteredCount": "{{filtered}} of {{count}} model",
-        "filteredCount_other": "{{filtered}} of {{count}} models"
+        "filteredCount": "{{filtered}} च्या {{count}} मॉडेल पैकी",
+        "filteredCount_other": "{{filtered}} च्या {{count}} मॉडेल्स पैकी"
       },
       "filters": {
-        "allProviders": "All providers",
-        "allConnections": "All connections",
-        "searchPlaceholder": "Filter models…"
+        "allProviders": "सर्व प्रदाते",
+        "allConnections": "सर्व कनेक्शन्स",
+        "searchPlaceholder": "मॉडेल्स फिल्टर करा…"
       },
       "discover": "Discover",
-      "addModel": "Add Model",
-      "deleteConfirm": "Remove model \"{{id}}\"?",
+      "addModel": "मॉडेल जोडा",
+      "deleteConfirm": "मॉडेल \"{{id}}\" काढून टाका?",
       "empty": {
-        "noModels": "No models yet. Add one to get started.",
-        "noMatches": "No models match the active filters."
+        "noModels": "अद्याप कोणतेही मॉडेल नाहीत। सुरुवात करण्यासाठी एक जोडा।",
+        "noMatches": "कोणतेही मॉडेल्स सक्रिय फिल्टर्सशी मेल खात नाहीत।"
       },
       "columns": {
         "id": "ID",
         "provider": "Provider",
         "endpoint": "Endpoint",
-        "input": "Input $/1M",
-        "output": "Output $/1M",
-        "cache": "Cache $/1M",
-        "context": "Context Size"
+        "input": "इनपुट $/1M",
+        "output": "आउटपुट $/1M",
+        "cache": "कॅश $/1M",
+        "context": "संदर्भ आकार"
       },
       "actions": {
         "test": "Test",
@@ -1942,41 +1953,41 @@
         "remove": "Remove"
       },
       "pagination": {
-        "previous": "← Previous",
-        "next": "Next →",
-        "pageOf": "Page {{page}} of {{totalPages}}",
-        "total": "({{count}} model)",
-        "total_other": "({{count}} models)"
+        "previous": "← मागील",
+        "next": "पुढील →",
+        "pageOf": "पृष्ठ {{page}} च्या {{totalPages}} पैकी",
+        "total": "({{count}} मॉडेल)",
+        "total_other": "({{count}} मॉडेल्स)"
       },
       "health": {
-        "emptyNoModels": "No models configured.",
-        "emptyNoMatches": "No models match the filter.",
-        "resetAll": "Reset all",
-        "resetAllTitle": "Reset every circuit breaker, cooldown, and lockout",
-        "resetTitle": "Reset circuit breaker",
-        "confirmResetModel": "Reset the circuit breaker for model \"{{id}}\"?",
-        "confirmResetAll": "Reset all resilience state? This clears every circuit breaker, cooldown, and lockout.",
+        "emptyNoModels": "कोणतेही मॉडेल्स कॉन्फिगर केलेले नाहीत।",
+        "emptyNoMatches": "कोणतेही मॉडेल्स फिल्टरशी मेल खात नाहीत।",
+        "resetAll": "सर्व रिसेट करा",
+        "resetAllTitle": "प्रत्येक सर्किट ब्रेकर, कूलडाउन आणि लॉकआउट रिसेट करा",
+        "resetTitle": "सर्किट ब्रेकर रिसेट करा",
+        "confirmResetModel": "मॉडेल \"{{id}}\" साठी सर्किट ब्रेकर रिसेट करा?",
+        "confirmResetAll": "सर्व स्थितीस्थापकता स्थिती रिसेट करा? हे प्रत्येक सर्किट ब्रेकर, कूलडाउन आणि लॉकआउट साफ करते।",
         "errors": {
-          "resetModelFailed": "Failed to reset circuit breaker",
-          "resetAllFailed": "Failed to reset resilience state"
+          "resetModelFailed": "सर्किट ब्रेकर रिसेट करणे अयशस्वी",
+          "resetAllFailed": "स्थितीस्थापकता स्थिती रिसेट करणे अयशस्वी"
         },
         "columns": {
           "model": "Model",
           "provider": "Provider",
           "status": "Status",
           "circuit": "Circuit",
-          "errorRate": "Error rate (5m)",
-          "p95Latency": "P95 latency (1h)",
-          "requests": "Requests (1h)",
-          "lastSuccess": "Last success",
-          "cooldownLockout": "Cooldown / lockout"
+          "errorRate": "त्रुटी दर (5m)",
+          "p95Latency": "P95 लेटेंसी (1h)",
+          "requests": "विनंती (1h)",
+          "lastSuccess": "शेवटची यशस्वी",
+          "cooldownLockout": "कूलडाउन / लॉकआउट"
         },
         "status": {
           "healthy": "Healthy",
           "degraded": "Degraded",
           "unavailable": "Unavailable",
           "cooldown": "Cooldown",
-          "nodata": "No data"
+          "nodata": "डेटा नाही"
         },
         "circuit": {
           "ok": "OK",
@@ -1986,10 +1997,10 @@
         "time": {
           "never": "never",
           "now": "now",
-          "secondsAgo": "{{count}}s ago",
-          "minutesAgo": "{{count}}m ago",
-          "hoursAgo": "{{count}}h ago",
-          "daysAgo": "{{count}}d ago",
+          "secondsAgo": "{{count}}s आधी",
+          "minutesAgo": "{{count}}m आधी",
+          "hoursAgo": "{{count}}h आधी",
+          "daysAgo": "{{count}}d आधी",
           "minSec": "{{min}}m {{sec}}s",
           "sec": "{{sec}}s",
           "cooldown": "cooldown {{time}}",
@@ -2001,18 +2012,18 @@
   "experiments": {
     "list": {
       "title": "Experiments",
-      "subtitle": "A/B test routers against each other",
-      "noPermission": "You don't have permission to view experiments.",
+      "subtitle": "एकमेकांविरुद्ध A/B चाचणी राउटर्स",
+      "noPermission": "आपल्याकडे प्रयोग पाहण्याची अनुमती नाही।",
       "count": "{{count}} experiment",
       "count_other": "{{count}} experiments",
-      "newExperiment": "New Experiment",
-      "empty": "No experiments yet. Create one to compare routers head to head.",
-      "deleteConfirm": "Delete experiment \"{{name}}\"? This cannot be undone.",
-      "noToken": "No token",
-      "noTokenTitle": "Without a token no client can reach this experiment",
+      "newExperiment": "नवीन प्रयोग",
+      "empty": "अद्याप कोणतेही प्रयोग नाहीत। राउटर्सची तुलना करण्यासाठी एक तयार करा।",
+      "deleteConfirm": "प्रयोग \"{{name}}\" हटवा? हे पूर्ववत केले जाऊ शकत नाही।",
+      "noToken": "कोणतीही टोकन नाही",
+      "noTokenTitle": "टोकन नाहीच्या विना कोणताही क्लायंट या प्रयोगापर्यंत पोहोचू शकत नाही",
       "errors": {
-        "loadFailed": "Failed to load experiments",
-        "deleteFailed": "Failed to delete experiment"
+        "loadFailed": "प्रयोग लोड करणे अयशस्वी",
+        "deleteFailed": "प्रयोग हटवणे अयशस्वी"
       },
       "columns": {
         "name": "Name",
@@ -2021,18 +2032,18 @@
         "created": "Created"
       },
       "actions": {
-        "edit": "Edit experiment",
+        "edit": "प्रयोग संपादित करा",
         "remove": "Delete"
       }
     },
     "layout": {
-      "backToExperiments": "Back to experiments",
-      "newExperiment": "New Experiment",
+      "backToExperiments": "प्रयोगांकडे परत",
+      "newExperiment": "नवीन प्रयोग",
       "loading": "Loading...",
-      "experimentId": "Experiment ID:",
-      "disabledTabTitle": "Save the experiment first to unlock this tab",
+      "experimentId": "प्रयोग ID:",
+      "disabledTabTitle": "या टॅबसाठी प्रयोग प्रथम सेव करा",
       "errors": {
-        "notFound": "Experiment not found"
+        "notFound": "प्रयोग आढळला नाही"
       },
       "tabs": {
         "config": "Configuration",
@@ -2042,111 +2053,111 @@
     },
     "config": {
       "saved": "Saved.",
-      "created": "Experiment created. Point your client at this token instead of a router token. It won't be shown again.",
+      "created": "प्रयोग तयार केला. आपल्या क्लायंटला राउटर टोकनऐवजी या टोकनकडे निर्देशित करा. हे पुन्हा दाखवले जाणार नाही.",
       "copy": "Copy",
       "copied": "Copied!",
       "done": "Done",
       "saving": "Saving...",
-      "create": "Create Experiment",
-      "save": "Save Changes",
+      "create": "प्रयोग तयार करा",
+      "save": "बदल सेव करा",
       "cancel": "Cancel",
-      "trafficSplit": "Traffic split",
+      "trafficSplit": "ट्रॅफिक विभाजन",
       "errors": {
-        "loadRoutersFailed": "Failed to load routers",
-        "saveFailed": "Failed to save the experiment",
-        "copyFailed": "Copy failed: select and copy the token manually."
+        "loadRoutersFailed": "राउटर्स लोड करणे अयशस्वी",
+        "saveFailed": "प्रयोग सेव करणे अयशस्वी",
+        "copyFailed": "कॉपी अयशस्वी: टोकन हाताने निवडा आणि कॉपी करा।"
       },
       "fields": {
         "name": "Name",
-        "namePlaceholder": "Cheap vs premium routing",
+        "namePlaceholder": "स्वस्त vs प्रीमियम राउटिंग",
         "description": "Description",
         "optional": "(optional)",
-        "descriptionPlaceholder": "What this test is trying to settle",
-        "minSamples": "Minimum calls per variant",
-        "minSamplesHint": "Below this, the Metrics tab marks the comparison as not yet conclusive.",
+        "descriptionPlaceholder": "ही चाचणी काय सेटल करण्याचा प्रयत्न करते",
+        "minSamples": "प्रति व्हेरिएंट किमान कॉल्स",
+        "minSamplesHint": "याच्या खाली, मेट्रिक्स टॅब तुलना निर्णायक नसल्याचे चिन्हांकित करते।",
         "rotation": "Rotation",
-        "stickyOn": "Sticky on",
-        "stickyKey": "Sticky key"
+        "stickyOn": "स्टिकी चालू",
+        "stickyKey": "स्टिकी की"
       },
       "variants": {
         "title": "Variants",
-        "desc": "Each variant is an existing router, taken whole: its models, routing and guardrails all apply. A test needs at least two.",
-        "routerAriaLabel": "Variant {{index}} router",
-        "routerPlaceholder": "Select a router",
-        "labelAriaLabel": "Variant {{index}} label",
-        "labelPlaceholder": "Label (optional)",
-        "weightAriaLabel": "Variant {{index}} weight",
+        "desc": "प्रत्येक व्हेरिएंट एक विद्यमान राउटर आहे, संपूर्ण: त्यांचे मॉडेल्स, राउटिंग आणि गार्डरेल्स सर्व लागू होतात. एक चाचणीला किमान दोन आवश्यकता आहे।",
+        "routerAriaLabel": "व्हेरिएंट {{index}} राउटर",
+        "routerPlaceholder": "राउटर निवडा",
+        "labelAriaLabel": "व्हेरिएंट {{index}} लेबल",
+        "labelPlaceholder": "लेबल (वैकल्पिक)",
+        "weightAriaLabel": "व्हेरिएंट {{index}} वजन",
         "weightPlaceholder": "Weight",
-        "removeTitle": "Remove variant {{index}}",
-        "add": "Add variant"
+        "removeTitle": "व्हेरिएंट {{index}} काढून टाका",
+        "add": "व्हेरिएंट जोडा"
       },
       "judge": {
         "title": "Judge",
-        "desc": "Optional: a model reads each sampled answer and scores it 0-10 against your criteria. Every judged call is an extra model call, billed like any other.",
-        "enable": "Score answers with a judge model",
-        "model": "Judge model",
-        "modelPlaceholder": "Select a model",
+        "desc": "वैकल्पिक: एक मॉडेल प्रत्येक नमुना उत्तर वाचते आणि आपल्या निकषांविरुद्ध 0-10 स्कोर करते। प्रत्येक न्यायाधीशाचे कॉल एक अतिरिक्त मॉडेल कॉल आहे, इतर कोणत्याहीप्रमाणे बिल केले जाते।",
+        "enable": "न्यायाधीश मॉडेल सह उत्तरांचे स्कोअर करा",
+        "model": "न्यायाधीश मॉडेल",
+        "modelPlaceholder": "मॉडेल निवडा",
         "criteria": "Criteria",
-        "criteriaPlaceholder": "One per line, e.g.\nAnswers the question asked\nStays factual\nKeeps to the requested format",
-        "sampleRate": "Share of calls judged (%)"
+        "criteriaPlaceholder": "प्रति ओळ एक, उदा.\nविचारलेल्या प्रश्नाचे उत्तर देते\nतथ्याभिमुख राहते\nविनंती केलेल्या स्वरूपात राहते",
+        "sampleRate": "न्यायाधीशाद्वारे कॉल्सचा वाटा (%)"
       }
     },
     "metrics": {
       "loading": "Loading...",
-      "callsMeasured": "{{count}} call measured",
-      "callsMeasured_other": "{{count}} calls measured",
-      "empty": "No calls in this window yet. Point a client at the experiment token to start the comparison.",
-      "notConclusive": "Not conclusive yet: every variant needs at least {{minSamples}} calls in this window. ",
-      "explanation": "The better figure of each pair is highlighted: cheaper per call, faster, higher judge score. The percentage under a value is its distance from the best arm. The judge score is a running average over the whole life of the experiment, so it is the one figure the window does not narrow.",
-      "lowSample": "Low sample",
-      "lowSampleTitle": "Under {{minSamples}} calls in this window",
-      "judgedCallsTitle": "{{count}} answer scored by the judge since the experiment started",
-      "judgedCallsTitle_other": "{{count}} answers scored by the judge since the experiment started",
+      "callsMeasured": "{{count}} कॉल मोजली गेली",
+      "callsMeasured_other": "{{count}} कॉल्स मोजली गेली",
+      "empty": "अद्याप या विंडोमध्ये कोणतेही कॉल्स नाहीत। तुलना सुरू करण्यासाठी प्रयोग टोकनकडे क्लायंट निर्देशित करा।",
+      "notConclusive": "अद्याप निर्णायक नाही: प्रत्येक व्हेरिएंटला या विंडोमध्ये किमान {{minSamples}} कॉल्स आवश्यकता आहे। ",
+      "explanation": "प्रत्येक जोडीचा चांगला आकृती हायलाइट केला आहे: प्रति कॉल स्वस्त, वेगवान, उच्च न्यायाधीश स्कोर. एका मूल्यामागील टक्केवारी सर्वोत्तम हातापासून त्याचे अंतर आहे. न्यायाधीश स्कोर संपूर्ण प्रयोगच्या जीवनकाल चालू सरासरी आहे, त्यामुळे विंडो अरुंद न करणारी एक आकृती आहे।",
+      "lowSample": "कमी नमुना",
+      "lowSampleTitle": "या विंडोमध्ये {{minSamples}} कॉल्स अंतर्गत",
+      "judgedCallsTitle": "प्रयोग सुरू झाल्यापासून न्यायाधीशाद्वारे {{count}} उत्तरांचे स्कोअर केले गेले",
+      "judgedCallsTitle_other": "प्रयोग सुरू झाल्यापासून न्यायाधीशाद्वारे {{count}} उत्तरांचे स्कोअर केले गेले",
       "errors": {
-        "loadFailed": "Failed to load metrics"
+        "loadFailed": "मेट्रिक्स लोड करणे अयशस्वी"
       },
       "columns": {
         "variant": "Variant",
         "calls": "Calls",
         "share": "Share",
         "errors": "Errors",
-        "tokens": "Tokens in / out",
+        "tokens": "इनपुट / आउटपुट टोकन्स",
         "cost": "Cost",
-        "costPerCall": "Cost / call",
-        "avgLatency": "Avg latency",
+        "costPerCall": "खर्च / कॉल",
+        "avgLatency": "सरासरी लेटेंसी",
         "p95": "p95",
         "ttft": "TTFT",
-        "judgeScore": "Judge score"
+        "judgeScore": "न्यायाधीश स्कोर"
       }
     },
     "token": {
-      "desc": "A client calls the experiment exactly like a router: same base URL, this token instead of a router token. Each request lands on one variant and is billed to that variant's router.",
-      "baseUrlLabel": "Base URL for the OpenAI or Anthropic SDK, with an experiment token as the API key:",
-      "created": "Token created. Copy it now, it won't be shown again.",
+      "desc": "क्लायंट प्रयोग राउटरप्रमाणे हबेहब कॉल करते: समान बेस URL, राउटर टोकनऐवजी हे टोकन. प्रत्येक विनंती एक व्हेरिएंटवर येते आणि त्या व्हेरिएंटच्या राउटरमध्ये बिल केली जाते।",
+      "baseUrlLabel": "OpenAI किंवा Anthropic SDK साठी बेस URL, प्रयोग टोकन सह API की म्हणून:",
+      "created": "टोकन तयार केला. आता कॉपी करा, हे पुन्हा दाखवले जाणार नाही।",
       "copy": "Copy",
       "copied": "Copied!",
-      "newToken": "New Token",
-      "empty": "No tokens on this experiment. Create one so clients can call it.",
-      "revokeConfirm": "Revoke token \"{{snippet}}...\"? Clients using it stop working immediately.",
-      "revokeTitle": "Revoke Token",
+      "newToken": "नवीन टोकन",
+      "empty": "या प्रयोगावर कोणतेही टोकन नाहीत। क्लायंट्स त्यास कॉल करू शकतील म्हणून एक तयार करा।",
+      "revokeConfirm": "टोकन \"{{snippet}}...\" रद्द करा? त्यास वापरणारे क्लायंट्स लगेच काम करणे बंद करतील।",
+      "revokeTitle": "टोकन रद्द करा",
       "errors": {
-        "createFailed": "Failed to create the token",
-        "revokeFailed": "Failed to revoke the token",
-        "copyFailed": "Copy failed: select and copy the token manually."
+        "createFailed": "टोकन तयार करणे अयशस्वी",
+        "revokeFailed": "टोकन रद्द करणे अयशस्वी",
+        "copyFailed": "कॉपी अयशस्वी: टोकन हाताने निवडा आणि कॉपी करा।"
       },
       "columns": {
         "created": "Created",
-        "lastUsed": "Last used"
+        "lastUsed": "शेवटी वापरले"
       }
     }
   },
   "overview": {
     "title": "Overview",
-    "subtitle": "Usage summary and cost breakdown",
-    "noPermission": "No permission to view usage data.",
-    "costByModel": "Cost by Model",
-    "noCostRecorded": "No cost recorded this period.",
-    "callsByModel": "Calls by Model",
+    "subtitle": "वापर सारांश आणि खर्च विभाजन",
+    "noPermission": "वापर डेटा पाहण्याची अनुमती नाही।",
+    "costByModel": "मॉडेल द्वारे खर्च",
+    "noCostRecorded": "या कालावधीत कोणताही खर्च रेकॉर्ड केला गेला नाही।",
+    "callsByModel": "मॉडेल द्वारे कॉल्स",
     "columns": {
       "model": "Model",
       "calls": "Calls",
@@ -2154,72 +2165,72 @@
       "cost": "Cost"
     },
     "stats": {
-      "totalCalls": "Total Calls",
-      "callsBreakdown": "{{routing}} routing · {{completion}} completion",
-      "successRate": "Success Rate",
-      "ofAllRequests": "of all requests",
+      "totalCalls": "एकूण कॉल्स",
+      "callsBreakdown": "{{routing}} राउटिंग · {{completion}} पूर्णता",
+      "successRate": "यशस्वी दर",
+      "ofAllRequests": "सर्व विनंत्यांपैकी",
       "errors": "Errors",
-      "failedRequests": "failed requests",
+      "failedRequests": "अयशस्वी विनंती",
       "models": "Models",
       "registered": "registered",
       "routers": "Routers",
       "active": "active"
     },
     "connectCard": {
-      "title": "Connect a client",
-      "desc": "Point Claude Code, Codex, Cursor and {{count}} more at this gateway."
+      "title": "क्लायंट कनेक्ट करा",
+      "desc": "Claude Code, Codex, Cursor आणि {{count}} अधिकांचा या गेटवेकडे निर्देशित करा।"
     }
   },
   "login": {
     "emailLabel": "Email",
     "passwordLabel": "Password",
-    "signIn": "Sign In",
+    "signIn": "साइन इन करा",
     "errors": {
-      "loginFailed": "Login failed",
-      "totpFailed": "2FA verification failed"
+      "loginFailed": "लॉगिन अयशस्वी",
+      "totpFailed": "2FA सत्यापन अयशस्वी"
     },
     "totp": {
-      "title": "Two-Factor Authentication",
-      "backupPrompt": "Enter a backup code.",
-      "appPrompt": "Enter the 6-digit code from your authenticator app.",
-      "backupCodeLabel": "Backup Code",
-      "authenticatorCodeLabel": "Authenticator Code",
+      "title": "द्विघटक प्रमाणीकरण",
+      "backupPrompt": "बॅकअप कोड प्रविष्ट करा।",
+      "appPrompt": "आपल्या प्रमाणक अ‍ॅपमधून 6-अंकीय कोड प्रविष्ट करा।",
+      "backupCodeLabel": "बॅकअप कोड",
+      "authenticatorCodeLabel": "प्रमाणक कोड",
       "verify": "Verify",
-      "useAuthenticatorInstead": "Use authenticator app instead",
-      "useBackupInstead": "Use a backup code instead"
+      "useAuthenticatorInstead": "त्याऐवजी प्रमाणक अ‍ॅप वापरा",
+      "useBackupInstead": "त्याऐवजी बॅकअप कोड वापरा"
     }
   },
   "setup": {
-    "welcome": "Welcome! Let's get you set up.",
-    "welcomeSubtitle": "Create the first admin account to start managing Routerly.",
-    "betaBadge": "🚧 Beta",
-    "betaNotice": "Routerly is actively evolving. Bugs may occur.",
-    "betaFeedback": "Your feedback helps shape what it becomes —",
-    "betaLink": "report issues or share ideas",
-    "emailLabel": "Admin Email",
+    "welcome": "स्वागतम! चला आपल्याला सेटअप करूया।",
+    "welcomeSubtitle": "Routerly व्यवस्थापित करना सुरू करण्यासाठी पहिली व्यवस्थापक खाती तयार करा।",
+    "betaBadge": "🚧 बीटा",
+    "betaNotice": "Routerly सक्रियपणे विकसित होत आहे. बग आली शकते।",
+    "betaFeedback": "आपल्या प्रतिक्रियेचा त्यामध्ये बदल घडवून आणण्यास मदत होते —",
+    "betaLink": "समस्या अहवाल किंवा विचार शेअर करा",
+    "emailLabel": "व्यवस्थापक ईमेल",
     "emailPlaceholder": "admin@example.com",
     "passwordLabel": "Password",
-    "passwordPlaceholder": "Minimum 8 characters",
-    "confirmLabel": "Confirm Password",
-    "confirmPlaceholder": "Re-enter password",
-    "submit": "Create Admin Account",
+    "passwordPlaceholder": "किमान 8 वर्ण",
+    "confirmLabel": "पासवर्ड पुष्टी करा",
+    "confirmPlaceholder": "पासवर्ड पुन्हा प्रविष्ट करा",
+    "submit": "व्यवस्थापक खाती तयार करा",
     "errors": {
-      "mismatch": "Passwords do not match",
-      "tooShort": "Password must be at least 8 characters",
-      "setupFailed": "Setup failed"
+      "mismatch": "पासवर्ड मेल खात नाहीत",
+      "tooShort": "पासवर्ड किमान 8 वर्ण असणे आवश्यक आहे",
+      "setupFailed": "सेटअप अयशस्वी"
     }
   },
   "audit": {
-    "empty": "No audit entries found.",
+    "empty": "कोणतेही ऑडिट एंट्री आढळले नाहीत।",
     "errors": {
-      "loadFailed": "Failed to load audit log"
+      "loadFailed": "ऑडिट लॉग लोड करणे अयशस्वी"
     },
     "filters": {
       "period": "Period",
       "user": "User",
-      "userPlaceholder": "Email or user ID",
+      "userPlaceholder": "ईमेल किंवा वापरकर्ता ID",
       "action": "Action",
-      "actionPlaceholder": "e.g. model:create",
+      "actionPlaceholder": "उदा. model:create",
       "result": "Result",
       "results": {
         "all": "All",
@@ -2240,16 +2251,16 @@
     "pagination": {
       "previous": "Previous",
       "next": "Next",
-      "page": "Page {{page}} of {{totalPages}}",
-      "total": "({{count}} total)"
+      "page": "पृष्ठ {{page}} च्या {{totalPages}} पैकी",
+      "total": "({{count}} एकूण)"
     }
   },
   "usage": {
     "page": {
       "title": "Usage",
       "live": "LIVE",
-      "subtitle": "Detailed call logs and per-model breakdown",
-      "updatedAt": "· updated at {{time}}",
+      "subtitle": "विस्तृत कॉल लॉग्स आणि प्रति-मॉडेल विभाजन",
+      "updatedAt": "· {{time}} वाजता अपडेट केले",
       "poll": {
         "off": "Off",
         "5s": "5s",
@@ -2258,13 +2269,13 @@
         "1m": "1m",
         "5m": "5m"
       },
-      "liveButton": "● Live",
+      "liveButton": "● लाइव",
       "liveButtonTitle": {
-        "disable": "Disable live mode",
-        "enable": "Enable live mode (refresh every 2s)"
+        "disable": "लाइव मोड अक्षम करा",
+        "enable": "लाइव मोड सक्षम करा (प्रत्येक 2s ताज करा)"
       },
-      "refreshNow": "↻ Now",
-      "refreshNowTitle": "Refresh now",
+      "refreshNow": "↻ आता",
+      "refreshNowTitle": "आता ताज करा",
       "filters": {
         "period": "Period",
         "router": "Router",
@@ -2273,10 +2284,10 @@
         "caller": "Caller",
         "type": "Type",
         "status": "Status",
-        "allRouters": "All Routers",
-        "allModels": "All Models",
-        "allTokens": "All Tokens",
-        "resetFilters": "Reset filters",
+        "allRouters": "सर्व राउटर्स",
+        "allModels": "सर्व मॉडेल्स",
+        "allTokens": "सर्व टोकन्स",
+        "resetFilters": "फिल्टर रिसेट करा",
         "all": "All",
         "success": "Success",
         "blocked": "Blocked",
@@ -2296,15 +2307,15 @@
         "judge": "judge"
       },
       "errors": {
-        "loadFailedPrefix": "Failed to load usage data:",
+        "loadFailedPrefix": "वापर डेटा लोड करणे अयशस्वी:",
         "retry": "Retry"
       },
       "stats": {
-        "totalCalls": "Total Calls",
-        "completionCalls": "Completion Calls",
+        "totalCalls": "एकूण कॉल्स",
+        "completionCalls": "पूर्णता कॉल्स",
         "routerCalls": "Router Calls",
-        "guardrailCalls": "Guardrail Calls",
-        "blockedCalls": "Blocked Calls",
+        "guardrailCalls": "गार्डरेल कॉल्स",
+        "blockedCalls": "अवरोधित कॉल्स",
         "errors": "Errors"
       },
       "table": {
@@ -2313,21 +2324,21 @@
         "provider": "Provider",
         "calls": "Calls",
         "errors": "Errors",
-        "successRate": "Success rate",
-        "avgLatency": "Avg latency",
-        "p95Latency": "P95 latency",
-        "inputTokens": "Input tokens",
-        "outputTokens": "Output tokens",
-        "costPer1k": "Cost / 1K",
-        "cost": "Cost (USD)",
-        "bestCostPerformance": "Best cost-performance"
+        "successRate": "यशस्वी दर",
+        "avgLatency": "सरासरी लेटेंसी",
+        "p95Latency": "P95 लेटेंसी",
+        "inputTokens": "इनपुट टोकन्स",
+        "outputTokens": "आउटपुट टोकन्स",
+        "costPer1k": "खर्च / 1K",
+        "cost": "खर्च (USD)",
+        "bestCostPerformance": "सर्वोत्तम खर्च-कार्यक्षमता"
       },
-      "showMoreModels": "Show {{count}} more model",
-      "showMoreModels_other": "Show {{count}} more models",
-      "showFewerModels": "Show fewer models",
+      "showMoreModels": "{{count}} अधिक मॉडेल दाखवा",
+      "showMoreModels_other": "{{count}} अधिक मॉडेल्स दाखवा",
+      "showFewerModels": "कमी मॉडेल्स दाखवा",
       "recentCalls": {
-        "title": "Recent Calls",
-        "empty": "No usage records for this period.",
+        "title": "अलीकडील कॉल्स",
+        "empty": "या कालावधीसाठी कोणतेही वापर रेकॉर्ड नाहीत।",
         "columns": {
           "time": "Time",
           "router": "Router",
@@ -2346,188 +2357,188 @@
       "pagination": {
         "previous": "Previous",
         "next": "Next",
-        "pageOf": "Page {{page}} of {{totalPages}}",
-        "totalRecords": "({{count}} total records)"
+        "pageOf": "पृष्ठ {{page}} च्या {{totalPages}} पैकी",
+        "totalRecords": "({{count}} एकूण रेकॉर्ड्स)"
       }
     },
     "record": {
       "back": "Back",
-      "title": "Call Detail",
-      "notFoundTitle": "Record Not Found",
-      "notFoundBody": "Usage record {{id}} could not be loaded.",
+      "title": "कॉल तपशील",
+      "notFoundTitle": "रेकॉर्ड आढळले नाही",
+      "notFoundBody": "वापर रेकॉर्ड {{id}} लोड केले जाऊ शकले नाही।",
       "errors": {
-        "loadFailed": "Failed to load record"
+        "loadFailed": "रेकॉर्ड लोड करणे अयशस्वी"
       },
       "sections": {
         "identity": "Identity",
-        "tokensAndCost": "Tokens & Cost",
-        "performanceAndOutcome": "Performance & Outcome",
-        "traceLog": "Trace Log"
+        "tokensAndCost": "टोकन्स आणि खर्च",
+        "performanceAndOutcome": "कार्यक्षमता आणि परिणाम",
+        "traceLog": "ट्रेस लॉग"
       },
       "fields": {
-        "recordId": "Record ID",
+        "recordId": "रेकॉर्ड ID",
         "router": "Router",
         "token": "Token",
         "model": "Model",
-        "callType": "Call Type",
-        "requestType": "Request Type",
-        "inputTokens": "Input Tokens",
-        "outputTokens": "Output Tokens",
-        "totalTokens": "Total Tokens",
-        "costUsd": "Cost (USD)",
+        "callType": "कॉल प्रकार",
+        "requestType": "विनंती प्रकार",
+        "inputTokens": "इनपुट टोकन्स",
+        "outputTokens": "आउटपुट टोकन्स",
+        "totalTokens": "एकूण टोकन्स",
+        "costUsd": "खर्च (USD)",
         "costUnknown": "Unknown",
         "latency": "Latency",
         "ttft": "TTFT",
         "tokensPerSec": "Tok/s",
         "outcome": "Outcome",
         "timestamp": "Timestamp",
-        "guardrailTriggered": "Guardrail Triggered",
-        "blockedBy": "Blocked By",
-        "piiRedacted": "PII Redacted"
+        "guardrailTriggered": "गार्डरेल ट्रिगर केले गेले",
+        "blockedBy": "ब्लॉक केले गेले",
+        "piiRedacted": "PII रिडॅक्ट केले गेले"
       },
-      "errorMessage": "Error Message",
+      "errorMessage": "त्रुटी संदेश",
       "eventCount": "{{count}} event",
       "eventCount_other": "{{count}} events",
-      "noTrace": "No trace available. Trace data is captured for new calls only."
+      "noTrace": "कोणतेही ट्रेस उपलब्ध नाही. ट्रेस डेटा फक्त नवीन कॉल्ससाठी कॅप्चर केला जातो।"
     }
   },
   "playground": {
     "title": "Playground",
-    "subtitle": "Test models, compare responses, and save prompt presets.",
+    "subtitle": "मॉडेल्स चाचणी करा, प्रतिक्रिया तुलना करा आणि प्रॉम्प्ट प्रीसेट्स सेव करा।",
     "mode": {
       "single": "Single",
       "compare": "Compare"
     },
     "token": {
       "label": "Token:",
-      "labelA": "Token A",
-      "labelB": "Token B",
+      "labelA": "टोकन A",
+      "labelB": "टोकन B",
       "placeholder": "sk-rt-...",
-      "placeholderB": "same as A",
-      "unknownToken": "Unknown token"
+      "placeholderB": "A सारखेच",
+      "unknownToken": "अज्ञात टोकन"
     },
     "presets": {
       "button": "Presets",
       "panelTitle": "Presets",
-      "saveCurrent": "Save current",
-      "namePlaceholder": "Preset name...",
+      "saveCurrent": "सध्याचे सेव करा",
+      "namePlaceholder": "प्रीसेट नाव...",
       "save": "Save",
-      "empty": "No presets yet.",
-      "delete": "Delete preset"
+      "empty": "अद्याप कोणतेही प्रीसेट्स नाहीत।",
+      "delete": "प्रीसेट हटवा"
     },
     "streamingDisabled": {
-      "banner": "Streaming not available",
-      "bannerBody": "this router has a response-blocking guardrail active. Routerly must inspect the full response before delivery, so responses arrive all at once.",
-      "tooltip": "Streaming is not available: a response-blocking guardrail requires the full response to be inspected before delivery.",
-      "ariaLabel": "Streaming unavailable"
+      "banner": "स्ट्रीमिंग उपलब्ध नाही",
+      "bannerBody": "या राउटरमध्ये प्रतिक्रिया-अवरोधित गार्डरेल सक्रिय आहे. Routerly संपूर्ण प्रतिक्रिया तपासणी करणे आवश्यक आहे, त्यामुळे प्रतिक्रिया एकत्रितपणे येतात.",
+      "tooltip": "स्ट्रीमिंग उपलब्ध नाही: प्रतिक्रिया-अवरोधित गार्डरेलला डिलिव्हरीसाठी संपूर्ण प्रतिक्रिया तपासणी आवश्यक आहे।",
+      "ariaLabel": "स्ट्रीमिंग अनुपलब्ध"
     },
-    "systemPrompt": "System prompt",
+    "systemPrompt": "सिस्टम प्रॉम्प्ट",
     "model": "Model",
-    "modelPlaceholder": "Auto (router default)",
+    "modelPlaceholder": "स्वयंचलित (राउटर डीफॉल्ट)",
     "params": {
       "temp": "Temp",
-      "maxTokens": "Max tokens",
+      "maxTokens": "कमाल टोकन्स",
       "topP": "Top-p"
     },
     "stream": "Stream",
     "clear": "Clear",
     "empty": {
-      "noMessages": "No messages yet.",
-      "enterToken": "Enter a Router Token above to start."
+      "noMessages": "अद्याप कोणतेही संदेश नाहीत।",
+      "enterToken": "सुरू करण्यासाठी वर Router Token प्रविष्ट करा।"
     },
     "reasoning": "Reasoning",
-    "blockedDefault": "This message was blocked by a guardrail.",
-    "truncated": "Truncated — response cut off by max tokens",
-    "bufferedNote": "Held for security review",
+    "blockedDefault": "हा संदेश गार्डरेलद्वारे अवरोधित केला होता।",
+    "truncated": "कापले गेले — कमाल टोकन्सद्वारे प्रतिक्रिया कापली गेली",
+    "bufferedNote": "सुरक्षा पुनरावलोकनासाठी ठेवले",
     "errors": {
-      "onlyImages": "Only image attachments are supported."
+      "onlyImages": "फक्त प्रतिमा संलग्नता समर्थित आहे।"
     },
     "rawToggle": {
       "rendered": "rendered",
       "raw": "raw"
     },
-    "inputPlaceholder": "Type a message...",
-    "attachImage": "Attach image",
+    "inputPlaceholder": "संदेश टाइप करा...",
+    "attachImage": "प्रतिमा संलग्न करा",
     "attachedImageAlt": "Attached",
     "attachmentAlt": "Attachment",
     "debug": {
       "title": "Debug",
       "clear": "Clear",
-      "hide": "Hide debug",
-      "show": "Show debug",
-      "empty": "No debug data yet.",
-      "emptyHint": "Send a message to see routing details.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "hide": "डीबग लपवा",
+      "show": "डीबग दाखवा",
+      "empty": "अद्याप कोणतेही डीबग डेटा नाही।",
+      "emptyHint": "राउटिंग तपशील पाहण्यासाठी संदेश पाठवा।",
+      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग"
     },
     "compare": {
-      "modelLabel": "Model {{label}}:",
-      "modelSelectPlaceholder": "Select model...",
-      "noMessages": "No messages yet.",
-      "debugTurns": "Debug ({{count}} turn)",
-      "debugTurns_other": "Debug ({{count}} turns)",
-      "guardrailTokensTitle": "Guardrail judge tokens",
+      "modelLabel": "मॉडेल {{label}}:",
+      "modelSelectPlaceholder": "मॉडेल निवडा...",
+      "noMessages": "अद्याप कोणतेही संदेश नाहीत।",
+      "debugTurns": "डीबग ({{count}} turn)",
+      "debugTurns_other": "डीबग ({{count}} turns)",
+      "guardrailTokensTitle": "गार्डरेल न्यायाधीश टोकन्स",
       "stop": "Stop",
-      "inputPlaceholder": "Send the same message to both models..."
+      "inputPlaceholder": "समान संदेश दोन्ही मॉडेल्सला पाठवा..."
     }
   },
   "help": {
-    "title": "Help & Support",
-    "subtitle": "We're here to help — find answers or reach out anytime.",
+    "title": "मदत व समर्थन",
+    "subtitle": "आम्ही मदत करण्यासाठी येथे आहोत — कोणतेही वेळी उत्तर शोधा किंवा संपर्क करा।",
     "docs": {
       "title": "Documentation",
-      "subtitle": "Guides, API reference, and configuration docs",
-      "body": "The official docs cover everything from getting started to advanced routing policies, provider setup, budgets, and the full API reference.",
-      "openLink": "Open documentation"
+      "subtitle": "मार्गदर्शक, API संदर्भ आणि कॉन्फिगरेशन डॉक्स",
+      "body": "अधिकृत डॉक्स सुरुवात करण्यापासून ते प्रगत राउटिंग धोरण, प्रदाता सेटअप, बजेट आणि संपूर्ण API संदर्भ सर्व काही कव्हर करतात।",
+      "openLink": "डॉक्यूमेंटेशन उघडा"
     },
     "issues": {
-      "title": "Report a bug or suggest a feature",
-      "subtitle": "Open a GitHub issue — it takes 2 minutes",
-      "body": "GitHub issues are the best way to report bugs or propose improvements. To help us fix things faster, include: what you did, what you expected to happen, and what actually happened.",
-      "showTemplate": "Show issue template",
-      "reportBug": "Report a bug",
-      "requestFeature": "Request a feature"
+      "title": "बग अहवाल किंवा वैशिष्ट्य सुचवा",
+      "subtitle": "GitHub समस्या उघडा — 2 मिनिटे लागतात",
+      "body": "GitHub समस्याएं बग अहवाल किंवा सुधार सूचित करण्याचा सर्वोत्तम मार्ग आहे. गोष्टींना वेगान ठीक करण्यास मदत करण्यासाठी समाविष्ट करा: आपण काय केले, काय होणे अपेक्षित होते, आणि वास्तविकपणे काय घडले।",
+      "showTemplate": "समस्या नमुना दाखवा",
+      "reportBug": "बग अहवाल करा",
+      "requestFeature": "वैशिष्ट्य विनंती करा"
     },
     "issueTemplate": {
-      "whatHappened": "What happened?",
-      "whatHappenedHint": "Describe the problem in plain words",
-      "stepsToReproduce": "Steps to reproduce",
-      "expectedBehaviour": "Expected behaviour",
-      "expectedBehaviourHint": "What you expected to see",
+      "whatHappened": "काय घडले?",
+      "whatHappenedHint": "समस्या सादर शब्दांमध्ये वर्णन करा",
+      "stepsToReproduce": "पुनरुत्पादन करण्याचे पायरी",
+      "expectedBehaviour": "अपेक्षित वर्तन",
+      "expectedBehaviourHint": "आपण काय पाहणे अपेक्षित होते",
       "version": "Routerly version",
-      "versionHint": "Run `routerly --version` or check Settings → About"
+      "versionHint": "`routerly --version` चलवा किंवा सेटिंग्स → About तपासा"
     },
     "email": {
-      "title": "Contact support",
-      "subtitle": "We read every message and reply as soon as we can",
-      "body": "For anything that doesn't fit a GitHub issue — billing questions, private concerns, or if you just want to say hi — drop us a line."
+      "title": "समर्थन संपर्क करा",
+      "subtitle": "आम्ही प्रत्येक संदेश वाचतो आणि शक्य तितक्या लवकर प्रतिक्रिया देतो",
+      "body": "GitHub समस्यामध्ये बसत नसलेल्या कोणत्याहीच्या लिए — बिलिंग प्रश्न, खाजगी चिंता किंवा जर आप फक्त हाय म्हणायचे आहे — आम्हाला एक ओळ ड्रॉप करा।"
     },
     "faq": {
-      "title": "Frequently asked questions",
-      "subtitle": "Quick answers to the most common questions",
+      "title": "वारंवार विचारलेले प्रश्न",
+      "subtitle": "सर्वात सामान्य प्रश्नांची द्रुत उत्तरे",
       "items": {
         "connect": {
-          "q": "How do I connect my app to Routerly?",
-          "a": "Point your OpenAI or Anthropic SDK to your Routerly instance. Replace the base URL with http://your-host:3000/v1 (OpenAI-compatible) or http://your-host:3000/anthropic (Anthropic-compatible), then use a router token as the API key. That's it — no other changes needed."
+          "q": "मी माझ्या अ‍ॅपला Routerly कनेक्ट कसे करू?",
+          "a": "आपले OpenAI किंवा Anthropic SDK आपल्या Routerly उदाहरणाकडे निर्देशित करा. बेस URL http://your-host:3000/v1 (OpenAI-compatible) किंवा http://your-host:3000/anthropic (Anthropic-compatible) सह बदला, नंतर API की म्हणून router टोकन वापरा. बस इतकेच — आणखी कोणतेही बदल आवश्यक नाहीत."
         },
         "openaiCompat": {
-          "q": "Is Routerly compatible with tools that use the OpenAI SDK?",
-          "a": "Yes. Routerly is a drop-in replacement: any tool that supports a custom base URL and API key (LangChain, LlamaIndex, Cursor, Continue, etc.) works out of the box. For Anthropic-format clients, use the /anthropic endpoint instead."
+          "q": "Routerly OpenAI SDK वापरणारी साधनांशी सुसंगत आहे?",
+          "a": "हो. Routerly हा drop-in प्रतिस्थापन आहे: कोणतेही साधन जे कस्टम बेस URL आणि API की (LangChain, LlamaIndex, Cursor, Continue, इ.) सपोर्ट करते तो box मधून बाहेर काम करते. Anthropic-format क्लायंटसाठी, त्याऐवजी /anthropic endpoint वापरा."
         },
         "routing": {
-          "q": "How does model routing work?",
-          "a": "Each router has a routing policy that decides which model receives a request. Policies include round-robin, lowest cost, fastest response, fallback chains, and more. You configure them per router under Routers → Routing."
+          "q": "मॉडेल राउटिंग कसे काम करते?",
+          "a": "प्रत्येक राउटरमध्ये राउटिंग धोरण असते जो निर्णय घेते की कोण मॉडेल विनंती प्राप्त करते. धोरणांमध्ये राउंड-रॉबिन, सर्वात स्वस्त, सर्वात वेगवान प्रतिक्रिया, फॉलबॅक चेन आणि आणखी समाविष्ट आहे. आप राउटर्स → राउटिंग अंतर्गत प्रति राउटर कॉन्फिगर करतात।"
         },
         "addModel": {
-          "q": "How do I add a new AI model?",
-          "a": "Go to Models → Add model. You can add any OpenAI-compatible provider (Ollama, LM Studio, custom endpoints) or a native Anthropic endpoint. Fill in the base URL, API key, and model ID — Routerly will handle the rest."
+          "q": "मी नवीन AI मॉडेल कसे जोडू?",
+          "a": "मॉडेल्स → मॉडेल जोडा वर जा. आप कोणताही OpenAI-compatible प्रदाता (Ollama, LM Studio, कस्टम endpoints) किंवा नेटिव Anthropic endpoint जोडू शकता. बेस URL, API की, आणि मॉडेल ID भरा — Routerly बाकी हाताळेल."
         },
         "dataStored": {
-          "q": "Is my data stored? Are my prompts logged?",
-          "a": "Routerly is self-hosted and stores data only on your machine (in ~/.routerly/ by default). Prompts and responses are never sent anywhere by Routerly. Request logs are stored locally and only if you enable them per-router."
+          "q": "माझा डेटा संग्रहित आहे? माझ्या प्रॉम्प्ट्स नोंद केले आहे?",
+          "a": "Routerly स्व-होस्ट केलेला आहे आणि डेटा केवळ आपल्या मशीनवर संग्रहित करते (डीफॉल्टपणे ~/.routerly/ मध्ये). Routerly द्वारे कोणतेही प्रॉम्प्ट किंवा प्रतिक्रिया कुठेही पाठवल्या जातात. विनंती लॉग्स स्थानिकपणे संग्रहित होतात आणि फक्त जर आप प्रति-राउटर त्यांना सक्षम करता."
         },
         "routerToken": {
-          "q": "What's a router token and how is it different from a provider API key?",
-          "a": "A router token is a credential you give to your app or team members to authenticate with Routerly. It's separate from your provider API keys, which Routerly stores securely on the server side. Your apps never see the real provider keys."
+          "q": "राउटर टोकन म्हणजे काय आणि प्रदाता API की पासून कसे वेगळे आहे?",
+          "a": "राउटर टोकन एक तपशील आहे जो आप आपल्या अ‍ॅपला किंवा संघ सदस्यांना Routerly सह प्रमाणीकृत करण्यासाठी देता. हे आपल्या प्रदाता API की पासून वेगळे आहे, जो Routerly सर्वर-बाजूने सुरक्षितपणे संग्रहित करते. आपल्या अ‍ॅप्स वास्तविक प्रदाता की कधीही पाहत नाहीत।"
         }
       }
     }
@@ -2535,20 +2546,20 @@
   "users": {
     "countLabel": "{{count}} user",
     "countLabel_other": "{{count}} users",
-    "addButton": "Add User",
+    "addButton": "वापरकर्ता जोडा",
     "columns": {
       "email": "Email",
       "role": "Role",
       "routers": "Routers"
     },
     "allRouters": "All",
-    "resetTwoFaTitle": "Reset 2FA",
-    "resetTwoFaConfirm": "Reset 2FA for {{email}}? They will need to re-enroll.",
-    "deleteConfirm": "Delete this user?",
-    "emptyTitle": "No users yet.",
-    "noPermission": "You don't have permission to view users.",
+    "resetTwoFaTitle": "2FA रिसेट करा",
+    "resetTwoFaConfirm": "{{email}} साठी 2FA रिसेट करा? त्यांना पुन्हा नोंदवणे आवश्यक असेल.",
+    "deleteConfirm": "हा वापरकर्ता हटवा?",
+    "emptyTitle": "अद्याप कोणतेही वापरकर्ता नाहीत.",
+    "noPermission": "आपल्याकडे वापरकर्ता पाहण्याची अनुमती नाही।",
     "modal": {
-      "title": "Add User",
+      "title": "वापरकर्ता जोडा",
       "emailLabel": "Email",
       "emailPlaceholder": "user@example.com",
       "passwordLabel": "Password",
@@ -2557,97 +2568,97 @@
       "roleAdmin": "Admin",
       "roleViewer": "Viewer",
       "cancelButton": "Cancel",
-      "submitButton": "Add User"
+      "submitButton": "वापरकर्ता जोडा"
     },
     "errors": {
-      "loadFailed": "Failed to load users",
+      "loadFailed": "वापरकर्ता लोड करणे अयशस्वी",
       "addFailed": "Error"
     }
   },
   "userEdit": {
-    "title": "Edit User",
+    "title": "वापरकर्ता संपादित करा",
     "account": "Account",
     "email": "Email",
     "role": "Role",
-    "changePassword": "Change Password",
-    "newPassword": "New Password",
-    "newPasswordHint": "(leave blank to keep current)",
+    "changePassword": "पासवर्ड बदला",
+    "newPassword": "नवीन पासवर्ड",
+    "newPasswordHint": "(वर्तमान ठेवण्यासाठी रिक्त)",
     "save": "Save",
     "saved": "Saved!",
     "errors": {
-      "loadFailed": "Failed to load user",
-      "saveFailed": "Failed to save"
+      "loadFailed": "वापरकर्ता लोड करणे अयशस्वी",
+      "saveFailed": "सेव करणे अयशस्वी"
     }
   },
   "roles": {
-    "toolbarTitle": "Manage roles and permissions. Built-in roles cannot be modified.",
-    "newRole": "New Role",
+    "toolbarTitle": "भूमिकांचे व अनुमती व्यवस्थापित करा. बिल्ट-इन भूमिकांचे संपादन केले जाऊ शकत नाही।",
+    "newRole": "नवीन भूमिका",
     "builtin": "built-in",
     "edit": "Edit",
-    "deleteConfirm": "Delete this role? Users with this role will be affected.",
+    "deleteConfirm": "ही भूमिका हटवा? या भूमिकेसह वापरकर्ता प्रभावित होतील।",
     "form": {
       "id": "ID",
-      "idPlaceholder": "e.g. operator",
+      "idPlaceholder": "उदा. operator",
       "name": "Name",
-      "namePlaceholder": "Role name",
+      "namePlaceholder": "भूमिका नाव",
       "permissions": "Permissions",
       "create": "Create",
       "save": "Save",
       "cancel": "Cancel"
     },
     "permissions": {
-      "routerRead": "Routers – Read",
-      "routerWrite": "Routers – Write",
-      "modelRead": "Models – Read",
-      "modelWrite": "Models – Write",
-      "userRead": "Users – Read",
-      "userWrite": "Users – Write",
-      "reportRead": "Reports – Read",
-      "settingsRead": "Settings – Read",
-      "settingsWrite": "Settings – Write",
-      "notificationWrite": "Notifications – Write",
-      "tokenRead": "Tokens – Read",
-      "tokenWrite": "Tokens – Write",
-      "roleWrite": "Roles – Write",
-      "auditRead": "Audit Log – Read",
-      "modulesRead": "Modules – Read",
-      "modulesManage": "Modules – Manage",
-      "connectionsRead": "Connections – Read",
-      "connectionsManage": "Connections – Manage",
-      "resilienceRead": "Resilience – Read",
-      "resilienceManage": "Resilience – Manage",
-      "profilesRead": "Routing Profiles – Read",
-      "profilesManage": "Routing Profiles – Manage",
-      "optimizersRead": "Optimizers – Read",
-      "optimizersManage": "Optimizers – Manage",
-      "experimentsRead": "Experiments – Read",
-      "experimentsManage": "Experiments – Manage"
+      "routerRead": "राउटर्स – वाचा",
+      "routerWrite": "राउटर्स – लेखन",
+      "modelRead": "मॉडेल्स – वाचा",
+      "modelWrite": "मॉडेल्स – लेखन",
+      "userRead": "वापरकर्ते – वाचा",
+      "userWrite": "वापरकर्ते – लेखन",
+      "reportRead": "अहवाल – वाचा",
+      "settingsRead": "सेटिंग्स – वाचा",
+      "settingsWrite": "सेटिंग्स – लेखन",
+      "notificationWrite": "सूचना – लेखन",
+      "tokenRead": "टोकन्स – वाचा",
+      "tokenWrite": "टोकन्स – लेखन",
+      "roleWrite": "भूमिकाएं – लेखन",
+      "auditRead": "ऑडिट लॉग – वाचा",
+      "modulesRead": "मॉड्यूल्स – वाचा",
+      "modulesManage": "मॉड्यूल्स – व्यवस्थापित करा",
+      "connectionsRead": "कनेक्शन्स – वाचा",
+      "connectionsManage": "कनेक्शन्स – व्यवस्थापित करा",
+      "resilienceRead": "स्थितीस्थापकता – वाचा",
+      "resilienceManage": "स्थितीस्थापकता – व्यवस्थापित करा",
+      "profilesRead": "राउटिंग प्रोफाइल्स – वाचा",
+      "profilesManage": "राउटिंग प्रोफाइल्स – व्यवस्थापित करा",
+      "optimizersRead": "ऑप्टिमाइजर्स – वाचा",
+      "optimizersManage": "ऑप्टिमाइजर्स – व्यवस्थापित करा",
+      "experimentsRead": "प्रयोग – वाचा",
+      "experimentsManage": "प्रयोग – व्यवस्थापित करा"
     },
     "errors": {
-      "loadFailed": "Failed to load roles",
-      "updateFailed": "Failed to update role",
-      "createFailed": "Failed to create role",
-      "deleteFailed": "Failed to delete role"
+      "loadFailed": "भूमिकांचे लोडिंग अयशस्वी",
+      "updateFailed": "भूमिका अपडेट करणे अयशस्वी",
+      "createFailed": "भूमिका तयार करणे अयशस्वी",
+      "deleteFailed": "भूमिका हटवणे अयशस्वी"
     }
   },
   "profiles": {
     "list": {
       "title": "Profiles",
-      "subtitle": "Reusable routing, optimizer and security configurations",
-      "noPermission": "You don't have permission to view profiles.",
-      "newProfile": "New {{kind}} Profile",
-      "empty": "No {{kind}} profiles yet.",
+      "subtitle": "पुनर्वापरण्यायोग्य राउटिंग, ऑप्टिमाइजर आणि सुरक्षा कॉन्फिगरेशन",
+      "noPermission": "आपल्याकडे प्रोफाइल्स पाहण्याची अनुमती नाही।",
+      "newProfile": "नवीन {{kind}} प्रोफाइल",
+      "empty": "अद्याप कोणतेही {{kind}} प्रोफाइल्स नाहीत।",
       "builtin": "Built-in",
       "custom": "Custom",
       "view": "View",
       "edit": "Edit",
       "clone": "Clone",
       "delete": "Delete",
-      "deleteConfirm": "Delete profile \"{{label}}\"? This cannot be undone.",
+      "deleteConfirm": "प्रोफाइल \"{{label}}\" हटवा? हे पूर्ववत केले जाऊ शकत नाही।",
       "kindDescriptions": {
-        "routing": "Which model answers a request, and what happens when it cannot",
-        "optimizer": "What is stripped from a prompt before it is sent",
-        "security": "Guardrails and PII policies applied to traffic"
+        "routing": "कोण मॉडेल विनंती उत्तर देते आणि जेव्हा तो करू शकत नाही तेव्हा काय होते",
+        "optimizer": "प्रॉम्प्टमधून काय काढून टाकले जाते तेव्हा ते पाठविले जाते",
+        "security": "ट्रॅफिकला लागू केलेल्या गार्डरेल्स आणि PII धोरण"
       },
       "columns": {
         "label": "Label",
@@ -2656,111 +2667,111 @@
         "version": "Version"
       },
       "errors": {
-        "loadFailed": "Failed to load profiles",
-        "deleteFailed": "Failed to delete profile"
+        "loadFailed": "प्रोफाइल्स लोड करणे अयशस्वी",
+        "deleteFailed": "प्रोफाइल हटवणे अयशस्वी"
       }
     },
     "form": {
-      "backToProfiles": "Back to Profiles",
-      "newProfileTitle": "New {{kind}} Profile",
+      "backToProfiles": "प्रोफाइल्सकडे परत",
+      "newProfileTitle": "नवीन {{kind}} प्रोफाइल",
       "editProfileTitle": "Edit {{label}}",
-      "builtinHint": "Built-in profiles cannot be edited. Clone one to customize it.",
-      "assignHint": "{{article}} {{kind}} profile can be assigned to any number of routers.",
-      "noPermission": "You don't have permission to view profiles.",
+      "builtinHint": "बिल्ट-इन प्रोफाइल्स संपादित केले जाऊ शकत नाहीत. एक कस्टमाइज करण्यासाठी क्लोन करा।",
+      "assignHint": "{{article}} {{kind}} प्रोफाइल कोणत्याही संख्यांच्या राउटर्सना निर्धारित केला जाऊ शकतो।",
+      "noPermission": "आपल्याकडे प्रोफाइल्स पाहण्याची अनुमती नाही।",
       "label": "Label",
       "optimizers": "Optimizers",
-      "optimizersHint": "Drag to reorder, toggle to enable. They run in order from top to bottom.",
-      "createProfile": "Create Profile",
-      "saveProfile": "Save Profile",
+      "optimizersHint": "पुनर्क्रम करण्यासाठी ड्रॅग करा, सक्षम करण्यासाठी टॉगल करा. ते वरून खाली क्रमाने चलतात।",
+      "createProfile": "प्रोफाइल तयार करा",
+      "saveProfile": "प्रोफाइल सेव करा",
       "cancel": "Cancel",
       "copySuffix": "{{label}} copy",
       "labelPlaceholders": {
-        "routing": "e.g. My Balanced Routing",
-        "optimizer": "e.g. My Prompt Trimmer",
-        "security": "e.g. My Strict Guardrails"
+        "routing": "उदा. My Balanced Routing",
+        "optimizer": "उदा. My Prompt Trimmer",
+        "security": "उदा. My Strict Guardrails"
       },
       "errors": {
-        "notFound": "Profile not found.",
-        "loadFailed": "Failed to load profile",
-        "saveFailed": "Failed to save profile"
+        "notFound": "प्रोफाइल आढळला नाही.",
+        "loadFailed": "प्रोफाइल लोड करणे अयशस्वी",
+        "saveFailed": "प्रोफाइल सेव करणे अयशस्वी"
       }
     }
   },
   "connectClient": {
-    "backToConnect": "Back to Connect",
+    "backToConnect": "कनेक्ट कडे परत",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
-    "noClientPrefix": "No client named",
+    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
+    "noClientPrefix": "कोणतेही क्लायंट नावाचा",
     "errors": {
-      "loadFailed": "Failed to load clients: {{error}}"
+      "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
     },
     "oneCommand": {
-      "title": "Fastest: one command",
-      "description": "Run it on the machine where {{client}} is installed. It writes {{configPath}}, keeping a backup you can undo."
+      "title": "सर्वात वेगवान: एक आदेश",
+      "description": "ज्या मशीनवर {{client}} स्थापित आहे तेथे त्यास चलवा. हे {{configPath}} लिहिते, बॅकअप ठेवते जो आप पूर्ववत करू शकता."
     },
     "byHand": {
-      "titleAlt": "Or set it up by hand",
-      "titleUi": "Set it up by hand",
-      "titleConfigFile": "Set up the config file",
-      "setValuesIn": "Set these values in {{configPath}}.",
-      "putThisIn": "Put this in",
+      "titleAlt": "किंवा हाताने सेटअप करा",
+      "titleUi": "हाताने सेटअप करा",
+      "titleConfigFile": "कॉन्फिग फाइल सेटअप करा",
+      "setValuesIn": "{{configPath}} मध्ये ही मूल्यांने सेट करा।",
+      "putThisIn": "यातून असे ठेवा",
       "replaceToken": "Replace",
-      "withRouterToken": "with a router token:",
-      "createOne": "create one",
-      "onRoutersPage": "on the Routers page.",
+      "withRouterToken": "राउटर टोकनसह:",
+      "createOne": "एक तयार करा",
+      "onRoutersPage": "राउटर्स पृष्ठावर।",
       "modelLabel": "Model:",
-      "modelHint": "hands the choice to Routerly, any model id from",
+      "modelHint": "Routerly हाताळणीवर हाताळते, कोणताही मॉडेल id पासून",
       "modelsLink": "Models",
-      "worksToo": "works too.",
-      "openaiCompatHint": "The same base URL, key and model fit any client that offers an \"OpenAI compatible\" provider."
+      "worksToo": "देखील काम करते।",
+      "openaiCompatHint": "समान बेस URL, की आणि मॉडेल कोणत्याही क्लायंटला फिट करता जो \"OpenAI संगत\" प्रदाता ऑफर करते।"
     },
     "mcp": {
       "title": "MCP server",
-      "description": "Separate from the steps above: this one lets {{client}} call the Routerly tools. It needs a personal MCP token, minted with",
-      "orFromYour": "or from your",
+      "description": "वरील पायरीपासून वेगळे: हा एक {{client}} ला Routerly साधनांना कॉल करू देते. त्याला एक व्यक्तिगत MCP टोकन आवश्यक आहे, तयार",
+      "orFromYour": "किंवा आपल्या",
       "profileLink": "profile"
     },
     "checkItWorked": {
-      "title": "Check it worked",
-      "restart": "Restart {{client}}, send it a prompt, then look for the call in",
+      "title": "हे काम केले तर तपासा",
+      "restart": "{{client}} पुनः सुरू करा, त्याला एक प्रॉम्प्ट पाठवा, नंतर कॉल",
       "usageLink": "Usage",
-      "cliReports": "From the same machine, the CLI reports what it finds:"
+      "cliReports": "समान मशीनमधून, CLI त्याला शोधते अहवाल करते:"
     }
   },
   "connect": {
     "title": "Connect",
-    "subtitle": "Point an AI coding client at this gateway. Pick a client for its setup steps.",
+    "subtitle": "AI कोडिंग क्लायंटला या गेटवेकडे निर्देशित करा. सेटअप पायरीसाठी क्लायंट निवडा।",
     "llmLabel": "LLM",
-    "llmDescription": "routes that client model traffic through Routerly.",
+    "llmDescription": "त्या क्लायंट मॉडेल ट्रॅफिकला Routerly द्वारे राउट करा।",
     "mcpLabel": "MCP",
-    "mcpDescription": "loads Routerly as a tool server inside it.",
-    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
+    "mcpDescription": "Routerly साधन सर्वरच्या अंदरुन लोड करा।",
+    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "errors": {
-      "loadFailed": "Failed to load clients: {{error}}"
+      "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
     },
     "oneCommand": {
-      "title": "One command",
-      "hint": "The CLI writes the config file for you, with a backup you can undo."
+      "title": "एक आदेश",
+      "hint": "CLI आपल्यासाठी कॉन्फिग फाइल लिहिते, बॅकअप सह आप पूर्ववत करू शकता।"
     },
     "byHand": {
-      "title": "By hand",
-      "hint": "Copy the snippet from the client page into its settings, then restart it."
+      "title": "हाताने",
+      "hint": "क्लायंट पृष्ठमधील स्निपेट त्याच्या सेटिंग्समध्ये कॉपी करा, नंतर त्यास पुनः सुरू करा।"
     },
     "endpoint": {
-      "title": "Point any client here",
-      "description": "Anything built on the OpenAI or Anthropic SDK works by changing the base URL and the key. Nothing else changes: requests and responses cross Routerly as they are.",
-      "openaiBaseUrl": "OpenAI base URL",
-      "anthropicBaseUrl": "Anthropic base URL",
+      "title": "कोणतेही क्लायंट येथे निर्देशित करा",
+      "description": "OpenAI किंवा Anthropic SDK वर बिल्ट कोणतीही गोष्ट बेस URL आणि की बदलून काम करते. काहीही बदल नाही: विनंती आणि प्रतिक्रिया Routerly ज्याप्रमाणे ते आहेत त्याप्रमाणे क्रॉस करतात।",
+      "openaiBaseUrl": "OpenAI बेस URL",
+      "anthropicBaseUrl": "Anthropic बेस URL",
       "apiKey": "API key",
       "model": "Model",
-      "apiKeyDescription": "A router token, sent as",
+      "apiKeyDescription": "राउटर टोकन, पाठविलेला",
       "or": "or",
-      "createOne": "Create one",
-      "onRoutersPage": "on the Routers page.",
-      "modelDescription": "lets Routerly pick. Any model id from the",
+      "createOne": "एक तयार करा",
+      "onRoutersPage": "राउटर्स पृष्ठावर।",
+      "modelDescription": "Routerly निवडू. कोणताही मॉडेल id पासून",
       "modelsLink": "Models",
-      "worksToo": "page works too."
+      "worksToo": "पृष्ठ देखील काम करते।"
     }
   }
 }

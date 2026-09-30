@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "தீம்: {{theme}}"
     },
+    "language": {
+      "label": "மொழி",
+      "saveError": "உங்கள் மொழியைச் சேமிக்க முடியவில்லை. முந்தைய மொழிக்குத் திரும்பியது."
+    },
     "sidebar": {
       "expand": "பக்க பட்டையை விரிக்கவும்",
       "collapse": "பக்க பட்டையை சுருக்கவும்"
@@ -40,9 +44,6 @@
       "telemetryLink": "என்ன அனுப்பப்படுகிறது?",
       "telemetryYes": "ஆம், உதவி",
       "telemetryNo": "இல்லை நன்றி"
-    },
-    "language": {
-      "label": "மொழி"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "மொழி",
       "description": "கட்டக்கம் மொழி பாணி வேண்ட்டை உள்ளடக்கப்பட்ட தளம் தேர்ந்தெடு.",
       "languageLabel": "மொழி",
-      "saved": "மொழி விருப்பம் சேமிக்கப்பட்ட."
+      "saved": "மொழி விருப்பம் சேமிக்கப்பட்ட.",
+      "saveError": "உங்கள் மொழி விருப்பத்தைச் சேமிக்க முடியவில்லை. முந்தைய மொழிக்குத் திரும்பியது."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 திசையாக்குபவர்",
       "count_other": "{{count}} திசையாக்குபவர்கள்",
       "newRouter": "புதிய திசையாக்குபவர்",
+      "newOrchestrator": "புதிய ஆர்கெஸ்ட்ரேட்டர்",
+      "newPassthrough": "புதிய பாஸ்-த்ரு",
       "empty": "எந்த திசையாக்குபவர்கள் இல்லை.",
       "emptyFiltered": "இந்த வகையின் நল் இல்லை.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "இந்த திசையாக்குபவர் நீக்க?",
       "errors": {
         "deleteFailed": "திசையாக்குபவர் நீக்க பிழை"
-      },
-      "newOrchestrator": "புதிய ஆர்கெஸ்ட்ரேட்டர்",
-      "newPassthrough": "புதிய பாஸ்-த்ரு"
+      }
     },
     "layout": {
       "notFound": "திசையாக்குபவர் கண்டுபிடிக்கப்படவில்லை",
@@ -1191,10 +1193,10 @@
       "backToRouters": "திசையாக்குபவர்கள் திரும்ப",
       "backToRoutersTitle": "திசையாக்குபவர்கள் திரும்ப",
       "newRouter": "புதிய திசையாக்குபவர்",
+      "newKind": "புதிய {{kind}}",
       "loading": "சுமை...",
       "routerId": "திசையாக்குபவர் ID:",
-      "saveFirstHint": "இந்த தாள் திறக்க திசையாக்குபவர் முதலாக சேமிக்க",
-      "newKind": "புதிய {{kind}}"
+      "saveFirstHint": "இந்த தாள் திறக்க திசையாக்குபவர் முதலாக சேமிக்க"
     },
     "dashboard": {
       "period": "காலம்",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "বேस URL <code>{{baseUrl}}</code>, இல்லாமல் <code>/v1</code>: SDK சேர்க்க।",
         "curl": "curl",
-        "curlHint": "கம்பி சோதனை நிறுவல் இல்லாமல், பின்னர் தேடு அழைப்பு <usageLink>பயன்பாடு</usageLink>."
+        "curlHint": "கம்பி சோதனை நிறுவல் இல்லாமல், பின்னர் தேடு அழைப்பு <usageLink>பயன்பாடு</usageLink>.",
+        "passthrough": {
+          "heading": "இணைக்கும் முறை",
+          "intro": "Passthrough ஒவ்வொரு கோரிக்கையையும் மாற்றமின்றி அனுப்புகிறது — உங்கள் <strong>சொந்த</strong> மேல்நிலை வழங்கியின் விசையை API விசையாகப் பயன்படுத்தவும், Routerly டோகன் ஒருபோதும் இல்லை. Routerly இந்த வழிதிருப்பியின் நற்சான்றை சேமிக்கவோ வழங்கவோ இல்லை; கிளையன்ட் அனுப்புவது நரம்பு வழங்கிக்கு செல்கிறது.",
+          "noLimits": "இந்த வழிதிருப்பிக்கு பட்ജெட்டும் வரம்புகளும் பொருந்தாது: Passthrough ட்ராஃபிக்கிற்கான செலவு தெரியாது, எனவே அது எந்த செலவு வரம்புக்கும் சரிபார்க்கப்படாது அல்லது கணக்கிடப்படாது.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — <code>/v1</code> suffix இல்லை, SDK இன்னும் உண்மையான OpenAI API க்கு எதிரான அதன் பாதையை சேர்க்கிறது.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK இன்னும் <code>/v1/messages</code> என்பதை தானே சேர்க்கிறது, உண்மையான Anthropic API க்கு எதிரான இதேபோல் செய்கிறது."
+        }
       },
       "form": {
         "kind": "வகை",
         "kindFixedHint": "ஒரு முறை திசையாக்குபவர் உருவாக்க நிலைநிறுத்த.",
         "routerName": "திசையாக்குபவர் பெயர்",
         "routerNamePlaceholder": "என் ஆப்",
+        "passthroughPath": "பாதை",
+        "passthroughPathHint": "கிளையண்டுகள் அழைக்கும் URL-ன் பகுதியாக மாறுகிறது: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "மேம்பட்ட அமைப்புகளை",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "ஒரு மாதிரி கோரை முதல் பதிலுக்கும் பைட் இந்த நேரம் இல் அனுப்பாமல், Routerly நிறுத்த அதை மற்றும் அடுத்த பொறுத்தம் முயற்சி. மொத்த பதிலுக்கும் நெடுக்கு நிலைநிறுத்த வேண்டும் இல்லை. 0 அமைப்பு வழங்குநர் தேவை வரை காத்திருக்க.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "தூண்டல் மற்றும் விளக்க பெற்",
         "saveChanges": "மாற்றங்கள் சேமிக்க",
         "createRouter": "திசையாக்குபவர் உருவாக்க",
-        "passthroughPath": "பாதை",
-        "passthroughPathHint": "கிளையண்டுகள் அழைக்கும் URL-ன் பகுதியாக மாறுகிறது: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ஆர்கெஸ்ட்ரேட்டர் உருவாக்கவும்",
         "createPassthrough": "பாஸ்-த்ரு உருவாக்கவும்"
       }
@@ -1493,9 +1504,9 @@
         "limitMetric": {
           "cost": "செலவு",
           "calls": "Requests",
-          "input_tokens": "Input tokens",
-          "output_tokens": "Output tokens",
-          "total_tokens": "Total tokens"
+          "input_tokens": "உள்ளீட்டு டோகன்கள்",
+          "output_tokens": "வெளியீட்டு டோகன்கள்",
+          "total_tokens": "மொத்த டோகன்கள்"
         },
         "period": {
           "hourly": "Hourly",
@@ -1528,16 +1539,16 @@
     "users": {
       "title": "பாதுகாப்பு",
       "description": "ஒரு பகிரங்க பாதுகாப்பு சுயவிவரம் பயன்படுத்த, அல்லு இந்த திசையாக்குபவர் சொந்த பாதுகாப்பு மற்றும் PII கொள்கைகளை வரையறை।",
-      "addButton": "Add Member",
-      "addNewTitle": "Add New Member",
-      "selectUserPlaceholder": "Select a user...",
+      "addButton": "உறுப்பினரைச் சேர்க்கவும்",
+      "addNewTitle": "புதிய உறுப்பினரைச் சேர்க்கவும்",
+      "selectUserPlaceholder": "பயனரைத் தேர்ந்தெடுக்கவும்...",
       "addConfirmButton": "Add",
       "cancelButton": "Cancel",
-      "empty": "No members found.",
-      "removeConfirm": "Are you sure you want to remove this member?",
-      "saveTitle": "Save changes",
-      "changeRoleTitle": "Change Role",
-      "removeTitle": "Remove Member",
+      "empty": "உறுப்பினர் எவரும் கண்டுபிடிக்கப்படவில்லை.",
+      "removeConfirm": "இந்த உறுப்பினரை அகற்ற நீங்கள் உறுதியாக இருக்கிறீர்களா?",
+      "saveTitle": "மாற்றங்களைச் சேமிக்கவும்",
+      "changeRoleTitle": "பாத்திரத்தை மாற்றவும்",
+      "removeTitle": "உறுப்பினரை அகற்றவும்",
       "roles": {
         "viewer": "Viewer",
         "editor": "Editor",
@@ -1549,10 +1560,10 @@
         "actions": "Actions"
       },
       "errors": {
-        "loadFailed": "Failed to load users",
-        "addFailed": "Error adding member",
-        "updateFailed": "Error updating member",
-        "removeFailed": "Error removing member"
+        "loadFailed": "பயனர்களை ஏற்றுவதில் தோல்வி",
+        "addFailed": "உறுப்பினரைச் சேர்க்கும் போது பிழை",
+        "updateFailed": "உறுப்பினரைப் புதுப்பிக்கும் போது பிழை",
+        "removeFailed": "உறுப்பினரை அகற்றுவதில் பிழை"
       }
     },
     "logs": {
@@ -1636,7 +1647,7 @@
     "test": {
       "defaultSystemMessage": "நீங்கள் ஒரு உதவிக்குத் தயாரான AI உதவி.",
       "errors": {
-        "unknown": "Unknown error occurred",
+        "unknown": "எதிர்பாராத பிழை ஏற்பட்டது",
         "onlyImages": "தொடும் உள்ளீடு வரையப் விளக்கத்தை ஆதரிக்க போது தொடும்."
       },
       "title": "பாதுகாப்பு",
@@ -1969,7 +1980,7 @@
           "p95Latency": "P95 தாமதம் (1h)",
           "requests": "कोरुकल (1h)",
           "lastSuccess": "கடைசி வெற்றி",
-          "cooldownLockout": "Cooldown / lockout"
+          "cooldownLockout": "குளிர்ச்சி / பூட்டு"
         },
         "status": {
           "healthy": "ஆரோக்கிய",

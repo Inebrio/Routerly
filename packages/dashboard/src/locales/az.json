@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Dil",
+      "saveError": "Dilinizi saxlamaq mümkün olmadı. Əvvəlki dilinə geri qayıtdı."
+    },
     "sidebar": {
       "expand": "Yan paneli genişləndir",
       "collapse": "Yan paneli yığ"
@@ -40,9 +44,6 @@
       "telemetryLink": "Nə göndərilir?",
       "telemetryYes": "Bəli, kömək edim",
       "telemetryNo": "Xeyr, sağ olun"
-    },
-    "language": {
-      "label": "Dil"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Dil",
       "description": "İdarə panelinin göstərildiyi dili seçin.",
       "languageLabel": "Dil",
-      "saved": "Dil seçimi saxlanıldı."
+      "saved": "Dil seçimi saxlanıldı.",
+      "saveError": "Dil seçiminizi saxlamaq mümkün olmadı. Əvvəlki seçiminə geri qayıtdı."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} router",
       "newRouter": "Yeni Router",
+      "newOrchestrator": "Yeni Orkestrator",
+      "newPassthrough": "Yeni Passthrough",
       "empty": "Hələ router yoxdur.",
       "emptyFiltered": "Bu cinsden marşrutçu yoxdur.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Bu router silinsin?",
       "errors": {
         "deleteFailed": "Router-i silmə xətası"
-      },
-      "newOrchestrator": "Yeni Orkestrator",
-      "newPassthrough": "Yeni Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router tapılmadı",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Routerlərə qayıt",
       "backToRoutersTitle": "Routerlərə qayıt",
       "newRouter": "Yeni Router",
+      "newKind": "Yeni {{kind}}",
       "loading": "Yüklənir...",
       "routerId": "Router ID:",
-      "saveFirstHint": "Bu tabı açmaq üçün əvvəlcə router-i saxlayın",
-      "newKind": "Yeni {{kind}}"
+      "saveFirstHint": "Bu tabı açmaq üçün əvvəlcə router-i saxlayın"
     },
     "dashboard": {
       "period": "Dövr",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Əsas URL <code>{{baseUrl}}</code>, <code>/v1</code>-siz: SDK onu özü əlavə edir.",
         "curl": "curl",
-        "curlHint": "Heç nə quraşdırmadan bağlantını yoxlayın, sonra çağırışı <usageLink>İstifadə</usageLink> bölməsində axtarın."
+        "curlHint": "Heç nə quraşdırmadan bağlantını yoxlayın, sonra çağırışı <usageLink>İstifadə</usageLink> bölməsində axtarın.",
+        "passthrough": {
+          "heading": "Necə bağlanmalı",
+          "intro": "Passthrough hər bir sorğunu dəyişdirilmədən yenidən yönləndirir — <strong>öz</strong> yuxarı tərəfdə olmayan sağlayıcı açarınızı API açarı olaraq istifadə edin, heç vaxt Routerly token istifadə etməyin. Routerly bu router üçün heç bir etibarlılığı saxlamır və ya dəmiş etmir; müştərinin göndərdiyi hər şey birbaşa sağlayıcıya gedir.",
+          "noLimits": "Büdcə və limitlər bu router üçün tətbiq edilməir: Passthrough trafikinin xərci məlum deyil, buna görə də heç vaxt heç bir xərc limitinə qarşı yoxlanılmır və ya hesablanmır.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Əsas URL <code>{{url}}</code> — <code>/v1</code> suffiks yoxdur, SDK hələ də öz yolunu əlavə edir, eynilə OpenAI API ilə etdiyi kimi.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Əsas URL <code>{{url}}</code> — SDK hələ də <code>/v1/messages</code> əlavə edir, eynilə Anthropic API ilə etdiyi kimi."
+        }
       },
       "form": {
         "kind": "Növ",
         "kindFixedHint": "Router yaradıldıqdan sonra sabitdir.",
         "routerName": "Router Adı",
         "routerNamePlaceholder": "Mənim Tətbiqim",
+        "passthroughPath": "Yol",
+        "passthroughPathHint": "Müşterilerin çağırdığı URL'nin bir hissəsi olur: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Əlavə parametrlər",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "Model bu vaxt ərzində ilk cavab baytını göndərmirsə, Routerly onu ləğv edir və növbəti namizədi sınayır. Ümumi cavab müddətini məhdudlaşdırmır. Provayderin istədiyi qədər gözləmək üçün 0-a təyin edin.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Sorğuları və cavabları qeyd et",
         "saveChanges": "Dəyişiklikləri Saxla",
         "createRouter": "Router Yarat",
-        "passthroughPath": "Yol",
-        "passthroughPathHint": "Müşterilerin çağırdığı URL'nin bir hissəsi olur: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Orkestrator Yarat",
         "createPassthrough": "Passthrough Yarat"
       }

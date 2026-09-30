@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "テーマ: {{theme}}"
     },
+    "language": {
+      "label": "言語",
+      "saveError": "言語を保存できませんでした。前の設定に戻しました。"
+    },
     "sidebar": {
       "expand": "サイドバーを展開",
       "collapse": "サイドバーを折りたたむ"
@@ -40,9 +44,6 @@
       "telemetryLink": "何が送信されますか?",
       "telemetryYes": "はい、手伝います",
       "telemetryNo": "結構です"
-    },
-    "language": {
-      "label": "言語"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "言語",
       "description": "ダッシュボードが表示される言語を選択します。",
       "languageLabel": "言語",
-      "saved": "言語設定が保存されました。"
+      "saved": "言語設定が保存されました。",
+      "saveError": "言語設定を保存できませんでした。前の設定に戻しました。"
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1ルーター",
       "count_other": "{{count}}ルーター",
       "newRouter": "新しいルーター",
+      "newOrchestrator": "新しいオーケストレーター",
+      "newPassthrough": "新しいパススルー",
       "empty": "ルーターがまだありません。",
       "emptyFiltered": "このタイプのルーターはありません。",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "このルーターを削除しますか?",
       "errors": {
         "deleteFailed": "ルーター削除エラー"
-      },
-      "newOrchestrator": "新しいオーケストレーター",
-      "newPassthrough": "新しいパススルー"
+      }
     },
     "layout": {
       "notFound": "ルーターが見つかりません",
@@ -1191,10 +1193,10 @@
       "backToRouters": "ルーターに戻る",
       "backToRoutersTitle": "ルーターに戻る",
       "newRouter": "新しいルーター",
+      "newKind": "新しい{{kind}}",
       "loading": "読み込み中...",
       "routerId": "ルーターID:",
-      "saveFirstHint": "このタブのロックを解除するにはまずルーターを保存してください",
-      "newKind": "新しい{{kind}}"
+      "saveFirstHint": "このタブのロックを解除するにはまずルーターを保存してください"
     },
     "dashboard": {
       "period": "期間",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "ベースURL <code>{{baseUrl}}</code>、<code>/v1</code>なし: SDKはそれを追加します。",
         "curl": "curl",
-        "curlHint": "何もインストールせずに配線をチェックしてから、<usageLink>Usage</usageLink>で呼び出しを探します。"
+        "curlHint": "何もインストールせずに配線をチェックしてから、<usageLink>Usage</usageLink>で呼び出しを探します。",
+        "passthrough": {
+          "heading": "接続方法",
+          "intro": "Passthroughは変更なくすべてのリクエストを転送します — <strong>独自の</strong>アップストリームプロバイダーキーをAPIキーとして使用し、Routerlyトークンは決して使用しないでください。Routerlyはこのルーターの認証情報を保存または発行しません。クライアントが送信するものはすべてプロバイダーに直接送られます。",
+          "noLimits": "予算と制限はこのルーターに適用されません。Passthroughトラフィックのコストは不明であるため、チェックされず、支出制限に対してもカウントされません。",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "ベースURL <code>{{url}}</code> — <code>/v1</code> サフィックスなし。SDKは実際のOpenAI APIに対してと同じように独自のパスを追加します。",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "ベースURL <code>{{url}}</code> — SDKは実際のAnthropic APIに対してと同じように <code>/v1/messages</code> をそれ自身で追加します。"
+        }
       },
       "form": {
         "kind": "種類",
         "kindFixedHint": "ルーターが作成されると固定されます。",
         "routerName": "ルーター名",
         "routerNamePlaceholder": "マイアプリ",
+        "passthroughPath": "パス",
+        "passthroughPathHint": "クライアントが呼び出すURLの一部になります: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "詳細設定",
         "ttftTimeout": "TTFTタイムアウト(ms)",
         "ttftTimeoutHint": "モデルがこの時間内に最初のレスポンスバイトを送信しない場合、Routerlyはそれを中止して次の候補を試します。総レスポンス時間を制限しません。0に設定するとプロバイダーが費やす時間までを待機します。",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "プロンプトと回答をキャプチャ",
         "saveChanges": "変更を保存",
         "createRouter": "ルーター作成",
-        "passthroughPath": "パス",
-        "passthroughPathHint": "クライアントが呼び出すURLの一部になります: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "オーケストレーターを作成",
         "createPassthrough": "パススルーを作成"
       }

@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Motyw: {{theme}}"
     },
+    "language": {
+      "label": "Język",
+      "saveError": "Nie udało się zapisać Twojego języka. Przywrócono poprzedni."
+    },
     "sidebar": {
       "expand": "Rozwiń pasek boczny",
       "collapse": "Zwiń pasek boczny"
@@ -40,9 +44,6 @@
       "telemetryLink": "Co jest wysyłane?",
       "telemetryYes": "Tak, pomogę",
       "telemetryNo": "Nie, dziękuję"
-    },
-    "language": {
-      "label": "Język"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Język",
       "description": "Wybierz język, w którym wyświetlana jest deska rozdzielcza.",
       "languageLabel": "Język",
-      "saved": "Preferencja języka zapisana."
+      "saved": "Preferencja języka zapisana.",
+      "saveError": "Nie udało się zapisać preferencji języka. Przywrócono poprzednią."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} routerów",
       "newRouter": "Nowy router",
+      "newOrchestrator": "Nowy Orchestrator",
+      "newPassthrough": "Nowy Passthrough",
       "empty": "Brak jeszcze routerów.",
       "emptyFiltered": "Brak routerów tego typu.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Usunąć ten router?",
       "errors": {
         "deleteFailed": "Błąd podczas usuwania routera"
-      },
-      "newOrchestrator": "Nowy Orchestrator",
-      "newPassthrough": "Nowy Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router nie znaleziony",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Powrót do routerów",
       "backToRoutersTitle": "Powrót do routerów",
       "newRouter": "Nowy router",
+      "newKind": "Nowy {{kind}}",
       "loading": "Ładowanie...",
       "routerId": "ID routera:",
-      "saveFirstHint": "Najpierw zapisz router, aby odblokować tę kartę",
-      "newKind": "Nowy {{kind}}"
+      "saveFirstHint": "Najpierw zapisz router, aby odblokować tę kartę"
     },
     "dashboard": {
       "period": "Okres",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "Podstawowy adres URL <code>{{baseUrl}}</code>, bez <code>/v1</code>: SDK dodaje go.",
         "curl": "curl",
-        "curlHint": "Sprawdź okablowanie bez instalowania czegokolwiek, a następnie poszukaj wywołania w <usageLink>Użyciu</usageLink>."
+        "curlHint": "Sprawdź okablowanie bez instalowania czegokolwiek, a następnie poszukaj wywołania w <usageLink>Użyciu</usageLink>.",
+        "passthrough": {
+          "heading": "Jak się połączyć",
+          "intro": "Passthrough przekazuje każde żądanie bez zmian — użyj <strong>własnego</strong> klucza upstream providera jako klucza API, nigdy tokena Routerly. Routerly nie przechowuje ani nie wydaje poświadczenia dla tego routera; wszystko, co wyśle klient, idzie bezpośrednio do providera.",
+          "noLimits": "Budżety i limity nie dotyczą tego routera: koszt ruchu Passthrough jest nieznany, więc nigdy nie jest sprawdzany ani liczony w stronę limitu wydatków.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Podstawowy adres URL <code>{{url}}</code> — bez sufiksu <code>/v1</code>, SDK nadal dodaje własną ścieżkę dokładnie tak, jak wobec rzeczywistego API OpenAI.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Podstawowy adres URL <code>{{url}}</code> — SDK nadal dodaje <code>/v1/messages</code> sam, dokładnie tak, jak wobec rzeczywistego API Anthropic."
+        }
       },
       "form": {
         "kind": "Rodzaj",
         "kindFixedHint": "Ustalony po utworzeniu routera.",
         "routerName": "Nazwa routera",
         "routerNamePlaceholder": "Moja aplikacja",
+        "passthroughPath": "Ścieżka",
+        "passthroughPathHint": "Staje się częścią adresu URL wywoływanego przez klientów: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Ustawienia zaawansowane",
         "ttftTimeout": "Limit czasu TTFT (ms)",
         "ttftTimeoutHint": "Jeśli model nie wyśle pierwszego bajtu odpowiedzi w tym czasie, Routerly go przerywa i próbuje następnego kandydata. Nie ogranicza całkowitego czasu trwania odpowiedzi. Ustaw na 0, aby czekać tak długo, jak zajmuje dostawca.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Przechwycaj prompty i odpowiedzi",
         "saveChanges": "Zapisz zmiany",
         "createRouter": "Utwórz router",
-        "passthroughPath": "Ścieżka",
-        "passthroughPathHint": "Staje się częścią adresu URL wywoływanego przez klientów: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Utwórz Orchestrator",
         "createPassthrough": "Utwórz Passthrough"
       }
@@ -1481,7 +1492,7 @@
         "type": "Typ",
         "periodLabel": "Okres",
         "every": "Każdy",
-        "maxCost": "Max ($)",
+        "maxCost": "Maks. ($)",
         "maxCalls": "Max (l.)",
         "maxTokens": "Max (tokeny)",
         "allCombosSet": "Wszystkie kombinacje metryk/okresu są już ustawione",

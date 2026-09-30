@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "עיצוב: {{theme}}"
     },
+    "language": {
+      "label": "שפה",
+      "saveError": "לא ניתן לשמור את השפה שלך. חזרה לשפה הקודמת."
+    },
     "sidebar": {
       "expand": "הרחב סרגל צד",
       "collapse": "כווץ סרגל צד"
@@ -40,9 +44,6 @@
       "telemetryLink": "מה נשלח?",
       "telemetryYes": "כן, אעזור",
       "telemetryNo": "לא תודה"
-    },
-    "language": {
-      "label": "שפה"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "שפה",
       "description": "בחר את השפה שבה מוצג הדשבורד.",
       "languageLabel": "שפה",
-      "saved": "העדפת השפה נשמרה."
+      "saved": "העדפת השפה נשמרה.",
+      "saveError": "לא ניתן לשמור את העדפת השפה שלך. חזרה להעדפה הקודמת."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "נתב אחד",
       "count_other": "{{count}} נתבים",
       "newRouter": "נתב חדש",
+      "newOrchestrator": "אורקסטרטור חדש",
+      "newPassthrough": "Passthrough חדש",
       "empty": "עדיין אין נתבים.",
       "emptyFiltered": "אין נתבים מסוג זה.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "למחוק נתב זה?",
       "errors": {
         "deleteFailed": "שגיאה במחיקת הנתב"
-      },
-      "newOrchestrator": "אורקסטרטור חדש",
-      "newPassthrough": "Passthrough חדש"
+      }
     },
     "layout": {
       "notFound": "הנתב לא נמצא",
@@ -1191,10 +1193,10 @@
       "backToRouters": "חזרה לנתבים",
       "backToRoutersTitle": "חזרה לנתבים",
       "newRouter": "נתב חדש",
+      "newKind": "{{kind}} חדש",
       "loading": "טוען...",
       "routerId": "מזהה נתב:",
-      "saveFirstHint": "שמור את הנתב ראשית כדי לפתוח כרטיסייה זו",
-      "newKind": "{{kind}} חדש"
+      "saveFirstHint": "שמור את הנתב ראשית כדי לפתוח כרטיסייה זו"
     },
     "dashboard": {
       "period": "תקופה",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "כתובת בסיס <code>{{baseUrl}}</code>, ללא ה-<code>/v1</code>: ה-SDK מוסיף אותו.",
         "curl": "curl",
-        "curlHint": "בדוק את החיווט מבלי להתקין דבר, ואז חפש את הקריאה ב<usageLink>שימוש</usageLink>."
+        "curlHint": "בדוק את החיווט מבלי להתקין דבר, ואז חפש את הקריאה ב<usageLink>שימוש</usageLink>.",
+        "passthrough": {
+          "heading": "כיצד להתחבר",
+          "intro": "Passthrough מעביר כל בקשה ללא שינוי — השתמש <strong>בשלך שלך</strong> במפתח הספק במעלה כמפתח API, לעולם לא בטוקן Routerly. Routerly לא שומר או מנפיק בעדויות לנתב זה; כל מה שהלקוח שולח הולך ישר לספק.",
+          "noLimits": "תקציבים והגבלות אינם חלים על נתב זה: עלות התנועה של Passthrough אינה ידועה, ולכן היא לעולם אינה נבדקת או נספרת כנגד כל הגבלת הוצאות.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "כתובת בסיס <code>{{url}}</code> — ללא סיומת <code>/v1</code>, ה-SDK עדיין מוסיף את הנתיב שלו בדיוק כפי שהיה עושה לעומת ה-OpenAI API האמיתי.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "כתובת בסיס <code>{{url}}</code> — ה-SDK עדיין מוסיף <code>/v1/messages</code> בעצמו, בדיוק כפי שהיה עושה לעומת ה-Anthropic API האמיתי."
+        }
       },
       "form": {
         "kind": "סוג",
         "kindFixedHint": "קבוע מרגע יצירת הנתב.",
         "routerName": "שם הנתב",
         "routerNamePlaceholder": "האפליקציה שלי",
+        "passthroughPath": "נתיב",
+        "passthroughPathHint": "הופך לחלק מ-URL שלקוחות קוראים אליו: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "הגדרות מתקדמות",
         "ttftTimeout": "זמן פסק (TTFT) (מ״ש)",
         "ttftTimeoutHint": "אם מודל לא שולח את בייט התגובה הראשון בפרק זמן זה, Routerly מבטל אותו ומנסה את המועמד הבא. לא מגביל את משך התגובה הכולל. הגדר ל-0 להמתין כל זמן שהספק דורש.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "לכוד פרומפטים ותשובות",
         "saveChanges": "שמור שינויים",
         "createRouter": "צור נתב",
-        "passthroughPath": "נתיב",
-        "passthroughPathHint": "הופך לחלק מ-URL שלקוחות קוראים אליו: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "צור אורקסטרטור",
         "createPassthrough": "צור Passthrough"
       }

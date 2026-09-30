@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Theme: {{theme}}"
     },
+    "language": {
+      "label": "Sprache",
+      "saveError": "Ihre Sprache konnte nicht gespeichert werden. Zurückgekehrt zur vorherigen."
+    },
     "sidebar": {
       "expand": "Seitenleiste erweitern",
       "collapse": "Seitenleiste einklappen"
@@ -40,9 +44,6 @@
       "telemetryLink": "Was wird gesendet?",
       "telemetryYes": "Ja, gerne",
       "telemetryNo": "Nein, danke"
-    },
-    "language": {
-      "label": "Sprache"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Sprache",
       "description": "Wähle die Sprache, in der das Dashboard angezeigt wird.",
       "languageLabel": "Sprache",
-      "saved": "Spracheinstellung gespeichert."
+      "saved": "Spracheinstellung gespeichert.",
+      "saveError": "Ihre Spracheinstellung konnte nicht gespeichert werden. Zurückgekehrt zur vorherigen."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 Router",
       "count_other": "{{count}} Router",
       "newRouter": "Neuer Router",
+      "newOrchestrator": "Neuer Orchestrator",
+      "newPassthrough": "Neuer Passthrough",
       "empty": "Noch keine Router.",
       "emptyFiltered": "Keine Router dieses Typs.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Diesen Router löschen?",
       "errors": {
         "deleteFailed": "Fehler beim Löschen des Routers"
-      },
-      "newOrchestrator": "Neuer Orchestrator",
-      "newPassthrough": "Neuer Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router nicht gefunden",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Zurück zu Router",
       "backToRoutersTitle": "Zurück zu Router",
       "newRouter": "Neuer Router",
+      "newKind": "Neuer {{kind}}",
       "loading": "Wird geladen...",
       "routerId": "Router-ID:",
-      "saveFirstHint": "Router zuerst speichern, um diesen Tab freizuschalten",
-      "newKind": "Neuer {{kind}}"
+      "saveFirstHint": "Router zuerst speichern, um diesen Tab freizuschalten"
     },
     "dashboard": {
       "period": "Zeitraum",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic-SDK",
         "anthropicBaseUrlHint": "Basis-URL <code>{{baseUrl}}</code>, ohne das <code>/v1</code>: Das SDK fügt es hinzu.",
         "curl": "curl",
-        "curlHint": "Prüfe die Verbindung ohne Installation und suche dann den Aufruf in <usageLink>Nutzung</usageLink>."
+        "curlHint": "Prüfe die Verbindung ohne Installation und suche dann den Aufruf in <usageLink>Nutzung</usageLink>.",
+        "passthrough": {
+          "heading": "Verbindungsanleitung",
+          "intro": "Passthrough leitet jeden Request unverändert weiter — verwenden Sie <strong>Ihren eigenen</strong> API-Schlüssel des Upstream-Providers als API Key, nie einen Routerly-Token. Routerly speichert oder vergibt keine Anmeldedaten für diesen Router; alles, was der Client sendet, geht direkt zum Provider.",
+          "noLimits": "Budgets und Limits gelten nicht für diesen Router: Die Kosten des Passthrough-Traffics sind unbekannt, daher wird nie gegen ein Ausgabenlimit geprüft oder angerechnet.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Basis-URL <code>{{url}}</code> — kein <code>/v1</code>-Suffix, das SDK fügt seinen Pfad genau wie gegen die echte OpenAI API an.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Basis-URL <code>{{url}}</code> — das SDK fügt <code>/v1/messages</code> selbst an, genau wie gegen die echte Anthropic API."
+        }
       },
       "form": {
         "kind": "Art",
         "kindFixedHint": "Fest, sobald der Router erstellt ist.",
         "routerName": "Router-Name",
         "routerNamePlaceholder": "Meine App",
+        "passthroughPath": "Pfad",
+        "passthroughPathHint": "Wird Teil der URL, die Clients aufrufen: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Erweiterte Einstellungen",
         "ttftTimeout": "TTFT-Timeout (ms)",
         "ttftTimeoutHint": "Wenn ein Modell das erste Antwort-Byte nicht innerhalb dieser Zeit sendet, bricht Routerly ab und versucht den nächsten Kandidaten. Begrenzt nicht die Gesamtantwortdauer. Auf 0 setzen, um so lange wie nötig zu warten.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Prompts und Antworten erfassen",
         "saveChanges": "Änderungen speichern",
         "createRouter": "Router erstellen",
-        "passthroughPath": "Pfad",
-        "passthroughPathHint": "Wird Teil der URL, die Clients aufrufen: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Orchestrator erstellen",
         "createPassthrough": "Passthrough erstellen"
       }

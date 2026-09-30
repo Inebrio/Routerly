@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Téma: {{theme}}"
     },
+    "language": {
+      "label": "Nyelv",
+      "saveError": "Nem sikerült menteni a nyelvet. Visszaállítva az előző verzióra."
+    },
     "sidebar": {
       "expand": "Oldalsáv bővítése",
       "collapse": "Oldalsáv összezárása"
@@ -40,9 +44,6 @@
       "telemetryLink": "Mit küldenek?",
       "telemetryYes": "Igen, segítek",
       "telemetryNo": "Nem, köszönöm"
-    },
-    "language": {
-      "label": "Nyelv"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Nyelv",
       "description": "Válassza meg, milyen nyelven jelenjen meg az irányítópult.",
       "languageLabel": "Nyelv",
-      "saved": "Nyelvpreferencia mentve."
+      "saved": "Nyelvpreferencia mentve.",
+      "saveError": "Nem sikerült menteni a nyelvbeállításokat. Visszaállítva az előző verzióra."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 útválasztó",
       "count_other": "{{count}} útválasztó",
       "newRouter": "Új Útválasztó",
+      "newOrchestrator": "Új Orchestrator",
+      "newPassthrough": "Új Passthrough",
       "empty": "Nincsenek útválasztók.",
       "emptyFiltered": "Nincs ilyen típusú útválasztó.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Törli ezt az útválasztót?",
       "errors": {
         "deleteFailed": "Hiba az útválasztó törlésénél"
-      },
-      "newOrchestrator": "Új Orchestrator",
-      "newPassthrough": "Új Passthrough"
+      }
     },
     "layout": {
       "notFound": "Az útválasztó nem található",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Vissza az Útválasztókhoz",
       "backToRoutersTitle": "Vissza az útválasztókhoz",
       "newRouter": "Új Útválasztó",
+      "newKind": "Új {{kind}}",
       "loading": "Betöltés...",
       "routerId": "Útválasztó azonosítója:",
-      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához",
-      "newKind": "Új {{kind}}"
+      "saveFirstHint": "Mentse az útválasztót először az ezen fül feloldásásához"
     },
     "dashboard": {
       "period": "Időszak",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Alapvető URL <code>{{baseUrl}}</code>, az <code>/v1</code> nélkül: az SDK hozzáadja azt.",
         "curl": "curl",
-        "curlHint": "Ellenőrizze a vezetékeket telepítés nélkül, majd keresse meg a hívásat az <usageLink>Használat</usageLink> oldalon."
+        "curlHint": "Ellenőrizze a vezetékeket telepítés nélkül, majd keresse meg a hívásat az <usageLink>Használat</usageLink> oldalon.",
+        "passthrough": {
+          "heading": "Csatlakozás módja",
+          "intro": "A Passthrough minden kérést módosítás nélkül továbbít — használja <strong>saját</strong> upstream szolgáltatói kulcsát az API kulcsként, soha ne Routerly tokent. A Routerly nem tárol vagy ad ki hitelesítési adatot erre az útválasztóra; bármi, amit az ügyfél küld, közvetlenül a szolgáltatóhoz megy.",
+          "noLimits": "A költségvetés és korlátok nem vonatkoznak erre az útválasztóra: a Passthrough forgalom költsége ismeretlen, ezért soha nem kerül ellenőrzésre vagy nem számít fel a költségkeretre.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Alap URL <code>{{url}}</code> — nincs <code>/v1</code> utótag, az SDK még mindig hozzáadja a saját útvonalát, pontosan úgy, ahogy a valódi OpenAI API-val tenné.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Alap URL <code>{{url}}</code> — az SDK még mindig hozzáadja a <code>/v1/messages</code> értéket, pontosan úgy, ahogy a valódi Anthropic API-val tenné."
+        }
       },
       "form": {
         "kind": "Típus",
         "kindFixedHint": "Az útválasztó létrehozása után rögzítve.",
         "routerName": "Útválasztó Neve",
         "routerNamePlaceholder": "Saját Alkalmazás",
+        "passthroughPath": "Elérési út",
+        "passthroughPathHint": "Az ügyfelek által meghívott URL része lesz: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Speciális beállítások",
         "ttftTimeout": "TTFT Időkorlát (ms)",
         "ttftTimeoutHint": "Ha egy modell nem küldi az első válaszhelyét ezen időn belül, a Routerly leállítja és próbálja meg a következő jelöltet. Nem korlátozza az összes válasz időtartamát. Állítsa 0-ra, hogy egy olyan hosszú ideig várakozzon, ahogy a szolgáltató végez.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Rögzítse az kéréseket és válaszokat",
         "saveChanges": "Módosítások Mentése",
         "createRouter": "Útválasztó Létrehozása",
-        "passthroughPath": "Elérési út",
-        "passthroughPathHint": "Az ügyfelek által meghívott URL része lesz: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Orchestrator létrehozása",
         "createPassthrough": "Passthrough létrehozása"
       }

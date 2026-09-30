@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Mandhari: {{theme}}"
     },
+    "language": {
+      "label": "Lugha",
+      "saveError": "Haiwezi kuokoa lugha yako. Kurudi kwa hapo linalotangulia."
+    },
     "sidebar": {
       "expand": "Panua upau wa pembeni",
       "collapse": "Kunja upau wa pembeni"
@@ -40,9 +44,6 @@
       "telemetryLink": "Nini kinachochukuliwa?",
       "telemetryYes": "Ndiyo, nisaidie",
       "telemetryNo": "Hapana shukrani"
-    },
-    "language": {
-      "label": "Lugha"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Lugha",
       "description": "Chagua lugha ambayo ubao la kuzuia unaonyeshwa ndani yake.",
       "languageLabel": "Lugha",
-      "saved": "Upendeleo wa lugha kutunzwa."
+      "saved": "Upendeleo wa lugha kutunzwa.",
+      "saveError": "Haiwezi kuokoa mapendeleo ya lugha yako. Kurudi kwa hapo linalotangulia."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "njia 1",
       "count_other": "{{count}} njia",
       "newRouter": "Njia Jipya",
+      "newOrchestrator": "Mtandao Mpya",
+      "newPassthrough": "Passthrough Mpya",
       "empty": "Hakuna njia bado.",
       "emptyFiltered": "Hakuna routers ya aina hii.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Futa njia hii?",
       "errors": {
         "deleteFailed": "Hitilafu funika njia"
-      },
-      "newOrchestrator": "Mtandao Mpya",
-      "newPassthrough": "Passthrough Mpya"
+      }
     },
     "layout": {
       "notFound": "Njia haijulikani",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Kurudi kwenye Njia",
       "backToRoutersTitle": "Kurudi njia",
       "newRouter": "Njia Jipya",
+      "newKind": "{{kind}} Mpya",
       "loading": "Inakupakia...",
       "routerId": "Kitambulisho cha Njia:",
-      "saveFirstHint": "Kutengeneza njia kwanza kuanguka kichupo hiki",
-      "newKind": "{{kind}} Mpya"
+      "saveFirstHint": "Kutengeneza njia kwanza kuanguka kichupo hiki"
     },
     "dashboard": {
       "period": "Kipindi",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, bila <code>/v1</code>: SDK ongeza.",
         "curl": "curl",
-        "curlHint": "Kuchukuza wiring bila kusakinisha kitu, kisha tafuta simu katika <usageLink>Matumizi</usageLink>."
+        "curlHint": "Kuchukuza wiring bila kusakinisha kitu, kisha tafuta simu katika <usageLink>Matumizi</usageLink>.",
+        "passthrough": {
+          "heading": "Jinsi ya kuunganisha",
+          "intro": "Passthrough inatuma kila ombi bila kuharisha — tumia <strong>yako mwenyewe</strong> ingizo la mtoa huduma kama kitufe cha API, kamwe sio Routerly token. Routerly haistaji au kutoa cheti kwa njia hii; kile mteja anatuma huenda moja kwa moja kwa mtoa huduma.",
+          "noLimits": "Bajeti na kiwango hakuna kwa njia hii: gharama haifahami kwa Passthrough traffic, kwa hivyo haishindwi au kukamatia kwa kiwango chochote cha matumizi.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — bila <code>/v1</code> suffix, SDK bado inaongeza njia yake kama inavyokuwa dhidi ya OpenAI API halisi.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK bado inaongeza <code>/v1/messages</code> yenyewe, kama inavyokuwa dhidi ya Anthropic API halisi."
+        }
       },
       "form": {
         "kind": "Aina",
         "kindFixedHint": "Imebadhi wakati njia itengenezwa.",
         "routerName": "Jina la Njia",
         "routerNamePlaceholder": "Programu Yangu",
+        "passthroughPath": "Njia",
+        "passthroughPathHint": "Inakuwa sehemu ya URL inayoitwa na wateja: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Mipangilio ya zamani",
         "ttftTimeout": "TTFT Wakati wa Mwisho (ms)",
         "ttftTimeoutHint": "Kama modeli haitumi byte ya kwanza ya jibu katika wakati huu, Routerly inaacha na kujaribu wagombea wajao. Hauzui muda wa jibu wa jumla. Weka kwenye 0 kusubiri kama mtoa huduma anachukua.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Kamatia onyo na majibu",
         "saveChanges": "Kutengeneza Mabadiliko",
         "createRouter": "Tengeneza Njia",
-        "passthroughPath": "Njia",
-        "passthroughPathHint": "Inakuwa sehemu ya URL inayoitwa na wateja: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Tengeneza Mtandao",
         "createPassthrough": "Tengeneza Passthrough"
       }

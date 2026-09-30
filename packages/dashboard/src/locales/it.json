@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Lingua",
+      "saveError": "Impossibile salvare la tua lingua. Ritorno alla precedente."
+    },
     "sidebar": {
       "expand": "Espandi barra laterale",
       "collapse": "Comprimi barra laterale"
@@ -40,9 +44,6 @@
       "telemetryLink": "Cosa viene inviato?",
       "telemetryYes": "Sì, volentieri",
       "telemetryNo": "No, grazie"
-    },
-    "language": {
-      "label": "Lingua"
     }
   },
   "common": {
@@ -267,9 +268,9 @@
       "azureApiVersionPlaceholder": "2024-02-01",
       "awsRegion": "Regione AWS",
       "awsRegionPlaceholder": "us-east-1",
-      "awsAccessKeyId": "AWS Access Key ID",
+      "awsAccessKeyId": "ID Chiave di accesso AWS",
       "awsAccessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
-      "awsSecretAccessKey": "AWS Secret Access Key",
+      "awsSecretAccessKey": "Chiave di accesso segreta AWS",
       "awsSecretAccessKeyPlaceholderExisting": "Lascia vuoto per mantenere il valore esistente",
       "awsSecretAccessKeyPlaceholderNew": "wJalrXUtnFEMI/K7MDENG/…",
       "awsSessionTokenLabel": "Token di sessione",
@@ -287,7 +288,7 @@
       "webProvider": {
         "unofficialWarningTitle": "Provider non ufficiale — usalo a tuo rischio.",
         "unofficialWarningBody": "Questa integrazione usa un'API interna non documentata che può cambiare o interrompersi in qualsiasi momento senza preavviso. Potrebbe violare i termini di servizio del provider e causare la sospensione dell'account.",
-        "accessTokenLabel": "Access Token",
+        "accessTokenLabel": "Token di accesso",
         "sessionTokenLabel": "Token di sessione",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Incolla il valore del cookie sessionKey (sk-ant-sid01-…)",
@@ -389,7 +390,7 @@
       "guardrailsEvaluated": "GUARDRAIL VALUTATI ({{target}})",
       "ruleCount": "{{count}} regola",
       "ruleCount_other": "{{count}} regole",
-      "promptInjection": "Prompt injection",
+      "promptInjection": "Iniezione di prompt",
       "injects": "inietta",
       "judgeResponse": "Risposta valutatore",
       "piiScrubbed": "PII OSCURATA",
@@ -619,7 +620,8 @@
       "heading": "Lingua",
       "description": "Scegli la lingua in cui viene mostrata la dashboard.",
       "languageLabel": "Lingua",
-      "saved": "Preferenza di lingua salvata."
+      "saved": "Preferenza di lingua salvata.",
+      "saveError": "Impossibile salvare le tue preferenze di lingua. Ritorno alla precedente."
     }
   },
   "settings": {
@@ -808,17 +810,17 @@
           "username": "Nome utente",
           "password": "Password",
           "awsRegion": "Regione AWS",
-          "accessKeyId": "Access Key ID",
-          "secretAccessKey": "Secret Access Key",
+          "accessKeyId": "ID Chiave di accesso",
+          "secretAccessKey": "Chiave di accesso segreta",
           "apiKey": "Chiave API",
           "connectionString": "Stringa di connessione",
-          "clientId": "Client ID",
-          "clientSecret": "Client Secret",
-          "refreshToken": "Refresh Token",
+          "clientId": "ID Cliente",
+          "clientSecret": "Segreto cliente",
+          "refreshToken": "Token di aggiornamento",
           "url": "URL",
           "method": "Metodo",
           "signingSecret": "Chiave di firma",
-          "botToken": "Bot Token",
+          "botToken": "Token Bot",
           "channelId": "ID canale",
           "webhookUrl": "URL webhook",
           "integrationKey": "Chiave di integrazione"
@@ -951,11 +953,11 @@
       "port": "Porta",
       "apiKey": "Chiave API",
       "connectionString": "Stringa di connessione",
-      "clientId": "Client ID",
-      "clientSecret": "Client Secret",
-      "refreshToken": "Refresh Token",
+      "clientId": "ID Cliente",
+      "clientSecret": "Segreto cliente",
+      "refreshToken": "Token di aggiornamento",
       "method": "Metodo",
-      "botToken": "Bot Token",
+      "botToken": "Token Bot",
       "channelId": "ID canale",
       "webhookUrl": "URL webhook",
       "integrationKey": "Chiave di integrazione"
@@ -997,7 +999,7 @@
       "headersHint": "(opzionale, uno per riga: Key: Value)",
       "fields": {
         "prometheus": {
-          "bearerToken": "Bearer Token",
+          "bearerToken": "Token Bearer",
           "placeholder": "Lascia vuoto per accesso aperto",
           "description": "Esporta <code>/metrics</code> in formato testo Prometheus. Impostare un token per richiedere l'autenticazione Bearer."
         },
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} router",
       "newRouter": "Nuovo router",
+      "newOrchestrator": "Nuovo Orchestrator",
+      "newPassthrough": "Nuovo Passthrough",
       "empty": "Nessun router ancora.",
       "emptyFiltered": "Nessun router di questo tipo.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Eliminare questo router?",
       "errors": {
         "deleteFailed": "Errore durante l'eliminazione del router"
-      },
-      "newOrchestrator": "Nuovo Orchestrator",
-      "newPassthrough": "Nuovo Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router non trovato",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Torna ai router",
       "backToRoutersTitle": "Torna ai router",
       "newRouter": "Nuovo router",
+      "newKind": "Nuovo {{kind}}",
       "loading": "Caricamento in corso...",
       "routerId": "ID router:",
-      "saveFirstHint": "Salva prima il router per sbloccare questa scheda",
-      "newKind": "Nuovo {{kind}}"
+      "saveFirstHint": "Salva prima il router per sbloccare questa scheda"
     },
     "dashboard": {
       "period": "Periodo",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL base <code>{{baseUrl}}</code>, senza il <code>/v1</code>: l'SDK lo aggiunge.",
         "curl": "curl",
-        "curlHint": "Verifica la connessione senza installare nulla, poi trova la chiamata in <usageLink>Utilizzo</usageLink>."
+        "curlHint": "Verifica la connessione senza installare nulla, poi trova la chiamata in <usageLink>Utilizzo</usageLink>.",
+        "passthrough": {
+          "heading": "Come connettersi",
+          "intro": "Passthrough inoltro ogni richiesta senza modifiche — usa <strong>la tua</strong> chiave provider a monte come chiave API, mai un token Routerly. Routerly non archivia né rilascia una credenziale per questo router; qualunque cosa il client invii va direttamente al provider.",
+          "noLimits": "Budget e limiti non si applicano a questo router: il costo è sconosciuto per il traffico Passthrough, quindi non viene mai controllato o conteggiato verso alcun limite di spesa.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL di base <code>{{url}}</code> — senza suffisso <code>/v1</code>, l'SDK aggiunge comunque il suo percorso esattamente come farebbe contro la vera API di OpenAI.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL di base <code>{{url}}</code> — l'SDK aggiunge comunque <code>/v1/messages</code> stesso, esattamente come farebbe contro la vera API di Anthropic."
+        }
       },
       "form": {
         "kind": "Tipo",
         "kindFixedHint": "Fisso una volta creato il router.",
         "routerName": "Nome router",
         "routerNamePlaceholder": "La mia app",
+        "passthroughPath": "Percorso",
+        "passthroughPathHint": "Diventa parte dell'URL che i client chiamano: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Impostazioni avanzate",
         "ttftTimeout": "Timeout TTFT (ms)",
         "ttftTimeoutHint": "Se un modello non invia il primo byte di risposta entro questo tempo, Routerly interrompe e prova il candidato successivo. Non limita la durata totale della risposta. Imposta a 0 per attendere quanto necessario.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Cattura prompt e risposte",
         "saveChanges": "Salva modifiche",
         "createRouter": "Crea router",
-        "passthroughPath": "Percorso",
-        "passthroughPathHint": "Diventa parte dell'URL che i client chiamano: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Crea Orchestrator",
         "createPassthrough": "Crea Passthrough"
       }
@@ -2421,7 +2432,7 @@
       "tooltip": "Streaming non disponibile: un guardrail bloccante sulle risposte richiede che la risposta completa venga controllata prima della consegna.",
       "ariaLabel": "Streaming non disponibile"
     },
-    "systemPrompt": "System prompt",
+    "systemPrompt": "Prompt di sistema",
     "model": "Modello",
     "modelPlaceholder": "Auto (predefinito router)",
     "params": {

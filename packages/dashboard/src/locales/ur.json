@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "تھیم: {{theme}}"
     },
+    "language": {
+      "label": "زبان",
+      "saveError": "آپ کی زبان محفوظ نہیں کی جا سکی۔ پچھلی پر واپس آ گیا۔"
+    },
     "sidebar": {
       "expand": "سائڈبار کو پھیلائیں",
       "collapse": "سائڈبار کو سمیٹیں"
@@ -40,9 +44,6 @@
       "telemetryLink": "کیا بھیجا جا رہا ہے؟",
       "telemetryYes": "ہاں، مدد کریں",
       "telemetryNo": "نہیں، شکریہ"
-    },
-    "language": {
-      "label": "زبان"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "زبان",
       "description": "ڈیش بورڈ جس زبان میں دکھایا جاتا ہے اس کو منتخب کریں۔",
       "languageLabel": "زبان",
-      "saved": "زبان کی ترجیح محفوظ کی گئی۔"
+      "saved": "زبان کی ترجیح محفوظ کی گئی۔",
+      "saveError": "آپ کی زبان کی ترجیح محفوظ نہیں کی جا سکی۔ پچھلی پر واپس آ گیا۔"
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 روٹر",
       "count_other": "{{count}} روٹرز",
       "newRouter": "نیا روٹر",
+      "newOrchestrator": "نیا آرکسٹریٹر",
+      "newPassthrough": "نیا Passthrough",
       "empty": "ابھی کوئی روٹرز نہیں۔",
       "emptyFiltered": "اس قسم کا کوئی روٹر نہیں۔",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "یہ روٹر حذف کریں؟",
       "errors": {
         "deleteFailed": "روٹر حذف کرنے میں خرابی"
-      },
-      "newOrchestrator": "نیا آرکسٹریٹر",
-      "newPassthrough": "نیا Passthrough"
+      }
     },
     "layout": {
       "notFound": "روٹر نہیں ملا",
@@ -1191,10 +1193,10 @@
       "backToRouters": "روٹرز پر واپس",
       "backToRoutersTitle": "روٹرز پر واپس",
       "newRouter": "نیا روٹر",
+      "newKind": "نیا {{kind}}",
       "loading": "لوڈ ہو رہا ہے...",
       "routerId": "روٹر ID:",
-      "saveFirstHint": "اس ٹیب کو کھولنے کے لیے پہلے روٹر کو محفوظ کریں",
-      "newKind": "نیا {{kind}}"
+      "saveFirstHint": "اس ٹیب کو کھولنے کے لیے پہلے روٹر کو محفوظ کریں"
     },
     "dashboard": {
       "period": "مدت",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "بنیادی URL <code>{{baseUrl}}</code>، <code>/v1</code> کے بغیر: SDK اسے شامل کرتا ہے۔",
         "curl": "curl",
-        "curlHint": "کچھ انسٹال کیے بغیر تاریں چیک کریں، پھر <usageLink>استعمال</usageLink> میں کال تلاش کریں۔"
+        "curlHint": "کچھ انسٹال کیے بغیر تاریں چیک کریں، پھر <usageLink>استعمال</usageLink> میں کال تلاش کریں۔",
+        "passthrough": {
+          "heading": "کیسے جڑیں",
+          "intro": "Passthrough ہر درخواست کو بغیر تبدیلی کے آگے بھیجتا ہے — اپنی <strong>اپنی</strong> اپ سٹریم فراہم کنندہ کی کلید کو API کلید کے طور پر استعمال کریں، کبھی Routerly ٹوکن نہیں۔ Routerly اس روٹر کے لیے کوئی اعتماد نامہ محفوظ یا جاری نہیں کرتا؛ جو کچھ بھی کلائنٹ بھیجتا ہے وہ براہ راست فراہم کنندہ کے پاس جاتا ہے۔",
+          "noLimits": "بجٹ اور حدود اس روٹر پر لاگو نہیں ہوتے: Passthrough ٹریفک کی لاگت نامعلوم ہے، اس لیے کبھی کسی خرچ کی حد کے خلاف چیک نہیں کیا جاتا یا شمار نہیں کیا جاتا۔",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — کوئی <code>/v1</code> لاحقہ نہیں، SDK اپنا راستہ بالکل اسی طرح شامل کرتا ہے جیسے یہ حقیقی OpenAI API کے خلاف ہو۔",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK خود <code>/v1/messages</code> شامل کرتا ہے، بالکل اسی طرح جیسے یہ حقیقی Anthropic API کے خلاف ہو۔"
+        }
       },
       "form": {
         "kind": "قسم",
         "kindFixedHint": "روٹر بننے کے بعد ثابت۔",
         "routerName": "روٹر نام",
         "routerNamePlaceholder": "میری ایپ",
+        "passthroughPath": "راستہ",
+        "passthroughPathHint": "جو URL کلائنٹ کال کرتے ہیں اس کا حصہ بن جاتا ہے: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "اعلیٰ سیٹنگز",
         "ttftTimeout": "TTFT ٹائم آؤٹ (ms)",
         "ttftTimeoutHint": "اگر ماڈل اس وقت میں پہلی ردعمل بائٹ نہیں بھیجتا، تو Routerly اسے ختم کر دیتا ہے اور اگلے امیدوار کو کوشش کرتا ہے۔ کل ردعمل کی مدت محدود نہیں۔ 0 پر سیٹ کریں فراہم کنندہ جتنا وقت لے سکتا ہے انتظار کرنے کے لیے۔",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "پروموٹس اور جوابات کو حاصل کریں",
         "saveChanges": "تبدیلیاں محفوظ کریں",
         "createRouter": "روٹر بنائیں",
-        "passthroughPath": "راستہ",
-        "passthroughPathHint": "جو URL کلائنٹ کال کرتے ہیں اس کا حصہ بن جاتا ہے: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "آرکسٹریٹر بنائیں",
         "createPassthrough": "Passthrough بنائیں"
       }
@@ -2258,7 +2269,7 @@
         "1m": "1m",
         "5m": "5m"
       },
-      "liveButton": "● Live",
+      "liveButton": "● لائیو",
       "liveButtonTitle": {
         "disable": "live موڈ غیر فعال کریں",
         "enable": "Live موڈ فعال کریں (ہر 2s تازہ کریں)"

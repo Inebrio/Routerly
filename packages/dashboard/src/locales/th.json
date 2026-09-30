@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "ธีม: {{theme}}"
     },
+    "language": {
+      "label": "ภาษา",
+      "saveError": "ไม่สามารถบันทึกภาษาของคุณ กลับไปที่ภาษาก่อนหน้า"
+    },
     "sidebar": {
       "expand": "ขยายแถบด้านข้าง",
       "collapse": "ย่อแถบด้านข้าง"
@@ -40,9 +44,6 @@
       "telemetryLink": "มีการส่งอะไร",
       "telemetryYes": "ใช่ ช่วยเหลือ",
       "telemetryNo": "ไม่ ขอบคุณ"
-    },
-    "language": {
-      "label": "ภาษา"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "ภาษา",
       "description": "เลือกภาษาที่แสดงแดชบอร์ด",
       "languageLabel": "ภาษา",
-      "saved": "ตั้งค่าภาษาที่บันทึก"
+      "saved": "ตั้งค่าภาษาที่บันทึก",
+      "saveError": "ไม่สามารถบันทึกการตั้งค่าภาษาของคุณ กลับไปที่ภาษาก่อนหน้า"
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 เราเตอร์",
       "count_other": "{{count}} เราเตอร์",
       "newRouter": "เราเตอร์ใหม่",
+      "newOrchestrator": "Orchestrator ใหม่",
+      "newPassthrough": "Passthrough ใหม่",
       "empty": "ยังไม่มีเราเตอร์",
       "emptyFiltered": "ไม่มีรูเตอร์ประเภทนี้",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "ลบเราเตอร์นี้?",
       "errors": {
         "deleteFailed": "ข้อผิดพลาดในการลบเราเตอร์"
-      },
-      "newOrchestrator": "Orchestrator ใหม่",
-      "newPassthrough": "Passthrough ใหม่"
+      }
     },
     "layout": {
       "notFound": "ไม่พบเราเตอร์",
@@ -1191,10 +1193,10 @@
       "backToRouters": "กลับไปเราเตอร์",
       "backToRoutersTitle": "กลับไปเราเตอร์",
       "newRouter": "เราเตอร์ใหม่",
+      "newKind": "{{kind}} ใหม่",
       "loading": "กำลังโหลด...",
       "routerId": "Router ID:",
-      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้",
-      "newKind": "{{kind}} ใหม่"
+      "saveFirstHint": "บันทึกเราเตอร์ก่อนเพื่อปลดล็อกแท็บนี้"
     },
     "dashboard": {
       "period": "ช่วงเวลา",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "URL ฐาน <code>{{baseUrl}}</code> โดยไม่มี <code>/v1</code>: SDK เพิ่มมัน",
         "curl": "curl",
-        "curlHint": "ตรวจสอบการเดินสายโดยไม่ติดตั้งอะไรจากนั้นมองหาการโทรใน <usageLink>การใช้</usageLink>"
+        "curlHint": "ตรวจสอบการเดินสายโดยไม่ติดตั้งอะไรจากนั้นมองหาการโทรใน <usageLink>การใช้</usageLink>",
+        "passthrough": {
+          "heading": "วิธีการเชื่อมต่อ",
+          "intro": "Passthrough ส่งต่อคำขออย่างตรงไปตรงมา — ใช้คีย์ผู้ให้บริการต้นน้ำของ <strong>คุณเอง</strong> เป็นคีย์ API ไม่เคยใช้โทเค็น Routerly Routerly ไม่ได้เก็บหรือออกใบรับรองสำหรับเราเตอร์นี้ สิ่งที่ไคลเอนต์ส่งไปจะไปยังผู้ให้บริการโดยตรง",
+          "noLimits": "งบประมาณและขีดจำกัดไม่ใช้กับเราเตอร์นี้ ต้นทุนสำหรับการจราจร Passthrough ไม่เป็นที่ทราบ ดังนั้นจึงไม่ได้ตรวจสอบหรือนับเทียบกับขีดจำกัดการใช้จ่ายใด ๆ",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — ไม่มี suffix <code>/v1</code> SDK ยังคงเพิ่มเส้นทางของตัวเองเหมือนกับที่จะทำกับ API OpenAI จริง",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK ยังคงเพิ่ม <code>/v1/messages</code> ด้วยตัวเอง เหมือนกับที่จะทำกับ API Anthropic จริง"
+        }
       },
       "form": {
         "kind": "ชนิด",
         "kindFixedHint": "คงที่เมื่อสร้างเราเตอร์",
         "routerName": "ชื่อเราเตอร์",
         "routerNamePlaceholder": "แอปของฉัน",
+        "passthroughPath": "เส้นทาง",
+        "passthroughPathHint": "กลายเป็นส่วนหนึ่งของ URL ที่ไคลเอนต์เรียก: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "การตั้งค่าขั้นสูง",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "หากรุ่นไม่ส่งไบต์การตอบสนองแรกภายในเวลานี้ Routerly ยกเลิกและลองผู้สมัครรายถัดไป ไม่ จำกัด ระยะเวลารวม ตั้งค่าเป็น 0 เพื่อรอตราบใจผู้ให้บริการจนถึง",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "เก็บพรอมต์และคำตอบ",
         "saveChanges": "บันทึกการเปลี่ยนแปลง",
         "createRouter": "สร้างเราเตอร์",
-        "passthroughPath": "เส้นทาง",
-        "passthroughPathHint": "กลายเป็นส่วนหนึ่งของ URL ที่ไคลเอนต์เรียก: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "สร้าง Orchestrator",
         "createPassthrough": "สร้าง Passthrough"
       }

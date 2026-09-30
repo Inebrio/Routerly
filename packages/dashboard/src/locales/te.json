@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "థీమ్: {{theme}}"
     },
+    "language": {
+      "label": "భాష",
+      "saveError": "మీ భాషను సేవ్ చేయలేము. గతమైనదానికి చేరుకుంది."
+    },
     "sidebar": {
       "expand": "సైడ్‌బార్‌ను విస్తరించండి",
       "collapse": "సైడ్‌బార్‌ను కుదించండి"
@@ -40,9 +44,6 @@
       "telemetryLink": "ఏ చేయించారు?",
       "telemetryYes": "అవును, సహాయం చేయండి",
       "telemetryNo": "వద్దు, ధన్యవాదాలు"
-    },
-    "language": {
-      "label": "భాష"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "భాష",
       "description": "డ్యాష్‌బోర్డ్ ప్రదర్శించిన భాష ఎంచుకోండి.",
       "languageLabel": "భాష",
-      "saved": "భాష ఆదరణ సేవ్ చేసారు."
+      "saved": "భాష ఆదరణ సేవ్ చేసారు.",
+      "saveError": "మీ భాష ప్రాధాన్యతను సేవ్ చేయలేము. గతమైనదానికి చేరుకుంది."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 రౌటర్",
       "count_other": "{{count}} రౌటర్‌లు",
       "newRouter": "నవీన రౌటర్",
+      "newOrchestrator": "కొత్త ఆర్కెస్ట్రేటర్",
+      "newPassthrough": "కొత్త పాస్‌థ్రూ",
       "empty": "ఇంకా రౌటర్‌లు లేవు.",
       "emptyFiltered": "ఈ రకమైన రూటర్ లేదు.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "ఈ రౌటర్‌ను తొలగించండి?",
       "errors": {
         "deleteFailed": "రౌటర్‌ను తొలగించటంలో ఉద్దాటన"
-      },
-      "newOrchestrator": "కొత్త ఆర్కెస్ట్రేటర్",
-      "newPassthrough": "కొత్త పాస్‌థ్రూ"
+      }
     },
     "layout": {
       "notFound": "రౌటర్ కనుగొనబడలేదు",
@@ -1191,10 +1193,10 @@
       "backToRouters": "రౌటర్‌లకు వెనుకకు",
       "backToRoutersTitle": "రౌటర్‌లకు వెనుకకు",
       "newRouter": "నవీన రౌటర్",
+      "newKind": "కొత్త {{kind}}",
       "loading": "లోడ్ చేస్తోంది...",
       "routerId": "రౌటర్ ID:",
-      "saveFirstHint": "ఈ ట్యాబ్‌ను అన్‌లాక్ చేయుటకు ముందు రౌటర్‌ను సేవ చేయండి",
-      "newKind": "కొత్త {{kind}}"
+      "saveFirstHint": "ఈ ట్యాబ్‌ను అన్‌లాక్ చేయుటకు ముందు రౌటర్‌ను సేవ చేయండి"
     },
     "dashboard": {
       "period": "కాలం",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "బేస్ URL <code>{{baseUrl}}</code>, <code>/v1</code> లేకుండా: SDK దానిని జోడిస్తుంది.",
         "curl": "curl",
-        "curlHint": "ఈ కేబిల్ చేయడం చూడండి ఇన్‌స్టాల్ చేయకుండా, ఆ <usageLink>ఉపయోగం</usageLink>లో కాల్‌ను చూడండి."
+        "curlHint": "ఈ కేబిల్ చేయడం చూడండి ఇన్‌స్టాల్ చేయకుండా, ఆ <usageLink>ఉపయోగం</usageLink>లో కాల్‌ను చూడండి.",
+        "passthrough": {
+          "heading": "సంయోగం ఎలా చేయాలి",
+          "intro": "Passthrough ప్రతిటి అభ్యర్థనను మార్చనిది ఫార్వార్డ్ చేస్తుంది — మీ <strong>స్వంత</strong> అప్‌స్ట్రీమ్ ప్రొవైడర్ కీని API కీగా ఉపయోగించండి, Routerly టోకన్ నిండా కాదు. Routerly ఈ రూటర్ కోసం ఎటువంటి ఆధారాధాని ఆకృతిని నిల్వ చేయదు; క్లయింట్ పంపినది నేరుగా ప్రొవైడర్‌కు చేరుకుంటుంది.",
+          "noLimits": "బడ్జెట్ మరియు పరిమితులు ఈ రూటర్‌కు వర్తించవు: Passthrough ట్రాఫిక్‌కు ఖర్చు తెలియదు, కాబట్టి ఇది ఎటువంటి ఖర్చు పరిమితికి వ్యతిరేకంగా తనిఖీ చేయబడదు లేదా లెక్కించబడదు.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — <code>/v1</code> suffix లేకుండా, SDK ఇప్పటికీ సరిగ్గా OpenAI API కు వ్యతిరేకంగా చేస్తుంది తన మార్గం జోడిస్తుంది.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK ఇప్పటికీ <code>/v1/messages</code> తాను జోడిస్తుంది, సరిగ్గా Anthropic API కు వ్యతిరేకంగా చేస్తుంది."
+        }
       },
       "form": {
         "kind": "రకం",
         "kindFixedHint": "రౌటర్ సృష్టించిన తర్వాత స్థిరం.",
         "routerName": "రౌటర్ నామం",
         "routerNamePlaceholder": "నా యాప్",
+        "passthroughPath": "పాత",
+        "passthroughPathHint": "క్లైంట్‌లు పిలిచే URL యొక్క భాగం చేస్తుంది: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "ఆధునిక సెట్టింగ్‌లు",
         "ttftTimeout": "TTFT సమయపాలన (ms)",
         "ttftTimeoutHint": "ఒక మోడల్ ఈ సమయంలో మొదటి ప్రతిస్పందన బైట్‌ను పంపకపోతే, Routerly ఆ రద్దు చేస్తుంది మరియు తదుపరి అభ్యర్థిని ప్రయత్నిస్తుంది. సంపూర్ణ ప్రతిస్పందన వ్యవధిని సీమితం చేయదు. ఇది 0 కు సెట్ చేయండి ప్రదాత తీసుకోవడానికి సమయానికి చేరుకోవటానికి.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "ప్రాంప్ట్‌లు మరియు చేరుకున్న సందేశాలను సంగ్రహించండి",
         "saveChanges": "మార్పులను సేవ చేయండి",
         "createRouter": "రౌటర్ సృష్టించండి",
-        "passthroughPath": "పాత",
-        "passthroughPathHint": "క్లైంట్‌లు పిలిచే URL యొక్క భాగం చేస్తుంది: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ఆర్కెస్ట్రేటర్ సృష్టించండి",
         "createPassthrough": "పాస్‌థ్రూ సృష్టించండి"
       }
@@ -1747,7 +1758,7 @@
       "free": "ఉచితం",
       "add": "జోడించండి",
       "addAgain": "మళ్ళీ జోడించండి",
-      "loadFailed": "కేటలాగ్ లోడ్ విఫలమైంది",
+      "loadFailed": "కేటలాగ్ లోడ్ చేయడం విఫలమైంది: {{error}}",
       "filters": {
         "search": "శోధించండి",
         "searchPlaceholder": "ID లేదా నామం...",
@@ -2096,12 +2107,12 @@
       "callsMeasured": "{{count}} కాల్ కొలుస్తారు",
       "callsMeasured_other": "{{count}} కాల్‌లు",
       "empty": "ఈ విండోలో ఇంకా కాల్‌లు లేవు.",
-      "notConclusive": "ఇంకా నిశ్చితం కాలేదు.",
+      "notConclusive": "ఇంకా నిశ్చితమైనది కాదు: ప్రతిటి వేరియంట్‌కు ఈ విండోలో కనీసం {{minSamples}} కాల్‌లు అవసరం.",
       "explanation": "ప్రతిదీ జత యొక్క ఉత్తమం నిర్ధారించబడుతుంది.",
       "lowSample": "తక్కువ నమూనా",
-      "lowSampleTitle": "ఈ విండోలో కంటే కనీసం కాల్‌ల క్రిందకు",
-      "judgedCallsTitle": "సమాధానం స్కోర్ చేసారు",
-      "judgedCallsTitle_other": "సమాధానాలు స్కోర్ చేసారు",
+      "lowSampleTitle": "ఈ విండోలో {{minSamples}} కాల్‌ల కంటే తక్కువ",
+      "judgedCallsTitle": "ప్రయోగం ప్రారంభమైనప్పటి నుండి న్యాయాధిపతి స్కోర్ చేసిన {{count}} సమాధానం",
+      "judgedCallsTitle_other": "ప్రయోగం ప్రారంభమైనప్పటి నుండి న్యాయాధిపతి స్కోర్ చేసిన {{count}} సమాధానాలు",
       "errors": {
         "loadFailed": "మెట్రిక్‌లు లోడ్ విఫలమైంది"
       },
@@ -2127,7 +2138,7 @@
       "copied": "కాపీ చేసారు!",
       "newToken": "నవీన టోకెన్",
       "empty": "టోకెన్‌లు లేవు.",
-      "revokeConfirm": "టోకెన్ రిభోక్ చేయండి?",
+      "revokeConfirm": "\"{{snippet}}...\" టోకన్‌ను ఉద్ఘాటించాలా? దానిని ఉపయోగించే ఖాతాలు వెంటనే పనిచేయటం ఆపివేస్తాయి.",
       "revokeTitle": "రిభోక్ చేయండి",
       "errors": {
         "createFailed": "సృష్టించడం విఫలమైంది",
@@ -2693,11 +2704,11 @@
     "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "noClientPrefix": "పేరు గల క్లయింట్ లేదు",
     "errors": {
-      "loadFailed": "క్లయింట్‌లను లోడ్ చేయడం విఫలమైంది"
+      "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },
     "oneCommand": {
       "title": "వేగవంతమైన: ఒక కమాండ్",
-      "description": "{{client}} ఇన్‌స్టాల్ చేసిన యంత్రంలో దీన్ని నడుపండి."
+      "description": "{{client}} ఇన్‌స్టాల్ చేయబడిన మెషీన్‌లో దీనిని చేయండి. ఇది {{configPath}} ను వ్రాస్తుంది, మీరు చేయగలిగే ఒక బ్యాకప్‌ను ఉంచుతుంది."
     },
     "byHand": {
       "titleAlt": "లేదా ఖాళీచేయండి",
@@ -2710,7 +2721,7 @@
       "createOne": "ఒకటి సృష్టించండి",
       "onRoutersPage": "రౌటర్‌ల పేజీలో.",
       "modelLabel": "మోడల్:",
-      "modelHint": "Routerly ను ఎంపిక చేయడానికి సాధ్యం చేస్తుంది, {{modelsLink}} నుండి ఏదైనా మోడల్ id కూడా పనిచేస్తుంది.",
+      "modelHint": "ఎంపిక Routerly కు అందిస్తుంది, ఏదైనా మోడల్ id నుండి",
       "modelsLink": "మోడల్‌లు",
       "worksToo": "కూడా పనిచేస్తుంది.",
       "openaiCompatHint": "బేస్ URL, కీ మరియు మోడల్ OpenAI సారూప్య ఆఫర్ చేసే ఏదైనా క్లయింట్‌కు సరిపోతాయి."
@@ -2723,7 +2734,7 @@
     },
     "checkItWorked": {
       "title": "ఇది పనిచేసిందని చెక్ చేయండి",
-      "restart": "{{client}} రీస్టార్ట్ చేయండి, ప్రాంప్ట్ పంపండి, ఆ {{usageLink}}లో కాల్‌ను చూడండి.",
+      "restart": "{{client}} పునః ప్రారంభించండి, దానికి సూచన పంపండి, ఆపై కాల్‌ను చూడండి",
       "usageLink": "ఉపయోగం",
       "cliReports": "అదే యంత్రం నుండి, CLI నివేదించింది:"
     }
@@ -2737,7 +2748,7 @@
     "mcpDescription": "Routerly ను టూల్ సర్వర్‌గా లోడ్ చేస్తుంది.",
     "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "errors": {
-      "loadFailed": "క్లయింట్‌లను లోడ్ చేయడం విఫలమైంది"
+      "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },
     "oneCommand": {
       "title": "ఒక కమాండ్",

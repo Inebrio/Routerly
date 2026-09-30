@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Wika",
+      "saveError": "Hindi ma-save ang iyong wika. Bumalik sa nakaraan."
+    },
     "sidebar": {
       "expand": "Palawakin ang sidebar",
       "collapse": "Itiklop ang sidebar"
@@ -40,9 +44,6 @@
       "telemetryLink": "Ano ang ipinapadala?",
       "telemetryYes": "Oo, tutulong ako",
       "telemetryNo": "Hindi, salamat"
-    },
-    "language": {
-      "label": "Wika"
     }
   },
   "common": {
@@ -102,8 +103,8 @@
       "metric": {
         "cost": "Gastos",
         "calls": "Mga Tawag",
-        "input_tokens": "Input tokens",
-        "output_tokens": "Output tokens",
+        "input_tokens": "Mga input token",
+        "output_tokens": "Mga output token",
         "total_tokens": "Kabuuang tokens"
       },
       "period": {
@@ -127,8 +128,8 @@
       },
       "fmt": {
         "requests": "{{value}} na request",
-        "inputTokens": "{{value}} input tokens",
-        "outputTokens": "{{value}} output tokens",
+        "inputTokens": "{{value}} input token",
+        "outputTokens": "{{value}} output token",
         "totalTokens": "{{value}} kabuuang tokens",
         "everyRolling": "{{metric}} bawat {{amount}} {{unit}}",
         "perPeriod": "{{metric}} kada {{period}}"
@@ -140,7 +141,7 @@
       "output": "Output",
       "actual": "Aktwal",
       "clientCalls": "{{count}} client call",
-      "clientCalls_other": "{{count}} client calls",
+      "clientCalls_other": "{{count}} na client call",
       "comparedAgainst": ", inihambing laban sa pagpapadala nito sa bawat isa sa",
       "comparedAgainst_other": ", inihambing laban sa pagpapadala ng lahat sa bawat isa sa",
       "paidModelsInPlay": "{{count}} bayad na model na kasangkot",
@@ -155,8 +156,8 @@
       "tokens": "Tokens",
       "in": "In: {{value}}",
       "out": "Out: {{value}}",
-      "tokenSubWithCache": "{{in}} in · {{out}} out · {{cached}} cached",
-      "tokenSub": "{{in}} in · {{out}} out",
+      "tokenSubWithCache": "{{in}} input · {{out}} output · {{cached}} cached",
+      "tokenSub": "{{in}} input · {{out}} output",
       "cutByOptimizers": "{{value}} binawas ng mga optimizer",
       "fewerThanAlways": "{{value}} mas kaunti kaysa sa palaging {{model}}, tinatayang halaga"
     },
@@ -175,11 +176,11 @@
       "embeddingModels": "Mga Embedding Model",
       "maxCompletionTokens": "Max na completion tokens",
       "maxPromptChars": "Max na prompt chars",
-      "similarityThreshold": "Similarity threshold",
+      "similarityThreshold": "Threshold ng pagkakatulad",
       "previousMessages": "Mga naunang mensahe",
       "intents": "Mga Intent",
-      "confidenceThreshold": "Confidence threshold",
-      "ambiguityMargin": "Ambiguity margin",
+      "confidenceThreshold": "Threshold ng kumpiyansa",
+      "ambiguityMargin": "Margin ng kalabuan",
       "maxCallsPerWindow": "Max na tawag kada window",
       "addFallbackModel": "Magdagdag ng Fallback Model",
       "autoRoutingLabel": "Auto Routing",
@@ -190,17 +191,17 @@
       "addIntentPlaceholder": "Magdagdag ng intent at pindutin ang Enter…",
       "addPolicyPlaceholder": "Magdagdag ng patakaran...",
       "labels": {
-        "llm": "AI Routing Policy",
-        "rate-limit": "Rate Limit Policy",
-        "budget-remaining": "Budget Remaining Policy",
-        "semantic-intent": "Semantic Intent Policy",
-        "health": "Health Policy",
-        "context": "Context Policy",
-        "capability": "Capability Policy",
-        "performance": "Performance Policy",
-        "fairness": "Fairness Policy",
-        "cheapest": "Cheapest Policy",
-        "model-preference": "Model Preference Policy"
+        "llm": "Patakaran sa AI Routing",
+        "rate-limit": "Patakaran sa Rate Limit",
+        "budget-remaining": "Patakaran sa Natitirang Budget",
+        "semantic-intent": "Patakaran sa Semantic Intent",
+        "health": "Patakaran sa Kalusugan",
+        "context": "Patakaran sa Konteksto",
+        "capability": "Patakaran sa Kakayahan",
+        "performance": "Patakaran sa Pagganap",
+        "fairness": "Patakaran sa Patas na Pamamaraan",
+        "cheapest": "Patakaran sa Pinakamurang",
+        "model-preference": "Patakaran sa Kagustuhan ng Model"
       },
       "descriptions": {
         "context": "Nagtatakda ng score sa mga model batay sa available na context window. Nagbibigay ng 0 sa mga model kung mas maliit ang context window kaysa sa tinatayang haba ng request, iniiwasan ang truncation errors.",
@@ -234,7 +235,7 @@
       "fallbackModelsPlaceholder": "Walang fallback model...",
       "exampleTextsLabel": "Mga halimbawang teksto na hahadlangan (isa kada linya)",
       "exampleTextsPlaceholder": "Paano ako mag-hack...\n...",
-      "similarityThresholdLabel": "Similarity threshold:",
+      "similarityThresholdLabel": "Threshold ng pagkakatulad:",
       "judgeModelPlaceholder": "Piliin ang judge model...",
       "allowedTopicsLabel": "Pinapayagang mga topiko (natural na wika)",
       "allowedTopicsPlaceholder": "Suporta sa customer para sa mga produktong software. Technical troubleshooting. Mga tanong sa billing.",
@@ -296,7 +297,7 @@
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Subscription OAuth Token",
-        "authFilePathLabel": "Auth file path",
+        "authFilePathLabel": "Path ng auth file",
         "oauthTokenPlaceholder": "sk-ant-oat01-…",
         "authFilePathPlaceholder": "~/.codex/auth.json (default)",
         "anthropicTitle": "Gamitin ang iyong Claude Pro/Max subscription.",
@@ -350,14 +351,14 @@
       "policyType": {
         "llm": "AI Routing",
         "rateLimit": "Rate Limit",
-        "budgetRemaining": "Budget Remaining",
+        "budgetRemaining": "Natitirang Budget",
         "semanticIntent": "Semantic Intent",
-        "modelPreference": "Model Preference"
+        "modelPreference": "Kagustuhan ng Model"
       },
       "rawDetails": "raw details",
-      "technicalDetails": "technical details",
+      "technicalDetails": "detalye sa teknolohiya",
       "systemPrompt": "system prompt",
-      "responseText": "response text",
+      "responseText": "teksto ng tugon",
       "responseJson": "response JSON",
       "cacheEmbeddingCall": "CACHE EMBEDDING CALL",
       "fallbackAttempt": "fallback #{{attempt}}",
@@ -619,7 +620,8 @@
       "heading": "Wika",
       "description": "Piliin ang wikang gagamitin sa pagpapakita ng dashboard.",
       "languageLabel": "Wika",
-      "saved": "Na-save ang kagustuhan sa wika."
+      "saved": "Na-save ang kagustuhan sa wika.",
+      "saveError": "Hindi ma-save ang iyong preference sa wika. Bumalik sa nakaraan."
     }
   },
   "settings": {
@@ -649,11 +651,11 @@
       },
       "runtime": {
         "heading": "Mga Runtime Setting",
-        "logLevel": "Log Level",
+        "logLevel": "Antas ng Log",
         "logLevelHint": "Kontrolado ang detalye ng mga log ng service.",
         "publicUrl": "Public URL",
         "publicUrlHint": "Base URL kung saan naaabot ang service mula sa mga panlabas na client (hal. <code>http://192.168.1.10:3000</code>). Ginagamit sa seksyong <strong>Paano magkonekta</strong> ng bawat router. Kapaki-pakinabang kung ang dashboard ay tumatakbo sa ibang makina o port kaysa sa service.",
-        "usageRetention": "Usage Retention",
+        "usageRetention": "Paggamit ng Retention",
         "noLimit": "Walang limitasyon",
         "maxAgeDays": "Max na edad (araw)",
         "maxSizeMb": "Max na laki (MB)",
@@ -750,32 +752,32 @@
       "formUpdatedHint": "Na-update ang form — i-save upang ilapat.",
       "hmacSigningKeyPlaceholder": "HMAC signing key",
       "perms": {
-        "routerRead": "Routers – Read",
-        "routerWrite": "Routers – Write",
-        "modelRead": "Models – Read",
-        "modelWrite": "Models – Write",
-        "userRead": "Users – Read",
-        "userWrite": "Users – Write",
-        "reportRead": "Reports – Read",
-        "settingsRead": "Settings – Read",
-        "settingsWrite": "Settings – Write",
-        "notificationWrite": "Notifications – Write",
-        "tokenRead": "Tokens – Read",
-        "tokenWrite": "Tokens – Write",
-        "roleWrite": "Roles – Write",
-        "auditRead": "Audit Log – Read",
-        "modulesRead": "Modules – Read",
-        "modulesManage": "Modules – Manage",
-        "connectionsRead": "Connections – Read",
-        "connectionsManage": "Connections – Manage",
-        "resilienceRead": "Resilience – Read",
-        "resilienceManage": "Resilience – Manage",
-        "profilesRead": "Routing Profiles – Read",
-        "profilesManage": "Routing Profiles – Manage",
-        "optimizersRead": "Optimizers – Read",
-        "optimizersManage": "Optimizers – Manage",
-        "experimentsRead": "Experiments – Read",
-        "experimentsManage": "Experiments – Manage"
+        "routerRead": "Routers – Basahin",
+        "routerWrite": "Routers – Isulat",
+        "modelRead": "Models – Basahin",
+        "modelWrite": "Models – Isulat",
+        "userRead": "Mga Gumagamit – Basahin",
+        "userWrite": "Mga Gumagamit – Isulat",
+        "reportRead": "Mga Ulat – Basahin",
+        "settingsRead": "Mga Pagpipilian – Basahin",
+        "settingsWrite": "Mga Pagpipilian – Isulat",
+        "notificationWrite": "Mga Notipikasyon – Isulat",
+        "tokenRead": "Mga Token – Basahin",
+        "tokenWrite": "Mga Token – Isulat",
+        "roleWrite": "Mga Papel – Isulat",
+        "auditRead": "Audit Log – Basahin",
+        "modulesRead": "Mga Module – Basahin",
+        "modulesManage": "Mga Module – Pamahalaan",
+        "connectionsRead": "Mga Koneksyon – Basahin",
+        "connectionsManage": "Mga Koneksyon – Pamahalaan",
+        "resilienceRead": "Resilience – Basahin",
+        "resilienceManage": "Resilience – Pamahalaan",
+        "profilesRead": "Mga Profil ng Routing – Basahin",
+        "profilesManage": "Mga Profil ng Routing – Pamahalaan",
+        "optimizersRead": "Mga Optimizer – Basahin",
+        "optimizersManage": "Mga Optimizer – Pamahalaan",
+        "experimentsRead": "Mga Eksperimento – Basahin",
+        "experimentsManage": "Mga Eksperimento – Pamahalaan"
       },
       "targetsHint": {
         "fixedEndpoint": "Para sa uring channel na ito, hindi binabago ng mga target ang paghahatid (naayos ang endpoint). Pinipilian lang nila kung aling mga kaganapan ang naitatala sa audit trail kada tatanggap.",
@@ -800,8 +802,8 @@
       "fields": {
         "dashboardHint": "Ipinapadala ang mga tumugmang kaganapan sa in-app notification inbox. Hindi kinakailangan ang kredensyal.",
         "labels": {
-          "fromAddress": "From Address",
-          "fromName": "From Name",
+          "fromAddress": "Mula sa Address",
+          "fromName": "Pangalan Mula Sa",
           "host": "Host",
           "port": "Port",
           "tls": "TLS/SSL",
@@ -945,7 +947,7 @@
         }
       },
       "sendTest": "Magpadala ng test",
-      "fromAddress": "From Address",
+      "fromAddress": "Mula sa Address",
       "individualUsers": "Mga indibidwal na user",
       "host": "Host",
       "port": "Port",
@@ -990,7 +992,7 @@
       "traces": {
         "label": "I-export ang mga trace ng request",
         "description": "Ipinapadala ang kumpletong trace ng bawat naiproxy na request: bawat yugto, bawat modyul na nagsalita, at mga prompt at sagot para sa mga proyekto na sumang-ayon.",
-        "sampleRateLabel": "Sample rate",
+        "sampleRateLabel": "Dalas ng sample",
         "sampleRateHint": "Ang 1 ay nag-export ng bawat request, ang 0.1 ay isa sa sampu."
       },
       "optional": "(opsyonal)",
@@ -1093,15 +1095,15 @@
         "application": "Application",
         "runtime": "Runtime",
         "storage": "Storage",
-        "softwareUpdate": "Software Update"
+        "softwareUpdate": "Update ng Software"
       },
       "labels": {
         "version": "Bersyon",
         "uptime": "Uptime",
         "nodeVersion": "Node.js",
         "platform": "Platform",
-        "configDir": "Config directory",
-        "dataDir": "Data directory",
+        "configDir": "Direktoryong configuration",
+        "dataDir": "Direktoryong data",
         "currentVersion": "Kasalukuyang bersyon",
         "availableVersion": "Available na bersyon",
         "upToDate": "Napapanahon",
@@ -1142,10 +1144,10 @@
       "security": "Seguridad",
       "notifications": "Mga Notipikasyon",
       "integrations": "Mga Integration",
-      "catalog": "Provider Catalog",
+      "catalog": "Catalog ng Provider",
       "users": "Mga User",
       "roles": "Mga Role",
-      "audit": "Audit Log",
+      "audit": "Log ng Audit",
       "about": "Tungkol"
     }
   },
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} na router",
       "newRouter": "Bagong Router",
+      "newOrchestrator": "Bagong Orchestrator",
+      "newPassthrough": "Bagong Passthrough",
       "empty": "Walang router pa.",
       "emptyFiltered": "Walang router na ganitong uri.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Burahin ang router na ito?",
       "errors": {
         "deleteFailed": "Error sa pagbura ng router"
-      },
-      "newOrchestrator": "Bagong Orchestrator",
-      "newPassthrough": "Bagong Passthrough"
+      }
     },
     "layout": {
       "notFound": "Hindi natagpuan ang router",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Bumalik sa Mga Router",
       "backToRoutersTitle": "Bumalik sa mga router",
       "newRouter": "Bagong Router",
+      "newKind": "Bagong {{kind}}",
       "loading": "Nag-lo-load...",
       "routerId": "Router ID:",
-      "saveFirstHint": "I-save muna ang router upang mabuksan ang tab na ito",
-      "newKind": "Bagong {{kind}}"
+      "saveFirstHint": "I-save muna ang router upang mabuksan ang tab na ito"
     },
     "dashboard": {
       "period": "Panahon",
@@ -1209,14 +1211,14 @@
         "callCount_other": "{{count}} tawag",
         "latency": "Latency",
         "medianP95": "median · p95 {{value}}",
-        "ttft": "Time to first token",
+        "ttft": "Oras hanggang sa unang token",
         "notMeasured": "hindi nasukat sa mga tawag na ito",
         "reliability": "Kaasahan",
         "errorsAndBlocked": "{{errors}} error · {{blocked}} nahadlangan"
       },
       "tokens": {
-        "input": "Input tokens:",
-        "output": "Output tokens:",
+        "input": "Mga input token:",
+        "output": "Mga output token:",
         "fromCache": "Mula sa cache:",
         "cacheSaved": "({{amount}} naitipid)"
       },
@@ -1224,7 +1226,7 @@
         "heading": "Kung napunta ang lahat sa isang model",
         "empty": "Magdagdag ng target model sa router na ito upang makita ang paghambing.",
         "columns": {
-          "targetModel": "Target model",
+          "targetModel": "Target na modelo",
           "wouldHaveCost": "Sana gastos",
           "saved": "Naitipid"
         },
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, walang <code>/v1</code>: idinadagdag ito ng SDK.",
         "curl": "curl",
-        "curlHint": "Suriin ang koneksyon nang walang mag-i-install, pagkatapos hanapin ang tawag sa <usageLink>Paggamit</usageLink>."
+        "curlHint": "Suriin ang koneksyon nang walang mag-i-install, pagkatapos hanapin ang tawag sa <usageLink>Paggamit</usageLink>.",
+        "passthrough": {
+          "heading": "Paano kumonekta",
+          "intro": "Ang Passthrough ay nagpapadala ng bawat request na walang pagbabago — gamitin ang <strong>iyong sariling</strong> API key ng upstream provider bilang API key, hindi kailanman ang Routerly token. Ang Routerly ay hindi nagsisiguro o naglalabas ng kredensyal para sa router na ito; anuman ang ipinapadala ng client ay napupunta direkta sa provider.",
+          "noLimits": "Ang mga budget at limit ay hindi naaangkop sa router na ito: ang gastos ng Passthrough traffic ay hindi kilala, kaya hindi ito kailanman sinusuri o binibilang laban sa anumang spend limit.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — walang <code>/v1</code> suffix, ang SDK ay patuloy na nagdadagdag ng sariling path na eksakto kung paano laban sa tunay na OpenAI API.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — ang SDK ay nagdadagdag pa rin ng <code>/v1/messages</code> mismo, eksakto kung paano laban sa tunay na Anthropic API."
+        }
       },
       "form": {
         "kind": "Uri",
         "kindFixedHint": "Naayos kapag nagawa na ang router.",
         "routerName": "Pangalan ng Router",
         "routerNamePlaceholder": "Aking App",
+        "passthroughPath": "Landas",
+        "passthroughPathHint": "Nagiging bahagi ng URL na tinatawag ng mga kliyente: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Mga advanced na setting",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "Kung hindi nagpapadala ang model ng unang response byte sa loob ng oras na ito, ihihinto ito ng Routerly at susubukan ang susunod na kandidato. Hindi nililimitahan ang kabuuang tagal ng response. Itakda sa 0 upang hintayin kung magkano ang gugugol ng provider.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Itala ang mga prompt at sagot",
         "saveChanges": "I-save ang mga Pagbabago",
         "createRouter": "Gumawa ng Router",
-        "passthroughPath": "Landas",
-        "passthroughPathHint": "Nagiging bahagi ng URL na tinatawag ng mga kliyente: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Lumikha ng Orchestrator",
         "createPassthrough": "Lumikha ng Passthrough"
       }
@@ -1493,8 +1504,8 @@
         "limitMetric": {
           "cost": "Gastos (USD)",
           "calls": "Mga Request",
-          "input_tokens": "Input tokens",
-          "output_tokens": "Output tokens",
+          "input_tokens": "Mga input token",
+          "output_tokens": "Mga output token",
           "total_tokens": "Kabuuang tokens"
         },
         "period": {
@@ -2179,7 +2190,7 @@
       "totpFailed": "Nabigo ang beripikasyon ng 2FA"
     },
     "totp": {
-      "title": "Two-Factor Authentication",
+      "title": "Dalawang-Hakbang na Pagpapatunay",
       "backupPrompt": "Ilagay ang backup code.",
       "appPrompt": "Ilagay ang 6-digit code mula sa iyong authenticator app.",
       "backupCodeLabel": "Backup Code",

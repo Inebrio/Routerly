@@ -8,11 +8,15 @@
     "themeCycle": {
       "title": "테마: {{theme}}"
     },
+    "language": {
+      "label": "언어",
+      "saveError": "언어를 저장할 수 없습니다. 이전 설정으로 되돌렸습니다."
+    },
     "sidebar": {
       "expand": "사이드바 확장",
       "collapse": "사이드바 축소"
     },
-    "tagline": "One gateway. Any AI model. Total control.",
+    "tagline": "하나의 게이트웨이. 모든 AI 모델. 완전한 제어.",
     "nav": {
       "overview": "개요",
       "providers": "제공업체",
@@ -40,9 +44,6 @@
       "telemetryLink": "무엇이 전송되나요?",
       "telemetryYes": "네, 도움을 드릴게요",
       "telemetryNo": "괜찮습니다"
-    },
-    "language": {
-      "label": "언어"
     }
   },
   "common": {
@@ -354,10 +355,10 @@
         "semanticIntent": "의미론적 의도",
         "modelPreference": "모델 기본 설정"
       },
-      "rawDetails": "raw details",
-      "technicalDetails": "technical details",
-      "systemPrompt": "system prompt",
-      "responseText": "response text",
+      "rawDetails": "원본 세부정보",
+      "technicalDetails": "기술 세부정보",
+      "systemPrompt": "시스템 프롬프트",
+      "responseText": "응답 텍스트",
       "responseJson": "response JSON",
       "cacheEmbeddingCall": "캐시 임베딩 호출",
       "fallbackAttempt": "대체 #{{attempt}}",
@@ -378,7 +379,7 @@
       "noRankingData": "순위 데이터 없음(기록이 손상되었거나 이전 버전일 수 있음)",
       "policyScores": "정책 점수",
       "weight": "가중치 {{value}}",
-      "allScores": "all scores",
+      "allScores": "모든 점수",
       "noPolicyData": "정책 데이터 없음(기록이 손상되었거나 이전 버전일 수 있음)",
       "requestGuardrailBlocked": "요청 가드레일 차단됨",
       "requestGuardrailTriggered": "요청 가드레일 트리거됨",
@@ -395,13 +396,13 @@
       "piiScrubbed": "개인정보 제거됨",
       "piiScanned": "개인정보 스캔됨({{target}})",
       "policies": "policies",
-      "entityTypes": "entity types",
-      "customPatterns": "custom patterns",
+      "entityTypes": "엔티티 유형",
+      "customPatterns": "사용자 정의 패턴",
       "scanned": "scanned",
       "redacted": "redacted",
       "took": "took",
       "ms": "{{value}} ms",
-      "entityTypesScanned": "entity types scanned",
+      "entityTypesScanned": "스캔된 엔티티 유형",
       "guardrailInjection": "가드레일 주입",
       "rules": "규칙",
       "chars": "문자",
@@ -619,7 +620,8 @@
       "heading": "언어",
       "description": "대시보드가 표시되는 언어를 선택하세요.",
       "languageLabel": "언어",
-      "saved": "언어 기본 설정이 저장되었습니다."
+      "saved": "언어 기본 설정이 저장되었습니다.",
+      "saveError": "언어 설정을 저장할 수 없습니다. 이전 설정으로 되돌렸습니다."
     }
   },
   "settings": {
@@ -980,7 +982,7 @@
         },
         "influxdb": {
           "label": "InfluxDB",
-          "description": "push — line protocol"
+          "description": "push — 라인 프로토콜"
         },
         "webhook": {
           "label": "Webhook",
@@ -1156,6 +1158,8 @@
       "count": "1개 라우터",
       "count_other": "{{count}}개 라우터",
       "newRouter": "새 라우터",
+      "newOrchestrator": "새 오케스트레이터",
+      "newPassthrough": "새 패스스루",
       "empty": "아직 라우터가 없습니다.",
       "emptyFiltered": "이 유형의 라우터가 없습니다.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "이 라우터를 삭제하시겠어요?",
       "errors": {
         "deleteFailed": "라우터 삭제 오류"
-      },
-      "newOrchestrator": "새 오케스트레이터",
-      "newPassthrough": "새 패스스루"
+      }
     },
     "layout": {
       "notFound": "라우터를 찾을 수 없습니다",
@@ -1191,10 +1193,10 @@
       "backToRouters": "라우터로 돌아가기",
       "backToRoutersTitle": "라우터로 돌아가기",
       "newRouter": "새 라우터",
+      "newKind": "새 {{kind}}",
       "loading": "로드 중...",
       "routerId": "라우터 ID:",
-      "saveFirstHint": "이 탭을 잠금 해제하려면 먼저 라우터를 저장하세요",
-      "newKind": "새 {{kind}}"
+      "saveFirstHint": "이 탭을 잠금 해제하려면 먼저 라우터를 저장하세요"
     },
     "dashboard": {
       "period": "기간",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "기본 URL <code>{{baseUrl}}</code>, <code>/v1</code> 제외: SDK가 추가합니다.",
         "curl": "curl",
-        "curlHint": "아무것도 설치하지 않고 배선을 확인한 다음 <usageLink>사용량</usageLink>에서 호출을 찾으세요."
+        "curlHint": "아무것도 설치하지 않고 배선을 확인한 다음 <usageLink>사용량</usageLink>에서 호출을 찾으세요.",
+        "passthrough": {
+          "heading": "연결 방법",
+          "intro": "Passthrough는 모든 요청을 수정 없이 전달합니다 — <strong>귀사 자신의</strong> 업스트림 공급자 키를 API 키로 사용하고, Routerly 토큰은 절대 사용하지 마세요. Routerly는 이 라우터에 대한 자격 증명을 저장하거나 발급하지 않습니다. 클라이언트가 보내는 모든 것이 공급자에게 직접 전달됩니다.",
+          "noLimits": "예산 및 제한은 이 라우터에 적용되지 않습니다. Passthrough 트래픽의 비용이 불명확하므로 지출 한도에 대해 확인되거나 계산되지 않습니다.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "기본 URL <code>{{url}}</code> — <code>/v1</code> 접미사 없음. SDK는 실제 OpenAI API와 동일하게 자신의 경로를 추가합니다.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "기본 URL <code>{{url}}</code> — SDK는 실제 Anthropic API와 동일하게 <code>/v1/messages</code>를 자신이 추가합니다."
+        }
       },
       "form": {
         "kind": "유형",
         "kindFixedHint": "라우터가 생성되면 고정됩니다.",
         "routerName": "라우터 이름",
         "routerNamePlaceholder": "내 앱",
+        "passthroughPath": "경로",
+        "passthroughPathHint": "클라이언트가 호출하는 URL의 일부가 됩니다: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "고급 설정",
         "ttftTimeout": "TTFT 시간 제한(ms)",
         "ttftTimeoutHint": "모델이 이 시간 내에 첫 응답 바이트를 전송하지 않으면 Routerly은 중단하고 다음 후보를 시도합니다. 총 응답 지속 시간을 제한하지 않습니다. 제공업체가 원하는 만큼 대기하려면 0으로 설정하세요.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "프롬프트 및 답변 캡처",
         "saveChanges": "변경 사항 저장",
         "createRouter": "라우터 생성",
-        "passthroughPath": "경로",
-        "passthroughPathHint": "클라이언트가 호출하는 URL의 일부가 됩니다: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "오케스트레이터 생성",
         "createPassthrough": "패스스루 생성"
       }
@@ -1377,7 +1388,7 @@
         "builtinLabel": "{{label}}(기본 제공)",
         "hint": "단계는 프로필에서 나오며 변경 사항을 따릅니다. 프로필 페이지에서 편집하거나 사용자 정의로 전환하여 복사본에서 시작하세요.",
         "disabledSuffix": "(비활성화됨)",
-        "thresholdSuffix": ", threshold {{threshold}}"
+        "thresholdSuffix": ", 임계값 {{threshold}}"
       },
       "customHint": "끌어서 재정렬하고 토글하여 활성화합니다. 일부 최적화기는 임계값을 사용하여 트리밍 공격성을 제어합니다.",
       "saveButton": "최적화기 저장",
@@ -1408,7 +1419,7 @@
           "after": "이후",
           "saved": "저장됨"
         },
-        "rolledBackNote": "rolled back: the change was rejected as unsafe",
+        "rolledBackNote": "롤백됨: 변경이 안전하지 않아 거부됨",
         "skippedNote": "skipped: {{reason}}",
         "diffEmpty": {
           "rolledBack": "이 단계가 생성한 변경 사항이 롤백되었으므로 프롬프트가 다음 단계에 손상되지 않은 상태로 도달했습니다.",
@@ -1561,7 +1572,7 @@
       },
       "autoRefreshOff": "자동 새로고침 비활성화됨",
       "autoRefreshEvery": "매 {{interval}}마다 자동 새로고침",
-      "lastUpdated": "last updated: {{time}}",
+      "lastUpdated": "마지막 업데이트: {{time}}",
       "refresh": "새로고침",
       "refreshNowTitle": "지금 새로고침",
       "refreshNowButton": "↻ 지금",
@@ -1621,8 +1632,8 @@
         "ariaLabel": "보안 프로필",
         "builtinLabel": "{{label}}(기본 제공)",
         "hint": "가드레일 및 개인정보 정책은 프로필에서 나오며 변경 사항을 따릅니다. 프로필 페이지에서 편집하거나 사용자 정의로 전환하여 복사본에서 시작하세요.",
-        "blockingSuffix": ", blocking",
-        "disabledSuffix": ", disabled",
+        "blockingSuffix": ", 차단 중",
+        "disabledSuffix": ", 비활성화됨",
         "piiRedaction": "개인정보 수정({{target}})"
       },
       "saveButton": "보안 설정 저장",
@@ -1846,7 +1857,7 @@
         "upstreamModelPlaceholder": "예: deepseek-r1, mistral-large-latest",
         "upstreamModelDesc": "업스트림 API 엔드포인트로 전송되는 모델 식별자.",
         "modelPreset": "모델 프리셋",
-        "customModelOption": "— custom model name —",
+        "customModelOption": "— 사용자 정의 모델 이름 —",
         "customModelPlaceholder": "예: my-fine-tuned-model"
       },
       "connection": {
@@ -1986,11 +1997,11 @@
         "time": {
           "never": "never",
           "now": "now",
-          "secondsAgo": "{{count}}s ago",
-          "minutesAgo": "{{count}}m ago",
-          "hoursAgo": "{{count}}h ago",
-          "daysAgo": "{{count}}d ago",
-          "minSec": "{{min}}m {{sec}}s",
+          "secondsAgo": "{{count}}초 전",
+          "minutesAgo": "{{count}}분 전",
+          "hoursAgo": "{{count}}시간 전",
+          "daysAgo": "{{count}}일 전",
+          "minSec": "{{min}}분 {{sec}}초",
           "sec": "{{sec}}s",
           "cooldown": "cooldown {{time}}",
           "lockout": "lockout {{time}}"
@@ -2704,7 +2715,7 @@
       "titleUi": "수동으로 설정합니다",
       "titleConfigFile": "구성 파일을 설정합니다",
       "setValuesIn": "{{configPath}}에서 이 값들을 설정합니다.",
-      "putThisIn": "이를 {{configPath}}에 넣으세요",
+      "putThisIn": "다음에 입력하세요",
       "replaceToken": "바꾸기",
       "withRouterToken": "라우터 토큰으로:",
       "createOne": "하나 만들기",

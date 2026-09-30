@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Тема: {{theme}}"
     },
+    "language": {
+      "label": "Язык",
+      "saveError": "Не удалось сохранить ваш язык. Восстановлен предыдущий."
+    },
     "sidebar": {
       "expand": "Развернуть боковую панель",
       "collapse": "Свернуть боковую панель"
@@ -40,9 +44,6 @@
       "telemetryLink": "Что отправляется?",
       "telemetryYes": "Да, помогу",
       "telemetryNo": "Нет, спасибо"
-    },
-    "language": {
-      "label": "Язык"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Язык",
       "description": "Выберите язык отображения панели инструментов.",
       "languageLabel": "Язык",
-      "saved": "Предпочтение языка сохранено."
+      "saved": "Предпочтение языка сохранено.",
+      "saveError": "Не удалось сохранить предпочтение языка. Восстановлено предыдущее."
     }
   },
   "settings": {
@@ -968,23 +970,23 @@
         },
         "otel": {
           "label": "OpenTelemetry",
-          "description": "push — OTLP HTTP"
+          "description": "отправка — OTLP HTTP"
         },
         "datadog": {
           "label": "Datadog",
-          "description": "push — metrics API"
+          "description": "отправка — metrics API"
         },
         "grafana": {
           "label": "Grafana Cloud",
-          "description": "push — remote_write"
+          "description": "отправка — remote_write"
         },
         "influxdb": {
           "label": "InfluxDB",
-          "description": "push — line protocol"
+          "description": "отправка — line protocol"
         },
         "webhook": {
           "label": "Webhook",
-          "description": "push — HTTP POST JSON"
+          "description": "отправка — HTTP POST JSON"
         }
       },
       "traces": {
@@ -1156,6 +1158,8 @@
       "count": "1 маршрутизатор",
       "count_other": "{{count}} маршрутизаторов",
       "newRouter": "Новый маршрутизатор",
+      "newOrchestrator": "Новый оркестратор",
+      "newPassthrough": "Новый passthrough",
       "empty": "Маршрутизаторы ещё не созданы.",
       "emptyFiltered": "Маршрутизаторы этого типа отсутствуют.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Удалить этот маршрутизатор?",
       "errors": {
         "deleteFailed": "Ошибка удаления маршрутизатора"
-      },
-      "newOrchestrator": "Новый оркестратор",
-      "newPassthrough": "Новый passthrough"
+      }
     },
     "layout": {
       "notFound": "Маршрутизатор не найден",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Вернуться к маршрутизаторам",
       "backToRoutersTitle": "Вернуться к маршрутизаторам",
       "newRouter": "Новый маршрутизатор",
+      "newKind": "Новый {{kind}}",
       "loading": "Загрузка...",
       "routerId": "ID маршрутизатора:",
-      "saveFirstHint": "Сначала сохраните маршрутизатор, чтобы разблокировать эту вкладку",
-      "newKind": "Новый {{kind}}"
+      "saveFirstHint": "Сначала сохраните маршрутизатор, чтобы разблокировать эту вкладку"
     },
     "dashboard": {
       "period": "Период",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Базовый URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK добавляет его.",
         "curl": "curl",
-        "curlHint": "Проверьте подключение без установки чего-либо, затем ищите вызов в <usageLink>использовании</usageLink>."
+        "curlHint": "Проверьте подключение без установки чего-либо, затем ищите вызов в <usageLink>использовании</usageLink>.",
+        "passthrough": {
+          "heading": "Как подключиться",
+          "intro": "Passthrough пересылает каждый запрос без изменений — используйте <strong>собственный</strong> ключ вашего провайдера как ключ API, никогда токен Routerly. Routerly не хранит и не выдает учетные данные для этого маршрутизатора; все, что отправляет клиент, идет прямо к провайдеру.",
+          "noLimits": "Бюджеты и лимиты не применяются к этому маршрутизатору: стоимость трафика Passthrough неизвестна, поэтому она никогда не проверяется и не учитывается в лимитах расходов.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Базовый URL <code>{{url}}</code> — без суффикса <code>/v1</code>, SDK по-прежнему добавляет свой путь точно так же, как с реальным API OpenAI.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Базовый URL <code>{{url}}</code> — SDK по-прежнему добавляет <code>/v1/messages</code> сам, точно так же, как с реальным API Anthropic."
+        }
       },
       "form": {
         "kind": "Вид",
         "kindFixedHint": "Зафиксировано после создания маршрутизатора.",
         "routerName": "Имя маршрутизатора",
         "routerNamePlaceholder": "Моё приложение",
+        "passthroughPath": "Путь",
+        "passthroughPathHint": "Становится частью URL, который вызывают клиенты: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Дополнительные параметры",
         "ttftTimeout": "Тайм-аут TTFT (мс)",
         "ttftTimeoutHint": "Если модель не отправляет первый байт ответа в течение этого времени, Routerly прерывает его и пробует следующего кандидата. Не ограничивает общую длительность ответа. Установите на 0, чтобы ждать столько, сколько требует провайдер.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Захватить подсказки и ответы",
         "saveChanges": "Сохранить изменения",
         "createRouter": "Создать маршрутизатор",
-        "passthroughPath": "Путь",
-        "passthroughPathHint": "Становится частью URL, который вызывают клиенты: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Создать оркестратор",
         "createPassthrough": "Создать passthrough"
       }

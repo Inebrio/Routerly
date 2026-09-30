@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Chủ đề: {{theme}}"
     },
+    "language": {
+      "label": "Ngôn ngữ",
+      "saveError": "Không thể lưu ngôn ngữ của bạn. Đã khôi phục về ngôn ngữ trước đó."
+    },
     "sidebar": {
       "expand": "Mở rộng thanh bên",
       "collapse": "Thu gọn thanh bên"
@@ -40,9 +44,6 @@
       "telemetryLink": "Điều gì được gửi?",
       "telemetryYes": "Có, giúp đỡ tôi",
       "telemetryNo": "Không, cảm ơn"
-    },
-    "language": {
-      "label": "Ngôn ngữ"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Ngôn ngữ",
       "description": "Chọn ngôn ngữ mà bảng điều khiển được hiển thị.",
       "languageLabel": "Ngôn ngữ",
-      "saved": "Tùy chỉnh ngôn ngữ đã được lưu."
+      "saved": "Tùy chỉnh ngôn ngữ đã được lưu.",
+      "saveError": "Không thể lưu tùy chỉnh ngôn ngữ của bạn. Đã khôi phục về tùy chỉnh trước đó."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 bộ định tuyến",
       "count_other": "{{count}} bộ định tuyến",
       "newRouter": "Bộ định tuyến mới",
+      "newOrchestrator": "Orchestrator mới",
+      "newPassthrough": "Passthrough mới",
       "empty": "Chưa có bộ định tuyến nào.",
       "emptyFiltered": "Không có router loại này.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Xóa bộ định tuyến này?",
       "errors": {
         "deleteFailed": "Lỗi khi xóa bộ định tuyến"
-      },
-      "newOrchestrator": "Orchestrator mới",
-      "newPassthrough": "Passthrough mới"
+      }
     },
     "layout": {
       "notFound": "Không tìm thấy bộ định tuyến",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Quay lại bộ định tuyến",
       "backToRoutersTitle": "Quay lại bộ định tuyến",
       "newRouter": "Bộ định tuyến mới",
+      "newKind": "{{kind}} mới",
       "loading": "Đang tải...",
       "routerId": "ID bộ định tuyến:",
-      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này",
-      "newKind": "{{kind}} mới"
+      "saveFirstHint": "Lưu bộ định tuyến trước tiên để mở khóa tab này"
     },
     "dashboard": {
       "period": "Khoảng thời gian",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL cơ sở <code>{{baseUrl}}</code>, không có <code>/v1</code>: SDK thêm nó.",
         "curl": "curl",
-        "curlHint": "Kiểm tra dây kết nối mà không cần cài đặt bất cứ thứ gì, sau đó tìm cuộc gọi trong <usageLink>Mức sử dụng</usageLink>."
+        "curlHint": "Kiểm tra dây kết nối mà không cần cài đặt bất cứ thứ gì, sau đó tìm cuộc gọi trong <usageLink>Mức sử dụng</usageLink>.",
+        "passthrough": {
+          "heading": "Cách kết nối",
+          "intro": "Passthrough chuyển tiếp từng yêu cầu mà không sửa đổi — hãy sử dụng <strong>khóa nhà cung cấp riêng của bạn</strong> làm khóa API, không bao giờ là token Routerly. Routerly không lưu trữ hoặc cấp thông tin xác thực cho bộ định tuyến này; bất cứ điều gì máy khách gửi đi thẳng đến nhà cung cấp.",
+          "noLimits": "Ngân sách và giới hạn không áp dụng cho bộ định tuyến này: chi phí lưu lượng Passthrough không xác định, vì vậy không bao giờ được kiểm tra hoặc tính vào bất kỳ giới hạn chi tiêu nào.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — không có hậu tố <code>/v1</code>, SDK vẫn thêm đường dẫn của nó chính xác như cách nó sẽ làm đối với API OpenAI thực tế.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK vẫn thêm <code>/v1/messages</code> chính nó, chính xác như cách nó sẽ làm đối với API Anthropic thực tế."
+        }
       },
       "form": {
         "kind": "Loại",
         "kindFixedHint": "Đã sửa khi bộ định tuyến được tạo.",
         "routerName": "Tên bộ định tuyến",
         "routerNamePlaceholder": "Ứng dụng của tôi",
+        "passthroughPath": "Đường dẫn",
+        "passthroughPathHint": "Trở thành một phần của URL mà các khách hàng gọi: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Cài đặt nâng cao",
         "ttftTimeout": "Hết giờ TTFT (ms)",
         "ttftTimeoutHint": "Nếu mô hình không gửi byte phản hồi đầu tiên trong khoảng thời gian này, Routerly sẽ hủy bỏ nó và thử ứng cử viên tiếp theo. Không giới hạn tổng thời lượng phản hồi. Đặt thành 0 để chờ đợi bao lâu nhà cung cấp cần.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Nắm bắt nhắc nhở và câu trả lời",
         "saveChanges": "Lưu các thay đổi",
         "createRouter": "Tạo bộ định tuyến",
-        "passthroughPath": "Đường dẫn",
-        "passthroughPathHint": "Trở thành một phần của URL mà các khách hàng gọi: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Tạo Orchestrator",
         "createPassthrough": "Tạo Passthrough"
       }
