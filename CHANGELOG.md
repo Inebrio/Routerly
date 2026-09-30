@@ -44,6 +44,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
 - **Dashboard translations** — Refreshed all 41 non-English catalogs against `en.json`: added missing keys and translated stale English-copy and placeholder-mismatch strings. Machine-translated; spot-check by a native speaker pending.
 - The update checker no longer runs outside a production build — a local dev checkout's `package.json` version is never bumped by semantic-release on `develop`/`main`, so it always lagged the tag a release had just cut, telling the instance actively building that release to update to it. Set `ROUTERLY_FORCE_UPDATE_CHECK=true` to opt back in for testing the checker itself.
 - General-tier config files (`settings.json`, `roles.json`, `updateAnnouncement.json`, etc.) are no longer seeded at the OS umask default (typically `0644`) on their very first write — they now start at `0600` like every other config file, closing the gap that let the startup permission guard's warning reappear on a fresh install. The startup warning and the dashboard banner for files still found unsafe now name the exact fix (`chmod 600 <path>`, or Settings → Security in the dashboard) instead of only saying to fix it "when convenient".
