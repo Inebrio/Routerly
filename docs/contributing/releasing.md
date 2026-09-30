@@ -205,6 +205,12 @@ happens, a maintainer must open and merge a `main` → `develop` pull request
 by hand. Nothing in the pipeline automates this, and nothing detects a
 missed one.
 
+The same applies to the active `release/X.Y.Z` branch: a hotfix that lands on
+`main` must also reach it, otherwise the next feature merged into the release
+branch can reintroduce the regression. A quick check:
+`git merge-base --is-ancestor origin/main origin/release/X.Y.Z` exits non-zero
+when `main` holds commits the release branch lacks.
+
 Forgetting it means the fix never reaches `develop`, the unstable line, and
 it **resurfaces as a regression the next time `develop` is promoted to
 `main`** — the promotion silently reintroduces whatever the fix corrected,
