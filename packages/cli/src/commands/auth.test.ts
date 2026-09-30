@@ -887,6 +887,33 @@ describe('auth whoami', () => {
     expect(mockApi).not.toHaveBeenCalled();
   });
 
+  it('--json prints machine-readable output with language', async () => {
+    mockGetCurrentAccount.mockResolvedValue(baseAccount);
+    mockApi.mockResolvedValueOnce({ id: 'u1', email: 'admin@example.com', roleId: 'admin', language: 'it' });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'auth', 'whoami', '--json']);
+    const out = JSON.parse(lines.join('\n'));
+    expect(out).toMatchObject({ id: 'u1', email: 'admin@example.com', roleId: 'admin', language: 'it', serverUrl: 'http://localhost:3000' });
+  });
+
+  it('--json prints null language when unset', async () => {
+    mockGetCurrentAccount.mockResolvedValue(baseAccount);
+    mockApi.mockResolvedValueOnce({ id: 'u1', email: 'admin@example.com', roleId: 'admin' });
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'auth', 'whoami', '--json']);
+    expect(JSON.parse(lines.join('\n')).language).toBeNull();
+  });
+
+  it('--json exits 1 on stderr when not logged in', async () => {
+    mockGetCurrentAccount.mockResolvedValue(null);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'auth', 'whoami', '--json'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Not logged in'));
+  });
+
   it('exits 1 with "Session expired" on 401', async () => {
     mockGetCurrentAccount.mockResolvedValue(baseAccount);
     mockApi.mockRejectedValueOnce(new ApiError(401, 'Unauthorized'));

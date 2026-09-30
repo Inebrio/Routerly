@@ -44,6 +44,17 @@ describe('user list', () => {
     expect(lines.join('\n')).toContain('alice@example.com');
   });
 
+  it('--json prints only whitelisted fields', async () => {
+    mockApi.mockResolvedValueOnce([{ ...baseUser, language: 'it', passwordHash: 'secret' }, baseUser]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'user', 'list', '--json']);
+    const out = JSON.parse(lines.join('\n'));
+    expect(out[0]).toEqual({ id: 'u1', email: 'alice@example.com', roleId: 'viewer', routerIds: [], language: 'it' });
+    expect(out[1].language).toBeNull();
+    expect(lines.join('\n')).not.toContain('secret');
+  });
+
   it('shows "all" for user with empty routerIds', async () => {
     mockApi.mockResolvedValueOnce([{ ...baseUser, routerIds: [] }]);
     const lines: string[] = [];
