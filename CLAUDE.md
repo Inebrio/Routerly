@@ -186,6 +186,15 @@ Stop and leave the item in Progress with a blocking comment if the item:
 - If the item is too large, create sub-items on Plane (`POST work-items/` with `parent=<id>`), one per verifiable unit of work.
 - At completion: move parent and all necessary children to Testing together. Sub-items that require Carlo's decision go to Backlog, not Progress.
 
+### Bug discovery
+
+If you discover a bug that is out of scope for the current item, create a separate Plane work item immediately:
+
+- Run `plane.sh GET labels/` to find the id of the label named **bug**.
+- Create: `plane.sh POST work-items/ '{"name":"<short description>","state":"<STATE_BACKLOG>","label_ids":["<bug-label-id>"],"priority":"<urgent|high|medium|low>"}'`
+- Post the bug id in a comment on the current item so Carlo has the cross-reference.
+- **Never fold an out-of-scope bug into the current item's DoD.**
+
 ### Headless execution constraints
 
 - **Do not start background agents or background commands.** The headless process terminates background tasks when the turn ends.
