@@ -167,6 +167,16 @@ This section applies when Claude runs headless, launched by `dispatch.sh` via `-
   git checkout develop
   ```
 
+### Missing prerequisites
+
+A missing branch or worktree is not a blocker: fix the cause, then continue. Stop only per Stop rules.
+
+- **Release branch missing on origin**: create it from `origin/develop` (`git branch release/X.Y.Z origin/develop && git push origin release/X.Y.Z`). This does not touch `develop`.
+- **`git branch` fails with `'refs/heads/release' exists`**: a local branch named `release` blocks every `release/*`. If `git merge-base --is-ancestor release origin/develop` holds, delete it with `git branch -d release`.
+- **Worktree or `feature/ROUT-N` missing**: `git worktree add /opt/routerly/worktrees/ROUT-N -b feature/ROUT-N origin/<release-branch>`, then continue inside it.
+- **Prerequisite PR not merged into `develop`**: never merge it. Work from the release branch and list the PR as pending in the Plane comment.
+- Anything else missing: create it if reversible and outside `develop`/`main`; otherwise stop with a blocking comment.
+
 ### Plane
 
 - Use **only** `/opt/routerly/plane.sh METHOD PATH [JSON]`. Never `curl` directly; never read `plane.env`.
