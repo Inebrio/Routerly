@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Bahasa",
+      "saveError": "Tidak dapat menyimpan bahasa Anda. Kembali ke yang sebelumnya."
+    },
     "sidebar": {
       "expand": "Perluas sidebar",
       "collapse": "Lipat sidebar"
@@ -40,9 +44,6 @@
       "telemetryLink": "Apa yang dikirim?",
       "telemetryYes": "Ya, bantu",
       "telemetryNo": "Tidak terima kasih"
-    },
-    "language": {
-      "label": "Bahasa"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Bahasa",
       "description": "Pilih bahasa untuk menampilkan dashboard.",
       "languageLabel": "Bahasa",
-      "saved": "Preferensi bahasa disimpan."
+      "saved": "Preferensi bahasa disimpan.",
+      "saveError": "Tidak dapat menyimpan pilihan bahasa Anda. Kembali ke yang sebelumnya."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} router",
       "newRouter": "Router Baru",
+      "newOrchestrator": "Orchestrator Baru",
+      "newPassthrough": "Passthrough Baru",
       "empty": "Tidak ada router.",
       "emptyFiltered": "Tiada pekeliling jenis ini.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Hapus router ini?",
       "errors": {
         "deleteFailed": "Kesalahan menghapus router"
-      },
-      "newOrchestrator": "Orchestrator Baru",
-      "newPassthrough": "Passthrough Baru"
+      }
     },
     "layout": {
       "notFound": "Router tidak ditemukan",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Kembali ke Router",
       "backToRoutersTitle": "Kembali ke router",
       "newRouter": "Router Baru",
+      "newKind": "{{kind}} Baru",
       "loading": "Memuat...",
       "routerId": "ID Router:",
-      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini",
-      "newKind": "{{kind}} Baru"
+      "saveFirstHint": "Simpan router terlebih dahulu untuk membuka kunci tab ini"
     },
     "dashboard": {
       "period": "Periode",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL dasar <code>{{baseUrl}}</code>, tanpa <code>/v1</code>: SDK menambahkannya.",
         "curl": "curl",
-        "curlHint": "Periksa wiring tanpa menginstal apa pun, lalu cari panggilan di <usageLink>Penggunaan</usageLink>."
+        "curlHint": "Periksa wiring tanpa menginstal apa pun, lalu cari panggilan di <usageLink>Penggunaan</usageLink>.",
+        "passthrough": {
+          "heading": "Cara menyambung",
+          "intro": "Passthrough meneruskan setiap permintaan tanpa perubahan — gunakan <strong>kunci penyedia hulu Anda sendiri</strong> sebagai kunci API, jangan pernah token Routerly. Routerly tidak menyimpan atau mengeluarkan kredensial untuk router ini; apa pun yang klien kirim pergi langsung ke penyedia.",
+          "noLimits": "Anggaran dan batasan tidak berlaku untuk router ini: biaya tidak diketahui untuk lalu lintas Passthrough, jadi tidak pernah diperiksa atau diperhitungkan terhadap batas pengeluaran apa pun.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL Dasar <code>{{url}}</code> — tanpa akhiran <code>/v1</code>, SDK masih menambahkan jalurnya sendiri persis seperti yang dilakukannya terhadap API OpenAI asli.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL Dasar <code>{{url}}</code> — SDK masih menambahkan <code>/v1/messages</code> itu sendiri, persis seperti yang dilakukannya terhadap API Anthropic asli."
+        }
       },
       "form": {
         "kind": "Jenis",
         "kindFixedHint": "Tetap setelah router dibuat.",
         "routerName": "Nama Router",
         "routerNamePlaceholder": "Aplikasi Saya",
+        "passthroughPath": "Laluan",
+        "passthroughPathHint": "Menjadi sebahagian daripada URL yang dipanggil pelanggan: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Pengaturan lanjutan",
         "ttftTimeout": "Timeout TTFT (ms)",
         "ttftTimeoutHint": "Jika model tidak mengirim byte respons pertama dalam waktu ini, Routerly menghentikannya dan mencoba kandidat berikutnya. Tidak membatasi durasi respons total. Atur ke 0 untuk menunggu selama penyedia.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Tangkap prompt dan jawaban",
         "saveChanges": "Simpan Perubahan",
         "createRouter": "Buat Router",
-        "passthroughPath": "Laluan",
-        "passthroughPathHint": "Menjadi sebahagian daripada URL yang dipanggil pelanggan: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Buat Orchestrator",
         "createPassthrough": "Buat Passthrough"
       }
@@ -1467,7 +1478,7 @@
         }
       },
       "edit": {
-        "title": "Edit Token",
+        "title": "Ubah Token",
         "subtitle": "Perbarui label dan penggantian batas per model untuk token ini.",
         "token": "Token",
         "labels": "Label",
@@ -1799,7 +1810,7 @@
       "backToModels": "Kembali ke Model",
       "title": {
         "add": "Tambah Model",
-        "edit": "Edit Model",
+        "edit": "Ubah Model",
         "clone": "Klon Model"
       },
       "subtitle": {
@@ -2753,11 +2764,11 @@
       "openaiBaseUrl": "URL dasar OpenAI",
       "anthropicBaseUrl": "URL dasar Anthropic",
       "apiKey": "Kunci API",
+      "model": "Model",
       "apiKeyDescription": "Token router, dikirim sebagai",
       "or": "atau",
       "createOne": "Buat satu",
       "onRoutersPage": "di halaman Router.",
-      "model": "Model",
       "modelDescription": "memungkinkan Routerly untuk memilih. Id model apa pun dari",
       "modelsLink": "Model",
       "worksToo": "halaman juga berfungsi."

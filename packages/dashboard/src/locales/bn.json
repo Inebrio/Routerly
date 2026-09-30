@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "থিম: {{theme}}"
     },
+    "language": {
+      "label": "ভাষা",
+      "saveError": "আপনার ভাষা সংরক্ষণ করা যায়নি। আগের ভাষায় ফিরে গেছি।"
+    },
     "sidebar": {
       "expand": "সাইডবার প্রসারিত করুন",
       "collapse": "সাইডবার সংকুচিত করুন"
@@ -40,9 +44,6 @@
       "telemetryLink": "কি পাঠানো হয়?",
       "telemetryYes": "হ্যাঁ, সাহায্য করুন",
       "telemetryNo": "না ধন্যবাদ"
-    },
-    "language": {
-      "label": "ভাষা"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "ভাষা",
       "description": "যে ভাষায় ড্যাশবোর্ড প্রদর্শিত হয় তা নির্বাচন করুন।",
       "languageLabel": "ভাষা",
-      "saved": "ভাষা পছন্দ সংরক্ষিত।"
+      "saved": "ভাষা পছন্দ সংরক্ষিত।",
+      "saveError": "আপনার ভাষা পছন্দ সংরক্ষণ করা যায়নি। আগের পছন্দে ফিরে গেছি।"
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 রাউটার",
       "count_other": "{{count}} রাউটার",
       "newRouter": "নতুন রাউটার",
+      "newOrchestrator": "নতুন অর্কেস্ট্রেটর",
+      "newPassthrough": "নতুন পাস-থ্রু",
       "empty": "কোন রাউটার এখনও নেই।",
       "emptyFiltered": "এই ধরনের কোনো রাউটার নেই।",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "এই রাউটার মুছুন?",
       "errors": {
         "deleteFailed": "রাউটার মুছতে ত্রুটি"
-      },
-      "newOrchestrator": "নতুন অর্কেস্ট্রেটর",
-      "newPassthrough": "নতুন পাস-থ্রু"
+      }
     },
     "layout": {
       "notFound": "রাউটার পাওয়া যায় না",
@@ -1191,10 +1193,10 @@
       "backToRouters": "রাউটারে ফিরুন",
       "backToRoutersTitle": "রাউটারে ফিরুন",
       "newRouter": "নতুন রাউটার",
+      "newKind": "নতুন {{kind}}",
       "loading": "লোড করা হচ্ছে...",
       "routerId": "রাউটার আইডি:",
-      "saveFirstHint": "এই ট্যাব আনলক করতে প্রথমে রাউটার সংরক্ষণ করুন",
-      "newKind": "নতুন {{kind}}"
+      "saveFirstHint": "এই ট্যাব আনলক করতে প্রথমে রাউটার সংরক্ষণ করুন"
     },
     "dashboard": {
       "period": "সময়কাল",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "বেস URL <code>{{baseUrl}}</code>, <code>/v1</code> ছাড়াই: SDK এটি যোগ করে।",
         "curl": "curl",
-        "curlHint": "কিছু ইনস্টল না করে সংযুক্তি পরীক্ষা করুন, তারপর <usageLink>ব্যবহার</usageLink> এ কল খুঁজুন।"
+        "curlHint": "কিছু ইনস্টল না করে সংযুক্তি পরীক্ষা করুন, তারপর <usageLink>ব্যবহার</usageLink> এ কল খুঁজুন।",
+        "passthrough": {
+          "heading": "কীভাবে সংযোগ করবেন",
+          "intro": "Passthrough প্রতিটি অনুরোধ অপরিবর্তিত ফরওয়ার্ড করে — <strong>আপনার নিজস্ব</strong> আপস্ট্রিম প্রদানকারীর চাবি API চাবি হিসাবে ব্যবহার করুন, কখনও Routerly টোকেন ব্যবহার করবেন না। Routerly এই রাউটারের জন্য কোনও শংসাপত্র সংরক্ষণ বা জারি করে না; ক্লায়েন্ট যা প্রেরণ করে তা সরাসরি প্রদানকারীর কাছে যায়।",
+          "noLimits": "বাজেট এবং সীমা এই রাউটারের জন্য প্রযোজ্য নয়: Passthrough ট্রাফিকের খরচ অজানা, তাই এটি কখনও কোনও ব্যয় সীমার বিরুদ্ধে পরীক্ষা করা হয় না বা গণনা করা হয় না।",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "বেস URL <code>{{url}}</code> — <code>/v1</code> সাফিক্স নেই, SDK তার নিজের পথ যোগ করে ঠিক যেমনটি বাস্তব OpenAI API এর বিপরীতে করবে।",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "বেস URL <code>{{url}}</code> — SDK স্বয়ং <code>/v1/messages</code> যোগ করে, ঠিক যেমনটি বাস্তব Anthropic API এর বিপরীতে করবে।"
+        }
       },
       "form": {
         "kind": "ধরনের",
         "kindFixedHint": "রাউটার তৈরি করার পরে নির্ধারিত।",
         "routerName": "রাউটার নাম",
         "routerNamePlaceholder": "আমার অ্যাপ",
+        "passthroughPath": "পাথ",
+        "passthroughPathHint": "ক্লায়েন্টরা যে URL কল করে তার অংশ হয়ে ওঠে: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "উন্নত সেটিংস",
         "ttftTimeout": "TTFT টাইম আউট (ms)",
         "ttftTimeoutHint": "যদি একটি মডেল এই সময়ে প্রথম প্রতিক্রিয়া বাইট পাঠায় না, Routerly এটি বাদ দেয় এবং পরবর্তী প্রার্থী চেষ্টা করে। মোট প্রতিক্রিয়া সময় সীমিত করে না। 0 এ সেট করুন প্রদানকারী নেয় পর্যন্ত অপেক্ষা করতে।",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "প্রম্পট এবং উত্তর ক্যাপচার করুন",
         "saveChanges": "পরিবর্তন সংরক্ষণ করুন",
         "createRouter": "রাউটার তৈরি করুন",
-        "passthroughPath": "পাথ",
-        "passthroughPathHint": "ক্লায়েন্টরা যে URL কল করে তার অংশ হয়ে ওঠে: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "অর্কেস্ট্রেটর তৈরি করুন",
         "createPassthrough": "পাস-থ্রু তৈরি করুন"
       }
@@ -2753,11 +2764,11 @@
       "openaiBaseUrl": "OpenAI বেস URL",
       "anthropicBaseUrl": "Anthropic বেস URL",
       "apiKey": "API কী",
+      "model": "মডেল",
       "apiKeyDescription": "একটি রাউটার টোকেন, পাঠানো হয়",
       "or": "বা",
       "createOne": "একটি তৈরি করুন",
       "onRoutersPage": "রাউটার পৃষ্ঠায়।",
-      "model": "মডেল",
       "modelDescription": "Routerly পছন্দ করতে দেয়। যেকোনো মডেল আইডি",
       "modelsLink": "মডেল",
       "worksToo": "পৃষ্ঠা কাজ করে।"

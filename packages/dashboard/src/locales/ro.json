@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Temă: {{theme}}"
     },
+    "language": {
+      "label": "Limbă",
+      "saveError": "Nu s-a putut salva limba dvs. S-a revenit la cea anterioară."
+    },
     "sidebar": {
       "expand": "Extinde bara laterală",
       "collapse": "Restrânge bara laterală"
@@ -40,9 +44,6 @@
       "telemetryLink": "Ce se trimite?",
       "telemetryYes": "Da, ajută",
       "telemetryNo": "Nu, mulțumesc"
-    },
-    "language": {
-      "label": "Limbă"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Limbă",
       "description": "Alege limba în care este afișat panoul de bord.",
       "languageLabel": "Limbă",
-      "saved": "Preferință de limbă salvată."
+      "saved": "Preferință de limbă salvată.",
+      "saveError": "Nu s-a putut salva preferința dvs. de limbă. S-a revenit la cea anterioară."
     }
   },
   "settings": {
@@ -836,7 +838,7 @@
         "smtpHostPlaceholder": "smtp.example.com",
         "smtpTlsLabel": "Utilizează TLS / SSL",
         "smtpTlsOnHint": "(port 465 — SSL direct)",
-        "smtpTlsOffHint": "(port 587 — STARTTLS)",
+        "smtpTlsOffHint": "(portul 587 — STARTTLS)",
         "sesRegionPlaceholder": "us-east-1",
         "sesIamHint": "Lăsați credențialele goale pentru a utiliza rolul instanței IAM.",
         "sendgridApiKeyPlaceholder": "SG.…",
@@ -968,7 +970,7 @@
         },
         "otel": {
           "label": "OpenTelemetry",
-          "description": "push — OTLP HTTP"
+          "description": "trimitere — OTLP HTTP"
         },
         "datadog": {
           "label": "Datadog",
@@ -976,7 +978,7 @@
         },
         "grafana": {
           "label": "Grafana Cloud",
-          "description": "push — remote_write"
+          "description": "trimitere — remote_write"
         },
         "influxdb": {
           "label": "InfluxDB",
@@ -984,7 +986,7 @@
         },
         "webhook": {
           "label": "Webhook",
-          "description": "push — HTTP POST JSON"
+          "description": "trimitere — HTTP POST JSON"
         }
       },
       "traces": {
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} rutere",
       "newRouter": "Router nou",
+      "newOrchestrator": "Noul Orchestrator",
+      "newPassthrough": "Noul Passthrough",
       "empty": "Niciun router încă.",
       "emptyFiltered": "Nu sunt rutere de acest tip.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Ștergi acest router?",
       "errors": {
         "deleteFailed": "Eroare la ștergerea router-ului"
-      },
-      "newOrchestrator": "Noul Orchestrator",
-      "newPassthrough": "Noul Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router nu găsit",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Înapoi la rutere",
       "backToRoutersTitle": "Înapoi la rutere",
       "newRouter": "Router nou",
+      "newKind": "Noul {{kind}}",
       "loading": "Se încarcă...",
       "routerId": "ID router:",
-      "saveFirstHint": "Salvează mai întâi routerul pentru a debloca această filă",
-      "newKind": "Noul {{kind}}"
+      "saveFirstHint": "Salvează mai întâi routerul pentru a debloca această filă"
     },
     "dashboard": {
       "period": "Perioadă",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL de bază <code>{{baseUrl}}</code>, fără <code>/v1</code>: SDK-ul adaugă-l.",
         "curl": "curl",
-        "curlHint": "Verifică cablajul fără a instala nimic, apoi caută apelul în <usageLink>Utilizare</usageLink>."
+        "curlHint": "Verifică cablajul fără a instala nimic, apoi caută apelul în <usageLink>Utilizare</usageLink>.",
+        "passthrough": {
+          "heading": "Cum să vă conectați",
+          "intro": "Passthrough redirecționează fiecare cerere nemodificată — utilizați <strong>cheia propriului</strong> furnizor upstream ca cheie API, niciodată un token Routerly. Routerly nu stochează și nu emite o acreditare pentru acest router; tot ceea ce trimite clientul merge direct la furnizor.",
+          "noLimits": "Bugetele și limitele nu se aplică acestui router: costul traficului Passthrough este necunoscut, deci nu este niciodată verificat sau numărat în raport cu nicio limită de cheltuieli.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL de bază <code>{{url}}</code> — fără sufix <code>/v1</code>, SDK-ul adaugă în continuare propria cale exact cum ar face-o împotriva API OpenAI real.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL de bază <code>{{url}}</code> — SDK-ul adaugă în continuare <code>/v1/messages</code> el însuși, exact cum ar face-o împotriva API Anthropic real."
+        }
       },
       "form": {
         "kind": "Tip",
         "kindFixedHint": "Fix o dată ce routerul este creat.",
         "routerName": "Nume router",
         "routerNamePlaceholder": "Aplicația mea",
+        "passthroughPath": "Cale",
+        "passthroughPathHint": "Devine parte din URL-ul pe care îl apelează clienții: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Setări avansate",
         "ttftTimeout": "Timeout TTFT (ms)",
         "ttftTimeoutHint": "Dacă un model nu trimite octetul de răspuns din prima în această durată, Routerly o anulează și încearcă următorul candidat. Nu limitează durata răspunsului total. Setează la 0 pentru a aștepta cât ia furnizorul.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Captură instrucțiuni și răspunsuri",
         "saveChanges": "Salvează modificări",
         "createRouter": "Creează router",
-        "passthroughPath": "Cale",
-        "passthroughPathHint": "Devine parte din URL-ul pe care îl apelează clienții: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Creează Orchestrator",
         "createPassthrough": "Creează Passthrough"
       }

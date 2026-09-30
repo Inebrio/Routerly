@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Téma: {{theme}}"
     },
+    "language": {
+      "label": "Jazyk",
+      "saveError": "Nepodařilo se uložit váš jazyk. Vráceno na předchozí."
+    },
     "sidebar": {
       "expand": "Rozbalit postranní panel",
       "collapse": "Sbalit postranní panel"
@@ -40,9 +44,6 @@
       "telemetryLink": "Co se odesílá?",
       "telemetryYes": "Ano, pomůžu",
       "telemetryNo": "Ne, děkuji"
-    },
-    "language": {
-      "label": "Jazyk"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Jazyk",
       "description": "Vyberte jazyk, ve kterém se zobrazuje dashboard.",
       "languageLabel": "Jazyk",
-      "saved": "Předvolba jazyka byla uložena."
+      "saved": "Předvolba jazyka byla uložena.",
+      "saveError": "Nepodařilo se uložit vaši jazykovou preferenci. Vráceno na předchozí."
     }
   },
   "settings": {
@@ -957,7 +959,7 @@
       "method": "Metoda",
       "botToken": "Bot Token",
       "channelId": "ID kanálu",
-      "webhookUrl": "Webhook URL",
+      "webhookUrl": "URL Webhooku",
       "integrationKey": "Klíč integrace"
     },
     "integrations": {
@@ -1014,7 +1016,7 @@
           "site": "Web"
         },
         "grafana": {
-          "remoteWriteUrl": "Remote Write URL",
+          "remoteWriteUrl": "URL vzdáleného zápisu",
           "description": "Naleznete v <strong>Grafana Cloud → Connections → Prometheus → Details</strong> jako „Remote Write Endpoint“.",
           "username": "Uživatelské jméno / Stack ID",
           "usernameHint": "Číselné ID zobrazené v podrobnostech připojení Prometheus.",
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} routerů",
       "newRouter": "Nový router",
+      "newOrchestrator": "Nový Orchestrator",
+      "newPassthrough": "Nový Passthrough",
       "empty": "Zatím žádné routery.",
       "emptyFiltered": "Žádné routery tohoto typu.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Smazat tento router?",
       "errors": {
         "deleteFailed": "Chyba při mazání routeru"
-      },
-      "newOrchestrator": "Nový Orchestrator",
-      "newPassthrough": "Nový Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router nenalezen",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Zpět na Routery",
       "backToRoutersTitle": "Zpět na routery",
       "newRouter": "Nový router",
+      "newKind": "Nový {{kind}}",
       "loading": "Načítání...",
       "routerId": "ID routeru:",
-      "saveFirstHint": "Nejprve router uložte pro odemčení této karty",
-      "newKind": "Nový {{kind}}"
+      "saveFirstHint": "Nejprve router uložte pro odemčení této karty"
     },
     "dashboard": {
       "period": "Období",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Základní URL <code>{{baseUrl}}</code>, bez <code>/v1</code>: SDK jej přidá sám.",
         "curl": "curl",
-        "curlHint": "Zkontrolujte zapojení bez instalace čehokoli, poté vyhledejte volání v <usageLink>Využití</usageLink>."
+        "curlHint": "Zkontrolujte zapojení bez instalace čehokoli, poté vyhledejte volání v <usageLink>Využití</usageLink>.",
+        "passthrough": {
+          "heading": "Jak se připojit",
+          "intro": "Passthrough předává každý požadavek beze změny — použijte <strong>svůj vlastní</strong> klíč poskytovatele v horním toku jako API klíč, nikdy nepoužívejte token Routerly. Routerly neukládá ani nevydává pověření pro tento směrovač; vše, co klient pošle, jde přímo poskytovateli.",
+          "noLimits": "Rozpočty a limity se na tento směrovač nevztahují: cena provozu Passthrough je neznámá, takže se nikdy nekontroluje ani se nezapočítává do žádného limitu výdajů.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Základní URL <code>{{url}}</code> — bez přípony <code>/v1</code>, SDK stále přidává vlastní cestu přesně tak, jako by to dělal se skutečným OpenAI API.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Základní URL <code>{{url}}</code> — SDK stále sám přidává <code>/v1/messages</code>, přesně tak, jak by to dělal se skutečným Anthropic API."
+        }
       },
       "form": {
         "kind": "Typ",
         "kindFixedHint": "Pevně stanoveno po vytvoření routeru.",
         "routerName": "Název routeru",
         "routerNamePlaceholder": "Moje aplikace",
+        "passthroughPath": "Cesta",
+        "passthroughPathHint": "Stává se součástí URL adresy, kterou volají klienti: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Pokročilá nastavení",
         "ttftTimeout": "Časový limit TTFT (ms)",
         "ttftTimeoutHint": "Pokud model neodešle první bajt odpovědi v tomto čase, Routerly jej přeruší a zkusí dalšího kandidáta. Nemá vliv na celkovou dobu odpovědi. Nastavte na 0, pokud chcete čekat, jak dlouho poskytovatel potřebuje.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Zaznamenávat prompty a odpovědi",
         "saveChanges": "Uložit změny",
         "createRouter": "Vytvořit router",
-        "passthroughPath": "Cesta",
-        "passthroughPathHint": "Stává se součástí URL adresy, kterou volají klienti: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Vytvořit Orchestrator",
         "createPassthrough": "Vytvořit Passthrough"
       }

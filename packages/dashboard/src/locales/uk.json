@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Тема: {{theme}}"
     },
+    "language": {
+      "label": "Мова",
+      "saveError": "Не вдалося зберегти вашу мову. Повернено до попередньої."
+    },
     "sidebar": {
       "expand": "Розгорнути панель",
       "collapse": "Згорнути панель"
@@ -40,9 +44,6 @@
       "telemetryLink": "Що надсилається?",
       "telemetryYes": "Так, допомогти",
       "telemetryNo": "Ні, дякую"
-    },
-    "language": {
-      "label": "Мова"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Мова",
       "description": "Виберіть мову, на якій буде відображатися інформаційна панель.",
       "languageLabel": "Мова",
-      "saved": "Переважу мови збережено."
+      "saved": "Переважу мови збережено.",
+      "saveError": "Не вдалося зберегти ваші переваги мови. Повернено до попередніх."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 маршрутизатор",
       "count_other": "{{count}} маршрутизаторів",
       "newRouter": "Новий маршрутизатор",
+      "newOrchestrator": "Новий оркестратор",
+      "newPassthrough": "Новий passthrough",
       "empty": "Маршрутизаторів немає.",
       "emptyFiltered": "Маршрутизаторів цього типу не знайдено.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Видалити цей маршрутизатор?",
       "errors": {
         "deleteFailed": "Помилка видалення маршрутизатора"
-      },
-      "newOrchestrator": "Новий оркестратор",
-      "newPassthrough": "Новий passthrough"
+      }
     },
     "layout": {
       "notFound": "Маршрутизатор не знайдено",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Назад до маршрутизаторів",
       "backToRoutersTitle": "Назад до маршрутизаторів",
       "newRouter": "Новий маршрутизатор",
+      "newKind": "Новий {{kind}}",
       "loading": "Завантаження...",
       "routerId": "ID маршрутизатора:",
-      "saveFirstHint": "Спочатку збережіть маршрутизатор, щоб розблокувати цю вкладку",
-      "newKind": "Новий {{kind}}"
+      "saveFirstHint": "Спочатку збережіть маршрутизатор, щоб розблокувати цю вкладку"
     },
     "dashboard": {
       "period": "Період",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Базова URL <code>{{baseUrl}}</code>, без <code>/v1</code>: SDK додає це.",
         "curl": "curl",
-        "curlHint": "Перевірте дроти без встановлення чого-небудь, потім шукайте виклик в <usageLink>Usage</usageLink>."
+        "curlHint": "Перевірте дроти без встановлення чого-небудь, потім шукайте виклик в <usageLink>Usage</usageLink>.",
+        "passthrough": {
+          "heading": "Як підключитися",
+          "intro": "Passthrough передає кожен запит без змін — використовуйте <strong>ваш власний</strong> ключ постачальника як ключ API, ніколи токен Routerly. Routerly не зберігає та не видає облікові дані для цього маршрутизатора; що б клієнт не надіслав, йде прямо до постачальника.",
+          "noLimits": "Бюджети та обмеження не застосовуються до цього маршрутизатора: вартість Passthrough трафіку невідома, тому ніколи не перевіряється та не враховується для будь-яких обмежень витрат.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — без суфіксу <code>/v1</code>, SDK все ще додає свій власний шлях точно так, як це було б проти справжнього OpenAI API.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK все ще додає <code>/v1/messages</code> сам, точно так, як це було б проти справжнього Anthropic API."
+        }
       },
       "form": {
         "kind": "Тип",
         "kindFixedHint": "Закріплено, коли маршрутизатор створено.",
         "routerName": "Назва маршрутизатора",
         "routerNamePlaceholder": "Моя програма",
+        "passthroughPath": "Шлях",
+        "passthroughPathHint": "Стає частиною URL, яку викликають клієнти: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Передові параметри",
         "ttftTimeout": "Тайм-аут TTFT (мс)",
         "ttftTimeoutHint": "Якщо модель не надсилає перший байт відповіді протягом цього часу, Routerly перериває це та пробує наступного кандидата. Не обмежує загальну тривалість відповіді. Встановіть це на 0, щоб чекати, скільки постачальник приймає.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Захопіть підказки та відповіді",
         "saveChanges": "Зберегти зміни",
         "createRouter": "Створити маршрутизатор",
-        "passthroughPath": "Шлях",
-        "passthroughPathHint": "Стає частиною URL, яку викликають клієнти: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Створити оркестратор",
         "createPassthrough": "Створити passthrough"
       }

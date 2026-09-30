@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Motív: {{theme}}"
     },
+    "language": {
+      "label": "Jazyk",
+      "saveError": "Nepodarilo sa uložiť váš jazyk. Obnovený na predchádzajúci."
+    },
     "sidebar": {
       "expand": "Rozšíriť bočný panel",
       "collapse": "Zbaliť bočný panel"
@@ -40,9 +44,6 @@
       "telemetryLink": "Čo sa posiela?",
       "telemetryYes": "Áno, pomôcť",
       "telemetryNo": "Nie, ďakujem"
-    },
-    "language": {
-      "label": "Jazyk"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Jazyk",
       "description": "Vyberte jazyk, v ktorom sa dashboard zobrazuje.",
       "languageLabel": "Jazyk",
-      "saved": "Preferencie jazyka uložené."
+      "saved": "Preferencie jazyka uložené.",
+      "saveError": "Nepodarilo sa uložiť vašu preferenciu jazyka. Obnovená na predchádzajúcu."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 smerovací modul",
       "count_other": "{{count}} smerovacie moduly",
       "newRouter": "Nový smerovací modul",
+      "newOrchestrator": "Nový Orchestrator",
+      "newPassthrough": "Nový Passthrough",
       "empty": "Zatiaľ nie sú žiadne smerovacie moduly.",
       "emptyFiltered": "Žiadne smerovače tohto typu.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Odstrániť tento smerovací modul?",
       "errors": {
         "deleteFailed": "Chyba pri odstraňovaní smerovaciho modulu"
-      },
-      "newOrchestrator": "Nový Orchestrator",
-      "newPassthrough": "Nový Passthrough"
+      }
     },
     "layout": {
       "notFound": "Smerovací modul sa nenašiel",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Späť na Smerovacie moduly",
       "backToRoutersTitle": "Späť na smerovacie moduly",
       "newRouter": "Nový smerovací modul",
+      "newKind": "Nový {{kind}}",
       "loading": "Načítavanie...",
       "routerId": "ID smerovaciho modulu:",
-      "saveFirstHint": "Najskôr uložte smerovací modul, aby ste odomkli túto kartu",
-      "newKind": "Nový {{kind}}"
+      "saveFirstHint": "Najskôr uložte smerovací modul, aby ste odomkli túto kartu"
     },
     "dashboard": {
       "period": "Perioda",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Základná adresa URL <code>{{baseUrl}}</code>, bez <code>/v1</code>: SDK to pridá.",
         "curl": "curl",
-        "curlHint": "Skontrolovať drôtovanie bez inštalácie čohokoľvek, potom vyhľadajte volanie v <usageLink>Používaní</usageLink>."
+        "curlHint": "Skontrolovať drôtovanie bez inštalácie čohokoľvek, potom vyhľadajte volanie v <usageLink>Používaní</usageLink>.",
+        "passthrough": {
+          "heading": "Ako sa pripojiť",
+          "intro": "Passthrough presmerovuje každý požiadavok bez zmien — použite <strong>vlastný</strong> kľúč vášho upstream poskytovateľa ako kľúč API, nikdy token Routerly. Routerly neukončuje ani nevydáva poverenia pre tento router; všetko, čo klient pošle, ide priamo k poskytovateľovi.",
+          "noLimits": "Rozpočty a limity sa nevzťahujú na tento router: cena prenosu Passthrough je neznáma, preto sa nikdy nekontroluje ani sa nepočíta v smere žiadneho limitu výdavkov.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Základná URL <code>{{url}}</code> — bez sufiksu <code>/v1</code>, SDK stále pridáva svoju cestu presne tak, ako by to robilo proti skutočnému API OpenAI.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Základná URL <code>{{url}}</code> — SDK stále pridáva <code>/v1/messages</code> sám, presne tak, ako by to robilo proti skutočnému API Anthropic."
+        }
       },
       "form": {
         "kind": "Druh",
         "kindFixedHint": "Fixné po vytvorení smerovaciho modulu.",
         "routerName": "Názov smerovaciho modulu",
         "routerNamePlaceholder": "Moja aplikácia",
+        "passthroughPath": "Cesta",
+        "passthroughPathHint": "Stáva sa súčasťou URL adresy, ktorú volajú klienti: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Pokročilé nastavenia",
         "ttftTimeout": "TTFT Timeout (ms)",
         "ttftTimeoutHint": "Ak model neposielá prvý bajt odpovede v tomto čase, Routerly ho zruší a skúsi ďalšieho kandidáta. Neobmedzuje trvanie celkovej odpovede. Nastavte na 0, aby ste čakali tak dlho, ako to poskytovateľ trvá.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Zachytávať výzvy a odpovede",
         "saveChanges": "Uložiť zmeny",
         "createRouter": "Vytvoriť smerovací modul",
-        "passthroughPath": "Cesta",
-        "passthroughPathHint": "Stáva sa súčasťou URL adresy, ktorú volajú klienti: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Vytvoriť Orchestrator",
         "createPassthrough": "Vytvoriť Passthrough"
       }

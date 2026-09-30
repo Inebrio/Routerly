@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Idioma",
+      "saveError": "Não foi possível guardar o seu idioma. Revertido para o anterior."
+    },
     "sidebar": {
       "expand": "Expandir barra lateral",
       "collapse": "Recolher barra lateral"
@@ -40,9 +44,6 @@
       "telemetryLink": "O que é enviado?",
       "telemetryYes": "Sim, ajudar",
       "telemetryNo": "Não, obrigado"
-    },
-    "language": {
-      "label": "Idioma"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Idioma",
       "description": "Escolha o idioma em que o painel está apresentado.",
       "languageLabel": "Idioma",
-      "saved": "Preferência de idioma guardada."
+      "saved": "Preferência de idioma guardada.",
+      "saveError": "Não foi possível guardar a sua preferência de idioma. Revertido para a anterior."
     }
   },
   "settings": {
@@ -968,7 +970,7 @@
         },
         "otel": {
           "label": "OpenTelemetry",
-          "description": "push — OTLP HTTP"
+          "description": "envio — OTLP HTTP"
         },
         "datadog": {
           "label": "Datadog",
@@ -976,7 +978,7 @@
         },
         "grafana": {
           "label": "Grafana Cloud",
-          "description": "push — remote_write"
+          "description": "envio — remote_write"
         },
         "influxdb": {
           "label": "InfluxDB",
@@ -984,7 +986,7 @@
         },
         "webhook": {
           "label": "Webhook",
-          "description": "push — HTTP POST JSON"
+          "description": "envio — HTTP POST JSON"
         }
       },
       "traces": {
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} routers",
       "newRouter": "Novo Router",
+      "newOrchestrator": "Novo Orquestrador",
+      "newPassthrough": "Novo Passthrough",
       "empty": "Nenhum router ainda.",
       "emptyFiltered": "Nenhum roteador deste tipo.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Eliminar este router?",
       "errors": {
         "deleteFailed": "Erro ao eliminar router"
-      },
-      "newOrchestrator": "Novo Orquestrador",
-      "newPassthrough": "Novo Passthrough"
+      }
     },
     "layout": {
       "notFound": "Router não encontrado",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Voltar aos Routers",
       "backToRoutersTitle": "Voltar aos routers",
       "newRouter": "Novo Router",
+      "newKind": "Novo {{kind}}",
       "loading": "A carregar...",
       "routerId": "ID do Router:",
-      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador",
-      "newKind": "Novo {{kind}}"
+      "saveFirstHint": "Guarde o router primeiro para desbloquear este separador"
     },
     "dashboard": {
       "period": "Período",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL base <code>{{baseUrl}}</code>, sem o <code>/v1</code>: o SDK adiciona-o.",
         "curl": "curl",
-        "curlHint": "Verifique a fiação sem instalar nada, depois procure a chamada em <usageLink>Utilização</usageLink>."
+        "curlHint": "Verifique a fiação sem instalar nada, depois procure a chamada em <usageLink>Utilização</usageLink>.",
+        "passthrough": {
+          "heading": "Como ligar",
+          "intro": "Passthrough encaminha cada pedido sem modificações — use <strong>a sua própria</strong> chave do fornecedor upstream como a chave da API, nunca um token Routerly. Routerly não armazena nem emite uma credencial para este roteador; tudo o que o cliente envia vai direto para o fornecedor.",
+          "noLimits": "Orçamentos e limites não se aplicam a este roteador: o custo do tráfego Passthrough é desconhecido, portanto nunca é verificado nem contado para nenhum limite de despesa.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL base <code>{{url}}</code> — sem sufixo <code>/v1</code>, o SDK ainda acrescenta o seu próprio caminho exatamente como faria com a API OpenAI real.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL base <code>{{url}}</code> — o SDK ainda acrescenta <code>/v1/messages</code> em si, exatamente como faria com a API Anthropic real."
+        }
       },
       "form": {
         "kind": "Tipo",
         "kindFixedHint": "Fixo uma vez o router é criado.",
         "routerName": "Nome do Router",
         "routerNamePlaceholder": "Minha Aplicação",
+        "passthroughPath": "Caminho",
+        "passthroughPathHint": "Torna-se parte da URL chamada pelos clientes: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Definições avançadas",
         "ttftTimeout": "Tempo limite TTFT (ms)",
         "ttftTimeoutHint": "Se um modelo não enviar o primeiro byte de resposta dentro deste tempo, Routerly aborta-o e tenta o próximo candidato. Não limita a duração total da resposta. Defina para 0 para esperar o tempo que o fornecedor levar.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Capturar prompts e respostas",
         "saveChanges": "Guardar Alterações",
         "createRouter": "Criar Router",
-        "passthroughPath": "Caminho",
-        "passthroughPathHint": "Torna-se parte da URL chamada pelos clientes: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Criar Orquestrador",
         "createPassthrough": "Criar Passthrough"
       }
@@ -2665,7 +2676,7 @@
       "newProfileTitle": "Novo Perfil {{kind}}",
       "editProfileTitle": "Editar {{label}}",
       "builtinHint": "Os perfis pré-integrados não podem ser editados. Clone um para personalizá-lo.",
-      "assignHint": "Um perfil {{kind}} pode ser atribuído a qualquer número de routers.",
+      "assignHint": "Um perfil {{article}} {{kind}} pode ser atribuído a qualquer número de roteadores.",
       "noPermission": "Não tem permissão para ver perfis.",
       "label": "Rótulo",
       "optimizers": "Otimizadores",

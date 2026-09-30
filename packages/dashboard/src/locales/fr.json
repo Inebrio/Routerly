@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Thème : {{theme}}"
     },
+    "language": {
+      "label": "Langue",
+      "saveError": "Impossible d'enregistrer votre langue. Retour à la version précédente."
+    },
     "sidebar": {
       "expand": "Développer la barre latérale",
       "collapse": "Réduire la barre latérale"
@@ -40,9 +44,6 @@
       "telemetryLink": "Qu'est-ce qui est envoyé ?",
       "telemetryYes": "Oui, aider",
       "telemetryNo": "Non merci"
-    },
-    "language": {
-      "label": "Langue"
     }
   },
   "common": {
@@ -480,7 +481,7 @@
         "previous": "← Précédent",
         "next": "Suivant →",
         "page": "Page {{page}} sur {{totalPages}}",
-        "total": "({{count}} total)"
+        "total": "({{count}} au total)"
       },
       "detail": {
         "ariaLabel": "Détail de la notification",
@@ -619,7 +620,8 @@
       "heading": "Langue",
       "description": "Choisissez la langue dans laquelle le tableau de bord s'affiche.",
       "languageLabel": "Langue",
-      "saved": "Préférence de langue enregistrée."
+      "saved": "Préférence de langue enregistrée.",
+      "saveError": "Impossible d'enregistrer votre préférence de langue. Retour à la version précédente."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 routeur",
       "count_other": "{{count}} routeurs",
       "newRouter": "Nouveau routeur",
+      "newOrchestrator": "Nouvel Orchestrateur",
+      "newPassthrough": "Nouveau Passthrough",
       "empty": "Aucun routeur pour l'instant.",
       "emptyFiltered": "Aucun routeur de ce type.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Supprimer ce routeur ?",
       "errors": {
         "deleteFailed": "Erreur lors de la suppression du routeur"
-      },
-      "newOrchestrator": "Nouvel Orchestrateur",
-      "newPassthrough": "Nouveau Passthrough"
+      }
     },
     "layout": {
       "notFound": "Routeur non trouvé",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Retour aux routeurs",
       "backToRoutersTitle": "Retour aux routeurs",
       "newRouter": "Nouveau routeur",
+      "newKind": "Nouveau {{kind}}",
       "loading": "Chargement...",
       "routerId": "ID du routeur :",
-      "saveFirstHint": "Enregistrez d'abord le routeur pour déverrouiller cet onglet",
-      "newKind": "Nouveau {{kind}}"
+      "saveFirstHint": "Enregistrez d'abord le routeur pour déverrouiller cet onglet"
     },
     "dashboard": {
       "period": "Période",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "SDK Anthropic",
         "anthropicBaseUrlHint": "URL de base <code>{{baseUrl}}</code>, sans le <code>/v1</code> : le SDK l'ajoute.",
         "curl": "curl",
-        "curlHint": "Vérifiez le câblage sans rien installer, puis cherchez l'appel dans <usageLink>Utilisation</usageLink>."
+        "curlHint": "Vérifiez le câblage sans rien installer, puis cherchez l'appel dans <usageLink>Utilisation</usageLink>.",
+        "passthrough": {
+          "heading": "Comment se connecter",
+          "intro": "Passthrough transfère chaque demande sans modification — utilisez <strong>votre propre</strong> clé du fournisseur en amont comme clé API, jamais un token Routerly. Routerly ne stocke ni n'émet d'identifiant pour ce routeur ; tout ce que le client envoie va directement au fournisseur.",
+          "noLimits": "Les budgets et les limites ne s'appliquent pas à ce routeur : le coût du trafic Passthrough est inconnu, il n'est donc jamais vérifié ou compté vers aucune limite de dépenses.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "URL de base <code>{{url}}</code> — pas de suffixe <code>/v1</code>, le SDK ajoute toujours son propre chemin exactement comme il le ferait avec l'API OpenAI réelle.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "URL de base <code>{{url}}</code> — le SDK ajoute toujours <code>/v1/messages</code> lui-même, exactement comme il le ferait avec l'API Anthropic réelle."
+        }
       },
       "form": {
         "kind": "Type",
         "kindFixedHint": "Fixe une fois le routeur créé.",
         "routerName": "Nom du routeur",
         "routerNamePlaceholder": "Mon app",
+        "passthroughPath": "Chemin",
+        "passthroughPathHint": "Devient partie de l'URL appelée par les clients : <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Paramètres avancés",
         "ttftTimeout": "Délai d'attente TTFT (ms)",
         "ttftTimeoutHint": "Si un modèle n'envoie pas le premier octet de réponse dans ce délai, Routerly l'abandonne et essaie le candidat suivant. Ne limite pas la durée totale de la réponse. Définissez-le à 0 pour attendre aussi longtemps que le fournisseur.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Capturer les prompts et les réponses",
         "saveChanges": "Enregistrer les modifications",
         "createRouter": "Créer un routeur",
-        "passthroughPath": "Chemin",
-        "passthroughPathHint": "Devient partie de l'URL appelée par les clients : <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Créer un Orchestrateur",
         "createPassthrough": "Créer un Passthrough"
       }
@@ -1986,9 +1997,9 @@
         "time": {
           "never": "jamais",
           "now": "maintenant",
-          "secondsAgo": "{{count}}s ago",
-          "minutesAgo": "{{count}}m ago",
-          "hoursAgo": "{{count}}h ago",
+          "secondsAgo": "il y a {{count}}s",
+          "minutesAgo": "il y a {{count}}m",
+          "hoursAgo": "il y a {{count}}h",
           "daysAgo": "{{count}}j ago",
           "minSec": "{{min}}m {{sec}}s",
           "sec": "{{sec}}s",
@@ -2665,7 +2676,7 @@
       "newProfileTitle": "Nouveau profil {{kind}}",
       "editProfileTitle": "Modifier {{label}}",
       "builtinHint": "Les profils intégrés ne peuvent pas être modifiés. Clonez-en un pour le personnaliser.",
-      "assignHint": "Un profil {{kind}} peut être assigné à n'importe quel nombre de routeurs.",
+      "assignHint": "Un profil {{article}} {{kind}} peut être attribué à n'importe quel nombre de routeurs.",
       "noPermission": "Vous n'avez pas la permission de voir les profils.",
       "label": "Étiquette",
       "optimizers": "Optimiseurs",

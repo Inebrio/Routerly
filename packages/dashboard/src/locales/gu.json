@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "થીમ: {{theme}}"
     },
+    "language": {
+      "label": "ભાષા",
+      "saveError": "તમારી ભાષા સંચય કરી શકાઈ નથી. પહેલાંની ભાષામાં પરત ફર્યું."
+    },
     "sidebar": {
       "expand": "સાઇડબાર વિસ્તૃત કરો",
       "collapse": "સાઇડબાર સંકુચિત કરો"
@@ -40,9 +44,6 @@
       "telemetryLink": "શું મોકલવામાં આવે છે?",
       "telemetryYes": "હા, મદદ કરો",
       "telemetryNo": "આભાર નથી"
-    },
-    "language": {
-      "label": "ભાષા"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "ભાષા",
       "description": "ડેશબોર્ડ જે ભાષામાં બતાવવામાં આવે છે તે પસંદ કરો.",
       "languageLabel": "ભાષા",
-      "saved": "ભાષા પ્રાધાન્યતા સાચવેલું."
+      "saved": "ભાષા પ્રાધાન્યતા સાચવેલું.",
+      "saveError": "તમારી ભાષા પસંદગી સંચય કરી શકાઈ નથી. પહેલાંની પસંદગીમાં પરત ફર્યું."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 રાઉટર",
       "count_other": "{{count}} રાઉટર્સ",
       "newRouter": "નવો રાઉટર",
+      "newOrchestrator": "નવો ઓર્કેસ્ટ્રેટર",
+      "newPassthrough": "નવો પાસથ્રુ",
       "empty": "હજુ કોઈ રાઉટર્સ નથી.",
       "emptyFiltered": "આ પ્રકારનો કોઈ રાઉટર નથી.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "આ રાઉટર દૂર કરો?",
       "errors": {
         "deleteFailed": "રાઉટર દૂર કરવામાં ભૂલ"
-      },
-      "newOrchestrator": "નવો ઓર્કેસ્ટ્રેટર",
-      "newPassthrough": "નવો પાસથ્રુ"
+      }
     },
     "layout": {
       "notFound": "રાઉટર મળી નથી",
@@ -1191,10 +1193,10 @@
       "backToRouters": "રાઉટર્સ પર પાછલું",
       "backToRoutersTitle": "રાઉટર્સ પર પાછલું",
       "newRouter": "નવો રાઉટર",
+      "newKind": "નવો {{kind}}",
       "loading": "લોડ કરી રહ્યા છીએ...",
       "routerId": "રાઉટર ID:",
-      "saveFirstHint": "આ ટેબ અનલૉક કરવા માટે રાઉટર પ્રથમ સાચવો",
-      "newKind": "નવો {{kind}}"
+      "saveFirstHint": "આ ટેબ અનલૉક કરવા માટે રાઉટર પ્રથમ સાચવો"
     },
     "dashboard": {
       "period": "સમયગાળો",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "બેસ URL <code>{{baseUrl}}</code>, <code>/v1</code> વિના: SDK તેને ઉમેરે છે.",
         "curl": "curl",
-        "curlHint": "કંઈ પણ ઇન્સ્ટોલ કર્યા વિના વાયર તપાસો, પછી <usageLink>ઉપયોગ</usageLink> માં કૉલ માટે તપાસો."
+        "curlHint": "કંઈ પણ ઇન્સ્ટોલ કર્યા વિના વાયર તપાસો, પછી <usageLink>ઉપયોગ</usageLink> માં કૉલ માટે તપાસો.",
+        "passthrough": {
+          "heading": "કેવી રીતે જોડાવું",
+          "intro": "Passthrough દરેક વિનંતી બિનસંશોધિત આગળ ભેજે છે — તમારું પોતાનું <strong>તમારું</strong> અપસ્ટ્રીમ પ્રદાતા કી API કી તરીકે ઉપયોગ કરો, Routerly ટોકન ક્યારેય નહીં. Routerly આ રાઉટર માટે કોઈ પ્રમાણપત્ર સંચય કે જારી કરતો નથી; ક્લાયંટ જે પણ મોકલે છે તે સીધો પ્રદાતાને જાય છે.",
+          "noLimits": "બજેટ અને મર્યાદા આ રાઉટર પર લાગુ નથી: Passthrough ટ્રાફિકની કિંમત અજ્ઞાત છે, તેથી તે ક્યારેય તપાસવામાં આવતી નથી અથવા કોઈ ખર્ચ મર્યાદા તરફ ગણવામાં આવતી નથી.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "બેસ URL <code>{{url}}</code> — કોઈ <code>/v1</code> પ્રત્યય નથી, SDK હજી પણ તેનો પોતાનો પાથ ઉમેરે છે બરાબર જેમ તે વાસ્તવિક OpenAI API સામે કરશે.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "બેસ URL <code>{{url}}</code> — SDK હજી પણ <code>/v1/messages</code> પોતે ઉમેરે છે, બરાબર જેમ તે વાસ્તવિક Anthropic API સામે કરશે."
+        }
       },
       "form": {
         "kind": "પ્રકાર",
         "kindFixedHint": "રાઉટર બનાવ્યા એક બાર નિશ્ચિત.",
         "routerName": "રાઉટર નામ",
         "routerNamePlaceholder": "મારી એપ",
+        "passthroughPath": "પાથ",
+        "passthroughPathHint": "ક્લાયેન્ટ્સ જે URL કૉલ કરે તેનો ભાગ બની જાય: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "અગ્રણી સેટિંગ્સ",
         "ttftTimeout": "TTFT ટાઈમઆઉટ (ms)",
         "ttftTimeoutHint": "જો મોડલ આ સમયમાં પ્રથમ પ્રતિક્રિયા બાઈટ મોકલતું નથી, Routerly તેને રોક અને આગલા ઉમેદવાર પ્રયાસ કરે છે. કુલ પ્રતિક્રિયા સમયગાળો સીમિત નથી. તે 0 સુધી રાહ માટે સમૃદ્ધ કરો જ્યાં સુધી પ્રદાતા લે છે.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "પ્રોમ્પ્ટ્સ અને જવાબો કેપ્ચર કરો",
         "saveChanges": "પરિવર્તનો સાચવો",
         "createRouter": "રાઉટર બનાવો",
-        "passthroughPath": "પાથ",
-        "passthroughPathHint": "ક્લાયેન્ટ્સ જે URL કૉલ કરે તેનો ભાગ બની જાય: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "ઓર્કેસ્ટ્રેટર બનાવો",
         "createPassthrough": "પાસથ્રુ બનાવો"
       }

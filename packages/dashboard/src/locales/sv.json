@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Språk",
+      "saveError": "Det gick inte att spara ditt språk. Återgick till det tidigare."
+    },
     "sidebar": {
       "expand": "Expandera sidofält",
       "collapse": "Dölj sidofält"
@@ -40,9 +44,6 @@
       "telemetryLink": "Vad skickas?",
       "telemetryYes": "Ja, hjälp gärna",
       "telemetryNo": "Nej tack"
-    },
-    "language": {
-      "label": "Språk"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Språk",
       "description": "Välj språket som instrumentpanelen visas på.",
       "languageLabel": "Språk",
-      "saved": "Språkinställning sparad."
+      "saved": "Språkinställning sparad.",
+      "saveError": "Det gick inte att spara dina språkinställningar. Återgick till det tidigare."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 router",
       "count_other": "{{count}} routrar",
       "newRouter": "Ny router",
+      "newOrchestrator": "Ny orkestrator",
+      "newPassthrough": "Ny passthrough",
       "empty": "Inga routrar ännu.",
       "emptyFiltered": "Inga routrar av denna typ.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Ta bort denna router?",
       "errors": {
         "deleteFailed": "Fel vid borttagning av router"
-      },
-      "newOrchestrator": "Ny orkestrator",
-      "newPassthrough": "Ny passthrough"
+      }
     },
     "layout": {
       "notFound": "Router hittades inte",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Tillbaka till routrar",
       "backToRoutersTitle": "Tillbaka till routrar",
       "newRouter": "Ny router",
+      "newKind": "Ny {{kind}}",
       "loading": "Laddar...",
       "routerId": "Router-ID:",
-      "saveFirstHint": "Spara routern först för att låsa upp denna flik",
-      "newKind": "Ny {{kind}}"
+      "saveFirstHint": "Spara routern först för att låsa upp denna flik"
     },
     "dashboard": {
       "period": "Period",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Bas-URL <code>{{baseUrl}}</code>, utan <code>/v1</code>: SDK lägger till den.",
         "curl": "curl",
-        "curlHint": "Kontrollera ledningen utan att installera något, titta sedan efter samtalet i <usageLink>Användning</usageLink>."
+        "curlHint": "Kontrollera ledningen utan att installera något, titta sedan efter samtalet i <usageLink>Användning</usageLink>.",
+        "passthrough": {
+          "heading": "Hur man ansluter",
+          "intro": "Passthrough skickar vidare varje begäran oförändrad — använd <strong>din egen</strong> upstream-leverantörnyckel som API-nyckel, aldrig en Routerly-token. Routerly lagrar eller utfärdar ingen autentiseringsuppgift för denna router; vad klienten skickar går direkt till leverantören.",
+          "noLimits": "Budgets och gränser gäller inte för denna router: kostnad är okänd för Passthrough-trafik, så den kontrolleras aldrig mot eller räknas mot någon utgiftsgräns.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — ingen <code>/v1</code> suffix, SDK:n lägger fortfarande till sin egen sökväg exakt som den skulle göra mot det verkliga OpenAI API:et.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK:n lägger fortfarande till <code>/v1/messages</code> själv, exakt som det skulle göra mot det verkliga Anthropic API:et."
+        }
       },
       "form": {
         "kind": "Typ",
         "kindFixedHint": "Fixerad när routern är skapad.",
         "routerName": "Routernamn",
         "routerNamePlaceholder": "Min app",
+        "passthroughPath": "Sökväg",
+        "passthroughPathHint": "Blir del av URL:en som klienter anropar: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Avancerade inställningar",
         "ttftTimeout": "TTFT-timeout (ms)",
         "ttftTimeoutHint": "Om en modell inte skickar den första svarsbyte inom denna tid avbryter Routerly den och försöker nästa kandidat. Begränsar inte total svarslängd. Ställ på 0 för att vänta så länge providern tar.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Fånga instruktioner och svar",
         "saveChanges": "Spara ändringar",
         "createRouter": "Skapa router",
-        "passthroughPath": "Sökväg",
-        "passthroughPathHint": "Blir del av URL:en som klienter anropar: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Skapa orkestrator",
         "createPassthrough": "Skapa passthrough"
       }

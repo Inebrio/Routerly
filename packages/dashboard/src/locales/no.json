@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Tema: {{theme}}"
     },
+    "language": {
+      "label": "Språk",
+      "saveError": "Kunne ikke lagre språket ditt. Tilbakestilt til forrige."
+    },
     "sidebar": {
       "expand": "Utvid sidestolpe",
       "collapse": "Slå sammen sidestolpe"
@@ -40,9 +44,6 @@
       "telemetryLink": "Hva sendes?",
       "telemetryYes": "Ja, hjelp til",
       "telemetryNo": "Nei takk"
-    },
-    "language": {
-      "label": "Språk"
     }
   },
   "common": {
@@ -102,8 +103,8 @@
       "metric": {
         "cost": "Kostnad",
         "calls": "Anrop",
-        "input_tokens": "Input tokens",
-        "output_tokens": "Output tokens",
+        "input_tokens": "Innskrevne tokens",
+        "output_tokens": "Utskrevne tokens",
         "total_tokens": "Totalt antall tokens"
       },
       "period": {
@@ -127,8 +128,8 @@
       },
       "fmt": {
         "requests": "{{value}} forespørsler",
-        "inputTokens": "{{value}} input tokens",
-        "outputTokens": "{{value}} output tokens",
+        "inputTokens": "{{value}} innskrevne tokens",
+        "outputTokens": "{{value}} utskrevne tokens",
         "totalTokens": "{{value}} totalt antall tokens",
         "everyRolling": "{{metric}} hver {{amount}} {{unit}}",
         "perPeriod": "{{metric}} per {{period}}"
@@ -619,7 +620,8 @@
       "heading": "Språk",
       "description": "Velg språket dashbordet vises i.",
       "languageLabel": "Språk",
-      "saved": "Språkpreferanse lagret."
+      "saved": "Språkpreferanse lagret.",
+      "saveError": "Kunne ikke lagre språkinnstillingene dine. Tilbakestilt til forrige."
     }
   },
   "settings": {
@@ -665,7 +667,7 @@
         "defaultLanguageHint": "Dashboardspråk for brukere som ikke har valgt sitt eget språk ennå. Overstyrer ikke brukerens personlige valg."
       },
       "telemetry": {
-        "heading": "Anonymous Metrics",
+        "heading": "Anonyme måledata",
         "neverAutomatic": "Routerly sender aldri data automatisk.",
         "noChoice": "Du har ikke gjort et valg ennå.",
         "enabledStatus": "Anonymous installasjonsmålinger er aktivert.",
@@ -1156,6 +1158,8 @@
       "count": "1 ruter",
       "count_other": "{{count}} rutere",
       "newRouter": "Ny ruter",
+      "newOrchestrator": "Ny orkestrator",
+      "newPassthrough": "Ny passthrough",
       "empty": "Ingen rutere ennå.",
       "emptyFiltered": "Ingen rutere av denne typen.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Slett denne ruteren?",
       "errors": {
         "deleteFailed": "Feil ved sletting av ruter"
-      },
-      "newOrchestrator": "Ny orkestrator",
-      "newPassthrough": "Ny passthrough"
+      }
     },
     "layout": {
       "notFound": "Ruter ikke funnet",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Tilbake til rutere",
       "backToRoutersTitle": "Tilbake til rutere",
       "newRouter": "Ny ruter",
+      "newKind": "Ny {{kind}}",
       "loading": "Laster...",
       "routerId": "Ruter-ID:",
-      "saveFirstHint": "Lagre ruteren først for å låse opp denne fanen",
-      "newKind": "Ny {{kind}}"
+      "saveFirstHint": "Lagre ruteren først for å låse opp denne fanen"
     },
     "dashboard": {
       "period": "Periode",
@@ -1215,8 +1217,8 @@
         "errorsAndBlocked": "{{errors}} feil · {{blocked}} blokkert"
       },
       "tokens": {
-        "input": "Input tokens:",
-        "output": "Output tokens:",
+        "input": "Innskrevne tokens:",
+        "output": "Utskrevne tokens:",
         "fromCache": "Fra hurtiglager:",
         "cacheSaved": "({{amount}} sparet)"
       },
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Base-URL <code>{{baseUrl}}</code>, uten <code>/v1</code>: SDK-en legger det til.",
         "curl": "curl",
-        "curlHint": "Sjekk ledningen uten å installere noe, og se deretter etter anropet i <usageLink>Bruk</usageLink>."
+        "curlHint": "Sjekk ledningen uten å installere noe, og se deretter etter anropet i <usageLink>Bruk</usageLink>.",
+        "passthrough": {
+          "heading": "Hvordan koble til",
+          "intro": "Passthrough videresender alle forespørsler uendret — bruk <strong>din egen</strong> oppstrøms-leverandørnøkkel som API-nøkkel, aldri en Routerly-token. Routerly lagrer eller utsteder ikke en legitimasjon for denne routeren; hva klienten sender går rett til leverandøren.",
+          "noLimits": "Budsjetter og grenser gjelder ikke denne routeren: kostnaden er ukjent for Passthrough-trafikk, så den blir aldri sjekket mot eller talt mot noen utgiftsbegrensning.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — ingen <code>/v1</code> suffiks, SDK legger fortsatt til sin egen sti akkurat som den ville gjort mot det virkelige OpenAI-API-et.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — SDK legger fortsatt til <code>/v1/messages</code> selv, akkurat som det ville gjort mot det virkelige Anthropic-API-et."
+        }
       },
       "form": {
         "kind": "Type",
         "kindFixedHint": "Fast når ruteren er opprettet.",
         "routerName": "Ruter-navn",
         "routerNamePlaceholder": "Min app",
+        "passthroughPath": "Sti",
+        "passthroughPathHint": "Blir del av URL-en som klienter kaller: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Avanserte innstillinger",
         "ttftTimeout": "TTFT tidsavbrudd (ms)",
         "ttftTimeoutHint": "Hvis en modell ikke sender den første svarbyten innen denne tiden, avbryter Routerly den og prøver neste kandidat. Begrenser ikke total responsvarighet. Sett det til 0 for å vente så lenge leverandøren tar.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Fang meldinger og svar",
         "saveChanges": "Lagre endringer",
         "createRouter": "Opprett ruter",
-        "passthroughPath": "Sti",
-        "passthroughPathHint": "Blir del av URL-en som klienter kaller: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Opprett orkestrator",
         "createPassthrough": "Opprett passthrough"
       }
@@ -1493,8 +1504,8 @@
         "limitMetric": {
           "cost": "Kostnad (USD)",
           "calls": "Forespørsler",
-          "input_tokens": "Input tokens",
-          "output_tokens": "Output tokens",
+          "input_tokens": "Innskrevne tokens",
+          "output_tokens": "Utskrevne tokens",
           "total_tokens": "Totalt antall tokens"
         },
         "period": {
@@ -1659,8 +1670,8 @@
       "debugLog": "Feilsøkingslogg",
       "clear": "Slett",
       "noRequestSent": "Ingen forespørsel sendt ennå.",
-      "turnTraceLog": "Vendespor logg · {{count}} hendelse",
-      "turnTraceLog_other": "Vendespor logg · {{count}} hendelser"
+      "turnTraceLog": "Tur #{{turn}} sporingslogg · {{count}} hendelse",
+      "turnTraceLog_other": "Tur #{{turn}} sporingslogg · {{count}} hendelser"
     }
   },
   "connections": {
@@ -2316,8 +2327,8 @@
         "successRate": "Suksessrate",
         "avgLatency": "Gjennomsnittlig latens",
         "p95Latency": "P95 latens",
-        "inputTokens": "Input tokens",
-        "outputTokens": "Output tokens",
+        "inputTokens": "Innskrevne tokens",
+        "outputTokens": "Utskrevne tokens",
         "costPer1k": "Kostnad / 1K",
         "cost": "Kostnad (USD)",
         "bestCostPerformance": "Beste kostnads-ytelse"
@@ -2457,7 +2468,7 @@
       "show": "Vis feilsøking",
       "empty": "Ingen feilsøkingsdata ennå.",
       "emptyHint": "Send en melding for å se rutingdetaljer.",
-      "turnTraceLog": "Vendespor logg"
+      "turnTraceLog": "Tur #{{turn}} sporingslogg"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",

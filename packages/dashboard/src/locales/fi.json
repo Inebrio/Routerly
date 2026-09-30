@@ -8,6 +8,10 @@
     "themeCycle": {
       "title": "Teema: {{theme}}"
     },
+    "language": {
+      "label": "Kieli",
+      "saveError": "Kielesi ei voitu tallentaa. Palautettu edelliseen."
+    },
     "sidebar": {
       "expand": "Laajenna sivupalkki",
       "collapse": "Pienennä sivupalkki"
@@ -40,9 +44,6 @@
       "telemetryLink": "Mitä lähetetään?",
       "telemetryYes": "Kyllä, autan",
       "telemetryNo": "Ei kiitos"
-    },
-    "language": {
-      "label": "Kieli"
     }
   },
   "common": {
@@ -619,7 +620,8 @@
       "heading": "Kieli",
       "description": "Valitse kieli, jolla hallintapaneeli näytetään.",
       "languageLabel": "Kieli",
-      "saved": "Kieliasetus tallennettu."
+      "saved": "Kieliasetus tallennettu.",
+      "saveError": "Kielen asetustasi ei voitu tallentaa. Palautettu edelliseen."
     }
   },
   "settings": {
@@ -1156,6 +1158,8 @@
       "count": "1 reititin",
       "count_other": "{{count}} reititintä",
       "newRouter": "Uusi reititin",
+      "newOrchestrator": "Uusi Orkestroija",
+      "newPassthrough": "Uusi Passthrough",
       "empty": "Reitittimiä ei ole vielä.",
       "emptyFiltered": "Ei reitittimiä tästä tyypistä.",
       "columns": {
@@ -1171,9 +1175,7 @@
       "deleteConfirm": "Poistetaanko tämä reititin?",
       "errors": {
         "deleteFailed": "Virhe poistettaessa reititintä"
-      },
-      "newOrchestrator": "Uusi Orkestroija",
-      "newPassthrough": "Uusi Passthrough"
+      }
     },
     "layout": {
       "notFound": "Reititintä ei löytynyt",
@@ -1191,10 +1193,10 @@
       "backToRouters": "Takaisin reitittimiin",
       "backToRoutersTitle": "Takaisin reitittimiin",
       "newRouter": "Uusi reititin",
+      "newKind": "Uusi {{kind}}",
       "loading": "Latautuu...",
       "routerId": "Reitittimen ID:",
-      "saveFirstHint": "Tallenna reititin ensin avataksesi tämän välilehden",
-      "newKind": "Uusi {{kind}}"
+      "saveFirstHint": "Tallenna reititin ensin avataksesi tämän välilehden"
     },
     "dashboard": {
       "period": "Ajanjakso",
@@ -1287,13 +1289,24 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Perus-URL <code>{{baseUrl}}</code>, ilman <code>/v1</code>:ää: SDK lisää sen.",
         "curl": "curl",
-        "curlHint": "Tarkista kytkennät asentamatta mitään, ja katso sitten kutsua <usageLink>Käyttö</usageLink>-sivulta."
+        "curlHint": "Tarkista kytkennät asentamatta mitään, ja katso sitten kutsua <usageLink>Käyttö</usageLink>-sivulta.",
+        "passthrough": {
+          "heading": "Yhdistäminen",
+          "intro": "Passthrough välittää jokaisen pyynnön muuttumattomana — käytä <strong>omaa</strong> ylävirran palveluntarjoajan API-avainta, älä Routerly-tunnusta. Routerly ei tallenna tai myönnä tunnistetietoja tälle reitittimelle; mitä asiakasta lähettää menee suoraan palveluntarjoajalle.",
+          "noLimits": "Budjetit ja rajat eivät koske tälle reitittimelle: Passthrough-liikenteen kustannukset ovat tuntemattomia, joten niitä ei koskaan tarkisteta tai lasketa mitään kulurajausta vastaan.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Perus-URL <code>{{url}}</code> — ei <code>/v1</code>-jälkiliitettä, SDK lisää silti oman polkunsa täsmälleen kuten todellista OpenAI API:a vastaan.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Perus-URL <code>{{url}}</code> — SDK lisää silti <code>/v1/messages</code> itse, täsmälleen kuten todellista Anthropic API:a vastaan."
+        }
       },
       "form": {
         "kind": "Tyyppi",
         "kindFixedHint": "Kiinteä, kun reititin on luotu.",
         "routerName": "Reitittimen nimi",
         "routerNamePlaceholder": "Sovellukseni",
+        "passthroughPath": "Polku",
+        "passthroughPathHint": "Tulee osaksi URL-osoitetta, jota asiakkaat kutsuvat: <code>/passthrough/{{path}}/...</code>",
         "advancedSettings": "Lisäasetukset",
         "ttftTimeout": "TTFT-aikakatkaisu (ms)",
         "ttftTimeoutHint": "Jos malli ei lähetä ensimmäistä vastaustavua tässä ajassa, Routerly keskeyttää sen ja kokeilee seuraavaa ehdokasta. Ei rajoita vastauksen kokonaiskestoa. Aseta 0, jos haluat odottaa niin kauan kuin palveluntarjoaja tarvitsee.",
@@ -1302,8 +1315,6 @@
         "capturePromptsAndAnswers": "Tallenna kehotteet ja vastaukset",
         "saveChanges": "Tallenna muutokset",
         "createRouter": "Luo reititin",
-        "passthroughPath": "Polku",
-        "passthroughPathHint": "Tulee osaksi URL-osoitetta, jota asiakkaat kutsuvat: <code>/passthrough/{{path}}/...</code>",
         "createOrchestrator": "Luo Orkestroija",
         "createPassthrough": "Luo Passthrough"
       }
