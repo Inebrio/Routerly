@@ -144,3 +144,58 @@ When the user types `/release`, invoke the Skill tool with `skill: "release-pipe
 - Screenshots → only `docs/assets/` or `docs/<section>/` when they are permanent documentation assets; never anywhere else.
 - Playwright MCP output (`.playwright-mcp/`) is auto-generated in the project root — treat it as noise; never commit it. It is gitignored.
 - Sub-agents must follow this rule too. The orchestrator is responsible for enforcing it.
+
+
+---
+
+## Dispatcher
+
+This section applies when Claude runs headless, launched by `dispatch.sh` via `--remote-control`. There is no interactive user. The goal arrives as a `/goal` message; everything else comes from this file.
+
+### Branch strategy
+
+- You are in a dedicated worktree on `feature/ROUT-N`, based off the current `release/X.Y.Z` branch.
+- The active release branch is noted in `.ai/memory.md`.
+- When work is done and verified: make a conventional commit on the feature branch (`feat`/`fix`/`refactor`/`chore`/... in English, conforming to `commitlint.config.js`), then merge into `release/X.Y.Z` and push.
+- **Never** touch `develop` or `main` — any push to those branches triggers the automated CI/release pipeline.
+- Merge sequence (run from the main checkout `/opt/routerly/code`, not the worktree):
+  ```
+  git -C /opt/routerly/worktrees/ROUT-N push origin feature/ROUT-N
+  git checkout <release-branch>
+  git merge --no-ff feature/ROUT-N
+  git push origin <release-branch>
+  git checkout develop
+  ```
+
+### Plane
+
+- Use **only** `/opt/routerly/plane.sh METHOD PATH [JSON]`. Never `curl` directly; never read `plane.env`.
+- `plane.sh ids` prints `CLAUDE_ID` and all `STATE_*` values.
+- Always read the item and **all** its comments before starting. On re-run, Carlo's most recent comments take priority over earlier state.
+- When done: (1) post a comment on the item — what was built, files touched, how to test, what was verified live; (2) move the item to `STATE_TESTING`. Never `STATE_DONE`.
+
+### Stop rules
+
+Stop and leave the item in Progress with a blocking comment if the item:
+- touches wire-format transparency, credentials, permissions, or security;
+- has an unresolved "Aperto" in the spec;
+- is architecturally invasive beyond what a single session can safely land.
+
+### Sub-items
+
+- If the item is too large, create sub-items on Plane (`POST work-items/` with `parent=<id>`), one per verifiable unit of work.
+- At completion: move parent and all necessary children to Testing together. Sub-items that require Carlo's decision go to Backlog, not Progress.
+
+### Headless execution constraints
+
+- **Do not start background agents or background commands.** The headless process terminates background tasks when the turn ends.
+- **Do not end the turn** until the work is complete and verified on a real environment.
+- Run agents in the foreground and wait for their result.
+
+### UAT box
+
+When the task needs real-environment testing (installation, browser, CLI):
+- SSH: `ssh root@192.168.1.26`
+- Rollback: `ssh root@192.168.1.7 'pct stop 118 && pct rollback 118 uat-clean && pct start 118'`
+- Load `.claude/skills/uat-runner/SKILL.md` before starting UAT work.
+- Playwright is available on this dev-box: `cd /opt/routerly/code && npx playwright`
