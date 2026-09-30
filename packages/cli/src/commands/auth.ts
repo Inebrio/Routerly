@@ -27,6 +27,7 @@ interface MeResponse {
   id: string;
   email: string;
   roleId: string;
+  language?: string;
 }
 
 export function makeAuthCommand(): Command {
@@ -338,9 +339,17 @@ Examples:
 Examples:
   # Show the current user's email, role, and session info
   routerly auth whoami
+
+  # Machine-readable output
+  routerly auth whoami --json
 `)
-    .action(async () => {
+    .option('--json', 'Output as JSON')
+    .action(async (opts: { json?: boolean }) => {
       const current = await getCurrentAccount();
+      if (!current && opts.json) {
+        console.error(chalk.red('Not logged in. Run: routerly auth login'));
+        process.exit(1);
+      }
       if (!current) {
         console.log(chalk.yellow('Not logged in. Run: routerly auth login'));
         return;
@@ -348,6 +357,18 @@ Examples:
 
       try {
         const me = await api<MeResponse>('GET', '/api/me');
+        if (opts.json) {
+          console.log(JSON.stringify({
+            id: me.id,
+            email: me.email,
+            roleId: me.roleId,
+            language: me.language ?? null,
+            serverUrl: current.serverUrl,
+            alias: current.alias,
+            expiresAt: current.expiresAt,
+          }, null, 2));
+          return;
+        }
         console.log(chalk.bold(`${me.email}`) + chalk.gray(` (role: ${me.roleId})`));
         console.log(chalk.gray(`  Server:  ${current.serverUrl}`));
         console.log(chalk.gray(`  Account: ${current.alias}`));

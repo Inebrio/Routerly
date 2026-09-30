@@ -3350,6 +3350,24 @@ describe('PUT /api/settings', () => {
     expect(written['defaultLanguage']).toBe('it')
   })
 
+  it.each([['empty', ''], ['too long', 'x'.repeat(11)], ['not a string', 42]])('rejects defaultLanguage that is %s', async (_n, value) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info' }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ defaultLanguage: value }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
   it('enables telemetry when setting telemetry.enabled=true', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {

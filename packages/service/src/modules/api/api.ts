@@ -2303,6 +2303,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
     }
+    const defaultLanguagePatch = (req.body as Partial<Settings>).defaultLanguage;
+    if (defaultLanguagePatch !== undefined && !z.string().min(1).max(10).safeParse(defaultLanguagePatch).success) {
+      return reply.status(400).send({ error: 'defaultLanguage must be a non-empty string of at most 10 characters' });
+    }
     // RC-3: validate/normalise channel before persisting — aliases (stable/develop)
     // resolve to their canonical name, which is what gets written and what
     // updateChecker.updateChannel() receives below.

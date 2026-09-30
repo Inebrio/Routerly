@@ -119,3 +119,6 @@ docs/superpowers/
 website/build/
 website/node_modules/
 website/.docusaurus/
+
+# i18n translate script run lock
+packages/dashboard/src/locales/.i18n-translate.lock

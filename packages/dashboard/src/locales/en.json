@@ -9,7 +9,8 @@
       "title": "Theme: {{theme}}"
     },
     "language": {
-      "label": "Language"
+      "label": "Language",
+      "saveError": "Could not save your language. Reverted to the previous one."
     },
     "sidebar": {
       "expand": "Expand sidebar",
@@ -619,7 +620,8 @@
       "heading": "Language",
       "description": "Choose the language the dashboard is displayed in.",
       "languageLabel": "Language",
-      "saved": "Language preference saved."
+      "saved": "Language preference saved.",
+      "saveError": "Could not save your language preference. Reverted to the previous one."
     }
   },
   "settings": {
@@ -1287,7 +1289,16 @@
         "anthropicSdk": "Anthropic SDK",
         "anthropicBaseUrlHint": "Base URL <code>{{baseUrl}}</code>, without the <code>/v1</code>: the SDK adds it.",
         "curl": "curl",
-        "curlHint": "Check the wiring without installing anything, then look for the call in <usageLink>Usage</usageLink>."
+        "curlHint": "Check the wiring without installing anything, then look for the call in <usageLink>Usage</usageLink>.",
+        "passthrough": {
+          "heading": "How to connect",
+          "intro": "Passthrough forwards every request unmodified — use <strong>your own</strong> upstream provider key as the API key, never a Routerly token. Routerly does not store or issue a credential for this router; whatever the client sends goes straight to the provider.",
+          "noLimits": "Budgets and limits do not apply to this router: cost is unknown for Passthrough traffic, so it is never checked against or counted toward any spend limit.",
+          "openaiTitle": "OpenAI SDK",
+          "openaiBase": "Base URL <code>{{url}}</code> — no <code>/v1</code> suffix, the SDK still appends its own path exactly as it would against the real OpenAI API.",
+          "anthropicTitle": "Anthropic SDK",
+          "anthropicBase": "Base URL <code>{{url}}</code> — the SDK still appends <code>/v1/messages</code> itself, exactly as it would against the real Anthropic API."
+        }
       },
       "form": {
         "kind": "Kind",

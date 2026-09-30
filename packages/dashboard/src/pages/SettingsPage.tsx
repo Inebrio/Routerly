@@ -102,6 +102,7 @@ function addressScope(address: string, t: (k: string) => string): string {
 
 export function SettingsGeneralTab() {
   const { t } = useTranslation();
+  const { can } = useAuth();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [info, setInfo] = useState<SystemInfo | null>(null);
   const [form, setForm] = useState<Partial<Settings>>({});
@@ -304,6 +305,7 @@ export function SettingsGeneralTab() {
             placeholder={t('settings.general.internationalization.defaultLanguage')}
             ariaLabel={t('settings.general.internationalization.defaultLanguage')}
             onChange={v => field('defaultLanguage', v)}
+            disabled={!can('settings:write')}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             {t('settings.general.internationalization.defaultLanguageHint')}

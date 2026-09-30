@@ -10,14 +10,29 @@ export function makeUserCommand(): Command {
   // ── user list ──
   cmd.command('list')
     .description('List all users')
+    .option('--json', 'Output as JSON')
     .addHelpText('after', `
 Examples:
   # Show all dashboard users with their roles and router access
   routerly user list
+
+  # Machine-readable output (id, email, roleId, routerIds, language)
+  routerly user list --json
 `)
-    .action(async () => {
+    .action(async (opts: { json?: boolean }) => {
       try {
         const users = await api<UserConfig[]>('GET', '/api/users');
+        if (opts.json) {
+          // Whitelist: the raw record carries secret-bearing fields that must not reach stdout.
+          console.log(JSON.stringify(users.map(u => ({
+            id: u.id,
+            email: u.email,
+            roleId: u.roleId,
+            routerIds: u.routerIds,
+            language: u.language ?? null,
+          })), null, 2));
+          return;
+        }
         if (users.length === 0) {
           console.log(chalk.yellow('No users yet. Use `routerly user add` to create one.'));
           return;

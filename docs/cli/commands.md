@@ -350,10 +350,10 @@ routerly auth rename <old-alias> <new-alias>
 ### `routerly auth whoami`
 
 ```
-routerly auth whoami
+routerly auth whoami [--json]
 ```
 
-Prints the active account alias, email, role, and server URL.
+Prints the active account alias, email, role, and server URL. With `--json`, prints `id`, `email`, `roleId`, `language` (`null` if the user has not chosen one), `serverUrl`, `alias`, and `expiresAt`.
 
 ---
 
@@ -1182,6 +1182,8 @@ Pauses an integration (sets `enabled: false`). Metric pushes stop without deleti
 ```
 routerly user list [--json]
 ```
+
+With `--json`, prints an array of `id`, `email`, `roleId`, `routerIds`, and `language` (`null` if the user has not chosen one). Secret-bearing fields are never printed. The CLI itself stays English-only.
 
 ### `routerly user add`
 

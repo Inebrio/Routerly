@@ -122,19 +122,12 @@ export function RouterGeneralTab() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
                 <Plug size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>How to connect</h2>
+                <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>{t('routers.general.connect.passthrough.heading')}</h2>
               </div>
               <p style={SECTION_TEXT}>
-                Passthrough forwards every request unmodified — use <strong>your own</strong>{' '}
-                upstream provider key as the API key, never a Routerly token. Routerly does
-                not store or issue a credential for this router; whatever the client sends
-                goes straight to the provider.
+                <Trans i18nKey="routers.general.connect.passthrough.intro" components={{ strong: <strong /> }} />
               </p>
-              <p style={SECTION_TEXT}>
-                Budgets and limits do not apply to this router: cost is unknown for
-                Passthrough traffic, so it is never checked against or counted toward any
-                spend limit.
-              </p>
+              <p style={SECTION_TEXT}>{t('routers.general.connect.passthrough.noLimits')}</p>
               {endpointOptions.length > 1 && (
                 <SearchableSelect
                   value={selectedEndpoint}
@@ -146,10 +139,9 @@ export function RouterGeneralTab() {
             </div>
 
             <div>
-              <div style={SECTION_TITLE}>OpenAI SDK</div>
+              <div style={SECTION_TITLE}>{t('routers.general.connect.passthrough.openaiTitle')}</div>
               <p style={SECTION_TEXT}>
-                Base URL <code>{passthroughBase}</code> — no <code>/v1</code> suffix, the SDK
-                still appends its own path exactly as it would against the real OpenAI API.
+                <Trans i18nKey="routers.general.connect.passthrough.openaiBase" values={{ url: passthroughBase }} components={{ code: <code /> }} />
               </p>
               <CopyBlock text={`from openai import OpenAI
 
@@ -165,11 +157,9 @@ response = client.chat.completions.create(
             </div>
 
             <div>
-              <div style={SECTION_TITLE}>Anthropic SDK</div>
+              <div style={SECTION_TITLE}>{t('routers.general.connect.passthrough.anthropicTitle')}</div>
               <p style={SECTION_TEXT}>
-                Base URL <code>{passthroughBase}</code> — the SDK still appends{' '}
-                <code>/v1/messages</code> itself, exactly as it would against the real
-                Anthropic API.
+                <Trans i18nKey="routers.general.connect.passthrough.anthropicBase" values={{ url: passthroughBase }} components={{ code: <code /> }} />
               </p>
               <CopyBlock text={`from anthropic import Anthropic
 

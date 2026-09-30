@@ -92,7 +92,7 @@ export function SearchableSelect({
         <span style={{ color: selected ? 'var(--text-primary)' : 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {selected ? selected.label : (placeholder ?? t('common.select'))}
         </span>
-        <ChevronDown size={14} style={{ flexShrink: 0, marginLeft: 6, color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
+        <ChevronDown size={14} style={{ flexShrink: 0, marginInlineStart: 6, color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 0.15s' }} />
       </div>
 
       {open && (
@@ -131,6 +131,8 @@ export function SearchableSelect({
               filtered.map(opt => (
                 <div
                   key={opt.value}
+                  role="option"
+                  aria-selected={opt.value === value}
                   onClick={() => { onChange(opt.value); setOpen(false); setQuery(''); }}
                   style={{
                     padding: '8px 12px',

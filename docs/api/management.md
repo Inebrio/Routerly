@@ -100,6 +100,18 @@ Only available when `configured: false`.
 GET /api/me
 ```
 
+### Set Language
+
+```
+PATCH /api/me/language
+```
+
+```json
+{ "language": "it" }
+```
+
+Sets the caller's own dashboard language (1-10 characters). No extra permission: a user can change only their own. `GET /api/me` and the login response return `language`.
+
 ### Update Profile
 
 ```
@@ -2073,6 +2085,8 @@ GET /api/settings
 ```
 PUT /api/settings
 ```
+
+`defaultLanguage` (1-10 characters) sets the instance default dashboard language; other values return `400`.
 
 ```json
 {
