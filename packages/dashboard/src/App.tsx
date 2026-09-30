@@ -94,16 +94,21 @@ function ThemeSelector() {
 
 function LanguageSelector() {
   const { t } = useTranslation();
-  const { language, setLanguage } = useLanguage();
+  const { language, saving, setLanguage } = useLanguage();
+  const [error, setError] = useState(false);
   return (
-    <SearchableSelect
-      options={SUPPORTED_LANGUAGES.map(l => ({ value: l.code, label: `${l.flag}  ${l.name}` }))}
-      value={language}
-      placeholder={t('app.language.label')}
-      ariaLabel={t('app.language.label')}
-      onChange={setLanguage}
-      style={{ fontSize: '0.78rem' }}
-    />
+    <>
+      <SearchableSelect
+        options={SUPPORTED_LANGUAGES.map(l => ({ value: l.code, label: `${l.flag}  ${l.name}` }))}
+        value={language}
+        placeholder={t('app.language.label')}
+        ariaLabel={t('app.language.label')}
+        onChange={code => { setError(false); setLanguage(code).catch(() => setError(true)); }}
+        disabled={saving}
+        style={{ fontSize: '0.78rem' }}
+      />
+      {error && <div role="alert" style={{ fontSize: '0.72rem', color: 'var(--danger, #ef4444)', padding: '2px 4px' }}>{t('app.language.saveError')}</div>}
+    </>
   );
 }
 

@@ -13,19 +13,19 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map(l => ({ value: l.code, label: l
 
 export function ProfilePreferencesTab() {
   const { t } = useTranslation();
-  const { language, setLanguage } = useLanguage();
-  const [saving, setSaving] = useState(false);
+  const { language, saving, setLanguage } = useLanguage();
+  const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
 
   async function handleChange(code: string) {
-    setSaving(true);
     setSaved(false);
+    setFailed(false);
     try {
       await setLanguage(code);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } finally {
-      setSaving(false);
+    } catch {
+      setFailed(true);
     }
   }
 
@@ -47,6 +47,7 @@ export function ProfilePreferencesTab() {
             style={{ maxWidth: 280 }}
           />
         </div>
+        {failed && <div className="form-error" role="alert" style={{ marginTop: 12 }}>{t('profile.preferences.saveError')}</div>}
         {saved && (
           <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, fontSize: '0.83rem', color: '#22c55e' }}>
             {t('profile.preferences.saved')}

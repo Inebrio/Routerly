@@ -62,13 +62,15 @@ vi.mock('./api', () => ({
   getExperiments: vi.fn(),
   getPermissionStatus: vi.fn(),
   fixPermissions: vi.fn(),
+  getMe: vi.fn().mockResolvedValue({}),
+  updateMyLanguage: vi.fn(),
 }));
 
 // ── AuthContext mock ───────────────────────────────────────────────────────────
 vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }));
 
 import App, { __resetPermissionCheckForTests } from './App';
-import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments, getPermissionStatus, fixPermissions } from './api';
+import { checkSetupStatus, getSystemInfo, getSettings, updateSettings, getClients, getExperiments, getPermissionStatus, fixPermissions, updateMyLanguage } from './api';
 import { useAuth } from './AuthContext';
 
 const mockCheckSetup = vi.mocked(checkSetupStatus as () => Promise<unknown>);
@@ -543,5 +545,53 @@ describe('SetupGuard — needsSetup true', () => {
     mockCheckSetup.mockResolvedValue({ needsSetup: true });
     renderApp();
     await waitFor(() => expect(screen.queryByText('SetupPage')).toBeTruthy(), { timeout: 3000 });
+  });
+});
+
+
+// ── Language selector (S3) ─────────────────────────────────────────────────────
+describe('Sidebar language selector', () => {
+  beforeEach(() => {
+    __resetPermissionCheckForTests();
+    window.history.pushState({}, '', '/dashboard/overview');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  const mockUpdateLang = vi.mocked(updateMyLanguage as (c: string) => Promise<unknown>);
+  const pick = async (name: string | RegExp) => {
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('combobox', { name: 'Language' }));
+    await user.click(await screen.findByRole('option', { name }));
+  };
+
+  it('AC9 lists every language by its own name and marks the current one', async () => {
+    renderApp();
+    await userEvent.setup().click(await screen.findByRole('combobox', { name: 'Language' }));
+    const opts = await screen.findAllByRole('option');
+    expect(opts.length).toBeGreaterThan(20);
+    expect(screen.getByRole('option', { name: /Deutsch/ })).toBeInTheDocument();
+    expect(opts.filter(o => o.getAttribute('aria-selected') === 'true')).toHaveLength(1);
+  });
+
+  it('AC1 switches immediately and saves', async () => {
+    mockUpdateLang.mockResolvedValue({ language: 'de' });
+    renderApp();
+    await pick(/Deutsch/);
+    await waitFor(() => expect(mockUpdateLang).toHaveBeenCalledWith('de'));
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /Sprache|Language/ })).toHaveTextContent('Deutsch'));
+  });
+
+  it('EC1 failed save shows an error and restores the previous language', async () => {
+    mockUpdateLang.mockRejectedValue(new Error('boom'));
+    renderApp();
+    await pick(/Deutsch/);
+    await screen.findByRole('alert');
+    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveTextContent('English');
+  });
+
+  it('EC7 selecting the active language does not save', async () => {
+    renderApp();
+    await pick(/English/);
+    expect(mockUpdateLang).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

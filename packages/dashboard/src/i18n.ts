@@ -93,6 +93,8 @@ i18n
   .init({
     resources,
     fallbackLng: 'en', // AC4: a missing key falls back to the English resource, never a raw key
+    returnEmptyString: false, // AC2: an empty catalog value falls back to English
+    returnNull: false, // AC3: a null catalog value falls back to English
     interpolation: { escapeValue: false },
   });
 

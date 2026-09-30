@@ -36,6 +36,10 @@ Enter the 6-digit code from your authenticator app to confirm setup. Once enable
 
 The profile card shows your **email address** and your **role**.
 
+### Language
+
+Pick the dashboard language in the sidebar selector or under Preferences. The choice is saved on your user and follows you across browsers. If saving fails, the previous language is restored and an error is shown. A missing translation shows the English text. The CLI and service stay English-only.
+
 ---
 
 ## Notifications Tab {#notifications-tab}

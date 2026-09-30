@@ -53,3 +53,22 @@ export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
   { code: 'vi', name: 'Tiếng Việt', rtl: false, flag: '🇻🇳' },
   { code: 'zh', name: '简体中文', rtl: false, flag: '🇨🇳' },
 ];
+
+export function isSupportedLanguage(code: string): boolean {
+  return SUPPORTED_LANGUAGES.some(l => l.code === code);
+}
+
+/**
+ * First browser tag that maps to a shipped catalog, else null.
+ * pt-BR -> 'pt-BR', other pt -> 'pt', any zh (incl. Traditional: zh-TW/HK/Hant) -> 'zh'
+ * because no zh-Hant catalog exists; otherwise the primary subtag if supported.
+ */
+export function matchBrowserLanguage(tags: readonly string[]): string | null {
+  for (const raw of tags) {
+    const tag = raw.replace(/_/g, '-').toLowerCase();
+    const primary = tag.split('-')[0] ?? '';
+    const code = tag === 'pt-br' ? 'pt-BR' : primary;
+    if (isSupportedLanguage(code)) return code;
+  }
+  return null;
+}

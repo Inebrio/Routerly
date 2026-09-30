@@ -181,6 +181,31 @@ describe('SettingsGeneralTab', () => {
     return render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
   }
 
+  it('AC5/AC6 shows the Internationalization section and saves the instance default', async () => {
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    fireEvent.change(screen.getByLabelText('Default Language'), { target: { value: 'de' } });
+    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ defaultLanguage: 'de' })));
+    await screen.findByText(/saved/i);
+  });
+
+  it('EC2 a refused save shows the error', async () => {
+    mockUpdateSettings.mockRejectedValue(new Error('Invalid language'));
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    fireEvent.change(screen.getByLabelText('Default Language'), { target: { value: 'de' } });
+    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+    await screen.findByText('Invalid language');
+  });
+
+  it('EC4 the default language is not editable without settings:write', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    expect(screen.getByLabelText('Default Language')).toBeDisabled();
+  });
+
   it('shows spinner while loading', () => {
     mockGetSettings.mockReturnValue(new Promise(() => {}));
     renderGeneral();

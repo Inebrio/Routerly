@@ -49,6 +49,8 @@ Everything in this block is editable and saved with **Save Settings**.
 | **Log Level** | `trace` / `debug` / `info` / `warn` / `error`. Routerly prints the [full request trace](../concepts/architecture.md#the-trace-on-the-console) on stdout, with failures on stderr; at `warn` and `error` only the failures are printed |
 | **Public URL** | The externally accessible URL of this Routerly instance. Shown in router connection snippets. Useful when the dashboard runs on a different machine or port than the service |
 
+| **Default language** (Internationalization) | Language for users who have not picked their own, in Profile → Preferences or the sidebar selector. A user's own choice is never overridden. Editable with `settings:write` |
+
 **Anonymous metrics** is a separate self-saving toggle at the bottom of the tab.
 
 Per-request timeouts are configured per router (see [Routers](./routers.md#general-tab)), not globally.
