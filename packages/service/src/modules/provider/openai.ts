@@ -54,6 +54,37 @@ export class OpenAIAdapter implements ProviderAdapter {
     return normalized;
   }
 
+  /**
+   * Some default-reasoning chat models (the gpt-5.x family) reject any request that mixes
+   * function tools with reasoning on /v1/chat/completions — even when `reasoning_effort` was
+   * never set, since the model still reasons by default unless told `'none'`. Detected by
+   * OpenAI's own error rather than a hardcoded model list, since the affected model set has
+   * changed release to release and will keep changing.
+   */
+  private isReasoningToolsConflict(err: unknown): boolean {
+    const status = (err as { status?: number })?.status;
+    const message = (err as { message?: string })?.message ?? '';
+    return status === 400 && /reasoning_effort/i.test(message) && /function tools|tool/i.test(message);
+  }
+
+  /**
+   * Call `chat.completions.create`, retrying once with `reasoning_effort: 'none'` forced on
+   * if the provider rejects the request as a tools+reasoning conflict (see isReasoningToolsConflict).
+   * A drop-in client shouldn't have to know about this quirk — Routerly keeps the call working
+   * without the client ever seeing the 400.
+   */
+  private async createChatCompletion(
+    client: OpenAI,
+    body: Record<string, unknown>,
+  ): Promise<unknown> {
+    try {
+      return await client.chat.completions.create(body as never);
+    } catch (err) {
+      if (!this.isReasoningToolsConflict(err)) throw err;
+      return await client.chat.completions.create({ ...body, reasoning_effort: 'none' } as never);
+    }
+  }
+
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
@@ -64,8 +95,7 @@ export class OpenAIAdapter implements ProviderAdapter {
     const upstreamModel = this.getUpstreamModelId(model);
     const rest = this.normalizeForModel(request, upstreamModel);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: false } as any);
+    const response = await this.createChatCompletion(client, { ...rest, model: upstreamModel, stream: false });
 
     return response as unknown as ChatCompletionResponse;
   }
@@ -78,8 +108,7 @@ export class OpenAIAdapter implements ProviderAdapter {
     const upstreamModel = this.getUpstreamModelId(model);
     const rest = this.normalizeForModel(request, upstreamModel);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream: any = await client.chat.completions.create({ ...rest, model: upstreamModel, stream: true } as any);
+    const stream = (await this.createChatCompletion(client, { ...rest, model: upstreamModel, stream: true })) as AsyncIterable<unknown>;
     for await (const chunk of stream) {
       yield chunk as unknown as StreamChunk;
     }
@@ -96,12 +125,11 @@ export class OpenAIAdapter implements ProviderAdapter {
       { messages: openAIMessages, max_tokens: request.max_tokens } as unknown as ChatCompletionRequest,
       upstreamModel,
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await client.chat.completions.create({
+    const response = await this.createChatCompletion(client, {
       ...normalized,
       model: upstreamModel,
       stream: false,
-    } as any);
-    return openAIToAnthropicResponse(response, upstreamModel);
+    });
+    return openAIToAnthropicResponse(response as never, upstreamModel);
   }
 }
