@@ -1920,7 +1920,7 @@ describe('SettingsCatalogTab', () => {
 describe('SettingsAboutTab', () => {
   beforeEach(() => {
     mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo } as never);
-    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next'], versions: [] } as never);
+    mockGetAvailableReleases.mockResolvedValue({ channels: ['latest', 'current', 'next', 'develop'], versions: [] } as never);
     mockCheckForUpdates.mockResolvedValue({ available: false, currentVersion: '0.3.0', latestVersion: '0.3.0', checkedAt: new Date().toISOString() } as never);
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
     mockTriggerUpdate.mockResolvedValue({ message: 'Update started' } as never);
@@ -2158,7 +2158,7 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => screen.getByText('Channel'));
     const sel = screen.getByRole('combobox') as HTMLSelectElement;
     const values = Array.from(sel.options).map(o => o.value);
-    expect(values).toEqual(['latest', 'current', 'next', '__custom']);
+    expect(values).toEqual(['latest', 'current', 'next', 'develop', '__custom']);
   });
 
   it('ChannelSelector: selecting a known channel calls updateSettings', async () => {
@@ -2186,7 +2186,7 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'v0.2.5' }));
   });
 
-  it('ChannelSelector: custom input still accepts a deprecated alias by name', async () => {
+  it('ChannelSelector: custom input still accepts a retired alias name verbatim (RMT-2 EC1)', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     await userEvent.selectOptions(screen.getByRole('combobox'), '__custom');
@@ -2251,29 +2251,30 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(screen.queryByText('Saved')).not.toBeNull());
   });
 
-  it('ChannelSelector: stored deprecated alias selects canonical option and shows a muted hint', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'stable' } as never);
+  it('ChannelSelector: a stored, now-retired "stable" value is unknown and falls back to the free-text input (RMT-2 EC1)', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'stable', rawChannel: 'stable' } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
-    // Selected option is the canonical name, not the raw stored alias
-    const sel = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(sel.value).toBe('current');
-    // No free-text fallback for a known alias
-    expect(screen.queryByPlaceholderText('v0.2.0')).toBeNull();
-    expect(screen.getByText('stored as stable (deprecated)')).toBeTruthy();
+    // 'stable' is no longer a recognised channel, so it is not in the dropdown
+    // options — the selector falls back to the custom free-text input, not a
+    // silent resolution to any canonical channel.
+    await waitFor(() => expect(screen.queryByPlaceholderText('v0.2.0')).not.toBeNull());
+    const customInput = screen.getByPlaceholderText('v0.2.0') as HTMLInputElement;
+    expect(customInput.value).toBe('stable');
+    expect(screen.queryByText(/deprecated/)).toBeNull();
   });
 
-  it('ChannelSelector: stored deprecated "develop" alias selects "next" and shows its hint', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'next', rawChannel: 'develop' } as never);
+  it('ChannelSelector: stored "develop" channel selects itself as a known option, no hint (RMT-2 AC3)', async () => {
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'develop', rawChannel: 'develop' } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     const sel = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(sel.value).toBe('next');
-    expect(screen.getByText('stored as develop (deprecated)')).toBeTruthy();
+    expect(sel.value).toBe('develop');
+    expect(screen.queryByText(/deprecated/)).toBeNull();
   });
 
   it('ChannelSelector: updateSettings is not called on render, dropdown open or dropdown close', async () => {
-    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'stable' } as never);
+    mockGetSystemInfo.mockResolvedValue({ ...baseSystemInfo, channel: 'current', rawChannel: 'current' } as never);
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
     expect(mockUpdateSettings).not.toHaveBeenCalled();

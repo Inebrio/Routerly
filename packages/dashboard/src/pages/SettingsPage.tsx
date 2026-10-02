@@ -11,7 +11,7 @@ import { SearchableSelect } from '../components/SearchableSelect';
 import { writeToClipboard } from '../utils/clipboard';
 import { isCaptureMode } from '../utils/captureMode';
 import { useAuth } from '../AuthContext';
-import { NOTIFICATION_EVENTS, normalizeUpdateChannel } from '@routerly/shared';
+import { NOTIFICATION_EVENTS } from '@routerly/shared';
 import { SUPPORTED_LANGUAGES } from '../locales/languages';
 
 const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
@@ -1909,7 +1909,7 @@ export function SettingsCatalogTab() {
 
 // ── About tab ────────────────────────────────────────────────────────────────
 
-const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next'], versions: [] };
+const FALLBACK_RELEASES: AvailableReleases = { channels: ['latest', 'current', 'next', 'develop'], versions: [] };
 
 function ChannelSelector({
   current,
@@ -1930,11 +1930,9 @@ function ChannelSelector({
     getAvailableReleases().then(setReleases).catch(() => setReleases(FALLBACK_RELEASES));
   }, []);
 
-  const normalized = normalizeUpdateChannel(current);
-  const deprecatedAlias = normalized.deprecatedAlias;
   const knownValues = [...releases.channels, ...releases.versions];
-  const isKnown = knownValues.includes(current) || deprecatedAlias !== undefined;
-  const selectValue = deprecatedAlias ? normalized.channel : current;
+  const isKnown = knownValues.includes(current);
+  const selectValue = current;
 
   React.useEffect(() => {
     setShowCustom(!isKnown);
@@ -1967,9 +1965,6 @@ function ChannelSelector({
         {err && <span style={{ fontSize: '0.72rem', color: 'var(--error, #e53e3e)' }}>{err}</span>}
         {saved && <span style={{ fontSize: '0.72rem', color: '#22c55e' }}>{t('common.saved')}</span>}
         {saving && <div className="spinner" style={{ width: 12, height: 12 }} />}
-        {!showCustom && deprecatedAlias && (
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>stored as {deprecatedAlias} (deprecated)</span>
-        )}
         {showCustom ? (
           <>
             <input
