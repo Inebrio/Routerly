@@ -18,7 +18,7 @@ import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-p
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, updateChannelDeprecationWarning, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -2307,8 +2307,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (defaultLanguagePatch !== undefined && !z.string().min(1).max(10).safeParse(defaultLanguagePatch).success) {
       return reply.status(400).send({ error: 'defaultLanguage must be a non-empty string of at most 10 characters' });
     }
-    // RC-3: validate/normalise channel before persisting — aliases (stable/develop)
-    // resolve to their canonical name, which is what gets written and what
+    // Validate/normalise channel before persisting — what gets written and what
     // updateChecker.updateChannel() receives below.
     const channelPatch = (req.body as Partial<Settings>).channel;
     let channelNormalized: ReturnType<typeof normalizeUpdateChannel> | undefined;
@@ -2317,9 +2316,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({ error: UPDATE_CHANNEL_ERROR });
       }
       channelNormalized = normalizeUpdateChannel(channelPatch);
-      if (channelNormalized.deprecatedAlias) {
-        console.warn(updateChannelDeprecationWarning(channelNormalized.deprecatedAlias));
-      }
     }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
