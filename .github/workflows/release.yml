@@ -1,12 +1,13 @@
 name: Release Pipeline
 
-# RC-2: one pipeline reacting to a push on either long-lived branch. Not yet
-# named release.yml — that file is still the currently-shipped pipeline;
-# RC-5 renames this one over it and deletes the old one. See the RC-2
-# blueprint's "Conflict stated up front" for why two files coexist until then.
+# RMT-1: manual-only trigger. No push: key anywhere under `on:` — a release
+# only ever runs when a maintainer explicitly dispatches it (Actions tab →
+# "Run workflow" → branch picker, or `gh workflow run release.yml --ref
+# <branch>`), same mechanism already proven by docker-rebuild.yml. The
+# branch to release from is whatever ref the dispatch names; nothing here
+# parses or validates it.
 on:
-  push:
-    branches: [main, develop]
+  workflow_dispatch: {}
 
 concurrency:
   group: 'release-pipeline-${{ github.ref }}'
@@ -242,23 +243,56 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Force-move the next tag
+      - name: Force-move the channel-next tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -f next "${{ needs.release.outputs.git_tag }}"
-          git push origin next --force
+          git tag -f channel-next "${{ needs.release.outputs.git_tag }}"
+          git push origin channel-next --force
 
       - name: Recreate the next prerelease
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete next --yes 2>/dev/null || true
+          gh release delete channel-next --yes 2>/dev/null || true
           # shellcheck disable=SC2016  # the printf format string is deliberately single-quoted, %s is the interpolation point
-          gh release create next \
+          gh release create channel-next \
             --title "Routerly next (→ ${{ needs.release.outputs.git_tag }})" \
             --prerelease \
             --notes "$(printf 'Unstable channel release. Points to **%s**.\n\nInstall:\n```bash\ncurl -fsSL https://routerly.ai/install.sh | bash -s -- --channel=next\n```' "${{ needs.release.outputs.git_tag }}")" \
+            scripts/install.sh \
+            scripts/install.ps1 \
+            scripts/install.mjs
+
+  develop-pointer:
+    name: Rolling develop pointer
+    needs: release
+    if: needs.release.outputs.released == 'true' && needs.release.outputs.channel == 'develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Force-move the channel-develop tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f channel-develop "${{ needs.release.outputs.git_tag }}"
+          git push origin refs/tags/channel-develop --force
+
+      - name: Recreate the develop prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete channel-develop --yes 2>/dev/null || true
+          # shellcheck disable=SC2016  # the printf format string is deliberately single-quoted, %s is the interpolation point
+          gh release create channel-develop \
+            --title "Routerly develop (→ ${{ needs.release.outputs.git_tag }})" \
+            --prerelease \
+            --notes "$(printf 'Bleeding-edge channel release. Points to **%s**.\n\nInstall:\n```bash\ncurl -fsSL https://routerly.ai/install.sh | bash -s -- --channel=develop\n```' "${{ needs.release.outputs.git_tag }}")" \
             scripts/install.sh \
             scripts/install.ps1 \
             scripts/install.mjs

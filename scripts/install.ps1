@@ -157,10 +157,10 @@ function Resolve-DownloadUrl {
       $apiUrl = "$apiBase/latest"
     } elseif ($Channel -ceq "next") {
       Write-Info "Resolving channel next..."
-      $apiUrl = "$apiBase/tags/next"
+      $apiUrl = "$apiBase/tags/channel-next"
     } elseif ($Channel -ceq "develop") {
       Write-Info "Resolving channel develop..."
-      $apiUrl = "$apiBase/tags/develop"
+      $apiUrl = "$apiBase/tags/channel-develop"
     } else {
       Die "Unknown channel: '$Channel'. Valid values: latest, current, next, develop"
     }
