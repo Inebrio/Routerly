@@ -2168,6 +2168,14 @@ describe('SettingsAboutTab', () => {
     await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'current' }));
   });
 
+  it('ChannelSelector: selecting "develop" from the dropdown saves it as its own real channel, distinct from "next" (RMT-2 AC1/AC3)', async () => {
+    renderAbout();
+    await waitFor(() => screen.getByText('Channel'));
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'develop');
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ channel: 'develop' }));
+    expect(mockUpdateSettings).not.toHaveBeenCalledWith({ channel: 'next' });
+  });
+
   it('ChannelSelector: selecting __custom shows custom input', async () => {
     renderAbout();
     await waitFor(() => screen.getByText('Channel'));
