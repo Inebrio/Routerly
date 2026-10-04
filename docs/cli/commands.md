@@ -3100,16 +3100,26 @@ Valid values:
 |-------|-------------|
 | `latest` | Newest production-ready release |
 | `current` | Newest production-ready release (same as `latest`) |
-| `next` | Unstable/rolling release line |
+| `next` | Validated pre-release line, promoted from `develop` |
+| `develop` | Bleeding-edge, unreviewed release line |
 | `vX.Y.Z` | Pin to a specific version tag (e.g. `v0.2.0`) |
 
-`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`, respectively. Removal is planned no earlier than the release after next.
+:::warning Breaking change
+`stable` is no longer accepted as an alias for `current` — it is rejected
+outright, with an error naming the four values above. `develop` is no
+longer an alias for `next`: it is now its own real channel, the
+bleeding-edge line, and resolves to itself with no deprecation warning. Any
+instance that had `stable` or `develop` persisted as its channel is
+affected — see [Update Channel](../dashboard/settings.md#update-channel)
+for what changes for an existing install.
+:::
 
 ```bash
 routerly update channel           # show current channel
 routerly update channel latest    # switch to latest
 routerly update channel current   # switch to current
-routerly update channel next      # switch to next (unstable/rolling)
+routerly update channel next      # switch to the validated pre-release line
+routerly update channel develop   # switch to the bleeding-edge line
 routerly update channel v0.2.0    # pin to a specific version
 ```
 
