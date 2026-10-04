@@ -912,7 +912,7 @@ export interface UpdateInfo {
   currentVersion: string;
   /** Latest version found in the resolved channel (e.g. '0.2.0') */
   latestVersion: string;
-  /** Channel or tag that was checked (e.g. 'latest', 'stable', 'v0.2.0') */
+  /** Channel or tag that was checked (e.g. 'latest', 'current', 'v0.2.0') */
   channel: string;
   /** URL to the GitHub release page */
   releaseUrl?: string;
