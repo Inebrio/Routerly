@@ -298,11 +298,11 @@ resolve_download_url() {
         ;;
       next)
         info "Resolving channel ${BOLD}next${RESET}..."
-        api_url="${api_base}/tags/next"
+        api_url="${api_base}/tags/channel-next"
         ;;
       develop)
         info "Resolving channel ${BOLD}develop${RESET}..."
-        api_url="${api_base}/tags/develop"
+        api_url="${api_base}/tags/channel-develop"
         ;;
       *)
         die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, develop"

@@ -60,7 +60,7 @@ describe('RC-2 — ci-release-output.mjs happy paths', () => {
     expect(fs.readFileSync(outFile, 'utf-8')).toBe(expected)
   })
 
-  it('addChannel on develop maps to channel next / docker tag next', () => {
+  it('addChannel on develop maps to channel develop / docker tag develop', () => {
     const outFile = tmpOutputFile()
     const result = run(['addChannel', '2.0.0', 'v2.0.0', 'develop'], { GITHUB_OUTPUT: outFile })
 
@@ -70,6 +70,24 @@ describe('RC-2 — ci-release-output.mjs happy paths', () => {
       'action=addChannel',
       'version=2.0.0',
       'git_tag=v2.0.0',
+      'channel=develop',
+      'docker_channel_tag=develop',
+    ].join('\n') + '\n'
+
+    expect(result.stdout).toBe(expected)
+    expect(fs.readFileSync(outFile, 'utf-8')).toBe(expected)
+  })
+
+  it('addChannel on next maps to channel next / docker tag next', () => {
+    const outFile = tmpOutputFile()
+    const result = run(['addChannel', '2.1.0', 'v2.1.0', 'next'], { GITHUB_OUTPUT: outFile })
+
+    expect(result.status).toBe(0)
+    const expected = [
+      'released=true',
+      'action=addChannel',
+      'version=2.1.0',
+      'git_tag=v2.1.0',
       'channel=next',
       'docker_channel_tag=next',
     ].join('\n') + '\n'
@@ -126,5 +144,6 @@ describe('RC-2 — ci-release-output.mjs rejection paths', () => {
     const result = run(['publish', '1.0.0', 'v1.0.0', 'staging'])
     expect(result.status).toBe(1)
     expect(result.stderr).toContain('Invalid branch "staging"')
+    expect(result.stderr).toContain('Expected "main", "next" or "develop"')
   })
 })

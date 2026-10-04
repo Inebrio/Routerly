@@ -361,8 +361,8 @@ describe('UpdateChecker channel resolution', () => {
   it.each([
     ['latest', `${REPO_PATH}/releases/latest`],
     ['current', `${REPO_PATH}/releases/latest`],
-    ['next', `${REPO_PATH}/releases/tags/next`],
-    ['develop', `${REPO_PATH}/releases/tags/develop`],
+    ['next', `${REPO_PATH}/releases/tags/channel-next`],
+    ['develop', `${REPO_PATH}/releases/tags/channel-develop`],
     ['v0.3.0', `${REPO_PATH}/releases/tags/v0.3.0`],
   ])('channel "%s" resolves to %s (AC8, EC3)', async (channel, expectedPath) => {
     stubGithubOk({ tag_name: 'v1.0.0', html_url: '', prerelease: false });
@@ -380,8 +380,8 @@ describe('UpdateChecker channel resolution', () => {
     checker.start('0.1.5', 'develop');
     await checker.check();
 
-    expect(lastRequestPath).toBe(`${REPO_PATH}/releases/tags/develop`);
-    expect(lastRequestPath).not.toBe(`${REPO_PATH}/releases/tags/next`);
+    expect(lastRequestPath).toBe(`${REPO_PATH}/releases/tags/channel-develop`);
+    expect(lastRequestPath).not.toBe(`${REPO_PATH}/releases/tags/channel-next`);
     expect(checker.getLastResult()?.channel).toBe('develop');
     expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();

@@ -105,11 +105,16 @@ function fetchAllReleases(): Promise<GithubRelease[]> {
   });
 }
 
+// Rolling prerelease channels are served off a tag renamed to avoid colliding
+// with the branches of the same name (`next`, `develop`) — see release.yml's
+// next-pointer/develop-pointer jobs.
+const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
+
 function fetchRelease(channel: string): Promise<GithubRelease> {
   return new Promise((resolve, reject) => {
     const path = (channel === 'latest' || channel === 'current')
       ? `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
-      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${channel}`;
+      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${ROLLING_CHANNEL_TAGS[channel] ?? channel}`;
 
     const options = {
       hostname: 'api.github.com',
