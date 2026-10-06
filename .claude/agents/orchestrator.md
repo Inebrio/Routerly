@@ -5,8 +5,6 @@ tools: Read, Grep, Glob, Write, Agent, Skill
 skills:
   - interface-contracts
 model: sonnet
-effort: high
-maxTurns: 40
 color: pink
 hooks:
   PreToolUse:

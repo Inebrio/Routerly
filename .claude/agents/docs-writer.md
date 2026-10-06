@@ -6,8 +6,6 @@ skills:
   - docs-conventions
   - codebase-map
 model: sonnet
-effort: medium
-maxTurns: 40
 color: white
 hooks:
   PreToolUse:

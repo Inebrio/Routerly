@@ -6,8 +6,6 @@ skills:
   - backend-conventions
   - codebase-map
 model: sonnet
-effort: high
-maxTurns: 50
 color: blue
 ---
 
