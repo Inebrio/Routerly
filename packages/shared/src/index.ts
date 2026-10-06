@@ -60,7 +60,6 @@ export type {
   UsageRetentionConfig,
   ProviderRepo,
   UpdateChannel,
-  DeprecatedUpdateChannel,
   UpdateChannelSetting,
   NormalizedUpdateChannel,
   NotificationsConfig,
@@ -196,10 +195,10 @@ export {
 export type { NotificationEvent } from './types/config.js';
 export type { PermissionCheckStatus } from './types/config.js';
 
-// Update channel vocabulary: 'latest' | 'current' | 'next', 'stable'/'develop' deprecated aliases (RC-3)
+// Update channel vocabulary: 'latest' | 'current' | 'next' | 'develop'
 export {
-  UPDATE_CHANNELS, DEPRECATED_UPDATE_CHANNELS, normalizeUpdateChannel,
-  updateChannelDeprecationWarning, isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
+  UPDATE_CHANNELS, normalizeUpdateChannel,
+  isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
 } from './types/config.js';
 
 // Readable catalog for those events: title, category, cause line (T51)

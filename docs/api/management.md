@@ -2086,13 +2086,14 @@ GET /api/settings
 PUT /api/settings
 ```
 
-`defaultLanguage` (1-10 characters) sets the instance default dashboard language; other values return `400`.
+`defaultLanguage` (1-10 characters) sets the instance default dashboard language; other values return `400`. `channel` sets the update channel the service checks against (`PUT` takes effect immediately, no restart — the running update checker is updated in place); an unrecognized value returns `400`.
 
 ```json
 {
   "port": 3000,
   "logLevel": "info",
   "publicUrl": "https://routerly.example.com",
+  "channel": "develop",
   "providerRepos": [
     {
       "url": "https://raw.githubusercontent.com/Inebrio/Routerly-Providers/main/",
@@ -2108,12 +2109,34 @@ PUT /api/settings
 
 **Fields:**
 - `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional)
+- `channel` - update channel: `latest`, `current`, `next`, `develop`, or a version tag such as `v0.4.0` (optional)
 - `providerRepos` - array of provider repository objects (optional)
 
 **ProviderRepo object:**
 - `url` - repository endpoint (required)
 - `enabled` - whether the repo is active (optional, default `true`)
-- `channel` - named channel to prefer (optional, e.g. `stable`, `latest`)
+- `channel` - named channel to prefer (optional, e.g. `stable`, `latest`) — this is the provider catalog's own channel concept, unrelated to the update channel above
+
+**Errors**: `400 { "error": "Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0." }` when `channel` is not one of the four names above or a version tag.
+
+:::warning Breaking change
+`stable` is no longer accepted as a deprecated alias for `current` — it now returns `400` with the error above. `develop` is no longer an alias for `next`: it is a real, distinct channel (the bleeding-edge line) and is accepted and persisted as itself, with no deprecation warning. An instance with `"channel": "stable"` already persisted keeps that literal on disk (no migration runs) but fails this validation on its next `PUT`; an instance with `"channel": "develop"` already persisted is unaffected on disk, but the update checker now resolves it against the new bleeding-edge channel instead of the old validated pre-release channel.
+:::
+
+### Get Available Releases
+
+```
+GET /api/system/releases
+```
+
+Requires a valid dashboard session (any role). Used by the dashboard's channel selector.
+
+**Response `200`:**
+```json
+{ "channels": ["latest", "current", "next", "develop"], "versions": [] }
+```
+
+`channels` always includes the four channel names above, plus any non-semver GitHub tag found among the repository's releases. `versions` is currently always empty.
 
 ---
 
@@ -3083,20 +3106,21 @@ No authentication required.
   "configDir": "/Users/you/.routerly/config",
   "dataDir": "/Users/you/.routerly/data",
   "uptimeSeconds": 3600,
-  "channel": "stable",
+  "channel": "current",
+  "rawChannel": "current",
   "isDocker": false,
   "updateInfo": {
     "available": true,
     "currentVersion": "0.2.0",
     "latestVersion": "0.3.0",
-    "channel": "stable",
+    "channel": "current",
     "releaseUrl": "https://github.com/Inebrio/Routerly/releases/tag/v0.3.0",
     "checkedAt": "2026-06-09T10:00:00.000Z"
   }
 }
 ```
 
-`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container.
+`updateInfo` is `null` if no check has completed yet (first 24 hours after boot). `isDocker` is `true` when the service is running inside a Docker container. `channel` is the stored value as-is; `rawChannel` is kept for compatibility and always equals `channel` — neither is ever silently substituted, so a persisted value that is no longer a recognized channel (e.g. the retired `stable` alias, see [Update Settings](#update-settings)) is reported back verbatim rather than corrected.
 
 ---
 
@@ -3115,7 +3139,7 @@ Requires authentication. Forces an immediate check against the GitHub Releases A
   "available": false,
   "currentVersion": "0.2.0",
   "latestVersion": "0.2.0",
-  "channel": "stable",
+  "channel": "current",
   "checkedAt": "2026-06-09T12:34:56.000Z"
 }
 ```

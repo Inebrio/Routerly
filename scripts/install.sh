@@ -8,6 +8,7 @@
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --scope=system
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=current
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=next
+#   curl -fsSL https://your-domain.com/install.sh | bash -s -- --channel=develop
 #   curl -fsSL https://your-domain.com/install.sh | bash -s -- --version=v0.2.0
 #
 # --channel and --version are resolved here; all other flags are forwarded to install.mjs.
@@ -20,7 +21,7 @@ GITHUB_REPO="Routerly"
 REQUIRED_NODE_MAJOR=20
 
 # ── Channel / version defaults ────────────────────────────────────────────────
-INSTALL_CHANNEL="current"  # latest | current | next (stable, develop: deprecated aliases)
+INSTALL_CHANNEL="current"  # latest | current | next | develop
 INSTALL_VERSION=""         # e.g. v0.2.0 — overrides INSTALL_CHANNEL when set
 
 # ── Colors ────────────────────────────────────────────────────────────────────
@@ -291,28 +292,20 @@ resolve_download_url() {
     api_url="${api_base}/tags/${INSTALL_VERSION}"
   else
     case "$INSTALL_CHANNEL" in
-      stable)
-        echo "Channel 'stable' is deprecated; using 'current' instead." >&2
-        INSTALL_CHANNEL="current"
-        ;;
-      develop)
-        echo "Channel 'develop' is deprecated; using 'next' instead." >&2
-        INSTALL_CHANNEL="next"
-        ;;
-    esac
-
-    case "$INSTALL_CHANNEL" in
       latest|current)
         info "Resolving channel ${BOLD}${INSTALL_CHANNEL}${RESET}..."
         api_url="${api_base}/latest"
         ;;
       next)
         info "Resolving channel ${BOLD}next${RESET}..."
-        api_url="${api_base}/tags/next"
+        api_url="${api_base}/tags/channel-next"
+        ;;
+      develop)
+        info "Resolving channel ${BOLD}develop${RESET}..."
+        api_url="${api_base}/tags/channel-develop"
         ;;
       *)
-        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next
-(deprecated aliases: stable, develop)"
+        die "Unknown channel: '${INSTALL_CHANNEL}'. Valid values: latest, current, next, develop"
         ;;
     esac
   fi

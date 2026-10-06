@@ -7,8 +7,6 @@ skills:
   - project-conventions
   - codebase-map
 model: sonnet
-effort: medium
-maxTurns: 30
 color: orange
 hooks:
   PreToolUse:

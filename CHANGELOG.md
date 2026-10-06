@@ -42,6 +42,9 @@ A Passthrough router's model list can now hold real target models alongside its 
 **Execution wiring for a Passthrough router's real target models** (follow-up to the above)
 A Passthrough router's real target models now route, authenticate, and meter exactly like a normal router: same policy scoring, same budget/limit enforcement, same usage tracking. A Routerly bearer token is issued the moment the router has its first real model configured and revoked the moment the last one is removed; the pass-through entry itself keeps its existing unauthenticated, budget-exempt raw-forward behavior. The pass-through entry's position in the model list decides the router's default outcome: at index 0 (ahead of every real model), raw-forward always wins and real models are never scored; anywhere else, real models are scored and routed normally and the pass-through entry is used only as a last-resort fallback when none of them are eligible. On that fallback, Routerly forwards the client's own request headers unchanged rather than substituting a provider credential, so a client authenticating only with its Routerly token should expect the upstream provider to reject the fallback request with its own `401` unless it also sends a valid upstream credential.
 
+**Manually triggered releases with a three-tier channel pipeline**
+`release.yml` now runs only on manual dispatch (Actions tab or `gh workflow run release.yml --ref <branch>`) — no release fires on a plain push anymore. Three branches each carry their own update channel: `develop` (bleeding-edge), `next` (validated pre-release, promoted from `develop`), and `main` (stable, `current`). Every release on `next` or `develop` force-moves a rolling pointer tag (`channel-next`/`channel-develop`) and recreates a same-named GitHub prerelease with the install scripts attached, so both channels always have something installable even though neither cuts its own `vX.Y.Z` tag.
+
 ### Bug fixes
 
 - The update checker no longer runs outside a production build — a local dev checkout's `package.json` version is never bumped by semantic-release on `develop`/`main`, so it always lagged the tag a release had just cut, telling the instance actively building that release to update to it. Set `ROUTERLY_FORCE_UPDATE_CHECK=true` to opt back in for testing the checker itself.
@@ -64,6 +67,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 - The management surface uses `router` and `routers` instead of `project` and `projects`. API paths, CLI commands, dashboard routes, configuration fields, and usage fields have no backward aliases. Existing `projects.json` data migrates to `routers.json` automatically and idempotently on first start.
 - `router create --candidate`/`router edit --candidate` no longer accepts `<routerId>:<weight>` — use `--candidate <routerId>` (repeatable); order of repetition is now the priority order. The old syntax is rejected with an error naming the replacement, not silently reinterpreted.
+- The update channel's deprecated aliases are retired: `stable` is now rejected outright (400 from the management API, non-zero exit from the CLI and installers) instead of silently resolving to `current`, and `develop` is now a real, distinct channel — the bleeding-edge line — instead of an alias for `next`. An instance with `"develop"` already persisted under the old meaning now tracks the bleeding-edge line the next time it checks for updates, not `next`.
 
 ---
 

@@ -6,8 +6,6 @@ skills:
   - validation-protocol
   - codebase-map
 model: sonnet
-effort: high
-maxTurns: 60
 color: red
 hooks:
   PreToolUse:

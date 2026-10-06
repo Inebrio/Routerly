@@ -6,8 +6,6 @@ skills:
   - analysis-format
   - codebase-map
 model: sonnet
-effort: high
-maxTurns: 40
 color: cyan
 hooks:
   PreToolUse:

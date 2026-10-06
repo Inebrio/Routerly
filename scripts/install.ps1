@@ -7,6 +7,7 @@
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Yes"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel current"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel next"
+#   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Channel develop"
 #   powershell -c "& ([scriptblock]::Create((irm https://your-domain.com/install.ps1))) -Version v0.2.0"
 #
 # -Channel and -Version are resolved here; all other flags are forwarded to install.mjs.
@@ -21,7 +22,7 @@ param(
   [switch]$NoCli,
   [switch]$NoDashboard,
   [switch]$NoDaemon,
-  [string]$Channel       = "current",  # latest | current | next (stable, develop: deprecated aliases)
+  [string]$Channel       = "current",  # latest | current | next | develop
   [string]$Version       = ""         # e.g. v0.2.0 — overrides -Channel when set
 )
 
@@ -151,22 +152,17 @@ function Resolve-DownloadUrl {
     Write-Info "Resolving version $Version..."
     $apiUrl = "$apiBase/tags/$Version"
   } else {
-    if ($Channel -ceq "stable") {
-      [Console]::Error.WriteLine("Channel 'stable' is deprecated; using 'current' instead.")
-      $script:Channel = "current"
-    } elseif ($Channel -ceq "develop") {
-      [Console]::Error.WriteLine("Channel 'develop' is deprecated; using 'next' instead.")
-      $script:Channel = "next"
-    }
-
     if ($Channel -ceq "latest" -or $Channel -ceq "current") {
       Write-Info "Resolving channel $Channel..."
       $apiUrl = "$apiBase/latest"
     } elseif ($Channel -ceq "next") {
       Write-Info "Resolving channel next..."
-      $apiUrl = "$apiBase/tags/next"
+      $apiUrl = "$apiBase/tags/channel-next"
+    } elseif ($Channel -ceq "develop") {
+      Write-Info "Resolving channel develop..."
+      $apiUrl = "$apiBase/tags/channel-develop"
     } else {
-      Die "Unknown channel: '$Channel'. Valid values: latest, current, next`n(deprecated aliases: stable, develop)"
+      Die "Unknown channel: '$Channel'. Valid values: latest, current, next, develop"
     }
   }
 

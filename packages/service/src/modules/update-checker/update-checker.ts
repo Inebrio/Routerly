@@ -1,8 +1,7 @@
 /**
  * Update checker — polls GitHub Releases API to compare the running version
- * against the configured channel (latest, current, next, or a specific tag).
- * `stable` and `develop` are deprecated aliases for `current` and `next`,
- * normalised via `@routerly/shared`.
+ * against the configured channel (latest, current, next, develop, or a
+ * specific tag), normalised via `@routerly/shared`.
  *
  * Design:
  *  - Singleton instance, started once after server boot.
@@ -12,12 +11,10 @@
  */
 
 import { request as httpsRequest } from 'node:https';
-import type { UpdateInfo, AvailableReleases, DeprecatedUpdateChannel } from '@routerly/shared';
+import type { UpdateInfo, AvailableReleases } from '@routerly/shared';
 import {
   normalizeUpdateChannel,
-  updateChannelDeprecationWarning,
   UPDATE_CHANNELS,
-  DEPRECATED_UPDATE_CHANNELS,
 } from '@routerly/shared';
 import { readConfig, writeConfig, type UpdateAnnouncement } from '../config/loader.js';
 import { emitEvent } from '../notifications/emitter.js';
@@ -108,11 +105,16 @@ function fetchAllReleases(): Promise<GithubRelease[]> {
   });
 }
 
+// Rolling prerelease channels are served off a tag renamed to avoid colliding
+// with the branches of the same name (`next`, `develop`) — see release.yml's
+// next-pointer/develop-pointer jobs.
+const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
+
 function fetchRelease(channel: string): Promise<GithubRelease> {
   return new Promise((resolve, reject) => {
     const path = (channel === 'latest' || channel === 'current')
       ? `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
-      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${channel}`;
+      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${ROLLING_CHANNEL_TAGS[channel] ?? channel}`;
 
     const options = {
       hostname: 'api.github.com',
@@ -154,20 +156,10 @@ export class UpdateChecker {
   private _timer: ReturnType<typeof setInterval> | null = null;
   private _currentVersion = '';
   private _channel = 'latest';
-  private _warnedAliases = new Set<DeprecatedUpdateChannel>();
 
-  /**
-   * Normalise a raw channel value (name, deprecated alias, tag, `undefined`
-   * or `''`) into the canonical name and store it. Warns once per distinct
-   * alias — the first time it is seen, never again, and never inside
-   * `check()` so a 24h periodic check cannot repeat the warning.
-   */
+  /** Normalise a raw channel value (name, tag, `undefined` or `''`) and store it. */
   private setChannel(channel: string | undefined): void {
     const normalized = normalizeUpdateChannel(channel);
-    if (normalized.deprecatedAlias && !this._warnedAliases.has(normalized.deprecatedAlias)) {
-      this._warnedAliases.add(normalized.deprecatedAlias);
-      console.warn(updateChannelDeprecationWarning(normalized.deprecatedAlias));
-    }
     this._channel = normalized.channel;
   }
 
@@ -289,9 +281,7 @@ export class UpdateChecker {
   /** Fetch available channels from GitHub Releases, always including the base set. */
   async getAvailableReleases(): Promise<AvailableReleases> {
     const base: string[] = [...UPDATE_CHANNELS];
-    // Deprecated aliases never reappear as selectable channels, even if
-    // GitHub still carries rolling tags named `stable`/`develop`.
-    const excluded = new Set<string>([...UPDATE_CHANNELS, ...Object.keys(DEPRECATED_UPDATE_CHANNELS)]);
+    const excluded = new Set<string>(UPDATE_CHANNELS);
     try {
       const releases = await fetchAllReleases();
       const extra: string[] = [];

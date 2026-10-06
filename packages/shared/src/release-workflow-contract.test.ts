@@ -1,6 +1,9 @@
 // Regression coverage for RC-2's frozen contact points, rewritten by RC-5
 // against the renamed release.yml (see
-// .claude/specs/release-channels/02-blueprint/RC-5.md, "Contact points").
+// .claude/specs/release-channels/02-blueprint/RC-5.md, "Contact points"),
+// and again by RMT-1 for the manual-only trigger and three-branch channel
+// engine (see .claude/specs/release-manual-trigger/02-blueprint/RMT-1.md,
+// "Contact points" C4/C5/C6).
 //
 // This story ships a GitHub Actions workflow, not application code, so there
 // is no source module to test beside. It lives here — inside packages/shared
@@ -79,20 +82,14 @@ describe('RC-5 — release.yml workflow contract', () => {
     expect(doc.name).toBe('Release Pipeline')
   })
 
-  it('A2 — triggers on push to main and develop only', () => {
+  it('A2 — triggers only via workflow_dispatch, with no inputs', () => {
     const doc = loadWorkflow()
-    expect(doc.on.push?.branches).toEqual(['main', 'develop'])
+    expect(doc.on.workflow_dispatch).toEqual({})
   })
 
-  it('A3 — no workflow_dispatch key on the normal release flow', () => {
+  it('A3 — no push key anywhere under on: (manual-only, RMT-1)', () => {
     const doc = loadWorkflow()
-    expect(doc.on).not.toHaveProperty('workflow_dispatch')
-  })
-
-  it('A4 — the push trigger has no paths or paths-ignore restriction', () => {
-    const doc = loadWorkflow()
-    expect(doc.on.push).not.toHaveProperty('paths')
-    expect(doc.on.push).not.toHaveProperty('paths-ignore')
+    expect(doc.on).not.toHaveProperty('push')
   })
 
   it("A5 — permissions grant contents, issues and pull-requests write (semantic-release/github's requirement)", () => {
@@ -147,12 +144,24 @@ describe('RC-5 — release.yml workflow contract', () => {
     expect(tags).not.toContain('needs.release.outputs.version')
     expect(tags).not.toMatch(/\bv?\d+\.\d+\.\d+\b/)
   })
+
+  it('A12 — the develop-pointer job depends on release and gates on channel == develop (RMT-1 C3/C6)', () => {
+    const doc = loadWorkflow()
+    const job = doc.jobs['develop-pointer']
+    expect(job, 'develop-pointer job').toBeDefined()
+    expect(job!.needs).toContain('release')
+    expect(job!.if).toContain('needs.release.outputs.channel == \'develop\'')
+  })
 })
 
 describe('RC-5 — release.config.mjs contract', () => {
-  it('A10 — branches is [\'main\', { name: \'develop\', channel: \'next\' }], main first (analysis D1)', async () => {
+  it('A10 — branches is the three-entry [main, next, develop] array, in order (RMT-1 C5)', async () => {
     const config = await loadReleaseConfig()
-    expect(config.branches).toEqual(['main', { name: 'develop', channel: 'next' }])
+    expect(config.branches).toEqual([
+      'main',
+      { name: 'next', channel: 'next' },
+      { name: 'develop', channel: 'develop' },
+    ])
     // branches[0] === 'main' asserted separately: the first entry drives the
     // default/"current" channel and must never silently reorder (analysis D1).
     expect(config.branches[0]).toBe('main')
