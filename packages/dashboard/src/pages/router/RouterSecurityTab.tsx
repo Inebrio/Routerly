@@ -20,6 +20,7 @@ import {
   type RuleWithId,
 } from '../../components/SecurityRulesEditor';
 import { useRouter } from './RouterLayout';
+import { uuid } from '../../utils/uuid';
 
 export function RouterSecurityTab() {
   const { t } = useTranslation();
@@ -58,7 +59,7 @@ export function RouterSecurityTab() {
     const g = router.guardrails;
     if (g) {
       setDetectInjection(g.detectInjection === true);
-      setRules((g.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: crypto.randomUUID() })));
+      setRules((g.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: uuid() })));
     }
     const p = router.pii;
     if (p) {
@@ -134,7 +135,7 @@ export function RouterSecurityTab() {
     // Leaving a profile: its rules and policies become the editable starting point.
     if (assignedProfile) {
       pending.current = {
-        rules: (assignedProfile.guardrails.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: crypto.randomUUID() })),
+        rules: (assignedProfile.guardrails.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: uuid() })),
         pii: assignedProfile.pii.policies ?? [],
       };
     }
