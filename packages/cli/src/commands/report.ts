@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { CALL_TYPES, REQUEST_TYPES, optimizerLabel, requestTypeLabel, type RequestType, type SavingsSummary, type UsageSeries } from '@routerly/shared';
 import { api } from '../api.js';
+import { fmtUsd } from '../lib/fmt.js';
 
 interface UsageByModel {
   calls: number;
@@ -126,7 +127,7 @@ function printSavingsTrend(series: UsageSeries | undefined): void {
     table.push([
       p.bucket,
       String(p.calls),
-      `$${p.cost.toFixed(6)}`,
+      fmtUsd(p.cost, 6),
       p.baselineCost > 0 ? `$${p.baselineCost.toFixed(6)}` : chalk.gray('-'),
       p.baselineCost === 0 ? chalk.gray('-')
         : saved >= 0 ? chalk.green(`$${saved.toFixed(6)}`) : chalk.red(`-$${Math.abs(saved).toFixed(6)}`),
@@ -209,7 +210,7 @@ Examples:
             stats.errors > 0 ? chalk.red(String(stats.errors)) : '0',
             stats.inputTokens.toLocaleString(),
             stats.outputTokens.toLocaleString(),
-            `$${stats.cost.toFixed(6)}`,
+            fmtUsd(stats.cost, 6),
           ]);
         }
 
@@ -295,7 +296,7 @@ Examples:
             r.callType ?? 'completion',
             r.inputTokens,
             r.outputTokens,
-            `$${r.cost.toFixed(6)}`,
+            fmtUsd(r.cost, 6),
             `${r.latencyMs}ms`,
             outcome,
           ]);
@@ -396,7 +397,7 @@ Examples:
             chalk.gray(s.sessionId.slice(0, 12) + '…'),
             s.routerId.slice(0, 12),
             s.requests,
-            `$${s.totalCost.toFixed(6)}`,
+            fmtUsd(s.totalCost, 6),
             new Date(s.startedAt).toLocaleString(),
           ]);
         }
