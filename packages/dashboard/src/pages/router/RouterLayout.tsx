@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Outlet, NavLink, useLocation } from 'react-router-dom';
-import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard, Shuffle } from 'lucide-react';
+import { ArrowLeft, Settings, Route, Users, FileText, Key, Shield, Gauge, LayoutDashboard, Shuffle, FlaskConical } from 'lucide-react';
 import { getRouters, type Router, type RouterKind } from '../../api';
 
 export function RouterLayout() {
@@ -42,6 +42,7 @@ export function RouterLayout() {
     { id: 'token', label: t('routers.layout.tabs.token'), icon: <Key size={16} />, disabled: isNew },
     { id: 'users', label: t('routers.layout.tabs.users'), icon: <Users size={16} />, disabled: isNew },
     { id: 'logs', label: t('routers.layout.tabs.logs'), icon: <FileText size={16} />, disabled: isNew },
+    { id: 'test', label: t('routers.layout.tabs.test'), icon: <FlaskConical size={16} />, disabled: isNew },
   ];
 
   if (err && !isNew) {

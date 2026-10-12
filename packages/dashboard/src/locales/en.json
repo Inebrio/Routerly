@@ -1188,7 +1188,8 @@
         "security": "Security",
         "token": "Token",
         "users": "Users",
-        "logs": "Logs"
+        "logs": "Logs",
+        "test": "Test"
       },
       "backToRouters": "Back to Routers",
       "backToRoutersTitle": "Back to routers",
