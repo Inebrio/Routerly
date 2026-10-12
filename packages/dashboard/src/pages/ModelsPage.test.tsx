@@ -225,6 +225,18 @@ describe('ModelsPage — models list', () => {
     expect(hasDash).toBe(true);
   });
 
+  it('shows dashes for missing prices and 0 context, $0 for free prices', async () => {
+    mockGetModels.mockResolvedValue([
+      makeModel({ id: 'no-data', cost: {} as any, contextWindow: 0 }),
+      makeModel({ id: 'free', cost: { inputPerMillion: 0, outputPerMillion: 0, cachePerMillion: null } }),
+    ]);
+    renderPage();
+    await waitFor(() => screen.getByText('no-data'));
+    const cells = (id: string) => Array.from(screen.getByText(id).closest('tr')!.querySelectorAll('td')).map(td => td.textContent);
+    expect(cells('no-data').slice(3, 7)).toEqual(['—', '—', '—', '—']);
+    expect(cells('free').slice(3, 5)).toEqual(['$0', '$0']);
+  });
+
   it('sorts by provider when Provider header clicked', async () => {
     mockGetModels.mockResolvedValue([
       makeModel({ id: 'z-model', provider: 'openai' }),
