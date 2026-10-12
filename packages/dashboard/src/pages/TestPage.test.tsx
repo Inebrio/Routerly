@@ -2382,6 +2382,37 @@ describe('TestPage — handleSend stream=false when streamEnabled=false', () => 
   });
 });
 
+// ── Temperature is optional: omitted by default, sent once the slider is enabled (ROUT-193) ──
+
+describe('TestPage — optional temperature', () => {
+  it('omits temperature by default and sends it after enabling the checkbox', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(makeSSEResponse('stop', 'Temp reply'));
+
+    await setupWithToken();
+
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    await userEvent.type(textarea, 'first');
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(screen.queryByText('Temp reply')).not.toBeNull(), { timeout: 4000 });
+
+    const bodyOf = (i: number) => JSON.parse(
+      (vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls[i] as [string, { body: string }])[1].body,
+    );
+    expect('temperature' in bodyOf(0)).toBe(false);
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Temp' }));
+    fireEvent.change(document.querySelectorAll('input[type="range"]')[0]!, { target: { value: '0.3' } });
+
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'second');
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(1));
+    const sent = vi.mocked(global.fetch as ReturnType<typeof vi.fn>).mock.calls
+      .map((_, i) => bodyOf(i)).filter(b => b.messages);
+    expect(sent[sent.length - 1].temperature).toBe(0.3);
+  });
+});
+
 // ── handleSend: data.model in SSE stream → msg.model truthy (L1000 br0) ───────
 
 describe('TestPage — assistant message with model name from SSE', () => {

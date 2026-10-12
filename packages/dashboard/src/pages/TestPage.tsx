@@ -68,26 +68,32 @@ function MdContent({ children }: { children: string }) {
   );
 }
 
-function ParamSlider({ label, value, min, max, step, onChange }: {
-  label: string; value: number; min: number; max: number; step: number;
-  onChange: (v: number) => void;
+// value === null means "not sent": the provider applies its own default. Moving the
+// slider sets a value; unticking the checkbox (shown only when onClear is given) clears it.
+function ParamSlider({ label, value, min, max, step, onChange, onClear }: {
+  label: string; value: number | null; min: number; max: number; step: number;
+  onChange: (v: number) => void; onClear?: () => void;
 }) {
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+      {onClear && (
+        <input type="checkbox" aria-label={label} checked={value !== null}
+          onChange={e => e.target.checked ? onChange((min + max) / 2) : onClear()} />
+      )}
       {label}
-      <input type="range" min={min} max={max} step={step} value={value}
+      <input type="range" min={min} max={max} step={step} value={value ?? (min + max) / 2}
         onChange={e => onChange(parseFloat(e.target.value))}
-        style={{ width: 80, accentColor: 'var(--primary)' }}
+        style={{ width: 80, accentColor: 'var(--primary)', opacity: value === null ? 0.4 : 1 }}
       />
-      <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', minWidth: 36 }}>{value}</span>
+      <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', minWidth: 36 }}>{value ?? '—'}</span>
     </label>
   );
 }
 
 // ── Compare panel ─────────────────────────────────────────────────────────────
 
-type PanelParams = { temperature: number; maxTokens: number; topP: number };
-const DEFAULT_PARAMS: PanelParams = { temperature: 0.7, maxTokens: 1024, topP: 1 };
+type PanelParams = { temperature: number | null; maxTokens: number; topP: number };
+const DEFAULT_PARAMS: PanelParams = { temperature: null, maxTokens: 1024, topP: 1 };
 
 function ComparePanel({
   apiKey, apiKeyB, systemPrompt, availableModels,
@@ -151,7 +157,7 @@ function ComparePanel({
     const payload = {
       model: modelId,
       messages: [...sysMsgs, ...prevMsgs.filter(m => m.role !== 'system'), { role: 'user' as const, content }],
-      stream: true, temperature: params.temperature, max_tokens: params.maxTokens, top_p: params.topP,
+      stream: true, ...(params.temperature !== null && { temperature: params.temperature }), max_tokens: params.maxTokens, top_p: params.topP,
     };
 
     try {
@@ -273,13 +279,13 @@ function ComparePanel({
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <ParamSlider label={t('playground.params.temp')} value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} />
+                  <ParamSlider label={t('playground.params.temp')} value={params.temperature} min={0} max={2} step={0.1} onChange={v => setParams((p: PanelParams) => ({ ...p, temperature: v }))} onClear={() => setParams((p: PanelParams) => ({ ...p, temperature: null }))} />
                   <ParamSlider label={t('playground.params.maxTokens')} value={params.maxTokens} min={64} max={8192} step={64} onChange={v => setParams((p: PanelParams) => ({ ...p, maxTokens: v }))} />
                   <ParamSlider label={t('playground.params.topP')} value={params.topP} min={0} max={1} step={0.05} onChange={v => setParams((p: PanelParams) => ({ ...p, topP: v }))} />
                 </div>
                 {assistantMsgs.length > 0 && (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 4, borderTop: '1px solid var(--border)', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    <span>temp: {params.temperature}</span>
+                    <span>temp: {params.temperature ?? '—'}</span>
                     <span>↑{totalIn} ↓{totalOut} tok</span>
                     <span>{costEstimate(totalIn, totalOut)}</span>
                   </div>
@@ -406,7 +412,7 @@ export function TestPage() {
   const [systemPromptOpen, setSystemPromptOpen] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful AI assistant.');
   const [selectedModelId, setSelectedModelId] = useState('');
-  const [temperature, setTemperature] = useState(0.7);
+  const [temperature, setTemperature] = useState<number | null>(null);
   const [maxTokens, setMaxTokens] = useState(1024);
   const [topP, setTopP] = useState(1);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -521,7 +527,7 @@ export function TestPage() {
       messages: [...sysMsgs, ...newMessages],
       // ponytail: streamingDisabled forces stream=false; otherwise respect user toggle
       stream: streamingDisabled ? false : streamEnabled,
-      temperature, max_tokens: maxTokens, top_p: topP,
+      ...(temperature !== null && { temperature }), max_tokens: maxTokens, top_p: topP,
     };
 
     let finalContent = '';
@@ -962,7 +968,7 @@ export function TestPage() {
                       style={{ fontSize: '0.78rem', minWidth: 180 }}
                     />
                   </div>
-                  <ParamSlider label={t('playground.params.temp')} value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} />
+                  <ParamSlider label={t('playground.params.temp')} value={temperature} min={0} max={2} step={0.1} onChange={setTemperature} onClear={() => setTemperature(null)} />
                   <ParamSlider label={t('playground.params.maxTokens')} value={maxTokens} min={64} max={8192} step={64} onChange={setMaxTokens} />
                   <ParamSlider label={t('playground.params.topP')} value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
                   <label
