@@ -8,11 +8,11 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 **Surfaces:** cli, dashboard, service
 **Preconditions:** Models exist
 **Steps:**
-1. `routerly router create <name> --kind router --timeout 60000`.
+1. `routerly router create --name <name> --kind router --timeout 60000`.
 2. Dashboard Routers, Router tab, New Router; `GET /api/routers`.
 **Expected:** Router appears under the Router tab and in the API with kind `router`; the creation form has no kind selector.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-01/cli_api.txt, dash.txt, newform.png
 
 ### UAT-05-02 - Edit and delete a router
 **Surfaces:** cli, dashboard
@@ -21,7 +21,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. `routerly router edit <id> --name x`, dashboard General tab, `routerly router remove <id>`.
 **Expected:** Edits persist; delete removes the router and its tokens.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-02/edit.txt, dash.txt, delete.txt (token 200 -> 401 after remove)
 
 ### UAT-05-03 - Router list is grouped by kind
 **Surfaces:** dashboard
@@ -30,7 +30,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. Open Routers and click Router, Orchestrator, Passthrough tabs.
 **Expected:** Each tab shows only routers of its kind; there is no All tab.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-03/tabs.txt (no All tab)
 
 ### UAT-05-04 - Add, reorder and remove target models
 **Surfaces:** cli, dashboard
@@ -39,7 +39,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. `routerly router model add <router> <model>`, `model reorder`, `model remove`; same in the Routing tab.
 **Expected:** Order and membership match across CLI, dashboard and `GET /api/routers`.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-04/cli.txt, dash.txt, dash_addremove.txt (dashboard drag-reorder not exercised)
 
 ### UAT-05-05 - Per-model system prompt
 **Surfaces:** cli, service
@@ -49,7 +49,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. Send a request through the router.
 **Expected:** Upstream request contains the configured prompt exactly once; the client payload is otherwise unchanged.
 **Real-provider proof:** Response carries the provider's own echoed model string and a non-zero token usage count that the fake upstream of the discarded run could not produce.
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-05/call.txt, control.txt (prompt is only a routing hint; identical prompt_tokens=14 with and without prompt, not sent upstream)
 
 ### UAT-05-06 - Enable, disable and reorder routing policies
 **Surfaces:** cli, dashboard
@@ -58,7 +58,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. `routerly router routing policy enable <router> <type>`, `disable`, `reorder`; Routing tab.
 **Expected:** The policy list and its order match on both surfaces; disabled policies do not influence routing.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-06/cli.txt, dash_save.txt (dashboard shows no enabled/disabled state and Save re-enables disabled policy)
 
 ### UAT-05-07 - Fallback models and auto-routing
 **Surfaces:** cli
@@ -67,18 +67,18 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. `routerly router routing update <router> --fallback-models a,b --auto-routing`; then `--no-auto-routing`.
 **Expected:** `router show --json` reflects the settings; with the primary failing the request is served by a fallback.
 **Real-provider proof:** Response carries the provider's own echoed model string and a non-zero token usage count that the fake upstream of the discarded run could not produce.
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-07/cli.txt, fallback_trace2.txt (deepseek 400 -> served by gpt-4.1-nano-2025-04-14, attempts 2)
 
 ### UAT-05-08 - Create a router token with scopes and limits
 **Surfaces:** cli, dashboard, service
 **Preconditions:** Router exists
 **Steps:**
-1. `routerly router token create <router> --labels ci --scopes chat --tag t1`.
+1. `routerly router token create <router> --labels ci --scopes chat --tag env=t1`.
 2. `router token edit ... --add-limit` / `--remove-limit`.
 3. Use the token on `/v1/chat/completions`.
 **Expected:** Token is shown once; requests count against the limit; a request over the limit is refused with a provider-shaped error.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-08/cli.txt, calls.txt, over_limit_rerun.txt (over-limit returns HTTP 500 {"statusCode":500,"error":"Internal Server Error","message":"all_models_limits_exceeded"}, not provider-shaped)
 
 ### UAT-05-09 - Revoke a router token
 **Surfaces:** cli, service
@@ -87,7 +87,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. `routerly router token remove <router> <token-id>`, then retry the request.
 **Expected:** The request fails authentication.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-09/revoke.txt (200 -> 401 Invalid router token)
 
 ### UAT-05-10 - Budget enforcement
 **Surfaces:** service
@@ -96,7 +96,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. Send requests until the budget is exceeded.
 **Expected:** Requests beyond the budget are refused or rerouted according to policy; usage records show the spend.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-10/calls.txt, usage.txt, reroute.txt (budget enforced, cost 0.00017 recorded; refusal is HTTP 500 non-provider-shaped, see 08)
 
 ### UAT-05-11 - Routing decision follows policy
 **Surfaces:** service
@@ -105,4 +105,4 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 1. Send ten requests.
 **Expected:** All requests go to the cheaper model; usage records name the model that served each request.
 **Real-provider proof:** Response carries the provider's own echoed model string and a non-zero token usage count that the fake upstream of the discarded run could not produce.
-**Last run:** never run - BLOCKED - evidence: -
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-05-11/calls.txt, usage.txt (10/10 served by cheaper model, gpt-4.1-nano-2025-04-14 echoed)
