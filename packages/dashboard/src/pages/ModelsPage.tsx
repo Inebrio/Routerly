@@ -18,6 +18,9 @@ const HEALTH_REFRESH_MS = 30_000;
 
 function numOrInfinity(v: number | null | undefined) { return v ?? Infinity; }
 
+// 0 is a valid (free) price; only a missing value gets the dash.
+function price(v: number | null | undefined) { return v != null ? `$${v}` : <span className="text-muted">—</span>; }
+
 function SortIcon({ col, sortKey, sortDir }: { col: string; sortKey: string; sortDir: SortDir }) {
   if (col !== sortKey) return <ChevronsUpDown size={13} style={{ opacity: 0.35, marginLeft: 4, flexShrink: 0 }} />;
   return sortDir === 'asc'
@@ -308,8 +311,8 @@ export function ModelsPage() {
         case 'id':       cmp = a.id.localeCompare(b.id); break;
         case 'provider': cmp = a.provider.localeCompare(b.provider); break;
         case 'endpoint': cmp = a.endpoint.localeCompare(b.endpoint); break;
-        case 'input':    cmp = a.cost.inputPerMillion - b.cost.inputPerMillion; break;
-        case 'output':   cmp = a.cost.outputPerMillion - b.cost.outputPerMillion; break;
+        case 'input':    cmp = numOrInfinity(a.cost.inputPerMillion) - numOrInfinity(b.cost.inputPerMillion); break;
+        case 'output':   cmp = numOrInfinity(a.cost.outputPerMillion) - numOrInfinity(b.cost.outputPerMillion); break;
         case 'cache':    cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
         case 'context':  cmp = numOrInfinity(a.contextWindow) - numOrInfinity(b.contextWindow); break;
       }
@@ -483,10 +486,10 @@ export function ModelsPage() {
                             <td><span className="mono">{m.id}</span></td>
                             <td><span className={`badge badge-${m.provider}`}>{providerLabel(m.provider)}</span></td>
                             <td><span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.endpoint}</span></td>
-                            <td>${m.cost.inputPerMillion}</td>
-                            <td>${m.cost.outputPerMillion}</td>
-                            <td>{m.cost.cachePerMillion != null ? `$${m.cost.cachePerMillion}` : <span className="text-muted">—</span>}</td>
-                            <td>{m.contextWindow != null ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
+                            <td>{price(m.cost.inputPerMillion)}</td>
+                            <td>{price(m.cost.outputPerMillion)}</td>
+                            <td>{price(m.cost.cachePerMillion)}</td>
+                            <td>{m.contextWindow ? `${(m.contextWindow / 1000).toFixed(0)}k` : <span className="text-muted">—</span>}</td>
                             <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                               {(() => {
                                 const tr = testResults[m.id];
