@@ -12,6 +12,7 @@ import { TraceLog } from '../components/TraceLog.js';
 import { TraceSummary } from '../components/TraceSummary.js';
 import { SearchableSelect } from '../components/SearchableSelect.js';
 import { isCaptureMode } from '../utils/captureMode.js';
+import { uuid } from '../utils/uuid';
 
 // Fixed placeholder shown instead of the real measured per-message latency while capturing
 // documentation screenshots: the real value is wall-clock derived and differs between two
@@ -139,7 +140,7 @@ function ComparePanel({
     const turnTraces: unknown[] = [];
     // The trace never rides the LLM wire: the caller picks a correlation id, sends it
     // on the request and reads its own entries on the management side channel.
-    const correlationId = crypto.randomUUID();
+    const correlationId = uuid();
     let traceId = '';
     const stopTrace = await streamTraces({ correlationId }, ev => {
       traceId = ev.traceId;
@@ -499,7 +500,7 @@ export function TestPage() {
 
     // The trace never rides the LLM wire: the caller picks a correlation id, sends it
     // on the request and reads its own entries on the management side channel.
-    const correlationId = crypto.randomUUID();
+    const correlationId = uuid();
     let traceId = '';
     const stopTrace = await streamTraces({ correlationId }, ev => {
       traceId = ev.traceId;

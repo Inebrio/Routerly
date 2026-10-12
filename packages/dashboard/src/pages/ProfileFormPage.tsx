@@ -17,6 +17,7 @@ import {
 } from '../components/SecurityRulesEditor';
 import { KIND_LABELS } from './ProfilesPage';
 import { useAuth } from '../AuthContext';
+import { uuid } from '../utils/uuid';
 
 function labelPlaceholders(t: TFunction): Record<ProfileKind, string> {
   return {
@@ -83,7 +84,7 @@ export function ProfileFormPage() {
     } else if (p.kind === 'optimizer') {
       setRows(mergeOptimizerRows(p.optimizers.steps, installedOptimizers));
     } else {
-      setRules((p.guardrails.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: crypto.randomUUID() })));
+      setRules((p.guardrails.rules ?? []).map(r => normalizeGuardActions({ ...r, _id: uuid() })));
       setPiiPolicies(p.pii.policies ?? []);
     }
   }

@@ -7,6 +7,7 @@ import { useRouter } from './RouterLayout';
 import { TraceLog } from '../../components/TraceLog';
 import { TraceSummary } from '../../components/TraceSummary';
 import { getTrace, streamTraces, type TraceEntry } from '../../api';
+import { uuid } from '../../utils/uuid';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -92,7 +93,7 @@ export function RouterTestTab() {
 
     // The trace never rides the LLM wire: the caller picks a correlation id, sends it
     // on the request and reads its own entries on the management side channel.
-    const correlationId = crypto.randomUUID();
+    const correlationId = uuid();
     let traceId = '';
     const stopTrace = await streamTraces({ correlationId }, ev => {
       traceId = ev.traceId;

@@ -16,6 +16,7 @@ import {
 } from '../api';
 import { SearchableSelect } from './SearchableSelect';
 import { MultiSelect } from './MultiSelect';
+import { uuid } from '../utils/uuid';
 
 const ALL_PII_ENTITIES: PiiEntity[] = ['EMAIL', 'PHONE', 'CREDIT_CARD', 'SSN', 'IBAN'];
 
@@ -46,7 +47,7 @@ const RULE_TYPE_DESCRIPTIONS: Record<GuardrailRuleType, string> = {
 };
 
 function makeDefaultRule(type: GuardrailRuleType): RuleWithId {
-  const _id = crypto.randomUUID();
+  const _id = uuid();
   switch (type) {
     case 'regex':
       return { _id, type, target: 'request', block: true, log: true, config: { patterns: [] } };
