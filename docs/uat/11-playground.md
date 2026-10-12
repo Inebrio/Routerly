@@ -39,3 +39,23 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 **Expected:** A readable error is shown; the page remains usable.
 **Real-provider proof:** n/a (no provider call)
 **Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/11/04.png (error only in Debug panel, clipped; chat bubble empty; stream returns HTTP 200)
+
+### UAT-11-05 - Playground over plain HTTP (non-secure context)
+**Surfaces:** dashboard
+**Preconditions:** Dashboard opened at `http://<LAN-IP>:3000` (not localhost); a router token
+**Steps:**
+1. Open `/dashboard/test`, enter the token, send a message.
+2. Collect Playwright `pageerror` events.
+**Expected:** Reply is shown; no `crypto.randomUUID is not a function` pageerror (ROUT-191).
+**Real-provider proof:** reply from a real model (router T-openai-gpt-4.1-nano)
+**Last run:** 2026-10-12 - PASS (sha ff61515a) - evidence: dev-box Playwright run, 0 pageerrors, reply "Hello" (before the fix: pageerror + no reply)
+
+### UAT-11-06 - Router Test tab
+**Surfaces:** dashboard
+**Preconditions:** Dashboard at `http://<LAN-IP>:3000`; router with a token
+**Steps:**
+1. Open the router, click the Test tab, enter the token, send a message.
+2. Also add a Regex policy in router Security tab and in a new security profile (`/dashboard/profiles/new?kind=security`).
+**Expected:** Reply and trace shown, policy rows added, no pageerror (ROUT-191).
+**Real-provider proof:** reply from a real model
+**Last run:** 2026-10-12 - PASS (sha ff61515a) - evidence: dev-box Playwright run, Test tab reached via nav, reply "Hello", 0 pageerrors; policy rows added on HTTP
