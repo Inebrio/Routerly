@@ -101,6 +101,12 @@ describe('routerly model list', () => {
     expect(out.join('\n')).toContain('openai');
   });
 
+  it('prints - instead of $undefined for models without pricing', async () => {
+    mockApi.mockResolvedValue([{ ...baseModel, cost: {} }]);
+    const { out } = await run('list');
+    expect(out.join('\n')).not.toContain('undefined');
+  });
+
   it('prints empty message when no models', async () => {
     mockApi.mockResolvedValue([]);
     const { out } = await run('list');

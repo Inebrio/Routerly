@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import type { ModelConfig, TokenCost, Limit, PricingTier, CatalogField, ModelInstance } from '@routerly/shared';
+import { fmtUsd } from '../lib/fmt.js';
 
 // ─── Interactive wizard helpers ───────────────────────────────────────────────
 
@@ -166,7 +167,7 @@ Examples:
               ? chalk.green('catalog')
               : '';
           const connectionId = connectionByModelId.get(m.id) ?? chalk.gray('-');
-          table.push([m.id, m.provider, m.endpoint, `$${m.cost.inputPerMillion}`, `$${m.cost.outputPerMillion}`, catalogLabel, connectionId]);
+          table.push([m.id, m.provider, m.endpoint, fmtUsd(m.cost?.inputPerMillion), fmtUsd(m.cost?.outputPerMillion), catalogLabel, connectionId]);
         }
         console.log(table.toString());
       } catch (err) {
@@ -220,10 +221,10 @@ Examples:
       }
 
       console.log(chalk.bold('\nPricing:'));
-      console.log(line('Input $/1M', `$${m.cost.inputPerMillion}`));
-      console.log(line('Output $/1M', `$${m.cost.outputPerMillion}`));
-      if (m.cost.cachePerMillion !== undefined) console.log(line('Cache read $/1M', `$${m.cost.cachePerMillion}`));
-      if (m.cost.cacheWritePerMillion !== undefined) console.log(line('Cache write $/1M', `$${m.cost.cacheWritePerMillion}`));
+      console.log(line('Input $/1M', fmtUsd(m.cost?.inputPerMillion)));
+      console.log(line('Output $/1M', fmtUsd(m.cost?.outputPerMillion)));
+      if (m.cost?.cachePerMillion != null) console.log(line('Cache read $/1M', fmtUsd(m.cost?.cachePerMillion)));
+      if (m.cost?.cacheWritePerMillion != null) console.log(line('Cache write $/1M', fmtUsd(m.cost?.cacheWritePerMillion)));
 
       // Catalog tracking section
       const overriddenKeys = m.fieldOverrides

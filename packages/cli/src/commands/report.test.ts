@@ -261,6 +261,13 @@ describe('report calls', () => {
     expect(out.join('\n')).toMatch(/gpt-4o/);
   });
 
+  it('shows - for records without a cost', async () => {
+    mockApi.mockResolvedValue({ ...usageFixture, records: [{ ...usageFixture.records[0], cost: null }] });
+    const { out, err } = await run('calls');
+    expect(err).toEqual([]);
+    expect(stripAnsi(out.join('\n'))).toContain('-');
+  });
+
   it('limits output to --limit rows', async () => {
     const many = Array.from({ length: 30 }, (_, i) => ({
       ...usageFixture.records[0],
