@@ -183,6 +183,8 @@ A missing branch or worktree is not a blocker: fix the cause, then continue. Sto
 - `plane.sh ids` prints `CLAUDE_ID` and all `STATE_*` values.
 - Always read the item and **all** its comments before starting. On re-run, Carlo's most recent comments take priority over earlier state.
 - When done: (1) post a comment on the item — what was built, files touched, how to test, what was verified live; (2) move the item to `STATE_TESTING`. Never `STATE_DONE`.
+- **`STATE_TESTING` means "verified on a real environment", nothing less.** Move an item there only after the change has been deployed and exercised on the uat-box (real install, real browser/CLI, real providers). Unit tests, mocks, fake upstreams, or a local dev server do not count. If real-environment verification is impossible, leave the item in Progress with a blocking comment saying what is missing.
+- **Every new feature or behaviour change gets UAT coverage.** Add or update cases in the matching `docs/uat/<area>.md` (stable id `UAT-<area>-<n>`, new area file + README link if none fits), commit them with the change, run them on the uat-box via the `uat-runner` skill, and list the UAT ids with their PASS evidence in the completion comment. Pure refactors with no observable change: say so explicitly in the comment instead.
 
 ### Stop rules
 
