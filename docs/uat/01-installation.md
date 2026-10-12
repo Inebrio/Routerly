@@ -12,7 +12,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. Run `routerly --version` and `systemctl is-active routerly`.
 **Expected:** Installer completes with exit 0; `routerly --version` prints the target version; the service is `active`. Any prerequisite the installer needs but does not install or name (curl, sudo) is recorded as a finding.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - BLOCKED (sha 1ce1d2a2) - needs pristine uat-clean; Proxmox refuses rollback to uat-clean while newer snapshots exist and deleting snapshots is not authorized - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-01/ (not run)
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - fresh clone of uat-clean (CT 128): default nvm path aborts with `curl: command not found`, exit 127, no prerequisite named (ROUT-229); after installing curl the install completes, service active, `routerly --version` 0.2.0 on channel current and 0.4.0 on channel next - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-02 - Non-interactive install flags
 **Surfaces:** cli
@@ -22,7 +22,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. Check `ss -ltnp | grep 3000` and `ls /var/lib/routerly`.
 **Expected:** Service listens on the requested port, data lives under `/var/lib/routerly`, the `routerly` CLI is not installed.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - BLOCKED (sha 1ce1d2a2) - needs pristine uat-clean; Proxmox refuses rollback to uat-clean while newer snapshots exist and deleting snapshots is not authorized - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-02/ (not run)
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - fresh clone (CT 129): `--yes --scope=system --port=3000 --no-cli` listens on 3000, data in /var/lib/routerly, no routerly CLI; finding: needs `sudo` even as root (ROUT-231) - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-03 - Config files are created with mode 0600
 **Surfaces:** service
@@ -32,7 +32,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. `journalctl -u routerly | grep -i permission`.
 **Expected:** Every config file, including `settings.json`, is `600`; no permission warning in the service log; no permission banner in the dashboard.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - BLOCKED (sha 1ce1d2a2) - needs pristine uat-clean; Proxmox refuses rollback to uat-clean while newer snapshots exist and deleting snapshots is not authorized - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-03/existing-install-observation.txt (existing install only: all 10 config/*.json are 600, not a fresh-install verdict)
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - fresh user-scope install: settings.json is 644 (install.mjs writes it with default umask), service logs `[permission-guard] Warning: unsafe permissions` (ROUT-230); all other config files 600 - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-04 - First visit shows the setup page
 **Surfaces:** dashboard
@@ -42,7 +42,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. `curl http://<host>:3000/api/setup/status`.
 **Expected:** Dashboard shows the setup (first admin) page; `/api/setup/status` reports setup is needed.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - BLOCKED (sha 1ce1d2a2) - needs pristine uat-clean; Proxmox refuses rollback to uat-clean while newer snapshots exist and deleting snapshots is not authorized - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-04/ (existing install reports needsSetup=false; not run)
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - fresh install: /api/setup/status returns {"needsSetup":true}; headless Chromium on / lands on /dashboard/ with the Create Admin Account form - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-05 - Create the first admin
 **Surfaces:** dashboard, service
@@ -52,7 +52,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. `curl -X POST /api/setup/first-admin` a second time.
 **Expected:** First submit logs in or redirects to login and the admin can sign in; the second call is rejected and creates no second admin.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - BLOCKED (sha 1ce1d2a2) - needs pristine uat-clean; Proxmox refuses rollback to uat-clean while newer snapshots exist and deleting snapshots is not authorized - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-05/ (not run)
+**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - form submit creates info@routerly.ai and opens /dashboard/overview signed in; second POST /api/setup/first-admin returns 403 `Setup already completed`, users.json holds one user - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-06 - Service survives the end of the ssh session
 **Surfaces:** cli
@@ -62,7 +62,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. `systemctl is-active routerly` and open the dashboard.
 **Expected:** Service is still active and the dashboard responds.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-06/ (same MainPID and ActiveEnterTimestamp after ssh close + 70 s; /dashboard/ 200 via LAN)
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - fresh user-scope install: installer never enables linger (Linger=no), service is gone 90 s after the last ssh session closes (ROUT-228); earlier PASS came from a snapshot with linger enabled by hand - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-07 - Service restarts after reboot
 **Surfaces:** cli
@@ -72,7 +72,7 @@ Template and judging rules: `.claude/skills/uat-runner/SKILL.md`. Every case bel
 2. `systemctl is-active routerly`; `curl /api/setup/status`.
 **Expected:** Service is active after boot without manual action; configuration and users are intact.
 **Real-provider proof:** n/a (no provider call)
-**Last run:** 2026-10-12 - PASS (sha 1ce1d2a2) - evidence: /root/.claude/jobs/2718551b/tmp/evidence/UAT-01-07/ (pct reboot, uptime reset, service active at boot, users/routers hashes identical, setup needsSetup=false)
+**Last run:** 2026-10-12 - FAIL (sha 1ce1d2a2) - fresh user-scope install: after `pct reboot` the service is not running until a login happens (no linger, ROUT-228) - evidence: /root/.claude/jobs/00f9fa27/tmp/ev0101/
 
 ### UAT-01-08 - Update check and channel
 **Surfaces:** cli, dashboard
