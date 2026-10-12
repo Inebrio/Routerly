@@ -19,6 +19,7 @@ import { RoutersPage } from './pages/RoutersPage';
 import { RouterLayout } from './pages/router/RouterLayout';
 import { RouterDashboardTab } from './pages/router/RouterDashboardTab';
 import { RouterGeneralTab } from './pages/router/RouterGeneralTab';
+import { RouterTestTab } from './pages/router/RouterTestTab';
 import { RouterFormRouter } from './pages/router/RouterFormRouter';
 import { RouterFormOrchestrator } from './pages/router/RouterFormOrchestrator';
 import { RouterFormPassthrough } from './pages/router/RouterFormPassthrough';
@@ -574,6 +575,7 @@ const router = createBrowserRouter([
               { index: true, element: <RouterDashboardTab /> },
               { path: 'dashboard', element: <RouterDashboardTab /> },
               { path: 'general', element: <RouterGeneralTab /> },
+              { path: 'test', element: <RouterTestTab /> },
               { path: 'routing', element: <RouterRoutingTab /> },
               { path: 'optimizer', element: <RouterOptimizerTab /> },
               { path: 'token', element: <RouterTokenTab /> },
