@@ -44,6 +44,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- The dashboard Models page shows `—` instead of a bare `$` for a missing input/output price and instead of `0k` for a missing context window. A price of `0` still shows `$0`.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
 - **Dashboard translations** — Refreshed all 41 non-English catalogs against `en.json`: added missing keys and translated stale English-copy and placeholder-mismatch strings. Machine-translated; spot-check by a native speaker pending.
 - The update checker no longer runs outside a production build — a local dev checkout's `package.json` version is never bumped by semantic-release on `develop`/`main`, so it always lagged the tag a release had just cut, telling the instance actively building that release to update to it. Set `ROUTERLY_FORCE_UPDATE_CHECK=true` to opt back in for testing the checker itself.
@@ -61,6 +62,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - Dashboard: an Orchestrator's Routing tab no longer shows the "Target Models" section — that model picker had no `kind`-based guard and let a model be added to an Orchestrator, which only ever routes to candidate Routers (configured on its own Orchestrator tab), never to models directly.
 - `POST /mcp` no longer 500s ("Cannot read properties of undefined (reading 'includes')") for any user account created before `routerIds` was added to `UserConfig` — a startup migration now backfills `routerIds: []` on stored users missing it, and `accessibleRouters()` no longer assumes the field is present on every user record on disk.
 - Anthropic OAuth (and Anthropic web) models on the `/v1/messages` passthrough lane no longer fail every request with an immediate auth error. The lane built its forwarding model from the routing candidate list, which never fetches a live token; the decrypted/refreshed OAuth credential was only ever wired into the non-passthrough SDK path. Every OAuth-connected Anthropic request now reloads the live credential right before forwarding, same as the SDK path already did.
+- Dashboard: the Models page shows `—` instead of a bare `$` for models without input/output pricing and instead of `0k` for models without a context window. A price of `0` still shows `$0`.
 
 ### Breaking changes
 
