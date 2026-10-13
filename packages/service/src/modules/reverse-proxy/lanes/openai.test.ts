@@ -878,6 +878,31 @@ describe('openai:attempt', () => {
     expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
   })
 
+  it('all candidates exhausted with a provider 400: returns the provider status and wrapped body, not 503', async () => {
+    await seedModels([
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ] as ModelConfig[])
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute({
+      id: 'openai:upstream', phase: 'upstream.execute',
+      run(ctx: ProxyContext) {
+        ctx.attemptResponse = { status: 400, body: { message: "Missing required parameter: 'messages'.", type: 'invalid_request_error', param: 'messages', code: 'missing_required_parameter' } }
+      },
+    })
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'openai', stream: false, log: makeLog(),
+      router: { id: 'p1' }, traceId: 't1',
+      request: { model: 'm', messages: [] },
+      candidates: [{ model: 'model-a', weight: 1 }],
+    } as unknown as ProxyContext
+    await openaiAttempt.run(ctx)
+    expect(ctx.result).toEqual({
+      kind: 'block', status: 400,
+      body: { error: { message: "Missing required parameter: 'messages'.", type: 'invalid_request_error', param: 'messages', code: 'missing_required_parameter' } },
+    })
+  })
+
   it('all candidates exhausted, non-streaming: returns a 503 block and emits routing.no_candidates', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
