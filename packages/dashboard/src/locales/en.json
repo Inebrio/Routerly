@@ -277,8 +277,8 @@
       "awsSessionTokenLabel": "Session Token",
       "awsSessionTokenOptionalHint": "(optional, for temporary credentials)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "GCP Router ID",
-      "gcpRouterIdPlaceholder": "my-gcp-router",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Location",
       "gcpLocationDefaultHint": "(default: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -1887,7 +1887,9 @@
         "cacheWritePerMillion": "Cache write $/1M",
         "optional": "(opt.)",
         "contextWindow": "Context Window",
-        "contextWindowHint": "(tokens, optional)"
+        "contextWindowHint": "(tokens, optional)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Advanced — Pricing tiers",

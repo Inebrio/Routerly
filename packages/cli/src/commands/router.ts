@@ -907,7 +907,7 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
 
   // ponytail: Inquirer 13 prompt() has no generic overload — cast after
   const typeAns = await inquirer.prompt([{
-    type: 'list',
+    type: 'select',
     name: 'type',
     message: 'Rule type:',
     choices: [
@@ -942,7 +942,7 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     target = req && res ? 'both' : req ? 'request' : res ? 'response' : undefined;
   } else {
     const targetAns = await inquirer.prompt([{
-      type: 'list',
+      type: 'select',
       name: 'target',
       message: 'Apply to:',
       choices: ['request', 'response', 'both'],
@@ -1509,7 +1509,7 @@ Examples:
         const policies = [...(pii.policies ?? [])];
 
         const ans = await inquirer.prompt([
-          { type: 'list', name: 'target', message: 'Apply to:', choices: ['request', 'response', 'both'] },
+          { type: 'select', name: 'target', message: 'Apply to:', choices: ['request', 'response', 'both'] },
           { type: 'input', name: 'entities', message: 'Entity types to detect (comma-separated, e.g. EMAIL,PHONE,SSN — leave empty for none):', default: '' },
           { type: 'input', name: 'customPatterns', message: 'Custom regex patterns (comma-separated — leave empty for none):', default: '' },
         ]) as { target: 'request' | 'response' | 'both'; entities: string; customPatterns: string };

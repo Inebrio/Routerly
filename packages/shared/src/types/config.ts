@@ -81,6 +81,8 @@ export interface ModelInstance {
   upstreamModelId: string;
   cost: TokenCost;
   contextWindow: number;
+  /** Upstream call timeout in ms (default 60000) */
+  timeout?: number;
   limits?: Limit[];
   capabilities?: ModelCapabilities;
   /** Fields manually overridden by user; these won't auto-sync from catalog */

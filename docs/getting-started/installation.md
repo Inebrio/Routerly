@@ -37,6 +37,7 @@ curl -fsSL https://www.routerly.ai/install.sh | bash -s -- \
   --public-url https://routerly.example.com  # External URL of the service
   --no-service              # Skip service installation (CLI only)
   --no-daemon               # Skip auto-start setup
+  --no-linger               # Linux user scope: do not run `loginctl enable-linger`
   --channel current         # Update channel: latest | current | next (default: current)
   --version v0.2.0          # Install a specific version tag (overrides --channel)
 ```
@@ -291,6 +292,8 @@ The installer can configure Routerly to start automatically on boot:
 | macOS | user | launchd LaunchAgent | `~/Library/LaunchAgents/ai.routerly.service.plist` |
 | macOS | system | launchd LaunchDaemon | `/Library/LaunchDaemons/ai.routerly.service.plist` |
 | Windows | — | Windows Service | via `sc.exe` |
+
+On Linux with user scope the installer also runs `loginctl enable-linger <user>`, so the service keeps running after you log out and starts at boot. Pass `--no-linger` to skip it, or run the command yourself if it failed. The uninstaller leaves linger as it is, because other user services may depend on it (`loginctl disable-linger <user>` to undo).
 
 To start/stop manually:
 

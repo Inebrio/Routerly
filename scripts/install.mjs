@@ -52,6 +52,9 @@ const FLAG_NO_SVC    = hasFlag('no-service');
 const FLAG_NO_CLI    = hasFlag('no-cli');
 const FLAG_NO_DASH   = hasFlag('no-dashboard');
 const FLAG_NO_DAEMON = hasFlag('no-daemon');
+const FLAG_NO_LINGER = hasFlag('no-linger');
+// true once systemd user lingering is on, so the user service survives logout and starts at boot
+let lingerEnabled = false;
 const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE       ?? '';
 const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT        ?? '';
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
@@ -1032,7 +1035,10 @@ console.log('\n' + '─'.repeat(60));
 console.log(c.green(c.bold('\n  Routerly installed successfully!\n')));
 
 if (installService) {
-  if (setupDaemon) {
+  if (setupDaemon && PLATFORM === 'linux' && scope === 'user' && !lingerEnabled) {
+    console.log(`  The service runs while you are logged in. To keep it running after logout and start it at boot:`);
+    console.log(`    loginctl enable-linger ${os.userInfo().username}`);
+  } else if (setupDaemon) {
     console.log(`  The service will start automatically at boot.`);
   } else {
     console.log(c.bold('  To start the service manually:'));
@@ -1166,12 +1172,29 @@ async function setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome,
     try {
       await runCmd(`systemctl --user daemon-reload`, '/');
       await runCmd(`systemctl --user enable --now ${unitName}`, '/');
+      await enableLinger();
     } catch {
       warn('Could not auto-start via systemctl. Run manually:');
       console.log(`  systemctl --user enable --now ${unitName}`);
     }
   }
   success(`systemd unit written to ${c.dim(unitPath)}`);
+}
+
+/** Keep the systemd user manager alive after logout and start it at boot. Failure is non-fatal. */
+async function enableLinger() {
+  const user = os.userInfo().username;
+  if (FLAG_NO_LINGER) {
+    warn(`Linger not enabled (--no-linger). The service stops at logout; to change: loginctl enable-linger ${user}`);
+    return;
+  }
+  try {
+    await runCmd(`loginctl enable-linger ${user}`, '/');
+    lingerEnabled = true;
+    success(`Linger enabled for ${user} (service survives logout and starts at boot)`);
+  } catch {
+    warn(`Could not enable linger. The service stops at logout; run: loginctl enable-linger ${user}`);
+  }
 }
 
 // ── launchd (macOS) ───────────────────────────────────────────────────────────

@@ -43,14 +43,14 @@ export const coreModules = [
 // makes the existing generic /api/modules + dashboard Modules page + CLI `modules`
 // command list and toggle them — no bespoke UI needed for this capability gate.
 export const providerOAuthModule: RouterlyModule = defineModule({
-  manifest: { id: 'provider-oauth', version: '0.4.0', dependsOn: { provider: '^0.4.0' } },
+  manifest: { id: 'provider-oauth', version: '0.5.4', dependsOn: { provider: '^0.5.4' } },
   register() {
     // intentionally empty
   },
 })
 
 export const providerWebModule: RouterlyModule = defineModule({
-  manifest: { id: 'provider-web', version: '0.4.0', dependsOn: { provider: '^0.4.0' } },
+  manifest: { id: 'provider-web', version: '0.5.4', dependsOn: { provider: '^0.5.4' } },
   register() {
     // intentionally empty
   },
