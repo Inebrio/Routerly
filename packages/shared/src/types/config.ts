@@ -308,7 +308,8 @@ export interface RoutingPolicy {
   /** Whether this policy should be checked when routing */
   enabled: boolean;
   /** Optional policy-specific settings */
-  config?: unknown;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy-specific settings, shape depends on policy type
+  config?: any;
 }
 
 export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheapest' | 'lowest-latency';
