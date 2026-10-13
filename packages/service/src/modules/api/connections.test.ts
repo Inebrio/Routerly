@@ -755,6 +755,24 @@ describe('DELETE /api/connections/:id', () => {
     expect(res.statusCode).toBe(204)
   })
 
+  it('returns 409 listing models when the connection is in use', async () => {
+    const app = await buildApp()
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [testUser]
+      if (type === 'roles') return [{ id: 'test-role', name: 'Test', permissions: ['connections:manage'] }]
+      if (type === 'connections') return [{ id: 'c1', providerId: 'openai', label: 'Main', credentials: {}, enabled: true }]
+      if (type === 'instances') return [{ id: 'm1', connectionId: 'c1' }]
+      return []
+    })
+    mockVerifyToken.mockReturnValue({ sub: 'test-user-id' } as any)
+    mockWriteConfig.mockClear()
+    const res = await app.inject({ method: 'DELETE', url: '/api/connections/c1', headers: { authorization: 'Bearer valid-jwt-token' } })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().usedBy).toEqual(['m1'])
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('forbids without connections:manage', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'DELETE', url: '/api/connections/c1', headers: auth('connections:read') })

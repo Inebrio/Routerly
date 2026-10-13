@@ -58,6 +58,20 @@ and a `released on @<channel>` label — this already runs, nothing to
 configure. A commit that fixes something without a tracked issue needs
 nothing extra.
 
+## Stamping a branch
+
+The publish job does not commit the bumped version back, so the
+`package.json` files in git go stale and any build from a branch (review
+instance, UAT) reports that stale number in Settings → About. When cutting
+`release/X.Y.Z`, stamp it once:
+
+```bash
+npm version X.Y.Z --allow-same-version --workspaces --include-workspace-root --no-git-tag-version --ignore-scripts
+node scripts/sync-module-versions.mjs
+```
+
+Commit as `chore: stamp version X.Y.Z`. The publish job overwrites it with the computed version.
+
 ## Module manifests carry the product version, not their own
 
 Every module under `packages/service/src/modules/` declares a

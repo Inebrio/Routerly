@@ -17,7 +17,7 @@ import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages
 export class OllamaAdapter implements ProviderAdapter {
   private getClient(model: ModelConfig): OpenAI {
     const baseURL = model.endpoint || 'http://localhost:11434/v1';
-    return new OpenAI({ apiKey: 'ollama', baseURL });
+    return new OpenAI({ apiKey: 'ollama', baseURL, timeout: model.timeout ?? 60000, maxRetries: 0 });
   }
 
   private getUpstreamModelId(model: ModelConfig): string {
