@@ -5041,6 +5041,24 @@ describe('DELETE /api/roles/:id', () => {
     expect(res.statusCode).toBe(204)
   })
 
+  it('returns 409 when the role is assigned to a user', async () => {
+    setupAdminAuth()
+    const user: any = { id: 'u1', email: 'dev@example.com', passwordHash: 'x', roleId: 'dev', routerIds: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, user]
+      if (t === 'roles') return [{ id: 'dev', name: 'Developer', permissions: [] }]
+      return []
+    })
+    mockWriteConfig.mockClear()
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/roles/dev', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('dev@example.com')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('returns 403 when trying to delete a built-in role', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
