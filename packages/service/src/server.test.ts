@@ -103,7 +103,28 @@ describe('buildServer', () => {
   })
 })
 
+vi.mock('./modules/mcp/stdio.js', () => ({ startStdioServer: vi.fn() }))
+
 describe('startServer', () => {
+  it('does not bind the port in MCP stdio mode (service already listening on it)', async () => {
+    const { createServer } = await import('node:net')
+    const busy = createServer()
+    await new Promise<void>(r => busy.listen(3096, '127.0.0.1', r))
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
+    vi.stubEnv('ROUTERLY_MCP_STDIO', '1')
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false, port: 3096, host: '127.0.0.1' } as any)
+    const log = console.log
+    try {
+      await startServer()
+      expect(exit).not.toHaveBeenCalled()
+    } finally {
+      console.log = log
+      vi.unstubAllEnvs()
+      exit.mockRestore()
+      await new Promise(r => busy.close(r))
+    }
+  })
+
   it('fires pingTelemetry install event on first start (no lastPingedVersion)', async () => {
     const settings: any = {
       logLevel: 'silent', dashboardEnabled: false,

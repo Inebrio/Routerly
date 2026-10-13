@@ -171,6 +171,7 @@ POST /api/models
 **Request fields:**
 - `connectionId` (optional): bind the model to an existing connection instead of supplying credentials inline. When present, `apiKey`/`endpoint`/`cfClearance` and the other credential fields are ignored; the connection's provider must match `provider` (`400` otherwise, `404` if `connectionId` does not exist).
 - When `connectionId` is **absent**, `apiKey`/`endpoint`/`cfClearance` (and any provider-specific credential fields) are used to create a dedicated, single-model connection with id `conn-for-<id>`, and the model binds to it. This is the same wire shape the endpoint accepted before the connections cutover, so existing integrations are unaffected.
+- `timeout` (optional): upstream request timeout in milliseconds, positive integer (default `60000` when omitted). Non-integer or non-positive values return `400`. Returned on the model. On `PUT`, omitting it keeps the current value and `null` resets it to the default.
 - `fieldOverrides` (optional): object mapping field names to `true` to lock them against catalog sync. Supported fields: `inputPerMillion`, `outputPerMillion`, `cachePerMillion`, `cacheWritePerMillion`, `pricingTiers`, `contextWindow`, `capabilities`.
 
 **Response `201`:** the created model (redacted), including `connectionId`.
@@ -1172,6 +1173,12 @@ getting `401`. Move those clients to a router token first.
 ```
 GET /api/routers
 ```
+
+The list is not filtered by router membership: every caller holding
+`router:read` sees every router (name, kind, token snippets, never full tokens).
+Membership (`/api/routers/:id/members`) records who administers a router and
+scopes MCP access; it does not hide routers. To keep a router out of someone's
+view, do not grant them `router:read`.
 
 There is no single-router route: read a router from this list. Routers are
 addressed by `id`, never by name or slug.

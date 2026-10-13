@@ -16,6 +16,7 @@ export class AnthropicAdapter implements ProviderAdapter {
       apiKey,
       baseURL: model.endpoint || 'https://api.anthropic.com',
       timeout: model.timeout ?? 60000,
+      maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
     });
   }
 

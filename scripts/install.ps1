@@ -239,6 +239,7 @@ if ($NoCli)        { $installerArgs += "--no-cli" }
 if ($NoDashboard)  { $installerArgs += "--no-dashboard" }
 if ($NoDaemon)     { $installerArgs += "--no-daemon" }
 if ($resolvedTag)  { $installerArgs += "--version=$resolvedTag" }
+if ($Version)      { $installerArgs += "--pinned" }
 $installerArgs += "--channel=$Channel"
 
 # ── Run the Node.js installer ─────────────────────────────────────────────────

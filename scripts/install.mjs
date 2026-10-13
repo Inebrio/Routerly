@@ -55,11 +55,15 @@ const FLAG_NO_SVC    = hasFlag('no-service');
 const FLAG_NO_CLI    = hasFlag('no-cli');
 const FLAG_NO_DASH   = hasFlag('no-dashboard');
 const FLAG_NO_DAEMON = hasFlag('no-daemon');
+const FLAG_NO_LINGER = hasFlag('no-linger');
+// true once systemd user lingering is on, so the user service survives logout and starts at boot
+let lingerEnabled = false;
 const FLAG_SCOPE     = getArg('scope')       ?? process.env.ROUTERLY_SCOPE       ?? '';
 const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT        ?? '';
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
 const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
+const INSTALL_PINNED = hasFlag('pinned'); // install.sh/ps1 pass --pinned only when the user asked for an explicit --version
 let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 via --channel= (latest | current | next)
 
 // Normalize deprecated channel aliases (mirrors install.sh / install.ps1) before any
@@ -328,7 +332,13 @@ function detectExistingAppDir() {
 
 let installMode = 'fresh'; // 'fresh' | 'update' | 'reinstall' | 'uninstall'
 
-if (isExistingInstall && !YES) {
+if (isExistingInstall && YES) {
+  // Non-interactive upgrade: same as choosing "1 Update" (keeps settings, restarts daemon)
+  installMode = 'update';
+  info('Existing installation detected: updating (--yes)');
+  info('Checking for running service daemon...');
+  await stopDaemon(detectExistingScope());
+} else if (isExistingInstall) {
   console.log('\n' + c.yellow(c.bold('  Existing installation detected')) + '\n');
 
   console.log(`  What would you like to do?\n`);
@@ -744,6 +754,11 @@ step('3', 'Copying files & installing dependencies');
 
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
+// Drop files of the previous version that the new source no longer has
+// (stale files can break the build, e.g. on downgrade). Only touches APP_DIR.
+if (fs.existsSync(path.join(APP_DIR, 'package.json'))) {
+  await pruneStale(SOURCE_DIR, APP_DIR, needsSudo);
+}
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
 success('Source files copied');
 
@@ -826,9 +841,9 @@ if (!fs.existsSync(settingsPath)) {
     dashboardEnabled: installDashboard,
     logLevel: 'info',
     publicUrl,
-    channel: INSTALL_VERSION ? 'custom' : INSTALL_CHANNEL,
+    channel: INSTALL_PINNED ? 'custom' : INSTALL_CHANNEL,
   };
-  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo);
+  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo, 0o600);
   success('settings.json written');
 } else {
   info('Existing settings.json kept (upgrade mode)');
@@ -1044,7 +1059,10 @@ console.log('\n' + '─'.repeat(60));
 console.log(c.green(c.bold('\n  Routerly installed successfully!\n')));
 
 if (installService) {
-  if (setupDaemon) {
+  if (setupDaemon && PLATFORM === 'linux' && scope === 'user' && !lingerEnabled) {
+    console.log(`  The service runs while you are logged in. To keep it running after logout and start it at boot:`);
+    console.log(`    loginctl enable-linger ${os.userInfo().username}`);
+  } else if (setupDaemon) {
     console.log(`  The service will start automatically at boot.`);
   } else {
     console.log(c.bold('  To start the service manually:'));
@@ -1115,6 +1133,22 @@ async function runCmd(cmd, cwd) {
   }
 }
 
+/** Remove from dest every entry missing in src, keeping dependencies and build output. */
+async function pruneStale(src, dest, useSudo = false) {
+  const keep = ['node_modules', 'dist'];
+  for (const entry of await fsp.readdir(dest, { withFileTypes: true })) {
+    if (keep.includes(entry.name)) continue;
+    const srcPath  = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    const srcStat  = await fsp.stat(srcPath).catch(() => null);
+    if (srcStat?.isDirectory() && entry.isDirectory()) {
+      await pruneStale(srcPath, destPath, useSudo);
+    } else if (!srcStat || srcStat.isDirectory() !== entry.isDirectory()) {
+      await removeDir(destPath, useSudo);
+    }
+  }
+}
+
 /** Recursively copy a directory, optionally using sudo for system paths. */
 async function copyDir(src, dest, useSudo = false) {
   await mkdirP(dest, useSudo);
@@ -1178,12 +1212,29 @@ async function setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome,
     try {
       await runCmd(`systemctl --user daemon-reload`, '/');
       await runCmd(`systemctl --user enable --now ${unitName}`, '/');
+      await enableLinger();
     } catch {
       warn('Could not auto-start via systemctl. Run manually:');
       console.log(`  systemctl --user enable --now ${unitName}`);
     }
   }
   success(`systemd unit written to ${c.dim(unitPath)}`);
+}
+
+/** Keep the systemd user manager alive after logout and start it at boot. Failure is non-fatal. */
+async function enableLinger() {
+  const user = os.userInfo().username;
+  if (FLAG_NO_LINGER) {
+    warn(`Linger not enabled (--no-linger). The service stops at logout; to change: loginctl enable-linger ${user}`);
+    return;
+  }
+  try {
+    await runCmd(`loginctl enable-linger ${user}`, '/');
+    lingerEnabled = true;
+    success(`Linger enabled for ${user} (service survives logout and starts at boot)`);
+  } catch {
+    warn(`Could not enable linger. The service stops at logout; run: loginctl enable-linger ${user}`);
+  }
 }
 
 // ── launchd (macOS) ───────────────────────────────────────────────────────────

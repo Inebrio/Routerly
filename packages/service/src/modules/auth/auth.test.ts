@@ -97,7 +97,15 @@ describe('authPlugin', () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'GET', url: '/v1/chat/completions' })
     expect(res.statusCode).toBe(401)
-    expect(res.json().error).toBe('unauthorized')
+    expect(res.json().error).toMatchObject({ type: 'invalid_request_error', code: 'invalid_api_key' })
+    await app.close()
+  })
+
+  it('returns Anthropic-shaped 401 on /v1/messages', async () => {
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/v1/messages', payload: {} })
+    expect(res.statusCode).toBe(401)
+    expect(res.json()).toMatchObject({ type: 'error', error: { type: 'authentication_error' } })
     await app.close()
   })
 
@@ -121,7 +129,7 @@ describe('authPlugin', () => {
       headers: { authorization: 'Bearer invalid-token' },
     })
     expect(res.statusCode).toBe(401)
-    expect(res.json().message).toContain('Invalid router token')
+    expect(res.json().error.message).toContain('Invalid router token')
     await app.close()
   })
 
@@ -162,7 +170,7 @@ describe('authPlugin', () => {
       headers: { 'x-api-key': 'nope' },
     })
     expect(res.statusCode).toBe(401)
-    expect(res.json().message).toContain('Invalid router token')
+    expect(res.json().error.message).toContain('Invalid router token')
     await app.close()
   })
 
@@ -259,7 +267,7 @@ describe('authPlugin', () => {
       headers: { authorization: 'Bearer expired-token' },
     })
     expect(res.statusCode).toBe(401)
-    expect(res.json().error).toBe('Token expired')
+    expect(res.json().error.message).toBe('Token expired')
     await app.close()
   })
 
@@ -414,7 +422,7 @@ describe('authPlugin — experiment tokens (T71)', () => {
       payload: {},
     })
     expect(res.statusCode).toBe(401)
-    expect(res.json().error).toBe('Token expired')
+    expect(res.json().error.message).toBe('Token expired')
     await app.close()
   })
 
@@ -428,7 +436,7 @@ describe('authPlugin — experiment tokens (T71)', () => {
       payload: {},
     })
     expect(res.statusCode).toBe(503)
-    expect(res.json().error).toBe('experiment_misconfigured')
+    expect(res.json().error.code).toBe('experiment_misconfigured')
     await app.close()
   })
 
@@ -442,7 +450,7 @@ describe('authPlugin — experiment tokens (T71)', () => {
       payload: {},
     })
     expect(res.statusCode).toBe(401)
-    expect(res.json().message).toContain('Invalid router token')
+    expect(res.json().error.message).toContain('Invalid router token')
     await app.close()
   })
 })

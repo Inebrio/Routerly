@@ -115,6 +115,15 @@ describe('llmChat', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: 'budget_exceeded' }))
   })
 
+  it('tracks outcome timeout when the SDK request timeout fires', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const timeoutErr = Object.assign(new Error('Request timed out.'), { name: 'APIConnectionTimeoutError' })
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(timeoutErr) } as any)
+
+    await expect(llmChat({ messages: [] } as any, makeModel(), makeCtx())).rejects.toThrow('Request timed out.')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
+  })
+
   it('throws and tracks error when chatCompletion fails', async () => {
     mockIsAllowed.mockResolvedValue(true)
     const mockAdapter = { chatCompletion: vi.fn().mockRejectedValue(new Error('provider down')) }
@@ -287,6 +296,27 @@ async function* makeStream(...chunks: any[]) {
 }
 
 describe('llmStream', () => {
+  it('injectUsage:false forwards the body untouched and estimates usage', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'hello world!' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    const req = { messages: [{ role: 'user', content: 'hi' }] } as any
+    const result = await llmStream(req, makeModel(), makeCtx(), { injectUsage: false })
+    for await (const _ of result.chunks) { /* consume */ }
+    expect(sc.mock.calls[0]![0]).toBe(req)
+    expect(sc.mock.calls[0]![0]).not.toHaveProperty('stream_options')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success', inputTokens: expect.any(Number), outputTokens: 3 }))
+    expect(mockTrackUsage.mock.calls.at(-1)![0].inputTokens).toBeGreaterThan(0)
+  })
+
+  it('injects stream_options by default', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'x' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    await llmStream({ messages: [] } as any, makeModel(), makeCtx())
+    expect(sc.mock.calls[0]![0].stream_options).toEqual({ include_usage: true })
+  })
+
   it('returns ttftMs and yields chunks', async () => {
     mockIsAllowed.mockResolvedValue(true)
     const chunk = { choices: [{ delta: { content: 'hi' } }] }

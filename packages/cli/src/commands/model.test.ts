@@ -291,7 +291,7 @@ describe('routerly model add', () => {
     mockApi.mockResolvedValue(baseModel);
     const { out } = await run('add', '--id', 'gpt-4o', '--provider', 'openai');
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = body as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(5);
     expect(cost.outputPerMillion).toBe(15);
     expect(out.join(' ')).toContain('pricing from preset');
@@ -307,9 +307,18 @@ describe('routerly model add', () => {
     mockApi.mockResolvedValue(baseModel);
     await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--input-price', '2.5', '--output-price', '10');
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = body as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(2.5);
     expect(cost.outputPerMillion).toBe(10);
+  });
+
+  it('sends flat price fields (no nested cost) and keeps 0 as a valid price', async () => {
+    mockApi.mockResolvedValue({});
+    await run('add', '--id', 'ollama/q', '--provider', 'ollama', '--input-price', '0', '--output-price', '0');
+    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    expect(body['cost']).toBeUndefined();
+    expect(body['inputPerMillion']).toBe(0);
+    expect(body['outputPerMillion']).toBe(0);
   });
 
   it('uses provider default endpoint for openai', async () => {
@@ -403,7 +412,7 @@ describe('routerly model add', () => {
     const tiers = JSON.stringify([{ metric: 'context_tokens', above: 200000, inputPerMillion: 7.5, outputPerMillion: 22.5 }]);
     await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--pricing-tiers-json', tiers);
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { pricingTiers?: unknown[] };
+    const cost = body as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
   });
 
@@ -473,7 +482,7 @@ describe('routerly model add', () => {
     mockApi.mockResolvedValue({});
     await run('add', '--id', 'my-model', '--provider', 'custom');
     const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
-    const cost = body['cost'] as { pricingTiers?: unknown };
+    const cost = body as { pricingTiers?: unknown };
     expect(cost.pricingTiers).toBeUndefined();
   });
 
@@ -607,7 +616,7 @@ describe('routerly model edit', () => {
     mockApi.mockResolvedValueOnce([baseModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--api-key', 'sk-new');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = putBody as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(5);
     expect(cost.outputPerMillion).toBe(15);
   });
@@ -616,15 +625,26 @@ describe('routerly model edit', () => {
     mockApi.mockResolvedValueOnce([baseModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--input-price', '2.5');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { inputPerMillion: number };
+    const cost = putBody as { inputPerMillion: number };
     expect(cost.inputPerMillion).toBe(2.5);
+  });
+
+  it('sends flat prices and resends existing limits on edit', async () => {
+    const limits = [{ metric: 'cost', windowType: 'period', period: 'monthly', value: 200 }];
+    mockApi.mockResolvedValueOnce([{ ...baseModel, limits }]).mockResolvedValueOnce({});
+    await run('edit', 'gpt-4o', '--input-price', '3');
+    const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
+    expect(putBody['cost']).toBeUndefined();
+    expect(putBody['inputPerMillion']).toBe(3);
+    expect(putBody['outputPerMillion']).toBe(15);
+    expect(putBody['limits']).toEqual(limits);
   });
 
   it('sends cache price when --cache-price provided', async () => {
     mockApi.mockResolvedValueOnce([baseModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--cache-price', '0.5');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { cachePerMillion?: number };
+    const cost = putBody as { cachePerMillion?: number };
     expect(cost.cachePerMillion).toBe(0.5);
   });
 
@@ -635,7 +655,7 @@ describe('routerly model edit', () => {
     }]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--output-price', '20');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { cachePerMillion?: number };
+    const cost = putBody as { cachePerMillion?: number };
     expect(cost.cachePerMillion).toBe(0.5);
   });
 
@@ -700,7 +720,7 @@ describe('routerly model edit', () => {
     const tiers = JSON.stringify([{ metric: 'context_tokens', above: 100000, inputPerMillion: 7.5, outputPerMillion: 22.5 }]);
     await run('edit', 'gpt-4o', '--pricing-tiers-json', tiers);
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
   });
 
@@ -718,7 +738,7 @@ describe('routerly model edit', () => {
     }]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--api-key', 'sk-new');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
   });
 
@@ -735,7 +755,7 @@ describe('routerly model edit', () => {
     mockApi.mockResolvedValueOnce([noCostModel]).mockResolvedValueOnce({});
     await run('edit', 'gpt-4o', '--api-key', 'sk-new');
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { inputPerMillion: number; outputPerMillion: number };
+    const cost = putBody as { inputPerMillion: number; outputPerMillion: number };
     expect(cost.inputPerMillion).toBe(0);
     expect(cost.outputPerMillion).toBe(0);
   });
@@ -895,7 +915,7 @@ describe('routerly model edit --interactive', () => {
     }));
     await makeCmd().parseAsync(['node', 'model', 'edit', 'gpt-4o', '--interactive']);
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     expect(cost.pricingTiers).toHaveLength(1);
     vi.doUnmock('inquirer');
   });
@@ -921,7 +941,7 @@ describe('routerly model edit --interactive', () => {
     }));
     await makeCmd().parseAsync(['node', 'model', 'edit', 'gpt-4o', '--interactive']);
     const putBody = mockApi.mock.calls[1]![2] as Record<string, unknown>;
-    const cost = putBody['cost'] as { pricingTiers?: unknown[] };
+    const cost = putBody as { pricingTiers?: unknown[] };
     // empty array → pricingTiers key omitted because tiers.length is 0
     expect(cost.pricingTiers).toBeUndefined();
     vi.doUnmock('inquirer');

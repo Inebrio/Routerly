@@ -13,7 +13,7 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 
 | Permission | Description |
 |-----------|-------------|
-| `router:read` | View routers and their configuration |
+| `router:read` | View all routers and their configuration (global: not limited by router membership) |
 | `router:write` | Create, edit, and delete routers |
 | `model:read` | View registered models |
 | `model:write` | Create, edit, and delete models |

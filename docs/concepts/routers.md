@@ -32,7 +32,7 @@ routerly router model add "My App" gpt-5-mini
 routerly router model add "My App" claude-haiku-4-5
 ```
 
-A Router is created empty. Target models are attached one at a time, so each one can carry its own system prompt hint.
+A Router is created empty. Target models are attached one at a time, so each one can carry its own routing guidance (read by the LLM routing policy, never sent upstream).
 
 ### Dashboard
 

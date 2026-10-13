@@ -62,6 +62,9 @@ The rotation decides which variant serves a given request.
 `weighted` reads each variant's `weight`. Weights are normalised against their
 own sum, so `1` / `1` and `50` / `50` mean the same thing, and a variant with
 no weight counts as `1`. A test that sets no weights at all splits evenly.
+Weights are relative, not percentages, and are not required to sum to 100:
+`70` / `20` runs as 77.8% / 22.2%. `routerly experiments show` prints the
+effective share of each variant. A negative weight is rejected with a 400.
 
 Sticky assignments and the round-robin cursor live in memory only. A service
 restart re-splits the traffic, which costs a little balance and no
