@@ -12,7 +12,7 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
+import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
@@ -2321,8 +2321,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         console.warn(updateChannelDeprecationWarning(channelNormalized.deprecatedAlias));
       }
     }
+    // ROUT-213: network + /metrics settings. port/host only take effect after a restart.
+    const netPatch = req.body as Partial<Omit<Settings, 'prometheusAuthToken'>> & { prometheusAuthToken?: string | null };
+    const netSchema = z.object({
+      port: z.number().int().min(1).max(65535).optional(),
+      host: z.string().trim().min(1).optional(),
+      metricsEnabled: z.boolean().optional(),
+      prometheusAuthToken: z.string().nullable().optional(),
+    });
+    const netParsed = netSchema.safeParse(netPatch);
+    if (!netParsed.success) {
+      return reply.status(400).send({ error: netParsed.error.issues[0]!.message });
+    }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
+      'port',
+      'host',
+      'metricsEnabled',
       'logLevel',
       'dashboardEnabled',
       'notifications',
@@ -2341,6 +2356,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
     if (channelNormalized) {
       updated.channel = channelNormalized.channel;
+    }
+    // Empty string / null removes the /metrics token.
+    if (netPatch.prometheusAuthToken !== undefined) {
+      updated.prometheusAuthToken = netPatch.prometheusAuthToken || undefined;
+    }
+    // A prometheus integration overrides the flat fields in /metrics: keep it in sync.
+    if (netPatch.metricsEnabled !== undefined || netPatch.prometheusAuthToken !== undefined) {
+      updated.integrations = (updated.integrations ?? []).map((i) => {
+        if (i.type !== 'prometheus') return i;
+        const next = { ...i } as PrometheusIntegration;
+        if (netPatch.metricsEnabled !== undefined) next.enabled = netPatch.metricsEnabled;
+        if (netPatch.prometheusAuthToken !== undefined) {
+          if (netPatch.prometheusAuthToken) next.authToken = netPatch.prometheusAuthToken;
+          else delete next.authToken;
+        }
+        return next;
+      });
     }
     // Telemetry is handled separately: server controls installId generation
     const telemetryPatch = (req.body as Partial<Settings>).telemetry;

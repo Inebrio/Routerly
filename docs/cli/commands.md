@@ -3045,14 +3045,16 @@ routerly service configure [options]
 
 | Option | Description |
 |--------|-------------|
-| `--port <n>` | Service port |
-| `--host <host>` | Bind address |
+| `--port <n>` | Service port (1-65535; applies after a service restart) |
+| `--host <host>` | Bind address (applies after a service restart) |
 | `--dashboard <bool>` | Enable/disable web dashboard |
 | `--log-level <level>` | `trace` / `debug` / `info` / `warn` / `error` |
 | `--metrics <bool>` | Enable/disable the Prometheus `/metrics` endpoint |
 | `--metrics-token <token>` | Bearer token protecting `/metrics` (empty string removes it) |
 | `--public-url <url>` | External URL of the service |
 | `--require-mfa <bool>` | Require two-factor authentication for all users |
+
+`routerly service metrics [--raw] [--token <token>]` reads `/metrics`; when it is protected by a token, pass `--token` or set `ROUTERLY_METRICS_TOKEN` (default: the account token).
 
 Per-request timeouts are configured per router with `routerly router edit --timeout <ms>`, not service-wide.
 
