@@ -3402,6 +3402,47 @@ describe('listeningAddresses', () => {
 })
 
 describe('PUT /api/settings', () => {
+  async function putSettings(current: Record<string, unknown>, body: unknown) {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return current
+      return []
+    })
+    let written: Record<string, any> = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v as Record<string, any> })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify(body),
+    })
+    await app.close()
+    return { res, written }
+  }
+
+  it('persists metricsEnabled, prometheusAuthToken, port, host (ROUT-213)', async () => {
+    const { res, written } = await putSettings({ logLevel: 'info' }, { metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
+    expect(res.statusCode).toBe(200)
+    expect(written).toMatchObject({ metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
+  })
+
+  it('removes prometheusAuthToken on empty string and syncs the prometheus integration', async () => {
+    const { res, written } = await putSettings(
+      { prometheusAuthToken: 'old', integrations: [{ id: 'p', type: 'prometheus', enabled: true, authToken: 'old' }] },
+      { prometheusAuthToken: '', metricsEnabled: false },
+    )
+    expect(res.statusCode).toBe(200)
+    expect(written['prometheusAuthToken']).toBeUndefined()
+    expect(written['integrations'][0]).toEqual({ id: 'p', type: 'prometheus', enabled: false })
+  })
+
+  it.each([{ port: 99999 }, { port: 0 }, { port: 1.5 }, { host: '' }, { metricsEnabled: 'no' }])('rejects invalid %j with 400', async (body) => {
+    const { res } = await putSettings({}, body)
+    expect(res.statusCode).toBe(400)
+  })
+
   it('updates settings', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
