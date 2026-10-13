@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **ESLint 9 flat config**: added `eslint.config.mjs` (port of the removed `.eslintrc.json`) so `npm run lint` runs again and exits 0. Pre-existing violations are reported as warnings, not errors.
 - **PII response scrub on `/v1/messages`**: a router PII policy targeting `response` now also scrubs Anthropic-protocol replies, non-stream (text blocks) and stream (including entities split across chunks). Previously the phone/email reached the client in clear; `/v1/chat/completions` is unchanged.
 - `PUT /api/models/:id` and `PUT /api/routers/:id` now merge a partial body: omitted model provider, endpoint, pricing and limits (router name and models) keep their stored values instead of wiping them / corrupting the bound connection / returning HTTP 500. An explicit `limits: []` still clears limits; a non-array `models` returns 400.
 - **Settings → About shows the real version** — package and module manifest versions were still stamped `0.4.0` in git, so branch builds reported `v0.4.0`. They are now stamped to the working release version; `docs/contributing/releasing.md` documents the stamp step for new release branches.
