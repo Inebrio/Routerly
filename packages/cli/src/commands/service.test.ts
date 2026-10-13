@@ -75,7 +75,7 @@ describe('service status', () => {
     await run('status');
     const out = lines.join('\n');
     expect(out).toContain('0.3.0');
-    expect(out).toContain('2m 5s'); // 125s = 2m 5s
+    expect(out).toContain('2m 5s'); // 125s
     expect(out).toContain('3000');
     expect(out).toContain('enabled');
     expect(out).toContain('Listening at:  http://127.0.0.1:3000');
