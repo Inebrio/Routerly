@@ -28,7 +28,7 @@ export function makeAuditCommand(): Command {
     .option('--user <email>', 'Filter by user email or ID')
     .option('--action <str>', 'Filter by action substring (e.g. model:create)')
     .option('--from <date>', 'Start date (ISO format, e.g. 2026-01-01)')
-    .option('--to <date>', 'End date (ISO format, e.g. 2026-12-31)')
+    .option('--to <date>', 'End date (ISO format, e.g. 2026-12-31; a date alone includes that whole day, UTC)')
     .option('--limit <n>', 'Max entries to return', '50')
     .option('--json', 'Output raw JSON')
     .addHelpText('after', `
@@ -38,14 +38,14 @@ Examples:
   routerly audit list --action model:create --json
 `)
     .action(async (opts: { user?: string; action?: string; from?: string; to?: string; limit: string; json?: boolean }) => {
-      const params = new URLSearchParams({ limit: opts.limit });
+      const params = new URLSearchParams({ pageSize: opts.limit });
       if (opts.user)   params.set('userId', opts.user);
       if (opts.action) params.set('action', opts.action);
       if (opts.from)   params.set('from', opts.from);
       if (opts.to)     params.set('to', opts.to);
 
       try {
-        const entries = await api<AuditEntry[]>('GET', `/api/audit?${params.toString()}`);
+        const { entries } = await api<{ entries: AuditEntry[] }>('GET', `/api/audit?${params.toString()}`);
 
         if (opts.json) {
           console.log(JSON.stringify(entries, null, 2));
