@@ -4,7 +4,7 @@ import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import {
   EXPERIMENT_ROTATIONS, STICKY_KEYS,
-  ROTATION_CATALOG, STICKY_KEY_CATALOG,
+  ROTATION_CATALOG, STICKY_KEY_CATALOG, variantShares,
 } from '@routerly/shared';
 import type {
   ExperimentConfig, ExperimentMetrics, ExperimentRotation,
@@ -223,14 +223,16 @@ Examples:
         if (e.variants.length === 0) {
           console.log(chalk.gray('  (none)'));
         } else {
-          const table = new Table({ head: ['ID', 'Label', 'Router', 'Weight'].map(h => chalk.cyan(h)) });
-          for (const v of e.variants) {
+          const table = new Table({ head: ['ID', 'Label', 'Router', 'Weight', 'Share'].map(h => chalk.cyan(h)) });
+          const shares = variantShares(e.variants);
+          for (const [i, v] of e.variants.entries()) {
             const router = routers.find(p => p.id === v.routerId);
             table.push([
               v.id,
               v.name ?? chalk.gray(router?.name ?? '-'),
               router?.name ?? chalk.red(`${v.routerId} (deleted)`),
               v.weight !== undefined ? String(v.weight) : chalk.gray('1'),
+              `${(shares[i]! * 100).toFixed(1)}%`,
             ]);
           }
           console.log(table.toString());
@@ -251,7 +253,7 @@ Examples:
     .option('--description <text>', 'What this test is trying to settle')
     .option('--rotation <rotation>', `How a variant is picked: ${EXPERIMENT_ROTATIONS.join(', ')}`)
     .option('--sticky-key <key>', `What identifies the same caller for sticky rotation: ${STICKY_KEYS.join(', ')}`)
-    .option('--variant <spec>', 'An arm of the test: <router>[:label][=weight]. Repeat for each variant', parseVariant)
+    .option('--variant <spec>', 'An arm of the test: <router>[:label][=weight]. Weights are relative, not percentages. Repeat for each variant', parseVariant)
     .option('--judge-model <modelId>', 'Score answers with this model')
     .option('--criteria <text>', 'One judge criterion. Repeat for each', collectCriteria)
     .option('--sample-rate <percent>', 'Share of calls the judge scores, 0-100 (default 100)')
@@ -293,7 +295,7 @@ Examples:
     .option('--description <text>', 'New description')
     .option('--rotation <rotation>', `How a variant is picked: ${EXPERIMENT_ROTATIONS.join(', ')}`)
     .option('--sticky-key <key>', `What identifies the same caller for sticky rotation: ${STICKY_KEYS.join(', ')}`)
-    .option('--variant <spec>', 'An arm of the test: <router>[:label][=weight]. Repeat for each variant. Replaces the whole list', parseVariant)
+    .option('--variant <spec>', 'An arm of the test: <router>[:label][=weight]. Weights are relative, not percentages. Repeat for each variant. Replaces the whole list', parseVariant)
     .option('--judge-model <modelId>', 'Score answers with this model')
     .option('--criteria <text>', 'One judge criterion. Repeat for each. Replaces the whole list', collectCriteria)
     .option('--sample-rate <percent>', 'Share of calls the judge scores, 0-100')

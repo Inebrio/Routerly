@@ -130,7 +130,7 @@ Examples:
       if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
       if (opts.logLevel) patch.logLevel = opts.logLevel as Settings['logLevel'];
       if (opts.metrics !== undefined) patch.metricsEnabled = opts.metrics === 'true';
-      if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken || undefined;
+      if (opts.metricsToken !== undefined) patch.prometheusAuthToken = opts.metricsToken; // '' removes it server-side
       if (opts.publicUrl !== undefined) patch.publicUrl = opts.publicUrl;
       if (opts.requireMfa !== undefined) patch.requireMfa = opts.requireMfa === 'true';
       if (opts.defaultLanguage !== undefined) patch.defaultLanguage = opts.defaultLanguage;
@@ -159,6 +159,9 @@ Examples:
 
         await api<void>('PUT', '/api/settings', patch);
         console.log(chalk.green('✓ Settings updated.'));
+        if (patch.port !== undefined || patch.host !== undefined) {
+          console.log(chalk.yellow('Restart the service for --port/--host to take effect.'));
+        }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           console.error(chalk.red('Admin privileges required.'));
@@ -224,12 +227,13 @@ Examples:
   cmd.command('metrics')
     .description('Show Prometheus metrics summary')
     .option('--raw', 'Print raw Prometheus text output')
-    .action(async (opts: { raw?: boolean }) => {
+    .option('--token <token>', 'Prometheus Bearer token (default: $ROUTERLY_METRICS_TOKEN, else the account token)')
+    .action(async (opts: { raw?: boolean; token?: string }) => {
       try {
         const account = await requireAccount();
         const url = `${account.serverUrl.replace(/\/$/, '')}/metrics`;
         const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${account.token}` },
+          headers: { Authorization: `Bearer ${opts.token ?? process.env['ROUTERLY_METRICS_TOKEN'] ?? account.token}` },
         });
         if (!res.ok) {
           console.error(chalk.red(`Error: ${res.statusText}`));

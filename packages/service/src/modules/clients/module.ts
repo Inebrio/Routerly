@@ -23,8 +23,8 @@ export function isClientConfiguratorEnabled(): boolean {
 export const clientConfiguratorModule = defineModule({
   manifest: {
     id: 'client-configurator',
-    version: '0.4.0',
-    dependsOn: { config: '^0.4.0' },
+    version: '0.5.4',
+    dependsOn: { config: '^0.5.4' },
   },
   register() {
     setClientConfiguratorEnabled(true)

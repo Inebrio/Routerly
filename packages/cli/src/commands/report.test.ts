@@ -419,9 +419,10 @@ describe('report leaderboard', () => {
 
 // ── report sessions ──────────────────────────────────────────────────────────
 
-const sessionsFixture = [
-  { sessionId: 'sess-aabbccddeeff1122', routerId: 'proj-abc123456789', requests: 5, totalCost: 0.01, startedAt: '2026-01-01T00:00:00Z' },
+const sessionsList = [
+  { sessionId: 'sess-aabbccddeeff1122', routerId: 'proj-abc123456789', requests: 5, totalCost: 0.01, firstSeen: '2026-01-01T00:00:00Z', lastSeen: '2026-01-01T00:05:00Z' },
 ];
+const sessionsFixture = { sessions: sessionsList };
 
 describe('report sessions', () => {
   it('prints sessions table', async () => {
@@ -435,11 +436,18 @@ describe('report sessions', () => {
     mockApi.mockResolvedValue(sessionsFixture);
     const { out } = await run('sessions', '--json');
     const parsed = JSON.parse(out.join('\n'));
-    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed).toEqual(sessionsList);
+  });
+
+  it('prints a valid start date and a hint when nextCursor is set', async () => {
+    mockApi.mockResolvedValue({ ...sessionsFixture, nextCursor: 'sess-x' });
+    const { out } = await run('sessions');
+    expect(out.join('\n')).not.toContain('Invalid Date');
+    expect(out.join('\n')).toContain('More sessions');
   });
 
   it('prints empty message when no data', async () => {
-    mockApi.mockResolvedValue([]);
+    mockApi.mockResolvedValue({ sessions: [] });
     const { out } = await run('sessions');
     expect(out.join('\n')).toContain('No sessions');
   });

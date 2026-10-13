@@ -13,6 +13,7 @@ export class AnthropicOAuthAdapter extends AnthropicAdapter {
       authToken: model.apiKey ?? '',
       baseURL: model.endpoint || 'https://api.anthropic.com',
       timeout: model.timeout ?? 60000,
+      maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
       defaultHeaders: {
         'anthropic-dangerous-direct-browser-access': 'true',
         'anthropic-beta': OAUTH_BETA,

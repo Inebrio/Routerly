@@ -31,7 +31,7 @@ import {
  * calls in server.ts/bootstrap.ts relied on implicitly.
  */
 export const configModule = defineModule({
-  manifest: { id: 'config', version: '0.4.0' },
+  manifest: { id: 'config', version: '0.5.4' },
   async migrate() {
     // Independent catch: the two migrations touch different files, so a
     // failure in one must not skip the other (the behaviour before they moved

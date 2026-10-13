@@ -58,6 +58,11 @@ function newToken(): RouterToken {
   return { id: randomUUID(), token: raw, tokenSnippet: raw.substring(0, 10), createdAt: new Date().toISOString() };
 }
 
+/** One-line 400 message that names every failing field by its full path (`judge.sampleRate`), as the clients expect `error` to be a string. */
+function validationError(error: z.ZodError): string {
+  return error.issues.map(i => `${i.path.length ? i.path.join('.') : 'body'}: ${i.message}`).join('; ');
+}
+
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
 const variantSchema = z.object({
@@ -140,7 +145,7 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
     if (!await checkModuleGate(reply)) return;
     const parsed = createSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return reply.status(400).send({ error: validationError(parsed.error) });
 
     const experiments = await readConfig('experiments');
     if (experiments.some(e => e.name.trim().toLowerCase() === parsed.data.name.toLowerCase())) {
@@ -173,7 +178,7 @@ export const experimentsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'experiments:manage', reply)) return;
     if (!await checkModuleGate(reply)) return;
     const parsed = patchSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return reply.status(400).send({ error: validationError(parsed.error) });
 
     const experiments = await readConfig('experiments');
     const idx = experiments.findIndex(e => e.id === req.params.id);
