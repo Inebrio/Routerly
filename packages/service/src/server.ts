@@ -18,6 +18,7 @@ import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/mig
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
+import { protocolError, protocolForUrl } from './lib/protocol-errors.js';
 import { bootstrap } from './bootstrap/index.js';
 import type { Kernel } from './core/index.js';
 
@@ -34,13 +35,20 @@ declare module 'fastify' {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
+// `routerly mcp serve` runs the service as a stdio MCP server: stdout is the
+// JSON-RPC channel, so nothing else may write to it and no port may be bound
+// (the regular service is usually already listening on the same host).
+const isMcpStdio = () => process.env['ROUTERLY_MCP_STDIO'] === '1';
+
 export async function buildServer() {
   const settings = await readConfig('settings');
 
   const fastify = Fastify({
     logger: {
       level: settings.logLevel,
-      ...(process.env['NODE_ENV'] !== 'production'
+      ...(isMcpStdio()
+        ? { stream: process.stderr }
+        : process.env['NODE_ENV'] !== 'production'
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
@@ -64,6 +72,14 @@ export async function buildServer() {
 
   // ─── Plugins ─────────────────────────────────────────────────────────────────
   await fastify.register(cors, { origin: true });
+  // Non-browser SDK calls on the proxy lanes (no Origin header) get the provider's
+  // headers back unaltered: drop the `Vary: Origin` the CORS plugin would add.
+  fastify.addHook('onSend', async (req, reply) => {
+    if (req.method === 'POST' && req.url.startsWith('/v1/') && !req.headers.origin
+        && String(reply.getHeader('vary')).toLowerCase() === 'origin') {
+      reply.removeHeader('vary');
+    }
+  });
 
   // ─── Dashboard static files (served before auth plugin) ───────────────────
   if (settings.dashboardEnabled) {
@@ -92,6 +108,14 @@ export async function buildServer() {
 
   // ─── Dashboard REST API (auth handled inside the plugin) ─────────────────
   await fastify.register(apiRoutes);
+
+  // /v1/* errors that never reach a route (malformed JSON, oversized body, ...) get the
+  // provider-shaped body instead of Fastify's default; everything else keeps default handling.
+  fastify.setErrorHandler(async (err, req, reply) => {
+    const status = (err as { statusCode?: number }).statusCode;
+    if (!req.url.startsWith('/v1/') || !status || status < 400 || status >= 500) throw err;
+    return reply.status(status).send(protocolError(protocolForUrl(req.url), status, (err as Error).message));
+  });
 
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
@@ -125,6 +149,7 @@ export async function buildServer() {
 }
 
 export async function startServer() {
+  if (isMcpStdio()) console.log = console.error;
   await initConfigDirs();
 
   // Permission guard runs first, before anything else reads or writes a
@@ -198,6 +223,8 @@ export async function startServer() {
     // eslint-disable-next-line no-console
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching router)`);
   }
+
+  if (isMcpStdio()) return;
 
   try {
     await server.listen({ port: settings.port, host: settings.host });

@@ -154,7 +154,7 @@ export function RouterOrchestratorTab() {
         }),
         policies: policies.map(p => {
           const { internalId, ...rest } = p;
-          return { ...rest, enabled: true };
+          return rest;
         }),
       };
       const updated = await updateRouter(router.id, payload);

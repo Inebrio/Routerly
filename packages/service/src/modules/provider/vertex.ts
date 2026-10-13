@@ -72,6 +72,7 @@ export class VertexAdapter extends OpenAIAdapter {
       apiKey:   token,
       baseURL,
       timeout:  model.timeout ?? 60000,
+      maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
       defaultHeaders: { Authorization: `Bearer ${token}` },
     });
   }

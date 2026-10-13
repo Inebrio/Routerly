@@ -224,7 +224,14 @@ jobs:
   docs-deploy:
     name: Deploy Docs
     needs: [release, docs]
-    if: needs.release.outputs.released == 'true' && needs.release.outputs.channel == 'current'
+    # `docs` (the version cut) is skipped on develop, which would skip this
+    # job too without always(). Every develop push redeploys so /next/ tracks
+    # the branch; main only deploys after a real release + cut.
+    if: >-
+      always() && needs.release.result == 'success' && (
+        needs.release.outputs.channel == 'next' ||
+        (needs.release.outputs.released == 'true' && needs.release.outputs.channel == 'current' && needs.docs.result == 'success')
+      )
     uses: ./.github/workflows/docs-deploy.yml
     with:
       ref: ${{ github.ref_name }}

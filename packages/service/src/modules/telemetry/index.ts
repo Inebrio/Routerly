@@ -9,7 +9,7 @@ import { pingTelemetry } from './telemetry.js';
  * makes it reachable through the container.
  */
 export const telemetryModule = defineModule({
-  manifest: { id: 'telemetry', version: '0.4.0' },
+  manifest: { id: 'telemetry', version: '0.5.4' },
   register({ container }) {
     container.register(TELEMETRY, { pingTelemetry });
   },
