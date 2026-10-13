@@ -113,7 +113,7 @@ export class CustomAdapter implements ProviderAdapter {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
     }
-    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint });
+    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint, ...(model.timeout != null ? { timeout: model.timeout } : {}), maxRetries: 0 });
     const upstreamModel = this.getUpstreamModelId(model);
     const { messages, system } = anthropicToOpenAIMessages(request);
     const openAIMessages = system

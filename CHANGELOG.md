@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- Non-stream requests to an unresponsive upstream no longer wait ~181 s: SDK clients for all chat adapters now run with `maxRetries: 0`, so the model `timeout` (default 60 s) is no longer tripled and failover happens right after it. Streaming requests whose candidates all fail before the first chunk now get HTTP 503 `server_error` (same as non-stream) instead of an empty 200 stream.
+
 ### New features
 
 **Router, Orchestrator, and Passthrough kinds**

@@ -17,6 +17,7 @@ export class OpenAIAdapter implements ProviderAdapter {
       apiKey,
       baseURL: model.endpoint || 'https://api.openai.com/v1',
       timeout: model.timeout ?? 60000,
+      maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
     });
   }
 

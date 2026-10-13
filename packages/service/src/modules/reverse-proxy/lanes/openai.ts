@@ -264,14 +264,10 @@ export const openaiAttempt: Processor<ProxyContext> = {
     }, () => {
       // All candidates exhausted.
       void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
-      if (ctx.stream) {
-        const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
-        ctx.emit?.(errorEntry)
-        const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
-        ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
-      } else {
-        ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
-      }
+      // Nothing was written to the client yet (candidates fail before the first chunk), so the
+      // streaming and non-streaming requests get the same HTTP 503.
+      if (ctx.stream) ctx.emit?.({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } })
+      ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
     })
   },
 }
