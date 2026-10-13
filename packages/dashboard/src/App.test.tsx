@@ -85,7 +85,7 @@ const mockUseAuth = vi.mocked(useAuth);
 
 const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
 const logoutFn = vi.fn();
-const navigateFn = vi.fn();
+const _navigateFn = vi.fn();
 
 // ponytail: useNavigate is internal to react-router; we can't easily mock it here,
 // so we test via actual routing. Keep tests at the branch level.

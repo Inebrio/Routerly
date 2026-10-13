@@ -21,23 +21,15 @@ export default [
     },
     rules: {
       ...tsPlugin.configs['flat/recommended'].reduce((a, c) => ({ ...a, ...c.rules }), {}),
-      // Pre-existing violations (~2.4k): reported as warnings so the gate passes
-      // without a mass rewrite. Tighten to 'error' once the backlog is cleared.
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
-      '@typescript-eslint/no-unused-expressions': 'warn',
-      '@typescript-eslint/no-require-imports': 'warn',
-      '@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
-      'no-empty': 'warn',
-      'prefer-const': 'warn',
-      'no-empty-pattern': 'warn',
-      'no-control-regex': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' }],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', disallowTypeAnnotations: false }],
+      '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
   {
-    // Tests use throwing generators as stream stubs.
+    // Tests use throwing generators as stream stubs and loosely typed mocks/fixtures.
     files: ['packages/*/src/**/*.test.{ts,tsx}'],
-    rules: { 'require-yield': 'off' },
+    rules: { 'require-yield': 'off', 'no-control-regex': 'off', 'no-empty-pattern': 'off', '@typescript-eslint/no-explicit-any': 'off' },
   },
 ];

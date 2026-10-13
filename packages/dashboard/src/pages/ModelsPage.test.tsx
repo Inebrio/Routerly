@@ -32,7 +32,7 @@ vi.mock('../components/SearchableSelect', () => ({
 
 // ponytail: gate 'resilience:manage' on a mutable flag ('mock' prefix so vi.mock hoist allows it);
 // everything else the component asks `can()` about is granted.
-let mockCanManage = true;
+const mockCanManage = true;
 let mockCanWriteModels = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({

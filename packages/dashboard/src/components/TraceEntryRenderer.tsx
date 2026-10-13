@@ -15,6 +15,7 @@ import type { TFunction } from 'i18next';
  */
 
 interface TraceEntryRendererProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   entry: any;
 }
 
@@ -298,9 +299,11 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             <div>
               <div style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 4 }}>{t('common.trace.excludedByLimits')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                 {(e.details.excludedByLimits as any[]).map((exc: any, i: number) => (
                   <div key={i} style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '5px 10px' }}>
                     <div style={{ fontSize: '0.85rem', color: '#f87171', fontWeight: 600, marginBottom: exc.violated?.length ? 4 : 0 }}>{exc.model}</div>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                     {(exc.violated ?? []).map((v: any, j: number) => (
                       <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         <span style={{ color: '#fca5a5', fontWeight: 600 }}>{v.metric}</span>
@@ -324,6 +327,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             <>
               <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2 }}>{t('common.trace.finalRanking')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                 {e.details.final.map((f: any) => (
                   <div key={f.rank} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-surface)', border: f.rank === 1 ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px' }}>
                     <span style={{ fontSize: '0.8rem', color: f.rank === 1 ? '#34d399' : 'var(--text-muted)', fontWeight: f.rank === 1 ? 700 : 400, minWidth: 16 }}>#{f.rank}</span>
@@ -345,6 +349,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>{t('common.trace.policyScores')}</div>
           {(e.details?.policies ?? []).length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
               {e.details.policies.map((p: any, i: number) => (
                 <div key={i} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: p.scores?.length > 1 ? 4 : 0 }}>
@@ -363,6 +368,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
                   <details>
                     <summary style={{ fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>{t('common.trace.allScores')}</summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 4 }}>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                       {p.scores.map((s: any, j: number) => (
                         <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.model}</span>
@@ -426,6 +432,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           {/* Every configured rule, including the ones that never ran: a rule that
               judged nothing is exactly what an operator looks for when a guardrail
               "did nothing". Score next to threshold says how close a pass was. */}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
           {Array.isArray(e.details?.rules) && (e.details.rules as Array<any>).map((r, i) => {
             const isInjection = r.rule === 'injection';
             const outcomeColor = r.outcome === 'passed' ? '#4ade80' : r.outcome === 'triggered' ? '#f87171' : 'var(--text-muted)';
@@ -595,6 +602,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
           badge={<Pill text={String(e.details?.model ?? '—')} color={e.details?.allowed === false ? '#ef4444' : '#4ade80'} />}
         >
           {e.details?.ms != null && <Facts items={[[t('common.trace.took'), t('common.trace.ms', { value: String(e.details.ms) })]]} />}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
           {Array.isArray(e.details?.violated) && (e.details.violated as any[]).map((v: any, i: number) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               <span style={{ color: '#fca5a5', fontWeight: 600 }}>{String(v.metric)}</span>

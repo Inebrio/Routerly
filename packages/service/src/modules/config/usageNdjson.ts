@@ -53,7 +53,7 @@ export async function readUsageNdjson(): Promise<UsageRecord[]> {
       records.push(JSON.parse(line) as UsageRecord);
     } catch (err) {
       if (i === lines.length - 1) {
-        // eslint-disable-next-line no-console
+         
         console.warn(`[usage] dropped malformed trailing line in usage.ndjson (likely an interrupted write): ${line.slice(0, 200)}`);
         break;
       }

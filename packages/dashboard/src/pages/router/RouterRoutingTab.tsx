@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
-import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type Router, type RoutingProfile } from '../../api';
+import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
 import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -141,6 +141,7 @@ export function RouterRoutingTab() {
     updatePolicyConfig(semPolicyIdx, { intents });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   function updatePolicyConfig(idx: number, configUpdates: any) {
     setPolicies(prev => prev.map((p, i) => {
       /* v8 ignore next */
@@ -225,7 +226,7 @@ export function RouterRoutingTab() {
       const payload: Parameters<typeof updateRouter>[1] = {
         name: router.name,
         policies: policies.map(p => {
-          const { internalId, ...rest } = p;
+          const { internalId: _internalId, ...rest } = p;
           return rest;
         }),
         models: targetModels.map(m => ({
@@ -254,6 +255,7 @@ export function RouterRoutingTab() {
   const profileAssigned = assignedProfileId !== '';
 
   // Policies actually in force: the assigned profile's, or this router's own.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const effectivePolicies: { type: string; enabled: boolean; config?: Record<string, any> }[] =
     profileAssigned ? (profiles.find(p => p.id === assignedProfileId)?.policies ?? []) : policies;
 

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield, Lock, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { NavLink, Outlet, Navigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo, getPermissionStatus, fixPermissions } from '../api';
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus, UsageRetentionConfig, PermissionCheckStatus } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -1078,7 +1078,7 @@ function useIntegrationTypes(): Array<{ type: IntegrationType; label: string; de
   }));
 }
 
-const DATADOG_SITES = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com'] as const;
+const _DATADOG_SITES = ['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com'] as const;
 
 /** Convert Record<string, string> to "key: value\nkey: value" for textarea display */
 function headersToText(h?: Record<string, string>): string {
@@ -1754,7 +1754,7 @@ export function SettingsCatalogTab() {
   }
 
   /* v8 ignore start */
-  function fileLabel(f: string | null) {
+  function _fileLabel(f: string | null) {
     if (!f) return '—';
     const m = f.match(/\.(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\.json$/);
     if (m) {
@@ -2222,7 +2222,7 @@ function FilePermissionsSection() {
   useEffect(() => {
     if (!canRead) { setLoading(false); return; }
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [canRead]);
 
   // A fix from PermissionGuardModal (or this section itself) must refresh
@@ -2231,7 +2231,7 @@ function FilePermissionsSection() {
     if (!canRead) return;
     window.addEventListener('lr-permission-fixed', load);
     return () => window.removeEventListener('lr-permission-fixed', load);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [canRead]);
 
   async function load() {

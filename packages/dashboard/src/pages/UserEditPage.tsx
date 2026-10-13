@@ -32,7 +32,7 @@ export function UserEditPage() {
       })
       .catch(e => setError(e instanceof Error ? e.message : t('userEdit.errors.loadFailed')))
       .finally(() => setLoading(false));
-  }, [userId]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]);    
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

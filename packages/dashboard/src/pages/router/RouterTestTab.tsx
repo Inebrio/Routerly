@@ -11,6 +11,7 @@ import { uuid } from '../../utils/uuid';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   content: string | any[];
   thinking?: string;
   model?: string;
@@ -32,6 +33,7 @@ export function RouterTestTab() {
 
   const [showKey, setShowKey] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const [debugTraceHistory, setDebugTraceHistory] = useState<(any[] | null)[]>([]);
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -62,6 +64,7 @@ export function RouterTestTab() {
     if (loading) return;
 
     // Build user content array if there's an image, else string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     let userContent: any = input.trim();
     if (attachedImage) {
       userContent = [
@@ -378,6 +381,7 @@ export function RouterTestTab() {
                     typeof msg.content === 'string'
                       ? <div className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
                       : /* v8 ignore start */ <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                           {(msg.content as any[]).map((c, idx) => {
                             if (c.type === 'text') return <div key={idx} className="md-content"><ReactMarkdown remarkPlugins={[remarkGfm]}>{c.text}</ReactMarkdown></div>;
                             if (c.type === 'image_url') return <img key={idx} src={c.image_url.url} alt={t('routers.test.attachedAlt')} style={{ maxWidth: 200, borderRadius: 8 }} />;
@@ -387,6 +391,7 @@ export function RouterTestTab() {
                   ) : (
                     typeof msg.content === 'string' ? msg.content : (
                       <>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
                         {(msg.content as any[]).map((c, idx) =>
                           c.type === 'text'
                             ? <span key={idx}>{c.text}</span>

@@ -22,10 +22,13 @@ export const capabilityPolicy: PolicyFn = async ({ request, candidates }) => {
     return (m.content as Array<{ type: string }>).some(p => p.type === 'image_url');
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const tools: unknown[]     = (request as any).tools     ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const functions: unknown[] = (request as any).functions ?? [];
   const needsFunctionCalling = tools.length > 0 || functions.length > 0;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const responseFormat = (request as any).response_format as { type?: string } | undefined;
   const needsJson      = responseFormat?.type === 'json_object';
 

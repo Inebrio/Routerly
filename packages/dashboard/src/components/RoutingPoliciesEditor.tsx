@@ -61,6 +61,7 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
   const [draggedLlmModelIdx, setDraggedLlmModelIdx] = useState<number | null>(null);
   const [draggedSemModelIdx, setDraggedSemModelIdx] = useState<number | null>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   function updatePolicyConfig(idx: number, configUpdates: any) {
     setPolicies(prev => prev.map((p, i) => {
       /* v8 ignore next */

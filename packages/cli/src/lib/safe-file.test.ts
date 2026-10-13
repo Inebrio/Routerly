@@ -14,7 +14,6 @@ import {
   atomicWrite,
   restoreBackup,
   listBackups,
-  type BackupManifest,
 } from './safe-file.js';
 
 const hashContent = (content: string): string => {
@@ -177,7 +176,7 @@ describe('restoreBackup', () => {
 
     // Modify the file
     await atomicWrite(testFile, modifiedContent);
-    let current = await readFile(testFile, 'utf-8');
+    const current = await readFile(testFile, 'utf-8');
     expect(current).toBe(modifiedContent);
 
     // Restore from backup

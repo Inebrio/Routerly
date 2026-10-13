@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MultiSelect } from './MultiSelect';
@@ -25,7 +25,7 @@ describe('MultiSelect — closed state', () => {
   });
 
   it('renders custom placeholder', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <MultiSelect options={options} value={[]} onChange={vi.fn()} placeholder="Pick one" />
     );
     expect(screen.getByText('Pick one')).toBeTruthy();
@@ -117,7 +117,7 @@ describe('MultiSelect — hover styles', () => {
     const option = screen.getByText('Alpha').closest('div') as HTMLElement;
     // Both handlers mutate style.background — verify they fire without error
     fireEvent.mouseEnter(option);
-    const afterEnter = option.style.background;
+    const _afterEnter = option.style.background;
     fireEvent.mouseLeave(option);
     // mouseLeave sets 'transparent'; happy-dom may normalise differently, just no throw
     expect(typeof option.style.background).toBe('string');

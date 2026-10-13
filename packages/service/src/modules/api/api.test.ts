@@ -90,7 +90,7 @@ vi.mock('../catalog/fetcher.js', () => ({
 import { apiRoutes, listeningAddresses } from './api.js'
 import authPlugin from '../auth/auth.js'
 import { readConfig, writeConfig, updateConfig, getOrCreateSecret } from '../config/loader.js'
-import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
+import { loadCredentialKey } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 import { createSessionToken, verifyToken } from '../auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
@@ -110,15 +110,15 @@ import { checkPermissions, fixPermissions, isBypassActive } from '../config/perm
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
-const mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
+const _mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
 const mockVerifyToken = vi.mocked(verifyToken)
 const mockCreateSessionToken = vi.mocked(createSessionToken)
 const mockGetTrace = vi.mocked(getTrace)
 const mockSendTestNotification = vi.mocked(sendTestNotification)
 const mockResolveCodexToken = vi.mocked(resolveCodexToken)
 const mockVerifyTotp = vi.mocked(verifyTotp)
-const mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
-const mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
+const _mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
+const _mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
 const mockHashBackupCode = vi.mocked(hashBackupCode)
 const mockCheckPermissions = vi.mocked(checkPermissions)
 const mockFixPermissions = vi.mocked(fixPermissions)

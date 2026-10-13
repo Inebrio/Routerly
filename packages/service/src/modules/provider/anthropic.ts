@@ -43,16 +43,19 @@ export class AnthropicAdapter implements ProviderAdapter {
    * Converts an OpenAI content value (string or content-part array) to Anthropic content blocks.
    * Preserves `cache_control` on each block so prompt caching works end-to-end.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   private convertContent(content: string | any[]): string | any[] {
     if (typeof content === 'string') return content;
     return content.map((part) => {
       // cache_control and other extra fields are spread in as-is
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       const { type, text, image_url, ...rest } = part as any;
       if (type === 'image_url' && image_url?.url) {
         const url: string = image_url.url;
         if (url.startsWith('data:')) {
           // data URI → base64
           const [header, data] = url.split(',', 2);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           const media_type = (header ?? '').replace('data:', '').replace(';base64', '') as any;
           return { type: 'image', source: { type: 'base64', media_type, data }, ...rest };
         }
@@ -67,19 +70,24 @@ export class AnthropicAdapter implements ProviderAdapter {
    * Converts an OpenAI system message content to Anthropic system format.
    * Supports both plain strings and content-part arrays (for cache_control).
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   private convertSystem(content: string | any[]): string | any[] {
     if (typeof content === 'string') return content;
     // Map to Anthropic text blocks, preserving cache_control
     return content.map((part) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       const { type: _type, text, ...rest } = part as any;
       return { type: 'text', text: text ?? '', ...rest };
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   private convertMessages(messages: import('@routerly/shared').Message[]): any[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const result: any[] = [];
 
     for (const m of messages) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       const rawMessage = m as any;
 
       if (m.role === 'tool') {
@@ -98,11 +106,13 @@ export class AnthropicAdapter implements ProviderAdapter {
         }
       } else if (m.role === 'assistant' && rawMessage.tool_calls?.length) {
         // OpenAI assistant tool_calls → Anthropic tool_use content blocks
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
         const content: any[] = [];
         if (m.content) {
           content.push({ type: 'text', text: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) });
         }
         for (const tc of rawMessage.tool_calls) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           let input: any = {};
           try { input = JSON.parse(tc.function?.arguments ?? '{}'); } catch { /* ignore */ }
           content.push({ type: 'tool_use', id: tc.id, name: tc.function?.name ?? '', input });
@@ -111,6 +121,7 @@ export class AnthropicAdapter implements ProviderAdapter {
       } else {
         result.push({
           role: m.role as 'user' | 'assistant',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           content: this.convertContent(m.content as string | any[]),
         });
       }
@@ -123,9 +134,11 @@ export class AnthropicAdapter implements ProviderAdapter {
    * OpenAI tool definitions → Anthropic `tools`.
    * The inverse (Anthropic → OpenAI) lives in messages-compat for the /v1/messages lane.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   private convertTools(tools: unknown): any[] | undefined {
     if (!Array.isArray(tools) || tools.length === 0) return undefined;
     return tools.map((raw) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       const tool = raw as any;
       const fn = tool.function ?? tool;
       return {
@@ -137,21 +150,26 @@ export class AnthropicAdapter implements ProviderAdapter {
   }
 
   /** OpenAI tool_choice → Anthropic tool_choice. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   private convertToolChoice(choice: unknown): any | undefined {
     if (choice === undefined || choice === null) return undefined;
     if (choice === 'auto') return { type: 'auto' };
     if (choice === 'required') return { type: 'any' };
     if (choice === 'none') return { type: 'none' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const named = choice as any;
     if (named?.type === 'function' && named.function?.name) return { type: 'tool', name: named.function.name };
     return undefined;
   }
 
   /** Adds `tools`/`tool_choice` to an Anthropic request when the client sent them. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   private applyTools(params: any, request: ChatCompletionRequest): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const tools = this.convertTools((request as any).tools);
     if (!tools) return;
     params.tools = tools;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const toolChoice = this.convertToolChoice((request as any).tool_choice);
     if (toolChoice) params.tool_choice = toolChoice;
   }
@@ -175,12 +193,14 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     const upstreamModel = this.getUpstreamModelId(model);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = {
       model: upstreamModel,
       max_tokens: request.max_completion_tokens ?? request.max_tokens ?? 4096,
       messages: this.convertMessages(nonSystemMessages),
     };
     if (systemMessage?.content) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       params.system = this.convertSystem(systemMessage.content as string | any[]);
     }
     this.applyTools(params, request);
@@ -203,7 +223,9 @@ export class AnthropicAdapter implements ProviderAdapter {
         type: 'function' as const,
         function: { name: block.name, arguments: JSON.stringify(block.input ?? {}) },
       }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const cacheRead = (response.usage as any).cache_read_input_tokens ?? 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const cacheCreation = (response.usage as any).cache_creation_input_tokens ?? 0;
     const totalInputTokens = response.usage.input_tokens + cacheRead + cacheCreation;
     return {
@@ -246,6 +268,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     const systemMessage = request.messages.find((m) => m.role === 'system');
     const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = {
       model: upstreamModel,
       max_tokens: request.max_completion_tokens ?? request.max_tokens ?? 4096,
@@ -253,6 +276,7 @@ export class AnthropicAdapter implements ProviderAdapter {
       stream: true,
     };
     if (systemMessage?.content) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       params.system = this.convertSystem(systemMessage.content as string | any[]);
     }
     this.applyTools(params, request);
@@ -264,6 +288,7 @@ export class AnthropicAdapter implements ProviderAdapter {
       if ((params.max_tokens as number) < 16000) params.max_tokens = 16000;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
 
     let id = `chatcmpl-${Math.random().toString(36).substring(2, 10)}`;
@@ -342,6 +367,7 @@ export class AnthropicAdapter implements ProviderAdapter {
             choices: [
               {
                 index: 0,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
                 delta: { thinking: event.delta.thinking } as any,
                 finish_reason: null,
               },
@@ -417,7 +443,9 @@ export class AnthropicAdapter implements ProviderAdapter {
   async messages(request: MessagesRequest, model: ModelConfig): Promise<MessagesResponse> {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const { model: _m, stream: _s, ...rest } = request as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = { ...rest, model: upstreamModel, stream: false };
     const response = await client.messages.create(params);
     return response as unknown as MessagesResponse;
@@ -426,8 +454,11 @@ export class AnthropicAdapter implements ProviderAdapter {
   async *messagesStream(request: MessagesRequest, model: ModelConfig): AsyncGenerator<string> {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const { model: _m, stream: _s, ...rest } = request as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = { ...rest, model: upstreamModel, stream: true };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const stream = await client.messages.create(params) as unknown as AsyncIterable<any>;
     for await (const event of stream) {
       yield `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;

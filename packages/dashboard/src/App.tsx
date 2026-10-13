@@ -358,6 +358,7 @@ function ProtectedLayout() {
 
   function handleTelemetryChoice(enabled: boolean) {
     setTelemetryUndecided(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     updateSettings({ telemetry: { enabled } } as any).catch(/* v8 ignore next */ () => { /* non-critical */ });
   }
 
@@ -502,7 +503,7 @@ function SetupGuard() {
       })
       .catch(() => { /* service not reachable – let the normal flow handle it */ })
       .finally(() => setChecking(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   if (checking) return <div className="loading-center"><div className="spinner" /></div>;

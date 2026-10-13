@@ -531,7 +531,7 @@ describe('anthropic:upstream', () => {
     it('advances to the next candidate when the first chunk fails', async () => {
       vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
         throw new Error('openai-oauth upstream HTTP 401')
-        // eslint-disable-next-line no-unreachable
+         
         yield undefined as never
       })())
 

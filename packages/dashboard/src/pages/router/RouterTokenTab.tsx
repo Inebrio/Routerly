@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit2, Key } from 'lucide-react';
-import { deleteRouterToken, type RouterToken } from '../../api';
+import { deleteRouterToken } from '../../api';
 import { useRouter } from './RouterLayout';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -13,7 +13,7 @@ export function RouterTokenTab() {
   if (!router) return null;
 
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState('');
+  const [_err, setErr] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const tokens = router.tokens || [];

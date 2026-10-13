@@ -50,7 +50,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         if (saved) setLanguageState(saved);
       })
       .catch(/* v8 ignore next */ () => { /* not logged in / unreachable — fall back stays */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Fallback tier: no personal pick and the browser locale isn't one we ship a
@@ -68,7 +68,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(/* v8 ignore next */ () => { /* no settings:read or unreachable — 'en' stays */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [user?.id]);
 
   useEffect(() => {

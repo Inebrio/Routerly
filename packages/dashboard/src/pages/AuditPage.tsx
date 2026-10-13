@@ -59,7 +59,7 @@ export function AuditPage() {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [emailFilter, actionFilter, dateRange, resultFilter]);
 
   // Reset to page 1 when filters change

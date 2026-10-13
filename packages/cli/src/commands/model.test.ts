@@ -69,7 +69,7 @@ const baseModel = {
   cost: { inputPerMillion: 5, outputPerMillion: 15 },
 };
 
-const fullModel = {
+const _fullModel = {
   ...baseModel,
   contextWindow: 128_000,
   capabilities: { vision: true, functionCalling: true, streaming: false },

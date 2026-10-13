@@ -121,6 +121,7 @@ export const semanticIntentPolicy: PolicyFn = async ({
         model: {
           id: cfg.embedding_model,
           name: cfg.embedding_model,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           provider: cfg.embedding_provider as any,
           endpoint: resolvedCfg.embedding_endpoint ?? '',
           cost: { inputPerMillion, outputPerMillion: 0 },

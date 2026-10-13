@@ -130,7 +130,7 @@ export const routingModule: RouterlyModule = defineModule({
   async migrate() {
     const migrated = await migrateProfiles()
     if (migrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${migrated} record(s) to the multi-kind profile shape`)
     }
   },

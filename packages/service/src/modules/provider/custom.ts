@@ -145,6 +145,7 @@ export class CustomAdapter implements ProviderAdapter {
     const openAIMessages = system
       ? [{ role: 'system' as const, content: system }, ...messages]
       : messages;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const { stream: _stream, ...rest } = request as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = await client.chat.completions.create({
@@ -152,6 +153,7 @@ export class CustomAdapter implements ProviderAdapter {
       messages: openAIMessages,
       model: upstreamModel,
       stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
   }

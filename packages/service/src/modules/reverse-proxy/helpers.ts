@@ -15,7 +15,9 @@ export function messageText(content: unknown): string {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
     return content
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .filter((p: any) => p?.type === 'text' && typeof p.text === 'string')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .map((p: any) => p.text as string)
       .join('\n')
   }
@@ -115,7 +117,9 @@ export async function writeOpenAIStreamingBlock(ctx: ProxyContext): Promise<void
 /** Last user message text, the guardrail "request" primary text (openai.ts L151-152). */
 export function primaryText(request: Pick<ChatCompletionRequest, 'messages'>): string {
   const msgs = request.messages ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   const lastUserMsg = [...msgs].reverse().find((m: any) => m?.role === 'user')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   return messageText((lastUserMsg as any)?.content)
 }
 
@@ -127,6 +131,7 @@ export function primaryText(request: Pick<ChatCompletionRequest, 'messages'>): s
  */
 export function conversationText(request: Pick<ChatCompletionRequest, 'messages'>): string {
   const msgs = request.messages ?? []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   return msgs.map((m: any) => `${m?.role ?? 'user'}: ${messageText(m?.content)}`).join('\n')
 }
 
@@ -190,11 +195,13 @@ export function applyResponseScrub(
  * needs the trace. Flush chunk id/model come from ctx (roadmap sig lacked them).
  */
 export async function* wrapWithStreamingScrubber(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   iter: AsyncIterable<any>,
   effective: EffectivePii,
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
   const scrubber = new StreamingScrubber(effective)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   let last: any
   for await (const chunk of iter) {
     last = chunk
@@ -252,6 +259,7 @@ export async function* wrapWithStreamingScrubber(
  * trackBlockedRequest). Receives already-PII-scrubbed chunks (pii.output wraps first).
  */
 export async function* wrapWithResponseGuardrail(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   iter: AsyncIterable<any>,
   router: RouterConfig,
   guardrailPctx: unknown,
@@ -259,6 +267,7 @@ export async function* wrapWithResponseGuardrail(
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
   const bufferForGuardrail = router.guardrails?.rules.some(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     (r: any) => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both'),
   ) ?? false
   const buffered: unknown[] = []
@@ -272,6 +281,7 @@ export async function* wrapWithResponseGuardrail(
   }
 
   if (router.guardrails && fullContent) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const result = await checkGuardrails('response', fullContent, router.guardrails, guardrailPctx as any, log)
     const hit = result.triggered ? { triggered: result.triggered } : null
     if (hit && result.block) {

@@ -127,6 +127,7 @@ export class OpenAIAdapter implements ProviderAdapter {
       ...normalized,
       model: upstreamModel,
       stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
   }

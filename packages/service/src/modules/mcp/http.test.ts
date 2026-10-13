@@ -10,7 +10,6 @@ vi.mock('../config/loader.js', () => ({
 import { readConfig, writeConfig } from '../config/loader.js'
 import { ServiceContainer, type Token } from '../../core/index.js'
 import {
-  MCP_TOOLS,
   CATALOG,
   ROUTER,
   USAGE_TRACKER,

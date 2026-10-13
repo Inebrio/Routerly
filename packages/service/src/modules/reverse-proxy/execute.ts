@@ -374,6 +374,7 @@ export async function llmChat(
     const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
     // Calculate costs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const cacheCreationTokens = (response.usage as any)?.prompt_tokens_details?.cache_creation_tokens ?? 0;
     const plainInput = inputTokens - cachedTokens - cacheCreationTokens;
     // ponytail: input/output splits below are display-only for the trace panel; the

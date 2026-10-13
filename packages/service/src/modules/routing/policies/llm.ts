@@ -120,6 +120,7 @@ function parseRoutingResponse(
   try {
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed?.routing)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       return parsed.routing.map((r: any) => ({
         model: r.model,
         point: typeof r.point === 'number' && !isNaN(r.point) ? r.point : 0,
@@ -199,6 +200,7 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   log?.info(
     {
       messageCount: request.messages?.length ?? 0,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       roles: request.messages?.map((m: any) => m.role) ?? [],
       candidates: candidates.map(c => ({ id: c.model.id, provider: c.model.provider })),
       config,

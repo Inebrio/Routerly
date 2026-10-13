@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 
 const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
 vi.mock('openai', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   default: vi.fn().mockImplementation(function (this: any) {
     this.chat = { completions: { create: mockCreate } }
   }),
@@ -128,7 +128,6 @@ describe('GeminiAdapter.streamCompletion', () => {
     })
 
     // consume the generator
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const _ of adapter.streamCompletion(
       { model: 'gemini/gemini-2.5-pro', messages: [] },
       makeModel('gemini/gemini-2.5-pro'),

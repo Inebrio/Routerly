@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent, act, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 // ── API mock ──────────────────────────────────────────────────────────────────
 
@@ -1775,7 +1775,7 @@ describe('SettingsCatalogTab', () => {
     renderCatalog();
     await waitFor(() => expect(screen.queryByText('https://r1.example.com/')).not.toBeNull());
     // Second row's "up" button (index 1 moving to 0)
-    const allUpBtns = document.querySelectorAll('button[style*="ChevronUp"], button') as NodeListOf<HTMLButtonElement>;
+    const _allUpBtns = document.querySelectorAll('button[style*="ChevronUp"], button') as NodeListOf<HTMLButtonElement>;
     // Find buttons that have SVG with move-up semantics (disabled=false at idx>0)
     // The ChevronUp button for idx=0 is disabled; for idx=1 is enabled
     const nonDisabledChevrons = Array.from(document.querySelectorAll('button'))
@@ -1814,7 +1814,7 @@ describe('SettingsCatalogTab', () => {
     await userEvent.click(screen.getAllByRole('button', { name: /Edit/i })[1]!);
     await waitFor(() => screen.getByLabelText('URL'));
     // Move it up (non-disabled up button exists for idx=1)
-    const allBtns = Array.from(document.querySelectorAll('button'));
+    const _allBtns = Array.from(document.querySelectorAll('button'));
     // The inline form is visible; the up button within the grid row (not inside the edit form) moves it
     // ponytail: skip detailed assertion; just verify no error and page still renders
     expect(screen.getByLabelText('URL')).toBeTruthy();
@@ -3293,7 +3293,7 @@ describe('SettingsCatalogTab — move buttons (corrected selector)', () => {
     const chevs = getChevronButtons();
     // Order: [up_idx0(disabled), down_idx0(enabled), up_idx1(enabled), down_idx1(disabled)]
     // minus Trash buttons which have title="Remove"
-    const arrowBtns = chevs.filter(b => !b.title);
+    const _arrowBtns = chevs.filter(b => !b.title);
     // First enabled arrow button is the down for idx=0 (or up for idx=1 — depends on order)
     // Actually layout: row0=(up_disabled, down_enabled), row1=(up_enabled, down_disabled)
     // But trash buttons are also background:none style — filter them by checking they have SVG childs

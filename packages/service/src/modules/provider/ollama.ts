@@ -57,6 +57,7 @@ export class OllamaAdapter implements ProviderAdapter {
     // Fall back to thinking content so callers always receive a non-empty response.
     const thinkingEnabled = model.capabilities?.thinking === true;
     if (!thinkingEnabled) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       const msg = response?.choices?.[0]?.message as any;
       if (msg && !msg.content && msg.thinking) {
         msg.content = msg.thinking;
@@ -80,9 +81,11 @@ export class OllamaAdapter implements ProviderAdapter {
       // Same fallback as chatCompletion: remap delta.thinking → delta.content when
       // think:false was requested but the model still emits thinking-only chunks.
       if (!thinkingEnabled) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
         const delta = (chunk as any)?.choices?.[0]?.delta as any;
         if (delta?.thinking && !delta.content) {
           const { thinking, ...deltaRest } = delta;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           yield { ...(chunk as any), choices: [{ ...(chunk as any).choices[0], delta: { ...deltaRest, content: thinking } }, ...(chunk as any).choices.slice(1)] } as unknown as StreamChunk;
           continue;
         }
@@ -105,6 +108,7 @@ export class OllamaAdapter implements ProviderAdapter {
       ...(system ? { messages: [{ role: 'system', content: system }, ...messages] } : {}),
       model: upstreamModel,
       stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
   }
