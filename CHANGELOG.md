@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Added
 
+- **Model timeout on every surface**: `timeout` (ms, default 60000) is now accepted and returned by `POST/PUT /api/models` (400 on non-integer or non-positive values; `null` on PUT resets it), settable with `routerly model add|edit --timeout <ms>` (`0` on edit resets), shown by `model show`, and editable in the dashboard model form. Previously config-file only.
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed

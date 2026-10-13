@@ -276,6 +276,7 @@ const instanceSchema = z.object({
   upstreamModelId: z.string(),
   cost: tokenCostSchema,
   contextWindow: z.number(),
+  timeout: z.number().int().positive().optional(),
   limits: z.array(limitSchema).optional(),
   capabilities: capabilitiesSchema.optional(),
 });

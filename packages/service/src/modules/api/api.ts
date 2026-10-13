@@ -82,6 +82,8 @@ export function listeningAddresses(host: string, port: number): string[] {
 
 const BCRYPT_ROUNDS = 12;
 
+const isValidTimeout = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0;
+
 /**
  * Non-secret EffectiveModel/ModelConfig fields safe to serialize in /api/models responses.
  * resolveEffectiveModel spreads connection.credentials verbatim into the model (adapters
@@ -704,6 +706,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
+      /** Upstream timeout in ms (positive integer); PUT accepts null to reset to default */
+      timeout?: number | null;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
@@ -715,6 +719,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
+      return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
+    }
     const instances = await readConfig('instances');
     if (instances.find(i => i.id === req.body.id)) {
       return reply.status(409).send({ error: `Model "${req.body.id}" already exists` });
@@ -791,6 +798,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
       contextWindow: req.body.contextWindow ?? 0,
+      ...(typeof req.body.timeout === 'number' ? { timeout: req.body.timeout } : {}),
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
       ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
@@ -819,6 +827,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
+      /** Upstream timeout in ms (positive integer); PUT accepts null to reset to default */
+      timeout?: number | null;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
@@ -830,6 +840,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models/:id', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
+      return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
+    }
     const instances = await readConfig('instances');
     const index = instances.findIndex(i => i.id === req.params.id);
     if (index === -1) {
@@ -961,6 +974,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
       contextWindow: req.body.contextWindow !== undefined ? req.body.contextWindow : existing.contextWindow,
+      // timeout: omitted keeps the existing value, null resets to the default.
+      ...(req.body.timeout === undefined
+        ? (existing.timeout !== undefined ? { timeout: existing.timeout } : {})
+        : req.body.timeout === null ? {} : { timeout: req.body.timeout }),
       // limits: cleared when the body omits both limits[] and legacy budget fields (matches
       // the original ModelConfig behavior, which discarded existing.limits unless re-supplied).
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
