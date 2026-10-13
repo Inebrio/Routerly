@@ -3179,7 +3179,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (action) filtered = filtered.filter(e => e.action.includes(action));
     if (result && result !== 'all') filtered = filtered.filter(e => e.result === result);
     if (from) filtered = filtered.filter(e => e.timestamp >= from);
-    if (to) filtered = filtered.filter(e => e.timestamp <= to);
+    // date-only `to` includes the whole day (UTC), as in /api/usage
+    if (to) { const end = to.length <= 10 ? `${to}T23:59:59.999Z` : to; filtered = filtered.filter(e => e.timestamp <= end); }
 
     const totalRecords = filtered.length;
     const totalPages   = Math.max(1, Math.ceil(totalRecords / size));

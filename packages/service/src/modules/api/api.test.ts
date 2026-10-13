@@ -10031,6 +10031,26 @@ describe('GET /api/audit', () => {
     expect(body.pagination.totalRecords).toBe(2)
   })
 
+  it('date-only `to` includes that whole day (UTC)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'audit') return sampleEntries
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'GET', url: '/api/audit?from=2026-01-02&to=2026-01-02',
+      headers: adminAuthHeaders(),
+    })
+    await app.close()
+
+    const body = res.json() as { entries: Array<{ id: string }> }
+    expect(body.entries.map(e => e.id)).toEqual(['e2'])
+  })
+
   it('returns 403 for roles without audit:read', async () => {
     const noAuditRole = { id: 'restricted', name: 'Restricted', permissions: ['router:read'] }
     const restrictedUser = { id: 'viewer-id', email: 'viewer@example.com', passwordHash: '$2b$12$hashed', roleId: 'restricted', routerIds: [] }

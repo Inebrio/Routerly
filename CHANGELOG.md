@@ -50,6 +50,9 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- `routerly audit list --limit` now honours the limit (was ignored, always 50), `--json` prints the entries array, and `GET /api/audit` treats a date-only `to` as the end of that day (UTC) so `--to 2026-10-12` includes the 12th.
+
+
 - `PUT /api/models/:id` without `provider` or `endpoint` no longer erases the bound connection's `providerId`/`endpoint`: omitted fields keep their current values (partial update), and a request that cannot resolve a provider gets 400.
 - **`GET /v1/models/{id}` with a literal slash** — `models.retrieve('openai/gpt-4.1-nano')` from the OpenAI SDK no longer gets a bare 404 (both the raw and `%2F` forms resolve). An unknown id now returns the OpenAI error shape (`type: invalid_request_error`, `param: null`, `code: model_not_found`), and the `routerly/ada` sentinel listed by `/v1/models` is retrievable too.
 - **Provider-shaped errors on `/v1/*`.** Malformed JSON, missing/invalid/revoked/expired router token and experiment misconfiguration now return the OpenAI (`{error:{message,type,param,code}}`) or Anthropic (`{type:'error',error:{type,message}}`) error shape with the right status instead of Fastify/string bodies; the 401 uses code `invalid_api_key`. On the OpenAI lane, when every candidate fails with a provider 400/404/413/422, that status and body are returned instead of a generic 503 (503 `server_error` remains when no candidate answers). Wire format of error bodies changes.
