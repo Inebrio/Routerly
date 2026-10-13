@@ -22,7 +22,7 @@ export { judgeExperimentCall } from './judge.js';
  * able to turn the whole capability off.
  */
 export const experimentsModule = defineModule({
-  manifest: { id: 'experiments', version: '0.4.0', dependsOn: { config: '^0.4.0', 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'experiments', version: '0.5.4', dependsOn: { config: '^0.5.4', 'reverse-proxy': '^0.5.4' } },
   register({ container }) {
     // finalize: the response has already left through egress, so scoring it here
     // costs the client nothing. judgeExperimentCall returns immediately unless an

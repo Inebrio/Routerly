@@ -167,8 +167,8 @@ export const ccrOptimizer = {
 export const ccrModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-ccr',
-    version: '0.4.0',
-    dependsOn: { 'optimizer-core': '^0.4.0' },
+    version: '0.5.4',
+    dependsOn: { 'optimizer-core': '^0.5.4' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(ccrOptimizer)
