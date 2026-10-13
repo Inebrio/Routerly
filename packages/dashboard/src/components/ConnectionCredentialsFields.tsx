@@ -147,7 +147,7 @@ export interface CredentialValues {
   cfClearance: string;
   azureResourceName: string; azureDeploymentId: string; azureApiVersion: string;
   awsRegion: string; awsAccessKeyId: string; awsSecretAccessKey: string; awsSessionToken: string;
-  VERTEXROUTERIDPLACEHOLDER: string; vertexLocation: string; vertexServiceAccountKey: string;
+  vertexProjectId: string; vertexLocation: string; vertexServiceAccountKey: string;
 }
 
 export function emptyCredentialValues(): CredentialValues {
@@ -155,7 +155,7 @@ export function emptyCredentialValues(): CredentialValues {
     endpoint: '', apiKey: '', cfClearance: '',
     azureResourceName: '', azureDeploymentId: '', azureApiVersion: '',
     awsRegion: '', awsAccessKeyId: '', awsSecretAccessKey: '', awsSessionToken: '',
-    VERTEXROUTERIDPLACEHOLDER: '', vertexLocation: '', vertexServiceAccountKey: '',
+    vertexProjectId: '', vertexLocation: '', vertexServiceAccountKey: '',
   };
 }
 
@@ -362,10 +362,10 @@ export function ConnectionCredentialsFields(props: Props) {
       {provider === 'vertex' && (
         <>
           <div className="form-group">
-            <label className="form-label">{t('common.connectionFields.gcpRouterId')}</label>
-            <input className="form-input" value={values.VERTEXROUTERIDPLACEHOLDER}
-              onChange={e => onChange({ VERTEXROUTERIDPLACEHOLDER: e.target.value })}
-              placeholder={t('common.connectionFields.gcpRouterIdPlaceholder')} required />
+            <label className="form-label">{t('common.connectionFields.gcpProjectId')}</label>
+            <input className="form-input" value={values.vertexProjectId}
+              onChange={e => onChange({ vertexProjectId: e.target.value })}
+              placeholder={t('common.connectionFields.gcpProjectIdPlaceholder')} required />
           </div>
           <div className="form-group">
             <label className="form-label">{t('common.connectionFields.gcpLocationLabel')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('common.connectionFields.gcpLocationDefaultHint')}</span></label>
