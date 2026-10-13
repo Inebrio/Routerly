@@ -28,6 +28,7 @@ import type {
   ResilienceFault,
 } from '@routerly/shared';
 import { getProviderAdapter } from '../provider/registry.js';
+import { estimateTokens } from '../optimizers/messages.js';
 import { isAllowed, isAllowedForRoutingModel, getLimitUsageSnapshot } from '../budget/budget.js';
 import { trackUsage } from '../usage/tracker.js';
 import { calculateCost } from '../../lib/cost.js';
@@ -483,6 +484,7 @@ export async function llmStream(
   request: ChatCompletionRequest,
   model: ModelConfig,
   ctx: LLMCallContext,
+  opts: { injectUsage?: boolean } = {},
 ): Promise<StreamResult> {
   const { routerId, callType, traceId, emit, log } = ctx;
   const { req, res } = getPanels(callType);
@@ -508,11 +510,11 @@ export async function llmStream(
     },
   });
 
-  // Inietta stream_options per ricevere i token usage nel chunk finale
-  const streamRequest: ChatCompletionRequest = {
-    ...request,
-    stream_options: { include_usage: true },
-  };
+  // Inietta stream_options per ricevere i token usage nel chunk finale, solo quando il body
+  // upstream non è quello del client (lane Anthropic). La lane OpenAI lo inoltra intatto.
+  const streamRequest: ChatCompletionRequest = opts.injectUsage === false
+    ? request
+    : { ...request, stream_options: { include_usage: true } };
 
   const iter = adapter.streamCompletion(streamRequest, model)[Symbol.asyncIterator]();
 
@@ -565,6 +567,7 @@ export async function llmStream(
     let thinkingAccum = '';
     let thinkingEmitted = false;
     let contentAccum = '';
+    let usageSeen = false;
     let outcome: 'success' | 'error' = 'success';
     let errorMessage: string | undefined;
 
@@ -572,6 +575,7 @@ export async function llmStream(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const u = (chunk as any).usage;
       if (u) {
+        usageSeen = true;
         inputTokens = u.prompt_tokens ?? inputTokens;
         outputTokens = u.completion_tokens ?? outputTokens;
         cachedInputTokens = u.prompt_tokens_details?.cached_tokens ?? cachedInputTokens;
@@ -634,6 +638,11 @@ export async function llmStream(
       throw err;
     } finally {
       const latencyMs = Date.now() - t0;
+      // ponytail: chars/4 estimate when the provider sent no usage (client did not ask for it)
+      if (outcome === 'success' && !usageSeen) {
+        inputTokens = estimateTokens(JSON.stringify(request.messages ?? []));
+        outputTokens = estimateTokens(contentAccum + thinkingAccum);
+      }
       if (outcome === 'success') {
         const tokensPerSec = latencyMs > 0 ? Math.round((inputTokens + outputTokens) / (latencyMs / 1000)) : 0;
 
