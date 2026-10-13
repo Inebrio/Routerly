@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 vi.mock('../guardrails/guardrails.js', () => ({ checkGuardrails: vi.fn() }))
 
 import {
-  buildContentFilterBlock, primaryText, conversationText, wrapWithStreamingScrubber,
+  buildContentFilterBlock, writeOpenAIStreamingBlock, primaryText, conversationText, wrapWithStreamingScrubber,
   applyResponseScrub, wrapWithResponseGuardrail, assembledResponseText,
 } from './helpers.js'
 import type { ProxyContext } from './context.js'
@@ -69,6 +69,21 @@ describe('helpers', () => {
     const text = out.map(c => c.choices[0].delta.content ?? '').join('')
     expect(text).not.toMatch(/\d{7}/)
     expect(text).toContain('please')
+  })
+
+  it('writeOpenAIStreamingBlock writes an Anthropic SSE refusal for /v1/messages streams', async () => {
+    const written: string[] = []
+    const headers: Record<string, string> = {}
+    const raw = { setHeader: (k: string, v: string) => { headers[k] = v }, flushHeaders: () => {}, write: (c: string) => { written.push(c) }, end: () => {} }
+    const ctx = ctxOf({ protocol: 'anthropic', traceId: 't1', request: { model: 'm' }, original: { model: 'm' }, req: { headers: {} }, reply: { hijack: () => {}, raw } } as any)
+    await writeOpenAIStreamingBlock(ctx)
+    expect(headers['Content-Type']).toBe('text/event-stream')
+    const text = written.join('')
+    const events = [...text.matchAll(/^event: (.+)$/gm)].map(m => m[1])
+    expect(events[0]).toBe('message_start')
+    expect(events.at(-1)).toBe('message_stop')
+    expect(text).toContain('"stop_reason":"refusal"')
+    expect(ctx.result).toEqual({ kind: 'block' })
   })
 
   it('wrapWithStreamingScrubber traces the response scan once the stream is complete', async () => {
