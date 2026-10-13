@@ -2238,7 +2238,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
-    return reply.send({ ...settings, localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
+    return reply.send({ ...settings, ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2873,6 +2874,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         delete out[field];
       }
     }
+    // Header values routinely carry credentials (X-Api-Key, Authorization): keep names, mask values.
+    const headers = out['headers'];
+    if (headers && typeof headers === 'object') {
+      out['headers'] = Object.fromEntries(Object.keys(headers).map(k => [k, REDACT_MARKER]));
+    }
     return out;
   }
 
@@ -2934,7 +2940,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'type') continue;
       if (secrets.includes(key)) {
-        if (typeof val === 'string' && val.length > 0) merged[key] = val;
+        if (typeof val === 'string' && val.length > 0 && val !== REDACT_MARKER) merged[key] = val;
+      } else if (key === 'headers' && val && typeof val === 'object') {
+        // Masked values come back from the dashboard round-trip: keep the stored value for that header.
+        const old = (stored['headers'] ?? {}) as Record<string, string>;
+        const next: Record<string, string> = {};
+        for (const [h, hv] of Object.entries(val as Record<string, string>)) {
+          if (hv !== REDACT_MARKER) next[h] = hv;
+          else if (old[h] !== undefined) next[h] = old[h];
+        }
+        merged[key] = next;
       } else {
         merged[key] = val;
       }
