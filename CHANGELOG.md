@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+- **Lint**: `npm run lint` runs again under ESLint 9 via the flat `eslint.config.mjs` (type-aware rules off), so the lint gate passes on release branches (ROUT-268).
 
 - **Builds in git worktrees use the worktree's own `@routerly/*` packages**: `npm run build` / `npm test` now run `scripts/link-worktree-modules.mjs`, which replaces a `node_modules` symlink to another checkout with a directory whose `@routerly/*` entries point at the current worktree (previously `tsc` resolved `@routerly/shared` from the main checkout and failed on release branches).
 - Added a regression test that usage appends leave the existing `usage.ndjson` bytes untouched (verification of the #124 fix, ROUT-4).
