@@ -129,7 +129,7 @@ export class BedrockAdapter implements ProviderAdapter {
     const url     = this.buildUrl(model, false);
     const headers = this.auth(model, url, bodyStr);
 
-    const resp = await fetch(url, { method: 'POST', headers, body: bodyStr });
+    const resp = await fetch(url, { method: 'POST', headers, body: bodyStr, signal: AbortSignal.timeout(model.timeout ?? 60000) });
     if (!resp.ok) {
       const text = await resp.text().catch(() => resp.statusText);
       throw new Error(`Bedrock error ${resp.status}: ${text}`);
