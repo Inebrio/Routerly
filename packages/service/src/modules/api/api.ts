@@ -892,7 +892,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           id: newDedicatedId,
           providerId: provider,
           label: req.body.name ?? newId,
-          endpoint: endpoint,
+          endpoint: endpoint ?? '',
           credentials: credentialUpdates,
           enabled: true,
         });
@@ -901,7 +901,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           ...connections[dedIdx]!,
           providerId: provider,
           label: req.body.name ?? connections[dedIdx]!.label,
-          endpoint: endpoint,
+          ...(endpoint !== undefined ? { endpoint } : {}),
           credentials: { ...connections[dedIdx]!.credentials, ...credentialUpdates },
         };
       }
