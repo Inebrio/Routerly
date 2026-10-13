@@ -778,13 +778,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Params: { id: string };
     Body: {
       id?: string;
-      name?: string; provider: string; endpoint: string;
+      name?: string; provider?: string; endpoint?: string;
       apiKey?: string; cfClearance?: string; upstreamModelId?: string;
       azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
       awsRegion?: string; awsAccessKeyId?: string; awsSecretAccessKey?: string; awsSessionToken?: string;
       vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
       connectionId?: string;
-      inputPerMillion: number; outputPerMillion: number;
+      inputPerMillion?: number; outputPerMillion?: number;
       cachePerMillion?: number;
       contextWindow?: number;
       pricingTiers?: PricingTier[];
@@ -812,7 +812,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Resolve limits: prefer new limits array, fall back to legacy budget fields
-    const resolvedLimits: Limit[] | undefined = req.body.limits?.length
+    // Partial body (PUT merges): omitted limits and budgets keep the stored limits.
+    const resolvedLimits: Limit[] | undefined = req.body.limits !== undefined
       ? req.body.limits
       : (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
         ? [
@@ -824,6 +825,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const connections = await readConfig('connections');
     let connectionsChanged = false;
+
+    // Omitted provider/endpoint/pricing = keep the stored values (merge, never wipe).
+    const existingConn = connections.find(c => c.id === existing.connectionId);
+    const provider = req.body.provider ?? existingConn?.providerId;
+    const endpoint = req.body.endpoint ?? existingConn?.endpoint ?? '';
+    if (!provider) return reply.status(400).send({ error: 'provider is required' });
 
     const oldDedicatedId = `conn-for-${req.params.id}`;
     const newDedicatedId = `conn-for-${newId}`;
@@ -839,8 +846,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (!target) {
         return reply.status(404).send({ error: 'Not found' });
       }
-      if (target.providerId !== req.body.provider) {
-        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${req.body.provider}"` });
+      if (target.providerId !== provider) {
+        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${provider}"` });
       }
       connectionId = req.body.connectionId;
       // Orphan cleanup: leaving a dedicated connection that no other instance uses → drop it.
@@ -865,7 +872,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
       const dedIdx = connections.findIndex(c => c.id === newDedicatedId);
-      const credentialUpdates = buildConnectionCredentials(req.body.provider, {
+      const credentialUpdates = buildConnectionCredentials(provider, {
         ...(req.body.apiKey ? { apiKey: req.body.apiKey } : {}),
         ...(req.body.cfClearance ? { cfClearance: req.body.cfClearance } : {}),
         azureResourceName: req.body.azureResourceName,
@@ -882,18 +889,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (dedIdx === -1) {
         connections.push({
           id: newDedicatedId,
-          providerId: req.body.provider,
+          providerId: provider,
           label: req.body.name ?? newId,
-          endpoint: req.body.endpoint,
+          endpoint,
           credentials: credentialUpdates,
           enabled: true,
         });
       } else {
         connections[dedIdx] = {
           ...connections[dedIdx]!,
-          providerId: req.body.provider,
+          providerId: provider,
           label: req.body.name ?? connections[dedIdx]!.label,
-          endpoint: req.body.endpoint,
+          endpoint,
           credentials: { ...connections[dedIdx]!.credentials, ...credentialUpdates },
         };
       }
@@ -914,16 +921,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // upstreamModelId is required on ModelInstance: an explicit body value always wins, otherwise
       // the existing value is kept (unlike ModelConfig, it cannot be cleared to "derive from id").
       upstreamModelId: req.body.upstreamModelId ? req.body.upstreamModelId : existing.upstreamModelId,
-      cost: {
-        inputPerMillion: req.body.inputPerMillion,
-        outputPerMillion: req.body.outputPerMillion,
-        ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
-        ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
-      },
+      // Full pricing body = replace; partial = merge onto the stored cost.
+      cost: req.body.inputPerMillion !== undefined && req.body.outputPerMillion !== undefined
+        ? {
+          inputPerMillion: req.body.inputPerMillion,
+          outputPerMillion: req.body.outputPerMillion,
+          ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
+          ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
+        }
+        : {
+          ...existing.cost,
+          ...(req.body.inputPerMillion !== undefined ? { inputPerMillion: req.body.inputPerMillion } : {}),
+          ...(req.body.outputPerMillion !== undefined ? { outputPerMillion: req.body.outputPerMillion } : {}),
+          ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
+          ...(req.body.pricingTiers !== undefined ? { pricingTiers: req.body.pricingTiers } : {}),
+        },
       contextWindow: req.body.contextWindow !== undefined ? req.body.contextWindow : existing.contextWindow,
-      // limits: cleared when the body omits both limits[] and legacy budget fields (matches
-      // the original ModelConfig behavior, which discarded existing.limits unless re-supplied).
-      ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
+      ...((resolvedLimits ?? existing.limits)?.length ? { limits: resolvedLimits ?? existing.limits } : {}),
       ...(req.body.capabilities
         ? { capabilities: req.body.capabilities }
         : existing.capabilities !== undefined ? { capabilities: existing.capabilities } : {}),
@@ -1253,12 +1267,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{
     Params: { id: string };
     Body: {
-      name: string;
+      name?: string;
       routingModelId?: string;
       autoRouting?: boolean;
       fallbackRoutingModelIds?: string[];
       policies?: RoutingPolicy[];
-      models: { modelId: string; prompt?: string }[];
+      models?: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
@@ -1279,8 +1293,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
-    const trimmedName = req.body.name.trim();
-    if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
+    if (req.body.name !== undefined && typeof req.body.name !== 'string') return reply.status(400).send({ error: 'Router name must be a string' });
+    if (req.body.models !== undefined && !Array.isArray(req.body.models)) return reply.status(400).send({ error: 'models must be an array' });
+    if (req.body.name !== undefined && !req.body.name.trim()) return reply.status(400).send({ error: 'Router name cannot be empty' });
 
     // Everything that reads or validates against the stored router list — the
     // duplicate-name check, kind inheritance, candidate validation and the
@@ -1290,6 +1305,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const finalRouters = await updateConfig('routers', (routers) => {
       const index = routers.findIndex(p => p.id === req.params.id);
       if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Not found' });
+      // Omitted name/models = keep the stored ones (merge, never wipe).
+      const trimmedName = req.body.name?.trim() ?? routers[index]!.name;
+      const bodyModels = req.body.models ?? routers[index]!.models ?? [];
       // Absent kind = keep the router's existing kind (default 'router'), same fallback
       // pattern as autoRouting/timeoutMs below — not a reset to plain router on every edit.
       const kind: RouterKind = parsedKind.data ?? routers[index]!.kind ?? 'router';
@@ -1333,8 +1351,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // from passthrough (EC3) strips any sentinel from the submitted list; real
       // models in the same list are kept untouched.
       const normalizedModels = kind === 'passthrough'
-        ? req.body.models
-        : req.body.models.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+        ? bodyModels
+        : bodyModels.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
       const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
       // Token issuance/revocation for passthrough routers (PR-E AC1/EC1): a real

@@ -4147,6 +4147,39 @@ describe('PUT /api/models/:id', () => {
     expect(saved.catalogDefaults).toEqual({ inputPerMillion: 3, outputPerMillion: 10 })
   })
 
+  it('partial body merges: keeps stored cost, limits, connection (ROUT-257 AC1)', async () => {
+    setupAdminAuth()
+    const limits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 }, contextWindow: 1000, limits }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: { apiKey: 'enc' }, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ contextWindow: 2000 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const saved = (mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')?.[1] as any[])[0]
+    expect(saved.cost).toEqual({ inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 })
+    expect(saved.limits).toEqual(limits)
+    expect(saved.contextWindow).toBe(2000)
+    const conns = mockWriteConfig.mock.calls.find((c) => c[0] === 'connections')?.[1] as any[] | undefined
+    const conn = conns?.[0] ?? existingConnection
+    expect(conn.providerId).toBe('openai')
+    expect(conn.endpoint).toBe('https://api.openai.com/v1')
+    expect(conn.credentials.apiKey).toBe('enc')
+  })
+
   it('returns 404 for unknown model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -4293,6 +4326,35 @@ describe('GET /api/models/:id/apikey', () => {
 // ─── Router sub-resources ────────────────────────────────────────────────────
 
 describe('PUT /api/routers/:id', () => {
+  it('partial body without models/name keeps them, no 500 (ROUT-257 AC2)', async () => {
+    setupAdminAuth()
+    const target = { id: 'r1', name: 'R', slug: 'r', tokens: [], members: [], models: [{ modelId: 'm1' }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [target]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/r1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ timeoutMs: 5000 }),
+    })
+    const bad = await app.inject({
+      method: 'PUT', url: '/api/routers/r1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ models: 'x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().name).toBe('R')
+    expect(res.json().models).toEqual([{ modelId: 'm1' }])
+    expect(bad.statusCode).toBe(400)
+  })
+
   it('updates router', async () => {
     setupAdminAuth()
     const router = { id: 'p1', name: 'Old Name', tokens: [], members: [], models: [] }
