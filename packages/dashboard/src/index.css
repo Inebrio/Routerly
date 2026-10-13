@@ -328,7 +328,7 @@ input, select, textarea { font-family: inherit; }
 /* Phones: sidebar is a rail; expanding it overlays the content. */
 @media (max-width: 768px) {
   .main-content,
-  .sidebar-collapsed .main-content { margin-left: var(--sidebar-width-collapsed); }
+  .sidebar-collapsed .main-content { margin-inline-start: var(--sidebar-width-collapsed); }
   .page-header { padding-left: 16px; padding-right: 16px; }
   .page-body { padding-left: 16px; padding-right: 16px; }
   .table-wrap { max-width: 100%; }

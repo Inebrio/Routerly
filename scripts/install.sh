@@ -390,4 +390,4 @@ echo
 # Forward filtered arguments (--channel and --version already consumed above)
 # plus the source directory so it knows where files are.
 # Pass --version with the resolved tag so install.mjs can show it in the banner.
-exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"
+exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} ${INSTALL_VERSION:+"--pinned"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"

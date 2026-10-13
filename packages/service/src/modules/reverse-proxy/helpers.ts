@@ -157,6 +157,23 @@ export function applyResponseScrub(
   ctx: ProxyContext,
   effective: EffectivePii,
 ): { found: string[]; counts: Record<string, number>; scanned: boolean } {
+  if (ctx.protocol === 'anthropic') {
+    // Anthropic Messages body: scrub each text block in place.
+    const blocks = (ctx.result?.body as { content?: Array<{ type?: string; text?: unknown }> } | undefined)?.content
+    const found = new Set<string>()
+    const counts: Record<string, number> = {}
+    let scanned = false
+    for (const b of Array.isArray(blocks) ? blocks : []) {
+      if (b?.type !== 'text' || typeof b.text !== 'string') continue
+      scanned = true
+      const r = scrubText(b.text, effective)
+      if (r.found.length === 0) continue
+      b.text = r.text
+      for (const f of r.found) found.add(f)
+      for (const [k, n] of Object.entries(r.counts)) counts[k] = (counts[k] ?? 0) + n
+    }
+    return { found: [...found], counts, scanned }
+  }
   const response = ctx.result?.body as ChatCompletionResponse | undefined
   const content = response?.choices?.[0]?.message?.content
   if (typeof content !== 'string') return { found: [], counts: {}, scanned: false }

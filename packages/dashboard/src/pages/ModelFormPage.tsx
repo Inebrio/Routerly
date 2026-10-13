@@ -876,7 +876,7 @@ export function ModelFormPage() {
 
             <div className="form-group">
               <label className="form-label">{t('models.form.pricing.timeout')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.pricing.timeoutHint')}</span></label>
-              <input className="form-input" type="number" min="1" step="1000" value={form.timeout}
+              <input className="form-input" type="number" min="1" step="1" value={form.timeout}
                 onChange={e => setForm(f => ({ ...f, timeout: e.target.value }))} placeholder="60000" />
             </div>
           </div>

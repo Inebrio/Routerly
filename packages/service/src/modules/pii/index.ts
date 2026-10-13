@@ -48,8 +48,6 @@ const output: Processor<ProxyContext> = {
   phase: 'response.postprocess',
   weight: -10, // runs FIRST in the phase, so it wraps the stream BEFORE guardrail.response does.
   run(ctx) {
-    // Asymmetry: output PII is an OpenAI-lane concern only (routes/anthropic.ts has none).
-    if (ctx.protocol !== 'openai') return
     const policies = ctx.router.pii?.policies
     if (!policies?.length) return
     const effective = mergePolicies(policies, 'output')

@@ -19,6 +19,9 @@ import * as http          from 'node:http';
 
 const exec = promisify(execCb);
 
+// Already root (uid 0): no sudo needed, and minimal images may not ship it.
+const SUDO = process.getuid?.() === 0 ? '' : 'sudo ';
+
 // ─── Colors ───────────────────────────────────────────────────────────────────
 const isTTY = process.stdout.isTTY;
 const c = {
@@ -60,6 +63,7 @@ const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT       
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
 const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
+const INSTALL_PINNED = hasFlag('pinned'); // install.sh/ps1 pass --pinned only when the user asked for an explicit --version
 let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 via --channel= (latest | current | next)
 
 // Normalize deprecated channel aliases (mirrors install.sh / install.ps1) before any
@@ -193,7 +197,7 @@ if (fs.existsSync(existingCliConfigPath)) {
 async function removeDir(dir, needsSudo) {
   if (!fs.existsSync(dir)) return;
   if (needsSudo && PLATFORM !== 'win32') {
-    await exec(`sudo rm -rf "${dir}"`).catch(() => {});
+    await exec(`${SUDO}rm -rf "${dir}"`).catch(() => {});
   } else {
     await fsp.rm(dir, { recursive: true, force: true });
   }
@@ -203,7 +207,7 @@ async function removeDir(dir, needsSudo) {
 async function restartDaemon(scope) {
   if (PLATFORM === 'linux') {
     const unit = 'routerly.service';
-    const sudo = scope === 'system' ? 'sudo ' : '';
+    const sudo = scope === 'system' ? SUDO : '';
     const ctl  = scope === 'system' ? 'systemctl' : 'systemctl --user';
     try {
       await exec(`${sudo}${ctl} restart ${unit}`);
@@ -216,7 +220,7 @@ async function restartDaemon(scope) {
     const label = 'ai.routerly.service';
     const plistDir = scope === 'system' ? '/Library/LaunchDaemons' : path.join(HOME, 'Library/LaunchAgents');
     const plistPath = path.join(plistDir, `${label}.plist`);
-    const sudo = scope === 'system' ? 'sudo ' : '';
+    const sudo = scope === 'system' ? SUDO : '';
     try {
       // launchd: unload + load = restart
       await exec(`${sudo}launchctl unload "${plistPath}"`).catch(() => {});
@@ -242,7 +246,7 @@ async function restartDaemon(scope) {
 async function stopDaemon(scope) {
   if (PLATFORM === 'linux') {
     const unit = 'routerly.service';
-    const sudo = scope === 'system' ? 'sudo ' : '';
+    const sudo = scope === 'system' ? SUDO : '';
     const ctl  = scope === 'system' ? 'systemctl' : 'systemctl --user';
     try {
       const { stdout } = await exec(`${sudo}${ctl} is-active ${unit} 2>/dev/null`).catch(() => ({ stdout: '' }));
@@ -257,7 +261,7 @@ async function stopDaemon(scope) {
     const label = 'ai.routerly.service';
     const plistDir = scope === 'system' ? '/Library/LaunchDaemons' : path.join(HOME, 'Library/LaunchAgents');
     const plistPath = path.join(plistDir, `${label}.plist`);
-    const sudo = scope === 'system' ? 'sudo ' : '';
+    const sudo = scope === 'system' ? SUDO : '';
     if (fs.existsSync(plistPath)) {
       try {
         await exec(`${sudo}launchctl unload "${plistPath}"`);
@@ -281,7 +285,7 @@ async function stopDaemon(scope) {
 async function removeDaemon(scope) {
   if (PLATFORM === 'linux') {
     const unit = scope === 'system' ? 'routerly.service' : 'routerly.service';
-    const sudo = scope === 'system' ? 'sudo ' : '';
+    const sudo = scope === 'system' ? SUDO : '';
     const ctl  = scope === 'system' ? 'systemctl' : 'systemctl --user';
     await exec(`${sudo}${ctl} stop ${unit} 2>/dev/null`).catch(() => {});
     await exec(`${sudo}${ctl} disable ${unit} 2>/dev/null`).catch(() => {});
@@ -294,7 +298,7 @@ async function removeDaemon(scope) {
     const label    = 'ai.routerly.service';
     const plistDir = scope === 'system' ? '/Library/LaunchDaemons' : path.join(HOME, 'Library/LaunchAgents');
     const plistPath = path.join(plistDir, `${label}.plist`);
-    const sudo = scope === 'system' ? 'sudo ' : '';
+    const sudo = scope === 'system' ? SUDO : '';
     await exec(`${sudo}launchctl unload -w "${plistPath}" 2>/dev/null`).catch(() => {});
     await exec(`${sudo}rm -f "${plistPath}"`).catch(() => {});
   } else if (PLATFORM === 'win32') {
@@ -420,7 +424,7 @@ if (isExistingInstall && YES) {
         } catch {
           // Likely a permission error — retry with sudo on POSIX
           if (PLATFORM !== 'win32') {
-            await exec(`sudo rm -f "${b}"`).catch(() => {});
+            await exec(`${SUDO}rm -f "${b}"`).catch(() => {});
             if (!fs.existsSync(b)) { success(`Removed ${b}`); }
             else { warn(`Could not remove ${b} — remove it manually with: sudo rm ${b}`); }
           }
@@ -510,6 +514,15 @@ if (scope === 'system' && PLATFORM === 'win32') {
     console.error('  Or install in user scope instead (does not require admin).\n');
     rl.close();
     process.exit(1);
+  }
+}
+
+// ── sudo prerequisite (POSIX system scope, non-root) ─────────────────────────
+if (scope === 'system' && PLATFORM !== 'win32' && SUDO) {
+  try { await exec('command -v sudo'); }
+  catch {
+    die('System-scope installation as a non-root user requires sudo, which was not found.',
+        'Install sudo, run the installer as root, or use --scope=user.');
   }
 }
 
@@ -741,6 +754,11 @@ step('3', 'Copying files & installing dependencies');
 
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
+// Drop files of the previous version that the new source no longer has
+// (stale files can break the build, e.g. on downgrade). Only touches APP_DIR.
+if (fs.existsSync(path.join(APP_DIR, 'package.json'))) {
+  await pruneStale(SOURCE_DIR, APP_DIR, needsSudo);
+}
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
 success('Source files copied');
 
@@ -749,7 +767,7 @@ success('Source files copied');
 // can run without sudo (and avoid creating root-owned node_modules).
 if (needsSudo) {
   const currentUser = os.userInfo().username;
-  await runCmd(`sudo chown -R ${currentUser} "${APP_DIR}"`, '/');
+  await runCmd(`${SUDO}chown -R ${currentUser} "${APP_DIR}"`, '/');
 }
 
 // npm install --ignore-scripts
@@ -823,9 +841,9 @@ if (!fs.existsSync(settingsPath)) {
     dashboardEnabled: installDashboard,
     logLevel: 'info',
     publicUrl,
-    channel: INSTALL_VERSION ? 'custom' : INSTALL_CHANNEL,
+    channel: INSTALL_PINNED ? 'custom' : INSTALL_CHANNEL,
   };
-  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo);
+  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo, 0o600);
   success('settings.json written');
 } else {
   info('Existing settings.json kept (upgrade mode)');
@@ -1080,7 +1098,7 @@ process.exit(0);
 /** Create a directory, using sudo for system paths on non-Windows. */
 async function mkdirP(dir, useSudo = false) {
   if (useSudo) {
-    await runCmd(`sudo mkdir -p "${dir}"`, '/');
+    await runCmd(`${SUDO}mkdir -p "${dir}"`, '/');
   } else {
     await fsp.mkdir(dir, { recursive: true });
   }
@@ -1094,8 +1112,8 @@ async function writeFileP(filePath, content, useSudo = false, mode = 0o644) {
   if (useSudo) {
     const tmp = path.join(os.tmpdir(), `routerly-${randomBytes(4).toString('hex')}`);
     await fsp.writeFile(tmp, content, { mode });
-    await runCmd(`sudo mv "${tmp}" "${filePath}"`, '/');
-    await runCmd(`sudo chmod ${mode.toString(8)} "${filePath}"`, '/');
+    await runCmd(`${SUDO}mv "${tmp}" "${filePath}"`, '/');
+    await runCmd(`${SUDO}chmod ${mode.toString(8)} "${filePath}"`, '/');
   } else {
     await fsp.writeFile(filePath, content, { mode });
   }
@@ -1115,6 +1133,22 @@ async function runCmd(cmd, cwd) {
   }
 }
 
+/** Remove from dest every entry missing in src, keeping dependencies and build output. */
+async function pruneStale(src, dest, useSudo = false) {
+  const keep = ['node_modules', 'dist'];
+  for (const entry of await fsp.readdir(dest, { withFileTypes: true })) {
+    if (keep.includes(entry.name)) continue;
+    const srcPath  = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    const srcStat  = await fsp.stat(srcPath).catch(() => null);
+    if (srcStat?.isDirectory() && entry.isDirectory()) {
+      await pruneStale(srcPath, destPath, useSudo);
+    } else if (!srcStat || srcStat.isDirectory() !== entry.isDirectory()) {
+      await removeDir(destPath, useSudo);
+    }
+  }
+}
+
 /** Recursively copy a directory, optionally using sudo for system paths. */
 async function copyDir(src, dest, useSudo = false) {
   await mkdirP(dest, useSudo);
@@ -1129,7 +1163,7 @@ async function copyDir(src, dest, useSudo = false) {
     if (entry.isDirectory()) {
       await copyDir(srcPath, destPath, useSudo);
     } else if (useSudo) {
-      await runCmd(`sudo cp "${srcPath}" "${destPath}"`, '/');
+      await runCmd(`${SUDO}cp "${srcPath}" "${destPath}"`, '/');
     } else {
       await fsp.copyFile(srcPath, destPath);
     }
@@ -1166,9 +1200,9 @@ async function setupSystemdService({ scope, serviceEntry, nodeExe, routerlyHome,
     const tempFile = path.join('/tmp', unitName);
     await fsp.writeFile(tempFile, unitContent);
     info('Installing systemd service (requires sudo)...');
-    await runCmd(`sudo mv ${tempFile} ${unitPath}`, '/');
-    await runCmd(`sudo systemctl daemon-reload`, '/');
-    await runCmd(`sudo systemctl enable --now ${unitName}`, '/');
+    await runCmd(`${SUDO}mv ${tempFile} ${unitPath}`, '/');
+    await runCmd(`${SUDO}systemctl daemon-reload`, '/');
+    await runCmd(`${SUDO}systemctl enable --now ${unitName}`, '/');
   } else {
     const systemdUserDir = path.join(HOME, '.config', 'systemd', 'user');
     await fsp.mkdir(systemdUserDir, { recursive: true });
@@ -1247,10 +1281,10 @@ async function setupLaunchdService({ scope, serviceEntry, nodeExe, routerlyHome,
     const tempFile = path.join('/tmp', `${label}.plist`);
     await fsp.writeFile(tempFile, plistContent);
     info('Installing launchd daemon (requires sudo)...');
-    await runCmd(`sudo mv ${tempFile} ${plistPath}`, '/');
-    await runCmd(`sudo chmod 644 ${plistPath}`, '/');
+    await runCmd(`${SUDO}mv ${tempFile} ${plistPath}`, '/');
+    await runCmd(`${SUDO}chmod 644 ${plistPath}`, '/');
     try {
-      await runCmd(`sudo launchctl load -w "${plistPath}"`, '/');
+      await runCmd(`${SUDO}launchctl load -w "${plistPath}"`, '/');
     } catch {
       warn('Could not load daemon automatically. Run: sudo launchctl load -w ' + plistPath);
     }

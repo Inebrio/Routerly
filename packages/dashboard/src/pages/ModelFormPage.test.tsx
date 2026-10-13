@@ -298,6 +298,20 @@ describe('ModelFormPage — edit path', () => {
     expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy();
   });
 
+  it('shows the stored timeout in a field that accepts round values (step 1)', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ id: 'openai/gpt-5.2', provider: 'openai', timeout: 5000 })]);
+
+    renderPage('/dashboard/models/openai%2Fgpt-5.2');
+
+    const input = await waitFor(() => {
+      const el = document.querySelector('input[placeholder="60000"]') as HTMLInputElement | null;
+      expect(el).toBeTruthy();
+      return el!;
+    });
+    expect(input.value).toBe('5000');
+    expect(input.step).toBe('1');
+  });
+
   it('shows error when editing unknown id', async () => {
     mockGetModels.mockResolvedValue([]);
 
