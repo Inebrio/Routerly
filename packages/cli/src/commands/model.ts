@@ -21,7 +21,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     console.log(display());
 
     const { action } = await inquirer.prompt([{
-      type: 'list', name: 'action', message: 'Limits:',
+      type: 'select', name: 'action', message: 'Limits:',
       choices: [
         { name: 'Add a limit', value: 'add' },
         ...(limits.length ? [{ name: 'Remove a limit', value: 'remove' }] : []),
@@ -33,7 +33,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
 
     if (action === 'remove') {
       const { idx } = await inquirer.prompt([{
-        type: 'list', name: 'idx', message: 'Which limit to remove?',
+        type: 'select', name: 'idx', message: 'Which limit to remove?',
         choices: limits.map((l, i) => ({ name: `${l.metric} ${l.windowType === 'period' ? l.period : `rolling ${l.rollingAmount} ${l.rollingUnit}`} ≤ ${l.value}`, value: i })),
       }]);
       limits.splice(idx, 1);
@@ -41,14 +41,14 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     }
 
     const { metric, windowType } = await inquirer.prompt([
-      { type: 'list', name: 'metric', message: 'Metric:', choices: ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'] },
-      { type: 'list', name: 'windowType', message: 'Window type:', choices: [{ name: 'period (calendar boundary)', value: 'period' }, { name: 'rolling (sliding window)', value: 'rolling' }] },
+      { type: 'select', name: 'metric', message: 'Metric:', choices: ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'] },
+      { type: 'select', name: 'windowType', message: 'Window type:', choices: [{ name: 'period (calendar boundary)', value: 'period' }, { name: 'rolling (sliding window)', value: 'rolling' }] },
     ]);
 
     let limitEntry: Limit;
     if (windowType === 'period') {
       const { period } = await inquirer.prompt([
-        { type: 'list', name: 'period', message: 'Period:', choices: ['hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
+        { type: 'select', name: 'period', message: 'Period:', choices: ['hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
       ]);
       const { value } = await inquirer.prompt([
         { type: 'input', name: 'value', message: `Max ${metric} per ${period}:`, validate: (v: string) => !isNaN(parseFloat(v)) || 'Must be a number' },
@@ -57,7 +57,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     } else {
       const { rollingAmount, rollingUnit, value } = await inquirer.prompt([
         { type: 'input', name: 'rollingAmount', message: 'Window size (number):', validate: (v: string) => !isNaN(parseInt(v)) || 'Must be an integer' },
-        { type: 'list', name: 'rollingUnit', message: 'Window unit:', choices: ['second', 'minute', 'hour', 'day', 'week', 'month'] },
+        { type: 'select', name: 'rollingUnit', message: 'Window unit:', choices: ['second', 'minute', 'hour', 'day', 'week', 'month'] },
         { type: 'input', name: 'value', message: `Max ${metric}:`, validate: (v: string) => !isNaN(parseFloat(v)) || 'Must be a number' },
       ]);
       limitEntry = { metric, windowType: 'rolling', rollingAmount: parseInt(rollingAmount), rollingUnit, value: parseFloat(value) };
@@ -81,7 +81,7 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
     console.log(display());
 
     const { action } = await inquirer.prompt([{
-      type: 'list', name: 'action', message: 'Pricing tiers:',
+      type: 'select', name: 'action', message: 'Pricing tiers:',
       choices: [
         { name: 'Add a tier', value: 'add' },
         ...(tiers.length ? [{ name: 'Remove a tier', value: 'remove' }] : []),
@@ -93,7 +93,7 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
 
     if (action === 'remove') {
       const { idx } = await inquirer.prompt([{
-        type: 'list', name: 'idx', message: 'Which tier to remove?',
+        type: 'select', name: 'idx', message: 'Which tier to remove?',
         choices: tiers.map((t, i) => ({ name: `${t.metric} > ${t.above}: $${t.inputPerMillion}/$${t.outputPerMillion}`, value: i })),
       }]);
       tiers.splice(idx, 1);
@@ -128,6 +128,16 @@ const PRICING_PRESETS: Record<string, TokenCost> = {
   'gemini-1.5-pro': { inputPerMillion: 1.25, outputPerMillion: 5 },
   'gemini-1.5-flash': { inputPerMillion: 0.075, outputPerMillion: 0.3 },
 };
+
+/** Parse `--timeout <ms>`: undefined when absent, exits 1 on anything but a non-negative integer. */
+function parseTimeoutOpt(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  if (!/^\d+$/.test(raw.trim())) {
+    console.error(chalk.red('--timeout: must be a non-negative integer (ms)'));
+    process.exit(1);
+  }
+  return parseInt(raw, 10);
+}
 
 export function makeModelCommand(): Command {
   const cmd = new Command('model').description('Manage LLM provider models');
@@ -212,6 +222,7 @@ Examples:
       console.log(line('Provider', m.provider));
       console.log(line('Endpoint', m.endpoint ?? ''));
       if (m.contextWindow) console.log(line('Context window', `${m.contextWindow.toLocaleString()} tokens`));
+      if (m.timeout) console.log(line('Timeout', `${m.timeout.toLocaleString()} ms`));
       if (m.capabilities) {
         const caps = Object.entries(m.capabilities)
           .filter(([, v]) => v)
@@ -303,6 +314,7 @@ Examples:
     .option('--vertex-sa-key <path>', 'Path to service account JSON key file (vertex provider)')
     // ChatGPT browser session
     .option('--cf-clearance <value>', 'cf_clearance cookie for Cloudflare bypass (openai-web provider)')
+    .option('--timeout <ms>', 'Upstream request timeout in ms (default 60000)')
     .action(async (opts: {
       id: string; provider: string; connection?: string; endpoint?: string; apiKey?: string;
       inputPrice?: string; outputPrice?: string; dailyBudget?: string; monthlyBudget?: string;
@@ -310,8 +322,9 @@ Examples:
       azureResource?: string; azureDeployment?: string; azureApiVersion?: string;
       awsRegion?: string; awsKeyId?: string; awsSecret?: string;
       vertexProject?: string; vertexLocation?: string; vertexSaKey?: string;
-      cfClearance?: string;
+      cfClearance?: string; timeout?: string;
     }) => {
+      const timeout = parseTimeoutOpt(opts.timeout);
       const preset = PRICING_PRESETS[opts.id];
       const cost: TokenCost = {
         inputPerMillion: opts.inputPrice ? parseFloat(opts.inputPrice) : (preset?.inputPerMillion ?? 0),
@@ -372,6 +385,7 @@ Examples:
         provider: opts.provider,
         // The API reads flat price fields, not a nested `cost` object.
         ...cost,
+        ...(timeout ? { timeout } : {}),
         ...(limits?.length ? { limits } : {}),
         ...(opts.connection
           ? { connectionId: opts.connection }
@@ -459,14 +473,16 @@ Examples:
     .option('--output-price <usd>', 'Cost per 1M output tokens in USD')
     .option('--cache-price <usd>', 'Cache cost per 1M tokens in USD')
     .option('--context-window <tokens>', 'Context window size in tokens')
+    .option('--timeout <ms>', 'Upstream request timeout in ms (default 60000; 0 resets to default)')
     .option('--limits-json <json>', 'Limits array as JSON string (replaces existing limits)')
     .option('--pricing-tiers-json <json>', 'Pricing tiers as JSON string (replaces existing tiers)')
     .option('--interactive', 'Open interactive wizard for limits and pricing tiers')
     .action(async (id: string, opts: {
       newId?: string; provider?: string; endpoint?: string; apiKey?: string;
-      inputPrice?: string; outputPrice?: string; cachePrice?: string; contextWindow?: string;
+      inputPrice?: string; outputPrice?: string; cachePrice?: string; contextWindow?: string; timeout?: string;
       limitsJson?: string; pricingTiersJson?: string; interactive?: boolean;
     }) => {
+      const timeout = parseTimeoutOpt(opts.timeout);
       // Fetch existing model
       let existing: ModelConfig;
       try {
@@ -515,6 +531,7 @@ Examples:
         ...(opts.newId        ? { id: opts.newId }                                           : {}),
         ...(opts.apiKey       ? { apiKey: opts.apiKey }                                      : {}),
         ...(opts.contextWindow ? { contextWindow: parseInt(opts.contextWindow, 10) }          : {}),
+        ...(timeout !== undefined ? { timeout: timeout === 0 ? null : timeout } : {}),
         // PUT clears limits when the body omits them: resend the existing ones.
         ...(limits !== undefined ? { limits }
           : (existing as ModelConfig & { limits?: Limit[] }).limits?.length ? { limits: (existing as ModelConfig & { limits?: Limit[] }).limits } : {}),

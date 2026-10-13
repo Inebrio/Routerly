@@ -82,6 +82,8 @@ export function listeningAddresses(host: string, port: number): string[] {
 
 const BCRYPT_ROUNDS = 12;
 
+const isValidTimeout = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0;
+
 /**
  * Non-secret EffectiveModel/ModelConfig fields safe to serialize in /api/models responses.
  * resolveEffectiveModel spreads connection.credentials verbatim into the model (adapters
@@ -175,6 +177,38 @@ function redactChannel(channel: Record<string, unknown>): Record<string, unknown
     }
   }
   return out;
+}
+
+/** Settings safe to send to clients: channel secrets and the metrics token are masked. */
+function redactSettings<T extends Settings>(settings: T): T {
+  const out: T = { ...settings };
+  if (out.notifications?.channels) {
+    out.notifications = {
+      ...out.notifications,
+      channels: out.notifications.channels.map(c => redactChannel(c as unknown as Record<string, unknown>)) as unknown as typeof out.notifications.channels,
+    };
+  }
+  if (out.prometheusAuthToken) out.prometheusAuthToken = REDACT_MARKER;
+  return out;
+}
+
+/**
+ * Inverse of redactChannel for round-trips: secret fields still carrying
+ * REDACT_MARKER take the stored value of the channel with the same id
+ * (dropped when there is none).
+ */
+function restoreChannelSecrets(incoming: Array<Record<string, unknown>>, stored: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  return incoming.map(ch => {
+    const secrets = CHANNEL_SECRET_FIELDS[ch['provider'] as ChannelProvider] ?? [];
+    const old = stored.find(s => s['id'] === ch['id']);
+    const out = { ...ch };
+    for (const field of secrets) {
+      if (out[field] !== REDACT_MARKER) continue;
+      if (typeof old?.[field] === 'string' && old[field]) out[field] = old[field];
+      else delete out[field];
+    }
+    return out;
+  });
 }
 
 async function hashPassword(p: string): Promise<string> {
@@ -672,6 +706,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
+      /** Upstream timeout in ms (positive integer); PUT accepts null to reset to default */
+      timeout?: number | null;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
@@ -683,6 +719,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
+      return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
+    }
     const instances = await readConfig('instances');
     if (instances.find(i => i.id === req.body.id)) {
       return reply.status(409).send({ error: `Model "${req.body.id}" already exists` });
@@ -759,6 +798,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
       contextWindow: req.body.contextWindow ?? 0,
+      ...(typeof req.body.timeout === 'number' ? { timeout: req.body.timeout } : {}),
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
       ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
@@ -787,6 +827,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       inputPerMillion?: number; outputPerMillion?: number;
       cachePerMillion?: number;
       contextWindow?: number;
+      /** Upstream timeout in ms (positive integer); PUT accepts null to reset to default */
+      timeout?: number | null;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
@@ -798,6 +840,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models/:id', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
+      return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
+    }
     const instances = await readConfig('instances');
     const index = instances.findIndex(i => i.id === req.params.id);
     if (index === -1) {
@@ -826,18 +871,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const connections = await readConfig('connections');
     let connectionsChanged = false;
 
-    // Omitted provider/endpoint/pricing = keep the stored values (merge, never wipe).
-    const existingConn = connections.find(c => c.id === existing.connectionId);
-    const provider = req.body.provider ?? existingConn?.providerId;
-    const endpoint = req.body.endpoint ?? existingConn?.endpoint ?? '';
-    if (!provider) return reply.status(400).send({ error: 'provider is required' });
-
     const oldDedicatedId = `conn-for-${req.params.id}`;
     const newDedicatedId = `conn-for-${newId}`;
     // Was this instance bound to its own dedicated (single-model) connection?
     const existingIsDedicated = existing.connectionId === oldDedicatedId;
     const existingConnMissing = !existing.connectionId || !connections.find(c => c.id === existing.connectionId);
     const bodyHasInlineCreds = Boolean(req.body.apiKey || req.body.cfClearance);
+
+    // Partial update: omitted provider/endpoint keep the values of the currently bound connection.
+    const existingConn = connections.find(c => c.id === existing.connectionId);
+    const provider = req.body.provider ?? existingConn?.providerId;
+    const endpoint = req.body.endpoint ?? existingConn?.endpoint;
+    if (!provider) {
+      return reply.status(400).send({ error: 'provider is required' });
+    }
 
     let connectionId: string;
     if (req.body.connectionId) {
@@ -891,7 +938,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           id: newDedicatedId,
           providerId: provider,
           label: req.body.name ?? newId,
-          endpoint,
+          endpoint: endpoint ?? '',
           credentials: credentialUpdates,
           enabled: true,
         });
@@ -900,7 +947,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           ...connections[dedIdx]!,
           providerId: provider,
           label: req.body.name ?? connections[dedIdx]!.label,
-          endpoint,
+          ...(endpoint !== undefined ? { endpoint } : {}),
           credentials: { ...connections[dedIdx]!.credentials, ...credentialUpdates },
         };
       }
@@ -937,6 +984,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           ...(req.body.pricingTiers !== undefined ? { pricingTiers: req.body.pricingTiers } : {}),
         },
       contextWindow: req.body.contextWindow !== undefined ? req.body.contextWindow : existing.contextWindow,
+      // timeout: omitted keeps the existing value, null resets to the default.
+      ...(req.body.timeout === undefined
+        ? (existing.timeout !== undefined ? { timeout: existing.timeout } : {})
+        : req.body.timeout === null ? {} : { timeout: req.body.timeout }),
       ...((resolvedLimits ?? existing.limits)?.length ? { limits: resolvedLimits ?? existing.limits } : {}),
       ...(req.body.capabilities
         ? { capabilities: req.body.capabilities }
@@ -1011,6 +1062,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const instances = await readConfig('instances');
     const target = instances.find(i => i.id === req.params.id);
     if (!target) return reply.status(404).send({ error: 'Not found' });
+    const usedBy = (await readConfig('routers')).filter(r =>
+      (r.models ?? []).some(m => m.modelId === req.params.id) ||
+      (r.tokens ?? []).some(t => (t.models ?? []).some(m => m.modelId === req.params.id)));
+    if (usedBy.length) {
+      return reply.status(409).send({ error: `Model "${req.params.id}" is used by router(s): ${usedBy.map(r => r.name ?? r.id).join(', ')}. Remove it from them first.` });
+    }
     const filtered = instances.filter(i => i.id !== req.params.id);
     await writeConfig('instances', filtered);
 
@@ -1813,10 +1870,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USERS
   // ══════════════════════════════════════════════════════════════════════════════
 
+  // Strip credential-derived fields; totpEnabled stays (UsersPage needs it).
+  const publicUser = ({ passwordHash: _p, refreshTokenHash: _r, totpSecret: _s, backupCodes: _b, mcpTokens: _m, ...rest }: UserConfig) => rest;
+
   fastify.get('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:read', reply)) return;
     const users = await readConfig('users');
-    return reply.send(users.map(u => ({ ...u, passwordHash: undefined })));
+    return reply.send(users.map(publicUser));
   });
 
   fastify.post<{
@@ -1837,7 +1897,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     users.push(user);
     await writeConfig('users', users);
     audit(req, 'user:create', 'success', { email: user.email });
-    return reply.status(201).send({ ...user, passwordHash: undefined });
+    return reply.status(201).send(publicUser(user));
   });
 
   fastify.put<{
@@ -2253,7 +2313,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
-    return reply.send({ ...settings, localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
+    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2357,6 +2418,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
     }
+    // GET /api/settings masks channel secrets: a client echoing the marker back means "unchanged".
+    if (notifPatch?.channels && updated.notifications) {
+      updated.notifications = {
+        ...updated.notifications,
+        channels: restoreChannelSecrets(
+          notifPatch.channels as unknown as Array<Record<string, unknown>>,
+          (current.notifications?.channels ?? []) as unknown as Array<Record<string, unknown>>,
+        ) as unknown as typeof notifPatch.channels,
+      };
+    }
     if (channelNormalized) {
       updated.channel = channelNormalized.channel;
     }
@@ -2384,7 +2455,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
     }
     audit(req, 'settings:update', 'success');
-    return reply.send(updated);
+    const integrations = updated.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
+    return reply.send({ ...redactSettings(updated), ...(integrations && { integrations }) });
   });
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────
@@ -2888,6 +2960,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         delete out[field];
       }
     }
+    // Header values routinely carry credentials (X-Api-Key, Authorization): keep names, mask values.
+    const headers = out['headers'];
+    if (headers && typeof headers === 'object') {
+      out['headers'] = Object.fromEntries(Object.keys(headers).map(k => [k, REDACT_MARKER]));
+    }
     return out;
   }
 
@@ -2949,7 +3026,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'type') continue;
       if (secrets.includes(key)) {
-        if (typeof val === 'string' && val.length > 0) merged[key] = val;
+        if (typeof val === 'string' && val.length > 0 && val !== REDACT_MARKER) merged[key] = val;
+      } else if (key === 'headers' && val && typeof val === 'object') {
+        // Masked values come back from the dashboard round-trip: keep the stored value for that header.
+        const old = (stored['headers'] ?? {}) as Record<string, string>;
+        const next: Record<string, string> = {};
+        for (const [h, hv] of Object.entries(val as Record<string, string>)) {
+          if (hv !== REDACT_MARKER) next[h] = hv;
+          else if (old[h] !== undefined) next[h] = old[h];
+        }
+        merged[key] = next;
       } else {
         merged[key] = val;
       }
@@ -3144,6 +3230,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const customRoles = await readConfig('roles');
     const filtered = customRoles.filter(r => r.id !== req.params.id);
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
+    const assigned = (await readConfig('users')).filter(u => u.roleId === req.params.id).map(u => u.email);
+    if (assigned.length > 0) {
+      return reply.status(409).send({ error: `Role "${req.params.id}" is assigned to ${assigned.length} user(s): ${assigned.join(', ')}. Reassign them first.` });
+    }
     await writeConfig('roles', filtered);
     audit(req, 'role:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
@@ -3167,7 +3257,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (action) filtered = filtered.filter(e => e.action.includes(action));
     if (result && result !== 'all') filtered = filtered.filter(e => e.result === result);
     if (from) filtered = filtered.filter(e => e.timestamp >= from);
-    if (to) filtered = filtered.filter(e => e.timestamp <= to);
+    // date-only `to` includes the whole day (UTC), as in /api/usage
+    if (to) { const end = to.length <= 10 ? `${to}T23:59:59.999Z` : to; filtered = filtered.filter(e => e.timestamp <= end); }
 
     const totalRecords = filtered.length;
     const totalPages   = Math.max(1, Math.ceil(totalRecords / size));
