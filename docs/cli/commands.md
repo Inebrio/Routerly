@@ -2054,7 +2054,7 @@ it exists: there is no start step.
 | `--description <text>` | What this test is trying to settle |
 | `--rotation <rotation>` | `sticky` (default), `weighted`, `round-robin` |
 | `--sticky-key <key>` | `auto` (default), `end-user`, `conversation`, `client`. Read only by `sticky` |
-| `--variant <spec>` | An arm of the test: `<router>[:label][=weight]`. Repeat for each variant |
+| `--variant <spec>` | An arm of the test: `<router>[:label][=weight]`. Weights are relative, not percentages. Repeat for each variant |
 | `--judge-model <modelId>` | Score answers with this model |
 | `--criteria <text>` | One judge criterion. Repeat for each |
 | `--sample-rate <percent>` | Share of calls the judge scores, `0`-`100` (default `100`) |

@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Bug fixes
+
+- **Experiments**: variant weights are documented as relative (not percentages), `routerly experiments show` prints each variant's effective share, and a 400 from `POST`/`PATCH /api/experiments` now carries a string `error` naming the failing field path (e.g. `judge.sampleRate`) instead of a nested object.
+
 ### New features
 
 **Router, Orchestrator, and Passthrough kinds**
