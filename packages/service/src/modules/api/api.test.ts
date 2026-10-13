@@ -13705,3 +13705,43 @@ describe('Optimizers API', () => {
   })
   })
 })
+
+describe('integration secret masking (ROUT-201)', () => {
+  const webhook = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'http://x', secret: 'whsec', headers: { 'X-Api-Key': 'k-123', Authorization: 'Bearer t' } }
+  const json = (o: unknown) => JSON.stringify(o)
+
+  it('GET /api/settings masks integration secrets and header values', async () => {
+    setupIntegrations([{ ...prometheusIntegration }, { ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.body).not.toMatch(/prom-secret|whsec|k-123|Bearer t/)
+    const wh = (res.json() as any).integrations[1]
+    expect(wh.secret).toBe('********')
+    expect(wh.headers).toEqual({ 'X-Api-Key': '********', Authorization: '********' })
+  })
+
+  it('GET /api/integrations/:id masks header values', async () => {
+    setupIntegrations([{ ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/intg-wh', headers: adminAuthHeaders() })
+    await app.close()
+    expect((res.json() as any).headers).toEqual({ 'X-Api-Key': '********', Authorization: '********' })
+  })
+
+  it('PATCH with masked values keeps stored secret and header values', async () => {
+    setupIntegrations([{ ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-wh',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: json({ secret: '********', headers: { 'X-Api-Key': '********', Authorization: 'new', Ghost: '********' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const stored = (mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any).integrations[0]
+    expect(stored.secret).toBe('whsec')
+    expect(stored.headers).toEqual({ 'X-Api-Key': 'k-123', Authorization: 'new' })
+  })
+})
