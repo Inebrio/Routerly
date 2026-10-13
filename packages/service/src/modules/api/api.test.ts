@@ -90,7 +90,7 @@ vi.mock('../catalog/fetcher.js', () => ({
 import { apiRoutes, listeningAddresses } from './api.js'
 import authPlugin from '../auth/auth.js'
 import { readConfig, writeConfig, updateConfig, getOrCreateSecret } from '../config/loader.js'
-import { loadCredentialKey, decryptCredential } from '../../lib/crypto-cred.js'
+import { loadCredentialKey } from '../../lib/crypto-cred.js'
 import { resolveOpenAIWebCredential } from '../provider/openai-web.js'
 import { createSessionToken, verifyToken } from '../auth/jwt.js'
 import { sendTestNotification } from '../notifications/sender.js'
@@ -110,15 +110,15 @@ import { checkPermissions, fixPermissions, isBypassActive } from '../config/perm
 const mockCatalogFetcher = vi.mocked(catalogFetcher)
 const mockReadConfig = vi.mocked(readConfig as (key: string) => Promise<any>)
 const mockWriteConfig = vi.mocked(writeConfig as (key: string, value: any) => Promise<void>)
-const mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
+const _mockUpdateConfig = vi.mocked(updateConfig as (key: string, mutate: (current: any) => any) => Promise<any>)
 const mockVerifyToken = vi.mocked(verifyToken)
 const mockCreateSessionToken = vi.mocked(createSessionToken)
 const mockGetTrace = vi.mocked(getTrace)
 const mockSendTestNotification = vi.mocked(sendTestNotification)
 const mockResolveCodexToken = vi.mocked(resolveCodexToken)
 const mockVerifyTotp = vi.mocked(verifyTotp)
-const mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
-const mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
+const _mockGenerateTotpSecret = vi.mocked(generateTotpSecret)
+const _mockGenerateBackupCodes = vi.mocked(generateBackupCodes)
 const mockHashBackupCode = vi.mocked(hashBackupCode)
 const mockCheckPermissions = vi.mocked(checkPermissions)
 const mockFixPermissions = vi.mocked(fixPermissions)
@@ -1089,6 +1089,33 @@ describe('GET /api/models', () => {
 })
 
 describe('POST /api/models', () => {
+  it('persists timeout and rejects a non-numeric one with 400', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'instances') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const post = (timeout: unknown) => app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'timeout-model', provider: 'openai', endpoint: 'https://api.openai.com/v1',
+        inputPerMillion: 5, outputPerMillion: 15, timeout,
+      }),
+    })
+    const app = await buildApp()
+    const ok = await post(5000)
+    const bad = await post('abc')
+    const neg = await post(-1)
+    await app.close()
+    expect(ok.statusCode).toBe(201)
+    expect(ok.json().timeout).toBe(5000)
+    expect(bad.statusCode).toBe(400)
+    expect(neg.statusCode).toBe(400)
+  })
+
   it('creates a new model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1372,6 +1399,25 @@ describe('DELETE /api/models/:id', () => {
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
   })
 
+  it('returns 409 and does not delete a model referenced by a router', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [{ id: 'in-use', connectionId: 'c', upstreamModelId: 'in-use', cost: {}, contextWindow: 0 }]
+      if (t === 'routers') return [{ id: 'r1', name: 'My Router', models: [{ modelId: 'in-use' }], tokens: [] }]
+      return []
+    })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/models/in-use', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('My Router')
+    expect(res.json().usedBy).toEqual(['r1'])
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('returns 404 for nonexistent model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -1407,6 +1453,27 @@ describe('GET /api/routers', () => {
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
     expect(body[0].tokens[0].token).toBeUndefined()
+  })
+
+  it('lists every router to a viewer who is not a member: router:read is global by design (ROUT-220)', async () => {
+    const viewer = { id: 'viewer-id', email: 'v@example.com', passwordHash: 'x', roleId: 'viewer', routerIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    const routers = [
+      { id: 'r1', name: 'One', tokens: [], members: [{ userId: 'admin-id', role: 'admin' }], models: [] },
+      { id: 'r2', name: 'Two', tokens: [], members: [], models: [] },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, viewer]
+      if (t === 'roles') return []
+      if (t === 'routers') return routers
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).map((r: any) => r.id)).toEqual(['r1', 'r2'])
   })
 
   it('resolves an orchestrator\'s candidates to {routerId,name,limits}, stripping the target Router\'s own policy/model config, and reports kind for every router (AC7 wire-level)', async () => {
@@ -3279,6 +3346,65 @@ describe('GET /api/settings', () => {
   })
 })
 
+describe('settings secret redaction (ROUT-236)', () => {
+  const stored = {
+    logLevel: 'info',
+    prometheusAuthToken: 'prom-secret',
+    notifications: { channels: [{ id: 'c1', provider: 'smtp', name: 't', host: 'h', port: 587, user: 'u', password: 'S3greto!' }] },
+  }
+  const setup = () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return JSON.parse(JSON.stringify(stored))
+      return []
+    })
+  }
+
+  it('GET masks channel secrets and prometheusAuthToken', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.body).not.toContain('S3greto!')
+    expect(res.body).not.toContain('prom-secret')
+    expect(res.json().notifications.channels[0].password).toBe('********')
+    expect(res.json().prometheusAuthToken).toBe('********')
+  })
+
+  it('PUT keeps stored secret when the marker is echoed back, and masks the response', async () => {
+    setup()
+    let written: any = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v })
+    const app = await buildApp()
+    const get = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ logLevel: 'debug', notifications: get.json().notifications }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(written.notifications.channels[0].password).toBe('S3greto!')
+    expect(res.body).not.toContain('S3greto!')
+  })
+
+  it('PUT replaces the secret when a new value is sent', async () => {
+    setup()
+    let written: any = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v })
+    const app = await buildApp()
+    await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ ...stored.notifications.channels[0], password: 'new-pw' }] } }),
+    })
+    await app.close()
+    expect(written.notifications.channels[0].password).toBe('new-pw')
+  })
+})
+
 describe('listeningAddresses', () => {
   it('reports only the bound host when it is not a wildcard', () => {
     expect(listeningAddresses('192.168.1.5', 3000)).toEqual(['http://192.168.1.5:3000'])
@@ -3298,6 +3424,47 @@ describe('listeningAddresses', () => {
 })
 
 describe('PUT /api/settings', () => {
+  async function putSettings(current: Record<string, unknown>, body: unknown) {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return current
+      return []
+    })
+    let written: Record<string, any> = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v as Record<string, any> })
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify(body),
+    })
+    await app.close()
+    return { res, written }
+  }
+
+  it('persists metricsEnabled, prometheusAuthToken, port, host (ROUT-213)', async () => {
+    const { res, written } = await putSettings({ logLevel: 'info' }, { metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
+    expect(res.statusCode).toBe(200)
+    expect(written).toMatchObject({ metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
+  })
+
+  it('removes prometheusAuthToken on empty string and syncs the prometheus integration', async () => {
+    const { res, written } = await putSettings(
+      { prometheusAuthToken: 'old', integrations: [{ id: 'p', type: 'prometheus', enabled: true, authToken: 'old' }] },
+      { prometheusAuthToken: '', metricsEnabled: false },
+    )
+    expect(res.statusCode).toBe(200)
+    expect(written['prometheusAuthToken']).toBeUndefined()
+    expect(written['integrations'][0]).toEqual({ id: 'p', type: 'prometheus', enabled: false })
+  })
+
+  it.each([{ port: 99999 }, { port: 0 }, { port: 1.5 }, { host: '' }, { metricsEnabled: 'no' }])('rejects invalid %j with 400', async (body) => {
+    const { res } = await putSettings({}, body)
+    expect(res.statusCode).toBe(400)
+  })
+
   it('updates settings', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -4184,6 +4351,39 @@ describe('PUT /api/models/:id', () => {
     expect(saved.catalogDefaults).toEqual({ inputPerMillion: 3, outputPerMillion: 10 })
   })
 
+  it('partial body merges: keeps stored cost, limits, connection (ROUT-257 AC1)', async () => {
+    setupAdminAuth()
+    const limits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 }, contextWindow: 1000, limits }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: { apiKey: 'enc' }, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ contextWindow: 2000 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const saved = (mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')?.[1] as any[])[0]
+    expect(saved.cost).toEqual({ inputPerMillion: 5, outputPerMillion: 15, cachePerMillion: 1 })
+    expect(saved.limits).toEqual(limits)
+    expect(saved.contextWindow).toBe(2000)
+    const conns = mockWriteConfig.mock.calls.find((c) => c[0] === 'connections')?.[1] as any[] | undefined
+    const conn = conns?.[0] ?? existingConnection
+    expect(conn.providerId).toBe('openai')
+    expect(conn.endpoint).toBe('https://api.openai.com/v1')
+    expect(conn.credentials.apiKey).toBe('enc')
+  })
+
   it('returns 404 for unknown model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
@@ -4330,6 +4530,35 @@ describe('GET /api/models/:id/apikey', () => {
 // ─── Router sub-resources ────────────────────────────────────────────────────
 
 describe('PUT /api/routers/:id', () => {
+  it('partial body without models/name keeps them, no 500 (ROUT-257 AC2)', async () => {
+    setupAdminAuth()
+    const target = { id: 'r1', name: 'R', slug: 'r', tokens: [], members: [], models: [{ modelId: 'm1' }] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [target]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/r1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ timeoutMs: 5000 }),
+    })
+    const bad = await app.inject({
+      method: 'PUT', url: '/api/routers/r1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ models: 'x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().name).toBe('R')
+    expect(res.json().models).toEqual([{ modelId: 'm1' }])
+    expect(bad.statusCode).toBe(400)
+  })
+
   it('updates router', async () => {
     setupAdminAuth()
     const router = { id: 'p1', name: 'Old Name', tokens: [], members: [], models: [] }

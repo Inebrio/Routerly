@@ -31,53 +31,53 @@ import {
  * calls in server.ts/bootstrap.ts relied on implicitly.
  */
 export const configModule = defineModule({
-  manifest: { id: 'config', version: '0.4.0' },
+  manifest: { id: 'config', version: '0.5.4' },
   async migrate() {
     // Independent catch: the two migrations touch different files, so a
     // failure in one must not skip the other (the behaviour before they moved
     // in here, when they were two separate call sites).
     await migrateModelsToConnections().catch((err) => {
-      // eslint-disable-next-line no-console
+       
       console.error('[startup] models.json -> connections/instances migration failed:', err)
     })
     const migrated = await migrateProjectConfigs()
     if (migrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${migrated} router(s) to new guardrails/PII config shape`)
     }
     const rolesMigrated = await migrateRolePermissions()
     if (rolesMigrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${rolesMigrated} custom role(s) to router:read/router:write permissions`)
     }
     const usageMigrated = await migrateUsageRouterId()
     if (usageMigrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${usageMigrated} usage record(s) from projectId to routerId`)
     }
     const channelsMigrated = await migrateNotificationChannelScope()
     if (channelsMigrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${channelsMigrated} notification channel(s) from projectIds to routerIds`)
     }
     const dropped = await migrateSettings()
     if (dropped.length > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] dropped removed setting(s) from settings.json: ${dropped.join(', ')}`)
     }
     const orchestratorsMigrated = await migrateOrchestratorCandidateOrder()
     if (orchestratorsMigrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${orchestratorsMigrated} orchestrator(s) candidate order from legacy weight`)
     }
     const passthroughMigrated = await migratePassthroughPseudoModel()
     if (passthroughMigrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] migrated ${passthroughMigrated} passthrough router(s) with a pass-through entry`)
     }
     const userRouterIdsMigrated = await migrateUserRouterIds()
     if (userRouterIdsMigrated > 0) {
-      // eslint-disable-next-line no-console
+       
       console.log(`[startup] backfilled routerIds on ${userRouterIdsMigrated} user(s) missing it`)
     }
     // migrateUsageToNdjson() deliberately does NOT run here: this migrate()

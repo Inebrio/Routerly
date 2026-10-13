@@ -11,10 +11,26 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Model timeout on every surface**: `timeout` (ms, default 60000) is now accepted and returned by `POST/PUT /api/models` (400 on non-integer or non-positive values; `null` on PUT resets it), settable with `routerly model add|edit --timeout <ms>` (`0` on edit resets), shown by `model show`, and editable in the dashboard model form. Previously config-file only.
+- Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
+
 ### Fixed
 
 - Added a regression test that usage appends leave the existing `usage.ndjson` bytes untouched (verification of the #124 fix, ROUT-4).
+- `routerly service configure --usage-retention-max-mb` / `--usage-retention-days` now reject non-integer or non-positive values (exit 1, error on stderr) instead of silently truncating (e.g. `1.5` saved as `1`).
+- **usage.ndjson permissions**: the usage history file is now created, rewritten and migrated with mode 600 (an existing 644 file is tightened on next access), so the CLI no longer warns about loose permissions after a data migration.
+- **Build on release branches**: `RoutingPolicy.config` is typed `any` again (it had become `unknown`, which broke `orchestrate.ts`); a shared test now fails to compile if it regresses.
+- **ESLint 9 flat config**: added `eslint.config.mjs` (port of the removed `.eslintrc.json`) so `npm run lint` runs again and exits 0. Pre-existing violations are reported as warnings, not errors.
+- **ESLint rules are blocking**: the pre-existing warnings (unused vars/imports, type imports, `prefer-const`, `no-empty`, `no-explicit-any` in non-test code) are cleaned up and every rule is now an error; `npm run lint` exits 0 with zero warnings. `any` is still allowed in `*.test.*` files, and remaining untyped provider/SDK payloads in `src` carry a targeted `eslint-disable-next-line` with a reason.
+- **PII response scrub on `/v1/messages`**: a router PII policy targeting `response` now also scrubs Anthropic-protocol replies, non-stream (text blocks) and stream (including entities split across chunks). Previously the phone/email reached the client in clear; `/v1/chat/completions` is unchanged.
+- `PUT /api/models/:id` and `PUT /api/routers/:id` now merge a partial body: omitted model provider, endpoint, pricing and limits (router name and models) keep their stored values instead of wiping them / corrupting the bound connection / returning HTTP 500. An explicit `limits: []` still clears limits; a non-array `models` returns 400.
+- **Settings → About shows the real version** — package and module manifest versions were still stamped `0.4.0` in git, so branch builds reported `v0.4.0`. They are now stamped to the working release version; `docs/contributing/releasing.md` documents the stamp step for new release branches.
 - Non-stream requests to an unresponsive upstream no longer wait ~181 s: SDK clients for all chat adapters now run with `maxRetries: 0`, so the model `timeout` (default 60 s) is no longer tripled; the `custom` and `bedrock` adapters, which call `fetch` directly, now honour it too (they had no timeout at all) and failover happens right after it. Streaming requests whose candidates all fail before the first chunk now get HTTP 503 `server_error` (same as non-stream) instead of an empty 200 stream.
+- `DELETE /api/connections/:id` (and so `routerly connections remove`) now rejects with 409 `{error, usedBy}` a connection still used by a model, instead of leaving hidden orphan instances.
+- `DELETE /api/models/:id` (and so `routerly model remove` and the dashboard Models page) now rejects with 409 a model still referenced by a router or router token, naming the routers, instead of leaving dangling references. CLI exits 1 with the message on stderr; the dashboard shows it as an error.
+- **Experiments**: variant weights are documented as relative (not percentages), `routerly experiments show` prints each variant's effective share, and a 400 from `POST`/`PATCH /api/experiments` now carries a string `error` naming the failing field path (e.g. `judge.sampleRate`) instead of a nested object.
 
 ### New features
 
@@ -51,6 +67,20 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Dashboard is usable at phone width.** At 768px and below the sidebar stays a 60px rail (expanding it overlays the page) and page padding shrinks, so no page scrolls horizontally at 390px; wide content (tables, tab bars, toolbars) scrolls inside the page body.
+- **Installer** writes `settings.json` with mode 600 (no more `permission-guard` warning on first start) and records `channel` as the requested channel (`current`/`latest`/`next`); `custom` only when `--version` is passed explicitly. New `--pinned` flag forwarded by `install.sh`/`install.ps1` to `install.mjs`.
+- **Installer update/reinstall no longer leaves stale files.** Files of the previous version missing from the new source are removed from the app directory before copying (`node_modules` and `dist` are kept; config and data live outside it), so a downgrade no longer breaks the build.
+- Dashboard RTL layout: the sidebar now sits on the right in Arabic, Hebrew and Urdu (logical CSS properties), theme toggle labels wrap instead of being ellipsized, and letter-spacing is disabled in RTL so Arabic/Urdu glyphs stay connected.
+- **Dashboard is usable at phone width.** At 768px and below the sidebar stays a 60px rail (expanding it overlays the page) and page padding shrinks, so no page scrolls horizontally at 390px; wide tables scroll inside their container.
+- **Installer:** `node scripts/install.mjs --yes` over an existing install now behaves as "Update": it stops the running service, rebuilds and restarts it (new PID, new version), keeping `settings.json` and data. Previously it ran as a fresh install and left the old process running.
+
+- Fixed `/v1/responses` requests with `parallel_tool_calls` but no `tools` (sent by Codex) failing with an OpenAI 400; the field is now forwarded only when tools are present
+- **`routerly mcp serve` with the service on the same host** — the stdio MCP server no longer binds the HTTP port (it failed with `EADDRINUSE` and exited 1), and its logs go to stderr so stdout carries only JSON-RPC.
+- Dashboard: saving the Routing tab or the Orchestrator candidates no longer re-enables disabled routing policies; disabled policies show a "Disabled" badge and the Orchestrator hint lists all five accepted policy types.
+- **OpenAI streaming wire format**: `/v1/chat/completions` with `stream:true` no longer injects `stream_options.include_usage` into the upstream body and no longer returns a usage chunk the client did not request. When the client does not ask for usage, the recorded token counts are estimated (characters / 4); with `include_usage:true` they stay exact.
+- Installer (Linux, user scope) now enables systemd linger (`loginctl enable-linger`), so the service survives logout and starts at boot. If linger cannot be enabled, the installer prints the manual command instead of claiming boot start. New `--no-linger` flag to opt out.
+- **Security:** `GET /api/settings` and the `PUT /api/settings` response no longer return notification channel secrets (SMTP password, API keys, tokens, webhook URLs) or `prometheusAuthToken`; they are masked as `********`, like the `/api/notifications/channels` routes. `PUT /api/settings` treats a masked channel secret as unchanged, so saving Settings > General keeps stored credentials.
+
 - `routerly audit list --limit` now honours the limit (was ignored, always 50), `--json` prints the entries array, and `GET /api/audit` treats a date-only `to` as the end of that day (UTC) so `--to 2026-10-12` includes the 12th.
 
 
@@ -69,8 +99,14 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - **Usage for `/v1/messages`** — verbatim Anthropic forwards (API-key and OAuth) now record the real input/output/cache tokens read from the provider's `usage` (JSON body or SSE `message_start`/`message_delta`) instead of 0. Bytes sent to the client are unchanged.
 - **Exhausted token/model limits return 429, not 500.** When every model of a non-passthrough router is over its limit or budget, the request now answers HTTP 429 in the provider error shape (`insufficient_quota` on OpenAI, `rate_limit_error` on Anthropic) instead of `500 all_models_limits_exceeded` (ROUT-196).
 - **Passthrough responses no longer empty** — `POST /passthrough/<slug>/...` returned the provider status and headers with an empty body (valid key, invalid key, `stream: true`). The route handlers (`/passthrough/...`, and `/v1/chat/completions`, `/v1/responses`, `/v1/messages` when a Passthrough router falls back to raw-forward) now return the reply after the upstream body is sent, so the provider body reaches the client unchanged.
+- Installer: `--scope=system` no longer calls `sudo` when running as root, so it works on minimal images without the `sudo` package; a non-root user without `sudo` now gets an immediate error naming it as a prerequisite.
 - **Dashboard over plain HTTP** — The Playground, Router Test, security rules editor and security profile form no longer fail with `crypto.randomUUID is not a function` on LAN installs served over `http://<IP>:3000` (non-secure context); ids now fall back to `crypto.getRandomValues`. The Router Test tab is mounted again in the router layout.
+- **Models page per-model Reset** — Reset now clears the connection cooldown too: it targets the model's connection id instead of the provider name.
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
+- `scripts/install.sh` now checks up front for `curl` or `wget` (and `tar`) and exits with a message naming the package instead of dying with `curl: command not found` (exit 127). The Node.js install paths (nvm, Homebrew, NodeSource) fall back to `wget` when `curl` is missing.
+- **Router visibility documented** — `GET /api/routers` (and the CLI/dashboard router lists) return every router to any caller with `router:read`; router membership does not filter them. Documented as intended; no behavior change.
+- **Docs deploy for the `next` channel** — pushes to `develop` now deploy the documentation site, so `/next/` tracks the branch (GitHub #131). The `docs-deploy` job was gated on the `current` channel only.
+- CI now enforces the dashboard coverage floor (lines 96.2, branches 93.6, functions 94.0, statements 95.7, from the 2026-10-13 measurement); the `--coverage.thresholds.*=0` overrides are removed from `ci.yml`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
 - **Dashboard translations** — Refreshed all 41 non-English catalogs against `en.json`: added missing keys and translated stale English-copy and placeholder-mismatch strings. Machine-translated; spot-check by a native speaker pending.
@@ -89,7 +125,11 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - Dashboard: an Orchestrator's Routing tab no longer shows the "Target Models" section — that model picker had no `kind`-based guard and let a model be added to an Orchestrator, which only ever routes to candidate Routers (configured on its own Orchestrator tab), never to models directly.
 - `POST /mcp` no longer 500s ("Cannot read properties of undefined (reading 'includes')") for any user account created before `routerIds` was added to `UserConfig` — a startup migration now backfills `routerIds: []` on stored users missing it, and `accessibleRouters()` no longer assumes the field is present on every user record on disk.
 - Anthropic OAuth (and Anthropic web) models on the `/v1/messages` passthrough lane no longer fail every request with an immediate auth error. The lane built its forwarding model from the routing candidate list, which never fetches a live token; the decrypted/refreshed OAuth credential was only ever wired into the non-passthrough SDK path. Every OAuth-connected Anthropic request now reloads the live credential right before forwarding, same as the SDK path already did.
+- `PUT /api/settings` now persists `port`, `host`, `metricsEnabled` and `prometheusAuthToken` (previously dropped silently while reporting success), validating port 1-65535, non-empty host, boolean and string types; an empty string or `null` token removes it, and an existing `prometheus` integration is kept in sync. `routerly service configure --port/--host` now warns that a restart is needed, and `routerly service metrics` accepts `--token` / `$ROUTERLY_METRICS_TOKEN` for a protected `/metrics` instead of always sending the account token.
 - Dashboard: the Models page shows `—` instead of a bare `$` for models without input/output pricing and instead of `0k` for models without a context window. A price of `0` still shows `$0`.
+- CLI: `router model add --prompt` and `router model set-prompt` help (and the CLI docs) no longer call the per-model prompt a "system prompt hint". It is routing guidance read by the LLM routing policy only and is never sent upstream; behaviour is unchanged.
+- Custom provider: upstream errors now keep their HTTP status and headers, so a 429 honours `retry-after` and a 404 `model_not_found` locks out only that model instead of counting as a `server` fault that could open the breaker for every custom model. The error message returned to the client is unchanged.
+- Streamed response PII scrub: the held-back tail is now merged into the `finish_reason` chunk, so an OpenAI stream ends on that chunk with constant `id`/`model`. A blocked `/v1/messages` request with `stream: true` now answers with an SSE event sequence (empty message, `stop_reason: refusal`) instead of JSON.
 
 ### Breaking changes
 

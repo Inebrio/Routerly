@@ -35,13 +35,20 @@ declare module 'fastify' {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
+// `routerly mcp serve` runs the service as a stdio MCP server: stdout is the
+// JSON-RPC channel, so nothing else may write to it and no port may be bound
+// (the regular service is usually already listening on the same host).
+const isMcpStdio = () => process.env['ROUTERLY_MCP_STDIO'] === '1';
+
 export async function buildServer() {
   const settings = await readConfig('settings');
 
   const fastify = Fastify({
     logger: {
       level: settings.logLevel,
-      ...(process.env['NODE_ENV'] !== 'production'
+      ...(isMcpStdio()
+        ? { stream: process.stderr }
+        : process.env['NODE_ENV'] !== 'production'
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
@@ -142,6 +149,7 @@ export async function buildServer() {
 }
 
 export async function startServer() {
+  if (isMcpStdio()) console.log = console.error;
   await initConfigDirs();
 
   // Permission guard runs first, before anything else reads or writes a
@@ -161,7 +169,7 @@ export async function startServer() {
   // iteration 2, finding B2.
   const storageMigrated = await migrateRouterStorage();
   if (storageMigrated !== undefined) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] migrated ${storageMigrated} router(s) from projects.json to routers.json`);
   }
 
@@ -172,7 +180,7 @@ export async function startServer() {
   // .claude/specs/0.4.1/03-validation/RTR-06.md, finding B1.
   const migratedUsage = await migrateUsageToNdjson();
   if (migratedUsage > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
   }
 
@@ -212,9 +220,11 @@ export async function startServer() {
 
   const orphansRemoved = await pruneOrphanUsage();
   if (orphansRemoved > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching router)`);
   }
+
+  if (isMcpStdio()) return;
 
   try {
     await server.listen({ port: settings.port, host: settings.host });

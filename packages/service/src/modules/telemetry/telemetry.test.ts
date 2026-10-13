@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { pingTelemetry, TELEMETRY_ENDPOINT } from './telemetry.js'
 
 // vitest.config sets ROUTERLY_TELEMETRY_DISABLED=1 so no real pings fire.

@@ -12,7 +12,7 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef } from '@routerly/shared';
+import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
@@ -81,6 +81,8 @@ export function listeningAddresses(host: string, port: number): string[] {
 }
 
 const BCRYPT_ROUNDS = 12;
+
+const isValidTimeout = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0;
 
 /**
  * Non-secret EffectiveModel/ModelConfig fields safe to serialize in /api/models responses.
@@ -175,6 +177,38 @@ function redactChannel(channel: Record<string, unknown>): Record<string, unknown
     }
   }
   return out;
+}
+
+/** Settings safe to send to clients: channel secrets and the metrics token are masked. */
+function redactSettings<T extends Settings>(settings: T): T {
+  const out: T = { ...settings };
+  if (out.notifications?.channels) {
+    out.notifications = {
+      ...out.notifications,
+      channels: out.notifications.channels.map(c => redactChannel(c as unknown as Record<string, unknown>)) as unknown as typeof out.notifications.channels,
+    };
+  }
+  if (out.prometheusAuthToken) out.prometheusAuthToken = REDACT_MARKER;
+  return out;
+}
+
+/**
+ * Inverse of redactChannel for round-trips: secret fields still carrying
+ * REDACT_MARKER take the stored value of the channel with the same id
+ * (dropped when there is none).
+ */
+function restoreChannelSecrets(incoming: Array<Record<string, unknown>>, stored: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  return incoming.map(ch => {
+    const secrets = CHANNEL_SECRET_FIELDS[ch['provider'] as ChannelProvider] ?? [];
+    const old = stored.find(s => s['id'] === ch['id']);
+    const out = { ...ch };
+    for (const field of secrets) {
+      if (out[field] !== REDACT_MARKER) continue;
+      if (typeof old?.[field] === 'string' && old[field]) out[field] = old[field];
+      else delete out[field];
+    }
+    return out;
+  });
 }
 
 async function hashPassword(p: string): Promise<string> {
@@ -672,6 +706,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       inputPerMillion: number; outputPerMillion: number;
       cachePerMillion?: number;
       contextWindow?: number;
+      /** Upstream timeout in ms (positive integer); PUT accepts null to reset to default */
+      timeout?: number | null;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
@@ -683,6 +719,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
+      return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
+    }
     const instances = await readConfig('instances');
     if (instances.find(i => i.id === req.body.id)) {
       return reply.status(409).send({ error: `Model "${req.body.id}" already exists` });
@@ -759,6 +798,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
       },
       contextWindow: req.body.contextWindow ?? 0,
+      ...(typeof req.body.timeout === 'number' ? { timeout: req.body.timeout } : {}),
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
       ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
@@ -784,9 +824,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       awsRegion?: string; awsAccessKeyId?: string; awsSecretAccessKey?: string; awsSessionToken?: string;
       vertexProjectId?: string; vertexLocation?: string; vertexServiceAccountKey?: string;
       connectionId?: string;
-      inputPerMillion: number; outputPerMillion: number;
+      inputPerMillion?: number; outputPerMillion?: number;
       cachePerMillion?: number;
       contextWindow?: number;
+      /** Upstream timeout in ms (positive integer); PUT accepts null to reset to default */
+      timeout?: number | null;
       pricingTiers?: PricingTier[];
       limits?: Limit[];
       capabilities?: ModelCapabilities;
@@ -798,6 +840,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models/:id', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
+      return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
+    }
     const instances = await readConfig('instances');
     const index = instances.findIndex(i => i.id === req.params.id);
     if (index === -1) {
@@ -812,7 +857,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Resolve limits: prefer new limits array, fall back to legacy budget fields
-    const resolvedLimits: Limit[] | undefined = req.body.limits?.length
+    // Partial body (PUT merges): omitted limits and budgets keep the stored limits.
+    const resolvedLimits: Limit[] | undefined = req.body.limits !== undefined
       ? req.body.limits
       : (req.body.dailyBudget !== undefined || req.body.weeklyBudget !== undefined || req.body.monthlyBudget !== undefined)
         ? [
@@ -922,16 +968,27 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // upstreamModelId is required on ModelInstance: an explicit body value always wins, otherwise
       // the existing value is kept (unlike ModelConfig, it cannot be cleared to "derive from id").
       upstreamModelId: req.body.upstreamModelId ? req.body.upstreamModelId : existing.upstreamModelId,
-      cost: {
-        inputPerMillion: req.body.inputPerMillion,
-        outputPerMillion: req.body.outputPerMillion,
-        ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
-        ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
-      },
+      // Full pricing body = replace; partial = merge onto the stored cost.
+      cost: req.body.inputPerMillion !== undefined && req.body.outputPerMillion !== undefined
+        ? {
+          inputPerMillion: req.body.inputPerMillion,
+          outputPerMillion: req.body.outputPerMillion,
+          ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
+          ...(req.body.pricingTiers?.length ? { pricingTiers: req.body.pricingTiers } : {}),
+        }
+        : {
+          ...existing.cost,
+          ...(req.body.inputPerMillion !== undefined ? { inputPerMillion: req.body.inputPerMillion } : {}),
+          ...(req.body.outputPerMillion !== undefined ? { outputPerMillion: req.body.outputPerMillion } : {}),
+          ...(req.body.cachePerMillion !== undefined ? { cachePerMillion: req.body.cachePerMillion } : {}),
+          ...(req.body.pricingTiers !== undefined ? { pricingTiers: req.body.pricingTiers } : {}),
+        },
       contextWindow: req.body.contextWindow !== undefined ? req.body.contextWindow : existing.contextWindow,
-      // limits: cleared when the body omits both limits[] and legacy budget fields (matches
-      // the original ModelConfig behavior, which discarded existing.limits unless re-supplied).
-      ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
+      // timeout: omitted keeps the existing value, null resets to the default.
+      ...(req.body.timeout === undefined
+        ? (existing.timeout !== undefined ? { timeout: existing.timeout } : {})
+        : req.body.timeout === null ? {} : { timeout: req.body.timeout }),
+      ...((resolvedLimits ?? existing.limits)?.length ? { limits: resolvedLimits ?? existing.limits } : {}),
       ...(req.body.capabilities
         ? { capabilities: req.body.capabilities }
         : existing.capabilities !== undefined ? { capabilities: existing.capabilities } : {}),
@@ -1005,6 +1062,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const instances = await readConfig('instances');
     const target = instances.find(i => i.id === req.params.id);
     if (!target) return reply.status(404).send({ error: 'Not found' });
+    const usedBy = (await readConfig('routers')).filter(r =>
+      (r.models ?? []).some(m => m.modelId === req.params.id) ||
+      (r.tokens ?? []).some(t => (t.models ?? []).some(m => m.modelId === req.params.id)));
+    if (usedBy.length) {
+      return reply.status(409).send({ error: `Model "${req.params.id}" is used by router(s): ${usedBy.map(r => r.name ?? r.id).join(', ')}. Remove it from them first.`, usedBy: usedBy.map(r => r.id) });
+    }
     const filtered = instances.filter(i => i.id !== req.params.id);
     await writeConfig('instances', filtered);
 
@@ -1261,12 +1324,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put<{
     Params: { id: string };
     Body: {
-      name: string;
+      name?: string;
       routingModelId?: string;
       autoRouting?: boolean;
       fallbackRoutingModelIds?: string[];
       policies?: RoutingPolicy[];
-      models: { modelId: string; prompt?: string }[];
+      models?: { modelId: string; prompt?: string }[];
       timeoutMs?: number;
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
@@ -1287,8 +1350,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // zod's `z.any()` on `limits` types it as `any[] | undefined`, not the stricter
     // `Limit[]` — same cast-after-parse pattern as guardrails/pii below.
     const candidates = parsedCandidates.data as OrchestratorCandidateRef[] | undefined;
-    const trimmedName = req.body.name.trim();
-    if (!trimmedName) return reply.status(400).send({ error: 'Router name cannot be empty' });
+    if (req.body.name !== undefined && typeof req.body.name !== 'string') return reply.status(400).send({ error: 'Router name must be a string' });
+    if (req.body.models !== undefined && !Array.isArray(req.body.models)) return reply.status(400).send({ error: 'models must be an array' });
+    if (req.body.name !== undefined && !req.body.name.trim()) return reply.status(400).send({ error: 'Router name cannot be empty' });
 
     // Everything that reads or validates against the stored router list — the
     // duplicate-name check, kind inheritance, candidate validation and the
@@ -1298,6 +1362,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const finalRouters = await updateConfig('routers', (routers) => {
       const index = routers.findIndex(p => p.id === req.params.id);
       if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Not found' });
+      // Omitted name/models = keep the stored ones (merge, never wipe).
+      const trimmedName = req.body.name?.trim() ?? routers[index]!.name;
+      const bodyModels = req.body.models ?? routers[index]!.models ?? [];
       // Absent kind = keep the router's existing kind (default 'router'), same fallback
       // pattern as autoRouting/timeoutMs below — not a reset to plain router on every edit.
       const kind: RouterKind = parsedKind.data ?? routers[index]!.kind ?? 'router';
@@ -1341,8 +1408,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // from passthrough (EC3) strips any sentinel from the submitted list; real
       // models in the same list are kept untouched.
       const normalizedModels = kind === 'passthrough'
-        ? req.body.models
-        : req.body.models.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
+        ? bodyModels
+        : bodyModels.filter(m => m.modelId !== PASSTHROUGH_MODEL_ID);
       const modelsError = validatePassthroughModels({ kind, models: normalizedModels });
       if (modelsError) throw new ConfigUpdateAbort(modelsError.status, { error: modelsError.message });
       // Token issuance/revocation for passthrough routers (PR-E AC1/EC1): a real
@@ -1656,6 +1723,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         throw new ConfigUpdateAbort(409, { error: 'User is already a member' });
       }
       const next = [...routers];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       next[index] = { ...router, members: [...members, { userId: req.body.userId, role: req.body.role as any }] };
       return next;
     });
@@ -1673,7 +1741,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const memberIndex = router.members.findIndex(m => m.userId === req.params.userId);
       if (memberIndex === -1) throw new ConfigUpdateAbort(404, { error: 'Member not found' });
       const members = [...router.members];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       updatedMember = { ...members[memberIndex]!, role: req.body.role as any };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       members[memberIndex] = updatedMember as any;
       const next = [...routers];
       next[index] = { ...router, members };
@@ -2247,7 +2317,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
     const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...settings, ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2333,8 +2403,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         console.warn(updateChannelDeprecationWarning(channelNormalized.deprecatedAlias));
       }
     }
+    // ROUT-213: network + /metrics settings. port/host only take effect after a restart.
+    const netPatch = req.body as Partial<Omit<Settings, 'prometheusAuthToken'>> & { prometheusAuthToken?: string | null };
+    const netSchema = z.object({
+      port: z.number().int().min(1).max(65535).optional(),
+      host: z.string().trim().min(1).optional(),
+      metricsEnabled: z.boolean().optional(),
+      prometheusAuthToken: z.string().nullable().optional(),
+    });
+    const netParsed = netSchema.safeParse(netPatch);
+    if (!netParsed.success) {
+      return reply.status(400).send({ error: netParsed.error.issues[0]!.message });
+    }
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
+      'port',
+      'host',
+      'metricsEnabled',
       'logLevel',
       'dashboardEnabled',
       'notifications',
@@ -2348,11 +2433,39 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const updated = { ...current };
     for (const key of allowed) {
       if ((req.body as Partial<Settings>)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
     }
+    // GET /api/settings masks channel secrets: a client echoing the marker back means "unchanged".
+    if (notifPatch?.channels && updated.notifications) {
+      updated.notifications = {
+        ...updated.notifications,
+        channels: restoreChannelSecrets(
+          notifPatch.channels as unknown as Array<Record<string, unknown>>,
+          (current.notifications?.channels ?? []) as unknown as Array<Record<string, unknown>>,
+        ) as unknown as typeof notifPatch.channels,
+      };
+    }
     if (channelNormalized) {
       updated.channel = channelNormalized.channel;
+    }
+    // Empty string / null removes the /metrics token.
+    if (netPatch.prometheusAuthToken !== undefined) {
+      updated.prometheusAuthToken = netPatch.prometheusAuthToken || undefined;
+    }
+    // A prometheus integration overrides the flat fields in /metrics: keep it in sync.
+    if (netPatch.metricsEnabled !== undefined || netPatch.prometheusAuthToken !== undefined) {
+      updated.integrations = (updated.integrations ?? []).map((i) => {
+        if (i.type !== 'prometheus') return i;
+        const next = { ...i } as PrometheusIntegration;
+        if (netPatch.metricsEnabled !== undefined) next.enabled = netPatch.metricsEnabled;
+        if (netPatch.prometheusAuthToken !== undefined) {
+          if (netPatch.prometheusAuthToken) next.authToken = netPatch.prometheusAuthToken;
+          else delete next.authToken;
+        }
+        return next;
+      });
     }
     // Telemetry is handled separately: server controls installId generation
     const telemetryPatch = (req.body as Partial<Settings>).telemetry;
@@ -2378,7 +2491,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
     }
     audit(req, 'settings:update', 'success');
-    return reply.send(updated);
+    const integrations = updated.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
+    return reply.send({ ...redactSettings(updated), ...(integrations && { integrations }) });
   });
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────

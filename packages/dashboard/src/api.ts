@@ -112,7 +112,7 @@ function httpError(message: string, status: number): ApiError {
   return err;
 }
 
-async function processResponse<T>(res: Response, path: string): Promise<T> {
+async function processResponse<T>(res: Response, _path: string): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   const text = await res.text();
@@ -124,7 +124,7 @@ async function processResponse<T>(res: Response, path: string): Promise<T> {
   let data: unknown;
   try {
     data = JSON.parse(text);
-  } catch (err) {
+  } catch (_err) {
     console.error('Failed to parse API response as JSON:', text);
     throw new Error('Invalid JSON response from server');
   }
@@ -215,6 +215,7 @@ export interface Model {
   upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
+  timeout?: number;
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
   capabilities?: ModelCapabilities;
@@ -308,6 +309,7 @@ export const testModel = (id: string) => request<{ ok: boolean; latencyMs: numbe
 export interface RoutingPolicy {
   type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent' | 'model-preference';
   enabled: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
   config?: any;
 }
 
@@ -1089,7 +1091,7 @@ export const resetResilience = (body?: { level: ResilienceLevel; id: string }) =
 
 // ── Profiles (routing, optimizer, security) ───────────────────────────────
 import type {
-  SelectorType, FallbackStrategyType,
+  
   Profile, ProfileKind, RoutingProfile, OptimizerProfile, SecurityProfile,
 } from '@routerly/shared';
 export type {

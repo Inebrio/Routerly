@@ -13,7 +13,7 @@ import { routerPassthroughRoutes } from './router-passthrough.js';
  * this module additionally makes them reachable through the container.
  */
 export const apiReverseProxyModule = defineModule({
-  manifest: { id: 'api-reverse-proxy', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'api-reverse-proxy', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
   register({ container }) {
     container.register(API_REVERSE_PROXY, {
       openaiRoutes,

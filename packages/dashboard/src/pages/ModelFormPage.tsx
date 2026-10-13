@@ -128,6 +128,7 @@ const EMPTY_FORM = {
   cachePerMillion: '',
   cacheWritePerMillion: '',
   contextWindow: '',
+  timeout: '',
   // Azure OpenAI
   azureResourceName: '',
   azureDeploymentId: '',
@@ -286,7 +287,7 @@ export function ModelFormPage() {
       }
     }
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [id, isEditing, editingModelId]);
 
   // ── Catalog override helpers ───────────────────────────────────────────────
@@ -496,6 +497,7 @@ export function ModelFormPage() {
       cachePerMillion: cachePrice != null ? String(cachePrice) : '',
       cacheWritePerMillion: cacheWritePrice != null ? String(cacheWritePrice) : '',
       contextWindow: ctxWindow != null ? String(ctxWindow) : '',
+      timeout: model.timeout != null ? String(model.timeout) : '',
       azureResourceName: m.azureResourceName ?? '',
       azureDeploymentId: m.azureDeploymentId ?? '',
       azureApiVersion: m.azureApiVersion ?? '',
@@ -551,7 +553,7 @@ export function ModelFormPage() {
   }
 
   /* v8 ignore next 7 */
-  function effectiveId(): string {
+  function _effectiveId(): string {
     if (form.customId.trim()) return form.customId.trim();
     const prefix = form.provider === 'custom' && form.customProviderName.trim()
       ? form.customProviderName.trim()
@@ -627,6 +629,8 @@ export function ModelFormPage() {
         ...(form.cachePerMillion ? { cachePerMillion: parseFloat(form.cachePerMillion) } : {}),
         ...(form.cacheWritePerMillion ? { cacheWritePerMillion: parseFloat(form.cacheWritePerMillion) } : {}),
         ...(form.contextWindow ? { contextWindow: parseInt(form.contextWindow, 10) } : {}),
+        // Empty on edit resets to the default (null); empty on create just omits it.
+        ...(form.timeout ? { timeout: parseInt(form.timeout, 10) } : isEditing ? { timeout: null } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
         ...(Object.keys(fieldOverrides).length ? { fieldOverrides } : {}),
         limits: limitRows
@@ -868,6 +872,12 @@ export function ModelFormPage() {
               <label className="form-label">{t('models.form.pricing.contextWindow')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.pricing.contextWindowHint')}</span><FieldBadge field="contextWindow" /></label>
               <input className="form-input" type="number" step="1000" value={form.contextWindow}
                 onChange={e => { setForm(f => ({ ...f, contextWindow: e.target.value })); setOverride('contextWindow', true); }} placeholder="128000" />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">{t('models.form.pricing.timeout')} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('models.form.pricing.timeoutHint')}</span></label>
+              <input className="form-input" type="number" min="1" step="1" value={form.timeout}
+                onChange={e => setForm(f => ({ ...f, timeout: e.target.value }))} placeholder="60000" />
             </div>
           </div>
 

@@ -12,6 +12,21 @@ import { forwardableResponseHeaders, type CallOptions } from './passthrough.js';
 import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
+ * Error carrying the SDK-style `status`/`headers`/`error` shape so the resilience
+ * classifier sees the real HTTP status and retry-after instead of a generic fault.
+ */
+async function upstreamError(response: Response): Promise<Error> {
+  const text = await response.text().catch(() => '');
+  let body: unknown;
+  try { body = JSON.parse(text); } catch { /* non-JSON body */ }
+  return Object.assign(new Error(`Custom provider returned ${response.status}: ${text}`), {
+    status: response.status,
+    headers: Object.fromEntries(response.headers),
+    ...(body !== undefined ? { error: body } : {}),
+  });
+}
+
+/**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
  * Requires a custom endpoint in ModelConfig.
  *
@@ -55,8 +70,7 @@ export class CustomAdapter implements ProviderAdapter {
     });
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Custom provider returned ${response.status}: ${text}`);
+      throw await upstreamError(response);
     }
     return response.json() as Promise<ChatCompletionResponse>;
   }
@@ -86,8 +100,7 @@ export class CustomAdapter implements ProviderAdapter {
     }).finally(() => clearTimeout(timer));
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Custom provider returned ${response.status}: ${text}`);
+      throw await upstreamError(response);
     }
     if (!response.body) {
       throw new Error('Custom provider returned no response body for streaming.');
@@ -132,6 +145,7 @@ export class CustomAdapter implements ProviderAdapter {
     const openAIMessages = system
       ? [{ role: 'system' as const, content: system }, ...messages]
       : messages;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const { stream: _stream, ...rest } = request as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = await client.chat.completions.create({
@@ -139,6 +153,7 @@ export class CustomAdapter implements ProviderAdapter {
       messages: openAIMessages,
       model: upstreamModel,
       stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
   }

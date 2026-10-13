@@ -1,6 +1,6 @@
 {
   "name": "routerly",
-  "version": "0.4.0",
+  "version": "0.5.4",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0",
@@ -13,7 +13,7 @@
     "dev": "npm run dev --workspace=packages/service",
     "test": "npm test --workspaces --if-present && vitest run",
     "test:e2e": "vitest run",
-    "lint": "eslint packages/*/src --ext .ts",
+    "lint": "eslint packages/*/src",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
     "prepare": "husky",
     "i18n:translate": "node scripts/i18n-translate.mjs",

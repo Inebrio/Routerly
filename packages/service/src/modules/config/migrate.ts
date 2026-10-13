@@ -400,7 +400,7 @@ export async function migrateUsageToNdjson(): Promise<number> {
   const content = usageRecords.length
     ? usageRecords.map((r) => JSON.stringify(r)).join('\n') + '\n'
     : '';
-  await writeFile(tmpPath, content, 'utf-8');
+  await writeFile(tmpPath, content, { encoding: 'utf-8', mode: 0o600 });
 
   // AC5: read the just-written file back and verify the line count matches
   // the source array length exactly before publishing over the target.

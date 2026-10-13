@@ -66,6 +66,15 @@ need_cmd() {
   return 0
 }
 
+# Fail early, naming the missing package, instead of dying later with exit 127.
+need_cmd curl || need_cmd wget || die "Neither 'curl' nor 'wget' found. Install one (e.g. apt-get install curl) and retry."
+need_cmd tar || die "'tar' not found. Install it (e.g. apt-get install tar) and retry."
+
+# Download URL to stdout with curl, or wget when curl is missing.
+fetch() {
+  if need_cmd curl; then curl -fsSL "$1"; else wget -qO- "$1"; fi
+}
+
 # ── Try to load Node.js from known locations ──────────────────────────────────
 # When running via `curl | bash` the shell is non-interactive: .bashrc/.zshrc
 # are NOT sourced, so nvm, Homebrew and other package managers may be invisible.
@@ -134,7 +143,7 @@ install_node() {
   local methods=()   # internal keys
 
   # nvm is always offered (works on both macOS and Linux, no root needed)
-  options+=("nvm  (Node Version Manager — recommended, no sudo needed)")
+  options+=("nvm  (Node Version Manager — recommended, no sudo needed; requires curl or wget)")
   methods+=("nvm")
 
   if [ "$PLATFORM" = "macos" ]; then
@@ -192,7 +201,7 @@ install_node() {
 
     nvm)
       info "Installing nvm and Node.js ${REQUIRED_NODE_MAJOR}..."
-      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      fetch https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
       export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
       # shellcheck disable=SC1091
       [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
@@ -207,7 +216,7 @@ install_node() {
 
     brew-install)
       info "Installing Homebrew first..."
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      /bin/bash -c "$(fetch https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       # Add brew to PATH for this session (Apple Silicon vs Intel)
       if [ -x "/opt/homebrew/bin/brew" ]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -220,13 +229,13 @@ install_node() {
 
     apt)
       info "Installing Node.js ${REQUIRED_NODE_MAJOR} via apt..."
-      curl -fsSL "https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo -E bash -
+      fetch "https://deb.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo -E bash -
       sudo apt-get install -y nodejs
       ;;
 
     dnf)
       info "Installing Node.js ${REQUIRED_NODE_MAJOR} via dnf..."
-      curl -fsSL "https://rpm.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo bash -
+      fetch "https://rpm.nodesource.com/setup_${REQUIRED_NODE_MAJOR}.x" | sudo bash -
       sudo dnf install -y nodejs
       ;;
 
@@ -381,4 +390,4 @@ echo
 # Forward filtered arguments (--channel and --version already consumed above)
 # plus the source directory so it knows where files are.
 # Pass --version with the resolved tag so install.mjs can show it in the banner.
-exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"
+exec node "$INSTALLER" "--source-dir=${EXTRACT_DIR}" ${RELEASE_TAG:+"--version=${RELEASE_TAG}"} ${INSTALL_VERSION:+"--pinned"} "--channel=${INSTALL_CHANNEL}" "${FORWARD_ARGS[@]+${FORWARD_ARGS[@]}}"

@@ -53,6 +53,7 @@ function partsToChat(content: unknown): string | Message['content'] {
   if (typeof content === 'string') return content;
   if (!Array.isArray(content)) return '';
   const parts = content.map((raw) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const part = raw as Record<string, any>;
     if (part?.type === 'input_image') {
       // Responses carries the URL flat, chat nests it under `image_url.url`.
@@ -74,6 +75,7 @@ export function responsesToolsToChat(tools: unknown): ToolDefinition[] | undefin
   const functions = tools.filter((t) => (t as Record<string, unknown>)?.type === 'function');
   if (functions.length === 0) return undefined; // hosted tools (web_search, file_search) have no chat equivalent
   return functions.map((raw) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const tool = raw as Record<string, any>;
     return {
       type: 'function' as const,
@@ -90,6 +92,7 @@ export function responsesToolsToChat(tools: unknown): ToolDefinition[] | undefin
 export function responsesToolChoiceToChat(choice: unknown): unknown {
   if (typeof choice === 'string') return choice; // auto | none | required
   if (choice && typeof choice === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const raw = choice as Record<string, any>;
     if (raw.type === 'function' && raw.name) return { type: 'function', function: { name: raw.name } };
   }
@@ -118,6 +121,7 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
     messages.push({ role: 'user', content: input });
   } else if (Array.isArray(input)) {
     for (const raw of input) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       const item = raw as Record<string, any>;
       const type = item?.type;
 
@@ -165,7 +169,8 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
     ...(body.max_output_tokens != null ? { max_tokens: body.max_output_tokens } : {}),
     ...(body.temperature != null ? { temperature: body.temperature } : {}),
     ...(body.top_p != null ? { top_p: body.top_p } : {}),
-    ...(body.parallel_tool_calls != null ? { parallel_tool_calls: body.parallel_tool_calls } : {}),
+    // OpenAI chat rejects `parallel_tool_calls` without `tools` (400); Codex sends it tool-less.
+    ...(tools && body.parallel_tool_calls != null ? { parallel_tool_calls: body.parallel_tool_calls } : {}),
     ...(body.user ? { user: body.user } : {}),
     ...(tools ? { tools } : {}),
     ...(tools && toolChoice ? { tool_choice: toolChoice } : {}),

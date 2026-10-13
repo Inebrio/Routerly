@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 const { mockApi } = vi.hoisted(() => ({
   mockApi: vi.fn(),
@@ -24,7 +24,7 @@ function stripAnsi(value: string): string {
 
 afterEach(() => vi.clearAllMocks());
 
-function setup() {
+function _setup() {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(process, 'exit').mockImplementation((() => { throw new Error('exit'); }) as never);

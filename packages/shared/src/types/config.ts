@@ -81,7 +81,7 @@ export interface ModelInstance {
   upstreamModelId: string;
   cost: TokenCost;
   contextWindow: number;
-  /** Upstream call timeout in ms (default 60000); config-file only for now */
+  /** Upstream call timeout in ms (default 60000) */
   timeout?: number;
   limits?: Limit[];
   capabilities?: ModelCapabilities;
@@ -308,6 +308,7 @@ export interface RoutingPolicy {
   /** Whether this policy should be checked when routing */
   enabled: boolean;
   /** Optional policy-specific settings */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- policy-specific settings, shape depends on policy type
   config?: any;
 }
 

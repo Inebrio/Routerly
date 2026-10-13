@@ -170,6 +170,7 @@
       "title": "Politiche di routing",
       "subtitle": "Le politiche determinano come vengono instradate le richieste. Vengono eseguite dall'alto verso il basso.",
       "removePolicy": "Rimuovi politica",
+      "disabledBadge": "Disabilitata",
       "removeIntent": "Rimuovi intent",
       "removeExample": "Rimuovi esempio",
       "routingModels": "Modelli di routing",
@@ -1324,7 +1325,7 @@
       "candidateRouters": "Router candidati",
       "candidateRoutersHint": "I router a cui questo orchestrator instrada le richieste. Il peso influenza quanto spesso viene scelto ogni candidato; qui vengono mostrati solo nome, ID, peso e limiti opzionali specifici del candidato.",
       "routingPolicies": "Criteri di routing",
-      "routingPoliciesHint": "Un orchestrator valuta ogni router candidato nel suo insieme, quindi qui si applicano solo i criteri di integrità, limite di velocità ed equità. Gli altri tipi di criteri scelgono tra i modelli propri di un router, che un orchestrator non ha.",
+      "routingPoliciesHint": "Un orchestrator valuta ogni router candidato nel suo insieme, quindi qui si applicano solo i criteri di integrità, limite di velocità, equità, prestazioni e budget residuo. Gli altri tipi di criteri scelgono tra i modelli propri di un router, che un orchestrator non ha.",
       "router": "Router",
       "selectRouter": "Seleziona router",
       "weight": "Peso",
@@ -1885,7 +1886,9 @@
         "cacheWritePerMillion": "Scrittura cache $/1M",
         "optional": "(opz.)",
         "contextWindow": "Finestra di contesto",
-        "contextWindowHint": "(token, opzionale)"
+        "contextWindowHint": "(token, opzionale)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, opzionale — default 60000)"
       },
       "tiers": {
         "title": "Avanzato — fasce di prezzo",

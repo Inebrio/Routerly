@@ -819,7 +819,7 @@ describe('OpenAIWebAdapter branch coverage: line 299 — default endpoint', () =
     const adapter = new OpenAIWebAdapter();
     // makeModel without endpoint override — endpoint defaults to 'https://chatgpt.com' in makeModel,
     // but we need it absent so we use an object spread omitting 'endpoint'
-    const modelNoEndpoint = { ...makeModel(), endpoint: 'https://chatgpt.com' };
+    const _modelNoEndpoint = { ...makeModel(), endpoint: 'https://chatgpt.com' };
     // Actually use a model that has no endpoint key — we can just use makeModel() since its default IS chatgpt.com
     // For this test to hit the `|| 'https://chatgpt.com'` branch we need endpoint to be falsy (empty string)
     await adapter.chatCompletion(makeRequest(), { ...makeModel(), endpoint: '' });

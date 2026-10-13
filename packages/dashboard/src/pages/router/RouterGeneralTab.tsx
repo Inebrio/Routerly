@@ -74,7 +74,7 @@ export function RouterGeneralTab() {
         traceContent: router.traceContent === true,
       });
     }
-  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router]);  
 
   const isDirty =
     form.name !== (/* v8 ignore next */ router?.name ?? '') ||

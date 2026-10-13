@@ -318,6 +318,7 @@ export function RouterTokenEditPage() {
                   const override = editModels.find(m => m.modelId === pm.modelId);
                   const isEnabled = !!override;
                   const fullModel = allModels.find(m => m.id === pm.modelId);
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
                   const inheritedLabel = inheritedLimitLabel(t, pm as any, fullModel);
                   const activeCount = override?.limitRows.filter(r => r.value !== '').length ?? 0;
                   const freeCombo = override ? findFreeCombo(override.limitRows) : null;

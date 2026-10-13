@@ -298,6 +298,20 @@ describe('ModelFormPage — edit path', () => {
     expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy();
   });
 
+  it('shows the stored timeout in a field that accepts round values (step 1)', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ id: 'openai/gpt-5.2', provider: 'openai', timeout: 5000 })]);
+
+    renderPage('/dashboard/models/openai%2Fgpt-5.2');
+
+    const input = await waitFor(() => {
+      const el = document.querySelector('input[placeholder="60000"]') as HTMLInputElement | null;
+      expect(el).toBeTruthy();
+      return el!;
+    });
+    expect(input.value).toBe('5000');
+    expect(input.step).toBe('1');
+  });
+
   it('shows error when editing unknown id', async () => {
     mockGetModels.mockResolvedValue([]);
 
@@ -336,7 +350,7 @@ describe('ModelFormPage — navigation state.catalogEntry', () => {
 
     // Pricing fields are 0 for local/free model
     const spinners = screen.getAllByRole('spinbutton') as HTMLInputElement[];
-    const inputPrice = spinners.find(i => i.name === 'inputPerMillion' || i.placeholder?.includes('Input'));
+    const _inputPrice = spinners.find(i => i.name === 'inputPerMillion' || i.placeholder?.includes('Input'));
     // local free: value is '0'
     const zeroFields = spinners.filter(i => i.value === '0');
     expect(zeroFields.length).toBeGreaterThanOrEqual(2);
@@ -1326,7 +1340,7 @@ describe('ModelFormPage — save create', () => {
 
     const user = userEvent.setup();
     // Give it a custom ID so we don't hit the "already exists" guard
-    const customIdInput = screen.getByPlaceholderText(/openai\//) as HTMLInputElement ?? screen.getAllByRole('textbox')[0]!;
+    const _customIdInput = screen.getByPlaceholderText(/openai\//) as HTMLInputElement ?? screen.getAllByRole('textbox')[0]!;
     // use the modelId input directly
     const allTextboxes = screen.getAllByRole('textbox') as HTMLInputElement[];
     const customIdBox = allTextboxes.find(i => i.name === 'modelId');
@@ -1840,7 +1854,7 @@ describe('ModelFormPage — show/hide token', () => {
 
     // Click the eye toggle
     const toggleBtns = screen.getAllByRole('button').filter(b => !b.hasAttribute('type') || b.getAttribute('type') === 'button');
-    const eyeBtn = toggleBtns.find(b => b.querySelector('svg'));
+    const _eyeBtn = toggleBtns.find(b => b.querySelector('svg'));
     // Find specifically the eye toggle (not submit/cancel/back)
     const eyeToggle = screen.getAllByRole('button').find(b =>
       b.style.background === 'none' && !b.textContent?.trim()

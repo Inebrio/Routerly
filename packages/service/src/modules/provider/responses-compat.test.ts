@@ -93,6 +93,14 @@ describe('responsesToChatRequest', () => {
     expect(chat.messages).toEqual([{ role: 'user', content: 'hi' }]);
   });
 
+  it('forwards parallel_tool_calls only when tools are present', () => {
+    const tool = { type: 'function', name: 'f', parameters: {} };
+    const without = responsesToChatRequest({ model: 'm', input: 'hi', parallel_tool_calls: false });
+    expect(without.parallel_tool_calls).toBeUndefined();
+    const withTools = responsesToChatRequest({ model: 'm', input: 'hi', parallel_tool_calls: false, tools: [tool] } as any);
+    expect(withTools.parallel_tool_calls).toBe(false);
+  });
+
   it('maps max_output_tokens to max_tokens, not the other way round', () => {
     const chat = responsesToChatRequest({ model: 'm', input: 'hi', max_output_tokens: 128 });
     expect(chat.max_tokens).toBe(128);

@@ -48,8 +48,6 @@ const output: Processor<ProxyContext> = {
   phase: 'response.postprocess',
   weight: -10, // runs FIRST in the phase, so it wraps the stream BEFORE guardrail.response does.
   run(ctx) {
-    // Asymmetry: output PII is an OpenAI-lane concern only (routes/anthropic.ts has none).
-    if (ctx.protocol !== 'openai') return
     const policies = ctx.router.pii?.policies
     if (!policies?.length) return
     const effective = mergePolicies(policies, 'output')
@@ -90,7 +88,7 @@ const output: Processor<ProxyContext> = {
 }
 
 export const piiModule: RouterlyModule = defineModule({
-  manifest: { id: 'pii', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'pii', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
   register({ container }) {
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(input)

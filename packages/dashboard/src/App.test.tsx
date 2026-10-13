@@ -85,7 +85,7 @@ const mockUseAuth = vi.mocked(useAuth);
 
 const adminUser = { id: 'u1', email: 'admin@test.com', role: 'admin', totpEnabled: false };
 const logoutFn = vi.fn();
-const navigateFn = vi.fn();
+const _navigateFn = vi.fn();
 
 // ponytail: useNavigate is internal to react-router; we can't easily mock it here,
 // so we test via actual routing. Keep tests at the branch level.
@@ -160,6 +160,12 @@ describe('SetupGuard', () => {
 // ── ProtectedLayout — banners ─────────────────────────────────────────────────
 
 describe('ProtectedLayout — update banner', () => {
+  it('shows the current version under the sign-out link', async () => {
+    mockGetSystemInfo.mockResolvedValue({ isDocker: false, version: '9.8.7' });
+    renderApp();
+    await waitFor(() => expect(screen.getByTestId('sidebar-version').textContent).toBe('v9.8.7'));
+  });
+
   it('shows update banner when update is available (non-docker admin)', async () => {
     mockGetSystemInfo.mockResolvedValue({
       isDocker: false,

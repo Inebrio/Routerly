@@ -318,10 +318,24 @@ input, select, textarea { font-family: inherit; }
 .main-content {
   margin-inline-start: var(--sidebar-width);
   flex: 1;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   transition: margin-inline-start 0.22s ease;
+}
+
+/* Phones: sidebar is a rail; expanding it overlays the content. */
+@media (max-width: 768px) {
+  .main-content,
+  .sidebar-collapsed .main-content { margin-inline-start: var(--sidebar-width-collapsed); }
+  .page-header { padding-left: 16px; padding-right: 16px; }
+  .page-body { padding-left: 16px; padding-right: 16px; }
+  .table-wrap { max-width: 100%; }
+  /* Wide content (tables, tab bars, toolbars) scrolls inside the page, never the document. */
+  .main-content { overflow-x: hidden; }
+  .page-header,
+  .page-body { overflow-x: auto; }
 }
 
 .sidebar-collapsed .main-content {

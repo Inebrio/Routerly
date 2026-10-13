@@ -161,14 +161,14 @@ describe('OpenAIAdapter.streamCompletion', () => {
   });
 
   it('passes stream: true to the client', async () => {
-    async function* empty() {}
+    async function* empty() { /* drain */ }
     create.mockResolvedValue(empty());
 
     const adapter = new OpenAIAdapter();
     for await (const _ of adapter.streamCompletion(
       { model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }] },
       makeModel(),
-    )) {}
+    )) { /* drain */ }
 
     const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(calledWith).toHaveProperty('stream', true);

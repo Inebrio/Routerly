@@ -61,7 +61,7 @@ export class Kernel {
       try {
         await mod.migrate()
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error(`[kernel] migration failed for module ${mod.manifest.id}:`, err)
       }
     }

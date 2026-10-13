@@ -169,12 +169,15 @@ export async function emitEvent(
     await Promise.all(
       matchedChannels.map(async (channel) => {
         // If channel is scoped to specific routers, skip if this event isn't from one of them
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
         if ((channel as any).routers?.length > 0 && opts.routerId) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
           if (!((channel as any).routers as string[]).includes(opts.routerId)) {
             return;
           }
         }
         // Per-channel cooldown: skip if within the configured interval.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
         const cooldownMs = ((channel as any).cooldownSeconds ?? 0) * 1000;
         if (cooldownMs > 0) {
           const key = `${channel.id}:${event}`;

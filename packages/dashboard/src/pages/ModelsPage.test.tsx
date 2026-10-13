@@ -32,7 +32,7 @@ vi.mock('../components/SearchableSelect', () => ({
 
 // ponytail: gate 'resilience:manage' on a mutable flag ('mock' prefix so vi.mock hoist allows it);
 // everything else the component asks `can()` about is granted.
-let mockCanManage = true;
+const mockCanManage = true;
 let mockCanWriteModels = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
@@ -297,6 +297,17 @@ describe('ModelsPage — delete with ConfirmDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     await waitFor(() => expect(mockDeleteModel).toHaveBeenCalledWith('gpt-4o'));
     await waitFor(() => expect(screen.queryByText('gpt-4o')).toBeNull());
+  });
+
+  it('shows the error and keeps the row when deleteModel is rejected', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockDeleteModel.mockRejectedValue(new Error('Model "gpt-4o" is used by router(s): r1.'));
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByTitle('Remove'));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => screen.getByText(/is used by router\(s\)/));
+    expect(screen.getByText('gpt-4o')).toBeTruthy();
   });
 });
 
@@ -1308,5 +1319,31 @@ describe('ModelsPage — permissions', () => {
     expect(screen.queryByTitle('Edit')).toBeNull();
     expect(screen.getByTitle('Test')).toBeTruthy();
     mockCanWriteModels = true;
+  });
+});
+
+describe('ModelsPage — per-model Reset', () => {
+  async function reset(model: Record<string, unknown>) {
+    mockResetResilience.mockResolvedValue(undefined);
+    mockGetModels.mockResolvedValue([makeModel(model)]);
+    mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
+    await userEvent.click(await screen.findByTitle('Reset circuit breaker'));
+    await userEvent.click(await screen.findByText('Confirm'));
+    await waitFor(() => expect(mockResetResilience).toHaveBeenCalledTimes(3));
+  }
+
+  it('resets the connection key by connectionId', async () => {
+    await reset({ connectionId: 'conn-1' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'conn-1' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'provider', id: 'openai' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'model', id: 'gpt-4o' });
+  });
+
+  it('falls back to provider for legacy models without connectionId', async () => {
+    await reset({});
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'openai' });
   });
 });

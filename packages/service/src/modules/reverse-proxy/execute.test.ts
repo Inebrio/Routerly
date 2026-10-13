@@ -296,6 +296,27 @@ async function* makeStream(...chunks: any[]) {
 }
 
 describe('llmStream', () => {
+  it('injectUsage:false forwards the body untouched and estimates usage', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'hello world!' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    const req = { messages: [{ role: 'user', content: 'hi' }] } as any
+    const result = await llmStream(req, makeModel(), makeCtx(), { injectUsage: false })
+    for await (const _ of result.chunks) { /* consume */ }
+    expect(sc.mock.calls[0]![0]).toBe(req)
+    expect(sc.mock.calls[0]![0]).not.toHaveProperty('stream_options')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'success', inputTokens: expect.any(Number), outputTokens: 3 }))
+    expect(mockTrackUsage.mock.calls.at(-1)![0].inputTokens).toBeGreaterThan(0)
+  })
+
+  it('injects stream_options by default', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const sc = vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'x' } }] }))
+    mockGetProvider.mockReturnValue({ streamCompletion: sc } as any)
+    await llmStream({ messages: [] } as any, makeModel(), makeCtx())
+    expect(sc.mock.calls[0]![0].stream_options).toEqual({ include_usage: true })
+  })
+
   it('returns ttftMs and yields chunks', async () => {
     mockIsAllowed.mockResolvedValue(true)
     const chunk = { choices: [{ delta: { content: 'hi' } }] }
@@ -841,7 +862,7 @@ describe('llmStream — additional branches', () => {
       tags: { source: 'api' },
     })
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
-    for await (const _ of result.chunks) {}
+    for await (const _ of result.chunks) { /* drain */ }
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
       endUserId: 'user-stream',
       sessionId: 'session-stream',
@@ -887,7 +908,7 @@ describe('llmStream — additional branches', () => {
     }
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(rateLimit()) } as any)
     const result = await llmStream({ messages: [] } as any, makeModel(), makeCtx())
-    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('rate limit exceeded')
+    await expect(async () => { for await (const _ of result.chunks) { /* drain */ } }).rejects.toThrow('rate limit exceeded')
     expect(mockEmitEvent).toHaveBeenCalledWith('provider.rate_limited', expect.any(String), expect.any(Object), expect.any(Object))
   })
 
@@ -902,7 +923,7 @@ describe('llmStream — additional branches', () => {
     const emitted: any[] = []
     const ctx = makeCtx({ emit: (e: any) => emitted.push(e) })
     const result = await llmStream({ messages: [] } as any, makeModel(), ctx)
-    for await (const _ of result.chunks) {}
+    for await (const _ of result.chunks) { /* drain */ }
     const successEntry = emitted.find(e => e.message === 'model:success')
     expect(successEntry?.details?.cachedInputTokens).toBe(3)
   })
@@ -1214,7 +1235,7 @@ describe('llmStream — .catch(() => {}) coverage for emitEvent rejections', () 
     }
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failMid()) } as any)
     const result = await llmStream({ messages: [] } as any, model, makeCtx())
-    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('mid fail')
+    await expect(async () => { for await (const _ of result.chunks) { /* drain */ } }).rejects.toThrow('mid fail')
     mockEmitEvent.mockResolvedValue(undefined)
   })
 
@@ -1224,7 +1245,7 @@ describe('llmStream — .catch(() => {}) coverage for emitEvent rejections', () 
     mockIsAllowed.mockResolvedValue(true)
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(makeStream({ choices: [{ delta: { content: 'ok' } }] })) } as any)
     const result = await llmStream({ messages: [] } as any, model, makeCtx())
-    for await (const _ of result.chunks) {}
+    for await (const _ of result.chunks) { /* drain */ }
     // No throw — .catch(() => {}) swallowed it
   })
 })
@@ -1805,7 +1826,7 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     }
     mockGetProvider.mockReturnValue({ streamCompletion: vi.fn().mockReturnValue(failMid()) } as any)
     const result = await llmStream({ messages: [] } as any, model, makeCtx())
-    await expect(async () => { for await (const _ of result.chunks) {} }).rejects.toThrow('mid fail')
+    await expect(async () => { for await (const _ of result.chunks) { /* drain */ } }).rejects.toThrow('mid fail')
     expect(store.records).toHaveLength(1)
     expect(store.records[0]!.key).toEqual({ level: 'provider', id: 'openai' })
   })

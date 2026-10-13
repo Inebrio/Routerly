@@ -94,6 +94,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const body = ctx.request
     const log = ctx.log
     const router = ctx.router
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const endUserId = (body as any).user as string | undefined || undefined
 
     // Provider response headers of the call that answers (a failed candidate's are overwritten).
@@ -175,7 +176,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
 
     if (ctx.stream) {
       try {
-        const streamResult = await llmStream(body, model, cctx)
+        const streamResult = await llmStream(body, model, cctx, { injectUsage: false })
         ctx.result = { kind: 'stream', body: streamResult.chunks, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {

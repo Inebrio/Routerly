@@ -267,6 +267,16 @@ describe('RouterRoutingTab — loads existing policies', () => {
     const payload = mockUpdateRouter.mock.calls[0]![1] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('timeoutMs');
   });
+
+  it('disabled policy shows badge and Save keeps enabled:false (ROUT-207)', async () => {
+    renderTab({ ...mockRouter, policies: [{ type: 'health', enabled: true }, { type: 'context', enabled: false }] });
+    await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
+    expect(screen.getAllByText('Disabled')).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as { policies: { type: string; enabled: boolean }[] };
+    expect(payload.policies.map(p => [p.type, p.enabled])).toEqual([['health', true], ['context', false]]);
+  });
 });
 
 // ── Add / Remove policies ─────────────────────────────────────────────────────
@@ -658,7 +668,7 @@ describe('RouterRoutingTab — LLM policy fields', () => {
     const addBtns = screen.getAllByText('Add Fallback Model');
     await userEvent.click(addBtns[addBtns.length - 1]!);
     await waitFor(() => {
-      const rows = document.querySelectorAll('[style*="cache"]') ?? [];
+      const _rows = document.querySelectorAll('[style*="cache"]') ?? [];
       // Just verify there are now 2 embedding model selects (primary + fallback)
       const embeddingSelects = document.querySelectorAll('[data-testid="searchable-Select model"]');
       expect(embeddingSelects.length).toBeGreaterThanOrEqual(2);
@@ -773,7 +783,7 @@ describe('RouterRoutingTab — semantic-intent policy fields', () => {
     await waitFor(() => screen.getAllByText('support'));
     // Click the intent row (the one inside the intent list, not a badge)
     const intentRows = document.querySelectorAll('[title="Remove intent"]');
-    const supportRow = Array.from(intentRows).find(btn =>
+    const _supportRow = Array.from(intentRows).find(btn =>
       btn.closest('div')?.previousSibling?.textContent?.includes('support') ||
       btn.closest('div[style]')?.textContent?.includes('support')
     );

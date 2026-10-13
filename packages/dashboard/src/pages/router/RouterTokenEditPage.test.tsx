@@ -343,7 +343,7 @@ describe('RouterTokenEditPage — model override toggle', () => {
     renderPage();
     await waitFor(() => screen.getByText('Metric'));
     // The X button for the limit row
-    const removeBtns = screen.getAllByRole('button').filter(b => {
+    const _removeBtns = screen.getAllByRole('button').filter(b => {
       // X buttons have no text label; they contain an SVG icon.
       // Find by proximity to a limit row grid.
       const parent = b.parentElement;

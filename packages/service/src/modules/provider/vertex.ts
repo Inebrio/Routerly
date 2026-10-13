@@ -55,7 +55,7 @@ async function getGoogleAccessToken(serviceAccountKeyJson: string): Promise<stri
  * Auth is handled via service account JWT token exchange.
  */
 export class VertexAdapter extends OpenAIAdapter {
-  protected override getClient(model: ModelConfig): OpenAI {
+  protected override getClient(_model: ModelConfig): OpenAI {
     // Token is fetched async; getClient is synchronous here so we return a placeholder.
     // The actual token is injected via a custom fetch implementation in the OpenAI SDK.
     // We override chatCompletion/streamCompletion to await the token first.

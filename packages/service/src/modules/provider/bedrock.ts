@@ -134,11 +134,14 @@ export class BedrockAdapter implements ProviderAdapter {
       const text = await resp.text().catch(() => resp.statusText);
       throw new Error(`Bedrock error ${resp.status}: ${text}`);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const data = await resp.json() as any;
 
     // Converse API response → OpenAI format
     const text = (data.output?.message?.content ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .filter((b: any) => b.type === 'text' || b.text)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       .map((b: any) => b.text ?? '')
       .join('');
 

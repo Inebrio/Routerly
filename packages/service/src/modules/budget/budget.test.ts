@@ -4,7 +4,7 @@ vi.mock('../config/loader.js', () => ({ readConfig: vi.fn() }))
 
 import { isAllowed, getViolatedLimits, getLimitUsageSnapshot, isAllowedForRoutingModel } from './budget.js'
 import { readConfig } from '../config/loader.js'
-import type { ModelConfig, RouterConfig, Settings, UsageRecord } from '@routerly/shared'
+import type { ModelConfig, RouterConfig, UsageRecord } from '@routerly/shared'
 
 const mockReadConfig = vi.mocked(readConfig)
 
@@ -323,7 +323,7 @@ describe('isAllowed - more metric types', () => {
 describe('startOfPeriod weekly – Sunday boundary (line 19)', () => {
   it('weekly period: Sunday rolls back to previous Monday (day===0 branch)', async () => {
     // Use a known Sunday — 2024-06-09 (Sunday)
-    const sunday = new Date('2024-06-09T12:00:00.000Z')
+    const _sunday = new Date('2024-06-09T12:00:00.000Z')
     // We need to exercise startOfPeriod indirectly via isAllowed with a weekly limit.
     // A record timestamped on Monday 2024-06-03 is in the same ISO week as Sunday 2024-06-09
     // only when day===0 maps diff to -6 (going back to 2024-06-03 Monday).
