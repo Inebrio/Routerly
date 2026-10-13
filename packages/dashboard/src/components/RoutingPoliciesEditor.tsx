@@ -236,6 +236,11 @@ export function RoutingPoliciesEditor({ policies, setPolicies, availableModels, 
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'capitalize' }}>
                         {policyLabel(t, policy.type)}
+                        {!policy.enabled && (
+                          <span style={{ marginLeft: 8, fontSize: '0.68rem', fontWeight: 500, textTransform: 'none', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 6px' }}>
+                            {t('common.routingPolicies.disabledBadge')}
+                          </span>
+                        )}
                       </div>
                       {policyDescription(t, policy.type) && (
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>

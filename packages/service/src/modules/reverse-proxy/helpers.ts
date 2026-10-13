@@ -6,6 +6,7 @@ import type { ProxyContext, ProxyResult } from './context.js'
 import { StreamingScrubber, scrubText } from '../pii/piiScrubber.js'
 import type { EffectivePii } from '../pii/piiScrubber.js'
 import { checkGuardrails } from '../guardrails/guardrails.js'
+import { openAIChunksToAnthropicSSE } from '../provider/messages-compat.js'
 import { chatToResponsesObject, openAIChunksToResponsesSSE } from '../provider/responses-compat.js'
 import type { ResponsesRequest } from '../provider/responses-compat.js'
 
@@ -96,6 +97,15 @@ export async function writeOpenAIStreamingBlock(ctx: ProxyContext): Promise<void
     ctx.result = { kind: 'block' }
     return
   }
+  if (ctx.protocol === 'anthropic') {
+    // Same block as an Anthropic event sequence: empty message, stop_reason refusal.
+    for await (const line of openAIChunksToAnthropicSSE((async function* () { yield blocked })(), `msg_${ctx.traceId}`, body.model ?? '')) {
+      reply.raw.write(line)
+    }
+    reply.raw.end()
+    ctx.result = { kind: 'block' }
+    return
+  }
   reply.raw.write(`data: ${JSON.stringify(blocked)}\n\n`)
   reply.raw.write('data: [DONE]\n\n')
   reply.raw.end()
@@ -168,21 +178,30 @@ export async function* wrapWithStreamingScrubber(
   ctx: ProxyContext,
 ): AsyncGenerator<unknown> {
   const scrubber = new StreamingScrubber(effective)
+  let last: any
   for await (const chunk of iter) {
+    last = chunk
     let outChunk = chunk
-    const delta = chunk.choices?.[0]?.delta?.content
-    if (typeof delta === 'string' && delta.length > 0) {
-      const scrubbed = scrubber.push(delta)
-      const c0 = chunk.choices![0]!
-      outChunk = { ...chunk, choices: [{ index: c0.index, finish_reason: c0.finish_reason, delta: { ...c0.delta, content: scrubbed } }] }
+    const c0 = chunk.choices?.[0]
+    const delta = c0?.delta?.content
+    let content = typeof delta === 'string' && delta.length > 0 ? scrubber.push(delta) : undefined
+    // The held-back tail goes out merged into the finish_reason chunk, so the stream
+    // still ends on that chunk with constant id/model.
+    if (c0?.finish_reason) {
+      const tail = scrubber.flush()
+      if (tail) content = (content ?? '') + tail
+    }
+    if (content !== undefined) {
+      outChunk = { ...chunk, choices: [{ ...c0, delta: { ...c0.delta, content } }, ...chunk.choices.slice(1)] }
     }
     yield outChunk
   }
+  // Fallback for a stream that ended without a finish_reason chunk.
   const remaining = scrubber.flush()
   if (remaining) {
     yield {
-      id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk',
-      created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '',
+      id: last?.id ?? `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk',
+      created: last?.created ?? Math.floor(Date.now() / 1000), model: last?.model ?? ctx.request.model ?? '',
       choices: [{ index: 0, delta: { content: remaining }, finish_reason: null }],
     }
   }

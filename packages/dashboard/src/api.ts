@@ -215,6 +215,7 @@ export interface Model {
   upstreamModelId?: string;
   cost: { inputPerMillion: number; outputPerMillion: number; cachePerMillion?: number; cacheWritePerMillion?: number; pricingTiers?: PricingTier[] };
   contextWindow?: number;
+  timeout?: number;
   limits?: Limit[];
   /** @deprecated use limits */ globalThresholds?: { daily?: number; weekly?: number; monthly?: number };
   capabilities?: ModelCapabilities;
