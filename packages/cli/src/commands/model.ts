@@ -370,7 +370,8 @@ Examples:
         id: opts.id,
         name: opts.id,
         provider: opts.provider,
-        cost,
+        // The API reads flat price fields, not a nested `cost` object.
+        ...cost,
         ...(limits?.length ? { limits } : {}),
         ...(opts.connection
           ? { connectionId: opts.connection }
@@ -509,11 +510,14 @@ Examples:
       const body: Record<string, unknown> = {
         provider:      opts.provider      ?? existing.provider,
         endpoint:      opts.endpoint      ?? existing.endpoint,
-        cost:          updatedCost,
+        // The API reads flat price fields, not a nested `cost` object.
+        ...updatedCost,
         ...(opts.newId        ? { id: opts.newId }                                           : {}),
         ...(opts.apiKey       ? { apiKey: opts.apiKey }                                      : {}),
         ...(opts.contextWindow ? { contextWindow: parseInt(opts.contextWindow, 10) }          : {}),
-        ...(limits !== undefined ? { limits } : {}),
+        // PUT clears limits when the body omits them: resend the existing ones.
+        ...(limits !== undefined ? { limits }
+          : (existing as ModelConfig & { limits?: Limit[] }).limits?.length ? { limits: (existing as ModelConfig & { limits?: Limit[] }).limits } : {}),
       };
 
       try {
