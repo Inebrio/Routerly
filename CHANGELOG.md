@@ -44,6 +44,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **`GET /v1/models/{id}` with a literal slash** — `models.retrieve('openai/gpt-4.1-nano')` from the OpenAI SDK no longer gets a bare 404 (both the raw and `%2F` forms resolve). An unknown id now returns the OpenAI error shape (`type: invalid_request_error`, `param: null`, `code: model_not_found`), and the `routerly/ada` sentinel listed by `/v1/models` is retrievable too.
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.

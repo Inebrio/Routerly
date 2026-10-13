@@ -4,6 +4,13 @@ import type { ResponsesRequest } from '../provider/responses-compat.js';
 import { listEffectiveModels } from '../provider/list-effective.js';
 import { buildOpenAIContext, buildResponsesContext, runProxy, getProxyPipeline } from '../reverse-proxy/index.js';
 
+const ADA_PLACEHOLDER: ModelObject = {
+  id: 'routerly/ada',
+  object: 'model',
+  created: 0,
+  owned_by: 'routerly',
+};
+
 export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
   // ─── POST /v1/chat/completions ───────────────────────────────────────────────
   fastify.post<{ Body: ChatCompletionRequest }>(
@@ -54,36 +61,31 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       owned_by: m.provider,
     }));
 
-    const adaPlaceholder: ModelObject = {
-      id: 'routerly/ada',
-      object: 'model',
-      created: 0,
-      owned_by: 'routerly',
-    };
-
-    return reply.send({ object: 'list', data: [adaPlaceholder, ...data] });
+    return reply.send({ object: 'list', data: [ADA_PLACEHOLDER, ...data] });
   });
 
-  // ─── GET /v1/models/:model ────────────────────────────────────────────────────
-  fastify.get<{ Params: { model: string } }>('/v1/models/:model', async (request, reply) => {
-    const router = request.router;
+  // ─── GET /v1/models/* ─────────────────────────────────────────────────────────
+  // Wildcard: model ids contain a literal "/" (provider/model), which the OpenAI SDK
+  // does not encode. find-my-way decodes %2F too, so both forms resolve.
+  fastify.get<{ Params: { '*': string } }>('/v1/models/*', async (request, reply) => {
+    const id = request.params['*'];
+    const notFound = () => reply.status(404).send({
+      error: {
+        message: `The model '${id}' does not exist or is not available to this router.`,
+        type: 'invalid_request_error',
+        param: null,
+        code: 'model_not_found',
+      },
+    });
+
+    // Sentinel listed by GET /v1/models; must stay retrievable.
+    if (id === ADA_PLACEHOLDER.id) return reply.send(ADA_PLACEHOLDER);
+
     // client-facing list: only models on enabled connections are routable
     const allModels = await listEffectiveModels();
-
-    // Ensure the model is available to the router
-    const isAvailable = router.models.some((ref) => ref.modelId === request.params.model);
-    if (!isAvailable) {
-      return reply.status(404).send({
-        error: { type: 'not_found', message: `Model '${request.params.model}' not found or not available to this router.` }
-      });
-    }
-
-    const modelInfo = allModels.find((m) => m.id === request.params.model);
-    if (!modelInfo) {
-      return reply.status(404).send({
-        error: { type: 'not_found', message: `Model '${request.params.model}' not found.` }
-      });
-    }
+    if (!request.router.models.some((ref) => ref.modelId === id)) return notFound();
+    const modelInfo = allModels.find((m) => m.id === id);
+    if (!modelInfo) return notFound();
 
     const data: ModelObject = {
       id: modelInfo.id,
@@ -91,7 +93,6 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       created: Math.floor(Date.now() / 1000),
       owned_by: modelInfo.provider,
     };
-
     return reply.send(data);
   });
 };
