@@ -424,7 +424,7 @@ Examples:
   routerly router model add my-api openai/gpt-5.2
   routerly router model add my-api anthropic/claude-opus-4-6 --prompt "Use for complex reasoning tasks"
 `)
-    .option('--prompt <text>', 'System prompt hint used when this model is selected')
+    .option('--prompt <text>', 'Routing guidance for the LLM routing policy (not sent upstream)')
     .action(async (nameOrId: string, modelId: string, opts: { prompt?: string }) => {
       if (modelId === PASSTHROUGH_MODEL_ID) {
         console.error(chalk.red('The pass-through entry cannot be added manually — it is always present on a passthrough-kind router.'));
@@ -482,7 +482,7 @@ Examples:
     });
 
   cmd.command('set-prompt <router> <model-id>')
-    .description('Set or update the system prompt hint for a model in a router')
+    .description('Set or update the routing guidance for a model in a router (LLM routing policy only, not sent upstream)')
     .addHelpText('after', `
 Examples:
   routerly router model set-prompt my-api openai/gpt-5.2 --prompt "Use for fast, simple tasks"
