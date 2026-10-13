@@ -74,7 +74,7 @@ ask for the same things in the same order.
 | `openai-web`, `anthropic-web` | the session token for that provider, an optional **cf_clearance**, and an unofficial-provider warning |
 | `azure-openai` | **Azure Resource Name**, **Deployment ID**, **API Version** |
 | `bedrock` | **AWS Region**, **AWS Access Key ID**, **AWS Secret Access Key**, optional **Session Token** |
-| `vertex` | **GCP Router ID**, **Location**, **Service Account Key** (JSON) |
+| `vertex` | **GCP Project ID**, **Location**, **Service Account Key** (JSON) |
 
 **Endpoint URL** sits above them and is optional on a connection: leaving it
 blank keeps the provider default. Routerly encrypts OAuth and web-session

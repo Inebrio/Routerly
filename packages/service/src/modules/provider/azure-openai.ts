@@ -17,6 +17,7 @@ export class AzureOpenAIAdapter extends OpenAIAdapter {
       defaultQuery: { 'api-version': apiVersion },
       defaultHeaders: { 'api-key': model.apiKey ?? '' },
       timeout: model.timeout ?? 60000,
+      maxRetries: 0, // retry/failover is Routerly's job (resilience + candidate loop); SDK retries multiplied the timeout x3
     });
   }
 }
