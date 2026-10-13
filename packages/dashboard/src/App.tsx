@@ -261,7 +261,7 @@ function ProtectedLayout() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed');
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed' || window.innerWidth <= 768);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isDocker, setIsDocker] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(() => {
