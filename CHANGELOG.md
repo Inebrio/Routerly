@@ -42,9 +42,9 @@ A Passthrough router's model list can now hold real target models alongside its 
 **Execution wiring for a Passthrough router's real target models** (follow-up to the above)
 A Passthrough router's real target models now route, authenticate, and meter exactly like a normal router: same policy scoring, same budget/limit enforcement, same usage tracking. A Routerly bearer token is issued the moment the router has its first real model configured and revoked the moment the last one is removed; the pass-through entry itself keeps its existing unauthenticated, budget-exempt raw-forward behavior. The pass-through entry's position in the model list decides the router's default outcome: at index 0 (ahead of every real model), raw-forward always wins and real models are never scored; anywhere else, real models are scored and routed normally and the pass-through entry is used only as a last-resort fallback when none of them are eligible. On that fallback, Routerly forwards the client's own request headers unchanged rather than substituting a provider credential, so a client authenticating only with its Routerly token should expect the upstream provider to reject the fallback request with its own `401` unless it also sends a valid upstream credential.
 
-
 ### Bug fixes
 
+- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
@@ -133,6 +133,7 @@ The service core has been reorganized from inline route handlers into a dependen
 
 ### Bug fixes
 
+- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - Fixed `updatedAt` in the model catalog always equalling `lastChecked` on first fetch, and the last repo in the list silently overriding earlier ones on a key conflict
 - Fixed "Unrecognized keys: notificationRules, cooldowns" error when saving notification settings, and email provider parity with the dashboard
 - Fixed Gemini adapter stripping the provider prefix from the model ID before the upstream call
@@ -219,6 +220,7 @@ Routerly can be used as a drop-in proxy for Claude Code by setting `ANTHROPIC_BA
 
 ### Bug fixes and maintenance
 
+- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - Fixed config write lock retry budget for high-concurrency scenarios
 - Fixed guardrail/blocked breakdown in CLI `report usage`
 - Fixed dashboard: prevent login redirect loop and double-encoded `to` param
@@ -297,6 +299,7 @@ New Help page in the dashboard with links to documentation, GitHub Issues, and e
 
 ### Bug fixes and maintenance
 
+- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - Fixed `GET /api/system/info` being incorrectly protected by JWT middleware — it is now public
 - Fixed Qwen3 thinking-only response handling in the Ollama adapter
 - Fixed `reasoning_effort` being forwarded to non-o-series OpenAI models
