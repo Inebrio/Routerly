@@ -21,7 +21,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     console.log(display());
 
     const { action } = await inquirer.prompt([{
-      type: 'list', name: 'action', message: 'Limits:',
+      type: 'select', name: 'action', message: 'Limits:',
       choices: [
         { name: 'Add a limit', value: 'add' },
         ...(limits.length ? [{ name: 'Remove a limit', value: 'remove' }] : []),
@@ -33,7 +33,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
 
     if (action === 'remove') {
       const { idx } = await inquirer.prompt([{
-        type: 'list', name: 'idx', message: 'Which limit to remove?',
+        type: 'select', name: 'idx', message: 'Which limit to remove?',
         choices: limits.map((l, i) => ({ name: `${l.metric} ${l.windowType === 'period' ? l.period : `rolling ${l.rollingAmount} ${l.rollingUnit}`} ≤ ${l.value}`, value: i })),
       }]);
       limits.splice(idx, 1);
@@ -41,14 +41,14 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     }
 
     const { metric, windowType } = await inquirer.prompt([
-      { type: 'list', name: 'metric', message: 'Metric:', choices: ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'] },
-      { type: 'list', name: 'windowType', message: 'Window type:', choices: [{ name: 'period (calendar boundary)', value: 'period' }, { name: 'rolling (sliding window)', value: 'rolling' }] },
+      { type: 'select', name: 'metric', message: 'Metric:', choices: ['cost', 'calls', 'input_tokens', 'output_tokens', 'total_tokens'] },
+      { type: 'select', name: 'windowType', message: 'Window type:', choices: [{ name: 'period (calendar boundary)', value: 'period' }, { name: 'rolling (sliding window)', value: 'rolling' }] },
     ]);
 
     let limitEntry: Limit;
     if (windowType === 'period') {
       const { period } = await inquirer.prompt([
-        { type: 'list', name: 'period', message: 'Period:', choices: ['hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
+        { type: 'select', name: 'period', message: 'Period:', choices: ['hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
       ]);
       const { value } = await inquirer.prompt([
         { type: 'input', name: 'value', message: `Max ${metric} per ${period}:`, validate: (v: string) => !isNaN(parseFloat(v)) || 'Must be a number' },
@@ -57,7 +57,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     } else {
       const { rollingAmount, rollingUnit, value } = await inquirer.prompt([
         { type: 'input', name: 'rollingAmount', message: 'Window size (number):', validate: (v: string) => !isNaN(parseInt(v)) || 'Must be an integer' },
-        { type: 'list', name: 'rollingUnit', message: 'Window unit:', choices: ['second', 'minute', 'hour', 'day', 'week', 'month'] },
+        { type: 'select', name: 'rollingUnit', message: 'Window unit:', choices: ['second', 'minute', 'hour', 'day', 'week', 'month'] },
         { type: 'input', name: 'value', message: `Max ${metric}:`, validate: (v: string) => !isNaN(parseFloat(v)) || 'Must be a number' },
       ]);
       limitEntry = { metric, windowType: 'rolling', rollingAmount: parseInt(rollingAmount), rollingUnit, value: parseFloat(value) };
@@ -81,7 +81,7 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
     console.log(display());
 
     const { action } = await inquirer.prompt([{
-      type: 'list', name: 'action', message: 'Pricing tiers:',
+      type: 'select', name: 'action', message: 'Pricing tiers:',
       choices: [
         { name: 'Add a tier', value: 'add' },
         ...(tiers.length ? [{ name: 'Remove a tier', value: 'remove' }] : []),
@@ -93,7 +93,7 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
 
     if (action === 'remove') {
       const { idx } = await inquirer.prompt([{
-        type: 'list', name: 'idx', message: 'Which tier to remove?',
+        type: 'select', name: 'idx', message: 'Which tier to remove?',
         choices: tiers.map((t, i) => ({ name: `${t.metric} > ${t.above}: $${t.inputPerMillion}/$${t.outputPerMillion}`, value: i })),
       }]);
       tiers.splice(idx, 1);
@@ -370,7 +370,8 @@ Examples:
         id: opts.id,
         name: opts.id,
         provider: opts.provider,
-        cost,
+        // The API reads flat price fields, not a nested `cost` object.
+        ...cost,
         ...(limits?.length ? { limits } : {}),
         ...(opts.connection
           ? { connectionId: opts.connection }
@@ -509,11 +510,14 @@ Examples:
       const body: Record<string, unknown> = {
         provider:      opts.provider      ?? existing.provider,
         endpoint:      opts.endpoint      ?? existing.endpoint,
-        cost:          updatedCost,
+        // The API reads flat price fields, not a nested `cost` object.
+        ...updatedCost,
         ...(opts.newId        ? { id: opts.newId }                                           : {}),
         ...(opts.apiKey       ? { apiKey: opts.apiKey }                                      : {}),
         ...(opts.contextWindow ? { contextWindow: parseInt(opts.contextWindow, 10) }          : {}),
-        ...(limits !== undefined ? { limits } : {}),
+        // PUT clears limits when the body omits them: resend the existing ones.
+        ...(limits !== undefined ? { limits }
+          : (existing as ModelConfig & { limits?: Limit[] }).limits?.length ? { limits: (existing as ModelConfig & { limits?: Limit[] }).limits } : {}),
       };
 
       try {

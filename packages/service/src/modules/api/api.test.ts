@@ -2037,7 +2037,7 @@ describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
     })
     await authApp.close()
     expect(authRes.statusCode).toBe(401)
-    expect(authRes.json()).toEqual({ error: 'unauthorized', message: 'Invalid router token.' })
+    expect(authRes.json()).toEqual({ error: { message: 'Invalid router token.', type: 'invalid_request_error', param: null, code: 'invalid_api_key' } })
   })
 })
 
@@ -3159,6 +3159,18 @@ describe('GET /api/users', () => {
     const users = JSON.parse(res.body)
     expect(users[0].passwordHash).toBeUndefined()
   })
+
+  it('strips refreshTokenHash, totpSecret, backupCodes and mcpTokens', async () => {
+    setupAdminAuth()
+    const full = { ...adminUser, refreshTokenHash: 'rh', totpSecret: 'ts', totpEnabled: true, backupCodes: ['bc'], mcpTokens: [{ id: 't', name: 'n', tokenHash: 'th', tokenSnippet: 's', createdAt: '' }] }
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [full] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/users', headers: adminAuthHeaders() })
+    await app.close()
+    const u = JSON.parse(res.body)[0]
+    for (const k of ['passwordHash', 'refreshTokenHash', 'totpSecret', 'backupCodes', 'mcpTokens']) expect(u[k]).toBeUndefined()
+    expect(u.totpEnabled).toBe(true)
+  })
 })
 
 describe('POST /api/users', () => {
@@ -4115,6 +4127,31 @@ describe('PUT /api/models/:id', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('keeps connection providerId/endpoint when the body omits provider and endpoint', async () => {
+    setupAdminAuth()
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ inputPerMillion: 10, outputPerMillion: 30 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')?.[1] as Array<{ providerId: string; endpoint: string }>
+    expect(written[0]).toMatchObject({ providerId: 'openai', endpoint: 'https://api.openai.com/v1' })
+  })
+
   it('preserves existing fieldOverrides/catalogDefaults when the body omits them', async () => {
     setupAdminAuth()
     const existingInstance = {
@@ -5039,6 +5076,24 @@ describe('DELETE /api/roles/:id', () => {
     const res = await app.inject({ method: 'DELETE', url: '/api/roles/dev', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(204)
+  })
+
+  it('returns 409 when the role is assigned to a user', async () => {
+    setupAdminAuth()
+    const user: any = { id: 'u1', email: 'dev@example.com', passwordHash: 'x', roleId: 'dev', routerIds: [] }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, user]
+      if (t === 'roles') return [{ id: 'dev', name: 'Developer', permissions: [] }]
+      return []
+    })
+    mockWriteConfig.mockClear()
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/roles/dev', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('dev@example.com')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('returns 403 when trying to delete a built-in role', async () => {
@@ -13723,5 +13778,45 @@ describe('Optimizers API', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
+  })
+})
+
+describe('integration secret masking (ROUT-201)', () => {
+  const webhook = { id: 'intg-wh', type: 'webhook', enabled: true, url: 'http://x', secret: 'whsec', headers: { 'X-Api-Key': 'k-123', Authorization: 'Bearer t' } }
+  const json = (o: unknown) => JSON.stringify(o)
+
+  it('GET /api/settings masks integration secrets and header values', async () => {
+    setupIntegrations([{ ...prometheusIntegration }, { ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.body).not.toMatch(/prom-secret|whsec|k-123|Bearer t/)
+    const wh = (res.json() as any).integrations[1]
+    expect(wh.secret).toBe('********')
+    expect(wh.headers).toEqual({ 'X-Api-Key': '********', Authorization: '********' })
+  })
+
+  it('GET /api/integrations/:id masks header values', async () => {
+    setupIntegrations([{ ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/integrations/intg-wh', headers: adminAuthHeaders() })
+    await app.close()
+    expect((res.json() as any).headers).toEqual({ 'X-Api-Key': '********', Authorization: '********' })
+  })
+
+  it('PATCH with masked values keeps stored secret and header values', async () => {
+    setupIntegrations([{ ...webhook }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/integrations/intg-wh',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: json({ secret: '********', headers: { 'X-Api-Key': '********', Authorization: 'new', Ghost: '********' } }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const stored = (mockWriteConfig.mock.calls.find(c => c[0] === 'settings')![1] as any).integrations[0]
+    expect(stored.secret).toBe('whsec')
+    expect(stored.headers).toEqual({ 'X-Api-Key': 'k-123', Authorization: 'new' })
   })
 })

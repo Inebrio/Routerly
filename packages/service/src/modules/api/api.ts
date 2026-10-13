@@ -778,7 +778,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Params: { id: string };
     Body: {
       id?: string;
-      name?: string; provider: string; endpoint: string;
+      name?: string; provider?: string; endpoint?: string;
       apiKey?: string; cfClearance?: string; upstreamModelId?: string;
       azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
       awsRegion?: string; awsAccessKeyId?: string; awsSecretAccessKey?: string; awsSessionToken?: string;
@@ -832,6 +832,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const existingConnMissing = !existing.connectionId || !connections.find(c => c.id === existing.connectionId);
     const bodyHasInlineCreds = Boolean(req.body.apiKey || req.body.cfClearance);
 
+    // Partial update: omitted provider/endpoint keep the values of the currently bound connection.
+    const existingConn = connections.find(c => c.id === existing.connectionId);
+    const provider = req.body.provider ?? existingConn?.providerId;
+    const endpoint = req.body.endpoint ?? existingConn?.endpoint;
+    if (!provider) {
+      return reply.status(400).send({ error: 'provider is required' });
+    }
+
     let connectionId: string;
     if (req.body.connectionId) {
       // Rebind to an existing connection — no credential copy.
@@ -839,8 +847,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (!target) {
         return reply.status(404).send({ error: 'Not found' });
       }
-      if (target.providerId !== req.body.provider) {
-        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${req.body.provider}"` });
+      if (target.providerId !== provider) {
+        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${provider}"` });
       }
       connectionId = req.body.connectionId;
       // Orphan cleanup: leaving a dedicated connection that no other instance uses → drop it.
@@ -865,7 +873,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
       const dedIdx = connections.findIndex(c => c.id === newDedicatedId);
-      const credentialUpdates = buildConnectionCredentials(req.body.provider, {
+      const credentialUpdates = buildConnectionCredentials(provider, {
         ...(req.body.apiKey ? { apiKey: req.body.apiKey } : {}),
         ...(req.body.cfClearance ? { cfClearance: req.body.cfClearance } : {}),
         azureResourceName: req.body.azureResourceName,
@@ -882,18 +890,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (dedIdx === -1) {
         connections.push({
           id: newDedicatedId,
-          providerId: req.body.provider,
+          providerId: provider,
           label: req.body.name ?? newId,
-          endpoint: req.body.endpoint,
+          endpoint: endpoint ?? '',
           credentials: credentialUpdates,
           enabled: true,
         });
       } else {
         connections[dedIdx] = {
           ...connections[dedIdx]!,
-          providerId: req.body.provider,
+          providerId: provider,
           label: req.body.name ?? connections[dedIdx]!.label,
-          endpoint: req.body.endpoint,
+          ...(endpoint !== undefined ? { endpoint } : {}),
           credentials: { ...connections[dedIdx]!.credentials, ...credentialUpdates },
         };
       }
@@ -1795,10 +1803,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USERS
   // ══════════════════════════════════════════════════════════════════════════════
 
+  // Strip credential-derived fields; totpEnabled stays (UsersPage needs it).
+  const publicUser = ({ passwordHash: _p, refreshTokenHash: _r, totpSecret: _s, backupCodes: _b, mcpTokens: _m, ...rest }: UserConfig) => rest;
+
   fastify.get('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:read', reply)) return;
     const users = await readConfig('users');
-    return reply.send(users.map(u => ({ ...u, passwordHash: undefined })));
+    return reply.send(users.map(publicUser));
   });
 
   fastify.post<{
@@ -1819,7 +1830,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     users.push(user);
     await writeConfig('users', users);
     audit(req, 'user:create', 'success', { email: user.email });
-    return reply.status(201).send({ ...user, passwordHash: undefined });
+    return reply.status(201).send(publicUser(user));
   });
 
   fastify.put<{
@@ -2235,7 +2246,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
-    return reply.send({ ...settings, localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
+    return reply.send({ ...settings, ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2870,6 +2882,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         delete out[field];
       }
     }
+    // Header values routinely carry credentials (X-Api-Key, Authorization): keep names, mask values.
+    const headers = out['headers'];
+    if (headers && typeof headers === 'object') {
+      out['headers'] = Object.fromEntries(Object.keys(headers).map(k => [k, REDACT_MARKER]));
+    }
     return out;
   }
 
@@ -2931,7 +2948,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'type') continue;
       if (secrets.includes(key)) {
-        if (typeof val === 'string' && val.length > 0) merged[key] = val;
+        if (typeof val === 'string' && val.length > 0 && val !== REDACT_MARKER) merged[key] = val;
+      } else if (key === 'headers' && val && typeof val === 'object') {
+        // Masked values come back from the dashboard round-trip: keep the stored value for that header.
+        const old = (stored['headers'] ?? {}) as Record<string, string>;
+        const next: Record<string, string> = {};
+        for (const [h, hv] of Object.entries(val as Record<string, string>)) {
+          if (hv !== REDACT_MARKER) next[h] = hv;
+          else if (old[h] !== undefined) next[h] = old[h];
+        }
+        merged[key] = next;
       } else {
         merged[key] = val;
       }
@@ -3126,6 +3152,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const customRoles = await readConfig('roles');
     const filtered = customRoles.filter(r => r.id !== req.params.id);
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
+    const assigned = (await readConfig('users')).filter(u => u.roleId === req.params.id).map(u => u.email);
+    if (assigned.length > 0) {
+      return reply.status(409).send({ error: `Role "${req.params.id}" is assigned to ${assigned.length} user(s): ${assigned.join(', ')}. Reassign them first.` });
+    }
     await writeConfig('roles', filtered);
     audit(req, 'role:delete', 'success', { id: req.params.id });
     return reply.status(204).send();

@@ -69,7 +69,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       })
       .catch(/* v8 ignore next */ () => { /* no settings:read or unreachable — 'en' stays */ });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const saved = savedLanguage(user?.language);
