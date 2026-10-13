@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+- **Lint**: `npm run lint` runs again under ESLint 9 via the flat `eslint.config.mjs` (type-aware rules off), so the lint gate passes on release branches (ROUT-268).
 
 - Added a regression test that usage appends leave the existing `usage.ndjson` bytes untouched (verification of the #124 fix, ROUT-4).
 - `routerly service configure --usage-retention-max-mb` / `--usage-retention-days` now reject non-integer or non-positive values (exit 1, error on stderr) instead of silently truncating (e.g. `1.5` saved as `1`).
