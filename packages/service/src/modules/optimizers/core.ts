@@ -138,7 +138,7 @@ function applyProcessor(registry: OptimizerRegistry): Processor<ProxyContext> {
  * and contributes the optimizer.apply processor into the proxy pipeline.
  */
 export const optimizerCoreModule: RouterlyModule = defineModule({
-  manifest: { id: 'optimizer-core', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'optimizer-core', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
   register({ container }) {
     const registry = new OptimizerRegistry()
     container.register(OPTIMIZER_REGISTRY, registry)

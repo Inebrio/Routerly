@@ -10,7 +10,7 @@ import { getEmbeddingProvider } from './dispatch.js';
  * container.
  */
 export const embeddingsModule = defineModule({
-  manifest: { id: 'embeddings', version: '0.4.0' },
+  manifest: { id: 'embeddings', version: '0.5.4' },
   register({ container }) {
     container.register(EMBEDDINGS, { getEmbeddingProvider });
   },

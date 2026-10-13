@@ -5,7 +5,7 @@ import { defineModule, type RouterlyModule } from '../core/index.js'
 // it holds the capability slot in the module map. Add a `cache.lookup` processor on
 // request.preprocess (weight -100, shortCircuit on hit) only when a real response cache lands.
 export const cacheModule: RouterlyModule = defineModule({
-  manifest: { id: 'cache', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'cache', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
   register() {
     // intentionally empty
   },

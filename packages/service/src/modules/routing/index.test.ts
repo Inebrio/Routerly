@@ -96,6 +96,29 @@ describe('routing module', () => {
     })
   })
 
+  describe('limits exhausted on a non-passthrough router', () => {
+    it.each([
+      ['openai', { error: { message: 'Usage limit exceeded for every model of this router.', type: 'insufficient_quota' } }],
+      ['anthropic', { type: 'error', error: { type: 'rate_limit_error', message: 'Usage limit exceeded for every model of this router.' } }],
+    ] as const)('returns a 429 block for %s', async (protocol, body) => {
+      routeRequestMock.mockRejectedValue(new Error('all_models_limits_exceeded'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      const ctx = baseCtx({ protocol })
+      await proc.run(ctx)
+      expect(ctx.result).toEqual({ kind: 'block', status: 429, body })
+    })
+
+    it('rethrows other routing errors', async () => {
+      routeRequestMock.mockRejectedValue(new Error('no_models_available'))
+      const { container, events, pipeline } = harness()
+      await routingModule.register({ container, events })
+      const proc = pipeline.orderedFor('routing.prepare').find((p) => p.id === 'routing.prepare')!
+      await expect(proc.run(baseCtx())).rejects.toThrow('no_models_available')
+    })
+  })
+
   describe('routing.memory processor', () => {
     it('does nothing for the anthropic protocol', async () => {
       const { container, events, pipeline } = harness()

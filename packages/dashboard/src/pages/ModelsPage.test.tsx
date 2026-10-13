@@ -298,6 +298,17 @@ describe('ModelsPage — delete with ConfirmDialog', () => {
     await waitFor(() => expect(mockDeleteModel).toHaveBeenCalledWith('gpt-4o'));
     await waitFor(() => expect(screen.queryByText('gpt-4o')).toBeNull());
   });
+
+  it('shows the error and keeps the row when deleteModel is rejected', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    mockDeleteModel.mockRejectedValue(new Error('Model "gpt-4o" is used by router(s): r1.'));
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await userEvent.click(screen.getByTitle('Remove'));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await waitFor(() => screen.getByText(/is used by router\(s\)/));
+    expect(screen.getByText('gpt-4o')).toBeTruthy();
+  });
 });
 
 // ── Pagination ─────────────────────────────────────────────────────────────────
