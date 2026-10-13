@@ -16,7 +16,7 @@ import { TRACE_COMPLETED_TOPIC, type TraceCompletedEvent } from '../trace/publis
 let runner: NodeJS.Timeout | null = null;
 
 export const observabilityModule = defineModule({
-  manifest: { id: 'observability', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
+  manifest: { id: 'observability', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
   register({ container, events }) {
     container.register(OBSERVABILITY, {
       getMetricsSnapshot,

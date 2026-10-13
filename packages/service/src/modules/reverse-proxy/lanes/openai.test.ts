@@ -878,6 +878,31 @@ describe('openai:attempt', () => {
     expect(ctx.result).toEqual({ kind: 'json', body: { object: 'chat.completion', model: 'model-b' } })
   })
 
+  it('all candidates exhausted with a provider 400: returns the provider status and wrapped body, not 503', async () => {
+    await seedModels([
+      { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
+    ] as ModelConfig[])
+    const reg = new ProcessorRegistry<ProxyContext>()
+    reg.contribute({
+      id: 'openai:upstream', phase: 'upstream.execute',
+      run(ctx: ProxyContext) {
+        ctx.attemptResponse = { status: 400, body: { message: "Missing required parameter: 'messages'.", type: 'invalid_request_error', param: 'messages', code: 'missing_required_parameter' } }
+      },
+    })
+    setProxyPipeline(reg)
+    const ctx = {
+      protocol: 'openai', stream: false, log: makeLog(),
+      router: { id: 'p1' }, traceId: 't1',
+      request: { model: 'm', messages: [] },
+      candidates: [{ model: 'model-a', weight: 1 }],
+    } as unknown as ProxyContext
+    await openaiAttempt.run(ctx)
+    expect(ctx.result).toEqual({
+      kind: 'block', status: 400,
+      body: { error: { message: "Missing required parameter: 'messages'.", type: 'invalid_request_error', param: 'messages', code: 'missing_required_parameter' } },
+    })
+  })
+
   it('all candidates exhausted, non-streaming: returns a 503 block and emits routing.no_candidates', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
@@ -904,7 +929,7 @@ describe('openai:attempt', () => {
     )
   })
 
-  it('all candidates exhausted, streaming: yields a stop-finish error chunk and emits the failure', async () => {
+  it('all candidates exhausted, streaming: returns the same 503 block, not an empty 200 stream', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
@@ -921,11 +946,10 @@ describe('openai:attempt', () => {
       emit: (e: { message: string }) => entries.push(e),
     } as unknown as ProxyContext
     await openaiAttempt.run(ctx)
-    expect((ctx.result as any).kind).toBe('stream')
-    const collected: unknown[] = []
-    for await (const chunk of (ctx.result as any).body) collected.push(chunk)
-    expect(collected).toHaveLength(1)
-    expect((collected[0] as any).choices[0].finish_reason).toBe('stop')
+    expect(ctx.result).toEqual({
+      kind: 'block', status: 503,
+      body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } },
+    })
     expect(entries.map((e) => e.message)).toContain('model:error')
   })
 
