@@ -43,8 +43,8 @@ A Passthrough router's model list can now hold real target models alongside its 
 A Passthrough router's real target models now route, authenticate, and meter exactly like a normal router: same policy scoring, same budget/limit enforcement, same usage tracking. A Routerly bearer token is issued the moment the router has its first real model configured and revoked the moment the last one is removed; the pass-through entry itself keeps its existing unauthenticated, budget-exempt raw-forward behavior. The pass-through entry's position in the model list decides the router's default outcome: at index 0 (ahead of every real model), raw-forward always wins and real models are never scored; anywhere else, real models are scored and routed normally and the pass-through entry is used only as a last-resort fallback when none of them are eligible. On that fallback, Routerly forwards the client's own request headers unchanged rather than substituting a provider credential, so a client authenticating only with its Routerly token should expect the upstream provider to reject the fallback request with its own `401` unless it also sends a valid upstream credential.
 
 ### Bug fixes
-
 - `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked".
+
 
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
