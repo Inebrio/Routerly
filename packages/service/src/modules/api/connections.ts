@@ -367,6 +367,10 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     const connections = await readConfig('connections');
     const filtered = connections.filter(c => c.id !== req.params.id);
     if (filtered.length === connections.length) return reply.status(404).send({ error: 'Not found' });
+    const usedBy = (await readConfig('instances')).filter(i => i.connectionId === req.params.id).map(i => i.id);
+    if (usedBy.length) {
+      return reply.status(409).send({ error: `Connection is used by model(s): ${usedBy.join(', ')}`, usedBy });
+    }
     await writeConfig('connections', filtered);
     audit(req, 'connection:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
