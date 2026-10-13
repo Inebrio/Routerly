@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixes
+
+- `DELETE /api/models/:id` (and so `routerly model remove` and the dashboard Models page) now rejects with 409 a model still referenced by a router or router token, naming the routers, instead of leaving dangling references. CLI exits 1 with the message on stderr; the dashboard shows it as an error.
+
 ### New features
 
 **Router, Orchestrator, and Passthrough kinds**
