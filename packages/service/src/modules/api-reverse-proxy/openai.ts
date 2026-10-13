@@ -18,6 +18,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const ctx = buildOpenAIContext(request, reply);
       await runProxy(getProxyPipeline(), ctx);
+      return reply;
     },
   );
 
@@ -41,6 +42,7 @@ export const openaiRoutes: FastifyPluginAsync = async (fastify) => {
       // re-encoded as a `response` object / Responses SSE at egress.
       const ctx = buildResponsesContext(request, reply);
       await runProxy(getProxyPipeline(), ctx);
+      return reply;
     }
   );
 

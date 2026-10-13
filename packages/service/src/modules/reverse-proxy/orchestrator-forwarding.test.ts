@@ -190,6 +190,22 @@ describe('orchestrator forwarding (RTR-02 task 3)', () => {
     expect(calledModelIds.every((id) => id === modelA.id || id === modelB.id)).toBe(true)
   })
 
+  it('streaming: exhausted candidates return the same 503 block, never an empty 200 stream', async () => {
+    buildPipeline()
+    const model = makeModel(`m-${randomUUID()}`)
+    await seedModels([model])
+    const router = makeRouter(`r-${randomUUID()}`, [model.id])
+    const orchestrator = makeOrchestrator(`o-${randomUUID()}`, [{ routerId: router.id }])
+    await writeConfig('routers', [orchestrator, router])
+    mockLlmChat.mockRejectedValue(new Error('upstream boom'))
+
+    const ctx = buildCtx(orchestrator)
+    ctx.stream = true
+    await openaiAttempt.run(ctx)
+
+    expect(ctx.result).toMatchObject({ kind: 'block', status: 503, body: { error: { type: 'server_error' } } })
+  })
+
   it('B2: tries the quality-ranked candidate first, not the earlier-listed one — the loop must not re-sort scoreOrchestratorCandidates\' order by array position', async () => {
     buildPipeline()
     const modelA = makeModel(`m-${randomUUID()}`)

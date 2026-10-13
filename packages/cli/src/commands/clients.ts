@@ -51,7 +51,7 @@ async function resolveRouterForConfigure(explicit: string | undefined): Promise<
   }
   const { default: inquirer } = await import('inquirer');
   const { routerId } = await inquirer.prompt([{
-    type: 'list',
+    type: 'select',
     name: 'routerId',
     message: 'Select a router to configure:',
     choices: routers.map(p => ({ name: p.name, value: p.id })),
