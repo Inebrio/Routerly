@@ -4,6 +4,14 @@ import { api, ApiError } from '../api.js';
 import { getCurrentAccount } from '../store.js';
 import type { Settings } from '@routerly/shared';
 
+export function formatUptime(seconds: number): string {
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
 interface SystemInfo {
   version: string;
   uptimeSeconds: number;
@@ -114,11 +122,7 @@ Examples:
         console.log(`  ${chalk.cyan('Reachable:')}     ${info ? chalk.green('yes') : chalk.red('no — server did not respond')}`);
 
         if (info) {
-          const uptimeSec = Math.floor(info.uptimeSeconds);
-          const h = Math.floor(uptimeSec / 3600);
-          const m = Math.floor((uptimeSec % 3600) / 60);
-          const s = uptimeSec % 60;
-          const uptimeStr = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+          const uptimeStr = formatUptime(info.uptimeSeconds);
           console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);
           console.log(`  ${chalk.cyan('Uptime:')}        ${uptimeStr}`);
         }

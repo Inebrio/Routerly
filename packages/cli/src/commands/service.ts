@@ -3,11 +3,12 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { api, ApiError } from '../api.js';
 import { getCurrentAccount, requireAccount } from '../store.js';
+import { formatUptime } from './status.js';
 import type { Settings, UsageRetentionConfig } from '@routerly/shared';
 
 interface SystemInfo {
   version: string;
-  uptime: number;
+  uptimeSeconds: number;
   nodeVersion: string;
 }
 
@@ -40,7 +41,7 @@ Examples:
         console.log(`  ${chalk.cyan('Server:')}        ${account.serverUrl}`);
         if (info) {
           console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);
-          console.log(`  ${chalk.cyan('Uptime:')}        ${Math.floor(info.uptime / 60)}m ${info.uptime % 60}s`);
+          console.log(`  ${chalk.cyan('Uptime:')}        ${formatUptime(info.uptimeSeconds)}`);
         }
         console.log(`  ${chalk.cyan('Port:')}          ${settings.port}`);
         console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
