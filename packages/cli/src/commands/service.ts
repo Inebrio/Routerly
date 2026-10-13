@@ -12,6 +12,13 @@ interface SystemInfo {
   nodeVersion: string;
 }
 
+function parseRetentionInt(flag: string, value: string): number {
+  if (!/^\d+$/.test(value) || parseInt(value, 10) < 1) {
+    throw new Error(`${flag} must be a positive integer (got "${value}")`);
+  }
+  return parseInt(value, 10);
+}
+
 export function makeServiceCommand(): Command {
   const cmd = new Command('service').description('Control the Routerly service');
 
@@ -125,6 +132,15 @@ Examples:
       defaultLanguage?: string;
     }) => {
       const patch: Partial<Settings> = {};
+      try {
+        // Validate before any request so a bad value never reaches the service.
+        for (const [flag, v] of [['--usage-retention-days', opts.usageRetentionDays], ['--usage-retention-max-mb', opts.usageRetentionMaxMb]] as const) {
+          if (v) parseRetentionInt(flag, v);
+        }
+      } catch (err) {
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
+        process.exit(1);
+      }
       if (opts.port) patch.port = parseInt(opts.port, 10);
       if (opts.host) patch.host = opts.host;
       if (opts.dashboard !== undefined) patch.dashboardEnabled = opts.dashboard === 'true';
@@ -143,11 +159,11 @@ Examples:
           const usageRetention: UsageRetentionConfig = { ...(current.usageRetention ?? {}) };
           if (opts.usageRetentionDays !== undefined) {
             if (opts.usageRetentionDays === '') delete usageRetention.maxAgeDays;
-            else usageRetention.maxAgeDays = parseInt(opts.usageRetentionDays, 10);
+            else usageRetention.maxAgeDays = parseRetentionInt('--usage-retention-days', opts.usageRetentionDays);
           }
           if (opts.usageRetentionMaxMb !== undefined) {
             if (opts.usageRetentionMaxMb === '') delete usageRetention.maxSizeMb;
-            else usageRetention.maxSizeMb = parseInt(opts.usageRetentionMaxMb, 10);
+            else usageRetention.maxSizeMb = parseRetentionInt('--usage-retention-max-mb', opts.usageRetentionMaxMb);
           }
           patch.usageRetention = usageRetention;
         }

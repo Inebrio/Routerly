@@ -304,6 +304,20 @@ describe('service configure', () => {
     expect(patch.usageRetention.maxSizeMb).toBeUndefined();
   });
 
+  it.each([
+    ['--usage-retention-max-mb', '1.5'],
+    ['--usage-retention-max-mb', 'abc'],
+    ['--usage-retention-max-mb', '0'],
+    ['--usage-retention-days', '30.5'],
+    ['--usage-retention-days', '-3'],
+  ])('rejects %s %s with exit 1 and no API call', async (flag, value) => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(run('configure', flag, value)).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('positive integer'));
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('does not call GET /api/settings when no usage-retention flags are provided', async () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--port', '8080');
