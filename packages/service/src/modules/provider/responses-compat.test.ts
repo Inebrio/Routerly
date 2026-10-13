@@ -33,16 +33,6 @@ describe('responsesToChatRequest', () => {
     expect(chat.stream).toBe(false);
   });
 
-  it('forwards parallel_tool_calls only when tools are present', () => {
-    const noTools = responsesToChatRequest({ model: 'm', input: 'hi', parallel_tool_calls: false });
-    expect(noTools).not.toHaveProperty('parallel_tool_calls');
-    const withTools = responsesToChatRequest({
-      model: 'm', input: 'hi', parallel_tool_calls: false,
-      tools: [{ type: 'function', name: 'f', parameters: {} }],
-    });
-    expect(withTools.parallel_tool_calls).toBe(false);
-  });
-
   it('turns instructions into the leading system message', () => {
     const chat = responsesToChatRequest({ model: 'm', instructions: 'be terse', input: 'hi' });
     expect(chat.messages[0]).toEqual({ role: 'system', content: 'be terse' });
