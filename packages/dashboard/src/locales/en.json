@@ -1886,7 +1886,9 @@
         "cacheWritePerMillion": "Cache write $/1M",
         "optional": "(opt.)",
         "contextWindow": "Context Window",
-        "contextWindowHint": "(tokens, optional)"
+        "contextWindowHint": "(tokens, optional)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, optional — default 60000)"
       },
       "tiers": {
         "title": "Advanced — Pricing tiers",

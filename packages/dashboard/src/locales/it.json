@@ -1885,7 +1885,9 @@
         "cacheWritePerMillion": "Scrittura cache $/1M",
         "optional": "(opz.)",
         "contextWindow": "Finestra di contesto",
-        "contextWindowHint": "(token, opzionale)"
+        "contextWindowHint": "(token, opzionale)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, opzionale — default 60000)"
       },
       "tiers": {
         "title": "Avanzato — fasce di prezzo",

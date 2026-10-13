@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Model timeout on every surface**: `timeout` (ms, default 60000) is now accepted and returned by `POST/PUT /api/models` (400 on non-integer or non-positive values; `null` on PUT resets it), settable with `routerly model add|edit --timeout <ms>` (`0` on edit resets), shown by `model show`, and editable in the dashboard model form. Previously config-file only.
+
 ### Fixed
 
 - Non-stream requests to an unresponsive upstream no longer wait ~181 s: SDK clients for all chat adapters now run with `maxRetries: 0`, so the model `timeout` (default 60 s) is no longer tripled; the `custom` and `bedrock` adapters, which call `fetch` directly, now honour it too (they had no timeout at all) and failover happens right after it. Streaming requests whose candidates all fail before the first chunk now get HTTP 503 `server_error` (same as non-stream) instead of an empty 200 stream.

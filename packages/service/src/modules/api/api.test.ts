@@ -1089,6 +1089,33 @@ describe('GET /api/models', () => {
 })
 
 describe('POST /api/models', () => {
+  it('persists timeout and rejects a non-numeric one with 400', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'instances') return []
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const post = (timeout: unknown) => app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'timeout-model', provider: 'openai', endpoint: 'https://api.openai.com/v1',
+        inputPerMillion: 5, outputPerMillion: 15, timeout,
+      }),
+    })
+    const app = await buildApp()
+    const ok = await post(5000)
+    const bad = await post('abc')
+    const neg = await post(-1)
+    await app.close()
+    expect(ok.statusCode).toBe(201)
+    expect(ok.json().timeout).toBe(5000)
+    expect(bad.statusCode).toBe(400)
+    expect(neg.statusCode).toBe(400)
+  })
+
   it('creates a new model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
