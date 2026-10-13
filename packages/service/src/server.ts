@@ -18,6 +18,7 @@ import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/mig
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
+import { protocolError, protocolForUrl } from './lib/protocol-errors.js';
 import { bootstrap } from './bootstrap/index.js';
 import type { Kernel } from './core/index.js';
 
@@ -92,6 +93,14 @@ export async function buildServer() {
 
   // ─── Dashboard REST API (auth handled inside the plugin) ─────────────────
   await fastify.register(apiRoutes);
+
+  // /v1/* errors that never reach a route (malformed JSON, oversized body, ...) get the
+  // provider-shaped body instead of Fastify's default; everything else keeps default handling.
+  fastify.setErrorHandler(async (err, req, reply) => {
+    const status = (err as { statusCode?: number }).statusCode;
+    if (!req.url.startsWith('/v1/') || !status || status < 400 || status >= 500) throw err;
+    return reply.status(status).send(protocolError(protocolForUrl(req.url), status, (err as Error).message));
+  });
 
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
