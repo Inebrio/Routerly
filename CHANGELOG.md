@@ -27,6 +27,8 @@ The dashboard now ships with 41 language catalogs (English plus 40 more, includi
 - `PUT /api/settings` now rejects a `defaultLanguage` that is not a 1-10 character string (400).
 - Browser locale detection maps `pt-BR` to Brazilian Portuguese and any `zh-*` to Simplified Chinese.
 - The Passthrough router's "How to connect" section is now translatable.
+- The instance default language now applies right after login instead of only after a reload.
+- RTL languages (Arabic, Hebrew, Urdu): the sidebar sits on the right, theme toggle labels wrap instead of being clipped, and letter-spacing no longer disconnects joined glyphs.
 
 **Routers list grouped by kind**
 The Routers list now has tabs (Router / Orchestrator / Passthrough) filtering by `RouterKind`. There is no "All" tab — an aggregate view added no filtering value once every router already belongs to exactly one kind.
