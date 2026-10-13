@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
+
 ### Fixed
 
 - **Settings → About shows the real version** — package and module manifest versions were still stamped `0.4.0` in git, so branch builds reported `v0.4.0`. They are now stamped to the working release version; `docs/contributing/releasing.md` documents the stamp step for new release branches.
