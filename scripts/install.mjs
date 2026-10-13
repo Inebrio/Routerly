@@ -732,6 +732,11 @@ step('3', 'Copying files & installing dependencies');
 
 // Copy source tree to APP_DIR
 info(`Copying source from ${c.dim(SOURCE_DIR)} to ${c.dim(APP_DIR)}...`);
+// Drop files of the previous version that the new source no longer has
+// (stale files can break the build, e.g. on downgrade). Only touches APP_DIR.
+if (fs.existsSync(path.join(APP_DIR, 'package.json'))) {
+  await pruneStale(SOURCE_DIR, APP_DIR, needsSudo);
+}
 await copyDir(SOURCE_DIR, APP_DIR, needsSudo);
 success('Source files copied');
 
@@ -1100,6 +1105,22 @@ async function runCmd(cmd, cwd) {
     if (err.stdout) process.stdout.write(err.stdout);
     if (err.stderr) process.stderr.write(err.stderr);
     die(`Command failed: ${cmd}`);
+  }
+}
+
+/** Remove from dest every entry missing in src, keeping dependencies and build output. */
+async function pruneStale(src, dest, useSudo = false) {
+  const keep = ['node_modules', 'dist'];
+  for (const entry of await fsp.readdir(dest, { withFileTypes: true })) {
+    if (keep.includes(entry.name)) continue;
+    const srcPath  = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    const srcStat  = await fsp.stat(srcPath).catch(() => null);
+    if (srcStat?.isDirectory() && entry.isDirectory()) {
+      await pruneStale(srcPath, destPath, useSudo);
+    } else if (!srcStat || srcStat.isDirectory() !== entry.isDirectory()) {
+      await removeDir(destPath, useSudo);
+    }
   }
 }
 
