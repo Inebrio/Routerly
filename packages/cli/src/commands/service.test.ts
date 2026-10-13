@@ -66,7 +66,7 @@ describe('service status', () => {
   it('prints status table when logged in', async () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     mockApi
-      .mockResolvedValueOnce({ version: '0.3.0', uptime: 125, nodeVersion: 'v22.0.0' }) // system/info
+      .mockResolvedValueOnce({ version: '0.3.0', uptimeSeconds: 125, nodeVersion: 'v22.0.0' }) // system/info
       .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', listeningAddresses: ['http://127.0.0.1:3000', 'http://192.168.1.10:3000'] }) // settings
       .mockResolvedValueOnce([{}, {}]) // models
       .mockResolvedValueOnce([{}]); // routers
@@ -101,7 +101,7 @@ describe('service status', () => {
     mockGetCurrentAccount.mockResolvedValue(account);
     // system/info resolves, settings rejects
     mockApi
-      .mockResolvedValueOnce({ version: '0.3.0', uptime: 0, nodeVersion: 'v22' })
+      .mockResolvedValueOnce({ version: '0.3.0', uptimeSeconds: 0, nodeVersion: 'v22' })
       .mockRejectedValueOnce(new Error('settings error'))
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);

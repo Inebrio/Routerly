@@ -7,7 +7,7 @@ import type { Settings, UsageRetentionConfig } from '@routerly/shared';
 
 interface SystemInfo {
   version: string;
-  uptime: number;
+  uptimeSeconds: number;
   nodeVersion: string;
 }
 
@@ -40,7 +40,7 @@ Examples:
         console.log(`  ${chalk.cyan('Server:')}        ${account.serverUrl}`);
         if (info) {
           console.log(`  ${chalk.cyan('Version:')}       ${info.version}`);
-          console.log(`  ${chalk.cyan('Uptime:')}        ${Math.floor(info.uptime / 60)}m ${info.uptime % 60}s`);
+          console.log(`  ${chalk.cyan('Uptime:')}        ${Math.floor(info.uptimeSeconds / 60)}m ${Math.floor(info.uptimeSeconds % 60)}s`);
         }
         console.log(`  ${chalk.cyan('Port:')}          ${settings.port}`);
         console.log(`  ${chalk.cyan('Host:')}          ${settings.host}`);
