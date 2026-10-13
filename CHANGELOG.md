@@ -44,7 +44,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
-- **Passthrough responses no longer empty** — `POST /passthrough/<slug>/...` returned the provider status and headers with an empty body (valid key, invalid key, `stream: true`). The route handler now returns the reply after streaming the upstream body, so the provider body reaches the client unchanged.
+- **Passthrough responses no longer empty** — `POST /passthrough/<slug>/...` returned the provider status and headers with an empty body (valid key, invalid key, `stream: true`). The route handlers (`/passthrough/...`, and `/v1/chat/completions`, `/v1/responses`, `/v1/messages` when a Passthrough router falls back to raw-forward) now return the reply after the upstream body is sent, so the provider body reaches the client unchanged.
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
