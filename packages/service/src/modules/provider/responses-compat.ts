@@ -165,7 +165,7 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
     ...(body.max_output_tokens != null ? { max_tokens: body.max_output_tokens } : {}),
     ...(body.temperature != null ? { temperature: body.temperature } : {}),
     ...(body.top_p != null ? { top_p: body.top_p } : {}),
-    ...(body.parallel_tool_calls != null ? { parallel_tool_calls: body.parallel_tool_calls } : {}),
+    ...(tools && body.parallel_tool_calls != null ? { parallel_tool_calls: body.parallel_tool_calls } : {}),
     ...(body.user ? { user: body.user } : {}),
     ...(tools ? { tools } : {}),
     ...(tools && toolChoice ? { tool_choice: toolChoice } : {}),
