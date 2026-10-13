@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **usage.ndjson permissions**: the usage history file is now created, rewritten and migrated with mode 600 (an existing 644 file is tightened on next access), so the CLI no longer warns about loose permissions after a data migration.
 - **ESLint 9 flat config**: added `eslint.config.mjs` (port of the removed `.eslintrc.json`) so `npm run lint` runs again and exits 0. Pre-existing violations are reported as warnings, not errors.
 - **ESLint rules are blocking**: the pre-existing warnings (unused vars/imports, type imports, `prefer-const`, `no-empty`, `no-explicit-any` in non-test code) are cleaned up and every rule is now an error; `npm run lint` exits 0 with zero warnings. `any` is still allowed in `*.test.*` files, and remaining untyped provider/SDK payloads in `src` carry a targeted `eslint-disable-next-line` with a reason.
 - **PII response scrub on `/v1/messages`**: a router PII policy targeting `response` now also scrubs Anthropic-protocol replies, non-stream (text blocks) and stream (including entities split across chunks). Previously the phone/email reached the client in clear; `/v1/chat/completions` is unchanged.
