@@ -44,6 +44,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Integration secrets masked everywhere** — `GET /api/settings` no longer returns integration secrets in clear, and webhook/OTEL `headers` values are masked (`********`, header names stay visible) on every integration read. `PATCH /api/integrations/:id` treats a `********` value (secret or header) as "unchanged", so saving from the dashboard no longer overwrites stored secrets with the marker.
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
