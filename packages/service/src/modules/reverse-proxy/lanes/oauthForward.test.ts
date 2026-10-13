@@ -475,3 +475,49 @@ describe('forwardAnthropicOAuth', () => {
     expect(mockTrackUsage).not.toHaveBeenCalled()
   })
 })
+
+// ─── usage capture on the verbatim forward (ROUT-199) ─────────────────────────
+
+describe('forwardAnthropicOAuth usage capture', () => {
+  const post = async (upstreamBody: string, contentType: string) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(upstreamBody, { status: 200, headers: { 'content-type': contentType } }),
+    ))
+    const app = await buildApp(oauthModel)
+    const res = await app.inject({
+      method: 'POST', url: '/v1/messages',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ model: 'x', max_tokens: 1, messages: [] }),
+    })
+    await app.close()
+    vi.unstubAllGlobals()
+    return res
+  }
+
+  it('records usage of a non-stream response and returns the body byte-identical', async () => {
+    const raw = JSON.stringify({ type: 'message', usage: { input_tokens: 9, output_tokens: 16 } })
+    const res = await post(raw, 'application/json')
+    expect(res.body).toBe(raw)
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ inputTokens: 9, outputTokens: 16, outcome: 'success' }))
+  })
+
+  it('records usage of an SSE stream (message_start + message_delta, cache folded into input) byte-identical', async () => {
+    const raw =
+      'event: message_start\ndata: {"type":"message_start","message":{"usage":{"input_tokens":5,"cache_read_input_tokens":3,"cache_creation_input_tokens":1,"output_tokens":1}}}\n\n' +
+      'event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"text":"hi"}}\n\n' +
+      'event: message_delta\ndata: {"type":"message_delta","usage":{"output_tokens":16}}\n\n'
+    const res = await post(raw, 'text/event-stream')
+    expect(res.body).toBe(raw)
+    expect(mockTrackUsage).toHaveBeenCalledOnce()
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      inputTokens: 9, outputTokens: 16, cachedInputTokens: 3, cacheCreationInputTokens: 1,
+    }))
+  })
+
+  it('does not fail the request on a non-JSON body', async () => {
+    const res = await post('not json', 'application/json')
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toBe('not json')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ inputTokens: 0, outputTokens: 0 }))
+  })
+})

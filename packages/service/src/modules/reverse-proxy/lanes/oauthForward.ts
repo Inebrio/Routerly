@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import type { ModelConfig } from '@routerly/shared';
 import { buildUpstreamUrl } from '../../api-reverse-proxy/passthrough.js';
 import { trackUsage } from '../../usage/tracker.js';
+import { createUsageTap, type TappedUsage } from './usageTap.js';
 
 /**
  * Faithful pass-through for subscription / OAuth models (Flow A).
@@ -182,14 +183,25 @@ export async function forwardAnthropicOAuth(
     'oauth pass-through',
   );
 
-  if (routerId) {
-    void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
-  }
+  const record = (u: TappedUsage): void => {
+    if (!routerId) return;
+    void trackUsage({
+      routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
+      ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
+      ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
+      latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(tokenId ? { tokenId } : {}),
+    }).catch(() => {});
+  };
 
   reply.code(upstream.status);
   if (upstream.body) {
-    return reply.send(Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]));
+    return reply.send(
+      Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0])
+        .pipe(createUsageTap(upstream.headers.get('content-type'), record)),
+    );
   }
+  record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
   return reply.send();
 }
 
@@ -247,9 +259,16 @@ export async function forwardAnthropicApiKey(
     'api-key pass-through',
   );
 
-  if (routerId) {
-    void trackUsage({ routerId, model, inputTokens: 0, outputTokens: 0, latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion', ...(tokenId ? { tokenId } : {}) }).catch(() => {});
-  }
+  const record = (u: TappedUsage): void => {
+    if (!routerId) return;
+    void trackUsage({
+      routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
+      ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
+      ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
+      latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(tokenId ? { tokenId } : {}),
+    }).catch(() => {});
+  };
 
   upstream.headers.forEach((value, key) => {
     if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
@@ -257,7 +276,11 @@ export async function forwardAnthropicApiKey(
 
   reply.code(upstream.status);
   if (upstream.body) {
-    return reply.send(Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]));
+    return reply.send(
+      Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0])
+        .pipe(createUsageTap(upstream.headers.get('content-type'), record)),
+    );
   }
+  record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
   return reply.send();
 }
