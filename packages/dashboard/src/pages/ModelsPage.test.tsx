@@ -1310,3 +1310,29 @@ describe('ModelsPage — permissions', () => {
     mockCanWriteModels = true;
   });
 });
+
+describe('ModelsPage — per-model Reset', () => {
+  async function reset(model: Record<string, unknown>) {
+    mockResetResilience.mockResolvedValue(undefined);
+    mockGetModels.mockResolvedValue([makeModel(model)]);
+    mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
+    await userEvent.click(await screen.findByTitle('Reset circuit breaker'));
+    await userEvent.click(await screen.findByText('Confirm'));
+    await waitFor(() => expect(mockResetResilience).toHaveBeenCalledTimes(3));
+  }
+
+  it('resets the connection key by connectionId', async () => {
+    await reset({ connectionId: 'conn-1' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'conn-1' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'provider', id: 'openai' });
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'model', id: 'gpt-4o' });
+  });
+
+  it('falls back to provider for legacy models without connectionId', async () => {
+    await reset({});
+    expect(mockResetResilience).toHaveBeenCalledWith({ level: 'connection', id: 'openai' });
+  });
+});
