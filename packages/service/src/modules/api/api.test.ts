@@ -2037,7 +2037,7 @@ describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
     })
     await authApp.close()
     expect(authRes.statusCode).toBe(401)
-    expect(authRes.json()).toEqual({ error: 'unauthorized', message: 'Invalid router token.' })
+    expect(authRes.json()).toEqual({ error: { message: 'Invalid router token.', type: 'invalid_request_error', param: null, code: 'invalid_api_key' } })
   })
 })
 

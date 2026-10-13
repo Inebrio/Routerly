@@ -1,5 +1,5 @@
 import { PASSTHROUGH_MODEL_ID, type ResilienceStore } from '@routerly/shared'
-import { defineModule, type Processor, type RouterlyModule } from '../../core/index.js'
+import { defineModule, shortCircuit, type Processor, type RouterlyModule } from '../../core/index.js'
 import { ROUTER, PROXY_PIPELINE, RESILIENCE_STORE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
 import { routeRequest } from './router.js'
@@ -81,17 +81,28 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
       }
       // The trace routeRequest returns is for callers without an event bus (the MCP
       // read tool): here every entry already went out through ctx.emit.
-      const { models } = await routeRequest(
-        ctx.request,
-        ctx.router,
-        ctx.log,
-        ctx.emit,
-        ctx.token,
-        ctx.traceId,
-        ctx.conversationId,
-        resilienceStore,
-      )
-      ctx.candidates = models
+      try {
+        const { models } = await routeRequest(
+          ctx.request,
+          ctx.router,
+          ctx.log,
+          ctx.emit,
+          ctx.token,
+          ctx.traceId,
+          ctx.conversationId,
+          resilienceStore,
+        )
+        ctx.candidates = models
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        if (!message.startsWith('all_models_limits_exceeded')) throw err
+        // Same 429 shapes as the guardrails over-limit block (guardrails/index.ts).
+        const text = 'Usage limit exceeded for every model of this router.'
+        ctx.result = ctx.protocol === 'anthropic'
+          ? { kind: 'block', status: 429, body: { type: 'error', error: { type: 'rate_limit_error', message: text } } }
+          : { kind: 'block', status: 429, body: { error: { message: text, type: 'insufficient_quota' } } }
+        return shortCircuit(ctx.result)
+      }
     },
   }
 }
