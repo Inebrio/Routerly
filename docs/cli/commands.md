@@ -417,6 +417,7 @@ routerly model add --id <id> --provider <provider> [options]
 | `--limits-json <json>` | Limits array as JSON string |
 | `--pricing-tiers-json <json>` | Pricing tiers array as JSON string |
 | `--interactive` | Open interactive wizard for limits and pricing tiers |
+| `--timeout <ms>` | Upstream request timeout in ms (default 60000). On `model edit`, `0` resets to the default |
 
 Azure, AWS Bedrock, Google Vertex, and ChatGPT-web-session providers accept
 additional provider-specific flags (`--azure-resource`, `--aws-region`,
@@ -1246,7 +1247,7 @@ routerly audit list [options]
 | `--user <email>` | Filter by user email or ID |
 | `--action <str>` | Filter by action substring (e.g. `model:create`) |
 | `--from <date>` | Start date (ISO format, e.g. `2026-01-01`) |
-| `--to <date>` | End date (ISO format, e.g. `2026-12-31`) |
+| `--to <date>` | End date (ISO format, e.g. `2026-12-31`); a date alone includes that whole day (UTC) |
 | `--limit <n>` | Max entries to return (default: 50) |
 | `--json` | Output raw JSON |
 
