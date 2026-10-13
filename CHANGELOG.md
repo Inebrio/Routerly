@@ -45,6 +45,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 ### Bug fixes
 
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
+- `scripts/install.sh` now checks up front for `curl` or `wget` (and `tar`) and exits with a message naming the package instead of dying with `curl: command not found` (exit 127). The Node.js install paths (nvm, Homebrew, NodeSource) fall back to `wget` when `curl` is missing.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
 - **Dashboard translations** — Refreshed all 41 non-English catalogs against `en.json`: added missing keys and translated stale English-copy and placeholder-mismatch strings. Machine-translated; spot-check by a native speaker pending.
