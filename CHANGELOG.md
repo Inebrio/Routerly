@@ -55,6 +55,8 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Security:** `GET /api/settings` and the `PUT /api/settings` response no longer return notification channel secrets (SMTP password, API keys, tokens, webhook URLs) or `prometheusAuthToken`; they are masked as `********`, like the `/api/notifications/channels` routes. `PUT /api/settings` treats a masked channel secret as unchanged, so saving Settings > General keeps stored credentials.
+
 - `routerly audit list --limit` now honours the limit (was ignored, always 50), `--json` prints the entries array, and `GET /api/audit` treats a date-only `to` as the end of that day (UTC) so `--to 2026-10-12` includes the 12th.
 
 

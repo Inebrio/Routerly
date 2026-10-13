@@ -177,6 +177,38 @@ function redactChannel(channel: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
+/** Settings safe to send to clients: channel secrets and the metrics token are masked. */
+function redactSettings<T extends Settings>(settings: T): T {
+  const out: T = { ...settings };
+  if (out.notifications?.channels) {
+    out.notifications = {
+      ...out.notifications,
+      channels: out.notifications.channels.map(c => redactChannel(c as unknown as Record<string, unknown>)) as unknown as typeof out.notifications.channels,
+    };
+  }
+  if (out.prometheusAuthToken) out.prometheusAuthToken = REDACT_MARKER;
+  return out;
+}
+
+/**
+ * Inverse of redactChannel for round-trips: secret fields still carrying
+ * REDACT_MARKER take the stored value of the channel with the same id
+ * (dropped when there is none).
+ */
+function restoreChannelSecrets(incoming: Array<Record<string, unknown>>, stored: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  return incoming.map(ch => {
+    const secrets = CHANNEL_SECRET_FIELDS[ch['provider'] as ChannelProvider] ?? [];
+    const old = stored.find(s => s['id'] === ch['id']);
+    const out = { ...ch };
+    for (const field of secrets) {
+      if (out[field] !== REDACT_MARKER) continue;
+      if (typeof old?.[field] === 'string' && old[field]) out[field] = old[field];
+      else delete out[field];
+    }
+    return out;
+  });
+}
+
 async function hashPassword(p: string): Promise<string> {
   return bcrypt.hash(p, BCRYPT_ROUNDS);
 }
@@ -2247,7 +2279,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
     const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...settings, ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2351,6 +2383,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
     }
+    // GET /api/settings masks channel secrets: a client echoing the marker back means "unchanged".
+    if (notifPatch?.channels && updated.notifications) {
+      updated.notifications = {
+        ...updated.notifications,
+        channels: restoreChannelSecrets(
+          notifPatch.channels as unknown as Array<Record<string, unknown>>,
+          (current.notifications?.channels ?? []) as unknown as Array<Record<string, unknown>>,
+        ) as unknown as typeof notifPatch.channels,
+      };
+    }
     if (channelNormalized) {
       updated.channel = channelNormalized.channel;
     }
@@ -2378,7 +2420,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
     }
     audit(req, 'settings:update', 'success');
-    return reply.send(updated);
+    const integrations = updated.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
+    return reply.send({ ...redactSettings(updated), ...(integrations && { integrations }) });
   });
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────

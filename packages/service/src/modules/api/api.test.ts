@@ -3279,6 +3279,65 @@ describe('GET /api/settings', () => {
   })
 })
 
+describe('settings secret redaction (ROUT-236)', () => {
+  const stored = {
+    logLevel: 'info',
+    prometheusAuthToken: 'prom-secret',
+    notifications: { channels: [{ id: 'c1', provider: 'smtp', name: 't', host: 'h', port: 587, user: 'u', password: 'S3greto!' }] },
+  }
+  const setup = () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return JSON.parse(JSON.stringify(stored))
+      return []
+    })
+  }
+
+  it('GET masks channel secrets and prometheusAuthToken', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.body).not.toContain('S3greto!')
+    expect(res.body).not.toContain('prom-secret')
+    expect(res.json().notifications.channels[0].password).toBe('********')
+    expect(res.json().prometheusAuthToken).toBe('********')
+  })
+
+  it('PUT keeps stored secret when the marker is echoed back, and masks the response', async () => {
+    setup()
+    let written: any = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v })
+    const app = await buildApp()
+    const get = await app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ logLevel: 'debug', notifications: get.json().notifications }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(written.notifications.channels[0].password).toBe('S3greto!')
+    expect(res.body).not.toContain('S3greto!')
+  })
+
+  it('PUT replaces the secret when a new value is sent', async () => {
+    setup()
+    let written: any = {}
+    mockWriteConfig.mockImplementation(async (_t: string, v: unknown) => { written = v })
+    const app = await buildApp()
+    await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ notifications: { channels: [{ ...stored.notifications.channels[0], password: 'new-pw' }] } }),
+    })
+    await app.close()
+    expect(written.notifications.channels[0].password).toBe('new-pw')
+  })
+})
+
 describe('listeningAddresses', () => {
   it('reports only the bound host when it is not a wildcard', () => {
     expect(listeningAddresses('192.168.1.5', 3000)).toEqual(['http://192.168.1.5:3000'])
