@@ -2,7 +2,13 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { OpenAIAdapter } from './openai.js';
 import type { ChatCompletionRequest, ModelConfig } from '@routerly/shared';
 
-const create = vi.hoisted(() => vi.fn());
+const create = vi.hoisted(() => {
+  // The adapter calls create(...).withResponse(); mirror the SDK's APIPromise.
+  const f = vi.fn();
+  f.mockResolvedValue = ((v: unknown) =>
+    f.mockReturnValue(Object.assign(Promise.resolve(v), { withResponse: async () => ({ data: v, response: { headers: new Headers() } }) }))) as typeof f.mockResolvedValue;
+  return f;
+});
 
 vi.mock('openai', () => {
   class OpenAIMock {
@@ -54,7 +60,7 @@ describe('OpenAIAdapter.chatCompletion', () => {
     expect(calledWith).toHaveProperty('messages');
   });
 
-  it('strips `stream` before forwarding (forces stream: false for non-streaming call)', async () => {
+  it('does not add or force `stream` on a non-streaming call', async () => {
     create.mockResolvedValue(makeResponse());
 
     const adapter = new OpenAIAdapter();
@@ -64,10 +70,10 @@ describe('OpenAIAdapter.chatCompletion', () => {
     );
 
     const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(calledWith).toHaveProperty('stream', false);
+    expect(calledWith).not.toHaveProperty('stream');
   });
 
-  it('normalises max_tokens → max_completion_tokens', async () => {
+  it('leaves max_tokens untouched for models that accept it', async () => {
     create.mockResolvedValue(makeResponse());
 
     const adapter = new OpenAIAdapter();
@@ -77,8 +83,8 @@ describe('OpenAIAdapter.chatCompletion', () => {
     );
 
     const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(calledWith).not.toHaveProperty('max_tokens');
-    expect(calledWith).toHaveProperty('max_completion_tokens', 512);
+    expect(calledWith).toHaveProperty('max_tokens', 512);
+    expect(calledWith).not.toHaveProperty('max_completion_tokens');
   });
 
   it('strips reasoning params for non-o-series models', async () => {
@@ -122,8 +128,8 @@ describe('OpenAIAdapter.chatCompletion', () => {
 
     const adapter = new OpenAIAdapter();
     await adapter.chatCompletion(
-      { model: 'gpt-4o', messages: [{ role: 'user', content: 'Hi' }], max_tokens: 100, max_completion_tokens: 200 },
-      makeModel(),
+      { model: 'o3', messages: [{ role: 'user', content: 'Hi' }], max_tokens: 100, max_completion_tokens: 200 },
+      makeModel({ id: 'o3' }),
     );
 
     const calledWith = create.mock.calls[0]?.[0] as Record<string, unknown>;

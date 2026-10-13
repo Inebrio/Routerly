@@ -165,6 +165,7 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
     ...(body.max_output_tokens != null ? { max_tokens: body.max_output_tokens } : {}),
     ...(body.temperature != null ? { temperature: body.temperature } : {}),
     ...(body.top_p != null ? { top_p: body.top_p } : {}),
+    // OpenAI chat rejects `parallel_tool_calls` without `tools` (400); Codex sends it tool-less.
     ...(tools && body.parallel_tool_calls != null ? { parallel_tool_calls: body.parallel_tool_calls } : {}),
     ...(body.user ? { user: body.user } : {}),
     ...(tools ? { tools } : {}),

@@ -83,7 +83,7 @@ routerly router create --name "My App"
 routerly router model add "My App" gpt-5-mini
 ```
 
-`router create` makes an empty router; target models are attached one at a time with `router model add`, which is also where you set the priority and the system prompt hint for that model.
+`router create` makes an empty router; target models are attached one at a time with `router model add`, which is also where you set the priority and the routing guidance for that model.
 
 `router create` prints your **router token**, a string starting with `sk-rt-`. Save it; you'll use it in your application.
 
