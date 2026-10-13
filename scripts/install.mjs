@@ -325,7 +325,13 @@ function detectExistingAppDir() {
 
 let installMode = 'fresh'; // 'fresh' | 'update' | 'reinstall' | 'uninstall'
 
-if (isExistingInstall && !YES) {
+if (isExistingInstall && YES) {
+  // Non-interactive upgrade: same as choosing "1 Update" (keeps settings, restarts daemon)
+  installMode = 'update';
+  info('Existing installation detected: updating (--yes)');
+  info('Checking for running service daemon...');
+  await stopDaemon(detectExistingScope());
+} else if (isExistingInstall) {
   console.log('\n' + c.yellow(c.bold('  Existing installation detected')) + '\n');
 
   console.log(`  What would you like to do?\n`);
