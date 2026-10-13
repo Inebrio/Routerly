@@ -60,6 +60,8 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Installer:** `node scripts/install.mjs --yes` over an existing install now behaves as "Update": it stops the running service, rebuilds and restarts it (new PID, new version), keeping `settings.json` and data. Previously it ran as a fresh install and left the old process running.
+
 - Fixed `/v1/responses` requests with `parallel_tool_calls` but no `tools` (sent by Codex) failing with an OpenAI 400; the field is now forwarded only when tools are present
 - **`routerly mcp serve` with the service on the same host** — the stdio MCP server no longer binds the HTTP port (it failed with `EADDRINUSE` and exited 1), and its logs go to stderr so stdout carries only JSON-RPC.
 - Dashboard: saving the Routing tab or the Orchestrator candidates no longer re-enables disabled routing policies; disabled policies show a "Disabled" badge and the Orchestrator hint lists all five accepted policy types.
