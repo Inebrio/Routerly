@@ -154,6 +154,7 @@ export function ModelsPage() {
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
+  const [deleteError, setDeleteError] = useState('');
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [testResults, setTestResults] = useState<Record<string, 'loading' | { ok: boolean; latencyMs: number; error?: string }>>({});
   const healthActive = useRef(true);
@@ -167,7 +168,6 @@ export function ModelsPage() {
   // Resilience reset state (health tab): busy key is a model id, 'all', or null
   const [resetBusy, setResetBusy] = useState<string | null>(null);
   const [resetError, setResetError] = useState('');
-  const [deleteError, setDeleteError] = useState('');
 
   // Load models once
   useEffect(() => { load(); }, []);
@@ -276,12 +276,12 @@ export function ModelsPage() {
       message: t('models.page.deleteConfirm', { id }),
       onConfirm: async () => {
         setConfirmState(null);
-        setDeleteError('');
         try {
           await deleteModel(id);
           setModels(m => m.filter(x => x.id !== id));
+          setDeleteError('');
         } catch (e) {
-          setDeleteError(e instanceof Error ? e.message : 'Delete failed');
+          setDeleteError(e instanceof Error ? e.message : String(e));
         }
       },
     });
@@ -406,9 +406,9 @@ export function ModelsPage() {
         </div>
       </div>
       <div className="page-body" style={{ paddingTop: 24 }}>
+        {deleteError && <div className="form-error" style={{ marginBottom: 20 }}>{deleteError}</div>}
         {tab === 'models' && (
           <>
-          {deleteError && <div className="form-error" style={{ marginBottom: 16 }}>{deleteError}</div>}
             <div className="toolbar">
               <span className="toolbar-title">
                 {filtered.length !== models.length

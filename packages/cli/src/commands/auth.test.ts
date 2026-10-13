@@ -554,6 +554,17 @@ describe('auth refresh', () => {
     fetchMock.mockRestore();
   });
 
+  it('saves the rotated refresh token', async () => {
+    mockGetCurrentAccount.mockResolvedValue(baseAccount);
+    mockSaveAccount.mockResolvedValue(undefined);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ token: makeToken(futureExp), refreshToken: 'rt-rotated' }), { status: 200 }),
+    );
+    await makeCmd().parseAsync(['node', 'auth', 'refresh']);
+    expect(mockSaveAccount).toHaveBeenCalledWith(expect.objectContaining({ refreshToken: 'rt-rotated' }));
+    fetchMock.mockRestore();
+  });
+
   it('refreshes token for named account via alias arg', async () => {
     mockGetAccount.mockResolvedValue(baseAccount);
     mockSaveAccount.mockResolvedValue(undefined);
