@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- Added a regression test that usage appends leave the existing `usage.ndjson` bytes untouched (verification of the #124 fix, ROUT-4).
 - `routerly service configure --usage-retention-max-mb` / `--usage-retention-days` now reject non-integer or non-positive values (exit 1, error on stderr) instead of silently truncating (e.g. `1.5` saved as `1`).
 - **usage.ndjson permissions**: the usage history file is now created, rewritten and migrated with mode 600 (an existing 644 file is tightened on next access), so the CLI no longer warns about loose permissions after a data migration.
 - **Build on release branches**: `RoutingPolicy.config` is typed `any` again (it had become `unknown`, which broke `orchestrate.ts`); a shared test now fails to compile if it regresses.
