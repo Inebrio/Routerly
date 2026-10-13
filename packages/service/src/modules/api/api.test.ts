@@ -3159,6 +3159,18 @@ describe('GET /api/users', () => {
     const users = JSON.parse(res.body)
     expect(users[0].passwordHash).toBeUndefined()
   })
+
+  it('strips refreshTokenHash, totpSecret, backupCodes and mcpTokens', async () => {
+    setupAdminAuth()
+    const full = { ...adminUser, refreshTokenHash: 'rh', totpSecret: 'ts', totpEnabled: true, backupCodes: ['bc'], mcpTokens: [{ id: 't', name: 'n', tokenHash: 'th', tokenSnippet: 's', createdAt: '' }] }
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [full] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/users', headers: adminAuthHeaders() })
+    await app.close()
+    const u = JSON.parse(res.body)[0]
+    for (const k of ['passwordHash', 'refreshTokenHash', 'totpSecret', 'backupCodes', 'mcpTokens']) expect(u[k]).toBeUndefined()
+    expect(u.totpEnabled).toBe(true)
+  })
 })
 
 describe('POST /api/users', () => {

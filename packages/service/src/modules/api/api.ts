@@ -1795,10 +1795,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // USERS
   // ══════════════════════════════════════════════════════════════════════════════
 
+  // Strip credential-derived fields; totpEnabled stays (UsersPage needs it).
+  const publicUser = ({ passwordHash: _p, refreshTokenHash: _r, totpSecret: _s, backupCodes: _b, mcpTokens: _m, ...rest }: UserConfig) => rest;
+
   fastify.get('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:read', reply)) return;
     const users = await readConfig('users');
-    return reply.send(users.map(u => ({ ...u, passwordHash: undefined })));
+    return reply.send(users.map(publicUser));
   });
 
   fastify.post<{
@@ -1819,7 +1822,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     users.push(user);
     await writeConfig('users', users);
     audit(req, 'user:create', 'success', { email: user.email });
-    return reply.status(201).send({ ...user, passwordHash: undefined });
+    return reply.status(201).send(publicUser(user));
   });
 
   fastify.put<{
