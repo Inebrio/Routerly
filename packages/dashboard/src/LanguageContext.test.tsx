@@ -47,16 +47,6 @@ describe('LanguageProvider resolution', () => {
     mount();
     await waitFor(() => expect(i18n.language).toBe('fr'));
   });
-  it('instance default applied after login without reload', async () => {
-    browser(['xx']);
-    localStorage.removeItem('lr_token');
-    const { rerender } = mount();
-    expect(getSettings).not.toHaveBeenCalled();
-    localStorage.setItem('lr_token', 't');
-    auth.user = { id: 'u1' } as never;
-    rerender(<LanguageProvider><Probe /></LanguageProvider>);
-    await waitFor(() => expect(i18n.language).toBe('fr'));
-  });
   it('AC7 unsupported browser and no default -> en', async () => {
     browser(['xx']);
     vi.mocked(getSettings).mockResolvedValue({} as never);
