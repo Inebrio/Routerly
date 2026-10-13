@@ -3144,6 +3144,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const customRoles = await readConfig('roles');
     const filtered = customRoles.filter(r => r.id !== req.params.id);
     if (filtered.length === customRoles.length) return reply.status(404).send({ error: 'Role not found' });
+    const assigned = (await readConfig('users')).filter(u => u.roleId === req.params.id).map(u => u.email);
+    if (assigned.length > 0) {
+      return reply.status(409).send({ error: `Role "${req.params.id}" is assigned to ${assigned.length} user(s): ${assigned.join(', ')}. Reassign them first.` });
+    }
     await writeConfig('roles', filtered);
     audit(req, 'role:delete', 'success', { id: req.params.id });
     return reply.status(204).send();
