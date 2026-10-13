@@ -332,6 +332,10 @@ input, select, textarea { font-family: inherit; }
   .page-header { padding-left: 16px; padding-right: 16px; }
   .page-body { padding-left: 16px; padding-right: 16px; }
   .table-wrap { max-width: 100%; }
+  /* Wide content (tables, tab bars, toolbars) scrolls inside the page, never the document. */
+  .main-content { overflow-x: hidden; }
+  .page-header,
+  .page-body { overflow-x: auto; }
 }
 
 .sidebar-collapsed .main-content {
