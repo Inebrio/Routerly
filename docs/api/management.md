@@ -1173,6 +1173,12 @@ getting `401`. Move those clients to a router token first.
 GET /api/routers
 ```
 
+The list is not filtered by router membership: every caller holding
+`router:read` sees every router (name, kind, token snippets, never full tokens).
+Membership (`/api/routers/:id/members`) records who administers a router and
+scopes MCP access; it does not hide routers. To keep a router out of someone's
+view, do not grant them `router:read`.
+
 There is no single-router route: read a router from this list. Routers are
 addressed by `id`, never by name or slug.
 

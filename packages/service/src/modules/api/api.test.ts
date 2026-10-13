@@ -1409,6 +1409,27 @@ describe('GET /api/routers', () => {
     expect(body[0].tokens[0].token).toBeUndefined()
   })
 
+  it('lists every router to a viewer who is not a member: router:read is global by design (ROUT-220)', async () => {
+    const viewer = { id: 'viewer-id', email: 'v@example.com', passwordHash: 'x', roleId: 'viewer', routerIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    const routers = [
+      { id: 'r1', name: 'One', tokens: [], members: [{ userId: 'admin-id', role: 'admin' }], models: [] },
+      { id: 'r2', name: 'Two', tokens: [], members: [], models: [] },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser, viewer]
+      if (t === 'roles') return []
+      if (t === 'routers') return routers
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).map((r: any) => r.id)).toEqual(['r1', 'r2'])
+  })
+
   it('resolves an orchestrator\'s candidates to {routerId,name,limits}, stripping the target Router\'s own policy/model config, and reports kind for every router (AC7 wire-level)', async () => {
     setupAdminAuth()
     const candidateLimits = [{ metric: 'cost', windowType: 'period', period: 'daily', value: 5 }]
