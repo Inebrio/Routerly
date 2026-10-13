@@ -49,7 +49,7 @@ const request: Processor<ProxyContext> = {
       ctx.emit?.({ panel: 'request', message: 'guardrail:triggered', details: { rule: result.triggered, target: 'request', block: result.block, log: result.log, blockMessage } })
       if (result.block) {
         ctx.blockedBy = result.triggered
-        if (ctx.protocol === 'openai' && ctx.stream) {
+        if (ctx.stream) {
           // buildContentFilterBlock is JSON-only; the streaming request-block has its
           // own wire form (hijack + SSE content_filter chunk + [DONE]).
           await writeOpenAIStreamingBlock(ctx)
@@ -123,7 +123,7 @@ const response: Processor<ProxyContext> = {
 }
 
 export const guardrailsModule: RouterlyModule = defineModule({
-  manifest: { id: 'guardrails', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'guardrails', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
   register({ container }) {
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(request)

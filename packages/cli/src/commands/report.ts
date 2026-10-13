@@ -373,13 +373,17 @@ Examples:
         const params = new URLSearchParams({ limit: opts.limit });
         if (opts.router) params.set('routerId', opts.router);
 
-        const data = await api<Array<{
-          sessionId: string;
-          routerId: string;
-          requests: number;
-          totalCost: number;
-          startedAt: string;
-        }>>('GET', `/api/sessions?${params.toString()}`);
+        const res = await api<{
+          sessions: Array<{
+            sessionId: string;
+            routerId: string;
+            requests: number;
+            totalCost: number;
+            firstSeen: string;
+          }>;
+          nextCursor?: string;
+        }>('GET', `/api/sessions?${params.toString()}`);
+        const data = res.sessions;
 
         if (opts.json) { console.log(JSON.stringify(data, null, 2)); return; }
 
@@ -398,10 +402,11 @@ Examples:
             s.routerId.slice(0, 12),
             s.requests,
             fmtUsd(s.totalCost, 6),
-            new Date(s.startedAt).toLocaleString(),
+            new Date(s.firstSeen).toLocaleString(),
           ]);
         }
         console.log(table.toString());
+        if (res.nextCursor) console.log(chalk.gray('More sessions available; raise --limit to see them.'));
       } catch (err) {
         console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
