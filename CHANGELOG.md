@@ -23,6 +23,7 @@ the change itself — never reconstructed after the fact. See
 - Non-stream requests to an unresponsive upstream no longer wait ~181 s: SDK clients for all chat adapters now run with `maxRetries: 0`, so the model `timeout` (default 60 s) is no longer tripled; the `custom` and `bedrock` adapters, which call `fetch` directly, now honour it too (they had no timeout at all) and failover happens right after it. Streaming requests whose candidates all fail before the first chunk now get HTTP 503 `server_error` (same as non-stream) instead of an empty 200 stream.
 - `DELETE /api/connections/:id` (and so `routerly connections remove`) now rejects with 409 `{error, usedBy}` a connection still used by a model, instead of leaving hidden orphan instances.
 - `DELETE /api/models/:id` (and so `routerly model remove` and the dashboard Models page) now rejects with 409 a model still referenced by a router or router token, naming the routers, instead of leaving dangling references. CLI exits 1 with the message on stderr; the dashboard shows it as an error.
+- **Experiments**: variant weights are documented as relative (not percentages), `routerly experiments show` prints each variant's effective share, and a 400 from `POST`/`PATCH /api/experiments` now carries a string `error` naming the failing field path (e.g. `judge.sampleRate`) instead of a nested object.
 
 ### New features
 
