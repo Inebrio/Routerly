@@ -279,6 +279,7 @@ routerly connections remove c1
 
 **Error cases:**
 - Connection not found: `Error: Connection "<id>" not found.`
+- Connection still used by a model: `Error: Connection is used by model(s): <ids>` (nothing is removed)
 
 Exit code: `0` on success, `1` on error.
 
@@ -449,8 +450,10 @@ dashboard model form, or the API's `PUT /api/models/:id` with a
 ### `routerly model remove`
 
 ```
-routerly model remove --id <id>
+routerly model remove <id>
 ```
+
+Fails with exit code `1` and `Error: Model "<id>" is used by router(s): <names>…` when a router or router token still references the model (nothing is removed).
 
 ### `routerly model discover`
 

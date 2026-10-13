@@ -218,6 +218,8 @@ Changing a field value automatically sets `fieldOverrides[fieldName] = true`. To
 DELETE /api/models/:id
 ```
 
+**Errors**: `404` model not found · `409` `{ error, usedBy }` the model is still referenced by a router or router token (`usedBy` = router ids; nothing is deleted) · `403` insufficient permissions
+
 If the model owned its dedicated `conn-for-<id>` connection and no other model instance references it, the connection is deleted along with the model.
 
 ### Get Model API Key
@@ -398,7 +400,7 @@ DELETE /api/connections/:id
 
 **Response**: `204 No Content`
 
-**Errors**: `404` connection not found · `403` insufficient permissions
+**Errors**: `404` connection not found · `409` `{ error, usedBy }` the connection is still used by one or more models (`usedBy` = model ids; nothing is deleted) · `403` insufficient permissions
 
 ---
 
