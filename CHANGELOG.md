@@ -133,7 +133,6 @@ The service core has been reorganized from inline route handlers into a dependen
 
 ### Bug fixes
 
-- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - Fixed `updatedAt` in the model catalog always equalling `lastChecked` on first fetch, and the last repo in the list silently overriding earlier ones on a key conflict
 - Fixed "Unrecognized keys: notificationRules, cooldowns" error when saving notification settings, and email provider parity with the dashboard
 - Fixed Gemini adapter stripping the provider prefix from the model ID before the upstream call
@@ -220,7 +219,6 @@ Routerly can be used as a drop-in proxy for Claude Code by setting `ANTHROPIC_BA
 
 ### Bug fixes and maintenance
 
-- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - Fixed config write lock retry budget for high-concurrency scenarios
 - Fixed guardrail/blocked breakdown in CLI `report usage`
 - Fixed dashboard: prevent login redirect loop and double-encoded `to` param
@@ -299,7 +297,6 @@ New Help page in the dashboard with links to documentation, GitHub Issues, and e
 
 ### Bug fixes and maintenance
 
-- `routerly auth refresh` now saves the rotated refresh token, so repeated refreshes and the later silent refresh no longer fail with "Refresh token revoked."
 - Fixed `GET /api/system/info` being incorrectly protected by JWT middleware — it is now public
 - Fixed Qwen3 thinking-only response handling in the Ollama adapter
 - Fixed `reasoning_effort` being forwarded to non-o-series OpenAI models
