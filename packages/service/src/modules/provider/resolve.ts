@@ -21,6 +21,10 @@ export function resolveEffectiveModel(
     contextWindow: instance.contextWindow,
   };
 
+  if (instance.timeout !== undefined) {
+    result.timeout = instance.timeout;
+  }
+
   if (instance.limits !== undefined) {
     result.limits = instance.limits;
   }
