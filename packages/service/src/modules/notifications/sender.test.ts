@@ -112,7 +112,7 @@ describe('sendTestNotification', () => {
     })
 
     it('rethrows non-Error thrown values (string) that are not SSL errors', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       mockSendMail.mockRejectedValue('string error value' as any)
       await expect(sendTestNotification(smtpChannel, 'u@x.com')).rejects.toBe('string error value')
     })

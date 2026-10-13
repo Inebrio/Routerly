@@ -132,6 +132,7 @@ export class GeminiAdapter implements ProviderAdapter {
       model: upstreamModel,
       max_tokens: request.max_tokens,
       stream: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     } as any);
     return openAIToAnthropicResponse(response, upstreamModel);
   }

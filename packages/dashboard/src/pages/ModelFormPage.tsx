@@ -287,7 +287,7 @@ export function ModelFormPage() {
       }
     }
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [id, isEditing, editingModelId]);
 
   // ── Catalog override helpers ───────────────────────────────────────────────
@@ -553,7 +553,7 @@ export function ModelFormPage() {
   }
 
   /* v8 ignore next 7 */
-  function effectiveId(): string {
+  function _effectiveId(): string {
     if (form.customId.trim()) return form.customId.trim();
     const prefix = form.provider === 'custom' && form.customProviderName.trim()
       ? form.customProviderName.trim()

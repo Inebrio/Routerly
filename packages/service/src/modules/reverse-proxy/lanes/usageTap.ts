@@ -78,7 +78,7 @@ export function createUsageTap(contentType: string | null, onDone: (u: TappedUsa
       cb(null, chunk);
     },
     flush(cb) {
-      if (sse) eat(pending), (pending = '');
+      if (sse) { eat(pending); pending = ''; }
       finish();
       cb();
     },

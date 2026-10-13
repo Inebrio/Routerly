@@ -153,7 +153,7 @@ export function RouterOrchestratorTab() {
           return { routerId: r.routerId, ...(limits.length > 0 ? { limits } : {}) };
         }),
         policies: policies.map(p => {
-          const { internalId, ...rest } = p;
+          const { internalId: _internalId, ...rest } = p;
           return rest;
         }),
       };

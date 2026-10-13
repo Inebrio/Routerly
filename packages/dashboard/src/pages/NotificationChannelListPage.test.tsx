@@ -454,8 +454,8 @@ describe('NotificationChannelListPage — add picker', () => {
 
 describe('NotificationChannelListPage — row navigation', () => {
   it('clicking a row navigates to channel edit page', async () => {
-    const mockNav = vi.fn();
-    const MemoryRouterWithNav = ({ children }: { children: React.ReactNode }) => {
+    const _mockNav = vi.fn();
+    const _MemoryRouterWithNav = ({ children }: { children: React.ReactNode }) => {
       return (
         <MemoryRouter>
           {children}

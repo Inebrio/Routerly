@@ -323,7 +323,7 @@ describe('RolesPage — delete role', () => {
     // Delete button is the Trash2 button (no text, last button in row)
     await waitFor(() => screen.getAllByRole('button'));
     const buttons = screen.getAllByRole('button');
-    const trashBtn = buttons.find(b => b.querySelector('svg'));
+    const _trashBtn = buttons.find(b => b.querySelector('svg'));
     // Find the danger-class button
     const dangerBtns = Array.from(document.querySelectorAll('button.btn-danger'));
     expect(dangerBtns.length).toBeGreaterThan(0);

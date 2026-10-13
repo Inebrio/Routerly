@@ -12,7 +12,7 @@ import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
 import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } from '../auth/totp.js';
-import type { ModelConfig, RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, Provider, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ProviderRepo, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
+import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
@@ -1723,6 +1723,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         throw new ConfigUpdateAbort(409, { error: 'User is already a member' });
       }
       const next = [...routers];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       next[index] = { ...router, members: [...members, { userId: req.body.userId, role: req.body.role as any }] };
       return next;
     });
@@ -1740,7 +1741,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const memberIndex = router.members.findIndex(m => m.userId === req.params.userId);
       if (memberIndex === -1) throw new ConfigUpdateAbort(404, { error: 'Member not found' });
       const members = [...router.members];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       updatedMember = { ...members[memberIndex]!, role: req.body.role as any };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
       members[memberIndex] = updatedMember as any;
       const next = [...routers];
       next[index] = { ...router, members };
@@ -2430,6 +2433,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const updated = { ...current };
     for (const key of allowed) {
       if ((req.body as Partial<Settings>)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
         (updated as any)[key] = (req.body as Partial<Settings>)[key];
       }
     }

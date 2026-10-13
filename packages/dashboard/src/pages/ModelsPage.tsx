@@ -147,7 +147,7 @@ export function ModelsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [healthMap, setHealthMap] = useState<Map<string, ProviderHealth>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [healthUpdatedAt, setHealthUpdatedAt] = useState<Date | null>(null);
+  const [_healthUpdatedAt, setHealthUpdatedAt] = useState<Date | null>(null);
   const [search, setSearch] = useState('');
   const [providerFilter, setProviderFilter] = useState(() => searchParams.get('provider') ?? '');
   const [connectionFilter, setConnectionFilter] = useState(() => searchParams.get('connection') ?? '');

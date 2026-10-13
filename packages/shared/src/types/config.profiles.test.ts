@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { SelectorType, FallbackStrategyType, OptimizerProfile, Profile, ProfileOfKind, RoutingProfile, SecurityProfile, Permission } from './config.js';
+import type { SelectorType, FallbackStrategyType, OptimizerProfile, Profile, ProfileOfKind, RoutingProfile, SecurityProfile, Permission } from './config.js';
 
 describe('type-checks', () => {
   it('type-checks', () => {

@@ -232,7 +232,7 @@ describe('proactive token refresh', () => {
     storage['lr_refresh_token'] = 'ref';
 
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { token: 't', user: {} }));
-    const { checkSetupStatus } = await api();
+    const { checkSetupStatus: _checkSetupStatus } = await api();
     // We test the path directly through checkSetupStatus — not /auth/refresh itself, since that's internal.
     // This test is covered by "does not call refresh for expiry=0" below.
     expect(true).toBe(true);

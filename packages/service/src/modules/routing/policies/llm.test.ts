@@ -795,7 +795,7 @@ describe('llmPolicy', () => {
     mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
     mockGetRoutingHistory.mockReturnValue([])
-    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+     
     mockLlmChat.mockRejectedValue('string error')
 
     await expect(llmPolicy(makeInput({ routingModelId: 'router-model' }))).rejects.toThrow('all models failed')

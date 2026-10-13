@@ -73,6 +73,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     const reply = ctx.reply
     const log = ctx.log
     const router = ctx.router
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const endUserId = (body as any).user as string | undefined || undefined
 
     // ── OAuth models: verbatim pass-through with OAuth token (anthropic.ts L221-224). ──

@@ -222,7 +222,7 @@ function PiiPolicyCard({
 // ── Target selector ───────────────────────────────────────────────────────────
 
 function TargetSelector({ value, onChange }: { value: GuardrailTarget | undefined; onChange: (v: GuardrailTarget) => void }) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const reqChecked = value === 'request' || value === 'both';
   const resChecked = value === 'response' || value === 'both';
 

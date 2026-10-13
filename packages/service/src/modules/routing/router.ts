@@ -206,7 +206,7 @@ export async function scoreCandidates(
 
   // ── Bypass diretto se rimane un solo candidato valido ────────────────────
   if (validCandidates.length === 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     const only = validCandidates[0]!;
     log?.info(
       { modelId: only.model.id, totalCandidates: candidates.length },

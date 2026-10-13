@@ -308,7 +308,7 @@ export interface RoutingPolicy {
   /** Whether this policy should be checked when routing */
   enabled: boolean;
   /** Optional policy-specific settings */
-  config?: any;
+  config?: unknown;
 }
 
 export type SelectorType = 'argmax' | 'weighted-random' | 'round-robin' | 'cheapest' | 'lowest-latency';

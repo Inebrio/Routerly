@@ -1446,7 +1446,6 @@ describe('RouterSecurityTab — PII onChange with multiple policies covers j !==
 describe('RouterSecurityTab — renders null when no router', () => {
   it('returns null (renders nothing) when router is undefined', async () => {
     function NullWrapper() {
-      const { Outlet } = require('react-router-dom');
       return <Outlet context={{ router: undefined, setRouter: vi.fn() }} />;
     }
     const { render: r } = await import('@testing-library/react');
@@ -1483,7 +1482,7 @@ describe('RouterSecurityTab — fallback models MultiSelect', () => {
     expect(ms).toBeTruthy();
 
     // Primary embedding model (openai/text-embedding-3-small) must not be in fallback options
-    const vals = Array.from(ms.options).map(o => o.value);
+    const _vals = Array.from(ms.options).map(o => o.value);
     // No embedding model selected yet (embeddingModelId=''), so all embedding options appear
     // Once a primary is selected it gets filtered — verify the filter logic via onChange
     expect(ms).toBeTruthy();

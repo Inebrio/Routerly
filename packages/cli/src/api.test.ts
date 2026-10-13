@@ -22,7 +22,7 @@ const ACCOUNT = {
   // exactOptionalPropertyTypes: omit optional key rather than set to undefined
 };
 
-const SAFE_STATUS: PermissionCheckStatus = { blocked: false, bypassActive: false, unsafe: [] };
+const _SAFE_STATUS: PermissionCheckStatus = { blocked: false, bypassActive: false, unsafe: [] };
 
 beforeEach(() => {
   mockRequireAccount.mockResolvedValue(ACCOUNT);

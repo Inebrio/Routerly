@@ -668,7 +668,7 @@ describe('RouterRoutingTab — LLM policy fields', () => {
     const addBtns = screen.getAllByText('Add Fallback Model');
     await userEvent.click(addBtns[addBtns.length - 1]!);
     await waitFor(() => {
-      const rows = document.querySelectorAll('[style*="cache"]') ?? [];
+      const _rows = document.querySelectorAll('[style*="cache"]') ?? [];
       // Just verify there are now 2 embedding model selects (primary + fallback)
       const embeddingSelects = document.querySelectorAll('[data-testid="searchable-Select model"]');
       expect(embeddingSelects.length).toBeGreaterThanOrEqual(2);
@@ -783,7 +783,7 @@ describe('RouterRoutingTab — semantic-intent policy fields', () => {
     await waitFor(() => screen.getAllByText('support'));
     // Click the intent row (the one inside the intent list, not a badge)
     const intentRows = document.querySelectorAll('[title="Remove intent"]');
-    const supportRow = Array.from(intentRows).find(btn =>
+    const _supportRow = Array.from(intentRows).find(btn =>
       btn.closest('div')?.previousSibling?.textContent?.includes('support') ||
       btn.closest('div[style]')?.textContent?.includes('support')
     );

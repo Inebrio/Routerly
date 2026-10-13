@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useRouter } from './RouterLayout';
-import { getUsers, addRouterMember, updateRouterMember, removeRouterMember, User } from '../../api';
+import type { User } from '../../api';
+import { getUsers, addRouterMember, updateRouterMember, removeRouterMember } from '../../api';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { SearchableSelect } from '../../components/SearchableSelect';
 

@@ -191,7 +191,7 @@ describe('TestPage — clean turn', () => {
 // ── Cross-chunk SSE buffering ──────────────────────────────────────────────
 
 /** Returns a Response whose reader yields the given chunks in order. */
-function makeChunkedSSEResponse(chunks: string[], traceId = 'trace-123') {
+function makeChunkedSSEResponse(chunks: string[], _traceId = 'trace-123') {
   const enc = new TextEncoder();
   let i = 0;
   return new Response(
@@ -297,7 +297,7 @@ describe('TestPage — Clear resets debug', () => {
 
     // Click the first Clear button (chat-area; resets both messages and debug)
     const clearBtns = screen.getAllByRole('button', { name: 'Clear' });
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     await userEvent.click(clearBtns[0]!);
 
     // Messages gone
@@ -956,7 +956,7 @@ describe('TestPage — debug sidebar trace entries rendered', () => {
     );
 
     // Click summary to expand
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     await userEvent.click(screen.getAllByText('Turn #1 trace log')[0]!);
     // TraceEntryRenderer mock renders entry.message
     await waitFor(() =>
@@ -1630,7 +1630,7 @@ describe('TestPage — debug sidebar trace entry last item', () => {
 
     // The trace log should be clickable to expand trace entries
     await waitFor(() => expect(screen.queryAllByText('Turn #1 trace log').length).toBeGreaterThan(0));
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+     
     await userEvent.click(screen.getAllByText('Turn #1 trace log')[0]!);
 
     // Both trace entries should render — last entry triggers j === traces.length-1 branch

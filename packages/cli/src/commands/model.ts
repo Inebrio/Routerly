@@ -15,7 +15,7 @@ async function promptLimits(existing: Limit[] = []): Promise<Limit[]> {
     ? chalk.gray('  (none)')
     : limits.map((l, i) => `  ${i + 1}. ${l.metric} ${l.windowType === 'period' ? l.period : `rolling ${l.rollingAmount} ${l.rollingUnit}`} ≤ ${l.value}`).join('\n');
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     console.log(chalk.bold('\nCurrent limits:'));
     console.log(display());
@@ -75,7 +75,7 @@ async function promptPricingTiers(existing: PricingTier[] = []): Promise<Pricing
     ? chalk.gray('  (none)')
     : tiers.map((t, i) => `  ${i + 1}. ${t.metric} > ${t.above}: $${t.inputPerMillion}/$${t.outputPerMillion} per 1M`).join('\n');
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     console.log(chalk.bold('\nCurrent pricing tiers:'));
     console.log(display());

@@ -244,7 +244,7 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
   function setModel(idx: number, key: string) {
     setRows(prev => prev.map((r, i) => {
       if (i !== idx) return r;
-      if (key === '') { const { model, ...rest } = r; return rest; }
+      if (key === '') { const { model: _model, ...rest } = r; return rest; }
       return { ...r, model: key };
     }));
   }
@@ -252,7 +252,7 @@ export function OptimizerStepsEditor({ rows, setRows, disabled = false }: Optimi
   function setThreshold(idx: number, value: string) {
     setRows(prev => prev.map((r, i) => {
       if (i !== idx) return r;
-      if (value === '') { const { threshold, ...rest } = r; return rest; }
+      if (value === '') { const { threshold: _threshold, ...rest } = r; return rest; }
       return { ...r, threshold: Number(value) };
     }));
   }

@@ -169,7 +169,7 @@ export async function startServer() {
   // iteration 2, finding B2.
   const storageMigrated = await migrateRouterStorage();
   if (storageMigrated !== undefined) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] migrated ${storageMigrated} router(s) from projects.json to routers.json`);
   }
 
@@ -180,7 +180,7 @@ export async function startServer() {
   // .claude/specs/0.4.1/03-validation/RTR-06.md, finding B1.
   const migratedUsage = await migrateUsageToNdjson();
   if (migratedUsage > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
   }
 
@@ -220,7 +220,7 @@ export async function startServer() {
 
   const orphansRemoved = await pruneOrphanUsage();
   if (orphansRemoved > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching router)`);
   }
 
