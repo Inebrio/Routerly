@@ -19,6 +19,7 @@ the change itself — never reconstructed after the fact. See
 
 - **Settings → About shows the real version** — package and module manifest versions were still stamped `0.4.0` in git, so branch builds reported `v0.4.0`. They are now stamped to the working release version; `docs/contributing/releasing.md` documents the stamp step for new release branches.
 - Non-stream requests to an unresponsive upstream no longer wait ~181 s: SDK clients for all chat adapters now run with `maxRetries: 0`, so the model `timeout` (default 60 s) is no longer tripled; the `custom` and `bedrock` adapters, which call `fetch` directly, now honour it too (they had no timeout at all) and failover happens right after it. Streaming requests whose candidates all fail before the first chunk now get HTTP 503 `server_error` (same as non-stream) instead of an empty 200 stream.
+- `DELETE /api/models/:id` (and so `routerly model remove` and the dashboard Models page) now rejects with 409 a model still referenced by a router or router token, naming the routers, instead of leaving dangling references. CLI exits 1 with the message on stderr; the dashboard shows it as an error.
 
 ### New features
 

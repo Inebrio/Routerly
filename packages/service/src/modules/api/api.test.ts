@@ -1372,6 +1372,24 @@ describe('DELETE /api/models/:id', () => {
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
   })
 
+  it('returns 409 and does not delete a model referenced by a router', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [{ id: 'in-use', connectionId: 'c', upstreamModelId: 'in-use', cost: {}, contextWindow: 0 }]
+      if (t === 'routers') return [{ id: 'r1', name: 'My Router', models: [{ modelId: 'in-use' }], tokens: [] }]
+      return []
+    })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/models/in-use', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().error).toContain('My Router')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('returns 404 for nonexistent model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
