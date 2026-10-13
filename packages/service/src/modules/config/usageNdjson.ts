@@ -1,4 +1,4 @@
-import { readFile, writeFile, appendFile, rename, unlink, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, rename, unlink, mkdir, chmod } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import lockfile from 'proper-lockfile';
 import type { UsageRecord, UsageRetentionConfig } from '@routerly/shared';
@@ -24,7 +24,9 @@ function isNodeError(err: unknown): err is NodeJS.ErrnoException {
  */
 async function ensureFileExists(filePath: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
-  await writeFile(filePath, '', { flag: 'a' });
+  await writeFile(filePath, '', { flag: 'a', mode: 0o600 });
+  // Tighten a file created earlier with the default umask (644).
+  await chmod(filePath, 0o600);
 }
 
 /**
@@ -73,7 +75,7 @@ async function publishUsageNdjson(filePath: string, records: UsageRecord[]): Pro
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   try {
     const content = records.map((r) => JSON.stringify(r)).join('\n') + (records.length ? '\n' : '');
-    await writeFile(tmpPath, content, 'utf-8');
+    await writeFile(tmpPath, content, { encoding: 'utf-8', mode: 0o600 });
     await rename(tmpPath, filePath);
   } catch (err) {
     await unlink(tmpPath).catch(() => {});
