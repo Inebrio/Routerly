@@ -187,7 +187,7 @@ Array of Router configurations: routers, Orchestrators, and Passthrough Routers 
 | `id` | `string` | Internal Router ID (UUID) |
 | `name` | `string` | Human-readable Router name |
 | `kind` | `string` | `"router"` \| `"orchestrator"` \| `"passthrough"`. Absent means `"router"` (every Router stored before this field existed) |
-| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, in milliseconds. Default `2000`; `0` disables it |
+| `timeoutMs` | `number` | Time-to-first-token timeout per model attempt, streaming requests only, in milliseconds. Default `2000`; `0` disables it. Non-streaming calls are capped by the model `timeout` (default `60000`) |
 | `policies` | `RoutingPolicy[]` | Routing policies in priority order (each `{ type, ...params }`); see [Concepts: Routing](../concepts/routing.md) |
 | `models` | `array` | Target models: `{ modelId, prompt? }` |
 | `candidates` | `array` | Only on `kind: "orchestrator"`: `{ routerId, limits? }` — other Routers this one forwards to, in priority order (index 0 = highest); no `weight` field |

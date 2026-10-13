@@ -133,7 +133,7 @@ function ThemeCycleButton() {
   );
 }
 
-function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function Sidebar({ collapsed, onToggle, version }: { collapsed: boolean; onToggle: () => void; version?: string | undefined }) {
   const { t } = useTranslation();
   const { user, logout, can } = useAuth();
   const navigate = useNavigate();
@@ -239,6 +239,9 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           <LogOut size={15} />
           <span className="nav-label">{t('app.nav.signOut')}</span>
         </button>
+        {version && !collapsed && (
+          <div className="sidebar-version" data-testid="sidebar-version" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', opacity: 0.6, textAlign: 'center', padding: '2px 0' }}>v{version}</div>
+        )}
       </div>
     </aside>
   );
@@ -261,9 +264,10 @@ function ProtectedLayout() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed');
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed' || window.innerWidth <= 768);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isDocker, setIsDocker] = useState(false);
+  const [version, setVersion] = useState<string>();
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     return localStorage.getItem('lr-update-banner-dismissed') === 'true';
   });
@@ -277,6 +281,7 @@ function ProtectedLayout() {
     getSystemInfo()
       .then(info => {
         setIsDocker(info.isDocker);
+        setVersion(info.version);
         if (info.updateInfo?.available) setUpdateInfo(info.updateInfo);
       })
       .catch(/* v8 ignore next */ () => { /* non-critical */ });
@@ -364,7 +369,7 @@ function ProtectedLayout() {
   if (!user) return <Navigate to={`/dashboard/login?to=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   return (
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
-      <Sidebar collapsed={collapsed} onToggle={handleToggle} />
+      <Sidebar collapsed={collapsed} onToggle={handleToggle} version={version} />
       <main className="main-content">
         {showPermissionWarning && (
           <div style={{
