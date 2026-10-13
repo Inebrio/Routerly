@@ -267,6 +267,16 @@ describe('RouterRoutingTab — loads existing policies', () => {
     const payload = mockUpdateRouter.mock.calls[0]![1] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('timeoutMs');
   });
+
+  it('disabled policy shows badge and Save keeps enabled:false (ROUT-207)', async () => {
+    renderTab({ ...mockRouter, policies: [{ type: 'health', enabled: true }, { type: 'context', enabled: false }] });
+    await waitFor(() => screen.getByRole('button', { name: /save routing configuration/i }));
+    expect(screen.getAllByText('Disabled')).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: /save routing configuration/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalled());
+    const payload = mockUpdateRouter.mock.calls[0]![1] as { policies: { type: string; enabled: boolean }[] };
+    expect(payload.policies.map(p => [p.type, p.enabled])).toEqual([['health', true], ['context', false]]);
+  });
 });
 
 // ── Add / Remove policies ─────────────────────────────────────────────────────
