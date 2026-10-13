@@ -57,6 +57,20 @@ describe('helpers', () => {
     expect((out[1] as any).choices[0].delta.content).toBe('hello')
   })
 
+  it('wrapWithStreamingScrubber merges the held-back tail into the finish_reason chunk', async () => {
+    const effective = { entities: ['PHONE'], customPatterns: [], outputBufferSize: 30 } as any
+    const mk = (content: string | undefined, finish: string | null) => ({
+      id: 'up-1', model: 'stub-model', choices: [{ index: 0, delta: content === undefined ? {} : { content }, finish_reason: finish }],
+    })
+    async function* src() { yield mk('call +39 333 ', null); yield mk('1234567 please', null); yield mk(undefined, 'stop') }
+    const out: any[] = await collect(wrapWithStreamingScrubber(src(), effective, ctxOf({})))
+    expect(out.at(-1).choices[0].finish_reason).toBe('stop')
+    expect(out.every(c => c.id === 'up-1' && c.model === 'stub-model')).toBe(true)
+    const text = out.map(c => c.choices[0].delta.content ?? '').join('')
+    expect(text).not.toMatch(/\d{7}/)
+    expect(text).toContain('please')
+  })
+
   it('wrapWithStreamingScrubber traces the response scan once the stream is complete', async () => {
     const emit = vi.fn()
     const effective = { entities: ['EMAIL'], customPatterns: [], outputBufferSize: 5 } as any
