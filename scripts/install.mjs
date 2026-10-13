@@ -57,6 +57,7 @@ const FLAG_PORT      = getArg('port')        ?? process.env.ROUTERLY_PORT       
 const FLAG_HOST      = getArg('host')        ?? process.env.ROUTERLY_HOST        ?? '';
 const FLAG_URL       = getArg('public-url')  ?? process.env.ROUTERLY_PUBLIC_URL  ?? '';
 const INSTALL_VERSION = getArg('version') ?? ''; // set by install.sh/ps1 via --version=vX.Y.Z
+const INSTALL_PINNED = hasFlag('pinned'); // install.sh/ps1 pass --pinned only when the user asked for an explicit --version
 let INSTALL_CHANNEL = getArg('channel') ?? 'current'; // set by install.sh/ps1 via --channel= (latest | current | next)
 
 // Normalize deprecated channel aliases (mirrors install.sh / install.ps1) before any
@@ -814,9 +815,9 @@ if (!fs.existsSync(settingsPath)) {
     dashboardEnabled: installDashboard,
     logLevel: 'info',
     publicUrl,
-    channel: INSTALL_VERSION ? 'custom' : INSTALL_CHANNEL,
+    channel: INSTALL_PINNED ? 'custom' : INSTALL_CHANNEL,
   };
-  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo);
+  await writeFileP(settingsPath, JSON.stringify(settings, null, 2), needsSudo, 0o600);
   success('settings.json written');
 } else {
   info('Existing settings.json kept (upgrade mode)');
