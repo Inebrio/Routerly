@@ -35,13 +35,20 @@ declare module 'fastify' {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: pkgVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
+// `routerly mcp serve` runs the service as a stdio MCP server: stdout is the
+// JSON-RPC channel, so nothing else may write to it and no port may be bound
+// (the regular service is usually already listening on the same host).
+const isMcpStdio = () => process.env['ROUTERLY_MCP_STDIO'] === '1';
+
 export async function buildServer() {
   const settings = await readConfig('settings');
 
   const fastify = Fastify({
     logger: {
       level: settings.logLevel,
-      ...(process.env['NODE_ENV'] !== 'production'
+      ...(isMcpStdio()
+        ? { stream: process.stderr }
+        : process.env['NODE_ENV'] !== 'production'
         ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
         : {}),
     },
@@ -142,6 +149,7 @@ export async function buildServer() {
 }
 
 export async function startServer() {
+  if (isMcpStdio()) console.log = console.error;
   await initConfigDirs();
 
   // Permission guard runs first, before anything else reads or writes a
@@ -215,6 +223,8 @@ export async function startServer() {
     // eslint-disable-next-line no-console
     console.log(`[startup] pruned ${orphansRemoved} orphan usage record(s) (no matching router)`);
   }
+
+  if (isMcpStdio()) return;
 
   try {
     await server.listen({ port: settings.port, host: settings.host });

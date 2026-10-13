@@ -60,6 +60,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 ### Bug fixes
 
 - Fixed `/v1/responses` requests with `parallel_tool_calls` but no `tools` (sent by Codex) failing with an OpenAI 400; the field is now forwarded only when tools are present
+- **`routerly mcp serve` with the service on the same host** — the stdio MCP server no longer binds the HTTP port (it failed with `EADDRINUSE` and exited 1), and its logs go to stderr so stdout carries only JSON-RPC.
 - Dashboard: saving the Routing tab or the Orchestrator candidates no longer re-enables disabled routing policies; disabled policies show a "Disabled" badge and the Orchestrator hint lists all five accepted policy types.
 - **OpenAI streaming wire format**: `/v1/chat/completions` with `stream:true` no longer injects `stream_options.include_usage` into the upstream body and no longer returns a usage chunk the client did not request. When the client does not ask for usage, the recorded token counts are estimated (characters / 4); with `include_usage:true` they stay exact.
 - Installer (Linux, user scope) now enables systemd linger (`loginctl enable-linger`), so the service survives logout and starts at boot. If linger cannot be enabled, the installer prints the manual command instead of claiming boot start. New `--no-linger` flag to opt out.
