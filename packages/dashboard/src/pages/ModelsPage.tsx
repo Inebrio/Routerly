@@ -226,7 +226,7 @@ export function ModelsPage() {
       // provider-open circuit or connection cooldown still blocking the row.
       await Promise.all([
         resetResilience({ level: 'provider', id: m.provider }),
-        resetResilience({ level: 'connection', id: m.provider }),
+        resetResilience({ level: 'connection', id: m.connectionId ?? m.provider }),
         resetResilience({ level: 'model', id: m.id }),
       ]);
       await fetchHealth();
