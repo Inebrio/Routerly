@@ -51,6 +51,7 @@ export class CustomAdapter implements ProviderAdapter {
       },
       // `stream` stays exactly as the client sent it.
       body: JSON.stringify({ ...rest, ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
+      signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
@@ -70,6 +71,9 @@ export class CustomAdapter implements ProviderAdapter {
     }
     const upstreamModel = this.getUpstreamModelId(model);
     const { stream: _stream, ...rest } = request;
+    // Timeout covers the wait for the response headers only; an established stream may run longer.
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(new DOMException('Request timed out.', 'TimeoutError')), model.timeout ?? 60000);
     const response = await fetch(`${model.endpoint}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -78,7 +82,8 @@ export class CustomAdapter implements ProviderAdapter {
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       body: JSON.stringify({ ...rest, model: upstreamModel, stream: true }),
-    });
+      signal: ctl.signal,
+    }).finally(() => clearTimeout(timer));
     opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
       const text = await response.text().catch(() => '');
@@ -121,7 +126,7 @@ export class CustomAdapter implements ProviderAdapter {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
     }
-    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint });
+    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint, timeout: model.timeout ?? 60000, maxRetries: 0 });
     const upstreamModel = this.getUpstreamModelId(model);
     const { messages, system } = anthropicToOpenAIMessages(request);
     const openAIMessages = system

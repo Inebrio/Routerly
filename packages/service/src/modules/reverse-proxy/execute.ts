@@ -121,6 +121,11 @@ const providerDegraded   = new Set<string>();          // currently degraded mod
 const budgetExceededKeys = new Set<string>(); // "${routerId}:${modelId}" — awaiting reset
 const thresholdFiredKeys = new Set<string>(); // "${routerId}:${modelId}:${window}" — threshold already fired
 
+/** True for the SDK's own request-timeout error (model `timeout` elapsed, APIConnectionTimeoutError). */
+function isUpstreamTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'APIConnectionTimeoutError' || err.name === 'TimeoutError' || /^request timed out/i.test(err.message));
+}
+
 function isRateLimitError(err: unknown): boolean {
   return /429|rate.?limit|too many/i.test(err instanceof Error ? err.message : String(err));
 }
@@ -449,7 +454,7 @@ export async function llmChat(
       inputTokens: 0,
       outputTokens: 0,
       latencyMs,
-      outcome: 'error',
+      outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
@@ -556,7 +561,7 @@ export async function llmStream(
     handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), routerId, log);
     await trackUsage({
       routerId, model, inputTokens: 0, outputTokens: 0, latencyMs,
-      outcome: isTtftTimeout ? 'timeout' : 'error',
+      outcome: isTtftTimeout || isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
@@ -809,7 +814,7 @@ export async function llmMessages(
       inputTokens: 0,
       outputTokens: 0,
       latencyMs,
-      outcome: 'error',
+      outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),

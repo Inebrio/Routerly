@@ -929,7 +929,7 @@ describe('openai:attempt', () => {
     )
   })
 
-  it('all candidates exhausted, streaming: yields a stop-finish error chunk and emits the failure', async () => {
+  it('all candidates exhausted, streaming: returns the same 503 block, not an empty 200 stream', async () => {
     const models: ModelConfig[] = [
       { id: 'model-a', name: 'model-a', provider: 'openai', endpoint: 'e', cost: { inputPerMillion: 0, outputPerMillion: 0 } },
     ]
@@ -946,11 +946,10 @@ describe('openai:attempt', () => {
       emit: (e: { message: string }) => entries.push(e),
     } as unknown as ProxyContext
     await openaiAttempt.run(ctx)
-    expect((ctx.result as any).kind).toBe('stream')
-    const collected: unknown[] = []
-    for await (const chunk of (ctx.result as any).body) collected.push(chunk)
-    expect(collected).toHaveLength(1)
-    expect((collected[0] as any).choices[0].finish_reason).toBe('stop')
+    expect(ctx.result).toEqual({
+      kind: 'block', status: 503,
+      body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } },
+    })
     expect(entries.map((e) => e.message)).toContain('model:error')
   })
 

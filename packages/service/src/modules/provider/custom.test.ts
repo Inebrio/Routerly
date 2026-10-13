@@ -479,3 +479,19 @@ describe('CustomAdapter — model ID handling', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('CustomAdapter.chatCompletion timeout', () => {
+  it('aborts a silent upstream after model.timeout', async () => {
+    const http = await import('node:http')
+    const srv = http.createServer(() => { /* never answers */ })
+    await new Promise<void>((r) => srv.listen(0, '127.0.0.1', r))
+    const { port } = srv.address() as { port: number }
+    try {
+      const model = { id: 'm', provider: 'custom', endpoint: `http://127.0.0.1:${port}/v1`, timeout: 200 } as unknown as ModelConfig
+      await expect(new CustomAdapter().chatCompletion({ messages: [] } as never, model)).rejects.toMatchObject({ name: 'TimeoutError' })
+    } finally {
+      srv.closeAllConnections()
+      srv.close()
+    }
+  })
+})

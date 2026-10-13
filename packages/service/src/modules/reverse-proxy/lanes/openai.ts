@@ -7,7 +7,6 @@ import { getProxyPipeline } from '../run.js'
 import { runCandidateLoop } from '../candidate-loop.js'
 import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
-import type { TraceEntry } from '@routerly/shared'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
@@ -278,12 +277,10 @@ export const openaiAttempt: Processor<ProxyContext> = {
     }, () => {
       // All candidates exhausted.
       void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
-      if (ctx.stream) {
-        const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
-        ctx.emit?.(errorEntry)
-        const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
-        ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
-      } else if (clientError) {
+      // Nothing was written to the client yet (candidates fail before the first chunk), so the
+      // streaming and non-streaming requests get the same HTTP error.
+      if (ctx.stream) ctx.emit?.({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } })
+      if (clientError) {
         ctx.result = { kind: 'block', status: clientError.status, body: clientError.body }
       } else {
         ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
