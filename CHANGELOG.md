@@ -44,6 +44,11 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 - **CLI `model add` / `model edit` prices and limits** — the CLI sent a nested `cost` object that `POST/PUT /api/models` ignores, so prices were dropped (`$undefined`) and `edit` wiped prices and limits. The CLI now sends flat price fields, keeps `0` as a valid price, and resends existing limits on edit.
+
+- **Exhausted token/model limits return 429, not 500.** When every model of a non-passthrough router is over its limit or budget, the request now answers HTTP 429 in the provider error shape (`insufficient_quota` on OpenAI, `rate_limit_error` on Anthropic) instead of `500 all_models_limits_exceeded` (ROUT-196).
+
+- **Passthrough responses no longer empty** — `POST /passthrough/<slug>/...` returned the provider status and headers with an empty body (valid key, invalid key, `stream: true`). The route handlers (`/passthrough/...`, and `/v1/chat/completions`, `/v1/responses`, `/v1/messages` when a Passthrough router falls back to raw-forward) now return the reply after the upstream body is sent, so the provider body reaches the client unchanged.
+- **Dashboard over plain HTTP** — The Playground, Router Test, security rules editor and security profile form no longer fail with `crypto.randomUUID is not a function` on LAN installs served over `http://<IP>:3000` (non-secure context); ids now fall back to `crypto.getRandomValues`. The Router Test tab is mounted again in the router layout.
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.
