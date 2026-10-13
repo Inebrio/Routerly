@@ -60,6 +60,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Dashboard is usable at phone width.** At 768px and below the sidebar stays a 60px rail (expanding it overlays the page) and page padding shrinks, so no page scrolls horizontally at 390px; wide tables scroll inside their container.
 - **Installer:** `node scripts/install.mjs --yes` over an existing install now behaves as "Update": it stops the running service, rebuilds and restarts it (new PID, new version), keeping `settings.json` and data. Previously it ran as a fresh install and left the old process running.
 
 - Fixed `/v1/responses` requests with `parallel_tool_calls` but no `tools` (sent by Codex) failing with an OpenAI 400; the field is now forwarded only when tools are present
