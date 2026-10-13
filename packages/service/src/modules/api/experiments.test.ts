@@ -262,7 +262,7 @@ describe('POST /api/experiments', () => {
 
   it('400 names the full field path and rejects a negative weight', async () => {
     const app = await buildApp()
-    const call = (payload: unknown) => app.inject({
+    const call = (payload: Record<string, unknown>) => app.inject({
       method: 'POST', url: '/api/experiments',
       headers: authWith('experiments:manage', { routers }), payload,
     })
