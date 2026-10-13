@@ -126,7 +126,7 @@ const memory: Processor<ProxyContext> = {
 }
 
 export const routingModule: RouterlyModule = defineModule({
-  manifest: { id: 'routing', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', resilience: '^0.4.0' } },
+  manifest: { id: 'routing', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4', resilience: '^0.5.4' } },
   async migrate() {
     const migrated = await migrateProfiles()
     if (migrated > 0) {

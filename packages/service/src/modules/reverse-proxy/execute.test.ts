@@ -115,6 +115,15 @@ describe('llmChat', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: 'budget_exceeded' }))
   })
 
+  it('tracks outcome timeout when the SDK request timeout fires', async () => {
+    mockIsAllowed.mockResolvedValue(true)
+    const timeoutErr = Object.assign(new Error('Request timed out.'), { name: 'APIConnectionTimeoutError' })
+    mockGetProvider.mockReturnValue({ chatCompletion: vi.fn().mockRejectedValue(timeoutErr) } as any)
+
+    await expect(llmChat({ messages: [] } as any, makeModel(), makeCtx())).rejects.toThrow('Request timed out.')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'timeout' }))
+  })
+
   it('throws and tracks error when chatCompletion fails', async () => {
     mockIsAllowed.mockResolvedValue(true)
     const mockAdapter = { chatCompletion: vi.fn().mockRejectedValue(new Error('provider down')) }

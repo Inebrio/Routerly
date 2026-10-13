@@ -7,10 +7,10 @@ import { getProxyPipeline } from '../run.js'
 import { runCandidateLoop } from '../candidate-loop.js'
 import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
-import type { TraceEntry } from '@routerly/shared'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
+import { forwardableRequestHeaders } from '../../provider/passthrough.js'
 import { traceEgress } from '../helpers.js'
 import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
@@ -96,6 +96,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const router = ctx.router
     const endUserId = (body as any).user as string | undefined || undefined
 
+    // Provider response headers of the call that answers (a failed candidate's are overwritten).
+    let upstreamHeaders: Record<string, string> | undefined
     const cctx: LLMCallContext = {
       routerId: router.id,
       router,
@@ -112,6 +114,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
+      forwardHeaders: forwardableRequestHeaders(ctx.req?.headers ?? {}),
+      onUpstreamHeaders: (h) => { upstreamHeaders = h },
     }
 
     // ── openai-oauth: Codex Responses backend, mapped back to OpenAI chunks. ──
@@ -172,7 +176,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
     if (ctx.stream) {
       try {
         const streamResult = await llmStream(body, model, cctx, { injectUsage: false })
-        ctx.result = { kind: 'stream', body: streamResult.chunks }
+        ctx.result = { kind: 'stream', body: streamResult.chunks, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {
           log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate')
@@ -198,7 +202,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
         },
         'completion: response',
       )
-      ctx.result = { kind: 'json', body: response }
+      ctx.result = { kind: 'json', body: response, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate')
@@ -273,12 +277,10 @@ export const openaiAttempt: Processor<ProxyContext> = {
     }, () => {
       // All candidates exhausted.
       void emitEvent('routing.no_candidates', 'critical', { routerId: router.id, requestedModel: ctx.request.model ?? null, traceId: ctx.traceId }, { routerId: router.id, log })
-      if (ctx.stream) {
-        const errorEntry: TraceEntry = { panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } }
-        ctx.emit?.(errorEntry)
-        const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
-        ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
-      } else if (clientError) {
+      // Nothing was written to the client yet (candidates fail before the first chunk), so the
+      // streaming and non-streaming requests get the same HTTP error.
+      if (ctx.stream) ctx.emit?.({ panel: 'response', message: 'model:error', details: { error: 'All candidates unavailable or budget-exhausted' } })
+      if (clientError) {
         ctx.result = { kind: 'block', status: clientError.status, body: clientError.body }
       } else {
         ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
@@ -304,6 +306,7 @@ export const openaiEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'json') {
       if (result.status) reply.code(result.status)
+      if (result.headers && !ctx.responsesApi) reply.headers(result.headers)
       reply.send(ctx.responsesApi
         ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
         : result.body)
@@ -327,6 +330,9 @@ export const openaiEgress: Processor<ProxyContext> = {
     if (origin) {
       reply.raw.setHeader('Access-Control-Allow-Origin', origin)
       reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
+    }
+    if (result.headers && !ctx.responsesApi) {
+      for (const [k, v] of Object.entries(result.headers)) reply.raw.setHeader(k, v)
     }
     reply.raw.setHeader('Content-Type', 'text/event-stream')
     reply.raw.setHeader('Cache-Control', 'no-cache')

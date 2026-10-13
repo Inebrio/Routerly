@@ -9,7 +9,7 @@ import { updateChecker } from './update-checker.js';
  * additionally makes it reachable through the container.
  */
 export const updateCheckerModule = defineModule({
-  manifest: { id: 'update-checker', version: '0.4.0' },
+  manifest: { id: 'update-checker', version: '0.5.4' },
   register({ container }) {
     container.register(UPDATE_CHECKER, {
       start: (currentVersion, channel) => updateChecker.start(currentVersion, channel),

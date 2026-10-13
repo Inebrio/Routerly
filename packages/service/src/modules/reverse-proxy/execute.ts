@@ -44,6 +44,7 @@ import type { TraceEntry } from '@routerly/shared';
 import type { TracePanel } from '../trace/store.js';
 import { getResilienceStore } from '../resilience/index.js';
 import { resilienceKeys } from '../resilience/keys.js';
+import type { CallOptions } from '../provider/passthrough.js';
 import { recordFault } from '../resilience/record.js';
 import { classifyUpstreamError, type UpstreamResponse } from '../resilience/classifier.js';
 
@@ -84,6 +85,10 @@ export interface LLMCallContext {
   experiment?: { id: string; variantId: string };
   /** Set when this call was forwarded through an Orchestrator (RTR-02) — the Orchestrator's own id. */
   orchestratorId?: string;
+  /** Client request headers to forward to the provider (OpenAI lane; already filtered). */
+  forwardHeaders?: Record<string, string>;
+  /** Receives the provider's response headers for the call that answered. */
+  onUpstreamHeaders?: (headers: Record<string, string>) => void;
 }
 
 /**
@@ -102,6 +107,13 @@ export class BudgetExceededError extends Error {
 
 // ─── In-memory notification state ────────────────────────────────────────────
 
+function callOptions(ctx: LLMCallContext): CallOptions {
+  return {
+    ...(ctx.forwardHeaders ? { headers: ctx.forwardHeaders } : {}),
+    ...(ctx.onUpstreamHeaders ? { onResponseHeaders: ctx.onUpstreamHeaders } : {}),
+  };
+}
+
 // Provider health tracking: keyed by model.id
 const providerFailCounts = new Map<string, number>(); // consecutive failures
 const providerDegraded   = new Set<string>();          // currently degraded model IDs
@@ -109,6 +121,11 @@ const providerDegraded   = new Set<string>();          // currently degraded mod
 // Budget notification deduplication
 const budgetExceededKeys = new Set<string>(); // "${routerId}:${modelId}" — awaiting reset
 const thresholdFiredKeys = new Set<string>(); // "${routerId}:${modelId}:${window}" — threshold already fired
+
+/** True for the SDK's own request-timeout error (model `timeout` elapsed, APIConnectionTimeoutError). */
+function isUpstreamTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'APIConnectionTimeoutError' || err.name === 'TimeoutError' || /^request timed out/i.test(err.message));
+}
 
 function isRateLimitError(err: unknown): boolean {
   return /429|rate.?limit|too many/i.test(err instanceof Error ? err.message : String(err));
@@ -344,7 +361,7 @@ export async function llmChat(
   });
 
   try {
-    const response = await adapter.chatCompletion(request, model);
+    const response = await adapter.chatCompletion(request, model, callOptions(ctx));
     const latencyMs = Date.now() - t0;
     const responseText = isRouting
       ? (response.choices?.[0]?.message?.content ?? undefined)
@@ -438,7 +455,7 @@ export async function llmChat(
       inputTokens: 0,
       outputTokens: 0,
       latencyMs,
-      outcome: 'error',
+      outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),
@@ -516,7 +533,7 @@ export async function llmStream(
     ? request
     : { ...request, stream_options: { include_usage: true } };
 
-  const iter = adapter.streamCompletion(streamRequest, model)[Symbol.asyncIterator]();
+  const iter = adapter.streamCompletion(streamRequest, model, callOptions(ctx))[Symbol.asyncIterator]();
 
   const ttftTimeoutMs = callType === 'completion' ? ctx.router.timeoutMs : undefined;
 
@@ -546,7 +563,7 @@ export async function llmStream(
     handleProviderResult(model, false, classifyUpstreamError(err, upstreamResponseFromError(err)), routerId, log);
     await trackUsage({
       routerId, model, inputTokens: 0, outputTokens: 0, latencyMs,
-      outcome: isTtftTimeout ? 'timeout' : 'error',
+      outcome: isTtftTimeout || isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
@@ -806,7 +823,7 @@ export async function llmMessages(
       inputTokens: 0,
       outputTokens: 0,
       latencyMs,
-      outcome: 'error',
+      outcome: isUpstreamTimeout(err) ? 'timeout' : 'error',
       errorMessage: msg,
       callType,
       ...(traceId !== undefined ? { traceId } : {}),

@@ -276,8 +276,8 @@
       "awsSessionTokenLabel": "Token di sessione",
       "awsSessionTokenOptionalHint": "(opzionale, per credenziali temporanee)",
       "awsSessionTokenPlaceholder": "AQoDYXdz…",
-      "gcpRouterId": "ID router GCP",
-      "gcpRouterIdPlaceholder": "mio-router-gcp",
+      "gcpProjectId": "GCP Project ID",
+      "gcpProjectIdPlaceholder": "my-gcp-project",
       "gcpLocationLabel": "Posizione",
       "gcpLocationDefaultHint": "(predefinito: us-central1)",
       "gcpLocationPlaceholder": "us-central1",
@@ -1885,7 +1885,9 @@
         "cacheWritePerMillion": "Scrittura cache $/1M",
         "optional": "(opz.)",
         "contextWindow": "Finestra di contesto",
-        "contextWindowHint": "(token, opzionale)"
+        "contextWindowHint": "(token, opzionale)",
+        "timeout": "Timeout",
+        "timeoutHint": "(ms, opzionale — default 60000)"
       },
       "tiers": {
         "title": "Avanzato — fasce di prezzo",
