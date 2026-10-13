@@ -11,6 +11,21 @@ import type { ProviderAdapter } from './types.js';
 import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
+ * Error carrying the SDK-style `status`/`headers`/`error` shape so the resilience
+ * classifier sees the real HTTP status and retry-after instead of a generic fault.
+ */
+async function upstreamError(response: Response): Promise<Error> {
+  const text = await response.text().catch(() => '');
+  let body: unknown;
+  try { body = JSON.parse(text); } catch { /* non-JSON body */ }
+  return Object.assign(new Error(`Custom provider returned ${response.status}: ${text}`), {
+    status: response.status,
+    headers: Object.fromEntries(response.headers),
+    ...(body !== undefined ? { error: body } : {}),
+  });
+}
+
+/**
  * Generic adapter for any provider that exposes an OpenAI-compatible API.
  * Requires a custom endpoint in ModelConfig.
  *
@@ -49,8 +64,7 @@ export class CustomAdapter implements ProviderAdapter {
       body: JSON.stringify({ ...rest, model: upstreamModel, stream: false }),
     });
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Custom provider returned ${response.status}: ${text}`);
+      throw await upstreamError(response);
     }
     return response.json() as Promise<ChatCompletionResponse>;
   }
@@ -73,8 +87,7 @@ export class CustomAdapter implements ProviderAdapter {
       body: JSON.stringify({ ...rest, model: upstreamModel, stream: true }),
     });
     if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Custom provider returned ${response.status}: ${text}`);
+      throw await upstreamError(response);
     }
     if (!response.body) {
       throw new Error('Custom provider returned no response body for streaming.');

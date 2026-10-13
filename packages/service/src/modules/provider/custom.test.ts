@@ -109,7 +109,7 @@ describe('CustomAdapter.chatCompletion', () => {
   })
 
   it('throws on non-2xx response', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 401, text: async () => 'Unauthorized' })
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 401, headers: new Headers(), text: async () => 'Unauthorized' })
     vi.stubGlobal('fetch', mockFetch)
 
     await expect(adapter.chatCompletion({ model: 'auto', messages: [] }, makeModel())).rejects.toThrow('401')
@@ -193,7 +193,7 @@ describe('CustomAdapter.streamCompletion', () => {
   })
 
   it('throws on non-2xx response', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400, text: async () => 'Bad' })
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400, headers: new Headers(), text: async () => 'Bad' })
     vi.stubGlobal('fetch', mockFetch)
 
     await expect(async () => {
@@ -477,5 +477,19 @@ describe('CustomAdapter — model ID handling', () => {
     expect(body.model).toBe('custom-reasoner')
 
     vi.unstubAllGlobals()
+  })
+})
+
+describe('CustomAdapter upstream errors', () => {
+  it('exposes status, headers and body so 429 retry-after and 404 are classified', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ error: { code: 'model_not_found' } }),
+      { status: 404, headers: { 'retry-after': '20' } },
+    )))
+    const err = await adapter.chatCompletion({ model: 'auto', messages: [] }, makeModel()).catch(e => e)
+    expect(err.message).toContain('Custom provider returned 404')
+    expect(err.status).toBe(404)
+    expect(err.headers['retry-after']).toBe('20')
+    expect(err.error).toEqual({ error: { code: 'model_not_found' } })
   })
 })

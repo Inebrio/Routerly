@@ -64,6 +64,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 - `POST /mcp` no longer 500s ("Cannot read properties of undefined (reading 'includes')") for any user account created before `routerIds` was added to `UserConfig` — a startup migration now backfills `routerIds: []` on stored users missing it, and `accessibleRouters()` no longer assumes the field is present on every user record on disk.
 - Anthropic OAuth (and Anthropic web) models on the `/v1/messages` passthrough lane no longer fail every request with an immediate auth error. The lane built its forwarding model from the routing candidate list, which never fetches a live token; the decrypted/refreshed OAuth credential was only ever wired into the non-passthrough SDK path. Every OAuth-connected Anthropic request now reloads the live credential right before forwarding, same as the SDK path already did.
 - Dashboard: the Models page shows `—` instead of a bare `$` for models without input/output pricing and instead of `0k` for models without a context window. A price of `0` still shows `$0`.
+- Custom provider: upstream errors now keep their HTTP status and headers, so a 429 honours `retry-after` and a 404 `model_not_found` locks out only that model instead of counting as a `server` fault that could open the breaker for every custom model. The error message returned to the client is unchanged.
 
 ### Breaking changes
 
