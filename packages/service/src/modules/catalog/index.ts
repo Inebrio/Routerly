@@ -10,7 +10,7 @@ import { syncModelsFromCatalog } from './sync.js';
  * additionally makes them reachable through the container.
  */
 export const catalogModule = defineModule({
-  manifest: { id: 'catalog', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
+  manifest: { id: 'catalog', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
   register({ container }) {
     container.register(CATALOG, {
       get: (routerlyVersion: string) => catalogFetcher.get(routerlyVersion),

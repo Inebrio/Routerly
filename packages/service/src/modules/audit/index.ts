@@ -9,7 +9,7 @@ import { logAudit } from './logger.js';
  * container.
  */
 export const auditModule = defineModule({
-  manifest: { id: 'audit', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
+  manifest: { id: 'audit', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
   register({ container }) {
     container.register(AUDIT, { logAudit });
   },

@@ -113,7 +113,7 @@ Examples:
         // Step 1: check if this email is already in use (regardless of --alias)
         if (sameEmail) {
           const { action } = await inquirer.prompt([{
-            type: 'list',
+            type: 'select',
             name: 'action',
             message: `Email "${email}" is already saved as account "${sameEmail.alias}". What do you want to do?`,
             choices: [
@@ -137,7 +137,7 @@ Examples:
           // New email, --alias provided: check alias conflict
           if (existing.has(opts.alias)) {
             const { action } = await inquirer.prompt([{
-              type: 'list',
+              type: 'select',
               name: 'action',
               message: `Alias "${opts.alias}" is already in use. What do you want to do?`,
               choices: [

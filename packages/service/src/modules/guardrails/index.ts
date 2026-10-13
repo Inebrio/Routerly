@@ -123,7 +123,7 @@ const response: Processor<ProxyContext> = {
 }
 
 export const guardrailsModule: RouterlyModule = defineModule({
-  manifest: { id: 'guardrails', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0' } },
+  manifest: { id: 'guardrails', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4' } },
   register({ container }) {
     const pipeline = container.resolve(PROXY_PIPELINE)
     pipeline.contribute(request)
