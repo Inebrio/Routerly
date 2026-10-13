@@ -14,7 +14,7 @@ export { apiRoutes };
  * apiRoutes directly by path to register it.
  */
 export const apiModule = defineModule({
-  manifest: { id: 'api', version: '0.4.0' },
+  manifest: { id: 'api', version: '0.5.4' },
   register({ container }) {
     container.register(API_ROUTES, createRouteRegistry());
   },

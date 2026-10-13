@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 vi.mock('../guardrails/guardrails.js', () => ({ checkGuardrails: vi.fn() }))
 
 import {
-  buildContentFilterBlock, primaryText, conversationText, wrapWithStreamingScrubber,
+  buildContentFilterBlock, writeOpenAIStreamingBlock, primaryText, conversationText, wrapWithStreamingScrubber,
   applyResponseScrub, wrapWithResponseGuardrail, assembledResponseText,
 } from './helpers.js'
 import type { ProxyContext } from './context.js'
@@ -55,6 +55,35 @@ describe('helpers', () => {
     }
     const out = await collect(wrapWithStreamingScrubber(src(), effective, ctxOf({})))
     expect((out[1] as any).choices[0].delta.content).toBe('hello')
+  })
+
+  it('wrapWithStreamingScrubber merges the held-back tail into the finish_reason chunk', async () => {
+    const effective = { entities: ['PHONE'], customPatterns: [], outputBufferSize: 30 } as any
+    const mk = (content: string | undefined, finish: string | null) => ({
+      id: 'up-1', model: 'stub-model', choices: [{ index: 0, delta: content === undefined ? {} : { content }, finish_reason: finish }],
+    })
+    async function* src() { yield mk('call +39 333 ', null); yield mk('1234567 please', null); yield mk(undefined, 'stop') }
+    const out: any[] = await collect(wrapWithStreamingScrubber(src(), effective, ctxOf({})))
+    expect(out.at(-1).choices[0].finish_reason).toBe('stop')
+    expect(out.every(c => c.id === 'up-1' && c.model === 'stub-model')).toBe(true)
+    const text = out.map(c => c.choices[0].delta.content ?? '').join('')
+    expect(text).not.toMatch(/\d{7}/)
+    expect(text).toContain('please')
+  })
+
+  it('writeOpenAIStreamingBlock writes an Anthropic SSE refusal for /v1/messages streams', async () => {
+    const written: string[] = []
+    const headers: Record<string, string> = {}
+    const raw = { setHeader: (k: string, v: string) => { headers[k] = v }, flushHeaders: () => {}, write: (c: string) => { written.push(c) }, end: () => {} }
+    const ctx = ctxOf({ protocol: 'anthropic', traceId: 't1', request: { model: 'm' }, original: { model: 'm' }, req: { headers: {} }, reply: { hijack: () => {}, raw } } as any)
+    await writeOpenAIStreamingBlock(ctx)
+    expect(headers['Content-Type']).toBe('text/event-stream')
+    const text = written.join('')
+    const events = [...text.matchAll(/^event: (.+)$/gm)].map(m => m[1])
+    expect(events[0]).toBe('message_start')
+    expect(events.at(-1)).toBe('message_stop')
+    expect(text).toContain('"stop_reason":"refusal"')
+    expect(ctx.result).toEqual({ kind: 'block' })
   })
 
   it('wrapWithStreamingScrubber traces the response scan once the stream is complete', async () => {

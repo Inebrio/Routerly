@@ -34,7 +34,7 @@ const BUILT_IN_TOOLS: McpToolEntry[] = [
  * the registry (not a stub) and disappears when its module is disabled.
  */
 export const mcpModule: RouterlyModule = defineModule({
-  manifest: { id: 'mcp', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
+  manifest: { id: 'mcp', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
   /**
    * MCP used to be gated by two gateway-wide permissions. It is now personal (a
    * token grants exactly its owner's permissions), so those permissions no longer

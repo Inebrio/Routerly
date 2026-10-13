@@ -11,7 +11,7 @@ import { getEffectiveRoles } from './roles.js';
  * token; other files still import jwt.ts/auth.ts/roles.ts directly by path.
  */
 export const authModule = defineModule({
-  manifest: { id: 'auth', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
+  manifest: { id: 'auth', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
   register({ container }) {
     container.register(AUTH, {
       signToken,
