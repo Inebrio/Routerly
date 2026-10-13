@@ -240,6 +240,9 @@ export const openaiAttempt: Processor<ProxyContext> = {
 
     let primaryModelId: string | undefined
     let primaryFailed = false
+    // Last upstream client error (4xx other than auth/rate-limit): when no candidate succeeds it is
+    // returned as-is (status + body) instead of a generic 503, like a direct provider call.
+    let clientError: { status: number; body: unknown } | undefined
 
     await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
       const model = allModels.find((m) => m.id === candidate.model)
@@ -260,6 +263,12 @@ export const openaiAttempt: Processor<ProxyContext> = {
       // The fault (if any) was already recorded once by handleProviderResult inside
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
       // candidate here; clearing the stash keeps it from leaking into the next iteration.
+      const ar = ctx.attemptResponse
+      if (ar && ar.status !== undefined && [400, 404, 413, 422].includes(ar.status) && ar.body !== undefined) {
+        // the OpenAI SDK exposes the inner `error` object; restore the wire envelope
+        const b = ar.body as Record<string, unknown>
+        clientError = { status: ar.status, body: b && typeof b === 'object' && 'error' in b ? b : { error: ar.body } }
+      }
       if (ctx.attemptError !== undefined) {
         ctx.attemptError = undefined
         delete ctx.attemptResponse
@@ -274,6 +283,8 @@ export const openaiAttempt: Processor<ProxyContext> = {
         ctx.emit?.(errorEntry)
         const errChunk = { id: `chatcmpl-${ctx.traceId}`, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: ctx.request.model ?? '', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] }
         ctx.result = { kind: 'stream', body: (async function* () { yield errChunk })() }
+      } else if (clientError) {
+        ctx.result = { kind: 'block', status: clientError.status, body: clientError.body }
       } else {
         ctx.result = { kind: 'block', status: 503, body: { error: { message: 'All candidate models failed or are budget-exhausted.', type: 'server_error' } } }
       }
