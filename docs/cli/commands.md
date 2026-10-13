@@ -624,7 +624,7 @@ removed. Reorder it like any other entry with `model reorder`.
 
 #### `routerly router model list <router>`
 
-List target models configured in the router, with their prompt hints. On a
+List target models configured in the router, with their routing guidance. On a
 passthrough router, the pass-through entry is shown as `(pass-through)
 __passthrough__`.
 
@@ -637,7 +637,7 @@ routerly router model add my-api anthropic/claude-opus-4-6 --prompt "Use for com
 
 | Option | Description |
 |--------|-------------|
-| `--prompt <text>` | System prompt hint used when this model is selected |
+| `--prompt <text>` | Routing guidance for the LLM routing policy (not sent upstream) |
 
 Rejects `__passthrough__` (exit 1) — the pass-through entry cannot be added
 manually.
@@ -650,7 +650,7 @@ cannot be removed.
 
 #### `routerly router model set-prompt <router> <model-id>`
 
-Update (or clear) the system prompt hint for a model.
+Update (or clear) the routing guidance for a model. It is read by the LLM routing policy only and is never sent to the provider.
 
 ```bash
 routerly router model set-prompt my-api openai/gpt-5.2 --prompt "Fast tasks only"
