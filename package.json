@@ -9,9 +9,9 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=packages/shared && npm run build --workspace=packages/service && npm run build --workspace=packages/cli && npm run build --workspace=packages/dashboard",
+    "build": "node scripts/link-worktree-modules.mjs && npm run build --workspace=packages/shared && npm run build --workspace=packages/service && npm run build --workspace=packages/cli && npm run build --workspace=packages/dashboard",
     "dev": "npm run dev --workspace=packages/service",
-    "test": "npm test --workspaces --if-present && vitest run",
+    "test": "node scripts/link-worktree-modules.mjs && npm test --workspaces --if-present && vitest run",
     "test:e2e": "vitest run",
     "lint": "eslint packages/*/src",
     "format": "prettier --write \"packages/*/src/**/*.ts\"",
