@@ -188,7 +188,7 @@ Credentials are encrypted at rest (`encryptCredential`/`decryptCredential`, AES-
 
 ## Timeout Handling
 
-Each adapter respects the `timeout` field in the model config (in milliseconds). If not set, it falls back to the router's `timeoutMs` (default `2000` ms, `0` disables it) — a time-to-first-token budget, not a total-duration cap. Timed-out requests are recorded as `outcome: "timeout"` in usage records and the `health` policy will penalise the model accordingly.
+Two separate timeouts apply. The model `timeout` field (ms, default `60000`) is the total-duration cap of one upstream call, for streaming and non-streaming requests alike; the SDK clients never retry on their own (`maxRetries: 0`), so the cap is not multiplied — retry and failover are Routerly's job. The router `timeoutMs` (default `2000` ms, `0` disables it) is a time-to-first-token budget for streaming requests only. A timed-out attempt fails over to the next candidate and is recorded as `outcome: "timeout"` in usage records; the `health` policy penalises the model accordingly. When every candidate fails before any byte is sent, streaming and non-streaming requests both get HTTP 503 (`server_error`).
 
 ---
 

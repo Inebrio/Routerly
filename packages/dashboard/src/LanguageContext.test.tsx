@@ -54,6 +54,16 @@ describe('LanguageProvider resolution', () => {
     await waitFor(() => expect(getSettings).toHaveBeenCalled());
     await waitFor(() => expect(i18n.language).toBe('en'));
   });
+  it('UAT-18-06 instance default applies after login without reload', async () => {
+    browser(['xx']);
+    localStorage.removeItem('lr_token');
+    const view = mount();
+    expect(getSettings).not.toHaveBeenCalled();
+    localStorage.setItem('lr_token', 't');
+    auth.user = { id: 'u1' } as never;
+    view.rerender(<LanguageProvider><Probe /></LanguageProvider>);
+    await waitFor(() => expect(i18n.language).toBe('fr'));
+  });
   it('unsupported instance default is ignored', async () => {
     browser(['xx']);
     vi.mocked(getSettings).mockResolvedValue({ defaultLanguage: 'zz' } as never);
