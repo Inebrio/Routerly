@@ -60,6 +60,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **Installer** writes `settings.json` with mode 600 (no more `permission-guard` warning on first start) and records `channel` as the requested channel (`current`/`latest`/`next`); `custom` only when `--version` is passed explicitly. New `--pinned` flag forwarded by `install.sh`/`install.ps1` to `install.mjs`.
 - **Installer update/reinstall no longer leaves stale files.** Files of the previous version missing from the new source are removed from the app directory before copying (`node_modules` and `dist` are kept; config and data live outside it), so a downgrade no longer breaks the build.
 - Dashboard RTL layout: the sidebar now sits on the right in Arabic, Hebrew and Urdu (logical CSS properties), theme toggle labels wrap instead of being ellipsized, and letter-spacing is disabled in RTL so Arabic/Urdu glyphs stay connected.
 - **Dashboard is usable at phone width.** At 768px and below the sidebar stays a 60px rail (expanding it overlays the page) and page padding shrinks, so no page scrolls horizontally at 390px; wide tables scroll inside their container.
