@@ -44,6 +44,7 @@ A Passthrough router's real target models now route, authenticate, and meter exa
 
 ### Bug fixes
 
+- **OpenAI lane wire transparency** — `/v1/chat/completions` now forwards the client's body unchanged to OpenAI-compatible providers (`max_tokens` is renamed to `max_completion_tokens` only for o-series and gpt-5 models, which reject it; `stream` is no longer forced), forwards the client's request headers (User-Agent, `openai-organization`, custom headers; never `authorization`, `cookie`, `host`, `x-api-key`, `x-routerly-*`) and returns the provider's response headers (`x-request-id`, `openai-*`, `x-ratelimit-*`). `Vary: Origin` is no longer added to non-browser `POST /v1/*` responses.
 - `routerly service status` no longer prints `Uptime: NaNm NaNs`: it now reads `uptimeSeconds` from `/api/system/info`.
 - **Playground temperature** — The dashboard Playground (single and compare mode) no longer sends `temperature: 0.7` on every request. Temperature is now unset by default and omitted from the request body, so models that accept only their default value (e.g. `gpt-5-nano`) work; tick the checkbox next to the Temp slider to send a value.
 - **Dev-box push guard** — `.husky/pre-push` now refuses any push to `develop` or `main` when `IS_SANDBOX=1` (dispatcher sessions), since those pushes trigger the release pipeline. Local guard only; `--no-verify` bypasses it.

@@ -11,6 +11,7 @@ import type { TraceEntry } from '@routerly/shared'
 import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
+import { forwardableRequestHeaders } from '../../provider/passthrough.js'
 import { traceEgress } from '../helpers.js'
 import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
@@ -96,6 +97,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const router = ctx.router
     const endUserId = (body as any).user as string | undefined || undefined
 
+    // Provider response headers of the call that answers (a failed candidate's are overwritten).
+    let upstreamHeaders: Record<string, string> | undefined
     const cctx: LLMCallContext = {
       routerId: router.id,
       router,
@@ -112,6 +115,8 @@ export const openaiUpstream: Processor<ProxyContext> = {
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
+      forwardHeaders: forwardableRequestHeaders(ctx.req?.headers ?? {}),
+      onUpstreamHeaders: (h) => { upstreamHeaders = h },
     }
 
     // ── openai-oauth: Codex Responses backend, mapped back to OpenAI chunks. ──
@@ -172,7 +177,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
     if (ctx.stream) {
       try {
         const streamResult = await llmStream(body, model, cctx)
-        ctx.result = { kind: 'stream', body: streamResult.chunks }
+        ctx.result = { kind: 'stream', body: streamResult.chunks, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {
           log.warn({ err, modelId: model.id }, 'Stream failed before first chunk, trying next candidate')
@@ -198,7 +203,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
         },
         'completion: response',
       )
-      ctx.result = { kind: 'json', body: response }
+      ctx.result = { kind: 'json', body: response, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Model failed, trying next candidate')
@@ -293,6 +298,7 @@ export const openaiEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'json') {
       if (result.status) reply.code(result.status)
+      if (result.headers && !ctx.responsesApi) reply.headers(result.headers)
       reply.send(ctx.responsesApi
         ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
         : result.body)
@@ -316,6 +322,9 @@ export const openaiEgress: Processor<ProxyContext> = {
     if (origin) {
       reply.raw.setHeader('Access-Control-Allow-Origin', origin)
       reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
+    }
+    if (result.headers && !ctx.responsesApi) {
+      for (const [k, v] of Object.entries(result.headers)) reply.raw.setHeader(k, v)
     }
     reply.raw.setHeader('Content-Type', 'text/event-stream')
     reply.raw.setHeader('Cache-Control', 'no-cache')
