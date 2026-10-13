@@ -174,8 +174,8 @@ export const headroomOptimizer = {
 export const headroomModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-headroom',
-    version: '0.4.0',
-    dependsOn: { 'optimizer-core': '^0.4.0' },
+    version: '0.5.4',
+    dependsOn: { 'optimizer-core': '^0.5.4' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(headroomOptimizer)
