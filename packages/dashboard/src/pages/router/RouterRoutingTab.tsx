@@ -226,7 +226,7 @@ export function RouterRoutingTab() {
         name: router.name,
         policies: policies.map(p => {
           const { internalId, ...rest } = p;
-          return { ...rest, enabled: true };
+          return rest;
         }),
         models: targetModels.map(m => ({
           modelId: m.modelId,

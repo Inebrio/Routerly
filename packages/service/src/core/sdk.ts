@@ -16,7 +16,7 @@
  *   export const myModule = defineModule({
  *     // 1. manifest: identity + ordering. `dependsOn` keys are other module ids;
  *     //    `before` / `after` / `weight` order this module against its peers.
- *     manifest: { id: 'my-module', version: '0.4.0', dependsOn: { config: '^0.4.0' } },
+ *     manifest: { id: 'my-module', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
  *
  *     // 2. register: put services behind DI tokens. Runs in dependency order,
  *     //    before any module starts. Contribute processors here by resolving the

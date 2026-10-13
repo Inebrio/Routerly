@@ -43,6 +43,7 @@ vi.mock('fastify', () => ({
     setNotFoundHandler: vi.fn(),
     decorate: vi.fn(),
     addHook: vi.fn(),
+    setErrorHandler: vi.fn(),
   })),
 }));
 vi.mock('@fastify/cors', () => ({ default: vi.fn() }));

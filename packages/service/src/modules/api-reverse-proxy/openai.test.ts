@@ -80,7 +80,29 @@ describe('GET /v1/models/:model', () => {
     expect(body.object).toBe('model')
   })
 
-  it('returns 404 for model not in router', async () => {
+  it('returns a specific model with a literal slash (OpenAI SDK form)', async () => {
+    mockModels([testModel])
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/v1/models/openai/gpt-4o' })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body).id).toBe('openai/gpt-4o')
+  })
+
+  it('returns the routerly/ada sentinel listed by /v1/models', async () => {
+    mockModels([testModel])
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/v1/models/routerly/ada' })
+    await app.close()
+
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual({ id: 'routerly/ada', object: 'model', created: 0, owned_by: 'routerly' })
+  })
+
+  it('returns an OpenAI-shaped 404 for model not in router', async () => {
     mockModels([testModel])
 
     const app = await buildApp()
@@ -88,6 +110,7 @@ describe('GET /v1/models/:model', () => {
     await app.close()
 
     expect(res.statusCode).toBe(404)
+    expect(JSON.parse(res.body).error).toMatchObject({ type: 'invalid_request_error', param: null, code: 'model_not_found' })
   })
 
   it('returns 404 when model is in router but not in allModels', async () => {
