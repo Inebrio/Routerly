@@ -778,7 +778,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Params: { id: string };
     Body: {
       id?: string;
-      name?: string; provider: string; endpoint: string;
+      name?: string; provider?: string; endpoint?: string;
       apiKey?: string; cfClearance?: string; upstreamModelId?: string;
       azureResourceName?: string; azureDeploymentId?: string; azureApiVersion?: string;
       awsRegion?: string; awsAccessKeyId?: string; awsSecretAccessKey?: string; awsSessionToken?: string;
@@ -832,6 +832,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const existingConnMissing = !existing.connectionId || !connections.find(c => c.id === existing.connectionId);
     const bodyHasInlineCreds = Boolean(req.body.apiKey || req.body.cfClearance);
 
+    // Partial update: omitted provider/endpoint keep the values of the currently bound connection.
+    const existingConn = connections.find(c => c.id === existing.connectionId);
+    const provider = req.body.provider ?? existingConn?.providerId;
+    const endpoint = req.body.endpoint ?? existingConn?.endpoint;
+    if (!provider) {
+      return reply.status(400).send({ error: 'provider is required' });
+    }
+
     let connectionId: string;
     if (req.body.connectionId) {
       // Rebind to an existing connection — no credential copy.
@@ -839,8 +847,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (!target) {
         return reply.status(404).send({ error: 'Not found' });
       }
-      if (target.providerId !== req.body.provider) {
-        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${req.body.provider}"` });
+      if (target.providerId !== provider) {
+        return reply.status(400).send({ error: `Connection "${target.id}" provider "${target.providerId}" does not match model provider "${provider}"` });
       }
       connectionId = req.body.connectionId;
       // Orphan cleanup: leaving a dedicated connection that no other instance uses → drop it.
@@ -865,7 +873,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         }
       }
       const dedIdx = connections.findIndex(c => c.id === newDedicatedId);
-      const credentialUpdates = buildConnectionCredentials(req.body.provider, {
+      const credentialUpdates = buildConnectionCredentials(provider, {
         ...(req.body.apiKey ? { apiKey: req.body.apiKey } : {}),
         ...(req.body.cfClearance ? { cfClearance: req.body.cfClearance } : {}),
         azureResourceName: req.body.azureResourceName,
@@ -882,18 +890,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       if (dedIdx === -1) {
         connections.push({
           id: newDedicatedId,
-          providerId: req.body.provider,
+          providerId: provider,
           label: req.body.name ?? newId,
-          endpoint: req.body.endpoint,
+          endpoint: endpoint ?? '',
           credentials: credentialUpdates,
           enabled: true,
         });
       } else {
         connections[dedIdx] = {
           ...connections[dedIdx]!,
-          providerId: req.body.provider,
+          providerId: provider,
           label: req.body.name ?? connections[dedIdx]!.label,
-          endpoint: req.body.endpoint,
+          ...(endpoint !== undefined ? { endpoint } : {}),
           credentials: { ...connections[dedIdx]!.credentials, ...credentialUpdates },
         };
       }
