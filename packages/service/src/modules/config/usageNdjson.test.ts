@@ -144,6 +144,17 @@ describe('AC2 — append cost does not grow with history', () => {
     expect(fsPromises.appendFile).toHaveBeenCalled();
     expect(fsPromises.readFile).not.toHaveBeenCalled();
   });
+
+  it('appending to a large history leaves the existing bytes untouched (append-only prefix)', async () => {
+    await writeUsageNdjson(Array.from({ length: 5000 }, (_, i) => makeRecord(`h${i}`)));
+    const before = await readFile(pathState.usage, 'utf-8');
+
+    await appendUsageRecordsNdjson([makeRecord('new1'), makeRecord('new2')]);
+
+    const after = await readFile(pathState.usage, 'utf-8');
+    expect(after.startsWith(before)).toBe(true);
+    expect(after.slice(before.length).trim().split('\n')).toHaveLength(2);
+  });
 });
 
 describe('concurrency (risks called out in the blueprint)', () => {
