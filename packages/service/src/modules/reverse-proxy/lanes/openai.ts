@@ -175,7 +175,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
 
     if (ctx.stream) {
       try {
-        const streamResult = await llmStream(body, model, cctx)
+        const streamResult = await llmStream(body, model, cctx, { injectUsage: false })
         ctx.result = { kind: 'stream', body: streamResult.chunks, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
       } catch (err: unknown) {
         if (!(err instanceof BudgetExceededError)) {
