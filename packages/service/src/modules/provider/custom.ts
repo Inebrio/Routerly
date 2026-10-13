@@ -8,6 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { forwardableResponseHeaders, type CallOptions } from './passthrough.js';
 import { anthropicToOpenAIMessages, openAIToAnthropicResponse } from './messages-compat.js';
 
 /**
@@ -34,6 +35,7 @@ export class CustomAdapter implements ProviderAdapter {
   async chatCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
+    opts?: CallOptions,
   ): Promise<ChatCompletionResponse> {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
@@ -43,12 +45,15 @@ export class CustomAdapter implements ProviderAdapter {
     const response = await fetch(`${model.endpoint}/chat/completions`, {
       method: 'POST',
       headers: {
+        ...opts?.headers,
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
-      body: JSON.stringify({ ...rest, model: upstreamModel, stream: false }),
+      // `stream` stays exactly as the client sent it.
+      body: JSON.stringify({ ...rest, ...(request.stream === false ? { stream: false } : {}), model: upstreamModel }),
       signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       throw new Error(`Custom provider returned ${response.status}: ${text}`);
@@ -59,6 +64,7 @@ export class CustomAdapter implements ProviderAdapter {
   async *streamCompletion(
     request: ChatCompletionRequest,
     model: ModelConfig,
+    opts?: CallOptions,
   ): AsyncIterable<StreamChunk> {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
@@ -71,12 +77,14 @@ export class CustomAdapter implements ProviderAdapter {
     const response = await fetch(`${model.endpoint}/chat/completions`, {
       method: 'POST',
       headers: {
+        ...opts?.headers,
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       body: JSON.stringify({ ...rest, model: upstreamModel, stream: true }),
       signal: ctl.signal,
     }).finally(() => clearTimeout(timer));
+    opts?.onResponseHeaders?.(forwardableResponseHeaders(response.headers));
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       throw new Error(`Custom provider returned ${response.status}: ${text}`);

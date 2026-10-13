@@ -50,7 +50,7 @@ describe('CustomAdapter.chatCompletion', () => {
     expect(url).toBe('https://api.deepseek.com/v1/chat/completions')
     const body = JSON.parse(opts.body as string)
     expect(body.model).toBe('deepseek-chat')
-    expect(body.stream).toBe(false)
+    expect(body).not.toHaveProperty('stream')
 
     vi.unstubAllGlobals()
   })
@@ -65,7 +65,7 @@ describe('CustomAdapter.chatCompletion', () => {
 
     await adapter.chatCompletion({ model: 'auto', messages: [], stream: true } as any, makeModel())
     const body = JSON.parse(mockFetch.mock.calls[0]![1].body as string)
-    expect(body.stream).toBe(false)
+    expect(body).not.toHaveProperty('stream')
 
     vi.unstubAllGlobals()
   })
