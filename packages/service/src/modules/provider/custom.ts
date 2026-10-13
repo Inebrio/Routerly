@@ -47,6 +47,7 @@ export class CustomAdapter implements ProviderAdapter {
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       body: JSON.stringify({ ...rest, model: upstreamModel, stream: false }),
+      signal: AbortSignal.timeout(model.timeout ?? 60000),
     });
     if (!response.ok) {
       const text = await response.text().catch(() => '');
@@ -64,6 +65,9 @@ export class CustomAdapter implements ProviderAdapter {
     }
     const upstreamModel = this.getUpstreamModelId(model);
     const { stream: _stream, ...rest } = request;
+    // Timeout covers the wait for the response headers only; an established stream may run longer.
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(new DOMException('Request timed out.', 'TimeoutError')), model.timeout ?? 60000);
     const response = await fetch(`${model.endpoint}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -71,7 +75,8 @@ export class CustomAdapter implements ProviderAdapter {
         'Authorization': `Bearer ${model.apiKey ?? 'custom'}`,
       },
       body: JSON.stringify({ ...rest, model: upstreamModel, stream: true }),
-    });
+      signal: ctl.signal,
+    }).finally(() => clearTimeout(timer));
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       throw new Error(`Custom provider returned ${response.status}: ${text}`);
@@ -113,7 +118,7 @@ export class CustomAdapter implements ProviderAdapter {
     if (!model.endpoint) {
       throw new Error(`Custom provider model "${model.id}" has no endpoint configured.`);
     }
-    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint, ...(model.timeout != null ? { timeout: model.timeout } : {}), maxRetries: 0 });
+    const client = new OpenAI({ apiKey: model.apiKey ?? 'custom', baseURL: model.endpoint, timeout: model.timeout ?? 60000, maxRetries: 0 });
     const upstreamModel = this.getUpstreamModelId(model);
     const { messages, system } = anthropicToOpenAIMessages(request);
     const openAIMessages = system

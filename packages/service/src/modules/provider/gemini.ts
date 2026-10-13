@@ -87,7 +87,7 @@ export class GeminiAdapter implements ProviderAdapter {
       model.endpoint || 'https://generativelanguage.googleapis.com/v1beta/openai/';
     // Cast: the SDK's Fetch type accepts a broader `input` than the DOM fetch.
     const fetchOverride = unwrapGeminiError as unknown as NonNullable<ConstructorParameters<typeof OpenAI>[0]>['fetch'];
-    return new OpenAI({ apiKey, baseURL, fetch: fetchOverride, ...(model.timeout != null ? { timeout: model.timeout } : {}), maxRetries: 0 });
+    return new OpenAI({ apiKey, baseURL, fetch: fetchOverride, timeout: model.timeout ?? 60000, maxRetries: 0 });
   }
 
   private getUpstreamModelId(model: ModelConfig): string {

@@ -111,7 +111,7 @@ const thresholdFiredKeys = new Set<string>(); // "${routerId}:${modelId}:${windo
 
 /** True for the SDK's own request-timeout error (model `timeout` elapsed, APIConnectionTimeoutError). */
 function isUpstreamTimeout(err: unknown): boolean {
-  return err instanceof Error && (err.name === 'APIConnectionTimeoutError' || /^request timed out/i.test(err.message));
+  return err instanceof Error && (err.name === 'APIConnectionTimeoutError' || err.name === 'TimeoutError' || /^request timed out/i.test(err.message));
 }
 
 function isRateLimitError(err: unknown): boolean {
