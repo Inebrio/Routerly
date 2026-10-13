@@ -328,6 +328,7 @@ export const routerPassthroughRoutes: FastifyPluginAsync = async (fastify) => {
     const hasBody = request.method !== 'GET' && request.method !== 'HEAD' && rawBody !== undefined && rawBody.length > 0;
 
     await forwardPassthroughRaw(router, path, request.method, request.headers, hasBody ? rawBody : undefined, reply, request.log);
+    return reply;
   });
 };
 

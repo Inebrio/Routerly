@@ -10,7 +10,13 @@ import type { ChatCompletionRequest, ModelConfig, ProviderConnection } from '@ro
 import { readConfig, writeConfig, getOrCreateSecret } from '../config/loader.js';
 import { loadCredentialKey, encryptCredential, decryptCredential } from '../../lib/crypto-cred.js';
 
-const create = vi.hoisted(() => vi.fn());
+const create = vi.hoisted(() => {
+  // The adapter calls create(...).withResponse(); mirror the SDK's APIPromise.
+  const f = vi.fn();
+  f.mockResolvedValue = ((v: unknown) =>
+    f.mockReturnValue(Object.assign(Promise.resolve(v), { withResponse: async () => ({ data: v, response: { headers: new Headers() } }) }))) as typeof f.mockResolvedValue;
+  return f;
+});
 
 vi.mock('openai', () => {
   class OpenAIMock {
