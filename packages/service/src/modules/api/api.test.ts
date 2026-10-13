@@ -4115,6 +4115,31 @@ describe('PUT /api/models/:id', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('keeps connection providerId/endpoint when the body omits provider and endpoint', async () => {
+    setupAdminAuth()
+    const existingInstance = { id: 'gpt4', connectionId: 'conn-for-gpt4', upstreamModelId: 'gpt4', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 0 }
+    const existingConnection = { id: 'conn-for-gpt4', providerId: 'openai', label: 'GPT-4', credentials: {}, endpoint: 'https://api.openai.com/v1', enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [existingInstance]
+      if (t === 'connections') return [existingConnection]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/models/gpt4',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ inputPerMillion: 10, outputPerMillion: 30 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')?.[1] as Array<{ providerId: string; endpoint: string }>
+    expect(written[0]).toMatchObject({ providerId: 'openai', endpoint: 'https://api.openai.com/v1' })
+  })
+
   it('preserves existing fieldOverrides/catalogDefaults when the body omits them', async () => {
     setupAdminAuth()
     const existingInstance = {
