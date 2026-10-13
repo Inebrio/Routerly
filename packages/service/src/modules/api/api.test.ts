@@ -1414,6 +1414,7 @@ describe('DELETE /api/models/:id', () => {
     await app.close()
     expect(res.statusCode).toBe(409)
     expect(res.json().error).toContain('My Router')
+    expect(res.json().usedBy).toEqual(['r1'])
     expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
