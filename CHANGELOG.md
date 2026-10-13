@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- `DELETE /api/connections/:id` and `DELETE /api/models/:id` now answer `409` (`{error, usedBy}`) instead of `204` when the connection is used by a model or the model is referenced by a router. CLI prints the message with exit 1; the dashboard Models page shows it. API contract change: automations relying on the silent `204` must unlink first.
+
 ### New features
 
 **Router, Orchestrator, and Passthrough kinds**

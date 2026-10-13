@@ -167,6 +167,7 @@ export function ModelsPage() {
   // Resilience reset state (health tab): busy key is a model id, 'all', or null
   const [resetBusy, setResetBusy] = useState<string | null>(null);
   const [resetError, setResetError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   // Load models once
   useEffect(() => { load(); }, []);
@@ -275,8 +276,13 @@ export function ModelsPage() {
       message: t('models.page.deleteConfirm', { id }),
       onConfirm: async () => {
         setConfirmState(null);
-        await deleteModel(id);
-        setModels(m => m.filter(x => x.id !== id));
+        setDeleteError('');
+        try {
+          await deleteModel(id);
+          setModels(m => m.filter(x => x.id !== id));
+        } catch (e) {
+          setDeleteError(e instanceof Error ? e.message : 'Delete failed');
+        }
       },
     });
   }
@@ -402,6 +408,7 @@ export function ModelsPage() {
       <div className="page-body" style={{ paddingTop: 24 }}>
         {tab === 'models' && (
           <>
+          {deleteError && <div className="form-error" style={{ marginBottom: 16 }}>{deleteError}</div>}
             <div className="toolbar">
               <span className="toolbar-title">
                 {filtered.length !== models.length

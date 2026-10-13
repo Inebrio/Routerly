@@ -997,6 +997,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const instances = await readConfig('instances');
     const target = instances.find(i => i.id === req.params.id);
     if (!target) return reply.status(404).send({ error: 'Not found' });
+    const usingRouters = (await readConfig('routers'))
+      .filter(r => (r.models ?? []).some(m => m.modelId === req.params.id)
+        || (r.tokens ?? []).some(t => (t.models ?? []).some(m => m.modelId === req.params.id)));
+    if (usingRouters.length) {
+      return reply.status(409).send({
+        error: `Model is used by router(s): ${usingRouters.map(r => r.name).join(', ')}`,
+        usedBy: usingRouters.map(r => r.id),
+      });
+    }
     const filtered = instances.filter(i => i.id !== req.params.id);
     await writeConfig('instances', filtered);
 

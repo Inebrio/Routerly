@@ -1372,6 +1372,29 @@ describe('DELETE /api/models/:id', () => {
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
   })
 
+  it('returns 409 naming routers when the model is referenced', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [{ id: 'm1', connectionId: 'c1' }]
+      if (t === 'routers') return [
+        { id: 'r1', name: 'Alpha', models: [{ modelId: 'm1' }] },
+        { id: 'r2', name: 'Beta', models: [], tokens: [{ models: [{ modelId: 'm1' }] }] },
+        { id: 'r3', name: 'Gamma', models: [{ modelId: 'other' }] },
+      ]
+      return []
+    })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({ method: 'DELETE', url: '/api/models/m1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(409)
+    expect(res.json().usedBy).toEqual(['r1', 'r2'])
+    expect(res.json().error).toContain('Alpha, Beta')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('returns 404 for nonexistent model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
