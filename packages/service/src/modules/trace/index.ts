@@ -86,7 +86,7 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
 }
 
 export const traceModule: RouterlyModule = defineModule({
-  manifest: { id: 'trace', version: '0.4.0', dependsOn: { 'reverse-proxy': '^0.4.0', api: '^0.4.0' } },
+  manifest: { id: 'trace', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4', api: '^0.5.4' } },
   async register({ container, events }) {
     // The console gets the whole trace, live. Read once at boot: the level only
     // decides how much of it is printed, and re-reading it per entry would put a
