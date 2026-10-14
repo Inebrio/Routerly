@@ -153,6 +153,14 @@ describe('ModelsPage — models list', () => {
     mockCanWriteModels = true;
   });
 
+  it('filter does not crash on models without endpoint (ROUT-281)', async () => {
+    mockGetModels.mockResolvedValue([makeModel({ id: 'other-model', endpoint: undefined })]);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('other-model')).toBeTruthy());
+    await userEvent.type(screen.getByPlaceholderText(/Filter models/), 'zzz');
+    expect(screen.queryByText('other-model')).toBeNull();
+  });
+
   it('shows filtered empty state when filter matches nothing', async () => {
     mockGetModels.mockResolvedValue([makeModel()]);
     renderPage();

@@ -306,7 +306,7 @@ export function ModelsPage() {
       if (providerFilter && m.provider !== providerFilter) return false;
       if (connectionFilter && m.connectionId !== connectionFilter) return false;
       if (!q) return true;
-      return m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q) || m.endpoint.toLowerCase().includes(q);
+      return m.id.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q) || (m.endpoint ?? '').toLowerCase().includes(q);
     });
   }, [models, search, providerFilter, connectionFilter]);
 
@@ -316,7 +316,7 @@ export function ModelsPage() {
       switch (sortKey) {
         case 'id':       cmp = a.id.localeCompare(b.id); break;
         case 'provider': cmp = a.provider.localeCompare(b.provider); break;
-        case 'endpoint': cmp = a.endpoint.localeCompare(b.endpoint); break;
+        case 'endpoint': cmp = (a.endpoint ?? '').localeCompare(b.endpoint ?? ''); break;
         case 'input':    cmp = numOrInfinity(a.cost.inputPerMillion) - numOrInfinity(b.cost.inputPerMillion); break;
         case 'output':   cmp = numOrInfinity(a.cost.outputPerMillion) - numOrInfinity(b.cost.outputPerMillion); break;
         case 'cache':    cmp = numOrInfinity(a.cost.cachePerMillion) - numOrInfinity(b.cost.cachePerMillion); break;
