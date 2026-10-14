@@ -136,7 +136,7 @@ function buildJudgeUserContent(context: string | undefined, text: string): strin
 
 /** Built-in prompt-injection detection patterns (#77). */
 const INJECTION_PATTERNS: Array<{ name: string; re: RegExp }> = [
-  { name: 'ignore-instructions', re: /ignore\s+(previous|above|prior)\s+instructions?/i },
+  { name: 'ignore-instructions', re: /ignore\s+(?:all\s+)?(?:the\s+)?(previous|above|prior)\s+instructions?/i },
   { name: 'you-are-now', re: /you\s+are\s+now\s+/i },
   { name: 'disregard', re: /disregard\s+(your|all)\s+/i },
   { name: 'dan-mode', re: /DAN\s+mode/i },
