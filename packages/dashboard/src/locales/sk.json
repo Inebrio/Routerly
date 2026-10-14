@@ -2291,7 +2291,13 @@
         "all": "Všetky",
         "success": "Úspech",
         "blocked": "Zablokované",
-        "error": "Chyba"
+        "error": "Chyba",
+        "sessionId": "ID relácie",
+        "endUser": "Koncový používateľ",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Akákoľvek relácia",
+        "endUserPlaceholder": "Akýkoľvek koncový používateľ",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Všetky",
@@ -2394,7 +2400,10 @@
         "timestamp": "Časová pečiatka",
         "guardrailTriggered": "Chránidlo spustené",
         "blockedBy": "Zablokované",
-        "piiRedacted": "PII redakované"
+        "piiRedacted": "PII redakované",
+        "sessionId": "ID relácie",
+        "endUser": "Koncový používateľ",
+        "tags": "Tags"
       },
       "errorMessage": "Chybová správa",
       "eventCount": "{{count}} udalosť",

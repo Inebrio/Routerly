@@ -2291,7 +2291,13 @@
         "all": "Toate",
         "success": "Succes",
         "blocked": "Blocat",
-        "error": "Eroare"
+        "error": "Eroare",
+        "sessionId": "ID sesiune",
+        "endUser": "Utilizator final",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Orice sesiune",
+        "endUserPlaceholder": "Orice utilizator final",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Toate",
@@ -2394,7 +2400,10 @@
         "timestamp": "Marcă de timp",
         "guardrailTriggered": "Protecție declanșată",
         "blockedBy": "Blocat de",
-        "piiRedacted": "PII redactat"
+        "piiRedacted": "PII redactat",
+        "sessionId": "ID sesiune",
+        "endUser": "Utilizator final",
+        "tags": "Tags"
       },
       "errorMessage": "Mesaj eroare",
       "eventCount": "{{count}} eveniment",

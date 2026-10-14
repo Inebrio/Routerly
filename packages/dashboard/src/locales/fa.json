@@ -2291,7 +2291,13 @@
         "all": "همه",
         "success": "موفق",
         "blocked": "مسدود",
-        "error": "خطا"
+        "error": "خطا",
+        "sessionId": "شناسه نشست",
+        "endUser": "کاربر نهایی",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "هر نشست",
+        "endUserPlaceholder": "هر کاربر نهایی",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "همه",
@@ -2394,7 +2400,10 @@
         "timestamp": "زمان",
         "guardrailTriggered": "محافظ فعال شد",
         "blockedBy": "مسدودشده توسط",
-        "piiRedacted": "اطلاعات شخصی پنهان شد"
+        "piiRedacted": "اطلاعات شخصی پنهان شد",
+        "sessionId": "شناسه نشست",
+        "endUser": "کاربر نهایی",
+        "tags": "Tags"
       },
       "errorMessage": "پیام خطا",
       "eventCount": "{{count}} رویداد",

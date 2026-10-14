@@ -2291,7 +2291,13 @@
         "all": "Alles",
         "success": "Succes",
         "blocked": "Geblokkeerd",
-        "error": "Fout"
+        "error": "Fout",
+        "sessionId": "Sessie-ID",
+        "endUser": "Eindgebruiker",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Elke sessie",
+        "endUserPlaceholder": "Elke eindgebruiker",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Alles",
@@ -2394,7 +2400,10 @@
         "timestamp": "Tijdstempel",
         "guardrailTriggered": "Garantie geactiveerd",
         "blockedBy": "Geblokkeerd door",
-        "piiRedacted": "PII geredigeerd"
+        "piiRedacted": "PII geredigeerd",
+        "sessionId": "Sessie-ID",
+        "endUser": "Eindgebruiker",
+        "tags": "Tags"
       },
       "errorMessage": "Foutbericht",
       "eventCount": "{{count}} gebeurtenis",

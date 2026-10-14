@@ -2291,7 +2291,13 @@
         "all": "모두",
         "success": "성공",
         "blocked": "차단됨",
-        "error": "오류"
+        "error": "오류",
+        "sessionId": "세션 ID",
+        "endUser": "최종 사용자",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "모든 세션",
+        "endUserPlaceholder": "모든 최종 사용자",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "모두",
@@ -2394,7 +2400,10 @@
         "timestamp": "타임스탬프",
         "guardrailTriggered": "가드레일 트리거됨",
         "blockedBy": "다음에 의해 차단됨",
-        "piiRedacted": "개인정보 제거됨"
+        "piiRedacted": "개인정보 제거됨",
+        "sessionId": "세션 ID",
+        "endUser": "최종 사용자",
+        "tags": "Tags"
       },
       "errorMessage": "오류 메시지",
       "eventCount": "{{count}}개 이벤트",

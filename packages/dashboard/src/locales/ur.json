@@ -2291,7 +2291,13 @@
         "all": "تمام",
         "success": "کامیابی",
         "blocked": "حجب شدہ",
-        "error": "خرابی"
+        "error": "خرابی",
+        "sessionId": "سیشن آئی ڈی",
+        "endUser": "اختتامی صارف",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "کوئی بھی سیشن",
+        "endUserPlaceholder": "کوئی بھی اختتامی صارف",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "تمام",
@@ -2394,7 +2400,10 @@
         "timestamp": "ٹائم سٹیمپ",
         "guardrailTriggered": "حفاظت متحرک",
         "blockedBy": "کے ذریعے حجب شدہ",
-        "piiRedacted": "PII ردعمل"
+        "piiRedacted": "PII ردعمل",
+        "sessionId": "سیشن آئی ڈی",
+        "endUser": "اختتامی صارف",
+        "tags": "Tags"
       },
       "errorMessage": "خرابی کا پیغام",
       "eventCount": "{{count}} واقعہ",

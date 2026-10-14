@@ -86,6 +86,9 @@ export function UsagePage() {
   const [callTypeFilter, setCallTypeFilter] = useFilterState<'all' | 'completion' | 'routing' | 'guardrail' | 'judge'>({ key: 'usage-filters-callType', defaultValue: 'all' });
   const [requestTypeFilter, setRequestTypeFilter] = useFilterState<'all' | RequestType>({ key: 'usage-filters-requestType', defaultValue: 'all' });
   const [outcomeFilter, setOutcomeFilter]   = useFilterState<'all' | 'success' | 'error' | 'blocked'>({ key: 'usage-filters-outcome', defaultValue: 'all' });
+  const [sessionId, setSessionId]     = useFilterState<string>({ key: 'usage-filters-sessionId', defaultValue: '' });
+  const [endUserId, setEndUserId]     = useFilterState<string>({ key: 'usage-filters-endUserId', defaultValue: '' });
+  const [tagFilter, setTagFilter]     = useFilterState<string>({ key: 'usage-filters-tag', defaultValue: '' });
   // The savings layer rides a fetch of its own: the counterfactual is expensive
   // and the record table polls every 2s, so it follows the filters and nothing
   // else (T209).
@@ -150,7 +153,7 @@ export function UsagePage() {
   useEffect(() => {
     latestTimestampRef.current = null;
     setNewRowIds(new Set());
-  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
   const fetchStats = useCallback(() => {
     const prevMax = latestTimestampRef.current;
@@ -170,6 +173,9 @@ export function UsagePage() {
       callType: callTypeFilter,
       requestType: requestTypeFilter,
       outcome: outcomeFilter,
+      sessionId: sessionId.trim(),
+      endUserId: endUserId.trim(),
+      tag: tagFilter.trim(),
     })
       .then(data => {
         if (prevMax !== null) {
@@ -191,7 +197,7 @@ export function UsagePage() {
         setFetchError(msg);
         console.error('Failed to load usage stats:', msg);
       });
-  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, page, pageSize, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);
@@ -206,7 +212,7 @@ export function UsagePage() {
     return () => clearInterval(id);
   }, [fetchStats, pollInterval]);
 
-  useEffect(() => { setPage(1); }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  useEffect(() => { setPage(1); }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
   // Savings over the same window and the same filters, one page of records asked
   // for because only the aggregates are read here (T209).
@@ -227,12 +233,15 @@ export function UsagePage() {
       callType: callTypeFilter,
       requestType: requestTypeFilter,
       outcome: outcomeFilter,
+      sessionId: sessionId.trim(),
+      endUserId: endUserId.trim(),
+      tag: tagFilter.trim(),
       series: true,
       savings: true,
     })
       .then(setSavingsStats)
       .catch(() => setSavingsStats(null));
-  }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter]);
+  }, [dateRange, routerIds, modelIds, tokenIds, callTypeFilter, requestTypeFilter, outcomeFilter, sessionId, endUserId, tagFilter]);
 
   const savingsData = useMemo(() => savingsSeriesData(savingsStats?.series), [savingsStats]);
 
@@ -284,7 +293,7 @@ export function UsagePage() {
   // Server now filters; records are already consistent with active filters.
   const displayRecords = stats?.records ?? [];
 
-  const hasActiveFilters = routerIds.length > 0 || modelIds.length > 0 || tokenIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all';
+  const hasActiveFilters = routerIds.length > 0 || modelIds.length > 0 || tokenIds.length > 0 || callTypeFilter !== 'all' || requestTypeFilter !== 'all' || outcomeFilter !== 'all' || sessionId !== '' || endUserId !== '' || tagFilter !== '';
   const hasReset = hasActiveFilters;
 
   function handleModelSort(key: ModelSortKey) {
@@ -526,11 +535,29 @@ export function UsagePage() {
               </div>
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+              <FilterLabel>{t('usage.page.filters.sessionId')}</FilterLabel>
+              <input className="form-input" value={sessionId} onChange={e => setSessionId(e.target.value)}
+                placeholder={t('usage.page.filters.sessionIdPlaceholder')} aria-label={t('usage.page.filters.sessionId')} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+              <FilterLabel>{t('usage.page.filters.endUser')}</FilterLabel>
+              <input className="form-input" value={endUserId} onChange={e => setEndUserId(e.target.value)}
+                placeholder={t('usage.page.filters.endUserPlaceholder')} aria-label={t('usage.page.filters.endUser')} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 160 }}>
+              <FilterLabel>{t('usage.page.filters.tag')}</FilterLabel>
+              <input className="form-input" value={tagFilter} onChange={e => setTagFilter(e.target.value)}
+                placeholder={t('usage.page.filters.tagPlaceholder')} aria-label={t('usage.page.filters.tag')} />
+            </div>
+
             {hasReset && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <FilterLabel>&nbsp;</FilterLabel>
                 <button className="btn btn-sm btn-secondary"
-                  onClick={() => { setRouterIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); }}>
+                  onClick={() => { setRouterIds([]); setModelIds([]); setTokenIds([]); setCallTypeFilter('all'); setRequestTypeFilter('all'); setOutcomeFilter('all'); setSessionId(''); setEndUserId(''); setTagFilter(''); }}>
                   {t('usage.page.filters.resetFilters')}
                 </button>
               </div>

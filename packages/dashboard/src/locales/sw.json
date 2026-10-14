@@ -2291,7 +2291,13 @@
         "all": "Zote",
         "success": "Mafanikio",
         "blocked": "Imedhibitiwa",
-        "error": "Hitilafu"
+        "error": "Hitilafu",
+        "sessionId": "Kitambulisho cha kipindi",
+        "endUser": "Mtumiaji wa mwisho",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Kipindi chochote",
+        "endUserPlaceholder": "Mtumiaji yeyote wa mwisho",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Zote",
@@ -2394,7 +2400,10 @@
         "timestamp": "Wakati",
         "guardrailTriggered": "Ngiti Iliboreshwa",
         "blockedBy": "Imedhibitiwa Na",
-        "piiRedacted": "PII Iliyochanjwa"
+        "piiRedacted": "PII Iliyochanjwa",
+        "sessionId": "Kitambulisho cha kipindi",
+        "endUser": "Mtumiaji wa mwisho",
+        "tags": "Tags"
       },
       "errorMessage": "Ujumbe wa Hitilafu",
       "eventCount": "{{count}} tukio",

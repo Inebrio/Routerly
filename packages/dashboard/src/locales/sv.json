@@ -2291,7 +2291,13 @@
         "all": "Alla",
         "success": "Framgång",
         "blocked": "Blockerad",
-        "error": "Fel"
+        "error": "Fel",
+        "sessionId": "Sessions-ID",
+        "endUser": "Slutanvändare",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Valfri session",
+        "endUserPlaceholder": "Valfri slutanvändare",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Alla",
@@ -2394,7 +2400,10 @@
         "timestamp": "Tidsstämpel",
         "guardrailTriggered": "Skyddskontroll utlöst",
         "blockedBy": "Blockerad av",
-        "piiRedacted": "PII redigerad"
+        "piiRedacted": "PII redigerad",
+        "sessionId": "Sessions-ID",
+        "endUser": "Slutanvändare",
+        "tags": "Tags"
       },
       "errorMessage": "Felmeddelande",
       "eventCount": "{{count}} händelse",

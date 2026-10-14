@@ -2291,7 +2291,13 @@
         "all": "Все",
         "success": "Успех",
         "blocked": "Заблокировано",
-        "error": "Ошибка"
+        "error": "Ошибка",
+        "sessionId": "ID сессии",
+        "endUser": "Конечный пользователь",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Любая сессия",
+        "endUserPlaceholder": "Любой конечный пользователь",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Все",
@@ -2394,7 +2400,10 @@
         "timestamp": "Временная метка",
         "guardrailTriggered": "Защита сработана",
         "blockedBy": "Заблокировано",
-        "piiRedacted": "PII отредактировано"
+        "piiRedacted": "PII отредактировано",
+        "sessionId": "ID сессии",
+        "endUser": "Конечный пользователь",
+        "tags": "Tags"
       },
       "errorMessage": "Сообщение об ошибке",
       "eventCount": "{{count}} событие",

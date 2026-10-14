@@ -2291,7 +2291,13 @@
         "all": "すべて",
         "success": "成功",
         "blocked": "ブロック",
-        "error": "エラー"
+        "error": "エラー",
+        "sessionId": "セッションID",
+        "endUser": "エンドユーザー",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "すべてのセッション",
+        "endUserPlaceholder": "すべてのエンドユーザー",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "すべて",
@@ -2394,7 +2400,10 @@
         "timestamp": "タイムスタンプ",
         "guardrailTriggered": "ガードレールがトリガー",
         "blockedBy": "ブロック者",
-        "piiRedacted": "PII編集"
+        "piiRedacted": "PII編集",
+        "sessionId": "セッションID",
+        "endUser": "エンドユーザー",
+        "tags": "Tags"
       },
       "errorMessage": "エラーメッセージ",
       "eventCount": "{{count}}イベント",

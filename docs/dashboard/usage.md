@@ -64,8 +64,9 @@ change, not every two seconds.
 | **Caller** | Who made the call: the client (`Completion`), the router, the guardrail pipeline, or an experiment judge |
 | **Type** | What the call asked for, taken from the endpoint the client hit: `Chat`, `Text Completion`, `Embedding`, `Rerank`, `Image`, `Audio` |
 | **Status** | `All`, `Success`, `Blocked`, or `Error` -- `Blocked` shows only guardrail-blocked requests |
-| **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header) |
-| **Tags** | Filter by token metadata (e.g., `environment: production`) |
+| **Session ID** | Filter to requests from a specific session (from the `x-routerly-conversation-id` header). Lists the requests of one session; `routerly report sessions` lists the sessions themselves |
+| **End user** | Filter to requests of one end-user ID |
+| **Tag** | Filter by one tag as `key=value` (e.g., `environment=production`); same syntax as `routerly report usage --tag` |
 
 **Token** lists every token of the selected routers, or of all routers when no
 router is picked, and appears only when there is more than one to choose from.
@@ -245,6 +246,7 @@ The **detail panel** for each usage record shows:
 | **Blocked By** | Same as Guardrail Triggered -- present only when `outcome` is `blocked` |
 | **PII Redacted** | Comma-separated list of entity types redacted (e.g. `EMAIL, PHONE`) |
 | **Session ID** | Session identifier from the `x-routerly-conversation-id` header, if provided (useful for grouping multi-turn conversations or user sessions) |
+| **End user** | End-user ID of the request, if provided |
 | **Tags** | Custom metadata from the token that made the request (e.g., `environment: production`, `team: backend`); enables filtering and analysis by custom dimensions |
 
 ### Live Polling

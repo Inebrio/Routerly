@@ -2291,7 +2291,13 @@
         "all": "Всички",
         "success": "Успех",
         "blocked": "Блокирано",
-        "error": "Грешка"
+        "error": "Грешка",
+        "sessionId": "ID на сесията",
+        "endUser": "Краен потребител",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Всяка сесия",
+        "endUserPlaceholder": "Всеки краен потребител",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Всички",
@@ -2394,7 +2400,10 @@
         "timestamp": "Времева отметка",
         "guardrailTriggered": "Ограничител активиран",
         "blockedBy": "Блокирано от",
-        "piiRedacted": "Лични данни редактирани"
+        "piiRedacted": "Лични данни редактирани",
+        "sessionId": "ID на сесията",
+        "endUser": "Краен потребител",
+        "tags": "Tags"
       },
       "errorMessage": "Съобщение за грешка",
       "eventCount": "{{count}} събитие",

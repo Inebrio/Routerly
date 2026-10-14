@@ -2291,7 +2291,13 @@
         "all": "All",
         "success": "Success",
         "blocked": "Blocked",
-        "error": "Error"
+        "error": "Error",
+        "sessionId": "सत्र आयडी",
+        "endUser": "अंतिम वापरकर्ता",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "कोणतेही सत्र",
+        "endUserPlaceholder": "कोणताही अंतिम वापरकर्ता",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "All",
@@ -2394,7 +2400,10 @@
         "timestamp": "Timestamp",
         "guardrailTriggered": "गार्डरेल ट्रिगर केले गेले",
         "blockedBy": "ब्लॉक केले गेले",
-        "piiRedacted": "PII रिडॅक्ट केले गेले"
+        "piiRedacted": "PII रिडॅक्ट केले गेले",
+        "sessionId": "सत्र आयडी",
+        "endUser": "अंतिम वापरकर्ता",
+        "tags": "Tags"
       },
       "errorMessage": "त्रुटी संदेश",
       "eventCount": "{{count}} event",

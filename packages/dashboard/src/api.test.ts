@@ -908,6 +908,18 @@ describe('getUsage', () => {
     expect(url).toContain('outcome=success');
   });
 
+  it('sends sessionId, endUserId and tag as tag[key]=value; ignores a malformed tag', async () => {
+    const { getUsage } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));
+    await getUsage('all', undefined, undefined, undefined, 1, 20, { sessionId: 's1', endUserId: 'u1', tag: 'team=a=b' });
+    const url = decodeURIComponent((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string);
+    expect(url).toContain('sessionId=s1');
+    expect(url).toContain('endUserId=u1');
+    expect(url).toContain('tag[team]=a=b');
+    await getUsage('all', undefined, undefined, undefined, 1, 20, { tag: 'novalue' });
+    expect(decodeURIComponent((fetch as ReturnType<typeof vi.fn>).mock.calls[1]![0] as string)).not.toContain('tag[');
+  });
+
   it('skips callType=all, requestType=all and outcome=all', async () => {
     const { getUsage } = await api();
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { summary: {}, byModel: {}, timeline: [], records: [] }));

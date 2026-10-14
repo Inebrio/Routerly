@@ -2291,7 +2291,13 @@
         "all": "הכל",
         "success": "הצלחה",
         "blocked": "חסום",
-        "error": "שגיאה"
+        "error": "שגיאה",
+        "sessionId": "מזהה סשן",
+        "endUser": "משתמש קצה",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "כל סשן",
+        "endUserPlaceholder": "כל משתמש קצה",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "הכל",
@@ -2394,7 +2400,10 @@
         "timestamp": "חותמת זמן",
         "guardrailTriggered": "מעקה הופעל",
         "blockedBy": "נחסם על ידי",
-        "piiRedacted": "מידע מזהה צונזר"
+        "piiRedacted": "מידע מזהה צונזר",
+        "sessionId": "מזהה סשן",
+        "endUser": "משתמש קצה",
+        "tags": "Tags"
       },
       "errorMessage": "הודעת שגיאה",
       "eventCount": "{{count}} אירוע",

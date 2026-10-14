@@ -2291,7 +2291,13 @@
         "all": "Tümü",
         "success": "Başarı",
         "blocked": "Engellendi",
-        "error": "Hata"
+        "error": "Hata",
+        "sessionId": "Oturum kimliği",
+        "endUser": "Son kullanıcı",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Herhangi bir oturum",
+        "endUserPlaceholder": "Herhangi bir son kullanıcı",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Tümü",
@@ -2394,7 +2400,10 @@
         "timestamp": "Zaman Damgası",
         "guardrailTriggered": "Güvenlik Rayı Tetiklendi",
         "blockedBy": "Tarafından Engellendi",
-        "piiRedacted": "KKB Reddedildi"
+        "piiRedacted": "KKB Reddedildi",
+        "sessionId": "Oturum kimliği",
+        "endUser": "Son kullanıcı",
+        "tags": "Tags"
       },
       "errorMessage": "Hata Mesajı",
       "eventCount": "{{count}} olay",
