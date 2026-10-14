@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **OpenAI OAuth: Test and chat use the same credential** (ROUT-285): the connection's Auth file path is now stored as `authFilePath` (it used to be saved as an encrypted token) and honoured by chat and by the model Test. The model Test calls the same Codex backend as the router, so it no longer fails on working connections (`oauth connection missing encrypted credentials`, `Missing scopes: model.request`) and reports the real upstream error for bad tokens. Connections saved by the old form keep working.
 - A connection created without an endpoint (CLI/API) for `anthropic` or `anthropic-oauth` now uses `https://api.anthropic.com`; `/v1/messages` no longer fails with 500 `Invalid URL` (ROUT-284).
 - **Connections / Models**: creating an `anthropic-oauth` connection with an empty token is now refused (`400 oauth_token_required`; the dashboard field is required), and the model Test button sends the upstream model name instead of the prefixed registry id (false "model not found" on custom providers).
 

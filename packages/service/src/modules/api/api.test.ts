@@ -66,7 +66,7 @@ vi.mock('bcrypt', () => ({
   default: { hash: vi.fn(async (p: string) => `hashed:${p}`), compare: vi.fn() },
 }))
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid-1234') }))
-vi.mock('../reverse-proxy/lanes/openaiOAuthForward.js', () => ({ resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
+vi.mock('../reverse-proxy/lanes/openaiOAuthForward.js', async (importOriginal) => ({ ...(await importOriginal<typeof import('../reverse-proxy/lanes/openaiOAuthForward.js')>()), resolveCodexToken: vi.fn(), forwardOpenAIOAuthSSE: vi.fn() }))
 vi.mock('../auth/totp.js', () => ({
   verifyTotp: vi.fn(() => true),
   generateTotpSecret: vi.fn(() => 'MOCK_SECRET_BASE32'),
@@ -13309,6 +13309,53 @@ describe('POST /api/models/:id/test', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json().ok).toBe(false)
     expect(res.json().error).toMatch(/anthropic-oauth|oauth connection/)
+  })
+
+  describe('openai-oauth (same credential + backend as the chat lane)', () => {
+    const jwt = 'h.' + Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 7200 })).toString('base64url') + '.s'
+    const sse = 'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"pong"}\n\n' +
+      'event: response.completed\ndata: {"type":"response.completed","response":{"id":"r1","usage":{"input_tokens":1,"output_tokens":1}}}\n\n'
+    const setup = async (authFilePath: string) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [adminUser]
+        if (t === 'roles') return []
+        if (t === 'instances') return [{ id: 'oa-1', connectionId: 'c-oa', upstreamModelId: 'gpt-5', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 1000 }]
+        if (t === 'connections') return [{ id: 'c-oa', providerId: 'openai-oauth', credentials: { authFilePath } }]
+        return []
+      })
+    }
+    const writeAuth = async () => {
+      const { mkdtemp, writeFile } = await import('node:fs/promises')
+      const { tmpdir } = await import('node:os')
+      const dir = await mkdtemp(`${tmpdir()}/oa-`)
+      const file = `${dir}/auth.json`
+      await writeFile(file, JSON.stringify({ tokens: { access_token: jwt, refresh_token: 'r', account_id: 'acct' } }))
+      return file
+    }
+
+    it('returns ok:true using the connection authFilePath', async () => {
+      await setup(await writeAuth())
+      const fetchMock = vi.fn().mockResolvedValue(new Response(sse, { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/models/oa-1/test', headers: adminAuthHeaders() })
+      await app.close()
+      vi.unstubAllGlobals()
+      expect(res.json().ok).toBe(true)
+      expect(String(fetchMock.mock.calls[0]![0])).toContain('chatgpt.com/backend-api/codex/responses')
+    })
+
+    it('returns ok:false with the upstream reason when the token is rejected', async () => {
+      await setup(await writeAuth())
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('invalid token', { status: 401 })))
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/models/oa-1/test', headers: adminAuthHeaders() })
+      await app.close()
+      vi.unstubAllGlobals()
+      expect(res.json().ok).toBe(false)
+      expect(res.json().error).toMatch(/HTTP 401/)
+    })
   })
 
   it('returns 404 for unknown model', async () => {

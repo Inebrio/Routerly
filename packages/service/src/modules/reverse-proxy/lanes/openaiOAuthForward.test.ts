@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import type { ModelConfig } from '@routerly/shared'
-import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, resolveCodexToken } from './openaiOAuthForward.js'
+import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, resolveCodexToken, resolveOpenAICodexAuth } from './openaiOAuthForward.js'
 
+vi.mock('../../config/loader.js', () => ({ getOrCreateSecret: vi.fn().mockResolvedValue('d'.repeat(64)), readConfig: vi.fn().mockResolvedValue([]) }))
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 import { trackUsage } from '../../usage/tracker.js'
 const mockTrackUsage = vi.mocked(trackUsage)
@@ -52,14 +53,14 @@ vi.mock('node:fs/promises', () => ({
 
 import * as fs from 'node:fs/promises'
 
-const oauthModel: ModelConfig = {
+const oauthModel = {
   id: 'gpt-4o',
   name: 'GPT-4o (Plus subscription)',
   provider: 'openai-oauth',
   endpoint: 'https://chatgpt.com',
-  apiKey: '/tmp/fake-auth.json',
+  authFilePath: '/tmp/fake-auth.json',
   cost: { inputPerMillion: 0, outputPerMillion: 0 },
-}
+} as unknown as ModelConfig
 
 function makeLog() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as any
@@ -595,12 +596,12 @@ describe('forwardOpenAIOAuthSSE', () => {
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'error' }))
   })
 
-  it('uses DEFAULT_AUTH_PATH when model.apiKey is absent (line 154 || branch=1)', async () => {
+  it('uses DEFAULT_AUTH_PATH when authFilePath is absent (line 154 || branch=1)', async () => {
     // apiKey is undefined → DEFAULT_AUTH_PATH ('~/.codex/auth.json') is used
     vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
     mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream('') })
 
-    const modelNoKey: ModelConfig = { ...oauthModel, apiKey: undefined }
+    const modelNoKey: ModelConfig = { ...oauthModel, authFilePath: undefined } as unknown as ModelConfig
     const raw = makeRaw()
     await forwardOpenAIOAuthSSE(raw as any, {}, modelNoKey, makeLog(), 'trace-defkey', 'proj-1')
 
@@ -826,5 +827,39 @@ describe('resolveCodexToken — id_token in refresh response (line 63 true branc
     const calledPath = vi.mocked(fs.readFile).mock.calls[0]![0] as string
     expect(calledPath).not.toContain('~')
     expect(calledPath).toMatch(/^\//)
+  })
+})
+
+// ─── resolveOpenAICodexAuth (shared by lane + model Test) ─────────────────────
+
+describe('resolveOpenAICodexAuth', () => {
+  it('reads the connection authFilePath, not the default', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    const r = await resolveOpenAICodexAuth({ authFilePath: '/custom/auth.json' } as unknown as ModelConfig, makeLog())
+    expect(vi.mocked(fs.readFile).mock.calls[0]![0]).toBe('/custom/auth.json')
+    expect(r.accessToken).toBe(ACCESS_TOKEN)
+  })
+
+  it('falls back to the default auth file when the connection has no credentials', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    await resolveOpenAICodexAuth({} as ModelConfig, makeLog())
+    expect(vi.mocked(fs.readFile).mock.calls[0]![0] as string).toContain('.codex/auth.json')
+  })
+
+  it('treats a non-JWT oauthEnc (path saved by the old form) as an auth file path', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    const { encryptCredential, loadCredentialKey } = await import('../../../lib/crypto-cred.js')
+    await loadCredentialKey()
+    await resolveOpenAICodexAuth({ oauthEnc: encryptCredential('/old/form/auth.json') } as unknown as ModelConfig, makeLog())
+    expect(vi.mocked(fs.readFile).mock.calls[0]![0]).toBe('/old/form/auth.json')
+  })
+
+  it('uses a stored static JWT as-is', async () => {
+    const { encryptCredential, loadCredentialKey } = await import('../../../lib/crypto-cred.js')
+    await loadCredentialKey()
+    const jwt = 'h.' + Buffer.from(JSON.stringify({ 'https://api.openai.com/auth': { chatgpt_account_id: 'acct_x' } })).toString('base64url') + '.s'
+    const r = await resolveOpenAICodexAuth({ oauthEnc: encryptCredential(jwt) } as unknown as ModelConfig, makeLog())
+    expect(r).toEqual({ accessToken: jwt, accountId: 'acct_x' })
+    expect(fs.readFile).not.toHaveBeenCalled()
   })
 })

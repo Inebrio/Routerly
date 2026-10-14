@@ -1058,6 +1058,15 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       // inside the try: oauth credential resolution can throw, which must surface as ok:false, not a 500
       const model = await loadEffectiveModel(req.params.id);
       if (!model) return reply.status(404).send({ error: 'Not found' });
+      if (model.provider === 'openai-oauth') {
+        // Same call as the chat lane (Codex backend, same credential), so Test and traffic agree.
+        const { streamOpenAIOAuthChunks, chunksToChatResponse } = await import('../reverse-proxy/lanes/openaiOAuthForward.js');
+        const chunks = streamOpenAIOAuthChunks(
+          { model: model.upstreamModelId ?? model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 },
+          model, req.log, { traceId: `test-${Date.now()}`, routerId: '' });
+        await chunksToChatResponse(chunks, model.id);
+        return reply.send({ ok: true, latencyMs: Date.now() - t0 });
+      }
       const adapter = getProviderAdapter(model);
       await adapter.chatCompletion({ model: model.upstreamModelId ?? model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
       return reply.send({ ok: true, latencyMs: Date.now() - t0 });

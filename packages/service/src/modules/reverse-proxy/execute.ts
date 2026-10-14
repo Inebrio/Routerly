@@ -201,7 +201,8 @@ export async function loadEffectiveModel(id: string): Promise<EffectiveModel | u
     const connection = connections.find((c) => c.id === instance.connectionId);
     if (connection) {
       const supportLevel = getProviderDescriptor(connection.providerId)?.supportLevel;
-      if (supportLevel === 'oauth') {
+      // openai-oauth resolves its own credential (authFilePath / token pair) in lanes/openaiOAuthForward.ts.
+      if (supportLevel === 'oauth' && connection.providerId !== 'openai-oauth') {
         const liveToken = connection.providerId === 'anthropic-oauth'
           ? await resolveAnthropicOAuthCredential(connection)
           : await resolveOpenAIOAuthCredential(connection);

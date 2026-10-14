@@ -318,6 +318,11 @@ describe('POST /api/connections', () => {
 // ─── buildConnectionCredentials (single source of truth for both API paths) ──────
 
 describe('buildConnectionCredentials', () => {
+  it('stores the openai-oauth auth file path as authFilePath, never as an encrypted token', () => {
+    expect(buildConnectionCredentials('openai-oauth', { apiKey: '/root/custom-auth.json' }))
+      .toEqual({ authFilePath: '/root/custom-auth.json' })
+  })
+
   it('passes bedrock cloud fields through untouched (plaintext at rest)', () => {
     expect(buildConnectionCredentials('bedrock', {
       awsRegion: 'us-east-1', awsAccessKeyId: 'AKIA-x',

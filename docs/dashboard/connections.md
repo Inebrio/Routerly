@@ -70,7 +70,7 @@ ask for the same things in the same order.
 |----------|--------|
 | API-key providers (`openai`, `anthropic`, `ollama`, `custom`, …) | **API Key / Token** (masked, with a show/hide toggle) |
 | `anthropic-oauth` | **Subscription OAuth Token**, with instructions to generate it via `claude setup-token` |
-| `openai-oauth` | **Auth file path** (blank means `~/.codex/auth.json`) plus a **Test** button that reports the account and token expiry |
+| `openai-oauth` | **Auth file path** (stored per connection and used by chat and the model Test; blank means `~/.codex/auth.json`) plus a **Test** button that reports the account and token expiry |
 | `openai-web`, `anthropic-web` | the session token for that provider, an optional **cf_clearance**, and an unofficial-provider warning |
 | `azure-openai` | **Azure Resource Name**, **Deployment ID**, **API Version** |
 | `bedrock` | **AWS Region**, **AWS Access Key ID**, **AWS Secret Access Key**, optional **Session Token** |
