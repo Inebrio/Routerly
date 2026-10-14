@@ -3489,6 +3489,16 @@ describe('PUT /api/settings', () => {
     expect(written).toMatchObject({ metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
   })
 
+  it('keeps prometheusAuthToken and integration token when the masked marker is echoed back (ROUT-279)', async () => {
+    const { res, written } = await putSettings(
+      { prometheusAuthToken: 'tok', integrations: [{ id: 'p', type: 'prometheus', enabled: true, authToken: 'tok' }] },
+      { prometheusAuthToken: '********', logLevel: 'info' },
+    )
+    expect(res.statusCode).toBe(200)
+    expect(written['prometheusAuthToken']).toBe('tok')
+    expect(written['integrations'][0].authToken).toBe('tok')
+  })
+
   it('removes prometheusAuthToken on empty string and syncs the prometheus integration', async () => {
     const { res, written } = await putSettings(
       { prometheusAuthToken: 'old', integrations: [{ id: 'p', type: 'prometheus', enabled: true, authToken: 'old' }] },
