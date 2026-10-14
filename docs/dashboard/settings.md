@@ -387,7 +387,7 @@ System information about the running instance:
 | Field | Description |
 |-------|-------------|
 | **Version** | Routerly version string |
-| **Channel** | Active update channel: `latest`, `current`, `next`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
+| **Channel** | Active update channel: `latest`, `current`, `next`, `develop`, or a pinned version tag. Editable — see [Update Channel](#update-channel) below |
 | **Uptime** | How long the service has been running since last start |
 | **Node.js** | Node.js runtime version |
 | **Platform** | OS and architecture |
@@ -401,10 +401,21 @@ The channel selector lets you choose which release stream Routerly follows when 
 |---------|-------------|
 | `latest` | Newest production-ready release |
 | `current` | Newest production-ready release (same as `latest`) |
-| `next` | Unstable/rolling release line |
+| `next` | Validated pre-release line, promoted from `develop` |
+| `develop` | Bleeding-edge, unreviewed release line |
 | Custom version | Pin to a specific release tag (e.g. `v0.2.0`) |
 
-`stable` and `develop` are still accepted as deprecated aliases for `current` and `next`, respectively. Removal is planned no earlier than the release after next.
+:::warning Breaking change
+`stable` is no longer an alias for `current` — selecting it (from this
+dropdown's custom-value field, the CLI, or an installer) is rejected with
+an error naming the four channels above. `develop` is no longer an alias
+for `next`: it is now a real, distinct channel, the bleeding-edge line, and
+selecting it resolves to itself with no deprecation message. An instance
+that already had `stable` or `develop` persisted as its channel is affected
+by this: `stable` now fails validation on the next change, and a persisted
+`develop` now tracks the new bleeding-edge line instead of the old
+validated pre-release line.
+:::
 
 Changing the channel takes effect immediately — the running service is notified without a restart.
 

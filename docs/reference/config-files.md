@@ -107,7 +107,7 @@ Global service configuration.
 | `dashboardEnabled` | `boolean` | `true` | Enable or disable the web dashboard |
 | `logLevel` | `string` | `"info"` | Log verbosity: `"error"`, `"warn"`, `"info"`, `"debug"` |
 | `publicUrl` | `string` | `"http://localhost:3000"` | Externally reachable URL, used for notification links |
-| `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, or a version tag such as `"v0.2.0"`. `"stable"`/`"develop"` are accepted as deprecated aliases for `"current"`/`"next"`. Controls which GitHub Release the update checker compares against |
+| `channel` | `string` | `"current"` | Update channel: `"latest"`, `"current"`, `"next"`, `"develop"`, or a version tag such as `"v0.2.0"`. `"stable"` is rejected (breaking change — it used to be an accepted alias for `"current"`). Controls which GitHub Release the update checker compares against |
 | `notifications.channels` | `array` | `[]` | Notification channel objects. Each has `provider`, optional `name`, `id`, `events` (event patterns), `targets` (`{ roles, permissions, users }`), plus provider-specific fields. See [Notifications](../concepts/notifications.md) |
 | `notifications.notificationRules` | `array` | `[]` | Route event patterns to specific channel IDs: `{ events, channels }` |
 | `notifications.cooldowns` | `object` | `{}` | Minimum interval between repeated dispatches per event type (e.g. `"provider.degraded": "15m"`) |
@@ -289,7 +289,7 @@ Records the last `system.update_available` alert the update checker raised, so t
 {
   "announcedVersion": "0.5.0",
   "currentVersion": "0.4.0",
-  "channel": "stable",
+  "channel": "current",
   "announcedAt": "2026-08-04T10:00:00.000Z"
 }
 ```

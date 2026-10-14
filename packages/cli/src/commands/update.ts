@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { api, ApiError } from '../api.js';
-import { normalizeUpdateChannel, updateChannelDeprecationWarning } from '@routerly/shared';
+import { normalizeUpdateChannel } from '@routerly/shared';
 
 interface UpdateInfo {
   available: boolean;
@@ -65,7 +65,7 @@ Examples:
   // ── channel ─────────────────────────────────────────────────────────────────
   cmd
     .command('channel [name]')
-    .description('Show or change the update channel (latest | current | next | vX.Y.Z)')
+    .description('Show or change the update channel (latest | current | next | develop | vX.Y.Z)')
     .action(async (name: string | undefined) => {
       try {
         if (!name) {
@@ -73,16 +73,9 @@ Examples:
           const normalized = normalizeUpdateChannel(settings.channel);
           console.log();
           console.log(`  Current channel: ${chalk.cyan(normalized.channel)}`);
-          console.log(chalk.gray(`  Valid values: latest, current, next, or a specific tag (e.g. v0.4.0)`));
+          console.log(chalk.gray(`  Valid values: latest, current, next, develop, or a specific tag (e.g. v0.4.0)`));
           console.log();
-          if (normalized.deprecatedAlias) {
-            console.error(updateChannelDeprecationWarning(normalized.deprecatedAlias));
-          }
           return;
-        }
-        const normalized = normalizeUpdateChannel(name);
-        if (normalized.deprecatedAlias) {
-          console.error(updateChannelDeprecationWarning(normalized.deprecatedAlias));
         }
         const updated = await api<Settings>('PUT', '/api/settings', { channel: name });
         console.log();
