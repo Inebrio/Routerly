@@ -19,6 +19,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Unknown router models are flagged**: `POST/PUT /api/routers` still accept `models[].modelId` not in the registry (unmapped models are legitimate) but now return a `warnings` array naming them; `routerly router model add` prints each as a warning on stderr (ROUT-276).
 - **Guardrail `detectInjection`** now blocks "Ignore all previous instructions" and "ignore all the above instructions" (optional `all` / `the` between `ignore` and the keyword) (ROUT-278).
 - **Router policy `semantic-intent`** now sends the upstream embedding model name (not the namespaced registry id `openai/text-embedding-3-small`) to the embedding provider; previously the provider answered 400 and the policy silently abstained (ROUT-277).
 - **Provider `upstreamModelId` honoured** — openai, anthropic, gemini, ollama and bedrock models now send `upstreamModelId` (when set) to the provider instead of the id suffix, as `custom` already did. Aliased models no longer 404 upstream (ROUT-275).

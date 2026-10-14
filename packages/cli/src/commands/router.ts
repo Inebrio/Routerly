@@ -437,11 +437,12 @@ Examples:
           return;
         }
         const updatedModels = [...router.models, opts.prompt ? { modelId, prompt: opts.prompt } : { modelId }];
-        await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
+        const res = await api<{ warnings?: string[] }>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
           name: router.name, timeoutMs: router.timeoutMs, autoRouting: router.autoRouting,
           routingModelId: router.routingModelId, fallbackRoutingModelIds: router.fallbackRoutingModelIds,
           policies: router.policies, models: updatedModels,
         });
+        for (const w of res?.warnings ?? []) console.error(chalk.yellow(`Warning: ${w}`));
         console.log(chalk.green(`✓ Model "${modelId}" added to router "${router.name}".`));
       } catch (err) {
         if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));

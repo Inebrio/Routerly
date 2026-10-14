@@ -2007,6 +2007,45 @@ describe('POST /api/routers — passthrough kind (RTR-03)', () => {
   })
 })
 
+describe('router models not in the registry (ROUT-276)', () => {
+  const setup = (routers: unknown[]) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'routers') return routers
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+  const hdr = () => ({ ...adminAuthHeaders(), 'content-type': 'application/json' })
+
+  it('POST returns 201 with a warning naming the unknown model', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/routers', headers: hdr(), payload: JSON.stringify({ name: 'R', models: [{ modelId: 'nope/does-not-exist' }] }) })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    expect(res.json().warnings).toEqual(['Model "nope/does-not-exist" is not in the model registry'])
+  })
+
+  it('PUT returns 200 with a warning naming the unknown model', async () => {
+    setup([{ id: 'r1', name: 'R', tokens: [], members: [], models: [] }])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/routers/r1', headers: hdr(), payload: JSON.stringify({ name: 'R', models: [{ modelId: 'typo/x' }] }) })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().warnings).toEqual(['Model "typo/x" is not in the model registry'])
+  })
+
+  it('omits warnings when no model is listed', async () => {
+    setup([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/routers', headers: hdr(), payload: JSON.stringify({ name: 'R' }) })
+    await app.close()
+    expect(res.json().warnings).toBeUndefined()
+  })
+})
+
 describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
   it('leaves the slug unchanged on rename — slug is computed once at creation, never re-derived (see suggestRouterSlug)', async () => {
     setupAdminAuth()
