@@ -19,6 +19,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Router policy `semantic-intent`** now sends the upstream embedding model name (not the namespaced registry id `openai/text-embedding-3-small`) to the embedding provider; previously the provider answered 400 and the policy silently abstained (ROUT-277).
 - **Provider `upstreamModelId` honoured** — openai, anthropic, gemini, ollama and bedrock models now send `upstreamModelId` (when set) to the provider instead of the id suffix, as `custom` already did. Aliased models no longer 404 upstream (ROUT-275).
 
 - Dashboard: the Copy button of the `claude setup-token` command (and every other copy button: router token, 2FA backup codes) now works on instances served over plain HTTP; all copies go through `writeToClipboard`, which falls back to `execCommand` when the Clipboard API is unavailable or denied (ROUT-272).
