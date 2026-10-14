@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto';
 import type { ModelConfig, ProviderConnection, ModelInstance } from '@routerly/shared';
 import { suggestConnectionLabel, isConnectionLabelTaken } from '@routerly/shared';
 import { readConfig, writeConfig } from './loader.js';
+import { defaultUpstreamModelId } from '../provider/resolve.js';
 
 /**
  * Credential fields on ModelConfig, in the fixed order used by the fingerprint hash.
@@ -73,7 +74,7 @@ function buildInstance(model: ModelConfig, connId: string): ModelInstance {
   const instance: ModelInstance = {
     id: model.id,
     connectionId: connId,
-    upstreamModelId: model.upstreamModelId ?? model.id,
+    upstreamModelId: model.upstreamModelId ?? defaultUpstreamModelId(model.id),
     cost: model.cost,
     // ponytail: no catalog lookup here, 0 means "unknown until user edits" — acceptable since this is a one-shot migration of pre-existing data, not new-model creation
     contextWindow: model.contextWindow ?? 0,

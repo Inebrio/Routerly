@@ -27,7 +27,7 @@ import { resetTraceExportCache } from '../observability/traces-export.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
-import { resolveEffectiveModel } from '../provider/resolve.js';
+import { resolveEffectiveModel, defaultUpstreamModelId } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { isVisibleToUser, loadInboxScope } from './inbox-access.js';
@@ -798,7 +798,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const instance: ModelInstance = {
       id: req.body.id,
       connectionId,
-      upstreamModelId: req.body.upstreamModelId ?? req.body.id,
+      upstreamModelId: req.body.upstreamModelId ?? defaultUpstreamModelId(req.body.id),
       cost: {
         inputPerMillion: req.body.inputPerMillion,
         outputPerMillion: req.body.outputPerMillion,
