@@ -91,6 +91,7 @@ export class GeminiAdapter implements ProviderAdapter {
   }
 
   private getUpstreamModelId(model: ModelConfig): string {
+    if (model.upstreamModelId) return model.upstreamModelId;
     if (model.id.includes('/')) return model.id.split('/').slice(1).join('/');
     return model.id;
   }

@@ -19,6 +19,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Provider `upstreamModelId` honoured** — openai, anthropic, gemini, ollama and bedrock models now send `upstreamModelId` (when set) to the provider instead of the id suffix, as `custom` already did. Aliased models no longer 404 upstream (ROUT-275).
+
 - Dashboard: the Copy button of the `claude setup-token` command (and every other copy button: router token, 2FA backup codes) now works on instances served over plain HTTP; all copies go through `writeToClipboard`, which falls back to `execCommand` when the Clipboard API is unavailable or denied (ROUT-272).
 - **Anthropic subscription (OAuth) connections created from `claude setup-token` never worked**: the token has no refresh token or expiry, and the credential resolver rejected it with "oauth connection missing encrypted credentials", so every call through those models failed. It is now used as a static bearer.
 - **Model Test never ends on subscription (OAuth) models**: `POST /api/models/:id/test` now returns `ok:false` with the error when the OAuth credential cannot be resolved (it used to answer HTTP 500), the dashboard Test button always resolves instead of spinning on "Testing…" forever and shows the full provider error, and the Anthropic OAuth token refresh has a 15 s timeout.
