@@ -71,6 +71,14 @@ function hashToken(t: string): string {
  * any other host is reachable at that address only, so advertising the LAN
  * addresses there would be a lie.
  */
+/** Advisory only: unregistered model ids may be valid (unmapped / externally managed), so they warn, never reject. */
+async function unknownModelWarnings(models: { modelId: string }[]): Promise<string[] | undefined> {
+  const known = new Set((await listEffectiveModelsIncludingDisabled()).map(m => m.id));
+  const unknown = [...new Set(models.map(m => m.modelId))].filter(id => id !== PASSTHROUGH_MODEL_ID && !known.has(id));
+  return unknown.length ? unknown.map(id => `Model "${id}" is not in the model registry`) : undefined;
+}
+
+
 export function listeningAddresses(host: string, port: number): string[] {
   if (host !== '0.0.0.0' && host !== '::' && host !== '') return [`http://${host}:${port}`];
   const addresses = Object.values(networkInterfaces())
@@ -1314,8 +1322,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     });
     void emitEvent('config.router_created', 'info', { routerId: createdRouter.id, name: createdRouter.name }, { routerId: createdRouter.id, log: req.log });
     audit(req, 'router:create', 'success', { id: createdRouter.id });
+    const warnings = await unknownModelWarnings(createdRouter.models ?? []);
     return reply.status(201).send({
       ...createdRouter,
+      ...(warnings ? { warnings } : {}),
       kind,
       ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, finalRouters) } : {}),
       ...(rawToken !== undefined ? { token: rawToken } : {}),
@@ -1490,7 +1500,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       return next;
     });
     audit(req, 'router:update', 'success', { id: req.params.id });
-    return reply.send(toRouterResponse(updated, finalRouters));
+    const warnings = await unknownModelWarnings(updated.models ?? []);
+    return reply.send({ ...toRouterResponse(updated, finalRouters), ...(warnings ? { warnings } : {}) });
   });
 
   fastify.patch<{
