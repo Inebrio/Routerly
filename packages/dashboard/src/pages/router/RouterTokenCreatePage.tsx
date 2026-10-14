@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Copy, Check, ArrowLeft, Plus, X } from 'lucide-react';
 import { createRouterToken } from '../../api';
 import { useRouter } from './RouterLayout';
+import { writeToClipboard } from '../../utils/clipboard';
 import { LabelInput } from './RouterTokenTab'; // Will be exported next
 
 export function RouterTokenCreatePage() {
@@ -33,23 +34,10 @@ export function RouterTokenCreatePage() {
   async function copyToClipboard(token: string) {
     const success = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
     try {
-      await navigator.clipboard.writeText(token);
+      await writeToClipboard(token);
       success();
     } catch {
-      // Fallback for non-secure contexts (HTTP, docker self-hosted via IP)
-      try {
-        const el = document.createElement('textarea');
-        el.value = token;
-        el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
-        document.body.appendChild(el);
-        el.focus();
-        el.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(el);
-        if (ok) { success(); } else { setErr(t('routers.token.create.copyFailed')); }
-      } catch {
-        setErr(t('routers.token.create.copyFailed'));
-      }
+      setErr(t('routers.token.create.copyFailed'));
     }
   }
 

@@ -2630,6 +2630,26 @@ describe('ModelFormPage — CopyCode button (anthropic-oauth)', () => {
 
     expect(writeText).toHaveBeenCalledWith('claude setup-token');
   });
+
+  it('CopyCode copies via execCommand fallback when navigator.clipboard is missing (HTTP)', async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+    if (!document.execCommand) Object.defineProperty(document, 'execCommand', { value: () => false, configurable: true, writable: true });
+    const execCommand = vi.spyOn(document, 'execCommand').mockReturnValue(true);
+
+    renderPage('/dashboard/models/new?provider=anthropic-oauth');
+
+    await waitFor(() => {
+      const all = screen.getAllByRole('combobox') as HTMLSelectElement[];
+      if (all[0]!.value !== 'anthropic-oauth') throw new Error('not yet');
+    });
+
+    await user.click(screen.getByTitle('Copy to clipboard'));
+
+    await waitFor(() => expect(execCommand).toHaveBeenCalledWith('copy'));
+    await waitFor(() => expect(screen.getByTitle('Copied!')).toBeTruthy());
+    execCommand.mockRestore();
+  });
 });
 
 

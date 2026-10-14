@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { writeToClipboard } from '../utils/clipboard';
 import { EyeOff, Eye, Copy, Check, FlaskConical } from 'lucide-react';
 
 // ── Provider metadata (shared by the model form and the connection form) ─────────
@@ -55,10 +56,10 @@ export function CopyCode({ text }: { text: string }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
+    writeToClipboard(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => {});
   }
   return (
     <span style={{

@@ -3,8 +3,10 @@
  * Clipboard API is unavailable — self-hosted instances are often reached over
  * plain HTTP by IP, which is not a secure context.
  */
-export function writeToClipboard(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+export async function writeToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try { return await navigator.clipboard.writeText(text); } catch { /* denied: fall back */ }
+  }
   return new Promise((resolve, reject) => {
     const el = document.createElement('textarea');
     el.value = text;
