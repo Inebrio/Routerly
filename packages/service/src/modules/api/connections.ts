@@ -122,6 +122,7 @@ export interface ConnectionCredentialFields {
   cfClearance?: string | undefined;
   oauthPlain?: string | undefined;
   refreshPlain?: string | undefined;
+  authFilePath?: string | undefined;
   expiresAt?: number | undefined;
   cookiePlain?: string | undefined;
   cfClearancePlain?: string | undefined;
@@ -164,7 +165,9 @@ export function buildConnectionCredentials(
     if (fields.cookiePlain) plain.cookiePlain = fields.cookiePlain;
     if (fields.cfClearancePlain) plain.cfClearancePlain = fields.cfClearancePlain;
   } else if (supportLevel === 'oauth') {
-    if (fields.apiKey) plain.oauthPlain = fields.apiKey;
+    // openai-oauth's form field is the Codex auth file path, not a token.
+    if (fields.apiKey) plain[provider === 'openai-oauth' ? 'authFilePath' : 'oauthPlain'] = fields.apiKey;
+    if (fields.authFilePath) plain.authFilePath = fields.authFilePath;
     if (fields.oauthPlain) plain.oauthPlain = fields.oauthPlain;
     if (fields.refreshPlain) plain.refreshPlain = fields.refreshPlain;
     if (typeof fields.expiresAt === 'number') plain.expiresAt = fields.expiresAt;
@@ -188,6 +191,7 @@ const credentialFieldsSchema = z.object({
   cfClearance: z.string(),
   oauthPlain: z.string(),
   refreshPlain: z.string(),
+  authFilePath: z.string(),
   expiresAt: z.number(),
   cookiePlain: z.string(),
   cfClearancePlain: z.string(),

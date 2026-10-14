@@ -7,6 +7,9 @@ import type {
 } from '@routerly/shared';
 import { mergePolicies, StreamingScrubber } from '../../pii/piiScrubber.js';
 import { trackUsage } from '../../usage/tracker.js';
+import { readConfig } from '../../config/loader.js';
+import { decryptCredential } from '../../../lib/crypto-cred.js';
+import { resolveOpenAIOAuthCredential } from '../../provider/openai-oauth.js';
 
 const CHATGPT_BASE = 'https://chatgpt.com';
 const CODEX_PATH = '/backend-api/codex/responses';
@@ -90,6 +93,41 @@ export async function resolveCodexToken(
   }
 
   return { accessToken: tokens.access_token, accountId: tokens.account_id };
+}
+
+function accountIdFromJwt(token: string): string {
+  try {
+    const raw = Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf-8');
+    const auth = (JSON.parse(raw) as Record<string, Record<string, unknown> | undefined>)['https://api.openai.com/auth'];
+    return String(auth?.['chatgpt_account_id'] ?? '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The one credential source for openai-oauth, shared by the chat lanes and the model Test:
+ * connection `authFilePath` → stored token pair (refreshed) → stored static JWT → default auth file.
+ * A non-JWT `oauthEnc` is a file path saved by the old form (it used to land in the token slot).
+ */
+export async function resolveOpenAICodexAuth(
+  model: ModelConfig,
+  log: FastifyBaseLogger,
+): Promise<{ accessToken: string; accountId: string }> {
+  const c = model as unknown as { authFilePath?: string; oauthEnc?: string; refreshEnc?: string; connectionId?: string };
+  if (c.authFilePath) return resolveCodexToken(c.authFilePath, log);
+  if (c.oauthEnc) {
+    if (c.refreshEnc) {
+      const connection = ((await readConfig('connections')) ?? []).find((x) => x.id === c.connectionId);
+      if (!connection) throw new Error('openai-oauth: connection not found');
+      const accessToken = await resolveOpenAIOAuthCredential(connection);
+      return { accessToken, accountId: accountIdFromJwt(accessToken) };
+    }
+    const stored = decryptCredential(c.oauthEnc);
+    if (stored.split('.').length === 3) return { accessToken: stored, accountId: accountIdFromJwt(stored) };
+    return resolveCodexToken(stored, log);
+  }
+  return resolveCodexToken(DEFAULT_AUTH_PATH, log);
 }
 
 /** Renders chat message content (plain string or OpenAI part list) as text. */
@@ -264,7 +302,7 @@ export async function* streamOpenAIOAuthChunks(
   }) as StreamChunk;
 
   try {
-    const { accessToken, accountId } = await resolveCodexToken(model.apiKey || DEFAULT_AUTH_PATH, log);
+    const { accessToken, accountId } = await resolveOpenAICodexAuth(model, log);
     const endpoint = (model.endpoint?.replace(/\/$/, '') ?? CHATGPT_BASE) + CODEX_PATH;
     const upstream = await fetch(endpoint, {
       method: 'POST',

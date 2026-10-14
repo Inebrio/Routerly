@@ -1596,7 +1596,7 @@ describe('loadEffectiveModel', () => {
     expect((result as any)?.apiKey).toBe('live-anthropic-token')
   })
 
-  it('resolves a live token for openai-oauth connections via resolveOpenAIOAuthCredential', async () => {
+  it('leaves openai-oauth credential resolution to the lane (no apiKey injected)', async () => {
     const instance = {
       id: 'inst-o', connectionId: 'conn-o', upstreamModelId: 'gpt-4o',
       cost: { inputPerMillion: 1, outputPerMillion: 2 }, contextWindow: 128000,
@@ -1609,12 +1609,12 @@ describe('loadEffectiveModel', () => {
     mockReadConfig.mockImplementationOnce(async () => [instance] as any) // 'instances'
     mockReadConfig.mockImplementationOnce(async () => [connection] as any) // 'connections'
     mockGetProviderDescriptor.mockReturnValueOnce({ supportLevel: 'oauth' } as any)
-    mockResolveOpenAIOAuth.mockResolvedValueOnce('live-openai-token')
 
     const result = await loadEffectiveModel('inst-o')
-    expect(mockResolveOpenAIOAuth).toHaveBeenCalledWith(connection)
+    expect(mockResolveOpenAIOAuth).not.toHaveBeenCalled()
     expect(mockResolveAnthropicOAuth).not.toHaveBeenCalled()
-    expect((result as any)?.apiKey).toBe('live-openai-token')
+    expect((result as any)?.apiKey).toBeUndefined()
+    expect((result as any)?.connectionId).toBe('conn-o')
   })
 
   it('resolves a live session cookie for anthropic-web connections via resolveAnthropicWebCredential', async () => {
