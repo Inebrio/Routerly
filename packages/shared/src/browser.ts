@@ -11,10 +11,10 @@ export { providersConf };
 export {
   NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
-  UPDATE_CHANNELS, DEPRECATED_UPDATE_CHANNELS, normalizeUpdateChannel,
-  updateChannelDeprecationWarning, isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
+  UPDATE_CHANNELS, normalizeUpdateChannel,
+  isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
 } from './types/config.js';
-export type { NotificationEvent, UpdateChannel, DeprecatedUpdateChannel, NormalizedUpdateChannel } from './types/config.js';
+export type { NotificationEvent, UpdateChannel, NormalizedUpdateChannel } from './types/config.js';
 
 // Readable catalog for those events (T51) — plain data plus pure functions
 export {

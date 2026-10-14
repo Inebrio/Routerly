@@ -3,17 +3,17 @@
 // Routerly — CI release output mapping
 // Called by release.config.mjs's @semantic-release/exec publishCmd and
 // addChannelCmd hooks. Single source of the branch → channel → docker-tag
-// mapping the release-pipeline.yml workflow's downstream jobs (docker, docs,
-// next-pointer) key off of. That hook — and nothing else — is what
-// distinguishes a build from a re-tag; there is no commit heuristic, no diff
-// inspection, no "did the tag already exist" probe.
+// mapping the release.yml workflow's downstream jobs (docker, docs,
+// next-pointer, develop-pointer) key off of. That hook — and nothing else —
+// is what distinguishes a build from a re-tag; there is no commit heuristic,
+// no diff inspection, no "did the tag already exist" probe.
 //
 // Invocation:
 //   node scripts/ci-release-output.mjs <action> <version> <gitTag> <branch>
 //     action  publish | addChannel   (exact strings, case-sensitive)
 //     version bare semver, e.g. 1.5.3
 //     gitTag  v<version>, e.g. v1.5.3
-//     branch  main | develop
+//     branch  main | next | develop
 //
 // On any violation: one line to stderr, exit 1 — fails the release run
 // loudly rather than publishing an image under a wrong tag.
@@ -21,8 +21,9 @@
 // (skipped, stdout-only, when unset — local dry run) and echoes the same
 // lines to stdout. Exit 0.
 //
-// Contract frozen by the RC-2 blueprint (C1/C2) — do not change without
-// updating release-pipeline.yml and the story.
+// Contract frozen by the RC-2 blueprint (C1/C2), extended to a third branch
+// by the RMT-1 blueprint (C1) — do not change without updating release.yml
+// and the story.
 // ────────────────────────────────────────────────────────────────────────────
 
 import * as fs from 'node:fs';
@@ -37,7 +38,8 @@ const VERSION_RE = /^\d+\.\d+\.\d+$/;
 // branch → { channel, docker_channel_tag }, frozen mapping (blueprint C1)
 const BRANCH_MAP = {
   main: { channel: 'current', docker_channel_tag: 'latest' },
-  develop: { channel: 'next', docker_channel_tag: 'next' },
+  next: { channel: 'next', docker_channel_tag: 'next' },
+  develop: { channel: 'develop', docker_channel_tag: 'develop' },
 };
 
 function main() {
@@ -53,7 +55,7 @@ function main() {
     die(`Invalid gitTag "${gitTag}". Expected "v${version}".`);
   }
   if (!Object.hasOwn(BRANCH_MAP, branch)) {
-    die(`Invalid branch "${branch}". Expected "main" or "develop".`);
+    die(`Invalid branch "${branch}". Expected "main", "next" or "develop".`);
   }
 
   const { channel, docker_channel_tag } = BRANCH_MAP[branch];
