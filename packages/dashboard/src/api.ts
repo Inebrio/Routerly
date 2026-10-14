@@ -304,7 +304,10 @@ export const updateModel = (id: string, data: {
   fieldOverrides?: Partial<Record<string, boolean>>;
 }) => request<Model>(`/models/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteModel = (id: string) => request<void>(`/models/${encodeURIComponent(id)}`, { method: 'DELETE' });
-export const testModel = (id: string) => request<{ ok: boolean; latencyMs: number; error?: string }>(`/models/${encodeURIComponent(id)}/test`, { method: 'POST' });
+export const testModel = (id: string): Promise<{ ok: boolean; latencyMs: number; error?: string }> =>
+  request<{ ok: boolean; latencyMs: number; error?: string }>(`/models/${encodeURIComponent(id)}/test`, { method: 'POST' })
+    // never reject: callers show a spinner until this resolves
+    .catch((e: unknown) => ({ ok: false, latencyMs: 0, error: e instanceof Error ? e.message : String(e) }));
 
 export interface RoutingPolicy {
   type: 'context' | 'cheapest' | 'health' | 'performance' | 'llm' | 'capability' | 'rate-limit' | 'fairness' | 'budget-remaining' | 'semantic-intent' | 'model-preference';

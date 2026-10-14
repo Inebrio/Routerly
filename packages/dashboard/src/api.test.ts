@@ -665,6 +665,14 @@ describe('testModel', () => {
     expect(result.ok).toBe(true);
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1].method).toBe('POST');
   });
+
+  it('resolves ok:false instead of rejecting when the service answers 500', async () => {
+    const { testModel } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(500, { error: 'boom' }));
+    const result = await testModel('m1');
+    expect(result.ok).toBe(false);
+    expect(result.error).toBeTruthy();
+  });
 });
 
 // ── Routers ──────────────────────────────────────────────────────────────────
