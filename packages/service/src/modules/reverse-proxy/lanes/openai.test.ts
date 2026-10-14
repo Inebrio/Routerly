@@ -38,7 +38,6 @@ async function seedModels(models: ModelConfig[]): Promise<void> {
 const mockLlmChat = vi.mocked(llmChat)
 const mockLlmStream = vi.mocked(llmStream)
 const mockEmitEvent = vi.mocked(emitEvent)
-const mockForwardSSE = vi.mocked(forwardOpenAIOAuthSSE)
 
 afterEach(() => vi.clearAllMocks())
 
@@ -590,68 +589,30 @@ describe('openai:upstream', () => {
     })
   })
 
-  it('openai-oauth + stream hijacks, sets SSE/CORS headers, forwards, and marks passthrough', async () => {
-    const rawHeaders: Record<string, string> = {}
-    let hijacked = false
-    let ended = false
-    const reply: any = {
-      hijack: () => { hijacked = true },
-      raw: { setHeader: (k: string, v: string) => { rawHeaders[k] = v }, flushHeaders: () => {}, end: () => { ended = true } },
-    }
-    const ctx = {
-      protocol: 'openai', stream: true, reply,
-      req: { headers: { origin: 'https://app.example.com' } },
-      traceId: 't1',
-      attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
-      request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      router: { id: 'p1', pii: undefined },
-    } as unknown as ProxyContext
+  const oauthStreamCtx = () => ({
+    protocol: 'openai', stream: true, traceId: 't1',
+    attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
+    request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
+    router: { id: 'p1', pii: undefined },
+  }) as unknown as ProxyContext
+
+  it('openai-oauth + stream hands the chunks to egress as a stream result', async () => {
+    vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'x', choices: [] } as any
+    })())
+    const ctx = oauthStreamCtx()
     await openaiUpstream.run(ctx)
-    expect(ctx.passthrough).toBe(true)
-    expect(hijacked).toBe(true)
-    expect(rawHeaders['Access-Control-Allow-Origin']).toBe('https://app.example.com')
-    expect(rawHeaders['Access-Control-Expose-Headers']).toBeUndefined()
-    expect(rawHeaders['Content-Type']).toBe('text/event-stream')
-    expect(rawHeaders['x-routerly-trace-id']).toBeUndefined()
-    expect(mockForwardSSE).toHaveBeenCalledOnce()
-    expect(ended).toBe(true)
-    expect(ctx.result).toEqual({ kind: 'passthrough' })
+    expect(ctx.result?.kind).toBe('stream')
   })
 
-  it('openai-oauth + stream skips CORS headers when there is no origin', async () => {
-    const rawHeaders: Record<string, string> = {}
-    const reply: any = {
-      hijack: () => {},
-      raw: { setHeader: (k: string, v: string) => { rawHeaders[k] = v }, flushHeaders: () => {}, end: () => {} },
-    }
-    const ctx = {
-      protocol: 'openai', stream: true, reply,
-      req: { headers: {} }, traceId: 't1',
-      attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
-      request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      router: { id: 'p1' },
-    } as unknown as ProxyContext
+  it('openai-oauth + stream failing before the first chunk leaves result unset for the next candidate', async () => {
+    vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
+      throw new Error('no credentials')
+    })())
+    const ctx = oauthStreamCtx()
     await openaiUpstream.run(ctx)
-    expect(rawHeaders['Access-Control-Allow-Origin']).toBeUndefined()
-    expect(rawHeaders['x-routerly-trace-id']).toBeUndefined()
-  })
-
-  it('openai-oauth + stream sets CORS without any expose-header', async () => {
-    const rawHeaders: Record<string, string> = {}
-    const reply: any = {
-      hijack: () => {},
-      raw: { setHeader: (k: string, v: string) => { rawHeaders[k] = v }, flushHeaders: () => {}, end: () => {} },
-    }
-    const ctx = {
-      protocol: 'openai', stream: true, reply,
-      req: { headers: { origin: 'https://app.example.com' } }, traceId: 't1',
-      attempt: { model: { ...model, provider: 'openai-oauth' }, candidate },
-      request: { model: 'gpt-4o', messages: [] }, log: makeLog(),
-      router: { id: 'p1' },
-    } as unknown as ProxyContext
-    await openaiUpstream.run(ctx)
-    expect(rawHeaders['Access-Control-Allow-Origin']).toBe('https://app.example.com')
-    expect(rawHeaders['Access-Control-Expose-Headers']).toBeUndefined()
+    expect(ctx.result).toBeUndefined()
+    expect(ctx.attemptError).toBeInstanceOf(Error)
   })
 
   it('stream success sets a stream result from llmStream and drives the trace emit callback', async () => {
