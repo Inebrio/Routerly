@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- A connection created without an endpoint (CLI/API) for `anthropic` or `anthropic-oauth` now uses `https://api.anthropic.com`; `/v1/messages` no longer fails with 500 `Invalid URL` (ROUT-284).
 - **Connections / Models**: creating an `anthropic-oauth` connection with an empty token is now refused (`400 oauth_token_required`; the dashboard field is required), and the model Test button sends the upstream model name instead of the prefixed registry id (false "model not found" on custom providers).
 
 - **Models page crash on filter**: typing in the Models filter (or sorting by endpoint) no longer crashes the page for models created via CLI/API without `endpoint` (ROUT-281).

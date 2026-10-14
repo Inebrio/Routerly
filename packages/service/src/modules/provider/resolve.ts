@@ -6,6 +6,12 @@ export function defaultUpstreamModelId(id: string): string {
   return i < 0 ? id : id.slice(i + 1);
 }
 
+/** Endpoint used when a connection has none (CLI/API-created), so lanes never see an empty URL. */
+const DEFAULT_ENDPOINTS: Partial<Record<string, string>> = {
+  anthropic: 'https://api.anthropic.com',
+  'anthropic-oauth': 'https://api.anthropic.com',
+};
+
 /**
  * Resolve a ModelInstance + ProviderConnection into an EffectiveModel (ModelConfig-shaped).
  * Maps connection credentials and instance fields to produce a runtime representation
@@ -24,7 +30,7 @@ export function resolveEffectiveModel(
     name: upstreamModelId,
     provider: connection.providerId as Provider,
     connectionId: connection.id,
-    endpoint: connection.endpoint,
+    endpoint: connection.endpoint || DEFAULT_ENDPOINTS[connection.providerId],
     ...((connection.credentials as Partial<EffectiveModel>) || {}),
     upstreamModelId,
     cost: instance.cost,
