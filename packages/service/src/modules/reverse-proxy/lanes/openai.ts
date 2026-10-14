@@ -12,7 +12,7 @@ import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
 import { forwardableRequestHeaders } from '../../provider/passthrough.js'
 import { traceEgress } from '../helpers.js'
-import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
+import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
 import type { ResponsesRequest } from '../../provider/responses-compat.js'
 
@@ -137,40 +137,21 @@ export const openaiUpstream: Processor<ProxyContext> = {
         }
         return
       }
-      if (ctx.responsesApi) {
-        // Responses clients need the typed event stream, which egress builds from the
-        // chunks: hand them over instead of writing OpenAI SSE bytes here.
-        try {
-          const chunks = streamOpenAIOAuthChunks(body as Record<string, unknown>, model, log, {
-            traceId: ctx.traceId,
-            routerId: router.id,
-            ...(router.pii ? { pii: router.pii } : {}),
-            ...(ctx.token ? { tokenId: ctx.token.id } : {}),
-          })
-          ctx.result = { kind: 'stream', body: await primeStream(chunks) }
-        } catch (err) {
-          log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
-          ctx.attemptError = err
-        }
-        return
+      // Egress frames the chunks (typed events or OpenAI SSE). Priming surfaces a failure
+      // before the first chunk, so the next candidate / the router error applies instead
+      // of a 200 with an empty stream.
+      try {
+        const chunks = streamOpenAIOAuthChunks(body as Record<string, unknown>, model, log, {
+          traceId: ctx.traceId,
+          routerId: router.id,
+          ...(router.pii ? { pii: router.pii } : {}),
+          ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+        })
+        ctx.result = { kind: 'stream', body: await primeStream(chunks) }
+      } catch (err) {
+        log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
+        ctx.attemptError = err
       }
-      // Verbatim SSE passthrough. main hijacks + sets SSE/CORS headers before the
-      // candidate loop (openai.ts L229-240); reproduce that here, then forward.
-      ctx.passthrough = true
-      const reply = ctx.reply
-      reply.hijack()
-      const origin = ctx.req.headers.origin
-      if (origin) {
-        reply.raw.setHeader('Access-Control-Allow-Origin', origin)
-        reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
-      }
-      reply.raw.setHeader('Content-Type', 'text/event-stream')
-      reply.raw.setHeader('Cache-Control', 'no-cache')
-      reply.raw.setHeader('Connection', 'keep-alive')
-      reply.raw.flushHeaders()
-      await forwardOpenAIOAuthSSE(reply.raw, body as Record<string, unknown>, model, log, ctx.traceId, router.id, router.pii, ctx.token?.id)
-      reply.raw.end()
-      ctx.result = { kind: 'passthrough' }
       return
     }
 
