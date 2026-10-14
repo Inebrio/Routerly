@@ -52,3 +52,19 @@ Reasoning models (for example Gemini) may return empty content with a very low `
 
 - Log in as admin and as the viewer; Overview, Models, Routers, Usage and Playground must load without console errors.
 - Playground over plain `http://<lan-ip>` fails (`crypto.randomUUID` needs a secure context): use `ssh -L 3300:localhost:3000 <host>` and open `http://localhost:3300/dashboard`.
+
+## 6. Full-feature demo coverage
+
+A demo instance is only convincing when every feature has been exercised with real traffic. Use one router per feature (name them `demo-<feature>`), send real requests and check Usage:
+
+| Area | What to create and check |
+|------|--------------------------|
+| Models | Real models only: at least one top-tier model per provider (for example an Opus/Sonnet-class Claude, GPT-5.x, Gemini Pro) next to the cheap ones. Remove fake or test models. |
+| Profiles | Auto, Cheap, Fast, Coding and a cloned custom profile, each assigned to a router. |
+| Routing policies | `cheapest`, `health`, `performance`, `capability`, `context`, `llm`, `rate-limit`, `fairness`, `budget-remaining`, `semantic-intent`, each alone and in combinations. |
+| Routers | `router`, `orchestrator` (two or more candidate routers) and `passthrough` kinds. |
+| Optimizers | `session-dedup`, `ccr`, `rtk`, `headroom`, `json-table`, `relevance`, `caveman`, `llmlingua-2`, each alone and combined; check the recorded savings. |
+| Security | Guardrails (regex, semantic, topic, moderation, injection) and PII policies (request, response, both, streaming), alone and combined. |
+| Experiments | Sticky, weighted and round-robin rotation with real traffic, then metrics. |
+
+Finish by running the whole `docs/uat` catalog on the instance.
