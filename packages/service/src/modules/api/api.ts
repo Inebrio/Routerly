@@ -1045,10 +1045,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post<{ Params: { id: string } }>('/api/models/:id/test', async (req, reply) => {
     if (!requirePerm(req, 'model:read', reply)) return;
-    const model = await loadEffectiveModel(req.params.id);
-    if (!model) return reply.status(404).send({ error: 'Not found' });
     const t0 = Date.now();
     try {
+      // inside the try: oauth credential resolution can throw, which must surface as ok:false, not a 500
+      const model = await loadEffectiveModel(req.params.id);
+      if (!model) return reply.status(404).send({ error: 'Not found' });
       const adapter = getProviderAdapter(model);
       await adapter.chatCompletion({ model: model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
       return reply.send({ ok: true, latencyMs: Date.now() - t0 });

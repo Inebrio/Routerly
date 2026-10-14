@@ -65,6 +65,8 @@ routerly model add \
 
 ---
 
+> **Note on the model *Test* button.** Anthropic only accepts subscription tokens from its own Claude Code client. A synthetic request such as the Test button's `ping` (or a generic OpenAI-style chat completion) can be rejected with `This credential is only authorized for use with Claude Code and cannot be used for other API requests.` Routerly shows the provider's error as-is instead of waiting; real Claude Code traffic forwarded through a router is not affected.
+
 ## Step 3: Attach the model to a router
 
 In the dashboard, go to **Routers > your router > Models** and add the model you just created. Copy the router token: you will use it as the API key for your client.

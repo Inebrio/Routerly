@@ -248,6 +248,17 @@ describe('resolveAnthropicOAuthCredential', () => {
     )
   })
 
+  it('uses a setup-token connection (oauthEnc only, no refresh token or expiry) as a static bearer', async () => {
+    const connection = makeConnection({ credentials: { oauthEnc: encryptCredential('sk-ant-oat01-setup') } })
+    const fetchMock = vi.fn()
+    global.fetch = fetchMock as any
+
+    const token = await resolveAnthropicOAuthCredential(connection)
+    expect(token).toBe('sk-ant-oat01-setup')
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('falls back to a static apiKey bearer when no refreshable oauth pair exists (legacy/migrated)', async () => {
     const connection = makeConnection({ credentials: { apiKey: 'static-legacy-token' } })
     const fetchMock = vi.fn()

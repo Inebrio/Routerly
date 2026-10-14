@@ -1055,8 +1055,8 @@ export function ModelFormPage() {
               </button>
             )}
             {testState && testState !== 'loading' && (
-              <span style={{ fontSize: '0.82rem', color: testState.ok ? 'var(--success)' : 'var(--danger)' }}>
-                {testState.ok ? `✓ ${testState.latencyMs}ms` : `✗ ${testState.error?.slice(0, 60)}`}
+              <span title={testState.error} style={{ fontSize: '0.82rem', color: testState.ok ? 'var(--success)' : 'var(--danger)' }}>
+                {testState.ok ? `✓ ${testState.latencyMs}ms` : `✗ ${testState.error?.slice(0, 200)}`}
               </span>
             )}
           </div>

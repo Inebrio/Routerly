@@ -29,6 +29,7 @@ export class AnthropicOAuthAdapter extends AnthropicAdapter {
 const ANTHROPIC_OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e';
 const ANTHROPIC_OAUTH_URL_PRIMARY = 'https://platform.claude.com/v1/oauth/token';
 const ANTHROPIC_OAUTH_URL_FALLBACK = 'https://console.anthropic.com/v1/oauth/token';
+const REFRESH_TIMEOUT_MS = 15_000;
 const REFRESH_BUFFER_MS = 300_000; // 5 minutes, mirrors REFRESH_BUFFER_SECONDS in openaiOAuthForward.ts
 
 interface AnthropicOAuthTokens {
@@ -41,6 +42,7 @@ async function postAnthropicRefresh(url: string, refreshToken: string): Promise<
   return fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(REFRESH_TIMEOUT_MS), // a stalled token endpoint must not hang every request
     body: JSON.stringify({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
@@ -82,13 +84,14 @@ export async function resolveAnthropicOAuthCredential(connection: ProviderConnec
     throw new Error("anthropic-oauth: 'provider-oauth' module is disabled");
   }
   const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number; apiKey?: string };
-  if (!creds.oauthEnc || !creds.refreshEnc || typeof creds.expiresAt !== 'number') {
-    // No refreshable oauth pair. Fall back to a static bearer stored in apiKey (legacy/migrated
-    // connections whose token predates the oauthEnc/refreshEnc mechanism); the adapter uses it
-    // as-is with no refresh. Only fail when there is no usable credential at all.
+  if (!creds.oauthEnc) {
+    // Legacy/migrated connections keep a static bearer in apiKey; no refresh.
     if (typeof creds.apiKey === 'string' && creds.apiKey) return creds.apiKey;
     throw new Error('oauth connection missing encrypted credentials');
   }
+  // A `claude setup-token` token is long-lived and comes without refresh token or expiry
+  // (the connection stores only oauthEnc): use it as-is, there is nothing to refresh.
+  if (!creds.refreshEnc || typeof creds.expiresAt !== 'number') return decryptCredential(creds.oauthEnc);
   const accessToken = decryptCredential(creds.oauthEnc);
 
   if (creds.expiresAt <= 0 || Date.now() < creds.expiresAt - REFRESH_BUFFER_MS) {

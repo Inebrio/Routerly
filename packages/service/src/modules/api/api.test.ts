@@ -13202,6 +13202,26 @@ describe('POST /api/models/:id/test', () => {
     expect(res.json().error).toBe('401 Unauthorized')
   })
 
+  it('returns ok:false (not 500) when the oauth credential cannot be resolved', async () => {
+    setupAdminAuth()
+    const instance = { id: 'inst-oauth-1', connectionId: 'conn-oauth-1', upstreamModelId: 'claude-opus-5-5', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 200000 }
+    const connection = { id: 'conn-oauth-1', providerId: 'anthropic-oauth', credentials: {} }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/inst-oauth-1/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json().ok).toBe(false)
+    expect(res.json().error).toMatch(/anthropic-oauth|oauth connection/)
+  })
+
   it('returns 404 for unknown model', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
