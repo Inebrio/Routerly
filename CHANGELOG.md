@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Models created with the default `upstreamModelId` (or stored with the full registry id) work again** (regression of the upstreamModelId honouring): the default is now the id without provider prefix (`openai/gpt-4.1-nano` → `gpt-4.1-nano`) in `POST /api/models` and in the connections migration, and an already-stored `upstreamModelId` equal to the full id is normalised when the model is resolved, so existing configs need no manual edit. Explicit aliases are unchanged.
 - **`PUT /api/settings` no longer overwrites the Prometheus token with the mask**: sending back `prometheusAuthToken: "********"` (as returned by `GET`) now leaves the stored token unchanged (ROUT-279).
 - **Unknown router models are flagged**: `POST/PUT /api/routers` still accept `models[].modelId` not in the registry (unmapped models are legitimate) but now return a `warnings` array naming them; `routerly router model add` prints each as a warning on stderr (ROUT-276).
 - **Guardrail `detectInjection`** now blocks "Ignore all previous instructions" and "ignore all the above instructions" (optional `all` / `the` between `ignore` and the keyword) (ROUT-278).

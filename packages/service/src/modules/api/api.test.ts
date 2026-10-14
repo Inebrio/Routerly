@@ -1223,6 +1223,27 @@ describe('POST /api/models', () => {
     expect(mockWriteConfig.mock.calls.some(c => c[0] === 'connections')).toBe(false)
   })
 
+  it('defaults upstreamModelId to the id without provider prefix (ROUT-283)', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'instances') return []
+      if (t === 'connections') return [{ id: 'c1', providerId: 'openai', label: 'x', credentials: {}, enabled: true }]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ id: 'openai/gpt-4.1-nano', provider: 'openai', endpoint: '', connectionId: 'c1', inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000 }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const call = mockWriteConfig.mock.calls.find(c => c[0] === 'instances')
+    expect(call?.[1].find((i: { id: string }) => i.id === 'openai/gpt-4.1-nano')?.upstreamModelId).toBe('gpt-4.1-nano')
+  })
+
   it('with connectionId returns 404 when the connection does not exist', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {

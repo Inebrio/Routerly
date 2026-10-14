@@ -165,7 +165,7 @@ describe('migrateModelsToConnections', () => {
 
     const savedInstances = mockWriteConfig.mock.calls.find((c) => c[0] === 'instances')?.[1] as any[];
     expect(savedInstances[0].id).toBe('openai/custom-id');
-    expect(savedInstances[0].upstreamModelId).toBe('openai/custom-id');
+    expect(savedInstances[0].upstreamModelId).toBe('custom-id');
     expect(savedInstances[0].contextWindow).toBe(0);
     expect(savedInstances[0].cost).toEqual({ inputPerMillion: 1, outputPerMillion: 2 });
   });

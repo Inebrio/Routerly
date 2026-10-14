@@ -51,4 +51,21 @@ describe('resolveEffectiveModel', () => {
     const eff = resolveEffectiveModel(inst, conn);
     expect(eff.awsRegion).toBe('us-east-1');
   });
+
+  describe('upstreamModelId (ROUT-283)', () => {
+    const conn = { id: 'c1', providerId: 'openai', label: 'A', credentials: {}, enabled: true } as ProviderConnection;
+    const mk = (id: string, upstreamModelId: string) =>
+      ({ id, connectionId: 'c1', upstreamModelId, cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 }) as ModelInstance;
+    it('strips the provider prefix when stored upstreamModelId equals the full id', () => {
+      const eff = resolveEffectiveModel(mk('openai/gpt-4.1-nano', 'openai/gpt-4.1-nano'), conn);
+      expect(eff.upstreamModelId).toBe('gpt-4.1-nano');
+      expect(eff.name).toBe('gpt-4.1-nano');
+    });
+    it('keeps an explicit alias', () => {
+      expect(resolveEffectiveModel(mk('openai/my-alias', 'gpt-4o'), conn).upstreamModelId).toBe('gpt-4o');
+    });
+    it('leaves ids without a slash alone', () => {
+      expect(resolveEffectiveModel(mk('m', 'm'), conn).upstreamModelId).toBe('m');
+    });
+  });
 });
