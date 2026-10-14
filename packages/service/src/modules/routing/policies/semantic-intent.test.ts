@@ -515,6 +515,20 @@ describe('semanticIntentPolicy — model registry credential injection', () => {
     expect(result.routing).toHaveLength(2);
   });
 
+  it('sends the upstream name, not the namespaced registry id, to the embedding provider', async () => {
+    mockModelsRegistry([{ id: 'openai/text-embedding-3-small', apiKey: 'sk-x', endpoint: 'https://api.openai.com/v1' }]);
+    mockProvider.embed.mockResolvedValue({ embeddings: [[1, 0, 0]], inputTokens: 0 });
+
+    await semanticIntentPolicy({
+      request: makeRequest('write code'),
+      candidates: [makeCandidate('coder-model'), makeCandidate('chat-model')],
+      config: { ...baseConfig, embedding_model: 'openai/text-embedding-3-small' },
+    });
+
+    expect(mockProvider.embed).toHaveBeenCalled();
+    for (const call of mockProvider.embed.mock.calls) expect(call[1]).toBe('text-embedding-3-small');
+  });
+
   it('passes all candidates through when embedding model is not in registry', async () => {
     mockModelsRegistry([]); // empty registry
 

@@ -97,8 +97,15 @@ export const semanticIntentPolicy: PolicyFn = async ({
       log?.warn({ embeddingModel: cfg.embedding_model }, 'semantic-intent policy: embedding model not in registry, passing all candidates through');
       return { routing: candidates.map(c => ({ model: c.model.id, point: 1.0 })) };
     }
+    // The registry id is namespaced (`openai/text-embedding-3-small`); the provider wants the upstream name.
+    // upstreamModelId defaults to the registry id when unset, so strip the prefix in that case too.
+    const rawUpstream = modelEntry.upstreamModelId ?? modelEntry.id;
+    const upstreamModel = rawUpstream === modelEntry.id && rawUpstream.includes('/')
+      ? rawUpstream.split('/').slice(1).join('/')
+      : rawUpstream;
     resolvedCfg = {
       ...cfg,
+      embedding_model: upstreamModel,
       ...(modelEntry.apiKey ? { embedding_api_key: modelEntry.apiKey } : {}),
       ...(modelEntry.endpoint ? { embedding_endpoint: modelEntry.endpoint } : {}),
     };
