@@ -2291,7 +2291,13 @@
         "all": "全部",
         "success": "成功",
         "blocked": "已阻止",
-        "error": "错误"
+        "error": "错误",
+        "sessionId": "会话 ID",
+        "endUser": "终端用户",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "任意会话",
+        "endUserPlaceholder": "任意终端用户",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "全部",
@@ -2394,7 +2400,10 @@
         "timestamp": "时间戳",
         "guardrailTriggered": "防护栏已触发",
         "blockedBy": "被...阻止",
-        "piiRedacted": "个人身份信息已编辑"
+        "piiRedacted": "个人身份信息已编辑",
+        "sessionId": "会话 ID",
+        "endUser": "终端用户",
+        "tags": "Tags"
       },
       "errorMessage": "错误消息",
       "eventCount": "{{count}} 个事件",

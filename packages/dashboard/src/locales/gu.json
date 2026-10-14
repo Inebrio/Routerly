@@ -2291,7 +2291,13 @@
         "all": "બધા",
         "success": "સફલતા",
         "blocked": "બ્લોક કરાયું",
-        "error": "ભૂલ"
+        "error": "ભૂલ",
+        "sessionId": "સેશન ID",
+        "endUser": "અંતિમ વપરાશકર્તા",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "કોઈપણ સેશન",
+        "endUserPlaceholder": "કોઈપણ અંતિમ વપરાશકર્તા",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "બધા",
@@ -2394,7 +2400,10 @@
         "timestamp": "સમય તથ્ય",
         "guardrailTriggered": "ગાર્ડરેલ ટ્રિગર કરાયું",
         "blockedBy": "દ્વારા બ્લોક કરાયું",
-        "piiRedacted": "PII સંપાદિત કરાયું"
+        "piiRedacted": "PII સંપાદિત કરાયું",
+        "sessionId": "સેશન ID",
+        "endUser": "અંતિમ વપરાશકર્તા",
+        "tags": "Tags"
       },
       "errorMessage": "ભૂલ સંદેશ",
       "eventCount": "{{count}} ઇવેન્ટ",

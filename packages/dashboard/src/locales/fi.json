@@ -2291,7 +2291,13 @@
         "all": "Kaikki",
         "success": "Onnistui",
         "blocked": "Estetty",
-        "error": "Virhe"
+        "error": "Virhe",
+        "sessionId": "Istunnon tunnus",
+        "endUser": "Loppukäyttäjä",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Mikä tahansa istunto",
+        "endUserPlaceholder": "Mikä tahansa loppukäyttäjä",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Kaikki",
@@ -2394,7 +2400,10 @@
         "timestamp": "Aikaleima",
         "guardrailTriggered": "Suojakaide laukesi",
         "blockedBy": "Esti",
-        "piiRedacted": "PII peitetty"
+        "piiRedacted": "PII peitetty",
+        "sessionId": "Istunnon tunnus",
+        "endUser": "Loppukäyttäjä",
+        "tags": "Tags"
       },
       "errorMessage": "Virheviesti",
       "eventCount": "{{count}} tapahtuma",

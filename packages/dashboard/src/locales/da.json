@@ -2291,7 +2291,13 @@
         "all": "Alle",
         "success": "Succes",
         "blocked": "Blokeret",
-        "error": "Fejl"
+        "error": "Fejl",
+        "sessionId": "Session-ID",
+        "endUser": "Slutbruger",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Enhver session",
+        "endUserPlaceholder": "Enhver slutbruger",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Alle",
@@ -2394,7 +2400,10 @@
         "timestamp": "Tidsstempel",
         "guardrailTriggered": "Barriere udløst",
         "blockedBy": "Blokeret af",
-        "piiRedacted": "PII skjult"
+        "piiRedacted": "PII skjult",
+        "sessionId": "Session-ID",
+        "endUser": "Slutbruger",
+        "tags": "Tags"
       },
       "errorMessage": "Fejlmeddelelse",
       "eventCount": "{{count}} hændelse",

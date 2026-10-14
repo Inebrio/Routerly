@@ -2291,7 +2291,13 @@
         "all": "সব",
         "success": "সাফল্য",
         "blocked": "ব্লক করা",
-        "error": "ত্রুটি"
+        "error": "ত্রুটি",
+        "sessionId": "সেশন আইডি",
+        "endUser": "শেষ ব্যবহারকারী",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "যেকোনো সেশন",
+        "endUserPlaceholder": "যেকোনো শেষ ব্যবহারকারী",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "সব",
@@ -2394,7 +2400,10 @@
         "timestamp": "সময়মান",
         "guardrailTriggered": "গার্ডরেইল ট্রিগার করা",
         "blockedBy": "দ্বারা ব্লক করা",
-        "piiRedacted": "PII সম্পাদিত"
+        "piiRedacted": "PII সম্পাদিত",
+        "sessionId": "সেশন আইডি",
+        "endUser": "শেষ ব্যবহারকারী",
+        "tags": "Tags"
       },
       "errorMessage": "ত্রুটি বার্তা",
       "eventCount": "{{count}} ইভেন্ট",

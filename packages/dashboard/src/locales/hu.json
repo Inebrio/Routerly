@@ -2291,7 +2291,13 @@
         "all": "Összes",
         "success": "Siker",
         "blocked": "Letiltva",
-        "error": "Hiba"
+        "error": "Hiba",
+        "sessionId": "Munkamenet-azonosító",
+        "endUser": "Végfelhasználó",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Bármely munkamenet",
+        "endUserPlaceholder": "Bármely végfelhasználó",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Összes",
@@ -2394,7 +2400,10 @@
         "timestamp": "Időbélyeg",
         "guardrailTriggered": "Örtorny Aktiválódott",
         "blockedBy": "Letiltva",
-        "piiRedacted": "PII Kitakarítva"
+        "piiRedacted": "PII Kitakarítva",
+        "sessionId": "Munkamenet-azonosító",
+        "endUser": "Végfelhasználó",
+        "tags": "Tags"
       },
       "errorMessage": "Hibaüzenet",
       "eventCount": "{{count}} esemény",

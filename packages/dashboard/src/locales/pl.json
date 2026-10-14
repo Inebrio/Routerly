@@ -2291,7 +2291,13 @@
         "all": "Wszystkie",
         "success": "Powodzenie",
         "blocked": "Zablokowane",
-        "error": "Błąd"
+        "error": "Błąd",
+        "sessionId": "ID sesji",
+        "endUser": "Użytkownik końcowy",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Dowolna sesja",
+        "endUserPlaceholder": "Dowolny użytkownik końcowy",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Wszystkie",
@@ -2394,7 +2400,10 @@
         "timestamp": "Sygnatura czasowa",
         "guardrailTriggered": "Zabezpieczenie wyzwolone",
         "blockedBy": "Zablokowany przez",
-        "piiRedacted": "PII wycierany"
+        "piiRedacted": "PII wycierany",
+        "sessionId": "ID sesji",
+        "endUser": "Użytkownik końcowy",
+        "tags": "Tags"
       },
       "errorMessage": "Komunikat o błędzie",
       "eventCount": "{{count}} zdarzenie",

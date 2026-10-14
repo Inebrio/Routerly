@@ -2294,7 +2294,13 @@
         "all": "Tutti",
         "success": "Successo",
         "blocked": "Bloccato",
-        "error": "Errore"
+        "error": "Errore",
+        "sessionId": "Session ID",
+        "endUser": "Utente finale",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Qualsiasi sessione",
+        "endUserPlaceholder": "Qualsiasi utente finale",
+        "tagPlaceholder": "chiave=valore"
       },
       "caller": {
         "all": "Tutti",
@@ -2397,7 +2403,10 @@
         "timestamp": "Data e ora",
         "guardrailTriggered": "Guardrail attivato",
         "blockedBy": "Bloccato da",
-        "piiRedacted": "PII oscurata"
+        "piiRedacted": "PII oscurata",
+        "sessionId": "Session ID",
+        "endUser": "Utente finale",
+        "tags": "Tag"
       },
       "errorMessage": "Messaggio di errore",
       "eventCount": "{{count}} evento",

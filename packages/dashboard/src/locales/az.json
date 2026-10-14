@@ -2291,7 +2291,13 @@
         "all": "Hamısı",
         "success": "Uğurlu",
         "blocked": "Bloklandı",
-        "error": "Xəta"
+        "error": "Xəta",
+        "sessionId": "Sessiya ID",
+        "endUser": "Son istifadəçi",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "İstənilən sessiya",
+        "endUserPlaceholder": "İstənilən son istifadəçi",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Hamısı",
@@ -2394,7 +2400,10 @@
         "timestamp": "Vaxt möhürü",
         "guardrailTriggered": "Mühafizə İşə Düşdü",
         "blockedBy": "Bloklayan",
-        "piiRedacted": "PII Gizlədildi"
+        "piiRedacted": "PII Gizlədildi",
+        "sessionId": "Sessiya ID",
+        "endUser": "Son istifadəçi",
+        "tags": "Tags"
       },
       "errorMessage": "Xəta Mesajı",
       "eventCount": "{{count}} hadisə",

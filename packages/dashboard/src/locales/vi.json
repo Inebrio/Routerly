@@ -2291,7 +2291,13 @@
         "all": "Tất cả",
         "success": "Thành công",
         "blocked": "Bị chặn",
-        "error": "Lỗi"
+        "error": "Lỗi",
+        "sessionId": "ID phiên",
+        "endUser": "Người dùng cuối",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Bất kỳ phiên nào",
+        "endUserPlaceholder": "Bất kỳ người dùng cuối nào",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Tất cả",
@@ -2394,7 +2400,10 @@
         "timestamp": "Dấu thời gian",
         "guardrailTriggered": "Tường lửa được kích hoạt",
         "blockedBy": "Bị chặn bởi",
-        "piiRedacted": "PII bị làm mờ"
+        "piiRedacted": "PII bị làm mờ",
+        "sessionId": "ID phiên",
+        "endUser": "Người dùng cuối",
+        "tags": "Tags"
       },
       "errorMessage": "Thông báo lỗi",
       "eventCount": "{{count}} sự kiện",

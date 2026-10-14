@@ -2291,7 +2291,13 @@
         "all": "Alle",
         "success": "Suksess",
         "blocked": "Blokkert",
-        "error": "Feil"
+        "error": "Feil",
+        "sessionId": "Økt-ID",
+        "endUser": "Sluttbruker",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Hvilken som helst økt",
+        "endUserPlaceholder": "Hvilken som helst sluttbruker",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Alle",
@@ -2394,7 +2400,10 @@
         "timestamp": "Tidsstempel",
         "guardrailTriggered": "Sikring utløst",
         "blockedBy": "Blokkert av",
-        "piiRedacted": "PII redigért"
+        "piiRedacted": "PII redigért",
+        "sessionId": "Økt-ID",
+        "endUser": "Sluttbruker",
+        "tags": "Tags"
       },
       "errorMessage": "Feilmelding",
       "eventCount": "{{count}} hendelse",

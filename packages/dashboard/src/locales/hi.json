@@ -2291,7 +2291,13 @@
         "all": "सभी",
         "success": "सफलता",
         "blocked": "अवरुद्ध",
-        "error": "त्रुटि"
+        "error": "त्रुटि",
+        "sessionId": "सेशन आईडी",
+        "endUser": "अंतिम उपयोगकर्ता",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "कोई भी सेशन",
+        "endUserPlaceholder": "कोई भी अंतिम उपयोगकर्ता",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "सभी",
@@ -2394,7 +2400,10 @@
         "timestamp": "समय मुद्रा",
         "guardrailTriggered": "गार्डरेल ट्रिगर किया गया",
         "blockedBy": "द्वारा अवरुद्ध",
-        "piiRedacted": "PII संपादित"
+        "piiRedacted": "PII संपादित",
+        "sessionId": "सेशन आईडी",
+        "endUser": "अंतिम उपयोगकर्ता",
+        "tags": "Tags"
       },
       "errorMessage": "त्रुटि संदेश",
       "eventCount": "{{count}} इवेंट",

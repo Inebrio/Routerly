@@ -204,6 +204,21 @@ describe('UsagePage — Guardrail filter button', () => {
   });
 });
 
+describe('UsagePage — session, end-user and tag filters (ROUT-280)', () => {
+  it('sends the typed values to getUsage', async () => {
+    vi.mocked(getUsage).mockResolvedValue(makeStats());
+    renderPage();
+    fireEvent.change(await screen.findByLabelText('Session ID'), { target: { value: 's-1' } });
+    fireEvent.change(screen.getByLabelText('End user'), { target: { value: 'u-1' } });
+    fireEvent.change(screen.getByLabelText('Tag'), { target: { value: 'team=a' } });
+    await waitFor(() => {
+      const opts = vi.mocked(getUsage).mock.calls.slice(-1)[0]![6];
+      expect(opts).toMatchObject({ sessionId: 's-1', endUserId: 'u-1', tag: 'team=a' });
+    });
+    expect(screen.getByRole('button', { name: 'Reset filters' })).toBeTruthy();
+  });
+});
+
 describe('UsagePage — blocked outcome', () => {
   function makeStatsWithRecord(outcomeVal: string) {
     return {

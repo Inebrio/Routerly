@@ -2291,7 +2291,13 @@
         "all": "الكل",
         "success": "نجاح",
         "blocked": "محظور",
-        "error": "خطأ"
+        "error": "خطأ",
+        "sessionId": "معرّف الجلسة",
+        "endUser": "المستخدم النهائي",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "أي جلسة",
+        "endUserPlaceholder": "أي مستخدم نهائي",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "الكل",
@@ -2394,7 +2400,10 @@
         "timestamp": "الطابع الزمني",
         "guardrailTriggered": "تم تفعيل الحاجز الأمني",
         "blockedBy": "تم الحظر بواسطة",
-        "piiRedacted": "تم إخفاء PII"
+        "piiRedacted": "تم إخفاء PII",
+        "sessionId": "معرّف الجلسة",
+        "endUser": "المستخدم النهائي",
+        "tags": "Tags"
       },
       "errorMessage": "رسالة الخطأ",
       "eventCount": "{{count}} حدث",

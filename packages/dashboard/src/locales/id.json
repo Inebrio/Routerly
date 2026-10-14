@@ -2291,7 +2291,13 @@
         "all": "Semua",
         "success": "Sukses",
         "blocked": "Diblokir",
-        "error": "Kesalahan"
+        "error": "Kesalahan",
+        "sessionId": "ID sesi",
+        "endUser": "Pengguna akhir",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Sesi apa pun",
+        "endUserPlaceholder": "Pengguna akhir mana pun",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Semua",
@@ -2394,7 +2400,10 @@
         "timestamp": "Timestamp",
         "guardrailTriggered": "Penjaga Dipicu",
         "blockedBy": "Diblokir Oleh",
-        "piiRedacted": "PII Diredaksi"
+        "piiRedacted": "PII Diredaksi",
+        "sessionId": "ID sesi",
+        "endUser": "Pengguna akhir",
+        "tags": "Tags"
       },
       "errorMessage": "Pesan Kesalahan",
       "eventCount": "{{count}} acara",

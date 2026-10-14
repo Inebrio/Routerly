@@ -2291,7 +2291,13 @@
         "all": "Lahat",
         "success": "Tagumpay",
         "blocked": "Nahadlangan",
-        "error": "Error"
+        "error": "Error",
+        "sessionId": "Session ID",
+        "endUser": "End user",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Anumang session",
+        "endUserPlaceholder": "Anumang end user",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Lahat",
@@ -2394,7 +2400,10 @@
         "timestamp": "Timestamp",
         "guardrailTriggered": "Na-trigger ang Guardrail",
         "blockedBy": "Nahadlangan Ng",
-        "piiRedacted": "Binurang PII"
+        "piiRedacted": "Binurang PII",
+        "sessionId": "Session ID",
+        "endUser": "End user",
+        "tags": "Tags"
       },
       "errorMessage": "Mensahe ng Error",
       "eventCount": "{{count}} kaganapan",

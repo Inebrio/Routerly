@@ -2291,7 +2291,13 @@
         "all": "Усе",
         "success": "Успішна",
         "blocked": "Заблоковано",
-        "error": "Помилка"
+        "error": "Помилка",
+        "sessionId": "ID сесії",
+        "endUser": "Кінцевий користувач",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "Будь-яка сесія",
+        "endUserPlaceholder": "Будь-який кінцевий користувач",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "Усе",
@@ -2394,7 +2400,10 @@
         "timestamp": "Часова мітка",
         "guardrailTriggered": "Охоронна система активована",
         "blockedBy": "Заблокована",
-        "piiRedacted": "ПІД редаговано"
+        "piiRedacted": "ПІД редаговано",
+        "sessionId": "ID сесії",
+        "endUser": "Кінцевий користувач",
+        "tags": "Tags"
       },
       "errorMessage": "Повідомлення про помилку",
       "eventCount": "{{count}} подія",

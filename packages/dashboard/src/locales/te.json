@@ -2291,7 +2291,13 @@
         "all": "అంతటా",
         "success": "విజయం",
         "blocked": "బ్లాక్ చేసారు",
-        "error": "ఉద్దాటన"
+        "error": "ఉద్దాటన",
+        "sessionId": "సెషన్ ID",
+        "endUser": "తుది వినియోగదారు",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "ఏ సెషన్ అయినా",
+        "endUserPlaceholder": "ఏ తుది వినియోగదారు అయినా",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "అంతటా",
@@ -2394,7 +2400,10 @@
         "timestamp": "సమయపాలన",
         "guardrailTriggered": "గార్డ్‌రెయిల్ ట్రిగర్ చేసారు",
         "blockedBy": "ఆ ద్వారా బ్లాక్ చేసారు",
-        "piiRedacted": "PII నిరాకరణ చేసారు"
+        "piiRedacted": "PII నిరాకరణ చేసారు",
+        "sessionId": "సెషన్ ID",
+        "endUser": "తుది వినియోగదారు",
+        "tags": "Tags"
       },
       "errorMessage": "ఉద్దాటన సందేశం",
       "eventCount": "{{count}} ఈవెంట్",

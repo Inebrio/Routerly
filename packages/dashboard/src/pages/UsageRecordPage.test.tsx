@@ -477,4 +477,21 @@ describe('UsageRecordPage — outcome badge', () => {
       expect(badge).toBeTruthy();
     });
   });
+
+  it('shows session, end user and tags when present', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord({ sessionId: 'sess-42', endUserId: 'user-7', tags: { team: 'a', env: 'prod' } }));
+    renderPage();
+    await waitFor(() => expect(screen.getByText('sess-42')).toBeTruthy());
+    expect(screen.getByText('user-7')).toBeTruthy();
+    expect(screen.getByText('team: a, env: prod')).toBeTruthy();
+  });
+
+  it('does NOT show session, end user and tags when absent', async () => {
+    mockGetRecord.mockResolvedValue(makeRecord());
+    renderPage();
+    await waitFor(() => screen.getByText('openai/gpt-4o'));
+    expect(screen.queryByText('Session ID')).toBeNull();
+    expect(screen.queryByText('End user')).toBeNull();
+    expect(screen.queryByText('Tags')).toBeNull();
+  });
 });

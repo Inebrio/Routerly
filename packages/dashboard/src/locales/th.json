@@ -2291,7 +2291,13 @@
         "all": "ทั้งหมด",
         "success": "สำเร็จ",
         "blocked": "ถูกบล็อก",
-        "error": "ข้อผิดพลาด"
+        "error": "ข้อผิดพลาด",
+        "sessionId": "รหัสเซสชัน",
+        "endUser": "ผู้ใช้ปลายทาง",
+        "tag": "Tag",
+        "sessionIdPlaceholder": "เซสชันใดก็ได้",
+        "endUserPlaceholder": "ผู้ใช้ปลายทางคนใดก็ได้",
+        "tagPlaceholder": "key=value"
       },
       "caller": {
         "all": "ทั้งหมด",
@@ -2394,7 +2400,10 @@
         "timestamp": "ประทับเวลา",
         "guardrailTriggered": "ป้องกันท่าที",
         "blockedBy": "ถูกบล็อกโดย",
-        "piiRedacted": "PII แก้ไข"
+        "piiRedacted": "PII แก้ไข",
+        "sessionId": "รหัสเซสชัน",
+        "endUser": "ผู้ใช้ปลายทาง",
+        "tags": "Tags"
       },
       "errorMessage": "ข้อความข้อผิดพลาด",
       "eventCount": "{{count}} เหตุการณ์",

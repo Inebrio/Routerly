@@ -182,6 +182,15 @@ export function UsageRecordPage() {
               {record.piiRedacted && record.piiRedacted.length > 0 && (
                 <Field label={t('usage.record.fields.piiRedacted')} value={record.piiRedacted.join(', ')} />
               )}
+              {record.sessionId && (
+                <Field label={t('usage.record.fields.sessionId')} value={record.sessionId} mono />
+              )}
+              {record.endUserId && (
+                <Field label={t('usage.record.fields.endUser')} value={record.endUserId} mono />
+              )}
+              {record.tags && Object.keys(record.tags).length > 0 && (
+                <Field label={t('usage.record.fields.tags')} value={Object.entries(record.tags).map(([k, v]) => `${k}: ${v}`).join(', ')} />
+              )}
             </div>
             {record.errorMessage && (
               <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>

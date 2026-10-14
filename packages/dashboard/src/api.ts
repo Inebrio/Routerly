@@ -536,6 +536,9 @@ export interface UsageRecord {
   piiRedacted?: string[];
   /** Router token the call authenticated with. Absent on records written before it was tracked. */
   tokenId?: string;
+  sessionId?: string;
+  endUserId?: string;
+  tags?: Record<string, string>;
 }
 
 import type { UsageByModelEntry, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RequestType, SavingsSummary, UsageSeries } from '@routerly/shared';
@@ -576,6 +579,10 @@ export interface GetUsageOptions {
   callType?: string;
   requestType?: string;
   outcome?: string;
+  sessionId?: string;
+  endUserId?: string;
+  /** `key=value`, same syntax as the CLI `--tag`. Anything without both parts is ignored. */
+  tag?: string;
   /** Ask the service for the counterfactual block. Costs a config read, so opt in. */
   savings?: boolean;
   /** Ask the service for the savings series over time. Same cost as `savings`, so opt in. */
@@ -595,6 +602,10 @@ export const getUsage = (period = 'monthly', routerId?: string, from?: string, t
   if (opts?.callType && opts.callType !== 'all') params.set('callType', opts.callType);
   if (opts?.requestType && opts.requestType !== 'all') params.set('requestType', opts.requestType);
   if (opts?.outcome  && opts.outcome  !== 'all') params.set('outcome',  opts.outcome);
+  if (opts?.sessionId) params.set('sessionId', opts.sessionId);
+  if (opts?.endUserId) params.set('endUserId', opts.endUserId);
+  const eq = opts?.tag?.indexOf('=') ?? -1;
+  if (opts?.tag && eq > 0 && eq < opts.tag.length - 1) params.set(`tag[${opts.tag.slice(0, eq)}]`, opts.tag.slice(eq + 1));
   if (opts?.savings) params.set('savings', '1');
   if (opts?.series) params.set('series', '1');
   return request<UsageStats>(`/usage?${params.toString()}`);
