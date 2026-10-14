@@ -90,6 +90,7 @@ function toBedrockMessages(messages: ChatCompletionRequest['messages']): {
 }
 
 function getUpstreamModelId(model: ModelConfig): string {
+  if (model.upstreamModelId) return model.upstreamModelId;
   // e.g. 'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0' → the part after first slash
   if (model.id.includes('/')) return model.id.split('/').slice(1).join('/');
   return model.id;

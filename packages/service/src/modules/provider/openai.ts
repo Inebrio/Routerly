@@ -24,6 +24,7 @@ export class OpenAIAdapter implements ProviderAdapter {
 
   // Helper to extract the actual upstream model string
   private getUpstreamModelId(model: ModelConfig): string {
+    if (model.upstreamModelId) return model.upstreamModelId;
     // If the ID contains a slash (e.g., 'openai/gpt-4o'), take the part after the slash
     if (model.id.includes('/')) {
       return model.id.split('/').slice(1).join('/');
