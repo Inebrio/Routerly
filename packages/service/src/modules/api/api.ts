@@ -2423,6 +2423,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!netParsed.success) {
       return reply.status(400).send({ error: netParsed.error.issues[0]!.message });
     }
+    // GET masks the /metrics token: a client echoing the marker back means "unchanged".
+    if (netPatch.prometheusAuthToken === REDACT_MARKER) delete netPatch.prometheusAuthToken;
     const current = await readConfig('settings');
     const allowed: (keyof Settings)[] = [
       'port',
