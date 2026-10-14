@@ -170,10 +170,21 @@ describe('POST /api/connections', () => {
     const app = await buildApp()
     const res = await app.inject({
       method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
-      payload: { providerId: 'anthropic-oauth', label: 'x', credentials: {}, enabled: true },
+      payload: { providerId: 'anthropic-oauth', label: 'x', credentials: { oauthPlain: 'tok' }, enabled: true },
     })
     await app.close()
     expect(res.statusCode).toBe(200)
+  })
+
+  it('rejects an anthropic-oauth connection with an empty token (400)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: { providerId: 'anthropic-oauth', label: 'x', credentials: { oauthPlain: '' }, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('oauth_token_required')
   })
 
   it('allows api-key providers without reading the modules config at all', async () => {

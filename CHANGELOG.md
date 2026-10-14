@@ -20,6 +20,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Connections / Models**: creating an `anthropic-oauth` connection with an empty token is now refused (`400 oauth_token_required`; the dashboard field is required), and the model Test button sends the upstream model name instead of the prefixed registry id (false "model not found" on custom providers).
+
 - **Models page crash on filter**: typing in the Models filter (or sorting by endpoint) no longer crashes the page for models created via CLI/API without `endpoint` (ROUT-281).
 - **Models created with the default `upstreamModelId` (or stored with the full registry id) work again** (regression of the upstreamModelId honouring): the default is now the id without provider prefix (`openai/gpt-4.1-nano` → `gpt-4.1-nano`) in `POST /api/models` and in the connections migration, and an already-stored `upstreamModelId` equal to the full id is normalised when the model is resolved, so existing configs need no manual edit. Explicit aliases are unchanged.
 - **`PUT /api/settings` no longer overwrites the Prometheus token with the mask**: sending back `prometheusAuthToken: "********"` (as returned by `GET`) now leaves the stored token unchanged (ROUT-279).
