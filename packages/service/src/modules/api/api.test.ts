@@ -13251,6 +13251,25 @@ describe('POST /api/models/:id/test', () => {
     expect(res.json().ok).toBe(true)
   })
 
+  it('sends the upstream model name (no provider prefix) to the adapter', async () => {
+    setupAdminAuth()
+    const instance = { id: 'uatollama/qwen3.5:2b-fast', connectionId: 'conn-c', upstreamModelId: 'qwen3.5:2b-fast', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 8000 }
+    const connection = { id: 'conn-c', providerId: 'custom', endpoint: 'http://x/v1', credentials: {} }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockResolvedValue({ choices: [{ message: { content: 'pong' } }] })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/' + encodeURIComponent(instance.id) + '/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.json().ok).toBe(true)
+    expect(mockChatCompletion.mock.calls.at(-1)![0].model).toBe('qwen3.5:2b-fast')
+  })
+
   it('returns ok:false with error when adapter throws', async () => {
     setupAdminAuth()
     const instance = { id: 'inst-err-1', connectionId: 'conn-err-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }

@@ -275,6 +275,7 @@ export function ConnectionCredentialsFields(props: Props) {
                 : provider === 'ollama' ? 'not required for local models'
                 : 'sk-…'
               }
+              required={!editing && provider === 'anthropic-oauth'}
               style={{ paddingRight: 40 }} />
             <button type="button" onClick={() => setShowToken(v => !v)}
               style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>

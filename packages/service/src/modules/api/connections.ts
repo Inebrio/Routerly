@@ -315,11 +315,17 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     );
     if ('error' in resolved) return reply.status(400).send({ error: 'label_taken', message: resolved.error });
 
+    const credentials = buildConnectionCredentials(parsed.data.providerId, parsed.data.credentials ?? {});
+    // An anthropic-oauth connection without its token can never work: reject it at creation.
+    // (openai-oauth is exempt: blank means the default ~/.codex/auth.json.)
+    if (parsed.data.providerId === 'anthropic-oauth' && !credentials.oauthEnc) {
+      return reply.status(400).send({ error: 'oauth_token_required', message: 'OAuth token is required' });
+    }
     const connection = {
       id: uuidv4(),
       ...parsed.data,
       label: resolved.label,
-      credentials: buildConnectionCredentials(parsed.data.providerId, parsed.data.credentials ?? {}),
+      credentials,
     } as ProviderConnection;
     connections.push(connection);
     await writeConfig('connections', connections);

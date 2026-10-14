@@ -1059,7 +1059,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const model = await loadEffectiveModel(req.params.id);
       if (!model) return reply.status(404).send({ error: 'Not found' });
       const adapter = getProviderAdapter(model);
-      await adapter.chatCompletion({ model: model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
+      await adapter.chatCompletion({ model: model.upstreamModelId ?? model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
       return reply.send({ ok: true, latencyMs: Date.now() - t0 });
     } catch (err) {
       return reply.send({ ok: false, latencyMs: Date.now() - t0, error: err instanceof Error ? err.message : String(err) });
