@@ -15,7 +15,7 @@ import { isModuleEnabled } from '../../core/modules/registry.js';
  * Unofficial adapter for Claude web (claude.ai).
  *
  * Authentication: `model.apiKey` must contain the value of the `sessionKey` cookie
- * (format: `sk-ant-sid01-...`) from a logged-in claude.ai session.
+ * (format: `sk-ant-sid0N-...`) from a logged-in claude.ai session.
  * To retrieve it: open claude.ai → DevTools (F12) → Application → Cookies → claude.ai
  * → copy the value of the `sessionKey` cookie.
  *

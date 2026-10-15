@@ -291,9 +291,9 @@
         "accessTokenLabel": "Token de acces",
         "sessionTokenLabel": "Token de sesiune",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Lipește valoarea cookie sessionKey (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Lipește valoarea cookie-ului sessionKey (sk-ant-sid…)",
         "openaiInstructions": "Mientras estés conectado a ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> în fila nouă. Copiați valoarea din câmpul <code>accessToken</code> (începe cu <code>eyJ</code>). Tokenul expiră la fiecare ~24 de ore. Pentru acces fiabil, completați și câmpul <strong>cf_clearance</strong> de mai jos.",
-        "anthropicInstructions": "<strong>Cum să obțineți cheia de sesiune:</strong> Mentre estés conectado a Claude, abre DevTools (F12) → Application → Cookies → <code>claude.ai</code> → copiază valoarea din cookie-ul <code>sessionKey</code> (comienza con <code>sk-ant-sid01-</code>). Cheia rămâne valabilă până când te deconectezi."
+        "anthropicInstructions": "<strong>Cum obții cheia de sesiune:</strong> După ce te-ai autentificat pe <code>https://claude.ai</code>, apasă F12 pentru a deschide DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copiază <strong>Value</strong> al cookie-ului <code>sessionKey</code> (începe cu <code>sk-ant-sid</code>, de exemplu <code>sk-ant-sid02-</code>). Este un cookie HttpOnly, deci nu este vizibil din consola paginii. Rămâne valabilă până te deconectezi sau expiră; lipește una nouă dacă Testul începe să eșueze."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth abonament",

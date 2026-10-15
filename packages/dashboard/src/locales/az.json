@@ -291,9 +291,9 @@
         "accessTokenLabel": "Access Token",
         "sessionTokenLabel": "Sessiya Tokeni",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "sessionKey cookie dəyərini yerləşdirin (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "sessionKey cookie dəyərini yapışdırın (sk-ant-sid…)",
         "openaiInstructions": "ChatGPT-yə daxil olduqda, yeni tabda <code>https://chatgpt.com/api/auth/session</code> açın. <code>accessToken</code> sahəsinin dəyərini (eyJ ilə başlayır) kopyalayın. Token təxminən hər 24 saatdan bir bitir. Etibarlı giriş üçün aşağıdaki <strong>cf_clearance</strong> sahəsini də doldurun.",
-        "anthropicInstructions": "<strong>Sessiya açarınızı necə əldə edin:</strong> Claude-a daxil olduqda, DevTools (F12) → Application → Cookies → <code>claude.ai</code> açın → <code>sessionKey</code> cookie-nin dəyərini kopyalayın (sk-ant-sid01- ilə başlayır). Açar çıxış edənə qədər etibarlıdır."
+        "anthropicInstructions": "<strong>Sessiya açarını necə əldə etmək olar:</strong> <code>https://claude.ai</code> saytında hesabınıza daxil olduqdan sonra DevTools-u açmaq üçün F12 düyməsini basın. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> cookie-sinin <strong>Value</strong> dəyərini kopyalayın (<code>sk-ant-sid</code> ilə başlayır, məsələn <code>sk-ant-sid02-</code>). Bu HttpOnly cookie-dir, ona görə səhifə konsolundan görünmür. Çıxış edənə və ya müddəti bitənə qədər etibarlı qalır; Test uğursuz olmağa başlasa, yenisini yapışdırın."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Abunə OAuth Tokeni",

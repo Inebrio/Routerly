@@ -541,7 +541,7 @@ describe('ModelFormPage — provider-specific fields', () => {
 
     expect(screen.getByText(/Unofficial provider/)).toBeTruthy();
     expect(screen.getByText(/Session Token/)).toBeTruthy();
-    expect(screen.getByPlaceholderText(/sk-ant-sid01/)).toBeTruthy();
+    expect(screen.getByPlaceholderText(/sk-ant-sid/)).toBeTruthy();
   });
 
   it('anthropic-oauth shows subscription info and OAuth Token label', async () => {

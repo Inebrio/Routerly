@@ -291,9 +291,9 @@
         "accessTokenLabel": "அ அணுக்கம் டோகன்",
         "sessionTokenLabel": "அமர்வு டோகன்",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "sessionKey குக்கி மதிப்பை பேஸ் செய்யவும் (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "sessionKey குக்கி மதிப்பை ஒட்டவும் (sk-ant-sid…)",
         "openaiInstructions": "ChatGPT இல் நுழையும் போது, <code>https://chatgpt.com/api/auth/session</code> புதிய தாளில் திறக்கவும். <code>accessToken</code> கள் மதிப்பை நகலெடு (தொடங்குகிறது <code>eyJ</code> ). டோகன் ~24 மணி நேரம் வாழ்கிறது. நির்ভরக்கதமான அ அணுக்கம், கீழே <strong>cf_clearance</strong> கள் வகையை கொட்டவும்.",
-        "anthropicInstructions": "<strong>உங்கள் அமர்வு விசை தேர்வு மாறிக்கொள்ளும்:</strong> Claude இல் நுழையும் போது, DevTools (F12) → உருப்பொருள் → குக்கிகள் → <code>claude.ai</code> → <code>sessionKey</code> குக்கி மதிப்பை நகலெடு (தொடங்குகிறது <code>sk-ant-sid01-</code> ). விசை செல்லலாம் வரை செயல்பாடு நீங்கள் வெளிவருங்கள் வரை."
+        "anthropicInstructions": "<strong>உங்கள் அமர்வு விசையை எவ்வாறு பெறுவது:</strong> <code>https://claude.ai</code> இல் உள்நுழைந்த நிலையில், DevTools ஐத் திறக்க F12 ஐ அழுத்தவும். Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> குக்கியின் <strong>Value</strong> ஐ நகலெடுக்கவும் (<code>sk-ant-sid</code> உடன் தொடங்கும், எடுத்துக்காட்டாக <code>sk-ant-sid02-</code>). இது HttpOnly குக்கி, எனவே பக்க கன்சோலில் தெரியாது. நீங்கள் வெளியேறும் வரை அல்லது காலாவதியாகும் வரை செல்லுபடியாகும்; சோதனை தோல்வியடையத் தொடங்கினால் புதியதை ஒட்டவும்."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "சந்தா OAuth டோகன்",

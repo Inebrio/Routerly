@@ -291,9 +291,9 @@
         "accessTokenLabel": "Token de acceso",
         "sessionTokenLabel": "Token de sesión",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Pega el valor de la cookie sessionKey (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Pega el valor de la cookie sessionKey (sk-ant-sid…)",
         "openaiInstructions": "Con la sesión iniciada en ChatGPT, abre <code>https://chatgpt.com/api/auth/session</code> en una pestaña nueva. Copia el valor del campo <code>accessToken</code> (empieza por <code>eyJ</code>). El token caduca cada ~24 horas. Para un acceso fiable, rellena también el campo <strong>cf_clearance</strong> a continuación.",
-        "anthropicInstructions": "<strong>Cómo obtener tu token de sesión:</strong> con la sesión iniciada en Claude, abre las herramientas de desarrollo (F12) → Aplicación → Cookies → <code>claude.ai</code> → copia el valor de la cookie <code>sessionKey</code> (empieza por <code>sk-ant-sid01-</code>). El token sigue siendo válido hasta que cierres sesión."
+        "anthropicInstructions": "<strong>Cómo obtener tu clave de sesión:</strong> Con la sesión iniciada en <code>https://claude.ai</code>, pulsa F12 para abrir DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copia el <strong>Value</strong> de la cookie <code>sessionKey</code> (empieza por <code>sk-ant-sid</code>, por ejemplo <code>sk-ant-sid02-</code>). Es una cookie HttpOnly, por lo que no es visible desde la consola de la página. Sigue siendo válida hasta que cierres sesión o caduque; pega una nueva si la prueba empieza a fallar."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth de suscripción",

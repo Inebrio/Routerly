@@ -291,9 +291,9 @@
         "accessTokenLabel": "Access Token",
         "sessionTokenLabel": "Session Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Indsæt værdien af cookien sessionKey (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Indsæt værdien af sessionKey-cookien (sk-ant-sid…)",
         "openaiInstructions": "Mens du er logget ind på ChatGPT, åbn <code>https://chatgpt.com/api/auth/session</code> i en ny fane. Kopier værdien af feltet <code>accessToken</code> (starter med <code>eyJ</code>). Tokenet udløber ca. hver 24. time. For pålidelig adgang, udfyld også feltet <strong>cf_clearance</strong> nedenfor.",
-        "anthropicInstructions": "<strong>Sådan får du din sessionsnøgle:</strong> Mens du er logget ind på Claude, åbn DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopier værdien af cookien <code>sessionKey</code> (starter med <code>sk-ant-sid01-</code>). Nøglen er gyldig, indtil du logger ud."
+        "anthropicInstructions": "<strong>Sådan får du din sessionsnøgle:</strong> Mens du er logget ind på <code>https://claude.ai</code>, tryk på F12 for at åbne DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopiér <strong>Value</strong> for cookien <code>sessionKey</code> (starter med <code>sk-ant-sid</code>, for eksempel <code>sk-ant-sid02-</code>). Det er en HttpOnly-cookie, så den er ikke synlig fra sidens konsol. Den forbliver gyldig, indtil du logger ud, eller den udløber; indsæt en ny, hvis Testen begynder at fejle."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Abonnements-OAuth-token",

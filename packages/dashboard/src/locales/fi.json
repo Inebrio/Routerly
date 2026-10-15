@@ -291,9 +291,9 @@
         "accessTokenLabel": "Käyttöoikeustoken",
         "sessionTokenLabel": "Istuntotoken",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Liitä sessionKey-evästeen arvo (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Liitä sessionKey-evästeen arvo (sk-ant-sid…)",
         "openaiInstructions": "Kun olet kirjautuneena ChatGPT:hen, avaa <code>https://chatgpt.com/api/auth/session</code> uuteen välilehteen. Kopioi <code>accessToken</code>-kentän arvo (alkaa <code>eyJ</code>). Token vanhenee noin 24 tunnin välein. Luotettavampaa käyttöä varten täytä myös alla oleva <strong>cf_clearance</strong>-kenttä.",
-        "anthropicInstructions": "<strong>Näin saat istuntoavaimesi:</strong> Kirjaudu Claudeen ja avaa DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopioi <code>sessionKey</code>-evästeen arvo (alkaa <code>sk-ant-sid01-</code>). Avain pysyy voimassa, kunnes kirjaudut ulos."
+        "anthropicInstructions": "<strong>Näin saat istuntoavaimen:</strong> Kun olet kirjautuneena sivustolle <code>https://claude.ai</code>, avaa DevTools painamalla F12. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopioi evästeen <code>sessionKey</code> <strong>Value</strong> (alkaa <code>sk-ant-sid</code>, esimerkiksi <code>sk-ant-sid02-</code>). Se on HttpOnly-eväste, joten se ei näy sivun konsolissa. Se pysyy voimassa, kunnes kirjaudut ulos tai se vanhenee; liitä uusi, jos testi alkaa epäonnistua."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Tilauksen OAuth-token",

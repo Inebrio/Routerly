@@ -291,9 +291,9 @@
         "accessTokenLabel": "Hozzáférési Token",
         "sessionTokenLabel": "Munkamenet Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Illessze be a sessionKey cookie értékét (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Illeszd be a sessionKey süti értékét (sk-ant-sid…)",
         "openaiInstructions": "Miközben bejelentkezve van a ChatGPT-be, nyissa meg a <code>https://chatgpt.com/api/auth/session</code> weboldalt egy új lapon. Másolja az <code>accessToken</code> mező értékét (az <code>eyJ</code>-vel kezdődik). A token ~24 órán belül lejár. Megbízható hozzáféréshez kitöltse az alábbi <strong>cf_clearance</strong> mezőt is.",
-        "anthropicInstructions": "<strong>A munkamenet-kulcs beszerzése:</strong> Miközben bejelentkezve van a Claudeba, nyissa meg a DevTools-ot (F12) → Alkalmazás → Sütik → <code>claude.ai</code> → másolja a <code>sessionKey</code> sütit (az <code>sk-ant-sid01-</code>-vel kezdődik). A kulcs mindaddig érvényes, amíg nem jelentkezik ki."
+        "anthropicInstructions": "<strong>Így szerezheted meg a munkamenetkulcsot:</strong> Miután bejelentkeztél a <code>https://claude.ai</code> oldalra, nyomd meg az F12 billentyűt a DevTools megnyitásához. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Másold ki a(z) <code>sessionKey</code> süti <strong>Value</strong> értékét (<code>sk-ant-sid</code> előtaggal kezdődik, például <code>sk-ant-sid02-</code>). Ez egy HttpOnly süti, ezért az oldal konzoljából nem látható. Érvényes marad, amíg ki nem jelentkezel, vagy le nem jár; ha a Teszt hibázni kezd, illessz be egy újat."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Előfizetés OAuth Token",

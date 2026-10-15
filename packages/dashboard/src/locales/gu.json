@@ -291,9 +291,9 @@
         "accessTokenLabel": "ઍક્સેસ ટોકન",
         "sessionTokenLabel": "સેશન ટોકન",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "sessionKey કૂકી મૂલ્ય ટોકેન (sk-ant-sid01-…)",
-        "openaiInstructions": "ChatGPT માં લૉગ ઇન કર્યા પછી, નવા ટૅબમાં <code>https://chatgpt.com/api/auth/session</code> ખોલો. <code>accessToken</code> ક્ષેત્ર (આમ <code>eyJ</code>) ની મૂલ્યતા કોપી કરો. ટોકન દરેક ~24 કલાક સમાપ્ત હોય છે. વિશ્વાસી ઍક્સેસ માટે, નીચે <strong>cf_clearance</strong> ક્ષેત્ર પણ ભરો.",
-        "anthropicInstructions": "<strong>તમારું સેશન કી મેળવવા માટે:</strong> Claude માં લૉગ ઇન કર્યા પછી, DevTools (F12) → Application → Cookies → <code>claude.ai</code> → <code>sessionKey</code> કૂકી મૂલ્ય કોપી કરો (આમ <code>sk-ant-sid01-</code>). કી પર્યંત માન્ય રહે છે તમે લૉગ આઉટ કરો તેવા પર્યંત."
+        "sessionTokenPlaceholder": "sessionKey કૂકીનું મૂલ્ય પેસ્ટ કરો (sk-ant-sid…)",
+        "openaiInstructions": "ChatGPT માં લૉગ ઇન કર્યા પછી, નવા ટૅબમાં <code>https://chatgpt.com/api/auth/session</code> ખોલો. <code>accessToken</code> ક્ષેત્ર (<code>eyJ</code> થી શરૂ થાય છે) ની મૂલ્યતા કોપી કરો. ટોકન દરેક ~24 કલાક સમાપ્ત હોય છે. વિશ્વાસી ઍક્સેસ માટે, નીચે <strong>cf_clearance</strong> ક્ષેત્ર પણ ભરો.",
+        "anthropicInstructions": "<strong>તમારી સત્ર કી કેવી રીતે મેળવવી:</strong> <code>https://claude.ai</code> પર લૉગ ઇન હોય ત્યારે, DevTools ખોલવા માટે F12 દબાવો. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. કૂકી <code>sessionKey</code> ની <strong>Value</strong> કૉપિ કરો (<code>sk-ant-sid</code> થી શરૂ થાય છે, ઉદાહરણ તરીકે <code>sk-ant-sid02-</code>). આ HttpOnly કૂકી છે, તેથી પૃષ્ઠ કન્સોલમાંથી દેખાતી નથી. તમે લૉગ આઉટ કરો અથવા તે સમાપ્ત થાય ત્યાં સુધી માન્ય રહે છે; જો પરીક્ષણ નિષ્ફળ થવા લાગે તો નવી પેસ્ટ કરો."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "સંધારણ OAuth ટોકન",

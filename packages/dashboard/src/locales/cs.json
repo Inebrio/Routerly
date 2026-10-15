@@ -291,9 +291,9 @@
         "accessTokenLabel": "Access Token",
         "sessionTokenLabel": "Session Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Vložte hodnotu cookie sessionKey (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Vložte hodnotu cookie sessionKey (sk-ant-sid…)",
         "openaiInstructions": "Zatímco jste přihlášeni v ChatGPT, otevřete v novém panelu <code>https://chatgpt.com/api/auth/session</code>. Zkopírujte hodnotu pole <code>accessToken</code> (začíná na <code>eyJ</code>). Token vyprší přibližně po 24 hodinách. Pro spolehlivější přístup vyplňte také pole <strong>cf_clearance</strong> níže.",
-        "anthropicInstructions": "<strong>Jak získat svůj session key:</strong> Zatímco jste přihlášeni v Claude, otevřete DevTools (F12) → Application → Cookies → <code>claude.ai</code> → zkopírujte hodnotu cookie <code>sessionKey</code> (začíná na <code>sk-ant-sid01-</code>). Klíč zůstává platný, dokud se neodhlásíte."
+        "anthropicInstructions": "<strong>Jak získat klíč relace:</strong> Po přihlášení na <code>https://claude.ai</code> stiskněte F12 a otevřete DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Zkopírujte <strong>Value</strong> cookie <code>sessionKey</code> (začíná na <code>sk-ant-sid</code>, například <code>sk-ant-sid02-</code>). Jde o cookie HttpOnly, proto není vidět z konzole stránky. Zůstává platný, dokud se neodhlásíte nebo mu nevyprší platnost; pokud Test začne selhávat, vložte nový."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "OAuth token předplatného",
