@@ -291,9 +291,9 @@
         "accessTokenLabel": "Токен доступа",
         "sessionTokenLabel": "Токен сеанса",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Вставьте значение cookies sessionKey (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Вставьте значение cookie sessionKey (sk-ant-sid…)",
         "openaiInstructions": "Будучи авторизованным в ChatGPT, откройте <code>https://chatgpt.com/api/auth/session</code> в новой вкладке. Скопируйте значение поля <code>accessToken</code> (начинается с <code>eyJ</code>). Токен истекает каждые ~24 часа. Для надёжного доступа также заполните поле <strong>cf_clearance</strong> ниже.",
-        "anthropicInstructions": "<strong>Как получить свой ключ сеанса:</strong> Будучи авторизованным в Claude, откройте DevTools (F12) → Application → Cookies → <code>claude.ai</code> → скопируйте значение cookies <code>sessionKey</code> (начинается с <code>sk-ant-sid01-</code>). Ключ остаётся действительным, пока вы не выйдете."
+        "anthropicInstructions": "<strong>Как получить ключ сессии:</strong> Войдя в аккаунт на <code>https://claude.ai</code>, нажмите F12, чтобы открыть DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Скопируйте <strong>Value</strong> cookie <code>sessionKey</code> (начинается с <code>sk-ant-sid</code>, например <code>sk-ant-sid02-</code>). Это cookie HttpOnly, поэтому она не видна в консоли страницы. Она остаётся действительной, пока вы не выйдете из аккаунта или срок её действия не истечёт; вставьте новую, если тест начнёт завершаться ошибкой."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Токен OAuth подписки",

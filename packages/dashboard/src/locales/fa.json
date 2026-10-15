@@ -291,9 +291,9 @@
         "accessTokenLabel": "توکن دسترسی",
         "sessionTokenLabel": "توکن نشست",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "مقدار کوکی sessionKey را جای‌گذاری کنید (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "مقدار کوکی sessionKey را جای‌گذاری کنید (sk-ant-sid…)",
         "openaiInstructions": "در حالی که وارد ChatGPT شده‌اید، <code>https://chatgpt.com/api/auth/session</code> را در یک زبانه جدید باز کنید. مقدار فیلد <code>accessToken</code> (که با <code>eyJ</code> شروع می‌شود) را کپی کنید. این توکن هر ~۲۴ ساعت منقضی می‌شود. برای دسترسی پایدار، فیلد <strong>cf_clearance</strong> در پایین را نیز پر کنید.",
-        "anthropicInstructions": "<strong>چگونه کلید نشست خود را دریافت کنید:</strong> در حالی که وارد Claude شده‌اید، DevTools (F12) ← Application ← Cookies ← <code>claude.ai</code> را باز کنید و مقدار کوکی <code>sessionKey</code> (که با <code>sk-ant-sid01-</code> شروع می‌شود) را کپی کنید. این کلید تا زمانی که خارج شوید معتبر می‌ماند."
+        "anthropicInstructions": "<strong>نحوهٔ دریافت کلید نشست:</strong> در حالی که وارد <code>https://claude.ai</code> شده‌اید، برای باز کردن DevTools کلید F12 را فشار دهید. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. مقدار <strong>Value</strong> کوکی <code>sessionKey</code> را کپی کنید (با <code>sk-ant-sid</code> شروع می‌شود، مثلاً <code>sk-ant-sid02-</code>). این یک کوکی HttpOnly است، بنابراین از کنسول صفحه قابل مشاهده نیست. تا زمانی که از حساب خارج شوید یا منقضی شود معتبر می‌ماند؛ اگر آزمون شروع به شکست کرد، کلید جدیدی جای‌گذاری کنید."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "توکن OAuth اشتراک",

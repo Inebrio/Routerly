@@ -291,9 +291,9 @@
         "accessTokenLabel": "Access Token",
         "sessionTokenLabel": "Session-Token",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Wert des sessionKey-Cookies einfügen (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Wert des sessionKey-Cookies einfügen (sk-ant-sid…)",
         "openaiInstructions": "Öffne bei angemeldetem ChatGPT <code>https://chatgpt.com/api/auth/session</code> in einem neuen Tab. Kopiere den Wert des Felds <code>accessToken</code> (beginnt mit <code>eyJ</code>). Der Token läuft alle ~24 Stunden ab. Für zuverlässigen Zugriff fülle auch das Feld <strong>cf_clearance</strong> unten aus.",
-        "anthropicInstructions": "<strong>So erhältst du deinen Session-Key:</strong> Öffne bei angemeldetem Claude die DevTools (F12) → Application → Cookies → <code>claude.ai</code> → kopiere den Wert des <code>sessionKey</code>-Cookies (beginnt mit <code>sk-ant-sid01-</code>). Der Schlüssel bleibt gültig, bis du dich abmeldest."
+        "anthropicInstructions": "<strong>So erhalten Sie Ihren Sitzungsschlüssel:</strong> Drücken Sie, während Sie bei <code>https://claude.ai</code> angemeldet sind, F12, um DevTools zu öffnen. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopieren Sie den <strong>Value</strong> des Cookies <code>sessionKey</code> (beginnt mit <code>sk-ant-sid</code>, zum Beispiel <code>sk-ant-sid02-</code>). Es ist ein HttpOnly-Cookie und daher in der Seitenkonsole nicht sichtbar. Er bleibt gültig, bis Sie sich abmelden oder er abläuft; fügen Sie einen neuen ein, wenn der Test fehlschlägt."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Subscription-OAuth-Token",

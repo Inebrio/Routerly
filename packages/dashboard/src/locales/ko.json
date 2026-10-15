@@ -291,9 +291,9 @@
         "accessTokenLabel": "액세스 토큰",
         "sessionTokenLabel": "세션 토큰",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "sessionKey 쿠키 값 붙여넣기(sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "sessionKey 쿠키 값 붙여넣기 (sk-ant-sid…)",
         "openaiInstructions": "ChatGPT에 로그인한 상태에서 새 탭에 <code>https://chatgpt.com/api/auth/session</code>을 엽니다. <code>accessToken</code> 필드의 값을 복사합니다(<code>eyJ</code>로 시작). 토큰은 약 24시간마다 만료됩니다. 안정적인 액세스를 위해 아래 <strong>cf_clearance</strong> 필드도 채우세요.",
-        "anthropicInstructions": "<strong>세션 키 받는 방법:</strong> Claude에 로그인한 상태에서 DevTools(F12) → 애플리케이션 → 쿠키 → <code>claude.ai</code> → <code>sessionKey</code> 쿠키의 값을 복사합니다(<code>sk-ant-sid01-</code>으로 시작). 로그아웃할 때까지 키는 유효합니다."
+        "anthropicInstructions": "<strong>세션 키를 얻는 방법:</strong> <code>https://claude.ai</code>에 로그인한 상태에서 F12를 눌러 DevTools를 엽니다. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> 쿠키의 <strong>Value</strong>를 복사합니다(<code>sk-ant-sid</code>로 시작하며, 예: <code>sk-ant-sid02-</code>). HttpOnly 쿠키이므로 페이지 콘솔에서는 보이지 않습니다. 로그아웃하거나 만료될 때까지 유효하며, 테스트가 실패하기 시작하면 새 키를 붙여넣으세요."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "구독 OAuth 토큰",

@@ -292,9 +292,9 @@
         "accessTokenLabel": "Token di accesso",
         "sessionTokenLabel": "Token di sessione",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Incolla il valore del cookie sessionKey (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "Incolla il valore del cookie sessionKey (sk-ant-sid…)",
         "openaiInstructions": "Con ChatGPT connesso, apri <code>https://chatgpt.com/api/auth/session</code> in una nuova scheda. Copia il valore del campo <code>accessToken</code> (inizia con <code>eyJ</code>). Il token scade ogni ~24 ore. Per un accesso affidabile, compila anche il campo <strong>cf_clearance</strong> sotto.",
-        "anthropicInstructions": "<strong>Come ottenere il tuo session key:</strong> Con Claude connesso, apri gli strumenti per sviluppatori (F12) → Application → Cookies → <code>claude.ai</code> → copia il valore del cookie <code>sessionKey</code> (inizia con <code>sk-ant-sid01-</code>). La chiave resta valida finché non esci."
+        "anthropicInstructions": "<strong>Come ottenere la tua session key:</strong> Con l'accesso effettuato a <code>https://claude.ai</code>, premi F12 per aprire DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copia il <strong>Value</strong> del cookie <code>sessionKey</code> (inizia con <code>sk-ant-sid</code>, ad esempio <code>sk-ant-sid02-</code>). È un cookie HttpOnly, quindi non è visibile dalla console della pagina. Resta valida finché non esci o non scade; incollane una nuova se il test inizia a fallire."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Token OAuth abbonamento",

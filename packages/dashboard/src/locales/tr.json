@@ -291,9 +291,9 @@
         "accessTokenLabel": "Erişim Jetonu",
         "sessionTokenLabel": "Oturum Jetonu",
         "accessTokenPlaceholder": "eyJ…",
-        "sessionTokenPlaceholder": "Sessionkey cookie değerini yapıştırın (sk-ant-sid01-…)",
+        "sessionTokenPlaceholder": "sessionKey çerez değerini yapıştırın (sk-ant-sid…)",
         "openaiInstructions": "ChatGPT'de oturum açmış durumdayken, <code>https://chatgpt.com/api/auth/session</code> adresini yeni bir sekmede açın. <code>accessToken</code> alanının değerini kopyalayın (<code>eyJ</code> ile başlar). Jeton yaklaşık 24 saatlik süre için geçersiz hale gelir. Güvenilir erişim için, aşağıda <strong>cf_clearance</strong> alanını da doldurun.",
-        "anthropicInstructions": "<strong>Oturum anahtarınızı nasıl alacağınız:</strong> Claude'da oturum açmış durumdayken, DevTools (F12) → Uygulama → Çerezler → <code>claude.ai</code> → <code>sessionKey</code> çerezinin değerini kopyalayın (<code>sk-ant-sid01-</code> ile başlar). Anahtar, oturumu kapatana kadar geçerli kalır."
+        "anthropicInstructions": "<strong>Oturum anahtarınızı nasıl alırsınız:</strong> <code>https://claude.ai</code> sitesinde oturum açıkken DevTools'u açmak için F12 tuşuna basın. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> çerezinin <strong>Value</strong> değerini kopyalayın (<code>sk-ant-sid</code> ile başlar, örneğin <code>sk-ant-sid02-</code>). Bu bir HttpOnly çerezidir, bu yüzden sayfa konsolundan görünmez. Çıkış yapana veya süresi dolana kadar geçerli kalır; Test başarısız olmaya başlarsa yenisini yapıştırın."
       },
       "subscriptionProvider": {
         "oauthTokenLabel": "Abonelik OAuth Jetonu",
