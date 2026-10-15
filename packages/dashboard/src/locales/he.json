@@ -292,7 +292,7 @@
         "sessionTokenLabel": "טוקן סשן",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "הדביקו את ערך העוגייה sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "בעת כניסה ל-ChatGPT, פתח <code>https://chatgpt.com/api/auth/session</code> בכרטיסייה חדשה. העתק את הערך של שדה <code>accessToken</code> (מתחיל ב-<code>eyJ</code>). הטוקן פג תוקף בכל ~24 שעות. לגישה יציבה יותר, מלא גם את השדה <strong>cf_clearance</strong> להלן.",
+        "openaiInstructions": "בעת כניסה ל-ChatGPT, פתח <code>https://chatgpt.com/api/auth/session</code> בכרטיסייה חדשה. העתק את הערך של שדה <code>accessToken</code> (מתחיל ב-<code>eyJ</code>). הטוקן תקף למשך כ-10 ימים; הדביקו טוקן חדש כאשר הבדיקה מתחילה להיכשל עם 401. לגישה יציבה יותר, מלא גם את השדה <strong>cf_clearance</strong> להלן.",
         "anthropicInstructions": "<strong>איך להשיג את מפתח ההפעלה:</strong> כשאתם מחוברים ל-<code>https://claude.ai</code>, לחצו על F12 כדי לפתוח את DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. העתיקו את ה-<strong>Value</strong> של העוגייה <code>sessionKey</code> (מתחיל ב-<code>sk-ant-sid</code>, לדוגמה <code>sk-ant-sid02-</code>). זוהי עוגיית HttpOnly, ולכן היא אינה נראית מהקונסולה של הדף. היא נשארת תקפה עד שתתנתקו או שתפוג; הדביקו חדשה אם הבדיקה מתחילה להיכשל."
       },
       "subscriptionProvider": {

@@ -292,7 +292,7 @@
         "sessionTokenLabel": "সেশন টোকেন",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "sessionKey কুকির মান পেস্ট করুন (sk-ant-sid…)",
-        "openaiInstructions": "ChatGPT-এ লগইন করার সময়, নতুন ট্যাবে <code>https://chatgpt.com/api/auth/session</code> খুলুন। <code>accessToken</code> ফিল্ডের মান অনুলিপি করুন (শুরু হয় <code>eyJ</code>)। টোকেনের মেয়াদ প্রতি ~24 ঘন্টায় শেষ হয়। নির্ভরযোগ্য অ্যাক্সেসের জন্য, নিম্নে <strong>cf_clearance</strong> ফিল্ডও পূরণ করুন।",
+        "openaiInstructions": "ChatGPT-এ লগইন করার সময়, নতুন ট্যাবে <code>https://chatgpt.com/api/auth/session</code> খুলুন। <code>accessToken</code> ফিল্ডের মান অনুলিপি করুন (শুরু হয় <code>eyJ</code>)। টোকেনটি প্রায় 10 দিন বৈধ থাকে; টেস্ট 401 ত্রুটি দিয়ে ব্যর্থ হতে শুরু করলে একটি নতুন টোকেন পেস্ট করুন। নির্ভরযোগ্য অ্যাক্সেসের জন্য, নিম্নে <strong>cf_clearance</strong> ফিল্ডও পূরণ করুন।",
         "anthropicInstructions": "<strong>আপনার সেশন কী কীভাবে পাবেন:</strong> <code>https://claude.ai</code>-এ লগ ইন থাকা অবস্থায় DevTools খুলতে F12 চাপুন। Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> কুকির <strong>Value</strong> কপি করুন (<code>sk-ant-sid</code> দিয়ে শুরু হয়, যেমন <code>sk-ant-sid02-</code>)। এটি একটি HttpOnly কুকি, তাই পেজ কনসোল থেকে দেখা যায় না। লগ আউট না করা বা মেয়াদ শেষ না হওয়া পর্যন্ত এটি বৈধ থাকে; পরীক্ষা ব্যর্থ হতে শুরু করলে নতুন একটি পেস্ট করুন।"
       },
       "subscriptionProvider": {

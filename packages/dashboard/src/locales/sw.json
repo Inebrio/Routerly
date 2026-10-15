@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Ishara ya Kikao",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Bandika thamani ya kuki ya sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Tunapoandika kwenye ChatGPT, fungua <code>https://chatgpt.com/api/auth/session</code> katika kichupo kipya. Nakili thamani ya shambulizi <code>accessToken</code> (inaanza na <code>eyJ</code>). Ishara inaendesha kila ~24 saa. Kwa kufikia kuamini, jaza pia shambulizi <code>cf_clearance</code> hapa chini.",
+        "openaiInstructions": "Tunapoandika kwenye ChatGPT, fungua <code>https://chatgpt.com/api/auth/session</code> katika kichupo kipya. Nakili thamani ya shambulizi <code>accessToken</code> (inaanza na <code>eyJ</code>). Tokeni ni halali kwa takriban siku 10; bandika mpya Jaribio linapoanza kushindwa kwa 401. Kwa kufikia kuamini, jaza pia shambulizi <code>cf_clearance</code> hapa chini.",
         "anthropicInstructions": "<strong>Jinsi ya kupata ufunguo wa kipindi chako:</strong> Ukiwa umeingia kwenye <code>https://claude.ai</code>, bonyeza F12 kufungua DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Nakili <strong>Value</strong> ya kuki ya <code>sessionKey</code> (huanza na <code>sk-ant-sid</code>, kwa mfano <code>sk-ant-sid02-</code>). Ni kuki ya HttpOnly, kwa hivyo haionekani kutoka kwenye koni ya ukurasa. Inabaki halali hadi utoke au muda wake uishe; bandika mpya ikiwa Jaribio litaanza kushindwa."
       },
       "subscriptionProvider": {

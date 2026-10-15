@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Токен сеансу",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Вставте значення cookie sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Перебуваючи в системі ChatGPT, відкрийте <code>https://chatgpt.com/api/auth/session</code> у новій вкладці. Скопіюйте значення поля <code>accessToken</code> (починається з <code>eyJ</code>). Токен закінчується кожні 24 години. Для надійного доступу також заповніть поле <strong>cf_clearance</strong> нижче.",
+        "openaiInstructions": "Перебуваючи в системі ChatGPT, відкрийте <code>https://chatgpt.com/api/auth/session</code> у новій вкладці. Скопіюйте значення поля <code>accessToken</code> (починається з <code>eyJ</code>). Токен дійсний приблизно 10 днів; вставте новий, коли тест почне завершуватися помилкою 401. Для надійного доступу також заповніть поле <strong>cf_clearance</strong> нижче.",
         "anthropicInstructions": "<strong>Як отримати ключ сесії:</strong> Увійшовши на <code>https://claude.ai</code>, натисніть F12, щоб відкрити DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Скопіюйте <strong>Value</strong> cookie <code>sessionKey</code> (починається з <code>sk-ant-sid</code>, наприклад <code>sk-ant-sid02-</code>). Це cookie HttpOnly, тому вона не видна в консолі сторінки. Вона залишається дійсною, доки ви не вийдете або термін її дії не мине; вставте нову, якщо тест почне завершуватися помилкою."
       },
       "subscriptionProvider": {

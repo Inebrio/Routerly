@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Sesjontoken",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Lim inn verdien til sessionKey-informasjonskapselen (sk-ant-sid…)",
-        "openaiInstructions": "Mens du er logget inn på ChatGPT, åpner du <code>https://chatgpt.com/api/auth/session</code> i en ny fane. Kopier verdien for <code>accessToken</code>-feltet (starter med <code>eyJ</code>). Tokenet utløper hvert ~24. timer. For pålitelig tilgang, fyll også <strong>cf_clearance</strong>-feltet nedenfor.",
+        "openaiInstructions": "Mens du er logget inn på ChatGPT, åpner du <code>https://chatgpt.com/api/auth/session</code> i en ny fane. Kopier verdien for <code>accessToken</code>-feltet (starter med <code>eyJ</code>). Tokenet er gyldig i omtrent 10 dager; lim inn et nytt når testen begynner å feile med 401. For pålitelig tilgang, fyll også <strong>cf_clearance</strong>-feltet nedenfor.",
         "anthropicInstructions": "<strong>Slik får du tak i øktnøkkelen din:</strong> Mens du er logget inn på <code>https://claude.ai</code>, trykk F12 for å åpne DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopier <strong>Value</strong> til informasjonskapselen <code>sessionKey</code> (starter med <code>sk-ant-sid</code>, for eksempel <code>sk-ant-sid02-</code>). Det er en HttpOnly-informasjonskapsel, så den er ikke synlig fra sidens konsoll. Den er gyldig til du logger ut eller den utløper; lim inn en ny hvis testen begynner å feile."
       },
       "subscriptionProvider": {

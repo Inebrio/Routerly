@@ -292,7 +292,7 @@
         "sessionTokenLabel": "โทเค็นเซัสชั่น",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "วางค่าคุกกี้ sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "ในขณะที่เข้าสู่ระบบ ChatGPT ให้เปิด <code>https://chatgpt.com/api/auth/session</code> ในแท็บใหม่ คัดลอกค่าของฟิลด์ <code>accessToken</code> (เริ่มต้นด้วย <code>eyJ</code>) โทเค็นหมดอายุทุก ~24 ชั่วโมง สำหรับการเข้าถึงที่เชื่อถือได้ ให้เติมฟิลด์ <strong>cf_clearance</strong> ด้านล่างด้วย",
+        "openaiInstructions": "ในขณะที่เข้าสู่ระบบ ChatGPT ให้เปิด <code>https://chatgpt.com/api/auth/session</code> ในแท็บใหม่ คัดลอกค่าของฟิลด์ <code>accessToken</code> (เริ่มต้นด้วย <code>eyJ</code>) โทเค็นมีอายุใช้งานประมาณ 10 วัน ให้วางโทเค็นใหม่เมื่อการทดสอบเริ่มล้มเหลวด้วย 401 สำหรับการเข้าถึงที่เชื่อถือได้ ให้เติมฟิลด์ <strong>cf_clearance</strong> ด้านล่างด้วย",
         "anthropicInstructions": "<strong>วิธีรับคีย์เซสชันของคุณ:</strong> ขณะที่ล็อกอินอยู่ที่ <code>https://claude.ai</code> ให้กด F12 เพื่อเปิด DevTools Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. คัดลอก <strong>Value</strong> ของคุกกี้ <code>sessionKey</code> (ขึ้นต้นด้วย <code>sk-ant-sid</code> เช่น <code>sk-ant-sid02-</code>) เป็นคุกกี้ HttpOnly จึงมองไม่เห็นจากคอนโซลของหน้าเว็บ ใช้งานได้จนกว่าคุณจะออกจากระบบหรือหมดอายุ หากการทดสอบเริ่มล้มเหลว ให้วางคีย์ใหม่"
       },
       "subscriptionProvider": {

@@ -292,7 +292,7 @@
         "sessionTokenLabel": "会话令牌",
         "accessTokenPlaceholder": "eyJ...",
         "sessionTokenPlaceholder": "粘贴 sessionKey Cookie 的值 (sk-ant-sid…)",
-        "openaiInstructions": "登录ChatGPT时，在新标签页中打开 <code>https://chatgpt.com/api/auth/session</code>。复制 <code>accessToken</code> 字段的值(以 <code>eyJ</code> 开头)。令牌每 ~24 小时过期一次。为了可靠访问，还应填充下面的 <strong>cf_clearance</strong> 字段。",
+        "openaiInstructions": "登录ChatGPT时，在新标签页中打开 <code>https://chatgpt.com/api/auth/session</code>。复制 <code>accessToken</code> 字段的值(以 <code>eyJ</code> 开头)。令牌有效期约 10 天；当测试开始因 401 失败时，请粘贴新的令牌。为了可靠访问，还应填充下面的 <strong>cf_clearance</strong> 字段。",
         "anthropicInstructions": "<strong>如何获取会话密钥:</strong>登录 <code>https://claude.ai</code> 后,按 F12 打开 DevTools。Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>。Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>。复制 <code>sessionKey</code> Cookie 的 <strong>Value</strong>(以 <code>sk-ant-sid</code> 开头,例如 <code>sk-ant-sid02-</code>)。这是 HttpOnly Cookie,因此在页面控制台中不可见。在您退出登录或其过期之前一直有效;如果测试开始失败,请粘贴新的密钥。"
       },
       "subscriptionProvider": {

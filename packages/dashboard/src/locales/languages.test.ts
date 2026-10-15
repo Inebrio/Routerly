@@ -45,5 +45,6 @@ describe('web provider instructions (ROUT-289)', () => {
     expect(w.anthropicInstructions).toContain('Storage');
     expect(w.sessionTokenPlaceholder).toContain('sk-ant-sid');
     expect(JSON.stringify(w)).not.toContain('sid01');
+    expect(w.openaiInstructions).not.toMatch(/24/);
   });
 });

@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Токен на сесията",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Поставете стойността на бисквитката sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Докато сте влезли в ChatGPT, отворете <code>https://chatgpt.com/api/auth/session</code> в нов раздел. Копирайте стойността на полето <code>accessToken</code> (започва с <code>eyJ</code>). Токенът изтича на всеки ~24 часа. За надежден достъп попълнете и полето <strong>cf_clearance</strong> по-долу.",
+        "openaiInstructions": "Докато сте влезли в ChatGPT, отворете <code>https://chatgpt.com/api/auth/session</code> в нов раздел. Копирайте стойността на полето <code>accessToken</code> (започва с <code>eyJ</code>). Токенът е валиден около 10 дни; поставете нов, когато тестът започне да се проваля с 401. За надежден достъп попълнете и полето <strong>cf_clearance</strong> по-долу.",
         "anthropicInstructions": "<strong>Как да получите ключа на сесията:</strong> Докато сте влезли в <code>https://claude.ai</code>, натиснете F12, за да отворите DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Копирайте <strong>Value</strong> на бисквитката <code>sessionKey</code> (започва с <code>sk-ant-sid</code>, например <code>sk-ant-sid02-</code>). Това е HttpOnly бисквитка, затова не се вижда от конзолата на страницата. Остава валидна, докато не излезете или не изтече; поставете нова, ако Тестът започне да се проваля."
       },
       "subscriptionProvider": {

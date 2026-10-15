@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Token sesji",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Wklej wartość ciasteczka sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Po zalogowaniu się do ChatGPT otwórz <code>https://chatgpt.com/api/auth/session</code> w nowej karcie. Skopiuj wartość pola <code>accessToken</code> (zaczyna się od <code>eyJ</code>). Token wygasa co około 24 godziny. Aby uzyskać niezawodny dostęp, wypełnij również pole <strong>cf_clearance</strong> poniżej.",
+        "openaiInstructions": "Po zalogowaniu się do ChatGPT otwórz <code>https://chatgpt.com/api/auth/session</code> w nowej karcie. Skopiuj wartość pola <code>accessToken</code> (zaczyna się od <code>eyJ</code>). Token jest ważny przez około 10 dni; wklej nowy, gdy test zacznie kończyć się błędem 401. Aby uzyskać niezawodny dostęp, wypełnij również pole <strong>cf_clearance</strong> poniżej.",
         "anthropicInstructions": "<strong>Jak uzyskać klucz sesji:</strong> Po zalogowaniu się na <code>https://claude.ai</code> naciśnij F12, aby otworzyć DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Skopiuj <strong>Value</strong> ciasteczka <code>sessionKey</code> (zaczyna się od <code>sk-ant-sid</code>, na przykład <code>sk-ant-sid02-</code>). To ciasteczko HttpOnly, więc nie jest widoczne w konsoli strony. Pozostaje ważny do wylogowania lub wygaśnięcia; wklej nowy, jeśli Test zacznie się nie udawać."
       },
       "subscriptionProvider": {

@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Session Token",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "I-paste ang value ng sessionKey cookie (sk-ant-sid…)",
-        "openaiInstructions": "Habang naka-login sa ChatGPT, buksan ang <code>https://chatgpt.com/api/auth/session</code> sa bagong tab. Kopyahin ang halaga ng field na <code>accessToken</code> (nagsisimula sa <code>eyJ</code>). Ang token ay mawawalan ng bisa kada ~24 oras. Para sa maaasahang access, punan din ang <strong>cf_clearance</strong> field sa ibaba.",
+        "openaiInstructions": "Habang naka-login sa ChatGPT, buksan ang <code>https://chatgpt.com/api/auth/session</code> sa bagong tab. Kopyahin ang halaga ng field na <code>accessToken</code> (nagsisimula sa <code>eyJ</code>). Ang token ay may bisa sa humigit-kumulang 10 araw; mag-paste ng bago kapag nagsimulang mag-fail ang Test na may 401. Para sa maaasahang access, punan din ang <strong>cf_clearance</strong> field sa ibaba.",
         "anthropicInstructions": "<strong>Paano makuha ang iyong session key:</strong> Habang naka-log in sa <code>https://claude.ai</code>, pindutin ang F12 para buksan ang DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopyahin ang <strong>Value</strong> ng cookie na <code>sessionKey</code> (nagsisimula sa <code>sk-ant-sid</code>, halimbawa <code>sk-ant-sid02-</code>). Ito ay isang HttpOnly cookie, kaya hindi ito nakikita sa console ng page. Nananatili itong valid hanggang mag-log out ka o mag-expire; mag-paste ng bago kung magsimulang mag-fail ang Test."
       },
       "subscriptionProvider": {

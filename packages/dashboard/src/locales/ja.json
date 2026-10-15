@@ -292,7 +292,7 @@
         "sessionTokenLabel": "セッショントークン",
         "accessTokenPlaceholder": "eyJ...",
         "sessionTokenPlaceholder": "sessionKey クッキーの値を貼り付け (sk-ant-sid…)",
-        "openaiInstructions": "ChatGPTにログインしている間に、<code>https://chatgpt.com/api/auth/session</code>を新しいタブで開きます。<code>accessToken</code>フィールド(<code>eyJ</code>で始まる)の値をコピーします。トークンは約24時間ごとに期限切れになります。信頼性の高いアクセスのために、下記の<strong>cf_clearance</strong>フィールドも入力してください。",
+        "openaiInstructions": "ChatGPTにログインしている間に、<code>https://chatgpt.com/api/auth/session</code>を新しいタブで開きます。<code>accessToken</code>フィールド(<code>eyJ</code>で始まる)の値をコピーします。トークンは約10日間有効です。テストが401で失敗し始めたら、新しいトークンを貼り付けてください。信頼性の高いアクセスのために、下記の<strong>cf_clearance</strong>フィールドも入力してください。",
         "anthropicInstructions": "<strong>セッションキーの取得方法:</strong><code>https://claude.ai</code> にログインした状態で、F12 を押して DevTools を開きます。Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>。Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>。<code>sessionKey</code> クッキーの <strong>Value</strong> をコピーします(<code>sk-ant-sid</code> で始まります。例: <code>sk-ant-sid02-</code>)。これは HttpOnly クッキーのため、ページのコンソールからは見えません。ログアウトするか期限切れになるまで有効です。テストが失敗し始めた場合は、新しいものを貼り付けてください。"
       },
       "subscriptionProvider": {

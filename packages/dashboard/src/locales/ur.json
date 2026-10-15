@@ -292,7 +292,7 @@
         "sessionTokenLabel": "سیشن ٹوکن",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "sessionKey کوکی کی ویلیو چسپاں کریں (sk-ant-sid…)",
-        "openaiInstructions": "ChatGPT میں لاگ ان ہوتے ہوئے، نیا ٹیب میں <code>https://chatgpt.com/api/auth/session</code> کھولیں۔ <code>accessToken</code> کی قیمت کو کاپی کریں (<code>eyJ</code> سے شروع ہوتی ہے)۔ ٹوکن ہر ~24 گھنٹے میں ختم ہو جاتا ہے۔ قابل اعتماد رسائی کے لیے، نیچے <strong>cf_clearance</strong> فیلڈ کو بھی پُر کریں۔",
+        "openaiInstructions": "ChatGPT میں لاگ ان ہوتے ہوئے، نیا ٹیب میں <code>https://chatgpt.com/api/auth/session</code> کھولیں۔ <code>accessToken</code> کی قیمت کو کاپی کریں (<code>eyJ</code> سے شروع ہوتی ہے)۔ ٹوکن تقریباً 10 دن کے لیے درست رہتا ہے؛ جب ٹیسٹ 401 کے ساتھ ناکام ہونے لگے تو نیا ٹوکن چسپاں کریں۔ قابل اعتماد رسائی کے لیے، نیچے <strong>cf_clearance</strong> فیلڈ کو بھی پُر کریں۔",
         "anthropicInstructions": "<strong>اپنی سیشن کلید کیسے حاصل کریں:</strong> <code>https://claude.ai</code> میں لاگ ان ہونے کے دوران DevTools کھولنے کے لیے F12 دبائیں۔ Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. کوکی <code>sessionKey</code> کی <strong>Value</strong> کاپی کریں (<code>sk-ant-sid</code> سے شروع ہوتی ہے، مثلاً <code>sk-ant-sid02-</code>)۔ یہ HttpOnly کوکی ہے، اس لیے صفحے کے کنسول سے نظر نہیں آتی۔ یہ لاگ آؤٹ ہونے یا ختم ہونے تک درست رہتی ہے؛ اگر ٹیسٹ ناکام ہونے لگے تو نئی کلید چسپاں کریں۔"
       },
       "subscriptionProvider": {

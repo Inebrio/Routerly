@@ -292,7 +292,7 @@
         "sessionTokenLabel": "సెషన్ టోకెన్",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "sessionKey కుకీ విలువను అతికించండి (sk-ant-sid…)",
-        "openaiInstructions": "ChatGPT లో సైన్ చేసిన సమయంలో, <code>https://chatgpt.com/api/auth/session</code> కొత్త ట్యాబ్‌లో తెరవండి. <code>accessToken</code> ఫీల్డ్ విలువ (<code>eyJ</code> తో మొదలవుతుంది) కాపీ చేయండి. టోకెన్ ప్రతి ~24 గంటలకు గడువు ముగుస్తుంది. విశ్వసనీయ ప్రాప్యత కోసం, కింద <strong>cf_clearance</strong> ఫీల్డ్ కూడా నింపండి.",
+        "openaiInstructions": "ChatGPT లో సైన్ చేసిన సమయంలో, <code>https://chatgpt.com/api/auth/session</code> కొత్త ట్యాబ్‌లో తెరవండి. <code>accessToken</code> ఫీల్డ్ విలువ (<code>eyJ</code> తో మొదలవుతుంది) కాపీ చేయండి. టోకెన్ సుమారు 10 రోజులు చెల్లుతుంది; టెస్ట్ 401తో విఫలం కావడం ప్రారంభమైనప్పుడు కొత్తదాన్ని పేస్ట్ చేయండి. విశ్వసనీయ ప్రాప్యత కోసం, కింద <strong>cf_clearance</strong> ఫీల్డ్ కూడా నింపండి.",
         "anthropicInstructions": "<strong>మీ సెషన్ కీని ఎలా పొందాలి:</strong> <code>https://claude.ai</code> లో లాగిన్ అయి ఉండగా, DevTools తెరవడానికి F12 నొక్కండి. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> కుకీ యొక్క <strong>Value</strong> ను కాపీ చేయండి (<code>sk-ant-sid</code> తో ప్రారంభమవుతుంది, ఉదాహరణకు <code>sk-ant-sid02-</code>). ఇది HttpOnly కుకీ, కాబట్టి పేజీ కన్సోల్ నుండి కనిపించదు. మీరు లాగ్ అవుట్ అయ్యే వరకు లేదా గడువు ముగిసే వరకు చెల్లుబాటులో ఉంటుంది; పరీక్ష విఫలమవడం ప్రారంభిస్తే కొత్తదాన్ని అతికించండి."
       },
       "subscriptionProvider": {
