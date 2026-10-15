@@ -1206,6 +1206,11 @@ strings: each entry is `{ modelId, prompt? }`. **Response `201`**: the created
 router plus a `token` field with the first router token in clear text, which
 is the only time it is readable.
 
+Model ids that are not in the model registry are accepted (a model may be
+unmapped or managed elsewhere) but listed in a `warnings` string array on the
+response, e.g. `Model "nope/x" is not in the model registry`. The field is
+absent when every model is registered. `PUT /api/routers/:id` behaves the same.
+
 **Errors**: `400` empty name · `400` invalid `timeoutMs` · `409` a router with
 that name already exists · `403` insufficient permissions
 
