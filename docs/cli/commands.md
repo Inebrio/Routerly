@@ -643,7 +643,8 @@ routerly router model add my-api anthropic/claude-opus-4-6 --prompt "Use for com
 | `--prompt <text>` | Routing guidance for the LLM routing policy (not sent upstream) |
 
 Rejects `__passthrough__` (exit 1) — the pass-through entry cannot be added
-manually.
+manually. A model id that is not in the model registry is still added, with a
+`Warning: Model "<id>" is not in the model registry` line on stderr (exit 0).
 
 #### `routerly router model remove <router> <model-id>`
 
