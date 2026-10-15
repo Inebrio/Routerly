@@ -20,6 +20,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Passthrough responses no longer carry `Vary: Origin`**: the CORS plugin header is dropped on `/passthrough/*` calls without an `Origin` header, so provider headers come back unaltered (ROUT-297).
+
 - **openai-oauth streaming errors**: a `stream:true` request to an `openai-oauth` model that fails before the first chunk now falls through to the next candidate and, when none answers, returns the same HTTP 503 as the non-stream call, instead of `200` with only `data: [DONE]` (ROUT-286).
 
 - **OpenAI OAuth: Test and chat use the same credential** (ROUT-285): the connection's Auth file path is now stored as `authFilePath` (it used to be saved as an encrypted token) and honoured by chat and by the model Test. The model Test calls the same Codex backend as the router, so it no longer fails on working connections (`oauth connection missing encrypted credentials`, `Missing scopes: model.request`) and reports the real upstream error for bad tokens. Connections saved by the old form keep working.

@@ -70,6 +70,18 @@ describe('buildServer', () => {
     expect(JSON.parse(res.body).status).toBe('ok')
   })
 
+  it('does not add Vary: Origin on passthrough responses without an Origin header', async () => {
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
+
+    const server = await buildServer()
+    const plain = await server.inject({ method: 'POST', url: '/passthrough/nope/v1/chat/completions', payload: {} })
+    const browser = await server.inject({ method: 'POST', url: '/passthrough/nope/v1/chat/completions', payload: {}, headers: { origin: 'http://x.test' } })
+    await server.close()
+
+    expect(plain.headers.vary).toBeUndefined()
+    expect(browser.headers.vary).toBe('Origin')
+  })
+
   it('redirects GET / to /dashboard/', async () => {
     mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
 
