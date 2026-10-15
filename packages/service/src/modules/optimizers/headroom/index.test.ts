@@ -281,3 +281,31 @@ describe('headroom optimizer', () => {
     expect(headroomModule.manifest.dependsOn).toEqual({ 'optimizer-core': `^${PRODUCT_VERSION}` })
   })
 })
+
+describe('headroom optimizer: single over-long agent turn', () => {
+  const round = (n: number): Message[] => [
+    { role: 'assistant', content: null, tool_calls: [{ id: `c${n}`, type: 'function', function: { name: 'read', arguments: '{}' } }] } as Message,
+    { role: 'tool', tool_call_id: `c${n}`, content: `r${n}${PAD}` } as Message,
+  ]
+  const agent = (n: number): Message[] => [
+    { role: 'system', content: 'sys' },
+    { role: 'user', content: `task${PAD}` },
+    ...Array.from({ length: n }, (_, i) => round(i + 1)).flat(),
+  ]
+
+  it('drops the oldest tool rounds, keeping the opening message, the latest round and tool pairing', async () => {
+    resetContextWindowCache()
+    headroomOptimizer.supports(ctxWith(agent(1), { contextWindow: 100 }))
+    await vi.waitFor(() => expect(headroomOptimizer.supports(ctxWith(agent(30), { threshold: 20, contextWindow: 100 }))).toBe(true))
+    const ctx = ctxWith(agent(30), { threshold: 20, contextWindow: 100 })
+    const result = await headroomOptimizer.optimize(ctx)
+    const out = readMessages(ctx.request)
+    expect(result.changed).toBe(true)
+    expect(out.length).toBeLessThan(62)
+    expect(out[0]!.role).toBe('system')
+    expect(out[1]!.content).toBe(`task${PAD}`)
+    expect(out[out.length - 1]!.content).toBe(`r30${PAD}`)
+    expect(out.filter((m) => m.role === 'tool').length).toBe(out.filter((m) => m.role === 'assistant').length)
+    expect(headroomOptimizer.validate(ctx, result)).toBe(true)
+  })
+})
