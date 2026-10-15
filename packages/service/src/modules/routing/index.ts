@@ -2,6 +2,8 @@ import { PASSTHROUGH_MODEL_ID, type ResilienceStore } from '@routerly/shared'
 import { defineModule, shortCircuit, type Processor, type RouterlyModule } from '../../core/index.js'
 import { ROUTER, PROXY_PIPELINE, RESILIENCE_STORE } from '../../core/tokens.js'
 import type { ProxyContext } from '../reverse-proxy/context.js'
+import { recallUpstreamError } from '../reverse-proxy/last-upstream-error.js'
+import { upstreamErrorBody } from '../../lib/protocol-errors.js'
 import { routeRequest } from './router.js'
 import { migrateProfiles } from './profiles/migrate.js'
 import { addRoutingDecision } from './routingMemoryStore.js'
@@ -95,6 +97,20 @@ function makePrepare(resilienceStore: ResilienceStore | undefined): Processor<Pr
         ctx.candidates = models
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
+        if (message.startsWith('all_models_excluded_by_policies')) {
+          // Every model is out (e.g. circuit open after an upstream auth failure): a provider-shaped 503, not a bare 500.
+          const lastErr = recallUpstreamError(ctx.router.id)
+          if (lastErr) {
+            const protocol = ctx.protocol === 'anthropic' ? 'anthropic' : 'openai'
+            ctx.result = { kind: 'block', status: lastErr.status, body: upstreamErrorBody(protocol, lastErr.status, lastErr.body) }
+            return shortCircuit(ctx.result)
+          }
+          const text = 'No model of this router is currently available.'
+          ctx.result = ctx.protocol === 'anthropic'
+            ? { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: text } } }
+            : { kind: 'block', status: 503, body: { error: { message: text, type: 'server_error' } } }
+          return shortCircuit(ctx.result)
+        }
         if (!message.startsWith('all_models_limits_exceeded')) throw err
         // Same 429 shapes as the guardrails over-limit block (guardrails/index.ts).
         const text = 'Usage limit exceeded for every model of this router.'

@@ -1852,3 +1852,19 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
   })
 })
+
+describe('upstreamResponseFromError', () => {
+  it('reads the HTTP status of AWS SDK errors from $metadata', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    const err = Object.assign(new Error('The security token included in the request is invalid.'), { $metadata: { httpStatusCode: 403 } })
+    expect(upstreamResponseFromError(err)).toEqual({ status: 403, body: { error: { message: 'The security token included in the request is invalid.' } } })
+  })
+
+  it('recovers status and JSON body from web adapter errors', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    const err = new Error('openai-web: HTTP 401 Unauthorized — {"error":{"message":"Could not parse your authentication token."}}')
+    expect(upstreamResponseFromError(err)).toEqual({ status: 401, body: { error: { message: 'Could not parse your authentication token.' } } })
+    expect(upstreamResponseFromError(new Error('anthropic-web: failed to fetch organizations — HTTP 403 Forbidden. Check your sessionKey.'))).toMatchObject({ status: 403 })
+    expect(upstreamResponseFromError(new Error('connect ECONNREFUSED'))).toBeUndefined()
+  })
+})

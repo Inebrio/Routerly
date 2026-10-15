@@ -141,8 +141,21 @@ function isRateLimitError(err: unknown): boolean {
  */
 export function upstreamResponseFromError(err: unknown): UpstreamResponse | undefined {
   if (!err || typeof err !== 'object') return undefined;
-  const e = err as { status?: unknown; headers?: unknown; error?: unknown };
-  if (typeof e.status !== 'number') return undefined;
+  const e = err as { status?: unknown; headers?: unknown; error?: unknown; $metadata?: { httpStatusCode?: unknown }; message?: unknown };
+  // AWS SDK errors (Bedrock) carry the HTTP status in `$metadata` and no parsed `error` body.
+  const awsStatus = e.$metadata?.httpStatusCode;
+  if (typeof e.status !== 'number' && typeof awsStatus === 'number') {
+    return { status: awsStatus, ...(typeof e.message === 'string' ? { body: { error: { message: e.message } } } : {}) };
+  }
+  if (typeof e.status !== 'number') {
+    // Web adapters throw plain Errors "<provider>: ... HTTP 401 Unauthorized — {json}": recover status and body.
+    const m = typeof e.message === 'string' ? /\bHTTP (\d{3})\b/.exec(e.message) : null;
+    if (!m) return undefined;
+    const msg = e.message as string;
+    let body: unknown;
+    try { body = JSON.parse(msg.slice(msg.indexOf('{', m.index))); } catch { body = { error: { message: msg } }; }
+    return { status: Number(m[1]), body };
+  }
   const headers = e.headers && typeof e.headers === 'object' ? (e.headers as Record<string, string>) : undefined;
   return { status: e.status, ...(headers ? { headers } : {}), ...(e.error !== undefined ? { body: e.error } : {}) };
 }

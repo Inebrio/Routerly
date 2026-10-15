@@ -11,6 +11,8 @@ import { llmChat, llmStream, BudgetExceededError, upstreamResponseFromError } fr
 import type { LLMCallContext } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
 import { forwardableRequestHeaders } from '../../provider/passthrough.js'
+import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
+import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import { responsesToChatRequest, chatToResponsesObject, openAIChunksToResponsesSSE } from '../../provider/responses-compat.js'
@@ -221,7 +223,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
 
     let primaryModelId: string | undefined
     let primaryFailed = false
-    // Last upstream client error (4xx other than auth/rate-limit): when no candidate succeeds it is
+    // Last deterministic upstream 4xx (bad request, invalid key, forbidden): when no candidate succeeds it is
     // returned as-is (status + body) instead of a generic 503, like a direct provider call.
     let clientError: { status: number; body: unknown } | undefined
 
@@ -236,6 +238,7 @@ export const openaiAttempt: Processor<ProxyContext> = {
       await pipeline.runPhase('upstream.execute', ctx)  // openai:upstream sets ctx.result on success
 
       if (ctx.result) {
+        forgetUpstreamError(router.id)
         if (primaryFailed && model.id !== primaryModelId) {
           void emitEvent('routing.fallback_used', 'info', { routerId: router.id, primaryModelId, fallbackModelId: model.id, traceId: ctx.traceId }, { routerId: router.id, log })
         }
@@ -245,10 +248,9 @@ export const openaiAttempt: Processor<ProxyContext> = {
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
       // candidate here; clearing the stash keeps it from leaking into the next iteration.
       const ar = ctx.attemptResponse
-      if (ar && ar.status !== undefined && [400, 404, 413, 422].includes(ar.status) && ar.body !== undefined) {
-        // the OpenAI SDK exposes the inner `error` object; restore the wire envelope
-        const b = ar.body as Record<string, unknown>
-        clientError = { status: ar.status, body: b && typeof b === 'object' && 'error' in b ? b : { error: ar.body } }
+      if (ar && ar.status !== undefined && UPSTREAM_PASSTHROUGH_STATUS.includes(ar.status)) {
+        clientError = { status: ar.status, body: upstreamErrorBody('openai', ar.status, ar.body) }
+        rememberUpstreamError(router.id, ar.status, ar.body)
       }
       if (ctx.attemptError !== undefined) {
         ctx.attemptError = undefined
