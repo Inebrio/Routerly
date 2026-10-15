@@ -20,9 +20,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Proxy: upstream rejection now reaches the client provider-shaped (ROUT-287).** Also covers AWS SDK and Bedrock/Vertex errors and web-provider (`anthropic-web`, `openai-web`) HTTP errors. When every candidate fails with a deterministic 4xx (invalid key 401, forbidden 403, bad request), `/v1/chat/completions` and `/v1/messages` return that status and the provider message in the client protocol's error shape (stream and non-stream) instead of a generic 503. When the health policy then excludes every model the same error is returned for 5 minutes (or a provider-shaped 503 if none is known) instead of a bare HTTP 500. AWS SDK error statuses are now read too. 429/5xx still fall back as before.
 - **Optimizer headroom trims over-long agent sessions (ROUT-291, GitHub #149).** A single user prompt followed by many tool rounds is one turn, so `headroom` could not trim it and the provider received the whole chat. When the newest turn alone exceeds the context budget, its oldest tool rounds are now dropped (opening message and latest round kept).
-
-- **Proxy: upstream rejection now reaches the client provider-shaped (ROUT-287).** Also covers AWS SDK errors and web-provider (`anthropic-web`, `openai-web`) HTTP errors. When every candidate fails with a deterministic 4xx (invalid key 401, forbidden 403, bad request), `/v1/chat/completions` and `/v1/messages` return that status and the provider message in the client protocol's error shape (stream and non-stream) instead of a generic 503. When the health policy then excludes every model the same error is returned for 5 minutes (or a provider-shaped 503 if none is known) instead of a bare HTTP 500. AWS SDK error statuses are now read too. 429/5xx still fall back as before.
 
 - **Passthrough responses no longer carry `Vary: Origin`**: the CORS plugin header is dropped on `/passthrough/*` calls without an `Origin` header, so provider headers come back unaltered (ROUT-297).
 

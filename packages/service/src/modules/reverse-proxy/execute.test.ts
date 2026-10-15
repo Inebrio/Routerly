@@ -1867,4 +1867,11 @@ describe('upstreamResponseFromError', () => {
     expect(upstreamResponseFromError(new Error('anthropic-web: failed to fetch organizations — HTTP 403 Forbidden. Check your sessionKey.'))).toMatchObject({ status: 403 })
     expect(upstreamResponseFromError(new Error('connect ECONNREFUSED'))).toBeUndefined()
   })
+
+  it('recovers status and body from Bedrock and Vertex plain Errors', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    expect(upstreamResponseFromError(new Error('Bedrock error 403: {"message":"The security token included in the request is invalid."}')))
+      .toEqual({ status: 403, body: { message: 'The security token included in the request is invalid.' } })
+    expect(upstreamResponseFromError(new Error('Vertex token exchange failed 401: invalid_grant'))).toMatchObject({ status: 401 })
+  })
 })
