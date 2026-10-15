@@ -145,6 +145,16 @@ describe('RouterGeneralTab — edit mode render', () => {
     await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ name: 'Updated Name' })));
   });
 
+  it('keeps per-model routing prompts when saving (ROUT-294)', async () => {
+    renderTab({ ...mockRouter, models: [{ modelId: 'openai/gpt-4o', prompt: 'hard tasks' }, { modelId: 'openai/gpt-4o-mini' }] });
+    await waitFor(() => screen.getByPlaceholderText('My App'));
+    await userEvent.type(screen.getByPlaceholderText('My App'), '2');
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({
+      models: [{ modelId: 'openai/gpt-4o', prompt: 'hard tasks' }, { modelId: 'openai/gpt-4o-mini' }],
+    })));
+  });
+
   it('shows error on updateRouter failure', async () => {
     mockUpdateRouter.mockRejectedValueOnce(new Error('Server error'));
     renderTab();

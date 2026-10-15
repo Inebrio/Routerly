@@ -92,7 +92,7 @@ export function RouterGeneralTab() {
       const payload = {
         name: form.name,
         ...(router.routingModelId ? { routingModelId: router.routingModelId } : {}),
-        models: router.models.map(m => ({ modelId: m.modelId })),
+        models: router.models.map(m => ({ modelId: m.modelId, ...(m.prompt ? { prompt: m.prompt } : {}) })),
         timeoutMs: parseInt(form.timeoutMs),
         traceContent: form.traceContent,
       };
