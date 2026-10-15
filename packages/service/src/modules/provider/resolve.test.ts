@@ -36,6 +36,13 @@ describe('resolveEffectiveModel', () => {
     expect(buildUpstreamUrl(eff, '/v1/messages')).toBe('https://api.anthropic.com/v1/messages');
   });
 
+  it('defaults a missing anthropic-web endpoint to claude.ai so /v1/messages gets a valid URL (ROUT-302)', () => {
+    const conn = { id: 'c1', providerId: 'anthropic-web', label: 'A', credentials: { apiKey: 't' }, enabled: true } as ProviderConnection;
+    const inst = { id: 'm', connectionId: 'c1', upstreamModelId: 'm', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0 } as ModelInstance;
+    const eff = resolveEffectiveModel(inst, conn);
+    expect(buildUpstreamUrl(eff, '/v1/messages')).toBe('https://claude.ai/v1/messages');
+  });
+
   it('carries the instance timeout to the effective model', () => {
     const conn = { id: 'c1', providerId: 'custom', label: 'A', credentials: {}, endpoint: 'http://x', enabled: true } as ProviderConnection;
     const inst = { id: 'm', connectionId: 'c1', upstreamModelId: 'm', cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 0, timeout: 5000 } as ModelInstance;

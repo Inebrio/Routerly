@@ -10,6 +10,7 @@ export function defaultUpstreamModelId(id: string): string {
 const DEFAULT_ENDPOINTS: Partial<Record<string, string>> = {
   anthropic: 'https://api.anthropic.com',
   'anthropic-oauth': 'https://api.anthropic.com',
+  'anthropic-web': 'https://claude.ai',
 };
 
 /**
