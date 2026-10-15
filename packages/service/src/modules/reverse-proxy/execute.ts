@@ -148,8 +148,8 @@ export function upstreamResponseFromError(err: unknown): UpstreamResponse | unde
     return { status: awsStatus, ...(typeof e.message === 'string' ? { body: { error: { message: e.message } } } : {}) };
   }
   if (typeof e.status !== 'number') {
-    // Web adapters throw plain Errors "<provider>: ... HTTP 401 Unauthorized — {json}": recover status and body.
-    const m = typeof e.message === 'string' ? /\bHTTP (\d{3})\b/.exec(e.message) : null;
+    // Plain-Error adapters (web, Bedrock "Bedrock error 403: {json}", Vertex "token exchange failed 401: ...") embed the status in the message: recover status and body.
+    const m = typeof e.message === 'string' ? /\b(?:HTTP|error|failed) (\d{3})\b/.exec(e.message) : null;
     if (!m) return undefined;
     const msg = e.message as string;
     let body: unknown;
