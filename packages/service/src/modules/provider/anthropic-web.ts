@@ -23,10 +23,8 @@ import { isModuleEnabled } from '../../core/modules/registry.js';
  *     Using it may violate Anthropic's Terms of Service.
  */
 export class AnthropicWebAdapter implements ProviderAdapter {
-  /** Cached organization ID — fetched once per adapter instance */
-  private cachedOrgId: string | undefined;
-  /** Cached conversation ID — reused across requests to avoid per-request creation */
-  private cachedConvId: string | undefined;
+  /** Organization ID per session cookie — the adapter is a singleton shared by every connection */
+  private readonly orgIds = new Map<string, string>();
 
   private getSessionKey(model: ModelConfig): string {
     if (!model.apiKey) {
@@ -71,9 +69,10 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     };
   }
 
-  /** Step 1: fetch the organization ID for this session (cached after first call) */
+  /** Step 1: fetch the organization ID for this session (cached per session cookie) */
   private async getOrgId(sessionKey: string, base: string): Promise<string> {
-    if (this.cachedOrgId) return this.cachedOrgId;
+    const cached = this.orgIds.get(sessionKey);
+    if (cached) return cached;
 
     const response = await globalThis.fetch(`${base}/api/organizations`, {
       headers: this.buildBrowserHeaders(sessionKey),
@@ -92,13 +91,16 @@ export class AnthropicWebAdapter implements ProviderAdapter {
       throw new Error('anthropic-web: no organizations found for this session.');
     }
 
-    this.cachedOrgId = orgs[0]!.uuid;
-    return this.cachedOrgId;
+    const orgId = orgs[0]!.uuid;
+    this.orgIds.set(sessionKey, orgId);
+    return orgId;
   }
 
-  /** Step 2: get or create a conversation ID (cached per adapter instance) */
-  private async getConvId(sessionKey: string, base: string, orgId: string): Promise<string> {
-    if (this.cachedConvId) return this.cachedConvId;
+  /**
+   * Step 2: create a fresh conversation for this request. Every request carries its whole
+   * history in the prompt, and claude.ai answers 429 when one conversation is reused.
+   */
+  private async createConv(sessionKey: string, base: string, orgId: string): Promise<string> {
     const response = await globalThis.fetch(
       `${base}/api/organizations/${orgId}/chat_conversations`,
       {
@@ -117,8 +119,17 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     }
 
     const conv = await response.json() as { uuid: string };
-    this.cachedConvId = conv.uuid;
-    return this.cachedConvId;
+    return conv.uuid;
+  }
+
+  /** Best-effort cleanup so the user's claude.ai history is not filled with API conversations */
+  private async deleteConv(sessionKey: string, base: string, orgId: string, convId: string): Promise<void> {
+    try {
+      await globalThis.fetch(`${base}/api/organizations/${orgId}/chat_conversations/${convId}`, {
+        method: 'DELETE',
+        headers: this.buildBrowserHeaders(sessionKey),
+      });
+    } catch { /* ignore: cleanup only */ }
   }
 
   /** Convert OpenAI-format messages to a single prompt string for the web API */
@@ -220,8 +231,6 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     );
 
     if (!response.ok) {
-      // 404 means the conversation was deleted/expired — invalidate cache so next call creates a fresh one
-      if (response.status === 404) this.cachedConvId = undefined;
       const retryAfter = response.headers.get('Retry-After');
       const detail = await response.text().catch(() => '');
       throw new Error(
@@ -241,18 +250,22 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     const base = this.baseUrl(model);
 
     const orgId = await this.getOrgId(sessionKey, base);
-    const convId = await this.getConvId(sessionKey, base, orgId);
-    const response = await this.sendCompletion(sessionKey, base, orgId, convId, request, model);
-
-    if (!response.body) throw new Error('anthropic-web: empty response body');
+    const convId = await this.createConv(sessionKey, base, orgId);
 
     let finalText = '';
     let finalModel = this.getUpstreamModelId(model);
 
-    for await (const chunk of this.parseSSE(response.body)) {
-      if (chunk.done) break;
-      finalText += chunk.delta;
-      if (chunk.model) finalModel = chunk.model;
+    try {
+      const response = await this.sendCompletion(sessionKey, base, orgId, convId, request, model);
+      if (!response.body) throw new Error('anthropic-web: empty response body');
+
+      for await (const chunk of this.parseSSE(response.body)) {
+        if (chunk.done) break;
+        finalText += chunk.delta;
+        if (chunk.model) finalModel = chunk.model;
+      }
+    } finally {
+      await this.deleteConv(sessionKey, base, orgId, convId);
     }
 
     const id = `chatcmpl-${randomUUID()}`;
@@ -282,27 +295,31 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     const base = this.baseUrl(model);
 
     const orgId = await this.getOrgId(sessionKey, base);
-    const convId = await this.getConvId(sessionKey, base, orgId);
-    const response = await this.sendCompletion(sessionKey, base, orgId, convId, request, model);
-
-    if (!response.body) throw new Error('anthropic-web: empty response body');
+    const convId = await this.createConv(sessionKey, base, orgId);
 
     const id = `chatcmpl-${randomUUID()}`;
     const created = Math.floor(Date.now() / 1000);
     let finalModel = this.getUpstreamModelId(model);
 
-    for await (const chunk of this.parseSSE(response.body)) {
-      if (chunk.done) break;
-      if (chunk.model) finalModel = chunk.model;
-      if (chunk.delta) {
-        yield {
-          id,
-          object: 'chat.completion.chunk',
-          created,
-          model: finalModel,
-          choices: [{ index: 0, delta: { content: chunk.delta }, finish_reason: null }],
-        };
+    try {
+      const response = await this.sendCompletion(sessionKey, base, orgId, convId, request, model);
+      if (!response.body) throw new Error('anthropic-web: empty response body');
+
+      for await (const chunk of this.parseSSE(response.body)) {
+        if (chunk.done) break;
+        if (chunk.model) finalModel = chunk.model;
+        if (chunk.delta) {
+          yield {
+            id,
+            object: 'chat.completion.chunk',
+            created,
+            model: finalModel,
+            choices: [{ index: 0, delta: { content: chunk.delta }, finish_reason: null }],
+          };
+        }
       }
+    } finally {
+      await this.deleteConv(sessionKey, base, orgId, convId);
     }
 
     yield {
