@@ -309,3 +309,29 @@ describe('headroom optimizer: single over-long agent turn', () => {
     expect(headroomOptimizer.validate(ctx, result)).toBe(true)
   })
 })
+
+describe('headroom optimizer: Anthropic tool_use / tool_result payloads count as tokens', () => {
+  const round = (n: number): Message[] => [
+    { role: 'assistant', content: [{ type: 'tool_use', id: `c${n}`, name: 'read', input: { path: `f${n}${PAD}` } }] } as unknown as Message,
+    { role: 'user', content: [{ type: 'tool_result', tool_use_id: `c${n}`, content: `r${n}${PAD}` }] } as unknown as Message,
+  ]
+  const agent = (n: number): Message[] => [
+    { role: 'system', content: 'sys' },
+    { role: 'user', content: 'task' },
+    ...Array.from({ length: n }, (_, i) => round(i + 1)).flat(),
+  ]
+
+  it('trims an over-long Anthropic agent session whose text blocks are tiny', async () => {
+    resetContextWindowCache()
+    headroomOptimizer.supports(ctxWith(agent(1), { contextWindow: 100 }))
+    await vi.waitFor(() => expect(headroomOptimizer.supports(ctxWith(agent(30), { threshold: 20, contextWindow: 100 }))).toBe(true))
+    const ctx = ctxWith(agent(30), { threshold: 20, contextWindow: 100 })
+    const result = await headroomOptimizer.optimize(ctx)
+    const out = readMessages(ctx.request)
+    expect(result.changed).toBe(true)
+    expect(out.length).toBeLessThan(62)
+    expect(out[1]!.content).toBe('task')
+    expect(JSON.stringify(out[out.length - 1])).toContain(`r30${PAD}`)
+    expect(headroomOptimizer.validate(ctx, result)).toBe(true)
+  })
+})
