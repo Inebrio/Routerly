@@ -2067,6 +2067,50 @@ describe('router models not in the registry (ROUT-276)', () => {
   })
 })
 
+describe('PUT /api/routers/:id — per-model prompts (ROUT-294)', () => {
+  const policy = (autoRouting: boolean) => ({ type: 'llm', enabled: true, config: { autoRouting } })
+  const stored = () => ({
+    id: 'r1', name: 'R', tokens: [], members: [], policies: [policy(false)],
+    models: [{ modelId: 'a/1', prompt: 'P1' }, { modelId: 'a/2', prompt: 'P2' }, { modelId: 'a/3', prompt: 'P3' }],
+  })
+  const put = async (payload: unknown) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'routers') return [stored()]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const res = await app.inject({ method: 'PUT', url: '/api/routers/r1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(payload) })
+    await app.close()
+    return res
+  }
+
+  it('keeps every prompt when models are re-sent and policies change', async () => {
+    const res = await put({ name: 'R2', models: stored().models, policies: [policy(false), { type: 'health', enabled: true }] })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+}, 30000)
+
+  it('keeps prompts untouched when models is omitted', async () => {
+    const res = await put({ name: 'R2' })
+    expect(res.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+  })
+
+  it('removing one model drops only its prompt', async () => {
+    const res = await put({ models: [{ modelId: 'a/1', prompt: 'P1' }, { modelId: 'a/3', prompt: 'P3' }] })
+    expect(res.json().models).toEqual([{ modelId: 'a/1', prompt: 'P1' }, { modelId: 'a/3', prompt: 'P3' }])
+  })
+
+  it('toggling autoRouting does not touch the stored prompts', async () => {
+    const res = await put({ policies: [policy(true)] })
+    expect(res.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+    const back = await put({ policies: [policy(false)], models: stored().models })
+    expect(back.json().models.map((m: { prompt: string }) => m.prompt)).toEqual(['P1', 'P2', 'P3'])
+  })
+})
+
 describe('PUT /api/routers/:id — passthrough kind (RTR-03)', () => {
   it('leaves the slug unchanged on rename — slug is computed once at creation, never re-derived (see suggestRouterSlug)', async () => {
     setupAdminAuth()

@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Per-model routing prompts erased on save**: saving the router General tab (name, timeout, trace) rebuilt the model list without the per-model decision prompts and wiped them; the prompts are now kept (GitHub #146, ROUT-294).
 - **Dashboard: correct instructions for the claude.ai `sessionKey` (ROUT-289).** The Anthropic (Web) hint now covers Chrome/Edge (Application) and Firefox (Storage), says the cookie starts with `sk-ant-sid` (it is `sk-ant-sid02-…` today, not `sid01`), and is translated in every locale; the OpenAI (Web) hint no longer claims the token expires every ~24 hours (it lasts about 10 days) and the Japanese one no longer quotes the wrong token prefix. `docs/guides/claude-web.md` updated.
 - **`anthropic-web`: every call after the first no longer fails with 503/429 (ROUT-288).** The adapter reused one claude.ai conversation (and one organization id, shared across all connections) forever, so claude.ai rate-limited the second request. It now opens a fresh conversation per request (stream and non-stream), deletes it afterwards, and caches the organization id per session key.
 - `/v1/messages` on an `anthropic-web` model whose connection has no endpoint (CLI/API-created) no longer answers 500 `Invalid URL`: the endpoint defaults to `https://claude.ai` like `anthropic` / `anthropic-oauth` (ROUT-302).
