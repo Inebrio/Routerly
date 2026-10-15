@@ -20,6 +20,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Model Test on embedding models**: the Test button / `POST /api/models/:id/test` now probes `/embeddings` for models flagged as embedding instead of `/chat/completions`, which a llama-server style backend answers with HTTP 400; a failed test is logged at warn level. The dashboard no longer shows the "Caching" section of the `llm` policy: the semantic response cache was removed in 0.3.0 and the setting had no effect (ROUT-295, GitHub #147).
+
 - **Cache-read pricing without `cachePerMillion`**: when a model has no `cachePerMillion`, cache reads are still billed at the input rate (never under-billed) but the service now logs a one-time warning per model, and the fallback is documented (ROUT-293).
 - **Per-model routing prompts erased on save**: saving the router General tab (name, timeout, trace) rebuilt the model list without the per-model decision prompts and wiped them; the prompts are now kept (GitHub #146, ROUT-294).
 - **Dashboard: correct instructions for the claude.ai `sessionKey` (ROUT-289).** The Anthropic (Web) hint now covers Chrome/Edge (Application) and Firefox (Storage), says the cookie starts with `sk-ant-sid` (it is `sk-ant-sid02-…` today, not `sid01`), and is translated in every locale; the OpenAI (Web) hint no longer claims the token expires every ~24 hours (it lasts about 10 days) and the Japanese one no longer quotes the wrong token prefix. `docs/guides/claude-web.md` updated.
