@@ -75,7 +75,8 @@ export async function buildServer() {
   // Non-browser SDK calls on the proxy lanes (no Origin header) get the provider's
   // headers back unaltered: drop the `Vary: Origin` the CORS plugin would add.
   fastify.addHook('onSend', async (req, reply) => {
-    if (req.method === 'POST' && req.url.startsWith('/v1/') && !req.headers.origin
+    const proxied = (req.method === 'POST' && req.url.startsWith('/v1/')) || req.url.startsWith('/passthrough/');
+    if (proxied && !req.headers.origin
         && String(reply.getHeader('vary')).toLowerCase() === 'origin') {
       reply.removeHeader('vary');
     }
