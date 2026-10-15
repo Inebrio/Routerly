@@ -592,87 +592,13 @@ describe('RouterRoutingTab — LLM policy fields', () => {
     expect(maxCharsInput.value).toBe('1000');
   });
 
-  it('toggles Caching checkbox and shows embedding model section', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
-    renderTab();
-    const sel = await waitFor(() => screen.getByTestId('searchable-Add a policy...') as HTMLSelectElement);
-    await userEvent.selectOptions(sel, 'llm');
-    await waitFor(() => screen.getByRole('checkbox', { name: /caching/i }));
-    await userEvent.click(screen.getByRole('checkbox', { name: /caching/i }));
-    await waitFor(() => screen.getByText('Embedding Models'));
-  });
-
-  it('editing TTL value updates the cache config', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
+  it('llm policy has no Caching section (the semantic response cache was removed)', async () => {
     renderTab({
       ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: { routingModelId: '', fallbackModelIds: [], autoRouting: true, cache: { enabled: true, embedding_model: '', ttl_seconds: 3600, similarity_threshold: 0.85 } },
-      }],
+      policies: [{ type: 'llm', enabled: true, config: { routingModelId: '', fallbackModelIds: [], autoRouting: true } }],
     });
-    await waitFor(() => screen.getByText('TTL (seconds)'));
-    const ttlInput = screen.getByDisplayValue('3600') as HTMLInputElement;
-    await userEvent.clear(ttlInput);
-    await userEvent.type(ttlInput, '7200');
-    expect(ttlInput.value).toBe('7200');
-  });
-
-  it('editing similarity threshold updates the cache config', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: { routingModelId: '', fallbackModelIds: [], autoRouting: true, cache: { enabled: true, embedding_model: '', ttl_seconds: 3600, similarity_threshold: 0.85 } },
-      }],
-    });
-    await waitFor(() => screen.getByText('Similarity threshold'));
-    const thresholdInput = screen.getByDisplayValue('0.85') as HTMLInputElement;
-    await userEvent.clear(thresholdInput);
-    await userEvent.type(thresholdInput, '0.9');
-    expect(thresholdInput.value).toContain('0.9');
-  });
-
-  it('toggles Extend TTL on hit checkbox', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: { routingModelId: '', fallbackModelIds: [], autoRouting: true, cache: { enabled: true, embedding_model: '', ttl_seconds: 3600, similarity_threshold: 0.85 } },
-      }],
-    });
-    await waitFor(() => screen.getByRole('checkbox', { name: /extend ttl on hit/i }));
-    const extCb = screen.getByRole('checkbox', { name: /extend ttl on hit/i }) as HTMLInputElement;
-    expect(extCb.checked).toBe(false);
-    await userEvent.click(extCb);
-    expect(extCb.checked).toBe(true);
-  });
-
-  it('adds fallback embedding model in cache section', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel, makeModel({ id: 'openai/text-embedding-ada-002', name: 'Ada 002', capabilities: { embedding: true } })]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: { routingModelId: '', fallbackModelIds: [], autoRouting: true, cache: { enabled: true, embedding_model: 'openai/text-embedding-3-small', ttl_seconds: 3600, similarity_threshold: 0.85 } },
-      }],
-    });
-    await waitFor(() => screen.getByText('Embedding Models'));
-    // Add Fallback Model button in cache section
-    const addBtns = screen.getAllByText('Add Fallback Model');
-    await userEvent.click(addBtns[addBtns.length - 1]!);
-    await waitFor(() => {
-      const _rows = document.querySelectorAll('[style*="cache"]') ?? [];
-      // Just verify there are now 2 embedding model selects (primary + fallback)
-      const embeddingSelects = document.querySelectorAll('[data-testid="searchable-Select model"]');
-      expect(embeddingSelects.length).toBeGreaterThanOrEqual(2);
-    });
+    await waitFor(() => screen.getByText('Max prompt chars').closest('details') ?? document.body);
+    expect(screen.queryByRole('checkbox', { name: /caching/i })).toBeNull();
   });
 
   it('llm policy pre-existing with memory=true shows memoryCount input', async () => {
@@ -1709,76 +1635,6 @@ describe('RouterRoutingTab — max prompt chars input: non-numeric filtering', (
 
 // ── Cache embedding model change ──────────────────────────────────────────────
 
-describe('RouterRoutingTab — cache embedding model change', () => {
-  it('changing cache embedding model selection fires setCacheModelIds', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel, makeModel({ id: 'openai/ada-002', name: 'Ada 002', capabilities: { embedding: true } })]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: {
-          routingModelId: '',
-          fallbackModelIds: [],
-          autoRouting: true,
-          cache: { enabled: true, embedding_model: 'openai/text-embedding-3-small', ttl_seconds: 3600, similarity_threshold: 0.85 },
-        },
-      }],
-    });
-    await waitFor(() => screen.getByText('Embedding Models'));
-    const embSelects = document.querySelectorAll('[data-testid="searchable-Select model"]') as NodeListOf<HTMLSelectElement>;
-    // First is cache embedding model
-    await userEvent.selectOptions(embSelects[0]!, 'openai/ada-002');
-    expect(embSelects[0]!.value).toBe('openai/ada-002');
-  });
-
-  it('removing cache fallback embedding model works', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel, makeModel({ id: 'openai/ada-002', name: 'Ada 002', capabilities: { embedding: true } })]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: {
-          routingModelId: '',
-          fallbackModelIds: [],
-          autoRouting: true,
-          cache: { enabled: true, embedding_model: 'openai/text-embedding-3-small', embedding_fallback_models: ['openai/ada-002'], ttl_seconds: 3600, similarity_threshold: 0.85 },
-        },
-      }],
-    });
-    await waitFor(() => screen.getByText('Embedding Models'));
-    const removeBtns = document.querySelectorAll('.btn-icon.danger');
-    // Second remove btn (cache fallback, not primary)
-    const enabledBtn = Array.from(removeBtns).find(b => !(b as HTMLButtonElement).disabled) as HTMLButtonElement;
-    if (enabledBtn) {
-      await userEvent.click(enabledBtn);
-    }
-  });
-
-  it('Add Fallback Model in cache disabled when no more embedding models', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: {
-          routingModelId: '',
-          fallbackModelIds: [],
-          autoRouting: true,
-          cache: { enabled: true, embedding_model: 'openai/text-embedding-3-small', ttl_seconds: 3600, similarity_threshold: 0.85 },
-        },
-      }],
-    });
-    await waitFor(() => screen.getByText('Embedding Models'));
-    // The only embedding model is already used as primary → Add Fallback should be disabled
-    const addFallbackBtns = screen.getAllByText('Add Fallback Model');
-    const lastBtn = addFallbackBtns[addFallbackBtns.length - 1] as HTMLButtonElement;
-    expect(lastBtn.disabled).toBe(true);
-  });
-});
-
 // ── Add Fallback Model: disabled when no more models ─────────────────────────
 
 describe('RouterRoutingTab — Add Fallback Model disabled when exhausted', () => {
@@ -2143,51 +1999,6 @@ describe('RouterRoutingTab — intent with undefined examples', () => {
 });
 
 // ── cache config with undefined cache fields (??-right-side for ttl/threshold/extend) ──
-
-describe('RouterRoutingTab — cache config ?? right-side branches', () => {
-  it('llm policy with cache enabled but no embedded_fallback_models triggers ?? [] branch', async () => {
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: {
-          routingModelId: '',
-          fallbackModelIds: [],
-          autoRouting: true,
-          // cache has no embedding_fallback_models key
-          cache: { enabled: true, embedding_model: '' },
-        },
-      }],
-    });
-    await waitFor(() => screen.getByText('TTL (seconds)'));
-    // Just verify it renders without crash — the ?? defaults kick in
-    expect(screen.queryByText('Similarity threshold')).not.toBeNull();
-  });
-
-  it('cache TTL onChange with null cache config triggers ?? {} fallback', async () => {
-    // This test enables caching then immediately changes TTL
-    mockGetModels.mockResolvedValueOnce([chatModel, embeddingModel]);
-    renderTab({
-      ...mockRouter,
-      policies: [{
-        type: 'llm',
-        enabled: true,
-        config: { routingModelId: '', fallbackModelIds: [], autoRouting: true },
-      }],
-    });
-    await waitFor(() => screen.getByRole('checkbox', { name: /caching/i }));
-    // Enable caching (cache was undefined → now set to defaults)
-    await userEvent.click(screen.getByRole('checkbox', { name: /caching/i }));
-    await waitFor(() => screen.getByText('TTL (seconds)'));
-    // After enabling, update TTL
-    const ttlInput = screen.getByDisplayValue('3600') as HTMLInputElement;
-    const { fireEvent } = await import('@testing-library/react');
-    fireEvent.change(ttlInput, { target: { value: '1800' } });
-    expect(ttlInput.value).toBe('1800');
-  });
-});
 
 // ── isBlocked modal (true branch) ────────────────────────────────────────────
 

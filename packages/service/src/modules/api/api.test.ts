@@ -38,6 +38,10 @@ vi.mock('../notifications/sender.js', () => ({ sendTestNotification: vi.fn() }))
 vi.mock('../notifications/emitter.js', () => ({ emitEvent: vi.fn() }))
 vi.mock('../trace/store.js', () => ({ getTrace: vi.fn() }))
 const mockChatCompletion = vi.fn()
+const mockEmbed = vi.fn()
+vi.mock('../embeddings/dispatch.js', () => ({
+  getEmbeddingProvider: vi.fn(() => ({ embed: mockEmbed })),
+}))
 vi.mock('../provider/registry.js', () => ({
   getProviderAdapter: vi.fn(() => ({ chatCompletion: mockChatCompletion })),
 }))
@@ -13254,6 +13258,30 @@ describe('GET /api/notifications/inbox — invalid to date (line 1574 if branch=
 // ─── POST /api/models/:id/test ────────────────────────────────────────────────
 
 describe('POST /api/models/:id/test', () => {
+  it('probes /embeddings, not chat, for an embedding model (ROUT-295)', async () => {
+    setupAdminAuth()
+    const instance = { id: 'custom/nomic-embed-text', connectionId: 'conn-emb', upstreamModelId: 'nomic-embed-text', capabilities: { embedding: true }, cost: { inputPerMillion: 0, outputPerMillion: 0 }, contextWindow: 2048 }
+    const connection = { id: 'conn-emb', providerId: 'custom', endpoint: 'http://llama:8080/v1', credentials: {} }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'instances') return [instance]
+      if (t === 'connections') return [connection]
+      return []
+    })
+    mockChatCompletion.mockClear()
+    mockEmbed.mockResolvedValue({ embeddings: [[0.1]], inputTokens: 1 })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/models/custom%2Fnomic-embed-text/test', headers: adminAuthHeaders() })
+    expect(res.json().ok).toBe(true)
+    expect(mockEmbed).toHaveBeenCalledWith(['ping'], 'nomic-embed-text')
+    expect(mockChatCompletion).not.toHaveBeenCalled()
+    mockEmbed.mockRejectedValue(new Error('boom'))
+    const bad = await app.inject({ method: 'POST', url: '/api/models/custom%2Fnomic-embed-text/test', headers: adminAuthHeaders() })
+    await app.close()
+    expect(bad.json()).toMatchObject({ ok: false, error: 'boom' })
+  })
+
   it('returns ok:true when adapter succeeds', async () => {
     setupAdminAuth()
     const instance = { id: 'inst-ok-1', connectionId: 'conn-ok-1', upstreamModelId: 'gpt-4o', cost: { inputPerMillion: 5, outputPerMillion: 15 }, contextWindow: 128000 }

@@ -25,6 +25,7 @@ import { z } from 'zod';
 import { getTrace } from '../trace/store.js';
 import { resetTraceExportCache } from '../observability/traces-export.js';
 import { getProviderAdapter } from '../provider/registry.js';
+import { getEmbeddingProvider } from '../embeddings/dispatch.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel, defaultUpstreamModelId } from '../provider/resolve.js';
@@ -1067,10 +1068,18 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         await chunksToChatResponse(chunks, model.id);
         return reply.send({ ok: true, latencyMs: Date.now() - t0 });
       }
+      if (model.capabilities?.embedding === true) {
+        // An embedding model has no chat endpoint: probe /embeddings, as the routing policies do.
+        const embedder = getEmbeddingProvider(
+          model.provider === 'ollama' ? 'ollama' : 'openai', model.endpoint, model.apiKey);
+        await embedder.embed(['ping'], model.upstreamModelId ?? model.id);
+        return reply.send({ ok: true, latencyMs: Date.now() - t0 });
+      }
       const adapter = getProviderAdapter(model);
       await adapter.chatCompletion({ model: model.upstreamModelId ?? model.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }, model);
       return reply.send({ ok: true, latencyMs: Date.now() - t0 });
     } catch (err) {
+      req.log.warn({ modelId: req.params.id, err: err instanceof Error ? err.message : String(err) }, 'model test failed');
       return reply.send({ ok: false, latencyMs: Date.now() - t0, error: err instanceof Error ? err.message : String(err) });
     }
   });
