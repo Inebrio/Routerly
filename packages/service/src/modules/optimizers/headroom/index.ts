@@ -78,8 +78,27 @@ interface Plan {
 }
 
 /**
+ * Split one turn into its opening message and its rounds. A round starts at each
+ * `assistant` message and runs up to the next one, so a tool call and its results
+ * (OpenAI `tool` messages, Anthropic `tool_result` user messages) stay together.
+ */
+function rounds(turn: Message[]): { head: Message[]; rounds: Message[][] } {
+  const first = turn.findIndex((m, i) => i > 0 && m.role === 'assistant')
+  if (first < 0) return { head: turn, rounds: [] }
+  const out: Message[][] = []
+  for (const m of turn.slice(first)) {
+    if (m.role === 'assistant') out.push([m])
+    else out[out.length - 1]!.push(m)
+  }
+  return { head: turn.slice(0, first), rounds: out }
+}
+
+/**
  * Drop the oldest turns, each in full (never split a turn), until the prompt
- * fits `budget` or only the newest turn remains — whichever comes first.
+ * fits `budget` or only the newest turn remains. An agent session is ONE turn
+ * (a single user prompt followed by dozens of tool rounds), so when the newest
+ * turn alone is over budget its oldest tool rounds go too, keeping the opening
+ * message and the latest round.
  */
 function plan(messages: Message[], budget: number): Plan {
   const { system, turns } = segment(messages)
@@ -88,10 +107,18 @@ function plan(messages: Message[], budget: number): Plan {
   while (remaining.length > 1 && tokensOf([...system, ...remaining.flat()]) > budget) {
     remaining = remaining.slice(1)
   }
-  if (remaining.length === turns.length) {
+  let last = remaining[remaining.length - 1] ?? []
+  const split = rounds(last)
+  let kept = split.rounds
+  const older = remaining.slice(0, -1).flat()
+  while (kept.length > 1 && tokensOf([...system, ...older, ...split.head, ...kept.flat()]) > budget) {
+    kept = kept.slice(1)
+  }
+  if (kept.length < split.rounds.length) last = [...split.head, ...kept.flat()]
+  if (remaining.length === turns.length && kept.length === split.rounds.length) {
     return { changed: false, newMessages: messages, before, after: before }
   }
-  const newMessages = [...system, ...remaining.flat()]
+  const newMessages = [...system, ...older, ...last]
   return { changed: true, newMessages, before, after: tokensOf(newMessages) }
 }
 
@@ -150,8 +177,10 @@ export const headroomOptimizer = {
     const now = readMessages(ctx.request)
     const present = new Set(now.map((m) => JSON.stringify(m)))
     for (const m of system) if (!present.has(JSON.stringify(m))) return false
-    const newest = turns[turns.length - 1] ?? []
-    for (const m of newest) if (!present.has(JSON.stringify(m))) return false
+    // The newest turn keeps its opening message and its latest round: older tool
+    // rounds of an over-long agent turn are what plan() may have dropped.
+    const { head, rounds: rs } = rounds(turns[turns.length - 1] ?? [])
+    for (const m of [...head, ...(rs[rs.length - 1] ?? [])]) if (!present.has(JSON.stringify(m))) return false
     return true
   },
 
