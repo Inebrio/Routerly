@@ -1852,3 +1852,11 @@ describe('handleProviderResult — resilience store integration (Task 7)', () =>
     expect(store.recordSuccessCalls).toContainEqual({ level: 'provider', id: 'openai' })
   })
 })
+
+describe('upstreamResponseFromError', () => {
+  it('reads the HTTP status of AWS SDK errors from $metadata', async () => {
+    const { upstreamResponseFromError } = await import('./execute.js')
+    const err = Object.assign(new Error('The security token included in the request is invalid.'), { $metadata: { httpStatusCode: 403 } })
+    expect(upstreamResponseFromError(err)).toEqual({ status: 403, body: { error: { message: 'The security token included in the request is invalid.' } } })
+  })
+})

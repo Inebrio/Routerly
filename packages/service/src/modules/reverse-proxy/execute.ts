@@ -141,7 +141,12 @@ function isRateLimitError(err: unknown): boolean {
  */
 export function upstreamResponseFromError(err: unknown): UpstreamResponse | undefined {
   if (!err || typeof err !== 'object') return undefined;
-  const e = err as { status?: unknown; headers?: unknown; error?: unknown };
+  const e = err as { status?: unknown; headers?: unknown; error?: unknown; $metadata?: { httpStatusCode?: unknown }; message?: unknown };
+  // AWS SDK errors (Bedrock) carry the HTTP status in `$metadata` and no parsed `error` body.
+  const awsStatus = e.$metadata?.httpStatusCode;
+  if (typeof e.status !== 'number' && typeof awsStatus === 'number') {
+    return { status: awsStatus, ...(typeof e.message === 'string' ? { body: { error: { message: e.message } } } : {}) };
+  }
   if (typeof e.status !== 'number') return undefined;
   const headers = e.headers && typeof e.headers === 'object' ? (e.headers as Record<string, string>) : undefined;
   return { status: e.status, ...(headers ? { headers } : {}), ...(e.error !== undefined ? { body: e.error } : {}) };

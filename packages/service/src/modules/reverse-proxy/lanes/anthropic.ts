@@ -9,6 +9,8 @@ import { forwardToRouter } from '../../routing/orchestrate.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 import { llmChat, llmStream, loadEffectiveModel, BudgetExceededError, upstreamResponseFromError } from '../execute.js'
 import type { LLMCallContext } from '../execute.js'
+import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
+import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
 import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
@@ -197,6 +199,10 @@ export const anthropicAttempt: Processor<ProxyContext> = {
     // execution: only route to models on enabled connections
     const allModels = await listEffectiveModels()
 
+    // Last deterministic upstream 4xx (bad request, invalid key, forbidden): returned as-is when no
+    // candidate succeeds, instead of a generic 503, like a direct provider call.
+    let clientError: { status: number; body: unknown } | undefined
+
     await runCandidateLoop(ctx.candidates ?? [], async (candidate) => {
       const model = allModels.find((m) => m.id === candidate.model)
       if (!model) return false
@@ -204,7 +210,12 @@ export const anthropicAttempt: Processor<ProxyContext> = {
       await pipeline.runPhase('upstream.prepare', ctx) // Plan 5 budget
       if (ctx.result) return true
       await pipeline.runPhase('upstream.execute', ctx)
-      if (ctx.result) return true
+      if (ctx.result) { forgetUpstreamError(ctx.router.id); return true }
+      const ar = ctx.attemptResponse
+      if (ar && ar.status !== undefined && UPSTREAM_PASSTHROUGH_STATUS.includes(ar.status)) {
+        clientError = { status: ar.status, body: upstreamErrorBody('anthropic', ar.status, ar.body) }
+        rememberUpstreamError(ctx.router.id, ar.status, ar.body)
+      }
       // The fault (if any) was already recorded once by handleProviderResult inside
       // llmChat/llmStream — the single authoritative recorder. The loop only advances to the next
       // candidate here; clearing the stash keeps it from leaking into the next iteration.
@@ -215,7 +226,9 @@ export const anthropicAttempt: Processor<ProxyContext> = {
       return false
     }, () => {
       // Exhausted, no events on the Anthropic lane (decision #8).
-      ctx.result = { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
+      ctx.result = clientError
+        ? { kind: 'block', status: clientError.status, body: clientError.body }
+        : { kind: 'block', status: 503, body: { type: 'error', error: { type: 'overloaded_error', message: 'All candidate models are budget-exhausted or unavailable.' } } }
     })
   },
 }
