@@ -292,7 +292,7 @@
         "sessionTokenLabel": "सेशन टोकन",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "sessionKey कुकीची व्हॅल्यू पेस्ट करा (sk-ant-sid…)",
-        "openaiInstructions": "ChatGPT मध्ये लॉग इन केल्यानंतर, नवीन टॅबमध्ये <code>https://chatgpt.com/api/auth/session</code> उघडा। <code>accessToken</code> फील्डचे मूल्य कॉपी करा (<code>eyJ</code>सह सुरू होते)। टोकन प्रत्येक ~24 तासात समाप्त होतो। विश्वसनीय प्रवेशासाठी, खाली <strong>cf_clearance</strong> फील्ड भरा.",
+        "openaiInstructions": "ChatGPT मध्ये लॉग इन केल्यानंतर, नवीन टॅबमध्ये <code>https://chatgpt.com/api/auth/session</code> उघडा। <code>accessToken</code> फील्डचे मूल्य कॉपी करा (<code>eyJ</code>सह सुरू होते)। टोकन सुमारे 10 दिवस वैध असतो; टेस्ट 401 सह अयशस्वी होऊ लागल्यावर नवीन टोकन पेस्ट करा। विश्वसनीय प्रवेशासाठी, खाली <strong>cf_clearance</strong> फील्ड भरा.",
         "anthropicInstructions": "<strong>तुमची सेशन की कशी मिळवायची:</strong> <code>https://claude.ai</code> मध्ये लॉग इन असताना, DevTools उघडण्यासाठी F12 दाबा. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. <code>sessionKey</code> कुकीची <strong>Value</strong> कॉपी करा (<code>sk-ant-sid</code> ने सुरू होते, उदाहरणार्थ <code>sk-ant-sid02-</code>). ही HttpOnly कुकी आहे, त्यामुळे पेज कन्सोलमधून दिसत नाही. तुम्ही लॉग आउट करेपर्यंत किंवा ती कालबाह्य होईपर्यंत वैध राहते; चाचणी अयशस्वी होऊ लागल्यास नवीन पेस्ट करा."
       },
       "subscriptionProvider": {

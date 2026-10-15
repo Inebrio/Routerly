@@ -292,7 +292,7 @@
         "sessionTokenLabel": "رمز الجلسة",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "الصق قيمة ملف تعريف الارتباط sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "أثناء تسجيل الدخول إلى ChatGPT، افتح <code>https://chatgpt.com/api/auth/session</code> في علامة تبويب جديدة. انسخ قيمة الحقل <code>accessToken</code> (يبدأ بـ <code>eyJ</code>). تنتهي صلاحية الرمز كل ~24 ساعة. للوصول الموثوق، املأ أيضًا حقل <strong>cf_clearance</strong> أدناه.",
+        "openaiInstructions": "أثناء تسجيل الدخول إلى ChatGPT، افتح <code>https://chatgpt.com/api/auth/session</code> في علامة تبويب جديدة. انسخ قيمة الحقل <code>accessToken</code> (يبدأ بـ <code>eyJ</code>). الرمز صالح لنحو 10 أيام؛ الصق رمزًا جديدًا عندما يبدأ الاختبار بالفشل مع الخطأ 401. للوصول الموثوق، املأ أيضًا حقل <strong>cf_clearance</strong> أدناه.",
         "anthropicInstructions": "<strong>كيفية الحصول على مفتاح الجلسة:</strong> أثناء تسجيل الدخول إلى <code>https://claude.ai</code>، اضغط F12 لفتح DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. انسخ <strong>Value</strong> لملف تعريف الارتباط <code>sessionKey</code> (يبدأ بـ <code>sk-ant-sid</code>، على سبيل المثال <code>sk-ant-sid02-</code>). إنه ملف تعريف ارتباط HttpOnly، لذلك لا يظهر في وحدة تحكم الصفحة. يبقى صالحًا حتى تسجّل الخروج أو تنتهي صلاحيته؛ الصق مفتاحًا جديدًا إذا بدأ الاختبار يفشل."
       },
       "subscriptionProvider": {

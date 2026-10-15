@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Sessietoken",
         "accessTokenPlaceholder": "eyJ...",
         "sessionTokenPlaceholder": "Plak de waarde van de sessionKey-cookie (sk-ant-sid…)",
-        "openaiInstructions": "Terwijl u bent aangemeld bij ChatGPT, opent u <code>https://chatgpt.com/api/auth/session</code> op een nieuw tabblad. Kopieer de waarde van het veld <code>accessToken</code> (begint met <code>eyJ</code>). Het token verloopt ongeveer elke 24 uur. Voor betrouwbare toegang vult u ook het veld <strong>cf_clearance</strong> hieronder in.",
+        "openaiInstructions": "Terwijl u bent aangemeld bij ChatGPT, opent u <code>https://chatgpt.com/api/auth/session</code> op een nieuw tabblad. Kopieer de waarde van het veld <code>accessToken</code> (begint met <code>eyJ</code>). Het token is ongeveer 10 dagen geldig; plak een nieuw token wanneer de test met 401 begint te mislukken. Voor betrouwbare toegang vult u ook het veld <strong>cf_clearance</strong> hieronder in.",
         "anthropicInstructions": "<strong>Zo krijg je je sessiesleutel:</strong> Druk terwijl je bent ingelogd op <code>https://claude.ai</code> op F12 om DevTools te openen. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Kopieer de <strong>Value</strong> van de cookie <code>sessionKey</code> (begint met <code>sk-ant-sid</code>, bijvoorbeeld <code>sk-ant-sid02-</code>). Het is een HttpOnly-cookie en dus niet zichtbaar via de console van de pagina. Hij blijft geldig tot je uitlogt of hij verloopt; plak een nieuwe als de test begint te falen."
       },
       "subscriptionProvider": {

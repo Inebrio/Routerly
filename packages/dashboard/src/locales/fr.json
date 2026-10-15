@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Jeton de session",
         "accessTokenPlaceholder": "eyJ...",
         "sessionTokenPlaceholder": "Collez la valeur du cookie sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Connecté à ChatGPT, ouvrez <code>https://chatgpt.com/api/auth/session</code> dans un nouvel onglet. Copiez la valeur du champ <code>accessToken</code> (commence par <code>eyJ</code>). Le jeton expire chaque environ 24 heures. Pour un accès fiable, remplissez également le champ <strong>cf_clearance</strong> ci-dessous.",
+        "openaiInstructions": "Connecté à ChatGPT, ouvrez <code>https://chatgpt.com/api/auth/session</code> dans un nouvel onglet. Copiez la valeur du champ <code>accessToken</code> (commence par <code>eyJ</code>). Le jeton est valide pendant environ 10 jours ; collez-en un nouveau lorsque le test commence à échouer avec une erreur 401. Pour un accès fiable, remplissez également le champ <strong>cf_clearance</strong> ci-dessous.",
         "anthropicInstructions": "<strong>Comment obtenir votre clé de session :</strong> Une fois connecté à <code>https://claude.ai</code>, appuyez sur F12 pour ouvrir DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copiez la <strong>Value</strong> du cookie <code>sessionKey</code> (commence par <code>sk-ant-sid</code>, par exemple <code>sk-ant-sid02-</code>). C'est un cookie HttpOnly, il n'est donc pas visible depuis la console de la page. Elle reste valide jusqu'à votre déconnexion ou son expiration ; collez-en une nouvelle si le test se met à échouer."
       },
       "subscriptionProvider": {

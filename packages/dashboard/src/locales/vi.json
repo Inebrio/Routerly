@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Token phiên",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Dán giá trị cookie sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Trong khi đăng nhập vào ChatGPT, mở <code>https://chatgpt.com/api/auth/session</code> trong tab mới. Sao chép giá trị của trường <code>accessToken</code> (bắt đầu bằng <code>eyJ</code>). Token hết hạn mỗi ~24 giờ. Để truy cập đáng tin cậy, hãy điền vào trường <strong>cf_clearance</strong> bên dưới.",
+        "openaiInstructions": "Trong khi đăng nhập vào ChatGPT, mở <code>https://chatgpt.com/api/auth/session</code> trong tab mới. Sao chép giá trị của trường <code>accessToken</code> (bắt đầu bằng <code>eyJ</code>). Token có hiệu lực khoảng 10 ngày; hãy dán token mới khi Test bắt đầu thất bại với lỗi 401. Để truy cập đáng tin cậy, hãy điền vào trường <strong>cf_clearance</strong> bên dưới.",
         "anthropicInstructions": "<strong>Cách lấy khóa phiên của bạn:</strong> Khi đã đăng nhập vào <code>https://claude.ai</code>, nhấn F12 để mở DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Sao chép <strong>Value</strong> của cookie <code>sessionKey</code> (bắt đầu bằng <code>sk-ant-sid</code>, ví dụ <code>sk-ant-sid02-</code>). Đây là cookie HttpOnly nên không hiển thị được từ bảng điều khiển của trang. Khóa vẫn hợp lệ cho đến khi bạn đăng xuất hoặc hết hạn; hãy dán khóa mới nếu Kiểm tra bắt đầu thất bại."
       },
       "subscriptionProvider": {

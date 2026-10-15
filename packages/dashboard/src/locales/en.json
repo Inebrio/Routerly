@@ -293,7 +293,7 @@
         "sessionTokenLabel": "Session Token",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Paste sessionKey cookie value (sk-ant-sid…)",
-        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token expires every ~24 hours. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
+        "openaiInstructions": "While logged in to ChatGPT, open <code>https://chatgpt.com/api/auth/session</code> in a new tab. Copy the value of the <code>accessToken</code> field (starts with <code>eyJ</code>). The token is valid for about 10 days; paste a new one when the Test starts failing with 401. For reliable access, also fill in the <strong>cf_clearance</strong> field below.",
         "anthropicInstructions": "<strong>How to get your session key:</strong> While logged in to <code>https://claude.ai</code>, press F12 to open DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Copy the <strong>Value</strong> of the <code>sessionKey</code> cookie (starts with <code>sk-ant-sid</code>, for example <code>sk-ant-sid02-</code>). It is an HttpOnly cookie, so it is not visible from the page console. It stays valid until you log out or it expires; paste a new one if the Test starts failing."
       },
       "subscriptionProvider": {

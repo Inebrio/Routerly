@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Token Sesi",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Tampal nilai kuki sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token berakhir setiap ~24 jam. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
+        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token sah selama kira-kira 10 hari; tampal yang baharu apabila Test mula gagal dengan 401. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
         "anthropicInstructions": "<strong>Cara mendapatkan kunci sesi anda:</strong> Semasa log masuk ke <code>https://claude.ai</code>, tekan F12 untuk membuka DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Salin <strong>Value</strong> kuki <code>sessionKey</code> (bermula dengan <code>sk-ant-sid</code>, contohnya <code>sk-ant-sid02-</code>). Ia ialah kuki HttpOnly, jadi tidak kelihatan daripada konsol halaman. Ia kekal sah sehingga anda log keluar atau tamat tempoh; tampal yang baharu jika Ujian mula gagal."
       },
       "subscriptionProvider": {

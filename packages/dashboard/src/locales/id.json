@@ -292,7 +292,7 @@
         "sessionTokenLabel": "Token Sesi",
         "accessTokenPlaceholder": "eyJ…",
         "sessionTokenPlaceholder": "Tempel nilai cookie sessionKey (sk-ant-sid…)",
-        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token berakhir setiap ~24 jam. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
+        "openaiInstructions": "Saat login ke ChatGPT, buka <code>https://chatgpt.com/api/auth/session</code> di tab baru. Salin nilai bidang <code>accessToken</code> (dimulai dengan <code>eyJ</code>). Token berlaku sekitar 10 hari; tempel yang baru saat Test mulai gagal dengan 401. Untuk akses yang andal, isi juga bidang <strong>cf_clearance</strong> di bawah.",
         "anthropicInstructions": "<strong>Cara mendapatkan session key Anda:</strong> Saat masuk ke <code>https://claude.ai</code>, tekan F12 untuk membuka DevTools. Chrome/Edge: <strong>Application</strong> → Cookies → <code>https://claude.ai</code>. Firefox: <strong>Storage</strong> → Cookies → <code>https://claude.ai</code>. Salin <strong>Value</strong> dari cookie <code>sessionKey</code> (diawali <code>sk-ant-sid</code>, misalnya <code>sk-ant-sid02-</code>). Ini adalah cookie HttpOnly, sehingga tidak terlihat dari konsol halaman. Key tetap valid hingga Anda keluar atau kedaluwarsa; tempel yang baru jika Tes mulai gagal."
       },
       "subscriptionProvider": {
