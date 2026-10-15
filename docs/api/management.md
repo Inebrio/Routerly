@@ -457,7 +457,7 @@ POST /api/instances
 **Fields:**
 - `connectionId` - id of an existing connection (required)
 - `upstreamModelId` - the provider's model id, e.g. `gpt-5-mini` (required)
-- `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required)
+- `cost` - `{ inputPerMillion, outputPerMillion, cachePerMillion?, cacheWritePerMillion?, pricingTiers? }` (required). When `cachePerMillion` is omitted, cache-read tokens are billed at `inputPerMillion` (and `cacheWritePerMillion` falls back the same way); the service logs a one-time warning per model on the first cache hit. Set `cachePerMillion` to price cache reads correctly.
 - `contextWindow` - token limit (required)
 - `limits` - array of usage limit objects, same shape as [router token limits](#create-token) (optional)
 - `capabilities` - `{ thinking?, vision?, functionCalling?, json?, embedding? }`, overrides the connection provider's `nativeCapabilities` (optional)

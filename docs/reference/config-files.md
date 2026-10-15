@@ -141,7 +141,7 @@ Array of registered LLM model configurations.
 | `apiKey` | `string` | API key — stored AES-256 encrypted with the value from `secret` |
 | `inputPrice` | `number` | Cost per 1,000 input tokens in USD |
 | `outputPrice` | `number` | Cost per 1,000 output tokens in USD |
-| `cachePrice` | `number` | Cost per 1,000 cached/read tokens in USD (optional) |
+| `cachePrice` | `number` | Cost per 1,000 cached/read tokens in USD (optional). If omitted, cache reads are billed at `inputPrice` (the service logs a one-time warning) |
 | `contextWindow` | `number` | Maximum context window in tokens |
 | `capabilities` | `string[]` | Supported capabilities: `"chat"`, `"vision"`, `"tools"`, `"json_mode"` |
 | `pricingTiers` | `array` | Volume-based pricing tiers (optional) |
