@@ -714,6 +714,7 @@ export async function llmStream(
         ...(ctx.token?.id ? { tokenId: ctx.token.id } : {}),
         ...(ctx.sessionId ? { sessionId: ctx.sessionId } : {}),
         ...(ctx.tags ? { tags: ctx.tags } : {}),
+        ...(ctx.optimizerStats ? { optimizerStats: ctx.optimizerStats } : {}),
         ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
       }).catch(() => {});
     }
