@@ -13,7 +13,7 @@ import { routerPassthroughRoutes } from './modules/api-reverse-proxy/router-pass
 import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
-import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
+import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage, effectivePort } from './modules/config/loader.js';
 import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/migrate.js';
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
@@ -228,7 +228,7 @@ export async function startServer() {
   if (isMcpStdio()) return;
 
   try {
-    await server.listen({ port: settings.port, host: settings.host });
+    await server.listen({ port: effectivePort(settings), host: settings.host });
     // The 60s integration push is started by the observability module (kernel start).
     // Skipped outside production by default: a dev checkout's package.json version
     // is never bumped by semantic-release on develop/main (see docs/contributing/

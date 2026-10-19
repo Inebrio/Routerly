@@ -365,3 +365,13 @@ export async function getOrCreateSecret(): Promise<string> {
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {
   return err instanceof Error && 'code' in err;
 }
+
+/**
+ * Listening port: ROUTERLY_PORT overrides `port` from settings.json (documented
+ * in docs/reference/environment-variables.md). An invalid value is ignored.
+ * Never persisted: the override applies at runtime only.
+ */
+export function effectivePort(settings: { port: number }): number {
+  const n = Number(process.env['ROUTERLY_PORT']);
+  return Number.isInteger(n) && n >= 1 && n <= 65535 ? n : settings.port;
+}
