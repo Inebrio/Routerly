@@ -27,6 +27,7 @@ vi.mock('./modules/config/loader.js', () => ({
   readConfig: mockReadConfig,
   writeConfig: mockWriteConfig,
   pruneOrphanUsage: vi.fn(async () => 0),
+  effectivePort: (s: { port: number }) => s.port,
   appendUsageRecord: vi.fn(),
   getOrCreateSecret: mockGetOrCreateSecret,
 }));
@@ -56,6 +57,13 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
   migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
   migrateUsageToNdjson: vi.fn(async () => 0),
+  migrateRolePermissions: vi.fn(async () => 0),
+  migrateUsageRouterId: vi.fn(async () => 0),
+  migrateNotificationChannelScope: vi.fn(async () => 0),
+  migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
+  migratePassthroughPseudoModel: vi.fn(async () => 0),
+  migrateSettings: vi.fn(async () => [] as string[]),
+  migrateUserRouterIds: vi.fn(async () => 0),
 }));
 vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }));
 

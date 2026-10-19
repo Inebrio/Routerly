@@ -5,6 +5,7 @@ vi.mock('./modules/config/loader.js', () => ({
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
   pruneOrphanUsage: vi.fn(async () => 0),
+  effectivePort: (s: { port: number }) => s.port,
   appendUsageRecord: vi.fn(),
   getOrCreateSecret: vi.fn(),
 }))
@@ -34,6 +35,7 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateUsageToNdjson: vi.fn(async () => 0),
   migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
   migratePassthroughPseudoModel: vi.fn(async () => 0),
+  migrateUserRouterIds: vi.fn(async () => 0),
 }))
 vi.mock('./modules/config/permission-guard.js', () => ({ enforceStartupGuard: vi.fn() }))
 
