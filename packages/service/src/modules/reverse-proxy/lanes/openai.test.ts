@@ -1,3 +1,4 @@
+import Fastify from 'fastify'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { ProcessorRegistry } from '../../../core/index.js'
 
@@ -359,16 +360,18 @@ describe('openai transport lane', () => {
   })
 
   it('egress json: forwarded content-type is kept verbatim (no charset appended)', async () => {
-    const headers: Record<string, string> = {}
-    let sent: unknown
-    const reply: any = { headers: (h: Record<string, string>) => Object.assign(headers, h), send: (b: unknown) => { sent = b }, code: () => reply }
-    const ctx = {
-      protocol: 'openai', reply, traceId: 't1', req: { headers: {} },
-      result: { kind: 'json', body: { a: 1 }, headers: { 'content-type': 'application/json' } },
-    } as unknown as ProxyContext
-    await openaiEgress.run(ctx)
-    expect(headers['content-type']).toBe('application/json')
-    expect(sent).toBe('{"a":1}')
+    const app = Fastify()
+    app.get('/', async (req, reply) => {
+      const ctx = {
+        protocol: 'openai', reply, traceId: 't1', req,
+        result: { kind: 'json', body: { a: 1 }, headers: { 'content-type': 'application/json' } },
+      } as unknown as ProxyContext
+      await openaiEgress.run(ctx)
+      return reply
+    })
+    const res = await app.inject('/')
+    expect(res.headers['content-type']).toBe('application/json')
+    expect(res.body).toBe('{"a":1}')
   })
 
   it('egress streams: never injects trace frames, skips CORS when no origin', async () => {
