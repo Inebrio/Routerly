@@ -1110,6 +1110,8 @@
         "lastChecked": "చివరిసారి తనిఖీ చేసారు"
       },
       "noCheckPerformed": "ఇంకా నవీకరణ తనిఖీ చేయబడలేదు.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "నవీకరణల కోసం తనిఖీ చేయండి",
       "checking": "తనిఖీ చేస్తోంది…",
       "updateTo": "v{{version}}కు నవీకరించండి",

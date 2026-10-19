@@ -1110,6 +1110,8 @@
         "lastChecked": "마지막 확인"
       },
       "noCheckPerformed": "아직 업데이트 확인이 수행되지 않았습니다.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "업데이트 확인",
       "checking": "확인 중…",
       "updateTo": "v{{version}}으로 업데이트",

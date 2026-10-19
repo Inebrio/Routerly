@@ -1110,6 +1110,8 @@
         "lastChecked": "ตรวจสอบล่าสุด"
       },
       "noCheckPerformed": "ยังไม่มีการตรวจสอบการอัปเดต",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "ตรวจสอบการอัปเดต",
       "checking": "กำลังตรวจสอบ…",
       "updateTo": "อัปเดตเป็น v{{version}}",

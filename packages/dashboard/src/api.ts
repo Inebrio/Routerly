@@ -771,6 +771,8 @@ export interface UpdateInfo {
   channel: string;
   releaseUrl?: string;
   checkedAt: string;
+  status: 'ok' | 'disabled' | 'error';
+  error?: string;
 }
 
 export interface SystemInfo {

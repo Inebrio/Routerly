@@ -1110,6 +1110,8 @@
         "lastChecked": "Senast kontrollerad"
       },
       "noCheckPerformed": "Ingen uppdateringskontroll utförd ännu.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Sök efter uppdateringar",
       "checking": "Kontrollerar…",
       "updateTo": "Uppdatera till v{{version}}",

@@ -1110,6 +1110,8 @@
         "lastChecked": "Lần kiểm tra cuối"
       },
       "noCheckPerformed": "Chưa thực hiện kiểm tra cập nhật.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Kiểm tra cập nhật",
       "checking": "Đang kiểm tra…",
       "updateTo": "Cập nhật thành v{{version}}",

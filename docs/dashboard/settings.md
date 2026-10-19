@@ -438,6 +438,8 @@ Shows the current update status for the active channel. The service checks for n
 | **Available version** | The latest version on the active channel, or "Up to date" if already current |
 | **Last checked** | Timestamp of the most recent check against the GitHub Releases API |
 
+When update checking is switched off on the instance (the service is not running in production, or `ROUTERLY_DISABLE_UPDATE_CHECK=true`), the Current version is still shown and the section says that the update check is disabled instead of "Up to date". If the check fails (network error, GitHub rate limit), the section shows the error instead of a result.
+
 **Check for updates** forces an immediate check against the GitHub Releases API and refreshes the displayed result.
 
 **Update to vX.Y.Z** — visible only when a newer version is available on the current channel and the service is not running inside Docker. Clicking it triggers an in-app update:

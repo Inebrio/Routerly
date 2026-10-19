@@ -1110,6 +1110,8 @@
         "lastChecked": "Последна проверка"
       },
       "noCheckPerformed": "Все още не е извършена проверка за актуализации.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Проверка за актуализации",
       "checking": "Проверка…",
       "updateTo": "Актуализиране до v{{version}}",

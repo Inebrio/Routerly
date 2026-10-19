@@ -1110,6 +1110,8 @@
         "lastChecked": "آخرین بررسی"
       },
       "noCheckPerformed": "هنوز بررسی به‌روزرسانی‌ای انجام نشده است.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "بررسی به‌روزرسانی",
       "checking": "در حال بررسی…",
       "updateTo": "به‌روزرسانی به v{{version}}",

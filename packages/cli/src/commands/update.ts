@@ -10,6 +10,8 @@ interface UpdateInfo {
   channel: string;
   releaseUrl?: string;
   checkedAt: string;
+  status?: 'ok' | 'disabled' | 'error';
+  error?: string;
 }
 
 interface Settings {
@@ -40,6 +42,14 @@ Examples:
         if (opts.json) {
           console.log(JSON.stringify(info, null, 2));
           return;
+        }
+        if (info.status === 'disabled') {
+          console.error(chalk.yellow(`Update check is disabled on this instance (Routerly v${info.currentVersion}).`));
+          process.exit(1);
+        }
+        if (info.status === 'error') {
+          console.error(chalk.red(`Update check failed: ${info.error ?? 'unknown error'}`));
+          process.exit(1);
         }
         console.log();
         if (info.available) {

@@ -182,36 +182,57 @@ describe('UpdateChecker.check()', () => {
     const first = await checker.check();
     expect(first.latestVersion).toBe('1.0.0');
 
-    // Second check fails — cached result should be preserved (not overwritten by fallback)
+    // Second check fails — the caller is told so, but the cached good result is preserved
     stubGithubError();
     const second = await checker.check();
-    expect(second.latestVersion).toBe('1.0.0');
+    expect(second.status).toBe('error');
+    expect(checker.getLastResult()!.status).toBe('ok');
     expect(checker.getLastResult()!.latestVersion).toBe('1.0.0');
   });
 
-  it('swallows network errors and returns safe fallback', async () => {
+  it('reports network errors as status=error, never as up to date', async () => {
     stubGithubError();
 
     checker.start('0.1.5', 'latest');
     const result = await checker.check();
 
+    expect(result.status).toBe('error');
+    expect(result.error).toBe('Network failure');
     expect(result.available).toBe(false);
     expect(result.currentVersion).toBe('0.1.5');
-    expect(result.latestVersion).toBe('0.1.5');
+    expect(result.latestVersion).toBe('');
   });
 
-  it('swallows non-200 GitHub responses and returns safe fallback', async () => {
+  it('reports non-200 GitHub responses as status=error', async () => {
     stubGithubNotFound();
 
     checker.start('0.1.5', 'current');
     const result = await checker.check();
 
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
     expect(result.available).toBe(false);
+  });
+
+  it('reports status=ok on a successful check', async () => {
+    stubGithubOk({ tag_name: 'v0.1.5', html_url: '', prerelease: false });
+    checker.start('0.1.5', 'latest');
+    expect((await checker.check()).status).toBe('ok');
+  });
+
+  it('configure() without start(): status=disabled, real version and channel, no request made', async () => {
+    checker.configure('0.5.4', 'develop');
+    const result = await checker.check();
+
+    expect(mockRequest).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ status: 'disabled', currentVersion: '0.5.4', channel: 'develop', available: false });
+    expect(checker.getLastResult()).toMatchObject({ status: 'disabled', currentVersion: '0.5.4' });
   });
 });
 
 describe('UpdateChecker.getLastResult()', () => {
-  it('returns null before any check has completed', () => {
+  it('returns null before any check has completed on an enabled checker', () => {
+    checker.start('0.1.5', 'latest');
     expect(checker.getLastResult()).toBeNull();
   });
 
@@ -528,6 +549,7 @@ describe('UpdateChecker — remaining uncovered branches', () => {
 function prime(c: UpdateChecker, currentVersion: string, channel: string): void {
   (c as unknown as { _currentVersion: string })._currentVersion = currentVersion;
   (c as unknown as { _channel: string })._channel = channel;
+  (c as unknown as { _enabled: boolean })._enabled = true;
 }
 
 describe('UpdateChecker — system.update_available announcement (RA-15)', () => {

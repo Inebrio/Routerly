@@ -1110,6 +1110,8 @@
         "lastChecked": "נבדק לאחרונה"
       },
       "noCheckPerformed": "לא בוצעה עדיין בדיקת עדכונים.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "בדוק עדכונים",
       "checking": "בודק…",
       "updateTo": "עדכן לגרסה v{{version}}",

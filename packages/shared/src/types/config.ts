@@ -921,6 +921,14 @@ export interface UpdateInfo {
   releaseUrl?: string;
   /** ISO-8601 timestamp of the last check */
   checkedAt: string;
+  /**
+   * Outcome of the check: `ok` (compared against the channel), `disabled`
+   * (checking is switched off on this instance, no request was made) or
+   * `error` (the request failed; `latestVersion` is empty and `available` false).
+   */
+  status: 'ok' | 'disabled' | 'error';
+  /** Failure reason, present only when `status` is `error` */
+  error?: string;
 }
 
 // ─── Notification config types ────────────────────────────────────────────────

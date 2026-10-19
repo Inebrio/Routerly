@@ -156,6 +156,7 @@ export class UpdateChecker {
   private _timer: ReturnType<typeof setInterval> | null = null;
   private _currentVersion = '';
   private _channel = 'latest';
+  private _enabled = false;
 
   /** Normalise a raw channel value (name, tag, `undefined` or `''`) and store it. */
   private setChannel(channel: string | undefined): void {
@@ -163,10 +164,19 @@ export class UpdateChecker {
     this._channel = normalized.channel;
   }
 
-  /** Start periodic checking. Safe to call multiple times (idempotent). */
-  start(currentVersion: string, channel: string): void {
+  /**
+   * Record the running version and channel without polling, so a disabled
+   * checker still reports the installed version truthfully.
+   */
+  configure(currentVersion: string, channel: string): void {
     this._currentVersion = currentVersion;
     this.setChannel(channel);
+  }
+
+  /** Start periodic checking. Safe to call multiple times (idempotent). */
+  start(currentVersion: string, channel: string): void {
+    this.configure(currentVersion, channel);
+    this._enabled = true;
 
     // Initial check (fire-and-forget, errors are swallowed)
     void this.check();
@@ -186,6 +196,7 @@ export class UpdateChecker {
   /** Force an immediate check and return the result. */
   async check(): Promise<UpdateInfo> {
     const channel = this._channel;
+    if (!this._enabled) return this.disabledInfo();
     try {
       const release = await fetchRelease(channel);
       const rawTag = release.tag_name.startsWith('v') ? release.tag_name.slice(1) : release.tag_name;
@@ -202,23 +213,37 @@ export class UpdateChecker {
         channel,
         releaseUrl: release.html_url,
         checkedAt: new Date().toISOString(),
+        status: 'ok',
       };
       this._result = result;
       await this.maybeAnnounce(result);
       return result;
-    } catch {
-      // Network errors, rate limits, etc. — return a safe fallback
-      const fallback: UpdateInfo = {
+    } catch (err) {
+      // Network errors, rate limits, etc. — reported as such, never as "up to date"
+      const failed: UpdateInfo = {
         available: false,
         currentVersion: this._currentVersion,
-        latestVersion: this._currentVersion,
+        latestVersion: '',
         channel,
         checkedAt: new Date().toISOString(),
+        status: 'error',
+        error: err instanceof Error ? err.message : String(err),
       };
-      // Only overwrite cached result if we have none yet
-      if (!this._result) this._result = fallback;
-      return this._result;
+      // Keep a previous good result cached (it still drives the update banner)
+      if (!this._result) this._result = failed;
+      return failed;
     }
+  }
+
+  private disabledInfo(): UpdateInfo {
+    return {
+      available: false,
+      currentVersion: this._currentVersion,
+      latestVersion: '',
+      channel: this._channel,
+      checkedAt: '',
+      status: 'disabled',
+    };
   }
 
   /**
@@ -300,7 +325,7 @@ export class UpdateChecker {
 
   /** Return the last cached result, or null if no check has completed yet. */
   getLastResult(): UpdateInfo | null {
-    return this._result;
+    return this._result ?? (this._enabled ? null : this.disabledInfo());
   }
 
   /** Stop the background interval (used in tests). */

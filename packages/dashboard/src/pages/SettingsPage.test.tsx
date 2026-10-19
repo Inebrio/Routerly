@@ -1950,7 +1950,7 @@ describe('SettingsAboutTab', () => {
 
   it('renders version', async () => {
     renderAbout();
-    await waitFor(() => expect(screen.queryByText('v0.3.0')).not.toBeNull());
+    await waitFor(() => expect(screen.queryAllByText('v0.3.0').length).toBeGreaterThan(0));
   });
 
   it('renders Node.js and Platform info', async () => {
@@ -2014,6 +2014,27 @@ describe('SettingsAboutTab', () => {
     } as never);
     renderAbout();
     await waitFor(() => expect(screen.queryByText('Up to date')).not.toBeNull());
+  });
+
+  it('shows the installed version as Current version even when the check is disabled, and not "Up to date"', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      ...baseSystemInfo,
+      updateInfo: { available: false, currentVersion: '0.3.0', latestVersion: '', checkedAt: '', status: 'disabled' },
+    } as never);
+    renderAbout();
+    await waitFor(() => expect(screen.queryByText('Update check is disabled on this instance.')).not.toBeNull());
+    expect(screen.queryByText('Up to date')).toBeNull();
+    expect(screen.getAllByText('v0.3.0').length).toBe(2);
+  });
+
+  it('shows the error and not "Up to date" when the check failed', async () => {
+    mockGetSystemInfo.mockResolvedValue({
+      ...baseSystemInfo,
+      updateInfo: { available: false, currentVersion: '0.3.0', latestVersion: '', checkedAt: 'x', status: 'error', error: 'GitHub API returned 403' },
+    } as never);
+    renderAbout();
+    await waitFor(() => expect(screen.queryByText('Update check failed: GitHub API returned 403')).not.toBeNull());
+    expect(screen.queryByText('Up to date')).toBeNull();
   });
 
   it('does NOT show "Last checked" when checkedAt is falsy', async () => {

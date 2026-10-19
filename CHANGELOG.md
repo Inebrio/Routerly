@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Settings › About › Software update**: *Current version* always shows the installed version (it was empty, rendered as `v`, outside production). `GET /api/system/update-check` and `updateInfo` gain a `status` field (`ok` | `disabled` | `error`, plus `error`); a disabled check or a failed request (network, rate limit) is reported as such instead of "Up to date". `routerly update check` exits 1 with the reason on stderr in those cases; `--json` exposes `status` (ROUT-308).
 - **openai-oauth: rejected token now returns the provider's 401** — `/v1/chat/completions` and `/v1/messages` (stream and non-stream) answer with the upstream status and message in the client's protocol shape instead of a generic 503 (ROUT-307). The ChatGPT backend `{detail}` error body keeps its text.
 - **Usage: optimizer savings on streamed requests** — the usage record of a streaming request now carries `optimizers` (tokensBefore/After), so `report savings` and the dashboard count the tokens saved on streams (ROUT-303).
 - **Model Test on embedding models**: the Test button / `POST /api/models/:id/test` now probes `/embeddings` for models flagged as embedding instead of `/chat/completions`, which a llama-server style backend answers with HTTP 400; a failed test is logged at warn level. The dashboard no longer shows the "Caching" section of the `llm` policy: the semantic response cache was removed in 0.3.0 and the setting had no effect (ROUT-295, GitHub #147).

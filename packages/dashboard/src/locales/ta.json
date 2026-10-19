@@ -1110,6 +1110,8 @@
         "lastChecked": "கடைசி சோதனை"
       },
       "noCheckPerformed": "புதிப்பிக்க சோதனை செயல்படுத்த வேண்டும் இல்லை.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "புதிப்பிக்கம் சோதனை",
       "checking": "சோதனை…",
       "updateTo": "v{{version}} குக்குவிக்கவும்",

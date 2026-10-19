@@ -1110,6 +1110,8 @@
         "lastChecked": "最后检查"
       },
       "noCheckPerformed": "尚未执行更新检查。",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "检查更新",
       "checking": "检查中...",
       "updateTo": "更新到 v{{version}}",

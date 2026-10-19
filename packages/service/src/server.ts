@@ -236,6 +236,7 @@ export async function startServer() {
     // cut — comparing it would flag the instance actively building that release as
     // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.
     const updateCheckWanted = process.env['NODE_ENV'] === 'production' || process.env['ROUTERLY_FORCE_UPDATE_CHECK'] === 'true';
+    updateChecker.configure(pkgVersion, settings.channel ?? 'latest');
     if (updateCheckWanted && process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
       updateChecker.start(pkgVersion, settings.channel ?? 'latest');
     }
