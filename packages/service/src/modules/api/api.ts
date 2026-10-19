@@ -629,6 +629,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(201).send({ token, user: { id: user.id, email: user.email, role: user.roleId } });
   });
 
+  const MFA_ENROLMENT_PATHS = /^\/api\/(me(\/language)?|auth\/2fa\/(setup|confirm))$/;
+
   // ─── Auth middleware for /api/* (except login and setup) ─────────────────────
   fastify.addHook('preHandler', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return;
@@ -653,6 +655,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const allRoles = getEffectiveRoles(customRoles);
     req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles) };
+
+    // requireMfa: a user without 2FA may only reach identity + 2FA enrolment routes.
+    if (!user.totpEnabled && !MFA_ENROLMENT_PATHS.test(req.url.split('?')[0]!)) {
+      const settings = await readConfig('settings');
+      if (settings?.requireMfa === true) {
+        return reply.status(403).send({
+          error: 'mfa_required',
+          message: 'Two-factor authentication is required for all users. Set up 2FA in your profile first.',
+        });
+      }
+    }
   });
 
   // ══════════════════════════════════════════════════════════════════════════════

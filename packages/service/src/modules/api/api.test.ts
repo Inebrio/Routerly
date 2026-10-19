@@ -3625,6 +3625,40 @@ describe('PUT /api/settings', () => {
     expect(written['requireMfa']).toBe(true)
   })
 
+  describe('requireMfa enforcement', () => {
+    const run = async (url: string, totpEnabled: boolean, requireMfa = true) => {
+      setupAdminAuth()
+      mockReadConfig.mockImplementation(async (t: string) => {
+        if (t === 'users') return [{ ...adminUser, totpEnabled }]
+        if (t === 'roles') return []
+        if (t === 'settings') return { requireMfa }
+        return []
+      })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'GET', url, headers: adminAuthHeaders() })
+      await app.close()
+      return res
+    }
+
+    it.each(['/api/settings', '/api/routers'])('refuses %s with 403 mfa_required when user has no 2FA', async (url) => {
+      const res = await run(url, false)
+      expect(res.statusCode).toBe(403)
+      expect(res.json().error).toBe('mfa_required')
+    })
+
+    it('allows /api/me without 2FA (whitelist)', async () => {
+      expect((await run('/api/me', false)).statusCode).toBe(200)
+    })
+
+    it('allows management calls when user has 2FA', async () => {
+      expect((await run('/api/routers', true)).statusCode).toBe(200)
+    })
+
+    it('allows management calls when requireMfa is off', async () => {
+      expect((await run('/api/routers', false, false)).statusCode).toBe(200)
+    })
+  })
+
   it.each([{ requireMfa: 'yes' }, { requireMfa: 1 }, { dashboardEnabled: 'no' }])('rejects non-boolean %j with 400 and does not write', async (body) => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {

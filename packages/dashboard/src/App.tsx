@@ -333,7 +333,10 @@ function ProtectedLayout() {
         if (user?.role === 'admin' && s.telemetry === undefined) setTelemetryUndecided(true);
         setRequireMfa(!!s.requireMfa);
       })
-      .catch(/* v8 ignore next */ () => { /* non-critical */ });
+      .catch((e: { status?: number; code?: string }) => {
+        // The service refuses management calls to users without 2FA when requireMfa is on.
+        if (e.status === 403 && e.code === 'mfa_required') setRequireMfa(true);
+      });
   }, [user]);
 
   useEffect(() => {
