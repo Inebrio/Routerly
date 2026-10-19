@@ -27,6 +27,11 @@ async function* stream(...chunks: StreamChunk[]): AsyncGenerator<StreamChunk> {
 }
 
 describe('responsesToChatRequest', () => {
+  it('asks for stream usage only when streaming', () => {
+    expect(responsesToChatRequest({ model: 'm', input: 'x', stream: true }).stream_options).toEqual({ include_usage: true });
+    expect(responsesToChatRequest({ model: 'm', input: 'x' }).stream_options).toBeUndefined();
+  });
+
   it('maps a plain string input to a user message', () => {
     const chat = responsesToChatRequest({ model: 'm', input: 'hello' });
     expect(chat.messages).toEqual([{ role: 'user', content: 'hello' }]);
@@ -182,6 +187,13 @@ describe('chatToResponsesObject', () => {
 });
 
 describe('openAIChunksToResponsesSSE', () => {
+  it('reports the final usage chunk in response.completed', async () => {
+    const usageChunk = { ...chunk({}), choices: [], usage: { prompt_tokens: 9, completion_tokens: 11, total_tokens: 20 } } as unknown as StreamChunk;
+    const frames = await collect(openAIChunksToResponsesSSE(stream(chunk({ content: 'hi' }), chunk({}, 'stop'), usageChunk), 'r1', 'm'));
+    const usage = frames.at(-1)!.data.response.usage;
+    expect(usage).toMatchObject({ input_tokens: 9, output_tokens: 11, total_tokens: 20 });
+  });
+
   it('frames text as message → content_part → deltas → completed, with no [DONE]', async () => {
     const frames = await collect(openAIChunksToResponsesSSE(
       stream(chunk({ content: 'hello' }), chunk({ content: ' world' }, 'stop')),

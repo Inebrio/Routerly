@@ -229,6 +229,8 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
     model: body.model,
     messages,
     stream: body.stream === true,
+    // Chat streams carry usage only on request; the Responses stream must end with real usage.
+    ...(body.stream === true ? { stream_options: { include_usage: true } } : {}),
     ...(body.max_output_tokens != null ? { max_tokens: body.max_output_tokens } : {}),
     ...(body.temperature != null ? { temperature: body.temperature } : {}),
     ...(body.top_p != null ? { top_p: body.top_p } : {}),

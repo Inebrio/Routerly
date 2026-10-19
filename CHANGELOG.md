@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Responses stream usage** — `POST /v1/responses` with `stream:true` now asks the provider for stream usage, so `response.completed` reports real `input_tokens`/`output_tokens` instead of zeros (Codex CLI token counts).
 - **`/v1/responses` now forwards tools declared as `additional_tools` input items (Codex 0.163)**: tools of an `additional_tools` item and of `namespace` entries reach the model, `custom` (free-form) tools are bridged to a single-`input` function, and their calls come back as `custom_tool_call` items (`response.custom_tool_call_input.*` when streaming), so Codex runs shell and `apply_patch` again (ROUT-350).
 
 - **`user:write` can no longer escalate to admin**: creating or editing a user, creating or editing a role, and deleting, resetting the password or 2FA of a user now require the caller to hold every permission of the role involved (admin unchanged); otherwise `403` with the missing permissions listed (ROUT-348).
