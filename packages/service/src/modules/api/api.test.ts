@@ -3625,6 +3625,26 @@ describe('PUT /api/settings', () => {
     expect(written['requireMfa']).toBe(true)
   })
 
+  it.each([{ requireMfa: 'yes' }, { requireMfa: 1 }, { dashboardEnabled: 'no' }])('rejects non-boolean %j with 400 and does not write', async (body) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info' }
+      return []
+    })
+    mockWriteConfig.mockClear()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify(body),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('persists defaultLanguage', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
