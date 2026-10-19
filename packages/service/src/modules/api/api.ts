@@ -257,6 +257,16 @@ function resolvePermissions(roleId: string, allRoles: RoleConfig[]): Permission[
   return allRoles.find(r => r.id === roleId)?.permissions ?? [];
 }
 
+/** Anti-escalation: caller may only grant/touch permissions it holds itself (admin holds all). */
+function requireCovers(req: FastifyRequest, needed: Permission[], reply: FastifyReply): boolean {
+  const have = req.dashUser?.permissions ?? [];
+  const missing = needed.filter(p => !have.includes(p));
+  if (missing.length === 0) return true;
+  reply.status(403).send({ error: 'Forbidden', message: `Cannot grant or manage permissions you do not hold: ${missing.join(', ')}` });
+  audit(req, 'privilege-escalation', 'forbidden', { missing });
+  return false;
+}
+
 function audit(req: FastifyRequest, action: string, result: AuditEntry['result'], details?: Record<string, unknown>): void {
   void logAudit({
     userId: req.dashUser?.id ?? 'unknown',
@@ -1932,6 +1942,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: { email: string; password: string; roleId?: string; routerIds?: string[] }
   }>('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:write', reply)) return;
+    const allRoles = getEffectiveRoles(await readConfig('roles'));
+    if (!requireCovers(req, resolvePermissions(req.body.roleId ?? 'viewer', allRoles), reply)) return;
     const users = await readConfig('users');
     if (users.find(u => u.email === req.body.email)) {
       return reply.status(409).send({ error: 'Email already exists' });
@@ -1959,6 +1971,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (idx === -1) return reply.status(404).send({ error: 'User not found' });
     const user = users[idx]!;
     const { email, roleId, newPassword } = req.body;
+    const allRoles = getEffectiveRoles(await readConfig('roles'));
+    if (!requireCovers(req, resolvePermissions(user.roleId, allRoles), reply)) return;
+    if (roleId && !requireCovers(req, resolvePermissions(roleId, allRoles), reply)) return;
     if (email && email !== user.email) {
       if (users.find(u => u.email === email)) return reply.status(409).send({ error: 'Email already in use' });
       users[idx] = { ...users[idx]!, email };
@@ -1987,6 +2002,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const target = users.find(u => u.id === req.params.id);
     if (!target) return reply.status(404).send({ error: 'Not found' });
+    if (!requireCovers(req, resolvePermissions(target.roleId, getEffectiveRoles(await readConfig('roles'))), reply)) return;
     // Ensure at least one admin remains
     if (target.roleId === 'admin' && users.filter(u => u.roleId === 'admin').length === 1) {
       return reply.status(409).send({ error: 'Cannot delete the last admin account' });
@@ -2003,6 +2019,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const userIndex = users.findIndex(u => u.id === req.params.id);
     if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
     const user = users[userIndex]!;
+    if (!requireCovers(req, resolvePermissions(user.roleId, getEffectiveRoles(await readConfig('roles'))), reply)) return;
     const { totpSecret: _s, totpEnabled: _e, backupCodes: _b, ...rest } = user;
     users[userIndex] = rest;
     await writeConfig('users', users);
@@ -3286,6 +3303,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     const { id, name, permissions } = req.body;
     if (!id || !name) return reply.status(400).send({ error: 'id and name are required' });
+    if (!requireCovers(req, permissions ?? [], reply)) return;
     if (BUILT_IN_ROLES.some(r => r.id === id)) {
       return reply.status(409).send({ error: `"${id}" is a built-in role and cannot be created` });
     }
@@ -3303,6 +3321,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be modified` });
     }
+    if (req.body.permissions && !requireCovers(req, req.body.permissions, reply)) return;
     const customRoles = await readConfig('roles');
     const idx = customRoles.findIndex(r => r.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Role not found' });
