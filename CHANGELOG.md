@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **`/v1/responses` now forwards tools declared as `additional_tools` input items (Codex 0.163)**: tools of an `additional_tools` item and of `namespace` entries reach the model, `custom` (free-form) tools are bridged to a single-`input` function, and their calls come back as `custom_tool_call` items (`response.custom_tool_call_input.*` when streaming), so Codex runs shell and `apply_patch` again (ROUT-350).
+
 - **`user:write` can no longer escalate to admin**: creating or editing a user, creating or editing a role, and deleting, resetting the password or 2FA of a user now require the caller to hold every permission of the role involved (admin unchanged); otherwise `403` with the missing permissions listed (ROUT-348).
 
 - **`role:write`, `token:write` and `token:read` are now enforced**: `role:write` also allows creating, editing and deleting custom roles, `token:write` also allows creating, updating and revoking router tokens (`user:write` / `router:write` keep working, no role loses access), and the token list in `GET /api/routers` is returned only to callers holding `token:read`, `token:write` or `router:write` (ROUT-345).

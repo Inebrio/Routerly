@@ -178,7 +178,7 @@ the way out.
 
 Supported input: a plain string, or an `input` list of `message` (string content or
 `input_text` / `output_text` / `input_image` parts), `function_call` and
-`function_call_output` items. `instructions`, `tools`, `tool_choice`,
+`function_call_output`, `custom_tool_call` and `custom_tool_call_output` items; tools are read from `tools` and from `additional_tools` input items (namespaces flattened, `custom` tools bridged to a one-string-`input` function). `instructions`, `tools`, `tool_choice`,
 `max_output_tokens` and `text.format` are honoured; the request settings are echoed
 back on the response object.
 
