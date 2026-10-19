@@ -540,6 +540,7 @@ describe('anthropic:upstream', () => {
 
       expect(ctx.result).toBeUndefined()
       expect(ctx.attemptError).toBeInstanceOf(Error)
+      expect(ctx.attemptResponse?.status).toBe(401)
     })
   })
 
