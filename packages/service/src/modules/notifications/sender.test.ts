@@ -18,6 +18,10 @@ vi.mock('./channels/pagerduty.js', () => ({ sendPagerDuty: vi.fn() }))
 vi.mock('./channels/discord.js',   () => ({ sendDiscord: vi.fn() }))
 vi.mock('./emitter.js',            () => ({ appendToInbox: mockAppendToInbox }))
 
+import { sendSlack } from './channels/slack.js'
+import { sendTeams } from './channels/teams.js'
+import { sendPagerDuty } from './channels/pagerduty.js'
+import { sendDiscord } from './channels/discord.js'
 import { sendTestNotification, dispatchNotification } from './sender.js'
 
 afterEach(() => {
@@ -524,6 +528,18 @@ describe('dispatchNotification recipients (U5)', () => {
       fromAddress: 'sys@x',
     } as any, payload)
     expect(r.ok).toBe(true)
+  })
+
+  it.each([
+    ['slack', sendSlack],
+    ['teams', sendTeams],
+    ['pagerduty', sendPagerDuty],
+    ['discord', sendDiscord],
+  ] as const)('dispatches real event via native %s channel', async (provider, fn) => {
+    const ch: any = { provider }
+    const r = await dispatchNotification(ch, payload)
+    expect(r.ok).toBe(true)
+    expect(fn).toHaveBeenCalledWith(ch, payload)
   })
 
   it('throws for unknown provider', async () => {

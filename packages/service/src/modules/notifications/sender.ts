@@ -295,6 +295,7 @@ export async function dispatchNotification(
   const subject = `Routerly [${payload.severity}] ${payload.event}`;
   const text    = `${payload.event} (${payload.severity}) at ${payload.timestamp}\n\n${JSON.stringify(payload.details, null, 2)}`;
   const content: MessageContent = { subject, text, payload: payload as unknown as Record<string, unknown> };
+  const native = payload as Parameters<typeof sendSlack>[1];
   switch (channel.provider) {
     case 'smtp':     return sendSmtp(channel, emailTo(channel.fromAddress, recipients), content);
     case 'ses':      return sendSes(channel, emailTo(channel.fromAddress, recipients), content);
@@ -302,7 +303,11 @@ export async function dispatchNotification(
     case 'azure':    return sendAzure(channel, emailTo(channel.fromAddress, recipients), content);
     case 'google':   return sendGoogle(channel, emailTo(channel.fromAddress, recipients), content);
     case 'webhook':  return sendWebhook(channel, content); // targets ignored for delivery
-    // slack/teams/pagerduty/discord/dashboard never reach here (filtered by emitter)
+    case 'slack':     await sendSlack(channel, native);     return { ok: true, message: 'Message sent via Slack.' };
+    case 'teams':     await sendTeams(channel, native);     return { ok: true, message: 'Message sent via Microsoft Teams.' };
+    case 'pagerduty': await sendPagerDuty(channel, native); return { ok: true, message: 'Event triggered via PagerDuty.' };
+    case 'discord':   await sendDiscord(channel, native);   return { ok: true, message: 'Message sent via Discord.' };
+    // dashboard never reaches here (handled by emitter inbox)
     default:         throw new Error(`Unknown provider: ${String((channel as { provider: string }).provider)}`);
   }
 }
