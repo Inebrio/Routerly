@@ -11353,6 +11353,46 @@ function setupIntegrations(integrations: unknown[] = [prometheusIntegration]) {
   mockWriteConfig.mockResolvedValue(undefined)
 }
 
+describe('integration URL validation (ROUT-328)', () => {
+  const bodies = [
+    { type: 'webhook', url: 'not-a-url' },
+    { type: 'webhook', url: 'ftp://example.com' },
+    { type: 'grafana', url: 'nope', username: 'u', apiKey: 'k' },
+    { type: 'influxdb', url: 'nope', token: 't', org: 'o', bucket: 'b' },
+    { type: 'otel', endpoint: 'localhost4318', protocol: 'http' },
+  ]
+  for (const body of bodies) {
+    it(`POST ${body.type} with invalid URL → 400`, async () => {
+      setupIntegrations([])
+    const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/integrations', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify(body) })
+      await app.close()
+      expect(res.statusCode).toBe(400)
+      expect(res.json().error).toContain('http(s) URL')
+      expect(mockWriteConfig).not.toHaveBeenCalled()
+    })
+  }
+
+  it('POST webhook with https URL → 201', async () => {
+    setupIntegrations([])
+    const app = await buildApp()
+    const res = await app.inject({ method: 'POST', url: '/api/integrations', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ type: 'webhook', url: 'https://example.com/hook' }) })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('PATCH with invalid url/endpoint → 400, valid → 200', async () => {
+    const app = await buildApp()
+    setupIntegrations([{ id: 'w1', type: 'webhook', enabled: true, url: 'https://example.com/hook' }])
+    const bad = await app.inject({ method: 'PATCH', url: '/api/integrations/w1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ url: 'not-a-url' }) })
+    expect(bad.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+    const ok = await app.inject({ method: 'PATCH', url: '/api/integrations/w1', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ url: 'http://example.com/x' }) })
+    await app.close()
+    expect(ok.statusCode).toBe(200)
+  })
+})
+
 describe('GET /api/integrations', () => {
   it('returns empty array when no integrations', async () => {
     setupIntegrations([])
