@@ -24,6 +24,7 @@ import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../trace/store.js';
 import { resetTraceExportCache } from '../observability/traces-export.js';
+import { encodeRemoteWrite, remoteWriteHeaders } from '../observability/remote-write.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { getEmbeddingProvider } from '../embeddings/dispatch.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
@@ -3177,21 +3178,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const url      = intg['url']      as string;
       const username = intg['username'] as string;
       const apiKey   = intg['apiKey']   as string;
-      const basicAuth = Buffer.from(`${username}:${apiKey}`).toString('base64');
       try {
         const res = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-protobuf',
-            'X-Prometheus-Remote-Write-Version': '0.1.0',
-            'Authorization': `Basic ${basicAuth}`,
-          },
-          body: '',
+          headers: remoteWriteHeaders(username, apiKey),
+          body: encodeRemoteWrite([{ name: 'routerly_connection_test', help: '', type: 'gauge', samples: [{ labels: {}, value: 1 }] }]),
         });
-        // 400/415 means endpoint exists but rejects empty payload — still reachable
-        const reachable = res.ok || res.status === 400 || res.status === 415;
-        return reply.send(reachable
-          ? { ok: true,  message: 'Grafana remote_write endpoint is reachable.' }
+        return reply.send(res.ok
+          ? { ok: true,  message: 'Grafana remote_write endpoint accepted a test write.' }
           : { ok: false, message: `Grafana endpoint returned HTTP ${res.status}` });
       } catch (err) {
         return reply.send({ ok: false, message: (err as Error).message });
