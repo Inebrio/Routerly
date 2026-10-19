@@ -296,11 +296,11 @@ export const openaiEgress: Processor<ProxyContext> = {
       if (result.status) reply.code(result.status)
       const forwarded = result.headers && !ctx.responsesApi
       if (forwarded) reply.headers(result.headers!)
-      // A pre-serialised string keeps the provider's content-type as is; Fastify appends
-      // `; charset=utf-8` to an object payload it serialises itself.
+      // A pre-serialised Buffer keeps the provider's content-type as is; Fastify appends
+      // `; charset=utf-8` to application/json for an object or string payload.
       reply.send(ctx.responsesApi
         ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
-        : forwarded && result.headers!['content-type'] ? JSON.stringify(result.body) : result.body)
+        : forwarded && result.headers!['content-type'] ? Buffer.from(JSON.stringify(result.body)) : result.body)
       traceEgress(ctx, { kind: 'json', status: result.status ?? 200, ...(ctx.responsesApi ? { encoding: 'responses' } : {}) })
       return
     }
