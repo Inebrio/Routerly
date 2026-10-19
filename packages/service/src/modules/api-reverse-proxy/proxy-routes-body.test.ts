@@ -32,4 +32,15 @@ describe.each([
     expect(res.statusCode).toBe(401)
     expect(res.body).toBe('provider-error-body')
   })
+
+  // ROUT-363: on a router the body `model` is a hint; the route must not reject an unknown one.
+  it('hands an unknown body model to the pipeline instead of answering 404', async () => {
+    const app = Fastify({ logger: false })
+    await app.register(plugin)
+    await app.ready()
+    const res = await app.inject({ method: 'POST', url, payload: { model: 'openai/nope' } })
+    await app.close()
+    expect(res.statusCode).not.toBe(404)
+    expect(res.body).toBe('provider-error-body')
+  })
 })
