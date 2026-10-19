@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry/telemetry.js';
-import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort } from '../config/loader.js';
+import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, effectivePort } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
@@ -2348,7 +2348,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
     const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, effectivePort(settings)) });
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────

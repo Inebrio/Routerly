@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **`ROUTERLY_PORT` is honoured**: the service now listens on `ROUTERLY_PORT` when set (valid port 1-65535), overriding `port` in `settings.json` as documented; previously the variable was ignored (ROUT-323).
 - **Real notification events reach Slack, Teams, PagerDuty and Discord channels**: the dispatcher threw `Unknown provider` for these four native channel types, so only the «Test» button worked and real events (login failures, budget, config) were silently dropped (ROUT-331).
 - **Dashboard Integrations tab for users without `settings:write`**: the tab no longer shows the false «No integrations configured yet.» empty state after a failed load, and hides «Add Integration» when the user lacks `settings:write` (ROUT-330).
 

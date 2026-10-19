@@ -34,7 +34,7 @@ vi.mock('node:fs/promises', () => ({
   stat: vi.fn().mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })),
 }))
 
-import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, pruneOrphanUsage } from './loader.js'
+import { readConfig, writeConfig, initConfigDirs, getOrCreateSecret, appendUsageRecord, pruneOrphanUsage, effectivePort } from './loader.js'
 import * as fs from 'node:fs/promises'
 import lockfile from 'proper-lockfile'
 
@@ -384,5 +384,20 @@ describe('pruneOrphanUsage (#77 BUG-5)', () => {
     const removed = await pruneOrphanUsage()
     expect(removed).toBe(0)
     expect(mockWriteFile.mock.calls.some(c => String(c[0]).endsWith('usage.ndjson'))).toBe(false)
+  })
+})
+
+describe('effectivePort (ROUT-323)', () => {
+  afterEach(() => { delete process.env['ROUTERLY_PORT'] })
+  it('uses settings port when ROUTERLY_PORT is unset', () => {
+    expect(effectivePort({ port: 3000 })).toBe(3000)
+  })
+  it('ROUTERLY_PORT overrides settings port', () => {
+    process.env['ROUTERLY_PORT'] = '3917'
+    expect(effectivePort({ port: 3000 })).toBe(3917)
+  })
+  it.each(['abc', '0', '70000', '1.5', ''])('ignores invalid value %j', (v) => {
+    process.env['ROUTERLY_PORT'] = v
+    expect(effectivePort({ port: 3000 })).toBe(3000)
   })
 })
