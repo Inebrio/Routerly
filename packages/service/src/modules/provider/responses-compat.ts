@@ -69,14 +69,72 @@ function partsToChat(content: unknown): string | Message['content'] {
     : (parts as Message['content']);
 }
 
-/** Responses tool definitions (flat `name`) → chat tool definitions (nested under `function`). */
-export function responsesToolsToChat(tools: unknown): ToolDefinition[] | undefined {
-  if (!Array.isArray(tools) || tools.length === 0) return undefined;
-  const functions = tools.filter((t) => (t as Record<string, unknown>)?.type === 'function');
-  if (functions.length === 0) return undefined; // hosted tools (web_search, file_search) have no chat equivalent
-  return functions.map((raw) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
-    const tool = raw as Record<string, any>;
+interface FlatTool {
+  tool: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+  namespace?: string;
+}
+
+/**
+ * Every callable tool of a Responses request, namespaces flattened. Newer Codex
+ * clients declare tools as a leading `additional_tools` input item instead of
+ * (or besides) the top-level `tools` field: both are read, first name wins.
+ */
+function collectTools(body: { tools?: unknown; input?: unknown }): FlatTool[] {
+  const out: FlatTool[] = [];
+  const seen = new Set<string>();
+  const walk = (list: unknown, namespace?: string): void => {
+    if (!Array.isArray(list)) return;
+    for (const raw of list) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
+      const tool = raw as Record<string, any>;
+      if (tool?.type === 'namespace') walk(tool.tools, typeof tool.name === 'string' ? tool.name : namespace);
+      else if ((tool?.type === 'function' || tool?.type === 'custom') && typeof tool.name === 'string' && !seen.has(tool.name)) {
+        seen.add(tool.name);
+        out.push({ tool, ...(namespace ? { namespace } : {}) });
+      }
+      // hosted tools (web_search, file_search) have no chat equivalent
+    }
+  };
+  walk(body.tools);
+  if (Array.isArray(body.input)) {
+    for (const item of body.input) {
+      if ((item as Record<string, unknown>)?.type === 'additional_tools') walk((item as Record<string, unknown>).tools);
+    }
+  }
+  return out;
+}
+
+/** Names of `custom` (free-form input) tools and the namespace each tool lives in. */
+function toolIndex(req: ResponsesRequest | undefined): { custom: Set<string>; namespace: Map<string, string> } {
+  const custom = new Set<string>();
+  const namespace = new Map<string, string>();
+  for (const { tool, namespace: ns } of req ? collectTools(req) : []) {
+    if (tool.type === 'custom') custom.add(tool.name);
+    if (ns) namespace.set(tool.name, ns);
+  }
+  return { custom, namespace };
+}
+
+/**
+ * Responses tool definitions (flat `name`) → chat tool definitions (nested under `function`).
+ * A `custom` tool takes one free-form string, which chat can only carry as a function
+ * with a single `input` parameter; the grammar, if any, goes in the description.
+ */
+export function responsesToolsToChat(tools: unknown, input?: unknown): ToolDefinition[] | undefined {
+  const flat = collectTools({ tools, input });
+  if (flat.length === 0) return undefined;
+  return flat.map(({ tool }) => {
+    if (tool.type === 'custom') {
+      const def = typeof tool.format?.definition === 'string' ? `\n\nInput format (${tool.format.syntax ?? 'text'}):\n${tool.format.definition}` : '';
+      return {
+        type: 'function' as const,
+        function: {
+          name: tool.name,
+          description: `${tool.description ?? ''}${def}`.trim(),
+          parameters: { type: 'object', properties: { input: { type: 'string' } }, required: ['input'] },
+        },
+      };
+    }
     return {
       type: 'function' as const,
       function: {
@@ -106,6 +164,8 @@ export function responsesToolChoiceToChat(choice: unknown): unknown {
  *   message              → chat message (parts converted, `output_text` included)
  *   function_call        → `tool_calls` on the preceding assistant message, or a new one
  *   function_call_output → `role: 'tool'` message carrying `tool_call_id`
+ *   custom_tool_call(_output) → same, the free-form string wrapped as `{"input": …}`
+ *   additional_tools     → not a message: its tools are declared like `tools`
  *
  * `instructions` becomes the leading system message, which is what every
  * OpenAI-compatible provider expects.
@@ -125,11 +185,14 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
       const item = raw as Record<string, any>;
       const type = item?.type;
 
-      if (type === 'function_call') {
+      if (type === 'function_call' || type === 'custom_tool_call') {
         const call: ToolCall = {
           id: String(item.call_id ?? item.id ?? ''),
           type: 'function',
-          function: { name: item.name ?? '', arguments: item.arguments ?? '{}' },
+          function: {
+            name: item.name ?? '',
+            arguments: type === 'custom_tool_call' ? JSON.stringify({ input: String(item.input ?? '') }) : (item.arguments ?? '{}'),
+          },
         };
         const last = messages[messages.length - 1];
         // Chat requires tool calls to hang off an assistant message; attach to the one
@@ -139,7 +202,7 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
         continue;
       }
 
-      if (type === 'function_call_output') {
+      if (type === 'function_call_output' || type === 'custom_tool_call_output') {
         messages.push({
           role: 'tool',
           tool_call_id: String(item.call_id ?? ''),
@@ -158,7 +221,7 @@ export function responsesToChatRequest(body: ResponsesRequest): ChatCompletionRe
     }
   }
 
-  const tools = responsesToolsToChat(body.tools);
+  const tools = responsesToolsToChat(body.tools, body.input);
   const toolChoice = responsesToolChoiceToChat(body.tool_choice);
   const format = body.text?.format;
 
@@ -252,8 +315,23 @@ function messageItem(id: string, text: string): Record<string, unknown> {
 }
 
 /** Builds an `output` function_call item. */
-function functionCallItem(id: string, callId: string, name: string, args: string): Record<string, unknown> {
-  return { id, type: 'function_call', status: 'completed', arguments: args, call_id: callId, name };
+function functionCallItem(
+  id: string,
+  callId: string,
+  name: string,
+  args: string,
+  tools?: ReturnType<typeof toolIndex>,
+): Record<string, unknown> {
+  if (tools?.custom.has(name)) {
+    let input = args;
+    try {
+      const parsed = JSON.parse(args) as { input?: unknown };
+      input = typeof parsed?.input === 'string' ? parsed.input : args;
+    } catch { /* model sent raw text: pass it through */ }
+    return { id, type: 'custom_tool_call', status: 'completed', call_id: callId, name, input };
+  }
+  const namespace = tools?.namespace.get(name);
+  return { id, type: 'function_call', status: 'completed', arguments: args, call_id: callId, name, ...(namespace ? { namespace } : {}) };
 }
 
 /**
@@ -272,6 +350,7 @@ export function chatToResponsesObject(
   const text = typeof choice?.message?.content === 'string' ? choice.message.content : '';
   const toolCalls: ToolCall[] = Array.isArray(choice?.message?.tool_calls) ? choice.message.tool_calls : [];
   const id = `resp_${fallbackId}`;
+  const tools = toolIndex(req);
 
   const output: Array<Record<string, unknown>> = [];
   if (text) output.push(messageItem(`msg_${fallbackId}`, text));
@@ -281,6 +360,7 @@ export function chatToResponsesObject(
       call.id || `call_${fallbackId}_${i}`,
       call.function?.name ?? '',
       call.function?.arguments ?? '{}',
+      tools,
     ));
   });
 
@@ -309,6 +389,7 @@ export async function* openAIChunksToResponsesSSE(
   req?: ResponsesRequest,
 ): AsyncGenerator<string> {
   const id = `resp_${respId}`;
+  const tools = toolIndex(req);
   const createdAt = Math.floor(Date.now() / 1000);
   let seq = 0;
   const sse = (type: string, data: Record<string, unknown>): string =>
@@ -339,8 +420,14 @@ export async function* openAIChunksToResponsesSSE(
       yield sse('response.output_item.done', { item, output_index: open.index });
       done.push(item);
     } else {
-      const item = functionCallItem(open.itemId, open.callId, open.name, open.args);
-      yield sse('response.function_call_arguments.done', { arguments: open.args, item_id: open.itemId, output_index: open.index });
+      const item = functionCallItem(open.itemId, open.callId, open.name, open.args, tools);
+      if (item.type === 'custom_tool_call') {
+        // Chat streams the free-form input as JSON arguments; it is unwrapped once complete.
+        yield sse('response.custom_tool_call_input.delta', { delta: item.input, item_id: open.itemId, output_index: open.index });
+        yield sse('response.custom_tool_call_input.done', { input: item.input, item_id: open.itemId, output_index: open.index });
+      } else {
+        yield sse('response.function_call_arguments.done', { arguments: open.args, item_id: open.itemId, output_index: open.index });
+      }
       yield sse('response.output_item.done', { item, output_index: open.index });
       done.push(item);
     }
@@ -380,7 +467,14 @@ export async function* openAIChunksToResponsesSSE(
         const itemId = `fc_${respId}_${outputIndex}`;
         const callId: string = call.id || `call_${respId}_${slot}`;
         open = { kind: 'tool', itemId, index: outputIndex, slot, callId, name: call.function?.name ?? '', args: '' };
-        yield sse('response.output_item.added', { item: { id: itemId, type: 'function_call', status: 'in_progress', arguments: '', call_id: callId, name: open.name }, output_index: outputIndex });
+        const isCustom = tools.custom.has(open.name);
+        const ns = tools.namespace.get(open.name);
+        yield sse('response.output_item.added', {
+          item: isCustom
+            ? { id: itemId, type: 'custom_tool_call', status: 'in_progress', call_id: callId, name: open.name, input: '' }
+            : { id: itemId, type: 'function_call', status: 'in_progress', arguments: '', call_id: callId, name: open.name, ...(ns ? { namespace: ns } : {}) },
+          output_index: outputIndex,
+        });
         outputIndex++;
       } else if (call.function?.name && !open.name) {
         open.name = call.function.name;
@@ -388,7 +482,7 @@ export async function* openAIChunksToResponsesSSE(
       const args = call.function?.arguments;
       if (args) {
         open.args += args;
-        yield sse('response.function_call_arguments.delta', { delta: args, item_id: open.itemId, output_index: open.index });
+        if (!tools.custom.has(open.name)) yield sse('response.function_call_arguments.delta', { delta: args, item_id: open.itemId, output_index: open.index });
       }
     }
 

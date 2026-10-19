@@ -274,3 +274,63 @@ describe('openAIChunksToResponsesSSE', () => {
     });
   });
 });
+
+describe('additional_tools / custom tools (Codex)', () => {
+  const additional = {
+    type: 'additional_tools',
+    role: 'developer',
+    tools: [{
+      type: 'namespace',
+      name: 'functions',
+      tools: [
+        { type: 'custom', name: 'apply_patch', description: 'Patch files', format: { type: 'grammar', syntax: 'lark', definition: 'start: x' } },
+        { type: 'function', name: 'shell', description: 'run', parameters: { type: 'object', properties: { cmd: { type: 'string' } } } },
+      ],
+    }],
+  };
+  const body = { model: 'm', input: [additional, { type: 'message', role: 'user', content: 'hi' }] };
+
+  it('declares additional_tools (namespace, custom + function) as chat tools and drops the item', () => {
+    const req = responsesToChatRequest(body);
+    expect(req.messages).toEqual([{ role: 'user', content: 'hi' }]);
+    const tools = req.tools as Array<{ function: { name: string; description: string; parameters: unknown } }>;
+    expect(tools.map((t) => t.function.name)).toEqual(['apply_patch', 'shell']);
+    expect(tools[0]!.function.parameters).toMatchObject({ required: ['input'] });
+    expect(tools[0]!.function.description).toContain('start: x');
+  });
+
+  it('maps custom_tool_call(_output) history to tool_calls and tool messages', () => {
+    const req = responsesToChatRequest({
+      ...body,
+      input: [...body.input, { type: 'custom_tool_call', call_id: 'c1', name: 'apply_patch', input: 'PATCH' }, { type: 'custom_tool_call_output', call_id: 'c1', output: 'ok' }],
+    });
+    expect(req.messages[1]).toMatchObject({ role: 'assistant', tool_calls: [{ id: 'c1', function: { name: 'apply_patch', arguments: '{"input":"PATCH"}' } }] });
+    expect(req.messages[2]).toEqual({ role: 'tool', tool_call_id: 'c1', content: 'ok' });
+  });
+
+  it('returns calls of custom tools as custom_tool_call and namespaced ones with their namespace', () => {
+    const resp = chatToResponsesObject({
+      id: 'x', object: 'chat.completion', created: 1, model: 'm',
+      choices: [{ index: 0, finish_reason: 'tool_calls', message: { role: 'assistant', content: null, tool_calls: [
+        { id: 'c1', type: 'function', function: { name: 'apply_patch', arguments: '{"input":"PATCH"}' } },
+        { id: 'c2', type: 'function', function: { name: 'shell', arguments: '{"cmd":"ls"}' } },
+      ] } }],
+    } as ChatCompletionResponse, 'm', 'f', body);
+    expect(resp.output).toMatchObject([
+      { type: 'custom_tool_call', call_id: 'c1', name: 'apply_patch', input: 'PATCH' },
+      { type: 'function_call', call_id: 'c2', name: 'shell', namespace: 'functions', arguments: '{"cmd":"ls"}' },
+    ]);
+  });
+
+  it('streams a custom tool call as custom_tool_call_input events', async () => {
+    const frames = await collect(openAIChunksToResponsesSSE(
+      stream(
+        chunk({ tool_calls: [{ index: 0, id: 'c1', type: 'function', function: { name: 'apply_patch', arguments: '{"inp' } }] }),
+        chunk({ tool_calls: [{ index: 0, function: { arguments: 'ut":"PATCH"}' } }] }, 'tool_calls'),
+      ),
+      'tid', 'm', body,
+    ));
+    expect(frames.map((f) => f.event)).toContain('response.custom_tool_call_input.done');
+    expect(frames.at(-1)!.data.response.output[0]).toMatchObject({ type: 'custom_tool_call', input: 'PATCH' });
+  });
+});
