@@ -14376,7 +14376,7 @@ describe('user:write privilege escalation', () => {
       return []
     })
     const app = await buildApp()
-    const res = await app.inject({ method, url, headers: body ? { authorization: 'Bearer tok', 'content-type': 'application/json' } : { authorization: 'Bearer tok' }, payload: body ? JSON.stringify(body) : undefined })
+    const res = await app.inject({ method, url, headers: body ? { authorization: 'Bearer tok', 'content-type': 'application/json' } : { authorization: 'Bearer tok' }, ...(body ? { payload: JSON.stringify(body) } : {}) })
     await app.close()
     return res
   }
