@@ -21,7 +21,7 @@ import {
 } from './openai.js'
 import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
-import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks } from './openaiOAuthForward.js'
+import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse } from './openaiOAuthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
@@ -547,6 +547,28 @@ describe('/v1/responses on the openai lane', () => {
     await openaiUpstream.run(ctx)
     expect(ctx.result?.kind).toBe('stream')
     expect(forwardOpenAIOAuthSSE).not.toHaveBeenCalled()
+  })
+})
+
+describe('openai:upstream openai-oauth rejected token', () => {
+  const oauthModel: ModelConfig = {
+    id: 'sub', name: 'sub', provider: 'openai-oauth', endpoint: 'https://chatgpt.com/backend-api/codex',
+    cost: { inputPerMillion: 0, outputPerMillion: 0 },
+  }
+  it.each([true, false])('stashes the upstream status for the attempt loop (stream=%s)', async (stream) => {
+    if (!stream) vi.mocked(chunksToChatResponse).mockRejectedValueOnce(new Error('openai-oauth upstream HTTP 401: Could not parse your authentication token'))
+    vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
+      throw new Error('openai-oauth upstream HTTP 401: Could not parse your authentication token')
+      yield undefined as never
+    })())
+    const ctx = {
+      protocol: 'openai', stream, traceId: 't1', log: makeLog(), router: { id: 'p1', models: [] },
+      request: { model: 'sub', messages: [] },
+      attempt: { model: oauthModel, candidate: { model: 'sub', weight: 1 } },
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(ctx.result).toBeUndefined()
+    expect(ctx.attemptResponse?.status).toBe(401)
   })
 })
 

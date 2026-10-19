@@ -124,6 +124,8 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       } catch (err) {
         log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
         ctx.attemptError = err
+        const attemptResponse = upstreamResponseFromError(err)
+        if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
       }
       return
     }
