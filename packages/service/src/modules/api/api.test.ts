@@ -11873,15 +11873,33 @@ describe('POST /api/integrations/:id/test', () => {
     expect(res.json()).toMatchObject({ ok: false, message: 'Invalid Datadog API key.' })
   })
 
-  it('influxdb: health pass → ok: true', async () => {
+  const influxCase = (name: string, status: number, expected: Record<string, unknown>) =>
+    it(`influxdb: write ${name}`, async () => {
+      const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
+      setupIntegrations([influx])
+      mockFetch.mockResolvedValue({ ok: status >= 200 && status < 300, status })
+      const app = await buildApp()
+      const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
+      await app.close()
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toMatchObject(expected)
+      expect(mockFetch).toHaveBeenCalledWith('http://influx:8086/api/v2/write?org=o&bucket=b&precision=s', expect.objectContaining({ method: 'POST', headers: expect.objectContaining({ Authorization: 'Token t' }) }))
+    })
+  influxCase('204 → ok: true', 204, { ok: true })
+  influxCase('401 (bad token) → ok: false', 401, { ok: false, message: expect.stringContaining('Invalid InfluxDB token') })
+  influxCase('403 (no write permission) → ok: false', 403, { ok: false, message: expect.stringContaining('no write permission') })
+  influxCase('404 (bad org/bucket) → ok: false', 404, { ok: false, message: expect.stringContaining('not found') })
+  influxCase('503 → ok: false', 503, { ok: false, message: 'InfluxDB write returned HTTP 503' })
+
+  it('influxdb: fetch throws → ok: false', async () => {
     const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
     setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'pass' }) })
+    mockFetch.mockRejectedValue(new Error('influx down'))
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: true })
+    expect(res.json()).toMatchObject({ ok: false, message: 'influx down' })
   })
 
   it('webhook: fetch 200 → ok: true', async () => {
@@ -11973,51 +11991,6 @@ describe('POST /api/integrations/:id/test', () => {
     await app.close()
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ ok: false, message: 'grafana unreachable' })
-  })
-
-  it('influxdb: health not-pass status → ok: false', async () => {
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ status: 'fail' }) })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health status: fail' })
-  })
-
-  it('influxdb: health status absent → ok: false with "unknown" (line 2146 ?? branch=1)', async () => {
-    // body.status is undefined → ?? 'unknown' fires (branch=1)
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health status: unknown' })
-  })
-
-  it('influxdb: health non-ok HTTP → ok: false', async () => {
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockResolvedValue({ ok: false, status: 503 })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'InfluxDB health check returned HTTP 503' })
-  })
-
-  it('influxdb: fetch throws → ok: false', async () => {
-    const influx = { id: 'intg-influx', type: 'influxdb', enabled: true, url: 'http://influx:8086', token: 't', org: 'o', bucket: 'b' }
-    setupIntegrations([influx])
-    mockFetch.mockRejectedValue(new Error('influx down'))
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-influx/test', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: false, message: 'influx down' })
   })
 
   it('datadog: non-200/non-403 status → generic error message', async () => {
