@@ -3057,7 +3057,7 @@ routerly service configure [options]
 | `--metrics <bool>` | Enable/disable the Prometheus `/metrics` endpoint |
 | `--metrics-token <token>` | Bearer token protecting `/metrics` (empty string removes it) |
 | `--public-url <url>` | External URL of the service |
-| `--require-mfa <bool>` | Require two-factor authentication for all users |
+| `--require-mfa <bool>` | Require two-factor authentication for all users |. Only `true` or `false` accepted (exit 1 otherwise); same for `--dashboard` and `--metrics`
 
 `routerly service metrics [--raw] [--token <token>]` reads `/metrics`; when it is protected by a token, pass `--token` or set `ROUTERLY_METRICS_TOKEN` (default: the account token).
 

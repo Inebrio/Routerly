@@ -2436,6 +2436,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       port: z.number().int().min(1).max(65535).optional(),
       host: z.string().trim().min(1).optional(),
       metricsEnabled: z.boolean().optional(),
+      dashboardEnabled: z.boolean().optional(),
+      requireMfa: z.boolean().optional(),
       prometheusAuthToken: z.string().nullable().optional(),
     });
     const netParsed = netSchema.safeParse(netPatch);

@@ -251,6 +251,11 @@ describe('service configure', () => {
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: false }));
   });
 
+  it('rejects a non-boolean --require-mfa without calling the API', async () => {
+    await expect(run('configure', '--require-mfa', 'maybe')).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('sends usageRetention.maxAgeDays after fetching current settings, when --usage-retention-days provided alone', async () => {
     mockApi
       .mockResolvedValueOnce({ port: 3000, host: '0.0.0.0', dashboardEnabled: true, logLevel: 'info', usageRetention: { maxSizeMb: 500 } }) // GET /api/settings
