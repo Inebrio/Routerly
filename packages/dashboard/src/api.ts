@@ -104,11 +104,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 /** Thrown by request()/processResponse() on any non-2xx response. `status` lets
  * callers distinguish e.g. 404 (feature/module disabled) from other failures. */
-export type ApiError = Error & { status?: number };
+export type ApiError = Error & { status?: number; code?: string };
 
-function httpError(message: string, status: number): ApiError {
+function httpError(message: string, status: number, code?: string): ApiError {
   const err: ApiError = new Error(message);
   err.status = status;
+  if (code) err.code = code;
   return err;
 }
 
@@ -133,7 +134,7 @@ async function processResponse<T>(res: Response, _path: string): Promise<T> {
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth showing.
     const body = data as { error?: string; message?: string };
-    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status);
+    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status, body.error);
   }
   return data as T;
 }

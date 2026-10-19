@@ -219,6 +219,12 @@ describe('ProtectedLayout — MFA banner', () => {
     await waitFor(() => expect(screen.getByText(/Two-factor authentication is required/)).toBeTruthy(), { timeout: 3000 });
   });
 
+  it('shows MFA banner when the service refuses getSettings with 403 mfa_required', async () => {
+    mockGetSettings.mockRejectedValue(Object.assign(new Error('Two-factor authentication is required'), { status: 403, code: 'mfa_required' }));
+    renderApp();
+    await waitFor(() => expect(screen.getByText(/Two-factor authentication is required/)).toBeTruthy(), { timeout: 3000 });
+  });
+
   it('does not show MFA banner when user has 2FA enabled', async () => {
     mockGetSettings.mockResolvedValue({ telemetry: true, requireMfa: true });
     mockUseAuth.mockReturnValue({

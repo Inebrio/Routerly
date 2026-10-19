@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Require 2FA is now enforced by the service** (ROUT-341). With `requireMfa` on, management API calls from a user without 2FA are refused with `403 {"error":"mfa_required"}`; only `/api/me`, `/api/me/language` and the 2FA setup/confirm routes stay available. Previously only the dashboard applied it.
 - **Provider Catalog merge priority**: when several repositories define the same provider, the first row now wins on conflict, as the dashboard hint and docs state; previously the last row won (ROUT-340).
 - **`PUT /api/settings` validates `requireMfa` and `dashboardEnabled`**: non-boolean values (`"yes"`, `1`) now return 400 instead of being stored; `routerly service configure --require-mfa|--dashboard|--metrics` rejects anything but `true`/`false` with exit 1 (ROUT-339).
 - **`ROUTERLY_PORT` is honoured**: the service now listens on `ROUTERLY_PORT` when set (valid port 1-65535), overriding `port` in `settings.json` as documented; previously the variable was ignored (ROUT-323).
