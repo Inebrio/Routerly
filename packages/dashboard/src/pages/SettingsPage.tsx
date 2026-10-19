@@ -1352,6 +1352,7 @@ function integrationFormFields(
 
 export function SettingsIntegrationsTab() {
   const { t } = useTranslation();
+  const { can } = useAuth();
   const integrationTypes = useIntegrationTypes();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -1479,7 +1480,7 @@ export function SettingsIntegrationsTab() {
     <div style={{ maxWidth: 600 }}>
       {error && <div className="form-error" style={{ marginBottom: 16 }}>{error}</div>}
 
-      {integrations.length === 0 && (
+      {integrations.length === 0 && !error && (
         <div style={{ padding: '40px 0 24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
           {t('settings.integrations.empty')}
         </div>
@@ -1589,7 +1590,7 @@ export function SettingsIntegrationsTab() {
       </div>
 
       {/* Add integration dropdown */}
-      <div ref={addRef} style={{ position: 'relative', display: 'inline-block' }}>
+      {can('settings:write') && <div ref={addRef} style={{ position: 'relative', display: 'inline-block' }}>
         <button type="button" className="btn btn-secondary"
           style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           onClick={() => setAddOpen(o => !o)}>
@@ -1615,7 +1616,7 @@ export function SettingsIntegrationsTab() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
