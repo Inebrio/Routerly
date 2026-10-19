@@ -1111,6 +1111,8 @@
         "lastChecked": "Ultimo controllo"
       },
       "noCheckPerformed": "Nessun controllo aggiornamenti effettuato ancora.",
+      "updateCheckDisabled": "Il controllo aggiornamenti è disattivato su questa istanza.",
+      "updateCheckFailed": "Controllo aggiornamenti non riuscito: {{error}}",
       "checkForUpdates": "Controlla aggiornamenti",
       "checking": "Verifica in corso…",
       "updateTo": "Aggiorna alla v{{version}}",

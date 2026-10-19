@@ -2143,9 +2143,13 @@ export function SettingsAboutTab() {
 
       <div>
         <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 4 }}>{t('settings.about.headings.softwareUpdate')}</h3>
-        {updateInfo ? (
+        <InfoRow label={t('settings.about.labels.currentVersion')} value={`v${info.version}`} />
+        {updateInfo?.status === 'disabled' ? (
+          <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', padding: '9px 0' }}>{t('settings.about.updateCheckDisabled')}</p>
+        ) : updateInfo?.status === 'error' ? (
+          <p style={{ color: 'var(--error, #e53e3e)', fontSize: '0.83rem', padding: '9px 0', margin: 0 }}>{t('settings.about.updateCheckFailed', { error: updateInfo.error ?? '' })}</p>
+        ) : updateInfo ? (
           <>
-            <InfoRow label={t('settings.about.labels.currentVersion')} value={`v${updateInfo.currentVersion}`} />
             <InfoRow label={t('settings.about.labels.availableVersion')} value={updateInfo.available ? `v${updateInfo.latestVersion}` : t('settings.about.labels.upToDate')} />
             {updateInfo.checkedAt && (
               <InfoRow label={t('settings.about.labels.lastChecked')} value={new Date(updateInfo.checkedAt).toLocaleString()} />

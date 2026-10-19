@@ -3154,9 +3154,12 @@ Requires authentication. Forces an immediate check against the GitHub Releases A
   "currentVersion": "0.2.0",
   "latestVersion": "0.2.0",
   "channel": "current",
-  "checkedAt": "2026-06-09T12:34:56.000Z"
+  "checkedAt": "2026-06-09T12:34:56.000Z",
+  "status": "ok"
 }
 ```
+
+`status` is `ok` when the channel was compared, `disabled` when update checking is off on this instance (non-production run or `ROUTERLY_DISABLE_UPDATE_CHECK=true`; no request is made and `checkedAt` is empty), or `error` when the request failed (the reason is in `error`, `latestVersion` is empty and `available` is `false`). `currentVersion` is always the installed version.
 
 ---
 

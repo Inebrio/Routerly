@@ -1110,6 +1110,8 @@
         "lastChecked": "Zuletzt geprüft"
       },
       "noCheckPerformed": "Noch keine Update-Prüfung durchgeführt.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Nach Updates suchen",
       "checking": "Wird geprüft…",
       "updateTo": "Auf v{{version}} aktualisieren",

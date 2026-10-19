@@ -1110,6 +1110,8 @@
         "lastChecked": "Poslední kontrola"
       },
       "noCheckPerformed": "Zatím nebyla provedena žádná kontrola aktualizací.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Zkontrolovat aktualizace",
       "checking": "Kontroluje se…",
       "updateTo": "Aktualizovat na v{{version}}",

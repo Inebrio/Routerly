@@ -32,7 +32,7 @@ vi.mock('./modules/config/loader.js', () => ({
 }));
 vi.mock('./modules/auth/jwt.js', () => ({ loadSecret: mockLoadSecret }));
 vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: mockLoadCredentialKey }));
-vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn() } }));
+vi.mock('./modules/update-checker/update-checker.js', () => ({ updateChecker: { start: vi.fn(), configure: vi.fn() } }));
 
 vi.mock('fastify', () => ({
   default: vi.fn(() => ({

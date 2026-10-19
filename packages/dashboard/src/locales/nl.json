@@ -1110,6 +1110,8 @@
         "lastChecked": "Laatst gecontroleerd"
       },
       "noCheckPerformed": "Nog geen updatecontrole uitgevoerd.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Op updates controleren",
       "checking": "Controleren...",
       "updateTo": "Update naar v{{version}}",

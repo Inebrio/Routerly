@@ -1110,6 +1110,8 @@
         "lastChecked": "آخری چیک"
       },
       "noCheckPerformed": "ابھی کوئی اپ ڈیٹ چیک نہیں کیا گیا۔",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "اپ ڈیٹس کے لیے چیک کریں",
       "checking": "چیک کیا جا رہا ہے...",
       "updateTo": "v{{version}} پر اپ ڈیٹ کریں",

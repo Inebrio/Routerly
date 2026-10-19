@@ -1110,6 +1110,8 @@
         "lastChecked": "Utolsó Ellenőrzés"
       },
       "noCheckPerformed": "Még nem végeztek frissítés ellenőrzést.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Frissítések keresése",
       "checking": "Ellenőrzés…",
       "updateTo": "Frissítés v{{version}}-ra",

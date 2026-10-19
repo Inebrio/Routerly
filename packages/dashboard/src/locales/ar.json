@@ -1110,6 +1110,8 @@
         "lastChecked": "آخر فحص"
       },
       "noCheckPerformed": "لم يتم إجراء أي فحص للتحديثات بعد.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "التحقق من التحديثات",
       "checking": "جارٍ التحقق…",
       "updateTo": "التحديث إلى v{{version}}",

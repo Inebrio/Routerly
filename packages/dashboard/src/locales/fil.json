@@ -1110,6 +1110,8 @@
         "lastChecked": "Huling nasuri"
       },
       "noCheckPerformed": "Walang update check na isinagawa pa.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Suriin ang mga update",
       "checking": "Sinusuri…",
       "updateTo": "I-update sa v{{version}}",

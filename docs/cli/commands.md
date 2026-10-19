@@ -3081,7 +3081,7 @@ routerly update check [--json]
 |--------|-------------|
 | `--json` | Print output as JSON for scripting |
 
-Prints the current version, the latest version available on the active channel, and when the last check was performed. Exit code `0` in all cases (use `--json` and parse `available` for scripting).
+Prints the current version, the latest version available on the active channel, and when the last check was performed. Exit code `0` when the check completes. When update checking is disabled on the instance or the check fails (network error, rate limit), the reason is printed to stderr and the exit code is `1`; with `--json` the exit code stays `0` and the `status` field (`ok`, `disabled` or `error`) tells which case applies.
 
 ```bash
 routerly update check

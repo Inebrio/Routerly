@@ -1110,6 +1110,8 @@
         "lastChecked": "Son kontrol"
       },
       "noCheckPerformed": "Henüz hiçbir güncelleme kontrolü yapılmadı.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Güncellemeleri denetle",
       "checking": "Denetleniyor…",
       "updateTo": "v{{version}} olarak güncelle",

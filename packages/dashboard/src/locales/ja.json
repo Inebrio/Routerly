@@ -1110,6 +1110,8 @@
         "lastChecked": "最後に確認"
       },
       "noCheckPerformed": "更新確認がまだ実行されていません。",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "更新を確認",
       "checking": "確認中...",
       "updateTo": "v{{version}}に更新",

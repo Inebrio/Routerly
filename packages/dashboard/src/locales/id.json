@@ -1110,6 +1110,8 @@
         "lastChecked": "Terakhir diperiksa"
       },
       "noCheckPerformed": "Belum ada pemeriksaan pembaruan yang dilakukan.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Periksa pembaruan",
       "checking": "Memeriksa…",
       "updateTo": "Perbarui ke v{{version}}",

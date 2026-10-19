@@ -1110,6 +1110,8 @@
         "lastChecked": "Ultima verificare"
       },
       "noCheckPerformed": "Nicio verificare de actualizare efectuată încă.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Caută actualizări",
       "checking": "Se verifică…",
       "updateTo": "Actualizează la v{{version}}",

@@ -1111,6 +1111,8 @@
         "lastChecked": "Last checked"
       },
       "noCheckPerformed": "No update check performed yet.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Check for updates",
       "checking": "Checking…",
       "updateTo": "Update to v{{version}}",
