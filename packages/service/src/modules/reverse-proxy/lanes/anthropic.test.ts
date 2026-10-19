@@ -268,6 +268,23 @@ describe('anthropic transport lane', () => {
     expect(headers['x-routerly-trace-id']).toBeUndefined()
   })
 
+  it('egress keeps provider headers verbatim: json as Buffer, stream without Cache-Control/Connection', async () => {
+    const sent: unknown[] = []
+    const set: Record<string, string> = {}
+    const reply: any = {
+      send: (b: unknown) => sent.push(b), headers: (h: Record<string, string>) => Object.assign(set, h), status: () => reply,
+      raw: { setHeader: (k: string, v: string) => { set[k] = v }, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    const h = { 'content-type': 'application/json', 'request-id': 'req_1' }
+    await anthropicEgress.run({ protocol: 'anthropic', reply, traceId: 't1', result: { kind: 'json', body: { type: 'message' }, headers: h } } as unknown as ProxyContext)
+    expect(set).toEqual(h)
+    expect(Buffer.isBuffer(sent[0])).toBe(true)
+    for (const k of Object.keys(set)) delete set[k]
+    async function* body() { /* no chunks */ }
+    const sh = { 'content-type': 'text/event-stream; charset=utf-8', 'request-id': 'req_2' }
+    await anthropicEgress.run({ protocol: 'anthropic', reply, traceId: 't1', original: { model: 'claude', messages: [] }, result: { kind: 'stream', body: body(), headers: sh } } as unknown as ProxyContext)
+    expect(set).toEqual(sh)
+  })
   it('egress streaming sets raw SSE headers and never hijacks (asymmetry vs OpenAI)', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []

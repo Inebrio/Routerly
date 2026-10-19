@@ -1,17 +1,23 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 
-const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
+const { mockCreate, mockHeaders } = vi.hoisted(() => ({ mockCreate: vi.fn(), mockHeaders: { current: {} as Record<string, string> } }))
 vi.mock('@anthropic-ai/sdk', () => ({
    
   default: vi.fn().mockImplementation(function (this: any) {
-    this.messages = { create: mockCreate }
+    // The SDK's create() is a promise that also exposes withResponse() (data + raw response).
+    this.messages = {
+      create: (...a: unknown[]) => {
+        const p = Promise.resolve(mockCreate(...a))
+        return Object.assign(p, { withResponse: async () => ({ data: await p, response: { headers: new Headers(mockHeaders.current) } }) })
+      },
+    }
   }),
 }))
 
 import { AnthropicAdapter } from './anthropic.js'
 import type { ModelConfig, MessagesRequest } from '@routerly/shared'
 
-afterEach(() => { vi.clearAllMocks() })
+afterEach(() => { vi.clearAllMocks(); mockHeaders.current = {} })
 
 function makeModel(overrides: Partial<ModelConfig> = {}): ModelConfig {
   return {
@@ -26,6 +32,18 @@ function makeModel(overrides: Partial<ModelConfig> = {}): ModelConfig {
 }
 
 const adapter = new AnthropicAdapter()
+
+describe('AnthropicAdapter response headers', () => {
+  it('reports the provider headers (transfer framing dropped) on chat and stream calls', async () => {
+    mockHeaders.current = { 'request-id': 'req_1', 'content-type': 'application/json', 'content-length': '10' }
+    mockCreate.mockResolvedValue({ id: 'm', model: 'claude', content: [{ type: 'text', text: 'hi' }], stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } })
+    const seen: Record<string, string>[] = []
+    await adapter.chatCompletion({ model: 'x', messages: [{ role: 'user', content: 'hi' }] }, makeModel(), { onResponseHeaders: (h) => seen.push(h) })
+    mockCreate.mockResolvedValue((async function* () { yield { type: 'message_stop' } })())
+    for await (const _ of adapter.streamCompletion({ model: 'x', messages: [{ role: 'user', content: 'hi' }] }, makeModel(), { onResponseHeaders: (h) => seen.push(h) })) { void _ }
+    expect(seen).toEqual([{ 'request-id': 'req_1', 'content-type': 'application/json' }, { 'request-id': 'req_1', 'content-type': 'application/json' }])
+  })
+})
 
 describe('AnthropicAdapter.chatCompletion', () => {
   it('calls anthropic messages API and converts response to OpenAI format', async () => {
