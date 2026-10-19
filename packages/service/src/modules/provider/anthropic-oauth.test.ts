@@ -4,7 +4,12 @@ const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn().mockImplementation(function (this: any, opts: any) {
     this._opts = opts
-    this.messages = { create: mockCreate }
+    this.messages = {
+      create: (...a: unknown[]) => {
+        const p = Promise.resolve(mockCreate(...a))
+        return Object.assign(p, { withResponse: async () => ({ data: await p, response: { headers: new Headers() } }) })
+      },
+    }
   }),
 }))
 
