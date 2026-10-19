@@ -11899,10 +11899,10 @@ describe('POST /api/integrations/:id/test', () => {
     const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: true, message: 'Grafana remote_write endpoint is reachable.' })
+    expect(res.json()).toMatchObject({ ok: true, message: 'Grafana remote_write endpoint accepted a test write.' })
   })
 
-  it('grafana: 400 → still reachable (ok: true)', async () => {
+  it('grafana: 400 → ok: false', async () => {
     const grafana = { id: 'intg-grafana', type: 'grafana', enabled: true, url: 'http://grafana:3000/push', username: 'admin', apiKey: 'grafkey' }
     setupIntegrations([grafana])
     mockFetch.mockResolvedValue({ ok: false, status: 400 })
@@ -11910,7 +11910,7 @@ describe('POST /api/integrations/:id/test', () => {
     const res = await app.inject({ method: 'POST', url: '/api/integrations/intg-grafana/test', headers: adminAuthHeaders() })
     await app.close()
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ ok: true })
+    expect(res.json()).toMatchObject({ ok: false })
   })
 
   it('grafana: 503 → ok: false', async () => {
