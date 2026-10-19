@@ -298,19 +298,19 @@ function resolveCandidatesForResponse(
  * Non-orchestrators never expose a raw `candidates` array even if one is
  * somehow stored.
  */
-function toRouterResponse(router: RouterConfig, routers: RouterConfig[]): Record<string, unknown> {
+function toRouterResponse(router: RouterConfig, routers: RouterConfig[], showTokens = true): Record<string, unknown> {
   const { candidates, ...rest } = router;
   const kind: RouterKind = router.kind ?? 'router';
   return {
     ...rest,
     kind,
-    tokens: router.tokens?.map(t => ({ ...t, token: undefined })) || [],
+    tokens: showTokens ? router.tokens?.map(t => ({ ...t, token: undefined })) || [] : [],
     ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, routers) } : {}),
   };
 }
 
-function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply): boolean {
-  if (!req.dashUser?.permissions.includes(perm)) {
+function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply, alsoAllowed: Permission[] = []): boolean {
+  if (![perm, ...alsoAllowed].some(p => req.dashUser?.permissions.includes(p))) {
     reply.status(403).send({ error: 'Forbidden', message: `Required permission: ${perm}` });
     audit(req, perm, 'forbidden');
     return false;
@@ -1218,11 +1218,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // only priority signal, `weight` is never read back.
   })).optional();
 
-  fastify.get('/api/routers', async (_req, reply) => {
+  fastify.get('/api/routers', async (req, reply) => {
     const routers = await readConfig('routers');
+    // Token metadata is listed only for callers who can read or manage tokens.
+    const showTokens = ['token:read', 'token:write', 'router:write'].some(p => req.dashUser?.permissions.includes(p as Permission));
     // Strip the full token; clients use tokenSnippet for display. Orchestrators
     // additionally get their candidates opacity-limited (AC7).
-    return reply.send(routers.map(p => toRouterResponse(p, routers)));
+    return reply.send(routers.map(p => toRouterResponse(p, routers, showTokens)));
   });
 
   fastify.post<{
@@ -1675,7 +1677,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; scopes?: string[]; expiresAt?: string } }>('/api/routers/:id/tokens', async (req, reply) => {
-    if (!requirePerm(req, 'router:write', reply)) return;
+    if (!requirePerm(req, 'router:write', reply, ['token:write'])) return;
 
     const parsed = createTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
@@ -1706,7 +1708,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string>, scopes?: string[] } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'router:write', reply)) return;
+    if (!requirePerm(req, 'router:write', reply, ['token:write'])) return;
 
     const parsed = updateTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
@@ -1736,7 +1738,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'router:write', reply)) return;
+    if (!requirePerm(req, 'router:write', reply, ['token:write'])) return;
     await updateConfig('routers', (routers) => {
       const index = routers.findIndex(p => p.id === req.params.id);
       if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
@@ -3281,7 +3283,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{ Body: { id: string; name: string; permissions: Permission[] } }>('/api/roles', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     const { id, name, permissions } = req.body;
     if (!id || !name) return reply.status(400).send({ error: 'id and name are required' });
     if (BUILT_IN_ROLES.some(r => r.id === id)) {
@@ -3297,7 +3299,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put<{ Params: { id: string }; Body: { name?: string; permissions?: Permission[] } }>('/api/roles/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be modified` });
     }
@@ -3314,7 +3316,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/roles/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be deleted` });
     }

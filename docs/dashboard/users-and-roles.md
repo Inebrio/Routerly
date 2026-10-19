@@ -23,9 +23,9 @@ Routerly has a role-based access control (RBAC) system for the dashboard. Users 
 | `settings:read` | View global settings |
 | `settings:write` | Change global settings |
 | `notification:write` | Manage notification channels and rules |
-| `token:read` | View router tokens |
-| `token:write` | Create and revoke router tokens |
-| `role:write` | Create, edit, and delete custom roles |
+| `token:read` | View router tokens (the token list in router responses is hidden without `token:read`, `token:write` or `router:write`) |
+| `token:write` | Create, edit and revoke router tokens (also granted by `router:write`) |
+| `role:write` | Create, edit, and delete custom roles (also granted by `user:write`) |
 | `audit:read` | Read the audit log |
 | `modules:read` | View which modules are installed and enabled |
 | `modules:manage` | Enable and disable modules |
