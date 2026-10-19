@@ -343,6 +343,34 @@ describe('openai transport lane', () => {
     expect(written.at(-1)).toBe('data: [DONE]\n\n')
   })
 
+  it('egress streams: forwarded provider headers are written as received, no Cache-Control/Connection of its own', async () => {
+    const rawHeaders: Record<string, string> = {}
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: (k: string, v: string) => { rawHeaders[k] = v }, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    async function* body() { /* no chunks */ }
+    const ctx = {
+      protocol: 'openai', reply, traceId: 't1', req: { headers: {} },
+      result: { kind: 'stream', body: body(), headers: { 'content-type': 'text/event-stream; charset=utf-8', 'openai-version': '2020-10-01' } },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(rawHeaders).toEqual({ 'content-type': 'text/event-stream; charset=utf-8', 'openai-version': '2020-10-01' })
+  })
+
+  it('egress json: forwarded content-type is kept verbatim (no charset appended)', async () => {
+    const headers: Record<string, string> = {}
+    let sent: unknown
+    const reply: any = { headers: (h: Record<string, string>) => Object.assign(headers, h), send: (b: unknown) => { sent = b }, code: () => reply }
+    const ctx = {
+      protocol: 'openai', reply, traceId: 't1', req: { headers: {} },
+      result: { kind: 'json', body: { a: 1 }, headers: { 'content-type': 'application/json' } },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(headers['content-type']).toBe('application/json')
+    expect(sent).toBe('{"a":1}')
+  })
+
   it('egress streams: never injects trace frames, skips CORS when no origin', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []
