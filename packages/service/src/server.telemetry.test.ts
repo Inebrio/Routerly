@@ -42,6 +42,7 @@ vi.mock('fastify', () => ({
     listen: vi.fn().mockResolvedValue(undefined),
     log: { warn: vi.fn(), error: vi.fn() },
     setNotFoundHandler: vi.fn(),
+    addContentTypeParser: vi.fn(),
     decorate: vi.fn(),
     addHook: vi.fn(),
     setErrorHandler: vi.fn(),

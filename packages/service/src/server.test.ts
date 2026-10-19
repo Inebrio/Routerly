@@ -16,7 +16,11 @@ vi.mock('./modules/auth/jwt.js', () => ({
   generateRawToken: vi.fn(() => 'raw'),
 }))
 vi.mock('./lib/crypto-cred.js', () => ({ loadCredentialKey: vi.fn() }))
-vi.mock('./modules/auth/auth.js', () => ({ default: vi.fn(async () => {}) }))
+vi.mock('./modules/auth/auth.js', () => ({
+  default: vi.fn(async () => {}),
+  extractRouterToken: vi.fn(() => null),
+  resolveRouterByToken: vi.fn(async () => null),
+}))
 vi.mock('./modules/api-reverse-proxy/openai.js', () => ({ openaiRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api-reverse-proxy/anthropic.js', () => ({ anthropicRoutes: vi.fn(async () => {}) }))
 vi.mock('./modules/api/api.js', () => ({ apiRoutes: vi.fn(async () => {}) }))
@@ -82,6 +86,20 @@ describe('buildServer', () => {
 
     expect(plain.headers.vary).toBeUndefined()
     expect(browser.headers.vary).toBe('Origin')
+  })
+
+  // Regression (ROUT-360): the catch-all must be wired in the real server; unmatched
+  // /v1 paths reach passthroughHandler (401 without a token) instead of a Fastify 404.
+  it('routes unregistered /v1 paths to the catch-all (401, not 404)', async () => {
+    mockSettings({ logLevel: 'silent', dashboardEnabled: false } as any)
+
+    const server = await buildServer()
+    const post = await server.inject({ method: 'POST', url: '/v1/embeddings', payload: { model: 'm', input: 'hi' } })
+    const get = await server.inject({ method: 'GET', url: '/v1/files' })
+    await server.close()
+
+    expect(post.statusCode).toBe(401)
+    expect(get.statusCode).toBe(401)
   })
 
   it('redirects GET / to /dashboard/', async () => {
