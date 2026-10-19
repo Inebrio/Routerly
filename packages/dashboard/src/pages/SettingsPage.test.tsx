@@ -1601,6 +1601,14 @@ describe('SettingsCatalogTab', () => {
     expect((screen.getByPlaceholderText('https://example.com/catalog/') as HTMLInputElement).disabled).toBe(true);
   });
 
+  it('repo table scrolls horizontally on narrow screens instead of clipping', async () => {
+    renderCatalog();
+    const url = await screen.findByText(/Routerly-Providers/);
+    const scroller = url.closest('div[style*="overflow-x: auto"]') as HTMLElement | null;
+    expect(scroller).not.toBeNull();
+    expect(scroller!.firstElementChild!.getAttribute('style')).toContain('min-width: 720px');
+  });
+
   it('shows spinner while loading', () => {
     mockGetSettings.mockReturnValue(new Promise(() => {}));
     renderCatalog();
