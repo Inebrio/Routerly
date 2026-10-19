@@ -3202,14 +3202,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     if (type === 'influxdb') {
-      const url = intg['url'] as string;
+      const url    = intg['url']    as string;
+      const token  = intg['token']  as string;
+      const org    = intg['org']    as string;
+      const bucket = intg['bucket'] as string;
       try {
-        const res = await fetch(`${url}/health`);
-        if (!res.ok) return reply.send({ ok: false, message: `InfluxDB health check returned HTTP ${res.status}` });
-        const body = await res.json() as { status?: string };
-        return reply.send(body.status === 'pass'
-          ? { ok: true,  message: 'InfluxDB is healthy.' }
-          : { ok: false, message: `InfluxDB health status: ${body.status ?? 'unknown'}` });
+        // Authenticated write of one test point: /health is unauthenticated and
+        // would not catch a wrong token, org or bucket. Works with write-only tokens.
+        const res = await fetch(`${url}/api/v2/write?org=${encodeURIComponent(org)}&bucket=${encodeURIComponent(bucket)}&precision=s`, {
+          method: 'POST',
+          headers: { 'Authorization': `Token ${token}`, 'Content-Type': 'text/plain; charset=utf-8' },
+          body: `routerly_connection_test value=1 ${Math.floor(Date.now() / 1000)}`,
+        });
+        if (res.ok) return reply.send({ ok: true, message: 'InfluxDB accepted a test write (token, org and bucket are valid).' });
+        if (res.status === 401) return reply.send({ ok: false, message: 'Invalid InfluxDB token (HTTP 401).' });
+        if (res.status === 403) return reply.send({ ok: false, message: 'InfluxDB token has no write permission on this bucket (HTTP 403).' });
+        if (res.status === 404) return reply.send({ ok: false, message: `InfluxDB organization "${org}" or bucket "${bucket}" not found (HTTP 404).` });
+        return reply.send({ ok: false, message: `InfluxDB write returned HTTP ${res.status}` });
       } catch (err) {
         return reply.send({ ok: false, message: (err as Error).message });
       }

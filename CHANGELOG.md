@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **InfluxDB integration test verifies credentials**: `POST /api/integrations/:id/test` (CLI `integrations test`, dashboard Test) now performs an authenticated test write instead of the unauthenticated `/health` check, so a wrong token (401), missing write permission (403) or unknown org/bucket (404) is reported as a failure (ROUT-329).
 - **Integration URL validation**: `POST/PATCH /api/integrations` now reject a `url`/`endpoint` that is not a valid http(s) URL (webhook, grafana, influxdb, otel) with 400; previously `not-a-url` was stored and the push failed silently (ROUT-328).
 
 - **MCP write tools are audited**: `create_router_token` and `toggle_model` called through `/mcp` now write an audit entry (`mcp:create_router_token`, `mcp:toggle_model`, with user, routerId, tokenId/modelId, never the raw token) and a permission refusal is recorded as `forbidden` (ROUT-327).
