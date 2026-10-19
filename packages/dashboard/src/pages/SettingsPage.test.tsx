@@ -506,6 +506,14 @@ describe('SettingsSecurityTab', () => {
     return render(<MemoryRouter><SettingsSecurityTab /></MemoryRouter>);
   }
 
+  it('viewer without settings:write: checkbox and Save are disabled', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderSecurity();
+    await waitFor(() => screen.getByText(/Require Two-Factor Authentication/));
+    expect(checkbox().disabled).toBe(true);
+    expect((screen.getByText(/Save Settings/).closest('button') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   function checkbox() {
     return screen.getByText(/Require Two-Factor Authentication/).closest('label')!
       .querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -1583,6 +1591,14 @@ describe('SettingsCatalogTab', () => {
     mockUpdateSettings.mockResolvedValue({ ...baseSettings } as never);
     mockRefreshCatalog.mockResolvedValue([]);
     mockProbeRepo.mockResolvedValue({ ok: true });
+  });
+
+  it('viewer without settings:write: write controls are disabled', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderCatalog();
+    await waitFor(() => screen.getByText(/Refresh/));
+    for (const b of screen.getAllByRole('button')) expect((b as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByPlaceholderText('https://example.com/catalog/') as HTMLInputElement).disabled).toBe(true);
   });
 
   it('shows spinner while loading', () => {

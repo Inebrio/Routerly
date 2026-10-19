@@ -1627,6 +1627,9 @@ const DEFAULT_REPO_URL = 'https://raw.githubusercontent.com/Inebrio/Routerly-Pro
 
 export function SettingsCatalogTab() {
   const { t } = useTranslation();
+  const { can } = useAuth();
+  const canWrite = can('settings:write');
+  const noWriteTitle = canWrite ? undefined : 'Required permission: settings:write';
   const [repos, setRepos] = useState<ProviderRepo[]>([]);
   const [status, setStatus] = useState<RepoStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1788,7 +1791,7 @@ export function SettingsCatalogTab() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
           <button type="button" className="btn btn-secondary"
             style={{ fontSize: '0.78rem', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
-            disabled={refreshing}
+            disabled={refreshing || !canWrite} title={noWriteTitle}
             onClick={() => void handleRefresh()}>
             {refreshing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> {t('settings.catalog.refreshing')}</> : t('settings.catalog.refresh')}
           </button>
@@ -1847,12 +1850,12 @@ export function SettingsCatalogTab() {
                 <div style={{ display: 'grid', gridTemplateColumns: COL, alignItems: 'center', padding: '8px 14px', gap: 0 }}>
                   {/* Priority + arrows */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-                    <button type="button" onClick={() => void move(idx, -1)} disabled={idx === 0}
+                    <button type="button" onClick={() => void move(idx, -1)} disabled={idx === 0 || !canWrite} title={noWriteTitle}
                       style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? 'var(--border)' : 'var(--text-muted)', padding: '1px 4px', display: 'flex' }}>
                       <ChevronUp size={12} />
                     </button>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1 }}>{idx + 1}</span>
-                    <button type="button" onClick={() => void move(idx, 1)} disabled={idx === repos.length - 1}
+                    <button type="button" onClick={() => void move(idx, 1)} disabled={idx === repos.length - 1 || !canWrite} title={noWriteTitle}
                       style={{ background: 'none', border: 'none', cursor: idx === repos.length - 1 ? 'default' : 'pointer', color: idx === repos.length - 1 ? 'var(--border)' : 'var(--text-muted)', padding: '1px 4px', display: 'flex' }}>
                       <ChevronDown size={12} />
                     </button>
@@ -1870,8 +1873,8 @@ export function SettingsCatalogTab() {
                   </span>
                   {/* Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '2px 8px' }} onClick={() => startEdit(idx)}>{t('settings.catalog.edit')}</button>
-                    <button type="button" onClick={() => setConfirmRemoveIdx(idx)} title={t('settings.catalog.removeTooltip')}
+                    <button type="button" className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '2px 8px' }} disabled={!canWrite} title={noWriteTitle} onClick={() => startEdit(idx)}>{t('settings.catalog.edit')}</button>
+                    <button type="button" onClick={() => setConfirmRemoveIdx(idx)} disabled={!canWrite} title={noWriteTitle ?? t('settings.catalog.removeTooltip')}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
                       <Trash2 size={14} />
                     </button>
@@ -1887,10 +1890,10 @@ export function SettingsCatalogTab() {
         <div style={{ flex: 1 }}>
           <label className="form-label" htmlFor="catalog-url">{t('settings.catalog.addRepository')}</label>
           <input id="catalog-url" className="form-input" type="url" placeholder="https://example.com/catalog/"
-            value={newUrl} onChange={e => { setNewUrl(e.target.value); setAddError(''); }} required />
+            value={newUrl} onChange={e => { setNewUrl(e.target.value); setAddError(''); }} required disabled={!canWrite} />
           {addError && <div className="form-error" style={{ marginTop: 4 }}>{addError}</div>}
         </div>
-        <button type="submit" className="btn btn-primary" style={{ fontSize: '0.83rem', display: 'flex', alignItems: 'center', gap: 5 }} disabled={probing}>
+        <button type="submit" className="btn btn-primary" style={{ fontSize: '0.83rem', display: 'flex', alignItems: 'center', gap: 5 }} disabled={probing || !canWrite} title={noWriteTitle}>
           {probing ? <><div className="spinner" style={{ width: 10, height: 10 }} /> {t('settings.catalog.checking')}</> : <><Plus size={14} /> {t('settings.catalog.add')}</>}
         </button>
       </form>
@@ -2324,6 +2327,8 @@ function FilePermissionsSection() {
 
 export function SettingsSecurityTab() {
   const { t } = useTranslation();
+  const { can } = useAuth();
+  const canWrite = can('settings:write');
   const [requireMfa, setRequireMfa] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2368,6 +2373,7 @@ export function SettingsSecurityTab() {
               type="checkbox"
               checked={requireMfa}
               onChange={e => setRequireMfa(e.target.checked)}
+              disabled={!canWrite}
               style={{ width: 16, height: 16, cursor: 'pointer' }}
             />
             {t('settings.security.requireMfa')}
@@ -2387,7 +2393,7 @@ export function SettingsSecurityTab() {
         </div>
       )}
       <div>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primary" disabled={saving || !canWrite} title={canWrite ? undefined : 'Required permission: settings:write'}>
           {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.security.saving')}</> : <><Save size={15} /> {t('settings.security.saveSettings')}</>}
         </button>
       </div>
