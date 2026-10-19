@@ -20,7 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **openai-oauth: rejected token now returns the provider's 401** — `/v1/chat/completions` and `/v1/messages` (stream and non-stream) answer with the upstream status and message in the client's protocol shape instead of a generic 503 (ROUT-307).
+- **openai-oauth: rejected token now returns the provider's 401** — `/v1/chat/completions` and `/v1/messages` (stream and non-stream) answer with the upstream status and message in the client's protocol shape instead of a generic 503 (ROUT-307). The ChatGPT backend `{detail}` error body keeps its text.
 - **Usage: optimizer savings on streamed requests** — the usage record of a streaming request now carries `optimizers` (tokensBefore/After), so `report savings` and the dashboard count the tokens saved on streams (ROUT-303).
 - **Model Test on embedding models**: the Test button / `POST /api/models/:id/test` now probes `/embeddings` for models flagged as embedding instead of `/chat/completions`, which a llama-server style backend answers with HTTP 400; a failed test is logged at warn level. The dashboard no longer shows the "Caching" section of the `llm` policy: the semantic response cache was removed in 0.3.0 and the setting had no effect (ROUT-295, GitHub #147).
 

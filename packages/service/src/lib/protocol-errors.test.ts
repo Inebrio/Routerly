@@ -32,4 +32,9 @@ describe('protocol-errors', () => {
     const inner = { message: 'Incorrect API key', type: 'invalid_request_error', param: null, code: 'invalid_api_key' };
     expect(upstreamErrorBody('openai', 401, inner)).toEqual({ error: inner });
   });
+  it('keeps the provider text of a {detail} body (ChatGPT backend)', () => {
+    const d = { detail: 'Could not parse your authentication token.' };
+    expect(upstreamErrorBody('openai', 401, d)).toEqual(protocolError('openai', 401, d.detail));
+    expect(upstreamErrorBody('anthropic', 401, d)).toEqual(protocolError('anthropic', 401, d.detail));
+  });
 });
