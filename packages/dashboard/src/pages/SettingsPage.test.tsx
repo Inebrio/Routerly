@@ -1243,6 +1243,15 @@ describe('SettingsIntegrationsTab', () => {
     await waitFor(() => screen.getByText(/No integrations configured yet/));
   });
 
+  it('viewer without settings:write: error only, no empty state, no Add button', async () => {
+    mockCan = p => p !== 'settings:write';
+    mockGetIntegrations.mockRejectedValue(new Error('Required permission: settings:write'));
+    renderIntegrations();
+    await waitFor(() => screen.getByText(/Required permission: settings:write/));
+    expect(screen.queryByText(/No integrations configured yet/)).toBeNull();
+    expect(screen.queryByText('Add Integration')).toBeNull();
+  });
+
   it('shows Add Integration button', async () => {
     renderIntegrations();
     await waitFor(() => screen.getByRole('button', { name: /Add Integration/i }));

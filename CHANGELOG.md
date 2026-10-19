@@ -11,6 +11,11 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dashboard Integrations tab for users without `settings:write`**: the tab no longer shows the false «No integrations configured yet.» empty state after a failed load, and hides «Add Integration» when the user lacks `settings:write` (ROUT-330).
+
+
 ### Added
 
 - **Usage page session, end-user and tag filters**: the dashboard Usage page filters by Session ID, End user and Tag (`key=value`), like `routerly report usage`, and the record detail shows session, end user and tags (ROUT-280).
