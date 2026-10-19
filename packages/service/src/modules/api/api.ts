@@ -3036,13 +3036,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // Trace export: only the sinks that can carry a per-request payload have it.
   const tracesSchema = z.object({ enabled: z.boolean(), sampleRate: z.number().min(0).max(1).optional() }).optional();
 
+  const httpUrl = z.string().refine((v) => {
+    try { return ['http:', 'https:'].includes(new URL(v).protocol); } catch { return false; }
+  }, 'must be a valid http(s) URL');
+
   const integrationSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('prometheus'), enabled: z.boolean().optional(), authToken: z.string().optional() }).passthrough(),
-    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: z.string().min(1), protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
+    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: httpUrl, protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
     z.object({ type: z.literal('datadog'),    enabled: z.boolean().optional(), apiKey: z.string().min(1), site: z.enum(['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com']) }).passthrough(),
-    z.object({ type: z.literal('grafana'),    enabled: z.boolean().optional(), url: z.string().min(1), username: z.string().min(1), apiKey: z.string().min(1) }).passthrough(),
-    z.object({ type: z.literal('influxdb'),   enabled: z.boolean().optional(), url: z.string().min(1), token: z.string().min(1), org: z.string().min(1), bucket: z.string().min(1) }).passthrough(),
-    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: z.string().min(1), secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
+    z.object({ type: z.literal('grafana'),    enabled: z.boolean().optional(), url: httpUrl, username: z.string().min(1), apiKey: z.string().min(1) }).passthrough(),
+    z.object({ type: z.literal('influxdb'),   enabled: z.boolean().optional(), url: httpUrl, token: z.string().min(1), org: z.string().min(1), bucket: z.string().min(1) }).passthrough(),
+    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: httpUrl, secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
   ]);
 
   // ─── GET /api/integrations ────────────────────────────────────────────────────
@@ -3087,6 +3091,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const stored = integrations[idx]!;
     const secrets = INTEGRATION_SECRET_FIELDS[stored['type'] as string] ?? []; // stored type always in schema
     const body = req.body;
+    for (const key of ['url', 'endpoint']) {
+      if (key in body && !httpUrl.safeParse(body[key]).success) {
+        return reply.status(400).send({ error: `${key}: must be a valid http(s) URL` });
+      }
+    }
     const merged: Record<string, unknown> = { ...stored };
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'type') continue;

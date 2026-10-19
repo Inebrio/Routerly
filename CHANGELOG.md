@@ -20,6 +20,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Integration URL validation**: `POST/PATCH /api/integrations` now reject a `url`/`endpoint` that is not a valid http(s) URL (webhook, grafana, influxdb, otel) with 400; previously `not-a-url` was stored and the push failed silently (ROUT-328).
+
 - **MCP write tools are audited**: `create_router_token` and `toggle_model` called through `/mcp` now write an audit entry (`mcp:create_router_token`, `mcp:toggle_model`, with user, routerId, tokenId/modelId, never the raw token) and a permission refusal is recorded as `forbidden` (ROUT-327).
 - **Grafana integration speaks Prometheus remote_write**: the push now sends a snappy-compressed protobuf `WriteRequest` (`Content-Type: application/x-protobuf`, `Content-Encoding: snappy`, `X-Prometheus-Remote-Write-Version: 0.1.0`) instead of text exposition, and the connection test sends a real test write and reports failure on any non-2xx (including 400/415) (ROUT-326).
 - **Settings › About › Software update**: *Current version* always shows the installed version (it was empty, rendered as `v`, outside production). `GET /api/system/update-check` and `updateInfo` gain a `status` field (`ok` | `disabled` | `error`, plus `error`); a disabled check or a failed request (network, rate limit) is reported as such instead of "Up to date". `routerly update check` exits 1 with the reason on stderr in those cases; `--json` exposes `status` (ROUT-308).
