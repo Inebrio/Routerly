@@ -7,6 +7,7 @@ vi.mock('../config/loader.js', () => ({
 }))
 
 import { readConfig, writeConfig } from '../config/loader.js'
+import { logAudit } from '../audit/logger.js'
 import { ServiceContainer, EventBus, type Token } from '../../core/index.js'
 import {
   MCP_TOOLS,
@@ -21,6 +22,8 @@ import { mcpAuthContext } from '../../test-support/mcp-auth.js'
 import { mcpModule } from './index.js'
 import { buildMcpServer } from './server.js'
 
+vi.mock('../audit/logger.js', () => ({ logAudit: vi.fn() }))
+const mockLogAudit = vi.mocked(logAudit)
 const mockReadConfig = vi.mocked(readConfig)
 const mockWriteConfig = vi.mocked(writeConfig)
 
@@ -83,6 +86,7 @@ async function request(permissions: Permission[], method: string, params: unknow
 beforeEach(() => {
   mockReadConfig.mockReset()
   mockWriteConfig.mockReset()
+  mockLogAudit.mockReset()
   mockWriteConfig.mockResolvedValue(undefined as never)
 })
 
@@ -146,5 +150,43 @@ describe('buildMcpServer tools/call', () => {
     expect(res.error).toBeDefined()
     expect(res.result).toBeUndefined()
     expect(res.error.message).toContain('Missing MCP auth context')
+  })
+})
+
+describe('buildMcpServer write-tool audit', () => {
+  const router = { id: 'proj-1', name: 'Alpha', models: [{ modelId: 'openai/gpt-4o' }] }
+
+  it('audits a successful create_router_token with ids and no raw token', async () => {
+    mockReadConfig.mockResolvedValue([{ ...router }] as never)
+    const res = await request(['token:write'], 'tools/call', { name: 'create_router_token', arguments: {} })
+    expect(res.result.isError).toBeUndefined()
+    const entry = mockLogAudit.mock.calls[0]![0]
+    expect(entry).toMatchObject({ userId: 'user-1', email: 'dev@routerly.ai', action: 'mcp:create_router_token', result: 'success' })
+    expect((entry.details as any).result.id).toBeTruthy()
+    expect(JSON.stringify(entry)).not.toContain('sk-rt-' + '0'.repeat(1))
+    expect(JSON.stringify(entry)).not.toMatch(/"token":/)
+  })
+
+  it('audits a successful toggle_model with routerId, modelId and new state', async () => {
+    mockReadConfig.mockResolvedValue([{ ...router, models: [{ modelId: 'openai/gpt-4o' }] }] as never)
+    await request(['router:write'], 'tools/call', {
+      name: 'toggle_model',
+      arguments: { routerId: 'proj-1', modelId: 'openai/gpt-4o' },
+    })
+    expect(mockLogAudit.mock.calls[0]![0]).toMatchObject({
+      action: 'mcp:toggle_model',
+      result: 'success',
+      details: { routerId: 'proj-1', modelId: 'openai/gpt-4o', result: { modelId: 'openai/gpt-4o', enabled: false } },
+    })
+  })
+
+  it('audits a permission refusal on a write tool as forbidden', async () => {
+    await request(['router:read'], 'tools/call', { name: 'toggle_model', arguments: { modelId: 'x' } })
+    expect(mockLogAudit.mock.calls[0]![0]).toMatchObject({ action: 'mcp:toggle_model', result: 'forbidden' })
+  })
+
+  it('does not audit read tools', async () => {
+    await request(['router:read'], 'tools/call', { name: 'list_routers', arguments: {} })
+    expect(mockLogAudit).not.toHaveBeenCalled()
   })
 })

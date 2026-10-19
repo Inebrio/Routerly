@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **MCP write tools are audited**: `create_router_token` and `toggle_model` called through `/mcp` now write an audit entry (`mcp:create_router_token`, `mcp:toggle_model`, with user, routerId, tokenId/modelId, never the raw token) and a permission refusal is recorded as `forbidden` (ROUT-327).
 - **Grafana integration speaks Prometheus remote_write**: the push now sends a snappy-compressed protobuf `WriteRequest` (`Content-Type: application/x-protobuf`, `Content-Encoding: snappy`, `X-Prometheus-Remote-Write-Version: 0.1.0`) instead of text exposition, and the connection test sends a real test write and reports failure on any non-2xx (including 400/415) (ROUT-326).
 - **Settings › About › Software update**: *Current version* always shows the installed version (it was empty, rendered as `v`, outside production). `GET /api/system/update-check` and `updateInfo` gain a `status` field (`ok` | `disabled` | `error`, plus `error`); a disabled check or a failed request (network, rate limit) is reported as such instead of "Up to date". `routerly update check` exits 1 with the reason on stderr in those cases; `--json` exposes `status` (ROUT-308).
 - **openai-oauth: rejected token now returns the provider's 401** — `/v1/chat/completions` and `/v1/messages` (stream and non-stream) answer with the upstream status and message in the client's protocol shape instead of a generic 503 (ROUT-307). The ChatGPT backend `{detail}` error body keeps its text.
