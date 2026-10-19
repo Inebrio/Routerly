@@ -14363,3 +14363,46 @@ describe('role:write, token:write, token:read are enforced', { timeout: 30000 },
     expect(res.json()[0].tokens).toEqual([])
   })
 })
+
+// ─── Anti-escalation (ROUT-348) ──────────────────────────────────────────────
+describe('user:write privilege escalation', () => {
+  const esc = { id: 'esc-id', email: 'esc@example.com', passwordHash: 'h', roleId: 'esc', routerIds: [] }
+  const adm = { id: 'adm-2', email: 'a2@example.com', passwordHash: 'h', roleId: 'admin', routerIds: [] }
+  const call = async (method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown) => {
+    mockVerifyToken.mockReturnValue({ sub: 'esc-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [esc, adm, adminUser]
+      if (t === 'roles') return [{ id: 'esc', name: 'esc', permissions: ['user:write', 'user:read'] }, { id: 'low', name: 'low', permissions: ['user:read'] }]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method, url, headers: body ? { authorization: 'Bearer tok', 'content-type': 'application/json' } : { authorization: 'Bearer tok' }, payload: body ? JSON.stringify(body) : undefined })
+    await app.close()
+    return res
+  }
+
+  it('403 creating an admin user', async () => {
+    expect((await call('POST', '/api/users', { email: 'x@e.com', password: 'pass1234', roleId: 'admin' })).statusCode).toBe(403)
+  })
+  it('201 creating a user with a role it fully holds', async () => {
+    expect((await call('POST', '/api/users', { email: 'x@e.com', password: 'pass1234', roleId: 'low' })).statusCode).toBe(201)
+  })
+  it('403 self-promotion to admin', async () => {
+    expect((await call('PUT', '/api/users/esc-id', { roleId: 'admin' })).statusCode).toBe(403)
+  })
+  it('403 resetting an admin password', async () => {
+    expect((await call('PUT', '/api/users/adm-2', { newPassword: 'newpass123' })).statusCode).toBe(403)
+  })
+  it('403 deleting an admin', async () => {
+    expect((await call('DELETE', '/api/users/adm-2')).statusCode).toBe(403)
+  })
+  it('403 adding unheld permissions to own role', async () => {
+    expect((await call('PUT', '/api/roles/esc', { permissions: ['user:write', 'role:write', 'settings:write'] })).statusCode).toBe(403)
+  })
+  it('403 creating a role with unheld permissions', async () => {
+    expect((await call('POST', '/api/roles', { id: 'r2', name: 'r2', permissions: ['model:write'] })).statusCode).toBe(403)
+  })
+  it('200 narrowing own role', async () => {
+    expect((await call('PUT', '/api/roles/esc', { permissions: ['user:write'] })).statusCode).toBe(200)
+  })
+})
