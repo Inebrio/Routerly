@@ -9,6 +9,7 @@ import { loadSecret } from './modules/auth/jwt.js';
 import { loadCredentialKey } from './lib/crypto-cred.js';
 import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
 import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
+import { passthroughHandler } from './modules/api-reverse-proxy/passthrough.js';
 import { routerPassthroughRoutes } from './modules/api-reverse-proxy/router-passthrough.js';
 import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
@@ -120,6 +121,12 @@ export async function buildServer() {
 
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
+
+  // ─── Catch-all: unmatched paths are forwarded to the router's provider ───
+  // Raw bytes in so non-JSON bodies (files, audio) reach the upstream verbatim.
+  // Encapsulated plugins (passthrough routers, dashboard) keep their own parsers/404 handlers.
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
+  fastify.setNotFoundHandler(passthroughHandler);
 
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
