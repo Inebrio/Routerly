@@ -13,7 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Service build**: the ROUT-348 anti-escalation tests in `api.test.ts` no longer break `tsc` (`payload` passed only when defined) (ROUT-358).
+- **Service tests and build**: the ROUT-348 anti-escalation tests in `api.test.ts` no longer break `tsc` (`payload` passed only when defined), and the `config/loader` and `config/migrate` mocks in `api.test.ts`, `server.test.ts` and `server.telemetry.test.ts` export the functions the service now uses, so the whole service suite passes again (ROUT-358).
 - **Responses stream usage** — `POST /v1/responses` with `stream:true` now asks the provider for stream usage, so `response.completed` reports real `input_tokens`/`output_tokens` instead of zeros (Codex CLI token counts).
 - **`/v1/responses` now forwards tools declared as `additional_tools` input items (Codex 0.163)**: tools of an `additional_tools` item and of `namespace` entries reach the model, `custom` (free-form) tools are bridged to a single-`input` function, and their calls come back as `custom_tool_call` items (`response.custom_tool_call_input.*` when streaming), so Codex runs shell and `apply_patch` again (ROUT-350).
 

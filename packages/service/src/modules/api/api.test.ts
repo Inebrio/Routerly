@@ -24,7 +24,8 @@ vi.mock('../config/loader.js', () => {
     if (next !== current) await writeConfig(key, next);
     return next;
   });
-  return { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, getOrCreateSecret: vi.fn() };
+  const effectivePort = (settings: { port: number }) => settings.port;
+  return { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, getOrCreateSecret: vi.fn(), effectivePort };
 })
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => ({ unref: vi.fn() })),
