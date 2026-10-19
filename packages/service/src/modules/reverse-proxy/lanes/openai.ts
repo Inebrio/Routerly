@@ -294,13 +294,14 @@ export const openaiEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'json') {
       if (result.status) reply.code(result.status)
-      const forwarded = result.headers && !ctx.responsesApi
+      const forwarded = result.headers
       if (forwarded) reply.headers(result.headers!)
       // A pre-serialised Buffer keeps the provider's content-type as is; Fastify appends
       // `; charset=utf-8` to application/json for an object or string payload.
-      reply.send(ctx.responsesApi
+      const payload = ctx.responsesApi
         ? chatToResponsesObject(result.body as ChatCompletionResponse, ctx.request.model ?? '', ctx.traceId, ctx.original as ResponsesRequest)
-        : forwarded && result.headers!['content-type'] ? Buffer.from(JSON.stringify(result.body)) : result.body)
+        : result.body
+      reply.send(forwarded && result.headers!['content-type'] ? Buffer.from(JSON.stringify(payload)) : payload)
       traceEgress(ctx, { kind: 'json', status: result.status ?? 200, ...(ctx.responsesApi ? { encoding: 'responses' } : {}) })
       return
     }
@@ -322,7 +323,7 @@ export const openaiEgress: Processor<ProxyContext> = {
       reply.raw.setHeader('Access-Control-Allow-Origin', origin)
       reply.raw.setHeader('Access-Control-Allow-Credentials', 'true')
     }
-    if (result.headers && !ctx.responsesApi) {
+    if (result.headers) {
       // Provider headers go back as received: no Cache-Control / Connection of our own,
       // and the provider's content-type (charset included) is kept.
       for (const [k, v] of Object.entries(result.headers)) reply.raw.setHeader(k, v)

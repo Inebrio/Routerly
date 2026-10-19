@@ -518,6 +518,42 @@ describe('/v1/responses on the openai lane', () => {
     expect(sent[0].output[0].content[0].text).toBe('42')
   })
 
+  it('egress keeps provider headers and content-type verbatim on a non-streaming Responses answer', async () => {
+    const sent: any[] = []
+    const hdrs: Record<string, string> = {}
+    const reply: any = { send: (b: unknown) => sent.push(b), headers: (h: Record<string, string>) => Object.assign(hdrs, h), code: () => reply }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceId: 't1',
+      request: { model: 'gpt-4o', messages: [] },
+      result: {
+        kind: 'json', headers: { 'content-type': 'application/json', 'openai-organization': 'org-x' },
+        body: { id: 'c', object: 'chat.completion', created: 1, model: 'gpt-4o', choices: [{ index: 0, message: { role: 'assistant', content: '42' }, finish_reason: 'stop' }], usage: { prompt_tokens: 3, completion_tokens: 1, total_tokens: 4 } },
+      },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(hdrs).toEqual({ 'content-type': 'application/json', 'openai-organization': 'org-x' })
+    expect(Buffer.isBuffer(sent[0])).toBe(true)
+    expect(JSON.parse(sent[0].toString()).object).toBe('response')
+  })
+
+  it('egress adds no Cache-Control / Connection on a streaming Responses answer with provider headers', async () => {
+    const set: Record<string, string> = {}
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: (k: string, v: string) => { set[k] = v }, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    async function* body() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: 'stop' }] }
+    }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceId: 't1',
+      req: { headers: {} }, request: { model: 'gpt-4o', messages: [] },
+      result: { kind: 'stream', body: body(), headers: { 'content-type': 'text/event-stream; charset=utf-8' } },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(set).toEqual({ 'content-type': 'text/event-stream; charset=utf-8' })
+  })
+
   it('egress writes named Responses events, with no [DONE] and no trace frames', async () => {
     const written: string[] = []
     const reply: any = {
