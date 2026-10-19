@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **Router `model` field documented as a hint** — on a router token the body `model` is ignored by design (any lane); this is now documented in `docs/service/routing-engine.md` and UAT-08-15 step 2 expects a normal 200 for an unknown model instead of a 404 (ROUT-363).
 - **Wire format: provider headers on the `/v1/responses` lane** — a `/v1/responses` response (stream and non-stream) now returns the provider's headers and `content-type` as received, and SSE no longer gets `Cache-Control: no-cache` / `Connection: keep-alive` added (ROUT-362).
 - **Wire format: provider headers on the `/v1/messages` lane** — a `/v1/messages` response served by an Anthropic model (stream and non-stream) now returns the provider's headers and `content-type` as received, with no `Cache-Control` / `Connection` added to SSE (ROUT-362).
 - **Wire format: provider headers on OpenAI-lane router responses** — a `/v1/chat/completions` response (stream and non-stream) now returns the provider's headers as received: no `Cache-Control: no-cache` / `Connection: keep-alive` added to SSE, and the provider's `content-type` (e.g. `text/event-stream; charset=utf-8`, `application/json`) is no longer normalised (ROUT-361).
