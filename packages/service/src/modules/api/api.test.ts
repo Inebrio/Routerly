@@ -14315,3 +14315,51 @@ describe('integration secret masking (ROUT-201)', () => {
     expect(stored.headers).toEqual({ 'X-Api-Key': 'k-123', Authorization: 'new' })
   })
 })
+
+// ─── role:write / token:write / token:read enforcement (ROUT-345) ──────────────
+
+describe('role:write, token:write, token:read are enforced', { timeout: 30000 }, () => {
+  const user = (roleId: string) => ({ id: 'u1', email: 'u@example.com', passwordHash: 'x', roleId, routerIds: [] })
+  const router = { id: 'r1', name: 'R', tokens: [{ id: 't1', token: 'sk-rt-secret', tokenSnippet: 'sk-rt-secr', createdAt: '2026-01-01T00:00:00Z' }] }
+
+  function setup(permissions: string[]) {
+    mockVerifyToken.mockReturnValue({ sub: 'u1' } as any)
+    mockReadConfig.mockImplementation(async (type: string) => {
+      if (type === 'users') return [user('custom')]
+      if (type === 'roles') return [{ id: 'custom', name: 'Custom', permissions }]
+      if (type === 'routers') return [router]
+      return []
+    })
+  }
+
+  it('POST /api/roles: role:write allows, unrelated permission gets 403', async () => {
+    setup(['router:read'])
+    const app = await buildApp()
+    const body = { id: 'new', name: 'New', permissions: [] }
+    setup(['role:write'])
+    expect((await app.inject({ method: 'POST', url: '/api/roles', headers: adminAuthHeaders(), payload: body })).statusCode).toBe(201)
+    setup(['router:read'])
+    expect((await app.inject({ method: 'POST', url: '/api/roles', headers: adminAuthHeaders(), payload: body })).statusCode).toBe(403)
+  })
+
+  it('POST /api/routers/:id/tokens: token:write allows, unrelated permission gets 403', async () => {
+    setup(['router:read'])
+    const app = await buildApp()
+    setup(['token:write'])
+    expect((await app.inject({ method: 'POST', url: '/api/routers/r1/tokens', headers: adminAuthHeaders(), payload: {} })).statusCode).toBe(200)
+    setup(['router:read'])
+    expect((await app.inject({ method: 'POST', url: '/api/routers/r1/tokens', headers: adminAuthHeaders(), payload: {} })).statusCode).toBe(403)
+  })
+
+  it('GET /api/routers lists tokens only with token:read (or a writer permission)', async () => {
+    setup(['router:read'])
+    const app = await buildApp()
+    setup(['token:read'])
+    let res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    expect(res.json()[0].tokens).toHaveLength(1)
+    expect(res.json()[0].tokens[0].token).toBeUndefined()
+    setup(['router:read'])
+    res = await app.inject({ method: 'GET', url: '/api/routers', headers: adminAuthHeaders() })
+    expect(res.json()[0].tokens).toEqual([])
+  })
+})

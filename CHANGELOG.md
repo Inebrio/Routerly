@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **`role:write`, `token:write` and `token:read` are now enforced**: `role:write` also allows creating, editing and deleting custom roles, `token:write` also allows creating, updating and revoking router tokens (`user:write` / `router:write` keep working, no role loses access), and the token list in `GET /api/routers` is returned only to callers holding `token:read`, `token:write` or `router:write` (ROUT-345).
+
 - **Settings › Provider Catalog table scrolls horizontally on narrow screens**: at phone width the URL column is readable and Edit/Remove stay reachable instead of being clipped (ROUT-343).
 
 - **Settings › Security and Provider Catalog are read-only without `settings:write`**: Save, the 2FA checkbox, Refresh, Add, Edit, Remove and the priority arrows are disabled (tooltip: `Required permission: settings:write`) instead of failing silently (ROUT-342).
