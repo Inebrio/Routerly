@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Settings › Provider Catalog table scrolls horizontally on narrow screens**: at phone width the URL column is readable and Edit/Remove stay reachable instead of being clipped (ROUT-343).
+
 - **Settings › Security and Provider Catalog are read-only without `settings:write`**: Save, the 2FA checkbox, Refresh, Add, Edit, Remove and the priority arrows are disabled (tooltip: `Required permission: settings:write`) instead of failing silently (ROUT-342).
 - **Require 2FA is now enforced by the service** (ROUT-341). With `requireMfa` on, management API calls from a user without 2FA are refused with `403 {"error":"mfa_required"}`; only `/api/me`, `/api/me/language` and the 2FA setup/confirm routes stay available. Previously only the dashboard applied it.
 - **Provider Catalog merge priority**: when several repositories define the same provider, the first row now wins on conflict, as the dashboard hint and docs state; previously the last row won (ROUT-340).

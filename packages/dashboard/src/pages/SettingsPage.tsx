@@ -1811,7 +1811,8 @@ export function SettingsCatalogTab() {
         </div>
       )}
 
-      <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 20 }}>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflowX: 'auto', marginBottom: 20 }}>
+        <div style={{ minWidth: 720 }}>
         {/* Header */}
         <div style={{ display: 'grid', gridTemplateColumns: COL, gap: 0, background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', padding: '6px 14px' }}>
           {[t('settings.catalog.columns.priority'), t('settings.catalog.columns.url'), t('settings.catalog.columns.updated'), t('settings.catalog.columns.lastCheck'), t('settings.catalog.columns.status'), ''].map(h => (
@@ -1884,6 +1885,7 @@ export function SettingsCatalogTab() {
             </div>
           );
         })}
+        </div>
       </div>
 
       <form onSubmit={e => void handleAdd(e)} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: 600 }}>
