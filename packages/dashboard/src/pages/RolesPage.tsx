@@ -5,6 +5,7 @@ import { Plus, Trash2, Lock, Save, X } from 'lucide-react';
 import { getRoles, createRole, updateRole, deleteRole, ALL_PERMISSIONS } from '../api';
 import type { Role, Permission } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useAuth } from '../AuthContext';
 
 function permLabels(t: TFunction): Record<Permission, string> {
   return {
@@ -47,6 +48,7 @@ const EMPTY_FORM: RoleFormState = { id: '', name: '', permissions: [] };
 
 export function RolesPage() {
   const { t } = useTranslation();
+  const canWrite = useAuth().can('user:write');
   const PERM_LABELS = permLabels(t);
   const [roles, setRoles]           = useState<Role[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -147,7 +149,7 @@ export function RolesPage() {
 
       <div className="toolbar">
         <span className="toolbar-title">{t('roles.toolbarTitle')}</span>
-        {!showCreate && (
+        {canWrite && !showCreate && (
           <button className="btn btn-primary" onClick={() => { setShowCreate(true); setEditingId(null); }}>
             <Plus size={15} /> {t('roles.newRole')}
           </button>
@@ -212,7 +214,7 @@ export function RolesPage() {
                     ))}
                   </div>
                 </div>
-                {!role.builtin && (
+                {canWrite && !role.builtin && (
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                     <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }}
                       onClick={() => startEdit(role)}>

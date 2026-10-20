@@ -34,6 +34,11 @@ vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+let mockCan = true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: () => mockCan }),
+}));
+
 vi.mock('../api', () => ({
   getUsage: vi.fn(),
   getModels: vi.fn(),
@@ -93,6 +98,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
   mockUseTheme.mockReturnValue({ theme: 'light', setTheme: vi.fn() });
   mockGetUsage.mockResolvedValue(makeStats());
   mockGetModels.mockResolvedValue([{ id: 'm1' }, { id: 'm2' }]);
@@ -330,6 +336,13 @@ describe('OverviewPage — cost by model', () => {
     await waitFor(() => screen.queryByText('Overview'));
     // Page still renders without crash
     expect(screen.queryByText('Total Cost')).not.toBeNull();
+  });
+
+  it('does not call getModels without model:read', async () => {
+    mockCan = false;
+    renderPage();
+    await waitFor(() => screen.queryByText('Overview'));
+    expect(mockGetModels).not.toHaveBeenCalled();
   });
 
   it('getRouters error is caught silently', async () => {

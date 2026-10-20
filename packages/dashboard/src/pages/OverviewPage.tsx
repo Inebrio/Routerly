@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Coins, DollarSign, XCircle, Boxes, FolderOpen, Terminal, TrendingUp } from 'lucide-react';
 import { CLIENT_REGISTRY } from '@routerly/shared';
 import { getUsage, getModels, getRouters, type UsageStats } from '../api.js';
+import { useAuth } from '../AuthContext.js';
 import { useClientsEnabled } from './ConnectPage.js';
 import { ChartTooltip, axisProps, seriesColor, useChartTheme } from '../components/charts.js';
 import { DateRangePicker, PRESETS, RECENT_PRESETS, parseStoredRange, type DateRange } from '../components/DateRangePicker.js';
@@ -18,6 +19,7 @@ import { formatCost } from '../utils/traceUtils.js';
 
 export function OverviewPage() {
   const { t } = useTranslation();
+  const { can } = useAuth();
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsError, setStatsError] = useState(false);
   // Same picker the Usage page carries, so a window means the same thing on both (T203),
@@ -61,7 +63,7 @@ export function OverviewPage() {
   }, [dateRange]);
 
   useEffect(() => {
-    getModels().then(m => setModelCount(m.length)).catch(console.error);
+    if (can('model:read')) getModels().then(m => setModelCount(m.length)).catch(console.error);
     getRouters().then(p => setRouterCount(p.length)).catch(console.error);
   }, []);
 
