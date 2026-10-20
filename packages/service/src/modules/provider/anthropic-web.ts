@@ -7,6 +7,7 @@ import type {
   StreamChunk,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { developerAsSystem } from './passthrough.js';
 import { decryptCredential } from '../../lib/crypto-cred.js';
 import { readConfig } from '../config/loader.js';
 import { isModuleEnabled } from '../../core/modules/registry.js';
@@ -202,8 +203,9 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     model: ModelConfig,
   ): Promise<Response> {
     const upstreamModel = this.getUpstreamModelId(model);
-    const systemMessage = request.messages.find(m => m.role === 'system');
-    const nonSystemMessages = request.messages.filter(m => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find(m => m.role === 'system');
+    const nonSystemMessages = messages.filter(m => m.role !== 'system');
 
     const body: Record<string, unknown> = {
       model: upstreamModel,

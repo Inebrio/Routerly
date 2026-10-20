@@ -8,6 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { developerAsSystem } from './passthrough.js';
 import { openAIToAnthropicResponse } from './messages-compat.js';
 
 // ── AWS Signature V4 ──────────────────────────────────────────────────────────
@@ -70,10 +71,11 @@ export function signRequest(opts: {
 
 interface BedrockMessage { role: string; content: Array<{ type: string; text: string }> }
 
-function toBedrockMessages(messages: ChatCompletionRequest['messages']): {
+function toBedrockMessages(input: ChatCompletionRequest['messages']): {
   system: Array<{ text: string }> | undefined;
   messages: BedrockMessage[];
 } {
+  const messages = developerAsSystem(input);
   const systemParts = messages.filter(m => m.role === 'system');
   const system = systemParts.length
     ? systemParts.map(m => ({ text: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) }))

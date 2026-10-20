@@ -1237,3 +1237,17 @@ describe('AnthropicAdapter — tool declarations and tool calls', () => {
     expect(slots).toEqual([0, 0, 1, 1])
   })
 })
+
+describe('AnthropicAdapter developer role', () => {
+  it('sends developer messages as system on chat and stream calls', async () => {
+    mockCreate.mockResolvedValue({ id: 'm', model: 'claude', content: [{ type: 'text', text: 'hi' }], stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } })
+    const req = { model: 'x', messages: [{ role: 'developer', content: 'Be brief' }, { role: 'user', content: 'hi' }] } as never
+    await adapter.chatCompletion(req, makeModel())
+    mockCreate.mockResolvedValue((async function* () { yield { type: 'message_stop' } })())
+    for await (const _ of adapter.streamCompletion(req, makeModel())) { void _ }
+    for (const [params] of mockCreate.mock.calls) {
+      expect(params.system).toBeDefined()
+      expect(params.messages).toEqual([{ role: 'user', content: 'hi' }])
+    }
+  })
+})
