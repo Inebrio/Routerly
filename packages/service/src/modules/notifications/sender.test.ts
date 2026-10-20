@@ -38,8 +38,8 @@ describe('sendTestNotification', () => {
       vi.setSystemTime(new Date('2026-01-01T10:01:00.000Z'))
       await sendTestNotification({ provider: 'discord', webhookUrl: 'https://x' } as any, '')
       const calls = vi.mocked(sendDiscord).mock.calls
-      expect(calls[0][1].timestamp).toBe('2026-01-01T10:00:00.000Z')
-      expect(calls[1][1].timestamp).toBe('2026-01-01T10:01:00.000Z')
+      expect(calls[0]![1].timestamp).toBe('2026-01-01T10:00:00.000Z')
+      expect(calls[1]![1].timestamp).toBe('2026-01-01T10:01:00.000Z')
     } finally {
       vi.useRealTimers()
     }
