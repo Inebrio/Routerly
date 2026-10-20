@@ -73,7 +73,15 @@ async function confirmAndFix(account: AccountEntry, secretFiles: PermissionCheck
 async function ensurePermissionsSafe(account: AccountEntry): Promise<void> {
   if (!permissionCheck) {
     permissionCheck = (async () => {
-      const status = await rawRequest<PermissionCheckStatus>(account, 'GET', '/api/system/permissions');
+      let status: PermissionCheckStatus;
+      try {
+        status = await rawRequest<PermissionCheckStatus>(account, 'GET', '/api/system/permissions');
+      } catch (err) {
+        // The route needs settings:read; a role without it cannot read the status.
+        // Not an error: the service still answers 423 per route when blocked (retry below).
+        if (err instanceof ApiError && err.status === 403) return;
+        throw err;
+      }
 
       if (status.blocked) {
         const secretFiles = status.unsafe.filter(u => u.severity === 'secret');
