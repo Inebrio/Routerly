@@ -39,6 +39,25 @@ openclaw configure --section model
 
 Follow the same prompts: choose **Custom Provider (OpenAI-compatible)** and enter the Routerly base URL and router token above.
 
+### Manual config
+
+Or put this in `~/.openclaw/openclaw.json` (`routerly clients configure openclaw` prints the same snippet). Every model entry needs both `id` and `name`:
+
+```json
+{
+  "models": {
+    "providers": {
+      "routerly": {
+        "baseUrl": "http://localhost:3000/v1",
+        "apiKey": "sk-rt-YOUR_ROUTER_TOKEN",
+        "models": [{ "id": "ada", "name": "ada" }]
+      }
+    }
+  },
+  "agents": { "defaults": { "model": { "primary": "routerly/ada" } } }
+}
+```
+
 ---
 
 ## Usage

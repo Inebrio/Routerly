@@ -216,12 +216,13 @@ export function buildSnippet(meta: ClientMeta, baseUrl: string, token: string): 
       // openclaw.json: custom providers live under models.providers.<id>, and
       // an agent selects one with the "<provider>/<model id>" reference. The
       // model id is `ada`, so the reference reads `routerly/ada`, Routerly's
-      // own auto-routing sentinel.
+      // own auto-routing sentinel. OpenClaw's schema requires `name` on every
+      // model entry and rejects the whole config without it.
       return JSON.stringify(
         {
           models: {
             providers: {
-              routerly: { baseUrl: v1, apiKey: token, models: [{ id: 'ada' }] },
+              routerly: { baseUrl: v1, apiKey: token, models: [{ id: 'ada', name: 'ada' }] },
             },
           },
           agents: { defaults: { model: { primary: 'routerly/ada' } } },
