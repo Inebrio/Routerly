@@ -644,6 +644,22 @@ describe('SettingsSecurityTab', () => {
       await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
     });
 
+    it('clears the banner by itself when the files are fixed outside the dashboard (polling)', async () => {
+      mockGetPermissionStatus
+        .mockResolvedValueOnce({
+          blocked: false,
+          bypassActive: false,
+          unsafe: [{ file: 'settings.json', path: '/etc/routerly/settings.json', mode: '644', severity: 'general' }],
+        })
+        .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+      renderSecurity();
+      await waitFor(() => screen.getByText('/etc/routerly/settings.json'));
+      await waitFor(
+        () => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy(),
+        { timeout: 12_000 },
+      );
+    }, 15_000);
+
     it('shows an error when the permission status fails to load', async () => {
       mockGetPermissionStatus.mockRejectedValue(new Error('boom'));
       renderSecurity();
