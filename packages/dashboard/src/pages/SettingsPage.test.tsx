@@ -359,7 +359,7 @@ describe('SettingsGeneralTab', () => {
     await waitFor(() => screen.getByLabelText('Log Level'));
     const sel = screen.getByLabelText('Log Level') as HTMLSelectElement;
     const values = Array.from(sel.options).map(o => o.value);
-    expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error']);
+    expect(values).toEqual(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
   });
 
   it('does not render the 2FA toggle — it lives in the Security tab', async () => {

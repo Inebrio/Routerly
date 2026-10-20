@@ -3567,6 +3567,19 @@ describe('PUT /api/settings', () => {
     return { res, written }
   }
 
+  it.each(['verbose', '', 5, null])('rejects invalid logLevel %j with 400 and writes nothing (ROUT-354)', async (bad) => {
+    const { res } = await putSettings({ logLevel: 'info' }, { logLevel: bad })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toMatch(/logLevel/)
+    expect(mockWriteConfig).not.toHaveBeenCalledWith('settings', expect.anything())
+  })
+
+  it.each(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])('accepts logLevel %s (ROUT-354)', async (lvl) => {
+    const { res, written } = await putSettings({ logLevel: 'info' }, { logLevel: lvl })
+    expect(res.statusCode).toBe(200)
+    expect(written.logLevel).toBe(lvl)
+  })
+
   it('persists metricsEnabled, prometheusAuthToken, port, host (ROUT-213)', async () => {
     const { res, written } = await putSettings({ logLevel: 'info' }, { metricsEnabled: false, prometheusAuthToken: 'x', port: 4000, host: '127.0.0.1' })
     expect(res.statusCode).toBe(200)
