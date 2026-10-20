@@ -2450,13 +2450,32 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const usageRetentionPatch = (req.body as Partial<Settings>).usageRetention;
     if (usageRetentionPatch !== undefined) {
       const usageRetentionSchema = z.object({
-        maxAgeDays: z.number().positive().optional(),
-        maxSizeMb: z.number().positive().optional(),
+        maxAgeDays: z.number().int({ message: 'usageRetention.maxAgeDays must be a positive integer' }).positive({ message: 'usageRetention.maxAgeDays must be a positive integer' }).optional(),
+        maxSizeMb: z.number().int({ message: 'usageRetention.maxSizeMb must be a positive integer' }).positive({ message: 'usageRetention.maxSizeMb must be a positive integer' }).optional(),
       });
       const parsed = usageRetentionSchema.safeParse(usageRetentionPatch);
       if (!parsed.success) {
         return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
+    }
+    // ROUT-355: publicUrl is '' (clear) or an http(s) URL with a host; trailing slashes are stripped.
+    const publicUrlPatch = (req.body as Partial<Settings>).publicUrl;
+    if (publicUrlPatch !== undefined) {
+      let normalized: string | undefined;
+      if (typeof publicUrlPatch === 'string') {
+        const raw = publicUrlPatch.trim();
+        if (raw === '') normalized = '';
+        else {
+          try {
+            const u = new URL(raw);
+            if ((u.protocol === 'http:' || u.protocol === 'https:') && u.hostname) normalized = raw.replace(/\/+$/, '');
+          } catch { /* invalid URL: rejected below */ }
+        }
+      }
+      if (normalized === undefined) {
+        return reply.status(400).send({ error: 'publicUrl must be an http:// or https:// URL (or empty to clear)' });
+      }
+      (req.body as Partial<Settings>).publicUrl = normalized;
     }
     const defaultLanguagePatch = (req.body as Partial<Settings>).defaultLanguage;
     if (defaultLanguagePatch !== undefined && !z.string().min(1).max(10).safeParse(defaultLanguagePatch).success) {

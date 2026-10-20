@@ -10384,6 +10384,8 @@ describe('PUT /api/settings — usageRetention', () => {
     ['negative maxAgeDays', { maxAgeDays: -5 }],
     ['zero maxSizeMb', { maxSizeMb: 0 }],
     ['non-numeric maxAgeDays', { maxAgeDays: 'thirty' }],
+    ['fractional maxAgeDays', { maxAgeDays: 1.5 }],
+    ['fractional maxSizeMb', { maxSizeMb: 0.5 }],
   ])('rejects %s with 400', async (_label, usageRetention) => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(readConfigStub())
@@ -10397,6 +10399,41 @@ describe('PUT /api/settings — usageRetention', () => {
     await app.close()
     expect(res.statusCode).toBe(400)
     expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+})
+
+// ── PUT /api/settings — publicUrl validation (ROUT-355) ───────────────────────
+
+describe('PUT /api/settings — publicUrl', () => {
+  const put = async (payload: unknown, headers: Record<string, string> = adminAuthHeaders()) => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/settings',
+      headers: { ...headers, 'content-type': 'application/json' },
+      payload: JSON.stringify(payload),
+    })
+    await app.close()
+    return res
+  }
+  const stub = () => mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : t === 'settings' ? {} : []))
+
+  it.each(['not a url', 'ftp://x', 'javascript:alert(1)', 'http://', 42])('rejects %j with 400 and writes nothing', async (publicUrl) => {
+    setupAdminAuth(); stub()
+    const res = await put({ publicUrl })
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['https://gw.example.com', 'https://gw.example.com'],
+    ['http://h:3000/', 'http://h:3000'],
+    ['', ''],
+  ])('accepts %j and stores %j', async (publicUrl, stored) => {
+    setupAdminAuth(); stub()
+    mockWriteConfig.mockResolvedValue(undefined)
+    const res = await put({ publicUrl })
+    expect(res.statusCode).toBe(200)
+    expect(mockWriteConfig).toHaveBeenCalledWith('settings', expect.objectContaining({ publicUrl: stored }))
   })
 })
 

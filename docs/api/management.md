@@ -2123,7 +2123,7 @@ PUT /api/settings
 
 **Fields:**
 - `logLevel` must be one of `fatal`, `error`, `warn`, `info`, `debug`, `trace`; anything else answers `400`.
-- `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional). When `requireMfa` is `true`, every management route except `/api/me`, `/api/me/language`, `POST /api/auth/2fa/setup` and `POST /api/auth/2fa/confirm` answers `403 {"error":"mfa_required"}` to a user who has not enabled 2FA
+- `port`, `logLevel`, `publicUrl`, `requireMfa` - service configuration (optional). `publicUrl` must be an `http://`/`https://` URL (trailing slash removed) or `""` to clear it; `usageRetention.maxAgeDays`/`maxSizeMb` must be positive integers; otherwise `400`. When `requireMfa` is `true`, every management route except `/api/me`, `/api/me/language`, `POST /api/auth/2fa/setup` and `POST /api/auth/2fa/confirm` answers `403 {"error":"mfa_required"}` to a user who has not enabled 2FA
 - `channel` - update channel: `latest`, `current`, `next`, `develop`, or a version tag such as `v0.4.0` (optional)
 - `providerRepos` - array of provider repository objects (optional)
 
