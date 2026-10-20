@@ -2577,6 +2577,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
+    if ((req.body as Partial<Settings>).logLevel !== undefined) fastify.log.level = updated.logLevel; // pino applies it live, no restart
     if (channelNormalized) {
       updateChecker.updateChannel(channelNormalized.channel);
     }

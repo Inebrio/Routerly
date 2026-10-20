@@ -3563,8 +3563,9 @@ describe('PUT /api/settings', () => {
       headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
       payload: JSON.stringify(body),
     })
+    const level = app.log.level
     await app.close()
-    return { res, written }
+    return { res, written, level }
   }
 
   it.each(['verbose', '', 5, null])('rejects invalid logLevel %j with 400 and writes nothing (ROUT-354)', async (bad) => {
@@ -3578,6 +3579,12 @@ describe('PUT /api/settings', () => {
     const { res, written } = await putSettings({ logLevel: 'info' }, { logLevel: lvl })
     expect(res.statusCode).toBe(200)
     expect(written.logLevel).toBe(lvl)
+  })
+
+  it('applies logLevel to the running logger without restart (ROUT-356)', async () => {
+    const { res, level } = await putSettings({ logLevel: 'info' }, { logLevel: 'warn' })
+    expect(res.statusCode).toBe(200)
+    expect(level).toBe('warn')
   })
 
   it('persists metricsEnabled, prometheusAuthToken, port, host (ROUT-213)', async () => {
