@@ -265,6 +265,7 @@ export function SettingsGeneralTab() {
               className="form-input"
               type="number"
               min={1}
+              step={1}
               placeholder={t('settings.general.runtime.noLimit')}
               aria-label={t('settings.general.runtime.maxAgeDays')}
               value={form.usageRetention?.maxAgeDays ?? ''}
@@ -275,6 +276,7 @@ export function SettingsGeneralTab() {
               className="form-input"
               type="number"
               min={1}
+              step={1}
               placeholder={t('settings.general.runtime.noLimit')}
               aria-label={t('settings.general.runtime.maxSizeMb')}
               value={form.usageRetention?.maxSizeMb ?? ''}

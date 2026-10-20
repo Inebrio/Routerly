@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Settings `publicUrl` and `usageRetention` validation (ROUT-355)** — `PUT /api/settings` now rejects a `publicUrl` that is not an http(s) URL with a host (400; empty clears it, trailing slashes are stripped) and non-integer `usageRetention.maxAgeDays`/`maxSizeMb`, matching `routerly service configure`.
 - **Settings `logLevel` validation (ROUT-354)** — `PUT /api/settings` and `routerly service configure --log-level` now reject values outside `fatal|error|warn|info|debug|trace` (400 / exit 1) instead of saving them and leaving the service unable to start at the next restart; `fatal` is now selectable in Settings › General.
 - **OpenClaw config snippet (ROUT-353)** — the `openclaw.json` snippet (`routerly clients configure openclaw`, Connect page) now includes `name` on the model entry; OpenClaw 2026.10.5 rejected the config without it.
 - **Messages stream with OpenAI upstream (ROUT-352)** — `message_delta` now carries the real `input_tokens` (and `cache_read_input_tokens`) because OpenAI reports usage only in the last chunk, after `message_start`; previously clients saw 0 input tokens.
