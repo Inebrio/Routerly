@@ -3,6 +3,11 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
+let mockCan = true;
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: () => mockCan }),
+}));
+
 vi.mock('../api', () => ({
   getRoles: vi.fn(),
   createRole: vi.fn(),
@@ -46,6 +51,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  mockCan = true;
   mockGetRoles.mockResolvedValue([]);
   mockCreateRole.mockResolvedValue(makeRole({ id: 'r-new', name: 'New Role' }));
   mockUpdateRole.mockResolvedValue(makeRole({ name: 'Updated' }));
@@ -92,6 +98,15 @@ describe('RolesPage — empty state', () => {
 // ── Loaded roles ───────────────────────────────────────────────────────────────
 
 describe('RolesPage — loaded roles', () => {
+  it('hides New Role, Edit and Delete without user:write', async () => {
+    mockCan = false;
+    mockGetRoles.mockResolvedValue([makeRole()]);
+    renderPage();
+    await waitFor(() => screen.getByText('Operator'));
+    expect(screen.queryByRole('button', { name: /New Role/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Edit/ })).toBeNull();
+  });
+
   it('renders role name and id', async () => {
     mockGetRoles.mockResolvedValue([makeRole({ id: 'op', name: 'Operator' })]);
     renderPage();

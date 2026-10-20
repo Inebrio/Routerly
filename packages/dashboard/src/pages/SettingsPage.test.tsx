@@ -206,6 +206,13 @@ describe('SettingsGeneralTab', () => {
     expect(screen.getByLabelText('Default Language')).toBeDisabled();
   });
 
+  it('Save Settings is disabled without settings:write', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    expect(screen.getByRole('button', { name: /Save Settings/i })).toBeDisabled();
+  });
+
   it('shows spinner while loading', () => {
     mockGetSettings.mockReturnValue(new Promise(() => {}));
     renderGeneral();

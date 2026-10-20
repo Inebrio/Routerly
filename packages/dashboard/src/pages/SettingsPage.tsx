@@ -325,7 +325,7 @@ export function SettingsGeneralTab() {
         </div>
       )}
       <div>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-primary" disabled={saving || !can('settings:write')} title={can('settings:write') ? undefined : 'Required permission: settings:write'}>
           {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.general.saving')}</> : <><Save size={15} /> {t('settings.general.saveSettings')}</>}
         </button>
       </div>

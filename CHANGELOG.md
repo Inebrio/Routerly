@@ -12,6 +12,8 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+
+- **Dashboard permission gating (ROUT-349)** — Roles hides New Role, Edit and Delete without `user:write`; General Save Settings is disabled without `settings:write`; Overview no longer requests models without `model:read` (no unhandled console error).
 - **Model creation validation** — `POST /api/models` with a missing `id` or `provider` now returns 400 with the offending field instead of 500 (ROUT-346).
 - **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
 - **Notification test timestamp** — the Slack, Teams, PagerDuty and Discord test message now carries the time it is sent, not the time the service started (ROUT-332).
