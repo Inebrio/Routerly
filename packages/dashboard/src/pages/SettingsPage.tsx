@@ -2236,20 +2236,23 @@ function FilePermissionsSection() {
   // this section's own status — it has its own independent load() cycle.
   useEffect(() => {
     if (!canRead) return;
-    window.addEventListener('lr-permission-fixed', load);
-    return () => window.removeEventListener('lr-permission-fixed', load);
+    const onFixed = () => { load(); };
+    window.addEventListener('lr-permission-fixed', onFixed);
+    // A fix from the CLI emits no event: poll quietly so the banner clears on its own.
+    const timer = setInterval(() => { load(true); }, 10_000);
+    return () => { window.removeEventListener('lr-permission-fixed', onFixed); clearInterval(timer); };
      
   }, [canRead]);
 
-  async function load() {
-    setLoading(true);
-    setError('');
+  async function load(silent = false) {
+    if (!silent) { setLoading(true); setError(''); }
     try {
       setStatus(await getPermissionStatus());
+      if (silent) setError('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load permission status');
+      if (!silent) setError(e instanceof Error ? e.message : 'Failed to load permission status');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
