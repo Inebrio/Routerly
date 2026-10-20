@@ -416,4 +416,15 @@ describe('permission guard (RTR-04)', () => {
     expect(result).toMatchObject({ models: [] });
     expect(errSpy).not.toHaveBeenCalled();
   });
+
+  it('proceeds when the status check is forbidden (role without settings:read)', async () => {
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/system/permissions')) return Promise.resolve(jsonResponse(403, { error: 'Required permission: settings:read' }));
+      if (url.endsWith('/api/roles')) return Promise.resolve(jsonResponse(201, { id: 'r' }));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(api('POST', '/api/roles', { id: 'r' })).resolves.toMatchObject({ id: 'r' });
+  });
 });
