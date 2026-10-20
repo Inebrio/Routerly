@@ -320,6 +320,19 @@ describe('ProtectedLayout — permission warning banner', () => {
     expect(mockGetPermissionStatus).toHaveBeenCalledTimes(1);
   });
 
+  it('clears the banner by itself when the files are fixed outside the dashboard (polling)', async () => {
+    mockGetPermissionStatus
+      .mockResolvedValueOnce({
+        blocked: false,
+        bypassActive: false,
+        unsafe: [{ file: 'settings', path: '/x/settings.json', mode: '644', severity: 'general' }],
+      })
+      .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
+    render(<App />);
+    await waitFor(() => screen.getByText(/permissive access/));
+    await waitFor(() => expect(screen.queryByText(/permissive access/)).toBeNull(), { timeout: 12_000 });
+  }, 15_000);
+
   it('shows no banner when permissions are safe (AC8)', async () => {
     mockGetPermissionStatus.mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
     render(<App />);

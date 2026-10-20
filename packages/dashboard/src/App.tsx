@@ -287,21 +287,28 @@ function ProtectedLayout() {
       .catch(/* v8 ignore next */ () => { /* non-critical */ });
   }, []);
 
-  // AC6/AC8/EC4: fetch permission status once per session (module-level flag), show a
+  // AC6/AC8/EC4: fetch permission status on mount (module-level flag) and every 10 s, show a
   // warning banner if any general-severity file is unsafe, never block on it.
   useEffect(() => {
+    function refresh() {
+      getPermissionStatus()
+        .then(status => {
+          const warnings = status.unsafe.filter(u => u.severity === 'general').map(u => u.file);
+          permissionWarningFiles = warnings;
+          setPermissionWarning(warnings);
+        })
+        .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
+    }
     if (permissionCheckDone) {
       setPermissionWarning(permissionWarningFiles);
-      return;
+    } else {
+      permissionCheckDone = true;
+      refresh();
     }
-    permissionCheckDone = true;
-    getPermissionStatus()
-      .then(status => {
-        const warnings = status.unsafe.filter(u => u.severity === 'general').map(u => u.file);
-        permissionWarningFiles = warnings;
-        setPermissionWarning(warnings);
-      })
-      .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
+    // A fix or a config write from the CLI emits no event: poll so the banner
+    // clears (or reappears) on its own.
+    const timer = setInterval(refresh, 10_000);
+    return () => clearInterval(timer);
   }, []);
 
   // AC6: any 423 from api.ts surfaces here as a blocking modal.
