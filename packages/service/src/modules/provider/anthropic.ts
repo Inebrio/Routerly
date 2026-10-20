@@ -8,7 +8,7 @@ import type {
   MessagesResponse,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
-import { forwardableResponseHeaders, type CallOptions } from './passthrough.js';
+import { forwardableResponseHeaders, developerAsSystem, type CallOptions } from './passthrough.js';
 
 export class AnthropicAdapter implements ProviderAdapter {
   protected getClient(model: ModelConfig): Anthropic {
@@ -191,8 +191,9 @@ export class AnthropicAdapter implements ProviderAdapter {
     const client = this.getClient(model);
 
     // Convert OpenAI message format to Anthropic format
-    const systemMessage = request.messages.find((m) => m.role === 'system');
-    const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     const upstreamModel = this.getUpstreamModelId(model);
 
@@ -270,8 +271,9 @@ export class AnthropicAdapter implements ProviderAdapter {
     const client = this.getClient(model);
     const upstreamModel = this.getUpstreamModelId(model);
 
-    const systemMessage = request.messages.find((m) => m.role === 'system');
-    const nonSystemMessages = request.messages.filter((m) => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const params: any = {
