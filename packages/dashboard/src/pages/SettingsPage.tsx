@@ -14,7 +14,7 @@ import { useAuth } from '../AuthContext';
 import { NOTIFICATION_EVENTS } from '@routerly/shared';
 import { SUPPORTED_LANGUAGES } from '../locales/languages';
 
-const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error'];
+const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
 
 // ── Telemetry section (self-saving) ──────────────────────────────────────────
 

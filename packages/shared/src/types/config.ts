@@ -854,12 +854,15 @@ export function isValidUpdateChannel(value: string): boolean {
 /** The rejection message, so service and CLI cannot drift. */
 export const UPDATE_CHANNEL_ERROR = 'Invalid channel. Accepted values: latest, current, next, develop, or a version tag such as v0.4.0.';
 
+export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
+
 export interface Settings {
   port: number;
   host: string;
   /** Whether to serve the dashboard at /dashboard */
   dashboardEnabled: boolean;
-  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  logLevel: LogLevel;
   /**
    * Public base URL of the service (e.g. https://routerly.example.com).
    * Used in the dashboard "How to connect" section when the dashboard is served

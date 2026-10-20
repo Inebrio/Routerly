@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Settings `logLevel` validation (ROUT-354)** — `PUT /api/settings` and `routerly service configure --log-level` now reject values outside `fatal|error|warn|info|debug|trace` (400 / exit 1) instead of saving them and leaving the service unable to start at the next restart; `fatal` is now selectable in Settings › General.
 - **OpenClaw config snippet (ROUT-353)** — the `openclaw.json` snippet (`routerly clients configure openclaw`, Connect page) now includes `name` on the model entry; OpenClaw 2026.10.5 rejected the config without it.
 - **Messages stream with OpenAI upstream (ROUT-352)** — `message_delta` now carries the real `input_tokens` (and `cache_read_input_tokens`) because OpenAI reports usage only in the last chunk, after `message_start`; previously clients saw 0 input tokens.
 - **Dashboard permission gating (ROUT-349)** — Roles hides New Role, Edit and Delete without `user:write`; General Save Settings is disabled without `settings:write`; Overview no longer requests models without `model:read` (no unhandled console error).

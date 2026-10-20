@@ -734,7 +734,7 @@ export interface Settings {
   port: number;
   host: string;
   dashboardEnabled: boolean;
-  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error';
+  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
   /** Public base URL of the service — used in "How to connect" when dashboard runs on a different host. */
   publicUrl?: string;
   notifications?: NotificationsConfig;

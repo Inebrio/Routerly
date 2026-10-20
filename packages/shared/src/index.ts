@@ -198,7 +198,7 @@ export type { PermissionCheckStatus } from './types/config.js';
 // Update channel vocabulary: 'latest' | 'current' | 'next' | 'develop'
 export {
   UPDATE_CHANNELS, normalizeUpdateChannel,
-  isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
+  isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,
 } from './types/config.js';
 
 // Readable catalog for those events: title, category, cause line (T51)

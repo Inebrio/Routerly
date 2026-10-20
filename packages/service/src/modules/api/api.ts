@@ -18,7 +18,7 @@ import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-p
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -2475,6 +2475,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // ROUT-213: network + /metrics settings. port/host only take effect after a restart.
     const netPatch = req.body as Partial<Omit<Settings, 'prometheusAuthToken'>> & { prometheusAuthToken?: string | null };
     const netSchema = z.object({
+      logLevel: z.enum(LOG_LEVELS, { message: `logLevel must be one of: ${LOG_LEVELS.join(', ')}` }).optional(),
       port: z.number().int().min(1).max(65535).optional(),
       host: z.string().trim().min(1).optional(),
       metricsEnabled: z.boolean().optional(),
