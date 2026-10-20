@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Startup refused on unsafe secrets permissions** now prints the exact `chmod 600 <files>` recovery command (the service is down, so `routerly permissions fix` cannot be used). (ROUT-370)
+
 - **Permission banner clears after a CLI fix (ROUT-369)** — the top warning banner and Settings › Security › File Permissions now refresh every 10 s, so the warning disappears (or reappears) after `routerly permissions fix` or any out-of-dashboard permission change without reloading the page.
 - **Log level applies without restart (ROUT-356)** — changing `logLevel` from Settings › General or `routerly service configure --log-level` now takes effect on the running service immediately instead of only after a restart.
 - **Settings `publicUrl` and `usageRetention` validation (ROUT-355)** — `PUT /api/settings` now rejects a `publicUrl` that is not an http(s) URL with a host (400; empty clears it, trailing slashes are stripped) and non-integer `usageRetention.maxAgeDays`/`maxSizeMb`, matching `routerly service configure`.
