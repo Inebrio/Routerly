@@ -261,7 +261,8 @@ export function __resetPermissionCheckForTests() {
 
 function ProtectedLayout() {
   const { t } = useTranslation();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, can } = useAuth();
+  const canReadSettings = can('settings:read');
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed' || window.innerWidth <= 768);
@@ -306,10 +307,12 @@ function ProtectedLayout() {
       refresh();
     }
     // A fix or a config write from the CLI emits no event: poll so the banner
-    // clears (or reappears) on its own.
+    // clears (or reappears) on its own. Roles without settings:read would only
+    // collect a 403 every tick, so they do not poll.
+    if (!canReadSettings) return;
     const timer = setInterval(refresh, 10_000);
     return () => clearInterval(timer);
-  }, []);
+  }, [canReadSettings]);
 
   // AC6: any 423 from api.ts surfaces here as a blocking modal.
   useEffect(() => {
