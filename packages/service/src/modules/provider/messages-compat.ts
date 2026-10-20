@@ -274,6 +274,10 @@ export async function* openAIChunksToAnthropicSSE(
   let anyBlock = false
   let finish: string | null = null
   let outputTokens = 0
+  // OpenAI sends usage only in the final chunk, after message_start went out:
+  // input tokens are reported in message_delta (Anthropic allows cumulative input_tokens there).
+  let inputTokens = 0
+  let cachedTokens = 0
 
   const closeBlock = function* (): Generator<string> {
     if (open !== null) {
@@ -300,6 +304,8 @@ export async function* openAIChunksToAnthropicSSE(
     }
 
     if (chunkAny.usage?.completion_tokens) outputTokens = chunkAny.usage.completion_tokens
+    if (chunkAny.usage?.prompt_tokens) inputTokens = chunkAny.usage.prompt_tokens
+    if (chunkAny.usage?.prompt_tokens_details?.cached_tokens) cachedTokens = chunkAny.usage.prompt_tokens_details.cached_tokens
 
     const delta = chunk.choices?.[0]?.delta
     const text = delta?.content
@@ -353,6 +359,6 @@ export async function* openAIChunksToAnthropicSSE(
   }
 
   const stopReason = sawToolCall ? 'tool_use' : finishReasonToStopReason(finish)
-  yield sse('message_delta', { type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { output_tokens: outputTokens } })
+  yield sse('message_delta', { type: 'message_delta', delta: { stop_reason: stopReason, stop_sequence: null }, usage: { ...(inputTokens ? { input_tokens: inputTokens } : {}), ...(cachedTokens ? { cache_read_input_tokens: cachedTokens } : {}), output_tokens: outputTokens } })
   yield sse('message_stop', { type: 'message_stop' })
 }

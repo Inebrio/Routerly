@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Messages stream with OpenAI upstream (ROUT-352)** — `message_delta` now carries the real `input_tokens` (and `cache_read_input_tokens`) because OpenAI reports usage only in the last chunk, after `message_start`; previously clients saw 0 input tokens.
 - **Dashboard permission gating (ROUT-349)** — Roles hides New Role, Edit and Delete without `user:write`; General Save Settings is disabled without `settings:write`; Overview no longer requests models without `model:read` (no unhandled console error).
 - **Model creation validation** — `POST /api/models` with a missing `id` or `provider` now returns 400 with the offending field instead of 500 (ROUT-346).
 - **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
