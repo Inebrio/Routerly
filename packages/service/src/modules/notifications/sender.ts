@@ -236,12 +236,12 @@ async function sendWebhook(cfg: WebhookChannelConfig, content: MessageContent = 
   return { ok: true, message: `Webhook ping OK — server responded HTTP ${res.status}.` };
 }
 
-const TEST_NATIVE_PAYLOAD = {
+const testNativePayload = () => ({
   event:     'test',
   severity:  'info' as const,
   timestamp: new Date().toISOString(),
   details:   { source: 'Routerly', message: 'Test notification' },
-};
+});
 
 // ── Public dispatcher ──────────────────────────────────────────────────────────────
 export async function sendTestNotification(
@@ -256,13 +256,13 @@ export async function sendTestNotification(
     case 'azure':     return sendAzure(channel, to);
     case 'google':    return sendGoogle(channel, to);
     case 'webhook':   return sendWebhook(channel);
-    case 'slack':     await sendSlack(channel, TEST_NATIVE_PAYLOAD);
+    case 'slack':     await sendSlack(channel, testNativePayload());
                       return { ok: true, message: 'Test message sent via Slack.' };
-    case 'teams':     await sendTeams(channel, TEST_NATIVE_PAYLOAD);
+    case 'teams':     await sendTeams(channel, testNativePayload());
                       return { ok: true, message: 'Test message sent via Microsoft Teams.' };
-    case 'pagerduty': await sendPagerDuty(channel, TEST_NATIVE_PAYLOAD);
+    case 'pagerduty': await sendPagerDuty(channel, testNativePayload());
                       return { ok: true, message: 'Test event triggered via PagerDuty.' };
-    case 'discord':   await sendDiscord(channel, TEST_NATIVE_PAYLOAD);
+    case 'discord':   await sendDiscord(channel, testNativePayload());
                       return { ok: true, message: 'Test message sent via Discord.' };
     case 'dashboard': {
       await appendToInbox({
