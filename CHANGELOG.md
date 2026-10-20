@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **Model creation validation** — `POST /api/models` with a missing `id` or `provider` now returns 400 with the offending field instead of 500 (ROUT-346).
 - **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
 - **Notification test timestamp** — the Slack, Teams, PagerDuty and Discord test message now carries the time it is sent, not the time the service started (ROUT-332).
 - **Router `model` field documented as a hint** — on a router token the body `model` is ignored by design (any lane); this is now documented in `docs/service/routing-engine.md` and UAT-08-15 step 2 expects a normal 200 for an unknown model instead of a 404 (ROUT-363).
