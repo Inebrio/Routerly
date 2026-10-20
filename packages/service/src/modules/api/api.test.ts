@@ -1094,6 +1094,20 @@ describe('GET /api/models', () => {
 })
 
 describe('POST /api/models', () => {
+  it('rejects an empty body with 400 naming the missing field', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: '{}',
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toMatch(/^id:/)
+  })
+
   it('persists timeout and rejects a non-numeric one with 400', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {

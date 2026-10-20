@@ -339,6 +339,11 @@ function resolveTestRecipient(provider: string, to: string | undefined, fallback
   return EMAIL_TEST_PROVIDERS.has(provider) ? fallback : '';
 }
 
+const createModelBodySchema = z.object({
+  id: z.string().min(1),
+  provider: z.string().min(1),
+});
+
 const previewBodySchema = z.object({
   routerId: z.string().optional(),
   // Model the sample is addressed to. Only `headroom` reads it, to size its
@@ -752,6 +757,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    const parsedBody = createModelBodySchema.safeParse(req.body ?? {});
+    if (!parsedBody.success) {
+      const issue = parsedBody.error.issues[0]!;
+      return reply.status(400).send({ error: `${issue.path.join('.') || 'body'}: ${issue.message}` });
+    }
     if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
       return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
     }
