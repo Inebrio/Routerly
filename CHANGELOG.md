@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
 - **Notification test timestamp** — the Slack, Teams, PagerDuty and Discord test message now carries the time it is sent, not the time the service started (ROUT-332).
 - **Router `model` field documented as a hint** — on a router token the body `model` is ignored by design (any lane); this is now documented in `docs/service/routing-engine.md` and UAT-08-15 step 2 expects a normal 200 for an unknown model instead of a 404 (ROUT-363).
 - **Wire format: provider headers on the `/v1/responses` lane** — a `/v1/responses` response (stream and non-stream) now returns the provider's headers and `content-type` as received, and SSE no longer gets `Cache-Control: no-cache` / `Connection: keep-alive` added (ROUT-362).
@@ -45,6 +46,7 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+- **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
 
 - **InfluxDB integration test verifies credentials**: `POST /api/integrations/:id/test` (CLI `integrations test`, dashboard Test) now performs an authenticated test write instead of the unauthenticated `/health` check, so a wrong token (401), missing write permission (403) or unknown org/bucket (404) is reported as a failure (ROUT-329).
 - **Integration URL validation**: `POST/PATCH /api/integrations` now reject a `url`/`endpoint` that is not a valid http(s) URL (webhook, grafana, influxdb, otel) with 400; previously `not-a-url` was stored and the push failed silently (ROUT-328).
