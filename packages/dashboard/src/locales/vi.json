@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Tìm kiếm kênh…",
         "noResults": "Không có kết quả",
         "emptyTitle": "Chưa cấu hình kênh thông báo nào.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Không có kênh nào phù hợp với các bộ lọc hoạt động.",
         "nameInlinePlaceholder": "Nhãn (tùy chọn)",
         "columns": {

@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "چینلز تلاش کریں...",
         "noResults": "کوئی نتائج نہیں",
         "emptyTitle": "ابھی کوئی اطلاع چینل کنفیگر شدہ نہیں۔",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "کوئی چینلز فعال فلٹرز سے مطابقت نہیں رکھتے۔",
         "nameInlinePlaceholder": "لیبل (اختیاری)",
         "columns": {

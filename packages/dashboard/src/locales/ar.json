@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "بحث في القنوات…",
         "noResults": "لا توجد نتائج",
         "emptyTitle": "لا توجد قنوات إشعار مُعدّة بعد.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "لا توجد قناة مطابقة للمرشحات النشطة.",
         "nameInlinePlaceholder": "التسمية (اختياري)",
         "columns": {

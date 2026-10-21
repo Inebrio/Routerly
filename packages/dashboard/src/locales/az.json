@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Kanalları axtar…",
         "noResults": "Nəticə yoxdur",
         "emptyTitle": "Hələ heç bir bildiriş kanalı konfiqurasiya edilməyib.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Aktiv filtrlərə uyğun kanal yoxdur.",
         "nameInlinePlaceholder": "Ad (isteğe bağlı)",
         "columns": {

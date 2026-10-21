@@ -901,6 +901,7 @@
         "addSearchPlaceholder": "Search channels…",
         "noResults": "No results",
         "emptyTitle": "No notification channels configured yet.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "No channels match the active filters.",
         "nameInlinePlaceholder": "Label (optional)",
         "columns": {

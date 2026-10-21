@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Kanalları ara…",
         "noResults": "Sonuç yok",
         "emptyTitle": "Henüz hiçbir bildirim kanalı yapılandırılmadı.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Hiçbir kanal etkin filtreleri eşleştirmez.",
         "nameInlinePlaceholder": "Etiket (isteğe bağlı)",
         "columns": {

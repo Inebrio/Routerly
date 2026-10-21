@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **Settings › Notifications without `notification:write`** now shows only «You don't have permission to view notification channels.» instead of «0 channels», the empty state and an active «Add Channel». (ROUT-338)
 - **CLI `notification channel edit`** now applies `--username` and clears recipient lists with `--target-roles/--target-users/--target-permissions ""` (other lists are preserved). (ROUT-334)
 
 - **Notification channel UI/CLI now match the emitter for empty events (ROUT-337)** — an external channel (email, webhook, Slack, …) with no events never receives anything; the dashboard form hint/placeholder and channel list now say «No events (silent)» instead of «All events», and `routerly notification channel list/show` print `none: silent`. `dashboard` channels still default to all events.

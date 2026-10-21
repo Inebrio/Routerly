@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "ચેનલ્સ શોધો…",
         "noResults": "કોઈ પરિણામ નથી",
         "emptyTitle": "હજુ કોઈ સૂચના ચેનલ્સ ગઠીત નથી.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "કોઈ પણ ચેનલ્સ સક્રિય ફિલ્ટર્સ સાથે મેળતા નથી.",
         "nameInlinePlaceholder": "લેબલ (વૈકલ્પિક)",
         "columns": {

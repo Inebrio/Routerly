@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "ค้นหาช่อง…",
         "noResults": "ไม่มีผลลัพธ์",
         "emptyTitle": "ยังไม่มีช่องการแจ้งเตือนที่ตั้งค่าไว้",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "ไม่มีช่องที่ตรงกับตัวกรองที่ใช้งาน",
         "nameInlinePlaceholder": "ป้ายกำกับ (เลือกได้)",
         "columns": {

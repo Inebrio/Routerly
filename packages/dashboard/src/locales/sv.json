@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Sök kanaler…",
         "noResults": "Inga resultat",
         "emptyTitle": "Inga aviseringskanaler konfigurerade ännu.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Inga kanaler matchar de aktiva filtren.",
         "nameInlinePlaceholder": "Etikett (valfritt)",
         "columns": {

@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "चैनल खोजें...",
         "noResults": "कोई परिणाम नहीं",
         "emptyTitle": "कोई सूचना चैनल अभी तक कॉन्फ़िगर नहीं किए गए।",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "कोई चैनल सक्रिय फ़िल्टर से मेल नहीं खाते।",
         "nameInlinePlaceholder": "लेबल (वैकल्पिक)",
         "columns": {

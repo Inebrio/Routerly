@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Hae kanavia…",
         "noResults": "Ei tuloksia",
         "emptyTitle": "Ilmoituskanavia ei ole vielä määritetty.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Mikään kanava ei vastaa aktiivisia suodattimia.",
         "nameInlinePlaceholder": "Nimike (valinnainen)",
         "columns": {

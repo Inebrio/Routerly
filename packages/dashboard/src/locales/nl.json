@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Kanalen zoeken...",
         "noResults": "Geen resultaten",
         "emptyTitle": "Nog geen notification kanalen geconfigureerd.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Geen kanalen passen bij de actieve filters.",
         "nameInlinePlaceholder": "Label (optioneel)",
         "columns": {
