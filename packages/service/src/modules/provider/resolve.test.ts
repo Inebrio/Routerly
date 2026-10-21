@@ -87,7 +87,7 @@ describe('resolveEffectiveModel', () => {
 
   it.each(['deepseek', 'groq', 'together', 'perplexity', 'xai', 'mistral', 'cohere'])('defaults a missing %s endpoint (ROUT-367)', (providerId) => {
     const conn: ProviderConnection = { id: 'c', providerId, label: 'L', credentials: { apiKey: 'k' }, enabled: true };
-    const inst: ModelInstance = { id: `${providerId}/m`, connectionId: 'c', upstreamModelId: 'm', cost: { inputPerMillion: 1, outputPerMillion: 1 } };
+    const inst: ModelInstance = { id: `${providerId}/m`, connectionId: 'c', upstreamModelId: 'm', cost: { inputPerMillion: 1, outputPerMillion: 1 }, contextWindow: 1000 };
     expect(resolveEffectiveModel(inst, conn).endpoint).toMatch(/^https:\/\//);
   });
 });
