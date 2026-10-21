@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **CLI `notification channel add --type webhook`** now supported with `--url`, `--method` and `--secret`; `add` also accepts `--json`. (ROUT-333)
+
 - **Startup refused on unsafe secrets permissions** now prints the exact `chmod 600 <files>` recovery command (the service is down, so `routerly permissions fix` cannot be used). (ROUT-370)
 
 - **Permission banner clears after a CLI fix (ROUT-369)** — the top warning banner and Settings › Security › File Permissions now refresh every 10 s, so the warning disappears (or reappears) after `routerly permissions fix` or any out-of-dashboard permission change without reloading the page.

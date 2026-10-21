@@ -269,13 +269,18 @@ export function makeNotificationCommand(): Command {
 
   const add = new Command('add').description('Add a notification channel');
   add
-    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|dashboard|smtp|ses|sendgrid|azure|google')
+    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|webhook|dashboard|smtp|ses|sendgrid|azure|google')
     .requiredOption('--name <name>', 'Friendly name for this channel')
     // native/webhook providers
     .option('--bot-token <token>', 'Slack bot token (xoxb-…)')
     .option('--channel-id <id>', 'Slack channel ID')
     .option('--webhook-url <url>', 'Webhook URL (Teams or Discord)')
     .option('--integration-key <key>', 'PagerDuty integration key')
+    // webhook
+    .option('--url <url>', 'Webhook URL (required for webhook)')
+    .option('--method <method>', 'HTTP method for webhook: POST|GET (default: POST)')
+    .option('--secret <secret>', 'HMAC-SHA256 signing secret for webhook (optional)')
+    .option('--json', 'Output the created channel as JSON')
     // shared email fields
     .option('--from-address <addr>', 'Sender email address (required for email providers)')
     .option('--from-name <name>', 'Sender display name (optional)')
@@ -306,6 +311,7 @@ export function makeNotificationCommand(): Command {
       type: string; name: string;
       botToken?: string; channelId?: string;
       webhookUrl?: string; integrationKey?: string;
+      url?: string; method?: string; secret?: string; json?: boolean;
       fromAddress?: string; fromName?: string;
       host?: string; port?: number; secure?: boolean; username?: string; password?: string;
       region?: string; accessKeyId?: string; secretAccessKey?: string;
@@ -358,6 +364,13 @@ export function makeNotificationCommand(): Command {
         case 'dashboard':
           body = { provider: 'dashboard', ...shared };
           break;
+        case 'webhook': {
+          if (!opts.url) { console.error(chalk.red('--url is required for webhook')); process.exit(1); }
+          const method = (opts.method ?? 'POST').toUpperCase();
+          if (method !== 'POST' && method !== 'GET') { console.error(chalk.red('--method must be POST or GET')); process.exit(1); }
+          body = { provider: 'webhook', ...shared, url: opts.url, method, ...(opts.secret ? { secret: opts.secret } : {}) };
+          break;
+        }
         case 'smtp': {
           const base = emailBase();
           if (!opts.host) { console.error(chalk.red('--host is required for smtp')); process.exit(1); }
@@ -407,12 +420,13 @@ export function makeNotificationCommand(): Command {
           break;
         }
         default:
-          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, dashboard, smtp, ses, sendgrid, azure, google`));
+          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, webhook, dashboard, smtp, ses, sendgrid, azure, google`));
           process.exit(1);
       }
       try {
         const ch = await api<ChannelBase>('POST', '/api/notifications/channels', body);
-        console.log(chalk.green(`Channel added (id: ${ch.id})`));
+        if (opts.json) console.log(JSON.stringify(ch, null, 2));
+        else console.log(chalk.green(`Channel added (id: ${ch.id})`));
       } catch (err) {
         if (err instanceof ApiError) console.error(chalk.red(`API error ${err.status}: ${err.message}`));
         else console.error(chalk.red(`Error: ${(err as Error).message}`));
