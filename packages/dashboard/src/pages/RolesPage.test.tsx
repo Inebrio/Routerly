@@ -4,8 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 let mockCan = true;
+let mockOnly: string | null = null;
 vi.mock('../AuthContext', () => ({
-  useAuth: () => ({ can: () => mockCan }),
+  useAuth: () => ({ can: (perm: string) => (mockOnly ? perm === mockOnly : mockCan) }),
 }));
 
 vi.mock('../api', () => ({
@@ -52,6 +53,7 @@ function renderPage() {
 
 beforeEach(() => {
   mockCan = true;
+  mockOnly = null;
   mockGetRoles.mockResolvedValue([]);
   mockCreateRole.mockResolvedValue(makeRole({ id: 'r-new', name: 'New Role' }));
   mockUpdateRole.mockResolvedValue(makeRole({ name: 'Updated' }));
@@ -105,6 +107,23 @@ describe('RolesPage — loaded roles', () => {
     await waitFor(() => screen.getByText('Operator'));
     expect(screen.queryByRole('button', { name: /New Role/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Edit/ })).toBeNull();
+  });
+
+  it.each(['role:write', 'user:write'])('shows New Role and Edit with only %s', async (perm) => {
+    mockOnly = perm;
+    mockGetRoles.mockResolvedValue([makeRole()]);
+    renderPage();
+    await waitFor(() => screen.getByText('Operator'));
+    expect(screen.queryByRole('button', { name: /New Role/ })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeNull();
+  });
+
+  it('hides New Role with only router:write', async () => {
+    mockOnly = 'router:write';
+    mockGetRoles.mockResolvedValue([makeRole()]);
+    renderPage();
+    await waitFor(() => screen.getByText('Operator'));
+    expect(screen.queryByRole('button', { name: /New Role/ })).toBeNull();
   });
 
   it('renders role name and id', async () => {
