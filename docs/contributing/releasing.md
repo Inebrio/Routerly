@@ -549,3 +549,12 @@ fails the run with:
 
 and pushes nothing. There is no partial state to clean up: the tag decision
 and the build both happen after this check passes.
+
+## Site `install.sh` and the `Latest` flag
+
+`https://www.routerly.ai/install.sh` redirects to
+`releases/latest/download/install.sh`, i.e. the script attached to the release
+flagged **Latest**. Every 0.3+ release is a GitHub pre-release, so that flag is
+only moved by the `addChannelCmd` promotion (`gh release edit <tag> --latest`).
+Until a release carrying the current `scripts/install.sh` is promoted, the site
+serves the older script attached to the previously flagged release.

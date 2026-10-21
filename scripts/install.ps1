@@ -147,28 +147,35 @@ Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { Cleanup } | 
 function Resolve-DownloadUrl {
   $headers = @{ "User-Agent" = "routerly-installer/1.0" }
   $apiBase = "https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases"
+  $release = $null
 
-  if ($Version) {
-    Write-Info "Resolving version $Version..."
-    $apiUrl = "$apiBase/tags/$Version"
-  } else {
-    if ($Channel -ceq "latest" -or $Channel -ceq "current") {
+  try {
+    if ($Version) {
+      Write-Info "Resolving version $Version..."
+      $release = Invoke-RestMethod -Uri "$apiBase/tags/$Version" -Headers $headers -ErrorAction Stop
+    } elseif ($Channel -ceq "latest" -or $Channel -ceq "current") {
       Write-Info "Resolving channel $Channel..."
-      $apiUrl = "$apiBase/latest"
-    } elseif ($Channel -ceq "next") {
-      Write-Info "Resolving channel next..."
-      $apiUrl = "$apiBase/tags/channel-next"
-    } elseif ($Channel -ceq "develop") {
-      Write-Info "Resolving channel develop..."
-      $apiUrl = "$apiBase/tags/channel-develop"
+      # /releases/latest skips pre-releases, which hides every 0.3+ build, so
+      # pick the highest plain vX.Y.Z tag from the release list instead.
+      $newest = Invoke-RestMethod -Uri "${apiBase}?per_page=100" -Headers $headers -ErrorAction Stop |
+        Where-Object { $_.tag_name -match '^v\d+\.\d+\.\d+$' } |
+        Sort-Object { [version]$_.tag_name.Substring(1) } -Descending | Select-Object -First 1
+      $release = if ($newest) { $newest } else { Invoke-RestMethod -Uri "$apiBase/latest" -Headers $headers -ErrorAction Stop }
+    } elseif ($Channel -ceq "next" -or $Channel -ceq "develop") {
+      Write-Info "Resolving channel $Channel..."
+      try {
+        $release = Invoke-RestMethod -Uri "$apiBase/tags/channel-$Channel" -Headers $headers -ErrorAction Stop
+      } catch {
+        # Releases published before the pointer tags were renamed use the bare name.
+        $release = Invoke-RestMethod -Uri "$apiBase/tags/$Channel" -Headers $headers -ErrorAction Stop
+      }
     } else {
       Die "Unknown channel: '$Channel'. Valid values: latest, current, next, develop"
     }
-  }
-
-  try {
-    $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers -ErrorAction Stop
-    return @{ TarballUrl = $release.tarball_url; Tag = $release.tag_name }
+    # Pointer releases carry no version tag of their own: it is in the title.
+    $tag = $release.tag_name
+    if ($release.name -match '\(\u2192 (v[^)]+)\)') { $tag = $Matches[1] }
+    return @{ TarballUrl = "https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/archive/refs/tags/$tag.zip"; Tag = $tag }
   } catch {
     if ($Version) {
       Die "Could not find release '$Version' on GitHub. Check the version tag and retry."
