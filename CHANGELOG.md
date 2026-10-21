@@ -48,6 +48,7 @@ the change itself — never reconstructed after the fact. See
 
 - **`role:write`, `token:write` and `token:read` are now enforced**: `role:write` also allows creating, editing and deleting custom roles, `token:write` also allows creating, updating and revoking router tokens (`user:write` / `router:write` keep working, no role loses access), and the token list in `GET /api/routers` is returned only to callers holding `token:read`, `token:write` or `router:write` (ROUT-345).
 - **Dashboard Roles page honours `role:write`**: users holding `role:write` (without `user:write`) now see New Role, Edit and Delete (ROUT-345).
+- **Dashboard router Token tab honours `token:write` / `router:write`**: New Token, edit and revoke are hidden for users who cannot use them, instead of ending in a raw 403 (ROUT-345).
 - **CLI works for roles without `settings:read`**: the permission-status pre-check no longer aborts every command with `Required permission: settings:read` when the role cannot read it (ROUT-345).
 
 - **Settings › Provider Catalog table scrolls horizontally on narrow screens**: at phone width the URL column is readable and Edit/Remove stay reachable instead of being clipped (ROUT-343).
