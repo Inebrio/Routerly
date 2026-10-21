@@ -1317,6 +1317,8 @@
         "traceContent": "Trace content",
         "traceContentHint": "Traces always record metadata (models, scores, tokens, cost, latency). Turn this on to also record the prompts sent and the answers received. They are stored with the usage record and visible to anyone who can read reports.",
         "capturePromptsAndAnswers": "Capture prompts and answers",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Save Changes",
         "createRouter": "Create Router",
         "createOrchestrator": "Create Orchestrator",

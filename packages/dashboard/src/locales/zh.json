@@ -1315,6 +1315,8 @@
         "traceContent": "跟踪内容",
         "traceContentHint": "跟踪总是记录元数据(模型、分数、令牌、成本、延迟)。启用此选项也可以记录发送的提示和接收的答案。它们与使用记录一起存储，对任何可以读取报告的人可见。",
         "capturePromptsAndAnswers": "捕获提示和答案",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "保存更改",
         "createRouter": "创建路由器",
         "createOrchestrator": "创建编排器",

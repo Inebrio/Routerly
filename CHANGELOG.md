@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Per-router notification channel override is now configurable (ROUT-335)** — `PUT /api/routers/:id` accepts `notifications: { channels } | null` (requires `router:write` + `notification:write`), `routerly router edit --notification-channel / --no-notification-channels`, and Router › General › Advanced › Notification channels. A router update that omits the field no longer drops a stored override.
+
 - **CLI `notification channel add --type webhook`** now supported with `--url`, `--method` and `--secret`; `add` also accepts `--json`. (ROUT-333)
 
 - **Startup refused on unsafe secrets permissions** now prints the exact `chmod 600 <files>` recovery command (the service is down, so `routerly permissions fix` cannot be used). (ROUT-370)

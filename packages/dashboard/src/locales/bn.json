@@ -1315,6 +1315,8 @@
         "traceContent": "ট্রেস সামগ্রী",
         "traceContentHint": "ট্রেসগুলি সর্বদা মেটাডেটা রেকর্ড করে (মডেল, স্কোর, টোকেন, খরচ, বিলম্ব)। ব্যবহার লগ করা প্রম্পট এবং উত্তর রেকর্ড করতেও এটি চালু করুন। তারা ব্যবহার রেকর্ডের সাথে সংরক্ষিত এবং রিপোর্ট পড়তে পারে যে কারও কাছে দৃশ্যমান।",
         "capturePromptsAndAnswers": "প্রম্পট এবং উত্তর ক্যাপচার করুন",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "পরিবর্তন সংরক্ষণ করুন",
         "createRouter": "রাউটার তৈরি করুন",
         "createOrchestrator": "অর্কেস্ট্রেটর তৈরি করুন",

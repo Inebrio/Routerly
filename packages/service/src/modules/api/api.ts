@@ -1399,12 +1399,24 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
       optimizers?: OptimizerConfig | null;
+      notifications?: { channels: string[] } | null;
       traceContent?: boolean;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
+    // Routing a router's events to external channels is a privileged sub-operation.
+    if (req.body.notifications !== undefined && !requirePerm(req, 'notification:write', reply)) return;
+    let notificationChannels: string[] | undefined;
+    if (req.body.notifications) {
+      const parsed = z.object({ channels: z.array(z.string().min(1)) }).strict().safeParse(req.body.notifications);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid notifications', details: parsed.error.issues });
+      notificationChannels = [...new Set(parsed.data.channels)];
+      const known = ((await readConfig('settings')).notifications?.channels ?? []) as { id: string; provider: string }[];
+      const bad = notificationChannels.filter(id => !known.some(c => c.id === id && c.provider !== 'dashboard'));
+      if (bad.length) return reply.status(400).send({ error: `Unknown or non-external notification channel: ${bad.join(', ')}` });
+    }
     // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
     if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
@@ -1527,6 +1539,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         optimizersUpdate = { optimizers: routers[index]!.optimizers };
       }
 
+      // undefined = keep stored override; null or [] = clear; array = replace.
+      const notifChannels = req.body.notifications === null ? [] : notificationChannels ?? routers[index]!.notifications?.channels ?? [];
+      const notificationsUpdate: { notifications?: { channels: string[] } } = notifChannels.length ? { notifications: { channels: notifChannels } } : {};
+
       const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, ...existing } = routers[index]!;
       updated = {
         ...existing,
@@ -1545,6 +1561,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...guardrailsUpdate,
         ...piiUpdate,
         ...optimizersUpdate,
+        ...notificationsUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
         ...tokensUpdate,

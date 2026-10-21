@@ -1315,6 +1315,8 @@
         "traceContent": "Vết nội dung",
         "traceContentHint": "Vết luôn ghi lại siêu dữ liệu (mô hình, điểm, token, chi phí, độ trễ). Bật điều này để cũng ghi lại các nhắc được gửi và câu trả lời nhận được. Chúng được lưu trữ với bản ghi sử dụng và hiển thị cho bất kỳ ai có thể đọc báo cáo.",
         "capturePromptsAndAnswers": "Nắm bắt nhắc nhở và câu trả lời",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Lưu các thay đổi",
         "createRouter": "Tạo bộ định tuyến",
         "createOrchestrator": "Tạo Orchestrator",

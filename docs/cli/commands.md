@@ -536,6 +536,8 @@ routerly router edit <router> [options]
 | `--timeout <ms>` | New time-to-first-token timeout per model attempt, in ms (`0` disables it) |
 | `--trace-content` | Record prompts and answers in the router's traces |
 | `--no-trace-content` | Record metadata only: no prompts, no answers (default) |
+| `--notification-channel <idOrName>` | Also send this router's events to a notification channel (repeatable, replaces the existing override). Requires `router:write` and `notification:write` |
+| `--no-notification-channels` | Remove the router's notification channel override |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
 | `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period|rolling:...:<value>` |
 

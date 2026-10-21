@@ -1315,6 +1315,8 @@
         "traceContent": "Contenu de la trace",
         "traceContentHint": "Les traces enregistrent toujours les métadonnées (modèles, scores, jetons, coût, latence). Activez ceci pour aussi enregistrer les prompts envoyés et les réponses reçues. Elles sont stockées avec l'enregistrement d'utilisation et visibles à tous ceux qui peuvent lire les rapports.",
         "capturePromptsAndAnswers": "Capturer les prompts et les réponses",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Enregistrer les modifications",
         "createRouter": "Créer un routeur",
         "createOrchestrator": "Créer un Orchestrateur",

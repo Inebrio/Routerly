@@ -1315,6 +1315,8 @@
         "traceContent": "ติดตามเนื้อหา",
         "traceContentHint": "ร่องรอยบันทึกข้อมูลมูลค่า (รุ่น คะแนน โทเค็น ต้นทุน ความล่าช้า) เปิดนี้ให้บันทึกพรอมต์ที่ส่งและคำตอบที่ได้รับเช่นกัน พวกเขาจัดเก็บกับเรกคอร์ดการใช้งานและมองเห็นให้ใครก็ได้ที่สามารถอ่านรายงาน",
         "capturePromptsAndAnswers": "เก็บพรอมต์และคำตอบ",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "บันทึกการเปลี่ยนแปลง",
         "createRouter": "สร้างเราเตอร์",
         "createOrchestrator": "สร้าง Orchestrator",

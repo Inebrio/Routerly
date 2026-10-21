@@ -1315,6 +1315,8 @@
         "traceContent": "محتوای ردیابی",
         "traceContentHint": "ردیابی‌ها همیشه فراداده (مدل‌ها، امتیازها، توکن‌ها، هزینه، تأخیر) را ثبت می‌کنند. این را فعال کنید تا پرامپت‌های ارسال‌شده و پاسخ‌های دریافت‌شده نیز ثبت شوند. آن‌ها با رکورد مصرف ذخیره می‌شوند و برای هرکسی که می‌تواند گزارش‌ها را بخواند قابل مشاهده هستند.",
         "capturePromptsAndAnswers": "ثبت پرامپت‌ها و پاسخ‌ها",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "ذخیره تغییرات",
         "createRouter": "ایجاد روتر",
         "createOrchestrator": "ارکستریتور ایجاد کنید",

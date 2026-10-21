@@ -1315,6 +1315,8 @@
         "traceContent": "Content traceren",
         "traceContentHint": "Traces registreren altijd metagegevens (modellen, scores, tokens, kosten, latentie). Schakel dit in om ook de verzonden prompts en ontvangen antwoorden op te slaan. Ze worden opgeslagen met de gebruiksrecord en zijn zichtbaar voor iedereen die rapporten kan lezen.",
         "capturePromptsAndAnswers": "Prompts en antwoorden vastleggen",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Wijzigingen opslaan",
         "createRouter": "Router aanmaken",
         "createOrchestrator": "Orchestrator maken",

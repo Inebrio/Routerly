@@ -1315,6 +1315,8 @@
         "traceContent": "Содержание трассировки",
         "traceContentHint": "Трассировки всегда записывают метаданные (модели, оценки, токены, стоимость, задержка). Включите это, чтобы также записывать отправленные подсказки и полученные ответы. Они хранятся с записью об использовании и видны всем, кто может читать отчёты.",
         "capturePromptsAndAnswers": "Захватить подсказки и ответы",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Сохранить изменения",
         "createRouter": "Создать маршрутизатор",
         "createOrchestrator": "Создать оркестратор",

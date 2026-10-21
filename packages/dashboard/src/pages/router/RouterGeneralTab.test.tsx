@@ -8,6 +8,7 @@ vi.mock('../../api', () => ({
   createRouter: vi.fn(),
   updateRouter: vi.fn(),
   getSettings: vi.fn(),
+  getNotificationChannels: vi.fn(),
 }));
 
 // ponytail: mock useUnsavedChanges — blocker not needed in unit tests
@@ -21,7 +22,8 @@ vi.mock('../../hooks/useUnsavedChanges', () => ({
   ),
 }));
 
-import { createRouter, updateRouter, getSettings } from '../../api';
+import { createRouter, updateRouter, getSettings, getNotificationChannels } from '../../api';
+const mockGetChannels = vi.mocked(getNotificationChannels as () => Promise<unknown>);
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
 
 const mockCreateRouter = vi.mocked(createRouter as (...a: unknown[]) => Promise<unknown>);
@@ -63,6 +65,7 @@ function renderTab(router: Record<string, unknown> | null = mockRouter) {
 beforeEach(() => {
   mockGetSettings.mockResolvedValue({ publicUrl: 'https://api.example.com', port: 3000 });
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
+  mockGetChannels.mockRejectedValue(new Error('403'));
   mockCreateRouter.mockResolvedValue({ id: 'proj-new', name: 'New', models: [], token: 'sk-rt-abc123' });
   mockUseUnsavedChanges.mockReturnValue({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() });
 });
@@ -336,5 +339,25 @@ describe('RouterGeneralTab — unsaved changes modal', () => {
     });
     renderTab();
     await waitFor(() => expect(screen.getByTestId('unsaved-modal')).toBeTruthy());
+  });
+});
+
+describe('RouterGeneralTab — notification channel override', () => {
+  it('hides the section when channels cannot be listed', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    expect(screen.queryByText('Notification channels')).toBeNull();
+  });
+
+  it('saves the selected channels', async () => {
+    mockGetChannels.mockResolvedValue([{ id: 'c1', provider: 'webhook', name: 'hook' }, { id: 'd1', provider: 'dashboard' }]);
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Advanced settings/i }));
+    await userEvent.click(await screen.findByLabelText(/hook/));
+    expect(screen.queryByLabelText(/d1/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /Save changes/i }));
+    await waitFor(() => expect(mockUpdateRouter).toHaveBeenCalledWith('proj-1', expect.objectContaining({ notifications: { channels: ['c1'] } })));
   });
 });

@@ -1316,6 +1316,8 @@
         "traceContent": "Contenuto della traccia",
         "traceContentHint": "Le tracce catturano sempre i metadati (modelli, punteggi, token, costi, latenza). Attiva questa opzione per catturare anche i prompt inviati e le risposte ricevute. Vengono salvati con il record di utilizzo e sono visibili a chiunque possa leggere i report.",
         "capturePromptsAndAnswers": "Cattura prompt e risposte",
+        "notificationChannels": "Canali di notifica",
+        "notificationChannelsHint": "Invia gli eventi di questo router anche a questi canali, oltre a quelli che corrispondono globalmente.",
         "saveChanges": "Salva modifiche",
         "createRouter": "Crea router",
         "createOrchestrator": "Crea Orchestrator",

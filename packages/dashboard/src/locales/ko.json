@@ -1315,6 +1315,8 @@
         "traceContent": "추적 콘텐츠",
         "traceContentHint": "추적은 항상 메타데이터(모델, 점수, 토큰, 비용, 레이턴시)를 기록합니다. 보낸 프롬프트와 받은 답변도 기록하려면 켜십시오. 사용 기록과 함께 저장되며 보고서를 읽을 수 있는 모든 사람이 볼 수 있습니다.",
         "capturePromptsAndAnswers": "프롬프트 및 답변 캡처",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "변경 사항 저장",
         "createRouter": "라우터 생성",
         "createOrchestrator": "오케스트레이터 생성",
