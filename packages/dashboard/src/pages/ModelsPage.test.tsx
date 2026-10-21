@@ -34,11 +34,13 @@ vi.mock('../components/SearchableSelect', () => ({
 // everything else the component asks `can()` about is granted.
 const mockCanManage = true;
 let mockCanWriteModels = true;
+let mockCanReadModels = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
     can: (p: string) => {
       if (p === 'resilience:manage') return mockCanManage;
       if (p === 'model:write') return mockCanWriteModels;
+      if (p === 'model:read') return mockCanReadModels;
       return true;
     },
   }),
@@ -274,6 +276,19 @@ describe('ModelsPage — models list', () => {
 });
 
 // ── ConfirmDialog / delete flow ────────────────────────────────────────────────
+
+describe('ModelsPage — without model:read', () => {
+  it('shows the permission message and does not call getModels', async () => {
+    mockCanReadModels = false;
+    try {
+      renderPage();
+      expect(screen.getByText("You don't have permission to view models.")).toBeTruthy();
+      expect(getModels).not.toHaveBeenCalled();
+    } finally {
+      mockCanReadModels = true;
+    }
+  });
+});
 
 describe('ModelsPage — delete with ConfirmDialog', () => {
   it('shows confirm dialog when delete button clicked', async () => {

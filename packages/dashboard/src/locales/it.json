@@ -1926,6 +1926,7 @@
     "page": {
       "title": "Modelli",
       "subtitle": "Provider LLM registrati in Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modelli",
         "health": "Salute"

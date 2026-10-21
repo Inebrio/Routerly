@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Modellər",
       "subtitle": "Routerly-yə qeydiyyatdan keçmiş LLM provayderləri",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modellər",
         "health": "Sağlamlıq"

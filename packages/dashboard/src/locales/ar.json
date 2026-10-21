@@ -1923,6 +1923,7 @@
     "page": {
       "title": "النماذج",
       "subtitle": "مزوّدو LLM المسجّلون في Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "النماذج",
         "health": "الحالة"

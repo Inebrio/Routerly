@@ -1923,6 +1923,7 @@
     "page": {
       "title": "מודלים",
       "subtitle": "ספקי LLM הרשומים ב-Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "מודלים",
         "health": "תקינות"

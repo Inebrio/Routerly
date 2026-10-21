@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Моделі",
       "subtitle": "Постачальники LLM, зареєстровані з Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Моделі",
         "health": "Здоров'я"

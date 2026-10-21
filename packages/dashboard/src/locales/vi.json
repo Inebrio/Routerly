@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Mô hình",
       "subtitle": "Mô hình nhà cung cấp LLM được đăng ký với Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Mô hình",
         "health": "Sức khỏe"

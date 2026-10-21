@@ -1923,6 +1923,7 @@
     "page": {
       "title": "मॉडल",
       "subtitle": "Routerly के साथ पंजीकृत LLM प्रदाता",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "मॉडल",
         "health": "स्वास्थ्य"

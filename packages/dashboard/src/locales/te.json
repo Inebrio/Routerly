@@ -1923,6 +1923,7 @@
     "page": {
       "title": "మోడల్‌లు",
       "subtitle": "Routerly తో నమోదు చేసిన LLM ప్రదాతలు",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "మోడల్‌లు",
         "health": "ఆరోగ్య"

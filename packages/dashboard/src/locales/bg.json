@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Модели",
       "subtitle": "LLM доставчици, регистрирани в Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Модели",
         "health": "Здраве"

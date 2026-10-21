@@ -1923,6 +1923,7 @@
     "page": {
       "title": "รุ่น",
       "subtitle": "ผู้ให้บริการ LLM ลงทะเบียนกับ Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "รุ่น",
         "health": "สุขภาพ"
