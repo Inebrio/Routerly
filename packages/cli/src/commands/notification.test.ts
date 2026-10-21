@@ -1068,3 +1068,24 @@ describe('notification channel edit — cooldown and routers', () => {
   });
 });
 
+
+describe('notification channel edit — username and clearing targets', () => {
+  it('patches username', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'smtp', name: 'x' });
+    await runChannel('edit', 'ch1', '--username', 'bob');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({ username: 'bob' }));
+  });
+
+  it.each([
+    ['--target-roles', 'roles'],
+    ['--target-users', 'users'],
+    ['--target-permissions', 'permissions'],
+  ])('%s "" clears only that list and keeps the others', async (flag, key) => {
+    const stored = { roles: ['admin'], users: ['u1'], permissions: ['models:read'] };
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x', targets: stored });
+    await runChannel('edit', 'ch1', flag, '');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', {
+      targets: { ...stored, [key]: [] },
+    });
+  });
+});

@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **CLI `notification channel edit`** now applies `--username` and clears recipient lists with `--target-roles/--target-users/--target-permissions ""` (other lists are preserved). (ROUT-334)
 
 - **Notification channel UI/CLI now match the emitter for empty events (ROUT-337)** — an external channel (email, webhook, Slack, …) with no events never receives anything; the dashboard form hint/placeholder and channel list now say «No events (silent)» instead of «All events», and `routerly notification channel list/show` print `none: silent`. `dashboard` channels still default to all events.
 - **Per-router notification channel override is now configurable (ROUT-335)** — `PUT /api/routers/:id` accepts `notifications: { channels } | null` (requires `router:write` + `notification:write`), `routerly router edit --notification-channel / --no-notification-channels`, and Router › General › Advanced › Notification channels. Override delivery also covers events that carry the router only in their details (`provider.*`, `budget.*`, `auth.token_invalid`). A router update that omits the field no longer drops a stored override.
