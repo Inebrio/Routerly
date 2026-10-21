@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} uprawnień",
         "userCount": "{{count}} użytkownik",
         "userCount_other": "{{count}} użytkowników",
-        "everyone": "Wszyscy"
+        "everyone": "Wszyscy",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nie udało się załadować"
@@ -858,7 +859,9 @@
           "routersHint": "Pozostaw puste, aby otrzymywać zdarzenia ze wszystkich routerów.",
           "cooldownHeading": "Okres ochłodzenia",
           "cooldownSuffix": "sekund (0 = brak okresu ochłodzenia)",
-          "cooldownHint": "Minimalny interwał przed ponownym uruchomieniem tego kanału dla tego samego zdarzenia."
+          "cooldownHint": "Minimalny interwał przed ponownym uruchomieniem tego kanału dla tego samego zdarzenia.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Odbiorcy / Cele",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} صلاحيات",
         "userCount": "{{count}} مستخدم",
         "userCount_other": "{{count}} مستخدمين",
-        "everyone": "الجميع"
+        "everyone": "الجميع",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "فشل التحميل"
@@ -858,7 +859,9 @@
           "routersHint": "اتركه فارغًا لاستلام أحداث من كل الموجّهات.",
           "cooldownHeading": "فترة التهدئة",
           "cooldownSuffix": "ثوانٍ (0 = بدون تهدئة)",
-          "cooldownHint": "أقل فاصل زمني قبل أن تتمكن هذه القناة من الإطلاق مجددًا لنفس الحدث."
+          "cooldownHint": "أقل فاصل زمني قبل أن تتمكن هذه القناة من الإطلاق مجددًا لنفس الحدث.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "المستلمون / الوجهات",

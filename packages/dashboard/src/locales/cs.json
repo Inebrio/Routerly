@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} oprávnění",
         "userCount": "{{count}} uživatel",
         "userCount_other": "{{count}} uživatelů",
-        "everyone": "Všichni"
+        "everyone": "Všichni",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Načtení se nezdařilo"
@@ -858,7 +859,9 @@
           "routersHint": "Nechte prázdné pro přijímání událostí ze všech routerů.",
           "cooldownHeading": "Prodleva",
           "cooldownSuffix": "sekund (0 = bez prodlevy)",
-          "cooldownHint": "Minimální interval, než se tento kanál může znovu spustit pro stejnou událost."
+          "cooldownHint": "Minimální interval, než se tento kanál může znovu spustit pro stejnou událost.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Příjemci / Cíle",

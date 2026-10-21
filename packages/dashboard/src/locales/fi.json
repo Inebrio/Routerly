@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} oikeutta",
         "userCount": "{{count}} käyttäjä",
         "userCount_other": "{{count}} käyttäjää",
-        "everyone": "Kaikki"
+        "everyone": "Kaikki",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Lataaminen epäonnistui"
@@ -858,7 +859,9 @@
           "routersHint": "Jätä tyhjäksi vastaanottaaksesi tapahtumat kaikilta reitittimiltä.",
           "cooldownHeading": "Jäähdytysaika",
           "cooldownSuffix": "sekuntia (0 = ei jäähdytysaikaa)",
-          "cooldownHint": "Vähimmäisväli, ennen kuin tämä kanava voi laukaista uudelleen samalle tapahtumalle."
+          "cooldownHint": "Vähimmäisväli, ennen kuin tämä kanava voi laukaista uudelleen samalle tapahtumalle.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Vastaanottajat / kohteet",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} Berechtigungen",
         "userCount": "{{count}} Benutzer",
         "userCount_other": "{{count}} Benutzer",
-        "everyone": "Alle"
+        "everyone": "Alle",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Laden fehlgeschlagen"
@@ -858,7 +859,9 @@
           "routersHint": "Leer lassen, um Ereignisse von allen Routern zu erhalten.",
           "cooldownHeading": "Abklingzeit",
           "cooldownSuffix": "Sekunden (0 = keine Abklingzeit)",
-          "cooldownHint": "Mindestintervall, bevor dieser Kanal für dasselbe Ereignis erneut ausgelöst werden kann."
+          "cooldownHint": "Mindestintervall, bevor dieser Kanal für dasselbe Ereignis erneut ausgelöst werden kann.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Empfänger / Ziele",

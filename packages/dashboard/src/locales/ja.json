@@ -794,7 +794,8 @@
         "permCount_other": "{{count}}権限",
         "userCount": "{{count}}ユーザー",
         "userCount_other": "{{count}}ユーザー",
-        "everyone": "全員"
+        "everyone": "全員",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "読み込みに失敗しました"
@@ -858,7 +859,9 @@
           "routersHint": "すべてのルーターからイベントを受け取るには空白のままにしてください。",
           "cooldownHeading": "クールダウン",
           "cooldownSuffix": "秒(0 = クールダウンなし)",
-          "cooldownHint": "このチャネルが同じイベントに対して再度実行されるまでの最小間隔。"
+          "cooldownHint": "このチャネルが同じイベントに対して再度実行されるまでの最小間隔。",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "受信者 / ターゲット",

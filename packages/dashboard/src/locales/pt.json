@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} utilizador",
         "userCount_other": "{{count}} utilizadores",
-        "everyone": "Todos"
+        "everyone": "Todos",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Falha ao carregar"
@@ -858,7 +859,9 @@
           "routersHint": "Deixe vazio para receber eventos de todos os routers.",
           "cooldownHeading": "Arrefecimento",
           "cooldownSuffix": "segundos (0 = sem arrefecimento)",
-          "cooldownHint": "Intervalo mínimo antes deste canal poder disparar novamente para o mesmo evento."
+          "cooldownHint": "Intervalo mínimo antes deste canal poder disparar novamente para o mesmo evento.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Destinatários / Destinos",

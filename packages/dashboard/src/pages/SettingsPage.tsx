@@ -443,7 +443,8 @@ function targetsHint(provider: EProvider, t: (k: string) => string): string | nu
 function summariseChannel(ch: EChannel, t: TFunction): string {
   const parts: string[] = [];
   const evCount = ch.events?.length ?? 0;
-  parts.push(evCount === 0 ? t('settings.notifications.summary.allEvents') : t('settings.notifications.summary.eventCount', { count: evCount }));
+  const noEventsKey = ch.provider === 'dashboard' ? 'allEvents' : 'noEvents';
+  parts.push(evCount === 0 ? t(`settings.notifications.summary.${noEventsKey}`) : t('settings.notifications.summary.eventCount', { count: evCount }));
   const targets = ch.targets;
   const targetParts: string[] = [];
   if (targets?.roles?.length) targetParts.push(t('settings.notifications.summary.roleCount', { count: targets.roles.length }));
@@ -703,6 +704,7 @@ export function SettingsNotificationsTab() {
     const roleOptions = roles.map(r => ({ value: r.id, label: r.name }));
     const userOptions = users.map(u => ({ value: u.id, label: u.email }));
     const hint = targetsHint(ch.provider, t);
+    const evSuffix = ch.provider === 'dashboard' ? '' : 'External';
 
     return (
       <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -713,10 +715,10 @@ export function SettingsNotificationsTab() {
             options={EVENT_OPTIONS}
             value={ch.events ?? []}
             onChange={v => uf(ch.id, 'events', v.length ? v : undefined)}
-            placeholder={t('settings.notifications.fields.routing.eventsPlaceholder')}
+            placeholder={t(`settings.notifications.fields.routing.eventsPlaceholder${evSuffix}`)}
           />
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-            {t('settings.notifications.fields.routing.eventsHint')}
+            {t(`settings.notifications.fields.routing.eventsHint${evSuffix}`)}
           </p>
         </div>
 

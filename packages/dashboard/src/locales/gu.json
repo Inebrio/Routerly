@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} વપરાશકર્તા",
         "userCount_other": "{{count}} વપરાશકર્તાઓ",
-        "everyone": "બધા"
+        "everyone": "બધા",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "લોડ નિષ્ફળ"
@@ -858,7 +859,9 @@
           "routersHint": "બધા રાઉટર્સ થી ઇવેન્ટ્સ પ્રાપ્ત કરવા માટે ખાલી છોડો.",
           "cooldownHeading": "શીતળન",
           "cooldownSuffix": "સેકંડ (0 = કોઈ શીતળન નથી)",
-          "cooldownHint": "આ ચેનલ તે જ ઇવેન્ટ માટે ફરીથી આગ્નેય કરી શકે તે માટે ન્યૂનતમ અંતરાલ."
+          "cooldownHint": "આ ચેનલ તે જ ઇવેન્ટ માટે ફરીથી આગ્નેય કરી શકે તે માટે ન્યૂનતમ અંતરાલ.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "પ્રાપ્તકર્તાઓ / લક્ષ્યો",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} הרשאות",
         "userCount": "{{count}} משתמש",
         "userCount_other": "{{count}} משתמשים",
-        "everyone": "כולם"
+        "everyone": "כולם",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "הטעינה נכשלה"
@@ -858,7 +859,9 @@
           "routersHint": "השאר ריק לקבלת אירועים מכל הנתבים.",
           "cooldownHeading": "תקופת צינון",
           "cooldownSuffix": "שניות (0 = ללא צינון)",
-          "cooldownHint": "המרווח המינימלי לפני שערוץ זה יכול להתריע שוב על אותו אירוע."
+          "cooldownHint": "המרווח המינימלי לפני שערוץ זה יכול להתריע שוב על אותו אירוע.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "נמענים / מטרות",

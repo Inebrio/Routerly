@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} مجوز",
         "userCount": "{{count}} کاربر",
         "userCount_other": "{{count}} کاربر",
-        "everyone": "همه"
+        "everyone": "همه",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "بارگذاری ناموفق بود"
@@ -858,7 +859,9 @@
           "routersHint": "برای دریافت رویدادها از همه روترها خالی بگذارید.",
           "cooldownHeading": "دوره خاموشی",
           "cooldownSuffix": "ثانیه (۰ = بدون دوره خاموشی)",
-          "cooldownHint": "حداقل فاصله پیش از آنکه این کانال دوباره برای همان رویداد فعال شود."
+          "cooldownHint": "حداقل فاصله پیش از آنکه این کانال دوباره برای همان رویداد فعال شود.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "گیرندگان / هدف‌ها",

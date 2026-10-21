@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} permisos",
         "userCount": "{{count}} usuario",
         "userCount_other": "{{count}} usuarios",
-        "everyone": "Todos"
+        "everyone": "Todos",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Error al cargar"
@@ -858,7 +859,9 @@
           "routersHint": "Deja vacío para recibir eventos de todos los enrutadores.",
           "cooldownHeading": "Tiempo de espera",
           "cooldownSuffix": "segundos (0 = sin espera)",
-          "cooldownHint": "Intervalo mínimo antes de que este canal pueda dispararse de nuevo para el mismo evento."
+          "cooldownHint": "Intervalo mínimo antes de que este canal pueda dispararse de nuevo para el mismo evento.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Destinatarios / Objetivos",

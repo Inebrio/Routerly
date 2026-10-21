@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} mach",
         "userCount": "{{count}} gebruiker",
         "userCount_other": "{{count}} gebruikers",
-        "everyone": "Iedereen"
+        "everyone": "Iedereen",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kan niet laden"
@@ -858,7 +859,9 @@
           "routersHint": "Leeg laten om gebeurtenissen van alle routers te ontvangen.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "seconden (0 = geen cooldown)",
-          "cooldownHint": "Minimaal interval voordat dit kanaal opnieuw kan afgaan voor dezelfde gebeurtenis."
+          "cooldownHint": "Minimaal interval voordat dit kanaal opnieuw kan afgaan voor dezelfde gebeurtenis.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Ontvangers / Doelen",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} 个权限",
         "userCount": "{{count}} 个用户",
         "userCount_other": "{{count}} 个用户",
-        "everyone": "所有人"
+        "everyone": "所有人",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "未能加载"
@@ -858,7 +859,9 @@
           "routersHint": "留空以接收所有路由器的事件。",
           "cooldownHeading": "冷却",
           "cooldownSuffix": "秒(0 = 无冷却)",
-          "cooldownHint": "此频道再次触发相同事件前的最小间隔。"
+          "cooldownHint": "此频道再次触发相同事件前的最小间隔。",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "收件人 / 目标",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} izin",
         "userCount": "{{count}} pengguna",
         "userCount_other": "{{count}} pengguna",
-        "everyone": "Semua orang"
+        "everyone": "Semua orang",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Gagal memuat"
@@ -858,7 +859,9 @@
           "routersHint": "Biarkan kosong untuk menerima acara dari semua router.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "detik (0 = tidak ada cooldown)",
-          "cooldownHint": "Interval minimum sebelum saluran ini dapat dipecat lagi untuk acara yang sama."
+          "cooldownHint": "Interval minimum sebelum saluran ini dapat dipecat lagi untuk acara yang sama.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Penerima / Target",

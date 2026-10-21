@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} utilizator",
         "userCount_other": "{{count}} utilizatori",
-        "everyone": "Toți"
+        "everyone": "Toți",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nu s-a putut încărca"
@@ -858,7 +859,9 @@
           "routersHint": "Lăsați gol pentru a primi evenimente din toți ruterii.",
           "cooldownHeading": "Tiempo de espera",
           "cooldownSuffix": "secunde (0 = fără timp de espera)",
-          "cooldownHint": "Interval minim înainte ca acest canal să poată declanșa din nou pentru același eveniment."
+          "cooldownHint": "Interval minim înainte ca acest canal să poată declanșa din nou pentru același eveniment.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Destinatari / Ținte",

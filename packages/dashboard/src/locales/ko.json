@@ -794,7 +794,8 @@
         "permCount_other": "{{count}}개 권한",
         "userCount": "{{count}}개 사용자",
         "userCount_other": "{{count}}개 사용자",
-        "everyone": "모두"
+        "everyone": "모두",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "로드 실패"
@@ -858,7 +859,9 @@
           "routersHint": "모든 라우터에서 이벤트를 수신하려면 비워두세요.",
           "cooldownHeading": "쿨다운",
           "cooldownSuffix": "초(0 = 쿨다운 없음)",
-          "cooldownHint": "이 채널이 동일한 이벤트에 대해 다시 실행되기 전의 최소 간격."
+          "cooldownHint": "이 채널이 동일한 이벤트에 대해 다시 실행되기 전의 최소 간격.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "수신자/대상",

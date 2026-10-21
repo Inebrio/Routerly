@@ -123,8 +123,10 @@ export function summariseChannel(ch: Record<string, unknown>, t: TFunction): str
   const parts: string[] = [];
   const events = ch['events'] as string[] | undefined;
   const evCount = events?.length ?? 0;
+  // External channels without events never receive anything (emitter opt-in rule).
+  const noEventsKey = ch['provider'] === 'dashboard' ? 'allEvents' : 'noEvents';
   parts.push(evCount === 0
-    ? t('settings.notifications.summary.allEvents')
+    ? t(`settings.notifications.summary.${noEventsKey}`)
     : t('settings.notifications.summary.eventCount', { count: evCount }));
   const targets = ch['targets'] as { roles?: string[]; permissions?: string[]; users?: string[] } | undefined;
   const targetParts: string[] = [];
@@ -356,6 +358,7 @@ export function RoutingEditFields({
   form, onChange, t,
 }: Pick<TargetsProps, 'form' | 'onChange' | 't'>) {
   const events = (form['events'] as string[] | undefined) ?? [];
+  const evSuffix = form['provider'] === 'dashboard' ? '' : 'External';
   const cooldownSeconds = typeof form['cooldownSeconds'] === 'number' ? form['cooldownSeconds'] : 0;
   const selectedRouters = (form['routers'] as string[] | undefined) ?? [];
 
@@ -371,10 +374,10 @@ export function RoutingEditFields({
           options={getEventOptions(t)}
           value={events}
           onChange={v => onChange('events', v.length ? v : undefined)}
-          placeholder={t('settings.notifications.fields.routing.eventsPlaceholder')}
+          placeholder={t(`settings.notifications.fields.routing.eventsPlaceholder${evSuffix}`)}
         />
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '5px 0 0' }}>
-          {t('settings.notifications.fields.routing.eventsHint')}
+          {t(`settings.notifications.fields.routing.eventsHint${evSuffix}`)}
         </p>
       </div>
       <div>

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} behörigheter",
         "userCount": "{{count}} användare",
         "userCount_other": "{{count}} användare",
-        "everyone": "Alla"
+        "everyone": "Alla",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Misslyckades att ladda"
@@ -858,7 +859,9 @@
           "routersHint": "Lämna tomt för att ta emot händelser från alla routrar.",
           "cooldownHeading": "Nedkylning",
           "cooldownSuffix": "sekunder (0 = ingen nedkylning)",
-          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse."
+          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Mottagare / Mål",

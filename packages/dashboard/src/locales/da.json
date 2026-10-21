@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} tilladelser",
         "userCount": "{{count}} bruger",
         "userCount_other": "{{count}} brugere",
-        "everyone": "Alle"
+        "everyone": "Alle",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kunne ikke indlæse"
@@ -858,7 +859,9 @@
           "routersHint": "Lad stå tomt for at modtage hændelser fra alle routere.",
           "cooldownHeading": "Afkølingstid",
           "cooldownSuffix": "sekunder (0 = ingen afkølingstid)",
-          "cooldownHint": "Minimumsinterval, før denne kanal kan udløses igen for den samme hændelse."
+          "cooldownHint": "Minimumsinterval, før denne kanal kan udløses igen for den samme hændelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Modtagere/mål",

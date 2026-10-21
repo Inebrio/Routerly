@@ -638,12 +638,18 @@ describe('notification channel show', () => {
     expect(s).toContain('configured'); // botToken masked
   });
 
-  it('shows "events: all" and "(unnamed)" when absent', async () => {
-    mockApi.mockResolvedValue({ id: 'ch2', provider: 'webhook', url: 'https://x.com' });
+  it('shows "events: all" and "(unnamed)" when absent on a dashboard channel', async () => {
+    mockApi.mockResolvedValue({ id: 'ch2', provider: 'dashboard' });
     const { out } = await runChannel('show', 'ch2');
     const s = out.join(' ');
     expect(s).toContain('(unnamed)');
     expect(s).toContain('events: all');
+  });
+
+  it('shows events: none (silent) for an external channel without events', async () => {
+    mockApi.mockResolvedValue({ id: 'ch2', provider: 'webhook', url: 'https://x.com' });
+    const { out } = await runChannel('show', 'ch2');
+    expect(out.join(' ')).toContain('events: none');
   });
 
   it('marks an unset secret as "(not set)"', async () => {

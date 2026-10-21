@@ -257,7 +257,7 @@ export function makeNotificationCommand(): Command {
           Name:    ch.name ?? '(unnamed)',
           Type:    ch.provider,
           Config:  providerSummary(ch as ChannelBase & Record<string, unknown>),
-          Events:  ch.events?.length ? ch.events.join(', ') : '*',
+          Events:  ch.events?.length ? ch.events.join(', ') : (ch.provider === 'dashboard' ? '*' : '(none: silent)'),
           Targets: targetsSummary(ch.targets),
         }));
         console.table(rows);
@@ -491,7 +491,7 @@ export function makeNotificationCommand(): Command {
         if (ch.events?.length) {
           console.log(chalk.gray(`events: ${ch.events.join(', ')}`));
         } else {
-          console.log(chalk.gray('events: all'));
+          console.log(chalk.gray(ch.provider === 'dashboard' ? 'events: all' : 'events: none (channel is silent until events are set)'));
         }
         if (ch.targets) console.log(chalk.gray(`targets: ${JSON.stringify(ch.targets)}`));
         // Print provider-specific fields; secrets shown as ***

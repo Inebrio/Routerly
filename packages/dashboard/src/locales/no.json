@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} tillatelser",
         "userCount": "{{count}} bruker",
         "userCount_other": "{{count}} brukere",
-        "everyone": "Alle"
+        "everyone": "Alle",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kunne ikke laste"
@@ -858,7 +859,9 @@
           "routersHint": "La stå tomt for å motta hendelser fra alle rutere.",
           "cooldownHeading": "Avkjøling",
           "cooldownSuffix": "sekunder (0 = ingen avkjøling)",
-          "cooldownHint": "Minimumintervall før denne kanalen kan utløses igjen for samme hendelse."
+          "cooldownHint": "Minimumintervall før denne kanalen kan utløses igjen for samme hendelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Mottakere / mål",

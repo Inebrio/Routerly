@@ -9,7 +9,7 @@ Routerly emits events when something notable happens — a provider goes down, a
 
 Every channel supports two filtering dimensions:
 
-- **Events** — which event types it receives. Leave empty to receive all events.
+- **Events** — which event types it receives. `dashboard` channels with no events receive all events; every external channel (email, webhook, Slack, …) with no events is silent and receives nothing until at least one event pattern is set.
 - **Targets** — who receives them (`{ roles, permissions, users }`). Leave empty for everyone.
 
 ---

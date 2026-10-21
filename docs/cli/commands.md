@@ -3294,7 +3294,7 @@ Add a notification channel.
 |------|----------|-------------|
 | `--type <type>` | yes | `dashboard`, `smtp`, `ses`, `sendgrid`, `azure`, `google`, `webhook`, `slack`, `teams`, `pagerduty`, `discord` |
 | `--name <name>` | yes | Friendly label shown in the UI |
-| `--events <patterns>` | no | Comma-separated event patterns this channel receives (e.g. `budget.*,model.added`). Omit for all events. |
+| `--events <patterns>` | no | Comma-separated event patterns this channel receives (e.g. `budget.*,model.added`). Omit for all events on `dashboard` channels; external channels without events are silent. |
 | `--target-roles <roles>` | no | Comma-separated role IDs to target. Omit for everyone. |
 | `--target-permissions <perms>` | no | Comma-separated permission names to target. |
 | `--target-users <users>` | no | Comma-separated user IDs to target. |

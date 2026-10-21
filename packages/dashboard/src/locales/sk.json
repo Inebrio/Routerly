@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} oprav",
         "userCount": "{{count}} používateľ",
         "userCount_other": "{{count}} používateľov",
-        "everyone": "Všetci"
+        "everyone": "Všetci",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nepodarilo sa načítať"
@@ -858,7 +859,9 @@
           "routersHint": "Nechajte prázdne, aby ste dostali udalosti zo všetkých smerovacie modulov.",
           "cooldownHeading": "Čakajúci čas",
           "cooldownSuffix": "sekúnd (0 = bez čakajúcich čas)",
-          "cooldownHint": "Minimálny interval predtým, ako sa tento kanál môže znova aktivovať pre tú istú udalosť."
+          "cooldownHint": "Minimálny interval predtým, ako sa tento kanál môže znova aktivovať pre tú istú udalosť.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Príjemcovia / Ciele",
