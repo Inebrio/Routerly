@@ -169,4 +169,19 @@ describe('migrateModelsToConnections', () => {
     expect(savedInstances[0].contextWindow).toBe(0);
     expect(savedInstances[0].cost).toEqual({ inputPerMillion: 1, outputPerMillion: 2 });
   });
+
+  it('does not throw on an existing connection without a label (ROUT-357)', async () => {
+    stubStores([], [{ id: 'c1', providerId: 'openai', credentials: {}, enabled: true }]);
+
+    await expect(migrateModelsToConnections()).resolves.toEqual({ connections: 0, instances: 0 });
+
+    const written = mockWriteConfig.mock.calls.find(([k]) => k === 'connections')![1] as any[];
+    expect(written[0].label).toBe('openai');
+  });
+
+  it('is a no-op for empty models/connections/instances', async () => {
+    stubStores([]);
+    await expect(migrateModelsToConnections()).resolves.toEqual({ connections: 0, instances: 0 });
+    expect(mockWriteConfig).not.toHaveBeenCalled();
+  });
 });
