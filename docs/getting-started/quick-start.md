@@ -12,11 +12,11 @@ From zero to your first routed AI response in under 5 minutes.
 ## Step 1: Install Routerly
 
 ```bash
-# macOS / Linux — installs the current release
-curl -fsSL https://www.routerly.ai/install.sh | bash
+# macOS / Linux — installs v0.5.3
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.3
 
-# Windows (PowerShell) — installs the current release
-powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+# Windows (PowerShell) — installs v0.5.3
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.5.3"
 ```
 
 The installer defaults to the **`current`** channel — the latest production-ready release. To install a different channel or a specific version:
@@ -26,7 +26,7 @@ The installer defaults to the **`current`** channel — the latest production-re
 curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
 
 # Pin to a specific version
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.2.0
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.2
 ```
 
 After the installer finishes, start the service if it isn't already running:

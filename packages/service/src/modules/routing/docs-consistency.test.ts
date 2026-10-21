@@ -43,4 +43,10 @@ describe('README and docs intro stay aligned with the product', () => {
     expect(readme.match(date)?.[1]).toBeTruthy()
     expect(readme.match(date)?.[1]).toBe(intro.match(date)?.[1])
   })
+
+  it.each([['README.md', readme], ['docs/intro.md', intro]])('%s pins the installer to a 0.5.x version', (_name, text) => {
+    const pins = [...text.matchAll(/(?:--version|-Version) (v\d+\.\d+\.\d+)/g)].map(m => m[1]!)
+    expect(pins.length).toBeGreaterThanOrEqual(2)
+    for (const v of pins) expect(v).toMatch(/^v0\.5\./)
+  })
 })
