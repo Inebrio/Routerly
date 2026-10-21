@@ -98,7 +98,7 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
   const MIGRATED_SUFFIX = ' (migrated)';
   let labelsChanged = false;
   for (const c of existingConnections) {
-    if (c.label.endsWith(MIGRATED_SUFFIX)) {
+    if (c.label?.endsWith(MIGRATED_SUFFIX)) {
       c.label = c.label.slice(0, -MIGRATED_SUFFIX.length);
       labelsChanged = true;
     }
@@ -110,7 +110,8 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
   // renaming the later ones in place is safe.
   const kept: string[] = [];
   for (const c of existingConnections) {
-    if (isConnectionLabelTaken(c.label, kept)) {
+    // A connection persisted without a label (hand-edited or older writer) gets a generated one.
+    if (!c.label || isConnectionLabelTaken(c.label, kept)) {
       c.label = suggestConnectionLabel(c.providerId, c.providerName, kept);
       labelsChanged = true;
     }
