@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Route, Shuffle, Plug, ChevronDown } from 'lucide-react';
-import { updateRouter, getSettings, type RouterKind } from '../../api';
+import { updateRouter, getSettings, getNotificationChannels, type RouterKind, type RedactedChannel } from '../../api';
 import { useRouter } from './RouterLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -64,7 +64,15 @@ export function RouterGeneralTab() {
     name: '',
     timeoutMs: String(DEFAULT_ROUTER_TIMEOUT_MS),
     traceContent: false,
+    notifyChannels: [] as string[],
   });
+
+  // External channels the override can target; the list needs notification:write,
+  // so a 403 (or no channels) simply hides the section.
+  const [channels, setChannels] = useState<RedactedChannel[]>([]);
+  useEffect(() => {
+    getNotificationChannels().then(list => setChannels(list.filter(c => c.provider !== 'dashboard'))).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (router) {
@@ -72,6 +80,7 @@ export function RouterGeneralTab() {
         name: router.name,
         timeoutMs: String(router.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS),
         traceContent: router.traceContent === true,
+        notifyChannels: router.notifications?.channels ?? [],
       });
     }
   }, [router]);  
@@ -79,7 +88,8 @@ export function RouterGeneralTab() {
   const isDirty =
     form.name !== (/* v8 ignore next */ router?.name ?? '') ||
     form.timeoutMs !== String(/* v8 ignore next */ router?.timeoutMs ?? DEFAULT_ROUTER_TIMEOUT_MS) ||
-    form.traceContent !== (/* v8 ignore next */ router?.traceContent === true);
+    form.traceContent !== (/* v8 ignore next */ router?.traceContent === true) ||
+    form.notifyChannels.join() !== (router?.notifications?.channels ?? []).join();
 
   const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty);
 
@@ -95,10 +105,12 @@ export function RouterGeneralTab() {
         models: router.models.map(m => ({ modelId: m.modelId, ...(m.prompt ? { prompt: m.prompt } : {}) })),
         timeoutMs: parseInt(form.timeoutMs),
         traceContent: form.traceContent,
+        ...(channels.length > 0 ? { notifications: form.notifyChannels.length ? { channels: form.notifyChannels } : null } : {}),
       };
       await updateRouter(router.id, payload);
       // Update context and reset form so isDirty becomes false — no navigation needed
-      const updated = { ...router, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent };
+      const { notifications: _n, ...rest } = router;
+      const updated = { ...rest, name: form.name, timeoutMs: parseInt(form.timeoutMs), traceContent: form.traceContent, ...(form.notifyChannels.length ? { notifications: { channels: form.notifyChannels } } : {}) };
       setRouter(updated);
       setForm(f => ({ ...f, name: updated.name, timeoutMs: String(updated.timeoutMs), traceContent: updated.traceContent }));
     } catch (err) {
@@ -354,6 +366,29 @@ message = client.messages.create(
                   {t('routers.general.form.capturePromptsAndAnswers')}
                 </label>
               </div>
+
+              {channels.length > 0 && (
+                <div className="form-group">
+                  <label className="form-label">{t('routers.general.form.notificationChannels')}</label>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    {t('routers.general.form.notificationChannelsHint')}
+                  </p>
+                  {channels.map(c => (
+                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', cursor: 'pointer', marginBottom: 4 }}>
+                      <input
+                        type="checkbox"
+                        checked={form.notifyChannels.includes(c.id)}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          notifyChannels: e.target.checked ? [...f.notifyChannels, c.id] : f.notifyChannels.filter(id => id !== c.id),
+                        }))}
+                        style={{ width: 14, height: 14, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                      />
+                      {c.name ?? c.id} <span style={{ color: 'var(--text-muted)' }}>({c.provider})</span>
+                    </label>
+                  ))}
+                </div>
+              )}
 
             </div>
           )}

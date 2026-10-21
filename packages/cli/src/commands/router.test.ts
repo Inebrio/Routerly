@@ -1035,6 +1035,26 @@ describe('router edit', () => {
     expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.not.objectContaining({ traceContent: expect.anything() }));
   });
 
+  it('sets the notification channel override resolving name or id', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce([{ id: 'c1', name: 'hook' }]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--notification-channel', 'hook']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ notifications: { channels: ['c1'] } }));
+  });
+
+  it('clears the notification channel override', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
+    await makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--no-notification-channels']);
+    expect(mockApi).toHaveBeenLastCalledWith('PUT', `/api/routers/${baseRouter.id}`, expect.objectContaining({ notifications: null }));
+  });
+
+  it('exits 1 on an unknown notification channel', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce([]);
+    await expect(makeCmd().parseAsync(['node', 'router', 'edit', 'my-api', '--notification-channel', 'nope'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
+
   it('updates router name', async () => {
     mockApi.mockResolvedValueOnce([baseRouter]).mockResolvedValueOnce(undefined);
     const lines: string[] = [];

@@ -431,6 +431,7 @@ export const updateRouter = (id: string, data: {
   guardrails?: GuardrailConfig | null;
   pii?: PiiConfig | null;
   optimizers?: OptimizerConfig | null;
+  notifications?: { channels: string[] } | null;
   traceContent?: boolean;
 }) => request<Router>(`/routers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteRouter = (id: string) => request<void>(`/routers/${id}`, { method: 'DELETE' });

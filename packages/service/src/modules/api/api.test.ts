@@ -14478,3 +14478,75 @@ describe('user:write privilege escalation', () => {
     expect((await call('PUT', '/api/roles/esc', { permissions: ['user:write'] })).statusCode).toBe(200)
   })
 })
+
+describe('PUT /api/routers/:id notifications override (ROUT-335)', () => {
+  const channels = [
+    { id: 'wh1', provider: 'webhook', name: 'wh' },
+    { id: 'dash1', provider: 'dashboard', name: 'inbox' },
+  ]
+  const baseRouter = { id: 'p1', name: 'Test', tokens: [], members: [], models: [] }
+  function setup(user: any, roles: any[] = [], router: any = baseRouter) {
+    mockVerifyToken.mockReturnValue({ sub: user.id } as any)
+    mockWriteConfig.mockResolvedValue(undefined)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [user]
+      if (t === 'roles') return roles
+      if (t === 'routers') return [router]
+      if (t === 'settings') return { notifications: { channels } }
+      return []
+    })
+  }
+  async function put(notifications?: unknown) {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PUT', url: '/api/routers/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], ...(notifications !== undefined ? { notifications } : {}) }),
+    })
+    await app.close()
+    return res
+  }
+
+  it('persists the override (200)', async () => {
+    setup(adminUser)
+    const res = await put({ channels: ['wh1', 'wh1'] })
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as any).notifications).toEqual({ channels: ['wh1'] })
+    expect(mockWriteConfig).toHaveBeenCalledWith('routers', expect.arrayContaining([
+      expect.objectContaining({ id: 'p1', notifications: { channels: ['wh1'] } }),
+    ]))
+  })
+
+  it('keeps a stored override when the field is omitted', async () => {
+    setup(adminUser, [], { ...baseRouter, notifications: { channels: ['wh1'] } })
+    const res = await put()
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as any).notifications).toEqual({ channels: ['wh1'] })
+  })
+
+  it('clears the override with null', async () => {
+    setup(adminUser, [], { ...baseRouter, notifications: { channels: ['wh1'] } })
+    const res = await put(null)
+    expect(res.statusCode).toBe(200)
+    expect((res.json() as any).notifications).toBeUndefined()
+  })
+
+  it('returns 400 for an unknown or dashboard channel', async () => {
+    setup(adminUser)
+    expect((await put({ channels: ['nope'] })).statusCode).toBe(400)
+    expect((await put({ channels: ['dash1'] })).statusCode).toBe(400)
+  })
+
+  it('returns 403 with router:write but without notification:write', async () => {
+    const role = { id: 'rw', name: 'RW', permissions: ['router:write'] }
+    setup({ id: 'rw-id', email: 'rw@x.com', passwordHash: '$2b$12$h', roleId: 'rw', routerIds: [] }, [role])
+    expect((await put({ channels: ['wh1'] })).statusCode).toBe(403)
+    expect((await put()).statusCode).toBe(200)
+  })
+
+  it('returns 403 without router:write', async () => {
+    const role = { id: 'nw', name: 'NW', permissions: ['notification:write'] }
+    setup({ id: 'nw-id', email: 'nw@x.com', passwordHash: '$2b$12$h', roleId: 'nw', routerIds: [] }, [role])
+    expect((await put({ channels: ['wh1'] })).statusCode).toBe(403)
+  })
+})

@@ -1315,6 +1315,8 @@
         "traceContent": "தடம் உள்ளடக்கம்",
         "traceContentHint": "தடம் எப்போதும் அளவிட தரவு (மாதிரிகள், மதிப்புகள், டோகன்கள், செலவு, தாமதம்). தூண்டல் அனுப்ப மற்றும் விளக்க பெற் இல் இந்த செய். அவை சேமிக்கப்பட்ட பயன்பாடு பதிவு மற்றும் பார்வை யாரும் பெற பற்றி.",
         "capturePromptsAndAnswers": "தூண்டல் மற்றும் விளக்க பெற்",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "மாற்றங்கள் சேமிக்க",
         "createRouter": "திசையாக்குபவர் உருவாக்க",
         "createOrchestrator": "ஆர்கெஸ்ட்ரேட்டர் உருவாக்கவும்",

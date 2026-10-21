@@ -1315,6 +1315,8 @@
         "traceContent": "Jejak konten",
         "traceContentHint": "Jejak selalu merekam metadata (model, skor, token, biaya, latensi). Aktifkan ini untuk juga merekam prompt yang dikirim dan jawaban yang diterima. Mereka disimpan dengan catatan penggunaan dan terlihat oleh siapa pun yang dapat membaca laporan.",
         "capturePromptsAndAnswers": "Ambil prompt dan jawaban",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Simpan Perubahan",
         "createRouter": "Buat Router",
         "createOrchestrator": "Buat Orchestrator",

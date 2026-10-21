@@ -1315,6 +1315,8 @@
         "traceContent": "トレースコンテンツ",
         "traceContentHint": "トレースは常にメタデータ(モデル、スコア、トークン、コスト、遅延)を記録します。これをオンにするとプロンプトとレスポンスも記録します。使用状況レコードと共に保存され、レポートを読む権限のある誰もが見ることができます。",
         "capturePromptsAndAnswers": "プロンプトと回答をキャプチャ",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "変更を保存",
         "createRouter": "ルーター作成",
         "createOrchestrator": "オーケストレーターを作成",
