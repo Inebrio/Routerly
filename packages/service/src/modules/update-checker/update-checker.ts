@@ -72,50 +72,8 @@ interface GithubRelease {
   draft: boolean;
 }
 
-function fetchAllReleases(): Promise<GithubRelease[]> {
+function githubGet<T>(path: string, failure: (status: number | undefined) => string): Promise<T> {
   return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.github.com',
-      path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=100`,
-      method: 'GET',
-      headers: {
-        'User-Agent': `routerly-update-checker/${GITHUB_OWNER}`,
-        'Accept': 'application/vnd.github+json',
-      },
-      timeout: 10_000,
-    };
-
-    const req = httpsRequest(options, (res) => {
-      const chunks: Buffer[] = [];
-      res.on('data', (c: Buffer) => chunks.push(c));
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          try {
-            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as GithubRelease[]);
-          } catch (e) { reject(e); }
-        } else {
-          reject(new Error(`GitHub API returned ${res.statusCode}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('GitHub API request timed out')); });
-    req.end();
-  });
-}
-
-// Rolling prerelease channels are served off a tag renamed to avoid colliding
-// with the branches of the same name (`next`, `develop`) — see release.yml's
-// next-pointer/develop-pointer jobs.
-const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
-
-function fetchRelease(channel: string): Promise<GithubRelease> {
-  return new Promise((resolve, reject) => {
-    const path = (channel === 'latest' || channel === 'current')
-      ? `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`
-      : `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tags/${ROLLING_CHANNEL_TAGS[channel] ?? channel}`;
-
     const options = {
       hostname: 'api.github.com',
       path,
@@ -133,12 +91,10 @@ function fetchRelease(channel: string): Promise<GithubRelease> {
       res.on('end', () => {
         if (res.statusCode === 200) {
           try {
-            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as GithubRelease);
-          } catch (e) {
-            reject(e);
-          }
+            resolve(JSON.parse(Buffer.concat(chunks).toString('utf-8')) as T);
+          } catch (e) { reject(e); }
         } else {
-          reject(new Error(`GitHub API returned ${res.statusCode} for channel "${channel}"`));
+          reject(new Error(failure(res.statusCode)));
         }
       });
     });
@@ -147,6 +103,50 @@ function fetchRelease(channel: string): Promise<GithubRelease> {
     req.on('timeout', () => { req.destroy(); reject(new Error('GitHub API request timed out')); });
     req.end();
   });
+}
+
+const REPO_API = `/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
+
+function fetchAllReleases(): Promise<GithubRelease[]> {
+  return githubGet<GithubRelease[]>(`${REPO_API}/releases?per_page=100`, s => `GitHub API returned ${s}`);
+}
+
+// Rolling prerelease channels are served off a tag renamed to avoid colliding
+// with the branches of the same name (`next`, `develop`) — see release.yml's
+// next-pointer/develop-pointer jobs. Until those jobs have run, only the legacy
+// release tagged `next` exists, so it stays as a fallback.
+const ROLLING_CHANNEL_TAGS: Record<string, string> = { next: 'channel-next', develop: 'channel-develop' };
+
+/**
+ * `latest`/`current`: the highest plain `vX.Y.Z` release. GitHub's
+ * `/releases/latest` skips pre-releases, which would pin every channel to the
+ * last non-pre-release (v0.2.0) while all 0.3+ releases are flagged as such;
+ * it stays as the fallback when the list is unavailable.
+ */
+async function fetchNewestRelease(channel: string): Promise<GithubRelease> {
+  const failure = (s: number | undefined) => `GitHub API returned ${s} for channel "${channel}"`;
+  try {
+    const list = await fetchAllReleases();
+    let best: GithubRelease | undefined;
+    for (const r of Array.isArray(list) ? list : []) {
+      if (r.draft || !/^v\d+\.\d+\.\d+$/.test(r.tag_name)) continue;
+      if (!best || isNewer(r.tag_name, best.tag_name)) best = r;
+    }
+    if (best) return best;
+  } catch { /* fall through to /releases/latest */ }
+  return githubGet<GithubRelease>(`${REPO_API}/releases/latest`, failure);
+}
+
+async function fetchRelease(channel: string): Promise<GithubRelease> {
+  if (channel === 'latest' || channel === 'current') return fetchNewestRelease(channel);
+  const failure = (s: number | undefined) => `GitHub API returned ${s} for channel "${channel}"`;
+  const tag = ROLLING_CHANNEL_TAGS[channel];
+  if (!tag) return githubGet<GithubRelease>(`${REPO_API}/releases/tags/${channel}`, failure);
+  try {
+    return await githubGet<GithubRelease>(`${REPO_API}/releases/tags/${tag}`, failure);
+  } catch {
+    return githubGet<GithubRelease>(`${REPO_API}/releases/tags/${channel}`, failure);
+  }
 }
 
 // ─── Singleton ────────────────────────────────────────────────────────────────
