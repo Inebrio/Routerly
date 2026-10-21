@@ -1923,6 +1923,7 @@
     "page": {
       "title": "模型",
       "subtitle": "注册到Routerly的LLM提供商",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "模型",
         "health": "健康"

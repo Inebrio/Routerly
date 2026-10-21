@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Mga Model",
       "subtitle": "Mga LLM provider na naka-rehistro sa Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Mga Model",
         "health": "Health"

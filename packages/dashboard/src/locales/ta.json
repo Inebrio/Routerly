@@ -1923,6 +1923,7 @@
     "page": {
       "title": "மாதிரிகள்",
       "subtitle": "LLM வழங்குநர்கள் Routerly உடன் பதிவு",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "மாதிரிகள்",
         "health": "ஆரோக்கியம்"

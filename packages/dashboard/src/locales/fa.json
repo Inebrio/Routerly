@@ -1923,6 +1923,7 @@
     "page": {
       "title": "مدل‌ها",
       "subtitle": "ارائه‌دهندگان LLM ثبت‌شده در روترلی",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "مدل‌ها",
         "health": "سلامت"

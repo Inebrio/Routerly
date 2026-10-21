@@ -1923,6 +1923,7 @@
     "page": {
       "title": "મોડલ્સ",
       "subtitle": "Routerly સાથે નોધણી LLM પ્રદાતાઓ",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "મોડલ્સ",
         "health": "સ્વાસ્થ્ય"

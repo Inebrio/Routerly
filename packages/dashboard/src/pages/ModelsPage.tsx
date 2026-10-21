@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Server, Edit2, Copy, ChevronUp, ChevronDown, ChevronsUpDown, Search, X, Telescope, FlaskConical, RotateCcw, ShieldOff } from 'lucide-react';
 import { getModels, deleteModel, testModel, getProviderHealth, resetResilience, getConnections, type Model, type ProviderHealth, type ResilienceState, type Connection } from '../api';
 import { useAuth } from '../AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -133,6 +133,7 @@ export function ModelsPage() {
   const { t } = useTranslation();
   const { can } = useAuth();
   const canManage = can('resilience:manage');
+  const canRead = can('model:read');
   const canWriteModels = can('model:write');
   const now = useNow();
   const navigate = useNavigate();
@@ -170,7 +171,7 @@ export function ModelsPage() {
   const [resetError, setResetError] = useState('');
 
   // Load models once
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (canRead) load(); else setLoading(false); }, []);
 
   async function load() {
     setLoading(true);
@@ -394,6 +395,20 @@ export function ModelsPage() {
     transition: 'color 0.15s',
     marginBottom: -1,
   });
+
+  if (!canRead) {
+    return (
+      <>
+        <div className="page-header">
+          <h1>{t('models.page.title')}</h1>
+          <p>{t('models.page.subtitle')}</p>
+        </div>
+        <div className="page-body">
+          <div className="empty-state"><ShieldOff size={40} /><p>{t('models.page.noPermission')}</p></div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Modelos",
       "subtitle": "Proveedores LLM registrados en Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modelos",
         "health": "Estado"

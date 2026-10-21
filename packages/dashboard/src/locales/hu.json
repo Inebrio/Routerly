@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Modellek",
       "subtitle": "Az Routerly-vel regisztrált LLM szolgáltatók",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modellek",
         "health": "Egészség"

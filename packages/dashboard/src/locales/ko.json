@@ -1923,6 +1923,7 @@
     "page": {
       "title": "모델",
       "subtitle": "Routerly에 등록된 LLM 제공업체",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "모델",
         "health": "상태"

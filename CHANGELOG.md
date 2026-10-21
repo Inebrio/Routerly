@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **Models page without `model:read`** shows a «no permission» message instead of an unhandled `Required permission: model:read` error. (ROUT-378)
 - **Router › Users without `router:write`** no longer shows «Add Member» and the change-role/remove actions; the tab is read-only instead of failing with 403. (ROUT-377)
 - **Settings › General without `settings:write`** now disables Log level, Public URL, usage retention and the telemetry Enable/Disable buttons instead of leaving them active and failing with 403. (ROUT-371)
 - **Native deepseek, groq, together, perplexity, xai, mistral and cohere providers** now work: model Test and proxy calls (stream and non-stream) no longer fail with «Unknown provider»; they use the OpenAI-compatible adapter with each provider's default endpoint. (ROUT-367)

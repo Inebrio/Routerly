@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Model",
       "subtitle": "Penyedia LLM terdaftar dengan Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Model",
         "health": "Kesehatan"

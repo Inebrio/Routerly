@@ -1923,6 +1923,7 @@
     "page": {
       "title": "Modely",
       "subtitle": "Poskytovatelé LLM registrovaní u Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modely",
         "health": "Zdraví"
