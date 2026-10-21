@@ -13,7 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Changed
 
-- **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count.
+- **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count. Install commands pin `--version v0.5.3` until the default channel resolves to a 0.5.x release.
 
 ### Fixed
 

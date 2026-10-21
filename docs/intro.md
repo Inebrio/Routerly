@@ -77,21 +77,15 @@ LangChain   completions   Track cost     ◀──  ...
 **macOS / Linux:**
 
 ```bash
-# Install the current release (default channel)
-curl -fsSL https://www.routerly.ai/install.sh | bash
-
-# Install latest release
-curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --channel latest
+# Install v0.5.3 (the default channel still resolves to an older release)
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.3
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-# Install the current release (default channel)
-powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
-
-# Install latest release
-powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Channel latest"
+# Install v0.5.3 (the default channel still resolves to an older release)
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.5.3"
 ```
 
 Then create the admin account at `http://localhost:3000/dashboard`, log in from the CLI, register a model and create a router:

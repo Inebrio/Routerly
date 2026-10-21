@@ -31,13 +31,15 @@
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://www.routerly.ai/install.sh | bash
+curl -fsSL https://www.routerly.ai/install.sh | bash -s -- --version v0.5.3
 ```
 
 **Windows (PowerShell):**
 ```powershell
-powershell -c "irm https://www.routerly.ai/install.ps1 | iex"
+powershell -c "& ([scriptblock]::Create((irm https://www.routerly.ai/install.ps1))) -Version v0.5.3"
 ```
+
+The commands pin `v0.5.3` because the default channel still resolves to an older release. See [Installation options](docs/getting-started/installation.md).
 
 **Docker:**
 ```bash
