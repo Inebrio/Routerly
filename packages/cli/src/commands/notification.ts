@@ -562,6 +562,7 @@ export function makeNotificationCommand(): Command {
         if (opts['name'] !== undefined)   patch['name']   = opts['name'];
         if (opts['fromAddress'] !== undefined) patch['fromAddress'] = opts['fromAddress'];
         if (opts['fromName'] !== undefined)    patch['fromName']    = opts['fromName'];
+        if (opts['username'] !== undefined)    patch['username']    = opts['username'];
         if (opts['host'] !== undefined)   patch['host']   = opts['host'];
         if (opts['port'] !== undefined)   patch['port']   = opts['port'];
         if (opts['region'] !== undefined) patch['region'] = opts['region'];
@@ -586,12 +587,16 @@ export function makeNotificationCommand(): Command {
         // Per-channel cooldown
         if (opts['cooldownSeconds'] !== undefined) patch['cooldownSeconds'] = opts['cooldownSeconds'];
 
-        // Targets
-        const targets: Record<string, unknown> = {};
-        if (opts['targetRoles'])       targets['roles']       = String(opts['targetRoles']).split(',').map(s => s.trim()).filter(Boolean);
-        if (opts['targetPermissions']) targets['permissions'] = String(opts['targetPermissions']).split(',').map(s => s.trim()).filter(Boolean);
-        if (opts['targetUsers'])       targets['users']       = String(opts['targetUsers']).split(',').map(s => s.trim()).filter(Boolean);
-        if (Object.keys(targets).length) patch['targets'] = targets;
+        // Targets — PATCH replaces the whole object, so merge over the stored one; empty string clears a list
+        const targetOpts = { roles: opts['targetRoles'], permissions: opts['targetPermissions'], users: opts['targetUsers'] };
+        if (Object.values(targetOpts).some(v => v !== undefined)) {
+          const current = await api<{ targets?: Record<string, unknown> }>('GET', `/api/notifications/channels/${id}`);
+          const targets: Record<string, unknown> = { ...(current?.targets ?? {}) };
+          for (const [key, val] of Object.entries(targetOpts)) {
+            if (val !== undefined) targets[key] = String(val).split(',').map(s => s.trim()).filter(Boolean);
+          }
+          patch['targets'] = targets;
+        }
 
         // Secret fields — only include when explicitly provided (non-empty)
         const secretFields: Record<string, string> = {
