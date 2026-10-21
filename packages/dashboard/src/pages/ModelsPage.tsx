@@ -179,7 +179,7 @@ export function ModelsPage() {
   }
 
   // Connections power the connection filter; best-effort like health.
-  useEffect(() => { getConnections().then(setConnections).catch(() => {}); }, []);
+  useEffect(() => { if (canRead) getConnections().then(setConnections).catch(() => {}); }, []);
 
   function updateProviderFilter(v: string) {
     setProviderFilter(v);
@@ -213,6 +213,7 @@ export function ModelsPage() {
   // Load health + poll every 30s
   useEffect(() => {
     healthActive.current = true;
+    if (!canRead) return;
     fetchHealth();
     const id = setInterval(fetchHealth, HEALTH_REFRESH_MS);
     return () => { healthActive.current = false; clearInterval(id); };
