@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Changed
+
+- **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count.
+
 ### Fixed
 
 - **OpenClaw config snippet (ROUT-353)** — the `openclaw.json` snippet (`routerly clients configure openclaw`, Connect page) now includes `name` on the model entry; OpenClaw 2026.10.5 rejected the config without it.
