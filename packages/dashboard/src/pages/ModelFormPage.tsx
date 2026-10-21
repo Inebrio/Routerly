@@ -456,7 +456,10 @@ export function ModelFormPage() {
         customModel = false;
       }
     } else {
+      // Routerly ID without the provider prefix: keep it as-is and prefill the upstream name
+      // so the required "model name" field is not left empty (which blocked saving).
       customId = model.id;
+      formId = model.upstreamModelId ?? model.id.slice(model.id.indexOf('/') + 1);
     }
 
     // If prices are 0 (model was created without specifying them), fall back to preset values
