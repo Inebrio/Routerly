@@ -285,6 +285,26 @@ describe('per-router override + cooldown (preserved)', () => {
     );
   });
 
+  it('merges per-router override from details.routerId when opts.routerId is absent (ROUT-335)', async () => {
+    settings(
+      { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
+      { routers: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
+    );
+    await emitEvent('provider.error', 'warning', { routerId: 'p1' });
+    expect(mockDispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'proj-ch' }), expect.anything(), undefined,
+    );
+  });
+
+  it('ignores a non-string details.routerId for the override (ROUT-335)', async () => {
+    settings(
+      { channels: [{ id: 'proj-ch', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
+      { routers: [{ id: 'p1', notifications: { channels: ['proj-ch'] } }] },
+    );
+    await emitEvent('provider.error', 'warning', { routerId: 42 });
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
   it('per-router override referencing a non-external (unknown) channel id is ignored', async () => {
     settings(
       { channels: [{ id: 'c1', provider: 'webhook', url: 'https://x', events: ['budget.only'] }] },
