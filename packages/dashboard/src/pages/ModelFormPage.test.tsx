@@ -298,6 +298,16 @@ describe('ModelFormPage — edit path', () => {
     expect(screen.getByRole('heading', { name: /Edit Model/ })).toBeTruthy();
   });
 
+  it('prefills the model name when the Routerly ID has no provider prefix (ROUT-376)', async () => {
+    const model = makeModel({ id: 'custom-prefix/gpt-4.1-nano', provider: 'openai' });
+    mockGetModels.mockResolvedValue([model]);
+
+    renderPage('/dashboard/models/custom-prefix%2Fgpt-4.1-nano');
+
+    const input = await screen.findByPlaceholderText(/my-fine-tuned-model/) as HTMLInputElement;
+    expect(input.value).toBe('gpt-4.1-nano');
+  });
+
   it('shows the stored timeout in a field that accepts round values (step 1)', async () => {
     mockGetModels.mockResolvedValue([makeModel({ id: 'openai/gpt-5.2', provider: 'openai', timeout: 5000 })]);
 
