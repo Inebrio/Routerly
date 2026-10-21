@@ -206,6 +206,17 @@ describe('SettingsGeneralTab', () => {
     expect(screen.getByLabelText('Default Language')).toBeDisabled();
   });
 
+  it('AC1 public URL, retention, log level and telemetry are read-only without settings:write', async () => {
+    mockCan = p => p !== 'settings:write';
+    renderGeneral();
+    await screen.findByText('Internationalization');
+    expect(screen.getByLabelText('Log Level')).toBeDisabled();
+    expect(document.getElementById('s-publicurl')).toBeDisabled();
+    expect(document.getElementById('s-usage-retention-days')).toBeDisabled();
+    expect(document.getElementById('s-usage-retention-size')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Enable$/ })).toBeDisabled();
+  });
+
   it('Save Settings is disabled without settings:write', async () => {
     mockCan = p => p !== 'settings:write';
     renderGeneral();

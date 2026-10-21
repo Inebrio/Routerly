@@ -12,6 +12,7 @@ the change itself — never reconstructed after the fact. See
 ## [Unreleased]
 
 ### Fixed
+- **Settings › General without `settings:write`** now disables Log level, Public URL, usage retention and the telemetry Enable/Disable buttons instead of leaving them active and failing with 403. (ROUT-371)
 - **Native deepseek, groq, together, perplexity, xai, mistral and cohere providers** now work: model Test and proxy calls (stream and non-stream) no longer fail with «Unknown provider»; they use the OpenAI-compatible adapter with each provider's default endpoint. (ROUT-367)
 - **Startup migration of models.json** no longer fails with «TypeError: Cannot read properties of undefined (reading 'endsWith')» when a stored connection has no label; a label is generated instead. (ROUT-357)
 - **Settings › Notifications without `notification:write`** now shows only «You don't have permission to view notification channels.» instead of «0 channels», the empty state and an active «Add Channel». (ROUT-338)
