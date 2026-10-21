@@ -75,6 +75,26 @@ function stubGithubNotFound(): void {
   });
 }
 
+/** Per-path GitHub stub: body for 200, absent path → 404. Records every requested path. */
+const requestedPaths: string[] = [];
+function stubGithubRoutes(routes: Record<string, object>): void {
+  requestedPaths.length = 0;
+  mockRequest.mockImplementation((opts: { path: string }, cb: (res: MockRes) => void) => {
+    requestedPaths.push(opts.path);
+    const req = new EventEmitter() as ReqLike;
+    req.end = () => {
+      const res = new EventEmitter() as MockRes;
+      const body = routes[opts.path];
+      res.statusCode = body ? 200 : 404;
+      cb(res);
+      res.emit('data', Buffer.from(body ? JSON.stringify(body) : 'Not Found'));
+      res.emit('end');
+    };
+    req.destroy = () => {};
+    return req;
+  });
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 let checker: UpdateChecker;
@@ -456,6 +476,47 @@ describe('UpdateChecker.stop()', () => {
     checker.stop();
     checker.stop();
     // Should not throw
+  });
+});
+
+describe('UpdateChecker channel resolution against pre-releases and legacy pointers (ROUT-382)', () => {
+  const REPO_PATH = '/repos/Inebrio/Routerly';
+  const rel = (tag: string, extra: object = {}) => ({ tag_name: tag, name: tag, html_url: `https://x/${tag}`, prerelease: true, draft: false, ...extra });
+
+  it.each(['latest', 'current'])('"%s" picks the highest plain vX.Y.Z including pre-releases, not /releases/latest', async (channel) => {
+    stubGithubRoutes({
+      [`${REPO_PATH}/releases?per_page=100`]: [rel('next'), rel('v0.5.3'), rel('v0.10.0'), rel('v0.2.0', { prerelease: false }), rel('v9.9.9', { draft: true })],
+      [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }),
+    });
+    prime(checker, '0.4.0', channel);
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.10.0');
+    expect(result.status).toBe('ok');
+    expect(requestedPaths).not.toContain(`${REPO_PATH}/releases/latest`);
+  });
+
+  it('"current" falls back to /releases/latest when the release list is unavailable', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/latest`]: rel('v0.2.0', { prerelease: false }) });
+    prime(checker, '0.1.0', 'current');
+    const result = await checker.check();
+    expect(result.latestVersion).toBe('0.2.0');
+  });
+
+  it('"next" falls back to the legacy "next" release and reads the version from its title', async () => {
+    stubGithubRoutes({ [`${REPO_PATH}/releases/tags/next`]: rel('next', { name: 'Routerly next (→ v0.5.3)' }) });
+    prime(checker, '0.4.0', 'next');
+    const result = await checker.check();
+    expect(result.status).toBe('ok');
+    expect(result.latestVersion).toBe('0.5.3');
+    expect(requestedPaths).toEqual([`${REPO_PATH}/releases/tags/channel-next`, `${REPO_PATH}/releases/tags/next`]);
+  });
+
+  it('"develop" with neither pointer release reports status=error', async () => {
+    stubGithubRoutes({});
+    prime(checker, '0.4.0', 'develop');
+    const result = await checker.check();
+    expect(result.status).toBe('error');
+    expect(result.error).toContain('404');
   });
 });
 
