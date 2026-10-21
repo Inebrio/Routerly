@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useRouter } from './RouterLayout';
+import { useAuth } from '../../AuthContext';
 import type { User } from '../../api';
 import { getUsers, addRouterMember, updateRouterMember, removeRouterMember } from '../../api';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -10,6 +11,8 @@ import { SearchableSelect } from '../../components/SearchableSelect';
 export function RouterUsersTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
+  const { can } = useAuth();
+  const canWrite = can('router:write');
   if (!router) return null;
 
   const [users, setUsers] = useState<User[]>([]);
@@ -118,7 +121,7 @@ export function RouterUsersTab() {
             {t('routers.users.description')}
           </p>
         </div>
-        {!adding && (
+        {canWrite && !adding && (
           <button type="button" className="btn btn-primary" onClick={() => setAdding(true)} disabled={loading}>
             <Plus size={16} />
             {t('routers.users.addButton')}
@@ -126,7 +129,7 @@ export function RouterUsersTab() {
         )}
       </div>
 
-      {adding && (
+      {canWrite && adding && (
         <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px dashed var(--border)', background: 'var(--surface-active)' }}>
           <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>{t('routers.users.addNewTitle')}</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -166,7 +169,7 @@ export function RouterUsersTab() {
               <tr>
                 <th>{t('routers.users.columns.user')}</th>
                 <th style={{ width: 200 }}>{t('routers.users.columns.role')}</th>
-                <th style={{ width: 100, textAlign: 'right' }}>{t('routers.users.columns.actions')}</th>
+                {canWrite && <th style={{ width: 100, textAlign: 'right' }}>{t('routers.users.columns.actions')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -177,7 +180,7 @@ export function RouterUsersTab() {
                 return (
                   <tr
                     key={member.userId}
-                    {...(isEditing ? {} : {
+                    {...(isEditing || !canWrite ? {} : {
                       style: { cursor: 'pointer' },
                       onClick: () => { setEditingUserId(member.userId); setEditRole(member.role); },
                     })}
@@ -208,7 +211,7 @@ export function RouterUsersTab() {
                         </span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }} onClick={e => e.stopPropagation()}>
+                    {canWrite && <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: 6 }} onClick={e => e.stopPropagation()}>
                       {isEditing ? (
                         <>
                           <button className="btn-icon" onClick={() => handleUpdateMember(member.userId)} disabled={loading} title={t('routers.users.saveTitle')}>
@@ -238,7 +241,7 @@ export function RouterUsersTab() {
                           </button>
                         </>
                       )}
-                    </td>
+                    </td>}
                   </tr>
                 );
               })}

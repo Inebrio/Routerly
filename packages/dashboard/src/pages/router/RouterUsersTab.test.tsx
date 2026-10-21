@@ -5,6 +5,11 @@ import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import { RouterUsersTab } from './RouterUsersTab';
 
+let mockCanWrite = true;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (perm: string) => (perm === 'router:write' ? mockCanWrite : true) }),
+}));
+
 vi.mock('../../api', () => ({
   getUsers: vi.fn(),
   addRouterMember: vi.fn(),
@@ -91,7 +96,18 @@ beforeEach(() => {
   mockRemoveRouterMember.mockResolvedValue(undefined);
 });
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => { vi.clearAllMocks(); mockCanWrite = true; });
+
+describe('RouterUsersTab — without router:write', () => {
+  it('hides Add Member and row actions', async () => {
+    mockCanWrite = false;
+    renderTab();
+    await waitFor(() => screen.getByText('alice@example.com'));
+    expect(screen.queryByRole('button', { name: /Add Member/i })).toBeNull();
+    expect(screen.queryByTitle(/Remove/i)).toBeNull();
+    expect(screen.queryByTitle(/role/i)).toBeNull();
+  });
+});
 
 // ── null router guard ────────────────────────────────────────────────────────
 
