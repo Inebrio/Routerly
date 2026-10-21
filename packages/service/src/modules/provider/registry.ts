@@ -35,7 +35,7 @@ providerRegistry.contribute({ id: 'ollama', value: new OllamaAdapter() });
 providerRegistry.contribute({ id: 'custom', value: new CustomAdapter() });
 // OpenAI-compatible hosted providers: default endpoints live in resolve.ts
 const compatAdapter = new CustomAdapter();
-for (const id of ['deepseek', 'groq', 'together', 'perplexity', 'xai', 'mistral', 'cohere']) {
+for (const id of ['deepseek', 'groq', 'together', 'perplexity', 'xai', 'mistral', 'cohere', 'fireworks', 'cerebras']) {
   providerRegistry.contribute({ id, value: compatAdapter });
 }
 providerRegistry.contribute({ id: 'azure-openai', value: new AzureOpenAIAdapter() });

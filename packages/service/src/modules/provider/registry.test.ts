@@ -78,6 +78,10 @@ describe('getProviderAdapter', () => {
     }
   })
 
+  it.each(['fireworks', 'cerebras'])('has an adapter for catalog provider %s (ROUT-367)', (id) => {
+    expect(() => getProviderAdapter(makeModel(id))).not.toThrow()
+  })
+
   it('every provider offered by a descriptor has an adapter (ROUT-367)', () => {
     for (const { id } of providerDescriptorRegistry.ordered()) {
       expect(() => getProviderAdapter(makeModel(id)), id).not.toThrow()

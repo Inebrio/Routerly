@@ -18,6 +18,8 @@ const DEFAULT_ENDPOINTS: Partial<Record<string, string>> = {
   xai: 'https://api.x.ai/v1',
   mistral: 'https://api.mistral.ai/v1',
   cohere: 'https://api.cohere.ai/compatibility/v1',
+  fireworks: 'https://api.fireworks.ai/inference/v1',
+  cerebras: 'https://api.cerebras.ai/v1',
 };
 
 /**
