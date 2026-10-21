@@ -20,6 +20,9 @@ const LOG_LEVELS: Settings['logLevel'][] = ['trace', 'debug', 'info', 'warn', 'e
 
 function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: (s: Settings) => void }) {
   const { t } = useTranslation();
+  const { can } = useAuth();
+  const canWrite = can('settings:write');
+  const noWriteTitle = canWrite ? undefined : 'Required permission: settings:write';
   const telemetry = settings.telemetry;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -71,7 +74,8 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
           <button
             type="button"
             className={`btn btn-sm ${telemetry?.enabled ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || telemetry?.enabled === true}
+            disabled={saving || !canWrite || telemetry?.enabled === true}
+            title={noWriteTitle}
             onClick={() => toggle(true)}
             style={{ fontSize: '0.8rem' }}
           >
@@ -80,7 +84,8 @@ function TelemetrySection({ settings, onSaved }: { settings: Settings; onSaved: 
           <button
             type="button"
             className={`btn btn-sm ${telemetry?.enabled === false ? 'btn-primary' : 'btn-secondary'}`}
-            disabled={saving || telemetry?.enabled === false}
+            disabled={saving || !canWrite || telemetry?.enabled === false}
+            title={noWriteTitle}
             onClick={() => toggle(false)}
             style={{ fontSize: '0.8rem' }}
           >
@@ -233,6 +238,7 @@ export function SettingsGeneralTab() {
             placeholder={t('settings.general.runtime.logLevel')}
             ariaLabel={t('settings.general.runtime.logLevel')}
             onChange={v => field('logLevel', v as Settings['logLevel'])}
+            disabled={!can('settings:write')}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             {t('settings.general.runtime.logLevelHint')}
@@ -248,6 +254,7 @@ export function SettingsGeneralTab() {
             placeholder={`http://${settings?.host === '0.0.0.0' ? '<your-ip>' : (settings?.host ?? 'localhost')}:${settings?.port ?? 3000}`}
             value={form.publicUrl ?? ''}
             onChange={e => field('publicUrl', e.target.value)}
+            disabled={!can('settings:write')}
           />
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
             <Trans
@@ -270,6 +277,7 @@ export function SettingsGeneralTab() {
               aria-label={t('settings.general.runtime.maxAgeDays')}
               value={form.usageRetention?.maxAgeDays ?? ''}
               onChange={e => retentionField('maxAgeDays', e.target.value)}
+              disabled={!can('settings:write')}
             />
             <input
               id="s-usage-retention-size"
@@ -281,6 +289,7 @@ export function SettingsGeneralTab() {
               aria-label={t('settings.general.runtime.maxSizeMb')}
               value={form.usageRetention?.maxSizeMb ?? ''}
               onChange={e => retentionField('maxSizeMb', e.target.value)}
+              disabled={!can('settings:write')}
             />
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
