@@ -11,6 +11,8 @@ vi.mock('../../api', () => ({
   getNotificationChannels: vi.fn(),
 }));
 
+vi.mock('../../AuthContext', () => ({ useAuth: vi.fn() }));
+
 // ponytail: mock useUnsavedChanges — blocker not needed in unit tests
 vi.mock('../../hooks/useUnsavedChanges', () => ({
   useUnsavedChanges: vi.fn(() => ({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() })),
@@ -25,6 +27,10 @@ vi.mock('../../hooks/useUnsavedChanges', () => ({
 import { createRouter, updateRouter, getSettings, getNotificationChannels } from '../../api';
 const mockGetChannels = vi.mocked(getNotificationChannels as () => Promise<unknown>);
 import { useUnsavedChanges } from '../../hooks/useUnsavedChanges';
+import { useAuth } from '../../AuthContext';
+const mockUseAuth = vi.mocked(useAuth);
+const allow = (...perms: string[]) =>
+  mockUseAuth.mockReturnValue({ can: (p: string) => perms.includes(p) } as unknown as ReturnType<typeof useAuth>);
 
 const mockCreateRouter = vi.mocked(createRouter as (...a: unknown[]) => Promise<unknown>);
 const mockUpdateRouter = vi.mocked(updateRouter as (...a: unknown[]) => Promise<unknown>);
@@ -66,6 +72,7 @@ beforeEach(() => {
   mockGetSettings.mockResolvedValue({ publicUrl: 'https://api.example.com', port: 3000 });
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetChannels.mockRejectedValue(new Error('403'));
+  allow('notification:write');
   mockCreateRouter.mockResolvedValue({ id: 'proj-new', name: 'New', models: [], token: 'sk-rt-abc123' });
   mockUseUnsavedChanges.mockReturnValue({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() });
 });
@@ -343,6 +350,13 @@ describe('RouterGeneralTab — unsaved changes modal', () => {
 });
 
 describe('RouterGeneralTab — notification channel override', () => {
+  it('does not fetch channels without notification:write', async () => {
+    allow('router:write');
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));
+    expect(mockGetChannels).not.toHaveBeenCalled();
+  });
+
   it('hides the section when channels cannot be listed', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Advanced settings/i }));

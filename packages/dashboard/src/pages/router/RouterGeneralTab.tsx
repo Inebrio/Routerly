@@ -3,6 +3,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Route, Shuffle, Plug, ChevronDown } from 'lucide-react';
 import { updateRouter, getSettings, getNotificationChannels, type RouterKind, type RedactedChannel } from '../../api';
+import { useAuth } from '../../AuthContext';
 import { useRouter } from './RouterLayout';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { SearchableSelect } from '../../components/SearchableSelect';
@@ -68,11 +69,14 @@ export function RouterGeneralTab() {
   });
 
   // External channels the override can target; the list needs notification:write,
-  // so a 403 (or no channels) simply hides the section.
+  // so without it the fetch is skipped and the section stays hidden.
+  const { can } = useAuth();
+  const canListChannels = can('notification:write');
   const [channels, setChannels] = useState<RedactedChannel[]>([]);
   useEffect(() => {
+    if (!canListChannels) return;
     getNotificationChannels().then(list => setChannels(list.filter(c => c.provider !== 'dashboard'))).catch(() => {});
-  }, []);
+  }, [canListChannels]);
 
   useEffect(() => {
     if (router) {
