@@ -278,12 +278,14 @@ describe('ModelsPage — models list', () => {
 // ── ConfirmDialog / delete flow ────────────────────────────────────────────────
 
 describe('ModelsPage — without model:read', () => {
-  it('shows the permission message and does not call getModels', async () => {
+  it('shows the permission message and does not call the models, connections or health APIs', async () => {
     mockCanReadModels = false;
     try {
       renderPage();
       expect(screen.getByText("You don't have permission to view models.")).toBeTruthy();
       expect(getModels).not.toHaveBeenCalled();
+      expect(getConnections).not.toHaveBeenCalled();
+      expect(getProviderHealth).not.toHaveBeenCalled();
     } finally {
       mockCanReadModels = true;
     }
