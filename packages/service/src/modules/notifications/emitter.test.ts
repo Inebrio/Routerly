@@ -385,6 +385,16 @@ describe('per-router override + cooldown (preserved)', () => {
 });
 
 describe('router-scoped channel filtering (lines 165-166)', () => {
+  it('skips a scoped channel for an event carrying the router only in details', async () => {
+    settings(
+      { channels: [{ id: 'scoped', provider: 'webhook', url: 'https://x', events: ['provider.error'], routers: ['p1'] }] },
+    );
+    await emitEvent('provider.error', 'critical', { routerId: 'p2' });
+    expect(mockDispatch).not.toHaveBeenCalled();
+    await emitEvent('provider.error', 'critical', { routerId: 'p1' });
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+  });
+
   it('dispatches when channel has routers filter and event is from one of them (line 166 if branch=0)', async () => {
     // Channel has routers: ['p1'] and event is from router p1 → dispatch (branch=0 = includes → not returned)
     settings(
