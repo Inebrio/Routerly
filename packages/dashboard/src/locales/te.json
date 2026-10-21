@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "సరిభాగాలను శోధించండి…",
         "noResults": "ఫలితాలు లేవు",
         "emptyTitle": "ఇంకా నోటిఫికేషన్ సరిభాగాలు ఆర్డర చేయబడలేదు.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "క్రియాశీల ఫిల్టర్‌లకు సరిభాగాలు సరిపోవు.",
         "nameInlinePlaceholder": "లేబుల్ (ఐచ్ఛికం)",
         "columns": {

@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "চ্যানেল অনুসন্ধান...",
         "noResults": "কোন ফলাফল নেই",
         "emptyTitle": "কোন বিজ্ঞপ্তি চ্যানেল এখনও কনফিগার করা হয়নি।",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "সক্রিয় ফিল্টারগুলি কোন চ্যানেল ম্যাচ করে না।",
         "nameInlinePlaceholder": "লেবেল (ঐচ্ছিক)",
         "columns": {

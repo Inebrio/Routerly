@@ -901,6 +901,7 @@
         "addSearchPlaceholder": "Cerca canali…",
         "noResults": "Nessun risultato",
         "emptyTitle": "Nessun canale di notifica configurato ancora.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Nessun canale corrisponde ai filtri attivi.",
         "nameInlinePlaceholder": "Etichetta (opzionale)",
         "columns": {

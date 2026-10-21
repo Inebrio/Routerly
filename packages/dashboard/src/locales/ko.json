@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "채널 검색…",
         "noResults": "결과 없음",
         "emptyTitle": "아직 알림 채널이 구성되지 않았습니다.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "활성 필터와 일치하는 채널이 없습니다.",
         "nameInlinePlaceholder": "레이블(선택 사항)",
         "columns": {

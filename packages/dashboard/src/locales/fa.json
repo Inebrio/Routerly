@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "جستجوی کانال‌ها…",
         "noResults": "نتیجه‌ای یافت نشد",
         "emptyTitle": "هنوز کانال اعلانی پیکربندی نشده است.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "هیچ کانالی با فیلترهای فعال مطابقت ندارد.",
         "nameInlinePlaceholder": "برچسب (اختیاری)",
         "columns": {

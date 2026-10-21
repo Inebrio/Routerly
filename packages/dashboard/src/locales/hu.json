@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Csatornák keresése…",
         "noResults": "Nincs találat",
         "emptyTitle": "Nincsenek konfigurált értesítési csatornák.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Nincsenek csatornák az aktív szűrőkhöz.",
         "nameInlinePlaceholder": "Címke (nem kötelező)",
         "columns": {

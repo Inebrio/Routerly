@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Søg kanaler…",
         "noResults": "Ingen resultater",
         "emptyTitle": "Ingen notifikationskanaler konfigureret endnu.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ingen kanaler matcher de aktive filtre.",
         "nameInlinePlaceholder": "Label (valgfrit)",
         "columns": {

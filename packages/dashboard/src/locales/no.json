@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Søk kanaler…",
         "noResults": "Ingen resultater",
         "emptyTitle": "Ingen varselkanaler konfigurert ennå.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ingen kanaler samsvarer med de aktive filtrene.",
         "nameInlinePlaceholder": "Etikett (valgfritt)",
         "columns": {

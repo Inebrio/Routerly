@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Търсене на канали…",
         "noResults": "Няма резултати",
         "emptyTitle": "Все още няма конфигурирани канали за известия.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Няма канали, отговарящи на активните филтри.",
         "nameInlinePlaceholder": "Етикет (по избор)",
         "columns": {

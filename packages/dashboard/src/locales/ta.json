@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "சிறைகளை தேடு…",
         "noResults": "முடிவுகள் இல்லை",
         "emptyTitle": "எந்த அறிவிப்பு சिறைகளை அமைப்பு வேண்டும் இல்லை.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "எந்த சिறைகளை செயல்பட்ட வடிகட்ட பொருத்தம் நிலை।",
         "nameInlinePlaceholder": "பெயர் (விரும்பத்தகாய)",
         "columns": {

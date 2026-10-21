@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Hledat kanály…",
         "noResults": "Žádné výsledky",
         "emptyTitle": "Zatím nejsou nastaveny žádné oznamovací kanály.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Žádný kanál neodpovídá aktivním filtrům.",
         "nameInlinePlaceholder": "Popisek (volitelné)",
         "columns": {

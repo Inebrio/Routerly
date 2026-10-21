@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Maghanap ng mga channel…",
         "noResults": "Walang resulta",
         "emptyTitle": "Walang nakakonfigureng notification channel pa.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Walang channel na tumutugma sa aktibong filter.",
         "nameInlinePlaceholder": "Label (opsyonal)",
         "columns": {

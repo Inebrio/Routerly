@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "チャネルを検索...",
         "noResults": "結果がありません",
         "emptyTitle": "通知チャネルが未だ構成されていません。",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "アクティブなフィルターに一致するチャネルがありません。",
         "nameInlinePlaceholder": "ラベル(オプション)",
         "columns": {

@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "חפש ערוצים…",
         "noResults": "אין תוצאות",
         "emptyTitle": "עדיין לא הוגדרו ערוצי התראות.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "אין ערוצים המתאימים למסננים הפעילים.",
         "nameInlinePlaceholder": "תווית (אופציונלי)",
         "columns": {

@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Пошук каналів…",
         "noResults": "Немає результатів",
         "emptyTitle": "Жоден канал сповіщення не налаштований.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Жоден канал не відповідає активним фільтрам.",
         "nameInlinePlaceholder": "Ярлик (опціонально)",
         "columns": {

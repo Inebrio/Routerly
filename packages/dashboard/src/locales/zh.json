@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "搜索频道...",
         "noResults": "无结果",
         "emptyTitle": "尚未配置任何通知频道。",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "没有频道与活跃过滤器匹配。",
         "nameInlinePlaceholder": "标签(可选)",
         "columns": {

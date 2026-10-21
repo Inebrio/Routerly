@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Cari saluran…",
         "noResults": "Tidak ada hasil",
         "emptyTitle": "Tidak ada saluran notifikasi yang dikonfigurasi.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Tidak ada saluran yang cocok dengan filter aktif.",
         "nameInlinePlaceholder": "Label (opsional)",
         "columns": {

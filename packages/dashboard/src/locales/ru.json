@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Поиск каналов…",
         "noResults": "Нет результатов",
         "emptyTitle": "Ещё не настроены каналы уведомлений.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ни один канал не соответствует активным фильтрам.",
         "nameInlinePlaceholder": "Метка (опционально)",
         "columns": {

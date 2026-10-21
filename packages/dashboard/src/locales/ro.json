@@ -900,6 +900,7 @@
         "addSearchPlaceholder": "Caută canale…",
         "noResults": "Niciun rezultat",
         "emptyTitle": "Niciun canal de notificare configurat încă.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Niciun canal nu se potrivește cu filtrele active.",
         "nameInlinePlaceholder": "Etichetă (opțional)",
         "columns": {
