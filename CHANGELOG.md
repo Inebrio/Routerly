@@ -14,6 +14,8 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Per-router notification channel override is now configurable (ROUT-335)** — `PUT /api/routers/:id` accepts `notifications: { channels } | null` (requires `router:write` + `notification:write`), `routerly router edit --notification-channel / --no-notification-channels`, and Router › General › Advanced › Notification channels. Override delivery also covers events that carry the router only in their details (`provider.*`, `budget.*`, `auth.token_invalid`). A router update that omits the field no longer drops a stored override.
+- **SSRF guard on Teams and Discord notification channels (ROUT-336)** — `webhookUrl` of Teams/Discord channels is now rejected like the webhook channel when it targets a private, loopback or link-local address: `POST`/`PATCH /api/notifications/channels` return HTTP 400 and sending/testing fails with the same message.
+- **Per-router notification channel override is now configurable (ROUT-335)** — `PUT /api/routers/:id` accepts `notifications: { channels } | null` (requires `router:write` + `notification:write`), `routerly router edit --notification-channel / --no-notification-channels`, and Router › General › Advanced › Notification channels. A router update that omits the field no longer drops a stored override.
 
 - **CLI `notification channel add --type webhook`** now supported with `--url`, `--method` and `--secret`; `add` also accepts `--json`. (ROUT-333)
 

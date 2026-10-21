@@ -31,6 +31,7 @@ import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel, defaultUpstreamModelId } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
+import { validateWebhookUrl } from '../notifications/url-guard.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { isVisibleToUser, loadInboxScope } from './inbox-access.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -167,6 +168,13 @@ const notificationsConfigSchema = z.object({
 }).passthrough();
 
 const REDACT_MARKER = '********';
+
+/** SSRF guard on the delivery URL of a channel; returns the error message, or null when fine. */
+function channelUrlError(channel: Record<string, unknown>): string | null {
+  const url = channel['provider'] === 'webhook' ? channel['url'] : channel['webhookUrl'];
+  if (!['webhook', 'teams', 'discord'].includes(channel['provider'] as string) || typeof url !== 'string' || !url) return null;
+  try { validateWebhookUrl(url); return null; } catch (e) { return (e as Error).message; }
+}
 
 /**
  * Returns a shallow copy of the channel with all non-empty secret fields
@@ -3025,6 +3033,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         merged[key] = val;
       }
     }
+    const urlError = channelUrlError(merged);
+    if (urlError) return reply.status(400).send({ error: urlError });
     const updatedChannels = [...channels];
     updatedChannels[idx] = merged;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -3039,6 +3049,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     }
+    const urlError = channelUrlError(parsed.data);
+    if (urlError) return reply.status(400).send({ error: urlError });
     const channel = { ...parsed.data, id: parsed.data.id ?? randomUUID() };
     const settings  = await readConfig('settings');
     const existing  = settings.notifications ?? {};
