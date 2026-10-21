@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getProviderAdapter } from './registry.js'
+import { providerDescriptorRegistry } from './descriptor.js'
 import type { ModelConfig } from '@routerly/shared'
 
 import type { Provider } from '@routerly/shared'
@@ -74,6 +75,12 @@ describe('getProviderAdapter', () => {
       const adapter = getProviderAdapter(makeModel(provider))
       expect(typeof adapter.chatCompletion).toBe('function')
       expect(typeof adapter.streamCompletion).toBe('function')
+    }
+  })
+
+  it('every provider offered by a descriptor has an adapter (ROUT-367)', () => {
+    for (const { id } of providerDescriptorRegistry.ordered()) {
+      expect(() => getProviderAdapter(makeModel(id)), id).not.toThrow()
     }
   })
 })
