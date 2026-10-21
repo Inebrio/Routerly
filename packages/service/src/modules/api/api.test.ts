@@ -9714,6 +9714,33 @@ describe('POST /api/notifications/channels (U5 validation)', () => {
     expect(body.id).toBeDefined()
   })
 
+  it.each([
+    ['teams', 'webhookUrl'], ['discord', 'webhookUrl'], ['webhook', 'url'],
+  ])('rejects a %s channel targeting a private IP with 400', async (provider, field) => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider, [field]: 'http://192.168.1.1/x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toContain('private or loopback')
+  })
+
+  it('accepts a teams channel with a public URL', async () => {
+    setup()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/notifications/channels',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ provider: 'teams', webhookUrl: 'https://outlook.office.com/webhook/x' }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+  })
+
   it('rejects an unknown provider', async () => {
     setup()
     const app = await buildApp()
