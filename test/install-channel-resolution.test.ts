@@ -73,7 +73,6 @@ describe('install.sh — rolling-channel tag resolution (RMT-1 tag/branch collis
     expect(result.stderr).toContain("Could not fetch channel 'next'")
     const log = fs.readFileSync(logFile, 'utf-8')
     expect(log).toContain('/releases/tags/channel-next')
-    expect(log).not.toContain('/releases/tags/next\n')
   })
 
   it('--channel=develop requests the renamed "channel-develop" tag, not the "develop" branch name', () => {
@@ -84,7 +83,6 @@ describe('install.sh — rolling-channel tag resolution (RMT-1 tag/branch collis
     expect(result.stderr).toContain("Could not fetch channel 'develop'")
     const log = fs.readFileSync(logFile, 'utf-8')
     expect(log).toContain('/releases/tags/channel-develop')
-    expect(log).not.toContain('/releases/tags/develop\n')
   })
 
   it('--channel=current resolves to /releases/latest (unaffected by the rename)', () => {
@@ -93,8 +91,8 @@ describe('install.sh — rolling-channel tag resolution (RMT-1 tag/branch collis
 
     expect(result.status).toBe(1)
     const log = fs.readFileSync(logFile, 'utf-8')
+    expect(log).toContain('/releases?per_page=100')
     expect(log).toContain('/releases/latest')
-    expect(log).not.toContain('/tags/')
   })
 
   it('--channel=latest resolves to /releases/latest (unaffected by the rename)', () => {
@@ -103,7 +101,54 @@ describe('install.sh — rolling-channel tag resolution (RMT-1 tag/branch collis
 
     expect(result.status).toBe(1)
     const log = fs.readFileSync(logFile, 'utf-8')
-    expect(log).toContain('/releases/latest')
+    expect(log).toContain('/releases?per_page=100')
+  })
+})
+
+// Stub curl serving canned GitHub API bodies by URL; everything else fails.
+function makeFakeGithubBin(routes: Record<string, string>): { binDir: string; logFile: string } {
+  const { binDir, logFile } = makeStubCurlBin()
+  const cases = Object.entries(routes)
+    .map(([url, body]) => `  *"${url}") printf '%s' '${body}' ;;`)
+    .join('\n')
+  fs.writeFileSync(
+    path.join(binDir, 'curl'),
+    `#!/usr/bin/env bash\necho "$@" >> "${logFile}"\ncase "$*" in\n${cases}\n  *) exit 22 ;;\nesac\n`,
+    { mode: 0o755 },
+  )
+  return { binDir, logFile }
+}
+
+describe('install.sh — GitHub release resolution (ROUT-382)', () => {
+  const list = '[{"tag_name":"v0.5.3"},{"tag_name":"v0.10.0"},{"tag_name":"v0.2.0"},{"tag_name":"next"}]'
+
+  it('current picks the highest plain vX.Y.Z even when every release is a pre-release', () => {
+    const { binDir, logFile } = makeFakeGithubBin({ '/releases?per_page=100': list })
+    runInstallSh('current', binDir)
+    expect(fs.readFileSync(logFile, 'utf-8')).toContain('/releases/tags/v0.10.0')
+  })
+
+  it('next falls back to the legacy "next" release and downloads the stamped asset of the version in its title', () => {
+    const { binDir, logFile } = makeFakeGithubBin({
+      '/releases/tags/next': '{"tag_name":"next","name":"Routerly next (→ v0.5.3)"}',
+      '/releases/download/v0.5.3/routerly-0.5.3.tar.gz': '',
+    })
+    runInstallSh('next', binDir)
+    const log = fs.readFileSync(logFile, 'utf-8')
+    expect(log).toContain('/releases/tags/channel-next')
+    expect(log).toContain('/releases/download/v0.5.3/routerly-0.5.3.tar.gz')
+    expect(log).not.toContain('archive/refs/tags')
+  })
+
+  it('falls back to the tag source archive when the release has no routerly-X.Y.Z.tar.gz asset', () => {
+    const { binDir, logFile } = makeFakeGithubBin({ '/releases/tags/v0.2.0': '{"tag_name":"v0.2.0"}' })
+    const res = spawnSync('bash', [SCRIPT, '--yes', '--version', 'v0.2.0'], {
+      encoding: 'utf-8',
+      env: { ...process.env, PATH: `${binDir}:${process.env['PATH']}` },
+      timeout: 15_000,
+    })
+    expect(res.status).not.toBeNull()
+    expect(fs.readFileSync(logFile, 'utf-8')).toContain('archive/refs/tags/v0.2.0.tar.gz')
   })
 })
 
