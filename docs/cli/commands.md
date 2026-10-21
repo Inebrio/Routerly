@@ -3296,6 +3296,7 @@ Add a notification channel.
 | `--target-roles <roles>` | no | Comma-separated role IDs to target. Omit for everyone. |
 | `--target-permissions <perms>` | no | Comma-separated permission names to target. |
 | `--target-users <users>` | no | Comma-separated user IDs to target. |
+| `--json` | no | Print the created channel as JSON. |
 
 **Provider-specific flags:**
 | Provider | Flags |
@@ -3322,6 +3323,11 @@ routerly notification channel add \
 routerly notification channel add \
   --type slack --name "ops-alerts" \
   --bot-token xoxb-... --channel-id C1234567890
+
+# Webhook channel with HMAC-SHA256 signature (X-Routerly-Signature)
+routerly notification channel add \
+  --type webhook --name "hook" \
+  --url https://hooks.example.com/routerly --method POST --secret s3cret
 
 # SMTP channel for provider errors to operators
 routerly notification channel add \

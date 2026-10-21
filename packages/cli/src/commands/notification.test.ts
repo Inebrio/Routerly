@@ -408,6 +408,21 @@ describe('notification channel add', () => {
     expect(out.join(' ')).toContain('added');
   });
 
+  it('adds a webhook channel with url, method and secret', async () => {
+    mockApi.mockResolvedValue({ id: 'w1', provider: 'webhook', name: 'hook' });
+    await runChannel('add', '--type', 'webhook', '--name', 'hook', '--url', 'http://h/x', '--method', 'get', '--secret', 's3');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels',
+      expect.objectContaining({ provider: 'webhook', url: 'http://h/x', method: 'GET', secret: 's3' }));
+  });
+
+  it('webhook add --json prints valid JSON; missing --url exits 1', async () => {
+    mockApi.mockResolvedValue({ id: 'w2', provider: 'webhook', name: 'hook' });
+    const { out } = await runChannel('add', '--type', 'webhook', '--name', 'hook', '--url', 'http://h/x', '--json');
+    expect(JSON.parse(out.join('\n')).id).toBe('w2');
+    const { err } = await runChannel('add', '--type', 'webhook', '--name', 'hook');
+    expect(err.join(' ')).toContain('--url is required');
+  });
+
   it('adds a discord channel', async () => {
     mockApi.mockResolvedValue({ id: 'ch4', provider: 'discord', name: 'dev-alerts' });
     const { out } = await runChannel('add', '--type', 'discord', '--name', 'dev-alerts', '--webhook-url', 'https://discord.com/api/webhooks/x');
