@@ -49,4 +49,12 @@ describe('README and docs intro stay aligned with the product', () => {
     expect(pins.length).toBeGreaterThanOrEqual(2)
     for (const v of pins) expect(v).toMatch(/^v0\.5\./)
   })
+
+  it('Docker examples use a pinned 0.5.x image tag, never :latest', () => {
+    for (const f of ['README.md', 'docs/getting-started/installation.md', 'docs/guides/self-hosting.md']) {
+      const text = read(f)
+      expect(text).not.toMatch(/inebrio\/routerly:latest/)
+      expect(text).toMatch(/inebrio\/routerly:v0\.5\.\d+/)
+    }
+  })
 })
