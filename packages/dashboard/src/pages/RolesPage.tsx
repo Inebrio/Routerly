@@ -48,7 +48,8 @@ const EMPTY_FORM: RoleFormState = { id: '', name: '', permissions: [] };
 
 export function RolesPage() {
   const { t } = useTranslation();
-  const canWrite = useAuth().can('user:write');
+  const { can } = useAuth();
+  const canWrite = can('user:write') || can('role:write');
   const PERM_LABELS = permLabels(t);
   const [roles, setRoles]           = useState<Role[]>([]);
   const [loading, setLoading]       = useState(true);
