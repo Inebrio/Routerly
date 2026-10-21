@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} user",
         "userCount_other": "{{count}} users",
-        "everyone": "Everyone"
+        "everyone": "Everyone",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "लोड करणे अपयशी"
@@ -858,7 +859,9 @@
           "routersHint": "सर्व राउटरमधून इव्हेंट प्राप्त करण्यासाठी रिक्त सोडा.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "सेकंद (0 = कुलडाउन नाही)",
-          "cooldownHint": "समान इव्हेंटसाठी हा चॅनल पुन्हा फायर करण्यापूर्वी किमान मध्यांतर."
+          "cooldownHint": "समान इव्हेंटसाठी हा चॅनल पुन्हा फायर करण्यापूर्वी किमान मध्यांतर.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "प्राप्तकर्ते / लक्ष्य",

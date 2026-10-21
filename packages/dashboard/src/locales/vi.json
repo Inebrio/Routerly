@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perm",
         "userCount": "{{count}} người dùng",
         "userCount_other": "{{count}} người dùng",
-        "everyone": "Mọi người"
+        "everyone": "Mọi người",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Không thể tải"
@@ -858,7 +859,9 @@
           "routersHint": "Để trống để nhận sự kiện từ tất cả bộ định tuyến.",
           "cooldownHeading": "Thời gian hạ nhiệt",
           "cooldownSuffix": "giây (0 = không hạ nhiệt)",
-          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện."
+          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Người nhận / Mục tiêu",

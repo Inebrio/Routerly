@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} ruhusa",
         "userCount": "{{count}} mtumiaji",
         "userCount_other": "{{count}} watumiaji",
-        "everyone": "Kila mtu"
+        "everyone": "Kila mtu",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kushindwa kupakia"
@@ -858,7 +859,9 @@
           "routersHint": "Acha tupu kwa kupokea matukio kutoka njia zote.",
           "cooldownHeading": "Wakati wa burudani",
           "cooldownSuffix": "sekunde (0 = hakuna wakati wa burudani)",
-          "cooldownHint": "Muda wa chini kabla njia hii inaweza kufa tena kwa tukio sawa."
+          "cooldownHint": "Muda wa chini kabla njia hii inaweza kufa tena kwa tukio sawa.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Wapokeaji / Juhudi",

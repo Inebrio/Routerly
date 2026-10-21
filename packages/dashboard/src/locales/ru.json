@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} разрешений",
         "userCount": "{{count}} пользователь",
         "userCount_other": "{{count}} пользователей",
-        "everyone": "Все"
+        "everyone": "Все",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Не удалось загрузить"
@@ -858,7 +859,9 @@
           "routersHint": "Оставьте пустым для получения событий от всех маршрутизаторов.",
           "cooldownHeading": "Охлаждение",
           "cooldownSuffix": "секунд (0 = без охлаждения)",
-          "cooldownHint": "Минимальный интервал перед тем, как этот канал сможет снова срабатывать для одного и того же события."
+          "cooldownHint": "Минимальный интервал перед тем, как этот канал сможет снова срабатывать для одного и того же события.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Получатели / цели",

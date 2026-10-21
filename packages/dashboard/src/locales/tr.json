@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} kullanıcı",
         "userCount_other": "{{count}} kullanıcılar",
-        "everyone": "Herkes"
+        "everyone": "Herkes",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Yüklemek başarısız oldu"
@@ -858,7 +859,9 @@
           "routersHint": "Tüm yönlendiricilerden olaylar almak için boş bırakın.",
           "cooldownHeading": "Dinlenme Süresi",
           "cooldownSuffix": "saniye (0 = dinlenme süresi yok)",
-          "cooldownHint": "Bu kanal aynı olay için yeniden ateşlenmeden önce en az aralık."
+          "cooldownHint": "Bu kanal aynı olay için yeniden ateşlenmeden önce en az aralık.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Alıcılar / Hedefler",

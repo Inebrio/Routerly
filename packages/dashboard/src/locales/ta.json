@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} பயனர்",
         "userCount_other": "{{count}} பயனர்கள்",
-        "everyone": "அனைவரும்"
+        "everyone": "அனைவரும்",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "சுமை தவறிவிட்டது"
@@ -858,7 +859,9 @@
           "routersHint": "தட்டு அனைத்து திசையாக்குபவர்கள் மூலம் நிகழ்வுகளை பெற வெளிப்பாக வேண்டாம்.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "விநாடி (0 = மூட்டை சீல் நிலை)",
-          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।"
+          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "பெறுநர்கள் / இலக்கங்கள்",

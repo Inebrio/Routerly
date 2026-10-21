@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} дозволів",
         "userCount": "{{count}} користувач",
         "userCount_other": "{{count}} користувачів",
-        "everyone": "Кожен"
+        "everyone": "Кожен",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Не вдалося завантажити"
@@ -858,7 +859,9 @@
           "routersHint": "Залиште порожнім, щоб отримувати подієї від всіх маршрутизаторів.",
           "cooldownHeading": "Період охолодження",
           "cooldownSuffix": "секунди (0 без період охолодження)",
-          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї."
+          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Одержувачі / Цілі",

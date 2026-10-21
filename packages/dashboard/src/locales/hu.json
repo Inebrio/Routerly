@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} engedély",
         "userCount": "{{count}} felhasználó",
         "userCount_other": "{{count}} felhasználó",
-        "everyone": "Mindenki"
+        "everyone": "Mindenki",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Betöltés sikertelen"
@@ -858,7 +859,9 @@
           "routersHint": "Hagyja üresen az összes útválasztóból érkező események fogadásásához.",
           "cooldownHeading": "Lehűlési Idő",
           "cooldownSuffix": "másodperc (0 = nincs lehűlési idő)",
-          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel."
+          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Címzettek / Célok",

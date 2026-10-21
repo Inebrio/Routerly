@@ -795,7 +795,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} user",
         "userCount_other": "{{count}} users",
-        "everyone": "Everyone"
+        "everyone": "Everyone",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Failed to load"
@@ -859,7 +860,9 @@
           "routersHint": "Leave empty to receive events from all routers.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "seconds (0 = no cooldown)",
-          "cooldownHint": "Minimum interval before this channel can fire again for the same event."
+          "cooldownHint": "Minimum interval before this channel can fire again for the same event.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Recipients / Targets",

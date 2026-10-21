@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perm",
         "userCount": "{{count}} user",
         "userCount_other": "{{count}} user",
-        "everyone": "Lahat"
+        "everyone": "Lahat",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nabigong i-load"
@@ -858,7 +859,9 @@
           "routersHint": "Iwanang blangko upang matanggap ang mga kaganapan mula sa lahat ng router.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "segundo (0 = walang cooldown)",
-          "cooldownHint": "Minimum na agwat bago makapag-fire ulit ang channel na ito para sa parehong kaganapan."
+          "cooldownHint": "Minimum na agwat bago makapag-fire ulit ang channel na ito para sa parehong kaganapan.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Mga Tatanggap / Target",

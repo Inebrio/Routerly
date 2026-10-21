@@ -795,7 +795,8 @@
         "permCount_other": "{{count}} permessi",
         "userCount": "{{count}} utente",
         "userCount_other": "{{count}} utenti",
-        "everyone": "Tutti"
+        "everyone": "Tutti",
+        "noEvents": "Nessun evento (silenzioso)"
       },
       "errors": {
         "loadFailed": "Caricamento non riuscito"
@@ -859,7 +860,9 @@
           "routersHint": "Lascia vuoto per ricevere eventi da tutti i router.",
           "cooldownHeading": "Tempo di attesa",
           "cooldownSuffix": "secondi (0 = nessun tempo di attesa)",
-          "cooldownHint": "Intervallo minimo prima che questo canale possa attivarsi di nuovo per lo stesso evento."
+          "cooldownHint": "Intervallo minimo prima che questo canale possa attivarsi di nuovo per lo stesso evento.",
+          "eventsPlaceholderExternal": "Nessun evento selezionato: il canale non riceve nulla.",
+          "eventsHintExternal": "Nessun evento selezionato: il canale resta silenzioso. Seleziona gli eventi da ricevere."
         },
         "recipients": {
           "heading": "Destinatari / Destinazioni",

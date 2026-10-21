@@ -143,11 +143,16 @@ describe('targetsHint', () => {
 
 describe('summariseChannel', () => {
   it('shows "All events" when events is undefined', () => {
-    expect(summariseChannel({}, t)).toContain('All events');
+    expect(summariseChannel({ provider: 'dashboard' }, t)).toContain('All events');
+  });
+
+  it('shows "No events (silent)" for an external channel without events', () => {
+    expect(summariseChannel({ provider: 'smtp', events: [] }, t)).toContain('No events (silent)');
+    expect(summariseChannel({ provider: 'smtp', events: [] }, t)).not.toContain('All events');
   });
 
   it('shows "All events" when events is empty', () => {
-    expect(summariseChannel({ events: [] }, t)).toContain('All events');
+    expect(summariseChannel({ provider: 'dashboard', events: [] }, t)).toContain('All events');
   });
 
   it('shows "1 event" for a single event', () => {
@@ -595,16 +600,22 @@ describe('RoutingEditFields', () => {
 
   it('onChange fires when events MultiSelect changes', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: [] }} onChange={onChange}
+    render(<RoutingEditFields form={{ provider: 'dashboard', events: [] }} onChange={onChange}
       t={t} />);
     const evSelect = screen.getByTestId('multiselect-All events (leave empty for all)') as HTMLSelectElement;
     await userEvent.selectOptions(evSelect, ['provider.error']);
     expect(onChange).toHaveBeenCalledWith('events', ['provider.error']);
   });
 
+  it('external channel: placeholder and hint say no events = silent', () => {
+    render(<RoutingEditFields form={{ provider: 'smtp' }} onChange={vi.fn()} t={t} />);
+    expect(screen.getByTestId('multiselect-No events selected: this channel receives nothing (leave empty to disable).')).toBeTruthy();
+    expect(screen.getByText(/stays silent/)).toBeTruthy();
+  });
+
   it('onChange passes undefined when events cleared', async () => {
     const onChange = vi.fn();
-    render(<RoutingEditFields form={{ events: ['provider.error'] }} onChange={onChange}
+    render(<RoutingEditFields form={{ provider: 'dashboard', events: ['provider.error'] }} onChange={onChange}
       t={t} />);
     const evSelect = screen.getByTestId('multiselect-All events (leave empty for all)') as HTMLSelectElement;
     // Deselect all by selecting nothing

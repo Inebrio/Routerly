@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} права",
         "userCount": "{{count}} потребител",
         "userCount_other": "{{count}} потребители",
-        "everyone": "Всички"
+        "everyone": "Всички",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Зареждането е неуспешно"
@@ -858,7 +859,9 @@
           "routersHint": "Оставете празно за получаване на събития от всички рутери.",
           "cooldownHeading": "Изчакване",
           "cooldownSuffix": "секунди (0 = без изчакване)",
-          "cooldownHint": "Минимален интервал, преди този канал да може отново да се задейства за същото събитие."
+          "cooldownHint": "Минимален интервал, преди този канал да може отново да се задейства за същото събитие.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Получатели / Цели",

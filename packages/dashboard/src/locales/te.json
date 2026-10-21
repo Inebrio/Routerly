@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ఆర్డర",
         "userCount_other": "{{count}} ఆర్డర",
-        "everyone": "అందరూ"
+        "everyone": "అందరూ",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "లోడ్ చేయడం విఫలమైంది"
@@ -858,7 +859,9 @@
           "routersHint": "సమూహ ఈవెంట్‌లను చేరుకోవడానికి ఖాళీ వదిలివేయండి.",
           "cooldownHeading": "కూల్‌డౌన్",
           "cooldownSuffix": "సెకన్లు (0 = కూల్‌డౌన్ లేదు)",
-          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।"
+          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "గ్రహీత / లక్ష్య",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} icazə",
         "userCount": "{{count}} istifadəçi",
         "userCount_other": "{{count}} istifadəçi",
-        "everyone": "Hamı"
+        "everyone": "Hamı",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Yükləmək alınmadı"
@@ -858,7 +859,9 @@
           "routersHint": "Bütün routerlərdən hadisə almaq üçün boş qoyun.",
           "cooldownHeading": "Sərinləmə",
           "cooldownSuffix": "saniyə (0 = sərinləmə yoxdur)",
-          "cooldownHint": "Bu kanalın eyni hadisə üçün yenidən işə düşməsindən əvvəl minimum interval."
+          "cooldownHint": "Bu kanalın eyni hadisə üçün yenidən işə düşməsindən əvvəl minimum interval.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Alıcılar / Hədəflər",

@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ব্যবহারকারী",
         "userCount_other": "{{count}} ব্যবহারকারী",
-        "everyone": "সবাই"
+        "everyone": "সবাই",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "লোড করতে ব্যর্থ"
@@ -858,7 +859,9 @@
           "routersHint": "সমস্ত রাউটার থেকে ইভেন্ট পেতে খালি রেখে দিন।",
           "cooldownHeading": "শীতল মেয়াদ",
           "cooldownSuffix": "সেকেন্ড (0 = কোন শীতল মেয়াদ নেই)",
-          "cooldownHint": "এই চ্যানেল একই ইভেন্টের জন্য আবার ফায়ার করার আগে ন্যূনতম ব্যবধান।"
+          "cooldownHint": "এই চ্যানেল একই ইভেন্টের জন্য আবার ফায়ার করার আগে ন্যূনতম ব্যবধান।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "প্রাপক / লক্ষ্য",

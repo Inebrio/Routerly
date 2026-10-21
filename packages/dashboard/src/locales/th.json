@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ผู้ใช้",
         "userCount_other": "{{count}} ผู้ใช้",
-        "everyone": "ทุกคน"
+        "everyone": "ทุกคน",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "ไม่สามารถโหลด"
@@ -858,7 +859,9 @@
           "routersHint": "ปล่อยให้ว่างเพื่อรับเหตุการณ์จากเราเตอร์ทั้งหมด",
           "cooldownHeading": "เวลาพักร้อน",
           "cooldownSuffix": "วินาที (0 = ไม่มีเวลาพักร้อน)",
-          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน"
+          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "ผู้รับ / เป้าหมาย",

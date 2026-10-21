@@ -94,7 +94,7 @@ Click a channel row to navigate to its **edit page** for detailed configuration.
    - **Dashboard**: name only (no credentials)
    - **Email providers** (SMTP, SES, SendGrid, Azure, Google): host, auth, from address
    - **Webhooks/Native** (Webhook, Slack, Teams, PagerDuty, Discord): integration URLs and keys
-4. (Optional) Filter by **Events** - select specific event types to route to this channel; leave empty to receive all
+4. (Optional) Filter by **Events** - select specific event types to route to this channel; required for external channels (no events = silent); `dashboard` channels receive all when empty
 5. (Optional) Set **Recipients / Targets** - pick roles, permissions, or individual users; leave empty for everyone
 6. Click **Create Channel**
 7. Use **Send Test** to verify the channel works before relying on it for real events
@@ -111,7 +111,7 @@ Among the built-in events, the update checker raises **System – Update Availab
 
 Click the channel row or the **Edit** button to open the edit page. You can change:
 - **Name** - friendly label
-- **Events** - event filter (leave empty for all)
+- **Events** - event filter (external channels with none are silent; `dashboard` channels receive all)
 - **Recipients / Targets** - audience filter
 - **Connection details** - provider-specific fields (host, API keys, etc.). Secret fields (passwords, API keys, tokens) show as masked (`***`) when present; clearing the field will leave it unchanged. To update a secret, re-enter it in the text field.
 

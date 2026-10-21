@@ -794,7 +794,8 @@
         "permCount_other": "{{count}} اجازتیں",
         "userCount": "{{count}} صارف",
         "userCount_other": "{{count}} صارفین",
-        "everyone": "سب"
+        "everyone": "سب",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "لوڈ کرنے میں ناکام"
@@ -858,7 +859,9 @@
           "routersHint": "تمام روٹرز سے واقعات موصول کرنے کے لیے خالی چھوڑیں۔",
           "cooldownHeading": "سردی",
           "cooldownSuffix": "سیکنڈ (0 = کوئی سردی نہیں)",
-          "cooldownHint": "اس چینل دوبارہ اسی واقعے کے لیے آگے بڑھ سکتا ہے کم از کم وقفہ۔"
+          "cooldownHint": "اس چینل دوبارہ اسی واقعے کے لیے آگے بڑھ سکتا ہے کم از کم وقفہ۔",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "وصول کنندگان / ہدف",
