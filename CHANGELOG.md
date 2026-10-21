@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Changed
+
+- **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count.
+
 ### Fixed
 - **Models page without `model:read`** shows a «no permission» message instead of an unhandled `Required permission: model:read` error. (ROUT-378)
 - **Router › Users without `router:write`** no longer shows «Add Member» and the change-role/remove actions; the tab is read-only instead of failing with 403. (ROUT-377)
