@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **MCP:** concurrent `toggle_model` and `create_router_token` calls no longer lose updates (two toggles ended on the same value, concurrent token creations dropped tokens); both now run read-modify-write under the config file lock (ROUT-364).
 - Creating a connection no longer fails with HTTP 500 `Cannot read properties of undefined (reading 'trim')` when `connections.json` holds entries without a label (ROUT-359).
 - **CLI:** `routerly model add --connection` now accepts the connection label as well as its id, and an unknown value fails with «Connection 'x' not found, see `routerly connections list`» instead of a bare «Not found». (ROUT-325)
 - **CLI:** `routerly router list --json` now prints the routers as a JSON array instead of failing with «unknown option '--json'». (ROUT-324)
