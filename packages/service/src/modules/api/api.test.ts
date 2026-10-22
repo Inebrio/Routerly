@@ -14194,6 +14194,22 @@ describe('Optimizers API', () => {
     expect(res.statusCode).toBe(200)
   })
 
+  it('PUT /api/routers/:id accepts relevance threshold 0 and refuses one below the catalog minimum', async () => {
+    authAs(adminUser)
+    mockWriteConfig.mockResolvedValue(undefined)
+    const app = await buildApp()
+    const put = (steps: unknown[]) => app.inject({
+      method: 'PUT', url: '/api/routers/p1',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ name: 'Test', models: [], optimizers: { steps } }),
+    })
+    const zero = await put([{ id: 'relevance', enabled: true, threshold: 0 }])
+    const ccrZero = await put([{ id: 'ccr', enabled: true, threshold: 0 }])
+    await app.close()
+    expect(zero.statusCode).toBe(200)
+    expect(ccrZero.statusCode).toBe(400)
+  })
+
   it('POST /api/routers persists optimizers with optimizers:manage (201)', async () => {
     authAs(adminUser)
     mockReadConfig.mockImplementation(async (t: string) => {
