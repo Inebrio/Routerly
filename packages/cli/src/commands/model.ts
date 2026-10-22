@@ -290,7 +290,7 @@ Examples:
 `)
     .requiredOption('--id <id>', 'Unique model ID (e.g. gpt-4o)')
     .requiredOption('--provider <provider>', 'Provider: openai | anthropic | anthropic-oauth | gemini | ollama | custom | azure-openai | bedrock | vertex')
-    .option('--connection <id>', 'Bind to an existing provider connection (see `routerly connections list`); omits inline credentials')
+    .option('--connection <id|label>', 'Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials')
     .option('--endpoint <url>', 'Custom API endpoint (uses provider default if omitted)')
     .option('--api-key <key>', 'API key (stored plaintext; file permissions protect it)')
     .option('--input-price <usd>', 'Cost per 1M input tokens in USD')
@@ -379,6 +379,23 @@ Examples:
         }
       }
 
+      // Accept a connection id or label. Lookup is best-effort: without connections:read
+      // (or on an unexpected reply) the value is sent as-is, like before.
+      let connectionId = opts.connection;
+      if (connectionId) {
+        let conns: { id: string; label?: string }[] | undefined;
+        try { conns = await api<{ id: string; label?: string }[]>('GET', '/api/connections'); }
+        catch { /* no connections:read — send the value unchanged */ }
+        if (Array.isArray(conns)) {
+          const match = conns.find(c => c.id === connectionId) ?? conns.find(c => c.label === connectionId);
+          if (!match) {
+            console.error(chalk.red(`Connection '${connectionId}' not found, see \`routerly connections list\``));
+            process.exit(1);
+          }
+          connectionId = match.id;
+        }
+      }
+
       const body = {
         id: opts.id,
         name: opts.id,
@@ -388,7 +405,7 @@ Examples:
         ...(timeout ? { timeout } : {}),
         ...(limits?.length ? { limits } : {}),
         ...(opts.connection
-          ? { connectionId: opts.connection }
+          ? { connectionId }
           : {
             endpoint: opts.endpoint ?? providerEndpoints[opts.provider] ?? '',
             apiKey: opts.apiKey,
