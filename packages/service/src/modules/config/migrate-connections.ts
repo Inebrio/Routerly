@@ -110,9 +110,10 @@ export async function migrateModelsToConnections(): Promise<{ connections: numbe
   // renaming the later ones in place is safe.
   const kept: string[] = [];
   for (const c of existingConnections) {
-    // A connection persisted without a label (hand-edited or older writer) gets a generated one.
+    // A connection persisted without a label (hand-edited or older writer) gets a generated one;
+    // providerId may be missing too in a corrupt file.
     if (!c.label || isConnectionLabelTaken(c.label, kept)) {
-      c.label = suggestConnectionLabel(c.providerId, c.providerName, kept);
+      c.label = suggestConnectionLabel(c.providerId ?? '', c.providerName, kept);
       labelsChanged = true;
     }
     kept.push(c.label);
