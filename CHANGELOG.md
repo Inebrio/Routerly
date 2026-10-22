@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Dashboard:** the «Select a user» menu in Routers › Users › Add Member is no longer covered by the Router Members card below it, so members can be added from the UI.
 - **Dashboard:** roles without `settings:read` or `connections:read` no longer trigger 403 responses on every page: the layout skips `GET /api/system/permissions` and `GET /api/settings`, the language fallback skips `GET /api/settings`, and provider labels skip `GET /api/providers/descriptors` (raw provider ids are shown instead).
 - Playground Debug trace no longer reads INCOMPLETE with 0/0 tokens for `openai-oauth` models: the provider now emits the same `model:request` / `model:success` / `model:error` trace entries as every other provider, so the trace recap reports outcome, tokens, cost and latency (ROUT-379).
 - **Dashboard › Settings › Security:** the red «Unsafe permissions on secrets file(s)» error no longer stays next to «All configuration files have safe permissions» after a successful «Fix now» (ROUT-375).

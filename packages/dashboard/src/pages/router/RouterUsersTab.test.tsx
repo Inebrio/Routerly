@@ -191,6 +191,15 @@ describe('RouterUsersTab — add member', () => {
     expect(screen.getByText('Add New Member')).toBeTruthy();
   });
 
+  it('add form card is stacked above the members card so the dropdown is not covered (ROUT-385)', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
+    const card = screen.getByText('Add New Member').closest('.card') as HTMLElement;
+    expect(card.style.position).toBe('relative');
+    expect(card.style.zIndex).toBe('1');
+  });
+
   it('add form shows available users (not already members)', async () => {
     renderTab();
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));

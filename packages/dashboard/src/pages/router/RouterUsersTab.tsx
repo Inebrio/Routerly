@@ -129,8 +129,9 @@ export function RouterUsersTab() {
         )}
       </div>
 
+      {/* .card's backdrop-filter makes each card a stacking context: the add form is lifted above the members card so the dropdown is not covered */}
       {canWrite && adding && (
-        <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px dashed var(--border)', background: 'var(--surface-active)' }}>
+        <div className="card" style={{ position: 'relative', zIndex: 1, padding: 16, marginBottom: 16, border: '1px dashed var(--border)', background: 'var(--surface-active)' }}>
           <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>{t('routers.users.addNewTitle')}</h4>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
