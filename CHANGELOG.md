@@ -11,11 +11,12 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
-### Changed
 
 - **README and docs introduction refreshed for 0.5.x.** Positioning as the decision and control layer, all 11 routing policies, current quick start (`router create`, `auth login`), update channels, providers and capabilities, and a dated comparison with LiteLLM, Bifrost, Portkey and OpenRouter (cells sourced from each project's public documentation). A consistency test now keeps the README, the docs introduction and the routing page aligned on policy names and count. Install commands pin `--version v0.5.3` until the default channel resolves to a 0.5.x release. Docker examples use the `v0.5.3` image tag (`latest` still points at 0.2.0).
 
 ### Fixed
+- Creating a connection no longer fails with HTTP 500 `Cannot read properties of undefined (reading 'trim')` when `connections.json` holds entries without a label (ROUT-359).
+
 - **CLI:** `routerly model add --connection` now accepts the connection label as well as its id, and an unknown value fails with «Connection 'x' not found, see `routerly connections list`» instead of a bare «Not found». (ROUT-325)
 - **CLI:** `routerly router list --json` now prints the routers as a JSON array instead of failing with «unknown option '--json'». (ROUT-324)
 - **CLI:** `routerly auth login` no longer fails with «Unauthorized» for accounts with 2FA enabled; `/api/auth/2fa/verify` is now exempt from the unauthenticated permission pre-check like `/api/auth/login`. (ROUT-380)
