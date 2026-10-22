@@ -664,6 +664,18 @@ describe('router list', () => {
     expect(out).toContain('5s');
   });
 
+  it('--json prints a parseable array, also when empty', async () => {
+    mockApi.mockResolvedValueOnce([baseRouter]);
+    const lines: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
+    await makeCmd().parseAsync(['node', 'router', 'list', '--json']);
+    expect(JSON.parse(lines.join('\n'))).toEqual([baseRouter]);
+    mockApi.mockResolvedValueOnce([]);
+    lines.length = 0;
+    await makeCmd().parseAsync(['node', 'router', 'list', '--json']);
+    expect(JSON.parse(lines.join('\n'))).toEqual([]);
+  });
+
   it('shows empty state when no routers', async () => {
     mockApi.mockResolvedValueOnce([]);
     const lines: string[] = [];

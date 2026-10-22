@@ -1048,13 +1048,19 @@ export function makeRouterCommand(): Command {
   // ── router list ─────────────────────────────────────────────────────────────
   cmd.command('list')
     .description('List all routers')
+    .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly router list
+  routerly router list --json
 `)
-    .action(async () => {
+    .action(async (opts: { json?: boolean }) => {
       try {
         const routers = await api<RouterConfig[]>('GET', '/api/routers');
+        if (opts.json) {
+          console.log(JSON.stringify(routers, null, 2));
+          return;
+        }
         if (routers.length === 0) {
           console.log(chalk.yellow('No routers yet. Use `routerly router create` to create one.'));
           return;
