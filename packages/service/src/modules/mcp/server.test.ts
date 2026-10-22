@@ -4,9 +4,10 @@ import type { McpAuthContext, Permission } from '@routerly/shared'
 vi.mock('../config/loader.js', () => ({
   readConfig: vi.fn(),
   writeConfig: vi.fn(),
+  updateConfig: vi.fn(),
 }))
 
-import { readConfig, writeConfig } from '../config/loader.js'
+import { readConfig, writeConfig, updateConfig } from '../config/loader.js'
 import { logAudit } from '../audit/logger.js'
 import { ServiceContainer, EventBus, type Token } from '../../core/index.js'
 import {
@@ -88,6 +89,12 @@ beforeEach(() => {
   mockWriteConfig.mockReset()
   mockLogAudit.mockReset()
   mockWriteConfig.mockResolvedValue(undefined as never)
+  vi.mocked(updateConfig).mockImplementation((async (key: never, mutate: (c: unknown) => unknown) => {
+    const cur = await mockReadConfig(key)
+    const next = await mutate(cur)
+    if (next !== cur) await mockWriteConfig(key, next as never)
+    return next
+  }) as never)
 })
 
 describe('buildMcpServer tools/list', () => {
