@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest'
 import Fastify from 'fastify'
 
-vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(), getOrCreateSecret: vi.fn() }))
+vi.mock('../config/loader.js', () => ({ readConfig: vi.fn(), writeConfig: vi.fn(), getOrCreateSecret: vi.fn(), ConfigUpdateAbort: class extends Error {} }))
 vi.mock('../auth/jwt.js', () => ({
   createSessionToken: vi.fn(() => 'test-jwt'),
   verifyToken: vi.fn(),
@@ -72,6 +72,20 @@ describe('POST /api/connections', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
       payload: { providerId: 'openai', label: 'Main', credentials: { apiKey: 'sk' }, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('creates a connection when connections.json holds entries without a label (ROUT-359)', async () => {
+    const app = await buildApp()
+    const headers = auth('connections:manage')
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (type: string) =>
+      type === 'connections' ? [{ id: 'conn-for-undefined' }] : base(type))
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers,
+      payload: { providerId: 'openai', label: 'x', credentials: { apiKey: 'sk' }, enabled: true },
     })
     await app.close()
     expect(res.statusCode).toBe(200)
