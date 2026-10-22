@@ -6,8 +6,9 @@ import { useState } from 'react';
 import { RouterUsersTab } from './RouterUsersTab';
 
 let mockCanWrite = true;
+let mockCanReadUsers = true;
 vi.mock('../../AuthContext', () => ({
-  useAuth: () => ({ can: (perm: string) => (perm === 'router:write' ? mockCanWrite : true) }),
+  useAuth: () => ({ can: (perm: string) => (perm === 'router:write' ? mockCanWrite : perm === 'user:read' ? mockCanReadUsers : true) }),
 }));
 
 vi.mock('../../api', () => ({
@@ -96,7 +97,7 @@ beforeEach(() => {
   mockRemoveRouterMember.mockResolvedValue(undefined);
 });
 
-afterEach(() => { vi.clearAllMocks(); mockCanWrite = true; });
+afterEach(() => { vi.clearAllMocks(); mockCanWrite = true; mockCanReadUsers = true; });
 
 describe('RouterUsersTab — without router:write', () => {
   it('hides Add Member and row actions', async () => {
@@ -155,6 +156,13 @@ describe('RouterUsersTab — initial render', () => {
   it('shows empty state when no members', async () => {
     renderTab({ ...mockRouter, members: [] });
     await waitFor(() => expect(screen.getByText('No members found.')).toBeTruthy());
+  });
+
+  it('skips getUsers and shows user ids without user:read', async () => {
+    mockCanReadUsers = false;
+    renderTab();
+    await waitFor(() => expect(screen.getByText('u1')).toBeTruthy());
+    expect(mockGetUsers).not.toHaveBeenCalled();
   });
 
   it('shows error when getUsers rejects', async () => {

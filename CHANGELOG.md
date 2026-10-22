@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- The router Users tab no longer calls `GET /api/users` (403 in the console) for roles without `user:read`; members are shown by user id instead.
 - Startup no longer logs `models.json -> connections/instances migration failed` (`toLowerCase` of undefined) when `connections.json` holds entries with neither `label` nor `providerId`; the migration now generates a label for them.
 
 - **Dashboard:** the «Select a user» menu in Routers › Users › Add Member is no longer covered by the Router Members card below it, so members can be added from the UI.

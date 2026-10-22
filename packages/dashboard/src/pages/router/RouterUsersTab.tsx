@@ -13,6 +13,7 @@ export function RouterUsersTab() {
   const { router, setRouter } = useRouter();
   const { can } = useAuth();
   const canWrite = can('router:write');
+  const canReadUsers = can('user:read');
   if (!router) return null;
 
   const [users, setUsers] = useState<User[]>([]);
@@ -34,10 +35,12 @@ export function RouterUsersTab() {
   ];
 
   useEffect(() => {
+    // without user:read the members table falls back to the user ids
+    if (!canReadUsers) return;
     getUsers()
       .then(setUsers)
       .catch((e) => setErr(e instanceof Error ? e.message : t('routers.users.errors.loadFailed')));
-  }, []);
+  }, [canReadUsers]);
 
   async function handleAddMember() {
     /* v8 ignore next */
