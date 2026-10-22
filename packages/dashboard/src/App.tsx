@@ -259,7 +259,7 @@ export function __resetPermissionCheckForTests() {
   permissionWarningFiles = [];
 }
 
-function ProtectedLayout() {
+function ProtectedShell() {
   const { t } = useTranslation();
   const { user, isLoading, can } = useAuth();
   const canReadSettings = can('settings:read');
@@ -378,9 +378,6 @@ function ProtectedLayout() {
   const showUpdateBanner = !bannerDismissed && !isDocker && user?.role === 'admin' && updateInfo?.available;
   const showPermissionWarning = !permissionWarningDismissed && permissionWarning.length > 0;
 
-  if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
-  /* v8 ignore next */
-  if (!user) return <Navigate to={`/dashboard/login?to=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   return (
     <div className={`app-shell${collapsed ? ' sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={collapsed} onToggle={handleToggle} version={version} />
@@ -505,6 +502,14 @@ function ProtectedLayout() {
 }
 
 /** Checks setup status once on first load and redirects to /dashboard/setup if needed. */
+function ProtectedLayout() {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+  if (isLoading) return <div className="loading-center"><div className="spinner" /></div>;
+  if (!user) return <Navigate to={`/dashboard/login?to=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  return <ProtectedShell />;
+}
+
 function SetupGuard() {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();

@@ -578,6 +578,23 @@ describe('ProtectedLayout — unauthenticated', () => {
     renderApp();
     await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
   });
+
+  it('sends no authenticated request before the redirect (no 401 noise)', async () => {
+    __resetPermissionCheckForTests();
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      login: vi.fn(),
+      loginDirect: vi.fn(),
+      logout: vi.fn(),
+      updateUser: vi.fn(),
+      can: vi.fn(),
+    });
+    renderApp();
+    await waitFor(() => expect(screen.getByText('LoginPage')).toBeTruthy(), { timeout: 3000 });
+    expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
 });
 
 // ── SetupGuard — needsSetup: true (line 333) — MUST BE LAST (corrupts router state) ──
