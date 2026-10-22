@@ -125,8 +125,11 @@ async function rawRequest<T>(
   if (!res.ok) {
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth printing.
-    const body = data as { error?: string; message?: string };
-    throw new ApiError(res.status, body.message ?? body.error ?? res.statusText);
+    // Validation answers add the failing field messages in `details`.
+    const body = data as { error?: string; message?: string; details?: { message?: string }[] };
+    const why = Array.isArray(body.details) ? body.details.map(d => d.message).filter(Boolean).join('; ') : '';
+    const text = body.message ?? body.error ?? res.statusText;
+    throw new ApiError(res.status, why ? `${text}: ${why}` : text);
   }
 
   return data as T;

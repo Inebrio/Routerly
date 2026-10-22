@@ -105,6 +105,15 @@ describe('api() Content-Type header', () => {
 });
 
 describe('api() error handling', () => {
+  it('appends validation details to the ApiError message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 400, statusText: 'Bad Request',
+      json: async () => ({ error: 'Invalid optimizers config', details: [{ message: 'ccr: threshold must be at least 1' }] }),
+    }))
+    const { api } = await import('./api.js')
+    await expect(api('GET', '/api/models')).rejects.toThrow('Invalid optimizers config: ccr: threshold must be at least 1')
+  })
+
   it('throws ApiError when response is not ok', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       status: 403,
