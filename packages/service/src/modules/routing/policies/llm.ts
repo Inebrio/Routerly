@@ -219,7 +219,8 @@ export const llmPolicy: PolicyFn = async ({ request, candidates, config, log, em
   const router = allRouters.find((p: RouterConfig) => p.id === routerId)
     ?? { id: routerId ?? '', models: [], name: '', tokens: [], members: [] };
 
-  const fallbackModelIds: string[] = config?.fallbackModelIds ?? [];
+  // policy-level list wins; router-level `fallbackRoutingModelIds` is the default
+  const fallbackModelIds: string[] = config?.fallbackModelIds ?? router.fallbackRoutingModelIds ?? [];
   const candidateModelIds = [routingModelId, ...fallbackModelIds];
 
   // Calcola gli snapshot dei consumi correnti per i candidati che hanno limiti configurati

@@ -17,6 +17,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- The `llm` routing policy now honours the router-level fallback routing models (`router routing update --fallback-models`) when the policy defines no `fallbackModelIds` of its own.
+
 - Router Dashboard stat cards (e.g. Savings with `$0.00008800`) no longer clip long values: the figure now scales with the card width.
 - The router Users tab no longer calls `GET /api/users` (403 in the console) for roles without `user:read`; members are shown by user id instead.
 - Startup no longer logs `models.json -> connections/instances migration failed` (`toLowerCase` of undefined) when `connections.json` holds entries with neither `label` nor `providerId`; the migration now generates a label for them.
@@ -97,6 +99,8 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+
+- The `llm` routing policy now honours the router-level fallback routing models (`router routing update --fallback-models`) when the policy defines no `fallbackModelIds` of its own.
 - **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
 
 - **InfluxDB integration test verifies credentials**: `POST /api/integrations/:id/test` (CLI `integrations test`, dashboard Test) now performs an authenticated test write instead of the unauthenticated `/health` check, so a wrong token (401), missing write permission (403) or unknown org/bucket (404) is reported as a failure (ROUT-329).
