@@ -11,6 +11,8 @@ vi.mock('../api', () => ({
   getModels: vi.fn(),
 }));
 
+vi.mock('../AuthContext', () => ({ useAuth: () => ({ can: () => true }) }));
+
 // Mock DateRangePicker and MultiSelect to avoid complex UI
 vi.mock('../components/DateRangePicker', () => ({
   DateRangePicker: ({ value }: { value: { label?: string } }) => <div data-testid="date-picker">{value.label}</div>,
