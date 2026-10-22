@@ -74,6 +74,15 @@ describe('migrateModelsToConnections', () => {
     expect(savedConnections[0].label).toBe('openai');
   });
 
+  it('does not throw on a connection with neither label nor providerId', async () => {
+    stubStores([], [{ id: 'conn-for-undefined' }, { id: 'conn-for-undefined-2' }]);
+
+    await expect(migrateModelsToConnections()).resolves.toBeDefined();
+
+    const saved = mockWriteConfig.mock.calls.find((c) => c[0] === 'connections')?.[1] as any[];
+    expect(saved.map((c) => c.label)).toEqual(['connection', 'connection-2']);
+  });
+
   it('renames existing connections that share a label', async () => {
     mockReadConfig.mockImplementation(async (key: string) => {
       if (key === 'models') return [] as any;
