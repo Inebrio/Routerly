@@ -33,7 +33,7 @@ function applyDirection(code: string) {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, can } = useAuth();
   const [language, setLanguageState] = useState<string>(() => savedLanguage(user?.language) ?? detectBrowserLanguage() ?? 'en');
   const [saving, setSaving] = useState(false);
 
@@ -59,7 +59,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (savedLanguage(user?.language) || detectBrowserLanguage()) return;
     const token = localStorage.getItem('lr_token');
-    if (!token) return;
+    if (!token || !can('settings:read')) return;
     getSettings()
       .then(settings => {
         const code = settings.defaultLanguage;

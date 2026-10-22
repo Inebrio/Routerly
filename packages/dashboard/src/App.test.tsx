@@ -333,6 +333,17 @@ describe('ProtectedLayout — permission warning banner', () => {
     await waitFor(() => expect(screen.queryByText(/permissive access/)).toBeNull(), { timeout: 12_000 });
   }, 15_000);
 
+  it('does not call permissions or settings without settings:read', async () => {
+    mockUseAuth.mockReturnValue({
+      user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+      can: vi.fn().mockReturnValue(false),
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+    expect(mockGetPermissionStatus).not.toHaveBeenCalled();
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+
   it('does not poll permission status without settings:read', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
@@ -344,7 +355,7 @@ describe('ProtectedLayout — permission warning banner', () => {
       render(<App />);
       await waitFor(() => screen.getByText('OverviewPage'));
       await vi.advanceTimersByTimeAsync(35_000);
-      expect(mockGetPermissionStatus).toHaveBeenCalledTimes(1);
+      expect(mockGetPermissionStatus).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
