@@ -2360,6 +2360,13 @@ export function SettingsSecurityTab() {
       .finally(() => setLoading(false));
   }, []);
 
+  // A successful permission fix invalidates a stale 423 "unsafe permissions" error.
+  useEffect(() => {
+    const onFixed = () => setError('');
+    window.addEventListener('lr-permission-fixed', onFixed);
+    return () => window.removeEventListener('lr-permission-fixed', onFixed);
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
