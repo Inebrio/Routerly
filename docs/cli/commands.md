@@ -409,7 +409,7 @@ routerly model add --id <id> --provider <provider> [options]
 |--------|-------------|
 | `--id <id>` | Model identifier (e.g. `gpt-5-mini`), required |
 | `--provider <provider>` | Provider: `openai`, `anthropic`, `anthropic-oauth`, `gemini`, `ollama`, `custom`, `azure-openai`, `bedrock`, `vertex`, required |
-| `--connection <id>` | Bind to an existing provider connection (see `routerly connections list`); omits inline credentials |
+| `--connection <id\|label>` | Bind to an existing provider connection by id or label (see `routerly connections list`); omits inline credentials |
 | `--endpoint <url>` | Custom API endpoint (uses provider default if omitted) |
 | `--api-key <key>` | API key (stored plaintext; file permissions protect it) |
 | `--input-price <usd>` | Cost per 1M input tokens in USD |
@@ -425,7 +425,7 @@ additional provider-specific flags (`--azure-resource`, `--aws-region`,
 `--vertex-router`, `--cf-clearance`, etc.); see `routerly model add --help`.
 
 **`--connection` vs. inline credentials:**
-- With `--connection <id>`: the model binds to that existing connection. No credential flags (`--api-key`, `--endpoint`, and the provider-specific credential flags) are sent; the connection already owns them. The connection's provider must match `--provider`.
+- With `--connection <id|label>`: the model binds to that existing connection. The value is matched against connection ids first, then labels; an unknown value fails with `Connection 'x' not found, see \`routerly connections list\`` (exit 1) and nothing is created. Without `connections:read` the value is sent unchanged and must be an id. No credential flags (`--api-key`, `--endpoint`, and the provider-specific credential flags) are sent; the connection already owns them. The connection's provider must match `--provider`.
 - Without `--connection`: `--endpoint`/`--api-key` (and provider-specific flags) are sent inline, same as before the connections cutover. The service creates a dedicated, single-model connection with id `conn-for-<id>` from them and binds the model to it.
 
 ```bash
