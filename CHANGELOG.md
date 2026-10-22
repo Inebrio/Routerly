@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- Router Dashboard stat cards (e.g. Savings with `$0.00008800`) no longer clip long values: the figure now scales with the card width.
 - The router Users tab no longer calls `GET /api/users` (403 in the console) for roles without `user:read`; members are shown by user id instead.
 - Startup no longer logs `models.json -> connections/instances migration failed` (`toLowerCase` of undefined) when `connections.json` holds entries with neither `label` nor `providerId`; the migration now generates a label for them.
 
