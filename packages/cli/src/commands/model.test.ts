@@ -489,10 +489,42 @@ describe('routerly model add', () => {
   it('binds to an existing connection via --connection, sending no credentials', async () => {
     mockApi.mockResolvedValue({});
     await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'conn-abc123', '--api-key', 'sk-should-be-dropped');
-    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    const body = mockApi.mock.calls.find(c => c[0] === 'POST')![2] as Record<string, unknown>;
     expect(body['connectionId']).toBe('conn-abc123');
     expect(body).not.toHaveProperty('apiKey');
     expect(body).not.toHaveProperty('endpoint');
+  });
+
+  it('resolves --connection by label to the connection id', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      Promise.resolve(path === '/api/connections' ? [{ id: 'conn-abc123', label: 'dev-openai' }] : {}));
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'dev-openai');
+    const post = mockApi.mock.calls.find(c => c[0] === 'POST')!;
+    expect((post[2] as Record<string, unknown>)['connectionId']).toBe('conn-abc123');
+  });
+
+  it('accepts --connection as an id when connections are listed', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      Promise.resolve(path === '/api/connections' ? [{ id: 'conn-abc123', label: 'dev-openai' }] : {}));
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'conn-abc123');
+    const post = mockApi.mock.calls.find(c => c[0] === 'POST')!;
+    expect((post[2] as Record<string, unknown>)['connectionId']).toBe('conn-abc123');
+  });
+
+  it('errors naming the connection and does not POST when it is unknown', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      Promise.resolve(path === '/api/connections' ? [{ id: 'conn-abc123', label: 'dev-openai' }] : {}));
+    const { err } = await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'nope');
+    expect(err.join('\n')).toContain("Connection 'nope' not found");
+    expect(mockApi.mock.calls.some(c => c[0] === 'POST')).toBe(false);
+  });
+
+  it('sends --connection unchanged when connections cannot be listed', async () => {
+    mockApi.mockImplementation((m: string, path: string) =>
+      path === '/api/connections' ? Promise.reject(new ApiError(403, 'Forbidden')) : Promise.resolve({}));
+    await run('add', '--id', 'gpt-4o', '--provider', 'openai', '--connection', 'raw-id');
+    const post = mockApi.mock.calls.find(c => c[0] === 'POST')!;
+    expect((post[2] as Record<string, unknown>)['connectionId']).toBe('raw-id');
   });
 
   it('creates a dedicated connection from inline --api-key when --connection is not given', async () => {
@@ -507,7 +539,7 @@ describe('routerly model add', () => {
   it('skips reading the vertex SA key file when --connection is given', async () => {
     mockApi.mockResolvedValue({});
     await run('add', '--id', 'v', '--provider', 'vertex', '--connection', 'conn-vertex', '--vertex-sa-key', '/nonexistent/path.json');
-    const body = mockApi.mock.calls[0]![2] as Record<string, unknown>;
+    const body = mockApi.mock.calls.find(c => c[0] === 'POST')![2] as Record<string, unknown>;
     expect(body['connectionId']).toBe('conn-vertex');
     expect(body).not.toHaveProperty('vertexServiceAccountKey');
   });
