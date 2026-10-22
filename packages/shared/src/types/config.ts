@@ -38,13 +38,18 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+/** Trimmed, lower-cased labels; entries without a label (corrupt connections.json) are skipped. */
+function normalizeLabels(labels: readonly (string | undefined)[]): string[] {
+  return labels.filter((l): l is string => typeof l === 'string').map(l => l.trim().toLowerCase());
+}
+
 export function suggestConnectionLabel(
   providerId: string,
   providerName: string | undefined,
-  taken: readonly string[],
+  taken: readonly (string | undefined)[],
 ): string {
   const base = slugify(providerName ?? '') || slugify(providerId) || 'connection';
-  const used = new Set(taken.map(l => l.trim().toLowerCase()));
+  const used = new Set(normalizeLabels(taken));
   if (!used.has(base)) return base;
   // Bounded by the number of existing names: one of the first `taken.length + 1` is free.
   for (let n = 2; ; n++) {
@@ -54,9 +59,8 @@ export function suggestConnectionLabel(
 }
 
 /** True when `label` is already worn by one of `taken`, ignoring case and surrounding space. */
-export function isConnectionLabelTaken(label: string, taken: readonly string[]): boolean {
-  const wanted = label.trim().toLowerCase();
-  return taken.some(l => l.trim().toLowerCase() === wanted);
+export function isConnectionLabelTaken(label: string, taken: readonly (string | undefined)[]): boolean {
+  return normalizeLabels(taken).includes(label.trim().toLowerCase());
 }
 
 /**
