@@ -427,4 +427,16 @@ describe('permission guard (RTR-04)', () => {
 
     await expect(api('POST', '/api/roles', { id: 'r' })).resolves.toMatchObject({ id: 'r' });
   });
+
+  it('2fa verify is exempt: no permission pre-check before the unauthenticated call', async () => {
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/auth/2fa/verify')) return Promise.resolve(jsonResponse(200, { token: 't' }));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const acct = { alias: '', serverUrl: 'http://localhost:3000', email: 'a@b.c', token: '', expiresAt: 0 };
+    await expect(apiWith(acct, 'POST', '/api/auth/2fa/verify', { userId: 'u', token: '123456' })).resolves.toMatchObject({ token: 't' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
