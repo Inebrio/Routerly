@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- Playground Debug trace no longer reads INCOMPLETE with 0/0 tokens for `openai-oauth` models: the provider now emits the same `model:request` / `model:success` / `model:error` trace entries as every other provider, so the trace recap reports outcome, tokens, cost and latency (ROUT-379).
 - **Dashboard › Settings › Security:** the red «Unsafe permissions on secrets file(s)» error no longer stays next to «All configuration files have safe permissions» after a successful «Fix now» (ROUT-375).
 - **Optimizers:** a `relevance` threshold of `0` (no turn dropped) is now accepted by the service, CLI and dashboard, matching the catalog minimum; other optimizers are checked against their own catalog minimum, and the CLI now prints the failing field (`ccr: threshold must be at least 1`) instead of a bare "Invalid optimizers config" (ROUT-373).
 - **Dashboard:** opening a protected URL without a session no longer logs two `401` errors in the console; the layout now checks the session before it fires `GET /api/system/permissions` and `GET /api/settings`, then redirects to the login as before (ROUT-372).
