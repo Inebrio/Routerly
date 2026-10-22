@@ -14,6 +14,7 @@ export class ApiError extends Error {
 // unsafe permissions, except these — see the blueprint's frozen contact points.
 const PERMISSION_EXEMPT_PATHS = new Set([
   '/api/auth/login',
+  '/api/auth/2fa/verify',
   '/api/auth/refresh',
   '/api/system/permissions',
   '/api/system/permissions/fix',
