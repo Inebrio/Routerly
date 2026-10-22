@@ -604,6 +604,14 @@ describe('SettingsSecurityTab', () => {
       expect(mockGetPermissionStatus).not.toHaveBeenCalled();
     });
 
+    it('clears a stale permission error after a successful fix', async () => {
+      mockGetSettings.mockRejectedValue(new Error('Unsafe permissions on secrets file(s): users.'));
+      renderSecurity();
+      await waitFor(() => expect(screen.getByText(/Unsafe permissions on secrets/)).toBeTruthy());
+      window.dispatchEvent(new CustomEvent('lr-permission-fixed'));
+      await waitFor(() => expect(screen.queryByText(/Unsafe permissions on secrets/)).toBeNull());
+    });
+
     it('shows a calm all-good state when nothing is unsafe', async () => {
       renderSecurity();
       await waitFor(() => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy());
