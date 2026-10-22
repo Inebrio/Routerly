@@ -153,6 +153,27 @@ describe('llmPolicy', () => {
     expect(mockLlmChat).toHaveBeenCalledTimes(2)
   })
 
+  it('uses router-level fallbackRoutingModelIds when policy has no fallbackModelIds', async () => {
+    const fallbackModel: ModelConfig = {
+      id: 'fallback', name: 'Fallback', provider: 'openai',
+      endpoint: 'https://api.openai.com/v1',
+      cost: { inputPerMillion: 1, outputPerMillion: 3 },
+    }
+    mockModelsAndRouters([routingModel, fallbackModel], [{ ...router, fallbackRoutingModelIds: ['fallback'] }])
+    mockGetLimitUsageSnapshot.mockResolvedValue([])
+    mockGetRoutingHistory.mockReturnValue([])
+    mockLlmChat
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce(makeSuccessResponse([
+        { model: 'candidate-a', point: 0.7 },
+        { model: 'candidate-b', point: 0.3 },
+      ]) as any)
+
+    const result = await llmPolicy(makeInput({ routingModelId: 'router-model' }))
+    expect(result.routing).toHaveLength(2)
+    expect(mockLlmChat).toHaveBeenCalledTimes(2)
+  })
+
   it('skips model on generic call error', async () => {
     mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
