@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Dashboard:** opening a protected URL without a session no longer logs two `401` errors in the console; the layout now checks the session before it fires `GET /api/system/permissions` and `GET /api/settings`, then redirects to the login as before (ROUT-372).
 - **Dashboard tests:** the Overview and experiment-metrics period tests no longer fail between 00:00 and 02:00 CEST; expected windows are now computed in local calendar days like the date picker (ROUT-365).
 - **MCP:** concurrent `toggle_model` and `create_router_token` calls no longer lose updates (two toggles ended on the same value, concurrent token creations dropped tokens); both now run read-modify-write under the config file lock (ROUT-364).
 - Creating a connection no longer fails with HTTP 500 `Cannot read properties of undefined (reading 'trim')` when `connections.json` holds entries without a label (ROUT-359).
