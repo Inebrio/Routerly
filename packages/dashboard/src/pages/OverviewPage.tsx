@@ -46,6 +46,7 @@ export function OverviewPage() {
   const chartTheme = useChartTheme();
 
   useEffect(() => {
+    if (!can('report:read')) { setStatsError(true); return; }
     // `series` carries the savings bucketed over time for the chart (T81),
     // `savings` the whole-window totals per baseline the saving cards read (T102).
     let from = dateRange.from || undefined;
