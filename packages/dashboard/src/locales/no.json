@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Noen konfigurasjonsfiler har tillatende tilgang ({{files}}). Oppstart og forespørsler fungerer fortsatt. Fiks det fra Innstillinger → Sikkerhet, eller fra vertsfilsystemet når det passer.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Avvis",
       "updateAvailable": "Routerly v{{latest}} er tilgjengelig. Du bruker v{{current}}.",
       "updateLink": "Oppdater i Innstillinger",
@@ -87,8 +88,7 @@
       "title": "Usikre filtillatelser",
       "defaultMessage": "Noen filer har usikre tillatelser.",
       "fixing": "Fikser...",
-      "fixNow": "Fikse nå",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Fikse nå"
     },
     "limitRows": {
       "noLimits": "Ingen grenser angitt.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budsjett - Tilbakestill",
         "systemStartup": "System - Oppstart",
         "systemShutdown": "System - Avslutning",
-        "systemUpdateAvailable": "System - Oppdatering tilgjengelig"
+        "systemUpdateAvailable": "System - Oppdatering tilgjengelig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Fjern kanal",
       "removeChannelConfirm": "Fjern kanal?",

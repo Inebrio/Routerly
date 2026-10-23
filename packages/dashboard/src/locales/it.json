@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Alcuni file di configurazione hanno permessi troppo permissivi ({{files}}). Avvio e richieste funzionano comunque. Correggilo da Impostazioni → Sicurezza, oppure sul filesystem dell'host quando puoi.",
+      "permissionBlocked": "Alcuni dati non sono temporaneamente disponibili. Un amministratore è stato avvisato.",
       "dismiss": "Ignora",
       "updateAvailable": "Routerly v{{latest}} è disponibile. Stai usando v{{current}}.",
       "updateLink": "Aggiorna dalle impostazioni",
@@ -87,8 +88,7 @@
       "title": "Permessi file non sicuri",
       "defaultMessage": "Alcuni file hanno permessi non sicuri.",
       "fixing": "Correzione in corso…",
-      "fixNow": "Correggi ora",
-      "askOperator": "Chiedi a un operatore con il permesso Settings – Write di correggerlo."
+      "fixNow": "Correggi ora"
     },
     "limitRows": {
       "noLimits": "Nessun limite impostato.",
@@ -747,7 +747,8 @@
         "budgetReset": "Budget – Ripristinato",
         "systemStartup": "Sistema – Avvio",
         "systemShutdown": "Sistema – Arresto",
-        "systemUpdateAvailable": "Sistema – Aggiornamento disponibile"
+        "systemUpdateAvailable": "Sistema – Aggiornamento disponibile",
+        "systemPermissionsUnsafe": "Sistema – Permessi file non sicuri"
       },
       "removeChannelTooltip": "Rimuovi canale",
       "removeChannelConfirm": "Rimuovere il canale?",

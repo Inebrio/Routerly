@@ -1110,6 +1110,7 @@ export const NOTIFICATION_EVENTS = [
   'system.startup',
   'system.shutdown',
   'system.update_available',
+  'system.permissions_unsafe',
 ] as const;
 
 /** One of the canonical {@link NOTIFICATION_EVENTS} names. */

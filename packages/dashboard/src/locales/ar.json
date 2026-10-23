@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "بعض ملفات الإعدادات لها صلاحيات سماحة ({{files}}). يعمل بدء التشغيل والطلبات بشكل طبيعي. إصلاحه من الإعدادات → الأمان، أو من نظام الملفات على المضيف عند الحاجة.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "تجاهل",
       "updateAvailable": "الإصدار Routerly v{{latest}} متاح. أنت تستخدم v{{current}}.",
       "updateLink": "التحديث من الإعدادات",
@@ -87,8 +88,7 @@
       "title": "صلاحيات ملفات غير آمنة",
       "defaultMessage": "بعض الملفات لديها صلاحيات غير آمنة.",
       "fixing": "جارٍ الإصلاح…",
-      "fixNow": "إصلاح الآن",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "إصلاح الآن"
     },
     "limitRows": {
       "noLimits": "لا توجد حدود معيّنة.",
@@ -746,7 +746,8 @@
         "budgetReset": "الميزانية – تمت إعادة التعيين",
         "systemStartup": "النظام – بدء التشغيل",
         "systemShutdown": "النظام – إيقاف التشغيل",
-        "systemUpdateAvailable": "النظام – تحديث متاح"
+        "systemUpdateAvailable": "النظام – تحديث متاح",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "إزالة القناة",
       "removeChannelConfirm": "إزالة القناة؟",

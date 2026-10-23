@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Sommige configuratiebestanden hebben permissieve toegang ({{files}}). Opstarten en aanvragen werken nog steeds. Repareer het vanuit Instellingen → Beveiliging, of vanuit het hostbestandssysteem indien nodig.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Sluiten",
       "updateAvailable": "Routerly v{{latest}} is beschikbaar. U bent op v{{current}}.",
       "updateLink": "Update in Instellingen",
@@ -87,8 +88,7 @@
       "title": "Onveilige bestandsmachtigingen",
       "defaultMessage": "Sommige bestanden hebben onveilige machtigingen.",
       "fixing": "Aanpassen...",
-      "fixNow": "Nu aanpassen",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Nu aanpassen"
     },
     "limitRows": {
       "noLimits": "Geen limieten ingesteld.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budget - Reset",
         "systemStartup": "Systeem - Opstarten",
         "systemShutdown": "Systeem - Afsluiten",
-        "systemUpdateAvailable": "Systeem - Update beschikbaar"
+        "systemUpdateAvailable": "Systeem - Update beschikbaar",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Kanaal verwijderen",
       "removeChannelConfirm": "Kanaal verwijderen?",

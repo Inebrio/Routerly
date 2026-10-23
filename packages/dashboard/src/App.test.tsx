@@ -416,6 +416,25 @@ describe('ProtectedLayout — permission-blocked modal', () => {
     expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
     expect(mockFixPermissions).not.toHaveBeenCalled();
   });
+
+  it('shows a neutral notice and no modal without settings:write', async () => {
+    mockUseAuth.mockReturnValue({
+      user: adminUser, isLoading: false, login: vi.fn(), loginDirect: vi.fn(), logout: logoutFn, updateUser: vi.fn(),
+      can: vi.fn((p: string) => p !== 'settings:write'),
+    });
+    render(<App />);
+    await waitFor(() => screen.getByText('OverviewPage'));
+
+    window.dispatchEvent(new CustomEvent('lr-permission-blocked', {
+      detail: { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users'] },
+    }));
+    await waitFor(() => expect(screen.getByText(/temporarily unavailable/)).toBeTruthy());
+    expect(screen.queryByText(/users.json is unsafe/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix now' })).toBeNull();
+
+    await userEvent.click(screen.getByTitle('Dismiss'));
+    expect(screen.queryByText(/temporarily unavailable/)).toBeNull();
+  });
 });
 
 // ── Sidebar ────────────────────────────────────────────────────────────────────

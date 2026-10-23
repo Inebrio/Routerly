@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Một số tệp cấu hình có quyền truy cập cho phép ({{files}})। Khởi động và yêu cầu vẫn hoạt động. Sửa nó từ Cài đặt → Bảo mật, hoặc từ hệ thống tệp máy chủ khi thuận tiện.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Bỏ qua",
       "updateAvailable": "Routerly v{{latest}} có sẵn. Bạn đang dùng v{{current}}.",
       "updateLink": "Cập nhật trong Cài đặt",
@@ -87,8 +88,7 @@
       "title": "Quyền tệp không an toàn",
       "defaultMessage": "Một số tệp có quyền không an toàn.",
       "fixing": "Đang sửa chữa…",
-      "fixNow": "Sửa ngay",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Sửa ngay"
     },
     "limitRows": {
       "noLimits": "Không có giới hạn nào được đặt.",
@@ -746,7 +746,8 @@
         "budgetReset": "Ngân sách - Đặt lại",
         "systemStartup": "Hệ thống - Khởi động",
         "systemShutdown": "Hệ thống - Tắt",
-        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn"
+        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Xóa kênh",
       "removeChannelConfirm": "Xóa kênh?",

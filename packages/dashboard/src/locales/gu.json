@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "કેટલીક કોન્ફિગરેશન ફાઇલોને પરવાનગીધારક accessધરાવે છે ({{files}})। સ્ટાર્ટআપ અને વિનંતીઓ હજી પણ કાર્ય કરે છે. તેને સેટિંગ્સ → સુરક્ષા થી ઠીક કરો, અથવા જ્યારે અનુકૂળ હોય ત્યારે હોસ્ટ ફાઇલસિસ્ટમથી ઠીક કરો.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "બંધ કરો",
       "updateAvailable": "Routerly v{{latest}} ઉપલબ્ધ છે. તમે v{{current}} પર છો.",
       "updateLink": "સેટિંગ્સમાં અપડેટ કરો",
@@ -87,8 +88,7 @@
       "title": "અસુરક્ષિત ફાઇલ પરવાનગીઓ",
       "defaultMessage": "કેટલીક ફાઇલો અસુરક્ષિત પરવાનગીઓ ધરાવે છે.",
       "fixing": "ઠીક કરી રહ્યા છીએ…",
-      "fixNow": "હવે ઠીક કરો",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "હવે ઠીક કરો"
     },
     "limitRows": {
       "noLimits": "કોઈ મર્યાદા નિર્ધારિત નથી.",
@@ -746,7 +746,8 @@
         "budgetReset": "બજેટ – રીસેટ",
         "systemStartup": "સિસ્ટમ – સ્ટાર્ટઅપ",
         "systemShutdown": "સિસ્ટમ – શટડાઉન",
-        "systemUpdateAvailable": "સિસ્ટમ – અપડેટ ઉપલબ્ધ"
+        "systemUpdateAvailable": "સિસ્ટમ – અપડેટ ઉપલબ્ધ",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "ચેનલ દૂર કરો",
       "removeChannelConfirm": "ચેનલ દૂર કરો?",

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Деякі файли конфігурації мають дозвільний доступ ({{files}}). Запуск і запити все ще працюють. Виправте це в розділі Налаштування → Безпека, або в файловій системі хоста, коли це зручно.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Закрити",
       "updateAvailable": "Routerly v{{latest}} доступна. Ви використовуєте v{{current}}.",
       "updateLink": "Оновити в Налаштуваннях",
@@ -87,8 +88,7 @@
       "title": "Небезпечні дозволи на файли",
       "defaultMessage": "Деякі файли мають небезпечні дозволи.",
       "fixing": "Виправлення…",
-      "fixNow": "Виправити зараз",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Виправити зараз"
     },
     "limitRows": {
       "noLimits": "Обмеження не встановлені.",
@@ -746,7 +746,8 @@
         "budgetReset": "Бюджет скидання",
         "systemStartup": "Система запуск",
         "systemShutdown": "Система вимикання",
-        "systemUpdateAvailable": "Система оновлення доступно"
+        "systemUpdateAvailable": "Система оновлення доступно",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Видалити канал",
       "removeChannelConfirm": "Видалити канал?",

@@ -372,6 +372,9 @@ const PERMISSION_GUARD_EXEMPT_PATHS = new Set([
   '/api/system/permissions/fix',
 ]);
 
+/** Unsafe file set already announced to operators; reset once the files are safe again. */
+let announcedUnsafe = '';
+
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
 
@@ -396,7 +399,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onRequest', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return;
     const path = req.url.split('?')[0]!;
-    if (PERMISSION_GUARD_EXEMPT_PATHS.has(path)) return;
+    // The inbox must stay readable: it is where operators learn about this very block.
+    if (PERMISSION_GUARD_EXEMPT_PATHS.has(path) || path.startsWith('/api/notifications/inbox')) return;
 
     if (isBypassActive()) {
       fastify.log.warn(`[permission-guard] ROUTERLY_SKIP_PERMISSION_CHECK is set — skipping permission check for ${req.method} ${req.url}.`);
@@ -404,9 +408,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const status = await checkPermissions();
-    if (!status.blocked) return;
+    if (!status.blocked) {
+      announcedUnsafe = '';
+      return;
+    }
 
     const files = status.unsafe.filter(u => u.severity === 'secret').map(u => u.file);
+    if (files.join(',') !== announcedUnsafe) {
+      announcedUnsafe = files.join(',');
+      void emitEvent('system.permissions_unsafe', 'critical', { files }, { log: req.log });
+    }
     fastify.log.warn(`[permission-guard] Blocking ${req.method} ${req.url} — unsafe permissions on secrets file(s): ${files.join(', ')}.`);
     return reply.status(423).send({
       error: 'unsafe_permissions',

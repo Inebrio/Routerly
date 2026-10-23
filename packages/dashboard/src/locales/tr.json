@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Bazı yapılandırma dosyaları izin verilen erişime sahiptir ({{files}}). Başlatma ve istekler hala çalışıyor. Bunu Ayarlar → Güvenlik bölümünden düzeltin, ya da uygun olduğunda ana bilgisayar dosya sisteminden düzeltin.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Kapat",
       "updateAvailable": "Routerly v{{latest}} kullanılabilir. Siz v{{current}} üzerindeysiniz.",
       "updateLink": "Ayarlar'da Güncelle",
@@ -87,8 +88,7 @@
       "title": "Güvenli olmayan dosya izinleri",
       "defaultMessage": "Bazı dosyalar güvenli olmayan izinlere sahiptir.",
       "fixing": "Düzeltiliyor...",
-      "fixNow": "Şimdi düzelt",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Şimdi düzelt"
     },
     "limitRows": {
       "noLimits": "Hiçbir limit ayarlanmadı.",
@@ -746,7 +746,8 @@
         "budgetReset": "Bütçe – Sıfırlandı",
         "systemStartup": "Sistem – Başlangıç",
         "systemShutdown": "Sistem – Kapatma",
-        "systemUpdateAvailable": "Sistem – Güncelleme Mevcut"
+        "systemUpdateAvailable": "Sistem – Güncelleme Mevcut",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Kanalı kaldır",
       "removeChannelConfirm": "Kanalı kaldır?",

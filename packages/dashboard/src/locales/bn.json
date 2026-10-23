@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "কিছু কনফিগারেশন ফাইলের অনুমতিসুলভ অ্যাক্সেস রয়েছে ({{files}})। স্টার্টআপ এবং অনুরোধগুলি এখনও কাজ করে। এটি সেটিংস → নিরাপত্তা থেকে ঠিক করুন, বা সুবিধাজনক সময়ে হোস্ট ফাইলসিস্টেম থেকে ঠিক করুন।",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "বাতিল করুন",
       "updateAvailable": "Routerly v{{latest}} উপলব্ধ। আপনি v{{current}} এ আছেন।",
       "updateLink": "সেটিংসে আপডেট করুন",
@@ -87,8 +88,7 @@
       "title": "অসুরক্ষিত ফাইল অনুমতি",
       "defaultMessage": "কিছু ফাইলের অনুমতি অসুরক্ষিত।",
       "fixing": "সঠিক করা হচ্ছে...",
-      "fixNow": "এখনই ঠিক করুন",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "এখনই ঠিক করুন"
     },
     "limitRows": {
       "noLimits": "কোন সীমা নির্ধারিত নেই।",
@@ -746,7 +746,8 @@
         "budgetReset": "বাজেট - রিসেট",
         "systemStartup": "সিস্টেম - স্টার্টআপ",
         "systemShutdown": "সিস্টেম - শাটডাউন",
-        "systemUpdateAvailable": "সিস্টেম - আপডেট উপলব্ধ"
+        "systemUpdateAvailable": "সিস্টেম - আপডেট উপলব্ধ",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "চ্যানেল সরান",
       "removeChannelConfirm": "চ্যানেল সরান?",

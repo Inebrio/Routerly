@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Certains fichiers de configuration ont un accès permissif ({{files}}). Le démarrage et les requêtes fonctionnent toujours. Corrigez cela dans Paramètres → Sécurité, ou dans le système de fichiers hôte quand c'est pratique.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Rejeter",
       "updateAvailable": "Routerly v{{latest}} est disponible. Vous êtes sur v{{current}}.",
       "updateLink": "Mettre à jour dans Paramètres",
@@ -87,8 +88,7 @@
       "title": "Autorisations de fichier non sécurisées",
       "defaultMessage": "Certains fichiers ont des autorisations non sécurisées.",
       "fixing": "Correction en cours...",
-      "fixNow": "Corriger maintenant",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Corriger maintenant"
     },
     "limitRows": {
       "noLimits": "Aucune limite définie.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budget - Réinitialisation",
         "systemStartup": "Système - Démarrage",
         "systemShutdown": "Système - Arrêt",
-        "systemUpdateAvailable": "Système - Mise à jour disponible"
+        "systemUpdateAvailable": "Système - Mise à jour disponible",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Supprimer le canal",
       "removeChannelConfirm": "Supprimer le canal ?",

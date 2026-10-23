@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Bəzi konfiqurasiya faylları açıq icazələrə malikdir ({{files}}). Başlanğıc və istəklər əks halda işləyir. Bunu Parametrlər → Təhlükəsizlik-dən düzəldin, və ya ehtiyac olduqda hostun faylsistemindən düzəldin.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Bağla",
       "updateAvailable": "Routerly v{{latest}} mövcuddur. Siz v{{current}} versiyasındasınız.",
       "updateLink": "Parametrlərdə yenilə",
@@ -87,8 +88,7 @@
       "title": "Təhlükəsiz olmayan fayl icazələri",
       "defaultMessage": "Bəzi faylların icazələri təhlükəsiz deyil.",
       "fixing": "Düzəldilir…",
-      "fixNow": "İndi düzəlt",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "İndi düzəlt"
     },
     "limitRows": {
       "noLimits": "Heç bir limit təyin olunmayıb.",
@@ -746,7 +746,8 @@
         "budgetReset": "Büdcə – Sıfırlandı",
         "systemStartup": "Sistem – Başlanğıc",
         "systemShutdown": "Sistem – Söndürmə",
-        "systemUpdateAvailable": "Sistem – Yenilənmə Mövcuddur"
+        "systemUpdateAvailable": "Sistem – Yenilənmə Mövcuddur",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Kanalı sil",
       "removeChannelConfirm": "Kanal silinsin?",

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Některé konfigurační soubory mají volný přístup ({{files}}). Spuštění a požadavky stále fungují. Opravte to v Nastavení → Zabezpečení, nebo v hostitelském filesystému, když je to vhodné.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Zavřít",
       "updateAvailable": "Je k dispozici Routerly v{{latest}}. Vy používáte v{{current}}.",
       "updateLink": "Aktualizovat v Nastavení",
@@ -87,8 +88,7 @@
       "title": "Nebezpečná oprávnění souborů",
       "defaultMessage": "Některé soubory mají nebezpečná oprávnění.",
       "fixing": "Opravuje se…",
-      "fixNow": "Opravit nyní",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Opravit nyní"
     },
     "limitRows": {
       "noLimits": "Nejsou nastaveny žádné limity.",
@@ -746,7 +746,8 @@
         "budgetReset": "Rozpočet – Reset",
         "systemStartup": "Systém – Spuštění",
         "systemShutdown": "Systém – Vypnutí",
-        "systemUpdateAvailable": "Systém – Dostupná aktualizace"
+        "systemUpdateAvailable": "Systém – Dostupná aktualizace",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Odstranit kanál",
       "removeChannelConfirm": "Odstranit kanál?",

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Некоторые файлы конфигурации имеют открытый доступ ({{files}}). Запуск и запросы по-прежнему работают. Исправьте это в Параметры → Безопасность или в файловой системе хоста при необходимости.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Закрыть",
       "updateAvailable": "Доступна Routerly v{{latest}}. Вы используете v{{current}}.",
       "updateLink": "Обновить в параметрах",
@@ -87,8 +88,7 @@
       "title": "Небезопасные разрешения файлов",
       "defaultMessage": "Некоторые файлы имеют небезопасные разрешения.",
       "fixing": "Исправление…",
-      "fixNow": "Исправить сейчас",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Исправить сейчас"
     },
     "limitRows": {
       "noLimits": "Ограничения не установлены.",
@@ -746,7 +746,8 @@
         "budgetReset": "Бюджет – Сброс",
         "systemStartup": "Система – Запуск",
         "systemShutdown": "Система – Выключение",
-        "systemUpdateAvailable": "Система – Обновление доступно"
+        "systemUpdateAvailable": "Система – Обновление доступно",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Удалить канал",
       "removeChannelConfirm": "Удалить канал?",
