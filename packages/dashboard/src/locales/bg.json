@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Някои конфигурационни файлове имат разрешителни достъп ({{files}}). Стартирането и заявките все още работят. Оправете го от Настройки → Сигурност, или от хостовата файлова система, когато е удобно.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Отхвърляне",
       "updateAvailable": "Наличен е Routerly v{{latest}}. Използвате v{{current}}.",
       "updateLink": "Актуализация в Настройки",
@@ -87,8 +88,7 @@
       "title": "Небезопасни права за достъп на файлове",
       "defaultMessage": "Някои файлове имат небезопасни права за достъп.",
       "fixing": "Поправяне…",
-      "fixNow": "Поправи сега",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Поправи сега"
     },
     "limitRows": {
       "noLimits": "Няма зададени лимити.",
@@ -746,7 +746,8 @@
         "budgetReset": "Бюджет – Нулиран",
         "systemStartup": "Система – Стартиране",
         "systemShutdown": "Система – Спиране",
-        "systemUpdateAvailable": "Система – Налична актуализация"
+        "systemUpdateAvailable": "Система – Налична актуализация",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Премахване на канал",
       "removeChannelConfirm": "Премахване на канала?",

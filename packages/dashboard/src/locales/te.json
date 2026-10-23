@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "కొన్ని కాన్ఫిగరేషన్ ఫైలులకు అనుమతితో కూడిన యాక్సెస్ ఉంది ({{files}})। ప్రారంభం మరియు అభ్యర్థనలు ఇప్పటికీ పనిచేస్తాయి. సెట్టింగ్‌లు → భద్రత నుండి దీన్ని సరిదిద్దండి, లేదా సుబిధకరమైనప్పుడు హోస్ట్ ఫైల్‌సిస్టమ్ నుండి సరిదిద్దండి.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "విస్మరించండి",
       "updateAvailable": "Routerly v{{latest}} అందుబాటులో ఉంది. మీరు v{{current}}లో ఉన్నారు.",
       "updateLink": "సెట్టింగ్‌లలో నవీకరించండి",
@@ -87,8 +88,7 @@
       "title": "అసురక్షిత ఫైల్ అనుమతులు",
       "defaultMessage": "కొన్ని ఫైల్‌లకు అసురక్షిత అనుమతులు ఉన్నాయి.",
       "fixing": "సరిచేస్తోంది…",
-      "fixNow": "ఇప్పుడే సరిచేయండి",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "ఇప్పుడే సరిచేయండి"
     },
     "limitRows": {
       "noLimits": "పరిమితులు సెట్ చేయబడలేదు.",
@@ -746,7 +746,8 @@
         "budgetReset": "బడ్జెట్ – రీసెట్ చేసారు",
         "systemStartup": "సిస్టమ్ – ప్రారంభం చేసారు",
         "systemShutdown": "సిస్టమ్ – నిష్క్రియం చేసారు",
-        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది"
+        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "సరిభాగం తీసివేయండి",
       "removeChannelConfirm": "సరిభాగం తీసివేయండి?",

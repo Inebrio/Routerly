@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "برخی فایلهای تنظیمات دسترسی گسترده دارند ({{files}})، اما سیستم و درخواستها همچنان کار می‌کنند. آن را از تنظیمات → امنیت درست کنید، یا هنگام نیاز از سیستم فایل میزبان درست کنید.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "رد کردن",
       "updateAvailable": "نسخه v{{latest}} روترلی در دسترس است. شما روی v{{current}} هستید.",
       "updateLink": "به‌روزرسانی در تنظیمات",
@@ -87,8 +88,7 @@
       "title": "مجوزهای ناامن فایل",
       "defaultMessage": "برخی فایل‌ها مجوزهای ناامن دارند.",
       "fixing": "در حال اصلاح…",
-      "fixNow": "اکنون اصلاح شود",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "اکنون اصلاح شود"
     },
     "limitRows": {
       "noLimits": "هیچ محدودیتی تنظیم نشده است.",
@@ -746,7 +746,8 @@
         "budgetReset": "بودجه – بازنشانی شد",
         "systemStartup": "سیستم – راه‌اندازی",
         "systemShutdown": "سیستم – خاموش‌شدن",
-        "systemUpdateAvailable": "سیستم – به‌روزرسانی در دسترس"
+        "systemUpdateAvailable": "سیستم – به‌روزرسانی در دسترس",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "حذف کانال",
       "removeChannelConfirm": "کانال حذف شود؟",

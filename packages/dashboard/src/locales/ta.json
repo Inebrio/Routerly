@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "சில கட்டமைப்பு கோப்புகளுக்கு அனுமதிக்க கூடிய அணுகல் உள்ளது ({{files}})। தொடக்கம் மற்றும் கோரிக்கைகள் இன்னும் சரியாக வேலை செய்கின்றன. அமைப்புகள் → பாதுகாப்பு இலிருந்து சரிசெய்யவும், அல்லது வசதியான போது ஹோஸ்ட் கோப்பு முறைமையிலிருந்து சரிசெய்யவும்.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "நிராகரிக்கவும்",
       "updateAvailable": "Routerly v{{latest}} கிடைக்கிறது. நீங்கள் v{{current}} இல் இருக்கிறீர்கள்.",
       "updateLink": "அமைப்புகளில் புதுப்பிக்கவும்",
@@ -87,8 +88,7 @@
       "title": "பாதுரக்ஷைத்தற்ற கோப்பு அனுமதிகள்",
       "defaultMessage": "சில கோப்புகளுக்கு பாதுரக்ஷைத்தற்ற அனுமதிகள் உள்ளன.",
       "fixing": "சரிசெய்யப்படுகிறது…",
-      "fixNow": "இப்போது சரிசெய்",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "இப்போது சரிசெய்"
     },
     "limitRows": {
       "noLimits": "எந்த வரம்பும் அமைக்கப்படவில்லை.",
@@ -746,7 +746,8 @@
         "budgetReset": "பட்ஜெட் – சாரம் மாற்றவும்",
         "systemStartup": "கணினி – தொடக்கம்",
         "systemShutdown": "கணினி – ஹிறுக்கம்",
-        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது"
+        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "சிறை அகற்றவும்",
       "removeChannelConfirm": "சிறை அகற்ற?",

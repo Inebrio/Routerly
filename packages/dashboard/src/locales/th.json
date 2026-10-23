@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "ไฟล์การตั้งค่าบางไฟล์มีการเข้าถึงที่ได้รับอนุญาต ({{files}})। การเริ่มต้นและคำขอยังคงใช้งานได้ ซ่อมแซมจากการตั้งค่า → ความปลอดภัย หรือจากระบบไฟล์ของโฮสต์เมื่อสะดวก",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "ปิด",
       "updateAvailable": "Routerly v{{latest}} พร้อมใช้งาน คุณใช้ v{{current}} อยู่",
       "updateLink": "อัปเดตในการตั้งค่า",
@@ -87,8 +88,7 @@
       "title": "สิทธิอนุญาตไฟล์ที่ไม่ปลอดภัย",
       "defaultMessage": "ไฟล์บางไฟล์มีสิทธิอนุญาตที่ไม่ปลอดภัย",
       "fixing": "กำลังแก้ไข…",
-      "fixNow": "แก้ไขตอนนี้",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "แก้ไขตอนนี้"
     },
     "limitRows": {
       "noLimits": "ไม่มีการตั้งค่าจำกัด",
@@ -746,7 +746,8 @@
         "budgetReset": "งบประมาณ - รีเซ็ต",
         "systemStartup": "ระบบ - เริ่มต้น",
         "systemShutdown": "ระบบ - ปิด",
-        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม"
+        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "ลบช่อง",
       "removeChannelConfirm": "ลบช่อง?",

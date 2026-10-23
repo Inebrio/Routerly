@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Algunos archivos de configuración tienen acceso permisivo ({{files}}). El inicio y las solicitudes siguen funcionando. Solucionarlo desde Configuración → Seguridad, o desde el sistema de archivos del host cuando sea conveniente.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Descartar",
       "updateAvailable": "Routerly v{{latest}} está disponible. Tienes la v{{current}}.",
       "updateLink": "Actualizar en Configuración",
@@ -87,8 +88,7 @@
       "title": "Permisos de archivo inseguros",
       "defaultMessage": "Algunos archivos tienen permisos inseguros.",
       "fixing": "Corrigiendo…",
-      "fixNow": "Corregir ahora",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Corregir ahora"
     },
     "limitRows": {
       "noLimits": "No hay límites establecidos.",
@@ -746,7 +746,8 @@
         "budgetReset": "Presupuesto – Reiniciado",
         "systemStartup": "Sistema – Arranque",
         "systemShutdown": "Sistema – Apagado",
-        "systemUpdateAvailable": "Sistema – Actualización disponible"
+        "systemUpdateAvailable": "Sistema – Actualización disponible",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Eliminar canal",
       "removeChannelConfirm": "¿Eliminar canal?",

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Kilka plików konfiguracyjnych ma permisywny dostęp ({{files}}). Uruchamianie i żądania nadal działają. Napraw to z Ustawienia → Bezpieczeństwo, lub z systemu plików hosta, gdy jest to wygodne.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Odrzuć",
       "updateAvailable": "Routerly v{{latest}} jest dostępna. Używasz v{{current}}.",
       "updateLink": "Aktualizuj w Ustawieniach",
@@ -87,8 +88,7 @@
       "title": "Niebezpieczne uprawnienia do pliku",
       "defaultMessage": "Niektóre pliki mają niebezpieczne uprawnienia.",
       "fixing": "Naprawianie…",
-      "fixNow": "Napraw teraz",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Napraw teraz"
     },
     "limitRows": {
       "noLimits": "Nie ustawiono limitów.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budżet – Resetowanie",
         "systemStartup": "System – Uruchomienie",
         "systemShutdown": "System – Zamknięcie",
-        "systemUpdateAvailable": "System – Aktualizacja dostępna"
+        "systemUpdateAvailable": "System – Aktualizacja dostępna",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Usuń kanał",
       "removeChannelConfirm": "Usunąć kanał?",

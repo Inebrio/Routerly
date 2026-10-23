@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "某些配置文件具有宽松的访问权限 ({{files}})。启动和请求仍然有效。从设置 → 安全中进行修复，或在方便时从主机文件系统中进行修复.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "关闭",
       "updateAvailable": "Routerly v{{latest}} 已发布。您当前使用的是 v{{current}}。",
       "updateLink": "在设置中更新",
@@ -87,8 +88,7 @@
       "title": "不安全的文件权限",
       "defaultMessage": "某些文件的权限不安全。",
       "fixing": "修复中...",
-      "fixNow": "立即修复",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "立即修复"
     },
     "limitRows": {
       "noLimits": "未设置限制。",
@@ -746,7 +746,8 @@
         "budgetReset": "预算 - 已重置",
         "systemStartup": "系统 - 启动",
         "systemShutdown": "系统 - 关闭",
-        "systemUpdateAvailable": "系统 - 更新可用"
+        "systemUpdateAvailable": "系统 - 更新可用",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "删除频道",
       "removeChannelConfirm": "删除频道？",

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "일부 구성 파일에는 허용 가능한 액세스 권한이 있습니다 ({{files}})। 시작 및 요청이 계속 작동합니다. 설정 → 보안에서 수정하거나 편할 때 호스트 파일 시스템에서 수정하세요.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "닫기",
       "updateAvailable": "Routerly v{{latest}}를 사용할 수 있습니다. 현재 v{{current}}를 사용 중입니다.",
       "updateLink": "설정에서 업데이트",
@@ -87,8 +88,7 @@
       "title": "안전하지 않은 파일 권한",
       "defaultMessage": "일부 파일의 권한이 안전하지 않습니다.",
       "fixing": "수정 중…",
-      "fixNow": "지금 수정",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "지금 수정"
     },
     "limitRows": {
       "noLimits": "제한 없음",
@@ -746,7 +746,8 @@
         "budgetReset": "예산 - 재설정됨",
         "systemStartup": "시스템 - 시작됨",
         "systemShutdown": "시스템 - 종료됨",
-        "systemUpdateAvailable": "시스템 - 업데이트 사용 가능"
+        "systemUpdateAvailable": "시스템 - 업데이트 사용 가능",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "채널 제거",
       "removeChannelConfirm": "채널을 제거하시겠어요?",

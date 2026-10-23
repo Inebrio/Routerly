@@ -13,7 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Unsafe-permissions modal hides «Fix now» without `settings:write`.** Users lacking the permission now see an «Ask an operator…» hint instead of a button that answered 403 (ROUT-391).
+- **Unsafe secrets-file permissions no longer show a «Fix now» that answers 403.** Users without `settings:write` see no modal, only a neutral notice; the service raises one `system.permissions_unsafe` notification per unsafe state, visible only to users with `settings:write` (inbox needs a dashboard channel). Admins keep the modal with «Fix now». The notification inbox endpoints (`/api/notifications/inbox*`) stay reachable during the 423 block so the alert can be read (ROUT-391).
 - **Console trace lines follow the log level changed at runtime.** `PUT /api/settings` (and `routerly service configure --log-level`) now also updates the `trace …` console lines, which were stuck on the level read at boot until a restart.
 
 ### Changed

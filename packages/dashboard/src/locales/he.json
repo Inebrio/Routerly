@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "לכמה קובצי הגדרות יש גישה מתירנית ({{files}}). ההפעלה והבקשות עדיין פועלות. תקן זאת מ-הגדרות → אבטחה, או מה-filesystem של המארח כשזה נוח.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "התעלם",
       "updateAvailable": "גרסה v{{latest}} של Routerly זמינה. אתם נמצאים בגרסה v{{current}}.",
       "updateLink": "עדכון בהגדרות",
@@ -87,8 +88,7 @@
       "title": "הרשאות קובץ לא בטוחות",
       "defaultMessage": "לחלק מהקבצים יש הרשאות לא בטוחות.",
       "fixing": "מתקן…",
-      "fixNow": "תקן כעת",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "תקן כעת"
     },
     "limitRows": {
       "noLimits": "לא הוגדרו מגבלות.",
@@ -746,7 +746,8 @@
         "budgetReset": "תקציב – אופס",
         "systemStartup": "מערכת – הפעלה",
         "systemShutdown": "מערכת – כיבוי",
-        "systemUpdateAvailable": "מערכת – עדכון זמין"
+        "systemUpdateAvailable": "מערכת – עדכון זמין",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "הסר ערוץ",
       "removeChannelConfirm": "להסיר את הערוץ?",

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "کچھ تشکیل فائلوں کے پاس اجازت والی رسائی ہے ({{files}})۔ شروعات اور درخواستیں ابھی بھی کام کر رہی ہیں۔ اسے سیٹنگز → سیکیورٹی سے ٹھیک کریں، یا جب سہولت سے ہو تو ہوسٹ فائل سسٹم سے ٹھیک کریں۔",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "مسترد کریں",
       "updateAvailable": "Routerly v{{latest}} دستیاب ہے۔ آپ v{{current}} پر ہیں۔",
       "updateLink": "سیٹنگز میں اپ ڈیٹ کریں",
@@ -87,8 +88,7 @@
       "title": "غیر محفوظ فائل کی اجازتیں",
       "defaultMessage": "کچھ فائلوں کی اجازتیں غیر محفوظ ہیں۔",
       "fixing": "ٹھیک کیا جا رہا ہے...",
-      "fixNow": "ابھی ٹھیک کریں",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "ابھی ٹھیک کریں"
     },
     "limitRows": {
       "noLimits": "کوئی حدود متعین نہیں۔",
@@ -746,7 +746,8 @@
         "budgetReset": "بجٹ – ری سیٹ",
         "systemStartup": "سسٹم – شروعات",
         "systemShutdown": "سسٹم – بند",
-        "systemUpdateAvailable": "سسٹم – اپ ڈیٹ دستیاب"
+        "systemUpdateAvailable": "سسٹم – اپ ڈیٹ دستیاب",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "چینل ہٹائیں",
       "removeChannelConfirm": "چینل ہٹائیں؟",

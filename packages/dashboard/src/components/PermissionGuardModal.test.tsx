@@ -1,11 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PermissionGuardModal } from './PermissionGuardModal';
 import { fixPermissions } from '../api';
 
-let mockCan = true;
-vi.mock('../AuthContext', () => ({ useAuth: () => ({ can: () => mockCan }) }));
 vi.mock('../api', () => ({ fixPermissions: vi.fn() }));
 
 const mockFixPermissions = vi.mocked(fixPermissions as () => Promise<{ fixed: string[] }>);
@@ -13,15 +11,6 @@ const mockFixPermissions = vi.mocked(fixPermissions as () => Promise<{ fixed: st
 const detail = { error: 'unsafe_permissions', message: 'users.json is unsafe', files: ['users', 'models'] };
 
 describe('PermissionGuardModal', () => {
-  beforeEach(() => { mockCan = true; });
-
-  it('hides Fix now and shows guidance without settings:write', () => {
-    mockCan = false;
-    render(<PermissionGuardModal detail={detail} onFixed={vi.fn()} onCancel={vi.fn()} />);
-    expect(screen.queryByRole('button', { name: 'Fix now' })).toBeNull();
-    expect(screen.getByText(/Ask an operator/)).toBeTruthy();
-  });
-
   it('renders the message and the list of unsafe files', () => {
     render(<PermissionGuardModal detail={detail} onFixed={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByText('users.json is unsafe')).toBeTruthy();

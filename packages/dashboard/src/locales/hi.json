@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "कुछ कॉन्फ़िगरेशन फाइलों के पास अनुमत एक्सेस है ({{files}})। स्टार्टअप और अनुरोध अभी भी काम करते हैं। इसे सेटिंग्स → सुरक्षा से ठीक करें, या जब सुविधाजनक हो तो होस्ट फाइलसिस्टेम से ठीक करें।",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "खारिज करें",
       "updateAvailable": "Routerly v{{latest}} उपलब्ध है। आप v{{current}} पर हैं।",
       "updateLink": "सेटिंग्स में अपडेट करें",
@@ -87,8 +88,7 @@
       "title": "असुरक्षित फ़ाइल अनुमतियां",
       "defaultMessage": "कुछ फ़ाइलों में असुरक्षित अनुमतियां हैं।",
       "fixing": "ठीक हो रहा है...",
-      "fixNow": "अभी ठीक करें",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "अभी ठीक करें"
     },
     "limitRows": {
       "noLimits": "कोई सीमा निर्धारित नहीं है।",
@@ -746,7 +746,8 @@
         "budgetReset": "बजट — रीसेट",
         "systemStartup": "सिस्टम — स्टार्टअप",
         "systemShutdown": "सिस्टम — शटडाउन",
-        "systemUpdateAvailable": "सिस्टम — अपडेट उपलब्ध"
+        "systemUpdateAvailable": "सिस्टम — अपडेट उपलब्ध",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "चैनल हटाएं",
       "removeChannelConfirm": "चैनल हटाएं?",

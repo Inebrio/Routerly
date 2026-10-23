@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Néhány konfigurációs fájlnak megengedő hozzáférése van ({{files}}). Az indítás és a kérések még mindig működnek. Javítsa ki a Beállítások → Biztonság menüből, vagy amikor kényelmes, a gazda fájlrendszeréből.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Elutasítás",
       "updateAvailable": "Routerly v{{latest}} elérhető. Az Ön verziója: v{{current}}.",
       "updateLink": "Frissítés a beállításokból",
@@ -87,8 +88,7 @@
       "title": "Nem biztonságos fájlengedélyek",
       "defaultMessage": "Néhány fájl nem biztonságos engedélyekkel rendelkezik.",
       "fixing": "Javítás folyamatban…",
-      "fixNow": "Javítás most",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Javítás most"
     },
     "limitRows": {
       "noLimits": "Nincsenek beállított korlátok.",
@@ -746,7 +746,8 @@
         "budgetReset": "Költségvetés – Visszaállítva",
         "systemStartup": "Rendszer – Indítás",
         "systemShutdown": "Rendszer – Leállítás",
-        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető"
+        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Csatorna eltávolítása",
       "removeChannelConfirm": "Csatorna eltávolítása?",

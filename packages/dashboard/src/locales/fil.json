@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Ang ilang mga configuration files ay may permissive access ({{files}}). Ang startup at mga requests ay patuloy na gumagana. Ayusin ito mula sa Mga Setting → Seguridad, o mula sa host filesystem kung convenient.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Isara",
       "updateAvailable": "Available na ang Routerly v{{latest}}. Ikaw ay sa v{{current}}.",
       "updateLink": "I-update sa Mga Setting",
@@ -87,8 +88,7 @@
       "title": "Hindi ligtas na file permissions",
       "defaultMessage": "May mga file na hindi ligtas ang permisyon.",
       "fixing": "Inaayos…",
-      "fixNow": "Ayusin na",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Ayusin na"
     },
     "limitRows": {
       "noLimits": "Walang itinakdang limitasyon.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budget – Na-reset",
         "systemStartup": "System – Startup",
         "systemShutdown": "System – Shutdown",
-        "systemUpdateAvailable": "System – Available ang Update"
+        "systemUpdateAvailable": "System – Available ang Update",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Alisin ang channel",
       "removeChannelConfirm": "Alisin ang channel?",

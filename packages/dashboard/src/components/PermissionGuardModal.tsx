@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fixPermissions } from '../api';
-import { useAuth } from '../AuthContext';
 
 export interface PermissionBlockedDetail {
   error: string;
@@ -23,8 +22,6 @@ interface Props {
  */
 export function PermissionGuardModal({ detail, onFixed, onCancel }: Props) {
   const { t } = useTranslation();
-  const { can } = useAuth();
-  const canFix = can('settings:write');
   const [fixing, setFixing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,16 +59,11 @@ export function PermissionGuardModal({ detail, onFixed, onCancel }: Props) {
         {error && (
           <p style={{ color: 'var(--error, #e53e3e)', marginBottom: 12 }}>{error}</p>
         )}
-        {!canFix && (
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 12 }}>{t('common.permissionGuard.askOperator')}</p>
-        )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button className="btn btn-secondary" onClick={onCancel} disabled={fixing}>{t('common.cancel')}</button>
-          {canFix && (
-            <button className="btn btn-danger" onClick={handleFix} disabled={fixing}>
-              {fixing ? t('common.permissionGuard.fixing') : t('common.permissionGuard.fixNow')}
-            </button>
-          )}
+          <button className="btn btn-danger" onClick={handleFix} disabled={fixing}>
+            {fixing ? t('common.permissionGuard.fixing') : t('common.permissionGuard.fixNow')}
+          </button>
         </div>
       </div>
     </div>

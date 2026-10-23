@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Baadhi ya faili za usanidi zina ufikiaji unaoruhusa ({{files}}). Kuanza na ombi bado zinafanya kazi. Malizisha kutoka kwa Mipangilio → Usalama, au kutoka kwa mfumo wa faili wa kompyuta wakati inapofaa.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Ondoa",
       "updateAvailable": "Routerly v{{latest}} inapatikana. Uko kwenye v{{current}}.",
       "updateLink": "Sasisha katika Mipangilio",
@@ -87,8 +88,7 @@
       "title": "Ruhusa z'faili zisizo salama",
       "defaultMessage": "Faili kadhaa zina ruhusa zisizo salama.",
       "fixing": "Inakokurekebisha…",
-      "fixNow": "Rekebisha sasa",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Rekebisha sasa"
     },
     "limitRows": {
       "noLimits": "Hakuna vikomo viliyowekwa.",
@@ -746,7 +746,8 @@
         "budgetReset": "Bajeti – Kusezesha Upya",
         "systemStartup": "Mfumo – Kuanzisha",
         "systemShutdown": "Mfumo – Kufunga",
-        "systemUpdateAvailable": "Mfumo – Kuboreshwa Kinapatikana"
+        "systemUpdateAvailable": "Mfumo – Kuboreshwa Kinapatikana",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Ondoa njia",
       "removeChannelConfirm": "Ondoa njia?",

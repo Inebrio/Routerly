@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Nogle konfigurationsfiler har tilladende adgang ({{files}}). Start og anmodninger virker stadig. Fix det fra Indstillinger → Sikkerhed, eller fra værtsfilsystemet når det passer.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Afvis",
       "updateAvailable": "Routerly v{{latest}} er tilgængelig. Du kører v{{current}}.",
       "updateLink": "Opdater i Indstillinger",
@@ -87,8 +88,7 @@
       "title": "Usikre filrettigheder",
       "defaultMessage": "Nogle filer har usikre rettigheder.",
       "fixing": "Retter…",
-      "fixNow": "Ret nu",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Ret nu"
     },
     "limitRows": {
       "noLimits": "Ingen grænser angivet.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budget – Nulstillet",
         "systemStartup": "System – Opstart",
         "systemShutdown": "System – Nedlukning",
-        "systemUpdateAvailable": "System – Opdatering tilgængelig"
+        "systemUpdateAvailable": "System – Opdatering tilgængelig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Fjern kanal",
       "removeChannelConfirm": "Fjern kanal?",

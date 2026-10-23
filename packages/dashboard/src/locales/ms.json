@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Beberapa file konfigurasi mempunyai akses permisif ({{files}}). Permulaan dan permintaan masih berfungsi. Perbaiki dari Pengaturan → Keamanan, atau dari filesystem host apabila diperlukan.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Tutup",
       "updateAvailable": "Routerly v{{latest}} tersedia. Anda menggunakan v{{current}}.",
       "updateLink": "Perbarui di Pengaturan",
@@ -87,8 +88,7 @@
       "title": "Izin file tidak aman",
       "defaultMessage": "Beberapa file memiliki izin tidak aman.",
       "fixing": "Memperbaiki…",
-      "fixNow": "Perbaiki sekarang",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Perbaiki sekarang"
     },
     "limitRows": {
       "noLimits": "Tidak ada batas yang ditetapkan.",
@@ -746,7 +746,8 @@
         "budgetReset": "Anggaran – Setel Ulang",
         "systemStartup": "Sistem – Startup",
         "systemShutdown": "Sistem – Shutdown",
-        "systemUpdateAvailable": "Sistem – Update Tersedia"
+        "systemUpdateAvailable": "Sistem – Update Tersedia",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Hapus saluran",
       "removeChannelConfirm": "Hapus saluran?",

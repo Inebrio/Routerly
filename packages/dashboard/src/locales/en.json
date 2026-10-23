@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Some configuration files have permissive access ({{files}}). Startup and requests still work. Fix it from Settings → Security, or on the host filesystem when convenient.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Dismiss",
       "updateAvailable": "Routerly v{{latest}} is available. You are on v{{current}}.",
       "updateLink": "Update in Settings",
@@ -87,8 +88,7 @@
       "title": "Unsafe file permissions",
       "defaultMessage": "Some files have unsafe permissions.",
       "fixing": "Fixing…",
-      "fixNow": "Fix now",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Fix now"
     },
     "limitRows": {
       "noLimits": "No limits set.",
@@ -747,7 +747,8 @@
         "budgetReset": "Budget – Reset",
         "systemStartup": "System – Startup",
         "systemShutdown": "System – Shutdown",
-        "systemUpdateAvailable": "System – Update Available"
+        "systemUpdateAvailable": "System – Update Available",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Remove channel",
       "removeChannelConfirm": "Remove channel?",

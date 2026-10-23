@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Einige Konfigurationsdateien haben permissive Zugriffsrechte ({{files}}). Start und Anfragen funktionieren weiterhin. Behebe dies in Einstellungen → Sicherheit oder im Dateisystem des Hosts, wenn es passt.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Ausblenden",
       "updateAvailable": "Routerly v{{latest}} ist verfügbar. Du nutzt v{{current}}.",
       "updateLink": "In den Einstellungen aktualisieren",
@@ -87,8 +88,7 @@
       "title": "Unsichere Dateiberechtigungen",
       "defaultMessage": "Einige Dateien haben unsichere Berechtigungen.",
       "fixing": "Wird behoben…",
-      "fixNow": "Jetzt beheben",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Jetzt beheben"
     },
     "limitRows": {
       "noLimits": "Keine Limits gesetzt.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budget – Zurückgesetzt",
         "systemStartup": "System – Start",
         "systemShutdown": "System – Herunterfahren",
-        "systemUpdateAvailable": "System – Update verfügbar"
+        "systemUpdateAvailable": "System – Update verfügbar",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Kanal entfernen",
       "removeChannelConfirm": "Kanal entfernen?",

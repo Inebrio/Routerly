@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Joillakin asetustiedostoilla on luvallinen pääsy ({{files}}). Käynnistys ja pyynnöt toimivat yhä. Korjaa se Asetukset → Turvallisuus -kohdasta, tai isäntäpalvelimen tiedostojärjestelmästä kun siihen on mahdollisuus.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Hylkää",
       "updateAvailable": "Routerly v{{latest}} on saatavilla. Käytössäsi on v{{current}}.",
       "updateLink": "Päivitä asetuksista",
@@ -87,8 +88,7 @@
       "title": "Turvattomat tiedosto-oikeudet",
       "defaultMessage": "Joillakin tiedostoilla on turvattomat käyttöoikeudet.",
       "fixing": "Korjataan…",
-      "fixNow": "Korjaa nyt",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Korjaa nyt"
     },
     "limitRows": {
       "noLimits": "Rajoja ei ole asetettu.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budjetti – Nollattu",
         "systemStartup": "Järjestelmä – Käynnistys",
         "systemShutdown": "Järjestelmä – Sammutus",
-        "systemUpdateAvailable": "Järjestelmä – Päivitys saatavilla"
+        "systemUpdateAvailable": "Järjestelmä – Päivitys saatavilla",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Poista kanava",
       "removeChannelConfirm": "Poistetaanko kanava?",

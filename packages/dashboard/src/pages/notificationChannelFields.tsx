@@ -61,6 +61,7 @@ const EVENT_KEYS: Record<string, string> = {
   'system.startup':            'systemStartup',
   'system.shutdown':           'systemShutdown',
   'system.update_available':   'systemUpdateAvailable',
+  'system.permissions_unsafe': 'systemPermissionsUnsafe',
 };
 
 import { NOTIFICATION_EVENTS } from '@routerly/shared';

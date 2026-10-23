@@ -4008,6 +4008,44 @@ describe('Permission hard-block hook (RTR-04)', () => {
     })
   })
 
+  it('keeps the notification inbox reachable while a secrets file is unsafe', async () => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users' ? [adminUser] : []))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/notifications/inbox', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(mockCheckPermissions).not.toHaveBeenCalled()
+  })
+
+  it('announces an unsafe state once, and again after it was safe in between', async () => {
+    const { emitEvent } = await import('../notifications/emitter.js')
+    const mockEmit = vi.mocked(emitEvent)
+    mockEmit.mockClear()
+    setupAdminAuth()
+    const unsafe = {
+      blocked: true, bypassActive: false,
+      unsafe: [{ file: 'users', path: '/x/users.json', mode: '644', severity: 'secret' }],
+    }
+    const safe = { blocked: false, bypassActive: false, unsafe: [] }
+    const app = await buildApp()
+    const get = () => app.inject({ method: 'GET', url: '/api/settings', headers: adminAuthHeaders() })
+    mockCheckPermissions.mockResolvedValueOnce(safe as any)
+    await get()
+    mockCheckPermissions.mockResolvedValueOnce(unsafe as any)
+    mockCheckPermissions.mockResolvedValueOnce(unsafe as any)
+    await get()
+    await get()
+    expect(mockEmit).toHaveBeenCalledTimes(1)
+    expect(mockEmit).toHaveBeenCalledWith('system.permissions_unsafe', 'critical', { files: ['users'] }, expect.anything())
+    mockCheckPermissions.mockResolvedValueOnce(safe as any)
+    mockCheckPermissions.mockResolvedValueOnce(unsafe as any)
+    await get()
+    await get()
+    await app.close()
+    expect(mockEmit).toHaveBeenCalledTimes(2)
+  })
+
   it('lets the request through with no hard-block check when the bypass env var is set', async () => {
     setupAdminAuth()
     mockIsBypassActive.mockReturnValueOnce(true)

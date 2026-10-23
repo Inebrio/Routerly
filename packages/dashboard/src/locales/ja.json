@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "一部の設定ファイルは許可的なアクセス権を持っています ({{files}})。スタートアップとリクエストは引き続き機能します。設定 → セキュリティから修正するか、必要に応じてホストファイルシステムから修正してください。",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "閉じる",
       "updateAvailable": "Routerly v{{latest}}が利用可能です。現在のバージョンはv{{current}}です。",
       "updateLink": "設定で更新",
@@ -87,8 +88,7 @@
       "title": "安全でないファイル権限",
       "defaultMessage": "一部のファイルが安全でない権限を持っています。",
       "fixing": "修正中...",
-      "fixNow": "今すぐ修正",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "今すぐ修正"
     },
     "limitRows": {
       "noLimits": "制限が設定されていません。",
@@ -746,7 +746,8 @@
         "budgetReset": "予算 – リセット",
         "systemStartup": "システム – スタートアップ",
         "systemShutdown": "システム – シャットダウン",
-        "systemUpdateAvailable": "システム – 更新利用可能"
+        "systemUpdateAvailable": "システム – 更新利用可能",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "チャネルを削除",
       "removeChannelConfirm": "チャネルを削除しますか?",

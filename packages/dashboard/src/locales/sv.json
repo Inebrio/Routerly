@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Vissa konfigurationsfiler har tillåtande åtkomst ({{files}}). Start och förfrågningar fungerar fortfarande. Åtgärda det från Inställningar → Säkerhet, eller från värdfilsystemet när det passar.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Stäng",
       "updateAvailable": "Routerly v{{latest}} är tillgänglig. Du är på v{{current}}.",
       "updateLink": "Uppdatera i Inställningar",
@@ -87,8 +88,7 @@
       "title": "Osäkra filbehörigheter",
       "defaultMessage": "Vissa filer har osäkra behörigheter.",
       "fixing": "Åtgärdar…",
-      "fixNow": "Åtgärda nu",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Åtgärda nu"
     },
     "limitRows": {
       "noLimits": "Ingen begränsning angiven.",
@@ -746,7 +746,8 @@
         "budgetReset": "Budget – Återställd",
         "systemStartup": "System – Start",
         "systemShutdown": "System – Avstängning",
-        "systemUpdateAvailable": "System – Uppdatering tillgänglig"
+        "systemUpdateAvailable": "System – Uppdatering tillgänglig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Ta bort kanal",
       "removeChannelConfirm": "Ta bort kanal?",

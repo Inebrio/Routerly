@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Niektoré konfiguračné súbory majú prístupné oprávnenia ({{files}}). Spustenie a požiadavky stále fungujú. Opravte to z Nastavenia → Bezpečnosť, alebo zo súborového systému hostiteľa, keď je to vhodné.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Zavrieť",
       "updateAvailable": "Routerly v{{latest}} je dostupná. Používate v{{current}}.",
       "updateLink": "Aktualizovať v Nastaveniach",
@@ -87,8 +88,7 @@
       "title": "Nezabezpečené oprávnenia súboru",
       "defaultMessage": "Niektoré súbory majú nezabezpečené oprávnenia.",
       "fixing": "Opravuje sa…",
-      "fixNow": "Opraviť teraz",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Opraviť teraz"
     },
     "limitRows": {
       "noLimits": "Žiadne limity nenastavené.",
@@ -746,7 +746,8 @@
         "budgetReset": "Rozpočet – Resetovaný",
         "systemStartup": "Systém – Spustenie",
         "systemShutdown": "Systém – Vypnutie",
-        "systemUpdateAvailable": "Systém – Aktualizácia dostupná"
+        "systemUpdateAvailable": "Systém – Aktualizácia dostupná",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Odstrániť kanál",
       "removeChannelConfirm": "Odstrániť kanál?",

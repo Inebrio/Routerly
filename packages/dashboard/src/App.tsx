@@ -263,6 +263,7 @@ function ProtectedShell() {
   const { t } = useTranslation();
   const { user, isLoading, can } = useAuth();
   const canReadSettings = can('settings:read');
+  const canFixPermissions = can('settings:write');
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('lr-sidebar') === 'collapsed' || window.innerWidth <= 768);
@@ -277,6 +278,7 @@ function ProtectedShell() {
   const [permissionWarning, setPermissionWarning] = useState<string[]>(permissionWarningFiles);
   const [permissionWarningDismissed, setPermissionWarningDismissed] = useState(false);
   const [permissionBlockedDetail, setPermissionBlockedDetail] = useState<PermissionBlockedDetail | null>(null);
+  const [permissionBlockedNotice, setPermissionBlockedNotice] = useState(false);
 
   useEffect(() => {
     getSystemInfo()
@@ -318,11 +320,14 @@ function ProtectedShell() {
   useEffect(() => {
     function onBlocked(e: Event) {
       const detail = (e as CustomEvent<PermissionBlockedDetail>).detail;
-      if (detail) setPermissionBlockedDetail(detail);
+      if (!detail) return;
+      // Operators who cannot fix it get a neutral notice; the service notifies those who can.
+      if (canFixPermissions) setPermissionBlockedDetail(detail);
+      else setPermissionBlockedNotice(true);
     }
     window.addEventListener('lr-permission-blocked', onBlocked);
     return () => window.removeEventListener('lr-permission-blocked', onBlocked);
-  }, []);
+  }, [canFixPermissions]);
 
   function handlePermissionFixed() {
     setPermissionBlockedDetail(null);
@@ -400,6 +405,27 @@ function ProtectedShell() {
             </span>
             <button
               onClick={() => setPermissionWarningDismissed(true)}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
+              title={t('app.banner.dismiss')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {permissionBlockedNotice && (
+          <div style={{
+            background: 'var(--warning-bg, #fffbeb)',
+            borderBottom: '1px solid var(--warning-border, #f6e05e)',
+            padding: '10px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            fontSize: '0.85rem',
+            color: 'var(--warning-text, #744210)',
+          }}>
+            <span>{t('app.banner.permissionBlocked')}</span>
+            <button
+              onClick={() => setPermissionBlockedNotice(false)}
               style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, color: 'inherit', opacity: 0.7 }}
               title={t('app.banner.dismiss')}
             >

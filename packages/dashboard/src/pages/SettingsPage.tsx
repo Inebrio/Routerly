@@ -388,6 +388,7 @@ function useEventLabels(t: (k: string) => string): Record<string, string> {
     'system.startup':            t('settings.notifications.events.systemStartup'),
     'system.shutdown':           t('settings.notifications.events.systemShutdown'),
     'system.update_available':   t('settings.notifications.events.systemUpdateAvailable'),
+    'system.permissions_unsafe': t('settings.notifications.events.systemPermissionsUnsafe'),
   };
 }
 

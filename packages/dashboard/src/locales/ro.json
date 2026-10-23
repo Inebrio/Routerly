@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Unele fișiere de configurare au acces permisiv ({{files}}). Pornirea și cererile continuă să funcționeze. Remediați din Setări → Securitate, sau din sistemul de fișiere al gazdei când este convenabil.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Respinge",
       "updateAvailable": "Routerly v{{latest}} este disponibil. Ești pe v{{current}}.",
       "updateLink": "Actualizează în Setări",
@@ -87,8 +88,7 @@
       "title": "Permisiuni nesigure pe fișier",
       "defaultMessage": "Unele fișiere au permisiuni nesigure.",
       "fixing": "Se repară…",
-      "fixNow": "Repară acum",
-      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
+      "fixNow": "Repară acum"
     },
     "limitRows": {
       "noLimits": "Niciun limită setată.",
@@ -746,7 +746,8 @@
         "budgetReset": "Buget – Resetat",
         "systemStartup": "Sistem – Pornire",
         "systemShutdown": "Sistem – Oprire",
-        "systemUpdateAvailable": "Sistem – Actualizare disponibilă"
+        "systemUpdateAvailable": "Sistem – Actualizare disponibilă",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Elimină canal",
       "removeChannelConfirm": "Elimini canalul?",
