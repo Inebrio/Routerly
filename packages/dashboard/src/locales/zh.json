@@ -87,7 +87,8 @@
       "title": "不安全的文件权限",
       "defaultMessage": "某些文件的权限不安全。",
       "fixing": "修复中...",
-      "fixNow": "立即修复"
+      "fixNow": "立即修复",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "未设置限制。",

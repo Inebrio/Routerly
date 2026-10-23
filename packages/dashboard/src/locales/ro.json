@@ -87,7 +87,8 @@
       "title": "Permisiuni nesigure pe fișier",
       "defaultMessage": "Unele fișiere au permisiuni nesigure.",
       "fixing": "Se repară…",
-      "fixNow": "Repară acum"
+      "fixNow": "Repară acum",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Niciun limită setată.",

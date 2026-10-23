@@ -87,7 +87,8 @@
       "title": "Unsichere Dateiberechtigungen",
       "defaultMessage": "Einige Dateien haben unsichere Berechtigungen.",
       "fixing": "Wird behoben…",
-      "fixNow": "Jetzt beheben"
+      "fixNow": "Jetzt beheben",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Keine Limits gesetzt.",

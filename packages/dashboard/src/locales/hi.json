@@ -87,7 +87,8 @@
       "title": "असुरक्षित फ़ाइल अनुमतियां",
       "defaultMessage": "कुछ फ़ाइलों में असुरक्षित अनुमतियां हैं।",
       "fixing": "ठीक हो रहा है...",
-      "fixNow": "अभी ठीक करें"
+      "fixNow": "अभी ठीक करें",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "कोई सीमा निर्धारित नहीं है।",

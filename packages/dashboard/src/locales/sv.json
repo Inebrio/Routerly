@@ -87,7 +87,8 @@
       "title": "Osäkra filbehörigheter",
       "defaultMessage": "Vissa filer har osäkra behörigheter.",
       "fixing": "Åtgärdar…",
-      "fixNow": "Åtgärda nu"
+      "fixNow": "Åtgärda nu",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Ingen begränsning angiven.",

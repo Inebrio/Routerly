@@ -87,7 +87,8 @@
       "title": "안전하지 않은 파일 권한",
       "defaultMessage": "일부 파일의 권한이 안전하지 않습니다.",
       "fixing": "수정 중…",
-      "fixNow": "지금 수정"
+      "fixNow": "지금 수정",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "제한 없음",

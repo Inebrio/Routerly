@@ -87,7 +87,8 @@
       "title": "Nebezpečná oprávnění souborů",
       "defaultMessage": "Některé soubory mají nebezpečná oprávnění.",
       "fixing": "Opravuje se…",
-      "fixNow": "Opravit nyní"
+      "fixNow": "Opravit nyní",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Nejsou nastaveny žádné limity.",

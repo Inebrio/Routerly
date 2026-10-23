@@ -87,7 +87,8 @@
       "title": "Permissões de ficheiro inseguras",
       "defaultMessage": "Alguns ficheiros têm permissões inseguras.",
       "fixing": "A corrigir…",
-      "fixNow": "Corrigir agora"
+      "fixNow": "Corrigir agora",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Sem limites definidos.",

@@ -87,7 +87,8 @@
       "title": "Hindi ligtas na file permissions",
       "defaultMessage": "May mga file na hindi ligtas ang permisyon.",
       "fixing": "Inaayos…",
-      "fixNow": "Ayusin na"
+      "fixNow": "Ayusin na",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Walang itinakdang limitasyon.",

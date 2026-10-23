@@ -87,7 +87,8 @@
       "title": "مجوزهای ناامن فایل",
       "defaultMessage": "برخی فایل‌ها مجوزهای ناامن دارند.",
       "fixing": "در حال اصلاح…",
-      "fixNow": "اکنون اصلاح شود"
+      "fixNow": "اکنون اصلاح شود",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "هیچ محدودیتی تنظیم نشده است.",

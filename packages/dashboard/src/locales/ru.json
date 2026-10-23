@@ -87,7 +87,8 @@
       "title": "Небезопасные разрешения файлов",
       "defaultMessage": "Некоторые файлы имеют небезопасные разрешения.",
       "fixing": "Исправление…",
-      "fixNow": "Исправить сейчас"
+      "fixNow": "Исправить сейчас",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Ограничения не установлены.",

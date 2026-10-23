@@ -87,7 +87,8 @@
       "title": "Небезопасни права за достъп на файлове",
       "defaultMessage": "Някои файлове имат небезопасни права за достъп.",
       "fixing": "Поправяне…",
-      "fixNow": "Поправи сега"
+      "fixNow": "Поправи сега",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Няма зададени лимити.",

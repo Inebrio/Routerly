@@ -87,7 +87,8 @@
       "title": "הרשאות קובץ לא בטוחות",
       "defaultMessage": "לחלק מהקבצים יש הרשאות לא בטוחות.",
       "fixing": "מתקן…",
-      "fixNow": "תקן כעת"
+      "fixNow": "תקן כעת",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "לא הוגדרו מגבלות.",

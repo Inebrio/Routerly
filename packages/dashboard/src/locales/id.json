@@ -87,7 +87,8 @@
       "title": "Izin file tidak aman",
       "defaultMessage": "Beberapa file memiliki izin tidak aman.",
       "fixing": "Memperbaiki…",
-      "fixNow": "Perbaiki sekarang"
+      "fixNow": "Perbaiki sekarang",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Tidak ada batas yang ditetapkan.",

@@ -87,7 +87,8 @@
       "title": "Permessi file non sicuri",
       "defaultMessage": "Alcuni file hanno permessi non sicuri.",
       "fixing": "Correzione in corso…",
-      "fixNow": "Correggi ora"
+      "fixNow": "Correggi ora",
+      "askOperator": "Chiedi a un operatore con il permesso Settings – Write di correggerlo."
     },
     "limitRows": {
       "noLimits": "Nessun limite impostato.",

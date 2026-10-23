@@ -87,7 +87,8 @@
       "title": "Turvattomat tiedosto-oikeudet",
       "defaultMessage": "Joillakin tiedostoilla on turvattomat käyttöoikeudet.",
       "fixing": "Korjataan…",
-      "fixNow": "Korjaa nyt"
+      "fixNow": "Korjaa nyt",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Rajoja ei ole asetettu.",

@@ -87,7 +87,8 @@
       "title": "Güvenli olmayan dosya izinleri",
       "defaultMessage": "Bazı dosyalar güvenli olmayan izinlere sahiptir.",
       "fixing": "Düzeltiliyor...",
-      "fixNow": "Şimdi düzelt"
+      "fixNow": "Şimdi düzelt",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Hiçbir limit ayarlanmadı.",

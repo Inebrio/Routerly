@@ -87,7 +87,8 @@
       "title": "Quyền tệp không an toàn",
       "defaultMessage": "Một số tệp có quyền không an toàn.",
       "fixing": "Đang sửa chữa…",
-      "fixNow": "Sửa ngay"
+      "fixNow": "Sửa ngay",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Không có giới hạn nào được đặt.",

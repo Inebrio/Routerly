@@ -87,7 +87,8 @@
       "title": "สิทธิอนุญาตไฟล์ที่ไม่ปลอดภัย",
       "defaultMessage": "ไฟล์บางไฟล์มีสิทธิอนุญาตที่ไม่ปลอดภัย",
       "fixing": "กำลังแก้ไข…",
-      "fixNow": "แก้ไขตอนนี้"
+      "fixNow": "แก้ไขตอนนี้",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "ไม่มีการตั้งค่าจำกัด",

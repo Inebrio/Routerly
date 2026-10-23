@@ -87,7 +87,8 @@
       "title": "Autorisations de fichier non sécurisées",
       "defaultMessage": "Certains fichiers ont des autorisations non sécurisées.",
       "fixing": "Correction en cours...",
-      "fixNow": "Corriger maintenant"
+      "fixNow": "Corriger maintenant",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Aucune limite définie.",

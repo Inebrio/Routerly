@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Unsafe-permissions modal hides «Fix now» without `settings:write`.** Users lacking the permission now see an «Ask an operator…» hint instead of a button that answered 403 (ROUT-391).
 - **Console trace lines follow the log level changed at runtime.** `PUT /api/settings` (and `routerly service configure --log-level`) now also updates the `trace …` console lines, which were stuck on the level read at boot until a restart.
 
 ### Changed

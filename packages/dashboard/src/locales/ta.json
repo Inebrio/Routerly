@@ -87,7 +87,8 @@
       "title": "பாதுரக்ஷைத்தற்ற கோப்பு அனுமதிகள்",
       "defaultMessage": "சில கோப்புகளுக்கு பாதுரக்ஷைத்தற்ற அனுமதிகள் உள்ளன.",
       "fixing": "சரிசெய்யப்படுகிறது…",
-      "fixNow": "இப்போது சரிசெய்"
+      "fixNow": "இப்போது சரிசெய்",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "எந்த வரம்பும் அமைக்கப்படவில்லை.",

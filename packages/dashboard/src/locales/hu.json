@@ -87,7 +87,8 @@
       "title": "Nem biztonságos fájlengedélyek",
       "defaultMessage": "Néhány fájl nem biztonságos engedélyekkel rendelkezik.",
       "fixing": "Javítás folyamatban…",
-      "fixNow": "Javítás most"
+      "fixNow": "Javítás most",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Nincsenek beállított korlátok.",
