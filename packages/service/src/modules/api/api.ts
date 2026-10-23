@@ -23,6 +23,7 @@ import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../trace/store.js';
+import { setTraceLogLevel } from '../trace/console.js';
 import { resetTraceExportCache } from '../observability/traces-export.js';
 import { encodeRemoteWrite, remoteWriteHeaders } from '../observability/remote-write.js';
 import { getProviderAdapter } from '../provider/registry.js';
@@ -2602,7 +2603,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
-    if ((req.body as Partial<Settings>).logLevel !== undefined) fastify.log.level = updated.logLevel; // pino applies it live, no restart
+    if ((req.body as Partial<Settings>).logLevel !== undefined) {
+      fastify.log.level = updated.logLevel; // pino applies it live, no restart
+      setTraceLogLevel(updated.logLevel);
+    }
     if (channelNormalized) {
       updateChecker.updateChannel(channelNormalized.channel);
     }
