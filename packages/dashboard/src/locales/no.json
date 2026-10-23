@@ -87,7 +87,8 @@
       "title": "Usikre filtillatelser",
       "defaultMessage": "Noen filer har usikre tillatelser.",
       "fixing": "Fikser...",
-      "fixNow": "Fikse nå"
+      "fixNow": "Fikse nå",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Ingen grenser angitt.",

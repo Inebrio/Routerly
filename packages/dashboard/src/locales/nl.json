@@ -87,7 +87,8 @@
       "title": "Onveilige bestandsmachtigingen",
       "defaultMessage": "Sommige bestanden hebben onveilige machtigingen.",
       "fixing": "Aanpassen...",
-      "fixNow": "Nu aanpassen"
+      "fixNow": "Nu aanpassen",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Geen limieten ingesteld.",

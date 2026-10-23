@@ -87,7 +87,8 @@
       "title": "Permissões de arquivo inseguras",
       "defaultMessage": "Alguns arquivos têm permissões inseguras.",
       "fixing": "Corrigindo…",
-      "fixNow": "Corrigir agora"
+      "fixNow": "Corrigir agora",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Nenhum limite definido.",

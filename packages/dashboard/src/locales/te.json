@@ -87,7 +87,8 @@
       "title": "అసురక్షిత ఫైల్ అనుమతులు",
       "defaultMessage": "కొన్ని ఫైల్‌లకు అసురక్షిత అనుమతులు ఉన్నాయి.",
       "fixing": "సరిచేస్తోంది…",
-      "fixNow": "ఇప్పుడే సరిచేయండి"
+      "fixNow": "ఇప్పుడే సరిచేయండి",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "పరిమితులు సెట్ చేయబడలేదు.",

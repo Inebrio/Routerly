@@ -87,7 +87,8 @@
       "title": "Nezabezpečené oprávnenia súboru",
       "defaultMessage": "Niektoré súbory majú nezabezpečené oprávnenia.",
       "fixing": "Opravuje sa…",
-      "fixNow": "Opraviť teraz"
+      "fixNow": "Opraviť teraz",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Žiadne limity nenastavené.",

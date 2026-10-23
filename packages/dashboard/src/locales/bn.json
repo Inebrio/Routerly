@@ -87,7 +87,8 @@
       "title": "অসুরক্ষিত ফাইল অনুমতি",
       "defaultMessage": "কিছু ফাইলের অনুমতি অসুরক্ষিত।",
       "fixing": "সঠিক করা হচ্ছে...",
-      "fixNow": "এখনই ঠিক করুন"
+      "fixNow": "এখনই ঠিক করুন",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "কোন সীমা নির্ধারিত নেই।",

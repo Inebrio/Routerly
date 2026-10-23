@@ -87,7 +87,8 @@
       "title": "安全でないファイル権限",
       "defaultMessage": "一部のファイルが安全でない権限を持っています。",
       "fixing": "修正中...",
-      "fixNow": "今すぐ修正"
+      "fixNow": "今すぐ修正",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "制限が設定されていません。",

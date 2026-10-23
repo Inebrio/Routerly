@@ -87,7 +87,8 @@
       "title": "Ruhusa z'faili zisizo salama",
       "defaultMessage": "Faili kadhaa zina ruhusa zisizo salama.",
       "fixing": "Inakokurekebisha…",
-      "fixNow": "Rekebisha sasa"
+      "fixNow": "Rekebisha sasa",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Hakuna vikomo viliyowekwa.",

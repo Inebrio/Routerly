@@ -87,7 +87,8 @@
       "title": "Niebezpieczne uprawnienia do pliku",
       "defaultMessage": "Niektóre pliki mają niebezpieczne uprawnienia.",
       "fixing": "Naprawianie…",
-      "fixNow": "Napraw teraz"
+      "fixNow": "Napraw teraz",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "Nie ustawiono limitów.",

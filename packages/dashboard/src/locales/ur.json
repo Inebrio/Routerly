@@ -87,7 +87,8 @@
       "title": "غیر محفوظ فائل کی اجازتیں",
       "defaultMessage": "کچھ فائلوں کی اجازتیں غیر محفوظ ہیں۔",
       "fixing": "ٹھیک کیا جا رہا ہے...",
-      "fixNow": "ابھی ٹھیک کریں"
+      "fixNow": "ابھی ٹھیک کریں",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "کوئی حدود متعین نہیں۔",

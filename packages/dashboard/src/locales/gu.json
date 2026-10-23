@@ -87,7 +87,8 @@
       "title": "અસુરક્ષિત ફાઇલ પરવાનગીઓ",
       "defaultMessage": "કેટલીક ફાઇલો અસુરક્ષિત પરવાનગીઓ ધરાવે છે.",
       "fixing": "ઠીક કરી રહ્યા છીએ…",
-      "fixNow": "હવે ઠીક કરો"
+      "fixNow": "હવે ઠીક કરો",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "કોઈ મર્યાદા નિર્ધારિત નથી.",

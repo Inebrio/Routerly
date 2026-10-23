@@ -87,7 +87,8 @@
       "title": "صلاحيات ملفات غير آمنة",
       "defaultMessage": "بعض الملفات لديها صلاحيات غير آمنة.",
       "fixing": "جارٍ الإصلاح…",
-      "fixNow": "إصلاح الآن"
+      "fixNow": "إصلاح الآن",
+      "askOperator": "Ask an operator with the Settings – Write permission to fix this."
     },
     "limitRows": {
       "noLimits": "لا توجد حدود معيّنة.",
