@@ -300,6 +300,8 @@ function ProtectedShell() {
         })
         .catch(/* v8 ignore next */ () => { /* non-critical: hard block, if any, surfaces via the 423 event */ });
     }
+    // Roles without settings:read cannot read the status: skip the call, no 403.
+    if (!canReadSettings) return;
     if (permissionCheckDone) {
       setPermissionWarning(permissionWarningFiles);
     } else {
@@ -307,9 +309,7 @@ function ProtectedShell() {
       refresh();
     }
     // A fix or a config write from the CLI emits no event: poll so the banner
-    // clears (or reappears) on its own. Roles without settings:read would only
-    // collect a 403 every tick, so they do not poll.
-    if (!canReadSettings) return;
+    // clears (or reappears) on its own.
     const timer = setInterval(refresh, 10_000);
     return () => clearInterval(timer);
   }, [canReadSettings]);
@@ -338,6 +338,8 @@ function ProtectedShell() {
   }, []);
 
   useEffect(() => {
+    // No settings:read → the call would only 403 (the service still enforces requireMfa).
+    if (!canReadSettings) return;
     getSettings()
       .then(s => {
         if (user?.role === 'admin' && s.telemetry === undefined) setTelemetryUndecided(true);
@@ -347,7 +349,7 @@ function ProtectedShell() {
         // The service refuses management calls to users without 2FA when requireMfa is on.
         if (e.status === 403 && e.code === 'mfa_required') setRequireMfa(true);
       });
-  }, [user]);
+  }, [user, canReadSettings]);
 
   useEffect(() => {
     if (!isLoading && requireMfa && !user?.totpEnabled && !location.pathname.startsWith('/dashboard/profile')) {

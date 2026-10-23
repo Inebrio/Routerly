@@ -18,6 +18,16 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Dashboard › Settings › Security:** the red «Unsafe permissions on secrets file(s)» error no longer stays next to «All configuration files have safe permissions» after a successful «Fix now», or after the files are fixed from the CLI while the page is open (ROUT-375).
+- The `llm` routing policy now honours the router-level fallback routing models (`router routing update --fallback-models`) when the policy defines no `fallbackModelIds` of its own.
+
+- Router Dashboard stat cards (e.g. Savings with `$0.00008800`) no longer clip long values: the figure now scales with the card width.
+- The router Users tab no longer calls `GET /api/users` (403 in the console) for roles without `user:read`; members are shown by user id instead.
+- Startup no longer logs `models.json -> connections/instances migration failed` (`toLowerCase` of undefined) when `connections.json` holds entries with neither `label` nor `providerId`; the migration now generates a label for them.
+
+- **Dashboard:** the «Select a user» menu in Routers › Users › Add Member is no longer covered by the Router Members card below it, so members can be added from the UI.
+- **Dashboard:** roles without `settings:read` or `connections:read` no longer trigger 403 responses on every page: the layout skips `GET /api/system/permissions` and `GET /api/settings`, the language fallback skips `GET /api/settings`, and provider labels skip `GET /api/providers/descriptors` (raw provider ids are shown instead).
+- Playground Debug trace no longer reads INCOMPLETE with 0/0 tokens for `openai-oauth` models: the provider now emits the same `model:request` / `model:success` / `model:error` trace entries as every other provider, so the trace recap reports outcome, tokens, cost and latency (ROUT-379).
+- **Dashboard › Settings › Security:** the red «Unsafe permissions on secrets file(s)» error no longer stays next to «All configuration files have safe permissions» after a successful «Fix now» (ROUT-375).
 - **Optimizers:** a `relevance` threshold of `0` (no turn dropped) is now accepted by the service, CLI and dashboard, matching the catalog minimum; other optimizers are checked against their own catalog minimum, and the CLI now prints the failing field (`ccr: threshold must be at least 1`) instead of a bare "Invalid optimizers config" (ROUT-373).
 - **Dashboard:** opening a protected URL without a session no longer logs two `401` errors in the console; the layout now checks the session before it fires `GET /api/system/permissions` and `GET /api/settings`, then redirects to the login as before (ROUT-372).
 - **Dashboard tests:** the Overview and experiment-metrics period tests no longer fail between 00:00 and 02:00 CEST; expected windows are now computed in local calendar days like the date picker (ROUT-365).
@@ -28,6 +38,7 @@ the change itself — never reconstructed after the fact. See
 - **CLI:** `routerly auth login` no longer fails with «Unauthorized» for accounts with 2FA enabled; `/api/auth/2fa/verify` is now exempt from the unauthenticated permission pre-check like `/api/auth/login`. (ROUT-380)
 - **Dashboard › edit model** no longer blocks saving when the Routerly ID does not start with the provider prefix (e.g. `custom-prefix/gpt-4.1-nano` on openai): the upstream model name is now prefilled instead of left empty and required (ROUT-376).
 - **Installer channels** — `install.sh`/`install.ps1` now install the newest `vX.Y.Z` release for `latest`/`current` (GitHub's `/releases/latest` hid every pre-release and installed v0.2.0), resolve `--channel next|develop` through the `channel-*` pointer release with a fallback to the legacy `next`/`develop` release, and `install.sh` downloads the release's `routerly-X.Y.Z.tar.gz` asset so `/health` reports the installed version instead of the un-stamped tag source. The service update checker (`routerly update check`, dashboard update banner) uses the same resolution, so `current`/`latest` no longer report v0.2.0 and `next` no longer fails with a 404. (ROUT-382)
+- **Overview and Usage pages without `report:read`** (and Usage without `model:read`) show a «no permission» message and no longer fire `/api/usage` and `/api/models` requests that answered 403. (ROUT-384)
 - **Models page without `model:read`** shows a «no permission» message instead of an unhandled `Required permission: model:read` error. (ROUT-378)
 - **Router › Users without `router:write`** no longer shows «Add Member» and the change-role/remove actions; the tab is read-only instead of failing with 403. (ROUT-377)
 - **Settings › General without `settings:write`** now disables Log level, Public URL, usage retention and the telemetry Enable/Disable buttons instead of leaving them active and failing with 403. (ROUT-371)
@@ -89,6 +100,8 @@ the change itself — never reconstructed after the fact. See
 - Dashboard sidebar shows the running Routerly version (small, low contrast) under the sign-out link, so it is visible without opening Settings → About.
 
 ### Fixed
+
+- The `llm` routing policy now honours the router-level fallback routing models (`router routing update --fallback-models`) when the policy defines no `fallbackModelIds` of its own.
 - **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).
 
 - **InfluxDB integration test verifies credentials**: `POST /api/integrations/:id/test` (CLI `integrations test`, dashboard Test) now performs an authenticated test write instead of the unauthenticated `/health` check, so a wrong token (401), missing write permission (403) or unknown org/bucket (404) is reported as a failure (ROUT-329).

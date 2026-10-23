@@ -346,6 +346,13 @@ describe('OverviewPage — cost by model', () => {
     expect(mockGetModels).not.toHaveBeenCalled();
   });
 
+  it('does not call getUsage without report:read and shows the permission message', async () => {
+    mockCan = false;
+    renderPage();
+    await waitFor(() => expect(screen.queryByText(/No permission to view usage data/)).not.toBeNull());
+    expect(vi.mocked(getUsage)).not.toHaveBeenCalled();
+  });
+
   it('getRouters error is caught silently', async () => {
     mockGetRouters.mockRejectedValue(new Error('routers error'));
     renderPage();

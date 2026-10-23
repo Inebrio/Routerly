@@ -131,6 +131,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
             routerId: router.id,
             ...(router.pii ? { pii: router.pii } : {}),
             ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
           })
           ctx.result = { kind: 'json', body: await chunksToChatResponse(chunks, model.id) }
         } catch (err) {
@@ -150,6 +151,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
           routerId: router.id,
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
         })
         ctx.result = { kind: 'stream', body: await primeStream(chunks) }
       } catch (err) {

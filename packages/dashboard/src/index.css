@@ -397,6 +397,7 @@ input, select, textarea { font-family: inherit; }
   padding: 20px;
   position: relative;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 /* A stat card that points at the section explaining its number (T81). */
@@ -430,7 +431,9 @@ a.stat-card:hover {
 }
 
 .stat-value {
-  font-size: 28px;
+  /* shrinks with the card so long values (e.g. $0.00008800) are never clipped */
+  font-size: min(28px, 13cqw);
+  overflow-wrap: anywhere;
   font-weight: 700;
   margin-top: 8px;
   color: var(--text-primary);

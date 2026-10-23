@@ -112,6 +112,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           routerId: router.id,
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
         })
         if (!body.stream) {
           const chatResp = await chunksToChatResponse(chunks, model.id)
