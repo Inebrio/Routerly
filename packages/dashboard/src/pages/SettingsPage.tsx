@@ -2236,6 +2236,7 @@ function FilePermissionsSection() {
   const [error, setError] = useState('');
   const [fixing, setFixing] = useState(false);
   const [fixError, setFixError] = useState('');
+  const hadUnsafe = React.useRef(false);
 
   useEffect(() => {
     if (!canRead) { setLoading(false); return; }
@@ -2258,8 +2259,15 @@ function FilePermissionsSection() {
   async function load(silent = false) {
     if (!silent) { setLoading(true); setError(''); }
     try {
-      setStatus(await getPermissionStatus());
+      const next = await getPermissionStatus();
+      setStatus(next);
       if (silent) setError('');
+      // A fix outside the dashboard (CLI) emits no event: announce it so the
+      // blocking modal and any stale 423 error clear too.
+      if (silent && hadUnsafe.current && next.unsafe.length === 0) {
+        window.dispatchEvent(new CustomEvent('lr-permission-fixed'));
+      }
+      hadUnsafe.current = next.unsafe.length > 0;
     } catch (e) {
       if (!silent) setError(e instanceof Error ? e.message : 'Failed to load permission status');
     } finally {

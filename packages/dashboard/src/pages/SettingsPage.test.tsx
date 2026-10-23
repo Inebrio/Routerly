@@ -673,10 +673,14 @@ describe('SettingsSecurityTab', () => {
         .mockResolvedValue({ blocked: false, bypassActive: false, unsafe: [] });
       renderSecurity();
       await waitFor(() => screen.getByText('/etc/routerly/settings.json'));
+      const fixed = vi.fn();
+      window.addEventListener('lr-permission-fixed', fixed);
       await waitFor(
         () => expect(screen.getByText(/All configuration files have safe permissions/)).toBeTruthy(),
         { timeout: 12_000 },
       );
+      window.removeEventListener('lr-permission-fixed', fixed);
+      expect(fixed).toHaveBeenCalledTimes(1);
     }, 15_000);
 
     it('shows an error when the permission status fails to load', async () => {
