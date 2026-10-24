@@ -294,7 +294,7 @@ describe('NotificationChannelEditPage — submit', () => {
     expect(patch['events']).toEqual(['budget.exceeded']);
   });
 
-  it('deletes targets when all inner arrays empty (line 89)', async () => {
+  it('sends targets: null when all inner arrays empty (clears recipients)', async () => {
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'recipients' }));
     await userEvent.click(screen.getByRole('button', { name: 'recipients' }));
@@ -302,7 +302,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
     const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
-    expect(patch['targets']).toBeUndefined();
+    expect(patch['targets']).toBeNull();
   });
 
   it('keeps targets when roles non-empty (lines 85, 88)', async () => {
