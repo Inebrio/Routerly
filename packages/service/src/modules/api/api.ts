@@ -2418,16 +2418,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(202).send({ message: 'Update started. The service will restart shortly.' });
   });
 
-  // ─── GET /api/settings ─────────────────────────────────────────────────────
-  fastify.get('/api/settings', async (req, reply) => {
-    if (!requirePerm(req, 'settings:read', reply)) return;
-    const settings = await readConfig('settings');
+  function settingsResponse(settings: Settings) {
     const localAddresses = Object.values(networkInterfaces())
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
     const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, effectivePort(settings)) });
+    return { ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, effectivePort(settings)) };
+  }
+
+  // ─── GET /api/settings ─────────────────────────────────────────────────────
+  fastify.get('/api/settings', async (req, reply) => {
+    if (!requirePerm(req, 'settings:read', reply)) return;
+    const settings = await readConfig('settings');
+    return reply.send(settingsResponse(settings));
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2625,8 +2629,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
     }
     audit(req, 'settings:update', 'success');
-    const integrations = updated.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...redactSettings(updated), ...(integrations && { integrations }) });
+    return reply.send(settingsResponse(updated));
   });
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────

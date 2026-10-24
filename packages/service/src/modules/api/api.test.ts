@@ -3511,6 +3511,9 @@ describe('settings secret redaction (ROUT-236)', () => {
     expect(res.statusCode).toBe(200)
     expect(written.notifications.channels[0].password).toBe('S3greto!')
     expect(res.body).not.toContain('S3greto!')
+    // same shape as GET: the dashboard replaces its settings with this response
+    expect(res.json().listeningAddresses).toEqual(get.json().listeningAddresses)
+    expect(res.json().localAddresses).toEqual(get.json().localAddresses)
   })
 
   it('PUT replaces the secret when a new value is sent', async () => {
