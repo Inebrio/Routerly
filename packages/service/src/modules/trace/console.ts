@@ -14,7 +14,7 @@ import type { TraceEntry } from '@routerly/shared'
 import type { TraceEvent } from './store.js'
 
 /** Levels at which the operator asked the service for less output, not more. */
-const QUIET = new Set(['warn', 'error'])
+const QUIET = new Set(['warn', 'error', 'fatal', 'silent'])
 
 /** A failure is anything that reports an error, a block, or a failed outcome. */
 export function isFailure(entry: TraceEntry): boolean {
@@ -43,7 +43,7 @@ export function setTraceLogLevel(level: string): void {
   currentLevel = level
 }
 
-/** Writes one entry. `level` is the service log level: warn/error mean errors only. Defaults to the live level. */
+/** Writes one entry. `level` is the service log level: warn/error/fatal/silent mean failures only. Defaults to the live level. */
 export function printTrace(event: TraceEvent, level: string = currentLevel): void {
   const failure = isFailure(event.entry)
   if (!failure && QUIET.has(level)) return
