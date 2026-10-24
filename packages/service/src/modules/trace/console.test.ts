@@ -69,6 +69,14 @@ describe('trace console', () => {
     expect(err).toHaveLength(1)
   })
 
+  it.each(['warn', 'error', 'fatal', 'silent'])('level %s silences successful trace lines', (level) => {
+    expect(capture(() => printTrace(event({ message: 'model:success' }), level)).out).toHaveLength(0)
+  })
+
+  it.each(['info', 'debug', 'trace'])('level %s prints successful trace lines', (level) => {
+    expect(capture(() => printTrace(event({ message: 'model:success' }), level)).out).toHaveLength(1)
+  })
+
   it('follows the live level set at runtime without a restart', () => {
     try {
       setTraceLogLevel('info')
