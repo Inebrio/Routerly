@@ -3044,6 +3044,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
           merged[key] = val;
         }
         // else keep stored value (empty string or absent = no change)
+      } else if (val === null) {
+        delete merged[key]; // null clears an optional field; storing it breaks the GET→PUT round-trip of /api/settings
       } else {
         merged[key] = val;
       }

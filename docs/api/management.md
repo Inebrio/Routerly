@@ -2519,6 +2519,7 @@ PATCH /api/notifications/channels/:id
 
 - To **clear event filters**, send an empty array: `"events": []`
 - To **clear targets**, send an empty object: `"targets": {}`
+- Sending `null` for any non-secret optional field (e.g. `"targets": null`, `"username": null`) removes the field from the stored channel.
 - **Secret fields** (passwords, API keys, tokens) are only updated when explicitly provided and non-empty. Omitting a secret field leaves it unchanged.
 
 **Response `200`**
