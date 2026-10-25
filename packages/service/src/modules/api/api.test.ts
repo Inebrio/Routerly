@@ -4216,6 +4216,7 @@ describe('GET /api/me', () => {
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).email).toBe('admin@example.com')
     expect(JSON.parse(res.body).language).toBeUndefined()
+    expect(JSON.parse(res.body).permissions).toEqual(expect.any(Array))
   })
 })
 

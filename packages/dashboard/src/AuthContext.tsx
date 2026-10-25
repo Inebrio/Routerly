@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { login as apiLogin } from './api';
+import { login as apiLogin, getMe } from './api';
 
 interface AuthUser { id: string; email: string; role: string; permissions?: string[]; totpEnabled?: boolean; language?: string; }
 interface AuthCtx {
@@ -27,6 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         try {
           setUser(JSON.parse(stored) as AuthUser);
+          // The cached permissions are from login time: refresh them once per session load.
+          getMe()
+            .then(me => setUser(prev => {
+              if (!prev) return prev;
+              const next = { ...prev, role: me.roleId, ...(me.permissions ? { permissions: me.permissions } : {}) };
+              localStorage.setItem('lr_user', JSON.stringify(next));
+              return next;
+            }))
+            .catch(/* v8 ignore next */ () => { /* offline or expired: keep the cached user */ });
         } catch (err) {
           console.error('Failed to parse user from localStorage:', err);
           localStorage.removeItem('lr_user');

@@ -1927,7 +1927,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const user = users.find(u => u.id === userId);
     if (!user) return reply.status(404).send({ error: 'User not found' });
-    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, ...(user.language ? { language: user.language } : {}) });
+    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, permissions: req.dashUser!.permissions, ...(user.language ? { language: user.language } : {}) });
   });
 
   // Dashboard-owned language list — server only checks length, never the ~40-language catalog.
