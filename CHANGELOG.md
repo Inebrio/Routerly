@@ -11,6 +11,11 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Official provider mocks for UAT and tests (ROUT-401).** `npm run provider-mocks` starts mocks of claude.ai, chatgpt.com, Azure OpenAI, AWS Bedrock (Converse and ConverseStream) and Vertex AI on one port; connections point at them with `--endpoint` and a `mock-*` credential (`mock-429`, `mock-403`, `mock-401`, `mock-500`, `mock-cut`). Automated tests cover 429, 403, 401 and interrupted streams. Test tooling only; real-provider UAT cases stay BLOCKED and mock runs are recorded as «PASS (mock)».
+- **`azure-openai`, `bedrock` and `vertex` connections now honour `endpoint`** when set (empty keeps the cloud host, no change to default requests).
+
 ### Fixed
 
 - **Settings › General: «Server information» no longer collapses after Save.** `PUT /api/settings` now returns `listeningAddresses` and `localAddresses` like `GET` (ROUT-393).

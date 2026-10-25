@@ -197,3 +197,7 @@ Two separate timeouts apply. The model `timeout` field (ms, default `60000`) is 
 - [Concepts — Providers](../concepts/providers) — provider catalogue with model lists and pricing
 - [Service — Routing Engine](./routing-engine) — how adapters are invoked after model selection
 - [Dashboard — Models](../dashboard/models) — how to register a model with a provider
+
+## Endpoint override for cloud providers
+
+`azure-openai`, `bedrock` and `vertex` call their cloud host by default. When the connection has an `endpoint`, it replaces the host (Azure: `{endpoint}/openai/deployments/{deployment}`, Bedrock: `{endpoint}/model/{id}/converse[-stream]`, Vertex: `{endpoint}/v1beta1/projects/…`). Leave it empty for production. It exists for gateways and for the [official provider mocks](../contributing/provider-mocks.md).
