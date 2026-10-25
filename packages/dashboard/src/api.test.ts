@@ -1161,6 +1161,15 @@ describe('getMe', () => {
     const result = await getMe();
     expect(result.id).toBe('me');
   });
+
+  it('shares one request between concurrent callers', async () => {
+    const { getMe } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockClear();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'me', email: 'a@b.com', roleId: 'admin' }));
+    const [a, b] = await Promise.all([getMe(), getMe()]);
+    expect(a).toBe(b);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('updateMe', () => {

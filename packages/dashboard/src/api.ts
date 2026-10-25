@@ -874,7 +874,9 @@ export interface Me {
   language?: string;
 }
 
-export const getMe = () => request<Me>('/me');
+// AuthProvider and LanguageProvider both ask for /me when a session is restored: share one request.
+let meInFlight: Promise<Me> | undefined;
+export const getMe = () => (meInFlight ??= request<Me>('/me').finally(() => { meInFlight = undefined; }));
 export const updateMe = (data: { currentPassword: string; newPassword: string }) =>
   request<Me>('/me', { method: 'PUT', body: JSON.stringify(data) });
 export const updateMyLanguage = (language: string) =>
