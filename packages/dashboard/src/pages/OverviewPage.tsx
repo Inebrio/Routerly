@@ -163,7 +163,7 @@ export function OverviewPage() {
         )}
 
         {/* Cost by model (bar) + Calls by model (table) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="overview-split">
 
           {/* Horizontal bar chart — top models by cost */}
           <div className="chart-card" style={{ marginBottom: 0 }}>

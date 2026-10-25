@@ -134,6 +134,11 @@ describe('OverviewPage — error state', () => {
 // ── Loaded state ───────────────────────────────────────────────────────────────
 
 describe('OverviewPage — loaded state', () => {
+  it('lays cost and calls cards out with the responsive overview-split grid', async () => {
+    const { container } = renderPage();
+    await waitFor(() => expect(container.querySelector('.overview-split')?.children).toHaveLength(2));
+  });
+
   it('renders page header', async () => {
     renderPage();
     await waitFor(() => expect(screen.queryByText('Overview')).not.toBeNull());
