@@ -75,7 +75,7 @@ export function NotificationChannelEditPage() {
       for (const [key, val] of Object.entries(form)) {
         if (key === 'id' || key === 'provider') continue;
         if (secrets.includes(key)) {
-          if (typeof val === 'string' && val.length > 0) patch[key] = val;
+          if (val === null || (typeof val === 'string' && val.length > 0)) patch[key] = val;
         } else {
           patch[key] = val;
         }

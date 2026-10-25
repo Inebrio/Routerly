@@ -3382,6 +3382,9 @@ Edit a channel's configuration. Only provided options are updated; omitted optio
 | `--url <url>` | Webhook URL |
 | `--method <method>` | HTTP method (POST or GET) |
 | `--secret <secret>` | HMAC signing secret (secret) |
+| `--clear-secret` | Remove the webhook signing secret (deliveries are no longer signed) |
+| `--clear-password` | Remove the SMTP password |
+| `--clear-secret-access-key` | Remove the AWS secret access key (SES) |
 | `--bot-token <token>` | Slack bot token (secret) |
 | `--channel-id <id>` | Slack channel ID |
 | `--webhook-url <url>` | Webhook URL (Teams/Discord, secret) |

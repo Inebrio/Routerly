@@ -736,6 +736,12 @@ describe('notification channel edit', () => {
     expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', { botToken: 'xoxb-new' });
   });
 
+  it('--clear-secret sends secret null', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'webhook', name: 'w' });
+    await runChannel('edit', 'ch1', '--clear-secret');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', { secret: null });
+  });
+
   it('errors when no fields provided', async () => {
     const { err } = await runChannel('edit', 'ch1');
     expect(err.join(' ')).toContain('No fields to update');

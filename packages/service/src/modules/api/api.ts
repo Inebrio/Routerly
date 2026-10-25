@@ -18,7 +18,7 @@ import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-p
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
@@ -3042,8 +3042,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'provider') continue; // immutable
       if (secrets.includes(key)) {
-        // Secret: update only when non-empty string provided
-        if (typeof val === 'string' && val.length > 0) {
+        // Secret: update only when non-empty string provided; null removes an optional secret
+        if (val === null) {
+          if (!(OPTIONAL_CHANNEL_SECRET_FIELDS[provider!] ?? []).includes(key)) {
+            return reply.status(400).send({ error: `Secret "${key}" is required and cannot be removed` });
+          }
+          delete merged[key];
+        } else if (typeof val === 'string' && val.length > 0) {
           merged[key] = val;
         }
         // else keep stored value (empty string or absent = no change)

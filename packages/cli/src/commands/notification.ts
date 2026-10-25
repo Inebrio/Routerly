@@ -547,6 +547,9 @@ export function makeNotificationCommand(): Command {
     .option('--url <url>', 'Webhook URL')
     .option('--method <method>', 'HTTP method (POST|GET)')
     .option('--secret <secret>', 'HMAC signing secret (secret)')
+    .option('--clear-secret', 'Remove the webhook HMAC signing secret')
+    .option('--clear-password', 'Remove the SMTP password')
+    .option('--clear-secret-access-key', 'Remove the AWS secret access key')
     // slack
     .option('--bot-token <token>', 'Slack bot token (secret)')
     .option('--channel-id <id>', 'Slack channel ID')
@@ -614,6 +617,11 @@ export function makeNotificationCommand(): Command {
         for (const [key, val] of Object.entries(secretFields)) {
           if (opts[key] !== undefined && val.length > 0) patch[key] = val;
         }
+
+        // Explicit removal of optional secrets (PATCH null)
+        if (opts['clearSecret']) patch['secret'] = null;
+        if (opts['clearPassword']) patch['password'] = null;
+        if (opts['clearSecretAccessKey']) patch['secretAccessKey'] = null;
 
         if (Object.keys(patch).length === 0) {
           console.error(chalk.yellow('No fields to update. Provide at least one option.'));
