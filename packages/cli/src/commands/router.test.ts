@@ -3324,64 +3324,63 @@ describe('branch coverage extras', () => {
   // ── ApiError catch branches in commands that have if (!(err instanceof ApiError)) without else ──
 
   // routing show catch: ApiError → no message logged, just exits
-  it('routing show: exits 1 on ApiError (no error log, just exit)', async () => {
+  it('routing show: exits 1 and prints the ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'show', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    // ApiError: the if-block is false, so console.error is NOT called
-    expect(console.error).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   // routing policy list catch: ApiError (false branch of if)
-  it('routing policy list: exits 1 on ApiError (no error log)', async () => {
+  it('routing policy list: exits 1 and prints the ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'routing', 'policy', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   // model list catch: ApiError (false branch of if)
-  it('model list: exits 1 on ApiError (no error log)', async () => {
+  it('model list: exits 1 and prints the ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'model', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   // token list catch: ApiError (false branch of if)
-  it('token list: exits 1 on ApiError (no error log)', async () => {
+  it('token list: exits 1 and prints the ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'token', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   // member list catch: ApiError (false branch of if)
-  it('member list: exits 1 on ApiError (no error log)', async () => {
+  it('member list: exits 1 and prints the ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'member', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   // pii list catch: ApiError (false branch of if at line 1245)
-  it('pii list: exits 1 on ApiError (no error log)', async () => {
+  it('pii list: exits 1 and prints the ApiError', async () => {
     const { ApiError } = await import('../api.js');
     mockApi.mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'router', 'pii', 'list', 'my-api'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('forbidden'));
   });
 
   // routing policy enable: new policy with --config (line 226 true branch)
@@ -3657,5 +3656,16 @@ describe('branch coverage extras', () => {
     await expect(makeCmd().parseAsync(['node', 'router', 'token', 'edit', 'my-api', 'tok-1', '--labels', 'x'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not found'));
+  });
+
+  // ROUT-407: ApiError (403 on /api/users without user:read) must not fail silently
+  it.each([['show'], ['member', 'list']])('router %s prints the API error when GET /api/users is 403', async (...sub) => {
+    const { ApiError } = await import('../api.js');
+    mockApi.mockResolvedValueOnce([{ ...baseRouter, members: [{ userId: 'u1', role: 'editor' }] }])
+           .mockRejectedValueOnce(new ApiError(403, 'Required permission: user:read'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(makeCmd().parseAsync(['node', 'router', ...sub.flat(), 'my-api'])).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Required permission: user:read'));
   });
 });
