@@ -148,8 +148,8 @@ describe('RouterOptimizerTab', () => {
     expect(cbs[0]).toBeChecked(); // ccr first (configured), enabled
     expect(screen.getByDisplayValue('6')).toBeInTheDocument();
     // extras appended, disabled
-    expect(screen.getByText('Session Dedup')).toBeInTheDocument();
-    expect(screen.getByText('Caveman')).toBeInTheDocument();
+    expect(await screen.findByText('Session Dedup')).toBeInTheDocument();
+    expect(await screen.findByText('Caveman')).toBeInTheDocument();
   });
 
   it('shows loading then content', async () => {
