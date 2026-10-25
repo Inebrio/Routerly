@@ -105,7 +105,8 @@ export class BedrockAdapter implements ProviderAdapter {
     const region  = model.awsRegion ?? 'us-east-1';
     const modelId = getUpstreamModelId(model);
     const suffix  = stream ? 'converse-stream' : 'converse';
-    return `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(modelId)}/${suffix}`;
+    const base    = model.endpoint?.replace(/\/$/, '') || `https://bedrock-runtime.${region}.amazonaws.com`;
+    return `${base}/model/${encodeURIComponent(modelId)}/${suffix}`;
   }
 
   private auth(model: ModelConfig, url: string, body: string): Record<string, string> {
