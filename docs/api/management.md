@@ -100,6 +100,8 @@ Only available when `configured: false`.
 GET /api/me
 ```
 
+Returns `id`, `email`, `roleId`, `permissions` (the role's current permissions, resolved on every call) and `language` when set. The dashboard reads it when restoring a session so a role change applies after a reload.
+
 ### Set Language
 
 ```

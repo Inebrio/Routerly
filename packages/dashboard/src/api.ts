@@ -870,6 +870,7 @@ export interface Me {
   id: string;
   email: string;
   roleId: string;
+  permissions?: string[];
   language?: string;
 }
 

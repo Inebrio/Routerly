@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Dashboard: a role change now applies to an open session after a reload.** `GET /api/me` also returns `permissions`, and the dashboard refreshes role and permissions once when it restores a session, instead of keeping the ones from login (ROUT-406).
 - **Dashboard: telemetry opt-in banner and warning banners follow the dark theme.** The `--info-*` and `--warning-*` colour tokens were used but never defined, so the banners always rendered with the light fallback; both sets are now defined for light and dark (ROUT-404).
 - **Dashboard: Overview no longer breaks at phone width.** «Cost by model» and «Calls by model» stack in a single full-width column under 768px instead of one being squeezed and the other clipped (ROUT-403).
 - **Notification channels: an existing channel's optional secret (webhook signing secret, SMTP password, SES secret access key) can now be removed.** `PATCH /api/notifications/channels/:id` with `null` on the field removes it (400 for required secrets such as tokens); CLI `notification channel edit --clear-secret|--clear-password|--clear-secret-access-key`; the dashboard edit form has a «Remove secret» action (ROUT-398).
