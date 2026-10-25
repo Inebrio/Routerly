@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Dashboard: Overview no longer breaks at phone width.** «Cost by model» and «Calls by model» stack in a single full-width column under 768px instead of one being squeezed and the other clipped (ROUT-403).
 - **Notification channels: an existing channel's optional secret (webhook signing secret, SMTP password, SES secret access key) can now be removed.** `PATCH /api/notifications/channels/:id` with `null` on the field removes it (400 for required secrets such as tokens); CLI `notification channel edit --clear-secret|--clear-password|--clear-secret-access-key`; the dashboard edit form has a «Remove secret» action (ROUT-398).
 - **Settings › General: «Server information» no longer collapses after Save.** `PUT /api/settings` now returns `listeningAddresses` and `localAddresses` like `GET` (ROUT-393).
 - **Router page no longer fires `/api/usage` and `/api/settings` without permission.** The Dashboard, General and Logs tabs skip those requests unless the role has `report:read` / `settings:read`, so a `router:read`+`router:write` role gets no 403 in the console (ROUT-397).
