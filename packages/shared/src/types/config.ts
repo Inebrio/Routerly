@@ -1078,6 +1078,13 @@ export const CHANNEL_SECRET_FIELDS: Record<ChannelProvider, string[]> = {
   dashboard:  [],
 };
 
+/** Secret fields a channel works without; PATCH `null` (CLI `--clear-<field>`) removes them. */
+export const OPTIONAL_CHANNEL_SECRET_FIELDS: Partial<Record<ChannelProvider, string[]>> = {
+  smtp:    ['password'],
+  ses:     ['secretAccessKey'],
+  webhook: ['secret'],
+};
+
 /** Top-level notifications configuration */
 export interface NotificationsConfig {
   channels?: NotificationChannel[];

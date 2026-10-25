@@ -503,6 +503,31 @@ describe('ChannelEditFields — webhook (lines 509-523)', () => {
   });
 });
 
+describe('ChannelEditFields — remove optional secret', () => {
+  it('webhook edit: Remove secret sends null, Undo restores empty', async () => {
+    const onChange = renderEditFields('webhook', {}, true);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove secret' }));
+    expect(onChange).toHaveBeenCalledWith('secret', null);
+  });
+
+  it('shows Undo and disables the input while removal is pending', async () => {
+    const onChange = renderEditFields('webhook', { secret: null }, true);
+    expect(screen.getByPlaceholderText('Will be removed on save')).toHaveProperty('disabled', true);
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(onChange).toHaveBeenCalledWith('secret', '');
+  });
+
+  it('no Remove secret button on create or for required secrets', () => {
+    renderEditFields('webhook', {}, false);
+    expect(screen.queryByRole('button', { name: 'Remove secret' })).toBeNull();
+  });
+
+  it('no Remove secret button for slack bot token', () => {
+    renderEditFields('slack', {}, true);
+    expect(screen.queryByRole('button', { name: 'Remove secret' })).toBeNull();
+  });
+});
+
 describe('ChannelEditFields — slack (lines 525-530)', () => {
   it('renders slack bot token and channel id fields', () => {
     renderEditFields('slack');

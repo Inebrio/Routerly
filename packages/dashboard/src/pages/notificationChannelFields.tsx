@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { Bell, Users, FolderOpen } from 'lucide-react';
-import { CHANNEL_SECRET_FIELDS } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS } from '@routerly/shared';
 import { MultiSelect } from '../components/MultiSelect';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { ALL_PERMISSIONS, getRouters } from '../api';
@@ -307,17 +307,27 @@ function SecretEditInput({
   const placeholder = isEdit ? t('settings.notifications.fields.keepCurrentPlaceholder') : (customPlaceholder ?? '');
   /* v8 ignore next */
   const secretValue = typeof form[fieldKey] === 'string' ? (form[fieldKey] as string) : '';
+  const removing = form[fieldKey] === null;
+  const removable = isEdit && (OPTIONAL_CHANNEL_SECRET_FIELDS[form['provider'] as ChannelProvider] ?? []).includes(fieldKey);
   return (
     <div className="form-group">
       <label className="form-label">{label}</label>
-      <input
-        className="form-input"
-        type="password"
-        value={secretValue}
-        onChange={e => onChange(fieldKey, e.target.value)}
-        placeholder={placeholder}
-        autoComplete="new-password"
-      />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          className="form-input"
+          type="password"
+          value={secretValue}
+          onChange={e => onChange(fieldKey, e.target.value)}
+          placeholder={removing ? t('settings.notifications.fields.secretWillBeRemoved') : placeholder}
+          disabled={removing}
+          autoComplete="new-password"
+        />
+        {removable && (
+          <button type="button" className="btn btn-secondary" onClick={() => onChange(fieldKey, removing ? '' : null)}>
+            {removing ? t('settings.notifications.fields.undoRemoveSecret') : t('settings.notifications.fields.removeSecret')}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

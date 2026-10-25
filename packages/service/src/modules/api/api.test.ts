@@ -10847,6 +10847,35 @@ describe('PATCH /api/notifications/channels/:id', () => {
     expect(storedChannels[0]!['password']).toBe('supersecret')
   })
 
+  it('null on an optional secret removes it', async () => {
+    setupChannels()
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-smtp',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ password: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).not.toHaveProperty('password')
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'settings')
+    const storedChannels = (written![1] as any).notifications.channels as Array<Record<string, unknown>>
+    expect(storedChannels[0]).not.toHaveProperty('password')
+  })
+
+  it('null on a required secret returns 400', async () => {
+    setupChannels([{ id: 'ch-slack', provider: 'slack', botToken: 'xoxb-1' }])
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/notifications/channels/ch-slack',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ botToken: null }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
   it('null on an optional field removes it instead of storing null', async () => {
     setupChannels()
     const app = await buildApp()
