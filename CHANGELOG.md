@@ -14,6 +14,7 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Settings › General: «Server information» no longer collapses after Save.** `PUT /api/settings` now returns `listeningAddresses` and `localAddresses` like `GET` (ROUT-393).
+- **Dashboard: `/settings/notifications/new` hides the provider picker without `notification:write`.** The page now shows the same permission message as the list (ROUT-396).
 - **Log level `fatal` (and `silent`) now silences the successful `trace …` console lines**, like `warn` and `error` already did (ROUT-394).
 - **Notifications: clearing every recipient of a channel in the dashboard now saves.** The edit page sends `targets: null` so the channel goes back to «Everyone» (ROUT-395).
 - **`PATCH /api/notifications/channels/:id` with `null` no longer breaks `GET → PUT /api/settings`.** `null` on a non-secret field (e.g. `targets`, `username`) now removes the field instead of storing `null`, which made the settings round-trip fail with 400 (ROUT-392).

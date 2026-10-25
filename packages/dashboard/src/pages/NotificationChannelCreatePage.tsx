@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldOff } from 'lucide-react';
+import { useAuth } from '../AuthContext';
 import { createNotificationChannel, getRoles, getUsers } from '../api';
 import type { Role, User } from '../api';
 import {
@@ -45,6 +46,8 @@ function buildDefaults(provider: ChannelProvider): Record<string, unknown> {
 export function NotificationChannelCreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const allowed = can('notification:write');
   const [searchParams] = useSearchParams();
   const providerParam = searchParams.get('provider') as ChannelProvider | null;
 
@@ -59,9 +62,10 @@ export function NotificationChannelCreatePage() {
   const [activeTab, setActiveTab] = useState<'connection' | 'routing' | 'recipients'>('connection');
 
   useEffect(() => {
+    if (!allowed) return;
     getRoles().then(setRoles).catch(() => {});
     getUsers().then(setUsers).catch(() => {});
-  }, []);
+  }, [allowed]);
 
   const channelProviderMeta = useMemo(() => getChannelProviderMeta(t), [t]);
 
@@ -108,6 +112,10 @@ export function NotificationChannelCreatePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!allowed) {
+    return <div className="empty-state"><ShieldOff size={40} /><p>{t('settings.notifications.list.noPermission')}</p></div>;
   }
 
   // Provider picker view
