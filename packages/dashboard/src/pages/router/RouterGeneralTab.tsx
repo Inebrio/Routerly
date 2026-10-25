@@ -40,7 +40,11 @@ export function RouterGeneralTab() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<string>('');
 
   // Fetch publicUrl + local addresses from settings on mount.
+  // Needs settings:read; without it the connect snippets use window.location.origin.
+  const { can } = useAuth();
+  const canReadSettings = can('settings:read');
   useEffect(() => {
+    if (!canReadSettings) return;
     getSettings().then(s => {
       if (s.publicUrl) {
         const url = s.publicUrl.replace(/\/$/, '');
@@ -59,7 +63,7 @@ export function RouterGeneralTab() {
         setSelectedEndpoint(options[0] ?? fallback);
       }
     }).catch(() => {});
-  }, []);
+  }, [canReadSettings]);
 
   const [form, setForm] = useState({
     name: '',
@@ -70,7 +74,6 @@ export function RouterGeneralTab() {
 
   // External channels the override can target; the list needs notification:write,
   // so without it the fetch is skipped and the section stays hidden.
-  const { can } = useAuth();
   const canListChannels = can('notification:write');
   const [channels, setChannels] = useState<RedactedChannel[]>([]);
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getUsage, type UsageStats, type UsageRecord } from '../../api';
+import { useAuth } from '../../AuthContext';
 import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } from '../../components/DateRangePicker';
 import { MultiSelect } from '../../components/MultiSelect';
 import { useFilterState } from '../../hooks/useFilterState';
@@ -20,6 +21,7 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
 export function RouterLogsTab() {
   const { t } = useTranslation();
   const { id: routerId } = useParams<{ id: string }>();
+  const canReport = useAuth().can('report:read');
   const navigate = useNavigate();
 
   const [stats, setStats]         = useState<UsageStats | null>(null);
@@ -58,7 +60,7 @@ export function RouterLogsTab() {
 
   const fetchStats = useCallback(() => {
     /* v8 ignore next */
-    if (!routerId) return Promise.resolve();
+    if (!routerId || !canReport) return Promise.resolve();
     // For recent (minutes/hours) presets, recalculate the range on every fetch
     let from = dateRange.from || undefined;
     let to = dateRange.to || undefined;
@@ -72,7 +74,7 @@ export function RouterLogsTab() {
     return getUsage(period, routerId, from, to, page, pageSize)
       .then(data => { setStats(data); setLastUpdated(new Date()); })
       .catch(console.error);
-  }, [routerId, dateRange, page, pageSize]);
+  }, [routerId, dateRange, page, pageSize, canReport]);
 
   const handleRefreshNow = useCallback(() => {
     setRefreshing(true);

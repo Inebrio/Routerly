@@ -3,6 +3,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterDashboardTab } from './RouterDashboardTab';
 
+const mockCan = vi.hoisted(() => vi.fn((_p: string) => true));
+vi.mock('../../AuthContext', () => ({ useAuth: () => ({ can: mockCan }) }));
+
 vi.mock('../../api', () => ({
   getUsage: vi.fn(),
 }));
@@ -210,5 +213,16 @@ describe('RouterDashboardTab — what the optimizers removed', () => {
     expect(screen.getByText('4,200')).toBeInTheDocument();
     expect(screen.getByText('Caveman')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
+  });
+});
+
+describe('RouterDashboardTab — without report:read', () => {
+  it('does not call getUsage and shows the no-permission message', async () => {
+    mockCan.mockImplementation((p: string) => p !== 'report:read');
+    mockGetUsage.mockClear();
+    renderTab();
+    await waitFor(() => expect(screen.queryByText(/permission/i)).not.toBeNull());
+    expect(mockGetUsage).not.toHaveBeenCalled();
+    mockCan.mockImplementation(() => true);
   });
 });

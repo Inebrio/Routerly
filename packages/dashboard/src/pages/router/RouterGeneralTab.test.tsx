@@ -72,7 +72,7 @@ beforeEach(() => {
   mockGetSettings.mockResolvedValue({ publicUrl: 'https://api.example.com', port: 3000 });
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetChannels.mockRejectedValue(new Error('403'));
-  allow('notification:write');
+  allow('notification:write', 'settings:read');
   mockCreateRouter.mockResolvedValue({ id: 'proj-new', name: 'New', models: [], token: 'sk-rt-abc123' });
   mockUseUnsavedChanges.mockReturnValue({ isBlocked: false, proceed: vi.fn(), reset: vi.fn() });
 });
@@ -136,6 +136,14 @@ describe('RouterGeneralTab — edit mode render', () => {
     await waitFor(() =>
       expect(screen.queryByText('How to connect')).not.toBeNull()
     );
+  });
+
+  it('does not call getSettings without settings:read', async () => {
+    mockGetSettings.mockClear();
+    allow('router:write');
+    renderTab();
+    await waitFor(() => expect(screen.getByRole('button', { name: /Save Changes/i })).toBeTruthy());
+    expect(mockGetSettings).not.toHaveBeenCalled();
   });
 
   it('falls back when getSettings rejects', async () => {
