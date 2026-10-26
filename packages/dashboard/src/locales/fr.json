@@ -2267,7 +2267,8 @@
       "next": "Suivant",
       "page": "Page {{page}} sur {{totalPages}}",
       "total": "({{count}} au total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Impossible de mettre à jour le rôle",
       "createFailed": "Impossible de créer le rôle",
       "deleteFailed": "Impossible de supprimer le rôle"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

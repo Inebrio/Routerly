@@ -2267,7 +2267,8 @@
       "next": "తదుపరి",
       "page": "పేజీ {{page}} / {{totalPages}}",
       "total": "({{count}} మొత్తం)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "పాత్ర నవీకరించడం విఫలమైంది",
       "createFailed": "పాత్ర సృష్టించడం విఫలమైంది",
       "deleteFailed": "పాత్ర తొలగించడం విఫలమైంది"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

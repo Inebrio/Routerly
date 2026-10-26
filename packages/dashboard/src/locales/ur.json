@@ -2267,7 +2267,8 @@
       "next": "اگلا",
       "page": "صفحہ {{page}} میں {{totalPages}}",
       "total": "({{count}} کل)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "کردار اپ ڈیٹ کرنے میں ناکام",
       "createFailed": "کردار بنانے میں ناکام",
       "deleteFailed": "کردار حذف کرنے میں ناکام"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

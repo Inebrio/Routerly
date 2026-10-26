@@ -2267,7 +2267,8 @@
       "next": "次へ",
       "page": "ページ{{page}}/{{totalPages}}",
       "total": "(合計{{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "ロール更新に失敗しました",
       "createFailed": "ロール作成に失敗しました",
       "deleteFailed": "ロール削除に失敗しました"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

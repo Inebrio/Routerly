@@ -2267,7 +2267,8 @@
       "next": "Seuraava",
       "page": "Sivu {{page}} / {{totalPages}}",
       "total": "(yhteensä {{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Roolin päivittäminen epäonnistui",
       "createFailed": "Roolin luominen epäonnistui",
       "deleteFailed": "Roolin poistaminen epäonnistui"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

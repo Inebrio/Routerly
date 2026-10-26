@@ -2267,7 +2267,8 @@
       "next": "Következő",
       "page": "{{page}}. oldal / {{totalPages}}",
       "total": "({{count}} összes)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Az szerepkör frissítése sikertelen",
       "createFailed": "Az szerepkör létrehozása sikertelen",
       "deleteFailed": "Az szerepkör törlése sikertelen"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

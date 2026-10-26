@@ -2267,7 +2267,8 @@
       "next": "بعدی",
       "page": "صفحه {{page}} از {{totalPages}}",
       "total": "({{count}} مورد)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "به‌روزرسانی نقش ناموفق بود",
       "createFailed": "ایجاد نقش ناموفق بود",
       "deleteFailed": "حذف نقش ناموفق بود"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

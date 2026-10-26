@@ -2267,7 +2267,8 @@
       "next": "Növbəti",
       "page": "Səhifə {{page}} / {{totalPages}}",
       "total": "(cəmi {{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Rolu yeniləmək alınmadı",
       "createFailed": "Rolu yaratmaq alınmadı",
       "deleteFailed": "Rolu silmək alınmadı"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

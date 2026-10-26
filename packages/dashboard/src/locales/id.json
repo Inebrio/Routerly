@@ -2267,7 +2267,8 @@
       "next": "Berikutnya",
       "page": "Halaman {{page}} dari {{totalPages}}",
       "total": "({{count}} total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Gagal memperbarui peran",
       "createFailed": "Gagal membuat peran",
       "deleteFailed": "Gagal menghapus peran"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

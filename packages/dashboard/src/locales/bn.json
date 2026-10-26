@@ -2267,7 +2267,8 @@
       "next": "পরবর্তী",
       "page": "পৃষ্ঠা {{page}} এর {{totalPages}}",
       "total": "({{count}} মোট)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "ভূমিকা আপডেট করতে ব্যর্থ",
       "createFailed": "ভূমিকা তৈরি করতে ব্যর্থ",
       "deleteFailed": "ভূমিকা মুছতে ব্যর্থ"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

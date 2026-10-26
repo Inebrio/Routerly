@@ -2267,7 +2267,8 @@
       "next": "Nästa",
       "page": "Sida {{page}} av {{totalPages}}",
       "total": "({{count}} totalt)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Misslyckades att uppdatera roll",
       "createFailed": "Misslyckades att skapa roll",
       "deleteFailed": "Misslyckades att ta bort roll"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

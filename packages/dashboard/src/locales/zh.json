@@ -2267,7 +2267,8 @@
       "next": "下一个",
       "page": "第 {{page}} / {{totalPages}} 页",
       "total": "({{count}} 总计)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "未能更新角色",
       "createFailed": "未能创建角色",
       "deleteFailed": "未能删除角色"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
