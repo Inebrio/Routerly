@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "tsx src/index.ts",
+    "prebuild": "node ../../scripts/link-worktree-modules.mjs",
     "build": "tsc",
+    "pretypecheck": "node ../../scripts/link-worktree-modules.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

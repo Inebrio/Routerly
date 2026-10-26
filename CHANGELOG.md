@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Worktree typecheck/build resolve `@routerly/shared` from the worktree (ROUT-417).** `npm run build` and `npm run typecheck` in `service`, `cli` and `dashboard` now run `scripts/link-worktree-modules.mjs` first (no-op outside a worktree), so `tsc` no longer picks up the main checkout's `@routerly/shared`. Dev tooling only.
 - **Ollama embeddings with a `/v1` endpoint (ROUT-416).** The embedding adapter now strips a trailing `/v1` before calling `/api/embed`, so the endpoint used for chat also works for the model Test, semantic-intent and semantic cache (was 404 on `/v1/api/embed`).
 
 - **Test tooling: service and CLI vitest resolve `@routerly/shared` from the sibling package source,** so worktree runs no longer depend on a stale or missing `shared/dist` (ROUT-410).
