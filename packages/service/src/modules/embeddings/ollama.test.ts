@@ -37,6 +37,18 @@ describe('OllamaEmbeddingProvider', () => {
     expect(calledUrl).toBe('http://localhost:11434/api/embed')
   })
 
+  it.each(['http://localhost:11434/v1', 'http://localhost:11434/v1/'])('strips /v1 suffix from endpoint %s', async (endpoint) => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ embeddings: [[1, 0]] }),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    await new OllamaEmbeddingProvider(endpoint).embed(['test'], 'model')
+
+    expect(mockFetch.mock.calls[0]![0]).toBe('http://localhost:11434/api/embed')
+  })
+
   it('uses default endpoint when none provided', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,

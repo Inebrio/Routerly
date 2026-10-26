@@ -8,7 +8,8 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
   private readonly baseURL: string;
 
   constructor(endpoint?: string) {
-    this.baseURL = (endpoint ?? 'http://localhost:11434').replace(/\/$/, '');
+    // Chat uses the OpenAI-compatible endpoint (.../v1); /api/embed lives at the server root.
+    this.baseURL = (endpoint ?? 'http://localhost:11434').replace(/\/+$/, '').replace(/\/v1$/, '');
   }
 
   async embed(texts: string[], model: string): Promise<EmbedResult> {
