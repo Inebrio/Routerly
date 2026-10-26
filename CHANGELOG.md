@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Test tooling: service and CLI vitest resolve `@routerly/shared` from the sibling package source,** so worktree runs no longer depend on a stale or missing `shared/dist` (ROUT-410).
 - **Dashboard: no more 403 requests or console errors from Roles, Audit and Models for roles without the read permission.** The Roles and Audit pages show a permission message instead of calling `GET /api/roles` (`user:read`) and `GET /api/audit` (`audit:read`); the Models page skips `GET /api/health/providers` without `report:read` and `GET /api/connections` without `connections:read` (ROUT-409).
 - **CLI: `router` commands no longer fail in silence on an API error.** `router show`, `router member list` and every other `router` subcommand now print the API error (e.g. `Required permission: user:read`) on stderr instead of exiting 1 with no output (ROUT-407).
 - **Dashboard: a role change now applies to an open session after a reload.** `GET /api/me` also returns `permissions`, and the dashboard refreshes role and permissions once when it restores a session, instead of keeping the ones from login, with a single `/api/me` request per load (ROUT-406).
