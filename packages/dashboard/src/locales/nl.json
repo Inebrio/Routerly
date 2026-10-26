@@ -2267,7 +2267,8 @@
       "next": "Volgende",
       "page": "Pagina {{page}} van {{totalPages}}",
       "total": "({{count}} totaal)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Kan rol niet bijwerken",
       "createFailed": "Kan rol niet aanmaken",
       "deleteFailed": "Kan rol niet verwijderen"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

@@ -2267,7 +2267,8 @@
       "next": "Susunod",
       "page": "Pahina {{page}} ng {{totalPages}}",
       "total": "({{count}} kabuuan)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Nabigong i-update ang role",
       "createFailed": "Nabigong gumawa ng role",
       "deleteFailed": "Nabigong burahin ang role"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

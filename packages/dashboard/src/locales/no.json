@@ -2267,7 +2267,8 @@
       "next": "Neste",
       "page": "Side {{page}} av {{totalPages}}",
       "total": "({{count}} totalt)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Kunne ikke oppdatere rolle",
       "createFailed": "Kunne ikke opprette rolle",
       "deleteFailed": "Kunne ikke slette rolle"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

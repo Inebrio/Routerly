@@ -35,12 +35,16 @@ vi.mock('../components/SearchableSelect', () => ({
 const mockCanManage = true;
 let mockCanWriteModels = true;
 let mockCanReadModels = true;
+let mockCanReadReport = true;
+let mockCanReadConnections = true;
 vi.mock('../AuthContext', () => ({
   useAuth: () => ({
     can: (p: string) => {
       if (p === 'resilience:manage') return mockCanManage;
       if (p === 'model:write') return mockCanWriteModels;
       if (p === 'model:read') return mockCanReadModels;
+      if (p === 'report:read') return mockCanReadReport;
+      if (p === 'connections:read') return mockCanReadConnections;
       return true;
     },
   }),
@@ -288,6 +292,34 @@ describe('ModelsPage — without model:read', () => {
       expect(getProviderHealth).not.toHaveBeenCalled();
     } finally {
       mockCanReadModels = true;
+    }
+  });
+});
+
+describe('ModelsPage — without report:read / connections:read', () => {
+  it('does not call the health API without report:read, still loads models', async () => {
+    mockCanReadReport = false;
+    try {
+      mockGetModels.mockResolvedValue([makeModel()]);
+      renderPage();
+      await waitFor(() => screen.getByText('gpt-4o'));
+      expect(getProviderHealth).not.toHaveBeenCalled();
+      expect(getConnections).toHaveBeenCalled();
+    } finally {
+      mockCanReadReport = true;
+    }
+  });
+
+  it('does not call the connections API without connections:read, still loads models', async () => {
+    mockCanReadConnections = false;
+    try {
+      mockGetModels.mockResolvedValue([makeModel()]);
+      renderPage();
+      await waitFor(() => screen.getByText('gpt-4o'));
+      expect(getConnections).not.toHaveBeenCalled();
+      expect(getProviderHealth).toHaveBeenCalled();
+    } finally {
+      mockCanReadConnections = true;
     }
   });
 });

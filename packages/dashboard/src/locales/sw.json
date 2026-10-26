@@ -2267,7 +2267,8 @@
       "next": "Ijayo",
       "page": "Ukurasa {{page}} wa {{totalPages}}",
       "total": "({{count}} jumla)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Kushindwa kuboreshwa jukumu",
       "createFailed": "Kushindwa kutengeneza jukumu",
       "deleteFailed": "Kushindwa kufuta jukumu"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

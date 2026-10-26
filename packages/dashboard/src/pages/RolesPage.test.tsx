@@ -4,9 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 let mockCan = true;
+let mockCanRead = true;
 let mockOnly: string | null = null;
 vi.mock('../AuthContext', () => ({
-  useAuth: () => ({ can: (perm: string) => (mockOnly ? perm === mockOnly : mockCan) }),
+  useAuth: () => ({ can: (perm: string) => (perm === 'user:read' ? mockCanRead : mockOnly ? perm === mockOnly : mockCan) }),
 }));
 
 vi.mock('../api', () => ({
@@ -53,6 +54,7 @@ function renderPage() {
 
 beforeEach(() => {
   mockCan = true;
+  mockCanRead = true;
   mockOnly = null;
   mockGetRoles.mockResolvedValue([]);
   mockCreateRole.mockResolvedValue(makeRole({ id: 'r-new', name: 'New Role' }));
@@ -98,6 +100,15 @@ describe('RolesPage — empty state', () => {
 });
 
 // ── Loaded roles ───────────────────────────────────────────────────────────────
+
+describe('RolesPage — without user:read', () => {
+  it('shows the permission message and does not call the roles API', () => {
+    mockCanRead = false;
+    renderPage();
+    expect(screen.getByText("You don't have permission to view roles.")).toBeTruthy();
+    expect(mockGetRoles).not.toHaveBeenCalled();
+  });
+});
 
 describe('RolesPage — loaded roles', () => {
   it('hides New Role, Edit and Delete without user:write', async () => {

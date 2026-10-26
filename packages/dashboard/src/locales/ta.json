@@ -2267,7 +2267,8 @@
       "next": "அடுத்த",
       "page": "பக்கம் {{page}} {{totalPages}} இல்",
       "total": "({{count}} மொத्त)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "भूमिका को अपडेट करने में विफल",
       "createFailed": "भूमिका बनाने में विफल",
       "deleteFailed": "भूमिका हटाने में विफल"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

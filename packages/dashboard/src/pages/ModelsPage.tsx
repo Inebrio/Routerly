@@ -134,6 +134,8 @@ export function ModelsPage() {
   const { can } = useAuth();
   const canManage = can('resilience:manage');
   const canRead = can('model:read');
+  const canReadHealth = can('report:read');
+  const canReadConnections = can('connections:read');
   const canWriteModels = can('model:write');
   const now = useNow();
   const navigate = useNavigate();
@@ -179,7 +181,7 @@ export function ModelsPage() {
   }
 
   // Connections power the connection filter; best-effort like health.
-  useEffect(() => { if (canRead) getConnections().then(setConnections).catch(() => {}); }, []);
+  useEffect(() => { if (canRead && canReadConnections) getConnections().then(setConnections).catch(() => {}); }, []);
 
   function updateProviderFilter(v: string) {
     setProviderFilter(v);
@@ -213,7 +215,7 @@ export function ModelsPage() {
   // Load health + poll every 30s
   useEffect(() => {
     healthActive.current = true;
-    if (!canRead) return;
+    if (!canRead || !canReadHealth) return;
     fetchHealth();
     const id = setInterval(fetchHealth, HEALTH_REFRESH_MS);
     return () => { healthActive.current = false; clearInterval(id); };

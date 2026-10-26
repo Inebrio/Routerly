@@ -2267,7 +2267,8 @@
       "next": "다음",
       "page": "페이지 {{page}}/{{totalPages}}",
       "total": "({{count}}개 총계)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "역할 업데이트 실패",
       "createFailed": "역할 생성 실패",
       "deleteFailed": "역할 삭제 실패"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

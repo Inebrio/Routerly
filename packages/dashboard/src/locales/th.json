@@ -2267,7 +2267,8 @@
       "next": "ถัดไป",
       "page": "หน้า {{page}} ของ {{totalPages}}",
       "total": "({{count}} รวม)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "ไม่สามารถอัปเดตบทบาท",
       "createFailed": "ไม่สามารถสร้างบทบาท",
       "deleteFailed": "ไม่สามารถลบบทบาท"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

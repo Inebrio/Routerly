@@ -2267,7 +2267,8 @@
       "next": "Tiếp theo",
       "page": "Trang {{page}} của {{totalPages}}",
       "total": "({{count}} tổng cộng)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Không thể cập nhật vai trò",
       "createFailed": "Không thể tạo vai trò",
       "deleteFailed": "Không thể xóa vai trò"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {

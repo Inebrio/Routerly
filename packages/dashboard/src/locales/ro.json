@@ -2267,7 +2267,8 @@
       "next": "Următor",
       "page": "Pagina {{page}} din {{totalPages}}",
       "total": "({{count}} total)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2662,7 +2663,8 @@
       "updateFailed": "Nu s-a putut actualiza rol",
       "createFailed": "Nu s-a putut crea rol",
       "deleteFailed": "Nu s-a putut șterge rol"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
