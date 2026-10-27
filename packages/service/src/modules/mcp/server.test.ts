@@ -170,7 +170,8 @@ describe('buildMcpServer write-tool audit', () => {
     const entry = mockLogAudit.mock.calls[0]![0]
     expect(entry).toMatchObject({ userId: 'user-1', email: 'dev@routerly.ai', action: 'mcp:create_router_token', result: 'success' })
     expect((entry.details as any).result.id).toBeTruthy()
-    expect(JSON.stringify(entry)).not.toContain('sk-rt-' + '0'.repeat(1))
+    // Raw token = 64 random hex chars; the snippet only keeps a short prefix.
+    expect(JSON.stringify(entry)).not.toMatch(/[0-9a-f]{64}/)
     expect(JSON.stringify(entry)).not.toMatch(/"token":/)
   })
 
