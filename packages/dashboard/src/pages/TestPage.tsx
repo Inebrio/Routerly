@@ -438,7 +438,8 @@ export function TestPage() {
   useEffect(() => {
     const el = bodyRef.current;
     if (!el) return;
-    const measure = () => setBodyWidth(el.clientWidth || 1600);
+    // clientWidth includes the 32px side padding of the row
+    const measure = () => setBodyWidth(el.clientWidth ? el.clientWidth - 64 : 1600);
     measure();
     if (typeof ResizeObserver === 'undefined') { window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }
     const ro = new ResizeObserver(measure);
