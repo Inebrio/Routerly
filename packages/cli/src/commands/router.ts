@@ -1003,7 +1003,7 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     const spAns = await inquirer.prompt([{
       type: 'input',
       name: 'systemPrompt',
-      message: 'Custom moderation instructions:',
+      message: 'Moderation policy (plain words; the judge scores how much content violates it):',
       validate: (v: string) => v.trim().length > 0 || 'Required',
     }]) as { systemPrompt: string };
     const mc: ModerationGuardConfig = { systemPrompt: spAns.systemPrompt.trim() };

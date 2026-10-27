@@ -871,7 +871,7 @@ Launches an interactive wizard. Steps:
    - **Regex**: regex patterns (one per line, case-insensitive)
    - **Semantic**: embedding model, fallback models, example phrases to block, similarity threshold
    - **Topic**: allowed-topics description
-   - **Moderation**: custom instructions (required; used for injection or passed to the judge)
+   - **Moderation**: policy in plain words (required; used for injection, and the judge scores how much content violates it)
 
 New rules are appended to the end of the list and are active by default.
 
