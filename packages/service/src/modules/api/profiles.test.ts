@@ -120,6 +120,28 @@ describe('POST /api/profiles', () => {
     expect(mockWriteConfig).toHaveBeenCalledWith('profiles', [expect.objectContaining({ id: body.id })])
   })
 
+  it('rejects a routing profile whose llm policy names an unregistered routing model (ROUT-434)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'),
+      payload: { kind: 'routing', label: 'Bad', policies: [{ type: 'llm', enabled: true, config: { routingModelId: 'rout388-bad' } }] },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error).toContain('rout388-bad')
+    expect(mockWriteConfig).not.toHaveBeenCalled()
+  })
+
+  it('PATCH rejects a newly added unregistered routing model on a routing profile (ROUT-434)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/profiles/u1', headers: authWith('profiles:manage', { profiles: [userProfile] }),
+      payload: { policies: [{ type: 'llm', enabled: true, config: { fallbackModelIds: ['ghost'] } }] },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+  })
+
   it('fills routing defaults when only kind and label are sent', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage'), payload: { kind: 'routing', label: 'Empty' } })

@@ -583,7 +583,7 @@ routerly router routing update <router> [options]
 
 | Option | Description |
 |--------|-------------|
-| `--routing-model <id>` | Model ID used for LLM-based routing decisions |
+| `--routing-model <id>` | Model ID used for LLM-based routing decisions (must be in the model registry, otherwise the service answers 400) |
 | `--fallback-models <ids>` | Comma-separated fallback routing model IDs |
 | `--auto-routing` / `--no-auto-routing` | Enable or disable auto-routing |
 

@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { Permission, Profile, ProfileKind } from '@routerly/shared';
+import type { Permission, Profile, ProfileKind, RoutingPolicy } from '@routerly/shared';
 import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { isModuleEnabled } from '../../core/modules/registry.js';
 import { listProfiles, cloneProfile, bumpVersion, assertWritableProfile } from '../routing/profiles/store.js';
 import { getBuiltin } from '../routing/profiles/presets.js';
+import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema } from './schemas.js';
 
 // ── Route-local auth helpers (mirrors api.ts/connections.ts; no shared route-helper module exists) ──
@@ -155,6 +156,11 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
+    if (parsed.data.kind === 'routing') {
+      const modelsError = await validateRoutingModels({ policies: parsed.data.policies as RoutingPolicy[] });
+      if (modelsError) return reply.status(400).send({ error: modelsError });
+    }
+
     const profile = { ...parsed.data, id: randomUUID(), version: 1, builtin: false } as Profile;
     const userProfiles = await readConfig('profiles');
     userProfiles.push(profile);
@@ -195,6 +201,14 @@ export const profilesRoutes: FastifyPluginAsync = async (fastify) => {
     const current = userProfiles[idx]!;
     const parsed = PATCH_SCHEMAS[current.kind].safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
+    if (current.kind === 'routing' && (parsed.data as { policies?: RoutingPolicy[] }).policies) {
+      const modelsError = await validateRoutingModels(
+        { policies: (parsed.data as { policies: RoutingPolicy[] }).policies },
+        { policies: current.policies },
+      );
+      if (modelsError) return reply.status(400).send({ error: modelsError });
+    }
 
     // The schema for this kind already rejected every field that does not belong
     // to it, so the parsed body can be merged as-is.

@@ -419,7 +419,8 @@
       "status": "Status",
       "encoding": "Kodierung",
       "frames": "Frames",
-      "bytes": "Bytes"
+      "bytes": "Bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

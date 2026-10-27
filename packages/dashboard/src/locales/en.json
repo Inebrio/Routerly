@@ -420,7 +420,8 @@
       "status": "status",
       "encoding": "encoding",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

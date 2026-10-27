@@ -419,7 +419,8 @@
       "status": "நிலை",
       "encoding": "குறியாக்கம்",
       "frames": "பிரேம்கள்",
-      "bytes": "பைட்டுகள்"
+      "bytes": "பைட்டுகள்",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

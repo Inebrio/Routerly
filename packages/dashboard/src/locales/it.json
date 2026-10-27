@@ -420,7 +420,8 @@
       "status": "Stato",
       "encoding": "Codifica",
       "frames": "Frame",
-      "bytes": "Byte"
+      "bytes": "Byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

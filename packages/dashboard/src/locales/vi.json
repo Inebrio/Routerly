@@ -419,7 +419,8 @@
       "status": "trạng thái",
       "encoding": "mã hóa",
       "frames": "khung",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

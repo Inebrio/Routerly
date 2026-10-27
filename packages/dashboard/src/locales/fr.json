@@ -419,7 +419,8 @@
       "status": "statut",
       "encoding": "encodage",
       "frames": "images",
-      "bytes": "octets"
+      "bytes": "octets",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

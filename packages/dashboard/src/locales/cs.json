@@ -419,7 +419,8 @@
       "status": "stav",
       "encoding": "kódování",
       "frames": "rámce",
-      "bytes": "bajty"
+      "bytes": "bajty",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
