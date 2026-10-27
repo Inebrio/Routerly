@@ -1412,6 +1412,7 @@
       "saving": "Salvataggio in corso...",
       "saved": "Salvato",
       "preview": {
+        "pipeline": "Pipeline eseguita: {{name}}",
         "title": "Anteprima risparmio token",
         "description": "Esegui la pipeline attuale (non salvata) su un prompt per vedere cosa rimuove ogni passaggio e quanto costa. Scegli una delle conversazioni di esempio o inserisci il tuo prompt.",
         "promptLabel": "Prompt",

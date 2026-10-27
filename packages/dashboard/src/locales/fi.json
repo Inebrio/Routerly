@@ -1411,6 +1411,7 @@
       "saving": "Tallennetaan...",
       "saved": "Tallennettu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Esikatsele tokenisäästöjä",
         "description": "Suorita nykyinen (tallentamaton) putki kehotteelle nähdäksesi mitä kukin vaihe poistaa ja mitä se maksaa. Valitse jokin esimerkkikeskusteluista, tai kirjoita omasi.",
         "promptLabel": "Kehote",

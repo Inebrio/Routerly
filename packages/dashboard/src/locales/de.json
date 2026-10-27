@@ -1411,6 +1411,7 @@
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert",
       "preview": {
+        "pipeline": "Ausgeführte Pipeline: {{name}}",
         "title": "Token-Einsparungen als Vorschau",
         "description": "Führe die aktuelle (ungespeicherte) Pipeline über einen Prompt aus, um zu sehen, was jeder Schritt entfernt und was er kostet. Wähle eine der Beispielunterhaltungen oder gib deinen eigenen Prompt ein.",
         "promptLabel": "Prompt",

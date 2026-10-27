@@ -1413,6 +1413,7 @@
       "saving": "Saving...",
       "saved": "Saved",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Preview token savings",
         "description": "Run the current (unsaved) pipeline over a prompt to see what each step removes and what it costs. Pick one of the sample conversations, or type your own prompt.",
         "promptLabel": "Prompt",

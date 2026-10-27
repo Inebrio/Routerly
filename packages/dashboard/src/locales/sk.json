@@ -1411,6 +1411,7 @@
       "saving": "Ukladá sa...",
       "saved": "Uložené",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Náhľad úspory tokenov",
         "description": "Spustite aktuálny (neuložený) pipeline cez výzvu, aby ste videli, čo každý krok odstráni a čo stojí. Vyberte jeden zo vzorových rozhovorov alebo zadajte vlastnú výzvu.",
         "promptLabel": "Výzva",

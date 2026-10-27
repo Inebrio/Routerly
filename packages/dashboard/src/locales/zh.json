@@ -1411,6 +1411,7 @@
       "saving": "保存中...",
       "saved": "已保存",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "预览令牌节省",
         "description": "在提示上运行当前(未保存)管道，查看每个步骤删除的内容及其成本。选择其中一个示例对话或键入您自己的提示。",
         "promptLabel": "提示",

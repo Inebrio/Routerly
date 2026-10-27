@@ -1411,6 +1411,7 @@
       "saving": "Gemmer...",
       "saved": "Gemt",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Forhåndsvis token-besparelser",
         "description": "Kør den nuværende (ikke-gemte) pipeline over en prompt for at se, hvad hvert trin fjerner, og hvad det koster. Vælg en af eksempelsamtalerne, eller skriv din egen prompt.",
         "promptLabel": "Prompt",

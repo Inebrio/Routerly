@@ -189,6 +189,30 @@ describe('RouterOptimizerTab', () => {
     expect(screen.getAllByText(/40/).length).toBeGreaterThan(0);
   });
 
+  it('custom mode sends the current rows; the result names the pipeline', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'custom', label: 'Custom' } });
+    renderTab();
+    await waitFor(() => expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument());
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[0] as [{ steps?: unknown[] }];
+    expect(body.steps).toEqual([{ id: 'ccr', enabled: true, threshold: 6 }]);
+    expect(await screen.findByText('Pipeline run: Custom')).toBeInTheDocument();
+  });
+
+  it('profile mode sends no steps and names the profile (ROUT-440)', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'profile', profileId: 'optimizer-safe', label: 'Safe' } });
+    renderTab({ ...mockRouter, optimizerProfileId: 'optimizer-safe' });
+    await waitFor(() => expect(screen.getByLabelText('Sample prompt')).toBeInTheDocument());
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[0] as [Record<string, unknown>];
+    expect('steps' in body).toBe(false);
+    expect(await screen.findByText('Pipeline run: Safe')).toBeInTheDocument();
+  });
+
   it('hides edit controls without optimizers:manage', async () => {
     setAuth(['optimizers:read']);
     renderTab();

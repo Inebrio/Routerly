@@ -1411,6 +1411,7 @@
       "saving": "Sine-save...",
       "saved": "Na-save",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "I-preview ang naitipid na token",
         "description": "Patakbuhin ang kasalukuyan (hindi na-save) na pipeline sa isang prompt upang makita kung ano ang inalis ng bawat hakbang at ang gastos nito. Piliin ang isa sa mga sample conversation, o mag-type ng iyong sariling prompt.",
         "promptLabel": "Prompt",
