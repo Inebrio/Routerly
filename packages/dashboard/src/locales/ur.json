@@ -679,7 +679,8 @@
         "saving": "محفوظ کیا جا رہا ہے...",
         "enable": "فعال کریں",
         "disable": "غیر فعال کریں"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "انضمام ہٹائیں",
       "saving": "محفوظ کیا جا رہا ہے...",
       "save": "محفوظ کریں",
-      "addButton": "انضمام شامل کریں"
+      "addButton": "انضمام شامل کریں",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

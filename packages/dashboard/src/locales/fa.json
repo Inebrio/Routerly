@@ -679,7 +679,8 @@
         "saving": "در حال ذخیره…",
         "enable": "فعال‌سازی",
         "disable": "غیرفعال‌سازی"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "حذف یکپارچه‌سازی",
       "saving": "در حال ذخیره…",
       "save": "ذخیره",
-      "addButton": "افزودن یکپارچه‌سازی"
+      "addButton": "افزودن یکپارچه‌سازی",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

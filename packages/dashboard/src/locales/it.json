@@ -680,7 +680,8 @@
         "saving": "Salvataggio in corso…",
         "enable": "Attiva",
         "disable": "Disattiva"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1065,7 +1066,8 @@
       "removeTooltip": "Rimuovi integrazione",
       "saving": "Salvataggio in corso…",
       "save": "Salva",
-      "addButton": "Aggiungi integrazione"
+      "addButton": "Aggiungi integrazione",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

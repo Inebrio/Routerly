@@ -679,7 +679,8 @@
         "saving": "Сохранение…",
         "enable": "Включить",
         "disable": "Отключить"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Удалить интеграцию",
       "saving": "Сохранение…",
       "save": "Сохранить",
-      "addButton": "Добавить интеграцию"
+      "addButton": "Добавить интеграцию",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

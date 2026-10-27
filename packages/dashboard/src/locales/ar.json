@@ -679,7 +679,8 @@
         "saving": "جارٍ الحفظ…",
         "enable": "تفعيل",
         "disable": "تعطيل"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "إزالة التكامل",
       "saving": "جارٍ الحفظ…",
       "save": "حفظ",
-      "addButton": "إضافة تكامل"
+      "addButton": "إضافة تكامل",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

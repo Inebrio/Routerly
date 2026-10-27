@@ -679,7 +679,8 @@
         "saving": "સાચવી રહ્યા છીએ…",
         "enable": "સક્ષમ કરો",
         "disable": "અક્ષમ કરો"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "એકીકરણ દૂર કરો",
       "saving": "સાચવી રહ્યા છીએ…",
       "save": "સાચવો",
-      "addButton": "એકીકરણ ઉમેરો"
+      "addButton": "એકીકરણ ઉમેરો",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

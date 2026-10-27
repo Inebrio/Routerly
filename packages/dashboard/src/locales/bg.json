@@ -679,7 +679,8 @@
         "saving": "Запазване…",
         "enable": "Активиране",
         "disable": "Деактивиране"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Премахване на интеграция",
       "saving": "Запазване…",
       "save": "Запазване",
-      "addButton": "Добавяне на интеграция"
+      "addButton": "Добавяне на интеграция",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

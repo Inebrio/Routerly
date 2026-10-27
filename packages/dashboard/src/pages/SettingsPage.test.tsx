@@ -181,6 +181,13 @@ describe('SettingsGeneralTab', () => {
     return render(<MemoryRouter><SettingsGeneralTab /></MemoryRouter>);
   }
 
+  it('ROUT-427 does not request settings without settings:read', async () => {
+    mockCan = p => p !== 'settings:read';
+    renderGeneral();
+    await screen.findByText("You don't have permission to view settings.");
+    expect(mockGetSettings).not.toHaveBeenCalled();
+  });
+
   it('AC5/AC6 shows the Internationalization section and saves the instance default', async () => {
     renderGeneral();
     await screen.findByText('Internationalization');
@@ -1297,11 +1304,11 @@ describe('SettingsIntegrationsTab', () => {
     await waitFor(() => screen.getByText(/No integrations configured yet/));
   });
 
-  it('viewer without settings:write: error only, no empty state, no Add button', async () => {
+  it('viewer without settings:write: permission message, no request, no empty state, no Add button', async () => {
     mockCan = p => p !== 'settings:write';
-    mockGetIntegrations.mockRejectedValue(new Error('Required permission: settings:write'));
     renderIntegrations();
-    await waitFor(() => screen.getByText(/Required permission: settings:write/));
+    await screen.findByText("You don't have permission to view integrations.");
+    expect(mockGetIntegrations).not.toHaveBeenCalled();
     expect(screen.queryByText(/No integrations configured yet/)).toBeNull();
     expect(screen.queryByText('Add Integration')).toBeNull();
   });

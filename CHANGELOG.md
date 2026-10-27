@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Dashboard: Settings › General and Integrations no longer fire 403 requests without permission (ROUT-427).** General skips `GET /api/settings` without `settings:read`, Integrations skips `GET /api/integrations` without `settings:write`; both show a permission message instead of a console error.
 - **`GET /api/models/catalog` permission documented and tested (ROUT-423).** The route requires `model:read` only (it feeds the model picker); no `settings:read` needed. No behaviour change.
 - **Dashboard on phones (ROUT-429).** At 390px the telemetry consent banner wraps (full-width text, buttons below) and the collapsed sidebar rail shows the whole logo instead of a clipped one.
 - **Worktree typecheck/build resolve `@routerly/shared` from the worktree (ROUT-417).** `npm run build` and `npm run typecheck` in `service`, `cli` and `dashboard` now run `scripts/link-worktree-modules.mjs` first (no-op outside a worktree), so `tsc` no longer picks up the main checkout's `@routerly/shared`. Dev tooling only.
