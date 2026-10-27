@@ -244,7 +244,7 @@
       "onTopicThresholdLabel": "Block if on-topic score below:",
       "harmThresholdLabel": "Block if harm score above:",
       "customInstructionsLabel": "Custom instructions",
-      "customInstructionsPlaceholder": "You are a content safety classifier. Evaluate the following text for harmful content.\nCategories: hate speech, violence, sexual content, self-harm.\nRespond ONLY with a JSON object: {\"score\": <number between 0 and 1>}",
+      "customInstructionsPlaceholder": "Write the policy in plain words, e.g. Do not talk about English cinema. The judge rates how strongly the text violates it; injected, the serving model is told to follow it.",
       "customInstructionsRequired": "Custom instructions are required.",
       "enabledLabel": "Enabled",
       "contentGuardrailsHint": "Inspect requests and responses against configured rules. Active when at least one rule is configured.",

@@ -1214,6 +1214,15 @@ export function isCompletionCall(callType?: CallType): boolean {
   return callType !== 'routing' && callType !== 'guardrail' && callType !== 'judge';
 }
 
+/**
+ * True when a rule makes the proxy hold the whole response before releasing it:
+ * an enabled rule that blocks and judges the response. Single source for the
+ * service buffering, the Security page warning and the Playground stream toggle.
+ */
+export function blocksResponseStreaming(rules: readonly Pick<GuardrailRule, 'enabled' | 'block' | 'target'>[] | undefined): boolean {
+  return rules?.some(r => r.enabled !== false && r.block === true && (r.target === 'response' || r.target === 'both')) ?? false;
+}
+
 export interface UsageRecord {
   id: string;
   timestamp: string; // ISO 8601

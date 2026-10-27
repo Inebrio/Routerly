@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Code, Trash2, Save, BookOpen,
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
+import { blocksResponseStreaming } from '@routerly/shared';
 import { getRouters, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Router, type PlaygroundPreset, type TraceEntry } from '../api.js';
 import { TraceLog } from '../components/TraceLog.js';
 import { TraceSummary } from '../components/TraceSummary.js';
@@ -458,9 +459,7 @@ export function TestPage() {
 
   // ponytail: response-blocking rule => whole response must be buffered => no streaming
   const streamingDisabled = useMemo(
-    () => matchedRouter?.guardrails?.rules?.some(
-      r => r.block === true && (r.target === 'response' || r.target === 'both'),
-    ) ?? false,
+    () => blocksResponseStreaming(matchedRouter?.guardrails?.rules),
     [matchedRouter],
   );
 
