@@ -64,6 +64,7 @@ export interface ScoringResult {
   scoringIds: Set<string>;
   policyExcludes: Set<string>;
   excludeReasons: Map<string, string[]>;
+  failedPolicies: { type: string; error: string | undefined }[];
   /** Prefix trace: resilience?, intake, policies, profile, per-policy results (matches routeRequest's returned trace before recap/result). */
   trace: TraceEntry[];
   bypass?: RouteResult;
@@ -229,6 +230,7 @@ export async function scoreCandidates(
       scoringIds: new Set(),
       policyExcludes: new Set(),
       excludeReasons: new Map(),
+      failedPolicies: [],
       trace: bypass.trace,
       bypass,
     };
@@ -265,19 +267,30 @@ export async function scoreCandidates(
       const fn = POLICY_MAP[type];
       if (!fn) {
         log?.info({ type }, 'routing: unknown policy type, skipping');
-        return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
+        return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true, error: 'unknown policy type' };
       }
       try {
         const out = await fn({ request, candidates: validCandidates, config, ...(log !== undefined ? { log } : {}), ...(emit !== undefined ? { emit } : {}), routerId: router.id, ...(token !== undefined ? { token } : {}), ...(traceId !== undefined ? { traceId } : {}), ...(conversationId !== undefined ? { conversationId } : {}) });
-        return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false };
+        return { type, weight, routing: out.routing, excludes: out.excludes ?? [], failed: false, error: undefined as string | undefined };
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         log?.info({ type, err: errMsg }, 'routing: policy failed');
         emit?.(te('router-response', `policy:error:${type}`, { type, error: errMsg }));
-        return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true };
+        return { type, weight, routing: [] as { model: string; point: number }[], excludes: [] as string[], failed: true, error: errMsg };
       }
     }),
   );
+
+  // A failed policy is dropped from the scoring (fail-open: the request is still served), but
+  // never silently: say it in the trace and the log.
+  const failedPolicies = policyResults.filter(r => r.failed);
+  if (failedPolicies.length > 0) {
+    log?.warn({ failed: failedPolicies.map(r => r.type) }, 'routing: policies failed, selection is not guided by them');
+    emit?.(te('router-response', 'router:policies-failed', {
+      policies: failedPolicies.map(r => ({ type: r.type, error: r.error })),
+      allFailed: failedPolicies.length === policyResults.length,
+    }));
+  }
 
   // Emit risultato di ogni policy
   for (const r of policyResults) {
@@ -410,6 +423,7 @@ export async function scoreCandidates(
     scoringIds,
     policyExcludes,
     excludeReasons,
+    failedPolicies: failedPolicies.map(r => ({ type: r.type, error: r.error })),
     trace,
   };
 }
@@ -427,7 +441,7 @@ export async function routeRequest(
   const profile = await resolveRoutingProfile(router);
   const sc = await scoreCandidates(request, router, profile, log, emit, token, traceId, conversationId, store);
   if (sc.bypass) return sc.bypass;
-  const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, trace: preTrace } = sc;
+  const { scored, allAbstained, successfulResults, scoringIds, policyExcludes, excludeReasons, failedPolicies, trace: preTrace } = sc;
 
   const selectorCtx: SelectorContext = {
     routerId: router.id,
@@ -480,6 +494,7 @@ export async function routeRequest(
     })),
     ...(hasTie ? { tie: { count: tiedWinners.length, models: tiedWinners.map(c => c.model) } } : {}),
     ...(policyExcludes.size > 0 ? { excluded: Object.fromEntries(excludeReasons) } : {}),
+    ...(failedPolicies.length > 0 ? { failedPolicies } : {}),
   });
   emit?.(recapEntry);
 

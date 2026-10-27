@@ -419,7 +419,8 @@
       "status": "وضعیت",
       "encoding": "رمزگذاری",
       "frames": "فریم‌ها",
-      "bytes": "بایت"
+      "bytes": "بایت",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

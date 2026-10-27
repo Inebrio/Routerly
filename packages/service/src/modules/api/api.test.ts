@@ -6840,6 +6840,10 @@ describe('POST /api/auth/login — bcrypt hash coverage', () => {
 
 // ─── POST /api/routers — optional routing fields ────────────────────────────
 
+const registered = (ids: string[]) => splitModelsIntoInstancesConnections(ids.map(id => ({
+  id, name: id, provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 1, outputPerMillion: 1 },
+})))
+
 describe('POST /api/routers — optional routing fields', () => {
   it('creates router with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
     setupAdminAuth()
@@ -6847,6 +6851,8 @@ describe('POST /api/routers — optional routing fields', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return []
+      if (t === 'instances') return registered(['gpt4', 'gpt3']).instances
+      if (t === 'connections') return registered(['gpt4', 'gpt3']).connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -6908,6 +6914,71 @@ describe('POST /api/routers — optional routing fields', () => {
   })
 })
 
+describe('router write — unknown routing model (ROUT-434)', () => {
+  const stored = {
+    id: 'p1', name: 'Test', tokens: [], members: [], models: [],
+    policies: [{ type: 'llm', enabled: true, config: { routingModelId: 'legacy-gone' } }],
+  }
+  const seed = (extra: Record<string, unknown> = {}) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [stored]
+      if (t === 'instances') return registered(['known']).instances
+      if (t === 'connections') return registered(['known']).connections
+      return (extra[t] ?? []) as never
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+  const send = async (method: 'POST' | 'PUT', url: string, body: unknown, headers = adminAuthHeaders()) => {
+    const app = await buildApp()
+    const res = await app.inject({ method, url, headers: { ...headers, 'content-type': 'application/json' }, payload: JSON.stringify(body) })
+    await app.close()
+    return res
+  }
+  const llm = (config: unknown) => [{ type: 'llm', enabled: true, config }]
+
+  it('POST rejects an unregistered llm policy routing model with 400 naming the id', async () => {
+    seed()
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'rout388-bad' }) })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toContain('rout388-bad')
+  })
+
+  it('POST rejects an unregistered policy fallback and router-level fallback id', async () => {
+    seed()
+    const a = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'known', fallbackModelIds: ['nope'] }) })
+    expect(a.statusCode).toBe(400)
+    const b = await send('POST', '/api/routers', { name: 'N', models: [], fallbackRoutingModelIds: ['nope2'] })
+    expect(b.statusCode).toBe(400)
+    expect(b.json().error).toContain('nope2')
+  })
+
+  it('POST accepts a registered routing model', async () => {
+    seed()
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'known' }) })
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('PUT rejects a newly added unknown id but accepts the unchanged legacy one', async () => {
+    seed()
+    const bad = await send('PUT', '/api/routers/p1', { name: 'Test', policies: llm({ routingModelId: 'brand-new-bad' }) })
+    expect(bad.statusCode).toBe(400)
+    const same = await send('PUT', '/api/routers/p1', { name: 'Test2', policies: llm({ routingModelId: 'legacy-gone' }) })
+    expect(same.statusCode).toBe(200)
+  })
+
+  it('a caller without router:write gets 403 before validation', async () => {
+    seed()
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users'
+      ? [{ id: 'viewer-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }] : []) as never)
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'rout388-bad' }) })
+    expect(res.statusCode).toBe(403)
+  })
+})
+
 // ─── PUT /api/routers/:id — optional routing fields ──────────────────────────
 
 describe('PUT /api/routers/:id — optional routing fields', () => {
@@ -6918,6 +6989,8 @@ describe('PUT /api/routers/:id — optional routing fields', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return [router]
+      if (t === 'instances') return registered(['new-model', 'backup']).instances
+      if (t === 'connections') return registered(['new-model', 'backup']).connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)

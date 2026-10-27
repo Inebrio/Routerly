@@ -419,7 +419,8 @@
       "status": "অবস্থা",
       "encoding": "এনকোডিং",
       "frames": "ফ্রেম",
-      "bytes": "বাইট"
+      "bytes": "বাইট",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

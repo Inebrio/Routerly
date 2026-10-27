@@ -82,6 +82,8 @@ Uses a separate LLM call to decide which model to route to, based on request con
 |--------|------|---------|-------------|
 | `thinking` | `boolean` | `false` | If `true` and the routing model supports extended thinking (e.g. Claude with thinking capability), the routing call uses it for more accurate decisions. **Warning:** this increases routing latency significantly. |
 
+**Routing model validation and visibility.** Every routing model id (router-level `routingModelId`, `fallbackRoutingModelIds`, and the `llm` policy `routingModelId` / `fallbackModelIds`) must exist in the model registry: creating a router or routing profile, or adding such an id on edit, returns HTTP 400 naming the unknown id (ids already stored stay editable). At request time an unusable routing model is never silent: when a fallback routing model serves, the trace records `llm-policy:fallback` (primary, model used, skip reasons); when every policy fails, the trace records `router:policies-failed`, the recap lists `failedPolicies` and the service logs a warning. Candidates are then ranked with neutral scores, as before.
+
 **Use when:** you want dynamic model selection based on request semantics.
 
 ### `rate-limit`

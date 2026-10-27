@@ -419,7 +419,8 @@
       "status": "статус",
       "encoding": "кодування",
       "frames": "кадри",
-      "bytes": "байти"
+      "bytes": "байти",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

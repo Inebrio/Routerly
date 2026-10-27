@@ -419,7 +419,8 @@
       "status": "حالت",
       "encoding": "انکوڈنگ",
       "frames": "فریمز",
-      "bytes": "بائٹس"
+      "bytes": "بائٹس",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

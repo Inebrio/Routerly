@@ -15,6 +15,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
+import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
@@ -1370,6 +1371,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // concurrent creation can never observe a stale list or silently lose
     // this router (or have this one silently lose a concurrent sibling), and two
     // concurrent passthrough creations can never collide on slug either.
+    const routingModelsError = await validateRoutingModels(req.body);
+    if (routingModelsError) return reply.status(400).send({ error: routingModelsError });
     let createdRouter: RouterConfig = router;
     const finalRouters = await updateConfig('routers', (routers) => {
       // Passthrough names are scoped to Passthroughs only — a Passthrough is
@@ -1450,6 +1453,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.body.name !== undefined && typeof req.body.name !== 'string') return reply.status(400).send({ error: 'Router name must be a string' });
     if (req.body.models !== undefined && !Array.isArray(req.body.models)) return reply.status(400).send({ error: 'models must be an array' });
     if (req.body.name !== undefined && !req.body.name.trim()) return reply.status(400).send({ error: 'Router name cannot be empty' });
+
+    // Unknown routing model ids are checked outside the lock (async registry read): only ids
+    // the stored router does not already hold count, so a concurrent write cannot change the verdict.
+    const stored = (await readConfig('routers')).find(r => r.id === req.params.id);
+    if (stored) {
+      const routingModelsError = await validateRoutingModels(
+        { routingModelId: req.body.routingModelId, fallbackRoutingModelIds: req.body.fallbackRoutingModelIds, policies: req.body.policies },
+        stored,
+      );
+      if (routingModelsError) return reply.status(400).send({ error: routingModelsError });
+    }
 
     // Everything that reads or validates against the stored router list — the
     // duplicate-name check, kind inheritance, candidate validation and the

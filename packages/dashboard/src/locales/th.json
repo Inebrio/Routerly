@@ -419,7 +419,8 @@
       "status": "สถานะ",
       "encoding": "การเข้ารหัส",
       "frames": "เฟรม",
-      "bytes": "ไบต์"
+      "bytes": "ไบต์",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

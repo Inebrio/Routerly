@@ -419,7 +419,8 @@
       "status": "상태",
       "encoding": "인코딩",
       "frames": "프레임",
-      "bytes": "바이트"
+      "bytes": "바이트",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

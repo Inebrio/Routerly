@@ -419,7 +419,8 @@
       "status": "סטטוס",
       "encoding": "קידוד",
       "frames": "מסגרות",
-      "bytes": "בייטים"
+      "bytes": "בייטים",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

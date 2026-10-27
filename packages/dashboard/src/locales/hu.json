@@ -419,7 +419,8 @@
       "status": "állapot",
       "encoding": "kódolás",
       "frames": "keretek",
-      "bytes": "bájt"
+      "bytes": "bájt",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {

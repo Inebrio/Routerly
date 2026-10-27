@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Routing models that cannot work are no longer silently ignored (ROUT-434).** Creating or editing a router or routing profile with a routing model (router-level, llm policy or their fallbacks) that is not in the model registry now fails with HTTP 400 naming the id (only ids added by the edit are checked, so existing configs stay editable). At request time, when every policy fails the trace now records `router:policies-failed`, the recap lists `failedPolicies`, the service logs a warning and the dashboard shows a warning block; when a fallback routing model serves, the trace records `llm-policy:fallback` with the primary, the model used and the skip reasons.
 - **Debug log level now emits debug lines (ROUT-432).** At `logLevel=debug` each proxy attempt logs the selected candidate (model, provider, router, stream flag; no prompt or credentials). Levels from info up are unchanged.
 
 - **Dashboard: Settings › General and Integrations no longer fire 403 requests without permission (ROUT-427).** General skips `GET /api/settings` without `settings:read`, Integrations skips `GET /api/integrations` without `settings:write`; both show a permission message instead of a console error.

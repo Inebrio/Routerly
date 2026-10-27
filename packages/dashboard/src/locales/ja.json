@@ -419,7 +419,8 @@
       "status": "ステータス",
       "encoding": "エンコーディング",
       "frames": "フレーム",
-      "bytes": "バイト"
+      "bytes": "バイト",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
