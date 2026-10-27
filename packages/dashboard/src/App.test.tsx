@@ -249,6 +249,15 @@ describe('ProtectedLayout — telemetry banner', () => {
     await waitFor(() => expect(screen.getByText(/anonymous install metrics/)).toBeTruthy(), { timeout: 3000 });
   });
 
+  it('lets the telemetry banner wrap on narrow screens (ROUT-429)', async () => {
+    mockGetSettings.mockResolvedValue({ requireMfa: false });
+    renderApp();
+    const body = await screen.findByText(/anonymous install metrics/);
+    const text = body.closest('span') as HTMLElement;
+    expect((text.parentElement as HTMLElement).style.flexWrap).toBe('wrap');
+    expect(text.style.flex).toBe('1 1 240px');
+  });
+
   it('does not show telemetry prompt for non-admin users', async () => {
     mockGetSettings.mockResolvedValue({ requireMfa: false }); // telemetry undefined
     mockUseAuth.mockReturnValue({

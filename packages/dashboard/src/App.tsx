@@ -494,10 +494,11 @@ function ProtectedShell() {
             display: 'flex',
             alignItems: 'center',
             gap: 12,
+            flexWrap: 'wrap',
             fontSize: '0.85rem',
             color: 'var(--info-text, #1e40af)',
           }}>
-            <span style={{ flex: 1 }}>
+            <span style={{ flex: '1 1 240px' }}>
               <strong>{t('app.banner.telemetryTitle')}</strong>{' '}
               {t('app.banner.telemetryBody')}{' '}
               <a

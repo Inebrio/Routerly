@@ -179,6 +179,13 @@ input, select, textarea { font-family: inherit; }
   flex-shrink: 0;
 }
 
+.sidebar--collapsed .sidebar-logo {
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 0;
+  gap: 6px;
+}
+
 .sidebar-logo-inner {
   display: flex;
   align-items: center;
