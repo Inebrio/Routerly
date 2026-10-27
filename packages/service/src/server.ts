@@ -194,7 +194,7 @@ export async function startServer() {
 
   const reenabled = await reenableModules();
   if (reenabled.length > 0) {
-    console.log(`[startup] re-enabled ${reenabled.length} module(s): ${reenabled.join(', ')} (all modules are always active)`);
+    process.stdout.write(`[startup] re-enabled ${reenabled.length} module(s): ${reenabled.join(', ')} (all modules are always active)\n`);
   }
 
   await loadSecret();
