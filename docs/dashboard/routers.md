@@ -214,7 +214,8 @@ threshold, are written.
 
 Below the pipeline editor, **Preview token savings** dry-runs the pipeline
 the router uses against one prompt: in **Profile** mode the assigned profile's
-steps, in **Custom** mode the current (unsaved) steps of the editor. The result
+steps, in **Custom** mode the current (unsaved) steps of the editor. The preview
+follows the mode and profile shown on screen, including a choice you have not saved yet. The result
 names the pipeline it ran, and is cleared when you switch mode or profile. No upstream call is
 made and nothing is saved. It matches `POST /api/optimizers/preview` (see
 [API: Optimizers](../api/management.md#optimizers)).
