@@ -229,15 +229,8 @@ Click the **Refresh** button in the top right to invalidate the 6-hour in-memory
 
 ## Modules {#modules-tab}
 
-Optional service modules are managed from the CLI, not from the dashboard:
+Every module is core and always active, so the dashboard has no module controls. `routerly modules list` shows the modules. See [CLI — Commands](../cli/commands#routerly-modules).
 
-```bash
-routerly modules list
-routerly modules enable <id>
-routerly modules disable <id>
-```
-
-Module changes require a service restart to take effect. See [CLI — Commands](../cli/commands#routerly-modules) for the full command reference and the list of modules.
 
 ---
 

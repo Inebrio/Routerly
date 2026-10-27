@@ -419,7 +419,8 @@
       "status": "స్థితి",
       "encoding": "ఎన్‌కోడింగ్",
       "frames": "ఫ్రేమ్‌లు",
-      "bytes": "బైట్‌లు"
+      "bytes": "బైట్‌లు",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "సేవ చేస్తోంది...",
       "saved": "సేవ చేసారు",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "టోకెన్ బ్యాకపు సూచన చూడండి",
         "description": "ప్రస్తుత (సేవ చేయని) పైపు ప్రాంప్ట్‌పై నడుపండి ప్రతిదీ దశ తీసివేస్తుందో మరియు ఇది ఖర్చు చేస్తుందో చూడటానికి. నమూనా సంభాషణలలో ఒకటి ఎంచుకోండి, లేదా మీ తన ప్రాంప్ట్ వర్ణించండి.",
         "promptLabel": "ప్రాంప్ట్",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "ఇంకా అభ్యర్థన పంపబడలేదు.",
       "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్",
       "turnTraceLog_other": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్‌లు"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "చెప్పుటకు చూపండు",
       "empty": "ఇంకా చెప్పుటకు డేటా లేవు.",
       "emptyHint": "రూటింగ్ వివరాలు చూడటానికి సందేశం పంపండు.",
-      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్"
+      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్",
+      "resize": "డీబగ్ ప్యానెల్ పరిమాణాన్ని మార్చండి"
     },
     "compare": {
       "modelLabel": "మోడల్ {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "కనెక్ట్‌కు వెనుకకు",
     "title": "కనెక్ట్ చేయండి",
     "docs": "డాక్‌లు",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "noClientPrefix": "పేరు గల క్లయింట్ లేదు",
     "errors": {
       "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "ఆ క్లయింట్ మోడల్ ట్రాఫిక్‌ను Routerly ద్వారా రూట్ చేస్తుంది.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly ను టూల్ సర్వర్‌గా లోడ్ చేస్తుంది.",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "errors": {
       "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },

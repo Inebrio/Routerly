@@ -8,12 +8,13 @@ import {
   SplitSquareHorizontal, MessageSquare,
 } from 'lucide-react';
 import { blocksResponseStreaming } from '@routerly/shared';
-import { getRouters, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, type Router, type PlaygroundPreset, type TraceEntry } from '../api.js';
+import { getRouters, getPlaygroundPresets, createPlaygroundPreset, deletePlaygroundPreset, getTrace, streamTraces, getPlaygroundDebugLayout, setPlaygroundDebugLayout, type Router, type PlaygroundPreset, type TraceEntry } from '../api.js';
 import { TraceLog } from '../components/TraceLog.js';
 import { TraceSummary } from '../components/TraceSummary.js';
 import { SearchableSelect } from '../components/SearchableSelect.js';
 import { isCaptureMode } from '../utils/captureMode.js';
 import { uuid } from '../utils/uuid';
+import { clampDebugWidth, maxDebugWidth, minDebugWidth, DEBUG_DEFAULT } from '../utils/debugPanelLayout.js';
 
 // Fixed placeholder shown instead of the real measured per-message latency while capturing
 // documentation screenshots: the real value is wall-clock derived and differs between two
@@ -427,7 +428,46 @@ export function TestPage() {
   const endRef = useRef<HTMLDivElement>(null);
   const debugTopRef = useRef<HTMLDivElement>(null);
   const [debugTraceHistory, setDebugTraceHistory] = useState<(unknown[] | null)[]>([]);
-  const [showDebugSidebar, setShowDebugSidebar] = useState(true);
+  const [showDebugSidebar, setShowDebugSidebar] = useState(() => !getPlaygroundDebugLayout().collapsed);
+  const [debugWidth, setDebugWidth] = useState(() => getPlaygroundDebugLayout().width ?? DEBUG_DEFAULT);
+  const [bodyWidth, setBodyWidth] = useState(1600);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // The stored width is kept as chosen; the width in use is always re-limited to the current window.
+  const effectiveDebugWidth = clampDebugWidth(debugWidth, bodyWidth);
+  useEffect(() => { setPlaygroundDebugLayout({ width: debugWidth, collapsed: !showDebugSidebar }); }, [debugWidth, showDebugSidebar]);
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    // clientWidth includes the 32px side padding of the row
+    const measure = () => setBodyWidth(el.clientWidth ? el.clientWidth - 64 : 1600);
+    measure();
+    if (typeof ResizeObserver === 'undefined') { window.addEventListener('resize', measure); return () => window.removeEventListener('resize', measure); }
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const setDebugWidthClamped = (w: number) => setDebugWidth(clampDebugWidth(w, bodyWidth));
+  const startDebugResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startX = e.clientX, startW = effectiveDebugWidth;
+    const target = e.currentTarget;
+    target.setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => setDebugWidthClamped(startW + (startX - ev.clientX));
+    const up = () => { target.removeEventListener('pointermove', move); target.removeEventListener('pointerup', up); target.removeEventListener('pointercancel', up); };
+    target.addEventListener('pointermove', move);
+    target.addEventListener('pointerup', up);
+    target.addEventListener('pointercancel', up);
+  };
+  const onDebugResizeKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 64 : 16;
+    if (e.key === 'ArrowLeft') setDebugWidthClamped(effectiveDebugWidth + step);
+    else if (e.key === 'ArrowRight') setDebugWidthClamped(effectiveDebugWidth - step);
+    else if (e.key === 'Home') setDebugWidthClamped(minDebugWidth(bodyWidth));
+    else if (e.key === 'End') setDebugWidthClamped(maxDebugWidth(bodyWidth));
+    else if (e.key === 'Enter') setDebugWidthClamped(DEBUG_DEFAULT);
+    else return;
+    e.preventDefault();
+  };
 
   // Stream toggle (disabled when streamingDisabled)
   const [streamEnabled, setStreamEnabled] = useState(true);
@@ -867,7 +907,7 @@ export function TestPage() {
       </div>
 
       {/* Body */}
-      <div style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0, padding: '0 32px 24px' }}>
+      <div ref={bodyRef} style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0, padding: '0 32px 24px' }}>
 
         {/* Presets sidebar */}
         {showPresetsPanel && matchedRouter && (
@@ -925,7 +965,7 @@ export function TestPage() {
         {mode === 'single' ? (
           <>
             {/* Chat card */}
-            <div className="card" style={{ flex: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+            <div className="card" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
               {/* Streaming-disabled banner */}
               {streamingDisabled && (
                 <div
@@ -1162,56 +1202,75 @@ export function TestPage() {
 
             {/* Debug sidebar */}
             {showDebugSidebar && (
-              <div className="card" style={{ width: 380, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{t('playground.debug.title')}</h3>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {debugTraceHistory.length > 0 && (
-                      <button onClick={() => setDebugTraceHistory([])} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>{t('playground.debug.clear')}</button>
+              <>
+                <div
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label={t('playground.debug.resize')}
+                  aria-valuemin={minDebugWidth(bodyWidth)}
+                  aria-valuemax={maxDebugWidth(bodyWidth)}
+                  aria-valuenow={effectiveDebugWidth}
+                  tabIndex={0}
+                  data-testid="debug-resize-handle"
+                  title={t('playground.debug.resize')}
+                  onPointerDown={startDebugResize}
+                  onKeyDown={onDebugResizeKey}
+                  onDoubleClick={() => setDebugWidthClamped(DEBUG_DEFAULT)}
+                  style={{ width: 8, margin: '0 -12px', cursor: 'col-resize', flexShrink: 0, touchAction: 'none', alignSelf: 'stretch', zIndex: 1, display: 'flex', justifyContent: 'center' }}
+                >
+                  <div style={{ width: 2, height: '100%', background: 'var(--border)', borderRadius: 2 }} />
+                </div>
+                <div className="card" data-testid="debug-panel" style={{ width: effectiveDebugWidth, flexShrink: 0, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>{t('playground.debug.title')}</h3>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {debugTraceHistory.length > 0 && (
+                        <button onClick={() => setDebugTraceHistory([])} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>{t('playground.debug.clear')}</button>
+                      )}
+                      <button onClick={() => setShowDebugSidebar(false)} className="btn-icon" style={{ padding: 4 }} title={t('playground.debug.hide')} aria-label={t('playground.debug.hide')} data-testid="debug-collapse"><ChevronRight size={15} /></button>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12, background: 'var(--bg-base)', minWidth: 0, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    <div ref={debugTopRef} />
+                    {debugTraceHistory.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                        <p style={{ margin: 0, fontSize: '0.82rem' }}>{t('playground.debug.empty')}</p>
+                        <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>{t('playground.debug.emptyHint')}</p>
+                      </div>
+                    ) : (
+                      // Newest turn first: the one you just sent is the one you want to read.
+                      [...debugTraceHistory.entries()].reverse().map(([i, traces]) => {
+                        /* v8 ignore next */
+                        if (!traces) return null;
+                        return (
+                          <div key={i} style={{ marginBottom: 14 }}>
+                            <TraceSummary
+                              trace={traces as TraceEntry[]}
+                              turn={i + 1}
+                              collapsible
+                              defaultOpen={i === debugTraceHistory.length - 1}
+                            >
+                              <details>
+                                <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  {t('playground.debug.turnTraceLog', { turn: i + 1 })}
+                                </summary>
+                                <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
+                                  <TraceLog entries={traces as TraceEntry[]} collapsed />
+                                </div>
+                              </details>
+                            </TraceSummary>
+                          </div>
+                        );
+                      })
                     )}
-                    <button onClick={() => setShowDebugSidebar(false)} className="btn-icon" style={{ padding: 4 }} title={t('playground.debug.hide')}><ChevronRight size={15} /></button>
                   </div>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: 12, background: 'var(--bg-base)' }}>
-                  <div ref={debugTopRef} />
-                  {debugTraceHistory.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
-                      <p style={{ margin: 0, fontSize: '0.82rem' }}>{t('playground.debug.empty')}</p>
-                      <p style={{ margin: '6px 0 0', fontSize: '0.75rem' }}>{t('playground.debug.emptyHint')}</p>
-                    </div>
-                  ) : (
-                    // Newest turn first: the one you just sent is the one you want to read.
-                    [...debugTraceHistory.entries()].reverse().map(([i, traces]) => {
-                      /* v8 ignore next */
-                      if (!traces) return null;
-                      return (
-                        <div key={i} style={{ marginBottom: 14 }}>
-                          <TraceSummary
-                            trace={traces as TraceEntry[]}
-                            turn={i + 1}
-                            collapsible
-                            defaultOpen={i === debugTraceHistory.length - 1}
-                          >
-                            <details>
-                              <summary style={{ cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '6px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, userSelect: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                {t('playground.debug.turnTraceLog', { turn: i + 1 })}
-                              </summary>
-                              <div style={{ marginTop: 6, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 6, fontSize: '0.83rem' }}>
-                                <TraceLog entries={traces as TraceEntry[]} collapsed />
-                              </div>
-                            </details>
-                          </TraceSummary>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+              </>
             )}
             {!showDebugSidebar && (
-              <button onClick={() => setShowDebugSidebar(true)} className="btn-icon"
-                style={{ position: 'fixed', right: 24, top: '50%', transform: 'translateY(-50%)', padding: 8, background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
-                title={t('playground.debug.show')}>
+              <button onClick={() => setShowDebugSidebar(true)} className="card" data-testid="debug-expand"
+                style={{ flexShrink: 0, width: 36, padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}
+                title={t('playground.debug.show')} aria-label={t('playground.debug.show')}>
                 <ChevronLeft size={18} />
               </button>
             )}

@@ -742,11 +742,9 @@ function makeConnection(overrides: Partial<ProviderConnection> = {}): ProviderCo
 }
 
 describe('resolveAnthropicWebCredential', () => {
-  it('refuses to run when the provider-web module is disabled', async () => {
+  it('ignores a stored disabled provider-web record (all modules always active)', async () => {
     mockReadConfig.mockResolvedValueOnce([{ id: 'provider-web', enabled: false }] as any);
-    await expect(resolveAnthropicWebCredential(makeConnection())).rejects.toThrow(
-      "'provider-web' module is disabled",
-    );
+    expect(await resolveAnthropicWebCredential(makeConnection())).toBe('sk-ant-sid01-live-session');
   });
 
   it('decrypts the stored session cookie when the module is enabled', async () => {

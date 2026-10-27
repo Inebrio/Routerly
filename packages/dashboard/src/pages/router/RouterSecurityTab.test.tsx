@@ -1960,7 +1960,7 @@ describe('RouterSecurityTab — TopicFields interactions', () => {
 
     await waitFor(() => screen.queryByText('Judge model'));
 
-    const judgeSelect = document.querySelector('select') as HTMLSelectElement | null;
+    const judgeSelect = Array.from(document.querySelectorAll('select')).find(el => Array.from(el.options).some(o => o.value === 'openai/gpt-4o')) ?? null;
     if (judgeSelect) {
       await userEvent.selectOptions(judgeSelect, 'openai/gpt-4o');
       expect(judgeSelect.value).toBe('openai/gpt-4o');
@@ -2213,6 +2213,9 @@ describe('RouterSecurityTab — security profile assignment', () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Profile' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    expect(await screen.findByRole('status')).toHaveTextContent(/Nothing is applied until you save/);
+    await user.click(await screen.findByRole('button', { name: /save security settings/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'security-standard' }));
   });
 
@@ -2222,6 +2225,7 @@ describe('RouterSecurityTab — security profile assignment', () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.click(await screen.findByRole('button', { name: /save security settings/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'custom-sec' }));
   });
 
@@ -2252,23 +2256,42 @@ describe('RouterSecurityTab — security profile assignment', () => {
     expect(values).toContain('My Security');
   });
 
-  it('selecting another profile reassigns it', async () => {
+  it('selecting another profile reassigns it only on Save', async () => {
     const user = userEvent.setup();
     renderTab(assignedRouter);
     const select = await screen.findByLabelText('Security Profile');
     await user.selectOptions(select, 'custom-sec');
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: /save security settings/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: 'custom-sec' }));
   });
 
-  it('switching to Custom clears the profile and prefills its rules', async () => {
+  it('switching to Custom keeps the stored rules, not the profile copy, and clears the profile on Save', async () => {
     const user = userEvent.setup();
     mockAssignProfile.mockResolvedValue({ ...mockRouter });
     renderStatefulTab(assignedRouter);
     await waitFor(() => expect(screen.getByLabelText('Security Profile')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    // The profile's regex rule ('secret') is not copied into the editor.
+    expect(screen.queryByDisplayValue('secret')).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: /save security settings/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { security: null }));
-    // The profile's regex rule is now this router's own editable rule.
+  });
+
+  it('Copy into custom fills the editor from the profile after confirmation, without saving', async () => {
+    const user = userEvent.setup();
+    renderTab({ ...mockRouter, guardrails: { rules: [{ type: 'keyword', target: 'request', value: 'x', block: true }] } });
+    await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
+    await user.selectOptions(screen.getByLabelText('Start custom settings from a profile'), 'security-standard');
+    await user.click(screen.getByRole('button', { name: /copy into custom/i }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText(/This replaces the custom settings/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /copy into custom/i }));
+    await user.click(screen.getByRole('button', { name: 'Replace' }));
     await waitFor(() => expect(screen.getByDisplayValue('secret')).toBeInTheDocument());
+    expect(mockAssignProfile).not.toHaveBeenCalled();
   });
 
   it('clicking the already active mode does nothing', async () => {
@@ -2285,6 +2308,7 @@ describe('RouterSecurityTab — security profile assignment', () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('Content Guardrails')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.click(await screen.findByRole('button', { name: /save security settings/i }));
     await waitFor(() => expect(screen.getByText('assign boom')).toBeInTheDocument());
   });
 

@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "kodowanie",
       "frames": "ramki",
-      "bytes": "bajty"
+      "bytes": "bajty",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Zapisywanie...",
       "saved": "Zapisano",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Podgląd oszczędności tokenów",
         "description": "Uruchom bieżący (niezapisany) potok nad promptem, aby zobaczyć, co każdy krok usuwa i co kosztuje. Wybierz jedną z rozmów przykładowych lub wpisz własny prompt.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Nie wysłano jeszcze żadnego żądania.",
       "turnTraceLog": "Dziennik śladu tury #{{turn}} · {{count}} zdarzenie",
       "turnTraceLog_other": "Dziennik śladu tury #{{turn}} · {{count}} zdarzeń"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Pokaż debugowanie",
       "empty": "Brak jeszcze danych debugowania.",
       "emptyHint": "Wyślij wiadomość, aby zobaczyć szczegóły routingu.",
-      "turnTraceLog": "Dziennik śladu tury #{{turn}}"
+      "turnTraceLog": "Dziennik śladu tury #{{turn}}",
+      "resize": "Zmień rozmiar panelu debugowania"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Powrót do połączenia",
     "title": "Połącz",
     "docs": "Dokumenty",
-    "notEnabledPrefix": "Konfigurator klienta nie jest włączony. Poproś administratora, aby włączył go za pomocą",
     "noClientPrefix": "Nie ma klienta nazwą",
     "errors": {
       "loadFailed": "Nie udało się załadować klientów: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "kieruje ruch modelu tego klienta przez Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "ładuje Routerly jako serwer narzędziowy wewnątrz niego.",
-    "notEnabledPrefix": "Konfigurator klienta nie jest włączony. Poproś administratora, aby włączył go za pomocą",
     "errors": {
       "loadFailed": "Nie udało się załadować klientów: {{error}}"
     },

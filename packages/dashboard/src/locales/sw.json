@@ -419,7 +419,8 @@
       "status": "hali",
       "encoding": "ukodishaji",
       "frames": "fremu",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Inakuhifadhi...",
       "saved": "Kutunzwa",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Muhtasari wa akiba ya token",
         "description": "Endesha njia ya sasa (yasiyohifadhiwa) kupitia onyo kuona nini kila hatua huondoa na gharama yake. Chagua wagombea wa mazungumzo ya sampuli, au andika onyo lako.",
         "promptLabel": "Onyo",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Hakuna ombi lilitumwa bado.",
       "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}} · {{count}} tukio",
       "turnTraceLog_other": "Goria la kuchukuza la Zamu #{{turn}} · {{count}} matukio"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Onyesha kubaini",
       "empty": "Hakuna data ya kubaini bado.",
       "emptyHint": "Tuma ujumbe kuona maelezo ya njia.",
-      "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}}"
+      "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}}",
+      "resize": "Badilisha ukubwa wa paneli ya utatuzi"
     },
     "compare": {
       "modelLabel": "Modeli {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Kurudi kwenye Unganisha",
     "title": "Unganisha",
     "docs": "Nyaraka",
-    "notEnabledPrefix": "Mteja wa kusanidi hauwezekani. Mwaliko msimamizi kuamkua na",
     "noClientPrefix": "Hakuna mteja anayeitwa",
     "errors": {
       "loadFailed": "Kushindwa kupakia wateja: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "njia trafiki ya modeli ya mteja kupitia Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "inapakia Routerly kama mteja wa zana ndani yake.",
-    "notEnabledPrefix": "Mteja wa kusanidi hauwezekani. Mwaliko msimamizi kuamkua na",
     "errors": {
       "loadFailed": "Kushindwa kupakia wateja: {{error}}"
     },

@@ -419,7 +419,8 @@
       "status": "vəziyyət",
       "encoding": "kodlaşdırma",
       "frames": "kadrlar",
-      "bytes": "baytlar"
+      "bytes": "baytlar",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Saxlanılır...",
       "saved": "Saxlanıldı",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Token qənaətinə önizləmə",
         "description": "Hər addımın nə çıxardığını və nə qədər başa gəldiyini görmək üçün cari (saxlanmamış) boru xəttini bir sorğu üzərində işə salın. Nümunə söhbətlərdən birini seçin, ya da öz sorğunuzu yazın.",
         "promptLabel": "Sorğu",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Hələ sorğu göndərilməyib.",
       "turnTraceLog": "Növbə #{{turn}} iz jurnalı · {{count}} hadisə",
       "turnTraceLog_other": "Növbə #{{turn}} iz jurnalı · {{count}} hadisə"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Sazlamanı göstər",
       "empty": "Hələ sazlama məlumatı yoxdur.",
       "emptyHint": "Yönləndirmə detallarını görmək üçün mesaj göndərin.",
-      "turnTraceLog": "Növbə #{{turn}} iz jurnalı"
+      "turnTraceLog": "Növbə #{{turn}} iz jurnalı",
+      "resize": "Debug panelinin ölçüsünü dəyişin"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Qoşulmaya qayıt",
     "title": "Qoşul",
     "docs": "Sənədlər",
-    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
     "noClientPrefix": "Belə adlı müştəri yoxdur",
     "errors": {
       "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "həmin müştərinin model trafikini Routerly üzərindən yönləndirir.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly-ni onun içində alət serveri kimi yükləyir.",
-    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
     "errors": {
       "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
     },

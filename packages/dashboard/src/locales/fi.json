@@ -419,7 +419,8 @@
       "status": "tila",
       "encoding": "koodaus",
       "frames": "kehykset",
-      "bytes": "tavut"
+      "bytes": "tavut",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Tallennetaan...",
       "saved": "Tallennettu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Esikatsele tokenisäästöjä",
         "description": "Suorita nykyinen (tallentamaton) putki kehotteelle nähdäksesi mitä kukin vaihe poistaa ja mitä se maksaa. Valitse jokin esimerkkikeskusteluista, tai kirjoita omasi.",
         "promptLabel": "Kehote",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Pyyntöä ei ole vielä lähetetty.",
       "turnTraceLog": "Vuoron #{{turn}} jäljitysloki · {{count}} tapahtuma",
       "turnTraceLog_other": "Vuoron #{{turn}} jäljitysloki · {{count}} tapahtumaa"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Näytä vianjäljitys",
       "empty": "Ei vianjäljitystietoja vielä.",
       "emptyHint": "Lähetä viesti nähdäksesi reititystiedot.",
-      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki"
+      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki",
+      "resize": "Muuta virheenkorjauspaneelin kokoa"
     },
     "compare": {
       "modelLabel": "Malli {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Takaisin yhdistämiseen",
     "title": "Yhdistä",
     "docs": "Dokumentaatio",
-    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
     "noClientPrefix": "Ei asiakasta nimellä",
     "errors": {
       "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "reitittää sen asiakasmalliliikenteen Routerlyn läpi.",
     "mcpLabel": "MCP",
     "mcpDescription": "lataa Routerlyn työkalupalvelimeksi sen sisään.",
-    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
     "errors": {
       "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
     },

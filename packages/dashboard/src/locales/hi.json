@@ -419,7 +419,8 @@
       "status": "स्थिति",
       "encoding": "एन्कोडिंग",
       "frames": "फ्रेम",
-      "bytes": "बाइट"
+      "bytes": "बाइट",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "बचत हो रही है...",
       "saved": "सहेजा गया",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "टोकन बचत पूर्वावलोकन",
         "description": "पूर्वावलोकन के लिए मौजूदा (अप्रस्तुत) पाइपलाइन को एक प्रॉम्प्ट पर चलाएं देखने के लिए कि प्रत्येक चरण क्या हटाता है और इसकी लागत क्या है। नमूना बातचीत में से एक चुनें, या अपना स्वयं का प्रॉम्प्ट टाइप करें।",
         "promptLabel": "प्रॉम्प्ट",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "अभी तक कोई अनुरोध नहीं भेजा गया।",
       "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग · {{count}} इवेंट",
       "turnTraceLog_other": "बारी #{{turn}} ट्रेस लॉग · {{count}} इवेंट"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "डीबग दिखाएं",
       "empty": "अभी कोई डीबग डेटा नहीं।",
       "emptyHint": "राउटिंग विवरण देखने के लिए एक संदेश भेजें।",
-      "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "बारी #{{turn}} ट्रेस लॉग",
+      "resize": "डीबग पैनल का आकार बदलें"
     },
     "compare": {
       "modelLabel": "मॉडल {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "कनेक्ट पर वापस जाएं",
     "title": "कनेक्ट",
     "docs": "डॉक्स",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगर करने वाला सक्षम नहीं है। एक प्रशासक को इसके साथ सक्षम करने के लिए कहें",
     "noClientPrefix": "कोई क्लाइंट नहीं नाम दिया गया",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से राउट करता है।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly को इसके अंदर एक उपकरण सर्वर के रूप में लोड करता है।",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगर करने वाला सक्षम नहीं है। एक प्रशासक को इसके साथ सक्षम करने के लिए कहें",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
     },

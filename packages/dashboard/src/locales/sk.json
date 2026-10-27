@@ -419,7 +419,8 @@
       "status": "stav",
       "encoding": "kódovanie",
       "frames": "rámce",
-      "bytes": "bajty"
+      "bytes": "bajty",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Ukladá sa...",
       "saved": "Uložené",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Náhľad úspory tokenov",
         "description": "Spustite aktuálny (neuložený) pipeline cez výzvu, aby ste videli, čo každý krok odstráni a čo stojí. Vyberte jeden zo vzorových rozhovorov alebo zadajte vlastnú výzvu.",
         "promptLabel": "Výzva",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Zatiaľ nebola odoslaná žiadna požiadavka.",
       "turnTraceLog": "Turn #{{turn}} trace log · {{count}} udalosť",
       "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} udalostí"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Zobraziť debug",
       "empty": "Zatiaľ žiadne debug údaje.",
       "emptyHint": "Poslajte správu, aby ste videli podrobnosti smerovaniia.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Zmeniť veľkosť panela ladenia"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Späť na Pripojiť",
     "title": "Pripojiť",
     "docs": "Dokumentácia",
-    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
     "noClientPrefix": "Žiadny klient s menom",
     "errors": {
       "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "Smeruje prevádzku modelu tohto klienta cez Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "Načítava Routerly ako server nástrojov vo vnútri.",
-    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
     "errors": {
       "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
     },

@@ -2583,6 +2583,26 @@ describe('GET /api/usage', () => {
     expect(body.records).toHaveLength(1)
   })
 
+  it('tolerates records without token fields (ROUT-442)', async () => {
+    setupAdminAuth()
+    const records = [
+      { id: 'x1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', model: 'm1', promptTokens: 3, outcome: 'success', callType: 'completion', latencyMs: 10 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const m = JSON.parse(res.body).byModel.m1
+    expect(m.inputTokens).toBe(0)
+    expect(m.outputTokens).toBe(0)
+  })
+
   it('aggregates guardrail callType as a distinct sub-activity (BUG-5)', async () => {
     setupAdminAuth()
     const now = new Date().toISOString()
@@ -6840,6 +6860,10 @@ describe('POST /api/auth/login — bcrypt hash coverage', () => {
 
 // ─── POST /api/routers — optional routing fields ────────────────────────────
 
+const registered = (ids: string[]) => splitModelsIntoInstancesConnections(ids.map(id => ({
+  id, name: id, provider: 'openai', endpoint: 'https://api.openai.com/v1', cost: { inputPerMillion: 1, outputPerMillion: 1 },
+})))
+
 describe('POST /api/routers — optional routing fields', () => {
   it('creates router with routingModelId, policies, fallbackRoutingModelIds, timeoutMs', async () => {
     setupAdminAuth()
@@ -6847,6 +6871,8 @@ describe('POST /api/routers — optional routing fields', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return []
+      if (t === 'instances') return registered(['gpt4', 'gpt3']).instances
+      if (t === 'connections') return registered(['gpt4', 'gpt3']).connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -6908,6 +6934,71 @@ describe('POST /api/routers — optional routing fields', () => {
   })
 })
 
+describe('router write — unknown routing model (ROUT-434)', () => {
+  const stored = {
+    id: 'p1', name: 'Test', tokens: [], members: [], models: [],
+    policies: [{ type: 'llm', enabled: true, config: { routingModelId: 'legacy-gone' } }],
+  }
+  const seed = (extra: Record<string, unknown> = {}) => {
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'routers') return [stored]
+      if (t === 'instances') return registered(['known']).instances
+      if (t === 'connections') return registered(['known']).connections
+      return (extra[t] ?? []) as never
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+  }
+  const send = async (method: 'POST' | 'PUT', url: string, body: unknown, headers = adminAuthHeaders()) => {
+    const app = await buildApp()
+    const res = await app.inject({ method, url, headers: { ...headers, 'content-type': 'application/json' }, payload: JSON.stringify(body) })
+    await app.close()
+    return res
+  }
+  const llm = (config: unknown) => [{ type: 'llm', enabled: true, config }]
+
+  it('POST rejects an unregistered llm policy routing model with 400 naming the id', async () => {
+    seed()
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'rout388-bad' }) })
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toContain('rout388-bad')
+  })
+
+  it('POST rejects an unregistered policy fallback and router-level fallback id', async () => {
+    seed()
+    const a = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'known', fallbackModelIds: ['nope'] }) })
+    expect(a.statusCode).toBe(400)
+    const b = await send('POST', '/api/routers', { name: 'N', models: [], fallbackRoutingModelIds: ['nope2'] })
+    expect(b.statusCode).toBe(400)
+    expect(b.json().error).toContain('nope2')
+  })
+
+  it('POST accepts a registered routing model', async () => {
+    seed()
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'known' }) })
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('PUT rejects a newly added unknown id but accepts the unchanged legacy one', async () => {
+    seed()
+    const bad = await send('PUT', '/api/routers/p1', { name: 'Test', policies: llm({ routingModelId: 'brand-new-bad' }) })
+    expect(bad.statusCode).toBe(400)
+    const same = await send('PUT', '/api/routers/p1', { name: 'Test2', policies: llm({ routingModelId: 'legacy-gone' }) })
+    expect(same.statusCode).toBe(200)
+  })
+
+  it('a caller without router:write gets 403 before validation', async () => {
+    seed()
+    mockVerifyToken.mockReturnValue({ sub: 'viewer-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => (t === 'users'
+      ? [{ id: 'viewer-id', email: 'v@example.com', passwordHash: 'h', roleId: 'viewer', routerIds: [] }] : []) as never)
+    const res = await send('POST', '/api/routers', { name: 'N', models: [], policies: llm({ routingModelId: 'rout388-bad' }) })
+    expect(res.statusCode).toBe(403)
+  })
+})
+
 // ─── PUT /api/routers/:id — optional routing fields ──────────────────────────
 
 describe('PUT /api/routers/:id — optional routing fields', () => {
@@ -6918,6 +7009,8 @@ describe('PUT /api/routers/:id — optional routing fields', () => {
       if (t === 'users') return [adminUser]
       if (t === 'roles') return []
       if (t === 'routers') return [router]
+      if (t === 'instances') return registered(['new-model', 'backup']).instances
+      if (t === 'connections') return registered(['new-model', 'backup']).connections
       return []
     })
     mockWriteConfig.mockResolvedValue(undefined)
@@ -14046,6 +14139,29 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
 
 // ─── /api/modules ───────────────────────────────────────────────────────────
 describe('modules endpoints', () => {
+  it('GET /api/modules reports every module enabled even when a disabled record is stored', async () => {
+    setupAdminAuth()
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'modules' ? [{ id: 'provider-web', enabled: false }] : base(t))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/modules', headers: adminAuthHeaders() })
+    await app.close()
+    const body = res.json() as Array<{ id: string; enabled: boolean }>
+    expect(body.length).toBeGreaterThan(0)
+    expect(body.every((m) => m.enabled)).toBe(true)
+  })
+
+  it('has no enable/disable routes (modules are always active)', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const dis = await app.inject({ method: 'POST', url: '/api/modules/provider-web/disable', headers: adminAuthHeaders() })
+    const en = await app.inject({ method: 'POST', url: '/api/modules/provider-web/enable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(dis.statusCode).toBe(404)
+    expect(en.statusCode).toBe(404)
+  })
+
   it('GET /api/modules lists modules with 200 for a reader', async () => {
     setupAdminAuth()
     const app = await buildApp()
@@ -14071,36 +14187,6 @@ describe('modules endpoints', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('POST /api/modules/:id/disable disables a feature module (200, restartRequired)', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: false, restartRequired: true })
-  })
-
-  it('POST /api/modules/:id/disable is 409 for an always-on module', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/config/disable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('POST /api/modules/:id/enable is 403 without modules:manage', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', routerIds: [] }]
-      if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
   // Permission separation: modules:read must not imply modules:manage. The
   // built-in 'viewer' role has modules:read only (see auth/roles.ts) — proves
   // GET is allowed while enable/disable are specifically gated on a
@@ -14116,49 +14202,6 @@ describe('modules endpoints', () => {
     const res = await app.inject({ method: 'GET', url: '/api/modules', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(200)
-  })
-
-  it('POST /api/modules/:id/enable is 403 for a modules:read-only role (viewer)', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
-      if (t === 'roles') return []
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('POST /api/modules/:id/disable is 403 for a modules:read-only role (viewer)', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
-      if (t === 'roles') return []
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('POST /api/modules/:id/enable is 409 for an unknown module', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/does-not-exist/enable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('POST /api/modules/:id/enable enables a feature module (200, restartRequired)', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: true, restartRequired: true })
   })
 })
 
@@ -14373,6 +14416,51 @@ describe('Optimizers API', () => {
     const body = res.json() as { estimatedTokensBefore: number; estimatedTokensAfter: number; perStep: unknown[] }
     expect(body.estimatedTokensAfter).toBeLessThan(body.estimatedTokensBefore)
     expect(body.perStep).toHaveLength(1)
+  })
+
+  it('POST /api/optimizers/preview without steps runs the assigned profile, not the custom steps (ROUT-440)', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'routers' ? [{ id: 'pv', name: 'pv', models: [], optimizerProfileId: 'optimizer-safe', optimizers: { steps: [{ id: 'session-dedup', enabled: false }] } }] : base(t))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ routerId: 'pv', sampleMessages: [{ role: 'user', content: 'hello there' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { perStep: { id: string }[]; pipeline: { kind: string; profileId: string } }
+    expect(body.perStep.map(s => s.id)).toContain('session-dedup')
+    expect(body.pipeline).toMatchObject({ kind: 'profile', profileId: 'optimizer-safe' })
+  })
+
+  it('POST /api/optimizers/preview without steps and without a profile runs the saved custom steps; explicit steps win', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'routers' ? [{ id: 'pc', name: 'pc', models: [], optimizers: { steps: [{ id: 'session-dedup', enabled: false }] } }] : base(t))
+    const app = await buildApp()
+    const call = (extra: object) => app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ routerId: 'pc', sampleMessages: [{ role: 'user', content: 'hello there' }], ...extra }),
+    })
+    const saved = (await call({})).json() as { perStep: { id: string }[]; pipeline: { kind: string } }
+    const explicit = (await call({ steps: [{ id: 'session-dedup', enabled: true }] })).json() as { perStep: { id: string }[] }
+    const noRouter = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ sampleMessages: [{ role: 'user', content: 'x' }] }),
+    })
+    await app.close()
+    expect(saved.perStep.map(s => s.id)).toEqual(['session-dedup'])
+    expect(saved.pipeline.kind).toBe('custom')
+    expect(explicit.perStep.map(s => s.id)).toEqual(['session-dedup'])
+    expect(noRouter.statusCode).toBe(400)
   })
 
   it('POST /api/optimizers/preview returns 400 for an empty sampleMessages', async () => {

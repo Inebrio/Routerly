@@ -419,7 +419,8 @@
       "status": "অবস্থা",
       "encoding": "এনকোডিং",
       "frames": "ফ্রেম",
-      "bytes": "বাইট"
+      "bytes": "বাইট",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "সংরক্ষণ করা হচ্ছে...",
       "saved": "সংরক্ষিত",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "প্রিভিউ টোকেন সঞ্চয়",
         "description": "প্রতিটি ধাপ কি সরায় এবং কি খরচ দেখতে একটি প্রম্পট উপর বর্তমান (অসংরক্ষিত) পাইপলাইন চালান। নমুনা কথোপকথনগুলির একটি বেছে নিন বা আপনার নিজস্ব প্রম্পট টাইপ করুন।",
         "promptLabel": "প্রম্পট",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "এখনও কোন অনুরোধ পাঠানো হয়নি।",
       "turnTraceLog": "পরিণত #{{turn}} ট্রেস লগ · {{count}} ইভেন্ট",
       "turnTraceLog_other": "পরিণত #{{turn}} ট্রেস লগ · {{count}} ইভেন্ট"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "ডিবাগ দেখান",
       "empty": "এখনও কোন ডিবাগ ডেটা নেই।",
       "emptyHint": "রাউটিং বিবরণ দেখতে একটি বার্তা পাঠান।",
-      "turnTraceLog": "পরিণত #{{turn}} ট্রেস লগ"
+      "turnTraceLog": "পরিণত #{{turn}} ট্রেস লগ",
+      "resize": "ডিবাগ প্যানেলের আকার পরিবর্তন করুন"
     },
     "compare": {
       "modelLabel": "মডেল {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "সংযোগে ফিরুন",
     "title": "সংযোগ",
     "docs": "ডক্স",
-    "notEnabledPrefix": "ক্লায়েন্ট কনফিগারেটর সক্ষম নয়। একজন প্রশাসক এটি সক্ষম করতে বলুন",
     "noClientPrefix": "নামকরণ করা কোন ক্লায়েন্ট নেই",
     "errors": {
       "loadFailed": "ক্লায়েন্ট লোড করতে ব্যর্থ: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "যা ক্লায়েন্ট মডেল ট্রাফিক Routerly মাধ্যমে রুট করে।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly একটি টুল সার্ভার হিসাবে এটির ভিতরে লোড করে।",
-    "notEnabledPrefix": "ক্লায়েন্ট কনফিগারেটর সক্ষম নয়। একজন প্রশাসক এটি সক্ষম করতে বলুন",
     "errors": {
       "loadFailed": "ক্লায়েন্ট লোড করতে ব্যর্থ: {{error}}"
     },

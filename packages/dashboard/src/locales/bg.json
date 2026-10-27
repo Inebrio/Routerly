@@ -419,7 +419,8 @@
       "status": "статус",
       "encoding": "кодиране",
       "frames": "кадри",
-      "bytes": "байтове"
+      "bytes": "байтове",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Запазване...",
       "saved": "Запазено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Преглед на спестените токени",
         "description": "Изпълнете текущия (незапазен) процес върху промпт, за да видите какво премахва всяка стъпка и колко струва. Изберете един от примерните разговори или напишете свой промпт.",
         "promptLabel": "Промпт",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Все още не е изпратена заявка.",
       "turnTraceLog": "Дневник на трасето на реда №{{turn}} · {{count}} събитие",
       "turnTraceLog_other": "Дневник на трасето на реда №{{turn}} · {{count}} събития"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Показване на отстраняването на грешки",
       "empty": "Все още няма данни за отстраняване на грешки.",
       "emptyHint": "Изпратете съобщение, за да видите детайли за маршрутизирането.",
-      "turnTraceLog": "Дневник на трасето на реда №{{turn}}"
+      "turnTraceLog": "Дневник на трасето на реда №{{turn}}",
+      "resize": "Преоразмеряване на панела за отстраняване на грешки"
     },
     "compare": {
       "modelLabel": "Модел {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Назад към Свързване",
     "title": "Свързване",
     "docs": "Документация",
-    "notEnabledPrefix": "Конфигураторът на клиенти не е активиран. Попитайте администратор да го активира с",
     "noClientPrefix": "Няма клиент с име",
     "errors": {
       "loadFailed": "Зареждането на клиентите е неуспешно: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "насочва трафика на модела на този клиент през Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "зарежда Routerly като сървър на инструменти в него.",
-    "notEnabledPrefix": "Конфигураторът на клиенти не е активиран. Попитайте администратор да го активира с",
     "errors": {
       "loadFailed": "Зареждането на клиентите е неуспешно: {{error}}"
     },

@@ -13,6 +13,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 // ── Module mocks (hoisted) ─────────────────────────────────────────────────
 
+let layoutStore: { width: number | null; collapsed: boolean } = { width: null, collapsed: false };
+
 vi.mock('../api.js', () => ({
   getRouters: vi.fn(),
   getPlaygroundPresets: vi.fn(),
@@ -20,6 +22,8 @@ vi.mock('../api.js', () => ({
   deletePlaygroundPreset: vi.fn(),
   getTrace: vi.fn(),
   streamTraces: vi.fn(),
+  getPlaygroundDebugLayout: vi.fn(() => ({ ...layoutStore })),
+  setPlaygroundDebugLayout: vi.fn((l: { width: number | null; collapsed: boolean }) => { layoutStore = { ...l }; }),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so getByRole('combobox')/fireEvent.change tests keep working
@@ -114,6 +118,7 @@ async function setupWithToken() {
 // ── beforeEach ─────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  layoutStore = { width: null, collapsed: false };
   vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
   vi.mocked(getPlaygroundPresets).mockResolvedValue([]);
   vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
@@ -484,6 +489,50 @@ describe('TestPage — debug sidebar hide/show', () => {
     await waitFor(() =>
       expect(screen.queryByTitle('Hide debug')).not.toBeNull()
     );
+  });
+});
+
+describe('TestPage — debug panel resize and persistence', () => {
+  const width = () => Number(screen.getByTestId('debug-resize-handle').getAttribute('aria-valuenow'));
+
+  it('keyboard resize stays within min and max', async () => {
+    await setupWithToken();
+    expect(width()).toBe(380);
+    const handle = screen.getByTestId('debug-resize-handle');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(width()).toBe(396);
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(width()).toBe(720);
+    fireEvent.keyDown(handle, { key: 'ArrowLeft', shiftKey: true });
+    expect(width()).toBe(720);
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(width()).toBe(280);
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(width()).toBe(280);
+    fireEvent.keyDown(handle, { key: 'Enter' });
+    expect(width()).toBe(380);
+  });
+
+  it('collapse then expand restores the previous width and persists the choice', async () => {
+    await setupWithToken();
+    fireEvent.keyDown(screen.getByTestId('debug-resize-handle'), { key: 'End' });
+    await userEvent.click(screen.getByTestId('debug-collapse'));
+    expect(screen.queryByTestId('debug-panel')).toBeNull();
+    expect(layoutStore).toEqual({ width: 720, collapsed: true });
+    await userEvent.click(screen.getByTestId('debug-expand'));
+    expect(width()).toBe(720);
+  });
+
+  it('starts from the stored layout and re-limits an out-of-range width', async () => {
+    layoutStore = { width: 5000, collapsed: false };
+    await setupWithToken();
+    expect(width()).toBe(720);
+  });
+
+  it('starts collapsed when the stored layout says so', async () => {
+    layoutStore = { width: 400, collapsed: true };
+    await setupWithToken();
+    expect(screen.queryByTestId('debug-expand')).not.toBeNull();
   });
 });
 

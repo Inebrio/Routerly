@@ -419,7 +419,8 @@
       "status": "trạng thái",
       "encoding": "mã hóa",
       "frames": "khung",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Đang lưu...",
       "saved": "Đã lưu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Xem trước tiết kiệm token",
         "description": "Chạy đường ống hiện tại (chưa lưu) qua một nhắc để xem những gì mỗi bước loại bỏ và chi phí là gì. Chọn một trong các cuộc trò chuyện mẫu, hoặc nhập nhắc của riêng bạn.",
         "promptLabel": "Nhắc",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Chưa gửi yêu cầu nào.",
       "turnTraceLog": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện",
       "turnTraceLog_other": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Hiển thị gỡ lỗi",
       "empty": "Chưa có dữ liệu gỡ lỗi nào.",
       "emptyHint": "Gửi tin nhắn để xem chi tiết định tuyến.",
-      "turnTraceLog": "Lượt #{{turn}} nhật ký vết"
+      "turnTraceLog": "Lượt #{{turn}} nhật ký vết",
+      "resize": "Thay đổi kích thước bảng gỡ lỗi"
     },
     "compare": {
       "modelLabel": "Mô hình {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Quay lại kết nối",
     "title": "Kết nối",
     "docs": "Tài liệu",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "noClientPrefix": "Không có khách hàng tên",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "định tuyến lưu lượng mô hình khách hàng đó thông qua Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "tải Routerly dưới dạng máy chủ công cụ bên trong nó.",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
     },

@@ -15,6 +15,7 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
+import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
@@ -48,15 +49,13 @@ import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
+import { resolveOptimizerProfile, CUSTOM_PROFILE_ID } from '../routing/profiles/store.js';
 import * as llmlingua2Model from '../optimizers/llmlingua2/model.js';
 import { computeSavings, computeSeries } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
   isModuleEnabled,
   isAlwaysOn,
-  canEnable,
-  canDisable,
-  setModuleEnabled,
 } from '../../core/modules/registry.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')) as { version: string };
@@ -359,7 +358,10 @@ const previewBodySchema = z.object({
   // budget against that model's context window exactly as it would live.
   model: z.string().optional(),
   sampleMessages: z.array(z.any()).min(1),
-  steps: z.array(optimizerStepSchema),
+  // Omitted: the service runs the pipeline the router really uses (its assigned
+  // optimizer profile, else its saved custom steps). Sent: those exact steps,
+  // so unsaved custom edits can be previewed.
+  steps: z.array(optimizerStepSchema).optional(),
 });
 
 /** Paths never hard-blocked by the permission guard, even while a secrets file is unsafe:
@@ -718,28 +720,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       dependsOn: Object.keys(m.manifest.dependsOn ?? {}),
     }));
     return reply.send(list);
-  });
-
-  fastify.post<{ Params: { id: string } }>('/api/modules/:id/enable', async (req, reply) => {
-    if (!requirePerm(req, 'modules:manage', reply)) return;
-    const manifests = ALL_MODULES.map((m) => m.manifest);
-    const records = await readConfig('modules');
-    const check = canEnable(req.params.id, records, manifests);
-    if (!check.ok) return reply.status(409).send({ error: check.error });
-    await writeConfig('modules', setModuleEnabled(records, req.params.id, true));
-    audit(req, 'modules:enable', 'success', { id: req.params.id });
-    return reply.send({ id: req.params.id, enabled: true, restartRequired: true });
-  });
-
-  fastify.post<{ Params: { id: string } }>('/api/modules/:id/disable', async (req, reply) => {
-    if (!requirePerm(req, 'modules:manage', reply)) return;
-    const manifests = ALL_MODULES.map((m) => m.manifest);
-    const records = await readConfig('modules');
-    const check = canDisable(req.params.id, records, manifests);
-    if (!check.ok) return reply.status(409).send({ error: check.error });
-    await writeConfig('modules', setModuleEnabled(records, req.params.id, false));
-    audit(req, 'modules:disable', 'success', { id: req.params.id });
-    return reply.send({ id: req.params.id, enabled: false, restartRequired: true });
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -1370,6 +1350,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // concurrent creation can never observe a stale list or silently lose
     // this router (or have this one silently lose a concurrent sibling), and two
     // concurrent passthrough creations can never collide on slug either.
+    const routingModelsError = await validateRoutingModels(req.body);
+    if (routingModelsError) return reply.status(400).send({ error: routingModelsError });
     let createdRouter: RouterConfig = router;
     const finalRouters = await updateConfig('routers', (routers) => {
       // Passthrough names are scoped to Passthroughs only — a Passthrough is
@@ -1450,6 +1432,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.body.name !== undefined && typeof req.body.name !== 'string') return reply.status(400).send({ error: 'Router name must be a string' });
     if (req.body.models !== undefined && !Array.isArray(req.body.models)) return reply.status(400).send({ error: 'models must be an array' });
     if (req.body.name !== undefined && !req.body.name.trim()) return reply.status(400).send({ error: 'Router name cannot be empty' });
+
+    // Unknown routing model ids are checked outside the lock (async registry read): only ids
+    // the stored router does not already hold count, so a concurrent write cannot change the verdict.
+    const stored = (await readConfig('routers')).find(r => r.id === req.params.id);
+    if (stored) {
+      const routingModelsError = await validateRoutingModels(
+        { routingModelId: req.body.routingModelId, fallbackRoutingModelIds: req.body.fallbackRoutingModelIds, policies: req.body.policies },
+        stored,
+      );
+      if (routingModelsError) return reply.status(400).send({ error: routingModelsError });
+    }
 
     // Everything that reads or validates against the stored router list — the
     // duplicate-name check, kind inheritance, candidate validation and the
@@ -1695,14 +1688,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       router = routers.find(p => p.id === parsed.data.routerId);
       if (!router) return reply.status(404).send({ error: 'Not found' });
     }
+    let steps = parsed.data.steps as OptimizerConfig['steps'] | undefined;
+    let pipeline: { kind: 'profile' | 'custom'; profileId?: string; label: string } = { kind: 'custom', label: 'Custom' };
+    if (!steps) {
+      if (!router) return reply.status(400).send({ error: 'steps or routerId is required' });
+      const profile = await resolveOptimizerProfile(router);
+      steps = profile?.optimizers.steps ?? [];
+      if (profile && profile.id !== CUSTOM_PROFILE_ID) pipeline = { kind: 'profile', profileId: profile.id, label: profile.label };
+    }
     const result = await runPreview({
       registry: getOptimizerRegistry(),
       sampleMessages: parsed.data.sampleMessages as Message[],
-      steps: parsed.data.steps as OptimizerConfig['steps'],
+      steps,
       ...(parsed.data.model ? { model: parsed.data.model } : {}),
       ...(router ? { router } : {}),
     });
-    return reply.send(result);
+    return reply.send({ ...result, pipeline });
   });
 
   const tagsSchema = z.record(z.string().max(128), z.string().max(512))
@@ -2174,8 +2175,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const r of filtered) {
       const entry = byModelAcc[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cost: 0, errors: 0, success: 0, latencies: [] };
       entry.calls++;
-      entry.inputTokens += r.inputTokens;
-      entry.outputTokens += r.outputTokens;
+      entry.inputTokens += r.inputTokens ?? 0;
+      entry.outputTokens += r.outputTokens ?? 0;
       entry.cachedInputTokens += r.cachedInputTokens ?? 0;
       entry.cost += r.cost ?? 0;
       if (r.outcome === 'success') entry.success++;

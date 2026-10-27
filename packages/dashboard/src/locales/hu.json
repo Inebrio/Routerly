@@ -419,7 +419,8 @@
       "status": "állapot",
       "encoding": "kódolás",
       "frames": "keretek",
-      "bytes": "bájt"
+      "bytes": "bájt",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Mentés...",
       "saved": "Mentve",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Kérés megtakarítások előnézete",
         "description": "Futtassa az aktuális (mentetlen) csővezetéket az kérésen keresztül, hogy megtudja, mit távolít el minden lépés, és mennyibe kerül. Válasszon az egyik mintakonverzáció közül, vagy írjon be az saját kérést.",
         "promptLabel": "Kérés",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Még nem küldött kérés.",
       "turnTraceLog": "#{{turn}} fordulat nyom naplójában · {{count}} esemény",
       "turnTraceLog_other": "#{{turn}} fordulat nyom naplójában · {{count}} esemény"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Hibakereső Megjelenítése",
       "empty": "Még nincs hibakereső adat.",
       "emptyHint": "Küldjön egy üzenetet az útválasztási részletek megtekintéséhez.",
-      "turnTraceLog": "#{{turn}} fordulat nyom naplójában"
+      "turnTraceLog": "#{{turn}} fordulat nyom naplójában",
+      "resize": "A hibakeresési panel átméretezése"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Vissza az Csatlakozáshoz",
     "title": "Csatlakozás",
     "docs": "Dokumentáció",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "noClientPrefix": "Nincs kliens nevű",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "az kliens modell forgalmat irányít az Routerly-n keresztül.",
     "mcpLabel": "MCP",
     "mcpDescription": "az Routerly betölt egy eszköz szerver az belsejében.",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
     },

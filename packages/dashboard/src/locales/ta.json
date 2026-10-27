@@ -419,7 +419,8 @@
       "status": "நிலை",
       "encoding": "குறியாக்கம்",
       "frames": "பிரேம்கள்",
-      "bytes": "பைட்டுகள்"
+      "bytes": "பைட்டுகள்",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "சேமிக்கப்படுகிறது...",
       "saved": "சேமிக்கப்பட்டது",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "டோகன் சேமிப்பு முன்",
         "description": "தற்போதைய (சேமிக்கப்படாத) குழாய இயக்க ஒரு தூண்டல் மூலம் பார்வை என்ன ஒவ்வொரு கட்ட குறைக்க மற்றும் என்ன அதை செலவு. பொறுத்தம் மாதிரிக் உரை தொட்டுக்கள் ஒன்று, அல்லது வகை உங்கள் சொந்த தூண்டல்.",
         "promptLabel": "தூண்டல்",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "எந்த கோரிக்கை இல் அனுப்பப்பட்ட.",
       "turnTraceLog": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்",
       "turnTraceLog_other": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்கள்"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "डीबग दिखाएं",
       "empty": "अभी तक कोई डीबग डेटा नहीं।",
       "emptyHint": "रूटिंग विवरण देखने के लिए एक संदेश भेजें।",
-      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग",
+      "resize": "பிழைத்திருத்த பலகத்தின் அளவை மாற்றவும்"
     },
     "compare": {
       "modelLabel": "मॉडल {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "कनेक्ट पर वापस जाएं",
     "title": "कनेक्ट करें",
     "docs": "दस्तावेज़",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
     "noClientPrefix": "कोई क्लाइंट नाम नहीं",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से रूट करता है।",
     "mcpLabel": "MCP",
     "mcpDescription": "इसके अंदर Routerly को एक उपकरण सर्वर के रूप में लोड करता है।",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
     },

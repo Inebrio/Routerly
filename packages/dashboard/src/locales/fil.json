@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "encoding",
       "frames": "mga frame",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Sine-save...",
       "saved": "Na-save",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "I-preview ang naitipid na token",
         "description": "Patakbuhin ang kasalukuyan (hindi na-save) na pipeline sa isang prompt upang makita kung ano ang inalis ng bawat hakbang at ang gastos nito. Piliin ang isa sa mga sample conversation, o mag-type ng iyong sariling prompt.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Walang request na ipinadala pa.",
       "turnTraceLog": "Turn #{{turn}} trace log · {{count}} kaganapan",
       "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} kaganapan"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Ipakita ang debug",
       "empty": "Walang debug data pa.",
       "emptyHint": "Magpadala ng mensahe upang makita ang mga detalye ng routing.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Baguhin ang laki ng debug panel"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Bumalik sa Connect",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "Hindi pinagana ang client configurator. Humingi sa admin na paganahin ito gamit ang",
     "noClientPrefix": "Walang client na pinangalanang",
     "errors": {
       "loadFailed": "Nabigong i-load ang mga client: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "iniiruta ang trapiko ng model ng client na iyon sa pamamagitan ng Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "kinakarga ang Routerly bilang tool server sa loob nito.",
-    "notEnabledPrefix": "Hindi pinagana ang client configurator. Humingi sa admin na paganahin ito gamit ang",
     "errors": {
       "loadFailed": "Nabigong i-load ang mga client: {{error}}"
     },

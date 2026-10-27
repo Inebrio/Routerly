@@ -419,7 +419,8 @@
       "status": "סטטוס",
       "encoding": "קידוד",
       "frames": "מסגרות",
-      "bytes": "בייטים"
+      "bytes": "בייטים",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "שומר...",
       "saved": "נשמר",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "תצוגה מקדימה של חיסכון טוקנים",
         "description": "הפעל את הצנרת הנוכחית (הלא שמורה) על פרומפט לראות מה כל שלב מסיר ומה הוא עולה. בחר אחת מהשיחות לדוגמה, או הקלד פרומפט משלך.",
         "promptLabel": "פרומפט",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "עדיין לא נשלחה בקשה.",
       "turnTraceLog": "יומן עקבה תור #{{turn}} · {{count}} אירוע",
       "turnTraceLog_other": "יומן עקבה תור #{{turn}} · {{count}} אירועים"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "הצג ניפוי באגים",
       "empty": "עדיין אין נתוני ניפוי באגים.",
       "emptyHint": "שלח הודעה לראות פרטי ניתוב.",
-      "turnTraceLog": "יומן עקבה תור #{{turn}}"
+      "turnTraceLog": "יומן עקבה תור #{{turn}}",
+      "resize": "שינוי גודל לוח הניפוי"
     },
     "compare": {
       "modelLabel": "מודל {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "חזרה לחיבור",
     "title": "חיבור",
     "docs": "תיעוד",
-    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
     "noClientPrefix": "אין לקוח בשם",
     "errors": {
       "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "מנתב את תעבורת המודל של הלקוח הזה בעד Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "טוען את Routerly כשרת כלים בתוכו.",
-    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
     "errors": {
       "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
     },

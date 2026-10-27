@@ -419,7 +419,8 @@
       "status": "stare",
       "encoding": "codificare",
       "frames": "cadre",
-      "bytes": "octeți"
+      "bytes": "octeți",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Se salvează...",
       "saved": "Salvat",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Previzualizare economii jetoane",
         "description": "Rulează conducta actuală (nesalvată) pe o instrucțiune pentru a vedea ce elimină fiecare pas și cât costă. Alege din conversații exemplu, sau tastează propria instrucțiune.",
         "promptLabel": "Instrucțiune",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Nicio cerere trimisă încă.",
       "turnTraceLog": "Jurnal trasă rând #{{turn}} · {{count}} eveniment",
       "turnTraceLog_other": "Jurnal trasă rând #{{turn}} · {{count}} evenimente"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Arată depanare",
       "empty": "Niciun date de depanare încă.",
       "emptyHint": "Trimite un mesaj pentru a vedea detalii rutare.",
-      "turnTraceLog": "Jurnal trasă rând #{{turn}}"
+      "turnTraceLog": "Jurnal trasă rând #{{turn}}",
+      "resize": "Redimensionează panoul de depanare"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Înapoi la conectare",
     "title": "Conectare",
     "docs": "Documente",
-    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
     "noClientPrefix": "Niciun client numit",
     "errors": {
       "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "rutează trafic model al clientului prin Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "încarcă Routerly ca server unealtă în el.",
-    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
     "errors": {
       "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
     },

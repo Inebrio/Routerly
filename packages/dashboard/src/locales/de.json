@@ -419,7 +419,8 @@
       "status": "Status",
       "encoding": "Kodierung",
       "frames": "Frames",
-      "bytes": "Bytes"
+      "bytes": "Bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert",
       "preview": {
+        "pipeline": "Ausgeführte Pipeline: {{name}}",
         "title": "Token-Einsparungen als Vorschau",
         "description": "Führe die aktuelle (ungespeicherte) Pipeline über einen Prompt aus, um zu sehen, was jeder Schritt entfernt und was er kostet. Wähle eine der Beispielunterhaltungen oder gib deinen eigenen Prompt ein.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Noch keine Anfrage gesendet.",
       "turnTraceLog": "Runde #{{turn}} Spurprotokoll · {{count}} Ereignis",
       "turnTraceLog_other": "Runde #{{turn}} Spurprotokoll · {{count}} Ereignisse"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Debug anzeigen",
       "empty": "Noch keine Debug-Daten.",
       "emptyHint": "Sende eine Nachricht, um Routing-Details zu sehen.",
-      "turnTraceLog": "Runde #{{turn}} Spurprotokoll"
+      "turnTraceLog": "Runde #{{turn}} Spurprotokoll",
+      "resize": "Debug-Panel in der Größe ändern"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Zurück zu Verbinden",
     "title": "Verbinden",
     "docs": "Dokumente",
-    "notEnabledPrefix": "Client-Konfigurator ist nicht aktiviert. Bitte einen Administrator, ihn zu aktivieren mit",
     "noClientPrefix": "Kein Client namens",
     "errors": {
       "loadFailed": "Clients konnten nicht geladen werden: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "leitet den Modell-Traffic dieses Clients über Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "lädt Routerly als Tool-Server darin.",
-    "notEnabledPrefix": "Client-Konfigurator ist nicht aktiviert. Bitte einen Administrator, ihn zu aktivieren mit",
     "errors": {
       "loadFailed": "Clients konnten nicht geladen werden: {{error}}"
     },

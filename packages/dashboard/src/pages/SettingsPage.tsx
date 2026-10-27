@@ -2369,6 +2369,7 @@ export function SettingsSecurityTab() {
   const canWrite = can('settings:write');
   const [requireMfa, setRequireMfa] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -2376,7 +2377,7 @@ export function SettingsSecurityTab() {
   useEffect(() => {
     getSettings()
       .then(s => setRequireMfa(!!s.requireMfa))
-      .catch(e => setError(e instanceof Error ? e.message : t('settings.security.errors.loadFailed')))
+      .catch(e => { setLoadFailed(true); setError(e instanceof Error ? e.message : t('settings.security.errors.loadFailed')); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -2438,7 +2439,7 @@ export function SettingsSecurityTab() {
         </div>
       )}
       <div>
-        <button type="submit" className="btn btn-primary" disabled={saving || !canWrite} title={canWrite ? undefined : 'Required permission: settings:write'}>
+        <button type="submit" className="btn btn-primary" disabled={saving || !canWrite || loadFailed} title={canWrite ? undefined : 'Required permission: settings:write'}>
           {saving ? <><div className="spinner" style={{ width: 14, height: 14 }} /> {t('settings.security.saving')}</> : <><Save size={15} /> {t('settings.security.saveSettings')}</>}
         </button>
       </div>

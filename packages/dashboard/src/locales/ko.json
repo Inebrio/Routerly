@@ -419,7 +419,8 @@
       "status": "상태",
       "encoding": "인코딩",
       "frames": "프레임",
-      "bytes": "바이트"
+      "bytes": "바이트",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "저장 중...",
       "saved": "저장됨",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "토큰 절약 미리보기",
         "description": "현재(저장되지 않음) 파이프라인을 프롬프트에 대해 실행하여 각 단계가 제거하는 것과 비용을 확인합니다. 샘플 대화 중 하나를 선택하거나 고유 프롬프트를 입력하세요.",
         "promptLabel": "프롬프트",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "아직 요청을 보내지 않았습니다.",
       "turnTraceLog": "턴 #{{turn}} 추적 로그 · {{count}}개 이벤트",
       "turnTraceLog_other": "턴 #{{turn}} 추적 로그 · {{count}}개 이벤트"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "디버그 표시",
       "empty": "아직 디버그 데이터가 없습니다.",
       "emptyHint": "메시지를 보내 라우팅 상세를 확인합니다.",
-      "turnTraceLog": "턴 #{{turn}} 추적 로그"
+      "turnTraceLog": "턴 #{{turn}} 추적 로그",
+      "resize": "디버그 패널 크기 조절"
     },
     "compare": {
       "modelLabel": "모델 {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "연결로 돌아가기",
     "title": "연결",
     "docs": "문서",
-    "notEnabledPrefix": "클라이언트 구성기가 활성화되지 않았습니다. 관리자에게 다음 항목으로 활성화하도록 요청하세요",
     "noClientPrefix": "이름이 지정된 클라이언트 없음",
     "errors": {
       "loadFailed": "클라이언트 로드 실패: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "해당 클라이언트 모델 트래픽을 Routerly 통해 라우팅합니다.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly을 도구 서버로 로드합니다.",
-    "notEnabledPrefix": "클라이언트 구성기가 활성화되지 않았습니다. 관리자에게 다음 항목으로 활성화하도록 요청하세요",
     "errors": {
       "loadFailed": "클라이언트 로드 실패: {{error}}"
     },

@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "kodning",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Gemmer...",
       "saved": "Gemt",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Forhåndsvis token-besparelser",
         "description": "Kør den nuværende (ikke-gemte) pipeline over en prompt for at se, hvad hvert trin fjerner, og hvad det koster. Vælg en af eksempelsamtalerne, eller skriv din egen prompt.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Ingen forespørgsel sendt endnu.",
       "turnTraceLog": "Tur #{{turn}} trace-log · {{count}} hændelse",
       "turnTraceLog_other": "Tur #{{turn}} trace-log · {{count}} hændelser"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Vis fejlfinding",
       "empty": "Ingen fejlfindingsdata endnu.",
       "emptyHint": "Send en besked for at se routingdetaljer.",
-      "turnTraceLog": "Tur #{{turn}} trace-log"
+      "turnTraceLog": "Tur #{{turn}} trace-log",
+      "resize": "Tilpas størrelsen på fejlsøgningspanelet"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Tilbage til Tilslut",
     "title": "Tilslut",
     "docs": "Dokumentation",
-    "notEnabledPrefix": "Klientkonfigurator er ikke aktiveret. Bed en administrator om at aktivere den med",
     "noClientPrefix": "Ingen klient ved navn",
     "errors": {
       "loadFailed": "Kunne ikke indlæse klienter: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "routerer den klients modeltrafik gennem Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "indlæser Routerly som en værktøjsserver inde i den.",
-    "notEnabledPrefix": "Klientkonfigurator er ikke aktiveret. Bed en administrator om at aktivere den med",
     "errors": {
       "loadFailed": "Kunne ikke indlæse klienter: {{error}}"
     },

@@ -419,7 +419,8 @@
       "status": "статус",
       "encoding": "кодування",
       "frames": "кадри",
-      "bytes": "байти"
+      "bytes": "байти",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Збереження...",
       "saved": "Збережено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Попередній перегляд заощадження токенів",
         "description": "Запустіть поточний (незбережений) конвеєр над підказкою, щоб побачити, що кожен крок видаляє та що це коштує. Виберіть один з вибірних розмов або введіть власну підказку.",
         "promptLabel": "Підказка",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Запит ще не надіслано.",
       "turnTraceLog": "Обернути #{{turn}} журнал трасування · {{count}} подія",
       "turnTraceLog_other": "Обернути #{{turn}} журнал трасування · {{count}} подій"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Показати налагодження",
       "empty": "Жоден дані налагодження ще.",
       "emptyHint": "Надішліть повідомлення, щоб побачити деталі маршрутизації.",
-      "turnTraceLog": "Обернути #{{turn}} журнал трасування"
+      "turnTraceLog": "Обернути #{{turn}} журнал трасування",
+      "resize": "Змінити розмір панелі налагодження"
     },
     "compare": {
       "modelLabel": "Модель {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Назад до підключення",
     "title": "Підключити",
     "docs": "Документи",
-    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
     "noClientPrefix": "Немає клієнта на ім'я",
     "errors": {
       "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "маршрутизує цей трафік моделі клієнта через Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "завантажує Routerly як сервер інструменту всередину нього.",
-    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
     "errors": {
       "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
     },

@@ -419,7 +419,8 @@
       "status": "状态",
       "encoding": "编码",
       "frames": "帧",
-      "bytes": "字节"
+      "bytes": "字节",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "保存中...",
       "saved": "已保存",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "预览令牌节省",
         "description": "在提示上运行当前(未保存)管道，查看每个步骤删除的内容及其成本。选择其中一个示例对话或键入您自己的提示。",
         "promptLabel": "提示",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "还没有发送请求。",
       "turnTraceLog": "轮 #{{turn}} 跟踪日志 · {{count}} 个事件",
       "turnTraceLog_other": "轮 #{{turn}} 跟踪日志 · {{count}} 个事件"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "显示调试",
       "empty": "还没有调试数据。",
       "emptyHint": "发送消息以查看路由详情。",
-      "turnTraceLog": "轮 #{{turn}} 跟踪日志"
+      "turnTraceLog": "轮 #{{turn}} 跟踪日志",
+      "resize": "调整调试面板大小"
     },
     "compare": {
       "modelLabel": "模型 {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "返回连接",
     "title": "连接",
     "docs": "文档",
-    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
     "noClientPrefix": "没有名为以下的客户端",
     "errors": {
       "loadFailed": "未能加载客户端: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "路由该客户端模型流量通过Routerly。",
     "mcpLabel": "MCP",
     "mcpDescription": "将Routerly加载为其内的工具服务器。",
-    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
     "errors": {
       "loadFailed": "未能加载客户端: {{error}}"
     },

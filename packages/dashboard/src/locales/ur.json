@@ -419,7 +419,8 @@
       "status": "حالت",
       "encoding": "انکوڈنگ",
       "frames": "فریمز",
-      "bytes": "بائٹس"
+      "bytes": "بائٹس",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "محفوظ کیا جا رہا ہے...",
       "saved": "محفوظ",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "ٹوکن بچتوں کو پیش نظارہ کریں",
         "description": "ہر مرحلہ کیا ہٹاتا ہے اور اس کی لاگت دیکھنے کے لیے ایک پروموٹ پر موجودہ (غیر محفوظ) پائپ لائن چلائیں۔ نمونہ بات چیتوں میں سے ایک منتخب کریں، یا اپنا پروموٹ درج کریں۔",
         "promptLabel": "پروموٹ",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "ابھی کوئی درخواست نہیں بھیجی گئی۔",
       "turnTraceLog": "موڑ #{{turn}} نشان لاگ · {{count}} واقعہ",
       "turnTraceLog_other": "موڑ #{{turn}} نشان لاگ · {{count}} واقعات"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "ڈیبگ دکھائیں",
       "empty": "ابھی کوئی ڈیبگ کا ڈیٹا نہیں۔",
       "emptyHint": "روٹنگ تفصیلات دیکھنے کے لیے ایک پیغام بھیجیں۔",
-      "turnTraceLog": "موڑ #{{turn}} نشان لاگ"
+      "turnTraceLog": "موڑ #{{turn}} نشان لاگ",
+      "resize": "ڈیبگ پینل کا سائز تبدیل کریں"
     },
     "compare": {
       "modelLabel": "ماڈل {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "رابطہ پر واپس",
     "title": "رابطہ",
     "docs": "ڈاکس",
-    "notEnabledPrefix": "کلائنٹ کنفیگریٹر فعال نہیں۔ منتظم سے اسے فعال کرنے کے لیے کہیں",
     "noClientPrefix": "کوئی کلائنٹ نام نہیں",
     "errors": {
       "loadFailed": "کلائنٹس لوڈ کرنے میں ناکام: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "اس کلائنٹ ماڈل ٹریفک کو Routerly میں روٹ کرتا ہے۔",
     "mcpLabel": "MCP",
     "mcpDescription": "اندر Routerly کو ٹول سرور کے طور پر لوڈ کرتا ہے۔",
-    "notEnabledPrefix": "کلائنٹ کنفیگریٹر فعال نہیں۔ منتظم سے اسے فعال کرنے کے لیے کہیں",
     "errors": {
       "loadFailed": "کلائنٹس لوڈ کرنے میں ناکام: {{error}}"
     },

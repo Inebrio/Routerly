@@ -419,7 +419,8 @@
       "status": "статус",
       "encoding": "кодировка",
       "frames": "фреймы",
-      "bytes": "байты"
+      "bytes": "байты",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Сохранение...",
       "saved": "Сохранено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Просмотр сбережений токенов",
         "description": "Запустите текущий (несохранённый) конвейер над подсказкой, чтобы увидеть, что каждый шаг удаляет и что это стоит. Выберите один из примеров разговоров или введите свою подсказку.",
         "promptLabel": "Подсказка",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Запрос ещё не отправлен.",
       "turnTraceLog": "Лог трассировки поворота #{{turn}} · {{count}} событие",
       "turnTraceLog_other": "Лог трассировки поворота #{{turn}} · {{count}} событий"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Показать отладку",
       "empty": "Нет данных отладки ещё.",
       "emptyHint": "Отправьте сообщение, чтобы увидеть детали маршрутизации.",
-      "turnTraceLog": "Лог трассировки поворота #{{turn}}"
+      "turnTraceLog": "Лог трассировки поворота #{{turn}}",
+      "resize": "Изменить размер панели отладки"
     },
     "compare": {
       "modelLabel": "Модель {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Вернуться к подключению",
     "title": "Подключение",
     "docs": "Документы",
-    "notEnabledPrefix": "Конфигуратор клиента не включен. Попросите администратора включить его с помощью",
     "noClientPrefix": "Нет клиента с именем",
     "errors": {
       "loadFailed": "Не удалось загрузить клиентов: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "маршруты трафика модели этого клиента через Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "загружает Routerly как сервер инструментов внутри него.",
-    "notEnabledPrefix": "Конфигуратор клиента не включен. Попросите администратора включить его с помощью",
     "errors": {
       "loadFailed": "Не удалось загрузить клиентов: {{error}}"
     },

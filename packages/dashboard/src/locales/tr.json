@@ -419,7 +419,8 @@
       "status": "durum",
       "encoding": "kodlama",
       "frames": "çerçeveler",
-      "bytes": "baytlar"
+      "bytes": "baytlar",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Kaydediliyor...",
       "saved": "Kaydedildi",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "İstem tasarruflarını önizle",
         "description": "Geçerli (kaydedilmemiş) işlem hattını her adımın ne kaldırdığını ve ne mal olduğunu görmek için bir isteme çalıştırın. Örnek konuşmalardan birini seçin veya kendi isteminizi yazın.",
         "promptLabel": "İstem",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Henüz istek gönderilmedi.",
       "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü · {{count}} olay",
       "turnTraceLog_other": "Dönemek #{{turn}} izleme günlüğü · {{count}} olaylar"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Hata ayıklamayı göster",
       "empty": "Henüz hata ayıklama verisi yok.",
       "emptyHint": "Yönlendirme detaylarını görmek için mesaj gönderin.",
-      "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü"
+      "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü",
+      "resize": "Hata ayıklama panelini yeniden boyutlandır"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Bağlantıya Geri Dön",
     "title": "Bağlan",
     "docs": "Belgeler",
-    "notEnabledPrefix": "İstemci yapılandırıcı etkin değildir. Yöneticiden etkinleştirmesini isteyin",
     "noClientPrefix": "Adlı istemci yok",
     "errors": {
       "loadFailed": "İstemcileri yüklemek başarısız oldu: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "bu istemci modeli trafiğini Routerly üzerinden yönlendirir.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly'yi bir araç sunucusu olarak içine yükler.",
-    "notEnabledPrefix": "İstemci yapılandırıcı etkin değildir. Yöneticiden etkinleştirmesini isteyin",
     "errors": {
       "loadFailed": "İstemcileri yüklemek başarısız oldu: {{error}}"
     },

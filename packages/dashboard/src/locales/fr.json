@@ -419,7 +419,8 @@
       "status": "statut",
       "encoding": "encodage",
       "frames": "images",
-      "bytes": "octets"
+      "bytes": "octets",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Enregistrement...",
       "saved": "Enregistré",
       "preview": {
+        "pipeline": "Pipeline exécutée : {{name}}",
         "title": "Aperçu des économies de jeton",
         "description": "Exécutez le pipeline actuel (non enregistré) sur un prompt pour voir ce que chaque étape supprime et ce qu'elle coûte. Choisissez l'une des conversations d'exemple, ou tapez votre propre prompt.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Aucune requête envoyée pour l'instant.",
       "turnTraceLog": "Journal de trace du tour #{{turn}} · {{count}} événement",
       "turnTraceLog_other": "Journal de trace du tour #{{turn}} · {{count}} événements"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Afficher le débogage",
       "empty": "Aucune donnée de débogage pour l'instant.",
       "emptyHint": "Envoyez un message pour voir les détails de routage.",
-      "turnTraceLog": "Journal de trace du tour #{{turn}}"
+      "turnTraceLog": "Journal de trace du tour #{{turn}}",
+      "resize": "Redimensionner le panneau de débogage"
     },
     "compare": {
       "modelLabel": "Modèle {{label}} :",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Retour à Connecter",
     "title": "Connecter",
     "docs": "Docs",
-    "notEnabledPrefix": "Le configurateur de client n'est pas activé. Demandez à un admin de l'activer avec",
     "noClientPrefix": "Aucun client nommé",
     "errors": {
       "loadFailed": "Impossible de charger les clients : {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "route le trafic de modèle de ce client via Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "charge Routerly comme serveur d'outils dedans.",
-    "notEnabledPrefix": "Le configurateur de client n'est pas activé. Demandez à un admin de l'activer avec",
     "errors": {
       "loadFailed": "Impossible de charger les clients : {{error}}"
     },

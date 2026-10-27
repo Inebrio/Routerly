@@ -419,7 +419,8 @@
       "status": "સ્થિતિ",
       "encoding": "એન્કોડિંગ",
       "frames": "ફ્રેમ્સ",
-      "bytes": "બાઇટ્સ"
+      "bytes": "બાઇટ્સ",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "સાચવી રહ્યા છીએ...",
       "saved": "સાચવાયું",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "ટોકન બચત પૂર્વદર્શન",
         "description": "વર્તમાન (અસાચવેલ) પાઇપલાઇન પ્રોમ્પ્ટ દ્વારા ચલાવો દરેક પગલું શું દૂર કરે છે અને તેનો ખર્ચ શું છે તે જોવા માટે. નમૂના કણોમાંથી એક પસંદ કરો, અથવા તમારું પોતાનું પ્રોમ્પ્ટ ટાઈપ કરો.",
         "promptLabel": "પ્રોમ્પ્ટ",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "હજુ કોઈ વિનંતી મોકલી નથી.",
       "turnTraceLog": "ટર્ન #{{turn}} ટ્રેસ લોગ · {{count}} ઇવેન્ટ",
       "turnTraceLog_other": "ટર્ન #{{turn}} ટ્રેસ લોગ · {{count}} ઇવેન્ટ્સ"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "ડીબગ બતાવો",
       "empty": "હજુ કોઈ ડીબગ ડેટા નથી.",
       "emptyHint": "રૂટિંગ વિગતો જોવા માટે સંદેશ મોકલો.",
-      "turnTraceLog": "ટર્ન #{{turn}} ટ્રેસ લોગ"
+      "turnTraceLog": "ટર્ન #{{turn}} ટ્રેસ લોગ",
+      "resize": "ડિબગ પેનલનું કદ બદલો"
     },
     "compare": {
       "modelLabel": "મોડલ {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "કનેક્ટ પર પાછલું",
     "title": "કનેક્ટ",
     "docs": "ડોક્સ",
-    "notEnabledPrefix": "ક્લાયંટ ગોઠવણકાર સક્ષમ નથી. વ્યવસ્થાપક તેને સક્ષમ કરવા માટે પૂછો",
     "noClientPrefix": "કોઈ ક્લાયંટ નામ",
     "errors": {
       "loadFailed": "ક્લાયંટ્સ લોડ નિષ્ફળ: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "તે ક્લાયંટ મોડલ ટ્રાફિક Routerly દ્વારા માર્ગ આપે છે.",
     "mcpLabel": "MCP",
     "mcpDescription": "તે અંદર Routerly સાધન સર્વર લોડ કરે છે.",
-    "notEnabledPrefix": "ક્લાયંટ ગોઠવણકાર સક્ષમ નથી. વ્યવસ્થાપક તેને સક્ષમ કરવા માટે પૂછો",
     "errors": {
       "loadFailed": "ક્લાયંટ્સ લોડ નિષ્ફળ: {{error}}"
     },

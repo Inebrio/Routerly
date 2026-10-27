@@ -37,6 +37,7 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateUsageRouterId: vi.fn(async () => 0),
   migrateNotificationChannelScope: vi.fn(async () => 0),
   migrateUsageToNdjson: vi.fn(async () => 0),
+  reenableModules: vi.fn(async () => [] as string[]),
   migrateOrchestratorCandidateOrder: vi.fn(async () => 0),
   migratePassthroughPseudoModel: vi.fn(async () => 0),
   migrateUserRouterIds: vi.fn(async () => 0),

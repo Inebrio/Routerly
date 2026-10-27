@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "codering",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Opslaan...",
       "saved": "Opgeslagen",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Token-besparing voorvertoning",
         "description": "Voer de huidigelopen) pijplijn uit op een prompt om te zien wat elke stap verwijdert en wat het kost. Kies een van de voorbeeldgesprekken of typ uw eigen prompt.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Nog geen verzoek verzonden.",
       "turnTraceLog": "Beurt #{{turn}} trace logboek · {{count}} gebeurtenis",
       "turnTraceLog_other": "Beurt #{{turn}} trace logboek · {{count}} gebeurtenissen"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Debug tonen",
       "empty": "Nog geen debug-gegevens.",
       "emptyHint": "Verzend een bericht om routeringsdetails te zien.",
-      "turnTraceLog": "Beurt #{{turn}} trace logboek"
+      "turnTraceLog": "Beurt #{{turn}} trace logboek",
+      "resize": "Formaat van het debugpaneel wijzigen"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Terug naar verbinden",
     "title": "Verbinden",
     "docs": "Documenten",
-    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
     "noClientPrefix": "Geen client met de naam",
     "errors": {
       "loadFailed": "Kan clients niet laden: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "routeert dat clientmodelverkeer door Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laadt Routerly als toolserver erin.",
-    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
     "errors": {
       "loadFailed": "Kan clients niet laden: {{error}}"
     },

@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "encoding",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Saving...",
       "saved": "Saved",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "टोकन बचत पूर्वावलोकन",
         "description": "प्रत्येक चरण काय काढते आणि खर्च काय आहे हे पाहण्यासाठी वर्तमान (असंरक्षित) पाइपलाइन प्रॉम्प्टवर चलवा. नमुना संभाषणपैकी एक निवडा, किंवा आपली स्वतःची प्रॉम्प्ट टाइप करा.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "अद्याप कोणतीही विनंती पाठवलेली नाही।",
       "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग · {{count}} इव्हेंट",
       "turnTraceLog_other": "Turn #{{turn}} ट्रेस लॉग · {{count}} इव्हेंट्स"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "डीबग दाखवा",
       "empty": "अद्याप कोणतेही डीबग डेटा नाही।",
       "emptyHint": "राउटिंग तपशील पाहण्यासाठी संदेश पाठवा।",
-      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग",
+      "resize": "डीबग पॅनेलचा आकार बदला"
     },
     "compare": {
       "modelLabel": "मॉडेल {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "कनेक्ट कडे परत",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "noClientPrefix": "कोणतेही क्लायंट नावाचा",
     "errors": {
       "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "त्या क्लायंट मॉडेल ट्रॅफिकला Routerly द्वारे राउट करा।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly साधन सर्वरच्या अंदरुन लोड करा।",
-    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "errors": {
       "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
     },

@@ -419,7 +419,8 @@
       "status": "الحالة",
       "encoding": "الترميز",
       "frames": "الإطارات",
-      "bytes": "بايت"
+      "bytes": "بايت",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "جارٍ الحفظ...",
       "saved": "تم الحفظ",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "معاينة توفير الرموز",
         "description": "شغّل خط الأنابيب الحالي (غير المحفوظ) على مطالبة لرؤية ما تزيله كل خطوة وما تكلّفه. اختر إحدى المحادثات النموذجية، أو اكتب مطالبتك الخاصة.",
         "promptLabel": "المطالبة",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "لم يتم إرسال أي طلب بعد.",
       "turnTraceLog": "سجل تتبّع الدور رقم {{turn}} · {{count}} حدث",
       "turnTraceLog_other": "سجل تتبّع الدور رقم {{turn}} · {{count}} أحداث"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "إظهار التصحيح",
       "empty": "لا توجد بيانات تصحيح بعد.",
       "emptyHint": "أرسل رسالة لرؤية تفاصيل التوجيه.",
-      "turnTraceLog": "سجل تتبّع الدور رقم {{turn}}"
+      "turnTraceLog": "سجل تتبّع الدور رقم {{turn}}",
+      "resize": "تغيير حجم لوحة التصحيح"
     },
     "compare": {
       "modelLabel": "النموذج {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "العودة إلى الاتصال",
     "title": "الاتصال",
     "docs": "التوثيق",
-    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
     "noClientPrefix": "لا يوجد عميل باسم",
     "errors": {
       "loadFailed": "تعذّر تحميل العملاء: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "يوجّه حركة مرور نموذج ذلك العميل عبر Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "يحمّل Routerly كخادم أدوات داخله.",
-    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
     "errors": {
       "loadFailed": "تعذّر تحميل العملاء: {{error}}"
     },

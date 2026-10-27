@@ -501,17 +501,7 @@ export interface ModuleInfo {
   dependsOn: string[];
 }
 
-export interface ModuleToggleResult {
-  id: string;
-  enabled: boolean;
-  restartRequired: boolean;
-}
-
 export const getModules = () => request<ModuleInfo[]>('/modules');
-export const enableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/enable`, { method: 'POST' });
-export const disableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/disable`, { method: 'POST' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {
@@ -1229,6 +1219,8 @@ export interface OptimizerPreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
   perStep: OptimizerPreviewStep[];
+  /** Which pipeline ran: the router's assigned profile or its custom steps. */
+  pipeline?: { kind: 'profile' | 'custom'; profileId?: string; label: string };
   /** The prompt the whole pipeline would forward. */
   messages: Message[];
 }
@@ -1238,7 +1230,8 @@ export const previewOptimizers = (body: {
   /** Model the sample is addressed to, so context-window steps have a window. */
   model?: string;
   sampleMessages: Message[];
-  steps: OptimizerStep[];
+  /** Omit to run the router's own pipeline (assigned profile, else saved custom steps). */
+  steps?: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
 /** One installable LLMLingua-2 checkpoint, as the service host reports it. */
@@ -1287,3 +1280,21 @@ export interface ClientsResponse {
 /** 404s (as an ApiError with `status === 404`) when the client-configurator module is disabled. */
 export const getClients = () => request<ClientsResponse>('/clients');
 
+
+// ── Playground Debug panel layout (per-browser preference) ───────────────────
+const PLAYGROUND_DEBUG_KEY = 'lr_playground_debug';
+export interface PlaygroundDebugLayout { width: number | null; collapsed: boolean }
+
+export function getPlaygroundDebugLayout(): PlaygroundDebugLayout {
+  try {
+    const v = JSON.parse(localStorage.getItem(PLAYGROUND_DEBUG_KEY) ?? 'null');
+    return {
+      width: typeof v?.width === 'number' && Number.isFinite(v.width) ? v.width : null,
+      collapsed: v?.collapsed === true,
+    };
+  } catch { return { width: null, collapsed: false }; }
+}
+
+export function setPlaygroundDebugLayout(layout: PlaygroundDebugLayout): void {
+  try { localStorage.setItem(PLAYGROUND_DEBUG_KEY, JSON.stringify(layout)); } catch { /* storage unavailable */ }
+}

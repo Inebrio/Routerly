@@ -419,7 +419,8 @@
       "status": "وضعیت",
       "encoding": "رمزگذاری",
       "frames": "فریم‌ها",
-      "bytes": "بایت"
+      "bytes": "بایت",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "در حال ذخیره…",
       "saved": "ذخیره شد",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "پیش‌نمایش صرفه‌جویی توکن",
         "description": "خط لوله فعلی (ذخیره‌نشده) را روی یک پرامپت اجرا کنید تا ببینید هر مرحله چه چیزی را حذف می‌کند و هزینه‌اش چقدر است. یکی از گفتگوهای نمونه را انتخاب کنید، یا پرامپت خود را تایپ کنید.",
         "promptLabel": "پرامپت",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "هنوز درخواستی ارسال نشده است.",
       "turnTraceLog": "گزارش ردیابی نوبت #{{turn}} · {{count}} رویداد",
       "turnTraceLog_other": "گزارش ردیابی نوبت #{{turn}} · {{count}} رویداد"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "نمایش اشکال‌زدایی",
       "empty": "هنوز داده اشکال‌زدایی‌ای وجود ندارد.",
       "emptyHint": "برای مشاهده جزئیات مسیریابی، پیامی ارسال کنید.",
-      "turnTraceLog": "گزارش ردیابی نوبت #{{turn}}"
+      "turnTraceLog": "گزارش ردیابی نوبت #{{turn}}",
+      "resize": "تغییر اندازه پنل اشکال‌زدایی"
     },
     "compare": {
       "modelLabel": "مدل {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "بازگشت به اتصال",
     "title": "اتصال",
     "docs": "مستندات",
-    "notEnabledPrefix": "پیکربندی‌کننده کلاینت فعال نیست. از یک مدیر بخواهید آن را با",
     "noClientPrefix": "کلاینتی با نام",
     "errors": {
       "loadFailed": "بارگذاری کلاینت‌ها ناموفق بود: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "ترافیک مدل آن کلاینت را از طریق روترلی مسیریابی می‌کند.",
     "mcpLabel": "MCP",
     "mcpDescription": "روترلی را به‌عنوان یک سرور ابزار درون آن بار می‌کند.",
-    "notEnabledPrefix": "پیکربندی‌کننده کلاینت فعال نیست. از یک مدیر بخواهید آن را با",
     "errors": {
       "loadFailed": "بارگذاری کلاینت‌ها ناموفق بود: {{error}}"
     },

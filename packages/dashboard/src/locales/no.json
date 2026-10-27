@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "koding",
       "frames": "rammer",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Lagrer...",
       "saved": "Lagret",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Forhåndsvis token-besparelser",
         "description": "Kjør gjeldende (ulagret) rørledning over en melding for å se hva hvert trinn fjerner og hva det koster. Velg en av eksempelkonversasjonene, eller skriv din egen melding.",
         "promptLabel": "Melding",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Ingen forespørsel sendt ennå.",
       "turnTraceLog": "Tur #{{turn}} sporingslogg · {{count}} hendelse",
       "turnTraceLog_other": "Tur #{{turn}} sporingslogg · {{count}} hendelser"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Vis feilsøking",
       "empty": "Ingen feilsøkingsdata ennå.",
       "emptyHint": "Send en melding for å se rutingdetaljer.",
-      "turnTraceLog": "Tur #{{turn}} sporingslogg"
+      "turnTraceLog": "Tur #{{turn}} sporingslogg",
+      "resize": "Endre størrelsen på feilsøkingspanelet"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Tilbake til Koble til",
     "title": "Koble til",
     "docs": "Dokumenter",
-    "notEnabledPrefix": "Klientkonfiguratoren er ikke aktivert. Be en administrator om å aktivere den med",
     "noClientPrefix": "Ingen klient navngitt",
     "errors": {
       "loadFailed": "Kunne ikke laste klienter: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "ruterer klientmodelltrafikken gjennom Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laster Routerly som et verktøyserver innside det.",
-    "notEnabledPrefix": "Klientkonfiguratoren er ikke aktivert. Be en administrator om å aktivere den med",
     "errors": {
       "loadFailed": "Kunne ikke laste klienter: {{error}}"
     },

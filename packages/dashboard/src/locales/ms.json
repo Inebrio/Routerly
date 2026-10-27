@@ -419,7 +419,8 @@
       "status": "status",
       "encoding": "pengodean",
       "frames": "bingkai",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -1410,6 +1411,7 @@
       "saving": "Menyimpan...",
       "saved": "Tersimpan",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Pratinjau penghematan token",
         "description": "Jalankan pipeline saat ini (tidak tersimpan) melalui prompt untuk melihat apa yang setiap langkah hapus dan biayanya. Pilih salah satu percakapan sampel, atau ketik prompt Anda sendiri.",
         "promptLabel": "Prompt",
@@ -1687,6 +1689,16 @@
       "noRequestSent": "Belum ada permintaan yang dikirim.",
       "turnTraceLog": "Log jejak giliran #{{turn}} · {{count}} acara",
       "turnTraceLog_other": "Log jejak giliran #{{turn}} · {{count}} acara"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -2494,7 +2506,8 @@
       "show": "Tampilkan debug",
       "empty": "Tidak ada data debug.",
       "emptyHint": "Kirim pesan untuk melihat detail routing.",
-      "turnTraceLog": "Giliran #{{turn}} log jejak"
+      "turnTraceLog": "Giliran #{{turn}} log jejak",
+      "resize": "Ubah saiz panel nyahpepijat"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2728,7 +2741,6 @@
     "backToConnect": "Kembali ke Hubung",
     "title": "Hubung",
     "docs": "Dokumen",
-    "notEnabledPrefix": "Konfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
     "noClientPrefix": "Tidak ada klien bernama",
     "errors": {
       "loadFailed": "Gagal memuat klien: {{error}}"
@@ -2773,7 +2785,6 @@
     "llmDescription": "merutingkan lalu lintas model klien itu melalui Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "memuat Routerly sebagai server alat di dalamnya.",
-    "notEnabledPrefix": "Konfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
     "errors": {
       "loadFailed": "Gagal memuat klien: {{error}}"
     },

@@ -80,17 +80,6 @@ describe('GET /api/experiments', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
-
-  it('answers 403 when the experiments module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'GET', url: '/api/experiments',
-      headers: authWith('experiments:read', { modules: [{ id: 'experiments', enabled: false }] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
-  })
 })
 
 describe('GET /api/experiments/:id', () => {
@@ -184,17 +173,6 @@ describe('GET /api/experiments/:id/metrics', () => {
     const res = await app.inject({ method: 'GET', url: '/api/experiments/exp-1/metrics', headers: authWith('report:read', { experiments: [experiment()] }) })
     await app.close()
     expect(res.statusCode).toBe(403)
-  })
-
-  it('403s when the experiments module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({
-      method: 'GET', url: '/api/experiments/exp-1/metrics',
-      headers: authWith('experiments:read', { experiments: [experiment()], modules: [{ id: 'experiments', enabled: false }] }),
-    })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
   })
 })
 
