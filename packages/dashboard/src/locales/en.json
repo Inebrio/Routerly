@@ -1374,7 +1374,7 @@
         "customMode": "Custom",
         "routingProfile": "Routing Profile",
         "builtinSuffix": "(built-in)",
-        "profileHint": "Policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "profileHint": "Policies come from the profile and follow its changes. Edit them on the Profiles page, or use “Copy into custom” in the Custom view to start from a copy of them.",
         "saved": "Saved!",
         "saveRoutingConfiguration": "Save Routing Configuration"
       },
@@ -1404,7 +1404,7 @@
       "profileSelect": {
         "ariaLabel": "Optimizer Profile",
         "builtinLabel": "{{label}} (built-in)",
-        "hint": "Steps come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "hint": "Steps come from the profile and follow its changes. Edit them on the Profiles page, or use “Copy into custom” in the Custom view to start from a copy of them.",
         "disabledSuffix": "(disabled)",
         "thresholdSuffix": ", threshold {{threshold}}"
       },
@@ -1650,7 +1650,7 @@
       "profileSelect": {
         "ariaLabel": "Security Profile",
         "builtinLabel": "{{label}} (built-in)",
-        "hint": "Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or switch to Custom to start from a copy of them.",
+        "hint": "Guardrails and PII policies come from the profile and follow its changes. Edit them on the Profiles page, or use “Copy into custom” in the Custom view to start from a copy of them.",
         "blockingSuffix": ", blocking",
         "disabledSuffix": ", disabled",
         "piiRedaction": "PII redaction ({{target}})"
@@ -1691,6 +1691,16 @@
       "noRequestSent": "No request sent yet.",
       "turnTraceLog": "Turn #{{turn}} trace log · {{count}} event",
       "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} events"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {

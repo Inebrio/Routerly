@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **Choosing a profile on a router no longer overwrites its custom settings (ROUT-441).** On the Routing, Optimizer and Security tabs, picking a profile or switching Profile/Custom used to persist immediately and switching to Custom replaced the stored custom config with a profile copy. Now both are pending changes (notice with Discard) applied only on Save; Custom always shows the stored settings, and the new «Copy into custom» action asks for confirmation before replacing existing custom content. Dashboard only; `PUT /api/routers/:id/profiles` and `routerly profiles set` already left custom fields untouched.
+
 ### Changed
 
 - **All modules are core and always active.** A module can no longer be disabled: `provider-web` is no longer off by default, so web provider connections (`anthropic-web`, `openai-web`) can be created from the dashboard, CLI and API without extra steps. At startup, any stored `enabled: false` module record is cleared and the service logs `[startup] re-enabled N module(s): …`. Removed `POST /api/modules/:id/enable|disable`, `routerly modules enable|disable` and every `module_disabled` (403) error; `GET /api/modules` and `routerly modules list` remain (always enabled). The `modules:manage` permission no longer guards anything.
