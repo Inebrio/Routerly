@@ -5,6 +5,12 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterRoutingTab } from './RouterRoutingTab';
 
+// Permission gate: tests flip this to simulate a user without router:write.
+let mockCanWrite = true;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => (p === 'router:write' ? mockCanWrite : true) }),
+}));
+
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
   updateRouter: vi.fn(),
@@ -150,6 +156,7 @@ const sampleProfiles = [
 ];
 
 beforeEach(() => {
+  mockCanWrite = true;
   mockGetModels.mockResolvedValue([chatModel, chatModel2, embeddingModel]);
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetProfiles.mockResolvedValue(sampleProfiles);
@@ -2368,5 +2375,16 @@ describe('RouterRoutingTab — policy allow-list by router kind', () => {
 
     expect(optionLabels).toContain('Cheapest Policy');
     expect(optionLabels).toContain('Health Policy');
+  });
+});
+
+describe('RouterRoutingTab — without router:write', () => {
+  it('disables editing controls and hides Save', async () => {
+    mockCanWrite = false;
+    renderTab();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Profile$/ })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^Profile$/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Custom$/ })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /save routing configuration/i })).not.toBeInTheDocument();
   });
 });

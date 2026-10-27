@@ -33,7 +33,8 @@ export function RouterOptimizerTab() {
   const { router, setRouter } = useRouter();
   const { can } = useAuth();
   const canRead = can('optimizers:read');
-  const canManage = can('optimizers:manage');
+  // Saving the pipeline or a profile assignment is a router update: it also needs router:write.
+  const canManage = can('optimizers:manage') && can('router:write');
 
   const [installed, setInstalled] = useState<InstalledOptimizer[]>([]);
   const [rows, setRows] = useState<OptimizerRow[]>([]);

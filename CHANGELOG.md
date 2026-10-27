@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Router Routing, Optimizer and Security tabs are read-only without `router:write` (ROUT-450).** A viewer saw active Profile/Custom switches, Add buttons and Save, and only got a 403 on save. The controls are now disabled and Save is hidden; the Optimizer tab also requires `router:write` besides `optimizers:manage`. Dashboard only.
 - **Flaky MCP audit test fixed (ROUT-449).** The `create_router_token` audit test failed about 1 run in 16 when the random token snippet started with `0`; it now checks that no 64-hex raw token is in the audit entry. Test only.
 - **Output PII policy now applies to `/v1/messages` served by Anthropic-native models (ROUT-445).** API-key, OAuth and web Anthropic models are forwarded verbatim and bypassed the response scrub, so phone numbers, emails etc. reached the client in clear (stream and non-stream). The pass-through now masks only `text` blocks / `text_delta` events when the router has an output PII policy; every other byte is unchanged. Without a policy the pass-through is untouched.
 - **Root vitest suite passes on the dev-box (ROUT-443).** `release-notes.sh` now skips git-cliff `INFO` notices and colour codes when reporting the cause of a failure; the RA-08 tests no longer depend on `npx` being absent from `/usr/bin`; `link-worktree-modules.mjs` links the main checkout's `website/node_modules` so the RA-09 docs-version tests do not run `npm ci`. Tooling and tests only.

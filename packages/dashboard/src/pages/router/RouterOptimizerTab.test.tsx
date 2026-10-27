@@ -134,7 +134,7 @@ beforeEach(() => {
     perStep: [{ id: 'ccr', before: 100, after: 60, messages: [{ role: 'user', content: 'hello' }] }],
     messages: [{ role: 'user', content: 'hello' }],
   });
-  setAuth(['optimizers:read', 'optimizers:manage']);
+  setAuth(['optimizers:read', 'optimizers:manage', 'router:write']);
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -239,6 +239,14 @@ describe('RouterOptimizerTab', () => {
     await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /save optimizers/i })).not.toBeInTheDocument();
     // checkboxes disabled
+    expect(screen.getAllByRole('checkbox')[0]).toBeDisabled();
+  });
+
+  it('hides edit controls with optimizers:manage but without router:write', async () => {
+    setAuth(['optimizers:read', 'optimizers:manage']);
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /save optimizers/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[0]).toBeDisabled();
   });
 
