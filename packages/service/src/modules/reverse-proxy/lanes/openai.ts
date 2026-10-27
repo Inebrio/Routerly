@@ -96,6 +96,7 @@ export const openaiUpstream: Processor<ProxyContext> = {
     const body = ctx.request
     const log = ctx.log
     const router = ctx.router
+    log.debug({ modelId: model.id, provider: model.provider, routerId: router.id, stream: ctx.stream }, 'completion: candidate selected')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
     const endUserId = (body as any).user as string | undefined || undefined
 

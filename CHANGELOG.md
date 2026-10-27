@@ -18,6 +18,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Debug log level now emits debug lines (ROUT-432).** At `logLevel=debug` each proxy attempt logs the selected candidate (model, provider, router, stream flag; no prompt or credentials). Levels from info up are unchanged.
+
 - **Dashboard: Settings › General and Integrations no longer fire 403 requests without permission (ROUT-427).** General skips `GET /api/settings` without `settings:read`, Integrations skips `GET /api/integrations` without `settings:write`; both show a permission message instead of a console error.
 - **`GET /api/models/catalog` permission documented and tested (ROUT-423).** The route requires `model:read` only (it feeds the model picker); no `settings:read` needed. No behaviour change.
 - **Dashboard on phones (ROUT-429).** At 390px the telemetry consent banner wraps (full-width text, buttons below) and the collapsed sidebar rail shows the whole logo instead of a clipped one.
