@@ -501,17 +501,7 @@ export interface ModuleInfo {
   dependsOn: string[];
 }
 
-export interface ModuleToggleResult {
-  id: string;
-  enabled: boolean;
-  restartRequired: boolean;
-}
-
 export const getModules = () => request<ModuleInfo[]>('/modules');
-export const enableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/enable`, { method: 'POST' });
-export const disableModule = (id: string) =>
-  request<ModuleToggleResult>(`/modules/${encodeURIComponent(id)}/disable`, { method: 'POST' });
 
 // ── Usage Stats ───────────────────────────────────────────────────────────
 export interface TraceEntry {

@@ -2729,7 +2729,6 @@
     "backToConnect": "Qoşulmaya qayıt",
     "title": "Qoşul",
     "docs": "Sənədlər",
-    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
     "noClientPrefix": "Belə adlı müştəri yoxdur",
     "errors": {
       "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "həmin müştərinin model trafikini Routerly üzərindən yönləndirir.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly-ni onun içində alət serveri kimi yükləyir.",
-    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
     "errors": {
       "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
     },

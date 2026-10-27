@@ -2729,7 +2729,6 @@
     "backToConnect": "חזרה לחיבור",
     "title": "חיבור",
     "docs": "תיעוד",
-    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
     "noClientPrefix": "אין לקוח בשם",
     "errors": {
       "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "מנתב את תעבורת המודל של הלקוח הזה בעד Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "טוען את Routerly כשרת כלים בתוכו.",
-    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
     "errors": {
       "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
     },

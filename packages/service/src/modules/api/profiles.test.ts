@@ -88,14 +88,6 @@ describe('GET /api/profiles', () => {
     await app.close()
     expect(res.statusCode).toBe(403)
   })
-
-  it('blocks when the profiles module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'GET', url: '/api/profiles', headers: authWith('profiles:read', { modules: [{ id: 'profiles', enabled: false }] }) })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
-  })
 })
 
 // ─── POST /api/profiles ──────────────────────────────────────────────────────
@@ -215,14 +207,6 @@ describe('POST /api/profiles', () => {
     const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:read'), payload: { kind: 'routing', label: 'X' } })
     await app.close()
     expect(res.statusCode).toBe(403)
-  })
-
-  it('blocks when the profiles module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/profiles', headers: authWith('profiles:manage', { modules: [{ id: 'profiles', enabled: false }] }), payload: { kind: 'routing', label: 'X' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
   })
 })
 
@@ -488,13 +472,5 @@ describe('PUT /api/routers/:id/profiles', () => {
     expect(body.tokens).toHaveLength(1)
     expect(body.tokens[0].token).toBeUndefined()
     expect(JSON.stringify(body)).not.toContain('sha256-secret-hash')
-  })
-
-  it('blocks when the profiles module is disabled', async () => {
-    const app = await buildApp()
-    const res = await app.inject({ method: 'PUT', url: '/api/routers/p1/profiles', headers: authWith('router:write', { routers: [router], modules: [{ id: 'profiles', enabled: false }] }), payload: { routing: 'auto' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-    expect(JSON.parse(res.body).error).toBe('module_disabled')
   })
 })

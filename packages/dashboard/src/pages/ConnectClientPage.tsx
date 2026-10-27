@@ -26,7 +26,6 @@ export function ConnectClientPage() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<ClientListItem | null>(null);
-  const [notEnabled, setNotEnabled] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -34,10 +33,7 @@ export function ConnectClientPage() {
     setLoading(true);
     getClients()
       .then(res => setClient(res.clients.find(c => c.id === id) ?? null))
-      .catch((err: ApiError) => {
-        if (err.status === 404) setNotEnabled(true);
-        else setError(err.message);
-      })
+      .catch((err: ApiError) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -54,7 +50,7 @@ export function ConnectClientPage() {
 
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
-  if (notEnabled || error || !client) {
+  if (error || !client) {
     return (
       <>
         <div className="page-header">{back}<h1>{t('connectClient.title')}</h1></div>
@@ -65,9 +61,7 @@ export function ConnectClientPage() {
             <div className="empty-state">
               <Terminal size={40} />
               <p>
-                {notEnabled
-                  ? <>{t('connectClient.notEnabledPrefix')} <code>routerly modules enable clients</code>.</>
-                  : <>{t('connectClient.noClientPrefix')} <code>{id}</code>.</>}
+                {t('connectClient.noClientPrefix')} <code>{id}</code>.
               </p>
             </div>
           )}

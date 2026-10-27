@@ -7,7 +7,6 @@ import { readConfig, writeConfig } from '../config/loader.js';
 import { logAudit } from '../audit/logger.js';
 import type { AuditEntry } from '../audit/logger.js';
 import { isKnownProvider, providerDescriptorRegistry, getProviderDescriptor } from '../provider/descriptor.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 import { encryptCredential } from '../../lib/crypto-cred.js';
 
 // ── Route-local auth helpers (mirrors api.ts; no shared route-helper module exists) ──
@@ -50,26 +49,6 @@ function redactConnection(connection: ProviderConnection): Omit<ProviderConnecti
   // key, not by assigning undefined. Same JSON either way.
   const { credentials: _secret, ...rest } = connection;
   return Object.keys(safe).length > 0 ? { ...rest, credentials: safe } : rest;
-}
-
-/**
- * Gates connection create/update on the oauth/web module records. Only oauth and web
- * support-level providers require a module check; api-key/local/native providers are
- * always-on and skip the extra config read.
- */
-async function checkProviderModuleGate(providerId: string, reply: FastifyReply): Promise<boolean> {
-  const supportLevel = getProviderDescriptor(providerId)?.supportLevel;
-  if (supportLevel !== 'oauth' && supportLevel !== 'web') return true;
-
-  const moduleId = supportLevel === 'oauth' ? 'provider-oauth' : 'provider-web';
-  const records = await readConfig('modules');
-  if (isModuleEnabled(records, moduleId)) return true;
-
-  reply.status(403).send({
-    error: 'module_disabled',
-    message: `Provider connections requiring the '${supportLevel}' module cannot be created or updated while '${moduleId}' is disabled.`,
-  });
-  return false;
 }
 
 /**
@@ -311,7 +290,6 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (!requirePerm(req, 'connections:manage', reply)) return;
     const parsed = connectionSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
-    if (!(await checkProviderModuleGate(parsed.data.providerId, reply))) return;
 
     const connections = await readConfig('connections');
     const resolved = resolveConnectionLabel(
@@ -347,7 +325,6 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (index === -1) return reply.status(404).send({ error: 'Not found' });
 
     const effectiveProviderId = parsed.data.providerId ?? connections[index]!.providerId;
-    if (!(await checkProviderModuleGate(effectiveProviderId, reply))) return;
 
     const patchData = { ...parsed.data } as Partial<ProviderConnection>;
     if (parsed.data.label !== undefined) {

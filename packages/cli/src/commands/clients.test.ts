@@ -273,12 +273,12 @@ describe('clients endpoints', () => {
     });
   });
 
-  it('exits 1 with a hint when the module is disabled', async () => {
+  it('exits 1 with a clear message on 404', async () => {
     mockApi.mockRejectedValueOnce(new ApiError(404, 'Not found'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
     await expect(makeCmd().parseAsync(['node', 'clients', 'endpoints'])).rejects.toThrow('exit');
     expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('modules enable clients'));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('not available'));
   });
 });
 
@@ -300,10 +300,10 @@ describe('clients doctor', () => {
     expect(mockApi).toHaveBeenNthCalledWith(2, 'GET', '/api/clients');
     const out = lines.join('\n');
     expect(out).toContain('reachable');
-    expect(out).toContain('enabled');
+    expect(out).toContain('available');
   });
 
-  it('reports reachable + module disabled (404) without failing', async () => {
+  it('reports reachable + configurator unavailable (404) without failing', async () => {
     mockApi
       .mockResolvedValueOnce({ version: '0.5.0' })
       .mockRejectedValueOnce(new ApiError(404, 'Not found'));
@@ -311,7 +311,7 @@ describe('clients doctor', () => {
     const lines = collectLog();
     await makeCmd().parseAsync(['node', 'clients', 'doctor']);
     expect(exitSpy).not.toHaveBeenCalled();
-    expect(lines.join('\n')).toContain('disabled');
+    expect(lines.join('\n')).toContain('not available');
   });
 
   it('exits 1 when the service is unreachable', async () => {

@@ -83,7 +83,7 @@ Invalidate the in-memory catalog cache and fetch all enabled repositories immedi
 
 ## `routerly modules`
 
-Manage optional service modules. Disable unneeded modules to reduce memory and startup time. Core modules (`config`, `provider`, `catalog`, `reverse-proxy`, `routing`) cannot be disabled. Disabling a module requires a service restart to take effect.
+List the service modules. Every module is core and always active: there is no command to enable or disable one. A configuration that still marks a module as disabled (older versions allowed it) is cleared at the next service start, which logs the modules it re-enabled.
 
 ### `routerly modules list`
 
@@ -91,86 +91,27 @@ Manage optional service modules. Disable unneeded modules to reduce memory and s
 routerly modules list [--json]
 ```
 
-List all available modules with their enabled state, version, and dependencies.
+List all modules with version and dependencies.
 
 **Table columns:**
 - **ID** - module identifier
 - **Version** - module semantic version
-- **Enabled** - `yes` / `no`
-- **Always-on** - `yes` / `no` (core modules cannot be disabled)
+- **Enabled** - always `yes`
+- **Always-on** - always `yes`
 - **Depends on** - comma-separated list of module IDs this module requires; empty if no dependencies
-
-**Example output:**
-```
-ID             Version   Enabled   Always-on   Depends on
-guardrails     0.4.0     yes       no          -
-pii            0.4.0     no        no          -
-reverse-proxy  0.4.0     yes       yes         provider, routing
-```
 
 **JSON output** (`--json`):
 ```json
 [
   {
     "id": "guardrails",
-    "version": "0.4.0",
+    "version": "0.5.4",
     "enabled": true,
-    "alwaysOn": false,
+    "alwaysOn": true,
     "dependsOn": []
   }
 ]
 ```
-
-### `routerly modules enable`
-
-```
-routerly modules enable <id>
-```
-
-Enable a module (requires a service restart to take effect).
-
-**Example:**
-```bash
-routerly modules enable guardrails
-```
-
-**Output on success:**
-```
-Enabled: guardrails
-Restart the Routerly service for this to take effect (e.g. `docker restart <container>`, or stop and re-run the service process).
-```
-
-**Error cases:**
-- Module is unknown: `Error: Unknown module "unknown-module"`
-- Module has unmet dependencies: `Error: Cannot enable "guardrails": depends on disabled provider`
-
-(Enabling an already-enabled or always-on module is a no-op, not an error.)
-
-Exit code: `0` on success, `1` on error.
-
-### `routerly modules disable`
-
-```
-routerly modules disable <id>
-```
-
-Disable a module (requires a service restart to take effect).
-
-**Example:**
-```bash
-routerly modules disable guardrails
-```
-
-**Output on success:**
-```
-Disabled: guardrails
-Restart the Routerly service for this to take effect (e.g. `docker restart <container>`, or stop and re-run the service process).
-```
-
-**Error cases:**
-- Module is always-on (cannot be disabled): `Error: Module "reverse-proxy" is always-on and cannot be disabled`
-- Module is unknown: `Error: Unknown module "unknown-module"`
-- Module is required by other enabled modules: `Error: Cannot disable "provider": required by reverse-proxy, routing`
 
 Exit code: `0` on success, `1` on error.
 
@@ -1954,7 +1895,6 @@ the browser.
 Every subcommand answers the same way when the module is off:
 
 ```
-The experiments module is disabled. Enable it with: routerly modules enable experiments
 ```
 
 ### `routerly experiments list`

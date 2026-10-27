@@ -3,7 +3,6 @@ import type { ModelConfig, ProviderConnection } from '@routerly/shared';
 import { AnthropicAdapter } from './anthropic.js';
 import { decryptCredential, encryptCredential } from '../../lib/crypto-cred.js';
 import { readConfig, writeConfig } from '../config/loader.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 
 const OAUTH_BETA = 'oauth-2025-04-20';
 
@@ -79,10 +78,6 @@ export async function refreshAnthropicOAuthToken(refreshToken: string): Promise<
  * openaiOAuthForward.ts's resolveCodexToken.
  */
 export async function resolveAnthropicOAuthCredential(connection: ProviderConnection): Promise<string> {
-  const records = await readConfig('modules');
-  if (!isModuleEnabled(records, 'provider-oauth')) {
-    throw new Error("anthropic-oauth: 'provider-oauth' module is disabled");
-  }
   const creds = connection.credentials as { oauthEnc?: string; refreshEnc?: string; expiresAt?: number; apiKey?: string };
   if (!creds.oauthEnc) {
     // Legacy/migrated connections keep a static bearer in apiKey; no refresh.

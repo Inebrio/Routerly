@@ -2729,7 +2729,6 @@
     "backToConnect": "رابطہ پر واپس",
     "title": "رابطہ",
     "docs": "ڈاکس",
-    "notEnabledPrefix": "کلائنٹ کنفیگریٹر فعال نہیں۔ منتظم سے اسے فعال کرنے کے لیے کہیں",
     "noClientPrefix": "کوئی کلائنٹ نام نہیں",
     "errors": {
       "loadFailed": "کلائنٹس لوڈ کرنے میں ناکام: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "اس کلائنٹ ماڈل ٹریفک کو Routerly میں روٹ کرتا ہے۔",
     "mcpLabel": "MCP",
     "mcpDescription": "اندر Routerly کو ٹول سرور کے طور پر لوڈ کرتا ہے۔",
-    "notEnabledPrefix": "کلائنٹ کنفیگریٹر فعال نہیں۔ منتظم سے اسے فعال کرنے کے لیے کہیں",
     "errors": {
       "loadFailed": "کلائنٹس لوڈ کرنے میں ناکام: {{error}}"
     },

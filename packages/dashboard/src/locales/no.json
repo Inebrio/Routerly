@@ -2729,7 +2729,6 @@
     "backToConnect": "Tilbake til Koble til",
     "title": "Koble til",
     "docs": "Dokumenter",
-    "notEnabledPrefix": "Klientkonfiguratoren er ikke aktivert. Be en administrator om å aktivere den med",
     "noClientPrefix": "Ingen klient navngitt",
     "errors": {
       "loadFailed": "Kunne ikke laste klienter: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "ruterer klientmodelltrafikken gjennom Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laster Routerly som et verktøyserver innside det.",
-    "notEnabledPrefix": "Klientkonfiguratoren er ikke aktivert. Be en administrator om å aktivere den med",
     "errors": {
       "loadFailed": "Kunne ikke laste klienter: {{error}}"
     },

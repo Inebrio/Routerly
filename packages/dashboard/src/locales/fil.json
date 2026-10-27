@@ -2729,7 +2729,6 @@
     "backToConnect": "Bumalik sa Connect",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "Hindi pinagana ang client configurator. Humingi sa admin na paganahin ito gamit ang",
     "noClientPrefix": "Walang client na pinangalanang",
     "errors": {
       "loadFailed": "Nabigong i-load ang mga client: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "iniiruta ang trapiko ng model ng client na iyon sa pamamagitan ng Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "kinakarga ang Routerly bilang tool server sa loob nito.",
-    "notEnabledPrefix": "Hindi pinagana ang client configurator. Humingi sa admin na paganahin ito gamit ang",
     "errors": {
       "loadFailed": "Nabigong i-load ang mga client: {{error}}"
     },

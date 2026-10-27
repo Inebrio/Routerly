@@ -20,11 +20,6 @@ payload field is added, so a client changes only its base URL and key, exactly
 as with any other Routerly token. See
 [Architecture](./architecture.md).
 
-Experiments are a **module** and ship enabled with the rest of `0.4.0`. With
-the module off, every management route answers `403 module_disabled`, the
-dashboard hides the section and the CLI prints the command that turns it back
-on (`routerly modules enable experiments`). See
-[Dashboard: Modules](../dashboard/settings.md#modules-tab).
 
 ---
 

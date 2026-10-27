@@ -114,7 +114,7 @@ describe('readConfig', () => {
     await expect(readConfig('models')).rejects.toThrow('permission denied')
   })
 
-  it('seeds modules default with provider-web disabled (off by default) on first run', async () => {
+  it('seeds an empty modules default (all modules always active) on first run', async () => {
     const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
     mockReadFile.mockRejectedValueOnce(err)
     const releaseFn = vi.fn().mockResolvedValue(undefined)
@@ -122,7 +122,7 @@ describe('readConfig', () => {
     mockReadFile.mockRejectedValueOnce(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))
 
     const result = await readConfig('modules')
-    expect(result).toEqual([{ id: 'provider-web', enabled: false }])
+    expect(result).toEqual([])
   })
 
   it('returns default settings when settings file missing', async () => {

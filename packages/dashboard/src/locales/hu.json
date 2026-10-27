@@ -2729,7 +2729,6 @@
     "backToConnect": "Vissza az Csatlakozáshoz",
     "title": "Csatlakozás",
     "docs": "Dokumentáció",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "noClientPrefix": "Nincs kliens nevű",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "az kliens modell forgalmat irányít az Routerly-n keresztül.",
     "mcpLabel": "MCP",
     "mcpDescription": "az Routerly betölt egy eszköz szerver az belsejében.",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
     },

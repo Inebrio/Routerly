@@ -98,10 +98,10 @@ describe('ConnectPage', () => {
     await waitFor(() => expect(screen.getByText(/Internal Server Error/)).toBeTruthy());
   });
 
-  it('shows a "feature not enabled" empty state on a 404', async () => {
+  it('shows the load error on a 404 and never mentions modules', async () => {
     mockGetClients.mockRejectedValue(apiError('Not found', 404));
     renderPage();
-    await waitFor(() => expect(screen.getByText(/not enabled/i)).toBeTruthy());
-    expect(screen.getByText('routerly modules enable clients')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Not found/)).toBeTruthy());
+    expect(screen.queryByText(/module/i)).toBeNull();
   });
 });

@@ -2729,7 +2729,6 @@
     "backToConnect": "Tillbaka till anslutning",
     "title": "Anslut",
     "docs": "Dokumentation",
-    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
     "noClientPrefix": "Ingen klient namngiven",
     "errors": {
       "loadFailed": "Misslyckades att ladda klienter: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "routar denna klientmodelltrafik genom Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laddar Routerly som en verktygsserver inuti den.",
-    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
     "errors": {
       "loadFailed": "Misslyckades att ladda klienter: {{error}}"
     },

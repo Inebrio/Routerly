@@ -58,6 +58,7 @@ vi.mock('./modules/config/migrate.js', () => ({
   migrateProjectConfigs: vi.fn(async () => 0),
   migrateRouterStorage: vi.fn(async () => undefined as number | undefined),
   migrateUsageToNdjson: vi.fn(async () => 0),
+  reenableModules: vi.fn(async () => [] as string[]),
   migrateRolePermissions: vi.fn(async () => 0),
   migrateUsageRouterId: vi.fn(async () => 0),
   migrateNotificationChannelScope: vi.fn(async () => 0),

@@ -2729,7 +2729,6 @@
     "backToConnect": "కనెక్ట్‌కు వెనుకకు",
     "title": "కనెక్ట్ చేయండి",
     "docs": "డాక్‌లు",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "noClientPrefix": "పేరు గల క్లయింట్ లేదు",
     "errors": {
       "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "ఆ క్లయింట్ మోడల్ ట్రాఫిక్‌ను Routerly ద్వారా రూట్ చేస్తుంది.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly ను టూల్ సర్వర్‌గా లోడ్ చేస్తుంది.",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "errors": {
       "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },

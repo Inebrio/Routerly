@@ -2729,7 +2729,6 @@
     "backToConnect": "કનેક્ટ પર પાછલું",
     "title": "કનેક્ટ",
     "docs": "ડોક્સ",
-    "notEnabledPrefix": "ક્લાયંટ ગોઠવણકાર સક્ષમ નથી. વ્યવસ્થાપક તેને સક્ષમ કરવા માટે પૂછો",
     "noClientPrefix": "કોઈ ક્લાયંટ નામ",
     "errors": {
       "loadFailed": "ક્લાયંટ્સ લોડ નિષ્ફળ: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "તે ક્લાયંટ મોડલ ટ્રાફિક Routerly દ્વારા માર્ગ આપે છે.",
     "mcpLabel": "MCP",
     "mcpDescription": "તે અંદર Routerly સાધન સર્વર લોડ કરે છે.",
-    "notEnabledPrefix": "ક્લાયંટ ગોઠવણકાર સક્ષમ નથી. વ્યવસ્થાપક તેને સક્ષમ કરવા માટે પૂછો",
     "errors": {
       "loadFailed": "ક્લાયંટ્સ લોડ નિષ્ફળ: {{error}}"
     },

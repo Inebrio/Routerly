@@ -2729,7 +2729,6 @@
     "backToConnect": "接続に戻る",
     "title": "接続",
     "docs": "ドキュメント",
-    "notEnabledPrefix": "クライアント設定機が有効になっていません。管理者に",
     "noClientPrefix": "という名前のクライアントがありません",
     "errors": {
       "loadFailed": "クライアントの読み込みに失敗しました: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "クライアント モデルトラフィックをRouterlyを通してルーティング。",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerlyをツールサーバーとしてロード。",
-    "notEnabledPrefix": "クライアント設定機が有効になっていません。管理者に",
     "errors": {
       "loadFailed": "クライアントの読み込みに失敗しました: {{error}}"
     },

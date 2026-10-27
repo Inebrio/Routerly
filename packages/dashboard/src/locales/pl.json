@@ -2729,7 +2729,6 @@
     "backToConnect": "Powrót do połączenia",
     "title": "Połącz",
     "docs": "Dokumenty",
-    "notEnabledPrefix": "Konfigurator klienta nie jest włączony. Poproś administratora, aby włączył go za pomocą",
     "noClientPrefix": "Nie ma klienta nazwą",
     "errors": {
       "loadFailed": "Nie udało się załadować klientów: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "kieruje ruch modelu tego klienta przez Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "ładuje Routerly jako serwer narzędziowy wewnątrz niego.",
-    "notEnabledPrefix": "Konfigurator klienta nie jest włączony. Poproś administratora, aby włączył go za pomocą",
     "errors": {
       "loadFailed": "Nie udało się załadować klientów: {{error}}"
     },

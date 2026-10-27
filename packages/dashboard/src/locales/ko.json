@@ -2729,7 +2729,6 @@
     "backToConnect": "연결로 돌아가기",
     "title": "연결",
     "docs": "문서",
-    "notEnabledPrefix": "클라이언트 구성기가 활성화되지 않았습니다. 관리자에게 다음 항목으로 활성화하도록 요청하세요",
     "noClientPrefix": "이름이 지정된 클라이언트 없음",
     "errors": {
       "loadFailed": "클라이언트 로드 실패: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "해당 클라이언트 모델 트래픽을 Routerly 통해 라우팅합니다.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly을 도구 서버로 로드합니다.",
-    "notEnabledPrefix": "클라이언트 구성기가 활성화되지 않았습니다. 관리자에게 다음 항목으로 활성화하도록 요청하세요",
     "errors": {
       "loadFailed": "클라이언트 로드 실패: {{error}}"
     },

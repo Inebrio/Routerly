@@ -2729,7 +2729,6 @@
     "backToConnect": "Voltar a Conectar",
     "title": "Conectar",
     "docs": "Docs",
-    "notEnabledPrefix": "O configurador de cliente não está ativado. Peça a um admin para ativá-lo com",
     "noClientPrefix": "Nenhum cliente nomeado",
     "errors": {
       "loadFailed": "Falha ao carregar clientes: {{error}}"
@@ -2774,7 +2773,6 @@
     "llmDescription": "encaminha o tráfego do modelo desse cliente através de Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "carrega Routerly como servidor de ferramenta dentro dele.",
-    "notEnabledPrefix": "O configurador de cliente não está ativado. Peça a um admin para ativá-lo com",
     "errors": {
       "loadFailed": "Falha ao carregar clientes: {{error}}"
     },

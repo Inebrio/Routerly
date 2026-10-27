@@ -16,7 +16,6 @@ routerly connections add --provider-id anthropic-web --label claude-mock --api-k
 routerly connections add --provider-id bedrock --label bedrock-mock --aws-access-key-id mock-ok --aws-secret-access-key s --aws-region eu-west-1 --endpoint http://127.0.0.1:4010
 ```
 
-`anthropic-web` and `openai-web` need the `provider-web` module enabled.
 
 ## Behaviour is chosen by the credential
 

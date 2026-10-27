@@ -15,7 +15,7 @@ import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
 import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage, effectivePort } from './modules/config/loader.js';
-import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/migrate.js';
+import { migrateRouterStorage, migrateUsageToNdjson, reenableModules } from './modules/config/migrate.js';
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
@@ -190,6 +190,11 @@ export async function startServer() {
   if (migratedUsage > 0) {
      
     console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
+  }
+
+  const reenabled = await reenableModules();
+  if (reenabled.length > 0) {
+    console.log(`[startup] re-enabled ${reenabled.length} module(s): ${reenabled.join(', ')} (all modules are always active)`);
   }
 
   await loadSecret();
