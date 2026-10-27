@@ -213,6 +213,26 @@ describe('RouterOptimizerTab', () => {
     expect(await screen.findByText('Pipeline run: Safe')).toBeInTheDocument();
   });
 
+  it('an unsaved Custom draft previews the custom rows and clears the previous result (ROUT-440)', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'profile', profileId: 'custom-opt', label: 'Custom opt' } });
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 6, perStep: [], messages: [], pipeline: { kind: 'custom', label: 'Custom' } });
+    renderStatefulTab({ ...assignedRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } });
+    await waitFor(() => expect(screen.getByLabelText('Optimizer Profile')).toBeInTheDocument());
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    expect(await screen.findByText('Pipeline run: Custom opt')).toBeInTheDocument();
+    expect('steps' in (mockPreview.mock.calls[0]![0] as object)).toBe(false);
+    await user.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(screen.queryByText(/Pipeline run:/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[1] as [{ steps?: { id: string }[] }];
+    expect(body.steps?.find(x => x.id === 'ccr')).toBeTruthy();
+    expect(await screen.findByText('Pipeline run: Custom')).toBeInTheDocument();
+    mockAssignProfile.mockClear();
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+  });
+
   it('hides edit controls without optimizers:manage', async () => {
     setAuth(['optimizers:read']);
     renderTab();
@@ -305,6 +325,19 @@ describe('RouterOptimizerTab — optimizer profile assignment', () => {
     await user.click(screen.getByRole('button', { name: 'Profile' }));
     await user.click(await screen.findByRole('button', { name: /save optimizers/i }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { optimizer: 'custom-opt' }));
+  });
+
+  it('an unsaved Profile draft previews that profile\'s steps under its name (ROUT-440)', async () => {
+    const user = userEvent.setup();
+    mockPreview.mockResolvedValueOnce({ estimatedTokensBefore: 10, estimatedTokensAfter: 5, perStep: [], messages: [], pipeline: { kind: 'custom', label: 'Custom' } });
+    renderTab();
+    await waitFor(() => expect(screen.getByText('Conversation Context Reduction')).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Profile' }));
+    await user.type(screen.getByPlaceholderText(/sample user message/i), 'hi');
+    await user.click(screen.getByRole('button', { name: /run preview/i }));
+    const [body] = mockPreview.mock.calls[0] as [{ steps?: { id: string }[] }];
+    expect(body.steps?.length).toBeGreaterThan(0);
+    expect(await screen.findByText(/Pipeline run: (?!Custom$)/)).toBeInTheDocument();
   });
 
   it('Discard drops the pending change without any request', async () => {

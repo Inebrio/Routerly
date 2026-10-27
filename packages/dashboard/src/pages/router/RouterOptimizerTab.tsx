@@ -48,6 +48,8 @@ export function RouterOptimizerTab() {
   const [previewing, setPreviewing] = useState(false);
   const [previewErr, setPreviewErr] = useState('');
   const [preview, setPreview] = useState<OptimizerPreviewResult | null>(null);
+  // Name of a not yet saved profile the preview ran (the service only sees its steps).
+  const [previewProfileName, setPreviewProfileName] = useState<string | null>(null);
   // Sample conversations shipped with Routerly, offered as an alternative to
   // typing one. Routerly never records real prompts, so there is nothing else.
   const [pickedFixture, setPickedFixture] = useState('');
@@ -126,11 +128,13 @@ export function RouterOptimizerTab() {
     ? chosenFixture.messages
     : [{ role: 'user', content: sample }];
 
-  // The preview runs what is saved on the service, not the unsaved draft.
-  const storedProfileAssigned = (router?.optimizerProfileId ?? '') !== '';
+  // A result belongs to the pipeline that produced it: drop it when the mode or profile changes,
+  // saved or not.
+  useEffect(() => { setPreview(null); setOpenStep(null); }, [draft.selected]);
 
-  // A result belongs to the pipeline that produced it: drop it when the mode or profile changes.
-  useEffect(() => { setPreview(null); setOpenStep(null); }, [router?.optimizerProfileId]);
+  function pendingSteps() {
+    return draft.isCustom ? buildOptimizerSteps(rows) : (assignedProfile?.optimizers.steps ?? []);
+  }
 
   async function runPreview() {
     /* v8 ignore next */
@@ -143,11 +147,13 @@ export function RouterOptimizerTab() {
       const result = await previewOptimizers({
         routerId: router.id,
         sampleMessages: previewMessages,
-        // Profile assigned: no steps, the service resolves the profile exactly as live traffic does.
-        ...(storedProfileAssigned ? {} : { steps: buildOptimizerSteps(rows) }),
+        // Saved profile shown: no steps, the service resolves it exactly as live traffic does.
+        // Otherwise the pipeline on screen: the custom rows, or the steps of a not yet saved profile.
+        ...(!draft.isPending && !draft.isCustom ? {} : { steps: pendingSteps() }),
         ...(previewModel ? { model: previewModel } : {}),
       });
       setPreviewInput(previewMessages);
+      setPreviewProfileName(draft.isPending && !draft.isCustom ? (assignedProfile?.label ?? assignedProfileId) : null);
       setPreview(result);
     } catch (e) {
       setPreviewErr(e instanceof Error ? e.message : t('routers.optimizer.errors.previewFailed'));
@@ -375,7 +381,7 @@ export function RouterOptimizerTab() {
           <div style={{ marginTop: 16, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
             {preview.pipeline && (
               <div style={{ padding: '8px 16px', fontSize: '0.8rem', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>
-                {t('routers.optimizer.preview.pipeline', { name: preview.pipeline.kind === 'profile' ? preview.pipeline.label : t('routers.optimizer.mode.custom') })}
+                {t('routers.optimizer.preview.pipeline', { name: previewProfileName ?? (preview.pipeline.kind === 'profile' ? preview.pipeline.label : t('routers.optimizer.mode.custom')) })}
               </div>
             )}
             <div style={{ display: 'flex', gap: 24, padding: '12px 16px', background: 'var(--surface-active)', flexWrap: 'wrap' }}>
