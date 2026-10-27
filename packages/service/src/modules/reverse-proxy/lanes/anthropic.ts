@@ -12,7 +12,8 @@ import type { LLMCallContext } from '../execute.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub } from './oauthForward.js'
+import { mergePolicies } from '../../pii/piiScrubber.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import {
   anthropicToChatRequest, openAIToAnthropicResponse, openAIChunksToAnthropicSSE,
@@ -60,6 +61,15 @@ export const anthropicInject: Processor<ProxyContext> = {
   },
 }
 
+/** Output PII policy for the verbatim pass-through (the pii.output processor never sees those bytes). */
+function outputScrub(ctx: ProxyContext): PassthroughScrub | undefined {
+  const policies = ctx.router.pii?.policies
+  if (!policies?.length) return undefined
+  const effective = mergePolicies(policies, 'output')
+  if (!(effective.entities?.length || effective.customPatterns?.length)) return undefined
+  return { effective, ...(ctx.emit ? { emit: ctx.emit } : {}) }
+}
+
 // ─── upstream.execute: passthrough forward OR toChat+llmChat/llmStream (anthropic.ts L220-286) ──
 export const anthropicUpstream: Processor<ProxyContext> = {
   id: 'anthropic:upstream',
@@ -86,7 +96,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicOAuth(req, reply, liveModel)
+      await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx))
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -97,7 +107,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicApiKey(req, reply, liveModel)
+      await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx))
       ctx.result = { kind: 'passthrough' }
       return
     }
