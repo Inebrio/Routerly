@@ -43,7 +43,7 @@ const mockEmitEvent = vi.mocked(emitEvent)
 afterEach(() => vi.clearAllMocks())
 
 function makeLog() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }
 
 function makeFakeStore() {
@@ -826,6 +826,20 @@ describe('openai:upstream', () => {
     await openaiUpstream.run(ctx)
     expect(ctx.attemptError).toBe(err)
     expect(ctx.attemptResponse).toBeUndefined()
+  })
+
+  it('logs the selected candidate at debug level without request content', async () => {
+    mockLlmChat.mockResolvedValueOnce({ choices: [] } as any)
+    const log = makeLog()
+    const ctx = {
+      protocol: 'openai', stream: false,
+      attempt: { model, candidate },
+      request: { model: 'model-a', messages: [{ role: 'user', content: 'secret prompt' }] }, log,
+      router: { id: 'p1' }, traceId: 't1',
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(log.debug).toHaveBeenCalledOnce()
+    expect(JSON.stringify(log.debug.mock.calls)).not.toContain('secret prompt')
   })
 
   it('BudgetExceededError does NOT stash ctx.attemptError (a local skip, not an upstream fault)', async () => {
