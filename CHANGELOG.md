@@ -18,7 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
-- **Moderation policy with custom instructions now blocks what it says (ROUT-435).** The judge rated custom text on a "harmless/harmful" scale, so a topic policy such as "do not talk about English cinema" scored 0 on harmless answers and never triggered. With custom instructions the judge now rates how strongly the content violates that policy; the built-in prompt keeps the harm scale. The streamed response check now appears in the trace (rule, score, reason), and the streaming-disabled warning and the Playground stream toggle ignore disabled rules, like the service.
+- **Moderation policy with custom instructions now blocks what it says (ROUT-435).** The judge rated custom text on a "harmless/harmful" scale, so a topic policy such as "do not talk about English cinema" scored 0 on harmless answers and never triggered. With custom instructions the judge now rates how strongly the content violates that policy; the built-in prompt keeps the harm scale. The streamed response check now appears in the trace (rule, score, reason), and the streaming-disabled warning and the Playground stream toggle ignore disabled rules, like the service. The Playground now shows the answer (or the block) of a non-streaming JSON reply, which it requests when a response-blocking rule is active; before, the bubble stayed empty.
 
 - **Debug log level now emits debug lines (ROUT-432).** At `logLevel=debug` each proxy attempt logs the selected candidate (model, provider, router, stream flag; no prompt or credentials). Levels from info up are unchanged.
 

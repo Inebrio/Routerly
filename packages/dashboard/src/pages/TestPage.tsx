@@ -555,13 +555,15 @@ export function TestPage() {
         try { const json = JSON.parse(body) as { error?: { message?: string } }; if (json.error?.message) msg = json.error.message; } catch {}
         throw new Error(msg);
       }
+      // Non-streaming reply (stream:false, e.g. a response-blocking rule): one JSON body, not SSE.
+      const isJsonReply = (res.headers.get('content-type') ?? '').includes('application/json');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       // ponytail: buffer incomplete SSE lines across TCP reads (cross-chunk fix)
       let buffer = '';
       function processLine(line: string) {
-        if (!line.startsWith('data: ')) return;
-        const dataStr = line.slice(6).trim();
+        if (!isJsonReply && !line.startsWith('data: ')) return;
+        const dataStr = (isJsonReply ? line : line.slice(6)).trim();
         /* v8 ignore next */
         if (dataStr === '[DONE]' || !dataStr) return;
         try {
@@ -590,7 +592,7 @@ export function TestPage() {
             setMessages(prev => { const u = [...prev]; u[u.length - 1] = { ...u[u.length - 1]!, thinking: thinkingAccum }; return u; });
             return;
           }
-          const delta: string = data.choices?.[0]?.delta?.content || '';
+          const delta: string = data.choices?.[0]?.delta?.content || data.choices?.[0]?.message?.content || '';
           if (delta) {
             if (!assistantAdded) { setMessages(prev => [...prev, { role: 'assistant', content: '', model: modelName }]); assistantAdded = true; }
             finalContent += delta;
