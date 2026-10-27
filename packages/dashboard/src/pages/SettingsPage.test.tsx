@@ -577,6 +577,8 @@ describe('SettingsSecurityTab', () => {
     mockGetSettings.mockRejectedValue(new Error('Network failure'));
     renderSecurity();
     await waitFor(() => expect(screen.queryByText('Network failure')).not.toBeNull());
+    // ROUT-442: a failed load must not allow saving the default over the real value.
+    expect((screen.getByText(/Save Settings/).closest('button') as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows a fallback error when loading rejects with a non-Error', async () => {

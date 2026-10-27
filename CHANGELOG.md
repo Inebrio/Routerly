@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Fixed
+
+- Settings › Security: Save is disabled when loading the settings failed, so the default cannot overwrite `requireMfa`. `GET /api/usage` no longer produces `null` token totals for records lacking `inputTokens`/`outputTokens` (the `/usage` page crashed). `routerly catalog repos add` rejects non-http(s) URLs with exit 1.
+
 ### Changed
 
 - **All modules are core and always active.** A module can no longer be disabled: `provider-web` is no longer off by default, so web provider connections (`anthropic-web`, `openai-web`) can be created from the dashboard, CLI and API without extra steps. At startup, any stored `enabled: false` module record is cleared and the service logs `[startup] re-enabled N module(s): …`. Removed `POST /api/modules/:id/enable|disable`, `routerly modules enable|disable` and every `module_disabled` (403) error; `GET /api/modules` and `routerly modules list` remain (always enabled). The `modules:manage` permission no longer guards anything.
