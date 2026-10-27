@@ -2175,8 +2175,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const r of filtered) {
       const entry = byModelAcc[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cost: 0, errors: 0, success: 0, latencies: [] };
       entry.calls++;
-      entry.inputTokens += r.inputTokens;
-      entry.outputTokens += r.outputTokens;
+      entry.inputTokens += r.inputTokens ?? 0;
+      entry.outputTokens += r.outputTokens ?? 0;
       entry.cachedInputTokens += r.cachedInputTokens ?? 0;
       entry.cost += r.cost ?? 0;
       if (r.outcome === 'success') entry.success++;

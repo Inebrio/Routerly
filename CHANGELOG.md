@@ -14,6 +14,7 @@ the change itself — never reconstructed after the fact. See
 ### Fixed
 
 - **Root vitest suite passes on the dev-box (ROUT-443).** `release-notes.sh` now skips git-cliff `INFO` notices and colour codes when reporting the cause of a failure; the RA-08 tests no longer depend on `npx` being absent from `/usr/bin`; `link-worktree-modules.mjs` links the main checkout's `website/node_modules` so the RA-09 docs-version tests do not run `npm ci`. Tooling and tests only.
+- Settings › Security: Save is disabled when loading the settings failed, so the default cannot overwrite `requireMfa`. `GET /api/usage` no longer produces `null` token totals for records lacking `inputTokens`/`outputTokens` (the `/usage` page crashed). `routerly catalog repos add` rejects non-http(s) URLs with exit 1.
 - **Choosing a profile on a router no longer overwrites its custom settings (ROUT-441).** On the Routing, Optimizer and Security tabs, picking a profile or switching Profile/Custom used to persist immediately and switching to Custom replaced the stored custom config with a profile copy. Now both are pending changes (notice with Discard) applied only on Save; Custom always shows the stored settings, and the new «Copy into custom» action asks for confirmation before replacing existing custom content. Dashboard only; `PUT /api/routers/:id/profiles` and `routerly profiles set` already left custom fields untouched.
 
 ### Changed

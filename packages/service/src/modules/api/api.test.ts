@@ -2583,6 +2583,26 @@ describe('GET /api/usage', () => {
     expect(body.records).toHaveLength(1)
   })
 
+  it('tolerates records without token fields (ROUT-442)', async () => {
+    setupAdminAuth()
+    const records = [
+      { id: 'x1', timestamp: new Date().toISOString(), routerId: 'p1', modelId: 'm1', model: 'm1', promptTokens: 3, outcome: 'success', callType: 'completion', latencyMs: 10 },
+    ]
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'usage') return records
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/usage', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const m = JSON.parse(res.body).byModel.m1
+    expect(m.inputTokens).toBe(0)
+    expect(m.outputTokens).toBe(0)
+  })
+
   it('aggregates guardrail callType as a distinct sub-activity (BUG-5)', async () => {
     setupAdminAuth()
     const now = new Date().toISOString()
