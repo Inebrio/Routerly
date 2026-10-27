@@ -1411,6 +1411,7 @@
       "saving": "Guardando...",
       "saved": "Guardado",
       "preview": {
+        "pipeline": "Pipeline ejecutado: {{name}}",
         "title": "Vista previa del ahorro de tokens",
         "description": "Ejecuta la canalización actual (sin guardar) sobre un prompt para ver qué elimina cada paso y qué cuesta. Elige una de las conversaciones de ejemplo, o escribe tu propio prompt.",
         "promptLabel": "Prompt",

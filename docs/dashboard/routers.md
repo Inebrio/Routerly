@@ -209,8 +209,10 @@ threshold, are written.
 
 ### Preview Panel
 
-Below the pipeline editor, **Preview token savings** dry-runs the current
-(unsaved) UI state of the pipeline against one prompt. No upstream call is
+Below the pipeline editor, **Preview token savings** dry-runs the pipeline
+the router uses against one prompt: in **Profile** mode the assigned profile's
+steps, in **Custom** mode the current (unsaved) steps of the editor. The result
+names the pipeline it ran, and is cleared when you switch mode or profile. No upstream call is
 made and nothing is saved. It matches `POST /api/optimizers/preview` (see
 [API: Optimizers](../api/management.md#optimizers)).
 

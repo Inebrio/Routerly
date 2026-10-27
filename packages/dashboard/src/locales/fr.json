@@ -1411,6 +1411,7 @@
       "saving": "Enregistrement...",
       "saved": "Enregistré",
       "preview": {
+        "pipeline": "Pipeline exécutée : {{name}}",
         "title": "Aperçu des économies de jeton",
         "description": "Exécutez le pipeline actuel (non enregistré) sur un prompt pour voir ce que chaque étape supprime et ce qu'elle coûte. Choisissez l'une des conversations d'exemple, ou tapez votre propre prompt.",
         "promptLabel": "Prompt",

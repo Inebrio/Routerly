@@ -777,21 +777,24 @@ written.**
 - `sampleMessages`: message array to run the pipeline over, same shape as an
   [LLM Proxy](./llm-proxy.md) request's `messages` (required, min 1)
 - `steps`: the optimizer steps to dry-run, same shape as the
-  [`optimizers` router field](#optimizers-router-field) (required)
+  [`optimizers` router field](#optimizers-router-field). Optional when
+  `routerId` is given: omitted, the preview runs the pipeline the router really
+  uses, which is its assigned optimizer profile or, with none, its saved custom
+  steps. Sent, exactly these steps run (use it to preview unsaved edits)
 - `routerId`: optional. When given, the preview runs "as" that router (its
-  other config is read; nothing is written); `404` if unknown. The `steps`
-  in the request body still drive which optimizers run. The router's own
-  saved `optimizers.steps` are not substituted in
+  other config is read; nothing is written); `404` if unknown. Without
+  `steps`, `routerId` is required (`400` otherwise)
 - `model`: optional model id the sample is addressed to. `headroom` sizes its
   budget on the requested model's context window, so without one it reports a
   skip reason instead of trimming, exactly as it would on a request naming a
   model Routerly has no window for
 
-**Response `200`:**
+**Response `200`** (`pipeline.kind` is `profile`, with `profileId` and `label`, when the router's assigned profile ran; `custom` otherwise):
 ```json
 {
   "estimatedTokensBefore": 55,
   "estimatedTokensAfter": 30,
+  "pipeline": { "kind": "custom", "label": "Custom" },
   "messages": [{ "role": "user", "content": "Hello, help me this." }],
   "perStep": [
     {

@@ -1411,6 +1411,7 @@
       "saving": "Đang lưu...",
       "saved": "Đã lưu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Xem trước tiết kiệm token",
         "description": "Chạy đường ống hiện tại (chưa lưu) qua một nhắc để xem những gì mỗi bước loại bỏ và chi phí là gì. Chọn một trong các cuộc trò chuyện mẫu, hoặc nhập nhắc của riêng bạn.",
         "promptLabel": "Nhắc",

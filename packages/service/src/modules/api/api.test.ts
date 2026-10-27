@@ -14448,6 +14448,51 @@ describe('Optimizers API', () => {
     expect(body.perStep).toHaveLength(1)
   })
 
+  it('POST /api/optimizers/preview without steps runs the assigned profile, not the custom steps (ROUT-440)', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'routers' ? [{ id: 'pv', name: 'pv', models: [], optimizerProfileId: 'optimizer-safe', optimizers: { steps: [{ id: 'session-dedup', enabled: false }] } }] : base(t))
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ routerId: 'pv', sampleMessages: [{ role: 'user', content: 'hello there' }] }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { perStep: { id: string }[]; pipeline: { kind: string; profileId: string } }
+    expect(body.perStep.map(s => s.id)).toContain('session-dedup')
+    expect(body.pipeline).toMatchObject({ kind: 'profile', profileId: 'optimizer-safe' })
+  })
+
+  it('POST /api/optimizers/preview without steps and without a profile runs the saved custom steps; explicit steps win', async () => {
+    installFakeRegistry()
+    authAs(adminUser)
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'routers' ? [{ id: 'pc', name: 'pc', models: [], optimizers: { steps: [{ id: 'session-dedup', enabled: false }] } }] : base(t))
+    const app = await buildApp()
+    const call = (extra: object) => app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ routerId: 'pc', sampleMessages: [{ role: 'user', content: 'hello there' }], ...extra }),
+    })
+    const saved = (await call({})).json() as { perStep: { id: string }[]; pipeline: { kind: string } }
+    const explicit = (await call({ steps: [{ id: 'session-dedup', enabled: true }] })).json() as { perStep: { id: string }[] }
+    const noRouter = await app.inject({
+      method: 'POST', url: '/api/optimizers/preview',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({ sampleMessages: [{ role: 'user', content: 'x' }] }),
+    })
+    await app.close()
+    expect(saved.perStep.map(s => s.id)).toEqual(['session-dedup'])
+    expect(saved.pipeline.kind).toBe('custom')
+    expect(explicit.perStep.map(s => s.id)).toEqual(['session-dedup'])
+    expect(noRouter.statusCode).toBe(400)
+  })
+
   it('POST /api/optimizers/preview returns 400 for an empty sampleMessages', async () => {
     installFakeRegistry()
     authAs(adminUser)

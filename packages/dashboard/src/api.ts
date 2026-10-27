@@ -1229,6 +1229,8 @@ export interface OptimizerPreviewResult {
   estimatedTokensBefore: number;
   estimatedTokensAfter: number;
   perStep: OptimizerPreviewStep[];
+  /** Which pipeline ran: the router's assigned profile or its custom steps. */
+  pipeline?: { kind: 'profile' | 'custom'; profileId?: string; label: string };
   /** The prompt the whole pipeline would forward. */
   messages: Message[];
 }
@@ -1238,7 +1240,8 @@ export const previewOptimizers = (body: {
   /** Model the sample is addressed to, so context-window steps have a window. */
   model?: string;
   sampleMessages: Message[];
-  steps: OptimizerStep[];
+  /** Omit to run the router's own pipeline (assigned profile, else saved custom steps). */
+  steps?: OptimizerStep[];
 }) => request<OptimizerPreviewResult>('/optimizers/preview', { method: 'POST', body: JSON.stringify(body) });
 
 /** One installable LLMLingua-2 checkpoint, as the service host reports it. */

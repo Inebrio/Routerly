@@ -1411,6 +1411,7 @@
       "saving": "Inakuhifadhi...",
       "saved": "Kutunzwa",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Muhtasari wa akiba ya token",
         "description": "Endesha njia ya sasa (yasiyohifadhiwa) kupitia onyo kuona nini kila hatua huondoa na gharama yake. Chagua wagombea wa mazungumzo ya sampuli, au andika onyo lako.",
         "promptLabel": "Onyo",

@@ -1411,6 +1411,7 @@
       "saving": "Salvando...",
       "saved": "Salvo",
       "preview": {
+        "pipeline": "Pipeline executado: {{name}}",
         "title": "Economias de tokens de prévia",
         "description": "Execute o pipeline atual (não salvo) sobre um prompt para ver o que cada etapa remove e quanto custa. Escolha uma das conversas de exemplo ou digite seu próprio prompt.",
         "promptLabel": "Prompt",

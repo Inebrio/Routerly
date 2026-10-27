@@ -1411,6 +1411,7 @@
       "saving": "Sparar…",
       "saved": "Sparad",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Förhandsvisning av tokensparingar",
         "description": "Kör nuvarande (osparad) pipeline över en instruktion för att se vad varje steg tar bort och vad det kostar. Välj en av exempelsamtalen eller skriv din egen instruktion.",
         "promptLabel": "Instruktion",

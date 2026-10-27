@@ -1411,6 +1411,7 @@
       "saving": "A guardar...",
       "saved": "Guardado",
       "preview": {
+        "pipeline": "Pipeline executado: {{name}}",
         "title": "Pré-visualizar economias de token",
         "description": "Execute o oleoduto atual (não guardado) sobre um prompt para ver o que cada passo remove e o que custa. Escolha uma das conversas de amostra, ou escreva o seu próprio prompt.",
         "promptLabel": "Prompt",

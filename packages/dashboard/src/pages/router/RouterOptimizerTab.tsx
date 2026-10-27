@@ -135,6 +135,11 @@ export function RouterOptimizerTab() {
     ? chosenFixture.messages
     : [{ role: 'user', content: sample }];
 
+  const profileAssigned = (router?.optimizerProfileId ?? '') !== '';
+
+  // A result belongs to the pipeline that produced it: drop it when the mode or profile changes.
+  useEffect(() => { setPreview(null); setOpenStep(null); }, [router?.optimizerProfileId]);
+
   async function runPreview() {
     /* v8 ignore next */
     if (!router) return;
@@ -146,7 +151,8 @@ export function RouterOptimizerTab() {
       const result = await previewOptimizers({
         routerId: router.id,
         sampleMessages: previewMessages,
-        steps: buildOptimizerSteps(rows),
+        // Profile assigned: no steps, the service resolves the profile exactly as live traffic does.
+        ...(profileAssigned ? {} : { steps: buildOptimizerSteps(rows) }),
         ...(previewModel ? { model: previewModel } : {}),
       });
       setPreviewInput(previewMessages);
@@ -185,7 +191,6 @@ export function RouterOptimizerTab() {
     });
 
   const assignedProfileId = router?.optimizerProfileId ?? '';
-  const profileAssigned = assignedProfileId !== '';
   const defaultProfileId = profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
   const assignedProfile = profiles.find(p => p.id === assignedProfileId);
 
@@ -364,6 +369,11 @@ export function RouterOptimizerTab() {
 
         {preview && (
           <div style={{ marginTop: 16, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            {preview.pipeline && (
+              <div style={{ padding: '8px 16px', fontSize: '0.8rem', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>
+                {t('routers.optimizer.preview.pipeline', { name: preview.pipeline.kind === 'profile' ? preview.pipeline.label : t('routers.optimizer.mode.custom') })}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 24, padding: '12px 16px', background: 'var(--surface-active)', flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('routers.optimizer.preview.before')}</div>
