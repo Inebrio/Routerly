@@ -408,6 +408,32 @@ describe('PUT /api/routers/:id/profiles', () => {
     expect(body.optimizerProfileId).toBe('o1')
   })
 
+  it('assigning and clearing profiles never touches the router custom settings (ROUT-441)', async () => {
+    const custom = {
+      policies: [{ type: 'cheapest', enabled: true }],
+      optimizers: { steps: [{ id: 'caveman', enabled: true }] },
+      guardrails: { rules: [{ type: 'keyword', target: 'request', value: 'x', block: true }] },
+      pii: { policies: [{ entity: 'EMAIL', action: 'redact' }] },
+    }
+    const app = await buildApp()
+    const assigned = await app.inject({
+      method: 'PUT', url: '/api/routers/p1/profiles',
+      headers: authWith('router:write', { routers: [{ ...router, ...custom }], profiles: [userProfile, optimizerProfile, securityProfile] }),
+      payload: { routing: 'u1', optimizer: 'o1', security: 's1' },
+    })
+    const cleared = await app.inject({
+      method: 'PUT', url: '/api/routers/p1/profiles',
+      headers: authWith('router:write', { routers: [{ ...router, ...custom, routingProfileId: 'u1', optimizerProfileId: 'o1', securityProfileId: 's1' }] }),
+      payload: { routing: null, optimizer: null, security: null },
+    })
+    await app.close()
+    for (const res of [assigned, cleared]) {
+      expect(res.statusCode).toBe(200)
+      expect(JSON.parse(res.body)).toMatchObject(custom)
+    }
+    expect(JSON.parse(cleared.body).securityProfileId).toBeUndefined()
+  })
+
   it('drops the legacy profileId on any assignment', async () => {
     const app = await buildApp()
     const res = await app.inject({ method: 'PUT', url: '/api/routers/p1/profiles', headers: authWith('router:write', { routers: [{ ...router, profileId: 'fast' }], profiles: [userProfile] }), payload: { routing: 'u1' } })
