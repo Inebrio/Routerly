@@ -193,6 +193,39 @@ describe('TestPage — clean turn', () => {
   });
 });
 
+describe('TestPage — non-streaming JSON reply (response-blocking rule)', () => {
+  function jsonReply(content: string, finishReason: string) {
+    return new Response(JSON.stringify({
+      id: 'm1', object: 'chat.completion', model: 'm',
+      choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: finishReason }],
+    }), { status: 200, headers: { 'content-type': 'application/json', 'x-routerly-trace': 'trace-123' } });
+  }
+
+  it('shows the answer of a stream:false JSON body in the assistant bubble', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(jsonReply('Paris', 'stop'));
+
+    await setupWithToken();
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'capital of France?');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.queryByText('Paris')).not.toBeNull(), { timeout: 4000 });
+  });
+
+  it('detects content_filter in a JSON body as a blocked turn', async () => {
+    vi.mocked(getTrace).mockResolvedValue({
+      trace: [{ message: 'guardrail:response-triggered', panel: 'response', details: { rule: 'mod:x', target: 'response', block: true, blockMessage: 'Not allowed.' } }],
+    } as never);
+    global.fetch = vi.fn().mockResolvedValue(jsonReply('', 'content_filter'));
+
+    await setupWithToken();
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hitchcock');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.queryByText('Not allowed.')).not.toBeNull(), { timeout: 4000 });
+  });
+});
+
 // ── Cross-chunk SSE buffering ──────────────────────────────────────────────
 
 /** Returns a Response whose reader yields the given chunks in order. */
