@@ -1411,6 +1411,7 @@
       "saving": "Mentés...",
       "saved": "Mentve",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Kérés megtakarítások előnézete",
         "description": "Futtassa az aktuális (mentetlen) csővezetéket az kérésen keresztül, hogy megtudja, mit távolít el minden lépés, és mennyibe kerül. Válasszon az egyik mintakonverzáció közül, vagy írjon be az saját kérést.",
         "promptLabel": "Kérés",

@@ -1777,8 +1777,9 @@ Requires `optimizers:manage` permission.
 routerly optimizers preview <router> (--message <text> ... | --fixture <id>) [--model <id>] [--json]
 ```
 
-Dry-run the router's currently configured optimizer pipeline against a
-sample message list. No upstream call is made and the router's config is
+Dry-run the optimizer pipeline the router really uses (its assigned optimizer
+profile, else its custom steps; the output names which) against a sample
+message list. No upstream call is made and the router's config is
 not modified.
 
 | Option | Description |

@@ -49,6 +49,7 @@ import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
+import { resolveOptimizerProfile, CUSTOM_PROFILE_ID } from '../routing/profiles/store.js';
 import * as llmlingua2Model from '../optimizers/llmlingua2/model.js';
 import { computeSavings, computeSeries } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
@@ -357,7 +358,10 @@ const previewBodySchema = z.object({
   // budget against that model's context window exactly as it would live.
   model: z.string().optional(),
   sampleMessages: z.array(z.any()).min(1),
-  steps: z.array(optimizerStepSchema),
+  // Omitted: the service runs the pipeline the router really uses (its assigned
+  // optimizer profile, else its saved custom steps). Sent: those exact steps,
+  // so unsaved custom edits can be previewed.
+  steps: z.array(optimizerStepSchema).optional(),
 });
 
 /** Paths never hard-blocked by the permission guard, even while a secrets file is unsafe:
@@ -1684,14 +1688,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       router = routers.find(p => p.id === parsed.data.routerId);
       if (!router) return reply.status(404).send({ error: 'Not found' });
     }
+    let steps = parsed.data.steps as OptimizerConfig['steps'] | undefined;
+    let pipeline: { kind: 'profile' | 'custom'; profileId?: string; label: string } = { kind: 'custom', label: 'Custom' };
+    if (!steps) {
+      if (!router) return reply.status(400).send({ error: 'steps or routerId is required' });
+      const profile = await resolveOptimizerProfile(router);
+      steps = profile?.optimizers.steps ?? [];
+      if (profile && profile.id !== CUSTOM_PROFILE_ID) pipeline = { kind: 'profile', profileId: profile.id, label: profile.label };
+    }
     const result = await runPreview({
       registry: getOptimizerRegistry(),
       sampleMessages: parsed.data.sampleMessages as Message[],
-      steps: parsed.data.steps as OptimizerConfig['steps'],
+      steps,
       ...(parsed.data.model ? { model: parsed.data.model } : {}),
       ...(router ? { router } : {}),
     });
-    return reply.send(result);
+    return reply.send({ ...result, pipeline });
   });
 
   const tagsSchema = z.record(z.string().max(128), z.string().max(512))

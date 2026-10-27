@@ -1411,6 +1411,7 @@
       "saving": "Kaydediliyor...",
       "saved": "Kaydedildi",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "İstem tasarruflarını önizle",
         "description": "Geçerli (kaydedilmemiş) işlem hattını her adımın ne kaldırdığını ve ne mal olduğunu görmek için bir isteme çalıştırın. Örnek konuşmalardan birini seçin veya kendi isteminizi yazın.",
         "promptLabel": "İstem",

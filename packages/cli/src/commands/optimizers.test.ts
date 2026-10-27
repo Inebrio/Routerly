@@ -350,9 +350,9 @@ describe('optimizers preview', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('sends the router steps + user messages and prints deltas', async () => {
+  it('sends no steps (the service runs the real pipeline) + user messages and prints deltas and pipeline', async () => {
     const router = { ...baseRouter, optimizers: { steps: [{ id: 'ccr', enabled: true }] } };
-    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce(previewResult);
+    mockApi.mockResolvedValueOnce([router]).mockResolvedValueOnce({ ...previewResult, pipeline: { kind: 'profile', profileId: 'optimizer-aggressive', label: 'Aggressive' } });
     const lines: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...a) => lines.push(a.join(' ')));
     await makeCmd().parseAsync(['node', 'optimizers', 'preview', 'my-api', '--message', 'hello', '--message', 'world']);
@@ -362,9 +362,9 @@ describe('optimizers preview', () => {
         { role: 'user', content: 'hello' },
         { role: 'user', content: 'world' },
       ],
-      steps: [{ id: 'ccr', enabled: true }],
     });
     const out = lines.join('\n');
+    expect(out).toContain('profile Aggressive');
     expect(out).toContain('100');
     expect(out).toContain('60');
   });
@@ -401,7 +401,7 @@ describe('optimizers preview', () => {
     expect(mockApi.mock.calls[1]![1]).toBe('/api/optimizers/preview');
     expect(body.sampleMessages[0].role).toBe('system');
     expect(body.sampleMessages.length).toBeGreaterThan(6);
-    expect(body.steps).toEqual([{ id: 'ccr', enabled: true }]);
+    expect(body.steps).toBeUndefined();
   });
 
   it('exits 1 on an unknown --fixture id, without calling the service', async () => {

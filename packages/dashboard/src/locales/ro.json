@@ -1411,6 +1411,7 @@
       "saving": "Se salvează...",
       "saved": "Salvat",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Previzualizare economii jetoane",
         "description": "Rulează conducta actuală (nesalvată) pe o instrucțiune pentru a vedea ce elimină fiecare pas și cât costă. Alege din conversații exemplu, sau tastează propria instrucțiune.",
         "promptLabel": "Instrucțiune",

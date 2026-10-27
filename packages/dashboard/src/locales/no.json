@@ -1411,6 +1411,7 @@
       "saving": "Lagrer...",
       "saved": "Lagret",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Forhåndsvis token-besparelser",
         "description": "Kjør gjeldende (ulagret) rørledning over en melding for å se hva hvert trinn fjerner og hva det koster. Velg en av eksempelkonversasjonene, eller skriv din egen melding.",
         "promptLabel": "Melding",

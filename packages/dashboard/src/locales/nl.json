@@ -1411,6 +1411,7 @@
       "saving": "Opslaan...",
       "saved": "Opgeslagen",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Token-besparing voorvertoning",
         "description": "Voer de huidigelopen) pijplijn uit op een prompt om te zien wat elke stap verwijdert en wat het kost. Kies een van de voorbeeldgesprekken of typ uw eigen prompt.",
         "promptLabel": "Prompt",

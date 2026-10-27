@@ -1411,6 +1411,7 @@
       "saving": "Saxlanılır...",
       "saved": "Saxlanıldı",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Token qənaətinə önizləmə",
         "description": "Hər addımın nə çıxardığını və nə qədər başa gəldiyini görmək üçün cari (saxlanmamış) boru xəttini bir sorğu üzərində işə salın. Nümunə söhbətlərdən birini seçin, ya da öz sorğunuzu yazın.",
         "promptLabel": "Sorğu",

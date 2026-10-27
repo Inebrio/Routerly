@@ -1411,6 +1411,7 @@
       "saving": "Ukládá se...",
       "saved": "Uloženo",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Náhled úspor tokenů",
         "description": "Spusťte aktuální (neuloženou) pipeline na promptu, abyste viděli, co každý krok odstraní a co to stojí. Vyberte jednu z ukázkových konverzací, nebo napište vlastní prompt.",
         "promptLabel": "Prompt",

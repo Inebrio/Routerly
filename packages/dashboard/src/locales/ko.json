@@ -1411,6 +1411,7 @@
       "saving": "저장 중...",
       "saved": "저장됨",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "토큰 절약 미리보기",
         "description": "현재(저장되지 않음) 파이프라인을 프롬프트에 대해 실행하여 각 단계가 제거하는 것과 비용을 확인합니다. 샘플 대화 중 하나를 선택하거나 고유 프롬프트를 입력하세요.",
         "promptLabel": "프롬프트",

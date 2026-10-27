@@ -1411,6 +1411,7 @@
       "saving": "Menyimpan...",
       "saved": "Disimpan",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Pratinjau penghematan token",
         "description": "Jalankan pipeline saat ini (belum disimpan) di prompt untuk melihat apa yang setiap langkah hapus dan biayanya. Pilih salah satu percakapan sampel, atau ketik prompt Anda sendiri.",
         "promptLabel": "Prompt",
