@@ -2496,7 +2496,8 @@
       "show": "Hibakereső Megjelenítése",
       "empty": "Még nincs hibakereső adat.",
       "emptyHint": "Küldjön egy üzenetet az útválasztási részletek megtekintéséhez.",
-      "turnTraceLog": "#{{turn}} fordulat nyom naplójában"
+      "turnTraceLog": "#{{turn}} fordulat nyom naplójában",
+      "resize": "A hibakeresési panel átméretezése"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",

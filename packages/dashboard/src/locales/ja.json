@@ -2496,7 +2496,8 @@
       "show": "デバッグを表示",
       "empty": "デバッグデータがまだありません。",
       "emptyHint": "メッセージを送信してルーティング詳細を見ます。",
-      "turnTraceLog": "ターン#{{turn}}トレースログ"
+      "turnTraceLog": "ターン#{{turn}}トレースログ",
+      "resize": "デバッグパネルのサイズを変更"
     },
     "compare": {
       "modelLabel": "モデル{{label}}:",

@@ -2496,7 +2496,8 @@
       "show": "Vis fejlfinding",
       "empty": "Ingen fejlfindingsdata endnu.",
       "emptyHint": "Send en besked for at se routingdetaljer.",
-      "turnTraceLog": "Tur #{{turn}} trace-log"
+      "turnTraceLog": "Tur #{{turn}} trace-log",
+      "resize": "Tilpas størrelsen på fejlsøgningspanelet"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

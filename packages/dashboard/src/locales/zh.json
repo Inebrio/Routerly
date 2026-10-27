@@ -2496,7 +2496,8 @@
       "show": "显示调试",
       "empty": "还没有调试数据。",
       "emptyHint": "发送消息以查看路由详情。",
-      "turnTraceLog": "轮 #{{turn}} 跟踪日志"
+      "turnTraceLog": "轮 #{{turn}} 跟踪日志",
+      "resize": "调整调试面板大小"
     },
     "compare": {
       "modelLabel": "模型 {{label}}:",

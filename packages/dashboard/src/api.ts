@@ -1280,3 +1280,21 @@ export interface ClientsResponse {
 /** 404s (as an ApiError with `status === 404`) when the client-configurator module is disabled. */
 export const getClients = () => request<ClientsResponse>('/clients');
 
+
+// ── Playground Debug panel layout (per-browser preference) ───────────────────
+const PLAYGROUND_DEBUG_KEY = 'lr_playground_debug';
+export interface PlaygroundDebugLayout { width: number | null; collapsed: boolean }
+
+export function getPlaygroundDebugLayout(): PlaygroundDebugLayout {
+  try {
+    const v = JSON.parse(localStorage.getItem(PLAYGROUND_DEBUG_KEY) ?? 'null');
+    return {
+      width: typeof v?.width === 'number' && Number.isFinite(v.width) ? v.width : null,
+      collapsed: v?.collapsed === true,
+    };
+  } catch { return { width: null, collapsed: false }; }
+}
+
+export function setPlaygroundDebugLayout(layout: PlaygroundDebugLayout): void {
+  try { localStorage.setItem(PLAYGROUND_DEBUG_KEY, JSON.stringify(layout)); } catch { /* storage unavailable */ }
+}

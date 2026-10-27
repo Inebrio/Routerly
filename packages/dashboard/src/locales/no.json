@@ -2496,7 +2496,8 @@
       "show": "Vis feilsøking",
       "empty": "Ingen feilsøkingsdata ennå.",
       "emptyHint": "Send en melding for å se rutingdetaljer.",
-      "turnTraceLog": "Tur #{{turn}} sporingslogg"
+      "turnTraceLog": "Tur #{{turn}} sporingslogg",
+      "resize": "Endre størrelsen på feilsøkingspanelet"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",

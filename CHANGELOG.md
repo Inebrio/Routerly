@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Added
 
+- **Resizable and collapsible Playground Debug panel (ROUT-438).** The Debug sidebar can be widened or narrowed by dragging the handle (or with the keyboard) between 280 and 720 px, always leaving the conversation 360 px; it collapses to a rail and expands back to its previous width without losing the collected turns. Width and collapsed state are remembered per browser and re-limited on smaller windows; long trace lines wrap instead of being cut. Dashboard only.
 - **Official provider mocks for UAT and tests (ROUT-401).** `npm run provider-mocks` starts mocks of claude.ai, chatgpt.com, Azure OpenAI, AWS Bedrock (Converse and ConverseStream) and Vertex AI on one port; connections point at them with `--endpoint` and a `mock-*` credential (`mock-429`, `mock-403`, `mock-401`, `mock-500`, `mock-cut`). Automated tests cover 429, 403, 401 and interrupted streams. Test tooling only; real-provider UAT cases stay BLOCKED and mock runs are recorded as «PASS (mock)».
 - **`azure-openai`, `bedrock` and `vertex` connections now honour `endpoint`** when set (empty keeps the cloud host, no change to default requests).
 

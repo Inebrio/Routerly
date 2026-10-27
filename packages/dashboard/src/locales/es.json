@@ -2496,7 +2496,8 @@
       "show": "Mostrar depuración",
       "empty": "Aún no hay datos de depuración.",
       "emptyHint": "Envía un mensaje para ver los detalles de enrutamiento.",
-      "turnTraceLog": "Registro de traza del turno #{{turn}}"
+      "turnTraceLog": "Registro de traza del turno #{{turn}}",
+      "resize": "Cambiar el tamaño del panel de depuración"
     },
     "compare": {
       "modelLabel": "Modelo {{label}}:",

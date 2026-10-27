@@ -2496,7 +2496,8 @@
       "show": "Mostrar debug",
       "empty": "Nenhum dado de debug ainda.",
       "emptyHint": "Envie uma mensagem para ver detalhes de roteamento.",
-      "turnTraceLog": "Log de rastreamento da Rodada #{{turn}}"
+      "turnTraceLog": "Log de rastreamento da Rodada #{{turn}}",
+      "resize": "Redimensionar o painel de depuração"
     },
     "compare": {
       "modelLabel": "Modelo {{label}}:",

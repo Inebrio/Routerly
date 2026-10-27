@@ -2496,7 +2496,8 @@
       "show": "Näytä vianjäljitys",
       "empty": "Ei vianjäljitystietoja vielä.",
       "emptyHint": "Lähetä viesti nähdäksesi reititystiedot.",
-      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki"
+      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki",
+      "resize": "Muuta virheenkorjauspaneelin kokoa"
     },
     "compare": {
       "modelLabel": "Malli {{label}}:",

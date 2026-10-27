@@ -2496,7 +2496,8 @@
       "show": "Hiển thị gỡ lỗi",
       "empty": "Chưa có dữ liệu gỡ lỗi nào.",
       "emptyHint": "Gửi tin nhắn để xem chi tiết định tuyến.",
-      "turnTraceLog": "Lượt #{{turn}} nhật ký vết"
+      "turnTraceLog": "Lượt #{{turn}} nhật ký vết",
+      "resize": "Thay đổi kích thước bảng gỡ lỗi"
     },
     "compare": {
       "modelLabel": "Mô hình {{label}}:",

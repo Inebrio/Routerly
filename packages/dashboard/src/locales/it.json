@@ -2499,7 +2499,8 @@
       "show": "Mostra debug",
       "empty": "Nessun dato di debug ancora.",
       "emptyHint": "Invia un messaggio per vedere i dettagli del routing.",
-      "turnTraceLog": "Turno #{{turn}} log di traccia"
+      "turnTraceLog": "Turno #{{turn}} log di traccia",
+      "resize": "Ridimensiona il pannello di debug"
     },
     "compare": {
       "modelLabel": "Modello {{label}}:",

@@ -2496,7 +2496,8 @@
       "show": "Zobrazit debug",
       "empty": "Zatím žádná debug data.",
       "emptyHint": "Odešlete zprávu pro zobrazení podrobností směrování.",
-      "turnTraceLog": "Log trasování kola #{{turn}}"
+      "turnTraceLog": "Log trasování kola #{{turn}}",
+      "resize": "Změnit velikost panelu ladění"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
