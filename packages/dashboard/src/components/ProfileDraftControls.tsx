@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchableSelect } from './SearchableSelect';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -74,5 +74,21 @@ export function StartFromProfile({ options, hasCustom, onCopy }: {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Wraps editing controls; with `readOnly` they cannot be focused or clicked (native
+ * controls via the disabled fieldset, custom comboboxes via inert). Display stays.
+ */
+export function ReadOnlyFieldset({ readOnly, children }: { readOnly: boolean; children: ReactNode }) {
+  return (
+    <fieldset
+      disabled={readOnly}
+      style={{ border: 0, padding: 0, margin: 0, minWidth: 0, ...(readOnly ? { pointerEvents: 'none' } : {}) }}
+      {...(readOnly ? ({ inert: '' } as object) : {})}
+    >
+      {children}
+    </fieldset>
   );
 }

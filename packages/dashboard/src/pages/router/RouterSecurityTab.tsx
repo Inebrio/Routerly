@@ -12,7 +12,7 @@ import {
   type SecurityProfile,
 } from '../../api';
 import { SearchableSelect } from '../../components/SearchableSelect';
-import { PendingProfileNotice, StartFromProfile } from '../../components/ProfileDraftControls';
+import { PendingProfileNotice, ReadOnlyFieldset, StartFromProfile } from '../../components/ProfileDraftControls';
 import { useProfileDraft } from '../../hooks/useProfileDraft';
 import {
   SecurityRulesEditor,
@@ -22,11 +22,13 @@ import {
   type RuleWithId,
 } from '../../components/SecurityRulesEditor';
 import { useRouter } from './RouterLayout';
+import { useAuth } from '../../AuthContext';
 import { uuid } from '../../utils/uuid';
 
 export function RouterSecurityTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
+  const canWrite = useAuth().can('router:write');
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -140,6 +142,7 @@ export function RouterSecurityTab() {
         <PendingProfileNotice profileLabel={draft.isCustom ? null : (assignedProfile?.label ?? assignedProfileId)} onDiscard={draft.discard} />
       )}
 
+      <ReadOnlyFieldset readOnly={!canWrite}>
       <div className="form-group">
         <label className="form-label">{t('routers.security.title')}</label>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
@@ -209,7 +212,9 @@ export function RouterSecurityTab() {
         </>
       )}
 
-      {(!profileAssigned || draft.isPending) && (
+      </ReadOnlyFieldset>
+
+      {canWrite && (!profileAssigned || draft.isPending) && (
         <button
           type="submit"
           className="btn btn-primary"

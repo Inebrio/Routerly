@@ -4,8 +4,9 @@ import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
 import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
+import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
-import { PendingProfileNotice, StartFromProfile } from '../../components/ProfileDraftControls';
+import { PendingProfileNotice, ReadOnlyFieldset, StartFromProfile } from '../../components/ProfileDraftControls';
 import { useProfileDraft } from '../../hooks/useProfileDraft';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
@@ -20,6 +21,7 @@ type TargetModel = {
 export function RouterRoutingTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
+  const canWrite = useAuth().can('router:write');
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -299,6 +301,7 @@ export function RouterRoutingTab() {
           />
         )}
 
+        <ReadOnlyFieldset readOnly={!canWrite}>
         <div className="form-group">
           <label className="form-label">{t('routers.routing.form.routing')}</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
@@ -380,7 +383,7 @@ export function RouterRoutingTab() {
               <div
                 key={item.internalId}
                 id={`target-row-${idx}`}
-                draggable={promptHoverIdx !== idx}
+                draggable={canWrite && promptHoverIdx !== idx}
                 onDragStart={(e) => onDragStartTarget(e, idx)}
                 onDragEnter={(e) => onDragEnterTarget(e, idx)}
                 onDragEnd={(e) => onDragEndTarget(e, idx)}
@@ -524,7 +527,9 @@ export function RouterRoutingTab() {
         </>
         )}
 
-        <div style={{ marginTop: 32 }}>
+        </ReadOnlyFieldset>
+
+        {canWrite && <div style={{ marginTop: 32 }}>
           <button
             type="button"
             className="btn btn-primary"
@@ -540,7 +545,7 @@ export function RouterRoutingTab() {
               t('routers.routing.form.saveRoutingConfiguration')
             )}
           </button>
-        </div>
+        </div>}
       </form>
 
       {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}
