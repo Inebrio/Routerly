@@ -18,6 +18,8 @@ import {
 import { useRouter } from './RouterLayout';
 import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { PendingProfileNotice, StartFromProfile } from '../../components/ProfileDraftControls';
+import { useProfileDraft } from '../../hooks/useProfileDraft';
 import { TextDiff, promptText } from '../../components/TextDiff';
 import {
   OptimizerStepsEditor,
@@ -57,9 +59,9 @@ export function RouterOptimizerTab() {
   const [previewInput, setPreviewInput] = useState<Message[]>([]);
   const [openStep, setOpenStep] = useState<number | null>(null);
 
-  // Steps to install on the next router refresh, used when switching from a
-  // profile to custom so the profile steps become the editable starting point.
-  const pendingRows = React.useRef<OptimizerRow[] | null>(null);
+  // Profile/custom choice, local until saved. The custom rows below always show
+  // what is stored, whichever mode is selected.
+  const draft = useProfileDraft(router?.optimizerProfileId ?? '');
 
   useEffect(() => {
     if (!canRead) { setLoading(false); return; }
@@ -82,25 +84,8 @@ export function RouterOptimizerTab() {
   useEffect(() => {
     /* v8 ignore next */
     if (!router) return;
-    if (pendingRows.current) {
-      setRows(pendingRows.current);
-      pendingRows.current = null;
-      return;
-    }
     setRows(mergeOptimizerRows(router.optimizers?.steps ?? [], installed));
   }, [router, installed]);
-
-  async function onAssignProfile(profileId: string) {
-    /* v8 ignore next */
-    if (!router) return;
-    setErr('');
-    try {
-      const updated = await assignRouterProfiles(router.id, { optimizer: profileId === '' ? null : profileId });
-      setRouter(updated);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : t('routers.optimizer.errors.assignFailed'));
-    }
-  }
 
   async function doSave() {
     /* v8 ignore next */
@@ -108,12 +93,18 @@ export function RouterOptimizerTab() {
     setErr('');
     setSaving(true);
     try {
-      const payload: Parameters<typeof updateRouter>[1] = {
-        name: router.name,
-        models: router.models,
-        optimizers: { steps: buildOptimizerSteps(rows) },
-      };
-      const updated = await updateRouter(router.id, payload);
+      let updated;
+      if (draft.isCustom) {
+        const payload: Parameters<typeof updateRouter>[1] = {
+          name: router.name,
+          models: router.models,
+          optimizers: { steps: buildOptimizerSteps(rows) },
+        };
+        updated = await updateRouter(router.id, payload);
+        if (draft.isPending) updated = await assignRouterProfiles(router.id, { optimizer: null });
+      } else {
+        updated = await assignRouterProfiles(router.id, { optimizer: draft.selected });
+      }
       setRouter(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -184,29 +175,36 @@ export function RouterOptimizerTab() {
       return { value: id, label: window ? t('routers.optimizer.preview.modelWithContext', { id, k: Math.round(window / 1000) }) : id };
     });
 
-  const assignedProfileId = router?.optimizerProfileId ?? '';
-  const profileAssigned = assignedProfileId !== '';
+  const assignedProfileId = draft.selected;
+  const profileAssigned = !draft.isCustom;
   const defaultProfileId = profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
   const assignedProfile = profiles.find(p => p.id === assignedProfileId);
+  const profileOptions = [
+    ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: t('routers.optimizer.profileSelect.builtinLabel', { label: p.label }) })),
+    ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
+  ];
 
-  async function onSelectMode(next: 'profile' | 'custom') {
+  function onSelectMode(next: 'profile' | 'custom') {
     if ((next === 'profile') === profileAssigned) return;
-    if (next === 'profile') {
-      if (!defaultProfileId) {
-        setErr(t('routers.optimizer.errors.noProfileAvailable'));
-        return;
-      }
-      await onAssignProfile(defaultProfileId);
+    if (next === 'custom') { draft.selectCustom(); return; }
+    if (!defaultProfileId) {
+      setErr(t('routers.optimizer.errors.noProfileAvailable'));
       return;
     }
-    // Leaving a profile: its steps become the editable starting point.
-    if (assignedProfile) pendingRows.current = mergeOptimizerRows(assignedProfile.optimizers.steps, installed);
-    await onAssignProfile('');
+    draft.selectProfile(defaultProfileId);
+  }
+
+  function copyProfile(id: string) {
+    const p = profiles.find(x => x.id === id);
+    if (p) setRows(mergeOptimizerRows(p.optimizers.steps, installed));
   }
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
       {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+      {draft.isPending && (
+        <PendingProfileNotice profileLabel={draft.isCustom ? null : (assignedProfile?.label ?? assignedProfileId)} onDiscard={draft.discard} />
+      )}
 
       <div className="form-group">
         <label className="form-label">{t('routers.optimizer.title')}</label>
@@ -219,14 +217,14 @@ export function RouterOptimizerTab() {
             <button
               type="button"
               className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => void onSelectMode('profile')}
+              onClick={() => onSelectMode('profile')}
             >
               {t('routers.optimizer.mode.profile')}
             </button>
             <button
               type="button"
               className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
-              onClick={() => void onSelectMode('custom')}
+              onClick={() => onSelectMode('custom')}
             >
               {t('routers.optimizer.mode.custom')}
             </button>
@@ -239,12 +237,9 @@ export function RouterOptimizerTab() {
               style={{ maxWidth: 420 }}
               ariaLabel={t('routers.optimizer.profileSelect.ariaLabel')}
               value={assignedProfileId}
-              onChange={v => void onAssignProfile(v)}
+              onChange={draft.selectProfile}
               disabled={!canManage}
-              options={[
-                ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: t('routers.optimizer.profileSelect.builtinLabel', { label: p.label }) })),
-                ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
-              ]}
+              options={profileOptions}
             />
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
               {t('routers.optimizer.profileSelect.hint')}
@@ -266,13 +261,20 @@ export function RouterOptimizerTab() {
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
               {t('routers.optimizer.customHint')}
             </p>
+            {canManage && (
+              <StartFromProfile
+                options={profileOptions}
+                hasCustom={rows.some(r => r.enabled)}
+                onCopy={copyProfile}
+              />
+            )}
             <OptimizerStepsEditor rows={rows} setRows={setRows} disabled={!canManage} />
           </>
         )}
 
       </div>
 
-      {canManage && !profileAssigned && rows.length > 0 && (
+      {canManage && (draft.isPending || (!profileAssigned && rows.length > 0)) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
           <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void doSave()}>
             {saving ? t('routers.optimizer.saving') : t('routers.optimizer.saveButton')}

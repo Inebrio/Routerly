@@ -1688,6 +1688,16 @@
       "noRequestSent": "아직 요청을 보내지 않았습니다.",
       "turnTraceLog": "턴 #{{turn}} 추적 로그 · {{count}}개 이벤트",
       "turnTraceLog_other": "턴 #{{turn}} 추적 로그 · {{count}}개 이벤트"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
