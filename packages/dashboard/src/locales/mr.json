@@ -2728,7 +2728,6 @@
     "backToConnect": "कनेक्ट कडे परत",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "noClientPrefix": "कोणतेही क्लायंट नावाचा",
     "errors": {
       "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "त्या क्लायंट मॉडेल ट्रॅफिकला Routerly द्वारे राउट करा।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly साधन सर्वरच्या अंदरुन लोड करा।",
-    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "errors": {
       "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
     },

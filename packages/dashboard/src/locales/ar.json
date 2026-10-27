@@ -2728,7 +2728,6 @@
     "backToConnect": "العودة إلى الاتصال",
     "title": "الاتصال",
     "docs": "التوثيق",
-    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
     "noClientPrefix": "لا يوجد عميل باسم",
     "errors": {
       "loadFailed": "تعذّر تحميل العملاء: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "يوجّه حركة مرور نموذج ذلك العميل عبر Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "يحمّل Routerly كخادم أدوات داخله.",
-    "notEnabledPrefix": "مُعدّ العملاء غير مفعّل. اطلب من مسؤول تفعيله باستخدام",
     "errors": {
       "loadFailed": "تعذّر تحميل العملاء: {{error}}"
     },

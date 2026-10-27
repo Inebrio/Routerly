@@ -2728,7 +2728,6 @@
     "backToConnect": "Înapoi la conectare",
     "title": "Conectare",
     "docs": "Documente",
-    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
     "noClientPrefix": "Niciun client numit",
     "errors": {
       "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "rutează trafic model al clientului prin Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "încarcă Routerly ca server unealtă în el.",
-    "notEnabledPrefix": "Configuratorul client nu este activat. Cere unui admin să-l activeze cu",
     "errors": {
       "loadFailed": "Nu s-a putut încărca clienți: {{error}}"
     },

@@ -2728,7 +2728,6 @@
     "backToConnect": "Späť na Pripojiť",
     "title": "Pripojiť",
     "docs": "Dokumentácia",
-    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
     "noClientPrefix": "Žiadny klient s menom",
     "errors": {
       "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "Smeruje prevádzku modelu tohto klienta cez Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "Načítava Routerly ako server nástrojov vo vnútri.",
-    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
     "errors": {
       "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
     },

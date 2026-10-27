@@ -2728,7 +2728,6 @@
     "backToConnect": "Quay lại kết nối",
     "title": "Kết nối",
     "docs": "Tài liệu",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "noClientPrefix": "Không có khách hàng tên",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "định tuyến lưu lượng mô hình khách hàng đó thông qua Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "tải Routerly dưới dạng máy chủ công cụ bên trong nó.",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
     },

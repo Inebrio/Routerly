@@ -2728,7 +2728,6 @@
     "backToConnect": "Zurück zu Verbinden",
     "title": "Verbinden",
     "docs": "Dokumente",
-    "notEnabledPrefix": "Client-Konfigurator ist nicht aktiviert. Bitte einen Administrator, ihn zu aktivieren mit",
     "noClientPrefix": "Kein Client namens",
     "errors": {
       "loadFailed": "Clients konnten nicht geladen werden: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "leitet den Modell-Traffic dieses Clients über Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "lädt Routerly als Tool-Server darin.",
-    "notEnabledPrefix": "Client-Konfigurator ist nicht aktiviert. Bitte einen Administrator, ihn zu aktivieren mit",
     "errors": {
       "loadFailed": "Clients konnten nicht geladen werden: {{error}}"
     },

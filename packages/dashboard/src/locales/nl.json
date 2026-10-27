@@ -2728,7 +2728,6 @@
     "backToConnect": "Terug naar verbinden",
     "title": "Verbinden",
     "docs": "Documenten",
-    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
     "noClientPrefix": "Geen client met de naam",
     "errors": {
       "loadFailed": "Kan clients niet laden: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "routeert dat clientmodelverkeer door Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laadt Routerly als toolserver erin.",
-    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
     "errors": {
       "loadFailed": "Kan clients niet laden: {{error}}"
     },

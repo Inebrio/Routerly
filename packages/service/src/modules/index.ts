@@ -37,11 +37,8 @@ export const coreModules = [
   experimentsModule,
 ]
 
-// ponytail: provider-oauth/provider-web are pure feature-gate slots (no register()
-// lifecycle of their own — see anthropic-oauth.ts/openai-oauth.ts/anthropic-web.ts/
-// openai-web.ts, which check isModuleEnabled directly). Declaring them here is what
-// makes the existing generic /api/modules + dashboard Modules page + CLI `modules`
-// command list and toggle them — no bespoke UI needed for this capability gate.
+// provider-oauth/provider-web are empty module slots (no register() lifecycle of their own):
+// declared so that GET /api/modules and `routerly modules list` list them.
 export const providerOAuthModule: RouterlyModule = defineModule({
   manifest: { id: 'provider-oauth', version: '0.5.4', dependsOn: { provider: '^0.5.4' } },
   register() {

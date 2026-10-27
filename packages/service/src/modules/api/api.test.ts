@@ -14046,6 +14046,29 @@ describe('guardrailRuleSchema superRefine — uncovered validation branches', ()
 
 // ─── /api/modules ───────────────────────────────────────────────────────────
 describe('modules endpoints', () => {
+  it('GET /api/modules reports every module enabled even when a disabled record is stored', async () => {
+    setupAdminAuth()
+    const base = mockReadConfig.getMockImplementation()!
+    mockReadConfig.mockImplementation(async (t: string) =>
+      t === 'modules' ? [{ id: 'provider-web', enabled: false }] : base(t))
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/modules', headers: adminAuthHeaders() })
+    await app.close()
+    const body = res.json() as Array<{ id: string; enabled: boolean }>
+    expect(body.length).toBeGreaterThan(0)
+    expect(body.every((m) => m.enabled)).toBe(true)
+  })
+
+  it('has no enable/disable routes (modules are always active)', async () => {
+    setupAdminAuth()
+    const app = await buildApp()
+    const dis = await app.inject({ method: 'POST', url: '/api/modules/provider-web/disable', headers: adminAuthHeaders() })
+    const en = await app.inject({ method: 'POST', url: '/api/modules/provider-web/enable', headers: adminAuthHeaders() })
+    await app.close()
+    expect(dis.statusCode).toBe(404)
+    expect(en.statusCode).toBe(404)
+  })
+
   it('GET /api/modules lists modules with 200 for a reader', async () => {
     setupAdminAuth()
     const app = await buildApp()
@@ -14071,36 +14094,6 @@ describe('modules endpoints', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('POST /api/modules/:id/disable disables a feature module (200, restartRequired)', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: false, restartRequired: true })
-  })
-
-  it('POST /api/modules/:id/disable is 409 for an always-on module', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/config/disable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('POST /api/modules/:id/enable is 403 without modules:manage', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'no-perms-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'no-perms-id', email: 'noperms@example.com', passwordHash: 'hashed', roleId: 'no-perms', routerIds: [] }]
-      if (t === 'roles') return [{ id: 'no-perms', name: 'No Perms', permissions: [] }]
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
   // Permission separation: modules:read must not imply modules:manage. The
   // built-in 'viewer' role has modules:read only (see auth/roles.ts) — proves
   // GET is allowed while enable/disable are specifically gated on a
@@ -14116,49 +14109,6 @@ describe('modules endpoints', () => {
     const res = await app.inject({ method: 'GET', url: '/api/modules', headers: { authorization: 'Bearer tok' } })
     await app.close()
     expect(res.statusCode).toBe(200)
-  })
-
-  it('POST /api/modules/:id/enable is 403 for a modules:read-only role (viewer)', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
-      if (t === 'roles') return []
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('POST /api/modules/:id/disable is 403 for a modules:read-only role (viewer)', async () => {
-    vi.mocked(mockVerifyToken).mockReturnValue({ sub: 'viewer-id' } as any)
-    mockReadConfig.mockImplementation(async (t: string) => {
-      if (t === 'users') return [{ id: 'viewer-id', email: 'viewer@example.com', passwordHash: 'hashed', roleId: 'viewer', routerIds: [] }]
-      if (t === 'roles') return []
-      return []
-    })
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/disable', headers: { authorization: 'Bearer tok' } })
-    await app.close()
-    expect(res.statusCode).toBe(403)
-  })
-
-  it('POST /api/modules/:id/enable is 409 for an unknown module', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/does-not-exist/enable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(409)
-  })
-
-  it('POST /api/modules/:id/enable enables a feature module (200, restartRequired)', async () => {
-    setupAdminAuth()
-    const app = await buildApp()
-    const res = await app.inject({ method: 'POST', url: '/api/modules/guardrails/enable', headers: adminAuthHeaders() })
-    await app.close()
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ id: 'guardrails', enabled: true, restartRequired: true })
   })
 })
 

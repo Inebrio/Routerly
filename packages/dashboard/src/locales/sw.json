@@ -2728,7 +2728,6 @@
     "backToConnect": "Kurudi kwenye Unganisha",
     "title": "Unganisha",
     "docs": "Nyaraka",
-    "notEnabledPrefix": "Mteja wa kusanidi hauwezekani. Mwaliko msimamizi kuamkua na",
     "noClientPrefix": "Hakuna mteja anayeitwa",
     "errors": {
       "loadFailed": "Kushindwa kupakia wateja: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "njia trafiki ya modeli ya mteja kupitia Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "inapakia Routerly kama mteja wa zana ndani yake.",
-    "notEnabledPrefix": "Mteja wa kusanidi hauwezekani. Mwaliko msimamizi kuamkua na",
     "errors": {
       "loadFailed": "Kushindwa kupakia wateja: {{error}}"
     },

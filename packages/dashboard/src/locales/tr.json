@@ -2728,7 +2728,6 @@
     "backToConnect": "Bağlantıya Geri Dön",
     "title": "Bağlan",
     "docs": "Belgeler",
-    "notEnabledPrefix": "İstemci yapılandırıcı etkin değildir. Yöneticiden etkinleştirmesini isteyin",
     "noClientPrefix": "Adlı istemci yok",
     "errors": {
       "loadFailed": "İstemcileri yüklemek başarısız oldu: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "bu istemci modeli trafiğini Routerly üzerinden yönlendirir.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly'yi bir araç sunucusu olarak içine yükler.",
-    "notEnabledPrefix": "İstemci yapılandırıcı etkin değildir. Yöneticiden etkinleştirmesini isteyin",
     "errors": {
       "loadFailed": "İstemcileri yüklemek başarısız oldu: {{error}}"
     },

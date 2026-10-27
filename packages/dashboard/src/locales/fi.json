@@ -2728,7 +2728,6 @@
     "backToConnect": "Takaisin yhdistämiseen",
     "title": "Yhdistä",
     "docs": "Dokumentaatio",
-    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
     "noClientPrefix": "Ei asiakasta nimellä",
     "errors": {
       "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "reitittää sen asiakasmalliliikenteen Routerlyn läpi.",
     "mcpLabel": "MCP",
     "mcpDescription": "lataa Routerlyn työkalupalvelimeksi sen sisään.",
-    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
     "errors": {
       "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
     },

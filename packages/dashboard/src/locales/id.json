@@ -2728,7 +2728,6 @@
     "backToConnect": "Kembali ke Hubungkan",
     "title": "Hubungkan",
     "docs": "Dokumentasi",
-    "notEnabledPrefix": "Pengkonfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
     "noClientPrefix": "Tidak ada klien bernama",
     "errors": {
       "loadFailed": "Gagal memuat klien: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "mengarahkan traffic model klien itu melalui Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "memuat Routerly sebagai server alat di dalamnya.",
-    "notEnabledPrefix": "Pengkonfigurasi klien tidak diaktifkan. Minta admin untuk mengaktifkannya dengan",
     "errors": {
       "loadFailed": "Gagal memuat klien: {{error}}"
     },

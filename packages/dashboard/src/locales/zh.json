@@ -2728,7 +2728,6 @@
     "backToConnect": "返回连接",
     "title": "连接",
     "docs": "文档",
-    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
     "noClientPrefix": "没有名为以下的客户端",
     "errors": {
       "loadFailed": "未能加载客户端: {{error}}"
@@ -2773,7 +2772,6 @@
     "llmDescription": "路由该客户端模型流量通过Routerly。",
     "mcpLabel": "MCP",
     "mcpDescription": "将Routerly加载为其内的工具服务器。",
-    "notEnabledPrefix": "客户端配置器未启用。请管理员用以下方式启用它",
     "errors": {
       "loadFailed": "未能加载客户端: {{error}}"
     },

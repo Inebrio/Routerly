@@ -2732,7 +2732,6 @@
     "backToConnect": "Back to Connect",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
     "noClientPrefix": "No client named",
     "errors": {
       "loadFailed": "Failed to load clients: {{error}}"
@@ -2777,7 +2776,6 @@
     "llmDescription": "routes that client model traffic through Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "loads Routerly as a tool server inside it.",
-    "notEnabledPrefix": "Client configurator is not enabled. Ask an admin to enable it with",
     "errors": {
       "loadFailed": "Failed to load clients: {{error}}"
     },

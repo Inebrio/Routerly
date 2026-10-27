@@ -42,10 +42,8 @@ const DEFAULTS: Record<string, unknown> = {
   routers: [] as RouterConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
-  // 'provider-web' defaults DISABLED (unofficial, ToS-risk web-cookie adapters) —
-  // 'provider-oauth' has no record here and defaults enabled via isModuleEnabled's
-  // "no record = enabled" fallback.
-  modules: [{ id: 'provider-web', enabled: false } satisfies ModuleRecord] as ModuleRecord[],
+  // All modules are always active; the file is only kept for compatibility.
+  modules: [] as ModuleRecord[],
   profiles: [] as Profile[],
   experiments: [] as ExperimentConfig[],
   connections: [] as ProviderConnection[],

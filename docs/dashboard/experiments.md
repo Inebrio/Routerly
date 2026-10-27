@@ -11,11 +11,7 @@ variant is, how the rotation picks one, and how the numbers are computed.
 
 Navigate to `/dashboard/experiments`.
 
-The **Experiments** entry appears in the sidebar only when the `experiments`
-module is enabled and your role has `experiments:read`. With the module off
-the entry is hidden; modules are turned on from the CLI
-(`routerly modules enable experiments`, then restart the service). See
-[Settings: Modules](./settings.md#modules-tab).
+The **Experiments** entry appears in the sidebar when your role has `experiments:read`.
 
 ---
 
