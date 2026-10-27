@@ -136,6 +136,16 @@ resolves against. See [Connections](#connections) and
 [Dashboard: Models: Preconfigured vs Custom Connection](../dashboard/models.md#preconfigured-vs-custom-connection)
 for the higher-level explanation.
 
+### Model Catalog
+
+```
+GET /api/models/catalog
+```
+
+**Auth**: `Authorization: Bearer <jwt>` (requires `model:read`; `settings:read` is not needed)
+
+Returns the known models per provider, each flagged `isConfigured` when already registered. It feeds the model picker, so it follows the model permissions, unlike the catalog repository settings routes (`/api/catalog/*`), which need `settings:read` or `settings:write`.
+
 ### List Models
 
 ```
