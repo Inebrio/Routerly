@@ -12898,6 +12898,21 @@ describe('redactChannel edge cases (lines 83-90)', () => {
 // ─── GET /api/models/catalog — 403 (line 673 if branch=0) ────────────────────
 
 describe('GET /api/models/catalog — permission checks', () => {
+  it('returns 200 with model:read only, without settings:read (ROUT-423)', async () => {
+    const role = { id: 'model-only', name: 'ModelOnly', permissions: ['model:read'] }
+    const user = { id: 'mo-id', email: 'mo@mo.com', passwordHash: '$2b$12$h', roleId: 'model-only', routerIds: [] }
+    mockVerifyToken.mockReturnValue({ sub: 'mo-id' } as any)
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [user]
+      if (t === 'roles') return [role]
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/models/catalog', headers: { authorization: 'Bearer tok' } })
+    await app.close()
+    expect(res.statusCode).toBe(200)
+  })
+
   it('returns 403 when user lacks model:read permission (line 673 if branch=0)', async () => {
     const noModelRole = { id: 'no-model', name: 'NoModel', permissions: ['router:read'] }
     const noModelUser = { id: 'nm-id', email: 'nm@nm.com', passwordHash: '$2b$12$h', roleId: 'no-model', routerIds: [] }
