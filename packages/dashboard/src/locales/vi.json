@@ -679,7 +679,8 @@
         "saving": "Đang lưu…",
         "enable": "Bật",
         "disable": "Tắt"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Xóa tích hợp",
       "saving": "Đang lưu…",
       "save": "Lưu",
-      "addButton": "Thêm tích hợp"
+      "addButton": "Thêm tích hợp",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

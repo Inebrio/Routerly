@@ -679,7 +679,8 @@
         "saving": "சேமிக்கப்படுகிறது…",
         "enable": "இயக்கவும்",
         "disable": "முடக்கவும்"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "ஒருங்கிணைப்பு அகற்றவும்",
       "saving": "சேமிக்கப்படுகிறது…",
       "save": "சேமிக்க",
-      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்"
+      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

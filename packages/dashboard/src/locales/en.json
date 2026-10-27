@@ -680,7 +680,8 @@
         "saving": "Saving…",
         "enable": "Enable",
         "disable": "Disable"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1065,7 +1066,8 @@
       "removeTooltip": "Remove integration",
       "saving": "Saving…",
       "save": "Save",
-      "addButton": "Add Integration"
+      "addButton": "Add Integration",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

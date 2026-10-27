@@ -679,7 +679,8 @@
         "saving": "Saxlanılır…",
         "enable": "Aktivləşdir",
         "disable": "Deaktivləşdir"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "İnteqrasiyanı sil",
       "saving": "Saxlanılır…",
       "save": "Saxla",
-      "addButton": "İnteqrasiya Əlavə Et"
+      "addButton": "İnteqrasiya Əlavə Et",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

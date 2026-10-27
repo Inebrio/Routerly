@@ -679,7 +679,8 @@
         "saving": "সংরক্ষণ করা হচ্ছে...",
         "enable": "সক্ষম করুন",
         "disable": "অক্ষম করুন"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "ইন্টিগ্রেশন সরান",
       "saving": "সংরক্ষণ করা হচ্ছে...",
       "save": "সংরক্ষণ করুন",
-      "addButton": "ইন্টিগ্রেশন যোগ করুন"
+      "addButton": "ইন্টিগ্রেশন যোগ করুন",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

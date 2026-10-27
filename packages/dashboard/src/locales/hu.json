@@ -679,7 +679,8 @@
         "saving": "Mentés…",
         "enable": "Engedélyezés",
         "disable": "Letiltás"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Integráció eltávolítása",
       "saving": "Mentés…",
       "save": "Mentés",
-      "addButton": "Integráció Hozzáadása"
+      "addButton": "Integráció Hozzáadása",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

@@ -679,7 +679,8 @@
         "saving": "保存中...",
         "enable": "有効化",
         "disable": "無効化"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "統合を削除",
       "saving": "保存中...",
       "save": "保存",
-      "addButton": "統合を追加"
+      "addButton": "統合を追加",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

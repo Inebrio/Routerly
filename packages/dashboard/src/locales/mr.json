@@ -679,7 +679,8 @@
         "saving": "Saving…",
         "enable": "Enable",
         "disable": "Disable"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "एकीकरण काढून टाका",
       "saving": "Saving…",
       "save": "Save",
-      "addButton": "एकीकरण जोडा"
+      "addButton": "एकीकरण जोडा",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

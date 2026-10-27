@@ -679,7 +679,8 @@
         "saving": "సేవ చేస్తోంది…",
         "enable": "ప్రారంభం చేయండి",
         "disable": "నిష్క్రియం చేయండి"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "సమన్వయం తీసివేయండి",
       "saving": "సేవ చేస్తోంది…",
       "save": "సేవ చేయండి",
-      "addButton": "సమన్వయం జోడించండి"
+      "addButton": "సమన్వయం జోడించండి",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

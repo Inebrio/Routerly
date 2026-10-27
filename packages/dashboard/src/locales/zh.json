@@ -679,7 +679,8 @@
         "saving": "保存中...",
         "enable": "启用",
         "disable": "禁用"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "删除集成",
       "saving": "保存中...",
       "save": "保存",
-      "addButton": "添加集成"
+      "addButton": "添加集成",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

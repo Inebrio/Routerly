@@ -679,7 +679,8 @@
         "saving": "저장 중…",
         "enable": "활성화",
         "disable": "비활성화"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "통합 제거",
       "saving": "저장 중…",
       "save": "저장",
-      "addButton": "통합 추가"
+      "addButton": "통합 추가",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

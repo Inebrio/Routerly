@@ -679,7 +679,8 @@
         "saving": "Ukladá sa…",
         "enable": "Povoliť",
         "disable": "Zakázať"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Odstrániť integráciu",
       "saving": "Ukladá sa…",
       "save": "Uložiť",
-      "addButton": "Pridať integráciu"
+      "addButton": "Pridať integráciu",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

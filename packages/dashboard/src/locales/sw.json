@@ -679,7 +679,8 @@
         "saving": "Inakuhifadhi…",
         "enable": "Weza",
         "disable": "Zui"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Ondoa muunganisho",
       "saving": "Inakuhifadhi…",
       "save": "Kutengeneza",
-      "addButton": "Ongeza Muunganisho"
+      "addButton": "Ongeza Muunganisho",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

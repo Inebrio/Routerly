@@ -679,7 +679,8 @@
         "saving": "Enregistrement...",
         "enable": "Activer",
         "disable": "Désactiver"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Supprimer l'intégration",
       "saving": "Enregistrement...",
       "save": "Enregistrer",
-      "addButton": "Ajouter une intégration"
+      "addButton": "Ajouter une intégration",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

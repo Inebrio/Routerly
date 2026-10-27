@@ -679,7 +679,8 @@
         "saving": "Lagrer…",
         "enable": "Aktiver",
         "disable": "Deaktiver"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Fjern integrasjon",
       "saving": "Lagrer…",
       "save": "Lagre",
-      "addButton": "Legg til integrasjon"
+      "addButton": "Legg til integrasjon",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

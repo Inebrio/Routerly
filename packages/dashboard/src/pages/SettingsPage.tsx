@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield, Lock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Save, Plus, Trash2, Mail, Search, ChevronDown, ChevronRight, ChevronUp, Globe, BarChart2, Bell, Users, GitBranch, Activity, TrendingUp, Database, Webhook, Dog, Copy, Check, Shield, Lock, AlertTriangle, CheckCircle2, ShieldOff } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { getSettings, updateSettings, getSystemInfo, testNotificationChannel, checkForUpdates, triggerUpdate, getAvailableReleases, getRoles, getUsers, ALL_PERMISSIONS, getIntegrations, createIntegration, updateIntegration, deleteIntegration, testIntegration, refreshCatalog, getCatalogStatus, probeRepo, getPermissionStatus, fixPermissions } from '../api';
 import type { Settings, SystemInfo, UpdateInfo, AvailableReleases, Role, User, Permission, Integration, IntegrationTraces, IntegrationType, ProviderRepo, RepoStatus, UsageRetentionConfig, PermissionCheckStatus } from '../api';
@@ -117,7 +117,12 @@ export function SettingsGeneralTab() {
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => { load(); }, []);
+  const canRead = can('settings:read');
+
+  useEffect(() => {
+    if (!canRead) { setLoading(false); return; }
+    load();
+  }, [canRead]);
 
   async function load() {
     setLoading(true);
@@ -174,6 +179,7 @@ export function SettingsGeneralTab() {
     });
   }
 
+  if (!canRead) return <div className="empty-state"><ShieldOff size={40} /><p>{t('settings.general.noPermission')}</p></div>;
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
   /* v8 ignore next */
   if (!settings) return <div className="form-error" style={{ margin: 24 }}>{error || t('settings.general.errors.loadFailedPeriod')}</div>;
@@ -1379,7 +1385,11 @@ export function SettingsIntegrationsTab() {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const addRef = useRef<HTMLDivElement>(null);
 
+  // GET /api/integrations requires settings:write.
+  const canList = can('settings:write');
+
   useEffect(() => {
+    if (!canList) { setLoading(false); return; }
     getIntegrations()
       .then(setIntegrations)
       .catch(e => setError(e instanceof Error ? e.message : t('settings.integrations.errors.loadFailed')))
@@ -1483,6 +1493,7 @@ export function SettingsIntegrationsTab() {
     setForms(f => ({ ...f, [id]: { ...(f[id] ?? {}), ...patch } }));
   }
 
+  if (!canList) return <div className="empty-state"><ShieldOff size={40} /><p>{t('settings.integrations.noPermission')}</p></div>;
   if (loading) return <div className="loading-center"><div className="spinner" /></div>;
 
   const cardHeaderStyle: React.CSSProperties = {

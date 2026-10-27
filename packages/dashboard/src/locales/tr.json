@@ -679,7 +679,8 @@
         "saving": "Kaydediliyor…",
         "enable": "Etkinleştir",
         "disable": "Devre Dışı Bırak"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Entegrasyonu kaldır",
       "saving": "Kaydediliyor…",
       "save": "Kaydet",
-      "addButton": "Entegrasyon Ekle"
+      "addButton": "Entegrasyon Ekle",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

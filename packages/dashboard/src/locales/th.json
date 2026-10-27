@@ -679,7 +679,8 @@
         "saving": "กำลังบันทึก…",
         "enable": "เปิดใช้งาน",
         "disable": "ปิดใช้งาน"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "ลบการรวม",
       "saving": "กำลังบันทึก…",
       "save": "บันทึก",
-      "addButton": "เพิ่มการรวม"
+      "addButton": "เพิ่มการรวม",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

@@ -679,7 +679,8 @@
         "saving": "Sine-save…",
         "enable": "Paganahin",
         "disable": "I-disable"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Alisin ang integration",
       "saving": "Sine-save…",
       "save": "I-save",
-      "addButton": "Magdagdag ng Integration"
+      "addButton": "Magdagdag ng Integration",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {

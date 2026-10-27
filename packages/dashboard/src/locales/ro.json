@@ -679,7 +679,8 @@
         "saving": "Se salvează…",
         "enable": "Activează",
         "disable": "Dezactivează"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -1064,7 +1065,8 @@
       "removeTooltip": "Elimină integrare",
       "saving": "Se salvează…",
       "save": "Salvează",
-      "addButton": "Adaugă integrare"
+      "addButton": "Adaugă integrare",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
