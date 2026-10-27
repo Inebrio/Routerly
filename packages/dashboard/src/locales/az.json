@@ -2496,7 +2496,8 @@
       "show": "Sazlamanı göstər",
       "empty": "Hələ sazlama məlumatı yoxdur.",
       "emptyHint": "Yönləndirmə detallarını görmək üçün mesaj göndərin.",
-      "turnTraceLog": "Növbə #{{turn}} iz jurnalı"
+      "turnTraceLog": "Növbə #{{turn}} iz jurnalı",
+      "resize": "Debug panelinin ölçüsünü dəyişin"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

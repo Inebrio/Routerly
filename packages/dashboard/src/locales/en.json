@@ -2500,7 +2500,8 @@
       "show": "Show debug",
       "empty": "No debug data yet.",
       "emptyHint": "Send a message to see routing details.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Resize debug panel"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

@@ -2496,7 +2496,8 @@
       "show": "Visa felsökning",
       "empty": "Ingen felsökningsdata ännu.",
       "emptyHint": "Skicka ett meddelande för att se routningsdetaljer.",
-      "turnTraceLog": "Svars-#{{turn}} spårlogg"
+      "turnTraceLog": "Svars-#{{turn}} spårlogg",
+      "resize": "Ändra storlek på felsökningspanelen"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",

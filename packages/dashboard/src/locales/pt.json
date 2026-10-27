@@ -2496,7 +2496,8 @@
       "show": "Mostrar depuração",
       "empty": "Nenhum dado de depuração ainda.",
       "emptyHint": "Envie uma mensagem para ver detalhes de encaminhamento.",
-      "turnTraceLog": "Registo de rastreamento turno #{{turn}}"
+      "turnTraceLog": "Registo de rastreamento turno #{{turn}}",
+      "resize": "Redimensionar o painel de depuração"
     },
     "compare": {
       "modelLabel": "Modelo {{label}}:",

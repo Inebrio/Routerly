@@ -2496,7 +2496,8 @@
       "show": "Afficher le débogage",
       "empty": "Aucune donnée de débogage pour l'instant.",
       "emptyHint": "Envoyez un message pour voir les détails de routage.",
-      "turnTraceLog": "Journal de trace du tour #{{turn}}"
+      "turnTraceLog": "Journal de trace du tour #{{turn}}",
+      "resize": "Redimensionner le panneau de débogage"
     },
     "compare": {
       "modelLabel": "Modèle {{label}} :",

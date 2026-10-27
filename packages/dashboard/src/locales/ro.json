@@ -2496,7 +2496,8 @@
       "show": "Arată depanare",
       "empty": "Niciun date de depanare încă.",
       "emptyHint": "Trimite un mesaj pentru a vedea detalii rutare.",
-      "turnTraceLog": "Jurnal trasă rând #{{turn}}"
+      "turnTraceLog": "Jurnal trasă rând #{{turn}}",
+      "resize": "Redimensionează panoul de depanare"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

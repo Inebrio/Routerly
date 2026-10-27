@@ -2496,7 +2496,8 @@
       "show": "Zobraziť debug",
       "empty": "Zatiaľ žiadne debug údaje.",
       "emptyHint": "Poslajte správu, aby ste videli podrobnosti smerovaniia.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Zmeniť veľkosť panela ladenia"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

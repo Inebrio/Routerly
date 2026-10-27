@@ -2496,7 +2496,8 @@
       "show": "Ipakita ang debug",
       "empty": "Walang debug data pa.",
       "emptyHint": "Magpadala ng mensahe upang makita ang mga detalye ng routing.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Baguhin ang laki ng debug panel"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

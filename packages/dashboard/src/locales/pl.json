@@ -2496,7 +2496,8 @@
       "show": "Pokaż debugowanie",
       "empty": "Brak jeszcze danych debugowania.",
       "emptyHint": "Wyślij wiadomość, aby zobaczyć szczegóły routingu.",
-      "turnTraceLog": "Dziennik śladu tury #{{turn}}"
+      "turnTraceLog": "Dziennik śladu tury #{{turn}}",
+      "resize": "Zmień rozmiar panelu debugowania"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

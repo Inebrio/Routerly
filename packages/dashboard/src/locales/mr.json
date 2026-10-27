@@ -2496,7 +2496,8 @@
       "show": "डीबग दाखवा",
       "empty": "अद्याप कोणतेही डीबग डेटा नाही।",
       "emptyHint": "राउटिंग तपशील पाहण्यासाठी संदेश पाठवा।",
-      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग",
+      "resize": "डीबग पॅनेलचा आकार बदला"
     },
     "compare": {
       "modelLabel": "मॉडेल {{label}}:",

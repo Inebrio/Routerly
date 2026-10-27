@@ -2496,7 +2496,8 @@
       "show": "Tampilkan debug",
       "empty": "Belum ada data debug.",
       "emptyHint": "Kirim pesan untuk melihat detail routing.",
-      "turnTraceLog": "Putar #{{turn}} log jejak"
+      "turnTraceLog": "Putar #{{turn}} log jejak",
+      "resize": "Ubah ukuran panel debug"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

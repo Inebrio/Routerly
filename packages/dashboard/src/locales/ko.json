@@ -2496,7 +2496,8 @@
       "show": "디버그 표시",
       "empty": "아직 디버그 데이터가 없습니다.",
       "emptyHint": "메시지를 보내 라우팅 상세를 확인합니다.",
-      "turnTraceLog": "턴 #{{turn}} 추적 로그"
+      "turnTraceLog": "턴 #{{turn}} 추적 로그",
+      "resize": "디버그 패널 크기 조절"
     },
     "compare": {
       "modelLabel": "모델 {{label}}:",

@@ -2496,7 +2496,8 @@
       "show": "Debug tonen",
       "empty": "Nog geen debug-gegevens.",
       "emptyHint": "Verzend een bericht om routeringsdetails te zien.",
-      "turnTraceLog": "Beurt #{{turn}} trace logboek"
+      "turnTraceLog": "Beurt #{{turn}} trace logboek",
+      "resize": "Formaat van het debugpaneel wijzigen"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

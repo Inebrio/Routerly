@@ -2496,7 +2496,8 @@
       "show": "Hata ayıklamayı göster",
       "empty": "Henüz hata ayıklama verisi yok.",
       "emptyHint": "Yönlendirme detaylarını görmek için mesaj gönderin.",
-      "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü"
+      "turnTraceLog": "Dönemek #{{turn}} izleme günlüğü",
+      "resize": "Hata ayıklama panelini yeniden boyutlandır"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",

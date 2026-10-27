@@ -2496,7 +2496,8 @@
       "show": "Debug anzeigen",
       "empty": "Noch keine Debug-Daten.",
       "emptyHint": "Sende eine Nachricht, um Routing-Details zu sehen.",
-      "turnTraceLog": "Runde #{{turn}} Spurprotokoll"
+      "turnTraceLog": "Runde #{{turn}} Spurprotokoll",
+      "resize": "Debug-Panel in der Größe ändern"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",

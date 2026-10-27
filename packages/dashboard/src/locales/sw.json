@@ -2496,7 +2496,8 @@
       "show": "Onyesha kubaini",
       "empty": "Hakuna data ya kubaini bado.",
       "emptyHint": "Tuma ujumbe kuona maelezo ya njia.",
-      "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}}"
+      "turnTraceLog": "Goria la kuchukuza la Zamu #{{turn}}",
+      "resize": "Badilisha ukubwa wa paneli ya utatuzi"
     },
     "compare": {
       "modelLabel": "Modeli {{label}}:",
