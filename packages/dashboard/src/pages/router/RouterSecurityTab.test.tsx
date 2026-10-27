@@ -399,6 +399,13 @@ describe('RouterSecurityTab — streaming-disabled warning', () => {
     });
   });
 
+  it('does NOT show warning when the blocking response rule is disabled (the service streams)', async () => {
+    const rule = mockRouterWithResponseBlock.guardrails.rules[0]!;
+    renderTab({ ...mockRouterWithResponseBlock, guardrails: { rules: [{ ...rule, enabled: false }] } });
+    await waitFor(() => screen.getByTestId('searchable-Add a security policy...'));
+    expect(screen.queryByTestId('streaming-disabled-warning')).toBeNull();
+  });
+
   it('does NOT show warning when no rules are configured', async () => {
     renderTab();
     await waitFor(() => screen.getByTestId('searchable-Add a security policy...'));
@@ -1006,7 +1013,7 @@ describe('RouterSecurityTab — ModerationFields interactions', () => {
     await waitFor(() =>
       expect(screen.queryByText('Custom instructions')).not.toBeNull()
     );
-    const ta = screen.getByPlaceholderText(/You are a content safety classifier/) as HTMLTextAreaElement;
+    const ta = screen.getByPlaceholderText(/Write the policy in plain words/) as HTMLTextAreaElement;
     await userEvent.type(ta, 'custom prompt');
     expect(ta.value).toContain('custom prompt');
   });
@@ -1019,8 +1026,8 @@ describe('RouterSecurityTab — ModerationFields interactions', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'moderation');
 
-    await waitFor(() => screen.getByPlaceholderText(/You are a content safety classifier/));
-    const ta = screen.getByPlaceholderText(/You are a content safety classifier/) as HTMLTextAreaElement;
+    await waitFor(() => screen.getByPlaceholderText(/Write the policy in plain words/));
+    const ta = screen.getByPlaceholderText(/Write the policy in plain words/) as HTMLTextAreaElement;
     await userEvent.type(ta, 'some text');
     await userEvent.clear(ta);
     expect(ta.value).toBe('');
@@ -1060,7 +1067,7 @@ describe('RouterSecurityTab — mandatory Custom instructions', () => {
     await userEvent.selectOptions(addSelect, 'moderation');
 
     // systemPrompt starts empty → Save button must be disabled
-    await waitFor(() => screen.getByPlaceholderText(/You are a content safety classifier/));
+    await waitFor(() => screen.getByPlaceholderText(/Write the policy in plain words/));
     const saveBtn = screen.getByRole('button', { name: /save security settings/i }) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(true);
 
@@ -1078,8 +1085,8 @@ describe('RouterSecurityTab — mandatory Custom instructions', () => {
     ) as HTMLSelectElement;
     await userEvent.selectOptions(addSelect, 'moderation');
 
-    await waitFor(() => screen.getByPlaceholderText(/You are a content safety classifier/));
-    const ta = screen.getByPlaceholderText(/You are a content safety classifier/) as HTMLTextAreaElement;
+    await waitFor(() => screen.getByPlaceholderText(/Write the policy in plain words/));
+    const ta = screen.getByPlaceholderText(/Write the policy in plain words/) as HTMLTextAreaElement;
     await userEvent.type(ta, 'Be safe');
 
     await waitFor(() => {

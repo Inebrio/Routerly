@@ -383,7 +383,7 @@ Each rule card displays:
 | **Regex** | Regex patterns (one per line, case-insensitive) |
 | **Semantic** | Embedding model ID, optional fallback embedding models (multi-select, tried in order), example phrases to block, similarity threshold (0-1, default 0.82) |
 | **Topic** | Allowed-topics description, score threshold (0-1, default 0.5) |
-| **Moderation** | Custom instructions (required): instructions to inject or pass to the judge. Score threshold (0-1, default 0.5). |
+| **Moderation** | Custom instructions (required): the policy, written in plain words (for example "Do not talk about English cinema"). The judge rates how strongly the text violates it (0 = complies, 1 = clear violation) and the rule triggers above the threshold (0-1, default 0.5). When `inject` is on, the same text is added to the system prompt. Without custom instructions the built-in harm categories apply. |
 
 ##### Judge response (reason-first scoring)
 

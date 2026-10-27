@@ -567,6 +567,27 @@ describe('checkGuardrails — topic/moderation non-string raw (lines 189, 231)',
   });
 });
 
+describe('moderation rubric', () => {
+  it('custom instructions are rated as a policy violation (topic ban on harmless text can trigger)', async () => {
+    mockModels([judgeModel]);
+    mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"reason":"cinema","score":9}' } }] } as any);
+    const rule: GuardrailRule = { type: 'moderation', target: 'response', block: true, config: { modelId: judgeModel.id, systemPrompt: 'Do not talk about English cinema.', threshold: 0.5 } } as any;
+    const result = await checkGuardrails('response', 'Hitchcock directed The 39 Steps.', baseConfig([rule]), pctx);
+    const sys = (mockLlmChat.mock.calls[0]![0] as any).messages[0].content as string;
+    expect(sys).toContain('Rate how strongly the content violates that policy');
+    expect(sys).not.toContain('severely harmful');
+    expect(result.block).toBe(true);
+  });
+
+  it('built-in prompt keeps the harm rubric', async () => {
+    mockModels([judgeModel]);
+    mockLlmChat.mockResolvedValue({ choices: [{ message: { content: '{"score":0}' } }] } as any);
+    const rule: GuardrailRule = { type: 'moderation', target: 'request', config: { modelId: judgeModel.id } } as any;
+    await checkGuardrails('request', 'hi', baseConfig([rule]), pctx);
+    expect((mockLlmChat.mock.calls[0]![0] as any).messages[0].content).toContain('severely harmful');
+  });
+});
+
 describe('checkGuardrails — unknown rule type (line 246 ?? branch)', () => {
   it('skips and uses "unknown" when rule.type is undefined (line 246 ?? branch)', async () => {
     // A rule with undefined type falls through to line 246

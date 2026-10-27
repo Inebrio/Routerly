@@ -164,6 +164,23 @@ describe('helpers', () => {
       expect(ctx.blockedBy).toBe('r1')
     })
 
+    it('traces the streamed response check: evaluated rules and the triggered rule', async () => {
+      const evaluated = [{ rule: 'moderation:j', outcome: 'triggered', score: 0.9 }]
+      mockCheckGuardrails.mockResolvedValue({ triggered: 'moderation:score=0.90', block: true, evaluated } as any)
+      const emit = vi.fn()
+      const ctx = ctxOf({ emit } as any)
+      await collect(wrapWithResponseGuardrail(src(), router, {}, { info: vi.fn() } as any, ctx))
+      expect(emit).toHaveBeenCalledWith(expect.objectContaining({ message: 'guardrail:evaluated', details: { target: 'response', rules: evaluated } }))
+      expect(emit).toHaveBeenCalledWith(expect.objectContaining({ message: 'guardrail:response-triggered', details: expect.objectContaining({ rule: 'moderation:score=0.90', block: true }) }))
+    })
+
+    it('a disabled blocking rule does not buffer: chunks are yielded as they arrive', async () => {
+      mockCheckGuardrails.mockResolvedValue({ evaluated: [] } as any)
+      const disabled = { guardrails: { rules: [{ enabled: false, block: true, target: 'response' }] } } as any
+      const gen = wrapWithResponseGuardrail(src(), disabled, {}, { info: vi.fn() } as any, ctxOf({}))
+      expect(((await gen.next()).value as any).choices[0].delta.content).toBe('hello ')
+    })
+
     it('PASS-THROUGH path: no block rule configured, all chunks yielded unchanged, blockedBy unset', async () => {
       const passRouter = {} as any
       const ctx = ctxOf({})
