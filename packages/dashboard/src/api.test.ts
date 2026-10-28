@@ -1422,3 +1422,17 @@ describe('getModules', () => {
     expect(url).toMatch(/\/modules$/);
   });
 });
+
+describe('unhandledrejection for mfa_required', () => {
+  const fire = (reason: unknown) => {
+    const ev = Object.assign(new Event('unhandledrejection', { cancelable: true }), { reason });
+    window.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  };
+  it('suppresses 403 mfa_required rejections only', async () => {
+    await api();
+    expect(fire(Object.assign(new Error('x'), { status: 403, code: 'mfa_required' }))).toBe(true);
+    expect(fire(Object.assign(new Error('x'), { status: 403, code: 'other' }))).toBe(false);
+    expect(fire(new Error('x'))).toBe(false);
+  });
+});

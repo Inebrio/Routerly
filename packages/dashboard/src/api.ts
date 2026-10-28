@@ -15,6 +15,13 @@ function msUntilExpiry(): number {
   return Math.max(0, parseInt(raw, 10) - Date.now());
 }
 
+// With requireMfa on and no 2FA, App redirects to the Profile while in-flight page calls
+// reject with 403 mfa_required; those rejections are expected, not page errors.
+window.addEventListener('unhandledrejection', (e: PromiseRejectionEvent) => {
+  const r = e.reason as ApiError | undefined;
+  if (r?.status === 403 && r.code === 'mfa_required') e.preventDefault();
+});
+
 let refreshPromise: Promise<boolean> | null = null;
 
 /** Attempts a silent refresh. Returns true if successful. Concurrent calls share one promise. */
