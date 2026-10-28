@@ -696,6 +696,11 @@ td .badge {
   outline: none;
 }
 
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .form-input:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--accent-glow);

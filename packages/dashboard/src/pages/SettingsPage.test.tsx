@@ -327,6 +327,14 @@ describe('SettingsGeneralTab', () => {
     expect(input.value).toBe('http://localhost:3000');
   });
 
+  it('Save does not persist the pre-filled publicUrl default when none is stored (ROUT-459)', async () => {
+    mockGetSettings.mockResolvedValue({ ...baseSettings, publicUrl: '' } as never);
+    renderGeneral();
+    await waitFor(() => screen.getByLabelText('Public URL'));
+    fireEvent.click(screen.getByRole('button', { name: /Save/ }));
+    await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ publicUrl: '' })));
+  });
+
   it('renders usage retention inputs empty when no policy is configured', async () => {
     renderGeneral();
     await waitFor(() => expect(screen.queryByLabelText('Max age (days)')).not.toBeNull());
@@ -1691,6 +1699,13 @@ describe('SettingsCatalogTab', () => {
     mockGetSettings.mockResolvedValue({ ...baseSettings, providerRepos: [] } as never);
     renderCatalog();
     await waitFor(() => screen.getByText(/No repositories configured/));
+  });
+
+  it('does not show the empty-repos message when settings failed to load (ROUT-459)', async () => {
+    mockGetSettings.mockRejectedValue(new Error('Required permission: settings:read'));
+    renderCatalog();
+    await waitFor(() => screen.getByText(/Required permission: settings:read/));
+    expect(screen.queryByText(/No repositories configured/)).toBeNull();
   });
 
   it('Refresh button calls refreshCatalog', async () => {

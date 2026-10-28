@@ -5358,6 +5358,22 @@ describe('GET /api/clients', () => {
     }
   })
 
+  it('uses the configured publicUrl (trailing slash stripped) as baseUrl (ROUT-459)', async () => {
+    setClientConfiguratorEnabled(true)
+    setupAdminAuth()
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'roles') return []
+      if (t === 'settings') return { logLevel: 'info', publicUrl: 'https://gw.example.test/' }
+      return []
+    })
+    const app = await buildApp()
+    const res = await app.inject({ method: 'GET', url: '/api/clients', headers: { ...adminAuthHeaders(), host: 'localhost:3000' } })
+    await app.close()
+    const body = res.json() as { clients: Array<Record<string, unknown>> }
+    for (const client of body.clients) expect(client['baseUrl']).toBe('https://gw.example.test')
+  })
+
   it('honors x-forwarded-proto/host when present (behind a reverse proxy)', async () => {
     setClientConfiguratorEnabled(true)
     setupAdminAuth()
@@ -11713,6 +11729,15 @@ describe('integration URL validation (ROUT-328)', () => {
     const res = await app.inject({ method: 'POST', url: '/api/integrations', headers: { ...adminAuthHeaders(), 'content-type': 'application/json' }, payload: JSON.stringify({ type: 'webhook', url: 'https://example.com/hook' }) })
     await app.close()
     expect(res.statusCode).toBe(201)
+  })
+
+  it('PATCH with no body → 400 (ROUT-459)', async () => {
+    const app = await buildApp()
+    setupIntegrations([{ id: 'w1', type: 'webhook', enabled: true, url: 'https://example.com/hook' }])
+    const res = await app.inject({ method: 'PATCH', url: '/api/integrations/w1', headers: adminAuthHeaders() })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(mockWriteConfig).not.toHaveBeenCalled()
   })
 
   it('PATCH with invalid url/endpoint → 400, valid → 200', async () => {

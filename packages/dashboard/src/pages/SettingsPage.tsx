@@ -153,7 +153,9 @@ export function SettingsGeneralTab() {
     setSaving(true);
     setSaved(false);
     try {
-      const updated = await updateSettings(form);
+      // Do not persist the pre-filled default as if the user had typed it.
+      const sendForm = !settings?.publicUrl && form.publicUrl === `http://localhost:${settings?.port}` ? { ...form, publicUrl: '' } : form;
+      const updated = await updateSettings(sendForm);
       setSettings(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -1845,7 +1847,7 @@ export function SettingsCatalogTab() {
           ))}
         </div>
 
-        {repos.length === 0 && (
+        {repos.length === 0 && !error && (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             {t('settings.catalog.empty')}
           </div>
