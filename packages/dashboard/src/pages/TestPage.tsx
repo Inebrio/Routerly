@@ -1230,7 +1230,7 @@ export function TestPage() {
                       <button onClick={() => setShowDebugSidebar(false)} className="btn-icon" style={{ padding: 4 }} title={t('playground.debug.hide')} aria-label={t('playground.debug.hide')} data-testid="debug-collapse"><ChevronRight size={15} /></button>
                     </div>
                   </div>
-                  <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12, background: 'var(--bg-base)', minWidth: 0, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                  <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12, background: 'var(--bg-base)', minWidth: 0, overflowWrap: 'break-word' }}>
                     <div ref={debugTopRef} />
                     {debugTraceHistory.length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
