@@ -134,4 +134,14 @@ describe('TraceSummary', () => {
     expect(screen.getByText('unknown')).toBeTruthy();
     expect(screen.getByText(/connection reset/)).toBeTruthy();
   });
+
+  it('lets a long unbroken error text wrap instead of being clipped', () => {
+    render(<TraceSummary trace={recap({
+      outcome: 'error',
+      errors: [{ model: 'm', error: 'x'.repeat(200) }],
+    })} />);
+    const row = screen.getByText('m').parentElement as HTMLElement;
+    expect(row.style.overflowWrap).toBe('anywhere');
+    expect(row.style.minWidth).toBe('0');
+  });
 });
