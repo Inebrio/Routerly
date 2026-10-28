@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Settings minor fixes (ROUT-459).** `PATCH /api/integrations/:id` without a body answers 400 instead of 500; the Connect page (`GET /api/clients`) uses the configured `publicUrl`; Settings General no longer stores the pre-filled `http://localhost:<port>` as `publicUrl`; the Catalog tab no longer shows «No repositories configured» when settings cannot be read; disabled inputs are visibly dimmed.
+
 - **PII response scrub in streaming** no longer leaks parts of space-separated entities (e.g. phone `+39 333 1234567`) when a chunk boundary falls between their words: trailing digit-bearing tokens stay buffered until the entity ends (ROUT-452).
 - **Headroom optimizer trims the first request after a model is created or edited (ROUT-456).** The context-window cache was filled lazily and only every 30s, so a request right after creating a model went untrimmed. It is now warmed at boot and refreshed on every models/connections write.
 - **Router Routing, Optimizer and Security tabs are read-only without `router:write` (ROUT-450).** A viewer saw active Profile/Custom switches, Add buttons and Save, and only got a 403 on save. The controls are now disabled and Save is hidden; the Optimizer tab also requires `router:write` besides `optimizers:manage`. Dashboard only.

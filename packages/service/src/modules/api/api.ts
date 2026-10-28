@@ -2449,7 +2449,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // http. No trustProxy config change: this only sources the base URL, not client IPs.
     const protocol = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim() || req.protocol;
     const host = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() || req.headers.host;
-    const base = `${protocol}://${host}`;
+    // The configured publicUrl wins over the request origin (same rule as the router General tab).
+    const publicUrl = (await readConfig('settings')).publicUrl;
+    const base = publicUrl ? publicUrl.replace(/\/$/, '') : `${protocol}://${host}`;
     // One base URL per client: the gateway root. Every snippet builder in
     // @routerly/shared derives the OpenAI `/v1` suffix itself, so the route
     // does not need to pre-compute a per-wire-format variant.
@@ -3211,6 +3213,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const stored = integrations[idx]!;
     const secrets = INTEGRATION_SECRET_FIELDS[stored['type'] as string] ?? []; // stored type always in schema
     const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return reply.status(400).send({ error: 'Request body must be a JSON object' });
+    }
     for (const key of ['url', 'endpoint']) {
       if (key in body && !httpUrl.safeParse(body[key]).success) {
         return reply.status(400).send({ error: `${key}: must be a valid http(s) URL` });
