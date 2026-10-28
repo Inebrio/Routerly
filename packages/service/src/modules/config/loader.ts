@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
+import { notifyWrite } from './write-hooks.js';
 import { readUsageNdjson, writeUsageNdjson, appendUsageRecordsNdjson } from './usageNdjson.js';
 import { SECRET_KEYS } from './permission-guard.js';
 
@@ -217,6 +218,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   } finally {
     if (release) await release();
   }
+  await notifyWrite(key);
 }
 
 /**
@@ -270,6 +272,7 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
+  let written = false;
   try {
     release = await lockfile.lock(filePath, {
       retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 },
@@ -294,12 +297,14 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
     if (mode !== undefined) writeOptions.mode = mode;
     await writeFile(tmpPath, JSON.stringify(next, null, 2), writeOptions);
     await rename(tmpPath, filePath);
+    written = true;
     return next;
   } catch (err) {
     await unlink(tmpPath).catch(() => {});
     throw err;
   } finally {
     if (release) await release();
+    if (written) await notifyWrite(key);
   }
 }
 
