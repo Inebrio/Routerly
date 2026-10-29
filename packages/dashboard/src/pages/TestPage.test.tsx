@@ -699,6 +699,24 @@ describe('TestPage — fetch HTTP error', () => {
     { timeout: 4000 });
   });
 
+  it('wraps a long unbroken error text inside the banner (ROUT-462)', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    const long = 'sk-' + '*'.repeat(300);
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { message: long } }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    }));
+
+    await setupWithToken();
+
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
+    await userEvent.keyboard('{Enter}');
+
+    const banner = await screen.findByText(long, undefined, { timeout: 4000 });
+    expect(banner.style.overflowWrap).toBe('anywhere');
+    expect(banner.style.maxWidth).toBe('100%');
+  });
+
   it('shows HTTP status error when response body is not parseable JSON', async () => {
     vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
     global.fetch = vi.fn().mockResolvedValue(new Response('not json', {

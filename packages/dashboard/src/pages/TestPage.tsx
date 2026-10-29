@@ -341,8 +341,8 @@ function ComparePanel({
                   </div>
                 )}
                 {colError && (
-                  <div style={{ fontSize: '0.78rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <AlertCircle size={12} /> {colError}
+                  <div style={{ fontSize: '0.78rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, overflowWrap: 'anywhere' }}>
+                    <AlertCircle size={12} style={{ flexShrink: 0 }} /> {colError}
                   </div>
                 )}
               </div>
@@ -1161,8 +1161,8 @@ export function TestPage() {
                   </div>
                 )}
                 {error && (
-                  <div style={{ alignSelf: 'center', background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <AlertCircle size={14} /> {error}
+                  <div style={{ alignSelf: 'center', background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', padding: '8px 12px', borderRadius: 8, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, maxWidth: '100%', minWidth: 0, overflowWrap: 'anywhere' }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0 }} /> {error}
                   </div>
                 )}
                 <div ref={endRef} />
