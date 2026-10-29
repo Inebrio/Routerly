@@ -302,7 +302,7 @@ export class AnthropicAdapter implements ProviderAdapter {
 
     let id = `chatcmpl-${Math.random().toString(36).substring(2, 10)}`;
     const created = Math.floor(Date.now() / 1000);
-    const responseModel = upstreamModel;
+    let responseModel = upstreamModel;
     let inputTokens = 0;
     let cacheReadTokens = 0;
     let cacheCreationTokens = 0;
@@ -317,6 +317,7 @@ export class AnthropicAdapter implements ProviderAdapter {
     for await (const event of stream) {
       if (event.type === 'message_start') {
         id = event.message.id;
+        responseModel = event.message.model ?? upstreamModel;
         inputTokens = event.message.usage.input_tokens;
         cacheReadTokens = event.message.usage.cache_read_input_tokens ?? 0;
         cacheCreationTokens = event.message.usage.cache_creation_input_tokens ?? 0;
