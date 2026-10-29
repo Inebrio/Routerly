@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import type { ModelConfig } from '@routerly/shared';
+import { protocolError } from '../../../lib/protocol-errors.js';
 import { buildUpstreamUrl } from '../../api-reverse-proxy/passthrough.js';
 import { trackUsage } from '../../usage/tracker.js';
 import { createUsageTap, type TappedUsage } from './usageTap.js';
@@ -280,9 +281,23 @@ export async function forwardAnthropicApiKey(
     }).catch(() => {});
   };
 
+  // anthropic-web talks to claude.ai, a website: its Cloudflare headers and cookies are not
+  // the Anthropic API's and must not reach the client, and its non-JSON errors (empty 404
+  // on a bad session key) are rebuilt as an Anthropic error.
+  const web = model.provider === 'anthropic-web';
   upstream.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+    const k = key.toLowerCase();
+    if (HOP_BY_HOP_RESPONSE.has(k)) return;
+    if (web && !WEB_RESPONSE_HEADERS.has(k)) return;
+    reply.header(key, value);
   });
+
+  if (web && !upstream.ok && !(upstream.headers.get('content-type') ?? '').includes('json')) {
+    const text = (await upstream.text().catch(() => '')).trim().slice(0, 200);
+    record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
+    return reply.code(upstream.status).header('content-type', 'application/json')
+      .send(protocolError('anthropic', upstream.status, text || `anthropic-web: upstream responded HTTP ${upstream.status}`));
+  }
 
   reply.code(upstream.status);
   if (upstream.body) {
@@ -296,3 +311,6 @@ export async function forwardAnthropicApiKey(
   record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
   return reply.send();
 }
+
+/** Upstream response headers anthropic-web forwards (everything else is claude.ai/Cloudflare noise). */
+const WEB_RESPONSE_HEADERS = new Set(['content-type', 'cache-control', 'retry-after', 'request-id']);
