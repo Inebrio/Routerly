@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Edit model shows the provider of openai-web / openai-oauth models (ROUT-469).** The Provider field was empty when the model's provider is not in the catalog; the current provider is now always among the options.
 - **`routerly model add` without price flags leaves the price unset (ROUT-468).** Previously it saved 0 and `model list`/`show` displayed `$0`; now the fields stay absent and are shown as `-`, like the dashboard. `model edit` no longer writes 0 for unset prices either.
 - **Streaming with openai-web / anthropic-web no longer fails with 503 on default routers (ROUT-466).** The time-to-first-token timeout is raised to at least 30 s for web providers, whose handshake takes ~4 s before the first chunk. A timeout of 0 still disables it.
 - **Models Health table fits a 1280px viewport (ROUT-464).** The table uses tighter cell padding and wrapping headers/model ids, so the "Last success" and "Cooldown / lockout" columns are no longer cut off at the right edge.
