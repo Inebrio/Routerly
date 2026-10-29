@@ -41,6 +41,7 @@ export class OpenAIWebAdapter implements ProviderAdapter {
     token: string,
     cfClearance: string | undefined,
     extra: Record<string, string> = {},
+    deviceId?: string,
   ): Record<string, string> {
     const headers: Record<string, string> = {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
@@ -56,9 +57,14 @@ export class OpenAIWebAdapter implements ProviderAdapter {
       'Referer': 'https://chatgpt.com/',
       ...extra,
     };
-    if (cfClearance) {
-      headers['Cookie'] = `cf_clearance=${cfClearance}`;
+    const cookies: string[] = [];
+    if (cfClearance) cookies.push(`cf_clearance=${cfClearance}`);
+    if (deviceId) {
+      // chatgpt.com rejects /backend-api/conversation ("Unusual activity", 403) without a device id
+      headers['oai-device-id'] = deviceId;
+      cookies.push(`oai-did=${deviceId}`);
     }
+    if (cookies.length) headers['Cookie'] = cookies.join('; ');
     return headers;
   }
 
@@ -124,12 +130,15 @@ export class OpenAIWebAdapter implements ProviderAdapter {
     token: string,
     baseUrl: string,
     cfClearance: string | undefined,
+    deviceId: string,
   ): Promise<Record<string, string>> {
     try {
       const response = await globalThis.fetch(
         `${baseUrl}/backend-api/sentinel/chat-requirements`,
         {
-          headers: this.buildBrowserHeaders(token, cfClearance),
+          method: 'POST',
+          headers: this.buildBrowserHeaders(token, cfClearance, { 'Content-Type': 'application/json' }, deviceId),
+          body: '{}',
         },
       );
       if (!response.ok) {
@@ -276,6 +285,8 @@ export class OpenAIWebAdapter implements ProviderAdapter {
           }
           const message = parsed['message'] as Record<string, unknown> | undefined;
           if (!message) continue;
+          // the stream first echoes the user's own message; only assistant text is a completion
+          if ((message['author'] as { role?: string } | undefined)?.role !== 'assistant') continue;
           const status = message['status'] as string | undefined;
           if (status !== 'in_progress' && status !== 'finished_successfully') continue;
           const content = message['content'] as Record<string, unknown> | undefined;
@@ -303,7 +314,8 @@ export class OpenAIWebAdapter implements ProviderAdapter {
     const baseUrl = model.endpoint || 'https://chatgpt.com';
     const endpoint = baseUrl + '/backend-api/conversation';
 
-    const sentinelHeaders = await this.getSentinelHeaders(token, baseUrl, cfClearance);
+    const deviceId = randomUUID();
+    const sentinelHeaders = await this.getSentinelHeaders(token, baseUrl, cfClearance, deviceId);
 
     const response = await globalThis.fetch(endpoint, {
       method: 'POST',
@@ -311,7 +323,7 @@ export class OpenAIWebAdapter implements ProviderAdapter {
         ...sentinelHeaders,
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
-      }),
+      }, deviceId),
       body: JSON.stringify(this.buildBody(request, model)),
     });
 
@@ -360,7 +372,8 @@ export class OpenAIWebAdapter implements ProviderAdapter {
     const baseUrl = model.endpoint || 'https://chatgpt.com';
     const endpoint = baseUrl + '/backend-api/conversation';
 
-    const sentinelHeaders = await this.getSentinelHeaders(token, baseUrl, cfClearance);
+    const deviceId = randomUUID();
+    const sentinelHeaders = await this.getSentinelHeaders(token, baseUrl, cfClearance, deviceId);
 
     const response = await globalThis.fetch(endpoint, {
       method: 'POST',
@@ -368,7 +381,7 @@ export class OpenAIWebAdapter implements ProviderAdapter {
         ...sentinelHeaders,
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
-      }),
+      }, deviceId),
       body: JSON.stringify(this.buildBody(request, model)),
     });
 

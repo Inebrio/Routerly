@@ -51,6 +51,7 @@ function makeSSEStream(events: string[]): ReadableStream<Uint8Array> {
 function sseEvent(text: string, model = 'gpt-4o'): string {
   return JSON.stringify({
     message: {
+      author: { role: 'assistant' },
       status: 'in_progress',
       content: { content_type: 'text', parts: [text] },
       metadata: { model_slug: model },
@@ -95,7 +96,7 @@ describe('OpenAIWebAdapter.chatCompletion', () => {
       makeModel(),
     );
 
-    // calls[0] = sentinel/chat-requirements (GET), calls[1] = conversation (POST)
+    // calls[0] = sentinel/chat-requirements (POST), calls[1] = conversation (POST)
     const callArgs = fetchMock.mock.calls[1] as [string, RequestInit];
     const body = JSON.parse((callArgs[1].body) as string) as Record<string, unknown>;
     expect(body['system_prompt']).toBe('Be concise.');
@@ -356,10 +357,10 @@ describe('OpenAIWebAdapter branch coverage: line 56 — cfClearance cookie', () 
     const adapter = new OpenAIWebAdapter();
     await adapter.chatCompletion(makeRequest(), makeModel({ cfClearance: 'cf-test-value-abc123' }));
 
-    // calls[0] = sentinel (GET), calls[1] = conversation (POST)
+    // calls[0] = sentinel (POST), calls[1] = conversation (POST)
     const [, conversationInit] = fetchMock.mock.calls[1] as [string, RequestInit];
     const headers = conversationInit.headers as Record<string, string>;
-    expect(headers['Cookie']).toBe('cf_clearance=cf-test-value-abc123');
+    expect(headers['Cookie']).toMatch(/^cf_clearance=cf-test-value-abc123; oai-did=/);
   });
 });
 
@@ -746,6 +747,7 @@ describe('OpenAIWebAdapter parseSSE: parts field missing or not array', () => {
     const encoder = new TextEncoder();
     const eventNoArray = JSON.stringify({
       message: {
+        author: { role: 'assistant' },
         status: 'in_progress',
         content: { content_type: 'text', parts: 'not-an-array' },
         metadata: { model_slug: 'gpt-4o' },
@@ -779,6 +781,7 @@ describe('OpenAIWebAdapter parseSSE: model_slug absent in metadata', () => {
     const encoder = new TextEncoder();
     const eventNoSlug = JSON.stringify({
       message: {
+        author: { role: 'assistant' },
         status: 'in_progress',
         content: { content_type: 'text', parts: ['text with no slug'] },
         metadata: {},
@@ -867,6 +870,7 @@ describe('OpenAIWebAdapter chatCompletion: chunk.model falsy keeps upstreamModel
     const encoder = new TextEncoder();
     const eventNoSlug = JSON.stringify({
       message: {
+        author: { role: 'assistant' },
         status: 'in_progress',
         content: { content_type: 'text', parts: ['response text'] },
         metadata: {},  // no model_slug
@@ -948,6 +952,7 @@ describe('OpenAIWebAdapter streamCompletion: chunk.model falsy keeps upstreamMod
     const encoder = new TextEncoder();
     const eventNoSlug = JSON.stringify({
       message: {
+        author: { role: 'assistant' },
         status: 'in_progress',
         content: { content_type: 'text', parts: ['hello'] },
         metadata: {},  // no model_slug → chunk.model === ''
@@ -979,6 +984,7 @@ describe('OpenAIWebAdapter streamCompletion: empty delta not emitted', () => {
     // Two events with identical text — second delta would be ''
     const event1 = JSON.stringify({
       message: {
+        author: { role: 'assistant' },
         status: 'in_progress',
         content: { content_type: 'text', parts: ['hello'] },
         metadata: { model_slug: 'gpt-4o' },
@@ -987,6 +993,7 @@ describe('OpenAIWebAdapter streamCompletion: empty delta not emitted', () => {
     // Same text again — delta would be ''
     const event2 = JSON.stringify({
       message: {
+        author: { role: 'assistant' },
         status: 'in_progress',
         content: { content_type: 'text', parts: ['hello'] },
         metadata: { model_slug: 'gpt-4o' },
@@ -1169,5 +1176,41 @@ describe('resolveOpenAIWebCredential', () => {
     await expect(
       resolveOpenAIWebCredential(makeConnection({ credentials: {} })),
     ).rejects.toThrow('connection missing encrypted access token');
+  });
+});
+
+describe('OpenAIWebAdapter wire behaviour against chatgpt.com (ROUT-305)', () => {
+  const okSentinel = { ok: true, status: 200, json: async () => ({ token: 't' }) };
+
+  it('POSTs sentinel/chat-requirements and sends the same device id on both requests', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okSentinel)
+      .mockResolvedValueOnce({ ok: true, status: 200, body: makeSSEStream([sseEvent('hi')]) });
+    vi.stubGlobal('fetch', fetchMock);
+    await new OpenAIWebAdapter().chatCompletion(makeRequest(), makeModel({ cfClearance: 'cf' }));
+    const [, sentinel] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, conv] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(sentinel.method).toBe('POST');
+    const sh = sentinel.headers as Record<string, string>;
+    const ch = conv.headers as Record<string, string>;
+    expect(sh['oai-device-id']).toMatch(/^[0-9a-f-]{36}$/);
+    expect(ch['oai-device-id']).toBe(sh['oai-device-id']);
+    expect(ch['Cookie']).toBe(`cf_clearance=cf; oai-did=${ch['oai-device-id']}`);
+  });
+
+  it('ignores the echoed user message in the stream', async () => {
+    const echo = JSON.stringify({
+      message: { author: { role: 'user' }, status: 'finished_successfully', content: { content_type: 'text', parts: ['Hello'] } },
+    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okSentinel)
+      .mockResolvedValueOnce({ ok: true, status: 200, body: makeSSEStream([echo, sseEvent('ok')]) });
+    vi.stubGlobal('fetch', fetchMock);
+    const out: string[] = [];
+    for await (const c of new OpenAIWebAdapter().streamCompletion(makeRequest(), makeModel())) {
+      const d = c.choices[0]?.delta?.content;
+      if (d) out.push(d);
+    }
+    expect(out.join('')).toBe('ok');
   });
 });

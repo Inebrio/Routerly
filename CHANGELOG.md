@@ -20,6 +20,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **OpenAI Web (chatgpt.com) calls failed with 405/403**: the sentinel `chat-requirements` request is now a POST, a device id (`oai-device-id` header and `oai-did` cookie) is sent on both requests, and the streamed echo of the user's own message is no longer returned as completion text (ROUT-305).
 - **Usage: optimizer savings on streamed requests** — the usage record of a streaming request now carries `optimizers` (tokensBefore/After), so `report savings` and the dashboard count the tokens saved on streams (ROUT-303).
 - **Model Test on embedding models**: the Test button / `POST /api/models/:id/test` now probes `/embeddings` for models flagged as embedding instead of `/chat/completions`, which a llama-server style backend answers with HTTP 400; a failed test is logged at warn level. The dashboard no longer shows the "Caching" section of the `llm` policy: the semantic response cache was removed in 0.3.0 and the setting had no effect (ROUT-295, GitHub #147).
 
