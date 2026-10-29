@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **anthropic: streamed `/v1/chat/completions` chunks now carry the provider-returned `model` (ROUT-479).** Stream chunks reported the requested model name while non-stream responses reported the provider string (e.g. `claude-haiku-4-5-20251001`); both now use the provider value.
+
 - **anthropic-web: `/v1/messages` now works with a valid session key (ROUT-478).** The Anthropic lane forwarded anthropic-web models verbatim to `claude.ai/v1/messages`, a route claude.ai does not expose (always 404). They now go through the anthropic-web adapter and answer in Anthropic format, stream and non-stream.
 - **Proxy:** a stream cut by the upstream no longer ends as a clean `[DONE]` with HTTP 200; the connection is closed abnormally (OpenAI and Anthropic lanes) so the client sees the interruption (ROUT-474).
 
