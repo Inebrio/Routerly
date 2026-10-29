@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Proxy:** a stream cut by the upstream no longer ends as a clean `[DONE]` with HTTP 200; the connection is closed abnormally (OpenAI and Anthropic lanes) so the client sees the interruption (ROUT-474).
+
 - **anthropic-web: invalid session key returns an Anthropic error and no claude.ai headers (ROUT-473).** `/v1/messages` answered an empty 404 and forwarded claude.ai's Cloudflare headers, including `set-cookie` for `claude.ai`. Non-JSON upstream errors are now rebuilt as an Anthropic `type: error` body and only content-type, cache-control, retry-after and request-id are forwarded.
 - **Edit model shows the provider of openai-web / openai-oauth models (ROUT-469).** The Provider field was empty when the model's provider is not in the catalog; the current provider is now always among the options.
 - **`routerly model add` without price flags leaves the price unset (ROUT-468).** Previously it saved 0 and `model list`/`show` displayed `$0`; now the fields stay absent and are shown as `-`, like the dashboard. `model edit` no longer writes 0 for unset prices either.

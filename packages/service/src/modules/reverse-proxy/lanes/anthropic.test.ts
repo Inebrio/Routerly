@@ -372,11 +372,11 @@ describe('anthropic transport lane', () => {
     expect(text).toContain('"output_tokens":7')
   })
 
-  it('egress streaming catches a mid-stream translation error and still ends the response', async () => {
+  it('egress streaming catches a mid-stream translation error and closes the connection abnormally', async () => {
     let ended = false
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => { ended = true } },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => {}, destroy: () => { ended = true } },
     }
     async function* body(): AsyncGenerator<unknown> {
       yield { model: 'claude', choices: [{ delta: { content: 'hi' }, finish_reason: null }] }

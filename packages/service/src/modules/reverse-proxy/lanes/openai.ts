@@ -363,7 +363,8 @@ export const openaiEgress: Processor<ProxyContext> = {
         ctx.log.error({ err }, 'Streaming error mid-stream')
         failure = err instanceof Error ? err.message : String(err)
       }
-      reply.raw.end()
+      // An aborted stream is closed abnormally so the client sees an error, not a complete response.
+      if (failure) reply.raw.destroy(); else reply.raw.end()
       traceEgress(ctx, { kind: 'stream', encoding: 'responses', frames, bytes, ...(failure ? { error: failure } : {}) })
       return
     }
@@ -379,8 +380,13 @@ export const openaiEgress: Processor<ProxyContext> = {
       ctx.log.error({ err }, 'Streaming error mid-stream')
       failure = err instanceof Error ? err.message : String(err)
     }
-    reply.raw.write('data: [DONE]\n\n')
-    reply.raw.end()
+    if (failure) {
+      // No [DONE]: close abnormally so the client can tell the stream was cut.
+      reply.raw.destroy()
+    } else {
+      reply.raw.write('data: [DONE]\n\n')
+      reply.raw.end()
+    }
     traceEgress(ctx, { kind: 'stream', encoding: 'sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }
