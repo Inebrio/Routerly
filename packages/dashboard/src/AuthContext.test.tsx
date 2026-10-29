@@ -5,14 +5,16 @@ import { AuthProvider, useAuth } from './AuthContext';
 
 vi.mock('./api', () => ({
   login: vi.fn(),
+  getMe: vi.fn(),
 }));
 
-import { login as apiLogin } from './api';
+import { login as apiLogin, getMe } from './api';
 const mockLogin = vi.mocked(apiLogin as (...args: unknown[]) => Promise<unknown>);
 
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  vi.mocked(getMe).mockRejectedValue(new Error('offline'));
 });
 
 // Probe component that exposes auth state
@@ -52,6 +54,17 @@ describe('AuthProvider — initial load', () => {
     localStorage.setItem('lr_token', 'tok123');
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('user').textContent).toContain('a@b.com'));
+  });
+
+  it('refreshes role and permissions from /api/me on session restore', async () => {
+    localStorage.setItem('lr_user', JSON.stringify({ id: 'u1', email: 'a@b.com', role: 'old', permissions: ['token:write'] }));
+    localStorage.setItem('lr_token', 'tok');
+    vi.mocked(getMe).mockResolvedValue({ id: 'u1', email: 'a@b.com', roleId: 'new', permissions: ['router:read'] });
+    renderProvider();
+    await waitFor(() => expect(screen.getByTestId('user').textContent).toContain('"role":"new"'));
+    expect(screen.getByTestId('user').textContent).toContain('["router:read"]');
+    expect(localStorage.getItem('lr_user')).toContain('router:read');
+    expect(getMe).toHaveBeenCalledTimes(1);
   });
 
   it('clears invalid "undefined" string from localStorage', async () => {

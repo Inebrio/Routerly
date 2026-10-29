@@ -133,7 +133,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
           {status.label}
         </span>
         {str(d.model) && (
-          <span style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <span style={{ fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 600, minWidth: 0, overflowWrap: 'anywhere', color: 'var(--text-primary)' }}>
             {str(d.model)}
           </span>
         )}
@@ -234,7 +234,7 @@ export function TraceSummary({ trace, turn, collapsible = false, defaultOpen = t
                 fontSize: '0.78rem', color: 'var(--danger)', fontFamily: 'monospace',
               }}>
                 <XCircle size={12} style={{ flexShrink: 0, marginTop: 2 }} />
-                <span><strong>{str(err.model) ?? 'unknown'}</strong>: {str(err.error) ?? 'unknown'}</span>
+                <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}><strong>{str(err.model) ?? 'unknown'}</strong>: {str(err.error) ?? 'unknown'}</span>
               </div>
             ))}
           </div>

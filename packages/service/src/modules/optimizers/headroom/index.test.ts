@@ -335,3 +335,19 @@ describe('headroom optimizer: Anthropic tool_use / tool_result payloads count as
     expect(headroomOptimizer.validate(ctx, result)).toBe(true)
   })
 })
+
+describe('headroom optimizer: window refreshed on model write (ROUT-456)', () => {
+  it('sees a model created after the cache was filled on the very next request', async () => {
+    const { listEffectiveModels } = await import('../../provider/list-effective.js')
+    const { writeConfig } = await import('../../config/loader.js')
+    resetContextWindowCache()
+    await (await import('./index.js')).headroomOptimizer.supports(ctxWith(conversation(5), { contextWindow: 100 }))
+    await vi.waitFor(() => expect(headroomOptimizer.supports(ctxWith(conversation(5), { threshold: 20, contextWindow: 100 }))).toBe(true))
+    const added = ctxWith(conversation(5), { threshold: 20, contextWindow: 100 })
+    added.request.model = 'fresh-model'
+    expect(headroomOptimizer.supports(added)).toBe(false)
+    vi.mocked(listEffectiveModels).mockResolvedValueOnce([{ id: 'fresh-model', contextWindow: 100 } as any])
+    await writeConfig('instances', [])
+    expect(headroomOptimizer.supports(added)).toBe(true)
+  })
+})

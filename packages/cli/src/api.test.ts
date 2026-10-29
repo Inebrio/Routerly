@@ -105,6 +105,15 @@ describe('api() Content-Type header', () => {
 });
 
 describe('api() error handling', () => {
+  it('appends validation details to the ApiError message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 400, statusText: 'Bad Request',
+      json: async () => ({ error: 'Invalid optimizers config', details: [{ message: 'ccr: threshold must be at least 1' }] }),
+    }))
+    const { api } = await import('./api.js')
+    await expect(api('GET', '/api/models')).rejects.toThrow('Invalid optimizers config: ccr: threshold must be at least 1')
+  })
+
   it('throws ApiError when response is not ok', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       status: 403,
@@ -415,5 +424,28 @@ describe('permission guard (RTR-04)', () => {
 
     expect(result).toMatchObject({ models: [] });
     expect(errSpy).not.toHaveBeenCalled();
+  });
+
+  it('proceeds when the status check is forbidden (role without settings:read)', async () => {
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/system/permissions')) return Promise.resolve(jsonResponse(403, { error: 'Required permission: settings:read' }));
+      if (url.endsWith('/api/roles')) return Promise.resolve(jsonResponse(201, { id: 'r' }));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(api('POST', '/api/roles', { id: 'r' })).resolves.toMatchObject({ id: 'r' });
+  });
+
+  it('2fa verify is exempt: no permission pre-check before the unauthenticated call', async () => {
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url.endsWith('/api/auth/2fa/verify')) return Promise.resolve(jsonResponse(200, { token: 't' }));
+      throw new Error(`unhandled fetch: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const acct = { alias: '', serverUrl: 'http://localhost:3000', email: 'a@b.c', token: '', expiresAt: 0 };
+    await expect(apiWith(acct, 'POST', '/api/auth/2fa/verify', { userId: 'u', token: '123456' })).resolves.toMatchObject({ token: 't' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

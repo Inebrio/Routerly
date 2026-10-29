@@ -44,7 +44,7 @@ Or via the dashboard: **Settings > Provider Catalog > Refresh Cache** button.
 
 ### Multiple Repositories
 
-You can add multiple custom repositories alongside the default one. Repositories are processed in reverse order (last added = first checked), so the first repo in your list wins on merge conflict.
+You can add multiple custom repositories alongside the default one. When two repositories define the same provider, the one higher in the list (row 1) wins; the default repository is only used when no repository is configured.
 
 Add a custom repo:
 

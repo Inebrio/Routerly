@@ -54,6 +54,6 @@ export function upstreamErrorBody(protocol: ErrorProtocol, status: number, body:
   if (protocol === 'openai' && inner === undefined && typeof b?.['message'] === 'string') return { error: b };
   const isAnthropicShape = b?.['type'] === 'error' && inner !== undefined;
   if (inner !== undefined && (protocol === 'anthropic') === isAnthropicShape) return b;
-  const msg = typeof inner?.['message'] === 'string' ? inner['message'] : typeof b?.['message'] === 'string' ? b['message'] : typeof body === 'string' ? body : 'Upstream provider error';
+  const msg = typeof inner?.['message'] === 'string' ? inner['message'] : typeof b?.['message'] === 'string' ? b['message'] : typeof b?.['detail'] === 'string' ? b['detail'] : typeof body === 'string' ? body : 'Upstream provider error';
   return protocolError(protocol, status, msg);
 }

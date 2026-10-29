@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Nogle konfigurationsfiler har tilladende adgang ({{files}}). Start og anmodninger virker stadig. Fix det fra Indstillinger → Sikkerhed, eller fra værtsfilsystemet når det passer.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Afvis",
       "updateAvailable": "Routerly v{{latest}} er tilgængelig. Du kører v{{current}}.",
       "updateLink": "Opdater i Indstillinger",
@@ -418,7 +419,8 @@
       "status": "status",
       "encoding": "kodning",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Gemmer…",
         "enable": "Aktiver",
         "disable": "Deaktiver"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Budget – Nulstillet",
         "systemStartup": "System – Opstart",
         "systemShutdown": "System – Nedlukning",
-        "systemUpdateAvailable": "System – Opdatering tilgængelig"
+        "systemUpdateAvailable": "System – Opdatering tilgængelig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Fjern kanal",
       "removeChannelConfirm": "Fjern kanal?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} tilladelser",
         "userCount": "{{count}} bruger",
         "userCount_other": "{{count}} brugere",
-        "everyone": "Alle"
+        "everyone": "Alle",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kunne ikke indlæse"
@@ -833,6 +838,9 @@
         },
         "optional": "(valgfrit)",
         "keepCurrentPlaceholder": "Lad stå tomt for at bevare nuværende",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Lad stå tomt for at modtage hændelser fra alle routere.",
           "cooldownHeading": "Afkølingstid",
           "cooldownSuffix": "sekunder (0 = ingen afkølingstid)",
-          "cooldownHint": "Minimumsinterval, før denne kanal kan udløses igen for den samme hændelse."
+          "cooldownHint": "Minimumsinterval, før denne kanal kan udløses igen for den samme hændelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Modtagere/mål",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Søg kanaler…",
         "noResults": "Ingen resultater",
         "emptyTitle": "Ingen notifikationskanaler konfigureret endnu.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ingen kanaler matcher de aktive filtre.",
         "nameInlinePlaceholder": "Label (valgfrit)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Fjern integration",
       "saving": "Gemmer…",
       "save": "Gem",
-      "addButton": "Tilføj integration"
+      "addButton": "Tilføj integration",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Sidst kontrolleret"
       },
       "noCheckPerformed": "Ingen opdateringskontrol udført endnu.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Kontroller for opdateringer",
       "checking": "Kontrollerer…",
       "updateTo": "Opdater til v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Trace-indhold",
         "traceContentHint": "Traces registrerer altid metadata (modeller, scorer, tokens, omkostning, svartid). Slå dette til for også at registrere de sendte prompts og de modtagne svar. De gemmes med forbrugsposten og er synlige for alle, der kan læse rapporter.",
         "capturePromptsAndAnswers": "Registrer prompts og svar",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Gem ændringer",
         "createRouter": "Opret router",
         "createOrchestrator": "Opret orkestrering",
@@ -1395,6 +1411,7 @@
       "saving": "Gemmer...",
       "saved": "Gemt",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Forhåndsvis token-besparelser",
         "description": "Kør den nuværende (ikke-gemte) pipeline over en prompt for at se, hvad hvert trin fjerner, og hvad det koster. Vælg en af eksempelsamtalerne, eller skriv din egen prompt.",
         "promptLabel": "Prompt",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Ingen forespørgsel sendt endnu.",
       "turnTraceLog": "Tur #{{turn}} trace-log · {{count}} hændelse",
       "turnTraceLog_other": "Tur #{{turn}} trace-log · {{count}} hændelser"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modeller",
       "subtitle": "LLM-udbydere registreret hos Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modeller",
         "health": "Tilstand"
@@ -2253,7 +2281,8 @@
       "next": "Næste",
       "page": "Side {{page}} af {{totalPages}}",
       "total": "({{count}} i alt)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Vis fejlfinding",
       "empty": "Ingen fejlfindingsdata endnu.",
       "emptyHint": "Send en besked for at se routingdetaljer.",
-      "turnTraceLog": "Tur #{{turn}} trace-log"
+      "turnTraceLog": "Tur #{{turn}} trace-log",
+      "resize": "Tilpas størrelsen på fejlsøgningspanelet"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Kunne ikke opdatere rolle",
       "createFailed": "Kunne ikke oprette rolle",
       "deleteFailed": "Kunne ikke slette rolle"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Tilbage til Tilslut",
     "title": "Tilslut",
     "docs": "Dokumentation",
-    "notEnabledPrefix": "Klientkonfigurator er ikke aktiveret. Bed en administrator om at aktivere den med",
     "noClientPrefix": "Ingen klient ved navn",
     "errors": {
       "loadFailed": "Kunne ikke indlæse klienter: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "routerer den klients modeltrafik gennem Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "indlæser Routerly som en værktøjsserver inde i den.",
-    "notEnabledPrefix": "Klientkonfigurator er ikke aktiveret. Bed en administrator om at aktivere den med",
     "errors": {
       "loadFailed": "Kunne ikke indlæse klienter: {{error}}"
     },

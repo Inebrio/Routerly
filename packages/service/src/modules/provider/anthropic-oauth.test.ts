@@ -4,7 +4,12 @@ const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }))
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn().mockImplementation(function (this: any, opts: any) {
     this._opts = opts
-    this.messages = { create: mockCreate }
+    this.messages = {
+      create: (...a: unknown[]) => {
+        const p = Promise.resolve(mockCreate(...a))
+        return Object.assign(p, { withResponse: async () => ({ data: await p, response: { headers: new Headers() } }) })
+      },
+    }
   }),
 }))
 
@@ -268,17 +273,6 @@ describe('resolveAnthropicOAuthCredential', () => {
     expect(token).toBe('static-legacy-token')
     expect(fetchMock).not.toHaveBeenCalled()
     expect(mockWriteConfig).not.toHaveBeenCalled()
-  })
-
-  it('refuses to run when the provider-oauth module is disabled', async () => {
-    mockReadConfig.mockImplementation(async (type: string) => {
-      if (type === 'modules') return [{ id: 'provider-oauth', enabled: false }]
-      return []
-    })
-    const connection = makeConnection()
-    await expect(resolveAnthropicOAuthCredential(connection)).rejects.toThrow(
-      "'provider-oauth' module is disabled",
-    )
   })
 })
 

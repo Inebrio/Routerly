@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Kilka plików konfiguracyjnych ma permisywny dostęp ({{files}}). Uruchamianie i żądania nadal działają. Napraw to z Ustawienia → Bezpieczeństwo, lub z systemu plików hosta, gdy jest to wygodne.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Odrzuć",
       "updateAvailable": "Routerly v{{latest}} jest dostępna. Używasz v{{current}}.",
       "updateLink": "Aktualizuj w Ustawieniach",
@@ -418,7 +419,8 @@
       "status": "status",
       "encoding": "kodowanie",
       "frames": "ramki",
-      "bytes": "bajty"
+      "bytes": "bajty",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Zapisywanie…",
         "enable": "Włącz",
         "disable": "Wyłącz"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Budżet – Resetowanie",
         "systemStartup": "System – Uruchomienie",
         "systemShutdown": "System – Zamknięcie",
-        "systemUpdateAvailable": "System – Aktualizacja dostępna"
+        "systemUpdateAvailable": "System – Aktualizacja dostępna",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Usuń kanał",
       "removeChannelConfirm": "Usunąć kanał?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} uprawnień",
         "userCount": "{{count}} użytkownik",
         "userCount_other": "{{count}} użytkowników",
-        "everyone": "Wszyscy"
+        "everyone": "Wszyscy",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nie udało się załadować"
@@ -833,6 +838,9 @@
         },
         "optional": "(opcjonalne)",
         "keepCurrentPlaceholder": "Pozostaw puste, aby zachować bieżące",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Pozostaw puste, aby otrzymywać zdarzenia ze wszystkich routerów.",
           "cooldownHeading": "Okres ochłodzenia",
           "cooldownSuffix": "sekund (0 = brak okresu ochłodzenia)",
-          "cooldownHint": "Minimalny interwał przed ponownym uruchomieniem tego kanału dla tego samego zdarzenia."
+          "cooldownHint": "Minimalny interwał przed ponownym uruchomieniem tego kanału dla tego samego zdarzenia.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Odbiorcy / Cele",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Szukaj kanałów…",
         "noResults": "Brak wyników",
         "emptyTitle": "Nie skonfigurowano jeszcze kanałów powiadomień.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Żaden kanał nie pasuje do aktywnych filtrów.",
         "nameInlinePlaceholder": "Etykieta (opcjonalne)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Usuń integrację",
       "saving": "Zapisywanie…",
       "save": "Zapisz",
-      "addButton": "Dodaj integrację"
+      "addButton": "Dodaj integrację",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Ostatnio sprawdzono"
       },
       "noCheckPerformed": "Nie przeprowadzono jeszcze kontroli aktualizacji.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Sprawdź aktualizacje",
       "checking": "Sprawdzanie…",
       "updateTo": "Zaktualizuj do v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Zawartość śladu",
         "traceContentHint": "Ślady zawsze rejestrują metadane (modele, wyniki, tokeny, koszt, opóźnienie). Włącz to, aby również rejestrować wysłane prompty i otrzymane odpowiedzi. Są przechowywane z rekordem użycia i widoczne dla każdego, kto może czytać raporty.",
         "capturePromptsAndAnswers": "Przechwycaj prompty i odpowiedzi",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Zapisz zmiany",
         "createRouter": "Utwórz router",
         "createOrchestrator": "Utwórz Orchestrator",
@@ -1395,6 +1411,7 @@
       "saving": "Zapisywanie...",
       "saved": "Zapisano",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Podgląd oszczędności tokenów",
         "description": "Uruchom bieżący (niezapisany) potok nad promptem, aby zobaczyć, co każdy krok usuwa i co kosztuje. Wybierz jedną z rozmów przykładowych lub wpisz własny prompt.",
         "promptLabel": "Prompt",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Nie wysłano jeszcze żadnego żądania.",
       "turnTraceLog": "Dziennik śladu tury #{{turn}} · {{count}} zdarzenie",
       "turnTraceLog_other": "Dziennik śladu tury #{{turn}} · {{count}} zdarzeń"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modele",
       "subtitle": "Dostawcy LLM zarejestrowani w Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modele",
         "health": "Zdrowotne"
@@ -2253,7 +2281,8 @@
       "next": "Następna",
       "page": "Strona {{page}} z {{totalPages}}",
       "total": "({{count}} razem)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Pokaż debugowanie",
       "empty": "Brak jeszcze danych debugowania.",
       "emptyHint": "Wyślij wiadomość, aby zobaczyć szczegóły routingu.",
-      "turnTraceLog": "Dziennik śladu tury #{{turn}}"
+      "turnTraceLog": "Dziennik śladu tury #{{turn}}",
+      "resize": "Zmień rozmiar panelu debugowania"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Nie udało się zaktualizować rolę",
       "createFailed": "Nie udało się utworzyć rolę",
       "deleteFailed": "Nie udało się usunąć rolę"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Powrót do połączenia",
     "title": "Połącz",
     "docs": "Dokumenty",
-    "notEnabledPrefix": "Konfigurator klienta nie jest włączony. Poproś administratora, aby włączył go za pomocą",
     "noClientPrefix": "Nie ma klienta nazwą",
     "errors": {
       "loadFailed": "Nie udało się załadować klientów: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "kieruje ruch modelu tego klienta przez Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "ładuje Routerly jako serwer narzędziowy wewnątrz niego.",
-    "notEnabledPrefix": "Konfigurator klienta nie jest włączony. Poproś administratora, aby włączył go za pomocą",
     "errors": {
       "loadFailed": "Nie udało się załadować klientów: {{error}}"
     },

@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes } from 'node:crypto';
 import { pingTelemetry } from '../telemetry/telemetry.js';
-import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort } from '../config/loader.js';
+import { readConfig, writeConfig, updateConfig, ConfigUpdateAbort, effectivePort } from '../config/loader.js';
 import { CONFIG_PATHS } from '../../lib/paths.js';
 import { checkPermissions, fixPermissions, isBypassActive } from '../config/permission-guard.js';
 import { createSessionToken, verifyToken, generateRawToken } from '../auth/jwt.js';
@@ -15,21 +15,25 @@ import { generateTotpSecret, verifyTotp, generateBackupCodes, hashBackupCode } f
 import type { RouterConfig, RouterToken, UserConfig, RoleConfig, Permission, PricingTier, RoutingPolicy, TokenModelRef, Settings, Limit, ModelCapabilities, GuardrailConfig, PiiConfig, OptimizerConfig, Message, UsageByModelEntry, SavingsSummary, UsageSeries, ChannelProvider, ResilienceState, ProviderConnection, ModelInstance, EffectiveModel, CatalogField, CatalogDefaults, RouterKind, OrchestratorCandidateRef, PrometheusIntegration } from '@routerly/shared';
 import { validateOrchestratorCandidates } from '../routing/validate-orchestrator.js';
 import { validateOrchestratorPolicies } from '../routing/validate-orchestrator-policies.js';
+import { validateRoutingModels } from '../routing/validate-routing-models.js';
 import { validatePassthroughModels } from '../routing/validate-passthrough.js';
 import { resilienceKeys } from '../resilience/keys.js';
 import { getResilienceStore } from '../resilience/index.js';
-import { CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug } from '@routerly/shared';
+import { CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, CLIENT_REGISTRY, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, isCompletionCall, notificationCategory, normalizeUpdateChannel, isValidUpdateChannel, UPDATE_CHANNEL_ERROR, suggestRouterSlug, LOG_LEVELS } from '@routerly/shared';
 import { catalogFetcher } from '../catalog/fetcher.js';
 import { syncModelsFromCatalog } from '../catalog/sync.js';
 import { z } from 'zod';
 import { getTrace } from '../trace/store.js';
+import { setTraceLogLevel } from '../trace/console.js';
 import { resetTraceExportCache } from '../observability/traces-export.js';
+import { encodeRemoteWrite, remoteWriteHeaders } from '../observability/remote-write.js';
 import { getProviderAdapter } from '../provider/registry.js';
 import { getEmbeddingProvider } from '../embeddings/dispatch.js';
 import { loadEffectiveModel } from '../reverse-proxy/execute.js';
 import { listEffectiveModels, listEffectiveModelsIncludingDisabled } from '../provider/list-effective.js';
 import { resolveEffectiveModel, defaultUpstreamModelId } from '../provider/resolve.js';
 import { sendTestNotification } from '../notifications/sender.js';
+import { validateWebhookUrl } from '../notifications/url-guard.js';
 import { emitEvent } from '../notifications/emitter.js';
 import { isVisibleToUser, loadInboxScope } from './inbox-access.js';
 import { ALL_PERMISSIONS, BUILT_IN_ROLES, getEffectiveRoles } from '../auth/roles.js';
@@ -45,15 +49,13 @@ import { mcpApiRoutes } from './mcp.js';
 import { getOptimizerRegistry } from '../optimizers/registry.js';
 import { guardrailConfigSchema, piiConfigSchema, optimizerConfigSchema, optimizerStepSchema } from './schemas.js';
 import { runPreview } from '../optimizers/preview.js';
+import { resolveOptimizerProfile, CUSTOM_PROFILE_ID } from '../routing/profiles/store.js';
 import * as llmlingua2Model from '../optimizers/llmlingua2/model.js';
 import { computeSavings, computeSeries } from '../usage/savings.js';
 import { isClientConfiguratorEnabled } from '../clients/module.js';
 import {
   isModuleEnabled,
   isAlwaysOn,
-  canEnable,
-  canDisable,
-  setModuleEnabled,
 } from '../../core/modules/registry.js';
 
 const { version: pkgVersion } = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')) as { version: string };
@@ -167,6 +169,13 @@ const notificationsConfigSchema = z.object({
 
 const REDACT_MARKER = '********';
 
+/** SSRF guard on the delivery URL of a channel; returns the error message, or null when fine. */
+function channelUrlError(channel: Record<string, unknown>): string | null {
+  const url = channel['provider'] === 'webhook' ? channel['url'] : channel['webhookUrl'];
+  if (!['webhook', 'teams', 'discord'].includes(channel['provider'] as string) || typeof url !== 'string' || !url) return null;
+  try { validateWebhookUrl(url); return null; } catch (e) { return (e as Error).message; }
+}
+
 /**
  * Returns a shallow copy of the channel with all non-empty secret fields
  * replaced by REDACT_MARKER. Fields absent or empty in the stored config
@@ -256,6 +265,16 @@ function resolvePermissions(roleId: string, allRoles: RoleConfig[]): Permission[
   return allRoles.find(r => r.id === roleId)?.permissions ?? [];
 }
 
+/** Anti-escalation: caller may only grant/touch permissions it holds itself (admin holds all). */
+function requireCovers(req: FastifyRequest, needed: Permission[], reply: FastifyReply): boolean {
+  const have = req.dashUser?.permissions ?? [];
+  const missing = needed.filter(p => !have.includes(p));
+  if (missing.length === 0) return true;
+  reply.status(403).send({ error: 'Forbidden', message: `Cannot grant or manage permissions you do not hold: ${missing.join(', ')}` });
+  audit(req, 'privilege-escalation', 'forbidden', { missing });
+  return false;
+}
+
 function audit(req: FastifyRequest, action: string, result: AuditEntry['result'], details?: Record<string, unknown>): void {
   void logAudit({
     userId: req.dashUser?.id ?? 'unknown',
@@ -297,19 +316,19 @@ function resolveCandidatesForResponse(
  * Non-orchestrators never expose a raw `candidates` array even if one is
  * somehow stored.
  */
-function toRouterResponse(router: RouterConfig, routers: RouterConfig[]): Record<string, unknown> {
+function toRouterResponse(router: RouterConfig, routers: RouterConfig[], showTokens = true): Record<string, unknown> {
   const { candidates, ...rest } = router;
   const kind: RouterKind = router.kind ?? 'router';
   return {
     ...rest,
     kind,
-    tokens: router.tokens?.map(t => ({ ...t, token: undefined })) || [],
+    tokens: showTokens ? router.tokens?.map(t => ({ ...t, token: undefined })) || [] : [],
     ...(kind === 'orchestrator' ? { candidates: resolveCandidatesForResponse(candidates, routers) } : {}),
   };
 }
 
-function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply): boolean {
-  if (!req.dashUser?.permissions.includes(perm)) {
+function requirePerm(req: FastifyRequest, perm: Permission, reply: FastifyReply, alsoAllowed: Permission[] = []): boolean {
+  if (![perm, ...alsoAllowed].some(p => req.dashUser?.permissions.includes(p))) {
     reply.status(403).send({ error: 'Forbidden', message: `Required permission: ${perm}` });
     audit(req, perm, 'forbidden');
     return false;
@@ -328,13 +347,21 @@ function resolveTestRecipient(provider: string, to: string | undefined, fallback
   return EMAIL_TEST_PROVIDERS.has(provider) ? fallback : '';
 }
 
+const createModelBodySchema = z.object({
+  id: z.string().min(1),
+  provider: z.string().min(1),
+});
+
 const previewBodySchema = z.object({
   routerId: z.string().optional(),
   // Model the sample is addressed to. Only `headroom` reads it, to size its
   // budget against that model's context window exactly as it would live.
   model: z.string().optional(),
   sampleMessages: z.array(z.any()).min(1),
-  steps: z.array(optimizerStepSchema),
+  // Omitted: the service runs the pipeline the router really uses (its assigned
+  // optimizer profile, else its saved custom steps). Sent: those exact steps,
+  // so unsaved custom edits can be previewed.
+  steps: z.array(optimizerStepSchema).optional(),
 });
 
 /** Paths never hard-blocked by the permission guard, even while a secrets file is unsafe:
@@ -346,6 +373,9 @@ const PERMISSION_GUARD_EXEMPT_PATHS = new Set([
   '/api/system/permissions',
   '/api/system/permissions/fix',
 ]);
+
+/** Unsafe file set already announced to operators; reset once the files are safe again. */
+let announcedUnsafe = '';
 
 export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('dashUser', null);
@@ -371,7 +401,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onRequest', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return;
     const path = req.url.split('?')[0]!;
-    if (PERMISSION_GUARD_EXEMPT_PATHS.has(path)) return;
+    // The inbox must stay readable: it is where operators learn about this very block.
+    if (PERMISSION_GUARD_EXEMPT_PATHS.has(path) || path.startsWith('/api/notifications/inbox')) return;
 
     if (isBypassActive()) {
       fastify.log.warn(`[permission-guard] ROUTERLY_SKIP_PERMISSION_CHECK is set — skipping permission check for ${req.method} ${req.url}.`);
@@ -379,9 +410,16 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const status = await checkPermissions();
-    if (!status.blocked) return;
+    if (!status.blocked) {
+      announcedUnsafe = '';
+      return;
+    }
 
     const files = status.unsafe.filter(u => u.severity === 'secret').map(u => u.file);
+    if (files.join(',') !== announcedUnsafe) {
+      announcedUnsafe = files.join(',');
+      void emitEvent('system.permissions_unsafe', 'critical', { files }, { log: req.log });
+    }
     fastify.log.warn(`[permission-guard] Blocking ${req.method} ${req.url} — unsafe permissions on secrets file(s): ${files.join(', ')}.`);
     return reply.status(423).send({
       error: 'unsafe_permissions',
@@ -628,6 +666,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(201).send({ token, user: { id: user.id, email: user.email, role: user.roleId } });
   });
 
+  const MFA_ENROLMENT_PATHS = /^\/api\/(me(\/language)?|auth\/2fa\/(setup|confirm))$/;
+
   // ─── Auth middleware for /api/* (except login and setup) ─────────────────────
   fastify.addHook('preHandler', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return;
@@ -652,6 +692,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const allRoles = getEffectiveRoles(customRoles);
     req.dashUser = { id: userId, email: user.email, roleId: user.roleId, permissions: resolvePermissions(user.roleId, allRoles) };
+
+    // requireMfa: a user without 2FA may only reach identity + 2FA enrolment routes.
+    if (!user.totpEnabled && !MFA_ENROLMENT_PATHS.test(req.url.split('?')[0]!)) {
+      const settings = await readConfig('settings');
+      if (settings?.requireMfa === true) {
+        return reply.status(403).send({
+          error: 'mfa_required',
+          message: 'Two-factor authentication is required for all users. Set up 2FA in your profile first.',
+        });
+      }
+    }
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -669,28 +720,6 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       dependsOn: Object.keys(m.manifest.dependsOn ?? {}),
     }));
     return reply.send(list);
-  });
-
-  fastify.post<{ Params: { id: string } }>('/api/modules/:id/enable', async (req, reply) => {
-    if (!requirePerm(req, 'modules:manage', reply)) return;
-    const manifests = ALL_MODULES.map((m) => m.manifest);
-    const records = await readConfig('modules');
-    const check = canEnable(req.params.id, records, manifests);
-    if (!check.ok) return reply.status(409).send({ error: check.error });
-    await writeConfig('modules', setModuleEnabled(records, req.params.id, true));
-    audit(req, 'modules:enable', 'success', { id: req.params.id });
-    return reply.send({ id: req.params.id, enabled: true, restartRequired: true });
-  });
-
-  fastify.post<{ Params: { id: string } }>('/api/modules/:id/disable', async (req, reply) => {
-    if (!requirePerm(req, 'modules:manage', reply)) return;
-    const manifests = ALL_MODULES.map((m) => m.manifest);
-    const records = await readConfig('modules');
-    const check = canDisable(req.params.id, records, manifests);
-    if (!check.ok) return reply.status(409).send({ error: check.error });
-    await writeConfig('modules', setModuleEnabled(records, req.params.id, false));
-    audit(req, 'modules:disable', 'success', { id: req.params.id });
-    return reply.send({ id: req.params.id, enabled: false, restartRequired: true });
   });
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -728,6 +757,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
   }>('/api/models', async (req, reply) => {
     if (!requirePerm(req, 'model:write', reply)) return;
+    const parsedBody = createModelBodySchema.safeParse(req.body ?? {});
+    if (!parsedBody.success) {
+      const issue = parsedBody.error.issues[0]!;
+      return reply.status(400).send({ error: `${issue.path.join('.') || 'body'}: ${issue.message}` });
+    }
     if (req.body.timeout !== undefined && req.body.timeout !== null && !isValidTimeout(req.body.timeout)) {
       return reply.status(400).send({ error: 'timeout must be a positive integer (ms)' });
     }
@@ -1204,11 +1238,13 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // only priority signal, `weight` is never read back.
   })).optional();
 
-  fastify.get('/api/routers', async (_req, reply) => {
+  fastify.get('/api/routers', async (req, reply) => {
     const routers = await readConfig('routers');
+    // Token metadata is listed only for callers who can read or manage tokens.
+    const showTokens = ['token:read', 'token:write', 'router:write'].some(p => req.dashUser?.permissions.includes(p as Permission));
     // Strip the full token; clients use tokenSnippet for display. Orchestrators
     // additionally get their candidates opacity-limited (AC7).
-    return reply.send(routers.map(p => toRouterResponse(p, routers)));
+    return reply.send(routers.map(p => toRouterResponse(p, routers, showTokens)));
   });
 
   fastify.post<{
@@ -1314,6 +1350,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // concurrent creation can never observe a stale list or silently lose
     // this router (or have this one silently lose a concurrent sibling), and two
     // concurrent passthrough creations can never collide on slug either.
+    const routingModelsError = await validateRoutingModels(req.body);
+    if (routingModelsError) return reply.status(400).send({ error: routingModelsError });
     let createdRouter: RouterConfig = router;
     const finalRouters = await updateConfig('routers', (routers) => {
       // Passthrough names are scoped to Passthroughs only — a Passthrough is
@@ -1363,12 +1401,24 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       guardrails?: GuardrailConfig | null;
       pii?: PiiConfig | null;
       optimizers?: OptimizerConfig | null;
+      notifications?: { channels: string[] } | null;
       traceContent?: boolean;
       kind?: RouterKind;
       candidates?: OrchestratorCandidateRef[];
     };
   }>('/api/routers/:id', async (req, reply) => {
     if (!requirePerm(req, 'router:write', reply)) return;
+    // Routing a router's events to external channels is a privileged sub-operation.
+    if (req.body.notifications !== undefined && !requirePerm(req, 'notification:write', reply)) return;
+    let notificationChannels: string[] | undefined;
+    if (req.body.notifications) {
+      const parsed = z.object({ channels: z.array(z.string().min(1)) }).strict().safeParse(req.body.notifications);
+      if (!parsed.success) return reply.status(400).send({ error: 'Invalid notifications', details: parsed.error.issues });
+      notificationChannels = [...new Set(parsed.data.channels)];
+      const known = ((await readConfig('settings')).notifications?.channels ?? []) as { id: string; provider: string }[];
+      const bad = notificationChannels.filter(id => !known.some(c => c.id === id && c.provider !== 'dashboard'));
+      if (bad.length) return reply.status(400).send({ error: `Unknown or non-external notification channel: ${bad.join(', ')}` });
+    }
     // Changing the optimizers pipeline (set or clear) is a privileged sub-operation.
     if (req.body.optimizers !== undefined && !requirePerm(req, 'optimizers:manage', reply)) return;
     if (rejectInvalidTimeout(req.body.timeoutMs, reply)) return;
@@ -1382,6 +1432,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (req.body.name !== undefined && typeof req.body.name !== 'string') return reply.status(400).send({ error: 'Router name must be a string' });
     if (req.body.models !== undefined && !Array.isArray(req.body.models)) return reply.status(400).send({ error: 'models must be an array' });
     if (req.body.name !== undefined && !req.body.name.trim()) return reply.status(400).send({ error: 'Router name cannot be empty' });
+
+    // Unknown routing model ids are checked outside the lock (async registry read): only ids
+    // the stored router does not already hold count, so a concurrent write cannot change the verdict.
+    const stored = (await readConfig('routers')).find(r => r.id === req.params.id);
+    if (stored) {
+      const routingModelsError = await validateRoutingModels(
+        { routingModelId: req.body.routingModelId, fallbackRoutingModelIds: req.body.fallbackRoutingModelIds, policies: req.body.policies },
+        stored,
+      );
+      if (routingModelsError) return reply.status(400).send({ error: routingModelsError });
+    }
 
     // Everything that reads or validates against the stored router list — the
     // duplicate-name check, kind inheritance, candidate validation and the
@@ -1491,6 +1552,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         optimizersUpdate = { optimizers: routers[index]!.optimizers };
       }
 
+      // undefined = keep stored override; null or [] = clear; array = replace.
+      const notifChannels = req.body.notifications === null ? [] : notificationChannels ?? routers[index]!.notifications?.channels ?? [];
+      const notificationsUpdate: { notifications?: { channels: string[] } } = notifChannels.length ? { notifications: { channels: notifChannels } } : {};
+
       const { guardrails: _g, pii: _p, optimizers: _o, notifications: _n, kind: _k, candidates: _c, ...existing } = routers[index]!;
       updated = {
         ...existing,
@@ -1509,6 +1574,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         ...guardrailsUpdate,
         ...piiUpdate,
         ...optimizersUpdate,
+        ...notificationsUpdate,
         ...(kind !== 'router' ? { kind } : {}),
         ...(kind === 'orchestrator' ? candidatesUpdate : {}),
         ...tokensUpdate,
@@ -1622,14 +1688,22 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       router = routers.find(p => p.id === parsed.data.routerId);
       if (!router) return reply.status(404).send({ error: 'Not found' });
     }
+    let steps = parsed.data.steps as OptimizerConfig['steps'] | undefined;
+    let pipeline: { kind: 'profile' | 'custom'; profileId?: string; label: string } = { kind: 'custom', label: 'Custom' };
+    if (!steps) {
+      if (!router) return reply.status(400).send({ error: 'steps or routerId is required' });
+      const profile = await resolveOptimizerProfile(router);
+      steps = profile?.optimizers.steps ?? [];
+      if (profile && profile.id !== CUSTOM_PROFILE_ID) pipeline = { kind: 'profile', profileId: profile.id, label: profile.label };
+    }
     const result = await runPreview({
       registry: getOptimizerRegistry(),
       sampleMessages: parsed.data.sampleMessages as Message[],
-      steps: parsed.data.steps as OptimizerConfig['steps'],
+      steps,
       ...(parsed.data.model ? { model: parsed.data.model } : {}),
       ...(router ? { router } : {}),
     });
-    return reply.send(result);
+    return reply.send({ ...result, pipeline });
   });
 
   const tagsSchema = z.record(z.string().max(128), z.string().max(512))
@@ -1661,7 +1735,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{ Params: { id: string }, Body: { labels?: string[]; tags?: Record<string, string>; scopes?: string[]; expiresAt?: string } }>('/api/routers/:id/tokens', async (req, reply) => {
-    if (!requirePerm(req, 'router:write', reply)) return;
+    if (!requirePerm(req, 'router:write', reply, ['token:write'])) return;
 
     const parsed = createTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
@@ -1692,7 +1766,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put<{ Params: { id: string, tokenId: string }; Body: { models?: TokenModelRef[], labels?: string[], tags?: Record<string, string>, scopes?: string[] } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'router:write', reply)) return;
+    if (!requirePerm(req, 'router:write', reply, ['token:write'])) return;
 
     const parsed = updateTokenBodySchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
@@ -1722,7 +1796,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete<{ Params: { id: string, tokenId: string } }>('/api/routers/:id/tokens/:tokenId', async (req, reply) => {
-    if (!requirePerm(req, 'router:write', reply)) return;
+    if (!requirePerm(req, 'router:write', reply, ['token:write'])) return;
     await updateConfig('routers', (routers) => {
       const index = routers.findIndex(p => p.id === req.params.id);
       if (index === -1) throw new ConfigUpdateAbort(404, { error: 'Router not found' });
@@ -1854,7 +1928,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const user = users.find(u => u.id === userId);
     if (!user) return reply.status(404).send({ error: 'User not found' });
-    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, ...(user.language ? { language: user.language } : {}) });
+    return reply.send({ id: user.id, email: user.email, roleId: user.roleId, permissions: req.dashUser!.permissions, ...(user.language ? { language: user.language } : {}) });
   });
 
   // Dashboard-owned language list — server only checks length, never the ~40-language catalog.
@@ -1916,6 +1990,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     Body: { email: string; password: string; roleId?: string; routerIds?: string[] }
   }>('/api/users', async (req, reply) => {
     if (!requirePerm(req, 'user:write', reply)) return;
+    const allRoles = getEffectiveRoles(await readConfig('roles'));
+    if (!requireCovers(req, resolvePermissions(req.body.roleId ?? 'viewer', allRoles), reply)) return;
     const users = await readConfig('users');
     if (users.find(u => u.email === req.body.email)) {
       return reply.status(409).send({ error: 'Email already exists' });
@@ -1943,6 +2019,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (idx === -1) return reply.status(404).send({ error: 'User not found' });
     const user = users[idx]!;
     const { email, roleId, newPassword } = req.body;
+    const allRoles = getEffectiveRoles(await readConfig('roles'));
+    if (!requireCovers(req, resolvePermissions(user.roleId, allRoles), reply)) return;
+    if (roleId && !requireCovers(req, resolvePermissions(roleId, allRoles), reply)) return;
     if (email && email !== user.email) {
       if (users.find(u => u.email === email)) return reply.status(409).send({ error: 'Email already in use' });
       users[idx] = { ...users[idx]!, email };
@@ -1971,6 +2050,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const users = await readConfig('users');
     const target = users.find(u => u.id === req.params.id);
     if (!target) return reply.status(404).send({ error: 'Not found' });
+    if (!requireCovers(req, resolvePermissions(target.roleId, getEffectiveRoles(await readConfig('roles'))), reply)) return;
     // Ensure at least one admin remains
     if (target.roleId === 'admin' && users.filter(u => u.roleId === 'admin').length === 1) {
       return reply.status(409).send({ error: 'Cannot delete the last admin account' });
@@ -1987,6 +2067,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const userIndex = users.findIndex(u => u.id === req.params.id);
     if (userIndex === -1) return reply.status(404).send({ error: 'User not found' });
     const user = users[userIndex]!;
+    if (!requireCovers(req, resolvePermissions(user.roleId, getEffectiveRoles(await readConfig('roles'))), reply)) return;
     const { totpSecret: _s, totpEnabled: _e, backupCodes: _b, ...rest } = user;
     users[userIndex] = rest;
     await writeConfig('users', users);
@@ -2094,8 +2175,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const r of filtered) {
       const entry = byModelAcc[r.modelId] ?? { calls: 0, inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cost: 0, errors: 0, success: 0, latencies: [] };
       entry.calls++;
-      entry.inputTokens += r.inputTokens;
-      entry.outputTokens += r.outputTokens;
+      entry.inputTokens += r.inputTokens ?? 0;
+      entry.outputTokens += r.outputTokens ?? 0;
       entry.cachedInputTokens += r.cachedInputTokens ?? 0;
       entry.cost += r.cost ?? 0;
       if (r.outcome === 'success') entry.success++;
@@ -2338,16 +2419,20 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.status(202).send({ message: 'Update started. The service will restart shortly.' });
   });
 
-  // ─── GET /api/settings ─────────────────────────────────────────────────────
-  fastify.get('/api/settings', async (req, reply) => {
-    if (!requirePerm(req, 'settings:read', reply)) return;
-    const settings = await readConfig('settings');
+  function settingsResponse(settings: Settings) {
     const localAddresses = Object.values(networkInterfaces())
       .flat()
       .filter((n): n is NonNullable<typeof n> => n !== undefined && n.family === 'IPv4' && !n.internal)
       .map(n => n.address);
     const integrations = settings.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, settings.port) });
+    return { ...redactSettings(settings), ...(integrations && { integrations }), localAddresses, listeningAddresses: listeningAddresses(settings.host, effectivePort(settings)) };
+  }
+
+  // ─── GET /api/settings ─────────────────────────────────────────────────────
+  fastify.get('/api/settings', async (req, reply) => {
+    if (!requirePerm(req, 'settings:read', reply)) return;
+    const settings = await readConfig('settings');
+    return reply.send(settingsResponse(settings));
   });
 
   // ─── GET /api/clients ──────────────────────────────────────────────────────
@@ -2364,7 +2449,9 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // http. No trustProxy config change: this only sources the base URL, not client IPs.
     const protocol = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0]?.trim() || req.protocol;
     const host = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim() || req.headers.host;
-    const base = `${protocol}://${host}`;
+    // The configured publicUrl wins over the request origin (same rule as the router General tab).
+    const publicUrl = (await readConfig('settings')).publicUrl;
+    const base = publicUrl ? publicUrl.replace(/\/$/, '') : `${protocol}://${host}`;
     // One base URL per client: the gateway root. Every snippet builder in
     // @routerly/shared derives the OpenAI `/v1` suffix itself, so the route
     // does not need to pre-compute a per-wire-format variant.
@@ -2407,13 +2494,32 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const usageRetentionPatch = (req.body as Partial<Settings>).usageRetention;
     if (usageRetentionPatch !== undefined) {
       const usageRetentionSchema = z.object({
-        maxAgeDays: z.number().positive().optional(),
-        maxSizeMb: z.number().positive().optional(),
+        maxAgeDays: z.number().int({ message: 'usageRetention.maxAgeDays must be a positive integer' }).positive({ message: 'usageRetention.maxAgeDays must be a positive integer' }).optional(),
+        maxSizeMb: z.number().int({ message: 'usageRetention.maxSizeMb must be a positive integer' }).positive({ message: 'usageRetention.maxSizeMb must be a positive integer' }).optional(),
       });
       const parsed = usageRetentionSchema.safeParse(usageRetentionPatch);
       if (!parsed.success) {
         return reply.status(400).send({ error: parsed.error.issues[0]!.message });
       }
+    }
+    // ROUT-355: publicUrl is '' (clear) or an http(s) URL with a host; trailing slashes are stripped.
+    const publicUrlPatch = (req.body as Partial<Settings>).publicUrl;
+    if (publicUrlPatch !== undefined) {
+      let normalized: string | undefined;
+      if (typeof publicUrlPatch === 'string') {
+        const raw = publicUrlPatch.trim();
+        if (raw === '') normalized = '';
+        else {
+          try {
+            const u = new URL(raw);
+            if ((u.protocol === 'http:' || u.protocol === 'https:') && u.hostname) normalized = raw.replace(/\/+$/, '');
+          } catch { /* invalid URL: rejected below */ }
+        }
+      }
+      if (normalized === undefined) {
+        return reply.status(400).send({ error: 'publicUrl must be an http:// or https:// URL (or empty to clear)' });
+      }
+      (req.body as Partial<Settings>).publicUrl = normalized;
     }
     const defaultLanguagePatch = (req.body as Partial<Settings>).defaultLanguage;
     if (defaultLanguagePatch !== undefined && !z.string().min(1).max(10).safeParse(defaultLanguagePatch).success) {
@@ -2432,9 +2538,12 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     // ROUT-213: network + /metrics settings. port/host only take effect after a restart.
     const netPatch = req.body as Partial<Omit<Settings, 'prometheusAuthToken'>> & { prometheusAuthToken?: string | null };
     const netSchema = z.object({
+      logLevel: z.enum(LOG_LEVELS, { message: `logLevel must be one of: ${LOG_LEVELS.join(', ')}` }).optional(),
       port: z.number().int().min(1).max(65535).optional(),
       host: z.string().trim().min(1).optional(),
       metricsEnabled: z.boolean().optional(),
+      dashboardEnabled: z.boolean().optional(),
+      requireMfa: z.boolean().optional(),
       prometheusAuthToken: z.string().nullable().optional(),
     });
     const netParsed = netSchema.safeParse(netPatch);
@@ -2512,6 +2621,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
     await writeConfig('settings', updated);
+    if ((req.body as Partial<Settings>).logLevel !== undefined) {
+      fastify.log.level = updated.logLevel; // pino applies it live, no restart
+      setTraceLogLevel(updated.logLevel);
+    }
     if (channelNormalized) {
       updateChecker.updateChannel(channelNormalized.channel);
     }
@@ -2519,8 +2632,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       catalogFetcher.setRepos((updated as Settings).providerRepos ?? []);
     }
     audit(req, 'settings:update', 'success');
-    const integrations = updated.integrations?.map(i => redactIntegration(i as unknown as Record<string, unknown>));
-    return reply.send({ ...redactSettings(updated), ...(integrations && { integrations }) });
+    return reply.send(settingsResponse(updated));
   });
 
   // ─── POST /api/notifications/test ─────────────────────────────────────────
@@ -2933,15 +3045,24 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'provider') continue; // immutable
       if (secrets.includes(key)) {
-        // Secret: update only when non-empty string provided
-        if (typeof val === 'string' && val.length > 0) {
+        // Secret: update only when non-empty string provided; null removes an optional secret
+        if (val === null) {
+          if (!(OPTIONAL_CHANNEL_SECRET_FIELDS[provider!] ?? []).includes(key)) {
+            return reply.status(400).send({ error: `Secret "${key}" is required and cannot be removed` });
+          }
+          delete merged[key];
+        } else if (typeof val === 'string' && val.length > 0) {
           merged[key] = val;
         }
         // else keep stored value (empty string or absent = no change)
+      } else if (val === null) {
+        delete merged[key]; // null clears an optional field; storing it breaks the GET→PUT round-trip of /api/settings
       } else {
         merged[key] = val;
       }
     }
+    const urlError = channelUrlError(merged);
+    if (urlError) return reply.status(400).send({ error: urlError });
     const updatedChannels = [...channels];
     updatedChannels[idx] = merged;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2956,6 +3077,8 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.issues[0]!.message });
     }
+    const urlError = channelUrlError(parsed.data);
+    if (urlError) return reply.status(400).send({ error: urlError });
     const channel = { ...parsed.data, id: parsed.data.id ?? randomUUID() };
     const settings  = await readConfig('settings');
     const existing  = settings.notifications ?? {};
@@ -3035,13 +3158,17 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   // Trace export: only the sinks that can carry a per-request payload have it.
   const tracesSchema = z.object({ enabled: z.boolean(), sampleRate: z.number().min(0).max(1).optional() }).optional();
 
+  const httpUrl = z.string().refine((v) => {
+    try { return ['http:', 'https:'].includes(new URL(v).protocol); } catch { return false; }
+  }, 'must be a valid http(s) URL');
+
   const integrationSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('prometheus'), enabled: z.boolean().optional(), authToken: z.string().optional() }).passthrough(),
-    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: z.string().min(1), protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
+    z.object({ type: z.literal('otel'),       enabled: z.boolean().optional(), endpoint: httpUrl, protocol: z.enum(['http', 'grpc']), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
     z.object({ type: z.literal('datadog'),    enabled: z.boolean().optional(), apiKey: z.string().min(1), site: z.enum(['datadoghq.com', 'datadoghq.eu', 'us3.datadoghq.com', 'us5.datadoghq.com', 'ddog-gov.com']) }).passthrough(),
-    z.object({ type: z.literal('grafana'),    enabled: z.boolean().optional(), url: z.string().min(1), username: z.string().min(1), apiKey: z.string().min(1) }).passthrough(),
-    z.object({ type: z.literal('influxdb'),   enabled: z.boolean().optional(), url: z.string().min(1), token: z.string().min(1), org: z.string().min(1), bucket: z.string().min(1) }).passthrough(),
-    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: z.string().min(1), secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
+    z.object({ type: z.literal('grafana'),    enabled: z.boolean().optional(), url: httpUrl, username: z.string().min(1), apiKey: z.string().min(1) }).passthrough(),
+    z.object({ type: z.literal('influxdb'),   enabled: z.boolean().optional(), url: httpUrl, token: z.string().min(1), org: z.string().min(1), bucket: z.string().min(1) }).passthrough(),
+    z.object({ type: z.literal('webhook'),    enabled: z.boolean().optional(), url: httpUrl, secret: z.string().optional(), headers: z.record(z.string(), z.string()).optional(), traces: tracesSchema }).passthrough(),
   ]);
 
   // ─── GET /api/integrations ────────────────────────────────────────────────────
@@ -3086,6 +3213,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     const stored = integrations[idx]!;
     const secrets = INTEGRATION_SECRET_FIELDS[stored['type'] as string] ?? []; // stored type always in schema
     const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return reply.status(400).send({ error: 'Request body must be a JSON object' });
+    }
+    for (const key of ['url', 'endpoint']) {
+      if (key in body && !httpUrl.safeParse(body[key]).success) {
+        return reply.status(400).send({ error: `${key}: must be a valid http(s) URL` });
+      }
+    }
     const merged: Record<string, unknown> = { ...stored };
     for (const [key, val] of Object.entries(body)) {
       if (key === 'id' || key === 'type') continue;
@@ -3177,21 +3312,14 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       const url      = intg['url']      as string;
       const username = intg['username'] as string;
       const apiKey   = intg['apiKey']   as string;
-      const basicAuth = Buffer.from(`${username}:${apiKey}`).toString('base64');
       try {
         const res = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-protobuf',
-            'X-Prometheus-Remote-Write-Version': '0.1.0',
-            'Authorization': `Basic ${basicAuth}`,
-          },
-          body: '',
+          headers: remoteWriteHeaders(username, apiKey),
+          body: encodeRemoteWrite([{ name: 'routerly_connection_test', help: '', type: 'gauge', samples: [{ labels: {}, value: 1 }] }]),
         });
-        // 400/415 means endpoint exists but rejects empty payload — still reachable
-        const reachable = res.ok || res.status === 400 || res.status === 415;
-        return reply.send(reachable
-          ? { ok: true,  message: 'Grafana remote_write endpoint is reachable.' }
+        return reply.send(res.ok
+          ? { ok: true,  message: 'Grafana remote_write endpoint accepted a test write.' }
           : { ok: false, message: `Grafana endpoint returned HTTP ${res.status}` });
       } catch (err) {
         return reply.send({ ok: false, message: (err as Error).message });
@@ -3199,14 +3327,23 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     if (type === 'influxdb') {
-      const url = intg['url'] as string;
+      const url    = intg['url']    as string;
+      const token  = intg['token']  as string;
+      const org    = intg['org']    as string;
+      const bucket = intg['bucket'] as string;
       try {
-        const res = await fetch(`${url}/health`);
-        if (!res.ok) return reply.send({ ok: false, message: `InfluxDB health check returned HTTP ${res.status}` });
-        const body = await res.json() as { status?: string };
-        return reply.send(body.status === 'pass'
-          ? { ok: true,  message: 'InfluxDB is healthy.' }
-          : { ok: false, message: `InfluxDB health status: ${body.status ?? 'unknown'}` });
+        // Authenticated write of one test point: /health is unauthenticated and
+        // would not catch a wrong token, org or bucket. Works with write-only tokens.
+        const res = await fetch(`${url}/api/v2/write?org=${encodeURIComponent(org)}&bucket=${encodeURIComponent(bucket)}&precision=s`, {
+          method: 'POST',
+          headers: { 'Authorization': `Token ${token}`, 'Content-Type': 'text/plain; charset=utf-8' },
+          body: `routerly_connection_test value=1 ${Math.floor(Date.now() / 1000)}`,
+        });
+        if (res.ok) return reply.send({ ok: true, message: 'InfluxDB accepted a test write (token, org and bucket are valid).' });
+        if (res.status === 401) return reply.send({ ok: false, message: 'Invalid InfluxDB token (HTTP 401).' });
+        if (res.status === 403) return reply.send({ ok: false, message: 'InfluxDB token has no write permission on this bucket (HTTP 403).' });
+        if (res.status === 404) return reply.send({ ok: false, message: `InfluxDB organization "${org}" or bucket "${bucket}" not found (HTTP 404).` });
+        return reply.send({ ok: false, message: `InfluxDB write returned HTTP ${res.status}` });
       } catch (err) {
         return reply.send({ ok: false, message: (err as Error).message });
       }
@@ -3254,9 +3391,10 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post<{ Body: { id: string; name: string; permissions: Permission[] } }>('/api/roles', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     const { id, name, permissions } = req.body;
     if (!id || !name) return reply.status(400).send({ error: 'id and name are required' });
+    if (!requireCovers(req, permissions ?? [], reply)) return;
     if (BUILT_IN_ROLES.some(r => r.id === id)) {
       return reply.status(409).send({ error: `"${id}" is a built-in role and cannot be created` });
     }
@@ -3270,10 +3408,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put<{ Params: { id: string }; Body: { name?: string; permissions?: Permission[] } }>('/api/roles/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be modified` });
     }
+    if (req.body.permissions && !requireCovers(req, req.body.permissions, reply)) return;
     const customRoles = await readConfig('roles');
     const idx = customRoles.findIndex(r => r.id === req.params.id);
     if (idx === -1) return reply.status(404).send({ error: 'Role not found' });
@@ -3287,7 +3426,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.delete<{ Params: { id: string } }>('/api/roles/:id', async (req, reply) => {
-    if (!requirePerm(req, 'user:write', reply)) return;
+    if (!requirePerm(req, 'user:write', reply, ['role:write'])) return;
     if (BUILT_IN_ROLES.some(r => r.id === req.params.id)) {
       return reply.status(403).send({ error: `Built-in role "${req.params.id}" cannot be deleted` });
     }

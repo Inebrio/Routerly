@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "ไฟล์การตั้งค่าบางไฟล์มีการเข้าถึงที่ได้รับอนุญาต ({{files}})। การเริ่มต้นและคำขอยังคงใช้งานได้ ซ่อมแซมจากการตั้งค่า → ความปลอดภัย หรือจากระบบไฟล์ของโฮสต์เมื่อสะดวก",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "ปิด",
       "updateAvailable": "Routerly v{{latest}} พร้อมใช้งาน คุณใช้ v{{current}} อยู่",
       "updateLink": "อัปเดตในการตั้งค่า",
@@ -418,7 +419,8 @@
       "status": "สถานะ",
       "encoding": "การเข้ารหัส",
       "frames": "เฟรม",
-      "bytes": "ไบต์"
+      "bytes": "ไบต์",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "กำลังบันทึก…",
         "enable": "เปิดใช้งาน",
         "disable": "ปิดใช้งาน"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "งบประมาณ - รีเซ็ต",
         "systemStartup": "ระบบ - เริ่มต้น",
         "systemShutdown": "ระบบ - ปิด",
-        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม"
+        "systemUpdateAvailable": "ระบบ - อัปเดตพร้อม",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "ลบช่อง",
       "removeChannelConfirm": "ลบช่อง?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ผู้ใช้",
         "userCount_other": "{{count}} ผู้ใช้",
-        "everyone": "ทุกคน"
+        "everyone": "ทุกคน",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "ไม่สามารถโหลด"
@@ -833,6 +838,9 @@
         },
         "optional": "(เลือกได้)",
         "keepCurrentPlaceholder": "ปล่อยให้ว่างเพื่อเก็บไว้ปัจจุบัน",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "ปล่อยให้ว่างเพื่อรับเหตุการณ์จากเราเตอร์ทั้งหมด",
           "cooldownHeading": "เวลาพักร้อน",
           "cooldownSuffix": "วินาที (0 = ไม่มีเวลาพักร้อน)",
-          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน"
+          "cooldownHint": "ช่วงเวลาขั้นต่ำก่อนที่ช่องนี้สามารถยิงอีกครั้งสำหรับเหตุการณ์เดียวกัน",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "ผู้รับ / เป้าหมาย",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "ค้นหาช่อง…",
         "noResults": "ไม่มีผลลัพธ์",
         "emptyTitle": "ยังไม่มีช่องการแจ้งเตือนที่ตั้งค่าไว้",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "ไม่มีช่องที่ตรงกับตัวกรองที่ใช้งาน",
         "nameInlinePlaceholder": "ป้ายกำกับ (เลือกได้)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "ลบการรวม",
       "saving": "กำลังบันทึก…",
       "save": "บันทึก",
-      "addButton": "เพิ่มการรวม"
+      "addButton": "เพิ่มการรวม",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "ตรวจสอบล่าสุด"
       },
       "noCheckPerformed": "ยังไม่มีการตรวจสอบการอัปเดต",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "ตรวจสอบการอัปเดต",
       "checking": "กำลังตรวจสอบ…",
       "updateTo": "อัปเดตเป็น v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "ติดตามเนื้อหา",
         "traceContentHint": "ร่องรอยบันทึกข้อมูลมูลค่า (รุ่น คะแนน โทเค็น ต้นทุน ความล่าช้า) เปิดนี้ให้บันทึกพรอมต์ที่ส่งและคำตอบที่ได้รับเช่นกัน พวกเขาจัดเก็บกับเรกคอร์ดการใช้งานและมองเห็นให้ใครก็ได้ที่สามารถอ่านรายงาน",
         "capturePromptsAndAnswers": "เก็บพรอมต์และคำตอบ",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "บันทึกการเปลี่ยนแปลง",
         "createRouter": "สร้างเราเตอร์",
         "createOrchestrator": "สร้าง Orchestrator",
@@ -1395,6 +1411,7 @@
       "saving": "กำลังบันทึก...",
       "saved": "บันทึกแล้ว",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "เก็บโทเค็นพรอมต์ดู",
         "description": "เรียกใช้ไพพไลน์ปัจจุบัน (ไม่บันทึก) ในพรอมต์เพื่อดูว่าแต่ละขั้นตอนลบออกและราคาเท่าใด เลือกหนึ่งในสนทนาตัวอย่าง หรือพิมพ์พรอมต์ของคุณเอง",
         "promptLabel": "พรอมต์",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "ยังไม่ได้ส่งคำขอ",
       "turnTraceLog": "เปิดเผยบันทึก #{{turn}} · {{count}} เหตุการณ์",
       "turnTraceLog_other": "เปิดเผยบันทึก #{{turn}} · {{count}} เหตุการณ์"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "รุ่น",
       "subtitle": "ผู้ให้บริการ LLM ลงทะเบียนกับ Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "รุ่น",
         "health": "สุขภาพ"
@@ -2253,7 +2281,8 @@
       "next": "ถัดไป",
       "page": "หน้า {{page}} ของ {{totalPages}}",
       "total": "({{count}} รวม)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "แสดงการแก้จุดบกพร่อง",
       "empty": "ยังไม่มีข้อมูลการแก้จุดบกพร่อง",
       "emptyHint": "ส่งข้อความเพื่อดูรายละเอียดการกำหนดเส้นทาง",
-      "turnTraceLog": "เปิดเผยบันทึก #{{turn}}"
+      "turnTraceLog": "เปิดเผยบันทึก #{{turn}}",
+      "resize": "ปรับขนาดแผงดีบัก"
     },
     "compare": {
       "modelLabel": "รุ่น {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "ไม่สามารถอัปเดตบทบาท",
       "createFailed": "ไม่สามารถสร้างบทบาท",
       "deleteFailed": "ไม่สามารถลบบทบาท"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "กลับไปเชื่อมต่อ",
     "title": "เชื่อมต่อ",
     "docs": "เอกสาร",
-    "notEnabledPrefix": "ตัวแต่งค่าไคลเอนต์ไม่ได้เปิดใช้งาน ขอให้ผู้ดูแลระบบเปิดใช้งานด้วย",
     "noClientPrefix": "ไม่มีไคลเอนต์ชื่อ",
     "errors": {
       "loadFailed": "ไม่สามารถโหลดไคลเอนต์: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "เส้นทางไคลเอนต์ที่รับส่งข้อมูลรุ่นผ่าน Routerly",
     "mcpLabel": "MCP",
     "mcpDescription": "โหลด Routerly เป็นเซิร์ฟเวอร์เครื่องมือภายใน",
-    "notEnabledPrefix": "ตัวแต่งค่าไคลเอนต์ไม่ได้เปิดใช้งาน ขอให้ผู้ดูแลระบบเปิดใช้งานด้วย",
     "errors": {
       "loadFailed": "ไม่สามารถโหลดไคลเอนต์: {{error}}"
     },

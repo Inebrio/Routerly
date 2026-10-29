@@ -19,8 +19,9 @@ export function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel, dang
       <div className="card" style={{ maxWidth: 420, width: '90%', padding: 24 }}>
         <p style={{ marginBottom: 20 }}>{message}</p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" onClick={onCancel}>{t('common.cancel')}</button>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>{t('common.cancel')}</button>
           <button
+            type="button"
             className={danger ? 'btn btn-danger' : 'btn btn-primary'}
             onClick={onConfirm}
           >

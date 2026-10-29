@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import type { ModelConfig } from '@routerly/shared'
-import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, resolveCodexToken, resolveOpenAICodexAuth } from './openaiOAuthForward.js'
+import { buildOpenAIOAuthHeaders, forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, resolveCodexToken, resolveOpenAICodexAuth } from './openaiOAuthForward.js'
 
 vi.mock('../../config/loader.js', () => ({ getOrCreateSecret: vi.fn().mockResolvedValue('d'.repeat(64)), readConfig: vi.fn().mockResolvedValue([]) }))
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
@@ -861,5 +861,35 @@ describe('resolveOpenAICodexAuth', () => {
     const r = await resolveOpenAICodexAuth({ oauthEnc: encryptCredential(jwt) } as unknown as ModelConfig, makeLog())
     expect(r).toEqual({ accessToken: jwt, accountId: 'acct_x' })
     expect(fs.readFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('streamOpenAIOAuthChunks — trace entries', () => {
+  it('emits model:request and model:success with tokens so the recap is not incomplete', async () => {
+    const sse = [
+      'event: response.output_text.delta',
+      'data: {"type":"response.output_text.delta","delta":"ok","output_index":0,"content_index":0}',
+      '',
+      'event: response.completed',
+      'data: {"type":"response.completed","response":{"usage":{"input_tokens":20,"output_tokens":9}}}',
+      '',
+    ].join('\n')
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: true, status: 200, body: makeReadableStream(sse) })
+    const emit = vi.fn()
+    for await (const _ of streamOpenAIOAuthChunks({ messages: [] }, oauthModel, makeLog(), { traceId: 't', routerId: 'r', emit })) { /* drain */ }
+    const entries = emit.mock.calls.map((c) => c[0])
+    expect(entries.map((e) => `${e.panel}:${e.message}`)).toEqual(['request:model:request', 'response:model:success'])
+    expect(entries[1].details).toMatchObject({ inputTokens: 20, outputTokens: 9 })
+  })
+
+  it('emits model:error when the upstream fails', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(FAKE_AUTH_JSON as any)
+    mockFetch.mockResolvedValue({ ok: false, status: 500, text: async () => 'boom' })
+    const emit = vi.fn()
+    await expect((async () => {
+      for await (const _ of streamOpenAIOAuthChunks({ messages: [] }, oauthModel, makeLog(), { traceId: 't', routerId: 'r', emit })) { /* drain */ }
+    })()).rejects.toThrow('HTTP 500')
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ panel: 'response', message: 'model:error' })
   })
 })

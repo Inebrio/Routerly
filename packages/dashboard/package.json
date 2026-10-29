@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node ../../scripts/link-worktree-modules.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "pretypecheck": "node ../../scripts/link-worktree-modules.mjs",
     "typecheck": "tsc"
   },
   "dependencies": {

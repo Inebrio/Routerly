@@ -23,6 +23,9 @@ import {
   type Fixture,
 } from './release-notes-fixture.js'
 import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
+import { execFileSync } from 'node:child_process'
 
 const fixtures: Fixture[] = []
 
@@ -226,9 +229,19 @@ describe('RA-08: error contract', () => {
     const from = headSha(f)
     commit(f, 'feat: something shippable')
 
-    // Only the directories holding git and bash's own builtins survive; no
-    // node, no npm, no npx, no git-cliff.
-    const result = runReleaseNotes(f, [from, 'HEAD'], { PATH: '/usr/bin:/bin' })
+    // PATH holds only symlinks to the tools the script needs; no node, npm,
+    // npx or git-cliff (a plain /usr/bin:/bin exposes npx on some hosts).
+    const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'ra08-bin-'))
+    for (const tool of ['git', 'bash', 'dirname', 'mktemp', 'rm', 'grep', 'head', 'sed']) {
+      const abs = execFileSync('bash', ['-c', `command -v ${tool}`], { encoding: 'utf-8' }).trim()
+      fs.symlinkSync(abs, path.join(bin, tool))
+    }
+    let result
+    try {
+      result = runReleaseNotes(f, [from, 'HEAD'], { PATH: bin })
+    } finally {
+      fs.rmSync(bin, { recursive: true, force: true })
+    }
 
     expect(result.status).toBe(1)
     expect(result.stdout).toBe('')

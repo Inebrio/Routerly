@@ -7,9 +7,8 @@ import type {
   StreamChunk,
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
+import { developerAsSystem } from './passthrough.js';
 import { decryptCredential } from '../../lib/crypto-cred.js';
-import { readConfig } from '../config/loader.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 
 /**
  * Unofficial adapter for Claude web (claude.ai).
@@ -202,8 +201,9 @@ export class AnthropicWebAdapter implements ProviderAdapter {
     model: ModelConfig,
   ): Promise<Response> {
     const upstreamModel = this.getUpstreamModelId(model);
-    const systemMessage = request.messages.find(m => m.role === 'system');
-    const nonSystemMessages = request.messages.filter(m => m.role !== 'system');
+    const messages = developerAsSystem(request.messages);
+    const systemMessage = messages.find(m => m.role === 'system');
+    const nonSystemMessages = messages.filter(m => m.role !== 'system');
 
     const body: Record<string, unknown> = {
       model: upstreamModel,
@@ -335,16 +335,11 @@ export class AnthropicWebAdapter implements ProviderAdapter {
 // ─── Web credential resolution (encrypted-at-rest, module-gated) ───────────
 
 /**
- * Decrypts the stored session cookie for an anthropic-web connection, refusing to run
- * unless the 'provider-web' module is enabled. There is no refresh flow: this is a
+ * Decrypts the stored session cookie for an anthropic-web connection, There is no refresh flow: this is a
  * browser session cookie, not an OAuth token — an expired cookie surfaces as the
  * provider's own HTTP error on the next request.
  */
 export async function resolveAnthropicWebCredential(connection: ProviderConnection): Promise<string> {
-  const records = await readConfig('modules');
-  if (!isModuleEnabled(records, 'provider-web')) {
-    throw new Error("anthropic-web: 'provider-web' module is disabled");
-  }
   const creds = connection.credentials as { cookieEnc?: string };
   if (!creds.cookieEnc) {
     throw new Error('anthropic-web: connection missing encrypted session cookie');

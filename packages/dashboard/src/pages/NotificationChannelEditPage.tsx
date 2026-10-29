@@ -75,7 +75,7 @@ export function NotificationChannelEditPage() {
       for (const [key, val] of Object.entries(form)) {
         if (key === 'id' || key === 'provider') continue;
         if (secrets.includes(key)) {
-          if (typeof val === 'string' && val.length > 0) patch[key] = val;
+          if (val === null || (typeof val === 'string' && val.length > 0)) patch[key] = val;
         } else {
           patch[key] = val;
         }
@@ -90,7 +90,7 @@ export function NotificationChannelEditPage() {
         if (Array.isArray(targets['permissions']) && (targets['permissions'] as string[]).length) clean['permissions'] = targets['permissions'];
         if (Array.isArray(targets['users']) && (targets['users'] as string[]).length)             clean['users']       = targets['users'];
         if (Object.keys(clean).length) patch['targets'] = clean;
-        else delete patch['targets'];
+        else patch['targets'] = null; // PATCH null clears the recipients (back to Everyone)
       }
 
       await updateNotificationChannel(id, patch);

@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "কিছু কনফিগারেশন ফাইলের অনুমতিসুলভ অ্যাক্সেস রয়েছে ({{files}})। স্টার্টআপ এবং অনুরোধগুলি এখনও কাজ করে। এটি সেটিংস → নিরাপত্তা থেকে ঠিক করুন, বা সুবিধাজনক সময়ে হোস্ট ফাইলসিস্টেম থেকে ঠিক করুন।",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "বাতিল করুন",
       "updateAvailable": "Routerly v{{latest}} উপলব্ধ। আপনি v{{current}} এ আছেন।",
       "updateLink": "সেটিংসে আপডেট করুন",
@@ -418,7 +419,8 @@
       "status": "অবস্থা",
       "encoding": "এনকোডিং",
       "frames": "ফ্রেম",
-      "bytes": "বাইট"
+      "bytes": "বাইট",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "সংরক্ষণ করা হচ্ছে...",
         "enable": "সক্ষম করুন",
         "disable": "অক্ষম করুন"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "বাজেট - রিসেট",
         "systemStartup": "সিস্টেম - স্টার্টআপ",
         "systemShutdown": "সিস্টেম - শাটডাউন",
-        "systemUpdateAvailable": "সিস্টেম - আপডেট উপলব্ধ"
+        "systemUpdateAvailable": "সিস্টেম - আপডেট উপলব্ধ",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "চ্যানেল সরান",
       "removeChannelConfirm": "চ্যানেল সরান?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ব্যবহারকারী",
         "userCount_other": "{{count}} ব্যবহারকারী",
-        "everyone": "সবাই"
+        "everyone": "সবাই",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "লোড করতে ব্যর্থ"
@@ -833,6 +838,9 @@
         },
         "optional": "(ঐচ্ছিক)",
         "keepCurrentPlaceholder": "বর্তমান রাখতে খালি রেখে দিন",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "সমস্ত রাউটার থেকে ইভেন্ট পেতে খালি রেখে দিন।",
           "cooldownHeading": "শীতল মেয়াদ",
           "cooldownSuffix": "সেকেন্ড (0 = কোন শীতল মেয়াদ নেই)",
-          "cooldownHint": "এই চ্যানেল একই ইভেন্টের জন্য আবার ফায়ার করার আগে ন্যূনতম ব্যবধান।"
+          "cooldownHint": "এই চ্যানেল একই ইভেন্টের জন্য আবার ফায়ার করার আগে ন্যূনতম ব্যবধান।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "প্রাপক / লক্ষ্য",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "চ্যানেল অনুসন্ধান...",
         "noResults": "কোন ফলাফল নেই",
         "emptyTitle": "কোন বিজ্ঞপ্তি চ্যানেল এখনও কনফিগার করা হয়নি।",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "সক্রিয় ফিল্টারগুলি কোন চ্যানেল ম্যাচ করে না।",
         "nameInlinePlaceholder": "লেবেল (ঐচ্ছিক)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "ইন্টিগ্রেশন সরান",
       "saving": "সংরক্ষণ করা হচ্ছে...",
       "save": "সংরক্ষণ করুন",
-      "addButton": "ইন্টিগ্রেশন যোগ করুন"
+      "addButton": "ইন্টিগ্রেশন যোগ করুন",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "সর্বশেষ পরীক্ষা করা"
       },
       "noCheckPerformed": "এখনও কোন আপডেট চেক করা হয়নি।",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "আপডেট চেক করুন",
       "checking": "পরীক্ষা করা হচ্ছে...",
       "updateTo": "v{{version}} এ আপডেট করুন",
@@ -1313,6 +1327,8 @@
         "traceContent": "ট্রেস সামগ্রী",
         "traceContentHint": "ট্রেসগুলি সর্বদা মেটাডেটা রেকর্ড করে (মডেল, স্কোর, টোকেন, খরচ, বিলম্ব)। ব্যবহার লগ করা প্রম্পট এবং উত্তর রেকর্ড করতেও এটি চালু করুন। তারা ব্যবহার রেকর্ডের সাথে সংরক্ষিত এবং রিপোর্ট পড়তে পারে যে কারও কাছে দৃশ্যমান।",
         "capturePromptsAndAnswers": "প্রম্পট এবং উত্তর ক্যাপচার করুন",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "পরিবর্তন সংরক্ষণ করুন",
         "createRouter": "রাউটার তৈরি করুন",
         "createOrchestrator": "অর্কেস্ট্রেটর তৈরি করুন",
@@ -1395,6 +1411,7 @@
       "saving": "সংরক্ষণ করা হচ্ছে...",
       "saved": "সংরক্ষিত",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "প্রিভিউ টোকেন সঞ্চয়",
         "description": "প্রতিটি ধাপ কি সরায় এবং কি খরচ দেখতে একটি প্রম্পট উপর বর্তমান (অসংরক্ষিত) পাইপলাইন চালান। নমুনা কথোপকথনগুলির একটি বেছে নিন বা আপনার নিজস্ব প্রম্পট টাইপ করুন।",
         "promptLabel": "প্রম্পট",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "এখনও কোন অনুরোধ পাঠানো হয়নি।",
       "turnTraceLog": "পরিণত #{{turn}} ট্রেস লগ · {{count}} ইভেন্ট",
       "turnTraceLog_other": "পরিণত #{{turn}} ট্রেস লগ · {{count}} ইভেন্ট"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "মডেল",
       "subtitle": "Routerly সঙ্গে নিবন্ধিত LLM প্রদানকারী",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "মডেল",
         "health": "স্বাস্থ্য"
@@ -2253,7 +2281,8 @@
       "next": "পরবর্তী",
       "page": "পৃষ্ঠা {{page}} এর {{totalPages}}",
       "total": "({{count}} মোট)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "ডিবাগ দেখান",
       "empty": "এখনও কোন ডিবাগ ডেটা নেই।",
       "emptyHint": "রাউটিং বিবরণ দেখতে একটি বার্তা পাঠান।",
-      "turnTraceLog": "পরিণত #{{turn}} ট্রেস লগ"
+      "turnTraceLog": "পরিণত #{{turn}} ট্রেস লগ",
+      "resize": "ডিবাগ প্যানেলের আকার পরিবর্তন করুন"
     },
     "compare": {
       "modelLabel": "মডেল {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "ভূমিকা আপডেট করতে ব্যর্থ",
       "createFailed": "ভূমিকা তৈরি করতে ব্যর্থ",
       "deleteFailed": "ভূমিকা মুছতে ব্যর্থ"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "সংযোগে ফিরুন",
     "title": "সংযোগ",
     "docs": "ডক্স",
-    "notEnabledPrefix": "ক্লায়েন্ট কনফিগারেটর সক্ষম নয়। একজন প্রশাসক এটি সক্ষম করতে বলুন",
     "noClientPrefix": "নামকরণ করা কোন ক্লায়েন্ট নেই",
     "errors": {
       "loadFailed": "ক্লায়েন্ট লোড করতে ব্যর্থ: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "যা ক্লায়েন্ট মডেল ট্রাফিক Routerly মাধ্যমে রুট করে।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly একটি টুল সার্ভার হিসাবে এটির ভিতরে লোড করে।",
-    "notEnabledPrefix": "ক্লায়েন্ট কনফিগারেটর সক্ষম নয়। একজন প্রশাসক এটি সক্ষম করতে বলুন",
     "errors": {
       "loadFailed": "ক্লায়েন্ট লোড করতে ব্যর্থ: {{error}}"
     },

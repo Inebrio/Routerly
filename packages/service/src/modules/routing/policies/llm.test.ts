@@ -153,6 +153,27 @@ describe('llmPolicy', () => {
     expect(mockLlmChat).toHaveBeenCalledTimes(2)
   })
 
+  it('uses router-level fallbackRoutingModelIds when policy has no fallbackModelIds', async () => {
+    const fallbackModel: ModelConfig = {
+      id: 'fallback', name: 'Fallback', provider: 'openai',
+      endpoint: 'https://api.openai.com/v1',
+      cost: { inputPerMillion: 1, outputPerMillion: 3 },
+    }
+    mockModelsAndRouters([routingModel, fallbackModel], [{ ...router, fallbackRoutingModelIds: ['fallback'] }])
+    mockGetLimitUsageSnapshot.mockResolvedValue([])
+    mockGetRoutingHistory.mockReturnValue([])
+    mockLlmChat
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce(makeSuccessResponse([
+        { model: 'candidate-a', point: 0.7 },
+        { model: 'candidate-b', point: 0.3 },
+      ]) as any)
+
+    const result = await llmPolicy(makeInput({ routingModelId: 'router-model' }))
+    expect(result.routing).toHaveLength(2)
+    expect(mockLlmChat).toHaveBeenCalledTimes(2)
+  })
+
   it('skips model on generic call error', async () => {
     mockModelsAndRouters([routingModel], [router])
     mockGetLimitUsageSnapshot.mockResolvedValue([])
@@ -160,6 +181,33 @@ describe('llmPolicy', () => {
     mockLlmChat.mockRejectedValue(new Error('network error'))
 
     await expect(llmPolicy(makeInput({ routingModelId: 'router-model' }))).rejects.toThrow('all models failed')
+  })
+
+  it('emits llm-policy:fallback naming primary, used model and skip reason when the fallback serves (ROUT-434)', async () => {
+    mockModelsAndRouters([routingModel], [router])
+    mockGetLimitUsageSnapshot.mockResolvedValue([])
+    mockGetRoutingHistory.mockReturnValue([])
+    mockLlmChat.mockResolvedValue(makeSuccessResponse([{ model: 'candidate-a', point: 0.9 }, { model: 'candidate-b', point: 0.1 }]) as any)
+    const emit = vi.fn()
+
+    await llmPolicy(makeInput({ routingModelId: 'ghost', fallbackModelIds: ['router-model'] }, { emit }))
+
+    expect(emit).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'llm-policy:fallback',
+      details: { primary: 'ghost', used: 'router-model', skipped: [{ modelId: 'ghost', reason: 'model not found in config' }] },
+    }))
+  })
+
+  it('does not emit llm-policy:fallback when the primary routing model serves', async () => {
+    mockModelsAndRouters([routingModel], [router])
+    mockGetLimitUsageSnapshot.mockResolvedValue([])
+    mockGetRoutingHistory.mockReturnValue([])
+    mockLlmChat.mockResolvedValue(makeSuccessResponse([{ model: 'candidate-a', point: 0.9 }]) as any)
+    const emit = vi.fn()
+
+    await llmPolicy(makeInput({ routingModelId: 'router-model' }, { emit }))
+
+    expect(emit).not.toHaveBeenCalledWith(expect.objectContaining({ message: 'llm-policy:fallback' }))
   })
 
   it('skips model when routing model not found in models config', async () => {

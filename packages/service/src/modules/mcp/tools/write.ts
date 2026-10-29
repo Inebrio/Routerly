@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { v4 as uuidv4 } from 'uuid'
 import type { RouterToken } from '@routerly/shared'
 import { CONFIG_STORE } from '../../../core/tokens.js'
-import { readConfig, writeConfig } from '../../config/loader.js'
+import { updateConfig } from '../../config/loader.js'
 import type { McpToolEntry } from '../registry.js'
 import { errorResult, jsonResult, resolveRouter, ROUTER_ID_PROPERTY } from './context.js'
 
@@ -49,13 +49,20 @@ export const createRouterTokenTool: McpToolEntry = {
       ...(labels ? { labels } : {}),
     }
 
-    const routers = await readConfig('routers')
-    const index = routers.findIndex((p) => p.id === resolved.router.id)
-    if (index === -1) return errorResult('Router not found')
-    const updated = { ...routers[index]! }
-    updated.tokens = [...(updated.tokens ?? []), newToken]
-    routers[index] = updated
-    await writeConfig('routers', routers)
+    // updateConfig holds the file lock across read+mutate+write, so concurrent
+    // calls cannot overwrite each other's addition.
+    let notFound = false
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex((p) => p.id === resolved.router.id)
+      if (index === -1) {
+        notFound = true
+        return routers
+      }
+      const next = [...routers]
+      next[index] = { ...routers[index]!, tokens: [...(routers[index]!.tokens ?? []), newToken] }
+      return next
+    })
+    if (notFound) return errorResult('Router not found')
 
     // Build the result with ONLY the four allowed keys; the raw token is omitted
     // entirely (never set to undefined, which can round-trip through JSON).
@@ -94,16 +101,30 @@ export const toggleModelTool: McpToolEntry = {
     const resolved = resolveRouter(authCtx, routerId)
     if ('error' in resolved) return resolved.error
 
-    const routers = await readConfig('routers')
-    const index = routers.findIndex((p) => p.id === resolved.router.id)
-    if (index === -1) return errorResult('Router not found')
-    const router = routers[index]!
-    const ref = router.models.find((m) => m.modelId === modelId)
-    if (!ref) return errorResult(`Model not found in router: ${String(modelId)}`)
-    const enabled = !(ref.enabled ?? true)
-    ref.enabled = enabled
-    await writeConfig('routers', routers)
+    let error: string | undefined
+    let enabled = false
+    await updateConfig('routers', (routers) => {
+      const index = routers.findIndex((p) => p.id === resolved.router.id)
+      if (index === -1) {
+        error = 'Router not found'
+        return routers
+      }
+      const router = routers[index]!
+      const ref = router.models.find((m) => m.modelId === modelId)
+      if (!ref) {
+        error = `Model not found in router: ${String(modelId)}`
+        return routers
+      }
+      enabled = !(ref.enabled ?? true)
+      const next = [...routers]
+      next[index] = {
+        ...router,
+        models: router.models.map((m) => (m === ref ? { ...m, enabled } : m)),
+      }
+      return next
+    })
+    if (error) return errorResult(error)
 
-    return jsonResult({ modelId: ref.modelId, enabled })
+    return jsonResult({ modelId, enabled })
   },
 }

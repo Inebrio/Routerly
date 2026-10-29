@@ -5,6 +5,12 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { RouterRoutingTab } from './RouterRoutingTab';
 
+// Permission gate: tests flip this to simulate a user without router:write.
+let mockCanWrite = true;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (p: string) => (p === 'router:write' ? mockCanWrite : true) }),
+}));
+
 vi.mock('../../api', () => ({
   getModels: vi.fn(),
   updateRouter: vi.fn(),
@@ -150,6 +156,7 @@ const sampleProfiles = [
 ];
 
 beforeEach(() => {
+  mockCanWrite = true;
   mockGetModels.mockResolvedValue([chatModel, chatModel2, embeddingModel]);
   mockUpdateRouter.mockResolvedValue({ ...mockRouter });
   mockGetProfiles.mockResolvedValue(sampleProfiles);
@@ -2214,6 +2221,9 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     renderTab();
     await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
     await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    screen.getByRole('status');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'auto' }));
   });
 
@@ -2222,6 +2232,7 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     renderTab();
     await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
     await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'builtin-balanced' }));
   });
 
@@ -2230,6 +2241,7 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     renderTab();
     await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
     await userEvent.click(screen.getByRole('button', { name: 'Profile' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'user-custom' }));
   });
 
@@ -2264,17 +2276,21 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     expect(screen.getByRole('button', { name: /Add Target Model/ })).not.toBeNull();
   });
 
-  it('selecting another profile assigns it', async () => {
+  it('selecting another profile assigns it only on Save', async () => {
     renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     await userEvent.selectOptions(sel, 'user-custom');
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: 'user-custom' }));
   });
 
-  it('switching to Custom clears the assignment', async () => {
+  it('switching to Custom clears the assignment only on Save', async () => {
     renderTab(assignedRouter);
     await waitFor(getProfileSelect);
     await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    expect(mockAssignProfile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(mockAssignProfile).toHaveBeenCalledWith('proj-1', { routing: null }));
   });
 
@@ -2285,13 +2301,27 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     expect(mockAssignProfile).not.toHaveBeenCalled();
   });
 
-  it('prefills the inline policies from the profile when switching to Custom', async () => {
-    mockAssignProfile.mockResolvedValueOnce({ ...mockRouter });
-    renderStatefulTab({ ...mockRouter, routingProfileId: 'auto' });
+  it('switching to Custom keeps the stored policies instead of the profile copy', async () => {
+    renderStatefulTab({ ...mockRouterWithPolicies, policies: [{ type: 'health' as const, enabled: true }], routingProfileId: 'auto' });
     await waitFor(getProfileSelect);
     await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
-    // 'auto' carries a cheapest policy, which becomes this router's starting point
+    // 'auto' carries a cheapest policy; it must NOT replace the stored health policy
+    await waitFor(() => screen.getByText('Health Policy', { selector: '*' }));
+    expect(screen.queryByText(/Scores models inversely proportional/)).toBeNull();
+  });
+
+  it('Copy into custom asks for confirmation before replacing existing policies', async () => {
+    renderStatefulTab(mockRouterWithPolicies);
+    await waitFor(() => screen.getByTestId('searchable-Add a policy...'));
+    await userEvent.selectOptions(screen.getByTestId('searchable-Start from a profile…'), 'auto');
+    await userEvent.click(screen.getByRole('button', { name: 'Copy into custom' }));
+    screen.getByText(/This replaces the custom settings/);
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText(/This replaces the custom settings/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Copy into custom' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
     await waitFor(() => screen.getByText(/Scores models inversely proportional/));
+    expect(mockUpdateRouter).not.toHaveBeenCalled();
   });
 
   it('shows an error when assignment fails', async () => {
@@ -2299,6 +2329,7 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     await userEvent.selectOptions(sel, 'user-custom');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(screen.queryByText('assign failed')).not.toBeNull());
   });
 
@@ -2307,6 +2338,7 @@ describe('RouterRoutingTab — routing profile assignment', () => {
     renderTab(assignedRouter);
     const sel = await waitFor(getProfileSelect);
     await userEvent.selectOptions(sel, 'user-custom');
+    await userEvent.click(screen.getByRole('button', { name: 'Save Routing Configuration' }));
     await waitFor(() => expect(screen.queryByText('Failed to assign routing profile')).not.toBeNull());
   });
 
@@ -2343,5 +2375,16 @@ describe('RouterRoutingTab — policy allow-list by router kind', () => {
 
     expect(optionLabels).toContain('Cheapest Policy');
     expect(optionLabels).toContain('Health Policy');
+  });
+});
+
+describe('RouterRoutingTab — without router:write', () => {
+  it('disables editing controls and hides Save', async () => {
+    mockCanWrite = false;
+    renderTab();
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Profile$/ })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^Profile$/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Custom$/ })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /save routing configuration/i })).not.toBeInTheDocument();
   });
 });

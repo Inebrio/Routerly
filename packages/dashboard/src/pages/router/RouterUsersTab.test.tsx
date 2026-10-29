@@ -5,6 +5,12 @@ import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import { RouterUsersTab } from './RouterUsersTab';
 
+let mockCanWrite = true;
+let mockCanReadUsers = true;
+vi.mock('../../AuthContext', () => ({
+  useAuth: () => ({ can: (perm: string) => (perm === 'router:write' ? mockCanWrite : perm === 'user:read' ? mockCanReadUsers : true) }),
+}));
+
 vi.mock('../../api', () => ({
   getUsers: vi.fn(),
   addRouterMember: vi.fn(),
@@ -91,7 +97,18 @@ beforeEach(() => {
   mockRemoveRouterMember.mockResolvedValue(undefined);
 });
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => { vi.clearAllMocks(); mockCanWrite = true; mockCanReadUsers = true; });
+
+describe('RouterUsersTab — without router:write', () => {
+  it('hides Add Member and row actions', async () => {
+    mockCanWrite = false;
+    renderTab();
+    await waitFor(() => screen.getByText('alice@example.com'));
+    expect(screen.queryByRole('button', { name: /Add Member/i })).toBeNull();
+    expect(screen.queryByTitle(/Remove/i)).toBeNull();
+    expect(screen.queryByTitle(/role/i)).toBeNull();
+  });
+});
 
 // ── null router guard ────────────────────────────────────────────────────────
 
@@ -141,6 +158,13 @@ describe('RouterUsersTab — initial render', () => {
     await waitFor(() => expect(screen.getByText('No members found.')).toBeTruthy());
   });
 
+  it('skips getUsers and shows user ids without user:read', async () => {
+    mockCanReadUsers = false;
+    renderTab();
+    await waitFor(() => expect(screen.getByText('u1')).toBeTruthy());
+    expect(mockGetUsers).not.toHaveBeenCalled();
+  });
+
   it('shows error when getUsers rejects', async () => {
     mockGetUsers.mockRejectedValueOnce(new Error('Load failed'));
     renderTab();
@@ -173,6 +197,15 @@ describe('RouterUsersTab — add member', () => {
     await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
     await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
     expect(screen.getByText('Add New Member')).toBeTruthy();
+  });
+
+  it('add form card is stacked above the members card so the dropdown is not covered (ROUT-385)', async () => {
+    renderTab();
+    await waitFor(() => screen.getByRole('button', { name: /Add Member/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Add Member/i }));
+    const card = screen.getByText('Add New Member').closest('.card') as HTMLElement;
+    expect(card.style.position).toBe('relative');
+    expect(card.style.zIndex).toBe('1');
   });
 
   it('add form shows available users (not already members)', async () => {

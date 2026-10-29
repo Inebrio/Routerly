@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Alcuni file di configurazione hanno permessi troppo permissivi ({{files}}). Avvio e richieste funzionano comunque. Correggilo da Impostazioni → Sicurezza, oppure sul filesystem dell'host quando puoi.",
+      "permissionBlocked": "Alcuni dati non sono temporaneamente disponibili. Un amministratore è stato avvisato.",
       "dismiss": "Ignora",
       "updateAvailable": "Routerly v{{latest}} è disponibile. Stai usando v{{current}}.",
       "updateLink": "Aggiorna dalle impostazioni",
@@ -419,7 +420,8 @@
       "status": "Stato",
       "encoding": "Codifica",
       "frames": "Frame",
-      "bytes": "Byte"
+      "bytes": "Byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -679,7 +681,8 @@
         "saving": "Salvataggio in corso…",
         "enable": "Attiva",
         "disable": "Disattiva"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -746,7 +749,8 @@
         "budgetReset": "Budget – Ripristinato",
         "systemStartup": "Sistema – Avvio",
         "systemShutdown": "Sistema – Arresto",
-        "systemUpdateAvailable": "Sistema – Aggiornamento disponibile"
+        "systemUpdateAvailable": "Sistema – Aggiornamento disponibile",
+        "systemPermissionsUnsafe": "Sistema – Permessi file non sicuri"
       },
       "removeChannelTooltip": "Rimuovi canale",
       "removeChannelConfirm": "Rimuovere il canale?",
@@ -795,7 +799,8 @@
         "permCount_other": "{{count}} permessi",
         "userCount": "{{count}} utente",
         "userCount_other": "{{count}} utenti",
-        "everyone": "Tutti"
+        "everyone": "Tutti",
+        "noEvents": "Nessun evento (silenzioso)"
       },
       "errors": {
         "loadFailed": "Caricamento non riuscito"
@@ -834,6 +839,9 @@
         },
         "optional": "(opzionale)",
         "keepCurrentPlaceholder": "Lascia vuoto per mantenere il valore attuale",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -859,7 +867,9 @@
           "routersHint": "Lascia vuoto per ricevere eventi da tutti i router.",
           "cooldownHeading": "Tempo di attesa",
           "cooldownSuffix": "secondi (0 = nessun tempo di attesa)",
-          "cooldownHint": "Intervallo minimo prima che questo canale possa attivarsi di nuovo per lo stesso evento."
+          "cooldownHint": "Intervallo minimo prima che questo canale possa attivarsi di nuovo per lo stesso evento.",
+          "eventsPlaceholderExternal": "Nessun evento selezionato: il canale non riceve nulla.",
+          "eventsHintExternal": "Nessun evento selezionato: il canale resta silenzioso. Seleziona gli eventi da ricevere."
         },
         "recipients": {
           "heading": "Destinatari / Destinazioni",
@@ -898,6 +908,7 @@
         "addSearchPlaceholder": "Cerca canali…",
         "noResults": "Nessun risultato",
         "emptyTitle": "Nessun canale di notifica configurato ancora.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Nessun canale corrisponde ai filtri attivi.",
         "nameInlinePlaceholder": "Etichetta (opzionale)",
         "columns": {
@@ -1056,7 +1067,8 @@
       "removeTooltip": "Rimuovi integrazione",
       "saving": "Salvataggio in corso…",
       "save": "Salva",
-      "addButton": "Aggiungi integrazione"
+      "addButton": "Aggiungi integrazione",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1111,6 +1123,8 @@
         "lastChecked": "Ultimo controllo"
       },
       "noCheckPerformed": "Nessun controllo aggiornamenti effettuato ancora.",
+      "updateCheckDisabled": "Il controllo aggiornamenti è disattivato su questa istanza.",
+      "updateCheckFailed": "Controllo aggiornamenti non riuscito: {{error}}",
       "checkForUpdates": "Controlla aggiornamenti",
       "checking": "Verifica in corso…",
       "updateTo": "Aggiorna alla v{{version}}",
@@ -1314,6 +1328,8 @@
         "traceContent": "Contenuto della traccia",
         "traceContentHint": "Le tracce catturano sempre i metadati (modelli, punteggi, token, costi, latenza). Attiva questa opzione per catturare anche i prompt inviati e le risposte ricevute. Vengono salvati con il record di utilizzo e sono visibili a chiunque possa leggere i report.",
         "capturePromptsAndAnswers": "Cattura prompt e risposte",
+        "notificationChannels": "Canali di notifica",
+        "notificationChannelsHint": "Invia gli eventi di questo router anche a questi canali, oltre a quelli che corrispondono globalmente.",
         "saveChanges": "Salva modifiche",
         "createRouter": "Crea router",
         "createOrchestrator": "Crea Orchestrator",
@@ -1396,6 +1412,7 @@
       "saving": "Salvataggio in corso...",
       "saved": "Salvato",
       "preview": {
+        "pipeline": "Pipeline eseguita: {{name}}",
         "title": "Anteprima risparmio token",
         "description": "Esegui la pipeline attuale (non salvata) su un prompt per vedere cosa rimuove ogni passaggio e quanto costa. Scegli una delle conversazioni di esempio o inserisci il tuo prompt.",
         "promptLabel": "Prompt",
@@ -1673,6 +1690,16 @@
       "noRequestSent": "Nessuna richiesta inviata ancora.",
       "turnTraceLog": "Turno #{{turn}} log di traccia · {{count}} evento",
       "turnTraceLog_other": "Turno #{{turn}} log di traccia · {{count}} eventi"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1918,6 +1945,7 @@
     "page": {
       "title": "Modelli",
       "subtitle": "Provider LLM registrati in Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modelli",
         "health": "Salute"
@@ -2256,7 +2284,8 @@
       "next": "Successivo",
       "page": "Pagina {{page}} di {{totalPages}}",
       "total": "({{count}} in totale)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2480,7 +2509,8 @@
       "show": "Mostra debug",
       "empty": "Nessun dato di debug ancora.",
       "emptyHint": "Invia un messaggio per vedere i dettagli del routing.",
-      "turnTraceLog": "Turno #{{turn}} log di traccia"
+      "turnTraceLog": "Turno #{{turn}} log di traccia",
+      "resize": "Ridimensiona il pannello di debug"
     },
     "compare": {
       "modelLabel": "Modello {{label}}:",
@@ -2651,7 +2681,8 @@
       "updateFailed": "Impossibile aggiornare il ruolo",
       "createFailed": "Impossibile creare il ruolo",
       "deleteFailed": "Impossibile eliminare il ruolo"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2713,7 +2744,6 @@
     "backToConnect": "Torna a Connetti",
     "title": "Connetti",
     "docs": "Documenti",
-    "notEnabledPrefix": "Il configuratore client non è attivo. Chiedi a un amministratore di attivarlo con",
     "noClientPrefix": "Nessun client chiamato",
     "errors": {
       "loadFailed": "Impossibile caricare i client: {{error}}"
@@ -2758,7 +2788,6 @@
     "llmDescription": "instrada il traffico di modello di questo client attraverso Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "carica Routerly come server di strumenti al suo interno.",
-    "notEnabledPrefix": "Il configuratore client non è attivo. Chiedi a un amministratore di attivarlo con",
     "errors": {
       "loadFailed": "Impossibile caricare i client: {{error}}"
     },

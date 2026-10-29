@@ -1161,6 +1161,15 @@ describe('getMe', () => {
     const result = await getMe();
     expect(result.id).toBe('me');
   });
+
+  it('shares one request between concurrent callers', async () => {
+    const { getMe } = await api();
+    (fetch as ReturnType<typeof vi.fn>).mockClear();
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'me', email: 'a@b.com', roleId: 'admin' }));
+    const [a, b] = await Promise.all([getMe(), getMe()]);
+    expect(a).toBe(b);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('updateMe', () => {
@@ -1414,24 +1423,16 @@ describe('getModules', () => {
   });
 });
 
-describe('enableModule', () => {
-  it('POST /modules/:id/enable with encodeURIComponent', async () => {
-    const { enableModule } = await api();
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: true, restartRequired: true }));
-    await enableModule('g 1');
-    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
-    expect(url).toContain(`${encodeURIComponent('g 1')}/enable`);
-    expect(init.method).toBe('POST');
-  });
-});
-
-describe('disableModule', () => {
-  it('POST /modules/:id/disable with encodeURIComponent', async () => {
-    const { disableModule } = await api();
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRes(200, { id: 'g 1', enabled: false, restartRequired: true }));
-    await disableModule('g 1');
-    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0]! as [string, RequestInit];
-    expect(url).toContain(`${encodeURIComponent('g 1')}/disable`);
-    expect(init.method).toBe('POST');
+describe('unhandledrejection for mfa_required', () => {
+  const fire = (reason: unknown) => {
+    const ev = Object.assign(new Event('unhandledrejection', { cancelable: true }), { reason });
+    window.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  };
+  it('suppresses 403 mfa_required rejections only', async () => {
+    await api();
+    expect(fire(Object.assign(new Error('x'), { status: 403, code: 'mfa_required' }))).toBe(true);
+    expect(fire(Object.assign(new Error('x'), { status: 403, code: 'other' }))).toBe(false);
+    expect(fire(new Error('x'))).toBe(false);
   });
 });

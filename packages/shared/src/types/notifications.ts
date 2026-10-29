@@ -46,6 +46,7 @@ export const NOTIFICATION_EVENT_CATALOG: Record<NotificationEvent, NotificationE
   'system.startup':           { category: 'system',   title: 'Service started' },
   'system.shutdown':          { category: 'system',   title: 'Service stopped' },
   'system.update_available':  { category: 'system',   title: 'A newer release is available' },
+  'system.permissions_unsafe': { category: 'system',   title: 'Unsafe file permissions' },
 };
 
 /** Prefix to category, so an event added later still lands in the right group. */

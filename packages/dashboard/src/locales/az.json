@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Bəzi konfiqurasiya faylları açıq icazələrə malikdir ({{files}}). Başlanğıc və istəklər əks halda işləyir. Bunu Parametrlər → Təhlükəsizlik-dən düzəldin, və ya ehtiyac olduqda hostun faylsistemindən düzəldin.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Bağla",
       "updateAvailable": "Routerly v{{latest}} mövcuddur. Siz v{{current}} versiyasındasınız.",
       "updateLink": "Parametrlərdə yenilə",
@@ -418,7 +419,8 @@
       "status": "vəziyyət",
       "encoding": "kodlaşdırma",
       "frames": "kadrlar",
-      "bytes": "baytlar"
+      "bytes": "baytlar",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Saxlanılır…",
         "enable": "Aktivləşdir",
         "disable": "Deaktivləşdir"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Büdcə – Sıfırlandı",
         "systemStartup": "Sistem – Başlanğıc",
         "systemShutdown": "Sistem – Söndürmə",
-        "systemUpdateAvailable": "Sistem – Yenilənmə Mövcuddur"
+        "systemUpdateAvailable": "Sistem – Yenilənmə Mövcuddur",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Kanalı sil",
       "removeChannelConfirm": "Kanal silinsin?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} icazə",
         "userCount": "{{count}} istifadəçi",
         "userCount_other": "{{count}} istifadəçi",
-        "everyone": "Hamı"
+        "everyone": "Hamı",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Yükləmək alınmadı"
@@ -833,6 +838,9 @@
         },
         "optional": "(isteğe bağlı)",
         "keepCurrentPlaceholder": "Cari dəyəri saxlamaq üçün boş qoyun",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Bütün routerlərdən hadisə almaq üçün boş qoyun.",
           "cooldownHeading": "Sərinləmə",
           "cooldownSuffix": "saniyə (0 = sərinləmə yoxdur)",
-          "cooldownHint": "Bu kanalın eyni hadisə üçün yenidən işə düşməsindən əvvəl minimum interval."
+          "cooldownHint": "Bu kanalın eyni hadisə üçün yenidən işə düşməsindən əvvəl minimum interval.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Alıcılar / Hədəflər",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Kanalları axtar…",
         "noResults": "Nəticə yoxdur",
         "emptyTitle": "Hələ heç bir bildiriş kanalı konfiqurasiya edilməyib.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Aktiv filtrlərə uyğun kanal yoxdur.",
         "nameInlinePlaceholder": "Ad (isteğe bağlı)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "İnteqrasiyanı sil",
       "saving": "Saxlanılır…",
       "save": "Saxla",
-      "addButton": "İnteqrasiya Əlavə Et"
+      "addButton": "İnteqrasiya Əlavə Et",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Sonuncu yoxlanılma"
       },
       "noCheckPerformed": "Hələ yenilənmə yoxlanılmayıb.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Yenilənmələri yoxla",
       "checking": "Yoxlanılır…",
       "updateTo": "v{{version}}-ə yenilə",
@@ -1313,6 +1327,8 @@
         "traceContent": "Məzmun izi",
         "traceContentHint": "İzlər həmişə metadatanı qeyd edir (modellər, ballar, tokenlər, dəyər, gecikmə). Göndərilən sorğuları və alınan cavabları da qeyd etmək üçün bunu aktivləşdirin. Onlar istifadə qeydi ilə birgə saxlanılır və hesabatları oxuya bilən hər kəsə görünür.",
         "capturePromptsAndAnswers": "Sorğuları və cavabları qeyd et",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Dəyişiklikləri Saxla",
         "createRouter": "Router Yarat",
         "createOrchestrator": "Orkestrator Yarat",
@@ -1395,6 +1411,7 @@
       "saving": "Saxlanılır...",
       "saved": "Saxlanıldı",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Token qənaətinə önizləmə",
         "description": "Hər addımın nə çıxardığını və nə qədər başa gəldiyini görmək üçün cari (saxlanmamış) boru xəttini bir sorğu üzərində işə salın. Nümunə söhbətlərdən birini seçin, ya da öz sorğunuzu yazın.",
         "promptLabel": "Sorğu",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Hələ sorğu göndərilməyib.",
       "turnTraceLog": "Növbə #{{turn}} iz jurnalı · {{count}} hadisə",
       "turnTraceLog_other": "Növbə #{{turn}} iz jurnalı · {{count}} hadisə"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modellər",
       "subtitle": "Routerly-yə qeydiyyatdan keçmiş LLM provayderləri",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modellər",
         "health": "Sağlamlıq"
@@ -2253,7 +2281,8 @@
       "next": "Növbəti",
       "page": "Səhifə {{page}} / {{totalPages}}",
       "total": "(cəmi {{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Sazlamanı göstər",
       "empty": "Hələ sazlama məlumatı yoxdur.",
       "emptyHint": "Yönləndirmə detallarını görmək üçün mesaj göndərin.",
-      "turnTraceLog": "Növbə #{{turn}} iz jurnalı"
+      "turnTraceLog": "Növbə #{{turn}} iz jurnalı",
+      "resize": "Debug panelinin ölçüsünü dəyişin"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Rolu yeniləmək alınmadı",
       "createFailed": "Rolu yaratmaq alınmadı",
       "deleteFailed": "Rolu silmək alınmadı"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Qoşulmaya qayıt",
     "title": "Qoşul",
     "docs": "Sənədlər",
-    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
     "noClientPrefix": "Belə adlı müştəri yoxdur",
     "errors": {
       "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "həmin müştərinin model trafikini Routerly üzərindən yönləndirir.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly-ni onun içində alət serveri kimi yükləyir.",
-    "notEnabledPrefix": "Müştəri konfiquratoru aktiv deyil. Administratordan bunu aktivləşdirməsini xahiş edin",
     "errors": {
       "loadFailed": "Müştəriləri yükləmək alınmadı: {{error}}"
     },

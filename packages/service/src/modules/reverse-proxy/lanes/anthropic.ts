@@ -12,7 +12,8 @@ import type { LLMCallContext } from '../execute.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey } from './oauthForward.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub } from './oauthForward.js'
+import { mergePolicies } from '../../pii/piiScrubber.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import {
   anthropicToChatRequest, openAIToAnthropicResponse, openAIChunksToAnthropicSSE,
@@ -60,6 +61,15 @@ export const anthropicInject: Processor<ProxyContext> = {
   },
 }
 
+/** Output PII policy for the verbatim pass-through (the pii.output processor never sees those bytes). */
+function outputScrub(ctx: ProxyContext): PassthroughScrub | undefined {
+  const policies = ctx.router.pii?.policies
+  if (!policies?.length) return undefined
+  const effective = mergePolicies(policies, 'output')
+  if (!(effective.entities?.length || effective.customPatterns?.length)) return undefined
+  return { effective, ...(ctx.emit ? { emit: ctx.emit } : {}) }
+}
+
 // ─── upstream.execute: passthrough forward OR toChat+llmChat/llmStream (anthropic.ts L220-286) ──
 export const anthropicUpstream: Processor<ProxyContext> = {
   id: 'anthropic:upstream',
@@ -86,7 +96,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicOAuth(req, reply, liveModel)
+      await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx))
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -97,7 +107,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicApiKey(req, reply, liveModel)
+      await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx))
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -112,6 +122,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
           routerId: router.id,
           ...(router.pii ? { pii: router.pii } : {}),
           ...(ctx.token ? { tokenId: ctx.token.id } : {}),
+          ...(ctx.emit ? { emit: ctx.emit } : {}),
         })
         if (!body.stream) {
           const chatResp = await chunksToChatResponse(chunks, model.id)
@@ -124,11 +135,15 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       } catch (err) {
         log.warn({ err, modelId: model.id }, 'openai-oauth call failed, trying next candidate')
         ctx.attemptError = err
+        const attemptResponse = upstreamResponseFromError(err)
+        if (attemptResponse !== undefined) ctx.attemptResponse = attemptResponse
       }
       return
     }
 
     // ── Non-Anthropic providers: convert format and call the executor. ──
+    // Provider response headers of the call that answers (a failed candidate's are overwritten).
+    let upstreamHeaders: Record<string, string> | undefined
     const cctx: LLMCallContext = {
       routerId: router.id,
       router,
@@ -145,12 +160,13 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       ...(ctx.conversationId ? { sessionId: ctx.conversationId } : {}),
       ...(ctx.token?.tags ? { tags: ctx.token.tags } : {}),
       ...(ctx.orchestratorId ? { orchestratorId: ctx.orchestratorId } : {}),
+      onUpstreamHeaders: (h) => { upstreamHeaders = h },
     }
 
     if (body.stream) {
       try {
         const streamResult = await llmStream(toChat(body), model, cctx)
-        ctx.result = { kind: 'stream', body: streamResult.chunks }
+        ctx.result = { kind: 'stream', body: streamResult.chunks, ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
       } catch (err) {
         if (!(err instanceof BudgetExceededError)) {
           log.warn({ err, modelId: model.id }, 'Anthropic messages stream failed, trying next candidate')
@@ -167,7 +183,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
 
     try {
       const chatResp = await llmChat(toChat(body), model, cctx)
-      ctx.result = { kind: 'json', body: openAIToAnthropicResponse(chatResp, body.model, `msg_${ctx.traceId}`) }
+      ctx.result = { kind: 'json', body: openAIToAnthropicResponse(chatResp, body.model, `msg_${ctx.traceId}`), ...(upstreamHeaders ? { headers: upstreamHeaders } : {}) }
     } catch (err: unknown) {
       if (!(err instanceof BudgetExceededError)) {
         log.warn({ err, modelId: model.id }, 'Anthropic messages call failed, trying next candidate')
@@ -250,7 +266,10 @@ export const anthropicEgress: Processor<ProxyContext> = {
 
     if (result.kind === 'json') {
       if (result.status) reply.status(result.status)
-      reply.send(result.body)
+      // A pre-serialised Buffer keeps the provider's content-type as is; Fastify appends
+      // `; charset=utf-8` to application/json for an object payload.
+      if (result.headers) reply.headers(result.headers)
+      reply.send(result.headers?.['content-type'] ? Buffer.from(JSON.stringify(result.body)) : result.body)
       traceEgress(ctx, { kind: 'json', status: result.status ?? 200 })
       return
     }
@@ -267,9 +286,15 @@ export const anthropicEgress: Processor<ProxyContext> = {
 
     // result.kind === 'stream', raw SSE headers, NO hijack, NO CORS (anthropic.ts L261-265).
     const body = ctx.original as MessagesRequest
-    reply.raw.setHeader('Content-Type', 'text/event-stream')
-    reply.raw.setHeader('Cache-Control', 'no-cache')
-    reply.raw.setHeader('Connection', 'keep-alive')
+    if (result.headers) {
+      // Provider headers go back as received: no Cache-Control / Connection of our own.
+      for (const [k, v] of Object.entries(result.headers)) reply.raw.setHeader(k, v)
+      if (!result.headers['content-type']) reply.raw.setHeader('Content-Type', 'text/event-stream')
+    } else {
+      reply.raw.setHeader('Content-Type', 'text/event-stream')
+      reply.raw.setHeader('Cache-Control', 'no-cache')
+      reply.raw.setHeader('Connection', 'keep-alive')
+    }
     reply.raw.flushHeaders()
     let frames = 0
     let bytes = 0

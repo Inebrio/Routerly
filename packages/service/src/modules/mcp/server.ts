@@ -10,6 +10,7 @@ import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
 import type { McpAuthContext, McpToolResult } from '@routerly/shared'
 import type { ServiceContainer } from '../../core/index.js'
 import type { McpToolRegistry } from './registry.js'
+import { logAudit } from '../audit/logger.js'
 
 /**
  * Bridge the SDK's generic (OAuth-shaped) `AuthInfo` into our user-scoped
@@ -79,12 +80,34 @@ export function buildMcpServer(registry: McpToolRegistry, container: ServiceCont
     // A tool the caller cannot list is a tool the caller cannot call: the same
     // permission gates both, so an under-permissioned client can never reach a
     // handler by guessing the tool name.
+    const audited = tool.scope === 'write'
+    const auditWrite = (result: 'success' | 'forbidden', details: Record<string, unknown>) =>
+      logAudit({
+        userId: authCtx.user.id,
+        email: authCtx.user.email,
+        endpoint: `MCP tools/call ${name}`,
+        action: `mcp:${name}`,
+        result,
+        details,
+      })
+    const args = (request.params.arguments ?? {}) as { routerId?: unknown; modelId?: unknown }
+    const target = { routerId: args.routerId, modelId: args.modelId }
     if (!authCtx.permissions.includes(tool.permission)) {
+      if (audited) await auditWrite('forbidden', { ...target, permission: tool.permission })
       return errorResult(`Permission denied: ${tool.permission} is required to call ${name}.`)
     }
 
     // McpToolResult ({ content, isError? }) is structurally a CallToolResult.
-    return (await tool.handler(request.params.arguments ?? {}, authCtx)) as CallToolResult
+    const result = (await tool.handler(request.params.arguments ?? {}, authCtx)) as CallToolResult
+    if (audited && !result.isError) {
+      // Write tools never return the raw token; details carry only the ids and the tool's own result.
+      let outcome: unknown
+      try {
+        outcome = JSON.parse((result.content[0] as { text: string }).text)
+      } catch { /* non-JSON result: audit the target only */ }
+      await auditWrite('success', { ...target, ...(outcome && typeof outcome === 'object' ? { result: outcome } : {}) })
+    }
+    return result
   })
 
   return server

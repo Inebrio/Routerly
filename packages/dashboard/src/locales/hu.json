@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Néhány konfigurációs fájlnak megengedő hozzáférése van ({{files}}). Az indítás és a kérések még mindig működnek. Javítsa ki a Beállítások → Biztonság menüből, vagy amikor kényelmes, a gazda fájlrendszeréből.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Elutasítás",
       "updateAvailable": "Routerly v{{latest}} elérhető. Az Ön verziója: v{{current}}.",
       "updateLink": "Frissítés a beállításokból",
@@ -418,7 +419,8 @@
       "status": "állapot",
       "encoding": "kódolás",
       "frames": "keretek",
-      "bytes": "bájt"
+      "bytes": "bájt",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Mentés…",
         "enable": "Engedélyezés",
         "disable": "Letiltás"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Költségvetés – Visszaállítva",
         "systemStartup": "Rendszer – Indítás",
         "systemShutdown": "Rendszer – Leállítás",
-        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető"
+        "systemUpdateAvailable": "Rendszer – Frissítés Elérhető",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Csatorna eltávolítása",
       "removeChannelConfirm": "Csatorna eltávolítása?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} engedély",
         "userCount": "{{count}} felhasználó",
         "userCount_other": "{{count}} felhasználó",
-        "everyone": "Mindenki"
+        "everyone": "Mindenki",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Betöltés sikertelen"
@@ -833,6 +838,9 @@
         },
         "optional": "(nem kötelező)",
         "keepCurrentPlaceholder": "Hagyja üresen a meglévő megtartásához",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Hagyja üresen az összes útválasztóból érkező események fogadásásához.",
           "cooldownHeading": "Lehűlési Idő",
           "cooldownSuffix": "másodperc (0 = nincs lehűlési idő)",
-          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel."
+          "cooldownHint": "Az ebben a csatornában minimális intervallum, mielőtt ismét aktiválódhat ugyanazzal az eseménnyel.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Címzettek / Célok",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Csatornák keresése…",
         "noResults": "Nincs találat",
         "emptyTitle": "Nincsenek konfigurált értesítési csatornák.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Nincsenek csatornák az aktív szűrőkhöz.",
         "nameInlinePlaceholder": "Címke (nem kötelező)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Integráció eltávolítása",
       "saving": "Mentés…",
       "save": "Mentés",
-      "addButton": "Integráció Hozzáadása"
+      "addButton": "Integráció Hozzáadása",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Utolsó Ellenőrzés"
       },
       "noCheckPerformed": "Még nem végeztek frissítés ellenőrzést.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Frissítések keresése",
       "checking": "Ellenőrzés…",
       "updateTo": "Frissítés v{{version}}-ra",
@@ -1313,6 +1327,8 @@
         "traceContent": "Nyom tartalma",
         "traceContentHint": "A nyomok mindig rögzítik a metaadatokat (modellek, pontszámok, tokenek, költség, latentu). Kapcsolja be ezt is a küldött kérések és az kapott válaszok rögzítéséhez. Az használat rekordjaival tárolódnak, és bárki láthatja, aki jelentéseket olvashat.",
         "capturePromptsAndAnswers": "Rögzítse az kéréseket és válaszokat",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Módosítások Mentése",
         "createRouter": "Útválasztó Létrehozása",
         "createOrchestrator": "Orchestrator létrehozása",
@@ -1395,6 +1411,7 @@
       "saving": "Mentés...",
       "saved": "Mentve",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Kérés megtakarítások előnézete",
         "description": "Futtassa az aktuális (mentetlen) csővezetéket az kérésen keresztül, hogy megtudja, mit távolít el minden lépés, és mennyibe kerül. Válasszon az egyik mintakonverzáció közül, vagy írjon be az saját kérést.",
         "promptLabel": "Kérés",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Még nem küldött kérés.",
       "turnTraceLog": "#{{turn}} fordulat nyom naplójában · {{count}} esemény",
       "turnTraceLog_other": "#{{turn}} fordulat nyom naplójában · {{count}} esemény"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modellek",
       "subtitle": "Az Routerly-vel regisztrált LLM szolgáltatók",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modellek",
         "health": "Egészség"
@@ -2253,7 +2281,8 @@
       "next": "Következő",
       "page": "{{page}}. oldal / {{totalPages}}",
       "total": "({{count}} összes)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Hibakereső Megjelenítése",
       "empty": "Még nincs hibakereső adat.",
       "emptyHint": "Küldjön egy üzenetet az útválasztási részletek megtekintéséhez.",
-      "turnTraceLog": "#{{turn}} fordulat nyom naplójában"
+      "turnTraceLog": "#{{turn}} fordulat nyom naplójában",
+      "resize": "A hibakeresési panel átméretezése"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Az szerepkör frissítése sikertelen",
       "createFailed": "Az szerepkör létrehozása sikertelen",
       "deleteFailed": "Az szerepkör törlése sikertelen"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Vissza az Csatlakozáshoz",
     "title": "Csatlakozás",
     "docs": "Dokumentáció",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "noClientPrefix": "Nincs kliens nevű",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "az kliens modell forgalmat irányít az Routerly-n keresztül.",
     "mcpLabel": "MCP",
     "mcpDescription": "az Routerly betölt egy eszköz szerver az belsejében.",
-    "notEnabledPrefix": "Az kliens konfigurálót nincs engedélyezve. Kérje meg az adminisztrátort, hogy engedélyezze ezt",
     "errors": {
       "loadFailed": "Az kliensz betöltése sikertelen: {{error}}"
     },

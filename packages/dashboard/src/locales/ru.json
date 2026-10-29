@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Некоторые файлы конфигурации имеют открытый доступ ({{files}}). Запуск и запросы по-прежнему работают. Исправьте это в Параметры → Безопасность или в файловой системе хоста при необходимости.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Закрыть",
       "updateAvailable": "Доступна Routerly v{{latest}}. Вы используете v{{current}}.",
       "updateLink": "Обновить в параметрах",
@@ -418,7 +419,8 @@
       "status": "статус",
       "encoding": "кодировка",
       "frames": "фреймы",
-      "bytes": "байты"
+      "bytes": "байты",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Сохранение…",
         "enable": "Включить",
         "disable": "Отключить"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Бюджет – Сброс",
         "systemStartup": "Система – Запуск",
         "systemShutdown": "Система – Выключение",
-        "systemUpdateAvailable": "Система – Обновление доступно"
+        "systemUpdateAvailable": "Система – Обновление доступно",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Удалить канал",
       "removeChannelConfirm": "Удалить канал?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} разрешений",
         "userCount": "{{count}} пользователь",
         "userCount_other": "{{count}} пользователей",
-        "everyone": "Все"
+        "everyone": "Все",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Не удалось загрузить"
@@ -833,6 +838,9 @@
         },
         "optional": "(опционально)",
         "keepCurrentPlaceholder": "Оставьте пустым, чтобы сохранить текущий",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Оставьте пустым для получения событий от всех маршрутизаторов.",
           "cooldownHeading": "Охлаждение",
           "cooldownSuffix": "секунд (0 = без охлаждения)",
-          "cooldownHint": "Минимальный интервал перед тем, как этот канал сможет снова срабатывать для одного и того же события."
+          "cooldownHint": "Минимальный интервал перед тем, как этот канал сможет снова срабатывать для одного и того же события.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Получатели / цели",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Поиск каналов…",
         "noResults": "Нет результатов",
         "emptyTitle": "Ещё не настроены каналы уведомлений.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Ни один канал не соответствует активным фильтрам.",
         "nameInlinePlaceholder": "Метка (опционально)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Удалить интеграцию",
       "saving": "Сохранение…",
       "save": "Сохранить",
-      "addButton": "Добавить интеграцию"
+      "addButton": "Добавить интеграцию",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Последняя проверка"
       },
       "noCheckPerformed": "Проверка обновлений не выполнялась.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Проверить обновления",
       "checking": "Проверка…",
       "updateTo": "Обновить до v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Содержание трассировки",
         "traceContentHint": "Трассировки всегда записывают метаданные (модели, оценки, токены, стоимость, задержка). Включите это, чтобы также записывать отправленные подсказки и полученные ответы. Они хранятся с записью об использовании и видны всем, кто может читать отчёты.",
         "capturePromptsAndAnswers": "Захватить подсказки и ответы",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Сохранить изменения",
         "createRouter": "Создать маршрутизатор",
         "createOrchestrator": "Создать оркестратор",
@@ -1395,6 +1411,7 @@
       "saving": "Сохранение...",
       "saved": "Сохранено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Просмотр сбережений токенов",
         "description": "Запустите текущий (несохранённый) конвейер над подсказкой, чтобы увидеть, что каждый шаг удаляет и что это стоит. Выберите один из примеров разговоров или введите свою подсказку.",
         "promptLabel": "Подсказка",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Запрос ещё не отправлен.",
       "turnTraceLog": "Лог трассировки поворота #{{turn}} · {{count}} событие",
       "turnTraceLog_other": "Лог трассировки поворота #{{turn}} · {{count}} событий"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Модели",
       "subtitle": "Провайдеры LLM, зарегистрированные в Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Модели",
         "health": "Здоровье"
@@ -2253,7 +2281,8 @@
       "next": "Следующая",
       "page": "Страница {{page}} из {{totalPages}}",
       "total": "({{count}} всего)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Показать отладку",
       "empty": "Нет данных отладки ещё.",
       "emptyHint": "Отправьте сообщение, чтобы увидеть детали маршрутизации.",
-      "turnTraceLog": "Лог трассировки поворота #{{turn}}"
+      "turnTraceLog": "Лог трассировки поворота #{{turn}}",
+      "resize": "Изменить размер панели отладки"
     },
     "compare": {
       "modelLabel": "Модель {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Не удалось обновить роль",
       "createFailed": "Не удалось создать роль",
       "deleteFailed": "Не удалось удалить роль"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Вернуться к подключению",
     "title": "Подключение",
     "docs": "Документы",
-    "notEnabledPrefix": "Конфигуратор клиента не включен. Попросите администратора включить его с помощью",
     "noClientPrefix": "Нет клиента с именем",
     "errors": {
       "loadFailed": "Не удалось загрузить клиентов: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "маршруты трафика модели этого клиента через Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "загружает Routerly как сервер инструментов внутри него.",
-    "notEnabledPrefix": "Конфигуратор клиента не включен. Попросите администратора включить его с помощью",
     "errors": {
       "loadFailed": "Не удалось загрузить клиентов: {{error}}"
     },

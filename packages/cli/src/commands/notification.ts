@@ -257,7 +257,7 @@ export function makeNotificationCommand(): Command {
           Name:    ch.name ?? '(unnamed)',
           Type:    ch.provider,
           Config:  providerSummary(ch as ChannelBase & Record<string, unknown>),
-          Events:  ch.events?.length ? ch.events.join(', ') : '*',
+          Events:  ch.events?.length ? ch.events.join(', ') : (ch.provider === 'dashboard' ? '*' : '(none: silent)'),
           Targets: targetsSummary(ch.targets),
         }));
         console.table(rows);
@@ -269,13 +269,18 @@ export function makeNotificationCommand(): Command {
 
   const add = new Command('add').description('Add a notification channel');
   add
-    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|dashboard|smtp|ses|sendgrid|azure|google')
+    .requiredOption('--type <type>', 'Channel type: slack|teams|pagerduty|discord|webhook|dashboard|smtp|ses|sendgrid|azure|google')
     .requiredOption('--name <name>', 'Friendly name for this channel')
     // native/webhook providers
     .option('--bot-token <token>', 'Slack bot token (xoxb-…)')
     .option('--channel-id <id>', 'Slack channel ID')
     .option('--webhook-url <url>', 'Webhook URL (Teams or Discord)')
     .option('--integration-key <key>', 'PagerDuty integration key')
+    // webhook
+    .option('--url <url>', 'Webhook URL (required for webhook)')
+    .option('--method <method>', 'HTTP method for webhook: POST|GET (default: POST)')
+    .option('--secret <secret>', 'HMAC-SHA256 signing secret for webhook (optional)')
+    .option('--json', 'Output the created channel as JSON')
     // shared email fields
     .option('--from-address <addr>', 'Sender email address (required for email providers)')
     .option('--from-name <name>', 'Sender display name (optional)')
@@ -306,6 +311,7 @@ export function makeNotificationCommand(): Command {
       type: string; name: string;
       botToken?: string; channelId?: string;
       webhookUrl?: string; integrationKey?: string;
+      url?: string; method?: string; secret?: string; json?: boolean;
       fromAddress?: string; fromName?: string;
       host?: string; port?: number; secure?: boolean; username?: string; password?: string;
       region?: string; accessKeyId?: string; secretAccessKey?: string;
@@ -358,6 +364,13 @@ export function makeNotificationCommand(): Command {
         case 'dashboard':
           body = { provider: 'dashboard', ...shared };
           break;
+        case 'webhook': {
+          if (!opts.url) { console.error(chalk.red('--url is required for webhook')); process.exit(1); }
+          const method = (opts.method ?? 'POST').toUpperCase();
+          if (method !== 'POST' && method !== 'GET') { console.error(chalk.red('--method must be POST or GET')); process.exit(1); }
+          body = { provider: 'webhook', ...shared, url: opts.url, method, ...(opts.secret ? { secret: opts.secret } : {}) };
+          break;
+        }
         case 'smtp': {
           const base = emailBase();
           if (!opts.host) { console.error(chalk.red('--host is required for smtp')); process.exit(1); }
@@ -407,12 +420,13 @@ export function makeNotificationCommand(): Command {
           break;
         }
         default:
-          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, dashboard, smtp, ses, sendgrid, azure, google`));
+          console.error(chalk.red(`Unknown type: ${opts.type}. Must be one of: slack, teams, pagerduty, discord, webhook, dashboard, smtp, ses, sendgrid, azure, google`));
           process.exit(1);
       }
       try {
         const ch = await api<ChannelBase>('POST', '/api/notifications/channels', body);
-        console.log(chalk.green(`Channel added (id: ${ch.id})`));
+        if (opts.json) console.log(JSON.stringify(ch, null, 2));
+        else console.log(chalk.green(`Channel added (id: ${ch.id})`));
       } catch (err) {
         if (err instanceof ApiError) console.error(chalk.red(`API error ${err.status}: ${err.message}`));
         else console.error(chalk.red(`Error: ${(err as Error).message}`));
@@ -477,7 +491,7 @@ export function makeNotificationCommand(): Command {
         if (ch.events?.length) {
           console.log(chalk.gray(`events: ${ch.events.join(', ')}`));
         } else {
-          console.log(chalk.gray('events: all'));
+          console.log(chalk.gray(ch.provider === 'dashboard' ? 'events: all' : 'events: none (channel is silent until events are set)'));
         }
         if (ch.targets) console.log(chalk.gray(`targets: ${JSON.stringify(ch.targets)}`));
         // Print provider-specific fields; secrets shown as ***
@@ -533,6 +547,9 @@ export function makeNotificationCommand(): Command {
     .option('--url <url>', 'Webhook URL')
     .option('--method <method>', 'HTTP method (POST|GET)')
     .option('--secret <secret>', 'HMAC signing secret (secret)')
+    .option('--clear-secret', 'Remove the webhook HMAC signing secret')
+    .option('--clear-password', 'Remove the SMTP password')
+    .option('--clear-secret-access-key', 'Remove the AWS secret access key')
     // slack
     .option('--bot-token <token>', 'Slack bot token (secret)')
     .option('--channel-id <id>', 'Slack channel ID')
@@ -548,6 +565,7 @@ export function makeNotificationCommand(): Command {
         if (opts['name'] !== undefined)   patch['name']   = opts['name'];
         if (opts['fromAddress'] !== undefined) patch['fromAddress'] = opts['fromAddress'];
         if (opts['fromName'] !== undefined)    patch['fromName']    = opts['fromName'];
+        if (opts['username'] !== undefined)    patch['username']    = opts['username'];
         if (opts['host'] !== undefined)   patch['host']   = opts['host'];
         if (opts['port'] !== undefined)   patch['port']   = opts['port'];
         if (opts['region'] !== undefined) patch['region'] = opts['region'];
@@ -572,12 +590,16 @@ export function makeNotificationCommand(): Command {
         // Per-channel cooldown
         if (opts['cooldownSeconds'] !== undefined) patch['cooldownSeconds'] = opts['cooldownSeconds'];
 
-        // Targets
-        const targets: Record<string, unknown> = {};
-        if (opts['targetRoles'])       targets['roles']       = String(opts['targetRoles']).split(',').map(s => s.trim()).filter(Boolean);
-        if (opts['targetPermissions']) targets['permissions'] = String(opts['targetPermissions']).split(',').map(s => s.trim()).filter(Boolean);
-        if (opts['targetUsers'])       targets['users']       = String(opts['targetUsers']).split(',').map(s => s.trim()).filter(Boolean);
-        if (Object.keys(targets).length) patch['targets'] = targets;
+        // Targets — PATCH replaces the whole object, so merge over the stored one; empty string clears a list
+        const targetOpts = { roles: opts['targetRoles'], permissions: opts['targetPermissions'], users: opts['targetUsers'] };
+        if (Object.values(targetOpts).some(v => v !== undefined)) {
+          const current = await api<{ targets?: Record<string, unknown> }>('GET', `/api/notifications/channels/${id}`);
+          const targets: Record<string, unknown> = { ...(current?.targets ?? {}) };
+          for (const [key, val] of Object.entries(targetOpts)) {
+            if (val !== undefined) targets[key] = String(val).split(',').map(s => s.trim()).filter(Boolean);
+          }
+          patch['targets'] = targets;
+        }
 
         // Secret fields — only include when explicitly provided (non-empty)
         const secretFields: Record<string, string> = {
@@ -595,6 +617,11 @@ export function makeNotificationCommand(): Command {
         for (const [key, val] of Object.entries(secretFields)) {
           if (opts[key] !== undefined && val.length > 0) patch[key] = val;
         }
+
+        // Explicit removal of optional secrets (PATCH null)
+        if (opts['clearSecret']) patch['secret'] = null;
+        if (opts['clearPassword']) patch['password'] = null;
+        if (opts['clearSecretAccessKey']) patch['secretAccessKey'] = null;
 
         if (Object.keys(patch).length === 0) {
           console.error(chalk.yellow('No fields to update. Provide at least one option.'));

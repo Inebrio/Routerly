@@ -9,12 +9,13 @@ import { loadSecret } from './modules/auth/jwt.js';
 import { loadCredentialKey } from './lib/crypto-cred.js';
 import { openaiRoutes } from './modules/api-reverse-proxy/openai.js';
 import { anthropicRoutes } from './modules/api-reverse-proxy/anthropic.js';
+import { passthroughHandler } from './modules/api-reverse-proxy/passthrough.js';
 import { routerPassthroughRoutes } from './modules/api-reverse-proxy/router-passthrough.js';
 import { mcpHttpRoutes } from './modules/mcp/http.js';
 import { apiRoutes } from './modules/api/api.js';
 import { metricsRoutes } from './modules/observability/metrics.js';
-import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage } from './modules/config/loader.js';
-import { migrateRouterStorage, migrateUsageToNdjson } from './modules/config/migrate.js';
+import { initConfigDirs, readConfig, writeConfig, pruneOrphanUsage, effectivePort } from './modules/config/loader.js';
+import { migrateRouterStorage, migrateUsageToNdjson, reenableModules } from './modules/config/migrate.js';
 import { enforceStartupGuard } from './modules/config/permission-guard.js';
 import { pingTelemetry } from './modules/telemetry/telemetry.js';
 import { updateChecker } from './modules/update-checker/update-checker.js';
@@ -121,6 +122,12 @@ export async function buildServer() {
   // ─── LLM Proxy auth (only for /v1/* routes) ───────────────────────────────
   await fastify.register(authPlugin);
 
+  // ─── Catch-all: unmatched paths are forwarded to the router's provider ───
+  // Raw bytes in so non-JSON bodies (files, audio) reach the upstream verbatim.
+  // Encapsulated plugins (passthrough routers, dashboard) keep their own parsers/404 handlers.
+  fastify.addContentTypeParser('*', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
+  fastify.setNotFoundHandler(passthroughHandler);
+
   // ─── LLM Proxy routes ────────────────────────────────────────────────────
   await fastify.register(openaiRoutes);
   await fastify.register(anthropicRoutes);
@@ -185,6 +192,11 @@ export async function startServer() {
     console.log(`[startup] migrated ${migratedUsage} usage record(s) from usage.json to usage.ndjson`);
   }
 
+  const reenabled = await reenableModules();
+  if (reenabled.length > 0) {
+    process.stdout.write(`[startup] re-enabled ${reenabled.length} module(s): ${reenabled.join(', ')} (all modules are always active)\n`);
+  }
+
   await loadSecret();
   await loadCredentialKey();
   const settings = await readConfig('settings');
@@ -228,7 +240,7 @@ export async function startServer() {
   if (isMcpStdio()) return;
 
   try {
-    await server.listen({ port: settings.port, host: settings.host });
+    await server.listen({ port: effectivePort(settings), host: settings.host });
     // The 60s integration push is started by the observability module (kernel start).
     // Skipped outside production by default: a dev checkout's package.json version
     // is never bumped by semantic-release on develop/main (see docs/contributing/
@@ -236,6 +248,7 @@ export async function startServer() {
     // cut — comparing it would flag the instance actively building that release as
     // "outdated". ROUTERLY_FORCE_UPDATE_CHECK opts back in for testing the checker itself.
     const updateCheckWanted = process.env['NODE_ENV'] === 'production' || process.env['ROUTERLY_FORCE_UPDATE_CHECK'] === 'true';
+    updateChecker.configure(pkgVersion, settings.channel ?? 'latest');
     if (updateCheckWanted && process.env['ROUTERLY_DISABLE_UPDATE_CHECK'] !== 'true') {
       updateChecker.start(pkgVersion, settings.channel ?? 'latest');
     }

@@ -4,6 +4,7 @@ import type { Message, OptimizerResult } from '@routerly/shared'
 import type { ProxyContext } from '../../reverse-proxy/context.js'
 import type { Optimizer } from '../registry.js'
 import { readMessages, segment, tokensOf, writeMessages } from '../messages.js'
+import { onConfigWrite } from '../../config/write-hooks.js'
 import { listEffectiveModels } from '../../provider/list-effective.js'
 
 // ponytail: trim-oldest to fit; no re-summarize (that is ccr's job).
@@ -25,13 +26,12 @@ function reservedOf(ctx: ProxyContext): number {
 // writeConfig only if that turns out to matter.
 const WINDOWS_TTL_MS = 30_000
 let windows: { at: number; byId: Map<string, number> } | null = null
-let refreshing = false
+let refreshing: Promise<void> | null = null
 
-/** Kick a background refresh; never awaited, never throws into the request. */
-function refreshWindows(): void {
-  if (refreshing) return
-  refreshing = true
-  void listEffectiveModels()
+/** Refresh the snapshot; request paths fire and forget, never throws into the request. */
+function refreshWindows(): Promise<void> {
+  if (refreshing) return refreshing
+  return (refreshing = listEffectiveModels()
     .then((models) => {
       const byId = new Map<string, number>()
       for (const m of models) if ((m.contextWindow ?? 0) > 0) byId.set(m.id, m.contextWindow!)
@@ -42,14 +42,24 @@ function refreshWindows(): void {
       // silently turn a working trimmer off mid-flight.
     })
     .finally(() => {
-      refreshing = false
-    })
+      refreshing = null
+    }))
 }
+
+// A model created or edited is visible to the very next request: refresh
+// (awaited by the writer) whenever models or their connections are written.
+// A refresh already in flight may have read the files before the write: wait it out, then read again.
+const refreshAfterWrite = async (): Promise<void> => {
+  await refreshing
+  await refreshWindows()
+}
+onConfigWrite('instances', refreshAfterWrite)
+onConfigWrite('connections', refreshAfterWrite)
 
 /** Test seam, and the way a model edit takes effect before the TTL runs out. */
 export function resetContextWindowCache(): void {
   windows = null
-  refreshing = false
+  refreshing = null
 }
 
 /**
@@ -208,5 +218,6 @@ export const headroomModule: RouterlyModule = defineModule({
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(headroomOptimizer)
+    void refreshWindows() // warm the cache at boot
   },
 })

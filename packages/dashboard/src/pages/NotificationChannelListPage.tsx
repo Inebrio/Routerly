@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search, Bell, Pencil, Trash2, FlaskConical, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Plus, Search, Bell, ShieldOff, Pencil, Trash2, FlaskConical, X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../AuthContext';
 import { getNotificationChannels, deleteNotificationChannel, testNotificationChannel } from '../api';
 import type { RedactedChannel } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -28,6 +29,8 @@ type TestState = { loading: boolean; ok?: boolean; message?: string };
 export function NotificationChannelListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const allowed = can('notification:write');
   const [channels, setChannels] = useState<RedactedChannel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,8 +56,9 @@ export function NotificationChannelListPage() {
   const [testStates, setTestStates] = useState<Record<string, TestState>>({});
 
   useEffect(() => {
-    load();
-  }, []);
+    if (allowed) load();
+    else setLoading(false);
+  }, [allowed]);
 
   function load() {
     setLoading(true);
@@ -165,6 +169,10 @@ export function NotificationChannelListPage() {
         p.label.toLowerCase().includes(channelSearch.toLowerCase()) ||
         p.description.toLowerCase().includes(channelSearch.toLowerCase()))
     : channelProviderMeta;
+
+  if (!allowed) {
+    return <div className="empty-state"><ShieldOff size={40} /><p>{t('settings.notifications.list.noPermission')}</p></div>;
+  }
 
   return (
     <>

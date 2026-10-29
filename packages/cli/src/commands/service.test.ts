@@ -207,6 +207,13 @@ describe('service configure', () => {
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ logLevel: 'debug' }));
   });
 
+  it('rejects an invalid --log-level with exit 1 and no API call (ROUT-354)', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    await expect(run('configure', '--log-level', 'verbose')).rejects.toThrow('exit');
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockApi).not.toHaveBeenCalled();
+  });
+
   it('sends PUT with metricsEnabled=true when --metrics true', async () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--metrics', 'true');
@@ -249,6 +256,11 @@ describe('service configure', () => {
     mockApi.mockResolvedValueOnce(undefined);
     await run('configure', '--require-mfa', 'false');
     expect(mockApi).toHaveBeenCalledWith('PUT', '/api/settings', expect.objectContaining({ requireMfa: false }));
+  });
+
+  it('rejects a non-boolean --require-mfa without calling the API', async () => {
+    await expect(run('configure', '--require-mfa', 'maybe')).rejects.toThrow();
+    expect(mockApi).not.toHaveBeenCalled();
   });
 
   it('sends usageRetention.maxAgeDays after fetching current settings, when --usage-retention-days provided alone', async () => {

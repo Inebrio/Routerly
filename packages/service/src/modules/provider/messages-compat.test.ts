@@ -376,6 +376,16 @@ describe('openAIChunksToAnthropicSSE', () => {
     expect(events.find((e) => e.event === 'message_start')!.data.message.usage.input_tokens).toBe(3)
   })
 
+  it('reports input tokens in message_delta when usage arrives in a later chunk (ROUT-352)', async () => {
+    const events = await collect(openAIChunksToAnthropicSSE(chunksOf([
+      { choices: [{ index: 0, delta: { content: 'x' } }] },
+      { choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] },
+      { choices: [], usage: { prompt_tokens: 17840, completion_tokens: 4, prompt_tokens_details: { cached_tokens: 100 } } },
+    ]), 'msg_1', 'm'))
+    const usage = events.find((e) => e.event === 'message_delta')!.data.usage
+    expect(usage).toEqual({ input_tokens: 17840, cache_read_input_tokens: 100, output_tokens: 4 })
+  })
+
   it('emits a well-formed empty message when the upstream stream yields nothing', async () => {
     const events = await collect(openAIChunksToAnthropicSSE(chunksOf([]), 'msg_1', 'm'))
     expect(events.map((e) => e.event)).toEqual([

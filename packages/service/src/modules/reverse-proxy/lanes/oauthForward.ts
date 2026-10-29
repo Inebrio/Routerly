@@ -4,6 +4,12 @@ import type { ModelConfig } from '@routerly/shared';
 import { buildUpstreamUrl } from '../../api-reverse-proxy/passthrough.js';
 import { trackUsage } from '../../usage/tracker.js';
 import { createUsageTap, type TappedUsage } from './usageTap.js';
+import { createAnthropicScrubTransform } from './anthropicScrub.js';
+import type { EffectivePii } from '../../pii/piiScrubber.js';
+import type { TraceEntry } from '@routerly/shared';
+
+/** Output-PII scrub applied to the pass-through response (set when the router has an output policy). */
+export interface PassthroughScrub { effective: EffectivePii; emit?: (entry: TraceEntry) => void }
 
 /**
  * Faithful pass-through for subscription / OAuth models (Flow A).
@@ -132,6 +138,7 @@ export async function forwardAnthropicOAuth(
   request: FastifyRequest,
   reply: FastifyReply,
   model: ModelConfig,
+  scrub?: PassthroughScrub,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -196,9 +203,11 @@ export async function forwardAnthropicOAuth(
 
   reply.code(upstream.status);
   if (upstream.body) {
+    const ct = upstream.headers.get('content-type');
+    const src = Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]);
     return reply.send(
-      Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0])
-        .pipe(createUsageTap(upstream.headers.get('content-type'), record)),
+      (scrub ? src.pipe(createAnthropicScrubTransform(ct, scrub.effective, scrub.emit)) : src)
+        .pipe(createUsageTap(ct, record)),
     );
   }
   record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });
@@ -219,6 +228,7 @@ export async function forwardAnthropicApiKey(
   request: FastifyRequest,
   reply: FastifyReply,
   model: ModelConfig,
+  scrub?: PassthroughScrub,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -276,9 +286,11 @@ export async function forwardAnthropicApiKey(
 
   reply.code(upstream.status);
   if (upstream.body) {
+    const ct = upstream.headers.get('content-type');
+    const src = Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0]);
     return reply.send(
-      Readable.fromWeb(upstream.body as Parameters<typeof Readable.fromWeb>[0])
-        .pipe(createUsageTap(upstream.headers.get('content-type'), record)),
+      (scrub ? src.pipe(createAnthropicScrubTransform(ct, scrub.effective, scrub.emit)) : src)
+        .pipe(createUsageTap(ct, record)),
     );
   }
   record({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 });

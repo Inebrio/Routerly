@@ -14,6 +14,7 @@ export class ApiError extends Error {
 // unsafe permissions, except these — see the blueprint's frozen contact points.
 const PERMISSION_EXEMPT_PATHS = new Set([
   '/api/auth/login',
+  '/api/auth/2fa/verify',
   '/api/auth/refresh',
   '/api/system/permissions',
   '/api/system/permissions/fix',
@@ -73,7 +74,15 @@ async function confirmAndFix(account: AccountEntry, secretFiles: PermissionCheck
 async function ensurePermissionsSafe(account: AccountEntry): Promise<void> {
   if (!permissionCheck) {
     permissionCheck = (async () => {
-      const status = await rawRequest<PermissionCheckStatus>(account, 'GET', '/api/system/permissions');
+      let status: PermissionCheckStatus;
+      try {
+        status = await rawRequest<PermissionCheckStatus>(account, 'GET', '/api/system/permissions');
+      } catch (err) {
+        // The route needs settings:read; a role without it cannot read the status.
+        // Not an error: the service still answers 423 per route when blocked (retry below).
+        if (err instanceof ApiError && err.status === 403) return;
+        throw err;
+      }
 
       if (status.blocked) {
         const secretFiles = status.unsafe.filter(u => u.severity === 'secret');
@@ -116,8 +125,11 @@ async function rawRequest<T>(
   if (!res.ok) {
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth printing.
-    const body = data as { error?: string; message?: string };
-    throw new ApiError(res.status, body.message ?? body.error ?? res.statusText);
+    // Validation answers add the failing field messages in `details`.
+    const body = data as { error?: string; message?: string; details?: { message?: string }[] };
+    const why = Array.isArray(body.details) ? body.details.map(d => d.message).filter(Boolean).join('; ') : '';
+    const text = body.message ?? body.error ?? res.statusText;
+    throw new ApiError(res.status, why ? `${text}: ${why}` : text);
   }
 
   return data as T;

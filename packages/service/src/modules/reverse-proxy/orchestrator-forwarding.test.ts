@@ -34,7 +34,7 @@ const mockLlmChat = vi.mocked(llmChat)
 afterEach(() => vi.clearAllMocks())
 
 function makeLog() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }
 
 function makeModel(id: string): ModelConfig {

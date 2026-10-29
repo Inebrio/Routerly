@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { TraceEvent } from './store.js'
-import { formatTraceLine, isFailure, printTrace } from './console.js'
+import { formatTraceLine, isFailure, printTrace, setTraceLogLevel } from './console.js'
 
 const event = (entry: Partial<TraceEvent['entry']>): TraceEvent => ({
   traceId: 't-1',
@@ -67,5 +67,26 @@ describe('trace console', () => {
     })
     expect(out).toHaveLength(0)
     expect(err).toHaveLength(1)
+  })
+
+  it.each(['warn', 'error', 'fatal', 'silent'])('level %s silences successful trace lines', (level) => {
+    expect(capture(() => printTrace(event({ message: 'model:success' }), level)).out).toHaveLength(0)
+  })
+
+  it.each(['info', 'debug', 'trace'])('level %s prints successful trace lines', (level) => {
+    expect(capture(() => printTrace(event({ message: 'model:success' }), level)).out).toHaveLength(1)
+  })
+
+  it('follows the live level set at runtime without a restart', () => {
+    try {
+      setTraceLogLevel('info')
+      expect(capture(() => printTrace(event({ message: 'model:success' }))).out).toHaveLength(1)
+      setTraceLogLevel('warn')
+      expect(capture(() => printTrace(event({ message: 'model:success' }))).out).toHaveLength(0)
+      setTraceLogLevel('info')
+      expect(capture(() => printTrace(event({ message: 'model:success' }))).out).toHaveLength(1)
+    } finally {
+      setTraceLogLevel('info')
+    }
   })
 })

@@ -345,6 +345,17 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
               </div>
             </>
           )}
+          {(e.details?.failedPolicies ?? []).length > 0 && (
+            <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.4)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 700 }}>{t('common.trace.policiesFailed')}</div>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload */}
+              {e.details.failedPolicies.map((fp: any, i: number) => (
+                <div key={i} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <strong>{policyTypeLabel(t, fp.type)}</strong>: {fp.error}
+                </div>
+              ))}
+            </div>
+          )}
           {/* Per-policy winner table */}
           <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, letterSpacing: '0.04em', marginBottom: 2, marginTop: 16 }}>{t('common.trace.policyScores')}</div>
           {(e.details?.policies ?? []).length > 0 ? (

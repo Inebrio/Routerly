@@ -24,7 +24,7 @@ The official image is published on [`inebrio/routerly`](https://hub.docker.com/r
 ```yaml
 services:
   routerly:
-    image: inebrio/routerly:latest
+    image: inebrio/routerly:v0.5.3
     container_name: routerly
     ports:
       - "3000:3000"

@@ -9,10 +9,10 @@ export { providersConf };
 
 // Static notification event list and secret-field map (safe for browser — plain data)
 export {
-  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall,
+  NOTIFICATION_EVENTS, CHANNEL_SECRET_FIELDS, OPTIONAL_CHANNEL_SECRET_FIELDS, DEFAULT_ROUTER_TIMEOUT_MS, PASSTHROUGH_MODEL_ID, CALL_TYPES, isCompletionCall, blocksResponseStreaming,
   suggestConnectionLabel, isConnectionLabelTaken, suggestRouterSlug,
   UPDATE_CHANNELS, normalizeUpdateChannel,
-  isValidUpdateChannel, UPDATE_CHANNEL_ERROR,
+  isValidUpdateChannel, UPDATE_CHANNEL_ERROR, LOG_LEVELS,
 } from './types/config.js';
 export type { NotificationEvent, UpdateChannel, NormalizedUpdateChannel } from './types/config.js';
 

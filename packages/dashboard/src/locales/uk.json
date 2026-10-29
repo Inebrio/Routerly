@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Деякі файли конфігурації мають дозвільний доступ ({{files}}). Запуск і запити все ще працюють. Виправте це в розділі Налаштування → Безпека, або в файловій системі хоста, коли це зручно.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Закрити",
       "updateAvailable": "Routerly v{{latest}} доступна. Ви використовуєте v{{current}}.",
       "updateLink": "Оновити в Налаштуваннях",
@@ -418,7 +419,8 @@
       "status": "статус",
       "encoding": "кодування",
       "frames": "кадри",
-      "bytes": "байти"
+      "bytes": "байти",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Збереження…",
         "enable": "Увімкнути",
         "disable": "Відключити"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Бюджет скидання",
         "systemStartup": "Система запуск",
         "systemShutdown": "Система вимикання",
-        "systemUpdateAvailable": "Система оновлення доступно"
+        "systemUpdateAvailable": "Система оновлення доступно",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Видалити канал",
       "removeChannelConfirm": "Видалити канал?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} дозволів",
         "userCount": "{{count}} користувач",
         "userCount_other": "{{count}} користувачів",
-        "everyone": "Кожен"
+        "everyone": "Кожен",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Не вдалося завантажити"
@@ -833,6 +838,9 @@
         },
         "optional": "(опціонально)",
         "keepCurrentPlaceholder": "Залиште порожнім, щоб зберегти поточне",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Залиште порожнім, щоб отримувати подієї від всіх маршрутизаторів.",
           "cooldownHeading": "Період охолодження",
           "cooldownSuffix": "секунди (0 без період охолодження)",
-          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї."
+          "cooldownHint": "Мінімальний інтервал перед тим, як цей канал зможе знову спрацювати для тієї ж подієї.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Одержувачі / Цілі",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Пошук каналів…",
         "noResults": "Немає результатів",
         "emptyTitle": "Жоден канал сповіщення не налаштований.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Жоден канал не відповідає активним фільтрам.",
         "nameInlinePlaceholder": "Ярлик (опціонально)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Видалити інтеграцію",
       "saving": "Збереження…",
       "save": "Зберегти",
-      "addButton": "Додати інтеграцію"
+      "addButton": "Додати інтеграцію",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Остання перевірка"
       },
       "noCheckPerformed": "Жоден чек оновлення не проводився.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Перевірити оновлення",
       "checking": "Перевірка…",
       "updateTo": "Оновити до v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Вміст трасування",
         "traceContentHint": "Трасування завжди записує метадані (моделі, оцінки, токени, вартість, затримка). Вмикайте це, щоб також записати надіслані підказки та отримані відповіді. Вони зберігаються з записом використання та видимі для всіх, хто може читати звіти.",
         "capturePromptsAndAnswers": "Захопіть підказки та відповіді",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Зберегти зміни",
         "createRouter": "Створити маршрутизатор",
         "createOrchestrator": "Створити оркестратор",
@@ -1395,6 +1411,7 @@
       "saving": "Збереження...",
       "saved": "Збережено",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Попередній перегляд заощадження токенів",
         "description": "Запустіть поточний (незбережений) конвеєр над підказкою, щоб побачити, що кожен крок видаляє та що це коштує. Виберіть один з вибірних розмов або введіть власну підказку.",
         "promptLabel": "Підказка",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Запит ще не надіслано.",
       "turnTraceLog": "Обернути #{{turn}} журнал трасування · {{count}} подія",
       "turnTraceLog_other": "Обернути #{{turn}} журнал трасування · {{count}} подій"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Моделі",
       "subtitle": "Постачальники LLM, зареєстровані з Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Моделі",
         "health": "Здоров'я"
@@ -2253,7 +2281,8 @@
       "next": "Наступна",
       "page": "Сторінка {{page}} з {{totalPages}}",
       "total": "({{count}} всього)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Показати налагодження",
       "empty": "Жоден дані налагодження ще.",
       "emptyHint": "Надішліть повідомлення, щоб побачити деталі маршрутизації.",
-      "turnTraceLog": "Обернути #{{turn}} журнал трасування"
+      "turnTraceLog": "Обернути #{{turn}} журнал трасування",
+      "resize": "Змінити розмір панелі налагодження"
     },
     "compare": {
       "modelLabel": "Модель {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Не вдалось оновити роль",
       "createFailed": "Не вдалось створити роль",
       "deleteFailed": "Не вдалось видалити роль"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Назад до підключення",
     "title": "Підключити",
     "docs": "Документи",
-    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
     "noClientPrefix": "Немає клієнта на ім'я",
     "errors": {
       "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "маршрутизує цей трафік моделі клієнта через Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "завантажує Routerly як сервер інструменту всередину нього.",
-    "notEnabledPrefix": "Конфігуратор клієнта не ввімкнений. Попросіть адміністратора ввімкнути його за допомогою",
     "errors": {
       "loadFailed": "Не вдалось завантажити клієнтів: {{error}}"
     },

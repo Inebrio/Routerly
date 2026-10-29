@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Terminal } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { getClients } from '../api';
 import type { ApiError, ClientListItem } from '../api';
 import { ClientLogo } from '../components/ClientLogo';
@@ -128,7 +128,6 @@ function ClientGroup({ title, hint, clients }: { title: string; hint: string; cl
 export function ConnectPage() {
   const { t } = useTranslation();
   const [clients, setClients] = useState<ClientListItem[] | null>(null);
-  const [notEnabled, setNotEnabled] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -136,10 +135,7 @@ export function ConnectPage() {
     setLoading(true);
     getClients()
       .then(res => setClients(res.clients))
-      .catch((err: ApiError) => {
-        if (err.status === 404) setNotEnabled(true);
-        else setError(err.message);
-      })
+      .catch((err: ApiError) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -157,14 +153,6 @@ export function ConnectPage() {
       <div className="page-body">
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
-        ) : notEnabled ? (
-          <div className="empty-state">
-            <Terminal size={40} />
-            <p>
-              {t('connect.notEnabledPrefix')}{' '}
-              <code>routerly modules enable clients</code>.
-            </p>
-          </div>
         ) : error ? (
           <div className="form-error">{t('connect.errors.loadFailed', { error })}</div>
         ) : (

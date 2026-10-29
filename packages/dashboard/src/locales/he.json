@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "לכמה קובצי הגדרות יש גישה מתירנית ({{files}}). ההפעלה והבקשות עדיין פועלות. תקן זאת מ-הגדרות → אבטחה, או מה-filesystem של המארח כשזה נוח.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "התעלם",
       "updateAvailable": "גרסה v{{latest}} של Routerly זמינה. אתם נמצאים בגרסה v{{current}}.",
       "updateLink": "עדכון בהגדרות",
@@ -418,7 +419,8 @@
       "status": "סטטוס",
       "encoding": "קידוד",
       "frames": "מסגרות",
-      "bytes": "בייטים"
+      "bytes": "בייטים",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "שומר…",
         "enable": "הפעל",
         "disable": "כבה"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "תקציב – אופס",
         "systemStartup": "מערכת – הפעלה",
         "systemShutdown": "מערכת – כיבוי",
-        "systemUpdateAvailable": "מערכת – עדכון זמין"
+        "systemUpdateAvailable": "מערכת – עדכון זמין",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "הסר ערוץ",
       "removeChannelConfirm": "להסיר את הערוץ?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} הרשאות",
         "userCount": "{{count}} משתמש",
         "userCount_other": "{{count}} משתמשים",
-        "everyone": "כולם"
+        "everyone": "כולם",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "הטעינה נכשלה"
@@ -833,6 +838,9 @@
         },
         "optional": "(אופציונלי)",
         "keepCurrentPlaceholder": "השאר ריק לשמירה על הערך הנוכחי",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "השאר ריק לקבלת אירועים מכל הנתבים.",
           "cooldownHeading": "תקופת צינון",
           "cooldownSuffix": "שניות (0 = ללא צינון)",
-          "cooldownHint": "המרווח המינימלי לפני שערוץ זה יכול להתריע שוב על אותו אירוע."
+          "cooldownHint": "המרווח המינימלי לפני שערוץ זה יכול להתריע שוב על אותו אירוע.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "נמענים / מטרות",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "חפש ערוצים…",
         "noResults": "אין תוצאות",
         "emptyTitle": "עדיין לא הוגדרו ערוצי התראות.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "אין ערוצים המתאימים למסננים הפעילים.",
         "nameInlinePlaceholder": "תווית (אופציונלי)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "הסר אינטגרציה",
       "saving": "שומר…",
       "save": "שמור",
-      "addButton": "הוסף אינטגרציה"
+      "addButton": "הוסף אינטגרציה",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "נבדק לאחרונה"
       },
       "noCheckPerformed": "לא בוצעה עדיין בדיקת עדכונים.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "בדוק עדכונים",
       "checking": "בודק…",
       "updateTo": "עדכן לגרסה v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "תוכן עקבה",
         "traceContentHint": "עקבות תמיד רושמות מטא-דאטה (מודלים, ניקודים, טוקנים, עלות, זמן תגובה). הפעל זאת כדי לרשום גם את הפרומפטים שנשלחו והתשובות שהתקבלו. הם נשמרים עם רשומת השימוש וגלויים לכל מי שיכול לקרוא דוחות.",
         "capturePromptsAndAnswers": "לכוד פרומפטים ותשובות",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "שמור שינויים",
         "createRouter": "צור נתב",
         "createOrchestrator": "צור אורקסטרטור",
@@ -1395,6 +1411,7 @@
       "saving": "שומר...",
       "saved": "נשמר",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "תצוגה מקדימה של חיסכון טוקנים",
         "description": "הפעל את הצנרת הנוכחית (הלא שמורה) על פרומפט לראות מה כל שלב מסיר ומה הוא עולה. בחר אחת מהשיחות לדוגמה, או הקלד פרומפט משלך.",
         "promptLabel": "פרומפט",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "עדיין לא נשלחה בקשה.",
       "turnTraceLog": "יומן עקבה תור #{{turn}} · {{count}} אירוע",
       "turnTraceLog_other": "יומן עקבה תור #{{turn}} · {{count}} אירועים"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "מודלים",
       "subtitle": "ספקי LLM הרשומים ב-Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "מודלים",
         "health": "תקינות"
@@ -2253,7 +2281,8 @@
       "next": "הבא",
       "page": "עמוד {{page}} מתוך {{totalPages}}",
       "total": "(סה״כ {{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "הצג ניפוי באגים",
       "empty": "עדיין אין נתוני ניפוי באגים.",
       "emptyHint": "שלח הודעה לראות פרטי ניתוב.",
-      "turnTraceLog": "יומן עקבה תור #{{turn}}"
+      "turnTraceLog": "יומן עקבה תור #{{turn}}",
+      "resize": "שינוי גודל לוח הניפוי"
     },
     "compare": {
       "modelLabel": "מודל {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "עדכון התפקיד נכשל",
       "createFailed": "יצירת התפקיד נכשלה",
       "deleteFailed": "מחיקת התפקיד נכשלה"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "חזרה לחיבור",
     "title": "חיבור",
     "docs": "תיעוד",
-    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
     "noClientPrefix": "אין לקוח בשם",
     "errors": {
       "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "מנתב את תעבורת המודל של הלקוח הזה בעד Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "טוען את Routerly כשרת כלים בתוכו.",
-    "notEnabledPrefix": "מגדיר הלקוחות לא מופעל. בקש ממנהל להפעיל אותו עם",
     "errors": {
       "loadFailed": "טעינת הלקוחות נכשלה: {{error}}"
     },

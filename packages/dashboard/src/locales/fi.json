@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Joillakin asetustiedostoilla on luvallinen pääsy ({{files}}). Käynnistys ja pyynnöt toimivat yhä. Korjaa se Asetukset → Turvallisuus -kohdasta, tai isäntäpalvelimen tiedostojärjestelmästä kun siihen on mahdollisuus.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Hylkää",
       "updateAvailable": "Routerly v{{latest}} on saatavilla. Käytössäsi on v{{current}}.",
       "updateLink": "Päivitä asetuksista",
@@ -418,7 +419,8 @@
       "status": "tila",
       "encoding": "koodaus",
       "frames": "kehykset",
-      "bytes": "tavut"
+      "bytes": "tavut",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Tallennetaan…",
         "enable": "Ota käyttöön",
         "disable": "Poista käytöstä"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Budjetti – Nollattu",
         "systemStartup": "Järjestelmä – Käynnistys",
         "systemShutdown": "Järjestelmä – Sammutus",
-        "systemUpdateAvailable": "Järjestelmä – Päivitys saatavilla"
+        "systemUpdateAvailable": "Järjestelmä – Päivitys saatavilla",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Poista kanava",
       "removeChannelConfirm": "Poistetaanko kanava?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} oikeutta",
         "userCount": "{{count}} käyttäjä",
         "userCount_other": "{{count}} käyttäjää",
-        "everyone": "Kaikki"
+        "everyone": "Kaikki",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Lataaminen epäonnistui"
@@ -833,6 +838,9 @@
         },
         "optional": "(valinnainen)",
         "keepCurrentPlaceholder": "Jätä tyhjäksi säilyttääksesi nykyisen",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Jätä tyhjäksi vastaanottaaksesi tapahtumat kaikilta reitittimiltä.",
           "cooldownHeading": "Jäähdytysaika",
           "cooldownSuffix": "sekuntia (0 = ei jäähdytysaikaa)",
-          "cooldownHint": "Vähimmäisväli, ennen kuin tämä kanava voi laukaista uudelleen samalle tapahtumalle."
+          "cooldownHint": "Vähimmäisväli, ennen kuin tämä kanava voi laukaista uudelleen samalle tapahtumalle.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Vastaanottajat / kohteet",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Hae kanavia…",
         "noResults": "Ei tuloksia",
         "emptyTitle": "Ilmoituskanavia ei ole vielä määritetty.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Mikään kanava ei vastaa aktiivisia suodattimia.",
         "nameInlinePlaceholder": "Nimike (valinnainen)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Poista integraatio",
       "saving": "Tallennetaan…",
       "save": "Tallenna",
-      "addButton": "Lisää integraatio"
+      "addButton": "Lisää integraatio",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Viimeksi tarkistettu"
       },
       "noCheckPerformed": "Päivitystä ei ole vielä tarkistettu.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Tarkista päivitykset",
       "checking": "Tarkistetaan…",
       "updateTo": "Päivitä versioon v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Jäljitä sisältö",
         "traceContentHint": "Jäljitykset tallentavat aina metatiedot (mallit, pisteet, tokenit, kustannus, vasteaika). Ota tämä käyttöön tallentaaksesi myös lähetetyt kehotteet ja saadut vastaukset. Ne tallennetaan käyttötietueen mukana ja näkyvät kaikille, joilla on lukuoikeus raportteihin.",
         "capturePromptsAndAnswers": "Tallenna kehotteet ja vastaukset",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Tallenna muutokset",
         "createRouter": "Luo reititin",
         "createOrchestrator": "Luo Orkestroija",
@@ -1395,6 +1411,7 @@
       "saving": "Tallennetaan...",
       "saved": "Tallennettu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Esikatsele tokenisäästöjä",
         "description": "Suorita nykyinen (tallentamaton) putki kehotteelle nähdäksesi mitä kukin vaihe poistaa ja mitä se maksaa. Valitse jokin esimerkkikeskusteluista, tai kirjoita omasi.",
         "promptLabel": "Kehote",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Pyyntöä ei ole vielä lähetetty.",
       "turnTraceLog": "Vuoron #{{turn}} jäljitysloki · {{count}} tapahtuma",
       "turnTraceLog_other": "Vuoron #{{turn}} jäljitysloki · {{count}} tapahtumaa"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Mallit",
       "subtitle": "Routerlyyn rekisteröidyt LLM-palveluntarjoajat",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Mallit",
         "health": "Kunto"
@@ -2253,7 +2281,8 @@
       "next": "Seuraava",
       "page": "Sivu {{page}} / {{totalPages}}",
       "total": "(yhteensä {{count}})"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Näytä vianjäljitys",
       "empty": "Ei vianjäljitystietoja vielä.",
       "emptyHint": "Lähetä viesti nähdäksesi reititystiedot.",
-      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki"
+      "turnTraceLog": "Vuoron #{{turn}} jäljitysloki",
+      "resize": "Muuta virheenkorjauspaneelin kokoa"
     },
     "compare": {
       "modelLabel": "Malli {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Roolin päivittäminen epäonnistui",
       "createFailed": "Roolin luominen epäonnistui",
       "deleteFailed": "Roolin poistaminen epäonnistui"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Takaisin yhdistämiseen",
     "title": "Yhdistä",
     "docs": "Dokumentaatio",
-    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
     "noClientPrefix": "Ei asiakasta nimellä",
     "errors": {
       "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "reitittää sen asiakasmalliliikenteen Routerlyn läpi.",
     "mcpLabel": "MCP",
     "mcpDescription": "lataa Routerlyn työkalupalvelimeksi sen sisään.",
-    "notEnabledPrefix": "Asiakasmääritys ei ole käytössä. Pyydä ylläpitäjää ottamaan se käyttöön",
     "errors": {
       "loadFailed": "Asiakkaiden lataaminen epäonnistui: {{error}}"
     },

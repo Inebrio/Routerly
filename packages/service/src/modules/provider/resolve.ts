@@ -11,6 +11,15 @@ const DEFAULT_ENDPOINTS: Partial<Record<string, string>> = {
   anthropic: 'https://api.anthropic.com',
   'anthropic-oauth': 'https://api.anthropic.com',
   'anthropic-web': 'https://claude.ai',
+  deepseek: 'https://api.deepseek.com/v1',
+  groq: 'https://api.groq.com/openai/v1',
+  together: 'https://api.together.xyz/v1',
+  perplexity: 'https://api.perplexity.ai',
+  xai: 'https://api.x.ai/v1',
+  mistral: 'https://api.mistral.ai/v1',
+  cohere: 'https://api.cohere.ai/compatibility/v1',
+  fireworks: 'https://api.fireworks.ai/inference/v1',
+  cerebras: 'https://api.cerebras.ai/v1',
 };
 
 /**

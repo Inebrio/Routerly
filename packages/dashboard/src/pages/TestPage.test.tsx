@@ -13,6 +13,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 // ── Module mocks (hoisted) ─────────────────────────────────────────────────
 
+let layoutStore: { width: number | null; collapsed: boolean } = { width: null, collapsed: false };
+
 vi.mock('../api.js', () => ({
   getRouters: vi.fn(),
   getPlaygroundPresets: vi.fn(),
@@ -20,6 +22,8 @@ vi.mock('../api.js', () => ({
   deletePlaygroundPreset: vi.fn(),
   getTrace: vi.fn(),
   streamTraces: vi.fn(),
+  getPlaygroundDebugLayout: vi.fn(() => ({ ...layoutStore })),
+  setPlaygroundDebugLayout: vi.fn((l: { width: number | null; collapsed: boolean }) => { layoutStore = { ...l }; }),
 }));
 
 // ponytail: mock SearchableSelect as a plain <select> so getByRole('combobox')/fireEvent.change tests keep working
@@ -114,6 +118,7 @@ async function setupWithToken() {
 // ── beforeEach ─────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  layoutStore = { width: null, collapsed: false };
   vi.mocked(getRouters).mockResolvedValue([FAKE_ROUTER] as never);
   vi.mocked(getPlaygroundPresets).mockResolvedValue([]);
   vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
@@ -185,6 +190,39 @@ describe('TestPage — clean turn', () => {
     { timeout: 4000 });
 
     expect(screen.queryByText(/blocked by guardrail/i)).toBeNull();
+  });
+});
+
+describe('TestPage — non-streaming JSON reply (response-blocking rule)', () => {
+  function jsonReply(content: string, finishReason: string) {
+    return new Response(JSON.stringify({
+      id: 'm1', object: 'chat.completion', model: 'm',
+      choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: finishReason }],
+    }), { status: 200, headers: { 'content-type': 'application/json', 'x-routerly-trace': 'trace-123' } });
+  }
+
+  it('shows the answer of a stream:false JSON body in the assistant bubble', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    global.fetch = vi.fn().mockResolvedValue(jsonReply('Paris', 'stop'));
+
+    await setupWithToken();
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'capital of France?');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.queryByText('Paris')).not.toBeNull(), { timeout: 4000 });
+  });
+
+  it('detects content_filter in a JSON body as a blocked turn', async () => {
+    vi.mocked(getTrace).mockResolvedValue({
+      trace: [{ message: 'guardrail:response-triggered', panel: 'response', details: { rule: 'mod:x', target: 'response', block: true, blockMessage: 'Not allowed.' } }],
+    } as never);
+    global.fetch = vi.fn().mockResolvedValue(jsonReply('', 'content_filter'));
+
+    await setupWithToken();
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hitchcock');
+    await userEvent.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.queryByText('Not allowed.')).not.toBeNull(), { timeout: 4000 });
   });
 });
 
@@ -454,6 +492,50 @@ describe('TestPage — debug sidebar hide/show', () => {
   });
 });
 
+describe('TestPage — debug panel resize and persistence', () => {
+  const width = () => Number(screen.getByTestId('debug-resize-handle').getAttribute('aria-valuenow'));
+
+  it('keyboard resize stays within min and max', async () => {
+    await setupWithToken();
+    expect(width()).toBe(380);
+    const handle = screen.getByTestId('debug-resize-handle');
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(width()).toBe(396);
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(width()).toBe(720);
+    fireEvent.keyDown(handle, { key: 'ArrowLeft', shiftKey: true });
+    expect(width()).toBe(720);
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(width()).toBe(280);
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(width()).toBe(280);
+    fireEvent.keyDown(handle, { key: 'Enter' });
+    expect(width()).toBe(380);
+  });
+
+  it('collapse then expand restores the previous width and persists the choice', async () => {
+    await setupWithToken();
+    fireEvent.keyDown(screen.getByTestId('debug-resize-handle'), { key: 'End' });
+    await userEvent.click(screen.getByTestId('debug-collapse'));
+    expect(screen.queryByTestId('debug-panel')).toBeNull();
+    expect(layoutStore).toEqual({ width: 720, collapsed: true });
+    await userEvent.click(screen.getByTestId('debug-expand'));
+    expect(width()).toBe(720);
+  });
+
+  it('starts from the stored layout and re-limits an out-of-range width', async () => {
+    layoutStore = { width: 5000, collapsed: false };
+    await setupWithToken();
+    expect(width()).toBe(720);
+  });
+
+  it('starts collapsed when the stored layout says so', async () => {
+    layoutStore = { width: 400, collapsed: true };
+    await setupWithToken();
+    expect(screen.queryByTestId('debug-expand')).not.toBeNull();
+  });
+});
+
 // ── Debug Clear button (inside sidebar, not chat) ─────────────────────────────
 
 describe('TestPage — debug sidebar Clear button', () => {
@@ -615,6 +697,24 @@ describe('TestPage — fetch HTTP error', () => {
     await waitFor(() =>
       expect(screen.queryByText('Rate limited')).not.toBeNull(),
     { timeout: 4000 });
+  });
+
+  it('wraps a long unbroken error text inside the banner (ROUT-462)', async () => {
+    vi.mocked(getTrace).mockResolvedValue({ trace: [] } as never);
+    const long = 'sk-' + '*'.repeat(300);
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { message: long } }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    }));
+
+    await setupWithToken();
+
+    await userEvent.type(screen.getByPlaceholderText('Type a message...'), 'hi');
+    await userEvent.keyboard('{Enter}');
+
+    const banner = await screen.findByText(long, undefined, { timeout: 4000 });
+    expect(banner.style.overflowWrap).toBe('anywhere');
+    expect(banner.style.maxWidth).toBe('100%');
   });
 
   it('shows HTTP status error when response body is not parseable JSON', async () => {

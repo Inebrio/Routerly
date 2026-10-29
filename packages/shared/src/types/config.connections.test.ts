@@ -44,3 +44,14 @@ describe('isConnectionLabelTaken', () => {
     expect(isConnectionLabelTaken('openai', [])).toBe(false);
   });
 });
+
+describe('connections without a label (corrupt connections.json)', () => {
+  it('suggestConnectionLabel ignores undefined entries', () => {
+    expect(suggestConnectionLabel('openai', undefined, [undefined, 'openai'])).toBe('openai-2');
+  });
+
+  it('isConnectionLabelTaken ignores undefined entries', () => {
+    expect(isConnectionLabelTaken('x', [undefined, 'y'])).toBe(false);
+    expect(isConnectionLabelTaken('y', [undefined, 'Y'])).toBe(true);
+  });
+});

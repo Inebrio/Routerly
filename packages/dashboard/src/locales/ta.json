@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "சில கட்டமைப்பு கோப்புகளுக்கு அனுமதிக்க கூடிய அணுகல் உள்ளது ({{files}})। தொடக்கம் மற்றும் கோரிக்கைகள் இன்னும் சரியாக வேலை செய்கின்றன. அமைப்புகள் → பாதுகாப்பு இலிருந்து சரிசெய்யவும், அல்லது வசதியான போது ஹோஸ்ட் கோப்பு முறைமையிலிருந்து சரிசெய்யவும்.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "நிராகரிக்கவும்",
       "updateAvailable": "Routerly v{{latest}} கிடைக்கிறது. நீங்கள் v{{current}} இல் இருக்கிறீர்கள்.",
       "updateLink": "அமைப்புகளில் புதுப்பிக்கவும்",
@@ -418,7 +419,8 @@
       "status": "நிலை",
       "encoding": "குறியாக்கம்",
       "frames": "பிரேம்கள்",
-      "bytes": "பைட்டுகள்"
+      "bytes": "பைட்டுகள்",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "சேமிக்கப்படுகிறது…",
         "enable": "இயக்கவும்",
         "disable": "முடக்கவும்"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "பட்ஜெட் – சாரம் மாற்றவும்",
         "systemStartup": "கணினி – தொடக்கம்",
         "systemShutdown": "கணினி – ஹிறுக்கம்",
-        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது"
+        "systemUpdateAvailable": "கணினி – புதிப்பிக்க கிடைக்கிறது",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "சிறை அகற்றவும்",
       "removeChannelConfirm": "சிறை அகற்ற?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} பயனர்",
         "userCount_other": "{{count}} பயனர்கள்",
-        "everyone": "அனைவரும்"
+        "everyone": "அனைவரும்",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "சுமை தவறிவிட்டது"
@@ -833,6 +838,9 @@
         },
         "optional": "(விரும்பத்தகாய)",
         "keepCurrentPlaceholder": "தற்போதைய பயணப் விட விட்டு",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "தட்டு அனைத்து திசையாக்குபவர்கள் மூலம் நிகழ்வுகளை பெற வெளிப்பாக வேண்டாம்.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "விநாடி (0 = மூட்டை சீல் நிலை)",
-          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।"
+          "cooldownHint": "குறைந்த अंतराल இந்த சिறை பயண்ட் மறு ஒரே நிகழ்வு।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "பெறுநர்கள் / இலக்கங்கள்",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "சிறைகளை தேடு…",
         "noResults": "முடிவுகள் இல்லை",
         "emptyTitle": "எந்த அறிவிப்பு சिறைகளை அமைப்பு வேண்டும் இல்லை.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "எந்த சिறைகளை செயல்பட்ட வடிகட்ட பொருத்தம் நிலை।",
         "nameInlinePlaceholder": "பெயர் (விரும்பத்தகாய)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "ஒருங்கிணைப்பு அகற்றவும்",
       "saving": "சேமிக்கப்படுகிறது…",
       "save": "சேமிக்க",
-      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்"
+      "addButton": "ஒருங்கிணைப்பு சேர்க்கவும்",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "கடைசி சோதனை"
       },
       "noCheckPerformed": "புதிப்பிக்க சோதனை செயல்படுத்த வேண்டும் இல்லை.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "புதிப்பிக்கம் சோதனை",
       "checking": "சோதனை…",
       "updateTo": "v{{version}} குக்குவிக்கவும்",
@@ -1313,6 +1327,8 @@
         "traceContent": "தடம் உள்ளடக்கம்",
         "traceContentHint": "தடம் எப்போதும் அளவிட தரவு (மாதிரிகள், மதிப்புகள், டோகன்கள், செலவு, தாமதம்). தூண்டல் அனுப்ப மற்றும் விளக்க பெற் இல் இந்த செய். அவை சேமிக்கப்பட்ட பயன்பாடு பதிவு மற்றும் பார்வை யாரும் பெற பற்றி.",
         "capturePromptsAndAnswers": "தூண்டல் மற்றும் விளக்க பெற்",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "மாற்றங்கள் சேமிக்க",
         "createRouter": "திசையாக்குபவர் உருவாக்க",
         "createOrchestrator": "ஆர்கெஸ்ட்ரேட்டர் உருவாக்கவும்",
@@ -1395,6 +1411,7 @@
       "saving": "சேமிக்கப்படுகிறது...",
       "saved": "சேமிக்கப்பட்டது",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "டோகன் சேமிப்பு முன்",
         "description": "தற்போதைய (சேமிக்கப்படாத) குழாய இயக்க ஒரு தூண்டல் மூலம் பார்வை என்ன ஒவ்வொரு கட்ட குறைக்க மற்றும் என்ன அதை செலவு. பொறுத்தம் மாதிரிக் உரை தொட்டுக்கள் ஒன்று, அல்லது வகை உங்கள் சொந்த தூண்டல்.",
         "promptLabel": "தூண்டல்",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "எந்த கோரிக்கை இல் அனுப்பப்பட்ட.",
       "turnTraceLog": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்",
       "turnTraceLog_other": "பாலி #{{turn}} தடம் சொல்ல · {{count}} ஈவன்கள்"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "மாதிரிகள்",
       "subtitle": "LLM வழங்குநர்கள் Routerly உடன் பதிவு",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "மாதிரிகள்",
         "health": "ஆரோக்கியம்"
@@ -2253,7 +2281,8 @@
       "next": "அடுத்த",
       "page": "பக்கம் {{page}} {{totalPages}} இல்",
       "total": "({{count}} மொத्त)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "डीबग दिखाएं",
       "empty": "अभी तक कोई डीबग डेटा नहीं।",
       "emptyHint": "रूटिंग विवरण देखने के लिए एक संदेश भेजें।",
-      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "टर्न #{{turn}} ट्रेस लॉग",
+      "resize": "பிழைத்திருத்த பலகத்தின் அளவை மாற்றவும்"
     },
     "compare": {
       "modelLabel": "मॉडल {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "भूमिका को अपडेट करने में विफल",
       "createFailed": "भूमिका बनाने में विफल",
       "deleteFailed": "भूमिका हटाने में विफल"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "कनेक्ट पर वापस जाएं",
     "title": "कनेक्ट करें",
     "docs": "दस्तावेज़",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
     "noClientPrefix": "कोई क्लाइंट नाम नहीं",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "उस क्लाइंट मॉडल ट्रैफ़िक को Routerly के माध्यम से रूट करता है।",
     "mcpLabel": "MCP",
     "mcpDescription": "इसके अंदर Routerly को एक उपकरण सर्वर के रूप में लोड करता है।",
-    "notEnabledPrefix": "क्लाइंट कॉन्फ़िगरेटर सक्षम नहीं है। सेटअप के लिए एडमिन को कहें",
     "errors": {
       "loadFailed": "क्लाइंट लोड करने में विफल: {{error}}"
     },

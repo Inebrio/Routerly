@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Một số tệp cấu hình có quyền truy cập cho phép ({{files}})। Khởi động và yêu cầu vẫn hoạt động. Sửa nó từ Cài đặt → Bảo mật, hoặc từ hệ thống tệp máy chủ khi thuận tiện.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Bỏ qua",
       "updateAvailable": "Routerly v{{latest}} có sẵn. Bạn đang dùng v{{current}}.",
       "updateLink": "Cập nhật trong Cài đặt",
@@ -418,7 +419,8 @@
       "status": "trạng thái",
       "encoding": "mã hóa",
       "frames": "khung",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Đang lưu…",
         "enable": "Bật",
         "disable": "Tắt"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Ngân sách - Đặt lại",
         "systemStartup": "Hệ thống - Khởi động",
         "systemShutdown": "Hệ thống - Tắt",
-        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn"
+        "systemUpdateAvailable": "Hệ thống - Cập nhật có sẵn",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Xóa kênh",
       "removeChannelConfirm": "Xóa kênh?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} perm",
         "userCount": "{{count}} người dùng",
         "userCount_other": "{{count}} người dùng",
-        "everyone": "Mọi người"
+        "everyone": "Mọi người",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Không thể tải"
@@ -833,6 +838,9 @@
         },
         "optional": "(tùy chọn)",
         "keepCurrentPlaceholder": "Để trống để giữ hiện tại",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Để trống để nhận sự kiện từ tất cả bộ định tuyến.",
           "cooldownHeading": "Thời gian hạ nhiệt",
           "cooldownSuffix": "giây (0 = không hạ nhiệt)",
-          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện."
+          "cooldownHint": "Khoảng thời gian tối thiểu trước khi kênh này có thể kích hoạt lại cho cùng một sự kiện.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Người nhận / Mục tiêu",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Tìm kiếm kênh…",
         "noResults": "Không có kết quả",
         "emptyTitle": "Chưa cấu hình kênh thông báo nào.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Không có kênh nào phù hợp với các bộ lọc hoạt động.",
         "nameInlinePlaceholder": "Nhãn (tùy chọn)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Xóa tích hợp",
       "saving": "Đang lưu…",
       "save": "Lưu",
-      "addButton": "Thêm tích hợp"
+      "addButton": "Thêm tích hợp",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Lần kiểm tra cuối"
       },
       "noCheckPerformed": "Chưa thực hiện kiểm tra cập nhật.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Kiểm tra cập nhật",
       "checking": "Đang kiểm tra…",
       "updateTo": "Cập nhật thành v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Vết nội dung",
         "traceContentHint": "Vết luôn ghi lại siêu dữ liệu (mô hình, điểm, token, chi phí, độ trễ). Bật điều này để cũng ghi lại các nhắc được gửi và câu trả lời nhận được. Chúng được lưu trữ với bản ghi sử dụng và hiển thị cho bất kỳ ai có thể đọc báo cáo.",
         "capturePromptsAndAnswers": "Nắm bắt nhắc nhở và câu trả lời",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Lưu các thay đổi",
         "createRouter": "Tạo bộ định tuyến",
         "createOrchestrator": "Tạo Orchestrator",
@@ -1395,6 +1411,7 @@
       "saving": "Đang lưu...",
       "saved": "Đã lưu",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Xem trước tiết kiệm token",
         "description": "Chạy đường ống hiện tại (chưa lưu) qua một nhắc để xem những gì mỗi bước loại bỏ và chi phí là gì. Chọn một trong các cuộc trò chuyện mẫu, hoặc nhập nhắc của riêng bạn.",
         "promptLabel": "Nhắc",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Chưa gửi yêu cầu nào.",
       "turnTraceLog": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện",
       "turnTraceLog_other": "Lượt #{{turn}} nhật ký vết · {{count}} sự kiện"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Mô hình",
       "subtitle": "Mô hình nhà cung cấp LLM được đăng ký với Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Mô hình",
         "health": "Sức khỏe"
@@ -2253,7 +2281,8 @@
       "next": "Tiếp theo",
       "page": "Trang {{page}} của {{totalPages}}",
       "total": "({{count}} tổng cộng)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Hiển thị gỡ lỗi",
       "empty": "Chưa có dữ liệu gỡ lỗi nào.",
       "emptyHint": "Gửi tin nhắn để xem chi tiết định tuyến.",
-      "turnTraceLog": "Lượt #{{turn}} nhật ký vết"
+      "turnTraceLog": "Lượt #{{turn}} nhật ký vết",
+      "resize": "Thay đổi kích thước bảng gỡ lỗi"
     },
     "compare": {
       "modelLabel": "Mô hình {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Không thể cập nhật vai trò",
       "createFailed": "Không thể tạo vai trò",
       "deleteFailed": "Không thể xóa vai trò"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Quay lại kết nối",
     "title": "Kết nối",
     "docs": "Tài liệu",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "noClientPrefix": "Không có khách hàng tên",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "định tuyến lưu lượng mô hình khách hàng đó thông qua Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "tải Routerly dưới dạng máy chủ công cụ bên trong nó.",
-    "notEnabledPrefix": "Trình cấu hình khách hàng không được bật. Yêu cầu quản trị viên bật nó bằng",
     "errors": {
       "loadFailed": "Không thể tải khách hàng: {{error}}"
     },

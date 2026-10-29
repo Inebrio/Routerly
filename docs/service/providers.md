@@ -20,8 +20,8 @@ Adapters are selected automatically based on the `provider` field in a model's c
 | `gemini` | `GeminiAdapter` | OpenAI-compatible endpoint | Uses OpenAI SDK pointed at Google's OpenAI-compatible base URL |
 | `ollama` | `OllamaAdapter` | OpenAI-compatible endpoint | Uses OpenAI SDK pointed at local Ollama host |
 | `custom` | `CustomAdapter` | OpenAI-compatible endpoint | Any endpoint that speaks `/v1/chat/completions` |
-| `anthropic-web` | `AnthropicWebAdapter` | Unofficial, session cookie | Gated by `provider-web` module (off by default) — see [below](#web-session-adapters-anthropic-web-openai-web) |
-| `openai-web` | `OpenAIWebAdapter` | Unofficial, session cookie | Gated by `provider-web` module (off by default) — see [below](#web-session-adapters-anthropic-web-openai-web) |
+| `anthropic-web` | `AnthropicWebAdapter` | Unofficial, session cookie | Use at your own risk — see [below](#web-session-adapters-anthropic-web-openai-web) |
+| `openai-web` | `OpenAIWebAdapter` | Unofficial, session cookie | Use at your own risk — see [below](#web-session-adapters-anthropic-web-openai-web) |
 
 ---
 
@@ -160,15 +160,9 @@ These providers use the OpenAI-compatible protocol. Register them using the `cus
 
 ## Web Session Adapters (`anthropic-web`, `openai-web`)
 
-> **⚠️ Unofficial, off by default, use at your own risk.** These adapters authenticate with a **browser session cookie** instead of an official API key, replaying the same internal endpoints the provider's own web/chat interface uses. This is not an officially supported integration path. It relies on undocumented behaviour that can change or break at any time, and using it **may violate the provider's Terms of Service**. Evaluate that risk yourself before enabling this feature.
+> **⚠️ Unofficial, use at your own risk.** These adapters authenticate with a **browser session cookie** instead of an official API key, replaying the same internal endpoints the provider's own web/chat interface uses. This is not an officially supported integration path. It relies on undocumented behaviour that can change or break at any time, and using it **may violate the provider's Terms of Service**. Evaluate that risk yourself before using this feature.
 
-Both adapters are gated by the `provider-web` module, which is **disabled by default**. A connection with `providerId: "anthropic-web"` or `providerId: "openai-web"` refuses to run — at connection-creation time and at request time — until an administrator explicitly enables `provider-web`:
-
-```bash
-routerly modules enable provider-web
-```
-
-The equivalent management API is `POST /api/modules/provider-web/enable` (see [API — Management](../api/management#modules)).
+Both adapters are always available: creating a connection with `providerId: "anthropic-web"` or `providerId: "openai-web"` needs no extra step. The dashboard form keeps the unofficial-provider warning.
 
 **Credentials** — instead of an API key, the connection's encrypted credentials hold the session cookie value copied from a logged-in browser session:
 
@@ -197,3 +191,7 @@ Two separate timeouts apply. The model `timeout` field (ms, default `60000`) is 
 - [Concepts — Providers](../concepts/providers) — provider catalogue with model lists and pricing
 - [Service — Routing Engine](./routing-engine) — how adapters are invoked after model selection
 - [Dashboard — Models](../dashboard/models) — how to register a model with a provider
+
+## Endpoint override for cloud providers
+
+`azure-openai`, `bedrock` and `vertex` call their cloud host by default. When the connection has an `endpoint`, it replaces the host (Azure: `{endpoint}/openai/deployments/{deployment}`, Bedrock: `{endpoint}/model/{id}/converse[-stream]`, Vertex: `{endpoint}/v1beta1/projects/…`). Leave it empty for production. It exists for gateways and for the [official provider mocks](../contributing/provider-mocks.md).

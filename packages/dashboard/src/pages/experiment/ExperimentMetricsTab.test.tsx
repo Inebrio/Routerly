@@ -35,7 +35,9 @@ const setExperiment = vi.fn();
 
 /** The range picker is the shared one: its trigger is the only .btn-secondary here. */
 const openPicker = () => userEvent.click(document.querySelector('button.btn-secondary') as HTMLElement);
-const today = () => new Date().toISOString().slice(0, 10);
+// Local calendar days, like the picker: toISOString() is UTC and differs from the local day near midnight.
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = () => iso(new Date());
 
 function setContext(experiment: unknown) {
   mockUseExperiment.mockReturnValue({ experiment, setExperiment } as unknown as ReturnType<typeof useExperiment>);
@@ -72,7 +74,8 @@ describe('ExperimentMetricsTab', () => {
     await waitFor(() => expect(mockGetMetrics).toHaveBeenCalledWith('exp-1', {}));
     await openPicker();
     await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
-    const from = new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10);
+    const d = new Date(); d.setDate(d.getDate() - 6);
+    const from = iso(d);
     await waitFor(() => expect(mockGetMetrics).toHaveBeenLastCalledWith('exp-1', { from, to: today() }));
   });
 

@@ -408,6 +408,21 @@ describe('notification channel add', () => {
     expect(out.join(' ')).toContain('added');
   });
 
+  it('adds a webhook channel with url, method and secret', async () => {
+    mockApi.mockResolvedValue({ id: 'w1', provider: 'webhook', name: 'hook' });
+    await runChannel('add', '--type', 'webhook', '--name', 'hook', '--url', 'http://h/x', '--method', 'get', '--secret', 's3');
+    expect(mockApi).toHaveBeenCalledWith('POST', '/api/notifications/channels',
+      expect.objectContaining({ provider: 'webhook', url: 'http://h/x', method: 'GET', secret: 's3' }));
+  });
+
+  it('webhook add --json prints valid JSON; missing --url exits 1', async () => {
+    mockApi.mockResolvedValue({ id: 'w2', provider: 'webhook', name: 'hook' });
+    const { out } = await runChannel('add', '--type', 'webhook', '--name', 'hook', '--url', 'http://h/x', '--json');
+    expect(JSON.parse(out.join('\n')).id).toBe('w2');
+    const { err } = await runChannel('add', '--type', 'webhook', '--name', 'hook');
+    expect(err.join(' ')).toContain('--url is required');
+  });
+
   it('adds a discord channel', async () => {
     mockApi.mockResolvedValue({ id: 'ch4', provider: 'discord', name: 'dev-alerts' });
     const { out } = await runChannel('add', '--type', 'discord', '--name', 'dev-alerts', '--webhook-url', 'https://discord.com/api/webhooks/x');
@@ -623,12 +638,18 @@ describe('notification channel show', () => {
     expect(s).toContain('configured'); // botToken masked
   });
 
-  it('shows "events: all" and "(unnamed)" when absent', async () => {
-    mockApi.mockResolvedValue({ id: 'ch2', provider: 'webhook', url: 'https://x.com' });
+  it('shows "events: all" and "(unnamed)" when absent on a dashboard channel', async () => {
+    mockApi.mockResolvedValue({ id: 'ch2', provider: 'dashboard' });
     const { out } = await runChannel('show', 'ch2');
     const s = out.join(' ');
     expect(s).toContain('(unnamed)');
     expect(s).toContain('events: all');
+  });
+
+  it('shows events: none (silent) for an external channel without events', async () => {
+    mockApi.mockResolvedValue({ id: 'ch2', provider: 'webhook', url: 'https://x.com' });
+    const { out } = await runChannel('show', 'ch2');
+    expect(out.join(' ')).toContain('events: none');
   });
 
   it('marks an unset secret as "(not set)"', async () => {
@@ -713,6 +734,12 @@ describe('notification channel edit', () => {
     mockApi.mockResolvedValue({ id: 'ch1', provider: 'slack', name: 's' });
     await runChannel('edit', 'ch1', '--bot-token', 'xoxb-new');
     expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', { botToken: 'xoxb-new' });
+  });
+
+  it('--clear-secret sends secret null', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'webhook', name: 'w' });
+    await runChannel('edit', 'ch1', '--clear-secret');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', { secret: null });
   });
 
   it('errors when no fields provided', async () => {
@@ -1047,3 +1074,24 @@ describe('notification channel edit — cooldown and routers', () => {
   });
 });
 
+
+describe('notification channel edit — username and clearing targets', () => {
+  it('patches username', async () => {
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'smtp', name: 'x' });
+    await runChannel('edit', 'ch1', '--username', 'bob');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', expect.objectContaining({ username: 'bob' }));
+  });
+
+  it.each([
+    ['--target-roles', 'roles'],
+    ['--target-users', 'users'],
+    ['--target-permissions', 'permissions'],
+  ])('%s "" clears only that list and keeps the others', async (flag, key) => {
+    const stored = { roles: ['admin'], users: ['u1'], permissions: ['models:read'] };
+    mockApi.mockResolvedValue({ id: 'ch1', provider: 'dashboard', name: 'x', targets: stored });
+    await runChannel('edit', 'ch1', flag, '');
+    expect(mockApi).toHaveBeenCalledWith('PATCH', '/api/notifications/channels/ch1', {
+      targets: { ...stored, [key]: [] },
+    });
+  });
+});

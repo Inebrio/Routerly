@@ -153,9 +153,11 @@ export async function emitEvent(
     );
 
     // Per-router override (#91): merge the router's channels for its own events.
-    if (opts.routerId) {
+    // Most emitters carry the router only in `details`, so fall back to it.
+    const overrideRouterId = opts.routerId ?? (typeof details.routerId === 'string' ? details.routerId : undefined);
+    if (overrideRouterId) {
       const routers = await readConfig('routers');
-      const router = routers.find((p) => p.id === opts.routerId);
+      const router = routers.find((p) => p.id === overrideRouterId);
       for (const id of router?.notifications?.channels ?? []) {
         if (external.some((c) => c.id === id)) matched.add(id);
       }
@@ -170,9 +172,9 @@ export async function emitEvent(
       matchedChannels.map(async (channel) => {
         // If channel is scoped to specific routers, skip if this event isn't from one of them
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
-        if ((channel as any).routers?.length > 0 && opts.routerId) {
+        if ((channel as any).routers?.length > 0 && overrideRouterId) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped provider/SDK payload
-          if (!((channel as any).routers as string[]).includes(opts.routerId)) {
+          if (!((channel as any).routers as string[]).includes(overrideRouterId)) {
             return;
           }
         }

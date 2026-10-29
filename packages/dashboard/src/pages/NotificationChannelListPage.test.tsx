@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { NotificationChannelListPage } from './NotificationChannelListPage';
 
+const authState = vi.hoisted(() => ({ allowed: true }));
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ can: () => authState.allowed }),
+}));
+
 vi.mock('../api', () => ({
   getNotificationChannels: vi.fn(),
   deleteNotificationChannel: vi.fn(),
@@ -584,5 +589,19 @@ describe('NotificationChannelListPage — sort by name with nameless channels', 
     const rows = Array.from(document.querySelectorAll('tbody tr'));
     // The nameless channel uses '' as name → sorts before 'Alpha'
     expect(rows.length).toBeGreaterThan(0);
+  });
+});
+
+describe('NotificationChannelListPage — without notification:write', () => {
+  afterEach(() => { authState.allowed = true; });
+
+  it('shows only the permission message and does not fetch', async () => {
+    authState.allowed = false;
+    render(<MemoryRouter><NotificationChannelListPage /></MemoryRouter>);
+    expect(screen.getByText(/permission to view notification channels/i)).toBeInTheDocument();
+    expect(screen.queryByText(/0 channels/i)).toBeNull();
+    expect(screen.queryByText('Add Channel')).toBeNull();
+    expect(screen.queryByText(/No notification channels configured/i)).toBeNull();
+    expect(getNotificationChannels).not.toHaveBeenCalled();
   });
 });

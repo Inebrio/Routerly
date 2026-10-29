@@ -191,7 +191,7 @@ Examples:
           console.log(table.toString());
         }
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -231,8 +231,7 @@ Examples:
         await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, body);
         console.log(chalk.green(`✓ Routing updated for "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -267,7 +266,7 @@ Examples:
         });
         console.log(table.toString());
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -312,8 +311,7 @@ Examples:
         });
         console.log(chalk.green(`✓ Policy "${type}" enabled for "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -341,8 +339,7 @@ Examples:
         });
         console.log(chalk.green(`✓ Policy "${type}" disabled for "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -375,8 +372,7 @@ Examples:
         console.log(chalk.green(`✓ Policies reordered for "${router.name}".`));
         reordered.forEach((p, i) => console.log(chalk.gray(`  ${i + 1}. ${p.type} (${p.enabled ? 'enabled' : 'disabled'})`)));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -412,7 +408,7 @@ Examples:
         }
         console.log(table.toString());
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -445,8 +441,7 @@ Examples:
         for (const w of res?.warnings ?? []) console.error(chalk.yellow(`Warning: ${w}`));
         console.log(chalk.green(`✓ Model "${modelId}" added to router "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -476,8 +471,7 @@ Examples:
         });
         console.log(chalk.green(`✓ Model "${modelId}" removed from router "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -516,8 +510,7 @@ Examples:
         });
         console.log(chalk.green(`✓ Prompt updated for "${modelId}" in "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -553,8 +546,7 @@ Examples:
         console.log(chalk.green(`✓ Models reordered for "${router.name}".`));
         reordered.forEach((m, i) => console.log(chalk.gray(`  ${i + 1}. ${formatModelId(m.modelId)}`)));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -597,7 +589,7 @@ Examples:
         }
         console.log(table.toString());
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -633,8 +625,7 @@ Examples:
         if (scopes?.length) console.log(chalk.gray(`  Scopes:  ${scopes.join(', ')}`));
         if (tags) console.log(chalk.gray(`  Tags:    ${Object.entries(tags).map(([k, v]) => `${k}=${v}`).join(', ')}`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -717,8 +708,7 @@ Examples:
         });
         console.log(chalk.green(`✓ Token "${tokenId}" updated in router "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -778,7 +768,7 @@ Examples:
         }
         console.log(table.toString());
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -838,8 +828,7 @@ Examples:
         });
         console.log(chalk.green(`✓ "${opts.email}" role updated to "${opts.role}" in "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -1014,7 +1003,7 @@ async function runAddRuleWizard(): Promise<GuardrailRule> {
     const spAns = await inquirer.prompt([{
       type: 'input',
       name: 'systemPrompt',
-      message: 'Custom moderation instructions:',
+      message: 'Moderation policy (plain words; the judge scores how much content violates it):',
       validate: (v: string) => v.trim().length > 0 || 'Required',
     }]) as { systemPrompt: string };
     const mc: ModerationGuardConfig = { systemPrompt: spAns.systemPrompt.trim() };
@@ -1048,13 +1037,19 @@ export function makeRouterCommand(): Command {
   // ── router list ─────────────────────────────────────────────────────────────
   cmd.command('list')
     .description('List all routers')
+    .option('--json', 'Output raw JSON')
     .addHelpText('after', `
 Examples:
   routerly router list
+  routerly router list --json
 `)
-    .action(async () => {
+    .action(async (opts: { json?: boolean }) => {
       try {
         const routers = await api<RouterConfig[]>('GET', '/api/routers');
+        if (opts.json) {
+          console.log(JSON.stringify(routers, null, 2));
+          return;
+        }
         if (routers.length === 0) {
           console.log(chalk.yellow('No routers yet. Use `routerly router create` to create one.'));
           return;
@@ -1107,6 +1102,7 @@ Examples:
         }
         console.log(chalk.gray(`  Timeout: `) + formatTimeout(router.timeoutMs));
         console.log(chalk.gray(`  Traces:  `) + (router.traceContent ? 'metadata + content' : 'metadata only'));
+        console.log(chalk.gray(`  Notify:  `) + (router.notifications?.channels.length ? router.notifications.channels.join(', ') : chalk.gray('(global channels only)')));
 
         // Routing
         console.log(chalk.bold('\n  Routing'));
@@ -1168,7 +1164,7 @@ Examples:
         }
         console.log('');
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -1301,14 +1297,17 @@ Units:    second | minute | hour | day | week | month
     .option('--timeout <ms>', 'New TTFT timeout per model attempt in milliseconds (0 disables it)')
     .option('--trace-content', 'Record prompts and answers in traces (off by default: metadata only)')
     .option('--no-trace-content', 'Record metadata only, no prompts or answers')
+    .option('--notification-channel <idOrName>', 'Also send this router\'s events to a notification channel (repeatable); replaces the existing override', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
+    .option('--no-notification-channels', 'Remove the router\'s notification channel override')
     .option('--candidate <routerId>', "Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list", (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     .option('--candidate-limit <spec>', 'Usage limit for a candidate router (repeatable); requires --candidate; see below for spec format', (v, acc: string[]) => { acc.push(v); return acc; }, [] as string[])
     // --trace-content declared before --no-trace-content, so an untouched flag stays
     // undefined and leaves the stored value alone.
-    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; candidate: string[]; candidateLimit: string[] }) => {
+    .action(async (nameOrId: string, opts: { name?: string; timeout?: string; traceContent?: boolean; notificationChannel: string[]; notificationChannels?: boolean; candidate: string[]; candidateLimit: string[] }) => {
       const traceContent = opts.traceContent;
-      if (!opts.name && opts.timeout === undefined && traceContent === undefined && !opts.candidate.length && !opts.candidateLimit.length) {
-        console.error(chalk.red('Provide at least --name, --timeout, --trace-content or --candidate (or --candidate-limit).'));
+      const clearChannels = opts.notificationChannels === false;
+      if (!opts.name && opts.timeout === undefined && traceContent === undefined && !opts.candidate.length && !opts.candidateLimit.length && !opts.notificationChannel.length && !clearChannels) {
+        console.error(chalk.red('Provide at least --name, --timeout, --trace-content or --candidate (or --candidate-limit, --notification-channel, --no-notification-channels).'));
         process.exit(1);
       }
       try {
@@ -1325,6 +1324,17 @@ Units:    second | minute | hour | day | week | month
           }
           applyCandidateLimits(candidates, opts.candidateLimit);
         }
+        let notifications: { channels: string[] } | null | undefined;
+        if (opts.notificationChannel.length) {
+          const all = await api<{ id: string; name?: string }[]>('GET', '/api/notifications/channels');
+          notifications = { channels: opts.notificationChannel.map(ref => {
+            const hit = all.find(c => c.id === ref) ?? all.find(c => c.name === ref);
+            if (!hit) throw new Error(`Notification channel "${ref}" not found.`);
+            return hit.id;
+          }) };
+        } else if (clearChannels) {
+          notifications = null;
+        }
         await api<void>('PUT', `/api/routers/${encodeURIComponent(router.id)}`, {
           name: opts.name ?? router.name,
           timeoutMs: opts.timeout !== undefined ? parseTimeoutOption(opts.timeout) : router.timeoutMs,
@@ -1334,6 +1344,7 @@ Units:    second | minute | hour | day | week | month
           policies: router.policies,
           models: router.models,
           ...(traceContent !== undefined ? { traceContent } : {}),
+          ...(notifications !== undefined ? { notifications } : {}),
           ...(candidates !== undefined ? { candidates } : {}),
         });
         console.log(chalk.green(`✓ Router "${router.name}" updated.`));
@@ -1363,8 +1374,7 @@ Examples:
         await api<void>('DELETE', `/api/routers/${encodeURIComponent(router.id)}`);
         console.log(chalk.green(`✓ Router "${router.name}" removed.`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -1446,8 +1456,7 @@ Examples:
         await api<void>('PATCH', `/api/routers/${encodeURIComponent(router.id)}/guardrails`, { guardrails: updated });
         console.log(chalk.green(`Guardrails updated for "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -1491,7 +1500,7 @@ Examples:
         console.log(table.toString());
         console.log('');
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -1539,8 +1548,7 @@ Examples:
         await api<void>('PATCH', `/api/routers/${encodeURIComponent(router.id)}/guardrails`, { pii: { policies } });
         console.log(chalk.green(`PII policy added to "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });
@@ -1565,8 +1573,7 @@ Examples:
         await api<void>('PATCH', `/api/routers/${encodeURIComponent(router.id)}/guardrails`, { pii: { policies } });
         console.log(chalk.green(`PII policy #${index} removed from "${router.name}".`));
       } catch (err) {
-        if (!(err instanceof ApiError)) console.error(chalk.red(`Error: ${(err as Error).message}`));
-        else console.error(chalk.red(`Error: ${err.message}`));
+        console.error(chalk.red(`Error: ${(err as Error).message}`));
         process.exit(1);
       }
     });

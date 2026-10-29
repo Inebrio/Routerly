@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "కొన్ని కాన్ఫిగరేషన్ ఫైలులకు అనుమతితో కూడిన యాక్సెస్ ఉంది ({{files}})। ప్రారంభం మరియు అభ్యర్థనలు ఇప్పటికీ పనిచేస్తాయి. సెట్టింగ్‌లు → భద్రత నుండి దీన్ని సరిదిద్దండి, లేదా సుబిధకరమైనప్పుడు హోస్ట్ ఫైల్‌సిస్టమ్ నుండి సరిదిద్దండి.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "విస్మరించండి",
       "updateAvailable": "Routerly v{{latest}} అందుబాటులో ఉంది. మీరు v{{current}}లో ఉన్నారు.",
       "updateLink": "సెట్టింగ్‌లలో నవీకరించండి",
@@ -418,7 +419,8 @@
       "status": "స్థితి",
       "encoding": "ఎన్‌కోడింగ్",
       "frames": "ఫ్రేమ్‌లు",
-      "bytes": "బైట్‌లు"
+      "bytes": "బైట్‌లు",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "సేవ చేస్తోంది…",
         "enable": "ప్రారంభం చేయండి",
         "disable": "నిష్క్రియం చేయండి"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "బడ్జెట్ – రీసెట్ చేసారు",
         "systemStartup": "సిస్టమ్ – ప్రారంభం చేసారు",
         "systemShutdown": "సిస్టమ్ – నిష్క్రియం చేసారు",
-        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది"
+        "systemUpdateAvailable": "సిస్టమ్ – నవీకరణ అందుబాటులో ఉంది",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "సరిభాగం తీసివేయండి",
       "removeChannelConfirm": "సరిభాగం తీసివేయండి?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} ఆర్డర",
         "userCount_other": "{{count}} ఆర్డర",
-        "everyone": "అందరూ"
+        "everyone": "అందరూ",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "లోడ్ చేయడం విఫలమైంది"
@@ -833,6 +838,9 @@
         },
         "optional": "(ఐచ్ఛికం)",
         "keepCurrentPlaceholder": "ప్రస్తుత ఆర్డర చేయుటకు",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "సమూహ ఈవెంట్‌లను చేరుకోవడానికి ఖాళీ వదిలివేయండి.",
           "cooldownHeading": "కూల్‌డౌన్",
           "cooldownSuffix": "సెకన్లు (0 = కూల్‌డౌన్ లేదు)",
-          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।"
+          "cooldownHint": "ఆ సరిభాగం తిరిగి కాల్ చేయుటకు ముందు కనీస విరామం।",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "గ్రహీత / లక్ష్య",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "సరిభాగాలను శోధించండి…",
         "noResults": "ఫలితాలు లేవు",
         "emptyTitle": "ఇంకా నోటిఫికేషన్ సరిభాగాలు ఆర్డర చేయబడలేదు.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "క్రియాశీల ఫిల్టర్‌లకు సరిభాగాలు సరిపోవు.",
         "nameInlinePlaceholder": "లేబుల్ (ఐచ్ఛికం)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "సమన్వయం తీసివేయండి",
       "saving": "సేవ చేస్తోంది…",
       "save": "సేవ చేయండి",
-      "addButton": "సమన్వయం జోడించండి"
+      "addButton": "సమన్వయం జోడించండి",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "చివరిసారి తనిఖీ చేసారు"
       },
       "noCheckPerformed": "ఇంకా నవీకరణ తనిఖీ చేయబడలేదు.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "నవీకరణల కోసం తనిఖీ చేయండి",
       "checking": "తనిఖీ చేస్తోంది…",
       "updateTo": "v{{version}}కు నవీకరించండి",
@@ -1313,6 +1327,8 @@
         "traceContent": "ట్రేస్ కంటెంట్",
         "traceContentHint": "ట్రేస్‌లు ఎప్పుడూ సమాచారం రికార్డ్ చేస్తాయి (మోడల్‌లు, స్కోర్‌లు, టోకెన్‌లు, ధర, లేటెన్సీ). ఈ ప్రాంప్ట్‌లను పంపిన మరియు చేరుకున్న ప్రతిస్పందనలను రికార్డ్ చేయుటకు దీనిని ఆన్ చేయండి. ఉపయోగ రికార్డ్ తో నిల్లబడవు మరియు నివేదనలను చదువుటకు అనుమతిచేసిన అందరికి చూపబడుతుంది.",
         "capturePromptsAndAnswers": "ప్రాంప్ట్‌లు మరియు చేరుకున్న సందేశాలను సంగ్రహించండి",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "మార్పులను సేవ చేయండి",
         "createRouter": "రౌటర్ సృష్టించండి",
         "createOrchestrator": "ఆర్కెస్ట్రేటర్ సృష్టించండి",
@@ -1395,6 +1411,7 @@
       "saving": "సేవ చేస్తోంది...",
       "saved": "సేవ చేసారు",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "టోకెన్ బ్యాకపు సూచన చూడండి",
         "description": "ప్రస్తుత (సేవ చేయని) పైపు ప్రాంప్ట్‌పై నడుపండి ప్రతిదీ దశ తీసివేస్తుందో మరియు ఇది ఖర్చు చేస్తుందో చూడటానికి. నమూనా సంభాషణలలో ఒకటి ఎంచుకోండి, లేదా మీ తన ప్రాంప్ట్ వర్ణించండి.",
         "promptLabel": "ప్రాంప్ట్",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "ఇంకా అభ్యర్థన పంపబడలేదు.",
       "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్",
       "turnTraceLog_other": "పరిమితి #{{turn}} ట్రేస్ లాగ్ · {{count}} ఈవెంట్‌లు"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "మోడల్‌లు",
       "subtitle": "Routerly తో నమోదు చేసిన LLM ప్రదాతలు",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "మోడల్‌లు",
         "health": "ఆరోగ్య"
@@ -2253,7 +2281,8 @@
       "next": "తదుపరి",
       "page": "పేజీ {{page}} / {{totalPages}}",
       "total": "({{count}} మొత్తం)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "చెప్పుటకు చూపండు",
       "empty": "ఇంకా చెప్పుటకు డేటా లేవు.",
       "emptyHint": "రూటింగ్ వివరాలు చూడటానికి సందేశం పంపండు.",
-      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్"
+      "turnTraceLog": "పరిమితి #{{turn}} ట్రేస్ లాగ్",
+      "resize": "డీబగ్ ప్యానెల్ పరిమాణాన్ని మార్చండి"
     },
     "compare": {
       "modelLabel": "మోడల్ {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "పాత్ర నవీకరించడం విఫలమైంది",
       "createFailed": "పాత్ర సృష్టించడం విఫలమైంది",
       "deleteFailed": "పాత్ర తొలగించడం విఫలమైంది"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "కనెక్ట్‌కు వెనుకకు",
     "title": "కనెక్ట్ చేయండి",
     "docs": "డాక్‌లు",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "noClientPrefix": "పేరు గల క్లయింట్ లేదు",
     "errors": {
       "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "ఆ క్లయింట్ మోడల్ ట్రాఫిక్‌ను Routerly ద్వారా రూట్ చేస్తుంది.",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly ను టూల్ సర్వర్‌గా లోడ్ చేస్తుంది.",
-    "notEnabledPrefix": "క్లయింట్ కాన్ఫిగరేటర్ ప్రారంభం చేయబడలేదు.",
     "errors": {
       "loadFailed": "ఖాతాలను లోడ్ చేయడం విఫలమైంది: {{error}}"
     },

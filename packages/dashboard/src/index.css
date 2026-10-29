@@ -26,6 +26,13 @@
   --warning: #f59e0b;
   --danger: #ef4444;
 
+  --info-bg: rgba(61, 117, 245, 0.12);
+  --info-border: rgba(61, 117, 245, 0.35);
+  --info-text: #93b4fb;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-border: rgba(245, 158, 11, 0.35);
+  --warning-text: #fcd34d;
+
   --radius: 12px;
   --radius-sm: 8px;
   --radius-lg: 16px;
@@ -68,6 +75,13 @@
   --warning: #f59e0b;
   --danger: #ef4444;
 
+  --info-bg: #eff6ff;
+  --info-border: #bfdbfe;
+  --info-text: #1e40af;
+  --warning-bg: #fffbeb;
+  --warning-border: #f6e05e;
+  --warning-text: #744210;
+
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
@@ -100,6 +114,13 @@
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
+
+    --info-bg: #eff6ff;
+    --info-border: #bfdbfe;
+    --info-text: #1e40af;
+    --warning-bg: #fffbeb;
+    --warning-border: #f6e05e;
+    --warning-text: #744210;
 
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.08);
@@ -156,6 +177,13 @@ input, select, textarea { font-family: inherit; }
   gap: 8px;
   min-height: 64px;
   flex-shrink: 0;
+}
+
+.sidebar--collapsed .sidebar-logo {
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 0;
+  gap: 6px;
 }
 
 .sidebar-logo-inner {
@@ -342,6 +370,15 @@ input, select, textarea { font-family: inherit; }
   margin-inline-start: var(--sidebar-width-collapsed);
 }
 
+.overview-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+@media (max-width: 768px) {
+  .overview-split { grid-template-columns: minmax(0, 1fr); }
+}
+
 .page-header {
   padding: 28px 32px 0;
   margin-bottom: 28px;
@@ -397,6 +434,7 @@ input, select, textarea { font-family: inherit; }
   padding: 20px;
   position: relative;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 /* A stat card that points at the section explaining its number (T81). */
@@ -430,7 +468,9 @@ a.stat-card:hover {
 }
 
 .stat-value {
-  font-size: 28px;
+  /* shrinks with the card so long values (e.g. $0.00008800) are never clipped */
+  font-size: min(28px, 13cqw);
+  overflow-wrap: anywhere;
   font-weight: 700;
   margin-top: 8px;
   color: var(--text-primary);
@@ -466,6 +506,12 @@ thead th {
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* Dense tables with many columns (Models Health) must fit a 1280px viewport without clipping. */
+table.table-compact thead th,
+table.table-compact tbody td { padding-inline: 8px; }
+table.table-compact thead th { white-space: normal; }
+table.table-compact .mono { overflow-wrap: anywhere; }
 
 tbody tr {
   border-top: 1px solid var(--border);
@@ -654,6 +700,11 @@ td .badge {
   font-size: 0.875rem;
   transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .form-input:focus {

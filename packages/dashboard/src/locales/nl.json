@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Sommige configuratiebestanden hebben permissieve toegang ({{files}}). Opstarten en aanvragen werken nog steeds. Repareer het vanuit Instellingen → Beveiliging, of vanuit het hostbestandssysteem indien nodig.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Sluiten",
       "updateAvailable": "Routerly v{{latest}} is beschikbaar. U bent op v{{current}}.",
       "updateLink": "Update in Instellingen",
@@ -418,7 +419,8 @@
       "status": "status",
       "encoding": "codering",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Opslaan...",
         "enable": "Inschakelen",
         "disable": "Uitschakelen"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Budget - Reset",
         "systemStartup": "Systeem - Opstarten",
         "systemShutdown": "Systeem - Afsluiten",
-        "systemUpdateAvailable": "Systeem - Update beschikbaar"
+        "systemUpdateAvailable": "Systeem - Update beschikbaar",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Kanaal verwijderen",
       "removeChannelConfirm": "Kanaal verwijderen?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} mach",
         "userCount": "{{count}} gebruiker",
         "userCount_other": "{{count}} gebruikers",
-        "everyone": "Iedereen"
+        "everyone": "Iedereen",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Kan niet laden"
@@ -833,6 +838,9 @@
         },
         "optional": "(optioneel)",
         "keepCurrentPlaceholder": "Leeg laten om huidigeerte behouden",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@voorbeeld.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.voorbeeld.com",
@@ -858,7 +866,9 @@
           "routersHint": "Leeg laten om gebeurtenissen van alle routers te ontvangen.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "seconden (0 = geen cooldown)",
-          "cooldownHint": "Minimaal interval voordat dit kanaal opnieuw kan afgaan voor dezelfde gebeurtenis."
+          "cooldownHint": "Minimaal interval voordat dit kanaal opnieuw kan afgaan voor dezelfde gebeurtenis.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Ontvangers / Doelen",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Kanalen zoeken...",
         "noResults": "Geen resultaten",
         "emptyTitle": "Nog geen notification kanalen geconfigureerd.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Geen kanalen passen bij de actieve filters.",
         "nameInlinePlaceholder": "Label (optioneel)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Integratie verwijderen",
       "saving": "Opslaan...",
       "save": "Opslaan",
-      "addButton": "Integratie toevoegen"
+      "addButton": "Integratie toevoegen",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Laatst gecontroleerd"
       },
       "noCheckPerformed": "Nog geen updatecontrole uitgevoerd.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Op updates controleren",
       "checking": "Controleren...",
       "updateTo": "Update naar v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Content traceren",
         "traceContentHint": "Traces registreren altijd metagegevens (modellen, scores, tokens, kosten, latentie). Schakel dit in om ook de verzonden prompts en ontvangen antwoorden op te slaan. Ze worden opgeslagen met de gebruiksrecord en zijn zichtbaar voor iedereen die rapporten kan lezen.",
         "capturePromptsAndAnswers": "Prompts en antwoorden vastleggen",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Wijzigingen opslaan",
         "createRouter": "Router aanmaken",
         "createOrchestrator": "Orchestrator maken",
@@ -1395,6 +1411,7 @@
       "saving": "Opslaan...",
       "saved": "Opgeslagen",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Token-besparing voorvertoning",
         "description": "Voer de huidigelopen) pijplijn uit op een prompt om te zien wat elke stap verwijdert en wat het kost. Kies een van de voorbeeldgesprekken of typ uw eigen prompt.",
         "promptLabel": "Prompt",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Nog geen verzoek verzonden.",
       "turnTraceLog": "Beurt #{{turn}} trace logboek · {{count}} gebeurtenis",
       "turnTraceLog_other": "Beurt #{{turn}} trace logboek · {{count}} gebeurtenissen"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modellen",
       "subtitle": "LLM-providers geregistreerd bij Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modellen",
         "health": "Gezondheid"
@@ -2253,7 +2281,8 @@
       "next": "Volgende",
       "page": "Pagina {{page}} van {{totalPages}}",
       "total": "({{count}} totaal)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Debug tonen",
       "empty": "Nog geen debug-gegevens.",
       "emptyHint": "Verzend een bericht om routeringsdetails te zien.",
-      "turnTraceLog": "Beurt #{{turn}} trace logboek"
+      "turnTraceLog": "Beurt #{{turn}} trace logboek",
+      "resize": "Formaat van het debugpaneel wijzigen"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Kan rol niet bijwerken",
       "createFailed": "Kan rol niet aanmaken",
       "deleteFailed": "Kan rol niet verwijderen"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Terug naar verbinden",
     "title": "Verbinden",
     "docs": "Documenten",
-    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
     "noClientPrefix": "Geen client met de naam",
     "errors": {
       "loadFailed": "Kan clients niet laden: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "routeert dat clientmodelverkeer door Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laadt Routerly als toolserver erin.",
-    "notEnabledPrefix": "Clientconfigurator is niet ingeschakeld. Vraag een beheerder om het in te schakelen met",
     "errors": {
       "loadFailed": "Kan clients niet laden: {{error}}"
     },

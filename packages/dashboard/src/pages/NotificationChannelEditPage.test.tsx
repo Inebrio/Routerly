@@ -33,6 +33,7 @@ vi.mock('./notificationChannelFields', () => ({
   ChannelEditFields: ({ onChange }: { form: Record<string, unknown>; onChange: (f: string, v: unknown) => void; isEdit: boolean }) => (
     <div data-testid="channel-edit-fields">
       <button type="button" data-testid="set-secret" onClick={() => onChange('password', 'new-pass')}>set-secret</button>
+      <button type="button" data-testid="remove-secret" onClick={() => onChange('password', null)}>remove-secret</button>
       <button type="button" data-testid="clear-secret" onClick={() => onChange('password', '')}>clear-secret</button>
     </div>
   ),
@@ -262,6 +263,16 @@ describe('NotificationChannelEditPage — submit', () => {
     expect(patch['password']).toBeUndefined(); // empty secret excluded
   });
 
+  it('sends null for a secret marked for removal', async () => {
+    mockGet.mockResolvedValue(makeChannel({ provider: 'smtp' }));
+    renderPage();
+    await waitFor(() => screen.getByTestId('remove-secret'));
+    await userEvent.click(screen.getByTestId('remove-secret'));
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+    expect((mockUpdate.mock.calls[0]![1] as Record<string, unknown>)['password']).toBeNull();
+  });
+
   it('skips id and provider keys during patch build (line 72)', async () => {
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: /Save Changes/ }));
@@ -294,7 +305,7 @@ describe('NotificationChannelEditPage — submit', () => {
     expect(patch['events']).toEqual(['budget.exceeded']);
   });
 
-  it('deletes targets when all inner arrays empty (line 89)', async () => {
+  it('sends targets: null when all inner arrays empty (clears recipients)', async () => {
     renderPage();
     await waitFor(() => screen.getByRole('button', { name: 'recipients' }));
     await userEvent.click(screen.getByRole('button', { name: 'recipients' }));
@@ -302,7 +313,7 @@ describe('NotificationChannelEditPage — submit', () => {
     await userEvent.click(screen.getByRole('button', { name: /Save Changes/ }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
     const patch = mockUpdate.mock.calls[0]![1] as Record<string, unknown>;
-    expect(patch['targets']).toBeUndefined();
+    expect(patch['targets']).toBeNull();
   });
 
   it('keeps targets when roles non-empty (lines 85, 88)', async () => {

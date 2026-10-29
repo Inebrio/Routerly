@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "काही कॉन्फिगरेशन फाइलांना परवानगीदायक अ‍ॅक्सेस आहे ({{files}})। स्टार्टअप आणि विनंत्या अजूनही कार्य करतात। हे सेटिंग्स → सुरक्षा वरून दुरुस्त करा, किंवा जेव्हा सुविधाजनक असेल तेव्हा होस्ट फाइलसिस्टमवरून दुरुस्त करा.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Dismiss",
       "updateAvailable": "Routerly v{{latest}} उपलब्ध है। आप v{{current}} पर हैं।",
       "updateLink": "सेटिंग्स में अपडेट करें",
@@ -418,7 +419,8 @@
       "status": "status",
       "encoding": "encoding",
       "frames": "frames",
-      "bytes": "bytes"
+      "bytes": "bytes",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Saving…",
         "enable": "Enable",
         "disable": "Disable"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "बजेट – रीसेट",
         "systemStartup": "सिस्टम – सुरुवात",
         "systemShutdown": "सिस्टम – बंद",
-        "systemUpdateAvailable": "सिस्टम – अपडेट उपलब्ध"
+        "systemUpdateAvailable": "सिस्टम – अपडेट उपलब्ध",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "चॅनल काढून टाका",
       "removeChannelConfirm": "चॅनल काढून टाकायचा?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} perms",
         "userCount": "{{count}} user",
         "userCount_other": "{{count}} users",
-        "everyone": "Everyone"
+        "everyone": "Everyone",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "लोड करणे अपयशी"
@@ -833,6 +838,9 @@
         },
         "optional": "(optional)",
         "keepCurrentPlaceholder": "वर्तमान राखून ठेवण्यासाठी रिक्त सोडा",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "सर्व राउटरमधून इव्हेंट प्राप्त करण्यासाठी रिक्त सोडा.",
           "cooldownHeading": "Cooldown",
           "cooldownSuffix": "सेकंद (0 = कुलडाउन नाही)",
-          "cooldownHint": "समान इव्हेंटसाठी हा चॅनल पुन्हा फायर करण्यापूर्वी किमान मध्यांतर."
+          "cooldownHint": "समान इव्हेंटसाठी हा चॅनल पुन्हा फायर करण्यापूर्वी किमान मध्यांतर.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "प्राप्तकर्ते / लक्ष्य",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "चॅनल शोधा…",
         "noResults": "कोणतेही परिणाम नाही",
         "emptyTitle": "अजून कोणतेही सूचना चॅनल कॉन्फिगर केले नाही.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "सक्रिय फिल्टरशी कोणतेही चॅनल जुळत नाही.",
         "nameInlinePlaceholder": "लेबल (वैकल्पिक)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "एकीकरण काढून टाका",
       "saving": "Saving…",
       "save": "Save",
-      "addButton": "एकीकरण जोडा"
+      "addButton": "एकीकरण जोडा",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "शेवटी तपासले"
       },
       "noCheckPerformed": "अजून कोणतीही अपडेट तपासणी केली नाही.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "अपडेट तपासा",
       "checking": "Checking…",
       "updateTo": "v{{version}} वर अपडेट करा",
@@ -1313,6 +1327,8 @@
         "traceContent": "ट्रेस सामग्री",
         "traceContentHint": "ट्रेस नेहमी मेटाडेटा (मॉडेल, स्कोर, टोकन, खर्च, विलंब) रेकॉर्ड करतात. पाठवलेल्या प्रॉम्प्ट आणि प्राप्त उत्तरे रेकॉर्ड करण्यासाठी हे चालू करा. ते वापर रेकॉर्डसह संचयित केले जातात आणि अहवाल वाचू शकणारे कोणालाही दृश्यमान आहेत.",
         "capturePromptsAndAnswers": "प्रॉम्प्ट आणि उत्तरे कॅप्चर करा",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "बदल सेव्ह करा",
         "createRouter": "Create Router",
         "createOrchestrator": "ऑर्केस्ट्रेटर तयार करा",
@@ -1395,6 +1411,7 @@
       "saving": "Saving...",
       "saved": "Saved",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "टोकन बचत पूर्वावलोकन",
         "description": "प्रत्येक चरण काय काढते आणि खर्च काय आहे हे पाहण्यासाठी वर्तमान (असंरक्षित) पाइपलाइन प्रॉम्प्टवर चलवा. नमुना संभाषणपैकी एक निवडा, किंवा आपली स्वतःची प्रॉम्प्ट टाइप करा.",
         "promptLabel": "Prompt",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "अद्याप कोणतीही विनंती पाठवलेली नाही।",
       "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग · {{count}} इव्हेंट",
       "turnTraceLog_other": "Turn #{{turn}} ट्रेस लॉग · {{count}} इव्हेंट्स"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Models",
       "subtitle": "Routerly सह नोंदणीकृत LLM प्रदाते",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Models",
         "health": "Health"
@@ -2253,7 +2281,8 @@
       "next": "Next",
       "page": "पृष्ठ {{page}} च्या {{totalPages}} पैकी",
       "total": "({{count}} एकूण)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "डीबग दाखवा",
       "empty": "अद्याप कोणतेही डीबग डेटा नाही।",
       "emptyHint": "राउटिंग तपशील पाहण्यासाठी संदेश पाठवा।",
-      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग"
+      "turnTraceLog": "Turn #{{turn}} ट्रेस लॉग",
+      "resize": "डीबग पॅनेलचा आकार बदला"
     },
     "compare": {
       "modelLabel": "मॉडेल {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "भूमिका अपडेट करणे अयशस्वी",
       "createFailed": "भूमिका तयार करणे अयशस्वी",
       "deleteFailed": "भूमिका हटवणे अयशस्वी"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "कनेक्ट कडे परत",
     "title": "Connect",
     "docs": "Docs",
-    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "noClientPrefix": "कोणतेही क्लायंट नावाचा",
     "errors": {
       "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "त्या क्लायंट मॉडेल ट्रॅफिकला Routerly द्वारे राउट करा।",
     "mcpLabel": "MCP",
     "mcpDescription": "Routerly साधन सर्वरच्या अंदरुन लोड करा।",
-    "notEnabledPrefix": "क्लायंट कॉन्फिगरेटर सक्षम नाही. व्यवस्थापकला त्यास सक्षम करण्यास कहा",
     "errors": {
       "loadFailed": "क्लायंट्स लोड करणे अयशस्वी: {{error}}"
     },

@@ -1,10 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, GripVertical, Check } from 'lucide-react';
 import { updateRouter, getModels, getProfiles, assignRouterProfiles, type Model, type RoutingProfile } from '../../api';
 import { PASSTHROUGH_MODEL_ID } from '@routerly/shared';
 import { useRouter } from './RouterLayout';
+import { useAuth } from '../../AuthContext';
 import { SearchableSelect } from '../../components/SearchableSelect';
+import { PendingProfileNotice, ReadOnlyFieldset, StartFromProfile } from '../../components/ProfileDraftControls';
+import { useProfileDraft } from '../../hooks/useProfileDraft';
 import { RoutingPoliciesEditor, mkPolicyId, type PolicyItem } from '../../components/RoutingPoliciesEditor';
 import { useUnsavedChanges, UnsavedChangesModal } from '../../hooks/useUnsavedChanges';
 import { ORCHESTRATOR_POLICY_TYPES } from './RouterOrchestratorTab';
@@ -18,6 +21,7 @@ type TargetModel = {
 export function RouterRoutingTab() {
   const { t } = useTranslation();
   const { router, setRouter } = useRouter();
+  const canWrite = useAuth().can('router:write');
   const [availableModels, setAvailableModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,9 +36,9 @@ export function RouterRoutingTab() {
   const [draggedTargetIdx, setDraggedTargetIdx] = useState<number | null>(null);
   const [promptHoverIdx, setPromptHoverIdx] = useState<number | null>(null);
 
-  // Policies to install on the next router refresh, used when switching from a
-  // profile to custom so the profile policies become the editable starting point.
-  const pendingPolicies = useRef<PolicyItem[] | null>(null);
+  // Profile/custom choice, local until saved. The custom policies below always
+  // show what is stored, whichever mode is selected.
+  const draft = useProfileDraft(router?.routingProfileId ?? '');
 
   useEffect(() => {
     getModels()
@@ -45,27 +49,12 @@ export function RouterRoutingTab() {
       .catch(() => setProfiles([]));
   }, []);
 
-  async function onAssignProfile(profileId: string) {
-    /* v8 ignore next */
-    if (!router) return;
-    setErr('');
-    try {
-      const updated = await assignRouterProfiles(router.id, { routing: profileId === '' ? null : profileId });
-      setRouter(updated);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : t('routers.routing.errors.assignProfileFailed'));
-    }
-  }
-
   useEffect(() => {
     /* v8 ignore next */
     if (router) {
       const mkId = () => Math.random().toString(36).substring(7);
 
-      if (pendingPolicies.current) {
-        setPolicies(pendingPolicies.current);
-        pendingPolicies.current = null;
-      } else if (router.policies && router.policies.length > 0) {
+      if (router.policies && router.policies.length > 0) {
         setPolicies(router.policies.map(p => ({ ...p, internalId: mkId() })));
       } else {
         setPolicies([]);
@@ -99,7 +88,7 @@ export function RouterRoutingTab() {
     return false;
   })();
 
-  const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty);
+  const { isBlocked, proceed, reset } = useUnsavedChanges(isDirty || draft.isPending);
 
   // --- Helpers for used model IDs ---
   function getUsedTargetModelIds(excludeIdx: number): Set<string> {
@@ -222,6 +211,7 @@ export function RouterRoutingTab() {
     }
 
     setSaving(true);
+    let assigning = false;
     try {
       const payload: Parameters<typeof updateRouter>[1] = {
         name: router.name,
@@ -235,12 +225,14 @@ export function RouterRoutingTab() {
         })),
         ...(router.timeoutMs !== undefined && { timeoutMs: router.timeoutMs }),
       };
-      const updated = await updateRouter(router.id, payload);
+      let updated = await updateRouter(router.id, payload);
+      assigning = draft.isPending;
+      if (draft.isPending) updated = await assignRouterProfiles(router.id, { routing: draft.selected === '' ? null : draft.selected });
       setRouter(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setErr(err instanceof Error ? err.message : t('routers.routing.errors.saveFailed'));
+      setErr(err instanceof Error ? err.message : t(assigning ? 'routers.routing.errors.assignProfileFailed' : 'routers.routing.errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -251,7 +243,7 @@ export function RouterRoutingTab() {
     void doSave();
   }
 
-  const assignedProfileId = router?.routingProfileId ?? '';
+  const assignedProfileId = draft.selected;
   const profileAssigned = assignedProfileId !== '';
 
   // Policies actually in force: the assigned profile's, or this router's own.
@@ -272,20 +264,24 @@ export function RouterRoutingTab() {
   // Auto is the intended default; fall back to any built-in, then to any profile.
   const defaultProfileId = profiles.find(p => p.id === 'auto')?.id ?? profiles.find(p => p.builtin)?.id ?? profiles[0]?.id ?? '';
 
-  async function onSelectMode(next: 'profile' | 'custom') {
+  const profileOptions = [
+    ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} ${t('routers.routing.form.builtinSuffix')}` })),
+    ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
+  ];
+
+  function onSelectMode(next: 'profile' | 'custom') {
     if ((next === 'profile') === profileAssigned) return;
-    if (next === 'profile') {
-      if (!defaultProfileId) {
-        setErr(t('routers.routing.errors.noProfileAvailable'));
-        return;
-      }
-      await onAssignProfile(defaultProfileId);
+    if (next === 'custom') { draft.selectCustom(); return; }
+    if (!defaultProfileId) {
+      setErr(t('routers.routing.errors.noProfileAvailable'));
       return;
     }
-    // Leaving a profile: its policies become the editable starting point.
-    const current = profiles.find(p => p.id === assignedProfileId);
-    if (current) pendingPolicies.current = current.policies.map(p => ({ ...p, internalId: mkPolicyId() }));
-    await onAssignProfile('');
+    draft.selectProfile(defaultProfileId);
+  }
+
+  function copyProfile(id: string) {
+    const p = profiles.find(x => x.id === id);
+    if (p) setPolicies(p.policies.map(x => ({ ...x, internalId: mkPolicyId() })));
   }
 
   if (loading) return (
@@ -298,7 +294,14 @@ export function RouterRoutingTab() {
     <>
       <form onSubmit={handleSubmit} style={{ maxWidth: 800 }}>
         {err && <div className="form-error" style={{ marginBottom: 16 }}>{err}</div>}
+        {draft.isPending && (
+          <PendingProfileNotice
+            profileLabel={draft.isCustom ? null : (profiles.find(p => p.id === assignedProfileId)?.label ?? assignedProfileId)}
+            onDiscard={draft.discard}
+          />
+        )}
 
+        <ReadOnlyFieldset readOnly={!canWrite}>
         <div className="form-group">
           <label className="form-label">{t('routers.routing.form.routing')}</label>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
@@ -308,14 +311,14 @@ export function RouterRoutingTab() {
             <button
               type="button"
               className={`btn btn-sm ${profileAssigned ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => void onSelectMode('profile')}
+              onClick={() => onSelectMode('profile')}
             >
               {t('routers.routing.form.profileMode')}
             </button>
             <button
               type="button"
               className={`btn btn-sm ${profileAssigned ? 'btn-secondary' : 'btn-primary'}`}
-              onClick={() => void onSelectMode('custom')}
+              onClick={() => onSelectMode('custom')}
             >
               {t('routers.routing.form.customMode')}
             </button>
@@ -326,11 +329,8 @@ export function RouterRoutingTab() {
                 style={{ maxWidth: 420 }}
                 ariaLabel={t('routers.routing.form.routingProfile')}
                 value={assignedProfileId}
-                onChange={v => void onAssignProfile(v)}
-                options={[
-                  ...profiles.filter(p => p.builtin).map(p => ({ value: p.id, label: `${p.label} ${t('routers.routing.form.builtinSuffix')}` })),
-                  ...profiles.filter(p => !p.builtin).map(p => ({ value: p.id, label: p.label })),
-                ]}
+                onChange={draft.selectProfile}
+                options={profileOptions}
               />
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.45 }}>
                 {t('routers.routing.form.profileHint')}
@@ -342,6 +342,11 @@ export function RouterRoutingTab() {
         {!profileAssigned && (
           <>
             <div style={{ margin: '24px 0', borderTop: '1px solid var(--border)' }} />
+            <StartFromProfile
+              options={profileOptions}
+              hasCustom={policies.length > 0}
+              onCopy={copyProfile}
+            />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
               <RoutingPoliciesEditor
                 policies={policies}
@@ -378,7 +383,7 @@ export function RouterRoutingTab() {
               <div
                 key={item.internalId}
                 id={`target-row-${idx}`}
-                draggable={promptHoverIdx !== idx}
+                draggable={canWrite && promptHoverIdx !== idx}
                 onDragStart={(e) => onDragStartTarget(e, idx)}
                 onDragEnter={(e) => onDragEnterTarget(e, idx)}
                 onDragEnd={(e) => onDragEndTarget(e, idx)}
@@ -522,7 +527,9 @@ export function RouterRoutingTab() {
         </>
         )}
 
-        <div style={{ marginTop: 32 }}>
+        </ReadOnlyFieldset>
+
+        {canWrite && <div style={{ marginTop: 32 }}>
           <button
             type="button"
             className="btn btn-primary"
@@ -538,7 +545,7 @@ export function RouterRoutingTab() {
               t('routers.routing.form.saveRoutingConfiguration')
             )}
           </button>
-        </div>
+        </div>}
       </form>
 
       {isBlocked && <UnsavedChangesModal onConfirm={proceed} onCancel={reset} />}

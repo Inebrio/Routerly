@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Niektoré konfiguračné súbory majú prístupné oprávnenia ({{files}}). Spustenie a požiadavky stále fungujú. Opravte to z Nastavenia → Bezpečnosť, alebo zo súborového systému hostiteľa, keď je to vhodné.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Zavrieť",
       "updateAvailable": "Routerly v{{latest}} je dostupná. Používate v{{current}}.",
       "updateLink": "Aktualizovať v Nastaveniach",
@@ -418,7 +419,8 @@
       "status": "stav",
       "encoding": "kódovanie",
       "frames": "rámce",
-      "bytes": "bajty"
+      "bytes": "bajty",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Ukladá sa…",
         "enable": "Povoliť",
         "disable": "Zakázať"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Rozpočet – Resetovaný",
         "systemStartup": "Systém – Spustenie",
         "systemShutdown": "Systém – Vypnutie",
-        "systemUpdateAvailable": "Systém – Aktualizácia dostupná"
+        "systemUpdateAvailable": "Systém – Aktualizácia dostupná",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Odstrániť kanál",
       "removeChannelConfirm": "Odstrániť kanál?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} oprav",
         "userCount": "{{count}} používateľ",
         "userCount_other": "{{count}} používateľov",
-        "everyone": "Všetci"
+        "everyone": "Všetci",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Nepodarilo sa načítať"
@@ -833,6 +838,9 @@
         },
         "optional": "(voliteľne)",
         "keepCurrentPlaceholder": "Nechajte prázdne, aby ste zachovali súčasný",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Nechajte prázdne, aby ste dostali udalosti zo všetkých smerovacie modulov.",
           "cooldownHeading": "Čakajúci čas",
           "cooldownSuffix": "sekúnd (0 = bez čakajúcich čas)",
-          "cooldownHint": "Minimálny interval predtým, ako sa tento kanál môže znova aktivovať pre tú istú udalosť."
+          "cooldownHint": "Minimálny interval predtým, ako sa tento kanál môže znova aktivovať pre tú istú udalosť.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Príjemcovia / Ciele",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Hľadať kanály…",
         "noResults": "Žiadne výsledky",
         "emptyTitle": "Ešte nie sú nakonfigurované žiadne kanály notifikácií.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Žiadne kanály sa nezhodujú s aktívnymi filtrami.",
         "nameInlinePlaceholder": "Štítok (voliteľne)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Odstrániť integráciu",
       "saving": "Ukladá sa…",
       "save": "Uložiť",
-      "addButton": "Pridať integráciu"
+      "addButton": "Pridať integráciu",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Naposledy skontrolované"
       },
       "noCheckPerformed": "Kontrola aktualizácie ešte nebola vykonaná.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Skontrolovať aktualizácie",
       "checking": "Kontrola…",
       "updateTo": "Aktualizovať na v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Obsah stopy",
         "traceContentHint": "Stopy vždy zaznamenávajú metaúdaje (modely, skóre, tokeny, náklady, latencie). Zapnite to aj na zaznamenávanie odoslaných výziev a prijatých odpovedí. Sú uložené so záznamom používania a viditeľné pre kohokoľvek, kto môže čítať správy.",
         "capturePromptsAndAnswers": "Zachytávať výzvy a odpovede",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Uložiť zmeny",
         "createRouter": "Vytvoriť smerovací modul",
         "createOrchestrator": "Vytvoriť Orchestrator",
@@ -1395,6 +1411,7 @@
       "saving": "Ukladá sa...",
       "saved": "Uložené",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Náhľad úspory tokenov",
         "description": "Spustite aktuálny (neuložený) pipeline cez výzvu, aby ste videli, čo každý krok odstráni a čo stojí. Vyberte jeden zo vzorových rozhovorov alebo zadajte vlastnú výzvu.",
         "promptLabel": "Výzva",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Zatiaľ nebola odoslaná žiadna požiadavka.",
       "turnTraceLog": "Turn #{{turn}} trace log · {{count}} udalosť",
       "turnTraceLog_other": "Turn #{{turn}} trace log · {{count}} udalostí"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modely",
       "subtitle": "Modely poskytovania LLM registrovaní s Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modely",
         "health": "Zdravie"
@@ -2253,7 +2281,8 @@
       "next": "Ďalší",
       "page": "Strana {{page}} z {{totalPages}}",
       "total": "({{count}} celkovo)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Zobraziť debug",
       "empty": "Zatiaľ žiadne debug údaje.",
       "emptyHint": "Poslajte správu, aby ste videli podrobnosti smerovaniia.",
-      "turnTraceLog": "Turn #{{turn}} trace log"
+      "turnTraceLog": "Turn #{{turn}} trace log",
+      "resize": "Zmeniť veľkosť panela ladenia"
     },
     "compare": {
       "modelLabel": "Model {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Nepodarilo sa aktualizovať rolu",
       "createFailed": "Nepodarilo sa vytvoriť rolu",
       "deleteFailed": "Nepodarilo sa odstrániť rolu"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Späť na Pripojiť",
     "title": "Pripojiť",
     "docs": "Dokumentácia",
-    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
     "noClientPrefix": "Žiadny klient s menom",
     "errors": {
       "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "Smeruje prevádzku modelu tohto klienta cez Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "Načítava Routerly ako server nástrojov vo vnútri.",
-    "notEnabledPrefix": "Konfigurátor klienta nie je povolený. Požiadajte správcu, aby ho povolil",
     "errors": {
       "loadFailed": "Nepodarilo sa načítať klientov: {{error}}"
     },

@@ -8,8 +8,6 @@ import type {
 } from '@routerly/shared';
 import type { ProviderAdapter } from './types.js';
 import { decryptCredential } from '../../lib/crypto-cred.js';
-import { readConfig } from '../config/loader.js';
-import { isModuleEnabled } from '../../core/modules/registry.js';
 
 /**
  * Unofficial adapter for ChatGPT web (chatgpt.com).
@@ -435,15 +433,11 @@ export interface OpenAIWebCredentials {
 
 /**
  * Decrypts the stored access token (and, if present, the cf_clearance cookie) for an
- * openai-web connection, refusing to run unless the 'provider-web' module is enabled.
+ * openai-web connection.
  * There is no refresh flow: these are browser session cookies, not OAuth tokens — an
  * expired cookie surfaces as the provider's own HTTP error on the next request.
  */
 export async function resolveOpenAIWebCredential(connection: ProviderConnection): Promise<OpenAIWebCredentials> {
-  const records = await readConfig('modules');
-  if (!isModuleEnabled(records, 'provider-web')) {
-    throw new Error("openai-web: 'provider-web' module is disabled");
-  }
   const creds = connection.credentials as { cookieEnc?: string; cfClearanceEnc?: string };
   if (!creds.cookieEnc) {
     throw new Error('openai-web: connection missing encrypted access token');

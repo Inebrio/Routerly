@@ -1,3 +1,4 @@
+import Fastify from 'fastify'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { ProcessorRegistry } from '../../../core/index.js'
 
@@ -21,7 +22,7 @@ import {
 } from './openai.js'
 import { llmChat, llmStream, BudgetExceededError } from '../execute.js'
 import { emitEvent } from '../../notifications/emitter.js'
-import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks } from './openaiOAuthForward.js'
+import { forwardOpenAIOAuthSSE, streamOpenAIOAuthChunks, chunksToChatResponse } from './openaiOAuthForward.js'
 import { setProxyPipeline } from '../run.js'
 import { writeConfig } from '../../config/loader.js'
 import { splitModelsIntoInstancesConnections } from '../../../test-support/effective-models.js'
@@ -42,7 +43,7 @@ const mockEmitEvent = vi.mocked(emitEvent)
 afterEach(() => vi.clearAllMocks())
 
 function makeLog() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }
 
 function makeFakeStore() {
@@ -343,6 +344,36 @@ describe('openai transport lane', () => {
     expect(written.at(-1)).toBe('data: [DONE]\n\n')
   })
 
+  it('egress streams: forwarded provider headers are written as received, no Cache-Control/Connection of its own', async () => {
+    const rawHeaders: Record<string, string> = {}
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: (k: string, v: string) => { rawHeaders[k] = v }, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    async function* body() { /* no chunks */ }
+    const ctx = {
+      protocol: 'openai', reply, traceId: 't1', req: { headers: {} },
+      result: { kind: 'stream', body: body(), headers: { 'content-type': 'text/event-stream; charset=utf-8', 'openai-version': '2020-10-01' } },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(rawHeaders).toEqual({ 'content-type': 'text/event-stream; charset=utf-8', 'openai-version': '2020-10-01' })
+  })
+
+  it('egress json: forwarded content-type is kept verbatim (no charset appended)', async () => {
+    const app = Fastify()
+    app.get('/', async (req, reply) => {
+      const ctx = {
+        protocol: 'openai', reply, traceId: 't1', req,
+        result: { kind: 'json', body: { a: 1 }, headers: { 'content-type': 'application/json' } },
+      } as unknown as ProxyContext
+      await openaiEgress.run(ctx)
+      return reply
+    })
+    const res = await app.inject('/')
+    expect(res.headers['content-type']).toBe('application/json')
+    expect(res.body).toBe('{"a":1}')
+  })
+
   it('egress streams: never injects trace frames, skips CORS when no origin', async () => {
     const rawHeaders: Record<string, string> = {}
     const written: string[] = []
@@ -487,6 +518,42 @@ describe('/v1/responses on the openai lane', () => {
     expect(sent[0].output[0].content[0].text).toBe('42')
   })
 
+  it('egress keeps provider headers and content-type verbatim on a non-streaming Responses answer', async () => {
+    const sent: any[] = []
+    const hdrs: Record<string, string> = {}
+    const reply: any = { send: (b: unknown) => sent.push(b), headers: (h: Record<string, string>) => Object.assign(hdrs, h), code: () => reply }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceId: 't1',
+      request: { model: 'gpt-4o', messages: [] },
+      result: {
+        kind: 'json', headers: { 'content-type': 'application/json', 'openai-organization': 'org-x' },
+        body: { id: 'c', object: 'chat.completion', created: 1, model: 'gpt-4o', choices: [{ index: 0, message: { role: 'assistant', content: '42' }, finish_reason: 'stop' }], usage: { prompt_tokens: 3, completion_tokens: 1, total_tokens: 4 } },
+      },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(hdrs).toEqual({ 'content-type': 'application/json', 'openai-organization': 'org-x' })
+    expect(Buffer.isBuffer(sent[0])).toBe(true)
+    expect(JSON.parse(sent[0].toString()).object).toBe('response')
+  })
+
+  it('egress adds no Cache-Control / Connection on a streaming Responses answer with provider headers', async () => {
+    const set: Record<string, string> = {}
+    const reply: any = {
+      hijack: () => {},
+      raw: { setHeader: (k: string, v: string) => { set[k] = v }, flushHeaders: () => {}, write: () => {}, end: () => {} },
+    }
+    async function* body() {
+      yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: 'stop' }] }
+    }
+    const ctx = {
+      protocol: 'openai', responsesApi: true, reply, traceId: 't1',
+      req: { headers: {} }, request: { model: 'gpt-4o', messages: [] },
+      result: { kind: 'stream', body: body(), headers: { 'content-type': 'text/event-stream; charset=utf-8' } },
+    } as unknown as ProxyContext
+    await openaiEgress.run(ctx)
+    expect(set).toEqual({ 'content-type': 'text/event-stream; charset=utf-8' })
+  })
+
   it('egress writes named Responses events, with no [DONE] and no trace frames', async () => {
     const written: string[] = []
     const reply: any = {
@@ -547,6 +614,28 @@ describe('/v1/responses on the openai lane', () => {
     await openaiUpstream.run(ctx)
     expect(ctx.result?.kind).toBe('stream')
     expect(forwardOpenAIOAuthSSE).not.toHaveBeenCalled()
+  })
+})
+
+describe('openai:upstream openai-oauth rejected token', () => {
+  const oauthModel: ModelConfig = {
+    id: 'sub', name: 'sub', provider: 'openai-oauth', endpoint: 'https://chatgpt.com/backend-api/codex',
+    cost: { inputPerMillion: 0, outputPerMillion: 0 },
+  }
+  it.each([true, false])('stashes the upstream status for the attempt loop (stream=%s)', async (stream) => {
+    if (!stream) vi.mocked(chunksToChatResponse).mockRejectedValueOnce(new Error('openai-oauth upstream HTTP 401: Could not parse your authentication token'))
+    vi.mocked(streamOpenAIOAuthChunks).mockReturnValue((async function* () {
+      throw new Error('openai-oauth upstream HTTP 401: Could not parse your authentication token')
+      yield undefined as never
+    })())
+    const ctx = {
+      protocol: 'openai', stream, traceId: 't1', log: makeLog(), router: { id: 'p1', models: [] },
+      request: { model: 'sub', messages: [] },
+      attempt: { model: oauthModel, candidate: { model: 'sub', weight: 1 } },
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(ctx.result).toBeUndefined()
+    expect(ctx.attemptResponse?.status).toBe(401)
   })
 })
 
@@ -737,6 +826,20 @@ describe('openai:upstream', () => {
     await openaiUpstream.run(ctx)
     expect(ctx.attemptError).toBe(err)
     expect(ctx.attemptResponse).toBeUndefined()
+  })
+
+  it('logs the selected candidate at debug level without request content', async () => {
+    mockLlmChat.mockResolvedValueOnce({ choices: [] } as any)
+    const log = makeLog()
+    const ctx = {
+      protocol: 'openai', stream: false,
+      attempt: { model, candidate },
+      request: { model: 'model-a', messages: [{ role: 'user', content: 'secret prompt' }] }, log,
+      router: { id: 'p1' }, traceId: 't1',
+    } as unknown as ProxyContext
+    await openaiUpstream.run(ctx)
+    expect(log.debug).toHaveBeenCalledOnce()
+    expect(JSON.stringify(log.debug.mock.calls)).not.toContain('secret prompt')
   })
 
   it('BudgetExceededError does NOT stash ctx.attemptError (a local skip, not an upstream fault)', async () => {

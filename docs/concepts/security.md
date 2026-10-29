@@ -81,6 +81,12 @@ When a fallback is used, it is recorded in the trace as `skipped: <reason>` for 
 
 The `detectInjection` flag enables a built-in prompt-injection detector that runs on every request before rule evaluation. Detection uses heuristic patterns (e.g. "ignore previous instructions", DAN mode, jailbreak attempts). A hit is equivalent to a rule block and is logged but does not support custom messages.
 
+### Moderation: custom instructions are the policy
+
+A moderation rule with custom instructions treats the text as a policy, not as a definition of harm: the judge rates how strongly the content violates it (0 complies, 1 clear violation) and the rule triggers above the threshold. A topic ban such as "Do not talk about English cinema" therefore works on harmless text. Without custom instructions the judge uses the built-in harm categories (hate speech, violence, sexual content, self-harm).
+
+A rule that blocks the response (`block` with target `response` or `both`) makes Routerly hold the whole response until the check ends, so streaming clients receive it all at once. A disabled rule does not buffer.
+
 ### Injection Flag: Soft Steering
 
 The `inject` flag (topic/moderation only) appends the rule's instruction to the outgoing request system prompt so the serving model self-enforces the policy. Injection is soft steering: it does not guarantee a block, does not call the judge, and does not log (unless the judge also flags the rule, which happens when a rule has both `inject` and a `target`). The request payload is mutated with the injected text, which is an explicit opt-in guardrail feature allowed under wire-format transparency.

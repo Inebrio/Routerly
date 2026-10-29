@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import lockfile from 'proper-lockfile';
 import type { ModelConfig, RouterConfig, UserConfig, RoleConfig, Settings, UsageRecord, NotificationInboxItem, ModuleRecord, ProviderConnection, ModelInstance, Profile, ExperimentConfig } from '@routerly/shared';
 import { CONFIG_PATHS } from '../../lib/paths.js';
+import { notifyWrite } from './write-hooks.js';
 import { readUsageNdjson, writeUsageNdjson, appendUsageRecordsNdjson } from './usageNdjson.js';
 import { SECRET_KEYS } from './permission-guard.js';
 
@@ -42,10 +43,8 @@ const DEFAULTS: Record<string, unknown> = {
   routers: [] as RouterConfig[],
   users: [] as UserConfig[],
   roles: [] as RoleConfig[],
-  // 'provider-web' defaults DISABLED (unofficial, ToS-risk web-cookie adapters) —
-  // 'provider-oauth' has no record here and defaults enabled via isModuleEnabled's
-  // "no record = enabled" fallback.
-  modules: [{ id: 'provider-web', enabled: false } satisfies ModuleRecord] as ModuleRecord[],
+  // All modules are always active; the file is only kept for compatibility.
+  modules: [] as ModuleRecord[],
   profiles: [] as Profile[],
   experiments: [] as ExperimentConfig[],
   connections: [] as ProviderConnection[],
@@ -219,6 +218,7 @@ export async function writeConfig<K extends keyof StoredTypeMap>(
   } finally {
     if (release) await release();
   }
+  await notifyWrite(key);
 }
 
 /**
@@ -272,6 +272,7 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
 
   const tmpPath = `${filePath}.tmp-${process.pid}-${tmpCounter++}`;
   let release: (() => Promise<void>) | undefined;
+  let written = false;
   try {
     release = await lockfile.lock(filePath, {
       retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 },
@@ -296,12 +297,14 @@ export async function updateConfig<K extends keyof StoredTypeMap>(
     if (mode !== undefined) writeOptions.mode = mode;
     await writeFile(tmpPath, JSON.stringify(next, null, 2), writeOptions);
     await rename(tmpPath, filePath);
+    written = true;
     return next;
   } catch (err) {
     await unlink(tmpPath).catch(() => {});
     throw err;
   } finally {
     if (release) await release();
+    if (written) await notifyWrite(key);
   }
 }
 
@@ -364,4 +367,14 @@ export async function getOrCreateSecret(): Promise<string> {
 
 function isNodeError(err: unknown): err is NodeJS.ErrnoException {
   return err instanceof Error && 'code' in err;
+}
+
+/**
+ * Listening port: ROUTERLY_PORT overrides `port` from settings.json (documented
+ * in docs/reference/environment-variables.md). An invalid value is ignored.
+ * Never persisted: the override applies at runtime only.
+ */
+export function effectivePort(settings: { port: number }): number {
+  const n = Number(process.env['ROUTERLY_PORT']);
+  return Number.isInteger(n) && n >= 1 && n <= 65535 ? n : settings.port;
 }

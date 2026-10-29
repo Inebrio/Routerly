@@ -33,6 +33,7 @@
     },
     "banner": {
       "permissionWarning": "Vissa konfigurationsfiler har tillåtande åtkomst ({{files}}). Start och förfrågningar fungerar fortfarande. Åtgärda det från Inställningar → Säkerhet, eller från värdfilsystemet när det passar.",
+      "permissionBlocked": "Some data is temporarily unavailable. An administrator has been notified.",
       "dismiss": "Stäng",
       "updateAvailable": "Routerly v{{latest}} är tillgänglig. Du är på v{{current}}.",
       "updateLink": "Uppdatera i Inställningar",
@@ -418,7 +419,8 @@
       "status": "status",
       "encoding": "kodning",
       "frames": "bildrutor",
-      "bytes": "byte"
+      "bytes": "byte",
+      "policiesFailed": "Policies failed and were left out of the ranking"
     }
   },
   "profile": {
@@ -678,7 +680,8 @@
         "saving": "Sparar…",
         "enable": "Aktivera",
         "disable": "Inaktivera"
-      }
+      },
+      "noPermission": "You don't have permission to view settings."
     },
     "notifications": {
       "providers": {
@@ -745,7 +748,8 @@
         "budgetReset": "Budget – Återställd",
         "systemStartup": "System – Start",
         "systemShutdown": "System – Avstängning",
-        "systemUpdateAvailable": "System – Uppdatering tillgänglig"
+        "systemUpdateAvailable": "System – Uppdatering tillgänglig",
+        "systemPermissionsUnsafe": "System – Unsafe File Permissions"
       },
       "removeChannelTooltip": "Ta bort kanal",
       "removeChannelConfirm": "Ta bort kanal?",
@@ -794,7 +798,8 @@
         "permCount_other": "{{count}} behörigheter",
         "userCount": "{{count}} användare",
         "userCount_other": "{{count}} användare",
-        "everyone": "Alla"
+        "everyone": "Alla",
+        "noEvents": "No events (silent)"
       },
       "errors": {
         "loadFailed": "Misslyckades att ladda"
@@ -833,6 +838,9 @@
         },
         "optional": "(valfritt)",
         "keepCurrentPlaceholder": "Lämna tomt för att behålla aktuell",
+        "removeSecret": "Remove secret",
+        "undoRemoveSecret": "Undo",
+        "secretWillBeRemoved": "Will be removed on save",
         "emailFromAddressPlaceholder": "noreply@example.com",
         "emailFromNamePlaceholder": "Routerly",
         "smtpHostPlaceholder": "smtp.example.com",
@@ -858,7 +866,9 @@
           "routersHint": "Lämna tomt för att ta emot händelser från alla routrar.",
           "cooldownHeading": "Nedkylning",
           "cooldownSuffix": "sekunder (0 = ingen nedkylning)",
-          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse."
+          "cooldownHint": "Minimalt intervall innan denna kanal kan aktiveras igen för samma händelse.",
+          "eventsPlaceholderExternal": "No events selected: this channel receives nothing (leave empty to disable).",
+          "eventsHintExternal": "No events selected: this channel stays silent. Select the events it should receive."
         },
         "recipients": {
           "heading": "Mottagare / Mål",
@@ -897,6 +907,7 @@
         "addSearchPlaceholder": "Sök kanaler…",
         "noResults": "Inga resultat",
         "emptyTitle": "Inga aviseringskanaler konfigurerade ännu.",
+        "noPermission": "You don't have permission to view notification channels.",
         "noMatch": "Inga kanaler matchar de aktiva filtren.",
         "nameInlinePlaceholder": "Etikett (valfritt)",
         "columns": {
@@ -1055,7 +1066,8 @@
       "removeTooltip": "Ta bort integrering",
       "saving": "Sparar…",
       "save": "Spara",
-      "addButton": "Lägg till integrering"
+      "addButton": "Lägg till integrering",
+      "noPermission": "You don't have permission to view integrations."
     },
     "catalog": {
       "errors": {
@@ -1110,6 +1122,8 @@
         "lastChecked": "Senast kontrollerad"
       },
       "noCheckPerformed": "Ingen uppdateringskontroll utförd ännu.",
+      "updateCheckDisabled": "Update check is disabled on this instance.",
+      "updateCheckFailed": "Update check failed: {{error}}",
       "checkForUpdates": "Sök efter uppdateringar",
       "checking": "Kontrollerar…",
       "updateTo": "Uppdatera till v{{version}}",
@@ -1313,6 +1327,8 @@
         "traceContent": "Spårinnehål",
         "traceContentHint": "Spår registrerar alltid metadata (modeller, poäng, tokens, kostnad, latens). Slå på detta för att också registrera instruktionerna som skickats och svar som mottagits. De lagras med användningsposten och är synliga för alla som kan läsa rapporter.",
         "capturePromptsAndAnswers": "Fånga instruktioner och svar",
+        "notificationChannels": "Notification channels",
+        "notificationChannelsHint": "Also send this router's events to these channels, in addition to the channels that match globally.",
         "saveChanges": "Spara ändringar",
         "createRouter": "Skapa router",
         "createOrchestrator": "Skapa orkestrator",
@@ -1395,6 +1411,7 @@
       "saving": "Sparar…",
       "saved": "Sparad",
       "preview": {
+        "pipeline": "Pipeline run: {{name}}",
         "title": "Förhandsvisning av tokensparingar",
         "description": "Kör nuvarande (osparad) pipeline över en instruktion för att se vad varje steg tar bort och vad det kostar. Välj en av exempelsamtalen eller skriv din egen instruktion.",
         "promptLabel": "Instruktion",
@@ -1672,6 +1689,16 @@
       "noRequestSent": "Ingen förfrågan skickad ännu.",
       "turnTraceLog": "Svars-#{{turn}} spårlogg · {{count}} händelse",
       "turnTraceLog_other": "Svars-#{{turn}} spårlogg · {{count}} händelser"
+    },
+    "profileDraft": {
+      "pendingCustom": "Unsaved change: this router will use its own custom settings. Nothing is applied until you save.",
+      "pendingProfile": "Unsaved change: this router will use the profile “{{label}}”. Nothing is applied until you save.",
+      "discard": "Discard change",
+      "startFromAria": "Start custom settings from a profile",
+      "startFromPlaceholder": "Start from a profile…",
+      "startFromButton": "Copy into custom",
+      "replaceConfirm": "This replaces the custom settings currently in the editor with a copy of the profile. The stored settings change only when you save.",
+      "replaceConfirmButton": "Replace"
     }
   },
   "connections": {
@@ -1915,6 +1942,7 @@
     "page": {
       "title": "Modeller",
       "subtitle": "LLM-leverantörer registrerade med Routerly",
+      "noPermission": "You don't have permission to view models.",
       "tabs": {
         "models": "Modeller",
         "health": "Hälsa"
@@ -2253,7 +2281,8 @@
       "next": "Nästa",
       "page": "Sida {{page}} av {{totalPages}}",
       "total": "({{count}} totalt)"
-    }
+    },
+    "noPermission": "You don't have permission to view the audit log."
   },
   "usage": {
     "page": {
@@ -2477,7 +2506,8 @@
       "show": "Visa felsökning",
       "empty": "Ingen felsökningsdata ännu.",
       "emptyHint": "Skicka ett meddelande för att se routningsdetaljer.",
-      "turnTraceLog": "Svars-#{{turn}} spårlogg"
+      "turnTraceLog": "Svars-#{{turn}} spårlogg",
+      "resize": "Ändra storlek på felsökningspanelen"
     },
     "compare": {
       "modelLabel": "Modell {{label}}:",
@@ -2648,7 +2678,8 @@
       "updateFailed": "Misslyckades att uppdatera roll",
       "createFailed": "Misslyckades att skapa roll",
       "deleteFailed": "Misslyckades att ta bort roll"
-    }
+    },
+    "noPermission": "You don't have permission to view roles."
   },
   "profiles": {
     "list": {
@@ -2710,7 +2741,6 @@
     "backToConnect": "Tillbaka till anslutning",
     "title": "Anslut",
     "docs": "Dokumentation",
-    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
     "noClientPrefix": "Ingen klient namngiven",
     "errors": {
       "loadFailed": "Misslyckades att ladda klienter: {{error}}"
@@ -2755,7 +2785,6 @@
     "llmDescription": "routar denna klientmodelltrafik genom Routerly.",
     "mcpLabel": "MCP",
     "mcpDescription": "laddar Routerly som en verktygsserver inuti den.",
-    "notEnabledPrefix": "Klientconfiguratorn är inte aktiverad. Be en administratör aktivera den med",
     "errors": {
       "loadFailed": "Misslyckades att ladda klienter: {{error}}"
     },
