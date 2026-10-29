@@ -326,9 +326,12 @@ Examples:
     }) => {
       const timeout = parseTimeoutOpt(opts.timeout);
       const preset = PRICING_PRESETS[opts.id];
-      const cost: TokenCost = {
-        inputPerMillion: opts.inputPrice ? parseFloat(opts.inputPrice) : (preset?.inputPerMillion ?? 0),
-        outputPerMillion: opts.outputPrice ? parseFloat(opts.outputPrice) : (preset?.outputPerMillion ?? 0),
+      // No flag and no preset: leave the price unset (list/show print `-`), never a silent 0.
+      const inputPerMillion = opts.inputPrice ? parseFloat(opts.inputPrice) : preset?.inputPerMillion;
+      const outputPerMillion = opts.outputPrice ? parseFloat(opts.outputPrice) : preset?.outputPerMillion;
+      const cost: Partial<TokenCost> = {
+        ...(inputPerMillion !== undefined ? { inputPerMillion } : {}),
+        ...(outputPerMillion !== undefined ? { outputPerMillion } : {}),
       };
 
       const providerEndpoints: Record<string, string> = {
@@ -533,9 +536,11 @@ Examples:
         catch { console.error(chalk.red('--pricing-tiers-json: invalid JSON')); process.exit(1); }
       }
 
-      const updatedCost: TokenCost = {
-        inputPerMillion:  opts.inputPrice  ? parseFloat(opts.inputPrice)  : (existing.cost?.inputPerMillion  ?? 0),
-        outputPerMillion: opts.outputPrice ? parseFloat(opts.outputPrice) : (existing.cost?.outputPerMillion ?? 0),
+      const inputPerMillion  = opts.inputPrice  ? parseFloat(opts.inputPrice)  : existing.cost?.inputPerMillion;
+      const outputPerMillion = opts.outputPrice ? parseFloat(opts.outputPrice) : existing.cost?.outputPerMillion;
+      const updatedCost: Partial<TokenCost> = {
+        ...(inputPerMillion !== undefined ? { inputPerMillion } : {}),
+        ...(outputPerMillion !== undefined ? { outputPerMillion } : {}),
         ...(opts.cachePrice ? { cachePerMillion: parseFloat(opts.cachePrice) } : existing.cost?.cachePerMillion !== undefined ? { cachePerMillion: existing.cost.cachePerMillion } : {}),
         ...(pricingTiers?.length ? { pricingTiers } : pricingTiers === undefined && existing.cost?.pricingTiers?.length ? { pricingTiers: existing.cost.pricingTiers } : {}),
       };
