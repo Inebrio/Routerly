@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import Fastify from 'fastify'
 import type { RouterConfig, ModelConfig } from '@routerly/shared'
-import { buildOAuthForwardHeaders, forwardAnthropicOAuth, upstreamModelName } from './oauthForward.js'
+import { buildOAuthForwardHeaders, forwardAnthropicOAuth, forwardAnthropicApiKey, upstreamModelName } from './oauthForward.js'
 
 vi.mock('../../usage/tracker.js', () => ({ trackUsage: vi.fn().mockResolvedValue(undefined) }))
 import { trackUsage } from '../../usage/tracker.js'
@@ -519,5 +519,48 @@ describe('forwardAnthropicOAuth usage capture', () => {
     expect(res.statusCode).toBe(200)
     expect(res.body).toBe('not json')
     expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ inputTokens: 0, outputTokens: 0 }))
+  })
+})
+
+describe('forwardAnthropicApiKey anthropic-web', () => {
+  const webModel: ModelConfig = {
+    id: 'anthropic-web/claude-sonnet-4-5',
+    name: 'web',
+    provider: 'anthropic-web',
+    endpoint: 'https://claude.ai',
+    apiKey: 'sk-ant-sid-bad',
+    cost: { inputPerMillion: 0, outputPerMillion: 0 },
+  }
+
+  async function call(upstream: Response) {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(upstream))
+    const app = Fastify({ logger: false })
+    app.route({ method: 'POST', url: '/v1/messages', handler: (req, reply) => forwardAnthropicApiKey(req, reply, webModel) })
+    await app.ready()
+    const res = await app.inject({ method: 'POST', url: '/v1/messages', headers: { 'content-type': 'application/json' }, payload: '{"model":"x","messages":[]}' })
+    await app.close()
+    vi.unstubAllGlobals()
+    return res
+  }
+
+  it('turns an empty upstream 404 into an Anthropic error and drops claude.ai headers/cookies', async () => {
+    const res = await call(new Response(null, {
+      status: 404,
+      headers: { 'set-cookie': '__cf_bm=x; Domain=claude.ai', server: 'cloudflare', 'cf-ray': 'abc' },
+    }))
+    expect(res.statusCode).toBe(404)
+    expect(res.json()).toMatchObject({ type: 'error', error: { type: 'not_found_error' } })
+    expect(res.headers['set-cookie']).toBeUndefined()
+    expect(res.headers['cf-ray']).toBeUndefined()
+    expect(res.headers['server']).toBeUndefined()
+  })
+
+  it('keeps a JSON upstream body and drops set-cookie on success', async () => {
+    const res = await call(new Response('{"type":"message"}', {
+      status: 200,
+      headers: { 'content-type': 'application/json', 'set-cookie': 'a=b' },
+    }))
+    expect(res.json().type).toBe('message')
+    expect(res.headers['set-cookie']).toBeUndefined()
   })
 })
