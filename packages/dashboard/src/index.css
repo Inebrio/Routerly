@@ -507,6 +507,12 @@ thead th {
   white-space: nowrap;
 }
 
+/* Dense tables with many columns (Models Health) must fit a 1280px viewport without clipping. */
+table.table-compact thead th,
+table.table-compact tbody td { padding-inline: 8px; }
+table.table-compact thead th { white-space: normal; }
+table.table-compact .mono { overflow-wrap: anywhere; }
+
 tbody tr {
   border-top: 1px solid var(--border);
   transition: background 0.1s;
