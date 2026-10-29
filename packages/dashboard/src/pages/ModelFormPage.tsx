@@ -635,7 +635,7 @@ export function ModelFormPage() {
         // Empty on edit resets to the default (null); empty on create just omits it.
         ...(form.timeout ? { timeout: parseInt(form.timeout, 10) } : isEditing ? { timeout: null } : {}),
         ...(pricingTiersPayload.length ? { pricingTiers: pricingTiersPayload } : {}),
-        ...(Object.keys(fieldOverrides).length ? { fieldOverrides } : {}),
+        fieldOverrides,
         limits: limitRows
           .filter(l => l.value !== '' && !isNaN(parseFloat(l.value)))
           .map(rowToLimit),

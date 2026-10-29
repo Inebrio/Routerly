@@ -96,6 +96,31 @@ const BCRYPT_ROUNDS = 12;
 const isValidTimeout = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0;
 
 /**
+ * Catalog sync only skips fields pinned in fieldOverrides. A client that sends no `fieldOverrides`
+ * (CLI, raw API) has set its explicit values on purpose: pin the ones that are new or differ from
+ * `existing`. A client that sends `fieldOverrides` (dashboard) manages the pins itself.
+ */
+function inferFieldOverrides(
+  body: {
+    inputPerMillion?: number; outputPerMillion?: number; cachePerMillion?: number;
+    pricingTiers?: PricingTier[]; contextWindow?: number;
+    fieldOverrides?: Partial<Record<CatalogField, boolean>>;
+  },
+  existing?: ModelInstance,
+): Partial<Record<CatalogField, boolean>> | undefined {
+  if (body.fieldOverrides !== undefined) return body.fieldOverrides;
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  const pinned: Partial<Record<CatalogField, boolean>> = {};
+  if (body.inputPerMillion !== undefined && body.inputPerMillion !== existing?.cost.inputPerMillion) pinned.inputPerMillion = true;
+  if (body.outputPerMillion !== undefined && body.outputPerMillion !== existing?.cost.outputPerMillion) pinned.outputPerMillion = true;
+  if (body.cachePerMillion !== undefined && body.cachePerMillion !== existing?.cost.cachePerMillion) pinned.cachePerMillion = true;
+  if (body.pricingTiers?.length && !same(body.pricingTiers, existing?.cost.pricingTiers)) pinned.pricingTiers = true;
+  if (body.contextWindow && body.contextWindow !== existing?.contextWindow) pinned.contextWindow = true;
+  if (!Object.keys(pinned).length) return existing?.fieldOverrides;
+  return { ...existing?.fieldOverrides, ...pinned };
+}
+
+/**
  * Non-secret EffectiveModel/ModelConfig fields safe to serialize in /api/models responses.
  * resolveEffectiveModel spreads connection.credentials verbatim into the model (adapters
  * need the ciphertext/plaintext at runtime), so ANY credential field for ANY provider
@@ -830,6 +855,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       await writeConfig('connections', connections);
     }
 
+    const overrides = inferFieldOverrides(req.body);
     const instance: ModelInstance = {
       id: req.body.id,
       connectionId,
@@ -844,7 +870,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(typeof req.body.timeout === 'number' ? { timeout: req.body.timeout } : {}),
       ...(resolvedLimits?.length ? { limits: resolvedLimits } : {}),
       ...(req.body.capabilities ? { capabilities: req.body.capabilities } : {}),
-      ...(req.body.fieldOverrides ? { fieldOverrides: req.body.fieldOverrides } : {}),
+      ...(overrides ? { fieldOverrides: overrides } : {}),
       ...(req.body.catalogDefaults ? { catalogDefaults: req.body.catalogDefaults } : {}),
     };
     instances.push(instance);
@@ -1005,6 +1031,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       await writeConfig('connections', connections);
     }
 
+    const overrides = inferFieldOverrides(req.body, existing);
     const instance: ModelInstance = {
       id: newId,
       connectionId,
@@ -1035,9 +1062,7 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
       ...(req.body.capabilities
         ? { capabilities: req.body.capabilities }
         : existing.capabilities !== undefined ? { capabilities: existing.capabilities } : {}),
-      ...(req.body.fieldOverrides
-        ? { fieldOverrides: req.body.fieldOverrides }
-        : existing.fieldOverrides !== undefined ? { fieldOverrides: existing.fieldOverrides } : {}),
+      ...(overrides ? { fieldOverrides: overrides } : {}),
       ...(req.body.catalogDefaults
         ? { catalogDefaults: req.body.catalogDefaults }
         : existing.catalogDefaults !== undefined ? { catalogDefaults: existing.catalogDefaults } : {}),
