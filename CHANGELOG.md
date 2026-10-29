@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Playground: long unbroken error text stays inside the card (ROUT-462).** The error banner in the conversation (and the compare-mode column error) now wraps text such as a masked API key instead of overflowing the card.
+
 - **Dashboard: no unhandled page error with mandatory 2FA (ROUT-460).** A user without 2FA while `requireMfa` is on no longer triggers an unhandled promise rejection from in-flight page calls refused with 403 `mfa_required`; the redirect to the Profile and the banner are unchanged.
 
 - **Settings minor fixes (ROUT-459).** `PATCH /api/integrations/:id` without a body answers 400 instead of 500; the Connect page (`GET /api/clients`) uses the configured `publicUrl`; Settings General no longer stores the pre-filled `http://localhost:<port>` as `publicUrl`; the Catalog tab no longer shows «No repositories configured» when settings cannot be read; disabled inputs are visibly dimmed.
