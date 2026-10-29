@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Streaming with openai-web / anthropic-web no longer fails with 503 on default routers (ROUT-466).** The time-to-first-token timeout is raised to at least 30 s for web providers, whose handshake takes ~4 s before the first chunk. A timeout of 0 still disables it.
 - **Models Health table fits a 1280px viewport (ROUT-464).** The table uses tighter cell padding and wrapping headers/model ids, so the "Last success" and "Cooldown / lockout" columns are no longer cut off at the right edge.
 - **Playground: long unbroken error text stays inside the card (ROUT-462).** The error banner in the conversation (and the compare-mode column error) now wraps text such as a masked API key instead of overflowing the card.
 
