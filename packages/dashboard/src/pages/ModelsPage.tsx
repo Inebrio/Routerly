@@ -376,7 +376,7 @@ export function ModelsPage() {
     else { setHSortKey(key); setHSortDir('asc'); }
   }
   const hTh = (label: string, key: HealthSortKey, align?: 'right') => (
-    <th style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', textAlign: align }} onClick={() => handleHSort(key)}>
+    <th style={{ cursor: 'pointer', userSelect: 'none', textAlign: align }} onClick={() => handleHSort(key)}>
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
         {label}<SortIcon col={key} sortKey={hSortKey} sortDir={hSortDir} />
       </span>
@@ -611,7 +611,7 @@ export function ModelsPage() {
               ) : (
                 <>
                   <div className="table-wrap">
-                    <table>
+                    <table className="table-compact">
                       <thead>
                         <tr>
                           {hTh(t('models.page.health.columns.model'), 'id')}

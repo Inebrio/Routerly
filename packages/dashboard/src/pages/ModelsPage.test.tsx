@@ -445,6 +445,16 @@ describe('ModelsPage — health columns (merged table)', () => {
     expect(screen.getByText(/Cooldown/)).toBeTruthy();
   });
 
+  it('health table uses the compact layout so it fits 1280px (ROUT-464)', async () => {
+    mockGetModels.mockResolvedValue([makeModel()]);
+    renderPage();
+    await waitFor(() => screen.getByText('gpt-4o'));
+    await switchToHealthTab();
+    const th = screen.getByText(/Last success/).closest('th')!;
+    expect(th.closest('table')!.className).toContain('table-compact');
+    expect(th.style.whiteSpace).toBe('');
+  });
+
   it('shows Healthy badge when health data matches model', async () => {
     mockGetModels.mockResolvedValue([makeModel()]);
     mockGetProviderHealth.mockResolvedValue({ providers: [makeHealthProvider()] });

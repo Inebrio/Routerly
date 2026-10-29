@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Models Health table fits a 1280px viewport (ROUT-464).** The table uses tighter cell padding and wrapping headers/model ids, so the "Last success" and "Cooldown / lockout" columns are no longer cut off at the right edge.
 - **Playground: long unbroken error text stays inside the card (ROUT-462).** The error banner in the conversation (and the compare-mode column error) now wraps text such as a masked API key instead of overflowing the card.
 
 - **Dashboard: no unhandled page error with mandatory 2FA (ROUT-460).** A user without 2FA while `requireMfa` is on no longer triggers an unhandled promise rejection from in-flight page calls refused with 403 `mfa_required`; the redirect to the Profile and the banner are unchanged.
