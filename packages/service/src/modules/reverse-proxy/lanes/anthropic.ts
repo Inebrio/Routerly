@@ -101,10 +101,10 @@ export const anthropicUpstream: Processor<ProxyContext> = {
       return
     }
 
-    // ── Anthropic API-key / web models: verbatim pass-through (anthropic.ts L229-232). ──
-    // Same live-credential reload as above: anthropic-web's session key also needs it;
-    // plain anthropic api-key models resolve to the same static value either way.
-    if (model.provider === 'anthropic' || model.provider === 'anthropic-web') {
+    // ── Anthropic API-key models: verbatim pass-through (anthropic.ts L229-232). ──
+    // anthropic-web is NOT forwarded: claude.ai exposes no /v1/messages, so it goes through
+    // the generic adapter path below (Anthropic -> chat -> anthropic-web -> Anthropic).
+    if (model.provider === 'anthropic') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
       await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx))

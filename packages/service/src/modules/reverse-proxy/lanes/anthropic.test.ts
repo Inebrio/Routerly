@@ -467,7 +467,8 @@ describe('anthropic:upstream', () => {
     expect(ctx.result).toEqual({ kind: 'passthrough' })
   })
 
-  it.each(['anthropic', 'anthropic-web'] as const)('%s passes through verbatim via the API-key path', async (provider) => {
+  it('anthropic passes through verbatim via the API-key path', async () => {
+    const provider = 'anthropic'
     const reply: any = { header: vi.fn() }
     const ctx = {
       protocol: 'anthropic', reply, traceId: 't1',
@@ -591,6 +592,23 @@ describe('anthropic:upstream', () => {
     } as unknown as ProxyContext
     await anthropicUpstream.run(ctx)
     expect(mockLlmChat).toHaveBeenCalledOnce()
+  })
+
+  it('anthropic-web is converted through the adapter, never forwarded to claude.ai (ROUT-478)', async () => {
+    mockForwardApiKey.mockClear()
+    mockLlmChat.mockResolvedValueOnce({
+      id: 'c1', object: 'chat.completion', created: 0, model: 'm',
+      choices: [{ index: 0, message: { role: 'assistant', content: 'pong' }, finish_reason: 'stop' }],
+    } as any)
+    const ctx = {
+      protocol: 'anthropic', log: makeLog(), router: { id: 'p1' }, traceId: 't1',
+      attempt: { model: { ...model, provider: 'anthropic-web' }, candidate },
+      original: { model: 'm', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] },
+    } as unknown as ProxyContext
+    await anthropicUpstream.run(ctx)
+    expect(mockForwardApiKey).not.toHaveBeenCalled()
+    expect(ctx.passthrough).toBeUndefined()
+    expect((ctx.result as any).body.content[0].text).toBe('pong')
   })
 
   it('chatToMessages falls back to defaults when id/model/usage/finish_reason are absent or non-terminal', async () => {
