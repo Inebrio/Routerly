@@ -309,7 +309,8 @@ export const anthropicEgress: Processor<ProxyContext> = {
       // mid-stream error: nothing to write to the client, but the trace says so.
       failure = err instanceof Error ? err.message : String(err)
     }
-    reply.raw.end()
+    // An aborted stream is closed abnormally so the client sees an error, not a complete response.
+    if (failure) reply.raw.destroy(); else reply.raw.end()
     traceEgress(ctx, { kind: 'stream', encoding: 'anthropic-sse', frames, bytes, ...(failure ? { error: failure } : {}) })
   },
 }

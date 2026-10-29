@@ -275,9 +275,12 @@ describe('openai transport lane', () => {
 
   it('egress counts the SSE frames the client actually received, and names a mid-stream failure', async () => {
     const emit = vi.fn()
+    const written: string[] = []
+    const destroy = vi.fn()
+    const end = vi.fn()
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: () => {}, end: () => {} },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end, destroy },
     }
     async function* body() {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
@@ -294,6 +297,10 @@ describe('openai transport lane', () => {
       message: 'egress:sent',
       details: { protocol: 'openai', kind: 'stream', encoding: 'sse', frames: 1, bytes: expect.any(Number), error: 'upstream reset' },
     })
+    // truncated stream: no clean [DONE], connection closed abnormally
+    expect(written.join('')).not.toContain('[DONE]')
+    expect(destroy).toHaveBeenCalled()
+    expect(end).not.toHaveBeenCalled()
   })
 
   it('egress no-ops on a block with no body (streaming block already wrote its own bytes)', async () => {
@@ -417,7 +424,7 @@ describe('openai transport lane', () => {
     const logError = vi.fn()
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {} },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {}, destroy: () => {} },
     }
     async function* body(): AsyncGenerator<unknown> {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'm', choices: [] }
@@ -430,7 +437,7 @@ describe('openai transport lane', () => {
     } as unknown as ProxyContext
     await openaiEgress.run(ctx)
     expect(logError).toHaveBeenCalledOnce()
-    expect(written.at(-1)).toBe('data: [DONE]\n\n')
+    expect(written).not.toContain('data: [DONE]\n\n')
   })
 })
 
@@ -582,7 +589,7 @@ describe('/v1/responses on the openai lane', () => {
     let ended = false
     const reply: any = {
       hijack: () => {},
-      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => { ended = true } },
+      raw: { setHeader: () => {}, flushHeaders: () => {}, write: (s: string) => written.push(s), end: () => {}, destroy: () => { ended = true } },
     }
     async function* body(): AsyncGenerator<unknown> {
       yield { id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'gpt-4o', choices: [{ index: 0, delta: { content: 'hi' }, finish_reason: null }] }
