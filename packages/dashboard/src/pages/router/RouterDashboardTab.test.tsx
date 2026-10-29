@@ -134,6 +134,16 @@ describe('RouterDashboardTab', () => {
     expect(screen.getByText(/\$0\.0009 saved/)).toBeInTheDocument();
   });
 
+  it('renders unpriced (null) costs as a dash instead of crashing', async () => {
+    const base = makeStats();
+    vi.mocked(getUsage).mockResolvedValue({
+      ...base,
+      savings: { ...base.savings, cache: { inputTokens: 400, cost: null } },
+    } as never);
+    renderTab();
+    expect(await screen.findByText(/\(— saved\)/)).toBeInTheDocument();
+  });
+
   it('lists one counterfactual row per target, priced and never timed', async () => {
     renderTab();
     await screen.findByText('780 ms');

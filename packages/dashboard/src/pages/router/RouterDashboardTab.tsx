@@ -9,7 +9,7 @@ import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } fro
 import { useFilterState } from '../../hooks/useFilterState';
 
 const ms = (n: number | undefined) => (n == null ? '—' : `${Math.round(n).toLocaleString()} ms`);
-const usd = (n: number) => `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`;
+const usd = (n: number | null | undefined) => (n == null ? '—' : `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`);
 
 /**
  * Router Dashboard (T62). The first thing a router shows: what the routing

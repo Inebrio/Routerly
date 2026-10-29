@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Router Dashboard tab no longer crashes on models without prices (ROUT-481).** Null costs (e.g. Ollama models with cached tokens) caused `Cannot read properties of null (reading 'toFixed')`; they now render as `—`.
 - **anthropic: streamed `/v1/chat/completions` chunks now carry the provider-returned `model` (ROUT-479).** Stream chunks reported the requested model name while non-stream responses reported the provider string (e.g. `claude-haiku-4-5-20251001`); both now use the provider value.
 
 - **anthropic-web: `/v1/messages` now works with a valid session key (ROUT-478).** The Anthropic lane forwarded anthropic-web models verbatim to `claude.ai/v1/messages`, a route claude.ai does not expose (always 404). They now go through the anthropic-web adapter and answer in Anthropic format, stream and non-stream.
