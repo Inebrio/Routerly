@@ -702,7 +702,7 @@ export function ModelFormPage() {
             <div className="form-group">
               <label className="form-label">{t('models.form.identification.provider')}</label>
               <SearchableSelect
-                options={PROVIDERS.map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
+                options={(PROVIDERS.includes(form.provider) || !form.provider ? PROVIDERS : [form.provider, ...PROVIDERS]).map(p => ({ value: p, label: PROVIDER_LABEL_KEYS[p] ? t(PROVIDER_LABEL_KEYS[p]!) : p }))}
                 value={form.provider}
                 onChange={v => handleProviderChange(v as Provider)}
               />
