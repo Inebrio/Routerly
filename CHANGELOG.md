@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **anthropic-web: `/v1/messages` now works with a valid session key (ROUT-478).** The Anthropic lane forwarded anthropic-web models verbatim to `claude.ai/v1/messages`, a route claude.ai does not expose (always 404). They now go through the anthropic-web adapter and answer in Anthropic format, stream and non-stream.
 - **Proxy:** a stream cut by the upstream no longer ends as a clean `[DONE]` with HTTP 200; the connection is closed abnormally (OpenAI and Anthropic lanes) so the client sees the interruption (ROUT-474).
 
 - **anthropic-web: invalid session key returns an Anthropic error and no claude.ai headers (ROUT-473).** `/v1/messages` answered an empty 404 and forwarded claude.ai's Cloudflare headers, including `set-cookie` for `claude.ai`. Non-JSON upstream errors are now rebuilt as an Anthropic `type: error` body and only content-type, cache-control, retry-after and request-id are forwarded.
