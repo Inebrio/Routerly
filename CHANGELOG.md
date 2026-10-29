@@ -13,6 +13,8 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Catalog refresh no longer overwrites explicit model prices.** `POST`/`PUT /api/models` (and so `routerly model add`/`edit`) now pin `fieldOverrides` for the price, cache, tier and context-window fields the caller sets explicitly when the body carries no `fieldOverrides`; the dashboard always sends its own. (ROUT-485)
+
 - **Router Dashboard tab no longer crashes on models without prices (ROUT-481).** Null costs (e.g. Ollama models with cached tokens) caused `Cannot read properties of null (reading 'toFixed')`; they now render as `—`.
 - **anthropic: streamed `/v1/chat/completions` chunks now carry the provider-returned `model` (ROUT-479).** Stream chunks reported the requested model name while non-stream responses reported the provider string (e.g. `claude-haiku-4-5-20251001`); both now use the provider value.
 
