@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **anthropic-web accepts a system prompt.** `/v1/messages` (and `/v1/chat/completions`) with a `system` field no longer fails with claude.ai's 400 `system_prompt: Extra inputs are not permitted`; the system text now leads the prompt sent to claude.ai. (ROUT-497)
 - **Removing a connection that is in use now shows the error.** The dashboard banner ("Connection is used by model(s): …") was rendered above the fold and went unnoticed on long lists; it is now scrolled into view. (ROUT-494)
 
 
