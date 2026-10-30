@@ -70,6 +70,16 @@ describe('routerly model discover', () => {
     expect(out).toContain('ollama');
   });
 
+  it('prints the table for entries without modalities', async () => {
+    mockApi.mockResolvedValue([{ id: 'gpt-x', provider: 'openai', name: 'X', contextWindow: 128000, pricing: { inputPer1kTokens: 0.005, outputPer1kTokens: 0.015 }, isConfigured: false }]);
+    const { lines, restore } = captureConsole();
+
+    await run('discover');
+
+    restore();
+    expect(lines.join('\n')).toContain('gpt-x');
+  });
+
   it('filters by --provider', async () => {
     mockApi.mockResolvedValue(CATALOG);
     const { lines, restore } = captureConsole();
