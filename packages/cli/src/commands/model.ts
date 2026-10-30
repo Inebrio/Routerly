@@ -593,7 +593,7 @@ Examples:
         provider: string;
         name: string;
         contextWindow: number;
-        modalities: string[];
+        modalities?: string[];
         pricing: { inputPer1kTokens: number; outputPer1kTokens: number };
         local?: boolean;
         isConfigured: boolean;
@@ -643,7 +643,7 @@ Examples:
           e.id + configured,
           e.provider,
           ctx,
-          e.modalities.join(', '),
+          (e.modalities ?? []).join(', ') || '—',
           priceIn,
           priceOut,
         ]);

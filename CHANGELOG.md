@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **CLI `model discover`**: no longer crashes with a TypeError in table mode when a catalog entry has no `modalities`.
 - **Catalog refresh no longer overwrites explicit model prices.** `POST`/`PUT /api/models` (and so `routerly model add`/`edit`) now pin `fieldOverrides` for the price, cache, tier and context-window fields the caller sets explicitly when the body carries no `fieldOverrides`; the dashboard always sends its own. (ROUT-485)
 
 - **Router Dashboard tab no longer crashes on models without prices (ROUT-481).** Null costs (e.g. Ollama models with cached tokens) caused `Cannot read properties of null (reading 'toFixed')`; they now render as `—`.
