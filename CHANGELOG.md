@@ -13,6 +13,9 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Removing a connection that is in use now shows the error.** The dashboard banner ("Connection is used by model(s): …") was rendered above the fold and went unnoticed on long lists; it is now scrolled into view. (ROUT-494)
+
+
 - **CLI `model discover`**: no longer crashes with a TypeError in table mode when a catalog entry has no `modalities`.
 - **Catalog refresh no longer overwrites explicit model prices.** `POST`/`PUT /api/models` (and so `routerly model add`/`edit`) now pin `fieldOverrides` for the price, cache, tier and context-window fields the caller sets explicitly when the body carries no `fieldOverrides`; the dashboard always sends its own. (ROUT-485)
 
