@@ -21,6 +21,14 @@ import { decryptCredential } from '../../lib/crypto-cred.js';
  * ⚠️  This adapter uses an internal, undocumented API that may break at any time.
  *     Using it may violate Anthropic's Terms of Service.
  */
+/** Join the text blocks of array content; fall back to JSON for anything else */
+function textOf(content: unknown): string {
+  if (Array.isArray(content) && content.every(b => b && typeof b === 'object' && (b as { type?: string }).type === 'text')) {
+    return content.map(b => (b as { text: string }).text).join('\n');
+  }
+  return JSON.stringify(content);
+}
+
 export class AnthropicWebAdapter implements ProviderAdapter {
   /** Organization ID per session cookie — the adapter is a singleton shared by every connection */
   private readonly orgIds = new Map<string, string>();
@@ -135,7 +143,7 @@ export class AnthropicWebAdapter implements ProviderAdapter {
   private buildPrompt(request: ChatCompletionRequest): string {
     return request.messages
       .map(m => {
-        const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+        const content = typeof m.content === 'string' ? m.content : textOf(m.content);
         if (m.role === 'system') return content;
         const prefix = m.role === 'assistant' ? 'Assistant' : 'Human';
         return `${prefix}: ${content}`;
@@ -202,21 +210,15 @@ export class AnthropicWebAdapter implements ProviderAdapter {
   ): Promise<Response> {
     const upstreamModel = this.getUpstreamModelId(model);
     const messages = developerAsSystem(request.messages);
-    const systemMessage = messages.find(m => m.role === 'system');
-    const nonSystemMessages = messages.filter(m => m.role !== 'system');
 
     const body: Record<string, unknown> = {
       model: upstreamModel,
-      prompt: this.buildPrompt({ ...request, messages: nonSystemMessages }),
+      // claude.ai rejects a system_prompt field (400 "Extra inputs are not permitted"): system text leads the prompt
+      prompt: this.buildPrompt({ ...request, messages }),
       timezone: 'UTC',
       attachments: [],
       files: [],
     };
-    if (systemMessage?.content) {
-      body['system_prompt'] = typeof systemMessage.content === 'string'
-        ? systemMessage.content
-        : JSON.stringify(systemMessage.content);
-    }
 
     const response = await globalThis.fetch(
       `${base}/api/organizations/${orgId}/chat_conversations/${convId}/completion`,

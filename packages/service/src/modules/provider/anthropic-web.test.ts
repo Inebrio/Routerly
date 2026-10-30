@@ -263,7 +263,8 @@ describe('AnthropicWebAdapter system prompt with non-string content', () => {
       ],
     }
     await adapter.chatCompletion(request, makeModel())
-    expect(typeof capturedBody?.system_prompt).toBe('string')
+    expect(capturedBody).not.toHaveProperty('system_prompt')
+    expect(capturedBody?.prompt).toBe('system\n\nHuman: hi')
   });
 });
 
@@ -558,9 +559,8 @@ describe('AnthropicWebAdapter buildPrompt branches', () => {
       ],
     };
     await adapter.chatCompletion(request, makeModel());
-    expect(capturedBody?.system_prompt).toBe('You are helpful');
-    // The prompt should only have the user message (system is filtered out for prompt building)
-    expect(capturedBody?.prompt).toBe('Human: hi');
+    expect(capturedBody).not.toHaveProperty('system_prompt');
+    expect(capturedBody?.prompt).toBe('You are helpful\n\nHuman: hi');
   });
 });
 
