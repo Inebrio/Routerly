@@ -851,7 +851,11 @@ export const apiRoutes: FastifyPluginAsync = async (fastify) => {
         }),
         enabled: true,
       };
-      connections.push(connection);
+      // A leftover conn-for-<id> (no instance with this id exists, checked above) is an orphan:
+      // replace it so stale credentials never shadow the new ones and ids stay unique.
+      const kept = connections.filter(c => c.id !== connectionId);
+      connections.length = 0;
+      connections.push(...kept, connection);
       await writeConfig('connections', connections);
     }
 
