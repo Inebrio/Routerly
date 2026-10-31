@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - **Router with no models returns a provider-shaped 503.** `/v1/chat/completions` and `/v1/messages` on a router without resolvable models now answer 503 in the OpenAI/Anthropic error shape instead of a bare 500 `no_models_available`.
 - **anthropic-web accepts a system prompt.** `/v1/messages` (and `/v1/chat/completions`) with a `system` field no longer fails with claude.ai's 400 `system_prompt: Extra inputs are not permitted`; the system text now leads the prompt sent to claude.ai. (ROUT-497)
@@ -60,6 +61,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - **Optimizer preview runs the assigned profile.** The router Optimizer tab, `routerly optimizers preview` and `POST /api/optimizers/preview` ran the router's custom steps even when an optimizer profile was assigned. With a profile assigned the preview now runs that profile's steps, exactly as live traffic does; in Custom mode it runs the current (unsaved) steps. `steps` is optional in the preview request when `routerId` is given, and the response and both surfaces name the pipeline that ran (`pipeline`).
 - **Routing models that cannot work are no longer silently ignored (ROUT-434).** Creating or editing a router or routing profile with a routing model (router-level, llm policy or their fallbacks) that is not in the model registry now fails with HTTP 400 naming the id (only ids added by the edit are checked, so existing configs stay editable). At request time, when every policy fails the trace now records `router:policies-failed`, the recap lists `failedPolicies`, the service logs a warning and the dashboard shows a warning block; when a fallback routing model serves, the trace records `llm-policy:fallback` with the primary, the model used and the skip reasons.
@@ -95,6 +97,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - **Dashboard › Settings › Security:** the red «Unsafe permissions on secrets file(s)» error no longer stays next to «All configuration files have safe permissions» after a successful «Fix now», or after the files are fixed from the CLI while the page is open (ROUT-375).
 - The `llm` routing policy now honours the router-level fallback routing models (`router routing update --fallback-models`) when the policy defines no `fallbackModelIds` of its own.
@@ -179,6 +182,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - The `llm` routing policy now honours the router-level fallback routing models (`router routing update --fallback-models`) when the policy defines no `fallbackModelIds` of its own.
 - **Service build** — `sender.test.ts` no longer fails `tsc` with TS2532 under `noUncheckedIndexedAccess` (ROUT-366).

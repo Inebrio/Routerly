@@ -303,6 +303,9 @@ export const connectionsRoutes: FastifyPluginAsync = async (fastify) => {
     if (parsed.data.providerId === 'anthropic-oauth' && !credentials.oauthEnc) {
       return reply.status(400).send({ error: 'oauth_token_required', message: 'OAuth token is required' });
     }
+    if (getProviderDescriptor(parsed.data.providerId)?.supportLevel === 'web' && !credentials.cookieEnc) {
+      return reply.status(400).send({ error: 'cookie_required', message: 'Access/session token is required' });
+    }
     const connection = {
       id: uuidv4(),
       ...parsed.data,

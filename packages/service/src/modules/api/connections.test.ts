@@ -176,6 +176,17 @@ describe('POST /api/connections', () => {
     expect(res.json().error).toBe('oauth_token_required')
   })
 
+  it('rejects a web provider connection without a token (400 cookie_required)', async () => {
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/connections', headers: auth('connections:manage'),
+      payload: { providerId: 'openai-web', label: 'x', credentials: {}, enabled: true },
+    })
+    await app.close()
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error).toBe('cookie_required')
+  })
+
   it('allows api-key providers without reading the modules config at all', async () => {
     const app = await buildApp()
     const headers = auth('connections:manage')
