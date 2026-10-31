@@ -1230,7 +1230,9 @@
         "ttft": "Time to first token",
         "notMeasured": "not measured on these calls",
         "reliability": "Reliability",
-        "errorsAndBlocked": "{{errors}} errors · {{blocked}} blocked"
+        "errorsAndBlocked": "{{errors}} errors · {{blocked}} blocked",
+        "errorsAndBlocked_one": "{{errors}} error · {{blocked}} blocked",
+        "errorsAndBlocked_other": "{{errors}} errors · {{blocked}} blocked"
       },
       "tokens": {
         "input": "Input tokens:",

@@ -140,8 +140,11 @@ async function processResponse<T>(res: Response, _path: string): Promise<T> {
   if (!res.ok) {
     // Some routes answer with a machine code plus a sentence (`label_taken` +
     // "Label ... is already used"); the sentence is the one worth showing.
-    const body = data as { error?: string; message?: string };
-    throw httpError(body.message ?? body.error ?? `HTTP ${res.status}`, res.status, body.error);
+    // /api/usage and others wrap it: { error: { message } }.
+    const body = data as { error?: string | { message?: string }; message?: string };
+    const code = typeof body.error === 'string' ? body.error : undefined;
+    const nested = typeof body.error === 'object' ? body.error?.message : undefined;
+    throw httpError(body.message ?? nested ?? code ?? `HTTP ${res.status}`, res.status, code);
   }
   return data as T;
 }
