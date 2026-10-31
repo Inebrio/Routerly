@@ -185,6 +185,25 @@ describe('RouterDashboardTab', () => {
     expect(mockGetUsage.mock.calls[1]![2]).toBe('2024-06-01T09:00:00Z');
   });
 
+  it('puts the sign before the dollar sign on a negative saving and pluralises errors', async () => {
+    const base = makeStats();
+    vi.mocked(getUsage).mockResolvedValue({
+      ...base,
+      summary: { ...base.summary, errorCalls: 2 },
+      savings: { ...base.savings, baselines: [
+        { modelId: 'cheap', cost: 0.0002, costDelta: -0.00002695, costDeltaPercent: -12.2, latencySamples: 0 },
+      ] },
+    } as never);
+    renderTab();
+    expect(await screen.findByText(/-\$0\.00002695 \(-12\.2%\)/)).toBeInTheDocument();
+    expect(screen.getByText(/2 errors ·/)).toBeInTheDocument();
+  });
+
+  it('uses the singular for one error', async () => {
+    renderTab();
+    expect(await screen.findByText(/1 error ·/)).toBeInTheDocument();
+  });
+
   it('surfaces a failed fetch', async () => {
     mockGetUsage.mockRejectedValue(new Error('forbidden'));
     renderTab();
