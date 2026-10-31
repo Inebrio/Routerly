@@ -1228,7 +1228,9 @@
         "ttft": "Oras hanggang sa unang token",
         "notMeasured": "hindi nasukat sa mga tawag na ito",
         "reliability": "Kaasahan",
-        "errorsAndBlocked": "{{errors}} error · {{blocked}} nahadlangan"
+        "errorsAndBlocked": "{{errors}} error · {{blocked}} nahadlangan",
+        "errorsAndBlocked_one": "{{errors}} error · {{blocked}} nahadlangan",
+        "errorsAndBlocked_other": "{{errors}} error · {{blocked}} nahadlangan"
       },
       "tokens": {
         "input": "Mga input token:",

@@ -1228,7 +1228,9 @@
         "ttft": "Waktu ke token pertama",
         "notMeasured": "tidak diukur pada panggilan ini",
         "reliability": "Keandalan",
-        "errorsAndBlocked": "{{errors}} kesalahan · {{blocked}} diblokir"
+        "errorsAndBlocked": "{{errors}} kesalahan · {{blocked}} diblokir",
+        "errorsAndBlocked_one": "{{errors}} kesalahan · {{blocked}} diblokir",
+        "errorsAndBlocked_other": "{{errors}} kesalahan · {{blocked}} diblokir"
       },
       "tokens": {
         "input": "Token masukan:",

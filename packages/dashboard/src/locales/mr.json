@@ -1228,7 +1228,9 @@
         "ttft": "प्रथम टोकन वेळ",
         "notMeasured": "या कॉलवर मापन केले नाही",
         "reliability": "Reliability",
-        "errorsAndBlocked": "{{errors}} त्रुटी · {{blocked}} अवरुद्ध"
+        "errorsAndBlocked": "{{errors}} त्रुटी · {{blocked}} अवरुद्ध",
+        "errorsAndBlocked_one": "{{errors}} त्रुटी · {{blocked}} अवरुद्ध",
+        "errorsAndBlocked_other": "{{errors}} त्रुटी · {{blocked}} अवरुद्ध"
       },
       "tokens": {
         "input": "इनपुट टोकन:",

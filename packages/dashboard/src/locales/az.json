@@ -1228,7 +1228,9 @@
         "ttft": "İlk tokenə qədər vaxt",
         "notMeasured": "bu çağırışlarda ölçülməyib",
         "reliability": "Etibarlılıq",
-        "errorsAndBlocked": "{{errors}} xəta · {{blocked}} bloklanıb"
+        "errorsAndBlocked": "{{errors}} xəta · {{blocked}} bloklanıb",
+        "errorsAndBlocked_one": "{{errors}} xəta · {{blocked}} bloklanıb",
+        "errorsAndBlocked_other": "{{errors}} xəta · {{blocked}} bloklanıb"
       },
       "tokens": {
         "input": "Giriş tokenləri:",

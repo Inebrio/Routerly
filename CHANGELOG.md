@@ -15,6 +15,7 @@ the change itself — never reconstructed after the fact. See
 
 - **Usage / Call Detail readability.** Failed calls with no resolved model are recorded with cost 0 instead of `Unknown`/`-`; empty arrays in the `router:policies` trace (e.g. `fallbackModelIds`) are kept as `[]` instead of `{}`; the model filter placeholder is readable in the dark theme; Call Detail explains a failed policy instead of showing "No policy data". (ROUT-509)
 - **Router dashboard tab polish** — negative savings render as `-$0.0000269` instead of `$-0.0000269`, section titles are uppercase in the dark theme as in the light one, "1 error" is singular, and a `{ error: { message } }` API failure shows its message instead of `[object Object]` (ROUT-508).
+- **i18n.** `routers.dashboard.stats.errorsAndBlocked_one`/`_other` added to all 40 non-English locales (ROUT-513).
 - **Web-session connections require their token.** The dashboard form no longer submits `openai-web`/`anthropic-web` connections without a token, and `POST /api/connections` answers 400 `cookie_required` (also for the CLI). (ROUT-507)
 - **Re-adding a removed model no longer leaves a stale connection.** `POST /api/models` with inline credentials now replaces a leftover `conn-for-<id>` connection instead of appending a duplicate id. (ROUT-504)
 - **Router with no models returns a provider-shaped 503.** `/v1/chat/completions` and `/v1/messages` on a router without resolvable models now answer 503 in the OpenAI/Anthropic error shape instead of a bare 500 `no_models_available`.

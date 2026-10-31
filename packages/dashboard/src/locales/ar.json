@@ -1228,7 +1228,9 @@
         "ttft": "الزمن حتى أول رمز",
         "notMeasured": "غير مقاس في هذه الطلبات",
         "reliability": "الموثوقية",
-        "errorsAndBlocked": "{{errors}} أخطاء · {{blocked}} محظورة"
+        "errorsAndBlocked": "{{errors}} أخطاء · {{blocked}} محظورة",
+        "errorsAndBlocked_one": "{{errors}} أخطاء · {{blocked}} محظورة",
+        "errorsAndBlocked_other": "{{errors}} أخطاء · {{blocked}} محظورة"
       },
       "tokens": {
         "input": "رموز الإدخال:",

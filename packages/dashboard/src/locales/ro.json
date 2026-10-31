@@ -1228,7 +1228,9 @@
         "ttft": "Timp până la primul jetons",
         "notMeasured": "nu s-a măsurat pe aceste apeluri",
         "reliability": "Fiabilitate",
-        "errorsAndBlocked": "{{errors}} erori · {{blocked}} blocate"
+        "errorsAndBlocked": "{{errors}} erori · {{blocked}} blocate",
+        "errorsAndBlocked_one": "{{errors}} eroare · {{blocked}} blocate",
+        "errorsAndBlocked_other": "{{errors}} erori · {{blocked}} blocate"
       },
       "tokens": {
         "input": "Jetoane de intrare:",

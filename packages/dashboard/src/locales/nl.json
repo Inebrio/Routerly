@@ -1228,7 +1228,9 @@
         "ttft": "Tijd tot eerste token",
         "notMeasured": "niet gemeten op deze oproepen",
         "reliability": "Betrouwbaarheid",
-        "errorsAndBlocked": "{{errors}} fouten · {{blocked}} geblokkeerd"
+        "errorsAndBlocked": "{{errors}} fouten · {{blocked}} geblokkeerd",
+        "errorsAndBlocked_one": "{{errors}} fout · {{blocked}} geblokkeerd",
+        "errorsAndBlocked_other": "{{errors}} fouten · {{blocked}} geblokkeerd"
       },
       "tokens": {
         "input": "Invoertokens:",

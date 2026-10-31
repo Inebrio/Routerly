@@ -48,3 +48,13 @@ describe('web provider instructions (ROUT-289)', () => {
     expect(w.openaiInstructions).not.toMatch(/24/);
   });
 });
+
+describe('router dashboard plural keys (ROUT-513)', () => {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
+  it.each(files)('%s has errorsAndBlocked plural keys', (f) => {
+    const s = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')).routers.dashboard.stats;
+    expect(s.errorsAndBlocked_one).toBeTruthy();
+    expect(s.errorsAndBlocked_other).toBeTruthy();
+  });
+});

@@ -1228,7 +1228,9 @@
         "ttft": "Aika ensimmäiseen tokeniin",
         "notMeasured": "ei mitattu näissä kutsuissa",
         "reliability": "Luotettavuus",
-        "errorsAndBlocked": "{{errors}} virhettä · {{blocked}} estettyä"
+        "errorsAndBlocked": "{{errors}} virhettä · {{blocked}} estettyä",
+        "errorsAndBlocked_one": "{{errors}} virhe · {{blocked}} estettyä",
+        "errorsAndBlocked_other": "{{errors}} virhettä · {{blocked}} estettyä"
       },
       "tokens": {
         "input": "Syötetokenit:",

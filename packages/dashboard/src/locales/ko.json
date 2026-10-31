@@ -1228,7 +1228,9 @@
         "ttft": "첫 토큰까지의 시간",
         "notMeasured": "이 호출에서 측정되지 않음",
         "reliability": "안정성",
-        "errorsAndBlocked": "{{errors}}개 오류 · {{blocked}}개 차단됨"
+        "errorsAndBlocked": "{{errors}}개 오류 · {{blocked}}개 차단됨",
+        "errorsAndBlocked_one": "{{errors}}개 오류 · {{blocked}}개 차단됨",
+        "errorsAndBlocked_other": "{{errors}}개 오류 · {{blocked}}개 차단됨"
       },
       "tokens": {
         "input": "입력 토큰:",

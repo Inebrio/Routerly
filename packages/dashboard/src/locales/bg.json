@@ -1228,7 +1228,9 @@
         "ttft": "Време до първи токен",
         "notMeasured": "не е измерено при тези заявки",
         "reliability": "Надеждност",
-        "errorsAndBlocked": "{{errors}} грешки · {{blocked}} блокирани"
+        "errorsAndBlocked": "{{errors}} грешки · {{blocked}} блокирани",
+        "errorsAndBlocked_one": "{{errors}} грешка · {{blocked}} блокирани",
+        "errorsAndBlocked_other": "{{errors}} грешки · {{blocked}} блокирани"
       },
       "tokens": {
         "input": "Входни токени:",

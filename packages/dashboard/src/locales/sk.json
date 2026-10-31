@@ -1228,7 +1228,9 @@
         "ttft": "Čas do prvého tokenu",
         "notMeasured": "nemeraný na týchto volaniach",
         "reliability": "Spoľahlivosť",
-        "errorsAndBlocked": "{{errors}} chýb · {{blocked}} zablokovaných"
+        "errorsAndBlocked": "{{errors}} chýb · {{blocked}} zablokovaných",
+        "errorsAndBlocked_one": "{{errors}} chyba · {{blocked}} zablokovaných",
+        "errorsAndBlocked_other": "{{errors}} chýb · {{blocked}} zablokovaných"
       },
       "tokens": {
         "input": "Vstupné tokeny:",

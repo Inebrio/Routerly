@@ -1228,7 +1228,9 @@
         "ttft": "પહેલા ટોકનનો સમય",
         "notMeasured": "આ કૉલ્સમાં માપવામાં આવતું નથી",
         "reliability": "વિશ્વસનીયતા",
-        "errorsAndBlocked": "{{errors}} ભૂલો · {{blocked}} બ્લોક કરાયું"
+        "errorsAndBlocked": "{{errors}} ભૂલો · {{blocked}} બ્લોક કરાયું",
+        "errorsAndBlocked_one": "{{errors}} ભૂલ · {{blocked}} બ્લોક કરાયું",
+        "errorsAndBlocked_other": "{{errors}} ભૂલો · {{blocked}} બ્લોક કરાયું"
       },
       "tokens": {
         "input": "ઇનપુટ ટોકન્સ:",

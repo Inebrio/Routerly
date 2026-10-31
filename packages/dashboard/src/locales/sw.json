@@ -1228,7 +1228,9 @@
         "ttft": "Saa kwa ishara ya kwanza",
         "notMeasured": "haijapimwa simu hizi",
         "reliability": "Maadhimisho",
-        "errorsAndBlocked": "{{errors}} hitilafu · {{blocked}} imedhibitiwa"
+        "errorsAndBlocked": "{{errors}} hitilafu · {{blocked}} imedhibitiwa",
+        "errorsAndBlocked_one": "{{errors}} hitilafu · {{blocked}} imedhibitiwa",
+        "errorsAndBlocked_other": "{{errors}} hitilafu · {{blocked}} imedhibitiwa"
       },
       "tokens": {
         "input": "Tokens za ingizo:",

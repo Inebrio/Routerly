@@ -1228,7 +1228,9 @@
         "ttft": "Thời gian tới token đầu tiên",
         "notMeasured": "không được đo trên những cuộc gọi này",
         "reliability": "Độ tin cậy",
-        "errorsAndBlocked": "{{errors}} lỗi · {{blocked}} bị chặn"
+        "errorsAndBlocked": "{{errors}} lỗi · {{blocked}} bị chặn",
+        "errorsAndBlocked_one": "{{errors}} lỗi · {{blocked}} bị chặn",
+        "errorsAndBlocked_other": "{{errors}} lỗi · {{blocked}} bị chặn"
       },
       "tokens": {
         "input": "Token đầu vào:",

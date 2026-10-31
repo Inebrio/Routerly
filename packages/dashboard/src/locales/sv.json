@@ -1228,7 +1228,9 @@
         "ttft": "Tid till första token",
         "notMeasured": "inte mätt på dessa samtal",
         "reliability": "Tillförlitlighet",
-        "errorsAndBlocked": "{{errors}} fel · {{blocked}} blockerad"
+        "errorsAndBlocked": "{{errors}} fel · {{blocked}} blockerad",
+        "errorsAndBlocked_one": "{{errors}} fel · {{blocked}} blockerad",
+        "errorsAndBlocked_other": "{{errors}} fel · {{blocked}} blockerad"
       },
       "tokens": {
         "input": "Inmatningstoken:",

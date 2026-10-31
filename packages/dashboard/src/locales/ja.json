@@ -1228,7 +1228,9 @@
         "ttft": "最初のトークンまでの時間",
         "notMeasured": "これらの呼び出しでは測定されていません",
         "reliability": "信頼性",
-        "errorsAndBlocked": "{{errors}}エラー・{{blocked}}ブロック"
+        "errorsAndBlocked": "{{errors}}エラー・{{blocked}}ブロック",
+        "errorsAndBlocked_one": "{{errors}}エラー・{{blocked}}ブロック",
+        "errorsAndBlocked_other": "{{errors}}エラー・{{blocked}}ブロック"
       },
       "tokens": {
         "input": "入力トークン:",
