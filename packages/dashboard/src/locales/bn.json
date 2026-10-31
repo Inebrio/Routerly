@@ -1228,7 +1228,9 @@
         "ttft": "প্রথম টোকেনে সময়",
         "notMeasured": "এই কলগুলিতে পরিমাপ করা হয় না",
         "reliability": "নির্ভরযোগ্যতা",
-        "errorsAndBlocked": "{{errors}} ত্রুটি · {{blocked}} ব্লক করা"
+        "errorsAndBlocked": "{{errors}} ত্রুটি · {{blocked}} ব্লক করা",
+        "errorsAndBlocked_one": "{{errors}} ত্রুটি · {{blocked}} ব্লক করা",
+        "errorsAndBlocked_other": "{{errors}} ত্রুটি · {{blocked}} ব্লক করা"
       },
       "tokens": {
         "input": "ইনপুট টোকেন:",

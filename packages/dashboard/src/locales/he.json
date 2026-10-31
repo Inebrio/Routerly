@@ -1228,7 +1228,9 @@
         "ttft": "זמן עד לטוקן הראשון",
         "notMeasured": "לא נמדד בקריאות אלו",
         "reliability": "מהימנות",
-        "errorsAndBlocked": "{{errors}} שגיאות · {{blocked}} חסומות"
+        "errorsAndBlocked": "{{errors}} שגיאות · {{blocked}} חסומות",
+        "errorsAndBlocked_one": "{{errors}} שגיאות · {{blocked}} חסומות",
+        "errorsAndBlocked_other": "{{errors}} שגיאות · {{blocked}} חסומות"
       },
       "tokens": {
         "input": "טוקני קלט:",

@@ -1228,7 +1228,9 @@
         "ttft": "زمان تا اولین توکن",
         "notMeasured": "در این فراخوانی‌ها اندازه‌گیری نشده است",
         "reliability": "قابلیت اطمینان",
-        "errorsAndBlocked": "{{errors}} خطا · {{blocked}} مسدود"
+        "errorsAndBlocked": "{{errors}} خطا · {{blocked}} مسدود",
+        "errorsAndBlocked_one": "{{errors}} خطا · {{blocked}} مسدود",
+        "errorsAndBlocked_other": "{{errors}} خطا · {{blocked}} مسدود"
       },
       "tokens": {
         "input": "توکن‌های ورودی:",

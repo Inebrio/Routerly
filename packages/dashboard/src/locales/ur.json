@@ -1228,7 +1228,9 @@
         "ttft": "پہلی ٹوکن کا وقت",
         "notMeasured": "ان کالوں پر ناپا نہیں",
         "reliability": "قابل اعتماد",
-        "errorsAndBlocked": "{{errors}} خرابیاں · {{blocked}} حجب شدہ"
+        "errorsAndBlocked": "{{errors}} خرابیاں · {{blocked}} حجب شدہ",
+        "errorsAndBlocked_one": "{{errors}} خرابیاں · {{blocked}} حجب شدہ",
+        "errorsAndBlocked_other": "{{errors}} خرابیاں · {{blocked}} حجب شدہ"
       },
       "tokens": {
         "input": "ان پٹ ٹوکنز:",

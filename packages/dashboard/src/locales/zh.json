@@ -1228,7 +1228,9 @@
         "ttft": "首次令牌时间",
         "notMeasured": "未在这些调用中测量",
         "reliability": "可靠性",
-        "errorsAndBlocked": "{{errors}} 个错误 · {{blocked}} 个已阻止"
+        "errorsAndBlocked": "{{errors}} 个错误 · {{blocked}} 个已阻止",
+        "errorsAndBlocked_one": "{{errors}} 个错误 · {{blocked}} 个已阻止",
+        "errorsAndBlocked_other": "{{errors}} 个错误 · {{blocked}} 个已阻止"
       },
       "tokens": {
         "input": "输入令牌:",

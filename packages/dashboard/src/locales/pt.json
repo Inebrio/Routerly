@@ -1228,7 +1228,9 @@
         "ttft": "Tempo até primeiro token",
         "notMeasured": "não medido nessas chamadas",
         "reliability": "Confiabilidade",
-        "errorsAndBlocked": "{{errors}} erros · {{blocked}} bloqueados"
+        "errorsAndBlocked": "{{errors}} erros · {{blocked}} bloqueados",
+        "errorsAndBlocked_one": "{{errors}} erro · {{blocked}} bloqueados",
+        "errorsAndBlocked_other": "{{errors}} erros · {{blocked}} bloqueados"
       },
       "tokens": {
         "input": "Tokens de entrada:",

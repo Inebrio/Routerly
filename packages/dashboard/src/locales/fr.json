@@ -1228,7 +1228,9 @@
         "ttft": "Temps jusqu'au premier jeton",
         "notMeasured": "non mesuré sur ces appels",
         "reliability": "Fiabilité",
-        "errorsAndBlocked": "{{errors}} erreurs · {{blocked}} bloqué"
+        "errorsAndBlocked": "{{errors}} erreurs · {{blocked}} bloqué",
+        "errorsAndBlocked_one": "{{errors}} erreur · {{blocked}} bloqué",
+        "errorsAndBlocked_other": "{{errors}} erreurs · {{blocked}} bloqué"
       },
       "tokens": {
         "input": "Jetons d'entrée :",

@@ -1228,7 +1228,9 @@
         "ttft": "முதல் டோகன் நேரம்",
         "notMeasured": "இல் அளவிட வேண்டும் இந்த அழைப்புகள் தகவல்",
         "reliability": "நம்பிக்கை",
-        "errorsAndBlocked": "{{errors}} பிழைகளை · {{blocked}} தொண்டு"
+        "errorsAndBlocked": "{{errors}} பிழைகளை · {{blocked}} தொண்டு",
+        "errorsAndBlocked_one": "{{errors}} பிழைகளை · {{blocked}} தொண்டு",
+        "errorsAndBlocked_other": "{{errors}} பிழைகளை · {{blocked}} தொண்டு"
       },
       "tokens": {
         "input": "உள்ளீடு டோகன்கள்:",

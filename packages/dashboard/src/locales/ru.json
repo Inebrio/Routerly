@@ -1228,7 +1228,9 @@
         "ttft": "Время до первого токена",
         "notMeasured": "не измеряется в этих вызовах",
         "reliability": "Надёжность",
-        "errorsAndBlocked": "{{errors}} ошибок · {{blocked}} заблокировано"
+        "errorsAndBlocked": "{{errors}} ошибок · {{blocked}} заблокировано",
+        "errorsAndBlocked_one": "{{errors}} ошибка · {{blocked}} заблокировано",
+        "errorsAndBlocked_other": "{{errors}} ошибок · {{blocked}} заблокировано"
       },
       "tokens": {
         "input": "Входные токены:",

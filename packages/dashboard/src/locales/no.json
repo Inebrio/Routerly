@@ -1228,7 +1228,9 @@
         "ttft": "Tid til første token",
         "notMeasured": "ikke målt på disse anropene",
         "reliability": "Pålitelighet",
-        "errorsAndBlocked": "{{errors}} feil · {{blocked}} blokkert"
+        "errorsAndBlocked": "{{errors}} feil · {{blocked}} blokkert",
+        "errorsAndBlocked_one": "{{errors}} feil · {{blocked}} blokkert",
+        "errorsAndBlocked_other": "{{errors}} feil · {{blocked}} blokkert"
       },
       "tokens": {
         "input": "Innskrevne tokens:",

@@ -1228,7 +1228,9 @@
         "ttft": "İlk jetona kadar zaman",
         "notMeasured": "bu çağrılarda ölçülmedi",
         "reliability": "Güvenilirlik",
-        "errorsAndBlocked": "{{errors}} hatalar · {{blocked}} engellendi"
+        "errorsAndBlocked": "{{errors}} hatalar · {{blocked}} engellendi",
+        "errorsAndBlocked_one": "{{errors}} hata · {{blocked}} engellendi",
+        "errorsAndBlocked_other": "{{errors}} hatalar · {{blocked}} engellendi"
       },
       "tokens": {
         "input": "Giriş jetonları:",

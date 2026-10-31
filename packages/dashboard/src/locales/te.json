@@ -1228,7 +1228,9 @@
         "ttft": "మొదటి టోకెన్ కు సమయం",
         "notMeasured": "ఈ కాల్‌లలో కొలparís సరిపోవు",
         "reliability": "విశ్వసనీయత",
-        "errorsAndBlocked": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు"
+        "errorsAndBlocked": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు",
+        "errorsAndBlocked_one": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు",
+        "errorsAndBlocked_other": "{{errors}} ఉద్దాటనలు · {{blocked}} బ్లాక్ చేసారు"
       },
       "tokens": {
         "input": "ఇన్‌పుట్ టోకెన్‌లు:",

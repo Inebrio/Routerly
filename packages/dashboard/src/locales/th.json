@@ -1228,7 +1228,9 @@
         "ttft": "เวลาถึงโทเค็นแรก",
         "notMeasured": "ไม่ได้วัดในการโทรเหล่านี้",
         "reliability": "ความน่าเชื่อถือ",
-        "errorsAndBlocked": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก"
+        "errorsAndBlocked": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก",
+        "errorsAndBlocked_one": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก",
+        "errorsAndBlocked_other": "{{errors}} ข้อผิดพลาด · {{blocked}} ถูกบล็อก"
       },
       "tokens": {
         "input": "โทเค็นอินพุต:",

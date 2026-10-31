@@ -1228,7 +1228,9 @@
         "ttft": "Idő az első tokenig",
         "notMeasured": "nem mért ezeken a hívásokon",
         "reliability": "Megbízhatóság",
-        "errorsAndBlocked": "{{errors}} hibák · {{blocked}} letiltott"
+        "errorsAndBlocked": "{{errors}} hibák · {{blocked}} letiltott",
+        "errorsAndBlocked_one": "{{errors}} hiba · {{blocked}} letiltott",
+        "errorsAndBlocked_other": "{{errors}} hibák · {{blocked}} letiltott"
       },
       "tokens": {
         "input": "Bemeneti tokenek:",
