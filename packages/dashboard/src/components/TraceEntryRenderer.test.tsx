@@ -1156,3 +1156,20 @@ describe('TraceEntryRenderer — other entry types', () => {
     expect(screen.queryByText('EMAIL')).toBeNull();
   });
 });
+
+describe('TraceEntryRenderer — router:recap with every policy failed', () => {
+  it('explains the policy failure instead of "No policy data"', () => {
+    render(
+      <TraceEntryRenderer entry={{
+        message: 'router:recap',
+        details: {
+          final: [{ rank: 1, model: 'openai/gpt-4o', score: 0.5 }],
+          policies: [],
+          failedPolicies: [{ type: 'llm', error: 'llm policy: all models failed' }],
+        },
+      }} />
+    );
+    expect(screen.queryByText(/No policy data/i)).toBeNull();
+    expect(screen.getAllByText(/Policies failed/i).length).toBe(2);
+  });
+});

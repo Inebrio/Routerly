@@ -394,7 +394,7 @@ export function TraceEntryRenderer({ entry: e }: TraceEntryRendererProps) {
             </div>
           ) : (
             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '8px 10px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-              {t('common.trace.noPolicyData')}
+              {(e.details?.failedPolicies ?? []).length > 0 ? t('common.trace.policiesFailed') : t('common.trace.noPolicyData')}
             </div>
           )}
 
