@@ -1363,6 +1363,32 @@ describe('POST /api/models', () => {
     expect(instancesCall?.[1].find((i: { id: string }) => i.id === 'custom-1')?.connectionId).toBe('conn-for-custom-1')
   })
 
+  it('re-adding a model replaces an orphaned conn-for-<id> instead of duplicating it (ROUT-504)', async () => {
+    setupAdminAuth()
+    const orphan = { id: 'conn-for-custom-1', providerId: 'openai', label: 'old', credentials: {}, enabled: true }
+    mockReadConfig.mockImplementation(async (t: string) => {
+      if (t === 'users') return [adminUser]
+      if (t === 'connections') return [orphan]
+      return []
+    })
+    mockWriteConfig.mockResolvedValue(undefined)
+
+    const app = await buildApp()
+    const res = await app.inject({
+      method: 'POST', url: '/api/models',
+      headers: { ...adminAuthHeaders(), 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        id: 'custom-1', provider: 'openai', endpoint: 'https://api.openai.com/v1', apiKey: 'sk-x',
+        inputPerMillion: 1, outputPerMillion: 2, contextWindow: 8000,
+      }),
+    })
+    await app.close()
+    expect(res.statusCode).toBe(201)
+    const written = mockWriteConfig.mock.calls.find(c => c[0] === 'connections')?.[1] as { id: string; label: string }[]
+    expect(written.filter(c => c.id === 'conn-for-custom-1')).toHaveLength(1)
+    expect(written.find(c => c.id === 'conn-for-custom-1')?.label).toBe('custom-1')
+  })
+
   it('custom branch persists bedrock cloud credential fields on the dedicated connection (regression)', async () => {
     setupAdminAuth()
     mockReadConfig.mockImplementation(async (t: string) => {
