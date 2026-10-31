@@ -252,6 +252,8 @@ describe('routeRequest', () => {
           apiKey: 'super-secret',
           nested: { password: 'hidden', value: 42 },
           plain: 'visible',
+          fallbackModelIds: [],
+          list: [{ token: 'x', ok: 1 }],
         },
       },
     ])
@@ -263,6 +265,8 @@ describe('routeRequest', () => {
     expect(config.apiKey).toBe('***')
     expect(config.nested.password).toBe('***')
     expect(config.plain).toBe('visible')
+    expect(config.fallbackModelIds).toEqual([])
+    expect(config.list).toEqual([{ token: '***', ok: 1 }])
   })
 
   it('logs routing result when log is provided (covers log?.info path)', async () => {

@@ -240,6 +240,7 @@ export async function scoreCandidates(
   // Redact sensitive fields (API keys, tokens, secrets) from the trace.
   const redactConfig = (cfg: unknown): unknown => {
     if (!cfg || typeof cfg !== 'object') return cfg;
+    if (Array.isArray(cfg)) return cfg.map(redactConfig);
     return Object.fromEntries(
       Object.entries(cfg as Record<string, unknown>).map(([k, v]) => {
         if (/key|secret|token|password/i.test(k)) return [k, '***'];

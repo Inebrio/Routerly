@@ -56,7 +56,7 @@ export function MultiSelect({ options, value, onChange, placeholder, disabled }:
         }}
         onClick={() => !disabled && setOpen(!open)}
       >
-        {selectedOptions.length === 0 && <span style={{ color: 'var(--text-muted)' }}>{placeholder ?? t('common.select')}</span>}
+        {selectedOptions.length === 0 && <span style={{ color: 'var(--text-secondary)' }}>{placeholder ?? t('common.select')}</span>}
         {selectedOptions.map(opt => (
           <div
             key={opt.value}
