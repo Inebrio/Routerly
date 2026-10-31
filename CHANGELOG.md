@@ -13,6 +13,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Router with no models returns a provider-shaped 503.** `/v1/chat/completions` and `/v1/messages` on a router without resolvable models now answer 503 in the OpenAI/Anthropic error shape instead of a bare 500 `no_models_available`.
 - **anthropic-web accepts a system prompt.** `/v1/messages` (and `/v1/chat/completions`) with a `system` field no longer fails with claude.ai's 400 `system_prompt: Extra inputs are not permitted`; the system text now leads the prompt sent to claude.ai. (ROUT-497)
 - **Removing a connection that is in use now shows the error.** The dashboard banner ("Connection is used by model(s): …") was rendered above the fold and went unnoticed on long lists; it is now scrolled into view. (ROUT-494)
 
