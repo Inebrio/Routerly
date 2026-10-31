@@ -9,7 +9,8 @@ import { DateRangePicker, RECENT_PRESETS, parseStoredRange, type DateRange } fro
 import { useFilterState } from '../../hooks/useFilterState';
 
 const ms = (n: number | undefined) => (n == null ? '—' : `${Math.round(n).toLocaleString()} ms`);
-const usd = (n: number | null | undefined) => (n == null ? '—' : `$${n.toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`);
+const usd = (n: number | null | undefined) =>
+  n == null ? '—' : `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(n !== 0 && Math.abs(n) < 0.0001 ? 8 : 4)}`;
 
 /**
  * Router Dashboard (T62). The first thing a router shows: what the routing
@@ -144,7 +145,7 @@ export function RouterDashboardTab() {
                 {((summary.successCalls / summary.totalCalls) * 100).toFixed(1)}%
               </div>
               <div className="stat-sub">
-                {t('routers.dashboard.stats.errorsAndBlocked', { errors: summary.errorCalls, blocked: summary.blockedCalls ?? 0 })}
+                {t('routers.dashboard.stats.errorsAndBlocked', { count: summary.errorCalls, errors: summary.errorCalls, blocked: summary.blockedCalls ?? 0 })}
               </div>
             </div>
           </div>
