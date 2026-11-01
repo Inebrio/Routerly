@@ -2815,7 +2815,7 @@ routerly report usage [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
-| `--router <slug>` | Filter to one router |
+| `--router <name|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--session-id <id>` | Filter by session ID |
@@ -2855,7 +2855,7 @@ routerly report calls [options]
 | Option | Description |
 |--------|-------------|
 | `--limit <n>` | Number of records to return (default: 20) |
-| `--router <slug>` | Filter to one router |
+| `--router <name|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--token <id>` | Filter by router token ID, comma-separated for several |
@@ -2883,7 +2883,7 @@ routerly report savings [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly`, `all` (default: `monthly`) |
-| `--router <id>` | Filter by router ID |
+| `--router <name|id>` | Filter by router name or ID |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--trend` | Add a per-bucket breakdown: one row per hour with `--period daily`, one per day otherwise |
 | `--json` | Output the raw savings block |

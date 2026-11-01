@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **CLI `report` `--router` accepts a router name or ID.** `report usage|calls|leaderboard|sessions|savings --router <name>` used to match nothing and print zero rows; the name is now resolved to the router ID and an unknown router exits 1 with an error on stderr. (ROUT-526)
 - **Anthropic `/v1/messages` falls back when a verbatim-forwarded candidate fails (ROUT-525).** A non-2xx answer from an `anthropic`/`anthropic-oauth` candidate (e.g. `max_tokens: 128000 > 64000` from haiku) no longer ends the request while other candidates remain, and the usage row now carries the upstream error in `errorMessage`. The last or only candidate still returns the upstream error verbatim; request payloads are unchanged.
 - **Custom providers accept `developer` messages from Responses clients.** The custom (OpenAI-compatible) adapter sends the `developer` role as `system`, so DeepSeek no longer answers 422 `unknown variant 'developer'` to Codex and no failed first attempt is recorded (ROUT-523).
 - **Usage / Call Detail readability.** Failed calls with no resolved model are recorded with cost 0 instead of `Unknown`/`-`; empty arrays in the `router:policies` trace (e.g. `fallbackModelIds`) are kept as `[]` instead of `{}`; the model filter placeholder is readable in the dark theme; Call Detail explains a failed policy instead of showing "No policy data". (ROUT-509)

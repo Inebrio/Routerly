@@ -5,6 +5,17 @@ import { CALL_TYPES, REQUEST_TYPES, optimizerLabel, requestTypeLabel, type Reque
 import { api } from '../api.js';
 import { fmtUsd } from '../lib/fmt.js';
 
+// Accept a router name or ID; an unknown value fails instead of matching nothing.
+async function resolveRouterId(nameOrId: string): Promise<string> {
+  const routers = await api<{ id: string; name: string }[]>('GET', '/api/routers');
+  const router = routers.find(r => r.id === nameOrId || r.name === nameOrId);
+  if (!router) {
+    console.error(chalk.red(`Router "${nameOrId}" not found. Run \`routerly router list\` to see available routers.`));
+    process.exit(1);
+  }
+  return router.id;
+}
+
 interface UsageByModel {
   calls: number;
   inputTokens: number;
@@ -167,7 +178,7 @@ Examples:
   routerly report usage --token 3f2b1c4d-...
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
-    .option('--router <id>', 'Filter by router ID')
+    .option('--router <name|id>', 'Filter by router name or ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
     .option('--session-id <id>', 'Filter by session ID')
@@ -178,7 +189,7 @@ Examples:
     .action(async (opts: { period: string; router?: string; type?: string; caller?: string; sessionId?: string; endUser?: string; token?: string; tag?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
-        if (opts.router) params.set('routerId', opts.router);
+        if (opts.router) params.set('routerId', await resolveRouterId(opts.router));
         if (opts.type) params.set('requestType', opts.type);
         if (opts.caller) params.set('callType', opts.caller);
         if (opts.sessionId) params.set('sessionId', opts.sessionId);
@@ -263,14 +274,14 @@ Examples:
   routerly report calls --token 3f2b1c4d-...
 `)
     .option('--limit <n>', 'Number of records to show', '20')
-    .option('--router <id>', 'Filter by router ID')
+    .option('--router <name|id>', 'Filter by router name or ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--caller <caller>', `Filter by who made the call: ${CALL_TYPES.join(' | ')}`, parseCallType)
     .option('--token <id>', 'Filter by router token ID (comma-separated for several)')
     .action(async (opts: { limit: string; router?: string; type?: string; caller?: string; token?: string }) => {
       try {
         const params = new URLSearchParams({ period: 'all' });
-        if (opts.router) params.set('routerId', opts.router);
+        if (opts.router) params.set('routerId', await resolveRouterId(opts.router));
         if (opts.type) params.set('requestType', opts.type);
         if (opts.caller) params.set('callType', opts.caller);
         if (opts.token) params.set('tokenIds', opts.token);
@@ -313,12 +324,12 @@ Examples:
   cmd.command('leaderboard')
     .description('Show model performance leaderboard')
     .option('--period <period>', 'Period: daily | weekly | monthly', 'weekly')
-    .option('--router <id>', 'Filter by router ID')
+    .option('--router <name|id>', 'Filter by router name or ID')
     .option('--json', 'Output as JSON')
     .action(async (opts: { period: string; router?: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ period: opts.period });
-        if (opts.router) params.set('routerId', opts.router);
+        if (opts.router) params.set('routerId', await resolveRouterId(opts.router));
 
         const data = await api<Array<{
           modelId: string;
@@ -365,13 +376,13 @@ Examples:
   // ── report sessions ──
   cmd.command('sessions')
     .description('Show usage sessions')
-    .option('--router <id>', 'Filter by router ID')
+    .option('--router <name|id>', 'Filter by router name or ID')
     .option('--limit <n>', 'Number of sessions to show', '20')
     .option('--json', 'Output as JSON')
     .action(async (opts: { router?: string; limit: string; json?: boolean }) => {
       try {
         const params = new URLSearchParams({ limit: opts.limit });
-        if (opts.router) params.set('routerId', opts.router);
+        if (opts.router) params.set('routerId', await resolveRouterId(opts.router));
 
         const res = await api<{
           sessions: Array<{
@@ -431,7 +442,7 @@ Examples:
   routerly report savings --json
 `)
     .option('--period <period>', 'Period: daily | weekly | monthly | all', 'monthly')
-    .option('--router <id>', 'Filter by router ID')
+    .option('--router <name|id>', 'Filter by router name or ID')
     .option('--type <type>', `Filter by request type: ${REQUEST_TYPES.join(' | ')}`, parseRequestType)
     .option('--trend', 'Break the saving down per hour (daily period) or per day')
     .option('--json', 'Output as JSON')
@@ -439,7 +450,7 @@ Examples:
       try {
         const params = new URLSearchParams({ period: opts.period, savings: '1' });
         if (opts.trend) params.set('series', '1');
-        if (opts.router) params.set('routerId', opts.router);
+        if (opts.router) params.set('routerId', await resolveRouterId(opts.router));
         if (opts.type) params.set('requestType', opts.type);
 
         const data = await api<UsageResponse>('GET', `/api/usage?${params.toString()}`);
