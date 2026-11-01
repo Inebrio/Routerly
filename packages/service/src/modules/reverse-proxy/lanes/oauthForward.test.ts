@@ -564,3 +564,46 @@ describe('forwardAnthropicApiKey anthropic-web', () => {
     expect(res.headers['set-cookie']).toBeUndefined()
   })
 })
+
+// ─── non-2xx: recorded with a reason, deferred when another candidate remains ──
+
+describe('forwardAnthropicApiKey upstream failure', () => {
+  const keyModel: ModelConfig = { ...oauthModel, id: 'anthropic/claude-haiku-4-5', provider: 'anthropic' }
+  const upstream400 = () => new Response(
+    JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: 'max_tokens: 128000 > 64000' } }),
+    { status: 400, headers: { 'content-type': 'application/json' } },
+  )
+
+  async function run(deferFailure: boolean) {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => upstream400()))
+    const app = Fastify({ logger: false })
+    app.decorateRequest('router', null as any)
+    app.addHook('preHandler', async (req: any) => { req.router = testRouter })
+    let returned: unknown
+    app.post('/v1/messages', async (req, reply) => {
+      returned = await forwardAnthropicApiKey(req, reply, keyModel, undefined, deferFailure)
+      return deferFailure ? reply.code(299).send('deferred') : returned
+    })
+    await app.ready()
+    const res = await app.inject({ method: 'POST', url: '/v1/messages', headers: { 'content-type': 'application/json' }, payload: '{"model":"x","max_tokens":128000}' })
+    await app.close()
+    vi.unstubAllGlobals()
+    return { res, returned }
+  }
+
+  it('sends the upstream error verbatim and records its message when it is the last candidate', async () => {
+    const { res } = await run(false)
+    expect(res.statusCode).toBe(400)
+    expect(res.json().error.message).toBe('max_tokens: 128000 > 64000')
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({
+      outcome: 'error', errorMessage: 'Upstream returned 400: max_tokens: 128000 > 64000',
+    }))
+  })
+
+  it('returns the failure without answering the client when another candidate remains', async () => {
+    const { res, returned } = await run(true)
+    expect(res.statusCode).toBe(299)
+    expect(returned).toMatchObject({ status: 400, message: 'Upstream returned 400: max_tokens: 128000 > 64000' })
+    expect(mockTrackUsage).toHaveBeenCalledWith(expect.objectContaining({ errorMessage: expect.stringContaining('128000') }))
+  })
+})

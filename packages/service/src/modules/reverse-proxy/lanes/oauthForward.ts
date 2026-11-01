@@ -131,6 +131,20 @@ export function buildOAuthForwardHeaders(
   return out;
 }
 
+/** A non-2xx upstream answer, drained so it can be recorded and, when another candidate remains, skipped. */
+export interface UpstreamFailure { status: number; body: unknown; message: string }
+
+const ZERO_USAGE: TappedUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, cacheCreationInputTokens: 0 };
+
+async function drainFailure(upstream: Response): Promise<UpstreamFailure & { text: string }> {
+  const text = await upstream.text().catch(() => '');
+  let body: unknown = text;
+  try { body = JSON.parse(text); } catch { /* not JSON: keep the raw text */ }
+  const inner = (body as { error?: { message?: unknown } } | null)?.error?.message;
+  const detail = typeof inner === 'string' ? inner : text.trim().slice(0, 500);
+  return { status: upstream.status, body, text, message: `Upstream returned ${upstream.status}${detail ? `: ${detail}` : ''}` };
+}
+
 /**
  * Forward the current request verbatim to the model's upstream endpoint using
  * the stored OAuth credential, then stream the response back to the client.
@@ -140,6 +154,8 @@ export async function forwardAnthropicOAuth(
   reply: FastifyReply,
   model: ModelConfig,
   scrub?: PassthroughScrub,
+  /** More candidates remain: a non-2xx answer is returned (nothing sent to the client) so the caller can fall back. */
+  deferFailure = false,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -174,10 +190,6 @@ export async function forwardAnthropicOAuth(
     });
   }
 
-  upstream.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
-  });
-
   request.log.info(
     {
       oauth: true,
@@ -191,17 +203,31 @@ export async function forwardAnthropicOAuth(
     'oauth pass-through',
   );
 
-  const record = (u: TappedUsage): void => {
+  const record = (u: TappedUsage, errorMessage?: string): void => {
     if (!routerId) return;
     void trackUsage({
       routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
       ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
       ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
       latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
     }).catch(() => {});
   };
 
+  if (!upstream.ok) {
+    const failure = await drainFailure(upstream);
+    record(ZERO_USAGE, failure.message);
+    if (deferFailure) return failure;
+    upstream.headers.forEach((value, key) => {
+      if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+    });
+    return reply.code(failure.status).send(failure.text);
+  }
+
+  upstream.headers.forEach((value, key) => {
+    if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+  });
   reply.code(upstream.status);
   if (upstream.body) {
     const ct = upstream.headers.get('content-type');
@@ -230,6 +256,8 @@ export async function forwardAnthropicApiKey(
   reply: FastifyReply,
   model: ModelConfig,
   scrub?: PassthroughScrub,
+  /** More candidates remain: a non-2xx answer is returned (nothing sent to the client) so the caller can fall back. */
+  deferFailure = false,
 ): Promise<unknown> {
   const startMs = Date.now();
   const routerId = request.router?.id ?? '';
@@ -270,16 +298,29 @@ export async function forwardAnthropicApiKey(
     'api-key pass-through',
   );
 
-  const record = (u: TappedUsage): void => {
+  const record = (u: TappedUsage, errorMessage?: string): void => {
     if (!routerId) return;
     void trackUsage({
       routerId, model, inputTokens: u.inputTokens, outputTokens: u.outputTokens,
       ...(u.cachedInputTokens > 0 ? { cachedInputTokens: u.cachedInputTokens } : {}),
       ...(u.cacheCreationInputTokens > 0 ? { cacheCreationInputTokens: u.cacheCreationInputTokens } : {}),
       latencyMs: Date.now() - startMs, outcome: upstream.ok ? 'success' : 'error', callType: 'completion',
+      ...(errorMessage !== undefined ? { errorMessage } : {}),
       ...(tokenId ? { tokenId } : {}),
     }).catch(() => {});
   };
+
+  // A non-2xx answer is small: drain it so usage carries the reason and, when another candidate
+  // remains, the caller can fall back instead of the client receiving this error.
+  if (!upstream.ok && model.provider !== 'anthropic-web') {
+    const failure = await drainFailure(upstream);
+    record(ZERO_USAGE, failure.message);
+    if (deferFailure) return failure;
+    upstream.headers.forEach((value, key) => {
+      if (!HOP_BY_HOP_RESPONSE.has(key.toLowerCase())) reply.header(key, value);
+    });
+    return reply.code(failure.status).send(failure.text);
+  }
 
   // anthropic-web talks to claude.ai, a website: its Cloudflare headers and cookies are not
   // the Anthropic API's and must not reach the client, and its non-JSON errors (empty 404
