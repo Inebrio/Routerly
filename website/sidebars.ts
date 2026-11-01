@@ -117,6 +117,7 @@ const sidebars: SidebarsConfig = {
             'integrations/clients/claude-desktop',
             'integrations/clients/codex',
             'integrations/clients/opencode',
+            'integrations/coding-agents-router',
             'integrations/clients/continue',
             'integrations/clients/cline',
             'integrations/clients/zed',

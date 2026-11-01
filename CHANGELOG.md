@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Added
+
+- **Coding-agents router setup.** `scripts/setup-coding-agents-router.sh` creates a ready router for Codex and OpenCode (primary and fallback models, cost limits, one token per client) from the CLI; documented in `docs/integrations/coding-agents-router.md` (ROUT-517).
+
 ### Fixed
 
 - **Usage / Call Detail readability.** Failed calls with no resolved model are recorded with cost 0 instead of `Unknown`/`-`; empty arrays in the `router:policies` trace (e.g. `fallbackModelIds`) are kept as `[]` instead of `{}`; the model filter placeholder is readable in the dark theme; Call Detail explains a failed policy instead of showing "No policy data". (ROUT-509)
