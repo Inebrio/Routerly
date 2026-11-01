@@ -14,6 +14,7 @@ the change itself — never reconstructed after the fact. See
 ### Added
 
 - **Coding-agents router setup.** `scripts/setup-coding-agents-router.sh` creates a ready router for Codex and OpenCode from the CLI: four models with distinct roles, a policy stack (model-preference, semantic-intent, performance, cheapest, context, health, rate-limit) that routes quick and hard tasks differently with a deterministic fallback, cost limits and one token per client; documented in `docs/integrations/coding-agents-router.md` (ROUT-517).
+- **OpenCode doc: model selection.** `docs/integrations/clients/opencode.md` now shows `opencode run -m routerly/routerly/ada` and where to pick the model in the TUI (ROUT-528).
 
 ### Fixed
 
