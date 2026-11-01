@@ -17,6 +17,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Custom providers accept `developer` messages from Responses clients.** The custom (OpenAI-compatible) adapter sends the `developer` role as `system`, so DeepSeek no longer answers 422 `unknown variant 'developer'` to Codex and no failed first attempt is recorded (ROUT-523).
 - **Usage / Call Detail readability.** Failed calls with no resolved model are recorded with cost 0 instead of `Unknown`/`-`; empty arrays in the `router:policies` trace (e.g. `fallbackModelIds`) are kept as `[]` instead of `{}`; the model filter placeholder is readable in the dark theme; Call Detail explains a failed policy instead of showing "No policy data". (ROUT-509)
 - **Router dashboard tab polish** — negative savings render as `-$0.0000269` instead of `$-0.0000269`, section titles are uppercase in the dark theme as in the light one, "1 error" is singular, and a `{ error: { message } }` API failure shows its message instead of `[object Object]` (ROUT-508).
 - **i18n.** `routers.dashboard.stats.errorsAndBlocked_one`/`_other` added to all 40 non-English locales (ROUT-513).
