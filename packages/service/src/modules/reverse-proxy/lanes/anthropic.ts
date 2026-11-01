@@ -12,7 +12,7 @@ import type { LLMCallContext } from '../execute.js'
 import { UPSTREAM_PASSTHROUGH_STATUS, upstreamErrorBody } from '../../../lib/protocol-errors.js'
 import { rememberUpstreamError, forgetUpstreamError } from '../last-upstream-error.js'
 import { traceEgress } from '../helpers.js'
-import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub } from './oauthForward.js'
+import { forwardAnthropicOAuth, forwardAnthropicApiKey, type PassthroughScrub, type UpstreamFailure } from './oauthForward.js'
 import { mergePolicies } from '../../pii/piiScrubber.js'
 import { streamOpenAIOAuthChunks, chunksToChatResponse, primeStream } from './openaiOAuthForward.js'
 import {
@@ -70,6 +70,24 @@ function outputScrub(ctx: ProxyContext): PassthroughScrub | undefined {
   return { effective, ...(ctx.emit ? { emit: ctx.emit } : {}) }
 }
 
+/**
+ * Verbatim forward result: a non-2xx answer with candidates still to try was not sent to the
+ * client. Record it as the attempt's failure so the candidate loop advances.
+ */
+function deferredFailure(ctx: ProxyContext, sent: unknown): boolean {
+  const f = sent as Partial<UpstreamFailure> | undefined
+  if (typeof f?.status !== 'number' || typeof f.message !== 'string') return false
+  ctx.attemptError = new Error(f.message)
+  ctx.attemptResponse = { status: f.status, body: f.body }
+  return true
+}
+
+/** True when a candidate other than the current one has not been tried yet (loop order: weight, descending). */
+function hasLaterCandidate(ctx: ProxyContext): boolean {
+  const ordered = [...(ctx.candidates ?? [])].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+  return ordered.findIndex((c) => c === ctx.attempt?.candidate) < ordered.length - 1
+}
+
 // ─── upstream.execute: passthrough forward OR toChat+llmChat/llmStream (anthropic.ts L220-286) ──
 export const anthropicUpstream: Processor<ProxyContext> = {
   id: 'anthropic:upstream',
@@ -96,7 +114,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic-oauth') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx))
+      if (deferredFailure(ctx, await forwardAnthropicOAuth(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
@@ -107,7 +125,7 @@ export const anthropicUpstream: Processor<ProxyContext> = {
     if (model.provider === 'anthropic') {
       ctx.passthrough = true
       const liveModel = (await loadEffectiveModel(model.id)) ?? model
-      await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx))
+      if (deferredFailure(ctx, await forwardAnthropicApiKey(req, reply, liveModel, outputScrub(ctx), hasLaterCandidate(ctx)))) { ctx.passthrough = false; return }
       ctx.result = { kind: 'passthrough' }
       return
     }
