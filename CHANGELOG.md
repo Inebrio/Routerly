@@ -18,6 +18,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Coding-agents router setup works without `DEEPSEEK_API_KEY`.** `scripts/setup-coding-agents-router.sh` no longer exits silently after adding the last model when the optional DeepSeek key is unset; it completes with the 7 policies and the Codex/OpenCode tokens (ROUT-524).
 - **CLI `report` `--router` accepts a router name or ID.** `report usage|calls|leaderboard|sessions|savings --router <name>` used to match nothing and print zero rows; the name is now resolved to the router ID and an unknown router exits 1 with an error on stderr. (ROUT-526)
 - **Anthropic `/v1/messages` falls back when a verbatim-forwarded candidate fails (ROUT-525).** A non-2xx answer from an `anthropic`/`anthropic-oauth` candidate (e.g. `max_tokens: 128000 > 64000` from haiku) no longer ends the request while other candidates remain, and the usage row now carries the upstream error in `errorMessage`. The last or only candidate still returns the upstream error verbatim; request payloads are unchanged.
 - **Custom providers accept `developer` messages from Responses clients.** The custom (OpenAI-compatible) adapter sends the `developer` role as `system`, so DeepSeek no longer answers 422 `unknown variant 'developer'` to Codex and no failed first attempt is recorded (ROUT-523).
