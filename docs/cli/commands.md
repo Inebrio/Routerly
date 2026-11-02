@@ -480,7 +480,7 @@ routerly router edit <router> [options]
 | `--notification-channel <idOrName>` | Also send this router's events to a notification channel (repeatable, replaces the existing override). Requires `router:write` and `notification:write` |
 | `--no-notification-channels` | Remove the router's notification channel override |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
-| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period|rolling:...:<value>` |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period\|rolling:...:<value>` |
 
 Traces always carry metadata (models, policies, guardrail outcomes, tokens,
 timings). Prompts and answers are recorded only with `--trace-content`, and the
