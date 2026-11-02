@@ -9,7 +9,7 @@ import { getProviderAdapter } from './registry.js';
  * additionally makes it reachable through the container.
  */
 export const providerModule = defineModule({
-  manifest: { id: 'provider', version: '0.5.4', dependsOn: { config: '^0.5.4' } },
+  manifest: { id: 'provider', version: '0.6.0', dependsOn: { config: '^0.6.0' } },
   register({ container }) {
     container.register(PROVIDER_REGISTRY, { getProviderAdapter });
   },

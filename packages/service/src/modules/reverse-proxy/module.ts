@@ -14,8 +14,8 @@ import { anthropicTransportProcessors } from './lanes/anthropic.js'
 export const reverseProxyModule = defineModule({
   manifest: {
     id: 'reverse-proxy',
-    version: '0.5.4',
-    dependsOn: { config: '^0.5.4', provider: '^0.5.4' },
+    version: '0.6.0',
+    dependsOn: { config: '^0.6.0', provider: '^0.6.0' },
   },
   register(reg) {
     const pipeline = new ProcessorRegistry<ProxyContext>()

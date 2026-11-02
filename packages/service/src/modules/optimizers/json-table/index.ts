@@ -159,8 +159,8 @@ export const jsonTableOptimizer = {
 export const jsonTableModule: RouterlyModule = defineModule({
   manifest: {
     id: 'optimizer-json-table',
-    version: '0.5.4',
-    dependsOn: { 'optimizer-core': '^0.5.4' },
+    version: '0.6.0',
+    dependsOn: { 'optimizer-core': '^0.6.0' },
   },
   register({ container }) {
     container.resolve(OPTIMIZER_REGISTRY).register(jsonTableOptimizer)

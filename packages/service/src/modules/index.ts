@@ -40,14 +40,14 @@ export const coreModules = [
 // provider-oauth/provider-web are empty module slots (no register() lifecycle of their own):
 // declared so that GET /api/modules and `routerly modules list` list them.
 export const providerOAuthModule: RouterlyModule = defineModule({
-  manifest: { id: 'provider-oauth', version: '0.5.4', dependsOn: { provider: '^0.5.4' } },
+  manifest: { id: 'provider-oauth', version: '0.6.0', dependsOn: { provider: '^0.6.0' } },
   register() {
     // intentionally empty
   },
 })
 
 export const providerWebModule: RouterlyModule = defineModule({
-  manifest: { id: 'provider-web', version: '0.5.4', dependsOn: { provider: '^0.5.4' } },
+  manifest: { id: 'provider-web', version: '0.6.0', dependsOn: { provider: '^0.6.0' } },
   register() {
     // intentionally empty
   },
