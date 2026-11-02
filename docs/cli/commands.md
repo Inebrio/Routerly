@@ -446,7 +446,7 @@ routerly router create [options]
 | `--routing-model <id>` | Model ID used for routing decisions |
 | `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router's fixed pass-through entry, but do apply to any real target model added to it, exactly like on a `router`-kind router. |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable). Order of repetition sets priority: the first `--candidate` given is highest priority. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
-| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period|rolling:...:<value>`. Requires a matching `--candidate`. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period\|rolling:...:<value>`. Requires a matching `--candidate`. |
 
 ```bash
 # An orchestrator, routing to two candidate routers in priority order (first = highest priority)
