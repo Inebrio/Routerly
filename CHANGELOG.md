@@ -11,6 +11,10 @@ the change itself — never reconstructed after the fact. See
 
 ## [Unreleased]
 
+### Changed
+
+- **Version 0.6.0.** The next release is numbered 0.6.0: while the major is 0, `release.config.mjs` maps a BREAKING CHANGE to a minor bump instead of 1.0.0. The breaking change in this release is the update-channel rename: the `stable` alias for `current` is rejected, and `develop` is now its own channel instead of an alias for `next` (ROUT-539).
+
 ### Added
 
 - **Coding-agents router setup.** `scripts/setup-coding-agents-router.sh` creates a ready router for Codex and OpenCode from the CLI: four models with distinct roles, a policy stack (model-preference, semantic-intent, performance, cheapest, context, health, rate-limit) that routes quick and hard tasks differently with a deterministic fallback, cost limits and one token per client; documented in `docs/integrations/coding-agents-router.md` (ROUT-517).
@@ -18,6 +22,7 @@ the change itself — never reconstructed after the fact. See
 
 ### Fixed
 
+- **Documentation build.** `--router <name|id>` in CLI report tables no longer breaks the MDX compilation of `docs/cli/commands.md` (ROUT-539).
 - **semantic-intent embedding cost uses the registered price.** The routing usage row for the embedding call looked the price up in the catalog by registry id (`openai/text-embedding-3-small`) and recorded 0; it now uses the registered model's price, falling back to the catalog by upstream name (ROUT-534).
 - **Coding-agents router setup works without `DEEPSEEK_API_KEY`.** `scripts/setup-coding-agents-router.sh` no longer exits silently after adding the last model when the optional DeepSeek key is unset; it completes with the 7 policies and the Codex/OpenCode tokens (ROUT-524).
 - **CLI `report` `--router` accepts a router name or ID.** `report usage|calls|leaderboard|sessions|savings --router <name>` used to match nothing and print zero rows; the name is now resolved to the router ID and an unknown router exits 1 with an error on stderr. (ROUT-526)

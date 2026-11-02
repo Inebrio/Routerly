@@ -86,7 +86,7 @@ function makeFinalize(events: EventBus): Processor<ProxyContext> {
 }
 
 export const traceModule: RouterlyModule = defineModule({
-  manifest: { id: 'trace', version: '0.5.4', dependsOn: { 'reverse-proxy': '^0.5.4', api: '^0.5.4' } },
+  manifest: { id: 'trace', version: '0.6.0', dependsOn: { 'reverse-proxy': '^0.6.0', api: '^0.6.0' } },
   async register({ container, events }) {
     // The console gets the whole trace, live. The level is read once at boot and
     // kept in console.ts; PUT /api/settings updates it, so there is no config

@@ -5,7 +5,7 @@ import { InMemoryResilienceStore } from './store.js'
 import { getResilienceHandler, resetResilienceHandler } from './routes.js'
 
 export const resilienceModule: RouterlyModule = defineModule({
-  manifest: { id: 'resilience', version: '0.5.4', dependsOn: { api: '^0.5.4' } },
+  manifest: { id: 'resilience', version: '0.6.0', dependsOn: { api: '^0.6.0' } },
   register({ container }) {
     const store = new InMemoryResilienceStore()
     container.register(RESILIENCE_STORE, store)

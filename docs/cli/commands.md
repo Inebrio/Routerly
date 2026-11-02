@@ -446,7 +446,7 @@ routerly router create [options]
 | `--routing-model <id>` | Model ID used for routing decisions |
 | `--kind <kind>` | Router kind: `router` (default), `orchestrator`, or `passthrough`. Budgets/limits do not apply to a passthrough router's fixed pass-through entry, but do apply to any real target model added to it, exactly like on a `router`-kind router. |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable). Order of repetition sets priority: the first `--candidate` given is highest priority. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
-| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period|rolling:...:<value>`. Requires a matching `--candidate`. |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable), format `<routerId>:<metric>:period\|rolling:...:<value>`. Requires a matching `--candidate`. |
 
 ```bash
 # An orchestrator, routing to two candidate routers in priority order (first = highest priority)
@@ -480,7 +480,7 @@ routerly router edit <router> [options]
 | `--notification-channel <idOrName>` | Also send this router's events to a notification channel (repeatable, replaces the existing override). Requires `router:write` and `notification:write` |
 | `--no-notification-channels` | Remove the router's notification channel override |
 | `--candidate <routerId>` | Candidate router for an orchestrator (repeatable); order of repetition sets priority; replaces the existing candidate list. **Previously `--candidate <routerId>:<weight>`, now `--candidate <routerId>`** — the old colon-weight syntax is rejected with an error naming the new syntax; order of repetition on the command line replaces the numeric weight. |
-| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period|rolling:...:<value>` |
+| `--candidate-limit <spec>` | Usage limit for a candidate router (repeatable); requires `--candidate`, format `<routerId>:<metric>:period\|rolling:...:<value>` |
 
 Traces always carry metadata (models, policies, guardrail outcomes, tokens,
 timings). Prompts and answers are recorded only with `--trace-content`, and the
@@ -2815,7 +2815,7 @@ routerly report usage [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly` (default: `monthly`) |
-| `--router <name|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
+| `--router <name\|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--session-id <id>` | Filter by session ID |
@@ -2855,7 +2855,7 @@ routerly report calls [options]
 | Option | Description |
 |--------|-------------|
 | `--limit <n>` | Number of records to return (default: 20) |
-| `--router <name|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
+| `--router <name\|id>` | Filter to one router (name or ID; an unknown router exits with an error) |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--caller <caller>` | Filter by who made the call: `routing`, `completion`, `guardrail`, `judge` |
 | `--token <id>` | Filter by router token ID, comma-separated for several |
@@ -2883,7 +2883,7 @@ routerly report savings [options]
 | Option | Description |
 |--------|-------------|
 | `--period <period>` | `daily`, `weekly`, `monthly`, `all` (default: `monthly`) |
-| `--router <name|id>` | Filter by router name or ID |
+| `--router <name\|id>` | Filter by router name or ID |
 | `--type <type>` | Filter by request type: `chat`, `completion`, `embedding`, `rerank`, `image`, `audio` |
 | `--trend` | Add a per-bucket breakdown: one row per hour with `--period daily`, one per day otherwise |
 | `--json` | Output the raw savings block |

@@ -52,7 +52,7 @@ function toAuthContext(authInfo: AuthInfo | undefined): McpAuthContext {
 export function buildMcpServer(registry: McpToolRegistry, container: ServiceContainer): Server {
   void container
   const server = new Server(
-    { name: 'routerly', version: '0.5.4' },
+    { name: 'routerly', version: '0.6.0' },
     { capabilities: { tools: {} } },
   )
 
